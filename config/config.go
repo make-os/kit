@@ -6,6 +6,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/tendermint/tendermint/config"
+
 	"github.com/makeos/mosdef/util/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -43,7 +45,7 @@ func setDevDefaultConfig() {
 // Configure sets up the application command structure, tendermint
 // and mosdef configuration. This is where all configuration and
 // settings are prepared
-func Configure(rootCmd, tmRootCmd *cobra.Command, cfg *EngineConfig) {
+func Configure(rootCmd, tmRootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) {
 
 	if err := rootCmd.Execute(); err != nil {
 		golog.Fatalf("Failed to execute root command")
@@ -113,6 +115,7 @@ func Configure(rootCmd, tmRootCmd *cobra.Command, cfg *EngineConfig) {
 	SetVersions(viper.GetString("net.version"))
 
 	// Set data and network directories
+	c.SetDataDir(dataDir)
 	c.SetNetDataDir(path.Join(dataDir, viper.GetString("net.version")))
 
 	// Create network data directory
@@ -132,9 +135,14 @@ func Configure(rootCmd, tmRootCmd *cobra.Command, cfg *EngineConfig) {
 	c.VersionInfo.BuildVersion = ""
 
 	*cfg = c
+	*tmcfg = *tmcfg.SetRoot(cfg.DataDir())
 
 	// Add flags and prefix all env exposed with MD
 	executor := cli.PrepareMainCmd(tmRootCmd, AppEnvPrefix, dataDir)
+
+	// Get and cache node key
+	cfg.PrepareNodeKey(tmcfg.NodeKeyFile())
+
 	if err := executor.Execute(); err != nil {
 		golog.Fatalf("Failed executing tendermint prepare command: %s, exiting...", err)
 	}

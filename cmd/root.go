@@ -17,6 +17,7 @@ package cmd
 import (
 	"github.com/makeos/mosdef/config"
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
+	tmcfg "github.com/tendermint/tendermint/config"
 
 	"github.com/spf13/cobra"
 )
@@ -24,6 +25,9 @@ import (
 var (
 	// cfg is the application config
 	cfg = &config.EngineConfig{}
+
+	// Get a reference to tendermint's config object
+	tmconfig = tmcfg.DefaultConfig()
 
 	// rootCmd is the application root command
 	rootCmd *cobra.Command
@@ -66,11 +70,14 @@ func initTMRootCmd() {
 // Initialize setups the environment and returns a Config object
 func Initialize() {
 
+	// Initialize root commands
 	initRootCmd()
 	initTMRootCmd()
 
+	// Add sub commands
 	tmRootCmd.AddCommand(initCmd)
 	tmRootCmd.AddCommand(startCmd)
 
-	config.Configure(rootCmd, tmRootCmd, cfg)
+	// Configure the root commands
+	config.Configure(rootCmd, tmRootCmd, cfg, tmconfig)
 }

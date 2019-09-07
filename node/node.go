@@ -3,11 +3,11 @@ package node
 import (
 	"fmt"
 
+	"github.com/tendermint/tendermint/p2p"
+
 	"github.com/makeos/mosdef/mosdb"
-	"github.com/makeos/mosdef/util"
 
 	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util/logger"
 )
 
@@ -15,10 +15,9 @@ import (
 type Node struct {
 	app     *App
 	cfg     *config.EngineConfig
-	nodeKey *crypto.Key
+	nodeKey *p2p.NodeKey
 	log     logger.Logger
 	db      mosdb.DB
-	address util.NodeAddr
 }
 
 // NewNode creates an instance of Node
@@ -55,5 +54,5 @@ func (n *Node) DB() mosdb.DB {
 
 // Serve starts the node's server
 func (n *Node) Serve() {
-	
+
 }

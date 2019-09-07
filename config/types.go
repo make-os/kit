@@ -79,7 +79,7 @@ func (c *EngineConfig) GetDBDir() string {
 	var ns string
 	var dbFile = "data%s.db"
 	if c.Node.Mode == ModeDev {
-		ns = "_" + c.g.NodeKey.Addr().String()
+		ns = "_" + string(c.g.NodeKey.ID())
 	}
 	return filepath.Join(c.NetDataDir(), fmt.Sprintf(dbFile, ns))
 }

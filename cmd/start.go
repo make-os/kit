@@ -15,19 +15,31 @@
 package cmd
 
 import (
-	"fmt"
-
-	"github.com/k0kubun/pp"
+	"github.com/makeos/mosdef/node"
+	"github.com/makeos/mosdef/util/logger"
 	"github.com/spf13/cobra"
 )
+
+var log logger.Logger
+
+func start() error {
+
+	n := node.NewNode(cfg)
+	if err := n.OpenDB(); err != nil {
+		log.Error("Failed to open database: %s", err)
+		return err
+	}
+
+	return nil
+}
 
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Launch the node to join the network.",
 	Long:  `Launch the node to join the network.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		pp.Println(cfg)
-		fmt.Println("start called")
+	RunE: func(cmd *cobra.Command, args []string) error {
+		log = cfg.G().Log.Module("main")
+		return start()
 	},
 }
