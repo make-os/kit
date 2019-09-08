@@ -26,7 +26,7 @@ import (
 
 var log logger.Logger
 
-func start() {
+func start(onStart func(n *node.Node)) {
 
 	log.Info("Starting node...", "NodeID", cfg.G().NodeKey.ID(), "DevMode", cfg.IsDev())
 
@@ -41,14 +41,22 @@ func start() {
 		log.Fatal("Failed to prepare node", "Err", err)
 	}
 
-	defer func() {
-		n.Stop()
-	}()
+	if onStart != nil {
+		onStart(n)
+	}
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	<-c
-	os.Exit(0)
+	<-interrupt
+
+	n.Stop()
+}
+
+func listenForInterrupt() {
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		<-c
+		close(interrupt)
+	}()
 }
 
 // startCmd represents the start command
@@ -57,7 +65,10 @@ var startCmd = &cobra.Command{
 	Short: "Launch the node to join the network.",
 	Long:  `Launch the node to join the network.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// Get and cache node key
+		cfg.PrepareNodeKey(tmconfig.NodeKeyFile())
 		log = cfg.G().Log.Module("main")
-		start()
+		listenForInterrupt()
+		start(nil)
 	},
 }

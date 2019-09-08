@@ -117,6 +117,7 @@ func Configure(rootCmd, tmRootCmd *cobra.Command, cfg *EngineConfig, tmcfg *conf
 	// Set data and network directories
 	c.SetDataDir(dataDir)
 	c.SetNetDataDir(path.Join(dataDir, viper.GetString("net.version")))
+	c.consoleHistoryPath = path.Join(cfg.NetDataDir(), ".console_history")
 
 	// Create network data directory
 	os.MkdirAll(c.NetDataDir(), 0700)
@@ -139,9 +140,6 @@ func Configure(rootCmd, tmRootCmd *cobra.Command, cfg *EngineConfig, tmcfg *conf
 
 	// Add flags and prefix all env exposed with MD
 	executor := cli.PrepareMainCmd(tmRootCmd, AppEnvPrefix, dataDir)
-
-	// Get and cache node key
-	cfg.PrepareNodeKey(tmcfg.NodeKeyFile())
 
 	if err := executor.Execute(); err != nil {
 		golog.Fatalf("Failed executing tendermint prepare command: %s, exiting...", err)

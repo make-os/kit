@@ -35,6 +35,9 @@ var (
 	// tmRootCmd is tendermint's root command.
 	// We pass this to tendermint CLI configurer
 	tmRootCmd *cobra.Command
+
+	// interrupt is used to inform the stoppage of all modules
+	interrupt = make(chan struct{})
 )
 
 func makeRootCmd(name string) *cobra.Command {
@@ -77,6 +80,7 @@ func Initialize() {
 	// Add sub commands
 	tmRootCmd.AddCommand(initCmd)
 	tmRootCmd.AddCommand(startCmd)
+	tmRootCmd.AddCommand(consoleCmd)
 
 	// Configure the root commands
 	config.Configure(rootCmd, tmRootCmd, cfg, tmconfig)

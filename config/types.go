@@ -45,6 +45,10 @@ type EngineConfig struct {
 	// dataDir is where the network's data is stored
 	netDataDir string
 
+	// consoleHistoryPath is the path to the file where console input
+	// history is stored.
+	consoleHistoryPath string
+
 	// VersionInfo holds version information
 	VersionInfo *VersionInfo `json:"-" mapstructure:"-"`
 
@@ -52,6 +56,12 @@ type EngineConfig struct {
 	// used anywhere a config is required. Can help to reduce
 	// the complexity method definition
 	g *Globals
+}
+
+// GetConsoleHistoryPath returns the filepath where the console
+// input history is stored
+func (c *EngineConfig) GetConsoleHistoryPath() string {
+	return c.consoleHistoryPath
 }
 
 // SetNetDataDir sets the network's data directory

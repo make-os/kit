@@ -101,6 +101,17 @@ func (n *Node) Start() error {
 
 // Stop the node
 func (n *Node) Stop() {
+	n.log.Info("mosdef is stopping...")
+
+	// Close database
+	if n.db != nil {
+		n.log.Info("Database is closing")
+		n.db.Close()
+		n.log.Info("Database has been closed")
+	}
+
 	n.tm.Stop()
 	n.tm.Wait()
+
+	n.log.Info("mosdef has stopped")
 }
