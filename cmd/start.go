@@ -15,6 +15,10 @@
 package cmd
 
 import (
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/makeos/mosdef/node"
 	"github.com/makeos/mosdef/util/logger"
 	"github.com/spf13/cobra"
@@ -22,15 +26,29 @@ import (
 
 var log logger.Logger
 
-func start() error {
+func start() {
 
-	n := node.NewNode(cfg)
+	log.Info("Starting node...", "NodeID", cfg.G().NodeKey.ID(), "DevMode", cfg.IsDev())
+
+	n := node.NewNode(cfg, tmconfig)
 	if err := n.OpenDB(); err != nil {
-		log.Error("Failed to open database: %s", err)
-		return err
+		log.Fatal("Failed to open database", "Err", err)
 	}
 
-	return nil
+	log.Info("Database has been loaded", "DatabaseDir", cfg.GetDBDir())
+
+	if err := n.Start(); err != nil {
+		log.Fatal("Failed to prepare node", "Err", err)
+	}
+
+	defer func() {
+		n.Stop()
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	<-c
+	os.Exit(0)
 }
 
 // startCmd represents the start command
@@ -38,8 +56,8 @@ var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Launch the node to join the network.",
 	Long:  `Launch the node to join the network.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		log = cfg.G().Log.Module("main")
-		return start()
+		start()
 	},
 }

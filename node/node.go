@@ -2,30 +2,43 @@ package node
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/pkg/errors"
+
+	"github.com/tendermint/tendermint/privval"
+	"github.com/tendermint/tendermint/proxy"
+
+	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/p2p"
 
 	"github.com/makeos/mosdef/mosdb"
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/util/logger"
+	tmconfig "github.com/tendermint/tendermint/config"
+	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
+	nm "github.com/tendermint/tendermint/node"
 )
 
 // Node represents the client
 type Node struct {
 	app     *App
 	cfg     *config.EngineConfig
+	tmcfg   *tmconfig.Config
 	nodeKey *p2p.NodeKey
 	log     logger.Logger
 	db      mosdb.DB
+	tm      *nm.Node
 }
 
 // NewNode creates an instance of Node
-func NewNode(cfg *config.EngineConfig) *Node {
+func NewNode(cfg *config.EngineConfig, tmcfg *tmconfig.Config) *Node {
 	return &Node{
 		cfg:     cfg,
 		nodeKey: cfg.G().NodeKey,
 		log:     cfg.G().Log.Module("Node"),
+		tmcfg:   tmcfg,
 	}
 }
 
@@ -52,7 +65,42 @@ func (n *Node) DB() mosdb.DB {
 	return n.db
 }
 
-// Serve starts the node's server
-func (n *Node) Serve() {
+// Start starts the tendermint node
+func (n *Node) Start() error {
 
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+	var err error
+	logger, err = tmflags.ParseLogLevel(n.tmcfg.LogLevel, logger, tmconfig.DefaultLogLevel())
+	if err != nil {
+		return errors.Wrap(err, "failed to parse log level")
+	}
+
+	// Read private validator
+	pv := privval.LoadFilePV(n.tmcfg.PrivValidatorKeyFile(), n.tmcfg.PrivValidatorStateFile())
+
+	// Create node
+	app := NewApp(n.db)
+	node, err := nm.NewNode(
+		n.tmcfg,
+		pv,
+		n.nodeKey,
+		proxy.NewLocalClientCreator(app),
+		nm.DefaultGenesisDocProviderFunc(n.tmcfg),
+		nm.DefaultDBProvider,
+		nm.DefaultMetricsProvider(n.tmcfg.Instrumentation),
+		logger)
+	if err != nil {
+		return errors.Wrap(err, "failed to fully create node")
+	}
+
+	n.tm = node
+	n.tm.Start()
+
+	return nil
+}
+
+// Stop the node
+func (n *Node) Stop() {
+	n.tm.Stop()
+	n.tm.Wait()
 }
