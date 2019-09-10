@@ -11,7 +11,6 @@ import (
 	"github.com/makeos/mosdef/util/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/libs/cli"
 )
 
 var (
@@ -29,6 +28,9 @@ var (
 
 	// AppEnvPrefix is used as the prefix for environment variables
 	AppEnvPrefix = "MD"
+
+	// DefaultRPCAddress is the default RPC listening address
+	DefaultRPCAddress = "127.0.0.1:8999"
 )
 
 // setDefaultConfig sets default config values.
@@ -36,6 +38,7 @@ var (
 // in flag, env or config file.
 func setDefaultConfig() {
 	viper.SetDefault("net.version", DefaultNetVersion)
+	viper.SetDefault("rpc.address", DefaultRPCAddress)
 }
 
 func setDevDefaultConfig() {
@@ -45,11 +48,7 @@ func setDevDefaultConfig() {
 // Configure sets up the application command structure, tendermint
 // and mosdef configuration. This is where all configuration and
 // settings are prepared
-func Configure(rootCmd, tmRootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) {
-
-	if err := rootCmd.Execute(); err != nil {
-		golog.Fatalf("Failed to execute root command")
-	}
+func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) {
 
 	var c = EngineConfig{
 		Node: &NodeConfig{Mode: ModeProd},
@@ -139,11 +138,11 @@ func Configure(rootCmd, tmRootCmd *cobra.Command, cfg *EngineConfig, tmcfg *conf
 	*tmcfg = *tmcfg.SetRoot(cfg.DataDir())
 
 	// Add flags and prefix all env exposed with MD
-	executor := cli.PrepareMainCmd(tmRootCmd, AppEnvPrefix, dataDir)
+	// executor := cli.PrepareMainCmd(tmRootCmd, AppEnvPrefix, dataDir)
 
-	if err := executor.Execute(); err != nil {
-		golog.Fatalf("Failed executing tendermint prepare command: %s, exiting...", err)
-	}
+	// if err := executor.Execute(); err != nil {
+	// 	golog.Fatalf("Failed executing tendermint prepare command: %s, exiting...", err)
+	// }
 
 	return
 }

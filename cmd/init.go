@@ -15,10 +15,7 @@
 package cmd
 
 import (
-	golog "log"
-
 	"github.com/spf13/cobra"
-	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 )
 
 // initCmd represents the init command
@@ -29,8 +26,6 @@ var initCmd = &cobra.Command{
 and creates default config and keys required to successfully 
 launch the node.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := commands.InitFilesCmd.Execute(); err != nil {
-			golog.Fatalf("Failed to initialize data directory: %s, exiting...", err)
-		}
+		initializeTendermint()
 	},
 }

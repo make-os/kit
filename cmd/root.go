@@ -15,6 +15,8 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/makeos/mosdef/config"
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmcfg "github.com/tendermint/tendermint/config"
@@ -29,59 +31,54 @@ var (
 	// Get a reference to tendermint's config object
 	tmconfig = tmcfg.DefaultConfig()
 
-	// rootCmd is the application root command
 	rootCmd *cobra.Command
-
-	// tmRootCmd is tendermint's root command.
-	// We pass this to tendermint CLI configurer
-	tmRootCmd *cobra.Command
 
 	// interrupt is used to inform the stoppage of all modules
 	interrupt = make(chan struct{})
 )
 
-func makeRootCmd(name string) *cobra.Command {
+// initializeTendermint initializes tendermint
+func initializeTendermint() error {
+	commands.SetConfig(tmconfig)
+	commands.InitFilesCmd.RunE(nil, nil)
+	return nil
+}
+
+// Execute adds all child commands to the root command and sets flags appropriately.
+// This is called by main.main(). It only needs to happen once to the rootCmd.
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		os.Exit(1)
+	}
+}
+
+func init() {
+
 	// rootCmd represents the base command when called without any subcommands
-	rootCmd := &cobra.Command{
-		Use:   name,
+	rootCmd = &cobra.Command{
+		Use:   "mosdef",
 		Short: "The decentralized software development and collaboration network",
 		Long: `Mosdef is the official client for MakeOS network - A decentralized software
-	development network that allows anyone, anywhere to create software products
-	and organizations without a centralized authority.`,
-		Run: func(cmd *cobra.Command, args []string) {},
+		development network that allows anyone, anywhere to create software products
+		and organizations without a centralized authority.`,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			config.Configure(rootCmd, cfg, tmconfig)
+		},
 	}
 
+	initialize()
+}
+
+// initialize setups the environment and returns a Config object
+func initialize() {
+
+	// Add commands
+	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(startCmd)
+	rootCmd.AddCommand(consoleCmd)
+
+	// Add flags
 	rootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
-
-	return rootCmd
-}
-
-// initRootCmd initializes the app
-func initRootCmd() {
-	rootCmd = makeRootCmd("mosdef")
-}
-
-// initTMRootCmd initializes tendermint
-func initTMRootCmd() {
-	tmRootCmd = makeRootCmd("mosdef")
-	tmRootCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		commands.InitFilesCmd.PersistentFlags().AddFlagSet(rootCmd.PersistentFlags())
-		return commands.RootCmd.PersistentPreRunE(cmd, args)
-	}
-}
-
-// Initialize setups the environment and returns a Config object
-func Initialize() {
-
-	// Initialize root commands
-	initRootCmd()
-	initTMRootCmd()
-
-	// Add sub commands
-	tmRootCmd.AddCommand(initCmd)
-	tmRootCmd.AddCommand(startCmd)
-	tmRootCmd.AddCommand(consoleCmd)
-
-	// Configure the root commands
-	config.Configure(rootCmd, tmRootCmd, cfg, tmconfig)
+	rootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Enables development mode")
+	setStartFlags(startCmd, consoleCmd)
 }
