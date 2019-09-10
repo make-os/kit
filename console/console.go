@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"sync"
 
+	"github.com/makeos/mosdef/types"
+
 	"github.com/pkg/errors"
 
 	"github.com/makeos/mosdef/util"
@@ -59,6 +61,9 @@ type Console struct {
 	// use this to perform clean up etc
 	onStopFunc func()
 
+	// jsModules to integrate with the console
+	jsModules []types.JSModule
+
 	// Versions
 	protocol string
 	client   string
@@ -99,6 +104,7 @@ func NewAttached(historyPath string, cfg *config.EngineConfig, log logger.Logger
 // Prepare sets up the console's prompt
 // colors, suggestions etc.
 func (c *Console) Prepare() error {
+
 	// Set some options
 	options := []prompt.Option{
 		prompt.OptionPrefixTextColor(prompt.White),
@@ -115,9 +121,15 @@ func (c *Console) Prepare() error {
 		prompt.OptionHistory(c.history),
 	}
 
+	// Prepare the vm context
 	suggestions, err := c.executor.PrepareContext()
 	if err != nil {
 		return err
+	}
+
+	// Apply JS module
+	for _, jm := range c.jsModules {
+		c.suggestMgr.add(jm.Configure(c.executor.vm)...)
 	}
 
 	c.suggestMgr.add(suggestions...)
@@ -145,6 +157,11 @@ func (c *Console) Prepare() error {
 	c.Unlock()
 
 	return nil
+}
+
+// AddModules adds javascript modules
+func (c *Console) AddModules(modules ...types.JSModule) {
+	c.jsModules = append(c.jsModules, modules...)
 }
 
 // OnStop sets a function that is called

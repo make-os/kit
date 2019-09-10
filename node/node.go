@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/makeos/mosdef/types"
+
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/privval"
@@ -30,6 +32,7 @@ type Node struct {
 	log     logger.Logger
 	db      mosdb.DB
 	tm      *nm.Node
+	service types.Service
 }
 
 // NewNode creates an instance of Node
@@ -39,6 +42,7 @@ func NewNode(cfg *config.EngineConfig, tmcfg *tmconfig.Config) *Node {
 		nodeKey: cfg.G().NodeKey,
 		log:     cfg.G().Log.Module("Node"),
 		tmcfg:   tmcfg,
+		service: NewService(),
 	}
 }
 
@@ -63,6 +67,11 @@ func (n *Node) OpenDB() error {
 // DB returns the database instance
 func (n *Node) DB() mosdb.DB {
 	return n.db
+}
+
+// GetService returns the node's service
+func (n *Node) GetService() types.Service {
+	return n.service
 }
 
 // Start starts the tendermint node

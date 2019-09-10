@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"github.com/makeos/mosdef/accountmgr"
 	"github.com/makeos/mosdef/console"
 	"github.com/makeos/mosdef/node"
 	"github.com/spf13/cobra"
@@ -31,14 +32,24 @@ var consoleCmd = &cobra.Command{
 		// Get and cache node key
 		cfg.PrepareNodeKey(tmconfig.NodeKeyFile())
 
+		acctmgr := accountmgr.New(cfg.AccountDir())
+
 		// Start the node and also start the console
 		// after the node has started
 		start(func(n *node.Node) {
 			console := console.New(cfg.GetConsoleHistoryPath(), cfg, log)
+
+			// On stop, close the node and interrupt other processes
 			console.OnStop(func() {
 				n.Stop()
 				close(interrupt)
 			})
+
+			// Add modules
+			console.AddModules(
+				accountmgr.NewJSModule(acctmgr),
+				node.NewJSModule(n.GetService()),
+			)
 
 			// Run the console
 			go func() {

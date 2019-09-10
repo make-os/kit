@@ -32,4 +32,9 @@ const (
 	// NamespaceDebug is the namespace for RPC methods
 	// that offer debugging features
 	NamespaceDebug = "debug"
+
+	// NamespacePersonal is the namespace for RPC methods
+	// that interact with private and sensitive data of the
+	// client
+	NamespacePersonal = "personal"
 )

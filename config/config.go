@@ -114,8 +114,9 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	SetVersions(viper.GetString("net.version"))
 
 	// Set data and network directories
-	c.SetDataDir(dataDir)
-	c.SetNetDataDir(path.Join(dataDir, viper.GetString("net.version")))
+	c.dataDir = dataDir
+	c.netDataDir = path.Join(dataDir, viper.GetString("net.version"))
+	c.accountDir = path.Join(dataDir, AccountDirName)
 	c.consoleHistoryPath = path.Join(cfg.NetDataDir(), ".console_history")
 
 	// Create network data directory

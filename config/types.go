@@ -45,6 +45,9 @@ type EngineConfig struct {
 	// dataDir is where the network's data is stored
 	netDataDir string
 
+	// accountDir is where the node's accounts are stored
+	accountDir string
+
 	// consoleHistoryPath is the path to the file where console input
 	// history is stored.
 	consoleHistoryPath string
@@ -77,6 +80,11 @@ func (c *EngineConfig) NetDataDir() string {
 // DataDir returns the application's data directory
 func (c *EngineConfig) DataDir() string {
 	return c.dataDir
+}
+
+// AccountDir returns the application's accounts directory
+func (c *EngineConfig) AccountDir() string {
+	return c.accountDir
 }
 
 // SetDataDir sets the application's data directory

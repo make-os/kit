@@ -59,11 +59,7 @@ func (e *Executor) PrepareContext() ([]prompt.Suggest, error) {
 	// nsObj is a namespace for storing
 	// rpc methods and other categorized functions
 	var nsObj = map[string]map[string]interface{}{
-		"admin":    {},
-		"personal": {},
-		"ell":      {},
-		"rpc":      {},
-		"_system":  {},
+		"_system": {},
 	}
 
 	defer func() {

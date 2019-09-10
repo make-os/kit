@@ -31,6 +31,7 @@ var (
 	// Get a reference to tendermint's config object
 	tmconfig = tmcfg.DefaultConfig()
 
+	// rootCmd is the root command
 	rootCmd *cobra.Command
 
 	// interrupt is used to inform the stoppage of all modules
@@ -81,4 +82,5 @@ func initialize() {
 	rootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
 	rootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Enables development mode")
 	setStartFlags(startCmd, consoleCmd)
+	setAccountCmdAndFlags()
 }
