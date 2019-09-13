@@ -12,7 +12,7 @@ import (
 var _ = Describe("Common", func() {
 
 	Describe(".ObjectsToBytes", func() {
-		It("should return encode", func() {
+		It("should return expected bytes", func() {
 			s := struct{ Name string }{Name: "ben"}
 			expected := []uint8{
 				0x81, 0xa4, 0x4e, 0x61, 0x6d, 0x65, 0xa3, 0x62, 0x65, 0x6e,
@@ -37,6 +37,11 @@ var _ = Describe("Common", func() {
 			err := BytesToObject(bs, &actual)
 			Expect(err).To(BeNil())
 			Expect(actual).To(Equal(m))
+		})
+
+		It("should return expected bytes", func() {
+			expected := []uint8{0x81, 0xa5, 0x73, 0x74, 0x75, 0x66, 0x66, 0xd0, 0x0a}
+			Expect(expected).To(Equal(bs))
 		})
 	})
 
@@ -128,14 +133,6 @@ var _ = Describe("Common", func() {
 			str, err := HexToStr("0x3130")
 			Expect(err).To(BeNil())
 			Expect(str).To(Equal("10"))
-		})
-	})
-
-	Describe(".SerializeMsg", func() {
-		It("should successfully serialize object", func() {
-			o := []interface{}{1, 2, 3}
-			bs := SerializeMsg(o)
-			Expect(bs).To(Equal([]byte{147, 1, 2, 3}))
 		})
 	})
 

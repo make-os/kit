@@ -9,7 +9,6 @@ import (
 	"github.com/makeos/mosdef/util"
 
 	"github.com/fatih/color"
-	"github.com/makeos/mosdef/crypto"
 
 	funk "github.com/thoas/go-funk"
 )
@@ -75,13 +74,12 @@ func (am *AccountManager) RevealCmd(address, pwd string) error {
 
 unlock:
 
-	if err = storedAcct.Decrypt(passphrase, false); err != nil {
-		util.PrintCLIError("Invalid password. Could not unlock account.")
+	if err = storedAcct.Decrypt(passphrase); err != nil {
+		util.PrintCLIError("Invalid passphrase. Could not unlock account.")
 		return err
 	}
 
-	fmt.Println(color.HiCyanString("Private Key:"), storedAcct.key.(*crypto.Key).
-		PrivKey().Base58())
+	fmt.Println(color.HiCyanString("Private Key:"), storedAcct.key.PrivKey().Base58())
 
 	return nil
 

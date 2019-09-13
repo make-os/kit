@@ -159,8 +159,8 @@ func (c *Console) Prepare() error {
 	return nil
 }
 
-// AddModules adds javascript modules
-func (c *Console) AddModules(modules ...types.JSModule) {
+// AddJSModules adds javascript modules
+func (c *Console) AddJSModules(modules ...types.JSModule) {
 	c.jsModules = append(c.jsModules, modules...)
 }
 

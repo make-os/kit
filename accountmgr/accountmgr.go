@@ -6,13 +6,15 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	"github.com/fatih/color"
+
 	"golang.org/x/crypto/scrypt"
 
 	"github.com/ellcrys/go-prompt"
 )
 
 var (
-	accountEncryptionVersion       = "0.0.1"
+	accountEncryptionVersion = "0.0.1"
 )
 
 // PasswordPrompt reprents a function that can collect user input
@@ -59,6 +61,7 @@ func (am *AccountManager) AskForPassword() (string, error) {
 // AskForPasswordOnce is like askForPassword but it does not
 // ask to confirm password.
 func (am *AccountManager) AskForPasswordOnce() (string, error) {
+	fmt.Println(color.CyanString("Please enter your passphrase below"))
 	for {
 
 		passphrase := am.getPassword("Passphrase")

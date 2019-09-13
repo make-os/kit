@@ -1,4 +1,4 @@
-package mosdb_test
+package types_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func Testmosdb(t *testing.T) {
+func TestTypes(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "mosdb Suite")
+	RunSpecs(t, "Types Suite")
 }

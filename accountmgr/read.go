@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ellcrys/ltcutil"
-
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util"
@@ -31,7 +29,7 @@ type StoredAccount struct {
 	Cipher []byte
 
 	// key stores the instantiated equivalent of the stored account key
-	key interface{}
+	key *crypto.Key
 
 	// CreatedAt represents the time the account was created and stored on disk
 	CreatedAt time.Time
@@ -134,21 +132,18 @@ func (sa *StoredAccount) GetMeta() StoredAccountMeta {
 
 // GetKey gets an instance of the decrypted account's key.
 // Decrypt() must be called first.
-func (sa *StoredAccount) GetKey() interface{} {
+func (sa *StoredAccount) GetKey() *crypto.Key {
 	return sa.key
 }
 
 // Decrypt decrypts the account cipher and initializes the address field.
-// The asWIF argument will assume the store key is Litecoin WIF key
-// and attempt to create an instance of ltcutil.WIF to be included as
-// the value of sa.key.
-func (sa *StoredAccount) Decrypt(passphrase string, asWIF bool) error {
+func (sa *StoredAccount) Decrypt(passphrase string) error {
 
 	passphraseBs := hardenPassword([]byte(passphrase))
 	acctBytes, err := util.Decrypt(sa.Cipher, passphraseBs[:])
 	if err != nil {
 		if funk.Contains(err.Error(), "invalid key") {
-			return fmt.Errorf("invalid password")
+			return fmt.Errorf("invalid passphrase")
 		}
 		return err
 	}
@@ -156,7 +151,7 @@ func (sa *StoredAccount) Decrypt(passphrase string, asWIF bool) error {
 	// we expect a base58check content, verify it
 	acctData, _, err := base58.CheckDecode(string(acctBytes))
 	if err != nil {
-		return fmt.Errorf("invalid password")
+		return fmt.Errorf("invalid passphrase")
 	}
 
 	// attempt to decode to ensure content is json encoded
@@ -165,23 +160,12 @@ func (sa *StoredAccount) Decrypt(passphrase string, asWIF bool) error {
 		return fmt.Errorf("unable to parse account data")
 	}
 
-	if !asWIF {
-		privKey, err := crypto.PrivKeyFromBase58(accountData["sk"])
-		if err != nil {
-			return err
-		}
-
-		sa.key = crypto.NewKeyFromPrivKey(privKey)
-		return nil
-	}
-
-	// At this point, we assume the sk to be a WIF key and attempt to
-	// to create an instance of ltcutil.WIF
-	wif, err := ltcutil.DecodeWIF(accountData["sk"])
+	privKey, err := crypto.PrivKeyFromBase58(accountData["sk"])
 	if err != nil {
-		return fmt.Errorf("failed to decode decrypted as a WIF key")
+		return err
 	}
 
-	sa.key = wif
+	sa.key = crypto.NewKeyFromPrivKey(privKey)
+
 	return nil
 }

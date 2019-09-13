@@ -22,5 +22,5 @@ type JSModule interface {
 // It is meant to be used by packages that offer operations
 // than other packages or processes might need
 type Service interface {
-	Do(method string, params ...interface{}) (interface{}, error)
+	Do(method string, param interface{}) (interface{}, error)
 }

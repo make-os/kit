@@ -2,7 +2,13 @@ package node
 
 import (
 	"fmt"
+	"net"
+	"net/url"
 	"os"
+
+	"github.com/makeos/mosdef/node/tmrpc"
+
+	"github.com/makeos/mosdef/node/services"
 
 	"github.com/makeos/mosdef/types"
 
@@ -14,7 +20,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/p2p"
 
-	"github.com/makeos/mosdef/mosdb"
+	"github.com/makeos/mosdef/storage"
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/util/logger"
@@ -30,19 +36,27 @@ type Node struct {
 	tmcfg   *tmconfig.Config
 	nodeKey *p2p.NodeKey
 	log     logger.Logger
-	db      mosdb.DB
+	db      storage.Engine
 	tm      *nm.Node
 	service types.Service
 }
 
 // NewNode creates an instance of Node
 func NewNode(cfg *config.EngineConfig, tmcfg *tmconfig.Config) *Node {
+
+	// Parse the RPC address
+	parsedURL, err := url.Parse(tmcfg.RPC.ListenAddress)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to parse RPC address"))
+	}
+	tmrpc := tmrpc.New(net.JoinHostPort(parsedURL.Hostname(), parsedURL.Port()))
+
 	return &Node{
 		cfg:     cfg,
 		nodeKey: cfg.G().NodeKey,
 		log:     cfg.G().Log.Module("Node"),
 		tmcfg:   tmcfg,
-		service: NewService(),
+		service: services.New(tmrpc),
 	}
 }
 
@@ -55,8 +69,8 @@ func (n *Node) OpenDB() error {
 		return fmt.Errorf("db already open")
 	}
 
-	db := mosdb.NewDB(n.log)
-	if err := db.Open(n.cfg.GetDBDir()); err != nil {
+	db := storage.NewBadger(n.cfg)
+	if err := db.Init(); err != nil {
 		return err
 	}
 
@@ -65,7 +79,7 @@ func (n *Node) OpenDB() error {
 }
 
 // DB returns the database instance
-func (n *Node) DB() mosdb.DB {
+func (n *Node) DB() storage.Engine {
 	return n.db
 }
 

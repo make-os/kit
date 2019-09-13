@@ -1,10 +1,9 @@
-package node
+package jsmodule
 
 import (
 	"fmt"
 
 	prompt "github.com/c-bata/go-prompt"
-	"github.com/k0kubun/pp"
 	"github.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
 )
@@ -12,23 +11,23 @@ import (
 const jsModuleName = "tx"
 const jsCoinMapName = "coin"
 
-// JSModule provides functionalities that are accessible
+// Module provides functionalities that are accessible
 // through the javascript console environment
-type JSModule struct {
-	vm      *otto.Otto
-	service types.Service
+type Module struct {
+	vm          *otto.Otto
+	nodeService types.Service
 }
 
-// NewJSModule creates an instance of JSModule for account management.
+// NewModule creates an instance of Module for account management.
 // Pass the node service so it can perform node specific operations.
-func NewJSModule(nodeService types.Service) *JSModule {
-	return &JSModule{
-		service: nodeService,
+func NewModule(nodeService types.Service) *Module {
+	return &Module{
+		nodeService: nodeService,
 	}
 }
 
 // namespaceCoinFuncs are functions accessible using the tx.coin namespace
-func (m *JSModule) namespaceCoinFuncs() []*types.JSModuleFunc {
+func (m *Module) namespaceCoinFuncs() []*types.JSModuleFunc {
 	return []*types.JSModuleFunc{
 		&types.JSModuleFunc{
 			Name:        "send",
@@ -38,13 +37,13 @@ func (m *JSModule) namespaceCoinFuncs() []*types.JSModuleFunc {
 	}
 }
 
-func (m *JSModule) globals() []*types.JSModuleFunc {
+func (m *Module) globals() []*types.JSModuleFunc {
 	return []*types.JSModuleFunc{}
 }
 
 // Configure configures the JS context and return
 // any number of console prompt suggestions
-func (m *JSModule) Configure(vm *otto.Otto) []prompt.Suggest {
+func (m *Module) Configure(vm *otto.Otto) []prompt.Suggest {
 	m.vm = vm
 	suggestions := []prompt.Suggest{}
 	txMap := map[string]interface{}{}
@@ -68,11 +67,4 @@ func (m *JSModule) Configure(vm *otto.Otto) []prompt.Suggest {
 	}
 
 	return suggestions
-}
-
-// sendCoin sends the native coin from a source account
-// to a destination account
-func (m *JSModule) sendCoin() {
-	// m.service.Do(SrvNameCoinSend, "abc")
-	pp.Println("Args", params)
 }

@@ -1,20 +1,22 @@
 package node
 
 import (
-	"github.com/makeos/mosdef/mosdb"
+	"encoding/hex"
+
+	"github.com/makeos/mosdef/node/validators"
+	"github.com/makeos/mosdef/storage"
+	"github.com/makeos/mosdef/types"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
 // App implements tendermint ABCI interface to
 type App struct {
-	db mosdb.DB
+	db storage.Engine
 }
 
-// NewApp is creates an instance of App
-func NewApp(db mosdb.DB) *App {
-	return &App{
-		db: db,
-	}
+// NewApp creates an instance of App
+func NewApp(db storage.Engine) *App {
+	return &App{db: db}
 }
 
 // InitChain is called once upon genesis.
@@ -45,7 +47,36 @@ func (app *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeli
 // A non-zero response means the transaction is rejected and will not
 // be broadcast to other nodes.
 func (app *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
-	return abcitypes.ResponseCheckTx{Code: 0}
+
+	// We expect the transaction to be hex encoded,
+	// now we will attempt to decode it obtain the
+	// byte representation of the tx.
+	bs, err := hex.DecodeString(string(req.Tx))
+	if err != nil {
+		return abcitypes.ResponseCheckTx{
+			Code: types.ErrCodeTxBadEncode,
+			Log:  "unable to decode tx bytes; expected hex encoded value",
+		}
+	}
+
+	// Decode the transaction in byte form to types.Transaction
+	tx, err := types.NewTxFromBytes(bs)
+	if err != nil {
+		return abcitypes.ResponseCheckTx{
+			Code: types.ErrCodeTxBadEncode,
+			Log:  "unable to decode to types.Transaction",
+		}
+	}
+
+	// Perform syntactic validation
+	if err = validators.ValidateTxSyntax(tx, -1); err != nil {
+		return abcitypes.ResponseCheckTx{
+			Code: types.ErrCodeTxFailedValidation,
+			Log:  err.Error(),
+		}
+	}
+
+	return abcitypes.ResponseCheckTx{Code: 0, Data: tx.Hash.Bytes()}
 }
 
 // Commit persist the application state.

@@ -80,8 +80,7 @@ func (s String) IsDecimal() bool {
 	return true
 }
 
-// ObjectToBytes returns msgpack encoded
-// representation of an object
+// ObjectToBytes returns msgpack encoded representation of s
 func ObjectToBytes(s interface{}) []byte {
 	b, _ := msgpack.Marshal(s)
 	return b
@@ -184,16 +183,6 @@ func HexToStr(hexStr string) (string, error) {
 		return "", err
 	}
 	return string(bs), nil
-}
-
-// SerializeMsg serializes an object using msgpack.
-// Panics if an error is encountered
-func SerializeMsg(o interface{}) []byte {
-	bs, err := msgpack.Marshal(o)
-	if err != nil {
-		panic(err)
-	}
-	return bs
 }
 
 // ToHex encodes value to hex with a '0x' prefix

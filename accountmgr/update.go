@@ -47,7 +47,7 @@ func (am *AccountManager) UpdateCmd(address string) error {
 	acctBytes, err := util.Decrypt(account.(*StoredAccount).Cipher, passphraseBs[:])
 	if err != nil {
 		if funk.Contains(err.Error(), "invalid key") {
-			util.PrintCLIError("Invalid password. Could not unlock account.")
+			util.PrintCLIError("Invalid passphrase. Could not unlock account.")
 			return err
 		}
 		return err
@@ -56,7 +56,7 @@ func (am *AccountManager) UpdateCmd(address string) error {
 	// we expect a base58check content, verify it
 	acctBytesBase58Dec, _, err := base58.CheckDecode(string(acctBytes))
 	if err != nil {
-		util.PrintCLIError("Invalid password. Could not unlock account.")
+		util.PrintCLIError("Invalid passphrase. Could not unlock account.")
 		return err
 	}
 
