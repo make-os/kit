@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/makeos/mosdef/keepers"
+
 	"github.com/makeos/mosdef/node/tmrpc"
 
 	"github.com/makeos/mosdef/node/services"
@@ -102,7 +104,7 @@ func (n *Node) Start() error {
 	pv := privval.LoadFilePV(n.tmcfg.PrivValidatorKeyFile(), n.tmcfg.PrivValidatorStateFile())
 
 	// Create node
-	app := NewApp(n.db)
+	app := NewApp(n.db, keepers.New(n.db))
 	node, err := nm.NewNode(
 		n.tmcfg,
 		pv,

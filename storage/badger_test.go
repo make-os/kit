@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("CouchDB", func() {
+var _ = Describe("Badger", func() {
 	var c Engine
 	var err error
 	var cfg *config.EngineConfig

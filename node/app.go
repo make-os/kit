@@ -11,12 +11,13 @@ import (
 
 // App implements tendermint ABCI interface to
 type App struct {
-	db storage.Engine
+	db      storage.Engine
+	keepers types.Keepers
 }
 
 // NewApp creates an instance of App
-func NewApp(db storage.Engine) *App {
-	return &App{db: db}
+func NewApp(db storage.Engine, keepers types.Keepers) *App {
+	return &App{db: db, keepers: keepers}
 }
 
 // InitChain is called once upon genesis.

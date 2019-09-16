@@ -39,6 +39,7 @@ func (f *BadgerFunctions) CanFinish() bool {
 
 // commit commits the transaction if auto commit is enabled
 func (f *BadgerFunctions) commit() error {
+	defer f.renewTx()
 	if f.finish {
 		return f.Commit()
 	}
@@ -47,12 +48,11 @@ func (f *BadgerFunctions) commit() error {
 
 // Commit commits the transaction
 func (f *BadgerFunctions) Commit() error {
-	defer f.doRenew()
 	return f.tx.Commit()
 }
 
-// doRenew renews the transaction only renew and finish are true
-func (f *BadgerFunctions) doRenew() {
+// renewTx renews the transaction only if renew and finish are true
+func (f *BadgerFunctions) renewTx() {
 	f.Lock()
 	defer f.Unlock()
 	if f.finish && f.renew {
@@ -62,13 +62,14 @@ func (f *BadgerFunctions) doRenew() {
 
 // Discard discards the transaction
 func (f *BadgerFunctions) Discard() {
-	defer f.doRenew()
+	defer f.renewTx()
 	f.tx.Discard()
 }
 
 // Put adds a record to the database.
 // It will discard the transaction if an error occurred.
 func (f *BadgerFunctions) Put(record *Record) error {
+	f.renewTx()
 	f.Lock()
 	err := f.tx.Set(record.GetKey(), record.Value)
 	if err != nil {
@@ -82,8 +83,8 @@ func (f *BadgerFunctions) Put(record *Record) error {
 
 // Get a record by key
 func (f *BadgerFunctions) Get(key []byte) (*Record, error) {
+	f.renewTx()
 	f.Lock()
-	defer f.doRenew()
 	defer f.Unlock()
 
 	item, err := f.tx.Get(key)
@@ -95,15 +96,22 @@ func (f *BadgerFunctions) Get(key []byte) (*Record, error) {
 	}
 
 	val := make([]byte, item.ValueSize())
-	if _, err := item.ValueCopy(val); err != nil {
+	if val, err = item.ValueCopy(val); err != nil {
 		return nil, errors.Wrap(err, "failed to read value")
 	}
 
 	return NewFromKeyValue(key, val), nil
 }
 
+// RenewTx renews the underlying transaction.
+// Requires auto finish and renew capabilities enabled.
+func (f *BadgerFunctions) RenewTx() {
+	f.renewTx()
+}
+
 // Del deletes a record by key
 func (f *BadgerFunctions) Del(key []byte) error {
+	f.renewTx()
 	f.Lock()
 	defer f.commit()
 	defer f.Unlock()
@@ -116,6 +124,7 @@ func (f *BadgerFunctions) Del(key []byte) error {
 // If first is set to true, it begins from the first record, otherwise,
 // it will begin from the last record
 func (f *BadgerFunctions) Iterate(prefix []byte, first bool, iterFunc func(rec *Record) bool) {
+	f.renewTx()
 	f.RLock()
 	defer f.RUnlock()
 	opts := badger.DefaultIteratorOptions
@@ -131,4 +140,14 @@ func (f *BadgerFunctions) Iterate(prefix []byte, first bool, iterFunc func(rec *
 		}
 	}
 	return
+}
+
+// RawIterator returns badger's Iterator
+func (f *BadgerFunctions) RawIterator(opts interface{}) interface{} {
+	return f.tx.NewIterator(opts.(badger.IteratorOptions))
+}
+
+// NewBatch returns a batch writer
+func (f *BadgerFunctions) NewBatch() interface{} {
+	return f.db.NewWriteBatch()
 }

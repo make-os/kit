@@ -30,16 +30,24 @@ type TxCommitDiscarder interface {
 	Discard()
 }
 
+// TxRenewer represents an interface for renewing transaction
+type TxRenewer interface {
+	RenewTx()
+}
+
 // Operations describe the operations of Functions
 type Operations interface {
 	Put(record *Record) error
 	Get(key []byte) (*Record, error)
 	Del(key []byte) error
 	Iterate(prefix []byte, first bool, iterFunc func(rec *Record) bool)
+	RawIterator(opts interface{}) interface{}
+	NewBatch() interface{}
 }
 
 // Functions describes the functions of a storage engine
 type Functions interface {
 	TxCommitDiscarder
 	Operations
+	TxRenewer
 }

@@ -34,7 +34,8 @@ func (b *Badger) Init() error {
 
 	// Initialize the default transaction that auto commits
 	// on success ops or discards on failure.
-	// It also enables the renewal of the underlying transaction.
+	// It also enables the renewal of the underlying transaction
+	// after executing a read/write operation
 	b.BadgerFunctions = NewBadgerFunctions(db, true, true)
 
 	return nil
