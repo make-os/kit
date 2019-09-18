@@ -1,0 +1,36 @@
+# This is an example goreleaser.yaml file with some sane defaults.
+# Make sure to check the documentation at http://goreleaser.com
+project_name: mosdef
+builds:
+  - binary: mosdef
+    main: ./main.go
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+    goarm:
+      - "6"
+    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}} -X main.goversion={{.Env.GOVERSION}}
+    hooks:
+      pre: packr
+      post: packr clean
+archive:
+  replacements:
+    darwin: darwin
+    linux: linux
+    windows: windows
+    386: i386
+    amd64: x86_64
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ .Tag }}"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^test:"
+      - "^dist:"
+      - "^scripts:"

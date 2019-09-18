@@ -15,13 +15,35 @@
 package cmd
 
 import (
+	golog "log"
 	"os"
+
+	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/makeos/mosdef/config"
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmcfg "github.com/tendermint/tendermint/config"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+)
+
+var (
+	// BuildVersion is the build version
+	// set by goreleaser
+	BuildVersion = ""
+
+	// BuildCommit is the git hash of
+	// the build. It is set by goreleaser
+	BuildCommit = ""
+
+	// BuildDate is the date the build
+	// was created. Its is set by goreleaser
+	BuildDate = ""
+
+	// GoVersion is the version of go
+	// used to build the client
+	GoVersion = "go1.12.4"
 )
 
 var (
@@ -42,7 +64,23 @@ var (
 func initializeTendermint() error {
 	commands.SetConfig(tmconfig)
 	commands.InitFilesCmd.RunE(nil, nil)
+	reconfigureTendermint()
 	return nil
+}
+
+func reconfigureTendermint() {
+
+	// Read the genesis file
+	genDoc, err := tmtypes.GenesisDocFromFile(tmconfig.GenesisFile())
+	if err != nil {
+		golog.Fatalf("Failed to read genesis file: %s", err)
+	}
+
+	// Set the chain id
+	genDoc.ChainID = viper.GetString("net.version")
+	if err = genDoc.SaveAs(tmconfig.GenesisFile()); err != nil {
+		golog.Fatalf("Failed set chain id: %s", err)
+	}
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -60,10 +98,17 @@ func init() {
 		Use:   "mosdef",
 		Short: "The decentralized software development and collaboration network",
 		Long: `Mosdef is the official client for MakeOS network - A decentralized software
-		development network that allows anyone, anywhere to create software products
-		and organizations without a centralized authority.`,
+development network that allows anyone, anywhere to create software products
+and organizations without a centralized authority.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			config.Configure(rootCmd, cfg, tmconfig)
+
+			// Set version information
+			cfg.VersionInfo = &config.VersionInfo{}
+			cfg.VersionInfo.BuildCommit = BuildCommit
+			cfg.VersionInfo.BuildDate = BuildDate
+			cfg.VersionInfo.GoVersion = GoVersion
+			cfg.VersionInfo.BuildVersion = BuildVersion
 		},
 	}
 
@@ -81,6 +126,7 @@ func initialize() {
 	// Add flags
 	rootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
 	rootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Enables development mode")
+	rootCmd.PersistentFlags().String("net", config.DefaultNetVersion, "Set network/chain ID")
 	setStartFlags(startCmd, consoleCmd)
 	setAccountCmdAndFlags()
 }

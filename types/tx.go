@@ -157,7 +157,6 @@ func (tx *Transaction) Bytes() []byte {
 // NewTxFromBytes creates a transaction object from a slice of
 // bytes produced by tx.Bytes
 func NewTxFromBytes(bs []byte) (*Transaction, error) {
-	// var tx Transaction
 	var fields []interface{}
 	if err := util.BytesToObject(bs, &fields); err != nil {
 		return nil, err

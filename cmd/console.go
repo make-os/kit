@@ -17,6 +17,7 @@ package cmd
 import (
 	"github.com/makeos/mosdef/accountmgr"
 	acctJSModule "github.com/makeos/mosdef/accountmgr/jsmodule"
+	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/console"
 	"github.com/makeos/mosdef/node"
 	nodeJSModule "github.com/makeos/mosdef/node/jsmodule"
@@ -40,6 +41,7 @@ var consoleCmd = &cobra.Command{
 		// after the node has started
 		start(func(n *node.Node) {
 			console := console.New(cfg.GetConsoleHistoryPath(), cfg, log)
+			console.SetVersions(config.GetNetVersion(), BuildVersion, GoVersion, BuildCommit)
 
 			// On stop, close the node and interrupt other processes
 			console.OnStop(func() {

@@ -8,8 +8,12 @@ import (
 )
 
 const (
-	// SrvNameCoinSend indicates service name for sending the native coins
+	// SrvNameCoinSend is the name of a service that sends the native coins
 	SrvNameCoinSend = "coin.send"
+	// SrvNameChainGetBlock is the name of a service that fetches blocks.
+	SrvNameChainGetBlock = "chain.getBlock"
+	// SrvNameGetCurBlockHeight is the name of a service that fetches blocks.
+	SrvNameGetCurBlockHeight = "chain.currentHeight"
 )
 
 // Service implements types.Service. It provides node specific
@@ -30,37 +34,11 @@ func (s *Service) Do(method string, params interface{}) (interface{}, error) {
 	switch method {
 	case SrvNameCoinSend:
 		return s.sendCoin(params)
+	case SrvNameChainGetBlock:
+		return s.getBlock(params)
+	case SrvNameGetCurBlockHeight:
+		return s.getCurrentHeight()
 	default:
 		return nil, types.ErrServiceMethodUnknown
 	}
-}
-
-// sendCoin processes a types.TxTypeCoin transaction.
-// Expects a signed transaction.
-func (s *Service) sendCoin(data interface{}) (interface{}, error) {
-
-	tx, ok := data.(*types.Transaction)
-	if !ok {
-		return nil, types.ErrArgDecode("types.Transaction", 0)
-	}
-
-	// Validate the transaction (syntax)
-	if err := validators.ValidateTxSyntax(tx, -1); err != nil {
-		return nil, err
-	}
-
-	// Validate the transaction (consistency)
-	if err := validators.ValidateTxConsistency(tx, -1); err != nil {
-		return nil, err
-	}
-
-	// Send the transaction to tendermint for processing
-	txHash, err := s.tmrpc.SendTx(tx.Bytes())
-	if err != nil {
-		return nil, err
-	}
-
-	return util.EncodeForJS(map[string]interface{}{
-		"hash": txHash.HexStr(),
-	}), nil
 }

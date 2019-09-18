@@ -6,7 +6,9 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/makeos/mosdef/keepers"
+	"github.com/makeos/mosdef/storage/tree"
+
+	logic "github.com/makeos/mosdef/logic"
 
 	"github.com/makeos/mosdef/node/tmrpc"
 
@@ -103,8 +105,15 @@ func (n *Node) Start() error {
 	// Read private validator
 	pv := privval.LoadFilePV(n.tmcfg.PrivValidatorKeyFile(), n.tmcfg.PrivValidatorStateFile())
 
+	// Load the state tree
+	dbAdapter := storage.NewTMDBAdapter(n.db.F(true, true))
+	tree := tree.NewSafeTree(dbAdapter, 128)
+	if _, err = tree.Load(); err != nil {
+		return errors.Wrap(err, "failed to load state tree")
+	}
+	
 	// Create node
-	app := NewApp(n.db, keepers.New(n.db))
+	app := NewApp(n.db, logic.New(n.db, tree, n.cfg))
 	node, err := nm.NewNode(
 		n.tmcfg,
 		pv,

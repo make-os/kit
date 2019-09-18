@@ -33,11 +33,13 @@ var (
 	DefaultRPCAddress = "127.0.0.1:8999"
 )
 
-// setDefaultConfig sets default config values.
+// setDefaultViperConfig sets default config values.
 // They are used when their values is not provided
 // in flag, env or config file.
-func setDefaultConfig() {
+func setDefaultViperConfig(cmd *cobra.Command) {
 	viper.SetDefault("net.version", DefaultNetVersion)
+	viper.BindPFlag("net.version", cmd.Flags().Lookup("net"))
+
 	viper.SetDefault("rpc.address", DefaultRPCAddress)
 }
 
@@ -75,9 +77,11 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	// Create the data directory and other sub directories
 	os.MkdirAll(dataDir, 0700)
 	os.MkdirAll(path.Join(dataDir, AccountDirName), 0700)
+	os.MkdirAll(path.Join(dataDir, "data"), 0700)
+	os.MkdirAll(path.Join(dataDir, "config"), 0700)
 
 	// Set viper configuration
-	setDefaultConfig()
+	setDefaultViperConfig(rootCmd)
 	if devMode {
 		setDevDefaultConfig()
 	}
@@ -137,13 +141,6 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 
 	*cfg = c
 	*tmcfg = *tmcfg.SetRoot(cfg.DataDir())
-
-	// Add flags and prefix all env exposed with MD
-	// executor := cli.PrepareMainCmd(tmRootCmd, AppEnvPrefix, dataDir)
-
-	// if err := executor.Execute(); err != nil {
-	// 	golog.Fatalf("Failed executing tendermint prepare command: %s, exiting...", err)
-	// }
 
 	return
 }

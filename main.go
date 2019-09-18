@@ -18,6 +18,17 @@ import (
 	"github.com/makeos/mosdef/cmd"
 )
 
+var (
+	version   = ""
+	commit    = ""
+	date      = ""
+	goversion = ""
+)
+
 func main() {
+	cmd.BuildVersion = version
+	cmd.BuildCommit = commit
+	cmd.BuildDate = date
+	cmd.GoVersion = goversion
 	cmd.Execute()
 }

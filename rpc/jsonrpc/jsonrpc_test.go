@@ -18,7 +18,7 @@ var _ = Describe("RPC", func() {
 	var log = logger.NewLogrusNoOp()
 
 	BeforeEach(func() {
-		rpc = New(log, "", "abc", false)
+		rpc = New(log, "")
 	})
 
 	Describe(".handle", func() {
@@ -318,41 +318,6 @@ var _ = Describe("RPC", func() {
 			})
 		})
 
-		When("authorization format is valid and bearer token is not valid", func() {
-			It("should be successful when disableAuth is true", func() {
-				rpc.disableAuth = true
-				rpc.apiSet["echo"] = APIInfo{
-					Private:   true,
-					Namespace: "test",
-					Func: func(params interface{}) *Response {
-						return Success(params)
-					},
-				}
-
-				data, _ := json.Marshal(Request{
-					JSONRPCVersion: "2.0",
-					Method:         "echo",
-					ID:             1,
-					Params: map[string]interface{}{
-						"age": 100,
-					},
-				})
-
-				req, _ := http.NewRequest("POST", "/rpc", bytes.NewReader(data))
-				req.Header.Set("Authorization", "Bearer abcxyz")
-
-				rr := httptest.NewRecorder()
-				rr.Header().Set("Content-Type", "application/json")
-
-				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					resp := rpc.handle(w, r)
-					Expect(resp.Err).To(BeNil())
-					Expect(rr.Code).To(Equal(200))
-				})
-
-				handler.ServeHTTP(rr, req)
-			})
-		})
 	})
 
 	Describe(".AddAPI", func() {

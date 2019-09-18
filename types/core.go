@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/c-bata/go-prompt"
+	"github.com/makeos/mosdef/util"
 	"github.com/robertkrimen/otto"
 )
 
@@ -20,7 +21,19 @@ type JSModule interface {
 
 // Service provides an interface for exposing functionalities.
 // It is meant to be used by packages that offer operations
-// than other packages or processes might need
+// that other packages or processes might need
 type Service interface {
 	Do(method string, param interface{}) (interface{}, error)
+}
+
+// Account represents a user's identity and includes
+// balance and other information.
+type Account struct {
+	Balance util.String
+	Nonce   int64
+}
+
+// Bytes return the bytes equivalent of the account
+func (a *Account) Bytes() []byte {
+	return util.ObjectToBytes(a)
 }

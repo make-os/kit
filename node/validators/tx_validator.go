@@ -99,13 +99,25 @@ var validTimestampRule = func(field string, index int) func(interface{}) error {
 // ValidateTxs performs both syntactic and consistency
 // validation on the given transactions.
 func ValidateTxs(txs []*types.Transaction) error {
-
 	for i, tx := range txs {
-
-		// Perform syntactic checks
-		if err := ValidateTxSyntax(tx, i); err != nil {
+		if err := ValidateTx(tx, i); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// ValidateTx validates a transaction
+func ValidateTx(tx *types.Transaction, i int) error {
+
+	// Perform syntactic checks
+	if err := ValidateTxSyntax(tx, i); err != nil {
+		return err
+	}
+
+	// Perform consistency check
+	if err := ValidateTxConsistency(tx, i); err != nil {
+		return err
 	}
 
 	return nil

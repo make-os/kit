@@ -11,13 +11,13 @@ import (
 
 // App implements tendermint ABCI interface to
 type App struct {
-	db      storage.Engine
-	keepers types.Keepers
+	db    storage.Engine
+	logic types.Logic
 }
 
 // NewApp creates an instance of App
-func NewApp(db storage.Engine, keepers types.Keepers) *App {
-	return &App{db: db, keepers: keepers}
+func NewApp(db storage.Engine, logic types.Logic) *App {
+	return &App{db: db, logic: logic}
 }
 
 // InitChain is called once upon genesis.
@@ -41,7 +41,7 @@ func (app *App) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetO
 // DeliverTx processes transactions included in a proposed block.
 // Execute the transaction such that in modifies the blockchain state.
 func (app *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
-	return abcitypes.ResponseDeliverTx{Code: 0}
+	return app.logic.Tx().PrepareExec(req)
 }
 
 // CheckTx a proposed transaction for admission into the mempool.
