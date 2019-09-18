@@ -1,36 +1,35 @@
 package services
 
 import (
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"strconv"
+
 	"github.com/stretchr/objx"
 )
 
-// getCurrentHeight fetches a block at the given height
-func (s *Service) getBlock(arg interface{}) (interface{}, error) {
-
-	height, ok := arg.(int64)
-	if !ok {
-		return nil, types.ErrArgDecode("Int64", 0)
-	}
+// GetBlock fetches a block at the given height
+func (s *Service) GetBlock(height int64) (map[string]interface{}, error) {
 
 	blockInfo, err := s.tmrpc.GetBlock(height)
 	if err != nil {
 		return nil, err
 	}
 
-	return util.EncodeForJS(blockInfo), nil
+	return blockInfo, nil
 }
 
-// getCurrentHeight fetches the current block height
-func (s *Service) getCurrentHeight() (interface{}, error) {
+// GetCurrentHeight fetches the current block height
+func (s *Service) GetCurrentHeight() (int64, error) {
 
 	blockInfo, err := s.tmrpc.GetBlock(0)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
-	return util.EncodeForJS(map[string]interface{}{
-		"height": objx.Map(blockInfo).Get("result.block.header.height").Str(),
-	}), nil
+	heightStr := objx.Map(blockInfo).Get("result.block.header.height").Str()
+	heightInt, err := strconv.ParseInt(heightStr, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return heightInt, nil
 }

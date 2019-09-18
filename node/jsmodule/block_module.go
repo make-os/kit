@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/makeos/mosdef/node/services"
+	"github.com/makeos/mosdef/util"
+
 	"github.com/pkg/errors"
 
 	"github.com/c-bata/go-prompt"
@@ -88,7 +89,7 @@ func (m *BlockModule) getBlock(height interface{}) interface{} {
 		panic(types.ErrArgDecode("integer/string", 0))
 	}
 
-	res, err := m.nodeService.Do(services.SrvNameChainGetBlock, blockHeight)
+	res, err := m.nodeService.GetBlock(blockHeight)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get block"))
 	}
@@ -98,9 +99,11 @@ func (m *BlockModule) getBlock(height interface{}) interface{} {
 
 // getCurrentHeight returns the current block height
 func (m *BlockModule) getCurrentHeight() interface{} {
-	res, err := m.nodeService.Do(services.SrvNameGetCurBlockHeight, nil)
+	res, err := m.nodeService.GetCurrentHeight()
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get current block height"))
 	}
-	return res
+	return util.EncodeForJS(map[string]interface{}{
+		"height": fmt.Sprintf("%d", res),
+	})
 }

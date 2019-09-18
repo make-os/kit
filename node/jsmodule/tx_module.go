@@ -6,7 +6,6 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/node/services"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
@@ -118,10 +117,12 @@ func (m *TxModule) sendCoin(txObj interface{}, options ...interface{}) interface
 	}
 
 	// Process the transaction
-	res, err := m.nodeService.Do(services.SrvNameCoinSend, &tx)
+	hash, err := m.nodeService.SendCoin(&tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
-	return res
+	return util.EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
 }

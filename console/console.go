@@ -74,7 +74,6 @@ type Console struct {
 // New creates a new Console instance.
 // signatory is the address
 func New(historyPath string, cfg *config.EngineConfig, log logger.Logger) *Console {
-
 	c := new(Console)
 	c.historyFile = historyPath
 	c.executor = newExecutor(log)

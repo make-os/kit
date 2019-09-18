@@ -23,7 +23,9 @@ type JSModule interface {
 // It is meant to be used by packages that offer operations
 // that other packages or processes might need
 type Service interface {
-	Do(method string, param interface{}) (interface{}, error)
+	SendCoin(tx *Transaction) (util.Hash, error)
+	GetBlock(height int64) (map[string]interface{}, error)
+	GetCurrentHeight() (int64, error)
 }
 
 // Account represents a user's identity and includes

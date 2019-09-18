@@ -2,9 +2,6 @@ package services
 
 import (
 	"github.com/makeos/mosdef/node/tmrpc"
-	"github.com/makeos/mosdef/node/validators"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
 )
 
 const (
@@ -26,19 +23,5 @@ type Service struct {
 func New(tmrpc *tmrpc.TMRPC) *Service {
 	return &Service{
 		tmrpc: tmrpc,
-	}
-}
-
-// Do collects request for the execution of a service
-func (s *Service) Do(method string, params interface{}) (interface{}, error) {
-	switch method {
-	case SrvNameCoinSend:
-		return s.sendCoin(params)
-	case SrvNameChainGetBlock:
-		return s.getBlock(params)
-	case SrvNameGetCurBlockHeight:
-		return s.getCurrentHeight()
-	default:
-		return nil, types.ErrServiceMethodUnknown
 	}
 }

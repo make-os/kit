@@ -3,7 +3,7 @@ package config
 import (
 	golog "log"
 	"os"
-	"path"
+	path "path/filepath"
 	"strings"
 
 	"github.com/tendermint/tendermint/config"
@@ -121,7 +121,7 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	c.dataDir = dataDir
 	c.netDataDir = path.Join(dataDir, viper.GetString("net.version"))
 	c.accountDir = path.Join(dataDir, AccountDirName)
-	c.consoleHistoryPath = path.Join(cfg.NetDataDir(), ".console_history")
+	c.consoleHistoryPath = path.Join(c.NetDataDir(), ".console_history")
 
 	// Create network data directory
 	os.MkdirAll(c.NetDataDir(), 0700)
