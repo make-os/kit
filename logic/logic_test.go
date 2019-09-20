@@ -38,7 +38,7 @@ var _ = Describe("Logic", func() {
 		Expect(err).To(BeNil())
 	})
 
-	FDescribe(".WriteGenesisState", func() {
+	Describe(".WriteGenesisState", func() {
 		var testGenAccts = []*config.GenAccount{
 			&config.GenAccount{Address: "addr1", Balance: "100"},
 			&config.GenAccount{Address: "addr2", Balance: "200"},

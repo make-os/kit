@@ -4,8 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/makeos/mosdef/logic/keepers"
-
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/node/validators"
 	"github.com/makeos/mosdef/util"
@@ -16,7 +14,7 @@ import (
 
 const (
 	// ErrCodeFailedDecode refers to a failed decoded operation
-	ErrCodeFailedDecode = 1
+	ErrCodeFailedDecode = uint32(1)
 
 	// ErrExecFailure refers to a failure in executing an state transition operation
 	ErrExecFailure = 2
@@ -36,7 +34,7 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.Resp
 	hexDecode, err := hex.DecodeString(string(req.GetTx()))
 	if err != nil {
 		return abcitypes.ResponseDeliverTx{
-			Code: 1,
+			Code: ErrCodeFailedDecode,
 			Log:  "failed to decode transaction from hex to bytes",
 		}
 	}
@@ -61,8 +59,8 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.Resp
 	// Execute the transaction
 	if err = t.Exec(tx); err != nil {
 		return abcitypes.ResponseDeliverTx{
-			Code: ErrCodeFailedDecode,
-			Log:  "failed to execute: " + err.Error(),
+			Code: ErrExecFailure,
+			Log:  "failed to execute tx: " + err.Error(),
 		}
 	}
 
@@ -74,7 +72,7 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.Resp
 func (t *Transaction) Exec(tx *types.Transaction) error {
 	switch tx.Type {
 	case types.TxTypeCoin:
-		return t.transferTo(tx.SenderPubKey, tx.To, tx.Value)
+		return t.transferTo(tx.SenderPubKey, tx.To, tx.Value, tx.Fee)
 	default:
 		return fmt.Errorf("unknown transaction type")
 	}
@@ -82,22 +80,42 @@ func (t *Transaction) Exec(tx *types.Transaction) error {
 
 // transferTo transfer units of the native currency
 // from a sender account to a recipient account
-func (t *Transaction) transferTo(senderPubKey, recipient, value util.String) error {
+func (t *Transaction) transferTo(senderPubKey, recipientAddr, value, fee util.String) error {
 
 	spk, err := crypto.PubKeyFromBase58(senderPubKey.String())
 	if err != nil {
 		return fmt.Errorf("invalid sender public key: %s", err)
 	}
 
+	// Ensure recipient address is valid
+	if err = crypto.IsValidAddr(recipientAddr.String()); err != nil {
+		return fmt.Errorf("invalid recipient address: %s", err)
+	}
+
 	// Get sender and recipient accounts
-	acctKeeper := keepers.NewAccountKeeper(t.logic.StateTree())
+	acctKeeper := t.logic.AccountKeeper()
 	sender := spk.Addr()
 	senderAcct := acctKeeper.GetAccount(sender)
-	recipientAcct := acctKeeper.GetAccount(recipient)
+	recipientAcct := acctKeeper.GetAccount(recipientAddr)
 
-	_ = senderAcct
-	_ = recipientAcct
+	// Ensure sender has enough balance to pay transfer value + fee
+	spendAmt := value.Decimal().Add(fee.Decimal())
+	senderBal := senderAcct.Balance.Decimal()
+	if !senderBal.GreaterThanOrEqual(spendAmt) {
+		return fmt.Errorf("sender's account balance is insufficient")
+	}
 
-	// Get the senders balance
+	// Deduct the spend amount from the sender's account and increment nonce
+	senderAcct.Balance = util.String(senderBal.Sub(spendAmt).String())
+	senderAcct.Nonce = senderAcct.Nonce + 1
+
+	// Update the sender account
+	acctKeeper.Update(sender, senderAcct)
+
+	// Update the recipient account
+	recipientBal := recipientAcct.Balance.Decimal()
+	recipientAcct.Balance = util.String(recipientBal.Add(value.Decimal()).String())
+	acctKeeper.Update(recipientAddr, recipientAcct)
+
 	return nil
 }
