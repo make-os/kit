@@ -49,7 +49,7 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.Resp
 	}
 
 	// Validate the transaction
-	if err = validators.ValidateTx(tx, -1); err != nil {
+	if err = validators.ValidateTx(tx, -1, t.logic); err != nil {
 		return abcitypes.ResponseDeliverTx{
 			Code: ErrCodeFailedDecode,
 			Log:  "tx failed validation: " + err.Error(),
@@ -78,9 +78,9 @@ func (t *Transaction) Exec(tx *types.Transaction) error {
 	}
 }
 
-// transferTo transfer units of the native currency
-// from a sender account to a recipient account
-func (t *Transaction) transferTo(senderPubKey, recipientAddr, value, fee util.String) error {
+// CanTransferCoin checks whether the sender can transfer the value
+// and fee of the transaction based on the current state of their account
+func (t *Transaction) CanTransferCoin(senderPubKey, recipientAddr, value, fee util.String) error {
 
 	spk, err := crypto.PubKeyFromBase58(senderPubKey.String())
 	if err != nil {
@@ -96,7 +96,6 @@ func (t *Transaction) transferTo(senderPubKey, recipientAddr, value, fee util.St
 	acctKeeper := t.logic.AccountKeeper()
 	sender := spk.Addr()
 	senderAcct := acctKeeper.GetAccount(sender)
-	recipientAcct := acctKeeper.GetAccount(recipientAddr)
 
 	// Ensure sender has enough balance to pay transfer value + fee
 	spendAmt := value.Decimal().Add(fee.Decimal())
@@ -104,6 +103,29 @@ func (t *Transaction) transferTo(senderPubKey, recipientAddr, value, fee util.St
 	if !senderBal.GreaterThanOrEqual(spendAmt) {
 		return fmt.Errorf("sender's account balance is insufficient")
 	}
+
+	return nil
+}
+
+// transferTo transfer units of the native currency
+// from a sender account to a recipient account
+func (t *Transaction) transferTo(senderPubKey, recipientAddr, value, fee util.String) error {
+
+	if err := t.CanTransferCoin(senderPubKey, recipientAddr, value, fee); err != nil {
+		return err
+	}
+
+	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
+
+	// Get sender and recipient accounts
+	acctKeeper := t.logic.AccountKeeper()
+	sender := spk.Addr()
+	senderAcct := acctKeeper.GetAccount(sender)
+	recipientAcct := acctKeeper.GetAccount(recipientAddr)
+
+	// Ensure sender has enough balance to pay transfer value + fee
+	spendAmt := value.Decimal().Add(fee.Decimal())
+	senderBal := senderAcct.Balance.Decimal()
 
 	// Deduct the spend amount from the sender's account and increment nonce
 	senderAcct.Balance = util.String(senderBal.Sub(spendAmt).String())

@@ -52,7 +52,7 @@ var consoleCmd = &cobra.Command{
 			// Add modules
 			console.AddJSModules(
 				acctJSModule.NewModule(acctmgr),
-				nodeJSModule.NewModule(n.GetService()),
+				nodeJSModule.NewModule(n.GetService(), n.Logic()),
 			)
 
 			// Run the console

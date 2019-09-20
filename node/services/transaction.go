@@ -11,13 +11,8 @@ import (
 func (s *Service) SendCoin(tx *types.Transaction) (util.Hash, error) {
 	var hash util.Hash
 
-	// Validate the transaction (syntax)
-	if err := validators.ValidateTxSyntax(tx, -1); err != nil {
-		return hash, err
-	}
-
-	// Validate the transaction (consistency)
-	if err := validators.ValidateTxConsistency(tx, -1); err != nil {
+	// Validate the transaction
+	if err := validators.ValidateTx(tx, -1, s.logic); err != nil {
 		return hash, err
 	}
 

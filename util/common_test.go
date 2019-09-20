@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"os"
 
+	"github.com/robertkrimen/otto"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -417,6 +419,21 @@ var _ = Describe("Common", func() {
 			c := make(chan bool)
 			close(c)
 			Expect(IsBoolChanClosed(c)).To(BeTrue())
+		})
+	})
+
+	Describe(".VMSet", func() {
+		It("should successfully set object in vm context", func() {
+			vm := otto.New()
+			m := map[string]interface{}{"a": 2}
+			val := VMSet(vm, "m", m)
+			Expect(val).To(Equal(m))
+			obj, err := vm.Object("m")
+			Expect(err).To(BeNil())
+			Expect(obj).ToNot(BeNil())
+			m2, err := obj.Value().Export()
+			Expect(err).To(BeNil())
+			Expect(m2).To(Equal(m))
 		})
 	})
 })

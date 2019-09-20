@@ -3,6 +3,8 @@ package jsmodule
 import (
 	"fmt"
 
+	"github.com/makeos/mosdef/util"
+
 	"github.com/pkg/errors"
 
 	"github.com/makeos/mosdef/accountmgr"
@@ -62,6 +64,9 @@ func (m *Module) Configure(vm *otto.Otto) []prompt.Suggest {
 	fMap := map[string]interface{}{}
 	suggestions := []prompt.Suggest{}
 
+	// Set the namespace object
+	util.VMSet(vm, JSModuleName, fMap)
+
 	// add namespaced functions
 	for _, f := range m.namespacedFuncs() {
 		fMap[f.Name] = f.Value
@@ -70,11 +75,11 @@ func (m *Module) Configure(vm *otto.Otto) []prompt.Suggest {
 			Description: f.Description})
 	}
 
-	vm.Set(JSModuleName, fMap)
-
 	// Add global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
+		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
+			Description: f.Description})
 	}
 
 	return suggestions

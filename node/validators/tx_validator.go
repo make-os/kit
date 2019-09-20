@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/makeos/mosdef/params"
+
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util"
 	"github.com/shopspring/decimal"
@@ -72,7 +74,7 @@ var validValueRule = func(field string, index int) func(interface{}) error {
 			return types.FieldErrorWithIndex(index, field, "could not convert to decimal")
 		}
 		if dVal.LessThan(decimal.Zero) {
-			return types.FieldErrorWithIndex(index, field, "negative value not allowed")
+			return types.FieldErrorWithIndex(index, field, "negative figure not allowed")
 		}
 		return nil
 	}
@@ -98,9 +100,9 @@ var validTimestampRule = func(field string, index int) func(interface{}) error {
 
 // ValidateTxs performs both syntactic and consistency
 // validation on the given transactions.
-func ValidateTxs(txs []*types.Transaction) error {
+func ValidateTxs(txs []*types.Transaction, logic types.Logic) error {
 	for i, tx := range txs {
-		if err := ValidateTx(tx, i); err != nil {
+		if err := ValidateTx(tx, i, logic); err != nil {
 			return err
 		}
 	}
@@ -108,7 +110,7 @@ func ValidateTxs(txs []*types.Transaction) error {
 }
 
 // ValidateTx validates a transaction
-func ValidateTx(tx *types.Transaction, i int) error {
+func ValidateTx(tx *types.Transaction, i int, logic types.Logic) error {
 
 	// Perform syntactic checks
 	if err := ValidateTxSyntax(tx, i); err != nil {
@@ -116,7 +118,7 @@ func ValidateTx(tx *types.Transaction, i int) error {
 	}
 
 	// Perform consistency check
-	if err := ValidateTxConsistency(tx, i); err != nil {
+	if err := ValidateTxConsistency(tx, i, logic); err != nil {
 		return err
 	}
 
@@ -158,6 +160,23 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 			"value is required").Error()), v.By(validValueRule("value", index)),
 	); err != nil {
 		return err
+	}
+
+	// Fee must be >= 0 and it must be valid number
+	if err := v.Validate(tx.GetFee(),
+		v.Required.Error(types.FieldErrorWithIndex(index, "fee",
+			"fee is required").Error()), v.By(validValueRule("fee", index)),
+	); err != nil {
+		return err
+	}
+
+	// Fee must be at least equal to the base fee
+	txSize := decimal.NewFromFloat(float64(tx.GetSizeNoFee()))
+	baseFee := params.FeePerByte.Mul(txSize)
+	if tx.Fee.Decimal().LessThan(baseFee) {
+		return types.FieldErrorWithIndex(index, "fee",
+			fmt.Sprintf("fee cannot be lower than the base price of %s",
+				baseFee.StringFixed(4)))
 	}
 
 	// Timestamp is required.
@@ -230,6 +249,14 @@ func checkSignature(tx *types.Transaction, index int) (errs []error) {
 
 // ValidateTxConsistency checks whether the transaction includes
 // values that are consistent with the current state of the app
-func ValidateTxConsistency(tx *types.Transaction, index int) error {
+func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) error {
+
+	// Check whether the transaction is consistent with
+	// the current state of the sender's account
+	err := logic.Tx().CanTransferCoin(tx.SenderPubKey, tx.To, tx.Value, tx.Fee)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

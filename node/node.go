@@ -43,6 +43,8 @@ type Node struct {
 	db      storage.Engine
 	tm      *nm.Node
 	service types.Service
+	tmrpc   *tmrpc.TMRPC
+	logic   types.Logic
 }
 
 // NewNode creates an instance of Node
@@ -60,7 +62,8 @@ func NewNode(cfg *config.EngineConfig, tmcfg *tmconfig.Config) *Node {
 		nodeKey: cfg.G().NodeKey,
 		log:     cfg.G().Log.Module("Node"),
 		tmcfg:   tmcfg,
-		service: services.New(tmrpc),
+		service: services.New(tmrpc, nil),
+		tmrpc:   tmrpc,
 	}
 }
 
@@ -85,6 +88,11 @@ func (n *Node) OpenDB() error {
 // DB returns the database instance
 func (n *Node) DB() storage.Engine {
 	return n.db
+}
+
+// Logic returns the logic instance
+func (n *Node) Logic() types.Logic {
+	return n.logic
 }
 
 // GetService returns the node's service
@@ -112,10 +120,10 @@ func (n *Node) Start() error {
 		return errors.Wrap(err, "failed to load state tree")
 	}
 
-	lgc := logic.New(n.db, tree, n.cfg)
+	n.logic = logic.New(n.db, tree, n.cfg)
 
 	// Create node
-	app := NewApp(n.cfg, n.db, lgc)
+	app := NewApp(n.cfg, n.db, n.logic)
 	node, err := nm.NewNode(
 		n.tmcfg,
 		pv,
@@ -130,6 +138,7 @@ func (n *Node) Start() error {
 	}
 
 	n.tm = node
+	n.service = services.New(n.tmrpc, n.logic)
 	n.tm.Start()
 
 	return nil

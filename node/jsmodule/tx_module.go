@@ -46,7 +46,10 @@ func (m *TxModule) globals() []*types.JSModuleFunc {
 // any number of console prompt suggestions
 func (m *TxModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
+
+	// Add the main tx namespace
 	txMap := map[string]interface{}{}
+	util.VMSet(m.vm, jsTxModuleName, txMap)
 
 	// add 'coin' namespaced functions
 	coinMap := map[string]interface{}{}
@@ -58,12 +61,11 @@ func (m *TxModule) Configure() []prompt.Suggest {
 			Description: f.Description})
 	}
 
-	// Add the main tx namespace
-	m.vm.Set(jsTxModuleName, txMap)
-
 	// Add global functions
 	for _, f := range m.globals() {
 		m.vm.Set(f.Name, f.Value)
+		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
+			Description: f.Description})
 	}
 
 	return suggestions

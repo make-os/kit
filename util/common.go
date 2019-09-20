@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/robertkrimen/otto"
+
 	"github.com/thoas/go-funk"
 
 	"github.com/fatih/color"
@@ -369,4 +371,16 @@ func IsStructChanClosed(c <-chan struct{}) bool {
 	}
 
 	return false
+}
+
+// VMSet sets a value in the vm context only if it
+// has been set before.
+func VMSet(vm *otto.Otto, name string, value interface{}) interface{} {
+	existing, _ := vm.Object(name)
+	if existing != nil {
+		val, _ := existing.Value().Export()
+		return val
+	}
+	vm.Set(name, value)
+	return value
 }

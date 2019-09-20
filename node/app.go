@@ -123,7 +123,7 @@ func (app *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx 
 	}
 
 	// Perform syntactic validation
-	if err = validators.ValidateTxSyntax(tx, -1); err != nil {
+	if err = validators.ValidateTx(tx, -1, app.logic); err != nil {
 		return abcitypes.ResponseCheckTx{
 			Code: types.ErrCodeTxFailedValidation,
 			Log:  err.Error(),

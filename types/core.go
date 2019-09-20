@@ -31,8 +31,8 @@ type Service interface {
 // Account represents a user's identity and includes
 // balance and other information.
 type Account struct {
-	Balance util.String
-	Nonce   int64
+	Balance util.String `json:"balance"`
+	Nonce   int64       `json:"nonce"`
 }
 
 // Bytes return the bytes equivalent of the account

@@ -48,4 +48,5 @@ type TxLogic interface {
 	LogicCommon
 	PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx
 	Exec(tx *Transaction) error
+	CanTransferCoin(senderPubKey, recipientAddr, value, fee util.String) error
 }
