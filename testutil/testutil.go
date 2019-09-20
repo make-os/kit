@@ -24,11 +24,11 @@ func SetTestCfg() (*config.EngineConfig, error) {
 	// Create test root command and
 	// set required flags and values
 	rootCmd := &cobra.Command{}
-	rootCmd.PersistentFlags().String("net", config.DefaultNetVersion, "Set the network version")
+	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set the network version")
 	rootCmd.PersistentFlags().String("home", "", "Set configuration directory")
 	rootCmd.PersistentFlags().Set("home", dataDir)
 	rootCmd.PersistentFlags().Set("net", dataDir)
-	viper.Set("net.version", "test")
+	viper.Set("net.version", 10000000)
 
 	var cfg = &config.EngineConfig{}
 	var tmcfg = tmconfig.DefaultConfig()

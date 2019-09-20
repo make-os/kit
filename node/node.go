@@ -111,9 +111,11 @@ func (n *Node) Start() error {
 	if _, err = tree.Load(); err != nil {
 		return errors.Wrap(err, "failed to load state tree")
 	}
-	
+
+	lgc := logic.New(n.db, tree, n.cfg)
+
 	// Create node
-	app := NewApp(n.db, logic.New(n.db, tree, n.cfg))
+	app := NewApp(n.cfg, n.db, lgc)
 	node, err := nm.NewNode(
 		n.tmcfg,
 		pv,

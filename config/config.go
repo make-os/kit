@@ -1,10 +1,14 @@
 package config
 
 import (
+	"encoding/json"
 	golog "log"
 	"os"
 	path "path/filepath"
 	"strings"
+
+	"github.com/gobuffalo/packr"
+	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/config"
 
@@ -33,14 +37,30 @@ var (
 	DefaultRPCAddress = "127.0.0.1:8999"
 )
 
+// getGenesisAccounts returns the genesis/root accounts
+func getGenesisAccounts() []map[string]interface{} {
+	box := packr.NewBox("../data")
+	genesisData, err := box.FindString("genesis_account.json")
+	if err != nil {
+		panic(errors.Wrap(err, "failed to read genesis file"))
+	}
+
+	var data []map[string]interface{}
+	if err = json.Unmarshal([]byte(genesisData), &data); err != nil {
+		panic(errors.Wrap(err, "failed to decoded genesis account file"))
+	}
+
+	return data
+}
+
 // setDefaultViperConfig sets default config values.
 // They are used when their values is not provided
 // in flag, env or config file.
 func setDefaultViperConfig(cmd *cobra.Command) {
 	viper.SetDefault("net.version", DefaultNetVersion)
 	viper.BindPFlag("net.version", cmd.Flags().Lookup("net"))
-
 	viper.SetDefault("rpc.address", DefaultRPCAddress)
+	viper.SetDefault("genaccounts", getGenesisAccounts())
 }
 
 func setDevDefaultConfig() {
@@ -115,7 +135,7 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	// Set network version environment variable
 	// if not already set and then reset protocol
 	// handlers version.
-	SetVersions(viper.GetString("net.version"))
+	SetVersions(uint64(viper.GetInt64("net.version")))
 
 	// Set data and network directories
 	c.dataDir = dataDir

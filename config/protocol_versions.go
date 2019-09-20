@@ -4,13 +4,10 @@ import "sync"
 
 // DefaultNetVersion is the default network
 // version used when no network version is provided.
-const DefaultNetVersion = "0001"
+const DefaultNetVersion = uint64(1)
 
 // MainNetVersion is the main net version number
-const MainNetVersion = "0001"
-
-// BlockVersion is the version of each block of the chain
-const BlockVersion = "1"
+const MainNetVersion = uint64(1)
 
 var (
 	// versions contains protocol handlers versions information
@@ -19,7 +16,7 @@ var (
 )
 
 // IsMainNetVersion checks whether a given version represents the mainnet version
-func IsMainNetVersion(version string) bool {
+func IsMainNetVersion(version uint64) bool {
 	return version == MainNetVersion
 }
 
@@ -31,11 +28,11 @@ func IsMainNet() bool {
 // SetVersions sets the protocol version.
 // All protocol handlers will be prefixed
 // with the version to create a
-func SetVersions(netVersion string) {
+func SetVersions(netVersion uint64) {
 	cfgLck.Lock()
 	defer cfgLck.Unlock()
 
-	if netVersion == "" {
+	if netVersion == 0 {
 		netVersion = DefaultNetVersion
 	} else {
 		curNetVersion = netVersion
@@ -43,10 +40,10 @@ func SetVersions(netVersion string) {
 }
 
 // GetNetVersion returns the current network version
-func GetNetVersion() string {
+func GetNetVersion() uint64 {
 	return curNetVersion
 }
 
 func init() {
-	SetVersions("")
+	SetVersions(1)
 }

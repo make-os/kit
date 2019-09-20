@@ -126,7 +126,7 @@ func initialize() {
 	// Add flags
 	rootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
 	rootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Enables development mode")
-	rootCmd.PersistentFlags().String("net", config.DefaultNetVersion, "Set network/chain ID")
+	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
 	setStartFlags(startCmd, consoleCmd)
 	setAccountCmdAndFlags()
 }

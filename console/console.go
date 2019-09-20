@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"sync"
 
+	"github.com/thoas/go-funk"
+
 	"github.com/makeos/mosdef/types"
 
 	"github.com/pkg/errors"
@@ -65,7 +67,7 @@ type Console struct {
 	jsModules []types.JSModule
 
 	// Versions
-	protocol string
+	protocol uint64
 	client   string
 	runtime  string
 	commit   string
@@ -203,7 +205,7 @@ func (c *Console) Stop(immediately bool) {
 }
 
 // SetVersions sets the versions of components
-func (c *Console) SetVersions(protocol, client, runtime, commit string) {
+func (c *Console) SetVersions(protocol uint64, client, runtime, commit string) {
 	c.Lock()
 	defer c.Unlock()
 	c.protocol = protocol
@@ -219,7 +221,7 @@ func (c *Console) about() {
 	c.RLock()
 	defer c.RUnlock()
 	fmt.Println(color.CyanString("Welcome to Elld Javascript console!"))
-	fmt.Println(fmt.Sprintf("Client:%s, Protocol:%s, Commit:%s, Go:%s", c.client, c.protocol, util.String(c.commit).SS(), c.runtime))
+	fmt.Println(fmt.Sprintf("Client:%s, Protocol:%d, Commit:%s, Go:%s", c.client, c.protocol, util.String(c.commit).SS(), c.runtime))
 	fmt.Println(" type '.exit' to exit console")
 	fmt.Println("")
 }
@@ -228,6 +230,7 @@ func (c *Console) about() {
 // that have been cached in this session.
 // Note: Read lock must be called by the caller
 func (c *Console) saveHistory() {
+	c.history = funk.UniqString(c.history)
 	if len(c.history) == 0 {
 		return
 	}

@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestTransaction(t *testing.T) {
+func TestLogic(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Transaction Suite")
+	RunSpecs(t, "Logic Suite")
 }

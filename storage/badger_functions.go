@@ -131,7 +131,13 @@ func (f *BadgerFunctions) Iterate(prefix []byte, first bool, iterFunc func(rec *
 	opts.Reverse = !first
 	it := f.tx.NewIterator(opts)
 	defer it.Close()
-	for it.Seek(prefix); it.Valid(); it.Next() {
+
+	var prefixKey = append([]byte{}, prefix...)
+	if opts.Reverse {
+		prefixKey = append(prefixKey, 0xFF)
+	}
+
+	for it.Seek(prefixKey); it.ValidForPrefix(prefix); it.Next() {
 		item := it.Item()
 		k := item.Key()
 		v, _ := item.ValueCopy(nil)

@@ -40,6 +40,8 @@ func (s *SafeTree) GetVersioned(key []byte, version int64) (index int64, value [
 // Get returns the index and value of the specified key if it exists, or nil
 // and the next index, if it doesn't.
 func (s *SafeTree) Get(key []byte) (index int64, value []byte) {
+	s.RLock()
+	defer s.RUnlock()
 	return s.state.Get(key)
 }
 
@@ -63,4 +65,19 @@ func (s *SafeTree) Load() (int64, error) {
 	s.Lock()
 	defer s.Unlock()
 	return s.state.Load()
+}
+
+// WorkingHash returns the hash of the current working tree.
+func (s *SafeTree) WorkingHash() []byte {
+	s.RLock()
+	defer s.RUnlock()
+	return s.state.WorkingHash()
+}
+
+// Hash returns the hash of the latest saved version of the tree, as returned
+// by SaveVersion. If no versions have been saved, Hash returns nil.
+func (s *SafeTree) Hash() []byte {
+	s.RLock()
+	defer s.RUnlock()
+	return s.state.Hash()
 }

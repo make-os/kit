@@ -33,11 +33,36 @@ type VersionInfo struct {
 	GoVersion    string `json:"goVersion" mapstructure:"goVersion"`
 }
 
+// GenAccount describes root account and its balance
+type GenAccount struct {
+	Address string `json:"address" mapstructure:"address"`
+	Balance string `json:"balance" mapstructure:"balance"`
+}
+
+// NetConfig describes network configurations
+type NetConfig struct {
+	Version uint64 `json:"version" mapstructure:"version"`
+}
+
+// RPCConfig describes RPC config settings
+type RPCConfig struct {
+	Address string `json:"address" mapstructure:"address"`
+}
+
 // EngineConfig represents the client's configuration
 type EngineConfig struct {
 
 	// Node holds the node configurations
 	Node *NodeConfig `json:"node" mapstructure:"node"`
+
+	// Net holds network configurations
+	Net *NetConfig `json:"net" mapstructure:"net"`
+
+	// RPC holds RPC configurations
+	RPC *RPCConfig `json:"rpc" mapstructure:"rpc"`
+
+	// GenesisAccounts includes the initial/root accounts and their balances
+	GenesisAccounts []*GenAccount `json:"genaccounts" mapstructure:"genaccounts"`
 
 	// dataDir is where the node's config and network data is stored
 	dataDir string
