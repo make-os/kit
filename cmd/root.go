@@ -65,6 +65,7 @@ func initializeTendermint() error {
 	commands.SetConfig(tmconfig)
 	commands.InitFilesCmd.RunE(nil, nil)
 	reconfigureTendermint()
+	tmcfg.EnsureRoot(tmconfig.RootDir)
 	return nil
 }
 
@@ -101,6 +102,7 @@ func init() {
 development network that allows anyone, anywhere to create software products
 and organizations without a centralized authority.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+
 			config.Configure(rootCmd, cfg, tmconfig)
 
 			// Set version information

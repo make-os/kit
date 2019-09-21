@@ -67,6 +67,25 @@ func setDevDefaultConfig() {
 	// viper.SetDefault("txPool.capacity", 100)
 }
 
+// readTendermintConfig reads tendermint config into a tendermint
+// config object
+func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
+	v := viper.New()
+	v.SetEnvPrefix("TM")
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
+	v.AutomaticEnv()
+	v.SetConfigName("config")
+	v.AddConfigPath(path.Join(dataDir, "config"))
+	if err := v.ReadInConfig(); err != nil {
+		return err
+	}
+	err := v.Unmarshal(tmcfg)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Configure sets up the application command structure, tendermint
 // and mosdef configuration. This is where all configuration and
 // settings are prepared
@@ -99,6 +118,9 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	os.MkdirAll(path.Join(dataDir, AccountDirName), 0700)
 	os.MkdirAll(path.Join(dataDir, "data"), 0700)
 	os.MkdirAll(path.Join(dataDir, "config"), 0700)
+
+	// Read tendermint config file into tmcfg
+	readTendermintConfig(tmcfg, dataDir)
 
 	// Set viper configuration
 	setDefaultViperConfig(rootCmd)
