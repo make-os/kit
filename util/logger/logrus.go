@@ -38,7 +38,6 @@ func NewLogrus() Logger {
 // - filePath.out stores DEBUG and INFO
 // - filePath.err stores ERROR
 func NewLogrusWithFileRotation(filePath string) Logger {
-
 	l := &Logrus{
 		log:      logrus.New(),
 		filePath: filePath,
@@ -103,9 +102,10 @@ func isValidKeyValues(kv []interface{}) error {
 // logger is also set to debug.
 func (l *Logrus) Module(ns string) Logger {
 	newLog := &Logrus{
-		log:      logrus.New(),
-		filePath: l.filePath,
-		ns:       ns,
+		log:        logrus.New(),
+		filePath:   l.filePath,
+		ns:         ns,
+		debugLevel: l.debugLevel,
 	}
 	if newLog.filePath != "" {
 		configureFileRotation(newLog)
@@ -124,6 +124,7 @@ func (l *Logrus) SetToDebug() {
 
 // SetToInfo sets the logger to INFO level
 func (l *Logrus) SetToInfo() {
+	l.debugLevel = false
 	l.log.SetLevel(logrus.InfoLevel)
 }
 
