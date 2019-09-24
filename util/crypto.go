@@ -35,6 +35,8 @@ func (h Hash) Big() *big.Int { return new(big.Int).SetBytes(h[:]) }
 // Equal checks equality between h and o
 func (h Hash) Equal(o Hash) bool { return bytes.Equal(h.Bytes(), o.Bytes()) }
 
+func (h Hash) String() string { return h.HexStr() }
+
 // HexStr returns the hex string version of the hash beginning with 0x
 func (h Hash) HexStr() string {
 	return ToHex(h[:])

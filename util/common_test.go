@@ -385,7 +385,7 @@ var _ = Describe("Common", func() {
 				Num: new(big.Int).SetInt64(10),
 			}
 			result = EncodeForJS(t5)
-			Expect(result).To(Equal(map[string]interface{}{"Num": "0xa"}))
+			Expect(result).To(Equal(map[string]interface{}{"Num": "10"}))
 
 			t6 := test5{
 				Num: EncodeNonce(10),
@@ -399,7 +399,7 @@ var _ = Describe("Common", func() {
 
 			BeforeEach(func() {
 				result := EncodeForJS(t1)
-				Expect(result.(map[string]interface{})["Age"]).To(Equal("0x1e"))
+				Expect(result.(map[string]interface{})["Age"]).To(Equal("30"))
 			})
 
 			It("should not modify field", func() {
