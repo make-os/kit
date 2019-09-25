@@ -1,40 +1,27 @@
 package types
 
 const (
-	// NamespaceState is the namespace
-	// for RPC methods that access the database
-	NamespaceState = "state"
-
-	// NamespaceEll is the namespace for RPC methods
-	// that interact with the native currency
-	NamespaceEll = "ell"
-
-	// NamespaceNode is the namespace for RPC methods
-	// that interact and access the node/client properties
-	NamespaceNode = "node"
-
-	// NamespacePool is the namespace for RPC methods
-	// that access the transaction pool
-	NamespacePool = "pool"
-
-	// NamespaceNet is the namespace for RPC methods
-	// that perform network actions
-	NamespaceNet = "net"
-
-	// NamespaceRPC is the namespace for RPC methods
-	// that perform rpc actions
+	// NamespaceRPC is the name for a group of features interacting
+	// with the rpc service
 	NamespaceRPC = "rpc"
 
-	// NamespaceLogger is the namespace for RPC methods
-	// for configuring the logger
-	NamespaceLogger = "logger"
-
-	// NamespaceDebug is the namespace for RPC methods
-	// that offer debugging features
-	NamespaceDebug = "debug"
-
-	// NamespacePersonal is the namespace for RPC methods
-	// that interact with private and sensitive data of the
-	// client
+	// NamespacePersonal is the name for a group of features interacting
+	// with personal user data
 	NamespacePersonal = "personal"
+
+	// NamespaceChain is the name for a group of features interacting
+	// with the chain's state
+	NamespaceChain = "chain"
+
+	// NamespaceTx is the name for a group of features for constructing
+	// and accessing transactions
+	NamespaceTx = "tx"
+
+	// NamespaceCoin is the name for a group of features for constructing
+	// and accessing coin operations
+	NamespaceCoin = "coin"
+
+	// NamespacePool is the name for a group of features for accessing the
+	// transactions pool
+	NamespacePool = "pool"
 )

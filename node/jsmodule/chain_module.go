@@ -13,8 +13,6 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-const jsBlockModuleName = "chain"
-
 // ChainModule provides access to chain information
 type ChainModule struct {
 	vm          *otto.Otto
@@ -64,11 +62,11 @@ func (m *ChainModule) Configure() []prompt.Suggest {
 
 	// Add the main tx namespace
 	obj := map[string]interface{}{}
-	util.VMSet(m.vm, jsBlockModuleName, obj)
+	util.VMSet(m.vm, types.NamespaceChain, obj)
 
 	for _, f := range m.funcs() {
 		obj[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", jsBlockModuleName, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceChain, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
@@ -124,7 +122,7 @@ func (m *ChainModule) getCurrentHeight() interface{} {
 // getAccount returns the account of the given address
 func (m *ChainModule) getAccount(address string, height ...int64) interface{} {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
-	if account.Balance.String() == "0" && account.Nonce == int64(0) {
+	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
 		return nil
 	}
 	return util.EncodeForJS(account)
@@ -133,7 +131,7 @@ func (m *ChainModule) getAccount(address string, height ...int64) interface{} {
 // getBalance returns the balance of an account
 func (m *ChainModule) getBalance(address string, height ...int64) interface{} {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
-	if account.Balance.String() == "0" && account.Nonce == int64(0) {
+	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
 		return nil
 	}
 	return account.Balance.String()

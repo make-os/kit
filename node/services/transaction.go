@@ -6,8 +6,8 @@ import (
 	"github.com/makeos/mosdef/util"
 )
 
-// SendCoin processes a types.TxTypeCoin transaction.
-// Expects a signed transaction.
+// SendCoin sends a types.TxTypeCoin transaction to the network.
+// CONTRACT: Expects a signed transaction.
 func (s *Service) SendCoin(tx *types.Transaction) (util.Hash, error) {
 	var hash util.Hash
 
@@ -16,11 +16,5 @@ func (s *Service) SendCoin(tx *types.Transaction) (util.Hash, error) {
 		return hash, err
 	}
 
-	// Send the transaction to tendermint for processing
-	txHash, err := s.tmrpc.SendTx(tx.Bytes())
-	if err != nil {
-		return hash, err
-	}
-
-	return txHash, nil
+	return s.txRec.AddTx(tx)
 }

@@ -72,15 +72,18 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.Resp
 func (t *Transaction) Exec(tx *types.Transaction) error {
 	switch tx.Type {
 	case types.TxTypeCoin:
-		return t.transferTo(tx.SenderPubKey, tx.To, tx.Value, tx.Fee)
+		return t.transferTo(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
 	default:
 		return fmt.Errorf("unknown transaction type")
 	}
 }
 
-// CanTransferCoin checks whether the sender can transfer the value
-// and fee of the transaction based on the current state of their account
-func (t *Transaction) CanTransferCoin(senderPubKey, recipientAddr, value, fee util.String) error {
+// CanTransferCoin checks whether the sender can transfer
+// the value and fee of the transaction based on the
+// current state of their account. It also ensures that the
+// transaction's nonce is the next/expected nonce value.
+func (t *Transaction) CanTransferCoin(senderPubKey, recipientAddr, value, fee util.String,
+	nonce uint64) error {
 
 	spk, err := crypto.PubKeyFromBase58(senderPubKey.String())
 	if err != nil {
@@ -97,6 +100,12 @@ func (t *Transaction) CanTransferCoin(senderPubKey, recipientAddr, value, fee ut
 	sender := spk.Addr()
 	senderAcct := acctKeeper.GetAccount(sender)
 
+	// Ensure the transaction nonce is the next expected nonce
+	expectedNonce := senderAcct.Nonce + 1
+	if expectedNonce != nonce {
+		return fmt.Errorf("tx has invalid nonce (%d), expected (%d)", nonce, expectedNonce)
+	}
+
 	// Ensure sender has enough balance to pay transfer value + fee
 	spendAmt := value.Decimal().Add(fee.Decimal())
 	senderBal := senderAcct.Balance.Decimal()
@@ -109,9 +118,10 @@ func (t *Transaction) CanTransferCoin(senderPubKey, recipientAddr, value, fee ut
 
 // transferTo transfer units of the native currency
 // from a sender account to a recipient account
-func (t *Transaction) transferTo(senderPubKey, recipientAddr, value, fee util.String) error {
+func (t *Transaction) transferTo(senderPubKey, recipientAddr, value, fee util.String,
+	nonce uint64) error {
 
-	if err := t.CanTransferCoin(senderPubKey, recipientAddr, value, fee); err != nil {
+	if err := t.CanTransferCoin(senderPubKey, recipientAddr, value, fee, nonce); err != nil {
 		return err
 	}
 

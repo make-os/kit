@@ -32,7 +32,7 @@ type Service interface {
 // balance and other information.
 type Account struct {
 	Balance util.String `json:"balance"`
-	Nonce   int64       `json:"nonce"`
+	Nonce   uint64      `json:"nonce"`
 }
 
 // Bytes return the bytes equivalent of the account

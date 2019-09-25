@@ -93,6 +93,7 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 
 	var c = EngineConfig{
 		Node: &NodeConfig{Mode: ModeProd},
+		Net:  &NetConfig{},
 		g:    &Globals{},
 	}
 
@@ -100,6 +101,7 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 
 	// If data directory path is set in a flag, update the default data directory
 	dd, _ := rootCmd.PersistentFlags().GetString("home")
+	ddPrefix, _ := rootCmd.PersistentFlags().GetString("home.prefix")
 	if dd != "" {
 		dataDir = dd
 	}
@@ -111,6 +113,10 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	if devMode {
 		dataDir = DefaultDevDataDir
 		c.Node.Mode = ModeDev
+
+		if ddPrefix != "" {
+			dataDir = dataDir + "_" + ddPrefix
+		}
 	}
 
 	// Create the data directory and other sub directories
@@ -173,6 +179,9 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	os.MkdirAll(logPath, 0700)
 	logFile := path.Join(logPath, "main.log")
 	c.G().Log = logger.NewLogrusWithFileRotation(logFile)
+	if devMode {
+		c.G().Log.SetToDebug()
+	}
 
 	// Set default version information
 	c.VersionInfo = &VersionInfo{}
@@ -180,6 +189,12 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	c.VersionInfo.BuildDate = ""
 	c.VersionInfo.GoVersion = "go1.12.4"
 	c.VersionInfo.BuildVersion = ""
+
+	// Use some of the native config to override tendermint's config
+	tmcfg.P2P.ListenAddress = c.Node.ListeningAddr
+	tmcfg.P2P.AddrBookStrict = !devMode
+	tmcfg.P2P.PersistentPeers = c.Node.Peers
+	tmcfg.RPC.ListenAddress = c.RPC.TMRPCAddress
 
 	*cfg = c
 	*tmcfg = *tmcfg.SetRoot(cfg.DataDir())

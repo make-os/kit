@@ -30,7 +30,6 @@ var consoleCmd = &cobra.Command{
 	Short: "Start an interactive javascript console mode and start the node",
 	Long:  `Start an interactive javascript console mode and start the node`,
 	Run: func(cmd *cobra.Command, args []string) {
-		log = cfg.G().Log.Module("main")
 
 		// Get and cache node key
 		cfg.PrepareNodeKey(tmconfig.NodeKeyFile())
@@ -52,7 +51,7 @@ var consoleCmd = &cobra.Command{
 			// Add modules
 			console.AddJSModules(
 				acctJSModule.NewModule(acctmgr),
-				nodeJSModule.NewModule(n.GetService(), n.Logic()),
+				nodeJSModule.NewModule(n.GetService(), n.GetLogic(), n.GetTxReactor()),
 			)
 
 			// Run the console

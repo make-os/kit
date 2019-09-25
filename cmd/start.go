@@ -23,11 +23,8 @@ import (
 
 	"github.com/makeos/mosdef/node"
 	"github.com/makeos/mosdef/rpc"
-	"github.com/makeos/mosdef/util/logger"
 	"github.com/spf13/cobra"
 )
-
-var log logger.Logger
 
 func start(onStart func(n *node.Node)) {
 
@@ -80,7 +77,7 @@ var startCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get and cache node key
 		cfg.PrepareNodeKey(tmconfig.NodeKeyFile())
-		log = cfg.G().Log.Module("main")
+		log = cfg.G().Log.Module("Main")
 		listenForInterrupt()
 		start(nil)
 	},
@@ -90,5 +87,11 @@ func setStartFlags(cmds ...*cobra.Command) {
 	for _, cmd := range cmds {
 		cmd.Flags().String("rpc.address", "127.0.0.1:8999", "Set the RPC listening address")
 		viper.BindPFlag("rpc.address", cmd.Flags().Lookup("rpc.address"))
+		cmd.Flags().String("node.address", "127.0.0.1:9000", "Set the node's p2p listening address")
+		viper.BindPFlag("node.address", cmd.Flags().Lookup("node.address"))
+		cmd.Flags().String("node.addpeer", "", "Connect to one or more persistent node")
+		viper.BindPFlag("node.addpeer", cmd.Flags().Lookup("node.addpeer"))
+		cmd.Flags().String("rpc.tmaddress", "tcp://127.0.0.1:26657", "Set tendermint RPC listening address")
+		viper.BindPFlag("rpc.tmaddress", cmd.Flags().Lookup("rpc.tmaddress"))
 	}
 }

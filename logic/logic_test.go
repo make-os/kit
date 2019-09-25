@@ -49,7 +49,7 @@ var _ = Describe("Logic", func() {
 			for _, a := range testGenAccts {
 				res := logic.AccountKeeper().GetAccount(util.String(a.Address))
 				Expect(res.Balance).To(Equal(util.String("0")))
-				Expect(res.Nonce).To(Equal(int64(0)))
+				Expect(res.Nonce).To(Equal(uint64(0)))
 			}
 		})
 

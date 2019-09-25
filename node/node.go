@@ -6,6 +6,10 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/makeos/mosdef/params"
+
+	"github.com/makeos/mosdef/node/reactors"
+
 	"github.com/makeos/mosdef/storage/tree"
 
 	logic "github.com/makeos/mosdef/logic"
@@ -35,16 +39,17 @@ import (
 
 // Node represents the client
 type Node struct {
-	app     *App
-	cfg     *config.EngineConfig
-	tmcfg   *tmconfig.Config
-	nodeKey *p2p.NodeKey
-	log     logger.Logger
-	db      storage.Engine
-	tm      *nm.Node
-	service types.Service
-	tmrpc   *tmrpc.TMRPC
-	logic   types.Logic
+	app       *App
+	cfg       *config.EngineConfig
+	tmcfg     *tmconfig.Config
+	nodeKey   *p2p.NodeKey
+	log       logger.Logger
+	db        storage.Engine
+	tm        *nm.Node
+	service   types.Service
+	tmrpc     *tmrpc.TMRPC
+	logic     types.Logic
+	txReactor *reactors.TxReactor
 }
 
 // NewNode creates an instance of Node
@@ -62,7 +67,7 @@ func NewNode(cfg *config.EngineConfig, tmcfg *tmconfig.Config) *Node {
 		nodeKey: cfg.G().NodeKey,
 		log:     cfg.G().Log.Module("Node"),
 		tmcfg:   tmcfg,
-		service: services.New(tmrpc, nil),
+		service: services.New(tmrpc, nil, nil),
 		tmrpc:   tmrpc,
 	}
 }
@@ -83,21 +88,6 @@ func (n *Node) OpenDB() error {
 
 	n.db = db
 	return nil
-}
-
-// DB returns the database instance
-func (n *Node) DB() storage.Engine {
-	return n.db
-}
-
-// Logic returns the logic instance
-func (n *Node) Logic() types.Logic {
-	return n.logic
-}
-
-// GetService returns the node's service
-func (n *Node) GetService() types.Service {
-	return n.service
 }
 
 // Start starts the tendermint node
@@ -122,6 +112,9 @@ func (n *Node) Start() error {
 
 	n.logic = logic.New(n.db, tree, n.cfg)
 
+	// Add custom channels to tendermint before we create a node
+	nm.AddChannels([]byte{reactors.TxReactorChannel})
+
 	// Create node
 	app := NewApp(n.cfg, n.db, n.logic)
 	node, err := nm.NewNode(
@@ -137,11 +130,44 @@ func (n *Node) Start() error {
 		return errors.Wrap(err, "failed to fully create node")
 	}
 
+	fullAddr := fmt.Sprintf("%s@%s", n.nodeKey.ID(), n.tmcfg.P2P.ListenAddress)
+	n.log.Info("Node is now listening for connections", "Address", fullAddr)
+
+	// Cache a reference of tendermint node
 	n.tm = node
-	n.service = services.New(n.tmrpc, n.logic)
+
+	// Create reactors and pass to service
+	txReactor := reactors.NewTxReactor("txReactor", params.TxPoolCap, n.logic, n.tmrpc, n.log)
+	n.txReactor = txReactor
+	n.service = services.New(n.tmrpc, n.logic, txReactor)
+
+	// Add reactors to the switch
+	node.Switch().AddReactor(txReactor.GetName(), txReactor)
+
+	// Start tendermint
 	n.tm.Start()
 
 	return nil
+}
+
+// GetDB returns the database instance
+func (n *Node) GetDB() storage.Engine {
+	return n.db
+}
+
+// GetLogic returns the logic instance
+func (n *Node) GetLogic() types.Logic {
+	return n.logic
+}
+
+// GetTxReactor returns the transaction reactor
+func (n *Node) GetTxReactor() *reactors.TxReactor {
+	return n.txReactor
+}
+
+// GetService returns the node's service
+func (n *Node) GetService() types.Service {
+	return n.service
 }
 
 // Stop the node

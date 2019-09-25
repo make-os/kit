@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 
+	"github.com/fatih/structs"
+
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util"
 )
@@ -12,6 +14,32 @@ var (
 	// from one source account to a destination account
 	TxTypeCoin = 0x0
 )
+
+// Tx represents a transaction
+type Tx interface {
+	GetSignature() []byte
+	SetSignature(s []byte)
+	GetSenderPubKey() util.String
+	SetSenderPubKey(pk util.String)
+	GetTimestamp() int64
+	SetTimestamp(t int64)
+	GetNonce() uint64
+	GetFee() util.String
+	GetValue() util.String
+	SetValue(v util.String)
+	GetFrom() util.String
+	GetTo() util.String
+	GetHash() util.Hash
+	SetHash(h util.Hash)
+	GetType() int
+	GetBytesNoHashAndSig() []byte
+	Bytes() []byte
+	ComputeHash() util.Hash
+	GetID() string
+	Sign(privKey string) ([]byte, error)
+	GetSizeNoFee() int64
+	ToMap() map[string]interface{}
+}
 
 // Transaction represents a transaction
 type Transaction struct {
@@ -74,6 +102,16 @@ func (tx *Transaction) SetSenderPubKey(pk util.String) {
 	tx.SenderPubKey = pk
 }
 
+// GetFrom returns the address of the sender.
+// Panics if sender's public key is invalid
+func (tx *Transaction) GetFrom() util.String {
+	pk, err := crypto.PubKeyFromBase58(tx.SenderPubKey.String())
+	if err != nil {
+		panic(err)
+	}
+	return pk.Addr()
+}
+
 // GetTimestamp gets the timestamp
 func (tx *Transaction) GetTimestamp() int64 {
 	return tx.Timestamp
@@ -82,6 +120,13 @@ func (tx *Transaction) GetTimestamp() int64 {
 // SetTimestamp set the unix timestamp
 func (tx *Transaction) SetTimestamp(t int64) {
 	tx.Timestamp = t
+}
+
+// ToMap decodes the transaction to a map
+func (tx *Transaction) ToMap() map[string]interface{} {
+	s := structs.New(tx)
+	s.TagName = "json"
+	return s.Map()
 }
 
 // GetNonce gets the nonce

@@ -20,8 +20,11 @@ type NodeConfig struct {
 	// Mode determines the current environment type
 	Mode int `json:"mode" mapstructure:"mode"`
 
-	// Key is the address of the node key to use for start up
-	Key string `json:"key" mapstructure:"key"`
+	// ListeningAddr is the node's listening address
+	ListeningAddr string `json:"address" mapstructure:"address"`
+
+	// Peers is a comma separated list of persistent peers to connect to.
+	Peers string `json:"addpeer" mapstructure:"addpeer"`
 }
 
 // VersionInfo describes the clients
@@ -46,7 +49,8 @@ type NetConfig struct {
 
 // RPCConfig describes RPC config settings
 type RPCConfig struct {
-	Address string `json:"address" mapstructure:"address"`
+	Address      string `json:"address" mapstructure:"address"`
+	TMRPCAddress string `json:"tmaddress" mapstructure:"tmaddress"`
 }
 
 // EngineConfig represents the client's configuration

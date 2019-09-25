@@ -69,3 +69,9 @@ var (
 	ErrCodeTxBadEncode        uint32 = 20000
 	ErrCodeTxFailedValidation uint32 = 20001
 )
+
+// Transaction errors
+var (
+	//ErrTxTypeUnknown means transaction type is unknown
+	ErrTxTypeUnknown = fmt.Errorf("unknown transaction type")
+)

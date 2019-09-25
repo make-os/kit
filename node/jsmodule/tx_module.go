@@ -13,9 +13,6 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-const jsTxModuleName = "tx"
-const jsTxCoinMapName = "coin"
-
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
 	vm          *otto.Otto
@@ -49,14 +46,14 @@ func (m *TxModule) Configure() []prompt.Suggest {
 
 	// Add the main tx namespace
 	txMap := map[string]interface{}{}
-	util.VMSet(m.vm, jsTxModuleName, txMap)
+	util.VMSet(m.vm, types.NamespaceTx, txMap)
 
 	// add 'coin' namespaced functions
 	coinMap := map[string]interface{}{}
-	txMap[jsTxCoinMapName] = coinMap
+	txMap[types.NamespaceCoin] = coinMap
 	for _, f := range m.funcs() {
 		coinMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s.%s", jsTxModuleName, jsTxCoinMapName, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s.%s", types.NamespaceTx, types.NamespaceCoin, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}

@@ -30,11 +30,23 @@ type AccountKeeper interface {
 // Logic provides an interface that allows
 // access and modification to the state of the blockchain.
 type Logic interface {
+
+	// Tx returns the transaction logic provider
 	Tx() TxLogic
+
+	// DB returns the application's database
 	DB() storage.Engine
+
+	// StateTree manages the app state tree
 	StateTree() *tree.SafeTree
+
+	// SysKeeper manages system state
 	SysKeeper() SystemKeeper
+
+	// AccountKeeper manages account state
 	AccountKeeper() AccountKeeper
+
+	// WriteGenesisState initializes the app state with initial data
 	WriteGenesisState() error
 }
 
@@ -48,5 +60,5 @@ type TxLogic interface {
 	LogicCommon
 	PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx
 	Exec(tx *Transaction) error
-	CanTransferCoin(senderPubKey, recipientAddr, value, fee util.String) error
+	CanTransferCoin(senderPubKey, recipientAddr, value, fee util.String, nonce uint64) error
 }

@@ -253,7 +253,7 @@ func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) 
 
 	// Check whether the transaction is consistent with
 	// the current state of the sender's account
-	err := logic.Tx().CanTransferCoin(tx.SenderPubKey, tx.To, tx.Value, tx.Fee)
+	err := logic.Tx().CanTransferCoin(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
 	if err != nil {
 		return err
 	}

@@ -18,6 +18,8 @@ import (
 	golog "log"
 	"os"
 
+	"github.com/makeos/mosdef/util/logger"
+
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/makeos/mosdef/config"
@@ -47,6 +49,8 @@ var (
 )
 
 var (
+	log logger.Logger
+
 	// cfg is the application config
 	cfg = &config.EngineConfig{}
 
@@ -104,6 +108,7 @@ and organizations without a centralized authority.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 
 			config.Configure(rootCmd, cfg, tmconfig)
+			log = cfg.G().Log
 
 			// Set version information
 			cfg.VersionInfo = &config.VersionInfo{}
@@ -127,7 +132,8 @@ func initialize() {
 
 	// Add flags
 	rootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
-	rootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Enables development mode")
+	rootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Set the path to the home directory")
+	rootCmd.PersistentFlags().String("home.prefix", "", "Adds a prefix to the home directory in dev mode")
 	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
 	setStartFlags(startCmd, consoleCmd)
 	setAccountCmdAndFlags()
