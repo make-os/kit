@@ -11,9 +11,11 @@ import (
 )
 
 var (
-	// TxTypeCoin represents a transaction that moves coin
-	// from one source account to a destination account
-	TxTypeCoin = 0x0
+	// TxTypeCoinTransfer represents a tx that moves coin between accounts
+	TxTypeCoinTransfer = 0x0
+
+	// TxTypeTicketPurchase represents a transaction purchases validator ticket
+	TxTypeTicketPurchase = 0x1
 )
 
 // Tx represents a transaction

@@ -60,7 +60,7 @@ func (m *ChainModule) funcs() []*types.JSModuleFunc {
 func (m *ChainModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
-	// Add the main tx namespace
+	// Add the main namespace
 	obj := map[string]interface{}{}
 	util.VMSet(m.vm, types.NamespaceChain, obj)
 

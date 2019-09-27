@@ -2,10 +2,6 @@ package console
 
 import (
 	"fmt"
-	"io/ioutil"
-	"path/filepath"
-
-	"github.com/gobuffalo/packr"
 
 	prompt "github.com/c-bata/go-prompt"
 
@@ -22,96 +18,26 @@ type Executor struct {
 	// vm is an Otto instance for JS evaluation
 	vm *otto.Otto
 
-	// authToken is the token derived from the last login() invocation
-	authToken string
-
 	// log is a logger
 	log logger.Logger
 
 	// console is the console instance
 	console *Console
-
-	// scripts provides access to packed JS scripts
-	scripts packr.Box
 }
 
 // NewExecutor creates a new executor
 func newExecutor(l logger.Logger) *Executor {
 	e := new(Executor)
 	e.vm = otto.New()
-	e.log = l
-	e.scripts = packr.NewBox("./scripts")
+	e.log = l.Module("ConsoleExecutor")
 	return e
 }
 
 // PrepareContext adds objects and functions into the VM's global
 // contexts allowing users to have access to pre-defined values and objects
 func (e *Executor) PrepareContext() ([]prompt.Suggest, error) {
-
 	var suggestions = []prompt.Suggest{}
-
-	// Add some methods to the global namespace
-	e.vm.Set("pp", e.pp)
-	e.vm.Set("exec", e.runRaw)
-	e.vm.Set("runScript", e.runScript)
-	e.vm.Set("rs", e.runScript)
-
-	// nsObj is a namespace for storing
-	// rpc methods and other categorized functions
-	var nsObj = map[string]map[string]interface{}{
-		"_system": {},
-	}
-
-	defer func() {
-		for ns, objs := range nsObj {
-			e.vm.Set(ns, objs)
-		}
-
-		// Add system scripts
-		// e.runRaw(e.scripts.Bytes("transaction_builder.js"))
-	}()
-
 	return suggestions, nil
-}
-
-func (e *Executor) runScript(file string) {
-
-	fullPath, err := filepath.Abs(file)
-	if err != nil {
-		panic(e.vm.MakeCustomError("ExecError", err.Error()))
-	}
-
-	content, err := ioutil.ReadFile(fullPath)
-	if err != nil {
-		panic(e.vm.MakeCustomError("ExecError", err.Error()))
-	}
-
-	e.runRaw(content)
-}
-
-func (e *Executor) runRaw(src interface{}) {
-	script, err := e.vm.Compile("", src)
-	if err != nil {
-		panic(e.vm.MakeCustomError("ExecError", err.Error()))
-	}
-
-	_, err = e.vm.Run(script)
-	if err != nil {
-		panic(e.vm.MakeCustomError("ExecError", err.Error()))
-	}
-}
-
-// pp pretty prints a slice of arbitrary objects
-func (e *Executor) pp(values ...interface{}) {
-	var v interface{} = values
-	if len(values) == 1 {
-		v = values[0]
-	}
-	bs, err := prettyjson.Marshal(v)
-	if err != nil {
-		panic(e.vm.MakeCustomError("PrettyPrintError", err.Error()))
-	}
-	fmt.Println(string(bs))
 }
 
 // OnInput receives inputs and executes

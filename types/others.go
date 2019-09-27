@@ -26,6 +26,10 @@ const (
 	NamespacePool = "pool"
 
 	// NamespaceAccount is the name for a group
-	// of features for accessing account information
+	// of functions for accessing account information
 	NamespaceAccount = "account"
+
+	// NamespaceUtil is the name for a group
+	// of utility functions
+	NamespaceUtil = "util"
 )

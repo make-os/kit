@@ -47,7 +47,7 @@ func (m *PoolModule) funcs() []*types.JSModuleFunc {
 func (m *PoolModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
-	// Add the main tx namespace
+	// Add the main namespace
 	obj := map[string]interface{}{}
 	util.VMSet(m.vm, types.NamespacePool, obj)
 

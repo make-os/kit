@@ -37,5 +37,6 @@ func (m *Module) Configure(vm *otto.Otto) []prompt.Suggest {
 	sugs = append(sugs, NewChainModule(vm, m.nodeService, m.logic).Configure()...)
 	sugs = append(sugs, NewPoolModule(vm, m.txReactor).Configure()...)
 	sugs = append(sugs, NewAccountModule(vm, m.acctmgr, m.nodeService).Configure()...)
+	sugs = append(sugs, NewUtilModule(vm).Configure()...)
 	return sugs
 }
