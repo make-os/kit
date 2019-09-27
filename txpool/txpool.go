@@ -56,6 +56,8 @@ func (tp *TxPool) isExpired(tx types.Tx) bool {
 }
 
 // clean removes old transactions
+// FIXME: clean transactions that have spent x period in the pool as opposed
+// to how long they have existed themselves.
 func (tp *TxPool) clean() {
 	tp.container.Find(func(tx types.Tx) bool {
 		if tp.isExpired(tx) {
@@ -69,8 +71,8 @@ func (tp *TxPool) clean() {
 // (Not thread-safe)
 func (tp *TxPool) addTx(tx types.Tx) error {
 
-	// Ensure the transaction does not
-	// already exist in the queue
+	// Ensure the transaction does not already 
+	// exist in the queue
 	if tp.container.Has(tx) {
 		return ErrTxAlreadyAdded
 	}

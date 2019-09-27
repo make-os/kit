@@ -61,6 +61,10 @@ func setDefaultViperConfig(cmd *cobra.Command) {
 	viper.BindPFlag("net.version", cmd.Flags().Lookup("net"))
 	viper.SetDefault("rpc.address", DefaultRPCAddress)
 	viper.SetDefault("genaccounts", getGenesisAccounts())
+	viper.SetDefault("mempool.size", 5000)
+	viper.SetDefault("mempool.cacheSize", 10000)
+	viper.SetDefault("mempool.maxTxSize", 1024*1024)       // 1MB
+	viper.SetDefault("mempool.maxTxsSize", 1024*1024*1024) // 1GB
 }
 
 func setDevDefaultConfig() {
@@ -196,8 +200,14 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	tmcfg.P2P.PersistentPeers = c.Node.Peers
 	tmcfg.RPC.ListenAddress = c.RPC.TMRPCAddress
 
+	c.G().TMConfig = tmcfg
 	*cfg = c
 	*tmcfg = *tmcfg.SetRoot(cfg.DataDir())
+
+	// Get and cache node and validators keys
+	cfg.PrepareNodeValKeys(tmcfg.NodeKeyFile(),
+		tmcfg.PrivValidatorKeyFile(),
+		tmcfg.PrivValidatorStateFile())
 
 	return
 }

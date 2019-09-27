@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"encoding/hex"
 	"os"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -46,21 +45,11 @@ var _ = Describe("Transaction", func() {
 	})
 
 	Describe(".PrepareExec", func() {
-		Context("when tx is not hex decodeable", func() {
-			It("should return err='failed to decode transaction from hex to bytes'", func() {
-				req := abcitypes.RequestDeliverTx(abcitypes.RequestDeliverTx{
-					Tx: []byte("invalid_hex"),
-				})
-				resp := txLogic.PrepareExec(req)
-				Expect(resp.Code).To(Equal(ErrCodeFailedDecode))
-				Expect(resp.Log).To(Equal("failed to decode transaction from hex to bytes"))
-			})
-		})
 
 		Context("when tx bytes are not decodeable to types.Transaction", func() {
 			It("should return err='failed to decode transaction from hex to bytes'", func() {
 				req := abcitypes.RequestDeliverTx(abcitypes.RequestDeliverTx{
-					Tx: []byte(hex.EncodeToString([]byte("invalid_hex"))),
+					Tx: []byte([]byte("invalid_hex")),
 				})
 				resp := txLogic.PrepareExec(req)
 				Expect(resp.Code).To(Equal(ErrCodeFailedDecode))
@@ -71,9 +60,8 @@ var _ = Describe("Transaction", func() {
 		Context("when tx is invalid", func() {
 			It("should return err='tx failed validation...'", func() {
 				tx := &types.Transaction{Sig: []byte("sig")}
-				txHex := hex.EncodeToString(tx.Bytes())
 				req := abcitypes.RequestDeliverTx(abcitypes.RequestDeliverTx{
-					Tx: []byte(txHex),
+					Tx: tx.Bytes(),
 				})
 				resp := txLogic.PrepareExec(req)
 				Expect(resp.Code).To(Equal(ErrCodeFailedDecode))

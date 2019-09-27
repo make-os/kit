@@ -1,5 +1,4 @@
-package activeobject_test
-
+package mempool
 import (
 	"testing"
 
@@ -7,7 +6,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestActiveobject(t *testing.T) {
+func TestMempool(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "ActiveObject Suite")
+	RunSpecs(t, "Mempool Suite")
 }

@@ -54,7 +54,7 @@ var _ = Describe("Cache", func() {
 	Describe(".NewActiveCache", func() {
 
 		Context("cache should remove expired item", func() {
-			CacheItemRemovalInterval = 50 * time.Millisecond
+			DefaultRemovalInterval = 50 * time.Millisecond
 			cache := NewActiveCache(1)
 
 			It("should successfully remove item", func() {
@@ -75,7 +75,7 @@ var _ = Describe("Cache", func() {
 
 		It("should successfully add multiple values", func() {
 			values := []interface{}{1, 2, "3"}
-			cache.AddMulti(time.Time{}, values)
+			cache.AddValues(time.Time{}, values)
 			Expect(cache.Len()).To(Equal(1))
 		})
 	})
@@ -89,7 +89,7 @@ var _ = Describe("Cache", func() {
 			BeforeEach(func() {
 				cache = NewCache(10)
 				values = []interface{}{1, 2, "3"}
-				cache.AddMulti(time.Time{}, values...)
+				cache.AddValues(time.Time{}, values...)
 				Expect(cache.Len()).To(Equal(1))
 			})
 
@@ -103,7 +103,7 @@ var _ = Describe("Cache", func() {
 			BeforeEach(func() {
 				cache = NewCache(10)
 				values = []interface{}{1, 2, "3"}
-				cache.AddMulti(time.Time{}, values...)
+				cache.AddValues(time.Time{}, values...)
 				Expect(cache.Len()).To(Equal(1))
 			})
 

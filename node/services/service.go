@@ -1,7 +1,7 @@
 package services
 
 import (
-	"github.com/makeos/mosdef/node/reactors"
+	"github.com/makeos/mosdef/mempool"
 	"github.com/makeos/mosdef/node/tmrpc"
 	"github.com/makeos/mosdef/types"
 )
@@ -11,11 +11,11 @@ import (
 type Service struct {
 	tmrpc *tmrpc.TMRPC
 	logic types.Logic
-	txRec *reactors.TxReactor
+	txRec *mempool.Reactor
 }
 
 // New creates an instance of Service
-func New(tmrpc *tmrpc.TMRPC, logic types.Logic, txRec *reactors.TxReactor) *Service {
+func New(tmrpc *tmrpc.TMRPC, logic types.Logic, txRec *mempool.Reactor) *Service {
 	return &Service{
 		tmrpc: tmrpc,
 		logic: logic,

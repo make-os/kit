@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/fatih/structs"
@@ -39,6 +40,7 @@ type Tx interface {
 	Sign(privKey string) ([]byte, error)
 	GetSizeNoFee() int64
 	ToMap() map[string]interface{}
+	ToHex() string
 }
 
 // Transaction represents a transaction
@@ -127,6 +129,11 @@ func (tx *Transaction) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
+}
+
+// ToHex returns the hex encoded representation of the tx
+func (tx *Transaction) ToHex() string {
+	return hex.EncodeToString(tx.Bytes())
 }
 
 // GetNonce gets the nonce

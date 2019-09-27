@@ -3,8 +3,9 @@ package jsmodule
 import (
 	"fmt"
 
+	"github.com/makeos/mosdef/mempool"
+
 	"github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/node/reactors"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/robertkrimen/otto"
@@ -13,11 +14,11 @@ import (
 // PoolModule provides access to the transaction pool
 type PoolModule struct {
 	vm        *otto.Otto
-	txReactor *reactors.TxReactor
+	txReactor *mempool.Reactor
 }
 
 // NewPoolModule creates an instance of PoolModule
-func NewPoolModule(vm *otto.Otto, txReactor *reactors.TxReactor) *PoolModule {
+func NewPoolModule(vm *otto.Otto, txReactor *mempool.Reactor) *PoolModule {
 	return &PoolModule{vm: vm, txReactor: txReactor}
 }
 

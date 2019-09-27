@@ -6,9 +6,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/makeos/mosdef/params"
-
-	"github.com/makeos/mosdef/node/reactors"
+	"github.com/makeos/mosdef/mempool"
 
 	"github.com/makeos/mosdef/storage/tree"
 
@@ -49,7 +47,7 @@ type Node struct {
 	service   types.Service
 	tmrpc     *tmrpc.TMRPC
 	logic     types.Logic
-	txReactor *reactors.TxReactor
+	txReactor *mempool.Reactor
 }
 
 // NewNode creates an instance of Node
@@ -90,6 +88,17 @@ func (n *Node) OpenDB() error {
 	return nil
 }
 
+// createCustomMempool creates a custom mempool and mempool reactor
+// to replace tendermint's default mempool
+func createCustomMempool(cfg *config.EngineConfig, log logger.Logger) *nm.CustomMempool {
+	memp := mempool.NewMempool(cfg, log)
+	mempReactor := mempool.NewReactor(cfg, memp)
+	return &nm.CustomMempool{
+		Mempool:        memp,
+		MempoolReactor: mempReactor,
+	}
+}
+
 // Start starts the tendermint node
 func (n *Node) Start() error {
 
@@ -112,16 +121,20 @@ func (n *Node) Start() error {
 
 	n.logic = logic.New(n.db, tree, n.cfg)
 
-	// Add custom channels to tendermint before we create a node
-	nm.AddChannels([]byte{reactors.TxReactorChannel})
+	// Create the abci app and wrap with a ClientCreator
+	app := NewApp(n.cfg, n.db, n.logic)
+	clientCreator := proxy.NewLocalClientCreator(app)
+
+	// Create custom mempool
+	memp := createCustomMempool(n.cfg, n.log)
 
 	// Create node
-	app := NewApp(n.cfg, n.db, n.logic)
-	node, err := nm.NewNode(
+	node, err := nm.NewNodeWithCustomMempool(
 		n.tmcfg,
 		pv,
 		n.nodeKey,
-		proxy.NewLocalClientCreator(app),
+		clientCreator,
+		memp,
 		nm.DefaultGenesisDocProviderFunc(n.tmcfg),
 		nm.DefaultDBProvider,
 		nm.DefaultMetricsProvider(n.tmcfg.Instrumentation),
@@ -130,6 +143,9 @@ func (n *Node) Start() error {
 		return errors.Wrap(err, "failed to fully create node")
 	}
 
+	// Pass the proxy app to the mempool
+	memp.Mempool.(*mempool.Mempool).SetProxyApp(node.ProxyApp().Mempool())
+
 	fullAddr := fmt.Sprintf("%s@%s", n.nodeKey.ID(), n.tmcfg.P2P.ListenAddress)
 	n.log.Info("Node is now listening for connections", "Address", fullAddr)
 
@@ -137,12 +153,10 @@ func (n *Node) Start() error {
 	n.tm = node
 
 	// Create reactors and pass to service
-	txReactor := reactors.NewTxReactor("txReactor", params.TxPoolCap, n.logic, n.tmrpc, n.log)
+	txReactor := mempool.NewReactor(n.cfg, memp.Mempool.(*mempool.Mempool))
+	txReactor.SetSwitch(node.Switch())
 	n.txReactor = txReactor
 	n.service = services.New(n.tmrpc, n.logic, txReactor)
-
-	// Add reactors to the switch
-	node.Switch().AddReactor(txReactor.GetName(), txReactor)
 
 	// Start tendermint
 	n.tm.Start()
@@ -161,7 +175,7 @@ func (n *Node) GetLogic() types.Logic {
 }
 
 // GetTxReactor returns the transaction reactor
-func (n *Node) GetTxReactor() *reactors.TxReactor {
+func (n *Node) GetTxReactor() *mempool.Reactor {
 	return n.txReactor
 }
 

@@ -75,8 +75,6 @@ var startCmd = &cobra.Command{
 	Short: "Launch the node to join the network.",
 	Long:  `Launch the node to join the network.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Get and cache node key
-		cfg.PrepareNodeKey(tmconfig.NodeKeyFile())
 		log = cfg.G().Log.Module("Main")
 		listenForInterrupt()
 		start(nil)

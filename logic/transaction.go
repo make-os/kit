@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	"github.com/makeos/mosdef/crypto"
@@ -28,19 +27,11 @@ type Transaction struct {
 
 // PrepareExec decodes the transaction from the abci request,
 // performs final validation before executing the transaction.
+// CONTRACT: Expects req.Tx to be the raw transaction bytes
 func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
 
-	// Decode tx from bytes
-	hexDecode, err := hex.DecodeString(string(req.GetTx()))
-	if err != nil {
-		return abcitypes.ResponseDeliverTx{
-			Code: ErrCodeFailedDecode,
-			Log:  "failed to decode transaction from hex to bytes",
-		}
-	}
-
-	// Decode tx bytes to Transaction
-	tx, err := types.NewTxFromBytes(hexDecode)
+	// Decode tx bytes to types.Transaction
+	tx, err := types.NewTxFromBytes(req.Tx)
 	if err != nil {
 		return abcitypes.ResponseDeliverTx{
 			Code: ErrCodeFailedDecode,

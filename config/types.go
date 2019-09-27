@@ -53,6 +53,14 @@ type RPCConfig struct {
 	TMRPCAddress string `json:"tmaddress" mapstructure:"tmaddress"`
 }
 
+// MempoolConfig describes mempool config parameters
+type MempoolConfig struct {
+	Size       int   `json:"size" mapstructure:"size"`
+	CacheSize  int   `json:"cacheSize" mapstructure:"cacheSize"`
+	MaxTxSize  int   `json:"maxTxSize" mapstructure:"maxTxSize"`
+	MaxTxsSize int64 `json:"maxTxsSize" mapstructure:"maxTxsSize"`
+}
+
 // EngineConfig represents the client's configuration
 type EngineConfig struct {
 
@@ -64,6 +72,9 @@ type EngineConfig struct {
 
 	// RPC holds RPC configurations
 	RPC *RPCConfig `json:"rpc" mapstructure:"rpc"`
+
+	// Mempool holds mempool configurations
+	Mempool *MempoolConfig `json:"mempool" mapstructure:"mempool"`
 
 	// GenesisAccounts includes the initial/root accounts and their balances
 	GenesisAccounts []*GenAccount `json:"genaccounts" mapstructure:"genaccounts"`

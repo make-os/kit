@@ -2,7 +2,7 @@ package jsmodule
 
 import (
 	"github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/node/reactors"
+	"github.com/makeos/mosdef/mempool"
 	"github.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
 )
@@ -12,11 +12,11 @@ import (
 type Module struct {
 	nodeService types.Service
 	logic       types.Logic
-	txReactor   *reactors.TxReactor
+	txReactor   *mempool.Reactor
 }
 
 // NewModule creates an instance of Module
-func NewModule(nodeService types.Service, logic types.Logic, txReactor *reactors.TxReactor) *Module {
+func NewModule(nodeService types.Service, logic types.Logic, txReactor *mempool.Reactor) *Module {
 	return &Module{
 		nodeService: nodeService,
 		logic:       logic,

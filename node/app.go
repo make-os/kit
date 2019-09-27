@@ -1,7 +1,6 @@
 package node
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	"github.com/makeos/mosdef/util"
@@ -102,19 +101,8 @@ func (app *App) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetO
 // be broadcast to other nodes.
 func (app *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 
-	// We expect the transaction to be hex encoded,
-	// now we will attempt to decode it obtain the
-	// byte representation of the tx.
-	bs, err := hex.DecodeString(string(req.Tx))
-	if err != nil {
-		return abcitypes.ResponseCheckTx{
-			Code: types.ErrCodeTxBadEncode,
-			Log:  "unable to decode tx bytes; expected hex encoded value",
-		}
-	}
-
 	// Decode the transaction in byte form to types.Transaction
-	tx, err := types.NewTxFromBytes(bs)
+	tx, err := types.NewTxFromBytes(req.Tx)
 	if err != nil {
 		return abcitypes.ResponseCheckTx{
 			Code: types.ErrCodeTxBadEncode,
