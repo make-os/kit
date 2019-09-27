@@ -16,6 +16,7 @@ type Logrus struct {
 	filePath   string
 	ns         string
 	debugLevel bool
+	noop       bool
 }
 
 // NewLogrus creates a logrus backed logger
@@ -79,7 +80,8 @@ func configureFileRotation(l *Logrus) {
 // NewLogrusNoOp creates a logrus backed logger that logs nothing
 func NewLogrusNoOp() Logger {
 	l := &Logrus{
-		log: logrus.New(),
+		log:  logrus.New(),
+		noop: true,
 	}
 
 	l.log.Formatter = &logrus.JSONFormatter{}
@@ -106,6 +108,10 @@ func (l *Logrus) Module(ns string) Logger {
 		filePath:   l.filePath,
 		ns:         ns,
 		debugLevel: l.debugLevel,
+	}
+	if l.noop {
+		newLog.log.Out = ioutil.Discard
+		return newLog
 	}
 	if newLog.filePath != "" {
 		configureFileRotation(newLog)

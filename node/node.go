@@ -91,7 +91,7 @@ func (n *Node) OpenDB() error {
 // createCustomMempool creates a custom mempool and mempool reactor
 // to replace tendermint's default mempool
 func createCustomMempool(cfg *config.EngineConfig, log logger.Logger) *nm.CustomMempool {
-	memp := mempool.NewMempool(cfg, log)
+	memp := mempool.NewMempool(cfg)
 	mempReactor := mempool.NewReactor(cfg, memp)
 	return &nm.CustomMempool{
 		Mempool:        memp,

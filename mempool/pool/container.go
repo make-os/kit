@@ -1,4 +1,4 @@
-package txpool
+package pool
 
 import (
 	"fmt"
@@ -107,17 +107,18 @@ func (sn *senderNonces) len() int {
 }
 
 // TxContainer represents the internal container
-// used by TxPool. It provides a Put operation
+// used by pool. It provides a Put operation
 // with automatic sorting by fee rate and nonce.
 // The container is thread-safe.
 type TxContainer struct {
-	gmx       *sync.RWMutex
-	container []*ContainerItem       // main transaction container (the pool)
-	cap       int64                  // cap is the amount of transactions in the
-	len       int64                  // length of the container
-	noSorting bool                   // noSorting indicates that sorting is enabled/disabled
-	hashIndex map[string]interface{} // hashIndex caches tx hashes for quick existence lookup
-	byteSize  int64                  // byteSize is the total tx size of the container
+	gmx        *sync.RWMutex
+	container  []*ContainerItem       // main transaction container (the pool)
+	cap        int64                  // cap is the amount of transactions in the
+	len        int64                  // length of the container
+	noSorting  bool                   // noSorting indicates that sorting is enabled/disabled
+	hashIndex  map[string]interface{} // hashIndex caches tx hashes for quick existence lookup
+	byteSize   int64                  // byteSize is the total txs size of the container (excluding fee field)
+	actualSize int64                  // actualSize is the total tx size of the container (includes all fields)
 
 	// nonceInfo maps sending addresses to nonces of transaction.
 	// We use this to find transactions from same sender with
@@ -157,9 +158,15 @@ func (q *TxContainer) Size() int64 {
 }
 
 // ByteSize gets the total byte size of
-// all transactions in the container
+// all transactions in the container.
+// Note: The size of fee field of transactions are not calculated.
 func (q *TxContainer) ByteSize() int64 {
 	return q.byteSize
+}
+
+// ActualSize is like ByteSize but its result includes all fields
+func (q *TxContainer) ActualSize() int64 {
+	return q.actualSize
 }
 
 // Full checks if the container's capacity has been reached
@@ -230,6 +237,7 @@ func (q *TxContainer) add(tx types.Tx) error {
 	q.hashIndex[tx.GetHash().HexStr()] = struct{}{}
 	q.len++
 	q.byteSize += tx.GetSizeNoFee()
+	q.actualSize += int64(len(tx.Bytes()))
 
 	q.gmx.Unlock()
 
@@ -270,6 +278,7 @@ func (q *TxContainer) First() types.Tx {
 	delete(q.hashIndex, item.Tx.GetHash().HexStr())
 	q.nonceInfo.remove(item.Tx.GetFrom(), item.Tx.GetNonce())
 	q.byteSize -= item.Tx.GetSizeNoFee()
+	q.actualSize -= int64(len(item.Tx.Bytes()))
 	q.len--
 	return item.Tx
 }
@@ -291,6 +300,7 @@ func (q *TxContainer) Last() types.Tx {
 	delete(q.hashIndex, item.Tx.GetHash().HexStr())
 	q.nonceInfo.remove(item.Tx.GetFrom(), item.Tx.GetNonce())
 	q.byteSize -= item.Tx.GetSizeNoFee()
+	q.actualSize -= int64(len(item.Tx.Bytes()))
 	q.len--
 	return item.Tx
 }
@@ -346,6 +356,7 @@ func (q *TxContainer) remove(txs ...types.Tx) {
 			delete(q.hashIndex, o.Tx.GetHash().HexStr())
 			q.nonceInfo.remove(o.Tx.GetFrom(), o.Tx.GetNonce())
 			q.byteSize -= o.Tx.GetSizeNoFee()
+			q.actualSize -= int64(len(o.Tx.Bytes()))
 			q.len--
 			return false
 		}
@@ -365,6 +376,7 @@ func (q *TxContainer) removeByHash(txsHash ...util.Hash) {
 			delete(q.hashIndex, o.Tx.GetHash().HexStr())
 			q.nonceInfo.remove(o.Tx.GetFrom(), o.Tx.GetNonce())
 			q.byteSize -= o.Tx.GetSizeNoFee()
+			q.actualSize -= int64(len(o.Tx.Bytes()))
 			q.len--
 			return false
 		}

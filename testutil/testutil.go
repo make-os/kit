@@ -3,6 +3,10 @@ package testutil
 import (
 	"os"
 
+	"github.com/makeos/mosdef/util/logger"
+
+	"github.com/tendermint/tendermint/cmd/tendermint/commands"
+
 	"github.com/makeos/mosdef/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -33,9 +37,19 @@ func SetTestCfg() (*config.EngineConfig, error) {
 	var cfg = &config.EngineConfig{}
 	var tmcfg = tmconfig.DefaultConfig()
 
+	commands.SetLoggerToNoop()
+
 	// Initialize the config using the test root command
 	config.Configure(rootCmd, cfg, tmcfg)
 	cfg.Node.Mode = config.ModeTest
+
+	// Initialize the directory
+	commands.SetConfig(tmcfg)
+	commands.InitFilesCmd.RunE(nil, nil)
+	tmconfig.EnsureRoot(tmcfg.RootDir)
+
+	// Replace logger with Noop logger
+	cfg.G().Log = logger.NewLogrusNoOp()
 
 	return cfg, err
 }

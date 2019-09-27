@@ -1,4 +1,4 @@
-package txpool
+package pool
 
 import (
 	"time"
@@ -12,10 +12,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("TxPool", func() {
+var _ = Describe("pool", func() {
 
 	Describe(".Put", func() {
-		It("should return err = 'capacity reached' when txpool capacity is reached", func() {
+		It("should return err = 'capacity reached' when pool capacity is reached", func() {
 			tp := New(0)
 			sender := crypto.NewKeyFromIntSeed(1)
 			tx := types.NewTx(types.TxTypeCoin, 1, "something", sender, "0", "0", time.Now().Unix())
@@ -50,7 +50,7 @@ var _ = Describe("TxPool", func() {
 
 	Describe(".Has", func() {
 
-		var tp *TxPool
+		var tp *Pool
 		var sender = crypto.NewKeyFromIntSeed(1)
 
 		BeforeEach(func() {
@@ -71,7 +71,7 @@ var _ = Describe("TxPool", func() {
 
 	Describe(".GetByFrom", func() {
 
-		var tp *TxPool
+		var tp *Pool
 		var key1 = crypto.NewKeyFromIntSeed(1)
 		var key2 = crypto.NewKeyFromIntSeed(2)
 		var tx, tx2, tx3 *types.Transaction
@@ -97,7 +97,7 @@ var _ = Describe("TxPool", func() {
 
 	Describe(".Size", func() {
 
-		var tp *TxPool
+		var tp *Pool
 		var sender = crypto.NewKeyFromIntSeed(1)
 
 		BeforeEach(func() {
@@ -115,7 +115,7 @@ var _ = Describe("TxPool", func() {
 	Describe(".ByteSize", func() {
 
 		var tx, tx2 *types.Transaction
-		var tp *TxPool
+		var tp *Pool
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var sender2 = crypto.NewKeyFromIntSeed(2)
 
@@ -160,10 +160,58 @@ var _ = Describe("TxPool", func() {
 		})
 	})
 
+	Describe(".ActualSize", func() {
+
+		var tx, tx2 *types.Transaction
+		var tp *Pool
+		var sender = crypto.NewKeyFromIntSeed(1)
+		var sender2 = crypto.NewKeyFromIntSeed(2)
+
+		BeforeEach(func() {
+			tp = New(2)
+		})
+
+		BeforeEach(func() {
+			tx = types.NewTx(types.TxTypeCoin, 100, "something", sender, "0", "0", time.Now().Unix())
+			tx.SetHash(util.StrToHash("hash1"))
+			tx2 = types.NewTx(types.TxTypeCoin, 100, "something_2", sender2, "0", "0", time.Now().Unix())
+			tx2.SetHash(util.StrToHash("hash2"))
+			tp.Put(tx)
+			tp.Put(tx2)
+		})
+
+		It("should return expected actual size", func() {
+			s := tp.ActualSize()
+			Expect(s).To(Equal(tx.GetSize() + tx2.GetSize()))
+		})
+
+		When("a transaction is removed", func() {
+
+			var curByteSize int64
+
+			BeforeEach(func() {
+				curByteSize = tp.ActualSize()
+				Expect(curByteSize).To(Equal(tx.GetSize() + tx2.GetSize()))
+			})
+
+			It("should reduce the actual byte size when First is called", func() {
+				rmTx := tp.container.First()
+				s := tp.ActualSize()
+				Expect(s).To(Equal(curByteSize - rmTx.GetSize()))
+			})
+
+			It("should reduce the actual byte size when Last is called", func() {
+				rmTx := tp.container.Last()
+				s := tp.ActualSize()
+				Expect(s).To(Equal(curByteSize - rmTx.GetSize()))
+			})
+		})
+	})
+
 	Describe(".clean", func() {
 
 		var tx, tx2 *types.Transaction
-		var tp *TxPool
+		var tp *Pool
 		var sender = crypto.NewKeyFromIntSeed(1)
 
 		Context("when TxTTL is 1 day", func() {
@@ -196,7 +244,7 @@ var _ = Describe("TxPool", func() {
 
 	Describe(".Remove", func() {
 
-		var tp *TxPool
+		var tp *Pool
 		var tx, tx2, tx3 *types.Transaction
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var sender2 = crypto.NewKeyFromIntSeed(2)
@@ -228,7 +276,7 @@ var _ = Describe("TxPool", func() {
 
 	Describe(".GetByHash", func() {
 
-		var tp *TxPool
+		var tp *Pool
 		var tx, tx2 *types.Transaction
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var sender2 = crypto.NewKeyFromIntSeed(2)

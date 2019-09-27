@@ -204,10 +204,5 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	*cfg = c
 	*tmcfg = *tmcfg.SetRoot(cfg.DataDir())
 
-	// Get and cache node and validators keys
-	cfg.PrepareNodeValKeys(tmcfg.NodeKeyFile(),
-		tmcfg.PrivValidatorKeyFile(),
-		tmcfg.PrivValidatorStateFile())
-
 	return
 }

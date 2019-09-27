@@ -110,6 +110,11 @@ and organizations without a centralized authority.`,
 			config.Configure(rootCmd, cfg, tmconfig)
 			log = cfg.G().Log
 
+			// Get and cache node and validators keys
+			cfg.PrepareNodeValKeys(tmconfig.NodeKeyFile(),
+				tmconfig.PrivValidatorKeyFile(),
+				tmconfig.PrivValidatorStateFile())
+
 			// Set version information
 			cfg.VersionInfo = &config.VersionInfo{}
 			cfg.VersionInfo.BuildCommit = BuildCommit

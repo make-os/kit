@@ -10,7 +10,7 @@ import (
 
 	"github.com/makeos/mosdef/util/logger"
 
-	"github.com/makeos/mosdef/txpool"
+	"github.com/makeos/mosdef/mempool/pool"
 	abci "github.com/tendermint/tendermint/abci/types"
 	auto "github.com/tendermint/tendermint/libs/autofile"
 	"github.com/tendermint/tendermint/mempool"
@@ -27,7 +27,7 @@ type Mempool struct {
 
 	proxyMtx     sync.Mutex
 	proxyAppConn proxy.AppConnMempool
-	pool         *txpool.TxPool
+	pool         *pool.Pool
 	preCheck     mempool.PreCheckFunc
 	postCheck    mempool.PostCheckFunc
 
@@ -44,11 +44,11 @@ type Mempool struct {
 
 // NewMempool creates an instance of Mempool
 func NewMempool(
-	config *config.EngineConfig, log logger.Logger) *Mempool {
+	config *config.EngineConfig) *Mempool {
 	mp := &Mempool{
 		config: config,
-		pool:   txpool.New(int64(config.Mempool.Size)),
-		log:    log.Module("Mempool"),
+		pool:   pool.New(int64(config.Mempool.Size)),
+		log:    config.G().Log.Module("Mempool"),
 	}
 	return mp
 }
@@ -272,7 +272,7 @@ func (mp *Mempool) Size() int {
 
 // TxsBytes returns the total size of all txs in the mempool.
 func (mp *Mempool) TxsBytes() int64 {
-	return mp.pool.ByteSize()
+	return mp.pool.ActualSize()
 }
 
 func (mp *Mempool) globalCb(req *abci.Request, res *abci.Response) {}

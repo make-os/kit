@@ -1,4 +1,4 @@
-package txpool
+package pool
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestTxpool(t *testing.T) {
+func TestPool(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Txpool Suite")
+	RunSpecs(t, "Pool Suite")
 }

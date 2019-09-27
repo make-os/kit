@@ -39,6 +39,7 @@ type Tx interface {
 	GetID() string
 	Sign(privKey string) ([]byte, error)
 	GetSizeNoFee() int64
+	GetSize() int64
 	ToMap() map[string]interface{}
 	ToHex() string
 }
@@ -242,6 +243,11 @@ func (tx *Transaction) GetSizeNoFee() int64 {
 		tx.Type,
 		tx.Value,
 	})))
+}
+
+// GetSize returns the size of the transaction
+func (tx *Transaction) GetSize() int64 {
+	return int64(len(tx.Bytes()))
 }
 
 // ComputeHash returns the Blake2-256 hash of the transaction.
