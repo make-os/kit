@@ -16,11 +16,10 @@ package cmd
 
 import (
 	"github.com/makeos/mosdef/accountmgr"
-	acctJSModule "github.com/makeos/mosdef/accountmgr/jsmodule"
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/console"
 	"github.com/makeos/mosdef/node"
-	nodeJSModule "github.com/makeos/mosdef/node/jsmodule"
+	jsm "github.com/makeos/mosdef/jsmodules"
 	"github.com/spf13/cobra"
 )
 
@@ -47,8 +46,7 @@ var consoleCmd = &cobra.Command{
 
 			// Add modules
 			console.AddJSModules(
-				acctJSModule.NewModule(acctmgr),
-				nodeJSModule.NewModule(n.GetService(), n.GetLogic(), n.GetTxReactor()),
+				jsm.NewModule(acctmgr,n.GetService(), n.GetLogic(), n.GetTxReactor()),
 			)
 
 			// Run the console

@@ -1,4 +1,4 @@
-package jsmodule
+package jsmodules
 
 import (
 	"fmt"

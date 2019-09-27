@@ -7,7 +7,6 @@ import (
 
 	tmcfg "github.com/tendermint/tendermint/config"
 
-	"github.com/ellcrys/elld/elldb"
 	"github.com/makeos/mosdef/util/logger"
 	"github.com/olebedev/emitter"
 	"github.com/tendermint/tendermint/p2p"
@@ -15,7 +14,6 @@ import (
 
 // Globals holds references to global objects
 type Globals struct {
-	DB       elldb.DB
 	Log      logger.Logger
 	Bus      *emitter.Emitter
 	NodeKey  *p2p.NodeKey

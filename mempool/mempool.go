@@ -143,7 +143,13 @@ func (mp *Mempool) addTx(bs []byte, res *abci.Response) {
 		}
 
 		tx, _ := t.NewTxFromBytes(bs)
-		mp.pool.Put(tx)
+		err := mp.pool.Put(tx)
+		if err != nil {
+			r.CheckTx.Code = t.ErrCodeTxPoolReject
+			r.CheckTx.Log = err.Error()
+			return
+		}
+
 		mp.log.Info("Added a new transaction to the pool", "Hash", tx.GetHash())
 		mp.notifyTxsAvailable()
 	}

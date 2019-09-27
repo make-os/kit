@@ -62,7 +62,7 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.Resp
 // It returns error if the transaction is unknown.
 func (t *Transaction) Exec(tx *types.Transaction) error {
 	switch tx.Type {
-	case types.TxTypeCoin:
+	case types.TxTypeCoinTransfer:
 		return t.transferTo(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
 	default:
 		return fmt.Errorf("unknown transaction type")

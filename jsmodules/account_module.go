@@ -1,4 +1,4 @@
-package jsmodule
+package jsmodules
 
 import (
 	"fmt"
@@ -14,25 +14,27 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-// JSModuleName is the name of the global variable by
-// which users will access the functionalities of the module
-const JSModuleName = "account"
-
-// Module provides functionalities that are accessible
-// through the javascript console environment
-type Module struct {
+// AccountModule provides account management functionalities
+// that are accessed through the javascript console environment
+type AccountModule struct {
 	acctMgr *accountmgr.AccountManager
 	vm      *otto.Otto
+	service types.Service
 }
 
-// NewModule creates an instance of Module for account management
-func NewModule(acctmgr *accountmgr.AccountManager) *Module {
-	return &Module{
+// NewAccountModule creates an instance of AccountModule
+func NewAccountModule(
+	vm *otto.Otto,
+	acctmgr *accountmgr.AccountManager,
+	service types.Service) *AccountModule {
+	return &AccountModule{
 		acctMgr: acctmgr,
+		vm:      vm,
+		service: service,
 	}
 }
 
-func (m *Module) namespacedFuncs() []*types.JSModuleFunc {
+func (m *AccountModule) namespacedFuncs() []*types.JSModuleFunc {
 	return []*types.JSModuleFunc{
 		&types.JSModuleFunc{
 			Name:        "listAccounts",
@@ -44,10 +46,15 @@ func (m *Module) namespacedFuncs() []*types.JSModuleFunc {
 			Value:       m.getKey,
 			Description: "Get the private key of an account (supports interactive mode)",
 		},
+		&types.JSModuleFunc{
+			Name:        "getNonce",
+			Value:       m.getNonce,
+			Description: "Get the nonce of an account",
+		},
 	}
 }
 
-func (m *Module) globals() []*types.JSModuleFunc {
+func (m *AccountModule) globals() []*types.JSModuleFunc {
 	return []*types.JSModuleFunc{
 		&types.JSModuleFunc{
 			Name:        "accounts",
@@ -59,25 +66,24 @@ func (m *Module) globals() []*types.JSModuleFunc {
 
 // Configure configures the JS context and return
 // any number of console prompt suggestions
-func (m *Module) Configure(vm *otto.Otto) []prompt.Suggest {
-	m.vm = vm
+func (m *AccountModule) Configure() []prompt.Suggest {
 	fMap := map[string]interface{}{}
 	suggestions := []prompt.Suggest{}
 
 	// Set the namespace object
-	util.VMSet(vm, JSModuleName, fMap)
+	util.VMSet(m.vm, types.NamespaceAccount, fMap)
 
 	// add namespaced functions
 	for _, f := range m.namespacedFuncs() {
 		fMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", JSModuleName, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceAccount, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
 
 	// Add global functions
 	for _, f := range m.globals() {
-		vm.Set(f.Name, f.Value)
+		m.vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}
@@ -86,7 +92,7 @@ func (m *Module) Configure(vm *otto.Otto) []prompt.Suggest {
 }
 
 // listAccounts lists all accounts on this node
-func (m *Module) listAccounts() []string {
+func (m *AccountModule) listAccounts() []string {
 	accounts, err := m.acctMgr.ListAccounts()
 	if err != nil {
 		panic(err)
@@ -104,7 +110,7 @@ func (m *Module) listAccounts() []string {
 // The passphrase argument is used to unlock the address.
 // If passphrase is not set, an interactive prompt will be started
 // to collect the passphrase without revealing it in the terminal.
-func (m *Module) getKey(address string, passphrase ...string) string {
+func (m *AccountModule) getKey(address string, passphrase ...string) string {
 
 	var pass string
 
@@ -134,4 +140,13 @@ func (m *Module) getKey(address string, passphrase ...string) string {
 	}
 
 	return acct.GetKey().PrivKey().Base58()
+}
+
+// getNonce returns the current nonce of an account
+func (m *AccountModule) getNonce(address string) string {
+	nonce, err := m.service.GetNonce(util.String(address))
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("%d", nonce)
 }

@@ -24,4 +24,8 @@ const (
 	// NamespacePool is the name for a group of features for accessing the
 	// transactions pool
 	NamespacePool = "pool"
+
+	// NamespaceAccount is the name for a group
+	// of features for accessing account information
+	NamespaceAccount = "account"
 )

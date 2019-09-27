@@ -68,6 +68,7 @@ var (
 var (
 	ErrCodeTxBadEncode        uint32 = 20000
 	ErrCodeTxFailedValidation uint32 = 20001
+	ErrCodeTxPoolReject       uint32 = 20002
 )
 
 // Transaction errors

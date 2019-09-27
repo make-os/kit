@@ -1,4 +1,4 @@
-package jsmodule
+package jsmodules
 
 import (
 	"fmt"
@@ -104,6 +104,15 @@ func (m *TxModule) sendCoin(txObj interface{}, options ...interface{}) interface
 	// Set timestamp if not already set
 	if tx.Timestamp == 0 {
 		tx.Timestamp = time.Now().Unix()
+	}
+
+	// Set nonce if nonce is not provided
+	if tx.Nonce == 0 {
+		nonce, err := m.nodeService.GetNonce(tx.GetFrom())
+		if err != nil {
+			panic(errors.Wrap(err, "failed to get sender's nonce"))
+		}
+		tx.Nonce = nonce + 1
 	}
 
 	// Compute the hash

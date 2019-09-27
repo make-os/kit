@@ -26,6 +26,7 @@ type Service interface {
 	SendCoin(tx *Transaction) (util.Hash, error)
 	GetBlock(height int64) (map[string]interface{}, error)
 	GetCurrentHeight() (int64, error)
+	GetNonce(address util.String) (uint64, error)
 }
 
 // Account represents a user's identity and includes

@@ -220,7 +220,7 @@ func (c *Console) SetVersions(protocol uint64, client, runtime, commit string) {
 func (c *Console) about() {
 	c.RLock()
 	defer c.RUnlock()
-	fmt.Println(color.CyanString("Welcome to Elld Javascript console!"))
+	fmt.Println(color.CyanString("Welcome to the Javascript Console!"))
 	fmt.Println(fmt.Sprintf("Client:%s, Protocol:%d, Commit:%s, Go:%s", c.client, c.protocol, util.String(c.commit).SS(), c.runtime))
 	fmt.Println(" type '.exit' to exit console")
 	fmt.Println("")

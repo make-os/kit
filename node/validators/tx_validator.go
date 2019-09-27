@@ -18,7 +18,7 @@ import (
 
 // KnownTransactionTypes are the supported transaction types
 var KnownTransactionTypes = []int{
-	types.TxTypeCoin,
+	types.TxTypeCoinTransfer,
 }
 
 var validTypeRule = func(err error) func(interface{}) error {
