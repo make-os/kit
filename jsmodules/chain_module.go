@@ -42,16 +42,6 @@ func (m *ChainModule) funcs() []*types.JSModuleFunc {
 			Value:       m.getCurrentHeight,
 			Description: "Get the current block height",
 		},
-		&types.JSModuleFunc{
-			Name:        "getAccount",
-			Value:       m.getAccount,
-			Description: "Get the account of a given address",
-		},
-		&types.JSModuleFunc{
-			Name:        "getBalance",
-			Value:       m.getBalance,
-			Description: "Get the coin balance of an account",
-		},
 	}
 }
 
@@ -117,22 +107,4 @@ func (m *ChainModule) getCurrentHeight() interface{} {
 	return util.EncodeForJS(map[string]interface{}{
 		"height": fmt.Sprintf("%d", res),
 	})
-}
-
-// getAccount returns the account of the given address
-func (m *ChainModule) getAccount(address string, height ...int64) interface{} {
-	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
-	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
-		return nil
-	}
-	return util.EncodeForJS(account)
-}
-
-// getBalance returns the balance of an account
-func (m *ChainModule) getBalance(address string, height ...int64) interface{} {
-	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
-	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
-		return nil
-	}
-	return account.Balance.String()
 }

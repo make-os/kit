@@ -13,47 +13,44 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-// TxModule provides transaction functionalities to JS environment
-type TxModule struct {
+// TicketModule provides access to various utility functions
+type TicketModule struct {
 	vm          *otto.Otto
 	nodeService types.Service
 }
 
-// NewTxModule creates an instance of TxModule
-func NewTxModule(vm *otto.Otto, nodeService types.Service) *TxModule {
-	return &TxModule{vm: vm, nodeService: nodeService}
+// NewTicketModule creates an instance of TicketModule
+func NewTicketModule(vm *otto.Otto, nodeService types.Service) *TicketModule {
+	return &TicketModule{vm: vm, nodeService: nodeService}
 }
 
-// funcs are functions accessible using the tx.coin namespace
-func (m *TxModule) funcs() []*types.JSModuleFunc {
+func (m *TicketModule) globals() []*types.JSModuleFunc {
+	return []*types.JSModuleFunc{}
+}
+
+// funcs exposed by the module
+func (m *TicketModule) funcs() []*types.JSModuleFunc {
 	return []*types.JSModuleFunc{
 		&types.JSModuleFunc{
-			Name:        "send",
-			Value:       m.sendCoin,
-			Description: "Send the native coin from an account to a destination account.",
+			Name:        "buy",
+			Value:       m.buy,
+			Description: "Buy a validator ticket",
 		},
 	}
 }
 
-func (m *TxModule) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{}
-}
-
 // Configure configures the JS context and return
 // any number of console prompt suggestions
-func (m *TxModule) Configure() []prompt.Suggest {
+func (m *TicketModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
-	// Add the main tx namespace
-	txMap := map[string]interface{}{}
-	util.VMSet(m.vm, types.NamespaceTx, txMap)
+	// Add the main namespace
+	obj := map[string]interface{}{}
+	util.VMSet(m.vm, types.NamespaceTicket, obj)
 
-	// add 'coin' namespaced functions
-	coinMap := map[string]interface{}{}
-	txMap[types.NamespaceCoin] = coinMap
 	for _, f := range m.funcs() {
-		coinMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s.%s", types.NamespaceTx, types.NamespaceCoin, f.Name)
+		obj[f.Name] = f.Value
+		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceTicket, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
@@ -68,15 +65,13 @@ func (m *TxModule) Configure() []prompt.Suggest {
 	return suggestions
 }
 
-// sendCoin sends the native coin from a source account
-// to a destination account. It returns an object containing
-// the hash of the transaction. It panics when an error occurs.
-func (m *TxModule) sendCoin(txObj interface{}, options ...interface{}) interface{} {
+// buy creates and executes a ticket purchase order
+func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{} {
 
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx types.Transaction
+	var tx = types.Transaction{Type: types.TxTypeTicketPurchase}
 	if err = mapstructure.Decode(txObj, &tx); err != nil {
 		panic(errors.Wrap(err, types.ErrArgDecode("types.Transaction", 0).Error()))
 	}

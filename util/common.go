@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -84,14 +85,17 @@ func (s String) IsDecimal() bool {
 
 // ObjectToBytes returns msgpack encoded representation of s
 func ObjectToBytes(s interface{}) []byte {
-	b, _ := msgpack.Marshal(s)
-	return b
+	var buf bytes.Buffer
+	if err := msgpack.NewEncoder(&buf).SortMapKeys(true).Encode(s); err != nil {
+		panic(err)
+	}
+	return buf.Bytes()
 }
 
 // BytesToObject decodes bytes produced
 // by BytesToObject to the given dest object
 func BytesToObject(bs []byte, dest interface{}) error {
-	return msgpack.Unmarshal(bs, dest)
+	return msgpack.NewDecoder(bytes.NewBuffer(bs)).Decode(dest)
 }
 
 // RandString is like RandBytes but returns string

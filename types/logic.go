@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/storage/tree"
 	"github.com/makeos/mosdef/util"
@@ -60,5 +61,6 @@ type TxLogic interface {
 	LogicCommon
 	PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx
 	Exec(tx *Transaction) error
-	CanTransferCoin(senderPubKey, recipientAddr, value, fee util.String, nonce uint64) error
+	CanTransferCoin(txType int, senderPubKey *crypto.PubKey, recipientAddr,
+		value, fee util.String, nonce uint64) error
 }

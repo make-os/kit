@@ -24,7 +24,7 @@ var _ = Describe("Account", func() {
 			It("should return a bare account", func() {
 				acct := ak.GetAccount(util.String("unknown"), 0)
 				Expect(acct.Balance).To(Equal(util.String("0")))
-				Expect(acct.Nonce).To(Equal(int64(0)))
+				Expect(acct.Nonce).To(Equal(uint64(0)))
 			})
 		})
 
@@ -80,10 +80,13 @@ var _ = Describe("Account", func() {
 			key := util.String("addr1")
 			acct := ak.GetAccount(key)
 			Expect(acct.Balance).To(Equal(util.String("0")))
+			Expect(acct.Nonce).To(Equal(uint64(0)))
 			acct.Balance = util.String("10000")
+			acct.Nonce = 2
 			ak.Update(key, acct)
 			acct = ak.GetAccount(key)
 			Expect(acct.Balance).To(Equal(util.String("10000")))
+			Expect(acct.Nonce).To(Equal(uint64(2)))
 		})
 	})
 })

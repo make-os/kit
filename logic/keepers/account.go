@@ -2,6 +2,7 @@ package keepers
 
 import (
 	"github.com/makeos/mosdef/storage/tree"
+	"github.com/pkg/errors"
 
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
@@ -43,19 +44,19 @@ func (a *AccountKeeper) GetAccount(address util.String, blockNum ...int64) *type
 
 	// If we don't find the account, we return an empty account.
 	if bs == nil {
-		return MakeBareAccount()
+		return types.BareAccount()
 	}
 
 	// Otherwise, we decode the account bytes to types.Account
-	var acct types.Account
-	if err := util.BytesToObject(bs, &acct); err != nil {
-		panic("failed to decode account byte slice")
+	acct, err := types.NewAccountFromBytes(bs)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to decode account byte slice"))
 	}
 
-	return &acct
+	return acct
 }
 
 // Update resets an account to a new value
 func (a *AccountKeeper) Update(address util.String, upd *types.Account) {
-	a.state.Set(MakeAccountKey(address.String()), util.ObjectToBytes(upd))
+	a.state.Set(MakeAccountKey(address.String()), upd.Bytes())
 }

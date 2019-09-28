@@ -20,17 +20,20 @@ type AccountModule struct {
 	acctMgr *accountmgr.AccountManager
 	vm      *otto.Otto
 	service types.Service
+	logic   types.Logic
 }
 
 // NewAccountModule creates an instance of AccountModule
 func NewAccountModule(
 	vm *otto.Otto,
 	acctmgr *accountmgr.AccountManager,
-	service types.Service) *AccountModule {
+	service types.Service,
+	logic types.Logic) *AccountModule {
 	return &AccountModule{
 		acctMgr: acctmgr,
 		vm:      vm,
 		service: service,
+		logic:   logic,
 	}
 }
 
@@ -50,6 +53,21 @@ func (m *AccountModule) namespacedFuncs() []*types.JSModuleFunc {
 			Name:        "getNonce",
 			Value:       m.getNonce,
 			Description: "Get the nonce of an account",
+		},
+		&types.JSModuleFunc{
+			Name:        "get",
+			Value:       m.getAccount,
+			Description: "Get the account of a given address",
+		},
+		&types.JSModuleFunc{
+			Name:        "getBalance",
+			Value:       m.getSpendableBalance,
+			Description: "Get the spendable coin balance of an account",
+		},
+		&types.JSModuleFunc{
+			Name:        "getStakedBalance",
+			Value:       m.getStakedBalance,
+			Description: "Get the total staked coins of an account",
 		},
 	}
 }
@@ -149,4 +167,31 @@ func (m *AccountModule) getNonce(address string) string {
 		panic(err)
 	}
 	return fmt.Sprintf("%d", nonce)
+}
+
+// getAccount returns the account of the given address
+func (m *AccountModule) getAccount(address string, height ...int64) interface{} {
+	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
+	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
+		panic(types.ErrAccountUnknown)
+	}
+	return util.EncodeForJS(account)
+}
+
+// getSpendableBalance returns the spendable balance of an account
+func (m *AccountModule) getSpendableBalance(address string, height ...int64) interface{} {
+	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
+	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
+		panic(types.ErrAccountUnknown)
+	}
+	return account.GetSpendableBalance().String()
+}
+
+// getStakedBalance returns the total staked coins of an account
+func (m *AccountModule) getStakedBalance(address string, height ...int64) interface{} {
+	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
+	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
+		panic(types.ErrAccountUnknown)
+	}
+	return account.Stakes.TotalStaked().String()
 }

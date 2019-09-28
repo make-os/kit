@@ -13,7 +13,7 @@ import (
 
 	"github.com/makeos/mosdef/config"
 
-	"github.com/makeos/mosdef/node/validators"
+	"github.com/makeos/mosdef/validators"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/types"
 	abcitypes "github.com/tendermint/tendermint/abci/types"

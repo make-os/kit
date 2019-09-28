@@ -3,7 +3,6 @@ package keepers
 import (
 	"fmt"
 
-	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 )
 
@@ -15,14 +14,6 @@ const (
 	// BlockInfoTag is the prefix for last block data
 	BlockInfoTag = "b"
 )
-
-// MakeBareAccount creates a new account with zero values.
-func MakeBareAccount() *types.Account {
-	return &types.Account{
-		Balance: util.String("0"),
-		Nonce:   0,
-	}
-}
 
 // MakeAccountKey creates a key for accessing/store an account
 func MakeAccountKey(address string) []byte {

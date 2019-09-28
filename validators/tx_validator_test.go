@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/makeos/mosdef/node/validators"
+	"github.com/makeos/mosdef/validators"
 
 	"github.com/makeos/mosdef/config"
 	l "github.com/makeos/mosdef/logic"
@@ -103,6 +103,15 @@ var _ = Describe("TxValidator", func() {
 			err := validators.ValidateTxs(txs, logic)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("index:0, field:type, error:unsupported transaction type"))
+		})
+	})
+
+	Describe(".ValidateTxConsistency", func() {
+		to := crypto.NewKeyFromIntSeed(1)
+		It("should return err='field:senderPubKey, error:invalid format: version and/or checksum bytes missing' when tx sender public key is not valid", func() {
+			tx := &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: "abc"}
+			err := validators.ValidateTxConsistency(tx, -1, nil)
+			Expect(err.Error()).To(Equal("field:senderPubKey, error:invalid format: version and/or checksum bytes missing"))
 		})
 	})
 })

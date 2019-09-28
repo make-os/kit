@@ -19,6 +19,7 @@ import (
 // KnownTransactionTypes are the supported transaction types
 var KnownTransactionTypes = []int{
 	types.TxTypeCoinTransfer,
+	types.TxTypeTicketPurchase,
 }
 
 var validTypeRule = func(err error) func(interface{}) error {
@@ -144,14 +145,17 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 		return err
 	}
 
-	// Recipient's address must be set and it must be valid
-	if err := v.Validate(tx.GetTo(),
-		v.Required.Error(types.FieldErrorWithIndex(index, "to",
-			"recipient address is required").Error()),
-		v.By(validAddrRule(types.FieldErrorWithIndex(index, "to",
-			"recipient address is not valid"))),
-	); err != nil {
-		return err
+	// For non ticket purchasing transactions,
+	// The recipient's address must be set and it must be valid.
+	if tx.Type != types.TxTypeTicketPurchase {
+		if err := v.Validate(tx.GetTo(),
+			v.Required.Error(types.FieldErrorWithIndex(index, "to",
+				"recipient address is required").Error()),
+			v.By(validAddrRule(types.FieldErrorWithIndex(index, "to",
+				"recipient address is not valid"))),
+		); err != nil {
+			return err
+		}
 	}
 
 	// Value must be >= 0 and it must be valid number
@@ -251,9 +255,14 @@ func checkSignature(tx *types.Transaction, index int) (errs []error) {
 // values that are consistent with the current state of the app
 func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) error {
 
+	pubKey, err := crypto.PubKeyFromBase58(tx.GetSenderPubKey().String())
+	if err != nil {
+		return types.FieldErrorWithIndex(index, "senderPubKey", err.Error())
+	}
+
 	// Check whether the transaction is consistent with
 	// the current state of the sender's account
-	err := logic.Tx().CanTransferCoin(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
+	err = logic.Tx().CanTransferCoin(tx.Type, pubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
 	if err != nil {
 		return err
 	}

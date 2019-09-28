@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/node/validators"
 	"github.com/makeos/mosdef/util"
+	"github.com/makeos/mosdef/validators"
 
 	"github.com/makeos/mosdef/types"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -63,7 +63,9 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.Resp
 func (t *Transaction) Exec(tx *types.Transaction) error {
 	switch tx.Type {
 	case types.TxTypeCoinTransfer:
-		return t.transferTo(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
+		return t.transferCoin(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
+	case types.TxTypeTicketPurchase:
+		return t.stakeValidatorCoin(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce())
 	default:
 		return fmt.Errorf("unknown transaction type")
 	}
@@ -73,22 +75,27 @@ func (t *Transaction) Exec(tx *types.Transaction) error {
 // the value and fee of the transaction based on the
 // current state of their account. It also ensures that the
 // transaction's nonce is the next/expected nonce value.
-func (t *Transaction) CanTransferCoin(senderPubKey, recipientAddr, value, fee util.String,
+func (t *Transaction) CanTransferCoin(
+	txType int,
+	senderPubKey *crypto.PubKey,
+	recipientAddr,
+	value,
+	fee util.String,
 	nonce uint64) error {
 
-	spk, err := crypto.PubKeyFromBase58(senderPubKey.String())
-	if err != nil {
-		return fmt.Errorf("invalid sender public key: %s", err)
-	}
+	var err error
 
-	// Ensure recipient address is valid
-	if err = crypto.IsValidAddr(recipientAddr.String()); err != nil {
-		return fmt.Errorf("invalid recipient address: %s", err)
+	// Ensure recipient address is valid.
+	// Ignore for ticket purchases as a recipient address is not required.
+	if txType != types.TxTypeTicketPurchase {
+		if err = crypto.IsValidAddr(recipientAddr.String()); err != nil {
+			return fmt.Errorf("invalid recipient address: %s", err)
+		}
 	}
 
 	// Get sender and recipient accounts
 	acctKeeper := t.logic.AccountKeeper()
-	sender := spk.Addr()
+	sender := senderPubKey.Addr()
 	senderAcct := acctKeeper.GetAccount(sender)
 
 	// Ensure the transaction nonce is the next expected nonce
@@ -97,34 +104,83 @@ func (t *Transaction) CanTransferCoin(senderPubKey, recipientAddr, value, fee ut
 		return fmt.Errorf("tx has invalid nonce (%d), expected (%d)", nonce, expectedNonce)
 	}
 
-	// Ensure sender has enough balance to pay transfer value + fee
+	// Ensure sender has enough spendable balance to pay transfer value + fee
 	spendAmt := value.Decimal().Add(fee.Decimal())
-	senderBal := senderAcct.Balance.Decimal()
+	senderBal := senderAcct.GetSpendableBalance().Decimal()
 	if !senderBal.GreaterThanOrEqual(spendAmt) {
-		return fmt.Errorf("sender's account balance is insufficient")
+		return fmt.Errorf("sender's spendable account balance is insufficient")
 	}
 
 	return nil
 }
 
-// transferTo transfer units of the native currency
-// from a sender account to a recipient account
-func (t *Transaction) transferTo(senderPubKey, recipientAddr, value, fee util.String,
+// stakeValidatorCoin moves a given amount from the spendable
+// balance of an account to the validator stake balance.
+func (t *Transaction) stakeValidatorCoin(
+	senderPubKey,
+	value,
+	fee util.String,
 	nonce uint64) error {
 
-	if err := t.CanTransferCoin(senderPubKey, recipientAddr, value, fee, nonce); err != nil {
+	spk, err := crypto.PubKeyFromBase58(senderPubKey.String())
+	if err != nil {
+		return fmt.Errorf("invalid sender public key: %s", err)
+	}
+
+	// Ensure the account has sufficient balance and nonce
+	if err := t.CanTransferCoin(types.TxTypeTicketPurchase, spk, "",
+		value, fee, nonce); err != nil {
 		return err
 	}
 
-	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
+	acctKeeper := t.logic.AccountKeeper()
+
+	// Get sender accounts
+	sender := spk.Addr()
+	senderAcct := acctKeeper.GetAccount(sender)
+
+	// Get the current validator stakes, add the new value to it
+	// and update the account
+	curValStake := senderAcct.Stakes.Get(types.StakeNameValidator)
+	newValStake := curValStake.Decimal().Add(value.Decimal()).String()
+	senderAcct.Stakes.Add(types.StakeNameValidator, util.String(newValStake))
+
+	// Deduct the transaction fee and increment nonce
+	senderBal := senderAcct.Balance.Decimal()
+	senderAcct.Balance = util.String(senderBal.Sub(fee.Decimal()).String())
+	senderAcct.Nonce = senderAcct.Nonce + 1
+
+	// Update the sender account
+	acctKeeper.Update(sender, senderAcct)
+
+	return nil
+}
+
+// transferCoin transfer units of the native currency
+// from a sender account to another account
+func (t *Transaction) transferCoin(
+	senderPubKey,
+	recipientAddr,
+	value,
+	fee util.String,
+	nonce uint64) error {
+
+	spk, err := crypto.PubKeyFromBase58(senderPubKey.String())
+	if err != nil {
+		return fmt.Errorf("invalid sender public key: %s", err)
+	}
+
+	// Ensure the account has sufficient balance and nonce
+	if err := t.CanTransferCoin(types.TxTypeCoinTransfer, spk, recipientAddr,
+		value, fee, nonce); err != nil {
+		return err
+	}
 
 	// Get sender and recipient accounts
 	acctKeeper := t.logic.AccountKeeper()
 	sender := spk.Addr()
 	senderAcct := acctKeeper.GetAccount(sender)
 	recipientAcct := acctKeeper.GetAccount(recipientAddr)
-
-	// Ensure sender has enough balance to pay transfer value + fee
 	spendAmt := value.Decimal().Add(fee.Decimal())
 	senderBal := senderAcct.Balance.Decimal()
 

@@ -36,7 +36,8 @@ func (m *Module) Configure(vm *otto.Otto) []prompt.Suggest {
 	sugs = append(sugs, NewTxModule(vm, m.nodeService).Configure()...)
 	sugs = append(sugs, NewChainModule(vm, m.nodeService, m.logic).Configure()...)
 	sugs = append(sugs, NewPoolModule(vm, m.txReactor).Configure()...)
-	sugs = append(sugs, NewAccountModule(vm, m.acctmgr, m.nodeService).Configure()...)
+	sugs = append(sugs, NewAccountModule(vm, m.acctmgr, m.nodeService, m.logic).Configure()...)
 	sugs = append(sugs, NewUtilModule(vm).Configure()...)
+	sugs = append(sugs, NewTicketModule(vm, m.nodeService).Configure()...)
 	return sugs
 }

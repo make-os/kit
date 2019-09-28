@@ -61,9 +61,9 @@ func (h *Logic) WriteGenesisState() error {
 
 	// Add all genesis accounts
 	for _, ga := range h.cfg.GenesisAccounts {
-		h.accountKeeper.Update(util.String(ga.Address), &types.Account{
-			Balance: util.String(ga.Balance),
-		})
+		newAcct := types.BareAccount()
+		newAcct.Balance = util.String(ga.Balance)
+		h.accountKeeper.Update(util.String(ga.Address), newAcct)
 	}
 
 	return nil

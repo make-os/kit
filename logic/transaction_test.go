@@ -81,13 +81,25 @@ var _ = Describe("Transaction", func() {
 		})
 	})
 
-	Describe(".transferTo", func() {
-		var senderKey = crypto.NewKeyFromIntSeed(1)
+	Describe("CanTransfer", func() {
+		var sender = crypto.NewKeyFromIntSeed(1)
+		Context("when tx type is types.TxTypeTicketPurchase", func() {
+			It("should not return err='invalid recipient address...'", func() {
+				err := txLogic.CanTransferCoin(types.TxTypeTicketPurchase, sender.PubKey(), util.String("invalid"), util.String("100"),
+					util.String("0"), 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).NotTo(ContainSubstring("invalid recipient address"))
+			})
+		})
+	})
+
+	Describe(".transferCoin", func() {
+		var sender = crypto.NewKeyFromIntSeed(1)
 		var recipientKey = crypto.NewKeyFromIntSeed(2)
 
 		Context("when sender public key is not valid", func() {
 			It("should return err='invalid sender public key...'", func() {
-				err := txLogic.transferTo(util.String("invalid"), util.String(""),
+				err := txLogic.transferCoin(util.String("invalid"), util.String(""),
 					util.String("100"), util.String("0"), 0)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("invalid sender public key"))
@@ -96,8 +108,8 @@ var _ = Describe("Transaction", func() {
 
 		Context("when recipient public key is not valid", func() {
 			It("should return err='invalid recipient address...'", func() {
-				senderPubKey := util.String(senderKey.PubKey().Base58())
-				err := txLogic.transferTo(senderPubKey, util.String("invalid"), util.String("100"),
+				senderPubKey := util.String(sender.PubKey().Base58())
+				err := txLogic.transferCoin(senderPubKey, util.String("invalid"), util.String("100"),
 					util.String("0"), 0)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("invalid recipient address"))
@@ -106,15 +118,16 @@ var _ = Describe("Transaction", func() {
 
 		Context("when transaction has a nonce > currentNonce + 1", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(senderKey.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
 					Balance: util.String("1"),
 					Nonce:   0,
+					Stakes:  types.BareAccountStakes(),
 				})
 			})
 
 			It("should return err='sender's account balance is insufficient'", func() {
-				senderPubKey := util.String(senderKey.PubKey().Base58())
-				err := txLogic.transferTo(senderPubKey, recipientKey.Addr(), util.String("11"), util.String("1"), 2)
+				senderPubKey := util.String(sender.PubKey().Base58())
+				err := txLogic.transferCoin(senderPubKey, recipientKey.Addr(), util.String("11"), util.String("1"), 2)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("tx has invalid nonce (2), expected (1)"))
 			})
@@ -122,15 +135,16 @@ var _ = Describe("Transaction", func() {
 
 		Context("when transaction has a nonce < currentNonce", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(senderKey.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
 					Balance: util.String("1"),
 					Nonce:   2,
+					Stakes:  types.BareAccountStakes(),
 				})
 			})
 
 			It("should return err='sender's account balance is insufficient'", func() {
-				senderPubKey := util.String(senderKey.PubKey().Base58())
-				err := txLogic.transferTo(senderPubKey, recipientKey.Addr(), util.String("11"), util.String("1"), 1)
+				senderPubKey := util.String(sender.PubKey().Base58())
+				err := txLogic.transferCoin(senderPubKey, recipientKey.Addr(), util.String("11"), util.String("1"), 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("tx has invalid nonce (1), expected (3)"))
 			})
@@ -138,15 +152,16 @@ var _ = Describe("Transaction", func() {
 
 		Context("when transaction has a nonce == currentNonce", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(senderKey.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
 					Balance: util.String("1"),
 					Nonce:   2,
+					Stakes:  types.BareAccountStakes(),
 				})
 			})
 
 			It("should return err='sender's account balance is insufficient'", func() {
-				senderPubKey := util.String(senderKey.PubKey().Base58())
-				err := txLogic.transferTo(senderPubKey, recipientKey.Addr(), util.String("11"), util.String("1"), 2)
+				senderPubKey := util.String(sender.PubKey().Base58())
+				err := txLogic.transferCoin(senderPubKey, recipientKey.Addr(), util.String("11"), util.String("1"), 2)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("tx has invalid nonce (2), expected (3)"))
 			})
@@ -154,38 +169,59 @@ var _ = Describe("Transaction", func() {
 
 		Context("when sender account has insufficient balance", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(senderKey.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
 					Balance: util.String("10"),
+					Stakes:  types.BareAccountStakes(),
 				})
 			})
 
 			It("should return err='sender's account balance is insufficient'", func() {
-				senderPubKey := util.String(senderKey.PubKey().Base58())
-				err := txLogic.transferTo(senderPubKey, recipientKey.Addr(), util.String("11"), util.String("1"), 1)
+				senderPubKey := util.String(sender.PubKey().Base58())
+				err := txLogic.transferCoin(senderPubKey, recipientKey.Addr(), util.String("11"), util.String("1"), 1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("sender's account balance is insufficient"))
+				Expect(err.Error()).To(ContainSubstring("sender's spendable account balance is insufficient"))
+			})
+		})
+
+		Context("when sender account has balance=10 and one staked balance = 1", func() {
+			BeforeEach(func() {
+				stakes := types.BareAccount().Stakes
+				stakes.Add("s1", util.String("1"))
+				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+					Balance: util.String("10"),
+					Stakes:  stakes,
+				})
+			})
+
+			It("should return err='sender's account balance is insufficient' when tx.value = 9 and fee=1", func() {
+				senderPubKey := util.String(sender.PubKey().Base58())
+				err := txLogic.transferCoin(senderPubKey, recipientKey.Addr(), util.String("9"), util.String("1"), 1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("sender's spendable account balance is insufficient"))
 			})
 		})
 
 		Context("when sender has bal=100, recipient has bal=10", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(senderKey.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
 					Balance: util.String("100"),
+					Stakes:  types.BareAccountStakes(),
 				})
 				logic.AccountKeeper().Update(recipientKey.Addr(), &types.Account{
 					Balance: util.String("10"),
+					Stakes:  types.BareAccountStakes(),
 				})
 			})
 
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
-					senderPubKey := util.String(senderKey.PubKey().Base58())
-					err := txLogic.transferTo(senderPubKey, recipientKey.Addr(), util.String("10"), util.String("1"), 1)
+					senderPubKey := util.String(sender.PubKey().Base58())
+					err := txLogic.transferCoin(senderPubKey, recipientKey.Addr(), util.String("10"), util.String("1"), 1)
 					Expect(err).To(BeNil())
 				})
 
 				Specify("that sender balance is equal to 89 and nonce=1", func() {
-					senderAcct := logic.AccountKeeper().GetAccount(senderKey.Addr())
+					senderAcct := logic.AccountKeeper().GetAccount(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("89")))
 					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
 				})
@@ -195,6 +231,73 @@ var _ = Describe("Transaction", func() {
 					Expect(recipientAcct.Balance).To(Equal(util.String("20")))
 					Expect(recipientAcct.Nonce).To(Equal(uint64(0)))
 				})
+			})
+		})
+	})
+
+	Describe(".stakeValidatorCoin", func() {
+		var sender = crypto.NewKeyFromIntSeed(1)
+
+		Context("when sender public key is invalid", func() {
+			It("should return err='invalid sender public key...'", func() {
+				err := txLogic.stakeValidatorCoin(util.String("invalid"), util.String("10"), util.String("1"), 1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("invalid sender public key"))
+			})
+		})
+
+		Context("when tx has incorrect nonce", func() {
+			BeforeEach(func() {
+				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+					Balance: util.String("10"),
+					Stakes:  types.BareAccountStakes(),
+				})
+			})
+
+			It("should return err='tx has invalid...'", func() {
+				senderPubKey := util.String(sender.PubKey().Base58())
+				err := txLogic.stakeValidatorCoin(senderPubKey, util.String("100"), util.String("1"), 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("tx has invalid nonce"))
+			})
+		})
+
+		Context("when account balance is insufficient", func() {
+			BeforeEach(func() {
+				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+					Balance: util.String("10"),
+					Stakes:  types.BareAccountStakes(),
+				})
+			})
+
+			It("should return err='sender's account balance is insufficient'", func() {
+				senderPubKey := util.String(sender.PubKey().Base58())
+				err := txLogic.stakeValidatorCoin(senderPubKey, util.String("100"), util.String("1"), 1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("sender's spendable account balance is insufficient"))
+			})
+		})
+
+		Context("when account balance is 100 and 50 is validator stake", func() {
+			BeforeEach(func() {
+				stakes := types.BareAccountStakes()
+				stakes.Add(types.StakeNameValidator, util.String("50"))
+				acct := &types.Account{
+					Balance: util.String("100"),
+					Stakes:  stakes,
+				}
+				logic.AccountKeeper().Update(sender.Addr(), acct)
+				Expect(acct.GetBalance()).To(Equal(util.String("100")))
+				Expect(acct.GetSpendableBalance()).To(Equal(util.String("50")))
+			})
+
+			Specify("that staking value=10 with fee=1 will make spendable balance = 39", func() {
+				senderPubKey := util.String(sender.PubKey().Base58())
+				err := txLogic.stakeValidatorCoin(senderPubKey, util.String("10"), util.String("1"), 1)
+				Expect(err).To(BeNil())
+				acct := logic.AccountKeeper().GetAccount(sender.Addr())
+				Expect(acct.GetBalance()).To(Equal(util.String("99")))
+				Expect(acct.GetSpendableBalance()).To(Equal(util.String("39")))
 			})
 		})
 	})
