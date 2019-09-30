@@ -3,6 +3,8 @@ package logic
 import (
 	"fmt"
 
+	"github.com/shopspring/decimal"
+
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util"
 	"github.com/makeos/mosdef/validators"
@@ -86,10 +88,20 @@ func (t *Transaction) CanTransferCoin(
 	var err error
 
 	// Ensure recipient address is valid.
-	// Ignore for ticket purchases as a recipient address is not required.
+	// Ignore for ticket purchases tx as a recipient address is not required.
 	if txType != types.TxTypeTicketPurchase {
 		if err = crypto.IsValidAddr(recipientAddr.String()); err != nil {
 			return fmt.Errorf("invalid recipient address: %s", err)
+		}
+	}
+
+	// For validator ticket transaction:
+	// The tx value must be equal or greater than the current ticket price.
+	if txType == types.TxTypeTicketPurchase {
+		curTicketPrice := t.logic.Sys().GetCurTicketPrice()
+		if value.Decimal().LessThan(decimal.NewFromFloat(curTicketPrice)) {
+			return fmt.Errorf("sender's spendable account balance is insufficient to cover "+
+				"ticket price (%f)", curTicketPrice)
 		}
 	}
 

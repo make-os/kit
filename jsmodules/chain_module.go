@@ -15,14 +15,14 @@ import (
 
 // ChainModule provides access to chain information
 type ChainModule struct {
-	vm          *otto.Otto
-	nodeService types.Service
-	logic       types.Logic
+	vm      *otto.Otto
+	service types.Service
+	logic   types.Logic
 }
 
 // NewChainModule creates an instance of ChainModule
-func NewChainModule(vm *otto.Otto, nodeService types.Service, logic types.Logic) *ChainModule {
-	return &ChainModule{vm: vm, nodeService: nodeService, logic: logic}
+func NewChainModule(vm *otto.Otto, service types.Service, logic types.Logic) *ChainModule {
+	return &ChainModule{vm: vm, service: service, logic: logic}
 }
 
 func (m *ChainModule) globals() []*types.JSModuleFunc {
@@ -90,7 +90,7 @@ func (m *ChainModule) getBlock(height interface{}) interface{} {
 		panic(types.ErrArgDecode("integer/string", 0))
 	}
 
-	res, err := m.nodeService.GetBlock(blockHeight)
+	res, err := m.service.GetBlock(blockHeight)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get block"))
 	}
@@ -100,7 +100,7 @@ func (m *ChainModule) getBlock(height interface{}) interface{} {
 
 // getCurrentHeight returns the current block height
 func (m *ChainModule) getCurrentHeight() interface{} {
-	res, err := m.nodeService.GetCurrentHeight()
+	res, err := m.service.GetCurrentHeight()
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get current block height"))
 	}

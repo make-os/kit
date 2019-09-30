@@ -6,6 +6,7 @@ import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/params"
 
 	"github.com/makeos/mosdef/util"
 
@@ -26,6 +27,7 @@ var _ = Describe("Transaction", func() {
 	var state *tree.SafeTree
 	var logic *Logic
 	var txLogic *Transaction
+	var sysLogic *System
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -36,6 +38,12 @@ var _ = Describe("Transaction", func() {
 		state = tree.NewSafeTree(db, 128)
 		logic = New(c, state, cfg)
 		txLogic = &Transaction{logic: logic}
+		sysLogic = &System{logic: logic}
+	})
+
+	BeforeEach(func() {
+		err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 1})
+		Expect(err).To(BeNil())
 	})
 
 	AfterEach(func() {
@@ -83,12 +91,39 @@ var _ = Describe("Transaction", func() {
 
 	Describe("CanTransfer", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
+
 		Context("when tx type is types.TxTypeTicketPurchase", func() {
 			It("should not return err='invalid recipient address...'", func() {
-				err := txLogic.CanTransferCoin(types.TxTypeTicketPurchase, sender.PubKey(), util.String("invalid"), util.String("100"),
+				err := txLogic.CanTransferCoin(types.TxTypeTicketPurchase, sender.PubKey(),
+					util.String("invalid"), util.String("100"),
 					util.String("0"), 0)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).NotTo(ContainSubstring("invalid recipient address"))
+			})
+		})
+
+		Context("tx type is TxTypeTicketPurchase", func() {
+			When("current ticket price = 10; sender's account balance = 5; ticket value = 4", func() {
+				BeforeEach(func() {
+					params.InitialTicketPrice = 10
+					params.NumBlocksPerPriceWindow = 100
+					params.PricePercentIncrease = 0.2
+					price := sysLogic.GetCurTicketPrice()
+					Expect(price).To(Equal(float64(10)))
+
+					logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+						Balance: util.String("5"),
+						Stakes:  types.BareAccountStakes(),
+					})
+				})
+
+				Specify("that err='sender's spendable account balance is insufficient to cover ticket price (10.000000)' is returned", func() {
+					err := txLogic.CanTransferCoin(types.TxTypeTicketPurchase, sender.PubKey(),
+						"", util.String("4"),
+						util.String("0"), 1)
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("sender's spendable account balance is insufficient to cover ticket price (10.000000)"))
+				})
 			})
 		})
 	})

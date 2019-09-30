@@ -2,7 +2,7 @@ package services
 
 import (
 	"github.com/makeos/mosdef/mempool"
-	"github.com/makeos/mosdef/node/tmrpc"
+	"github.com/makeos/mosdef/tmrpc"
 	"github.com/makeos/mosdef/types"
 )
 

@@ -13,7 +13,7 @@ import (
 // through the javascript console environment
 type Module struct {
 	cfg         *config.EngineConfig
-	nodeService types.Service
+	service types.Service
 	logic       types.Logic
 	txReactor   *mempool.Reactor
 	acctmgr     *accountmgr.AccountManager
@@ -24,14 +24,14 @@ type Module struct {
 func NewModule(
 	cfg *config.EngineConfig,
 	acctmgr *accountmgr.AccountManager,
-	nodeService types.Service,
+	service types.Service,
 	logic types.Logic,
 	txReactor *mempool.Reactor,
 	ticketmgr types.TicketManager) *Module {
 	return &Module{
 		cfg:         cfg,
 		acctmgr:     acctmgr,
-		nodeService: nodeService,
+		service: service,
 		logic:       logic,
 		txReactor:   txReactor,
 		ticketmgr:   ticketmgr,
@@ -40,7 +40,7 @@ func NewModule(
 
 // Configure initialized the module and all sub-modules
 func (m *Module) Configure(vm *otto.Otto) []prompt.Suggest {
-	nodeSrv := m.nodeService
+	nodeSrv := m.service
 	sugs := []prompt.Suggest{}
 	sugs = append(sugs, NewTxModule(vm, nodeSrv).Configure()...)
 	sugs = append(sugs, NewChainModule(vm, nodeSrv, m.logic).Configure()...)

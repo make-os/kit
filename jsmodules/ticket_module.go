@@ -16,16 +16,16 @@ import (
 // TicketModule provides access to various utility functions
 type TicketModule struct {
 	vm          *otto.Otto
-	nodeService types.Service
+	service types.Service
 	ticketmgr   types.TicketManager
 }
 
 // NewTicketModule creates an instance of TicketModule
 func NewTicketModule(
 	vm *otto.Otto,
-	nodeService types.Service,
+	service types.Service,
 	ticketmgr types.TicketManager) *TicketModule {
-	return &TicketModule{vm: vm, nodeService: nodeService, ticketmgr: ticketmgr}
+	return &TicketModule{vm: vm, service: service, ticketmgr: ticketmgr}
 }
 
 func (m *TicketModule) globals() []*types.JSModuleFunc {
@@ -112,7 +112,7 @@ func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{
 
 	// Set nonce if nonce is not provided
 	if tx.Nonce == 0 {
-		nonce, err := m.nodeService.GetNonce(tx.GetFrom())
+		nonce, err := m.service.GetNonce(tx.GetFrom())
 		if err != nil {
 			panic(errors.Wrap(err, "failed to get sender's nonce"))
 		}
@@ -129,7 +129,7 @@ func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{
 	}
 
 	// Process the transaction
-	hash, err := m.nodeService.SendCoin(&tx)
+	hash, err := m.service.SendCoin(&tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
