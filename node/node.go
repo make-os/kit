@@ -14,7 +14,7 @@ import (
 
 	logic "github.com/makeos/mosdef/logic"
 
-	"github.com/makeos/mosdef/node/tmrpc"
+	"github.com/makeos/mosdef/tmrpc"
 
 	"github.com/makeos/mosdef/services"
 
