@@ -3,6 +3,8 @@ package node
 import (
 	"fmt"
 
+	"github.com/tendermint/tendermint/libs/common"
+
 	"github.com/makeos/mosdef/util"
 
 	"github.com/makeos/mosdef/util/logger"
@@ -13,29 +15,42 @@ import (
 
 	"github.com/makeos/mosdef/config"
 
-	"github.com/makeos/mosdef/validators"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/validators"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
+type tickPurchaseTx struct {
+	Tx    *types.Transaction
+	index int
+}
+
 // App implements tendermint ABCI interface to
 type App struct {
-	db           storage.Engine
-	logic        types.Logic
-	cfg          *config.EngineConfig
-	workingBlock *types.BlockInfo
-	log          logger.Logger
+	db                storage.Engine
+	logic             types.Logic
+	cfg               *config.EngineConfig
+	workingBlock      *types.BlockInfo
+	log               logger.Logger
+	txIndex           int
+	ticketPurchaseTxs []*tickPurchaseTx
+	ticketMgr         types.TicketManager
 }
 
 // NewApp creates an instance of App
-func NewApp(cfg *config.EngineConfig, db storage.Engine, logic types.Logic) *App {
+func NewApp(
+	cfg *config.EngineConfig,
+	db storage.Engine,
+	logic types.Logic,
+	ticketMgr types.TicketManager) *App {
 	return &App{
 		db:           db,
 		logic:        logic,
 		cfg:          cfg,
 		workingBlock: &types.BlockInfo{},
 		log:          cfg.G().Log.Module("App"),
+		ticketMgr:    ticketMgr,
 	}
 }
 
@@ -126,13 +141,29 @@ func (app *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBe
 	app.workingBlock.Height = req.GetHeader().Height
 	app.workingBlock.Hash = req.GetHash()
 	app.workingBlock.LastAppHash = req.GetHeader().AppHash
+	app.workingBlock.ProposerAddress = common.HexBytes(req.GetHeader().ProposerAddress).String()
 	return abcitypes.ResponseBeginBlock{}
 }
 
 // DeliverTx processes transactions included in a proposed block.
 // Execute the transaction such that in modifies the blockchain state.
 func (app *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
-	return app.logic.Tx().PrepareExec(req)
+	tx, _ := types.NewTxFromBytes(req.Tx)
+
+	resp := app.logic.Tx().PrepareExec(req)
+
+	// Cache ticket purchase transaction; They will be indexed in the COMMIT stage.
+	if resp.Code == 0 && tx.GetType() == types.TxTypeTicketPurchase {
+		app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{
+			Tx:    tx,
+			index: app.txIndex,
+		})
+	}
+
+	// Increment the tx index
+	app.txIndex++
+
+	return resp
 }
 
 // EndBlock indicates the end of a block
@@ -159,12 +190,26 @@ func (app *App) Commit() abcitypes.ResponseCommit {
 		panic(err)
 	}
 
-	// Reset the working block
-	app.workingBlock = &types.BlockInfo{}
+	// Index any purchased ticket collected in DeliverTx stage
+	for _, ptx := range app.ticketPurchaseTxs {
+		app.ticketMgr.Index(ptx.Tx,
+			ptx.Tx.SenderPubKey.String(),
+			uint64(app.workingBlock.Height), ptx.index)
+	}
+
+	// Reset the app
+	app.reset()
 
 	return abcitypes.ResponseCommit{
 		Data: appHash,
 	}
+}
+
+// reset cached values
+func (app *App) reset() {
+	app.workingBlock = &types.BlockInfo{}
+	app.ticketPurchaseTxs = []*tickPurchaseTx{}
+	app.txIndex = 0
 }
 
 // Query for data from the application.

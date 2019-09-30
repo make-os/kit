@@ -3,6 +3,8 @@ package config
 import (
 	golog "log"
 
+	"github.com/makeos/mosdef/crypto"
+
 	"github.com/tendermint/tendermint/privval"
 
 	tmcfg "github.com/tendermint/tendermint/config"
@@ -18,7 +20,7 @@ type Globals struct {
 	Bus      *emitter.Emitter
 	NodeKey  *p2p.NodeKey
 	TMConfig *tmcfg.Config
-	PrivVal  *privval.FilePV
+	PrivVal  *crypto.WrappedPV
 }
 
 // G returns the global object
@@ -42,8 +44,11 @@ func (c *EngineConfig) PrepareNodeValKeys(
 	// Load the private validator
 	pv := privval.LoadFilePV(privValKeyFile, privValStateFile)
 
+	// Set references for node key and priv val
 	c.g.NodeKey = nodeKey
-	c.g.PrivVal = pv
+	c.g.PrivVal = &crypto.WrappedPV{
+		FilePV: pv,
+	}
 
 	return nodeKey
 }

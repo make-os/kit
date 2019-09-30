@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/makeos/mosdef/ticket"
+
 	"github.com/makeos/mosdef/mempool"
 
 	"github.com/makeos/mosdef/storage/tree"
@@ -48,6 +50,7 @@ type Node struct {
 	tmrpc     *tmrpc.TMRPC
 	logic     types.Logic
 	txReactor *mempool.Reactor
+	ticketMgr types.TicketManager
 }
 
 // NewNode creates an instance of Node
@@ -121,8 +124,14 @@ func (n *Node) Start() error {
 
 	n.logic = logic.New(n.db, tree, n.cfg)
 
+	// Create ticket manager
+	n.ticketMgr, err = ticket.NewManager(n.cfg, n.logic)
+	if err != nil {
+		return errors.Wrap(err, "failed to create ticket manager")
+	}
+
 	// Create the abci app and wrap with a ClientCreator
-	app := NewApp(n.cfg, n.db, n.logic)
+	app := NewApp(n.cfg, n.db, n.logic, n.ticketMgr)
 	clientCreator := proxy.NewLocalClientCreator(app)
 
 	// Create custom mempool
@@ -167,6 +176,11 @@ func (n *Node) Start() error {
 // GetDB returns the database instance
 func (n *Node) GetDB() storage.Engine {
 	return n.db
+}
+
+// GetTicketManager returns the ticket manager
+func (n *Node) GetTicketManager() types.TicketManager {
+	return n.ticketMgr
 }
 
 // GetLogic returns the logic instance

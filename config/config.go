@@ -126,8 +126,6 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	// Create the data directory and other sub directories
 	os.MkdirAll(dataDir, 0700)
 	os.MkdirAll(path.Join(dataDir, AccountDirName), 0700)
-	os.MkdirAll(path.Join(dataDir, "data"), 0700)
-	os.MkdirAll(path.Join(dataDir, "config"), 0700)
 
 	// Read tendermint config file into tmcfg
 	readTendermintConfig(tmcfg, dataDir)
@@ -172,11 +170,13 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	// Set data and network directories
 	c.dataDir = dataDir
 	c.netDataDir = path.Join(dataDir, viper.GetString("net.version"))
-	c.accountDir = path.Join(dataDir, AccountDirName)
-	c.consoleHistoryPath = path.Join(c.NetDataDir(), ".console_history")
+	c.accountDir = path.Join(c.DataDir(), AccountDirName)
+	c.consoleHistoryPath = path.Join(c.DataDir(), ".console_history")
 
 	// Create network data directory
 	os.MkdirAll(c.NetDataDir(), 0700)
+	os.MkdirAll(path.Join(c.NetDataDir(), "data"), 0700)
+	os.MkdirAll(path.Join(c.NetDataDir(), "config"), 0700)
 
 	// Create logger with file rotation enabled
 	logPath := path.Join(c.NetDataDir(), "logs")
@@ -202,7 +202,7 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 
 	c.G().TMConfig = tmcfg
 	*cfg = c
-	*tmcfg = *tmcfg.SetRoot(cfg.DataDir())
+	*tmcfg = *tmcfg.SetRoot(cfg.NetDataDir())
 
 	return
 }

@@ -17,4 +17,21 @@ var (
 
 	// TxPoolCap is the number of transactions the tx pool can contain
 	TxPoolCap = int64(10000)
+
+	// MinTicketMatDur is the number of blocks that must be created
+	// before a ticket is considered matured.
+	MinTicketMatDur = 10
+
+	// MaxTicketActiveDur is the number of blocks before a matured
+	// ticket is considered spent or decayed.
+	MaxTicketActiveDur = 20
+
+	// InitialTicketPrice is the initial price of a ticket (window 0)
+	InitialTicketPrice = float64(10)
+
+	// NumBlocksPerPriceWindow is the number of blocks before price is increased
+	NumBlocksPerPriceWindow = 100
+
+	// PricePercentIncrease is the percentage increase of ticket price
+	PricePercentIncrease = float64(0.2)
 )

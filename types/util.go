@@ -1,6 +1,8 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // FieldError is used to describe an error concerning an objects field/property
 func FieldError(field, err string) error {

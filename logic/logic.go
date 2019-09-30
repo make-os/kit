@@ -15,6 +15,7 @@ type Logic struct {
 	cfg           *config.EngineConfig
 	db            storage.Engine
 	tx            types.TxLogic
+	sys           types.SysLogic
 	stateTree     *tree.SafeTree
 	systemKeeper  *keepers.SystemKeeper
 	accountKeeper *keepers.AccountKeeper
@@ -22,17 +23,23 @@ type Logic struct {
 
 // New creates an instance of Logic
 func New(db storage.Engine, tree *tree.SafeTree, cfg *config.EngineConfig) *Logic {
-	hub := &Logic{db: db, stateTree: tree}
-	hub.tx = &Transaction{logic: hub}
-	hub.cfg = cfg
-	hub.systemKeeper = keepers.NewSystemKeeper(db)
-	hub.accountKeeper = keepers.NewAccountKeeper(tree)
-	return hub
+	l := &Logic{db: db, stateTree: tree}
+	l.sys = &System{logic: l}
+	l.tx = &Transaction{logic: l}
+	l.cfg = cfg
+	l.systemKeeper = keepers.NewSystemKeeper(db)
+	l.accountKeeper = keepers.NewAccountKeeper(tree)
+	return l
 }
 
 // Tx returns the transaction logic
 func (h *Logic) Tx() types.TxLogic {
 	return h.tx
+}
+
+// Sys returns system logic
+func (h *Logic) Sys() types.SysLogic {
+	return h.sys
 }
 
 // DB returns the hubs db reference

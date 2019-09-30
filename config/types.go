@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"path/filepath"
 )
 
@@ -88,6 +87,9 @@ type EngineConfig struct {
 	// accountDir is where the node's accounts are stored
 	accountDir string
 
+	// dbDir is where the node's database files are stored
+	dbDir string
+
 	// consoleHistoryPath is the path to the file where console input
 	// history is stored.
 	consoleHistoryPath string
@@ -132,14 +134,19 @@ func (c *EngineConfig) SetDataDir(d string) {
 	c.dataDir = d
 }
 
-// GetDBDir returns the path where database files are stored
-func (c *EngineConfig) GetDBDir() string {
-	var ns string
-	var dbFile = "data%s.db"
-	if c.Node.Mode == ModeDev {
-		ns = "_" + string(c.g.NodeKey.ID())
-	}
-	return filepath.Join(c.NetDataDir(), fmt.Sprintf(dbFile, ns))
+// GetDBRootDir returns the directory where all database files are stored
+func (c *EngineConfig) GetDBRootDir() string {
+	return filepath.Join(c.NetDataDir(), "data")
+}
+
+// GetAppDBDir returns the path where app's database files are stored
+func (c *EngineConfig) GetAppDBDir() string {
+	return filepath.Join(c.GetDBRootDir(), "app.db")
+}
+
+// GetTicketDBDir returns the path where ticket database files are stored
+func (c *EngineConfig) GetTicketDBDir() string {
+	return filepath.Join(c.GetDBRootDir(), "ticket.db")
 }
 
 // IsDev checks whether the current environment is 'development'

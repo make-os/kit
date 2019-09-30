@@ -3,6 +3,8 @@ package jsmodules
 import (
 	"fmt"
 
+	"github.com/makeos/mosdef/config"
+
 	"github.com/makeos/mosdef/util"
 
 	"github.com/pkg/errors"
@@ -17,6 +19,7 @@ import (
 // AccountModule provides account management functionalities
 // that are accessed through the javascript console environment
 type AccountModule struct {
+	cfg     *config.EngineConfig
 	acctMgr *accountmgr.AccountManager
 	vm      *otto.Otto
 	service types.Service
@@ -25,11 +28,13 @@ type AccountModule struct {
 
 // NewAccountModule creates an instance of AccountModule
 func NewAccountModule(
+	cfg *config.EngineConfig,
 	vm *otto.Otto,
 	acctmgr *accountmgr.AccountManager,
 	service types.Service,
 	logic types.Logic) *AccountModule {
 	return &AccountModule{
+		cfg:     cfg,
 		acctMgr: acctmgr,
 		vm:      vm,
 		service: service,
@@ -68,6 +73,11 @@ func (m *AccountModule) namespacedFuncs() []*types.JSModuleFunc {
 			Name:        "getStakedBalance",
 			Value:       m.getStakedBalance,
 			Description: "Get the total staked coins of an account",
+		},
+		&types.JSModuleFunc{
+			Name:        "getPV",
+			Value:       m.getPrivateValidator,
+			Description: "Get the private validator information",
 		},
 	}
 }
@@ -194,4 +204,19 @@ func (m *AccountModule) getStakedBalance(address string, height ...int64) interf
 		panic(types.ErrAccountUnknown)
 	}
 	return account.Stakes.TotalStaked().String()
+}
+
+// getPrivateValidator returns the address, public and private keys of the validator.
+// If includePrivKey is true, the private key of the validator
+// will be included in the result.
+func (m *AccountModule) getPrivateValidator(includePrivKey ...bool) interface{} {
+	key, _ := m.cfg.G().PrivVal.GetKey()
+	info := map[string]string{
+		"publicKey": key.PubKey().Base58(),
+		"address":   key.Addr().String(),
+	}
+	if len(includePrivKey) > 0 && includePrivKey[0] {
+		info["privateKey"] = key.PrivKey().Base58()
+	}
+	return info
 }

@@ -324,3 +324,15 @@ func PrivKeyFromBase58(pk string) (*PrivKey, error) {
 		privKey: privKey,
 	}, nil
 }
+
+// PrivKeyFromBytes returns a PrivKey instance from a 64 bytes private key
+func PrivKeyFromBytes(bz [64]byte) (*PrivKey, error) {
+	privKey, err := crypto.UnmarshalEd25519PrivateKey(bz[:])
+	if err != nil {
+		return nil, err
+	}
+
+	return &PrivKey{
+		privKey: privKey,
+	}, nil
+}

@@ -22,7 +22,7 @@ func NewBadger(cfg *config.EngineConfig) *Badger {
 // Init starts the database
 func (b *Badger) Init() error {
 
-	opts := badger.DefaultOptions(b.cfg.NetDataDir())
+	opts := badger.DefaultOptions(b.cfg.GetAppDBDir())
 	opts.Logger = &noLogger{}
 	db, err := badger.Open(opts)
 	if err != nil {

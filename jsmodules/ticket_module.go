@@ -17,11 +17,15 @@ import (
 type TicketModule struct {
 	vm          *otto.Otto
 	nodeService types.Service
+	ticketmgr   types.TicketManager
 }
 
 // NewTicketModule creates an instance of TicketModule
-func NewTicketModule(vm *otto.Otto, nodeService types.Service) *TicketModule {
-	return &TicketModule{vm: vm, nodeService: nodeService}
+func NewTicketModule(
+	vm *otto.Otto,
+	nodeService types.Service,
+	ticketmgr types.TicketManager) *TicketModule {
+	return &TicketModule{vm: vm, nodeService: nodeService, ticketmgr: ticketmgr}
 }
 
 func (m *TicketModule) globals() []*types.JSModuleFunc {
@@ -35,6 +39,11 @@ func (m *TicketModule) funcs() []*types.JSModuleFunc {
 			Name:        "buy",
 			Value:       m.buy,
 			Description: "Buy a validator ticket",
+		},
+		&types.JSModuleFunc{
+			Name:        "find",
+			Value:       m.find,
+			Description: "Find tickets belonging to a given public key",
 		},
 	}
 }
@@ -128,4 +137,22 @@ func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{
 	return util.EncodeForJS(map[string]interface{}{
 		"hash": hash,
 	})
+}
+
+// find finds tickets owned by a given public key
+func (m *TicketModule) find(
+	proposerPubKey string,
+	queryOpts ...map[string]interface{}) interface{} {
+
+	var qopts types.QueryOptions
+	if len(queryOpts) > 0 {
+		mapstructure.Decode(queryOpts[0], &qopts)
+	}
+
+	res, err := m.ticketmgr.Get(proposerPubKey, qopts)
+	if err != nil {
+		panic(err)
+	}
+
+	return res
 }

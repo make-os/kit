@@ -36,7 +36,7 @@ func start(onStart func(n *node.Node)) {
 		log.Fatal("Failed to open database", "Err", err)
 	}
 
-	log.Info("Database has been loaded", "DatabaseDir", cfg.GetDBDir())
+	log.Info("App database has been loaded", "AppDBDir", cfg.GetAppDBDir())
 
 	// Start the node
 	if err := n.Start(); err != nil {

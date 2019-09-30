@@ -10,10 +10,11 @@ import (
 
 // BlockInfo describes information about a block
 type BlockInfo struct {
-	AppHash     []byte
-	LastAppHash []byte
-	Hash        []byte
-	Height      int64
+	AppHash         []byte
+	LastAppHash     []byte
+	Hash            []byte
+	Height          int64
+	ProposerAddress string
 }
 
 // SystemKeeper describes an interface for accessing system data
@@ -32,8 +33,11 @@ type AccountKeeper interface {
 // access and modification to the state of the blockchain.
 type Logic interface {
 
-	// Tx returns the transaction logic provider
+	// Tx returns the transaction logic
 	Tx() TxLogic
+
+	// SysLogic returns the app logic
+	Sys() SysLogic
 
 	// DB returns the application's database
 	DB() storage.Engine
@@ -53,8 +57,7 @@ type Logic interface {
 
 // LogicCommon describes a common functionalities for
 // all logic providers
-type LogicCommon interface {
-}
+type LogicCommon interface{}
 
 // TxLogic provides an interface for executing transactions
 type TxLogic interface {
@@ -63,4 +66,10 @@ type TxLogic interface {
 	Exec(tx *Transaction) error
 	CanTransferCoin(txType int, senderPubKey *crypto.PubKey, recipientAddr,
 		value, fee util.String, nonce uint64) error
+}
+
+// SysLogic provides an interface for managing system/app information
+type SysLogic interface {
+	LogicCommon
+	GetCurTicketPrice() float64
 }
