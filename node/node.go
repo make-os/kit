@@ -16,7 +16,7 @@ import (
 
 	"github.com/makeos/mosdef/node/tmrpc"
 
-	"github.com/makeos/mosdef/node/services"
+	"github.com/makeos/mosdef/services"
 
 	"github.com/makeos/mosdef/types"
 
