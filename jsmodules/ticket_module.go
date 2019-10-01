@@ -80,7 +80,7 @@ func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx = types.Transaction{Type: types.TxTypeTicketPurchase}
+	var tx = types.Transaction{Type: types.TxTypeTicketValidator}
 	if err = mapstructure.Decode(txObj, &tx); err != nil {
 		panic(errors.Wrap(err, types.ErrArgDecode("types.Transaction", 0).Error()))
 	}

@@ -34,4 +34,8 @@ var (
 
 	// PricePercentIncrease is the percentage increase of ticket price
 	PricePercentIncrease = float64(0.2)
+
+	// MaxValTicketsPerBlock is the max number of validators
+	// ticket transaction a block can include.
+	MaxValTicketsPerBlock = 1
 )

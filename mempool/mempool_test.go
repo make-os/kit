@@ -148,5 +148,27 @@ var _ = Describe("Mempool", func() {
 				Expect(len(res)).To(Equal(2))
 			})
 		})
+
+		FWhen("pool has three transactions; 1 is a coin transfer and 2 are validator ticket purchase txs", func() {
+			okRes := &abci.Response{Value: &abci.Response_CheckTx{CheckTx: &abci.ResponseCheckTx{
+				Code: abci.CodeTypeOK,
+			}}}
+
+			BeforeEach(func() {
+				mempool = NewMempool(cfg)
+				tx := types.NewTx(types.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
+				tx2 := types.NewTx(types.TxTypeTicketValidator, 1, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
+				tx3 := types.NewTx(types.TxTypeTicketValidator, 2, "recipient_addr3", sender, "10", "0.1", time.Now().Unix())
+				mempool.addTx(tx.Bytes(), okRes)
+				mempool.addTx(tx2.Bytes(), okRes)
+				mempool.addTx(tx3.Bytes(), okRes)
+				Expect(mempool.Size()).To(Equal(3))
+			})
+
+			It("should 2 txs; only one must be types.TxTypeTicketValidator", func() {
+				res := mempool.ReapMaxBytesMaxGas(0, 0)
+				Expect(len(res)).To(Equal(2))
+			})
+		})
 	})
 })

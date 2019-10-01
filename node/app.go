@@ -153,7 +153,7 @@ func (app *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeli
 	resp := app.logic.Tx().PrepareExec(req)
 
 	// Cache ticket purchase transaction; They will be indexed in the COMMIT stage.
-	if resp.Code == 0 && tx.GetType() == types.TxTypeTicketPurchase {
+	if resp.Code == 0 && tx.GetType() == types.TxTypeTicketValidator {
 		app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{
 			Tx:    tx,
 			index: app.txIndex,

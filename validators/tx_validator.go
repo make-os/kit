@@ -19,7 +19,7 @@ import (
 // KnownTransactionTypes are the supported transaction types
 var KnownTransactionTypes = []int{
 	types.TxTypeCoinTransfer,
-	types.TxTypeTicketPurchase,
+	types.TxTypeTicketValidator,
 }
 
 var validTypeRule = func(err error) func(interface{}) error {
@@ -147,7 +147,7 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 
 	// For non ticket purchasing transactions,
 	// The recipient's address must be set and it must be valid.
-	if tx.Type != types.TxTypeTicketPurchase {
+	if tx.Type != types.TxTypeTicketValidator {
 		if err := v.Validate(tx.GetTo(),
 			v.Required.Error(types.FieldErrorWithIndex(index, "to",
 				"recipient address is required").Error()),

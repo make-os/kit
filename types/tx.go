@@ -14,8 +14,8 @@ var (
 	// TxTypeCoinTransfer represents a tx that moves coin between accounts
 	TxTypeCoinTransfer = 0x0
 
-	// TxTypeTicketPurchase represents a transaction purchases validator ticket
-	TxTypeTicketPurchase = 0x1
+	// TxTypeTicketValidator represents a transaction purchases validator ticket
+	TxTypeTicketValidator = 0x1
 )
 
 // Tx represents a transaction

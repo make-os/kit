@@ -9,5 +9,6 @@
         "recs",
         "tmmem",
         "tmtypes"
-    ]
+    ],
+    "go.inferGopath": false
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/makeos/mosdef/params"
+
 	"github.com/makeos/mosdef/config"
 
 	t "github.com/makeos/mosdef/types"
@@ -180,6 +182,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 
 	var totalBytes int64
 	txs := make([]types.Tx, 0, mp.pool.Size())
+	numValTicketTxReaped := 0
 
 	// Collect transactions from the top of the pool up to
 	// the given maxBytes.
@@ -191,6 +194,14 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 			break
 		}
 
+		// Put back the tx if it is a validator ticket tx
+		// and have seen x number of this type of tx
+		if memTx.GetType() == t.TxTypeTicketValidator &&
+			numValTicketTxReaped == params.MaxValTicketsPerBlock {
+			mp.pool.Put(memTx)
+			continue
+		}
+
 		// Check total size requirement
 		txBs := memTx.Bytes()
 		txSize := len(txBs)
@@ -200,6 +211,11 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 		totalBytes += int64(txSize)
 
 		txs = append(txs, txBs)
+
+		// Increment num validator tickets seen
+		if memTx.GetType() == t.TxTypeTicketValidator {
+			numValTicketTxReaped++
+		}
 	}
 
 	return txs
