@@ -8,7 +8,8 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// Manager provides ticket management functionalities.
+// Manager implements types.TicketManager.
+// It provides ticket management functionalities.
 type Manager struct {
 	store Store
 	cfg   *config.EngineConfig

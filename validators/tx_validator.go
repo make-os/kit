@@ -16,6 +16,9 @@ import (
 	// "github.com/go-ozzo/ozzo-validation/is"
 )
 
+// ValidateTxFunc represents a function for validating a transaction
+type ValidateTxFunc func(tx *types.Transaction, i int, logic types.Logic) error
+
 // KnownTransactionTypes are the supported transaction types
 var KnownTransactionTypes = []int{
 	types.TxTypeCoinTransfer,

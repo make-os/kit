@@ -48,7 +48,7 @@ func (h *Logic) DB() storage.Engine {
 }
 
 // StateTree returns the state tree
-func (h *Logic) StateTree() *tree.SafeTree {
+func (h *Logic) StateTree() types.Tree {
 	return h.stateTree
 }
 

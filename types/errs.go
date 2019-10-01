@@ -76,3 +76,10 @@ var (
 	//ErrTxTypeUnknown means transaction type is unknown
 	ErrTxTypeUnknown = fmt.Errorf("unknown transaction type")
 )
+
+// Transaction processing errors
+const (
+	ErrCodeFailedDecode        = uint32(1)
+	ErrCodeExecFailure         = 2
+	ErrCodeMaxValTxTypeReached = 3
+)

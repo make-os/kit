@@ -3,6 +3,8 @@ package node
 import (
 	"fmt"
 
+	"github.com/makeos/mosdef/params"
+
 	"github.com/tendermint/tendermint/libs/common"
 
 	"github.com/makeos/mosdef/util"
@@ -28,14 +30,16 @@ type tickPurchaseTx struct {
 
 // App implements tendermint ABCI interface to
 type App struct {
-	db                storage.Engine
-	logic             types.Logic
-	cfg               *config.EngineConfig
-	workingBlock      *types.BlockInfo
-	log               logger.Logger
-	txIndex           int
-	ticketPurchaseTxs []*tickPurchaseTx
-	ticketMgr         types.TicketManager
+	db                      storage.Engine
+	logic                   types.Logic
+	cfg                     *config.EngineConfig
+	validateTx              validators.ValidateTxFunc
+	workingBlock            *types.BlockInfo
+	log                     logger.Logger
+	txIndex                 int
+	ticketPurchaseTxs       []*tickPurchaseTx
+	ticketMgr               types.TicketManager
+	numProcessedValTicketTx int
 }
 
 // NewApp creates an instance of App
@@ -51,6 +55,7 @@ func NewApp(
 		workingBlock: &types.BlockInfo{},
 		log:          cfg.G().Log.Module("App"),
 		ticketMgr:    ticketMgr,
+		validateTx:   validators.ValidateTx,
 	}
 }
 
@@ -126,7 +131,7 @@ func (app *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx 
 	}
 
 	// Perform syntactic validation
-	if err = validators.ValidateTx(tx, -1, app.logic); err != nil {
+	if err = app.validateTx(tx, -1, app.logic); err != nil {
 		return abcitypes.ResponseCheckTx{
 			Code: types.ErrCodeTxFailedValidation,
 			Log:  err.Error(),
@@ -148,7 +153,29 @@ func (app *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBe
 // DeliverTx processes transactions included in a proposed block.
 // Execute the transaction such that in modifies the blockchain state.
 func (app *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
-	tx, _ := types.NewTxFromBytes(req.Tx)
+
+	// Increment the tx index
+	app.txIndex++
+
+	// Decode transaction to types.Transaction
+	tx, err := types.NewTxFromBytes(req.Tx)
+	if err != nil {
+		return abcitypes.ResponseDeliverTx{
+			Code: types.ErrCodeTxBadEncode,
+			Log:  "unable to decode to types.Transaction",
+		}
+	}
+
+	// Invalidate the transaction if it is a validator ticket
+	// purchasing tx and we have reached the max per block.
+	// TODO: Slash proposer for violating the rule
+	if tx.GetType() == types.TxTypeTicketValidator &&
+		app.numProcessedValTicketTx == params.MaxValTicketsPerBlock {
+		return abcitypes.ResponseDeliverTx{
+			Code: types.ErrCodeMaxValTxTypeReached,
+			Log:  "failed to execute tx: validator ticket capacity reached",
+		}
+	}
 
 	resp := app.logic.Tx().PrepareExec(req)
 
@@ -160,8 +187,11 @@ func (app *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeli
 		})
 	}
 
-	// Increment the tx index
-	app.txIndex++
+	// Increment the counter that keeps track of the number of validator
+	// tickets tx that have been successfully processed in the current block.
+	if resp.Code == 0 && tx.GetType() == types.TxTypeTicketValidator {
+		app.numProcessedValTicketTx++
+	}
 
 	return resp
 }
@@ -210,6 +240,7 @@ func (app *App) reset() {
 	app.workingBlock = &types.BlockInfo{}
 	app.ticketPurchaseTxs = []*tickPurchaseTx{}
 	app.txIndex = 0
+	app.numProcessedValTicketTx = 0
 }
 
 // Query for data from the application.

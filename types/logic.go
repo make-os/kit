@@ -3,7 +3,6 @@ package types
 import (
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/storage/tree"
 	"github.com/makeos/mosdef/util"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
@@ -43,7 +42,7 @@ type Logic interface {
 	DB() storage.Engine
 
 	// StateTree manages the app state tree
-	StateTree() *tree.SafeTree
+	StateTree() Tree
 
 	// SysKeeper manages system state
 	SysKeeper() SystemKeeper

@@ -183,6 +183,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 	var totalBytes int64
 	txs := make([]types.Tx, 0, mp.pool.Size())
 	numValTicketTxReaped := 0
+	ignoredTx := []t.Tx{}
 
 	// Collect transactions from the top of the pool up to
 	// the given maxBytes.
@@ -194,11 +195,12 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 			break
 		}
 
-		// Put back the tx if it is a validator ticket tx
-		// and have seen x number of this type of tx
+		// if tx is a validator ticket and we already reaped n
+		// validator tickets, we cache and ignore it. We will
+		// flush them back to the pool after reaping.
 		if memTx.GetType() == t.TxTypeTicketValidator &&
 			numValTicketTxReaped == params.MaxValTicketsPerBlock {
-			mp.pool.Put(memTx)
+			ignoredTx = append(ignoredTx, memTx)
 			continue
 		}
 
@@ -216,6 +218,11 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 		if memTx.GetType() == t.TxTypeTicketValidator {
 			numValTicketTxReaped++
 		}
+	}
+
+	// Flush ignored tx back to the pool
+	for _, tx := range ignoredTx {
+		mp.pool.Put(tx)
 	}
 
 	return txs

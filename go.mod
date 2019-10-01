@@ -2,6 +2,8 @@ module github.com/makeos/mosdef
 
 go 1.13
 
+replace github.com/tendermint/tendermint => github.com/ncodes/tendermint v0.32.4
+
 require (
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/c-bata/go-prompt v0.2.3
@@ -14,6 +16,7 @@ require (
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/gobuffalo/packr v1.30.1
 	github.com/gogo/protobuf v1.3.0
+	github.com/golang/mock v1.3.1
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/rpc v1.2.0
 	github.com/hashicorp/golang-lru v0.5.3

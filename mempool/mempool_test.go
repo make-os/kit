@@ -4,6 +4,8 @@ import (
 	"os"
 	"time"
 
+	tmtypes "github.com/tendermint/tendermint/types"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	tmmem "github.com/tendermint/tendermint/mempool"
@@ -149,25 +151,31 @@ var _ = Describe("Mempool", func() {
 			})
 		})
 
-		FWhen("pool has three transactions; 1 is a coin transfer and 2 are validator ticket purchase txs", func() {
+		When("pool has three transactions; 1 is a coin transfer and 2 are validator ticket purchase txs", func() {
+			var tx, tx2, tx3 *types.Transaction
+			var res []tmtypes.Tx
 			okRes := &abci.Response{Value: &abci.Response_CheckTx{CheckTx: &abci.ResponseCheckTx{
 				Code: abci.CodeTypeOK,
 			}}}
 
 			BeforeEach(func() {
 				mempool = NewMempool(cfg)
-				tx := types.NewTx(types.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
-				tx2 := types.NewTx(types.TxTypeTicketValidator, 1, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
-				tx3 := types.NewTx(types.TxTypeTicketValidator, 2, "recipient_addr3", sender, "10", "0.1", time.Now().Unix())
+				tx = types.NewTx(types.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
+				tx2 = types.NewTx(types.TxTypeTicketValidator, 1, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
+				tx3 = types.NewTx(types.TxTypeTicketValidator, 2, "recipient_addr3", sender, "10", "0.1", time.Now().Unix())
 				mempool.addTx(tx.Bytes(), okRes)
 				mempool.addTx(tx2.Bytes(), okRes)
 				mempool.addTx(tx3.Bytes(), okRes)
 				Expect(mempool.Size()).To(Equal(3))
+				res = mempool.ReapMaxBytesMaxGas(1000, 0)
 			})
 
-			It("should 2 txs; only one must be types.TxTypeTicketValidator", func() {
-				res := mempool.ReapMaxBytesMaxGas(0, 0)
+			It("should return 2 txs; 1 tx must remain in the pool and it must be a types.TxTypeTicketValidator", func() {
 				Expect(len(res)).To(Equal(2))
+				Expect(mempool.pool.Size()).To(Equal(int64(1)))
+				Expect(mempool.pool.HasByHash(tx3.GetHash().HexStr())).To(BeTrue())
+				actual := mempool.pool.Head()
+				Expect(actual.GetType()).To(Equal(types.TxTypeTicketValidator))
 			})
 		})
 	})

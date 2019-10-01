@@ -13,14 +13,6 @@ import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
-const (
-	// ErrCodeFailedDecode refers to a failed decoded operation
-	ErrCodeFailedDecode = uint32(1)
-
-	// ErrExecFailure refers to a failure in executing an state transition operation
-	ErrExecFailure = 2
-)
-
 // Transaction implements types.TxLogic. Provides functionalities
 // for executing transactions
 type Transaction struct {
@@ -36,7 +28,7 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.Resp
 	tx, err := types.NewTxFromBytes(req.Tx)
 	if err != nil {
 		return abcitypes.ResponseDeliverTx{
-			Code: ErrCodeFailedDecode,
+			Code: types.ErrCodeFailedDecode,
 			Log:  "failed to decode transaction from bytes",
 		}
 	}
@@ -44,7 +36,7 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.Resp
 	// Validate the transaction
 	if err = validators.ValidateTx(tx, -1, t.logic); err != nil {
 		return abcitypes.ResponseDeliverTx{
-			Code: ErrCodeFailedDecode,
+			Code: types.ErrCodeFailedDecode,
 			Log:  "tx failed validation: " + err.Error(),
 		}
 	}
@@ -52,7 +44,7 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.Resp
 	// Execute the transaction
 	if err = t.Exec(tx); err != nil {
 		return abcitypes.ResponseDeliverTx{
-			Code: ErrExecFailure,
+			Code: types.ErrCodeExecFailure,
 			Log:  "failed to execute tx: " + err.Error(),
 		}
 	}
