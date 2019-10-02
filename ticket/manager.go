@@ -61,6 +61,7 @@ func (m *Manager) Index(
 	for i := int64(1); i < numSubTickets; i++ {
 		childTicket := *ticket
 		childTicket.ChildOf = ticket.Hash
+		childTicket.Index = int(i) - 1
 		tickets = append(tickets, &childTicket)
 	}
 

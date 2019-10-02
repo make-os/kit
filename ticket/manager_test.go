@@ -45,7 +45,8 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe(".Index", func() {
-		When("ticket purchase value=10, current ticket price=10, ticket block height = 100, params.MinTicketMatDur=60, params.MaxTicketActiveDur=40", func() {
+		When("ticket purchase value=10, current ticket price=10, ticket block height = 100, "+
+			"params.MinTicketMatDur=60, params.MaxTicketActiveDur=40", func() {
 			BeforeEach(func() {
 				params.InitialTicketPrice = 10
 				params.NumBlocksPerPriceWindow = 100
@@ -75,7 +76,9 @@ var _ = Describe("Manager", func() {
 			})
 		})
 
-		When("ticket purchase value=25, current ticket price=10, ticket block height = 100", func() {
+		When("ticket purchase value=35, current ticket price=10, ticket block height = 100", func() {
+			var tickets []*types.Ticket
+
 			BeforeEach(func() {
 				params.InitialTicketPrice = 10
 				params.NumBlocksPerPriceWindow = 100
@@ -83,17 +86,27 @@ var _ = Describe("Manager", func() {
 				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 2})
 				Expect(err).To(BeNil())
 				Expect(logic.Sys().GetCurTicketPrice()).To(Equal(float64(10)))
-				tx := &types.Transaction{Hash: util.StrToHash("hash"), Value: util.String("25")}
+				tx := &types.Transaction{Hash: util.StrToHash("hash"), Value: util.String("35")}
 				err = mgr.Index(tx, "validator_addr", 100, 1)
+				Expect(err).To(BeNil())
+
+				tickets, err = mgr.store.Query(types.Ticket{})
 				Expect(err).To(BeNil())
 			})
 
-			Specify("that one non-child and one child tickets are indexed", func() {
-				tickets, err := mgr.store.Query(types.Ticket{})
-				Expect(err).To(BeNil())
-				Expect(tickets).To(HaveLen(2))
+			Specify("that there are 3 tickets created", func() {
+				Expect(tickets).To(HaveLen(3))
+			})
+
+			Specify("that one non-child and two child tickets are indexed", func() {
 				Expect(tickets[0].ChildOf).To(BeEmpty())
 				Expect(tickets[1].ChildOf).To(Equal(tickets[0].Hash))
+				Expect(tickets[2].ChildOf).To(Equal(tickets[0].Hash))
+			})
+
+			Specify("that child tickets have increasing index", func() {
+				Expect(tickets[1].Index).To(Equal(0))
+				Expect(tickets[2].Index).To(Equal(1))
 			})
 		})
 	})
