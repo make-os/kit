@@ -39,7 +39,7 @@ func (m *Manager) Index(
 
 	// Create the ticket
 	ticket := &types.Ticket{
-		Hash:           tx.Hash.HexStr(),
+		Hash:           tx.GetHash().HexStr(),
 		ProposerPubKey: proposerPubKey,
 		Height:         blockHeight,
 		Index:          txIndex,
@@ -56,7 +56,7 @@ func (m *Manager) Index(
 	// Determine if a child ticket can be created.
 	// Child tickets are created when the value of the ticket
 	// is sufficient to purchase additional tickets
-	curTickPrice := decimal.NewFromFloat(m.logic.Sys().GetCurTicketPrice())
+	curTickPrice := decimal.NewFromFloat(m.logic.Sys().GetCurValidatorTicketPrice())
 	numSubTickets := tx.Value.Decimal().Div(curTickPrice).IntPart()
 	for i := int64(1); i < numSubTickets; i++ {
 		childTicket := *ticket
@@ -73,13 +73,36 @@ func (m *Manager) Index(
 	return nil
 }
 
-// Get finds tickets belonging to the given proposer.
-func (m *Manager) Get(proposerPubKey string, queryOpt types.QueryOptions) ([]*types.Ticket, error) {
+// GetByProposer finds tickets belonging to the
+// given proposer public key.
+func (m *Manager) GetByProposer(proposerPubKey string, queryOpt types.QueryOptions) ([]*types.Ticket, error) {
 	res, err := m.store.Query(types.Ticket{ProposerPubKey: proposerPubKey}, queryOpt)
 	if err != nil {
 		return nil, err
 	}
 	return res, nil
+}
+
+// CountLiveTickets returns the number of matured and non-decayed tickets.
+func (m *Manager) CountLiveTickets(queryOpt ...types.QueryOptions) (int, error) {
+
+	qOpt := types.EmptyQueryOptions
+	if len(queryOpt) > 0 {
+		qOpt = queryOpt[0]
+	}
+
+	// Get the last committed block
+	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return 0, err
+	}
+
+	count, err := m.store.CountLive(bi.Height, qOpt)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
 // Stop stores the manager

@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"strings"
 )
 
 // FieldError is used to describe an error concerning an objects field/property
@@ -21,4 +22,16 @@ func FieldErrorWithIndex(index int, field, err string) error {
 		fieldArg = "%s"
 	}
 	return fmt.Errorf(fmt.Sprintf("index:%d, "+fieldArg+"error:%s", index, field, err))
+}
+
+// ErrStaleSecretRound returns an error about `secretRound` field
+// is not greater than the previous secret round
+var ErrStaleSecretRound = func(index int) error {
+	return FieldErrorWithIndex(index, "secretRound",
+		"must be greater than the previous round")
+}
+
+// IsStaleSecretRoundErr checks whether an error is a ErrStaleSecretRound error
+func IsStaleSecretRoundErr(err error) bool {
+	return strings.Index(err.Error(), "error:must be greater than the previous round") != -1
 }

@@ -1,22 +1,22 @@
-package keepers_test
+package keepers
 
 import (
 	"github.com/makeos/mosdef/storage/tree"
+	"github.com/makeos/mosdef/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
 
-	keepers "github.com/makeos/mosdef/logic/keepers"
 	"github.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Account", func() {
 	var state *tree.SafeTree
-	var ak *keepers.AccountKeeper
+	var ak *AccountKeeper
 
 	BeforeEach(func() {
 		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
-		ak = keepers.NewAccountKeeper(state)
+		ak = NewAccountKeeper(state)
 	})
 
 	Describe(".GetAccount", func() {
@@ -29,12 +29,12 @@ var _ = Describe("Account", func() {
 		})
 
 		When("account exist on the latest block", func() {
-			var testAcct = keepers.MakeBareAccount()
+			var testAcct = types.BareAccount()
 
 			BeforeEach(func() {
 				testAcct.Nonce = 1
 				testAcct.Balance = util.String("100")
-				acctKey := keepers.MakeAccountKey("addr1")
+				acctKey := MakeAccountKey("addr1")
 				state.Set(acctKey, testAcct.Bytes())
 				_, _, err := state.SaveVersion()
 				Expect(err).To(BeNil())
@@ -47,20 +47,20 @@ var _ = Describe("Account", func() {
 		})
 
 		When("account exist on two different blocks", func() {
-			var testAcct = keepers.MakeBareAccount()
-			var testAcct2 = keepers.MakeBareAccount()
+			var testAcct = types.BareAccount()
+			var testAcct2 = types.BareAccount()
 
 			BeforeEach(func() {
 				testAcct.Nonce = 1
 				testAcct.Balance = util.String("100")
-				acctKey := keepers.MakeAccountKey("addr1")
+				acctKey := MakeAccountKey("addr1")
 				state.Set(acctKey, testAcct.Bytes())
 				_, _, err := state.SaveVersion()
 				Expect(err).To(BeNil())
 
 				testAcct2.Nonce = 20
 				testAcct2.Balance = util.String("200")
-				acctKey = keepers.MakeAccountKey("addr1")
+				acctKey = MakeAccountKey("addr1")
 				state.Set(acctKey, testAcct2.Bytes())
 				_, _, err = state.SaveVersion()
 				Expect(err).To(BeNil())

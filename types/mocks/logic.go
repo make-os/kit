@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	crypto "github.com/makeos/mosdef/crypto"
+	rand "github.com/makeos/mosdef/crypto/rand"
 	storage "github.com/makeos/mosdef/storage"
 	types "github.com/makeos/mosdef/types"
 	util "github.com/makeos/mosdef/util"
@@ -64,6 +65,94 @@ func (m *MockSystemKeeper) GetLastBlockInfo() (*types.BlockInfo, error) {
 func (mr *MockSystemKeeperMockRecorder) GetLastBlockInfo() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastBlockInfo", reflect.TypeOf((*MockSystemKeeper)(nil).GetLastBlockInfo))
+}
+
+// GetBlockInfo mocks base method
+func (m *MockSystemKeeper) GetBlockInfo(height int64) (*types.BlockInfo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBlockInfo", height)
+	ret0, _ := ret[0].(*types.BlockInfo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBlockInfo indicates an expected call of GetBlockInfo
+func (mr *MockSystemKeeperMockRecorder) GetBlockInfo(height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockInfo", reflect.TypeOf((*MockSystemKeeper)(nil).GetBlockInfo), height)
+}
+
+// MarkAsMatured mocks base method
+func (m *MockSystemKeeper) MarkAsMatured(maturityHeight uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkAsMatured", maturityHeight)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkAsMatured indicates an expected call of MarkAsMatured
+func (mr *MockSystemKeeperMockRecorder) MarkAsMatured(maturityHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsMatured", reflect.TypeOf((*MockSystemKeeper)(nil).MarkAsMatured), maturityHeight)
+}
+
+// GetNetMaturityHeight mocks base method
+func (m *MockSystemKeeper) GetNetMaturityHeight() (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNetMaturityHeight")
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetNetMaturityHeight indicates an expected call of GetNetMaturityHeight
+func (mr *MockSystemKeeperMockRecorder) GetNetMaturityHeight() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetMaturityHeight", reflect.TypeOf((*MockSystemKeeper)(nil).GetNetMaturityHeight))
+}
+
+// IsMarkedAsMature mocks base method
+func (m *MockSystemKeeper) IsMarkedAsMature() (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsMarkedAsMature")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsMarkedAsMature indicates an expected call of IsMarkedAsMature
+func (mr *MockSystemKeeperMockRecorder) IsMarkedAsMature() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMarkedAsMature", reflect.TypeOf((*MockSystemKeeper)(nil).IsMarkedAsMature))
+}
+
+// SetHighestDrandRound mocks base method
+func (m *MockSystemKeeper) SetHighestDrandRound(r uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetHighestDrandRound", r)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetHighestDrandRound indicates an expected call of SetHighestDrandRound
+func (mr *MockSystemKeeperMockRecorder) SetHighestDrandRound(r interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHighestDrandRound", reflect.TypeOf((*MockSystemKeeper)(nil).SetHighestDrandRound), r)
+}
+
+// GetHighestDrandRound mocks base method
+func (m *MockSystemKeeper) GetHighestDrandRound() (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHighestDrandRound")
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetHighestDrandRound indicates an expected call of GetHighestDrandRound
+func (mr *MockSystemKeeperMockRecorder) GetHighestDrandRound() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHighestDrandRound", reflect.TypeOf((*MockSystemKeeper)(nil).GetHighestDrandRound))
 }
 
 // MockAccountKeeper is a mock of AccountKeeper interface
@@ -171,6 +260,20 @@ func (mr *MockLogicMockRecorder) Sys() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sys", reflect.TypeOf((*MockLogic)(nil).Sys))
 }
 
+// Validator mocks base method
+func (m *MockLogic) Validator() types.ValidatorLogic {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Validator")
+	ret0, _ := ret[0].(types.ValidatorLogic)
+	return ret0
+}
+
+// Validator indicates an expected call of Validator
+func (mr *MockLogicMockRecorder) Validator() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validator", reflect.TypeOf((*MockLogic)(nil).Validator))
+}
+
 // DB mocks base method
 func (m *MockLogic) DB() storage.Engine {
 	m.ctrl.T.Helper()
@@ -241,6 +344,46 @@ func (mr *MockLogicMockRecorder) WriteGenesisState() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteGenesisState", reflect.TypeOf((*MockLogic)(nil).WriteGenesisState))
 }
 
+// SetTicketManager mocks base method
+func (m *MockLogic) SetTicketManager(tm types.TicketManager) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetTicketManager", tm)
+}
+
+// SetTicketManager indicates an expected call of SetTicketManager
+func (mr *MockLogicMockRecorder) SetTicketManager(tm interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTicketManager", reflect.TypeOf((*MockLogic)(nil).SetTicketManager), tm)
+}
+
+// GetTicketManager mocks base method
+func (m *MockLogic) GetTicketManager() types.TicketManager {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTicketManager")
+	ret0, _ := ret[0].(types.TicketManager)
+	return ret0
+}
+
+// GetTicketManager indicates an expected call of GetTicketManager
+func (mr *MockLogicMockRecorder) GetTicketManager() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTicketManager", reflect.TypeOf((*MockLogic)(nil).GetTicketManager))
+}
+
+// GetDRand mocks base method
+func (m *MockLogic) GetDRand() rand.DRander {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDRand")
+	ret0, _ := ret[0].(rand.DRander)
+	return ret0
+}
+
+// GetDRand indicates an expected call of GetDRand
+func (mr *MockLogicMockRecorder) GetDRand() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDRand", reflect.TypeOf((*MockLogic)(nil).GetDRand))
+}
+
 // MockLogicCommon is a mock of LogicCommon interface
 type MockLogicCommon struct {
 	ctrl     *gomock.Controller
@@ -261,6 +404,29 @@ func NewMockLogicCommon(ctrl *gomock.Controller) *MockLogicCommon {
 
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockLogicCommon) EXPECT() *MockLogicCommonMockRecorder {
+	return m.recorder
+}
+
+// MockValidatorLogic is a mock of ValidatorLogic interface
+type MockValidatorLogic struct {
+	ctrl     *gomock.Controller
+	recorder *MockValidatorLogicMockRecorder
+}
+
+// MockValidatorLogicMockRecorder is the mock recorder for MockValidatorLogic
+type MockValidatorLogicMockRecorder struct {
+	mock *MockValidatorLogic
+}
+
+// NewMockValidatorLogic creates a new mock instance
+func NewMockValidatorLogic(ctrl *gomock.Controller) *MockValidatorLogic {
+	mock := &MockValidatorLogic{ctrl: ctrl}
+	mock.recorder = &MockValidatorLogicMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockValidatorLogic) EXPECT() *MockValidatorLogicMockRecorder {
 	return m.recorder
 }
 
@@ -352,16 +518,59 @@ func (m *MockSysLogic) EXPECT() *MockSysLogicMockRecorder {
 	return m.recorder
 }
 
-// GetCurTicketPrice mocks base method
-func (m *MockSysLogic) GetCurTicketPrice() float64 {
+// GetCurValidatorTicketPrice mocks base method
+func (m *MockSysLogic) GetCurValidatorTicketPrice() float64 {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCurTicketPrice")
+	ret := m.ctrl.Call(m, "GetCurValidatorTicketPrice")
 	ret0, _ := ret[0].(float64)
 	return ret0
 }
 
-// GetCurTicketPrice indicates an expected call of GetCurTicketPrice
-func (mr *MockSysLogicMockRecorder) GetCurTicketPrice() *gomock.Call {
+// GetCurValidatorTicketPrice indicates an expected call of GetCurValidatorTicketPrice
+func (mr *MockSysLogicMockRecorder) GetCurValidatorTicketPrice() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurTicketPrice", reflect.TypeOf((*MockSysLogic)(nil).GetCurTicketPrice))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurValidatorTicketPrice", reflect.TypeOf((*MockSysLogic)(nil).GetCurValidatorTicketPrice))
+}
+
+// CheckSetNetMaturity mocks base method
+func (m *MockSysLogic) CheckSetNetMaturity() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CheckSetNetMaturity")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CheckSetNetMaturity indicates an expected call of CheckSetNetMaturity
+func (mr *MockSysLogicMockRecorder) CheckSetNetMaturity() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckSetNetMaturity", reflect.TypeOf((*MockSysLogic)(nil).CheckSetNetMaturity))
+}
+
+// GetEpoch mocks base method
+func (m *MockSysLogic) GetEpoch(curBlockHeight uint64) (int, int) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEpoch", curBlockHeight)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(int)
+	return ret0, ret1
+}
+
+// GetEpoch indicates an expected call of GetEpoch
+func (mr *MockSysLogicMockRecorder) GetEpoch(curBlockHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpoch", reflect.TypeOf((*MockSysLogic)(nil).GetEpoch), curBlockHeight)
+}
+
+// GetCurretEpochSecretTx mocks base method
+func (m *MockSysLogic) GetCurretEpochSecretTx() types.Tx {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCurretEpochSecretTx")
+	ret0, _ := ret[0].(types.Tx)
+	return ret0
+}
+
+// GetCurretEpochSecretTx indicates an expected call of GetCurretEpochSecretTx
+func (mr *MockSysLogicMockRecorder) GetCurretEpochSecretTx() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurretEpochSecretTx", reflect.TypeOf((*MockSysLogic)(nil).GetCurretEpochSecretTx))
 }

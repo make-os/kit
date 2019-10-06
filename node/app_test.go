@@ -164,13 +164,29 @@ var _ = Describe("App", func() {
 					return nil
 				}
 				tx := types.NewTx(199, 0, sender.Addr(), sender, "10", "1", 1)
-				expectedHash = tx.Hash
+				expectedHash = tx.GetHash()
 				res = app.CheckTx(abcitypes.RequestCheckTx{Tx: tx.Bytes()})
 			})
 
 			It("should return the tx hash", func() {
 				Expect(res.Code).To(Equal(uint32(0)))
 				Expect(res.GetData()).To(Equal(expectedHash.Bytes()))
+			})
+		})
+
+		When("tx failed validation", func() {
+			var res abcitypes.ResponseCheckTx
+			BeforeEach(func() {
+				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+					return fmt.Errorf("bad error")
+				}
+				tx := types.NewTx(199, 0, sender.Addr(), sender, "10", "1", 1)
+				res = app.CheckTx(abcitypes.RequestCheckTx{Tx: tx.Bytes()})
+			})
+
+			It("should return error", func() {
+				Expect(res.Code).To(Equal(types.ErrCodeTxFailedValidation))
+				Expect(res.Log).To(Equal(res.Log))
 			})
 		})
 	})
@@ -194,18 +210,18 @@ var _ = Describe("App", func() {
 		})
 
 		When("tx type is TxTypeTicketValidator; max. TxTypeTicketValidator per "+
-			"block is 1; 1 TxTypeTicketValidator has previously been seen", func() {
+			"block is 1; 1 TxTypeTicketValidator tx has previously been seen", func() {
 			var res abcitypes.ResponseDeliverTx
 			BeforeEach(func() {
-				app.numProcessedValTicketTx = 1
 				params.MaxValTicketsPerBlock = 1
+				app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{})
 				tx := types.NewTx(types.TxTypeTicketValidator, 0, sender.Addr(), sender, "10", "1", 1)
 				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
 			})
 
 			It("should return code=types.ErrCodeMaxValTxTypeReached and"+
 				" log='failed to execute tx: validator ticket capacity reached'", func() {
-				Expect(res.Code).To(Equal(uint32(types.ErrCodeMaxValTxTypeReached)))
+				Expect(res.Code).To(Equal(uint32(types.ErrCodeMaxTxTypeReached)))
 				Expect(res.Log).To(Equal("failed to execute tx: validator ticket capacity reached"))
 			})
 		})
@@ -224,6 +240,122 @@ var _ = Describe("App", func() {
 
 			It("should return cache the validator ticket tx", func() {
 				Expect(app.ticketPurchaseTxs).To(HaveLen(1))
+			})
+		})
+
+		When("tx type is TxTypeEpochSecret and the current block "+
+			"is not last in the current epoch", func() {
+			var res abcitypes.ResponseDeliverTx
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 5
+				app.workingBlock.Height = 4
+				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				tx.SecretRound = 18
+				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
+				res = app.DeliverTx(req)
+			})
+
+			It("should return code=ErrCodeTxTypeUnexpected and err='failed to execute tx: epoch secret not expected'", func() {
+				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxTypeUnexpected)))
+				Expect(res.Log).To(Equal("failed to execute tx: epoch secret not expected"))
+			})
+		})
+
+		When("tx type TxTypeEpochSecret has been seen/cached", func() {
+			var res abcitypes.ResponseDeliverTx
+			var tx *types.Transaction
+
+			BeforeEach(func() {
+				tx = types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				tx.SecretRound = 18
+			})
+
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 5
+				app.workingBlock.Height = 5
+				app.epochSecretTx = tx
+				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
+				res = app.DeliverTx(req)
+			})
+
+			It("should return code=ErrCodeMaxValTxTypeReached and err='failed to execute tx: epoch secret capacity reached'", func() {
+				Expect(res.Code).To(Equal(uint32(types.ErrCodeMaxTxTypeReached)))
+				Expect(res.Log).To(Equal("failed to execute tx: epoch secret capacity reached"))
+			})
+		})
+
+		When("tx type TxTypeEpochSecret is successfully executed", func() {
+			var res abcitypes.ResponseDeliverTx
+			var tx *types.Transaction
+
+			BeforeEach(func() {
+				tx = types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				tx.SecretRound = 18
+			})
+
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 5
+				app.workingBlock.Height = 5
+
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockTxLogic := mocks.NewMockTxLogic(ctrl)
+				mockTxLogic.EXPECT().PrepareExec(gomock.Any()).Return(abcitypes.ResponseDeliverTx{
+					Code: uint32(0),
+				})
+				mockLogic.EXPECT().Tx().Return(mockTxLogic)
+				app.logic = mockLogic
+
+				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
+				res = app.DeliverTx(req)
+			})
+
+			It("should return code=0 and epochSecretTx must be set as the processed tx", func() {
+				Expect(res.Code).To(BeZero())
+				Expect(app.epochSecretTx).To(Equal(tx))
+			})
+		})
+
+		When("tx type TxTypeEpochSecret but it is stale", func() {
+			var res abcitypes.ResponseDeliverTx
+			var tx *types.Transaction
+
+			BeforeEach(func() {
+				tx = types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				tx.SecretRound = 18
+			})
+
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 5
+				app.workingBlock.Height = 5
+
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockTxLogic := mocks.NewMockTxLogic(ctrl)
+				mockTxLogic.EXPECT().PrepareExec(gomock.Any()).Return(abcitypes.ResponseDeliverTx{
+					Code: types.ErrCodeTxInvalidValue,
+					Log:  types.ErrStaleSecretRound(1).Error(),
+				})
+				mockLogic.EXPECT().Tx().Return(mockTxLogic)
+				app.logic = mockLogic
+
+				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
+				res = app.DeliverTx(req)
+			})
+
+			It("should return code=types.ErrCodeTxInvalidValue", func() {
+				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxInvalidValue)))
+			})
+
+			Specify("that the cached epoch tx has been invalidated", func() {
+				Expect(app.epochSecretTx.GetID()).To(Equal(tx.GetID()))
+				Expect(app.epochSecretTx.IsInvalidated()).To(BeTrue())
 			})
 		})
 	})
@@ -264,6 +396,43 @@ var _ = Describe("App", func() {
 			})
 		})
 
+		When("epoch secret tx is set", func() {
+			var appHash = []byte("app_hash")
+			var tx *types.Transaction
+
+			BeforeEach(func() {
+				tx = types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				tx.SecretRound = 18
+				app.epochSecretTx = tx
+			})
+
+			BeforeEach(func() {
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockTree := mocks.NewMockTree(ctrl)
+				mockTree.EXPECT().SaveVersion().Return(appHash, int64(0), nil)
+
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockSysKeeper.EXPECT().SetHighestDrandRound(gomock.Any())
+				mockSysKeeper.EXPECT().SaveBlockInfo(&types.BlockInfo{
+					AppHash:             appHash,
+					EpochSecret:         tx.Secret,
+					EpochPreviousSecret: tx.PreviousSecret,
+					EpochRound:          tx.SecretRound,
+				}).Return(nil)
+
+				mockLogic.EXPECT().StateTree().Return(mockTree)
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+				app.logic = mockLogic
+			})
+
+			Specify("SaveBlockInfo is passed the epoch secret tx fields", func() {
+				res := app.Commit()
+				Expect(res.Data).To(Equal(appHash))
+			})
+		})
+
 		When("cached validator tickets are indexed", func() {
 			var appHash = []byte("app_hash")
 
@@ -292,7 +461,6 @@ var _ = Describe("App", func() {
 				Expect(app.ticketPurchaseTxs).To(BeEmpty())
 				Expect(app.workingBlock).To(Equal(&types.BlockInfo{}))
 				Expect(app.txIndex).To(Equal(0))
-				Expect(app.numProcessedValTicketTx).To(Equal(0))
 			})
 		})
 	})

@@ -129,13 +129,15 @@ func (n *Node) Start() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create ticket manager")
 	}
+	n.logic.SetTicketManager(n.ticketMgr)
 
-	// Create the abci app and wrap with a ClientCreator
+	// Create the ABCI app and wrap with a ClientCreator
 	app := NewApp(n.cfg, n.db, n.logic, n.ticketMgr)
 	clientCreator := proxy.NewLocalClientCreator(app)
 
-	// Create custom mempool
+	// Create custom mempool and set the epoch secret generator function
 	memp := createCustomMempool(n.cfg, n.log)
+	memp.Mempool.(*mempool.Mempool).SetEpochSecretGetter(n.logic.Sys().GetCurretEpochSecretTx)
 
 	// Create node
 	node, err := nm.NewNodeWithCustomMempool(
@@ -202,14 +204,14 @@ func (n *Node) GetService() types.Service {
 func (n *Node) Stop() {
 	n.log.Info("mosdef is stopping...")
 
-	// Close database
+	n.tm.Stop()
+
 	if n.db != nil {
 		n.log.Info("Database is closing")
 		n.db.Close()
 		n.log.Info("Database has been closed")
 	}
 
-	n.tm.Stop()
 	n.tm.Wait()
 
 	n.log.Info("mosdef has stopped")

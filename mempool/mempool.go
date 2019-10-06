@@ -40,6 +40,10 @@ type Mempool struct {
 	// A log of mempool txs
 	wal *auto.AutoFile
 
+	// epochSecretGetter is a callback that is used to fetch
+	// an epoch secret tx.
+	epochSecretGetter func() t.Tx
+
 	log     logger.Logger
 	metrics *mempool.Metrics
 }
@@ -47,12 +51,17 @@ type Mempool struct {
 // NewMempool creates an instance of Mempool
 func NewMempool(
 	config *config.EngineConfig) *Mempool {
-	mp := &Mempool{
+	return &Mempool{
 		config: config,
 		pool:   pool.New(int64(config.Mempool.Size)),
 		log:    config.G().Log.Module("Mempool"),
 	}
-	return mp
+}
+
+// SetEpochSecretGetter sets the callback function
+// that returns an epoch secret transaction
+func (mp *Mempool) SetEpochSecretGetter(cb func() t.Tx) {
+	mp.epochSecretGetter = cb
 }
 
 // SetProxyApp sets the proxy app connection for accessing
@@ -185,8 +194,18 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 	numValTicketTxReaped := 0
 	ignoredTx := []t.Tx{}
 
-	// Collect transactions from the top of the pool up to
-	// the given maxBytes.
+	// Get an epoch secret and add it as the first tx
+	if mp.epochSecretGetter != nil {
+		if epochSecretTx := mp.epochSecretGetter(); epochSecretTx != nil {
+			txBs := epochSecretTx.Bytes()
+			txs = append(txs, txBs)
+			totalBytes += int64(len(txBs))
+			mp.log.Debug("Added an epoch secret tx to reaped transactions")
+		}
+	}
+
+	// Collect transactions from the top
+	// of the pool up to the given maxBytes.
 	for {
 
 		// Fetch a transaction. Exit if nil is returned.

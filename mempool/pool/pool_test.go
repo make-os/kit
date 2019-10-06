@@ -28,7 +28,7 @@ var _ = Describe("pool", func() {
 			tp := New(10)
 			sender := crypto.NewKeyFromIntSeed(1)
 			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
-			sig, _ := types.TxSign(tx, sender.PrivKey().Base58())
+			sig, _ := types.SignTx(tx, sender.PrivKey().Base58())
 			tx.Sig = sig
 			err := tp.Put(tx)
 			Expect(err).To(BeNil())
@@ -40,7 +40,7 @@ var _ = Describe("pool", func() {
 			tp := New(1)
 			sender := crypto.NewKeyFromIntSeed(1)
 			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
-			sig, _ := types.TxSign(tx, sender.PrivKey().Base58())
+			sig, _ := types.SignTx(tx, sender.PrivKey().Base58())
 			tx.Sig = sig
 			err := tp.Put(tx)
 			Expect(err).To(BeNil())

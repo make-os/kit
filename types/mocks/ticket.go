@@ -48,19 +48,38 @@ func (mr *MockTicketManagerMockRecorder) Index(tx, proposerPubKey, blockHeight, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Index", reflect.TypeOf((*MockTicketManager)(nil).Index), tx, proposerPubKey, blockHeight, txIndex)
 }
 
-// Get mocks base method
-func (m *MockTicketManager) Get(proposerPubKey string, queryOpt types.QueryOptions) ([]*types.Ticket, error) {
+// GetByProposer mocks base method
+func (m *MockTicketManager) GetByProposer(proposerPubKey string, queryOpt types.QueryOptions) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", proposerPubKey, queryOpt)
+	ret := m.ctrl.Call(m, "GetByProposer", proposerPubKey, queryOpt)
 	ret0, _ := ret[0].([]*types.Ticket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
-func (mr *MockTicketManagerMockRecorder) Get(proposerPubKey, queryOpt interface{}) *gomock.Call {
+// GetByProposer indicates an expected call of GetByProposer
+func (mr *MockTicketManagerMockRecorder) GetByProposer(proposerPubKey, queryOpt interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockTicketManager)(nil).Get), proposerPubKey, queryOpt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByProposer", reflect.TypeOf((*MockTicketManager)(nil).GetByProposer), proposerPubKey, queryOpt)
+}
+
+// CountLiveTickets mocks base method
+func (m *MockTicketManager) CountLiveTickets(arg0 ...types.QueryOptions) (int, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range arg0 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CountLiveTickets", varargs...)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountLiveTickets indicates an expected call of CountLiveTickets
+func (mr *MockTicketManagerMockRecorder) CountLiveTickets(arg0 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLiveTickets", reflect.TypeOf((*MockTicketManager)(nil).CountLiveTickets), arg0...)
 }
 
 // Stop mocks base method

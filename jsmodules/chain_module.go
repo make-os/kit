@@ -42,6 +42,11 @@ func (m *ChainModule) funcs() []*types.JSModuleFunc {
 			Value:       m.getCurrentHeight,
 			Description: "Get the current block height",
 		},
+		&types.JSModuleFunc{
+			Name:        "getBlockInfo",
+			Value:       m.getBlockInfo,
+			Description: "Get summary block information of a given height",
+		},
 	}
 }
 
@@ -107,4 +112,31 @@ func (m *ChainModule) getCurrentHeight() interface{} {
 	return util.EncodeForJS(map[string]interface{}{
 		"height": fmt.Sprintf("%d", res),
 	})
+}
+
+// getBlockInfo get summary block information of a given height
+func (m *ChainModule) getBlockInfo(height interface{}) interface{} {
+
+	var err error
+	var blockHeight int64
+
+	// Convert to the expected type (int64)
+	switch v := height.(type) {
+	case int64:
+		blockHeight = int64(v)
+	case string:
+		blockHeight, err = strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			panic(types.ErrArgDecode("Int64", 0))
+		}
+	default:
+		panic(types.ErrArgDecode("integer/string", 0))
+	}
+
+	res, err := m.logic.SysKeeper().GetBlockInfo(blockHeight)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to get block info"))
+	}
+
+	return res
 }

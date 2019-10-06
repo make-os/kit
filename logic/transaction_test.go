@@ -60,19 +60,20 @@ var _ = Describe("Transaction", func() {
 					Tx: []byte([]byte("invalid_hex")),
 				})
 				resp := txLogic.PrepareExec(req)
-				Expect(resp.Code).To(Equal(ErrCodeFailedDecode))
+				Expect(resp.Code).To(Equal(types.ErrCodeFailedDecode))
 				Expect(resp.Log).To(Equal("failed to decode transaction from bytes"))
 			})
 		})
 
 		Context("when tx is invalid", func() {
 			It("should return err='tx failed validation...'", func() {
-				tx := &types.Transaction{Sig: []byte("sig")}
+				tx := types.NewBareTx(1)
+				tx.Sig = []byte("sig")
 				req := abcitypes.RequestDeliverTx(abcitypes.RequestDeliverTx{
 					Tx: tx.Bytes(),
 				})
 				resp := txLogic.PrepareExec(req)
-				Expect(resp.Code).To(Equal(ErrCodeFailedDecode))
+				Expect(resp.Code).To(Equal(types.ErrCodeFailedDecode))
 				Expect(resp.Log).To(ContainSubstring("tx failed validation"))
 			})
 		})
@@ -108,7 +109,7 @@ var _ = Describe("Transaction", func() {
 					params.InitialTicketPrice = 10
 					params.NumBlocksPerPriceWindow = 100
 					params.PricePercentIncrease = 0.2
-					price := sysLogic.GetCurTicketPrice()
+					price := sysLogic.GetCurValidatorTicketPrice()
 					Expect(price).To(Equal(float64(10)))
 
 					logic.AccountKeeper().Update(sender.Addr(), &types.Account{

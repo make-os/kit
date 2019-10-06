@@ -238,7 +238,6 @@ var _ = Describe("TxContainer", func() {
 		It("should return true when tx exist in queue", func() {
 			q := newTxContainer(1)
 			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
-			tx.Hash = tx.ComputeHash()
 			err := q.add(tx)
 			Expect(err).To(BeNil())
 			has := q.Has(tx)
@@ -248,7 +247,6 @@ var _ = Describe("TxContainer", func() {
 		It("should return false when tx does not exist in queue", func() {
 			q := newTxContainer(1)
 			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
-			tx.Hash = tx.ComputeHash()
 			has := q.Has(tx)
 			Expect(has).To(BeFalse())
 		})
@@ -258,7 +256,6 @@ var _ = Describe("TxContainer", func() {
 		It("should return true when tx exist in queue", func() {
 			q := newTxContainer(1)
 			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
-			tx.Hash = tx.ComputeHash()
 			err := q.add(tx)
 			Expect(err).To(BeNil())
 			has := q.HasByHash(tx.GetHash().HexStr())
@@ -268,7 +265,6 @@ var _ = Describe("TxContainer", func() {
 		It("should return false when tx does not exist in queue", func() {
 			q := newTxContainer(1)
 			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
-			tx.Hash = tx.ComputeHash()
 			has := q.HasByHash(tx.GetHash().HexStr())
 			Expect(has).To(BeFalse())
 		})
@@ -293,7 +289,6 @@ var _ = Describe("TxContainer", func() {
 
 		It("should do nothing when transaction does not exist in the container", func() {
 			unknownTx := types.NewTx(types.TxTypeCoinTransfer, 1, "unknown", sender, "0", "0.2", time.Now().Unix())
-			unknownTx.Hash = unknownTx.ComputeHash()
 			q.Remove(unknownTx)
 			Expect(q.Size()).To(Equal(int64(4)))
 		})
@@ -358,18 +353,16 @@ var _ = Describe("TxContainer", func() {
 		It("should return Not nil when tx exist in queue", func() {
 			q := newTxContainer(1)
 			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
-			tx.Hash = tx.ComputeHash()
 			err := q.add(tx)
 			Expect(err).To(BeNil())
-			txData := q.GetByHash(tx.Hash.HexStr())
+			txData := q.GetByHash(tx.GetHash().HexStr())
 			Expect(txData).ToNot(BeNil())
 		})
 
 		It("should return nil when tx does not exist in queue", func() {
 			q := newTxContainer(1)
 			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
-			tx.Hash = tx.ComputeHash()
-			txData := q.GetByHash(tx.Hash.HexStr())
+			txData := q.GetByHash(tx.GetHash().HexStr())
 			Expect(txData).To(BeNil())
 		})
 

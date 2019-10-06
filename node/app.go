@@ -30,16 +30,16 @@ type tickPurchaseTx struct {
 
 // App implements tendermint ABCI interface to
 type App struct {
-	db                      storage.Engine
-	logic                   types.Logic
-	cfg                     *config.EngineConfig
-	validateTx              validators.ValidateTxFunc
-	workingBlock            *types.BlockInfo
-	log                     logger.Logger
-	txIndex                 int
-	ticketPurchaseTxs       []*tickPurchaseTx
-	ticketMgr               types.TicketManager
-	numProcessedValTicketTx int
+	db                storage.Engine
+	logic             types.Logic
+	cfg               *config.EngineConfig
+	validateTx        validators.ValidateTxFunc
+	workingBlock      *types.BlockInfo
+	log               logger.Logger
+	txIndex           int
+	ticketPurchaseTxs []*tickPurchaseTx
+	ticketMgr         types.TicketManager
+	epochSecretTx     *types.Transaction
 }
 
 // NewApp creates an instance of App
@@ -138,15 +138,29 @@ func (app *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx 
 		}
 	}
 
-	return abcitypes.ResponseCheckTx{Code: 0, Data: tx.Hash.Bytes()}
+	return abcitypes.ResponseCheckTx{Code: 0, Data: tx.GetHash().Bytes()}
 }
 
 // BeginBlock indicates the beginning of a new block.
 func (app *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
+
+	curHeight := req.GetHeader().Height
 	app.workingBlock.Height = req.GetHeader().Height
 	app.workingBlock.Hash = req.GetHash()
 	app.workingBlock.LastAppHash = req.GetHeader().AppHash
 	app.workingBlock.ProposerAddress = common.HexBytes(req.GetHeader().ProposerAddress).String()
+
+	// If the network is still immature, return immediately
+	if err := app.logic.Sys().CheckSetNetMaturity(); err != nil {
+		app.log.Debug("Network is currently immature", "Err",
+			err, "CurHeight", curHeight)
+		return abcitypes.ResponseBeginBlock{}
+	}
+
+	// Determine current epoch
+	curEpoch, nextEpoch := app.logic.Sys().GetEpoch(uint64(curHeight))
+	app.log.Info("Epoch is known", "Epoch", curEpoch, "Next", nextEpoch)
+
 	return abcitypes.ResponseBeginBlock{}
 }
 
@@ -166,31 +180,66 @@ func (app *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeli
 		}
 	}
 
+	txType := tx.GetType()
+
 	// Invalidate the transaction if it is a validator ticket
 	// purchasing tx and we have reached the max per block.
-	// TODO: Slash proposer for violating the rule
-	if tx.GetType() == types.TxTypeTicketValidator &&
-		app.numProcessedValTicketTx == params.MaxValTicketsPerBlock {
+	// TODO: Slash proposer for violating the rule.
+	if txType == types.TxTypeTicketValidator &&
+		len(app.ticketPurchaseTxs) == params.MaxValTicketsPerBlock {
 		return abcitypes.ResponseDeliverTx{
-			Code: types.ErrCodeMaxValTxTypeReached,
+			Code: types.ErrCodeMaxTxTypeReached,
 			Log:  "failed to execute tx: validator ticket capacity reached",
+		}
+	}
+
+	if txType == types.TxTypeEpochSecret {
+		// Invalidate the epoch secret tx if the current block is not the
+		// last block in the current epoch.
+		// TODO: Slash the proposer for violating this rule.
+		if (app.workingBlock.Height)%int64(params.NumBlocksPerEpoch) != 0 {
+			return abcitypes.ResponseDeliverTx{
+				Code: types.ErrCodeTxTypeUnexpected,
+				Log:  "failed to execute tx: epoch secret not expected",
+			}
+		}
+
+		// Invalidate the epoch secret tx if we have already seen one in this block.
+		// TODO: Slash proposer for violating this rule.
+		if app.epochSecretTx != nil {
+			return abcitypes.ResponseDeliverTx{
+				Code: types.ErrCodeMaxTxTypeReached,
+				Log:  "failed to execute tx: epoch secret capacity reached",
+			}
 		}
 	}
 
 	resp := app.logic.Tx().PrepareExec(req)
 
+	if txType == types.TxTypeEpochSecret {
+
+		// Cache the epoch secret tx for use in the COMMIT stage
+		app.epochSecretTx = tx
+
+		// At the point, the proposer proposed an epoch secret tx whose round is earlier
+		// or same as the last epoch secret round. We respond by invalidating the tx
+		// object so that the COMMIT phase can flag it.
+		// Also, TODO: Slash the proposer for doing this.
+		if resp.Code != 0 && types.IsStaleSecretRoundErr(fmt.Errorf(resp.Log)) {
+			tx.Invalidate()
+			return abcitypes.ResponseDeliverTx{
+				Code: types.ErrCodeTxInvalidValue,
+				Log:  "failed to execute tx: " + resp.Log,
+			}
+		}
+	}
+
 	// Cache ticket purchase transaction; They will be indexed in the COMMIT stage.
-	if resp.Code == 0 && tx.GetType() == types.TxTypeTicketValidator {
+	if resp.Code == 0 && txType == types.TxTypeTicketValidator {
 		app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{
 			Tx:    tx,
 			index: app.txIndex,
 		})
-	}
-
-	// Increment the counter that keeps track of the number of validator
-	// tickets tx that have been successfully processed in the current block.
-	if resp.Code == 0 && tx.GetType() == types.TxTypeTicketValidator {
-		app.numProcessedValTicketTx++
 	}
 
 	return resp
@@ -204,31 +253,42 @@ func (app *App) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlo
 // Commit persist the application state.
 // It must return a merkle root hash of the application state.
 func (app *App) Commit() abcitypes.ResponseCommit {
+	defer app.reset()
 
 	appHash, _, err := app.logic.StateTree().SaveVersion()
 	if err != nil {
 		panic(errors.Wrap(err, "failed to commit: could not save new tree version"))
 	}
 
-	// Store the committed block
-	if err := app.logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{
+	bi := &types.BlockInfo{
 		Height:      app.workingBlock.Height,
 		Hash:        app.workingBlock.Hash,
 		LastAppHash: app.workingBlock.LastAppHash,
 		AppHash:     appHash,
-	}); err != nil {
+	}
+
+	// Add epoch secret data to the block info and
+	// update the highest known drand round
+	if estx := app.epochSecretTx; estx != nil {
+		bi.EpochSecret = estx.Secret
+		bi.EpochPreviousSecret = estx.PreviousSecret
+		bi.EpochRound = estx.SecretRound
+		bi.InvalidEpochSecret = estx.IsInvalidated()
+		if err := app.logic.SysKeeper().SetHighestDrandRound(estx.SecretRound); err != nil {
+			panic(errors.Wrap(err, "failed to save highest drand round"))
+		}
+	}
+
+	// Store the committed block
+	if err := app.logic.SysKeeper().SaveBlockInfo(bi); err != nil {
 		panic(err)
 	}
 
 	// Index any purchased ticket collected in DeliverTx stage
 	for _, ptx := range app.ticketPurchaseTxs {
-		app.ticketMgr.Index(ptx.Tx,
-			ptx.Tx.SenderPubKey.String(),
+		app.ticketMgr.Index(ptx.Tx, ptx.Tx.SenderPubKey.String(),
 			uint64(app.workingBlock.Height), ptx.index)
 	}
-
-	// Reset the app
-	app.reset()
 
 	return abcitypes.ResponseCommit{
 		Data: appHash,
@@ -240,7 +300,7 @@ func (app *App) reset() {
 	app.workingBlock = &types.BlockInfo{}
 	app.ticketPurchaseTxs = []*tickPurchaseTx{}
 	app.txIndex = 0
-	app.numProcessedValTicketTx = 0
+	app.epochSecretTx = nil
 }
 
 // Query for data from the application.

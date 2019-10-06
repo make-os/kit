@@ -21,7 +21,6 @@ type Transaction struct {
 
 // PrepareExec decodes the transaction from the abci request,
 // performs final validation before executing the transaction.
-// CONTRACT: Expects req.Tx to be the raw transaction bytes
 func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
 
 	// Decode tx bytes to types.Transaction
@@ -60,6 +59,8 @@ func (t *Transaction) Exec(tx *types.Transaction) error {
 		return t.transferCoin(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
 	case types.TxTypeTicketValidator:
 		return t.stakeValidatorCoin(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce())
+	case types.TxTypeEpochSecret:
+		return nil
 	default:
 		return fmt.Errorf("unknown transaction type")
 	}
@@ -90,7 +91,7 @@ func (t *Transaction) CanTransferCoin(
 	// For validator ticket transaction:
 	// The tx value must be equal or greater than the current ticket price.
 	if txType == types.TxTypeTicketValidator {
-		curTicketPrice := t.logic.Sys().GetCurTicketPrice()
+		curTicketPrice := t.logic.Sys().GetCurValidatorTicketPrice()
 		if value.Decimal().LessThan(decimal.NewFromFloat(curTicketPrice)) {
 			return fmt.Errorf("sender's spendable account balance is insufficient to cover "+
 				"ticket price (%f)", curTicketPrice)

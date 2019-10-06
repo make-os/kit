@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/hex"
 	"fmt"
+	"time"
 
 	"github.com/fatih/structs"
 
@@ -16,6 +17,15 @@ var (
 
 	// TxTypeTicketValidator represents a transaction purchases validator ticket
 	TxTypeTicketValidator = 0x1
+
+	// TxTypeEpochSecret represents a transaction containing 64 bytes secret
+	// for selecting the next epoch block validators.
+	TxTypeEpochSecret = 0x2
+)
+
+// Transaction meta keys
+var (
+	TxMetaKeyInvalidated = "invalidated"
 )
 
 // Tx represents a transaction
@@ -33,9 +43,11 @@ type Tx interface {
 	GetFrom() util.String
 	GetTo() util.String
 	GetHash() util.Hash
-	SetHash(h util.Hash)
 	GetType() int
-	GetBytesNoHashAndSig() []byte
+	GetSecret() []byte
+	GetPreviousSecret() []byte
+	GetSecretRound() uint64
+	GetBytesNoSig() []byte
 	Bytes() []byte
 	ComputeHash() util.Hash
 	GetID() string
@@ -44,6 +56,9 @@ type Tx interface {
 	GetSize() int64
 	ToMap() map[string]interface{}
 	ToHex() string
+	GetMeta() map[string]interface{}
+	IsInvalidated() bool
+	Invalidate()
 }
 
 // Transaction represents a transaction
@@ -56,7 +71,32 @@ type Transaction struct {
 	Timestamp    int64       `json:"timestamp" msgpack:"timestamp"`
 	Fee          util.String `json:"fee" msgpack:"fee"`
 	Sig          []byte      `json:"sig" msgpack:"sig"`
-	Hash         util.Hash   `json:"hash" msgpack:"hash"`
+
+	// TxTypeEpochSecret specific field
+	Secret         []byte `json:"secret" msgpack:"secret"`
+	PreviousSecret []byte `json:"previousSecret" msgpack:"previousSecret"`
+	SecretRound    uint64 `json:"secretRound" mapstructure:"secretRound"`
+
+	// meta stores arbitrary data for message passing during tx processing
+	meta map[string]interface{}
+}
+
+// NewBareTx create an unsigned transaction with zero value for all fields.
+func NewBareTx(txType int) *Transaction {
+	tx := new(Transaction)
+	tx.Type = txType
+	tx.Nonce = 0
+	tx.To = util.String("")
+	tx.SenderPubKey = util.String("")
+	tx.Value = util.String("0")
+	tx.Fee = util.String("0")
+	tx.Timestamp = time.Now().Unix()
+	tx.Secret = []byte{}
+	tx.PreviousSecret = []byte{}
+	tx.SecretRound = 0
+	tx.Sig = []byte{}
+	tx.meta = map[string]interface{}{}
+	return tx
 }
 
 // NewTx creates a new, signed transaction
@@ -76,13 +116,15 @@ func NewTx(txType int,
 	tx.Value = value
 	tx.Timestamp = timestamp
 	tx.Fee = fee
-	tx.Hash = tx.ComputeHash()
+	tx.Secret = []byte{}
+	tx.PreviousSecret = []byte{}
+	tx.SecretRound = 0
 
-	sig, err := TxSign(tx, senderKey.PrivKey().Base58())
+	var err error
+	tx.Sig, err = SignTx(tx, senderKey.PrivKey().Base58())
 	if err != nil {
 		panic(err)
 	}
-	tx.Sig = sig
 
 	return
 }
@@ -95,6 +137,25 @@ func (tx *Transaction) GetSignature() []byte {
 // SetSignature sets the signature
 func (tx *Transaction) SetSignature(s []byte) {
 	tx.Sig = s
+}
+
+// GetMeta returns the app meta
+func (tx *Transaction) GetMeta() map[string]interface{} {
+	return tx.meta
+}
+
+// IsInvalidated checks whether the transaction has been marked as invalid
+func (tx *Transaction) IsInvalidated() bool {
+	if tx.meta == nil {
+		return false
+	}
+	return tx.meta[TxMetaKeyInvalidated] != nil
+}
+
+// Invalidate sets a TxMetaKeyInvalidated key in the tx map
+// indicating that the transaction has been invalidated.
+func (tx *Transaction) Invalidate() {
+	tx.meta[TxMetaKeyInvalidated] = struct{}{}
 }
 
 // GetSenderPubKey gets the sender public key
@@ -125,6 +186,24 @@ func (tx *Transaction) GetTimestamp() int64 {
 // SetTimestamp set the unix timestamp
 func (tx *Transaction) SetTimestamp(t int64) {
 	tx.Timestamp = t
+}
+
+// GetSecret returns the secret
+// FOR: TxTypeEpochSecret
+func (tx *Transaction) GetSecret() []byte {
+	return tx.Secret
+}
+
+// GetPreviousSecret returns the previous secret
+// FOR: TxTypeEpochSecret
+func (tx *Transaction) GetPreviousSecret() []byte {
+	return tx.PreviousSecret
+}
+
+// GetSecretRound returns the secret round
+// FOR: TxTypeEpochSecret
+func (tx *Transaction) GetSecretRound() uint64 {
+	return tx.SecretRound
 }
 
 // ToMap decodes the transaction to a map
@@ -166,12 +245,7 @@ func (tx *Transaction) GetTo() util.String {
 
 // GetHash returns the hash of tx
 func (tx *Transaction) GetHash() util.Hash {
-	return tx.Hash
-}
-
-// SetHash sets the hash
-func (tx *Transaction) SetHash(h util.Hash) {
-	tx.Hash = h
+	return tx.ComputeHash()
 }
 
 // GetType gets the transaction type
@@ -179,10 +253,9 @@ func (tx *Transaction) GetType() int {
 	return tx.Type
 }
 
-// GetBytesNoHashAndSig converts a transaction
-// to bytes equivalent but omits the hash and
-// signature in the result.
-func (tx *Transaction) GetBytesNoHashAndSig() []byte {
+// GetBytesNoSig returns a serialized transaction
+// but omits the signature in the result.
+func (tx *Transaction) GetBytesNoSig() []byte {
 	return util.ObjectToBytes([]interface{}{
 		tx.Fee,
 		tx.Nonce,
@@ -191,14 +264,16 @@ func (tx *Transaction) GetBytesNoHashAndSig() []byte {
 		tx.To,
 		tx.Type,
 		tx.Value,
+		tx.Secret,
+		tx.PreviousSecret,
+		tx.SecretRound,
 	})
 }
 
-// Bytes converts a transaction to bytes equivalent
+// Bytes returns the serializes version of the transaction
 func (tx *Transaction) Bytes() []byte {
 	return util.ObjectToBytes([]interface{}{
 		tx.Fee,
-		tx.Hash,
 		tx.Nonce,
 		tx.SenderPubKey,
 		tx.Sig,
@@ -206,6 +281,9 @@ func (tx *Transaction) Bytes() []byte {
 		tx.To,
 		tx.Type,
 		tx.Value,
+		tx.Secret,
+		tx.PreviousSecret,
+		tx.SecretRound,
 	})
 }
 
@@ -217,15 +295,18 @@ func NewTxFromBytes(bs []byte) (*Transaction, error) {
 		return nil, err
 	}
 	var tx Transaction
+	tx.meta = make(map[string]interface{})
 	tx.Fee = util.String(fields[0].(string))
-	tx.Hash = util.BytesToHash(fields[1].([]uint8))
-	tx.Nonce = fields[2].(uint64)
-	tx.SenderPubKey = util.String(fields[3].(string))
-	tx.Sig = fields[4].([]uint8)
-	tx.Timestamp = fields[5].(int64)
-	tx.To = util.String(fields[6].(string))
-	tx.Type = int(fields[7].(int64))
-	tx.Value = util.String(fields[8].(string))
+	tx.Nonce = fields[1].(uint64)
+	tx.SenderPubKey = util.String(fields[2].(string))
+	tx.Sig = fields[3].([]uint8)
+	tx.Timestamp = fields[4].(int64)
+	tx.To = util.String(fields[5].(string))
+	tx.Type = int(fields[6].(int64))
+	tx.Value = util.String(fields[7].(string))
+	tx.Secret = fields[8].([]byte)
+	tx.PreviousSecret = fields[9].([]byte)
+	tx.SecretRound = fields[10].(uint64)
 
 	return &tx, nil
 }
@@ -236,7 +317,6 @@ func NewTxFromBytes(bs []byte) (*Transaction, error) {
 // of the transaction on disk.
 func (tx *Transaction) GetSizeNoFee() int64 {
 	return int64(len(util.ObjectToBytes([]interface{}{
-		tx.Hash,
 		tx.Nonce,
 		tx.SenderPubKey,
 		tx.Sig,
@@ -244,6 +324,9 @@ func (tx *Transaction) GetSizeNoFee() int64 {
 		tx.To,
 		tx.Type,
 		tx.Value,
+		tx.Secret,
+		tx.PreviousSecret,
+		tx.SecretRound,
 	})))
 }
 
@@ -252,9 +335,9 @@ func (tx *Transaction) GetSize() int64 {
 	return int64(len(tx.Bytes()))
 }
 
-// ComputeHash returns the Blake2-256 hash of the transaction.
+// ComputeHash returns the Blake2-256 hash of the serialized transaction.
 func (tx *Transaction) ComputeHash() util.Hash {
-	bs := tx.GetBytesNoHashAndSig()
+	bs := tx.Bytes()
 	hash := util.Blake2b256(bs)
 	return util.BytesToHash(hash[:])
 }
@@ -266,12 +349,12 @@ func (tx *Transaction) GetID() string {
 
 // Sign the transaction
 func (tx *Transaction) Sign(privKey string) ([]byte, error) {
-	return TxSign(tx, privKey)
+	return SignTx(tx, privKey)
 }
 
-// TxVerify checks whether a transaction's signature is valid.
+// VerifyTx checks whether a transaction's signature is valid.
 // Expect tx.SenderPubKey and tx.Sig to be set.
-func TxVerify(tx *Transaction) error {
+func VerifyTx(tx *Transaction) error {
 
 	if tx == nil {
 		return fmt.Errorf("nil tx")
@@ -290,7 +373,7 @@ func TxVerify(tx *Transaction) error {
 		return FieldError("senderPubKey", err.Error())
 	}
 
-	valid, err := pubKey.Verify(tx.GetBytesNoHashAndSig(), tx.Sig)
+	valid, err := pubKey.Verify(tx.GetBytesNoSig(), tx.Sig)
 	if err != nil {
 		return FieldError("sig", err.Error())
 	}
@@ -302,9 +385,9 @@ func TxVerify(tx *Transaction) error {
 	return nil
 }
 
-// TxSign signs a transaction.
+// SignTx signs a transaction.
 // Expects private key in base58Check encoding.
-func TxSign(tx *Transaction, privKey string) ([]byte, error) {
+func SignTx(tx *Transaction, privKey string) ([]byte, error) {
 
 	if tx == nil {
 		return nil, fmt.Errorf("nil tx")
@@ -315,7 +398,7 @@ func TxSign(tx *Transaction, privKey string) ([]byte, error) {
 		return nil, err
 	}
 
-	sig, err := pKey.Sign(tx.GetBytesNoHashAndSig())
+	sig, err := pKey.Sign(tx.GetBytesNoSig())
 	if err != nil {
 		return nil, err
 	}

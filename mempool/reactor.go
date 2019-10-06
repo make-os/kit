@@ -64,9 +64,6 @@ func NewReactor(cfg *config.EngineConfig, mempool *Mempool) *Reactor {
 
 // OnStart implements p2p.BaseReactor.
 func (r *Reactor) OnStart() error {
-	// if !r.config.Broadcast {
-	// 	r.Logger.Info("Tx broadcasting is disabled")
-	// }
 	return nil
 }
 

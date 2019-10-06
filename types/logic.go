@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/crypto/rand"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/util"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -9,34 +10,70 @@ import (
 
 // BlockInfo describes information about a block
 type BlockInfo struct {
-	AppHash         []byte
-	LastAppHash     []byte
-	Hash            []byte
-	Height          int64
-	ProposerAddress string
+	AppHash             []byte `json:"appHash"`
+	LastAppHash         []byte `json:"lastAppHash"`
+	Hash                []byte `json:"hash"`
+	Height              int64  `json:"height"`
+	ProposerAddress     string `json:"proposerAddress"`
+	EpochSecret         []byte `json:"epochSecret"`
+	EpochPreviousSecret []byte `json:"epochPreviousSecret"`
+	EpochRound          uint64 `json:"epochRound"`
+	InvalidEpochSecret  bool   `json:"invalidEpochSecret"`
 }
 
 // SystemKeeper describes an interface for accessing system data
 type SystemKeeper interface {
+	// SaveBlockInfo saves a committed block information
 	SaveBlockInfo(info *BlockInfo) error
+
+	// GetLastBlockInfo returns information about the last committed block
 	GetLastBlockInfo() (*BlockInfo, error)
+
+	// GetBlockInfo returns block information at a given height
+	GetBlockInfo(height int64) (*BlockInfo, error)
+
+	// MarkAsMatured sets the network maturity flag to true
+	MarkAsMatured(maturityHeight uint64) error
+
+	// GetNetMaturityHeight returns the height at which network maturity was attained
+	GetNetMaturityHeight() (uint64, error)
+
+	// IsMarkedAsMature returns true if the network has been flagged as mature.
+	IsMarkedAsMature() (bool, error)
+
+	// SetHighestDrandRound sets the highest drand round to r
+	// only if r is greater than the current highest round.
+	SetHighestDrandRound(r uint64) error
+
+	// GetHighestDrandRound returns the highest drand round
+	// known to the application
+	GetHighestDrandRound() (uint64, error)
 }
 
 // AccountKeeper describes an interface for accessing accounts
 type AccountKeeper interface {
+	// GetAccount returns an account by address.
+	// It returns an empty Account if no account is found.
+	// If block number is specified and greater than 0,
+	// the account state at the given block number is
+	// returned, otherwise the latest is returned
 	GetAccount(address util.String, blockNum ...int64) *Account
+
+	// Update resets an account to a new value
 	Update(address util.String, upd *Account)
 }
 
 // Logic provides an interface that allows
 // access and modification to the state of the blockchain.
 type Logic interface {
-
 	// Tx returns the transaction logic
 	Tx() TxLogic
 
 	// SysLogic returns the app logic
 	Sys() SysLogic
+
+	// Validator returns the validator logic
+	Validator() ValidatorLogic
 
 	// DB returns the application's database
 	DB() storage.Engine
@@ -52,17 +89,43 @@ type Logic interface {
 
 	// WriteGenesisState initializes the app state with initial data
 	WriteGenesisState() error
+
+	// SetTicketManager sets the ticket manager
+	SetTicketManager(tm TicketManager)
+
+	// GetTicketManager returns the ticket manager
+	GetTicketManager() TicketManager
+
+	// GetDRand returns a drand client
+	GetDRand() rand.DRander
 }
 
 // LogicCommon describes a common functionalities for
 // all logic providers
 type LogicCommon interface{}
 
+// ValidatorLogic provides functionalities for managing
+// and deriving validators.
+type ValidatorLogic interface {
+	LogicCommon
+}
+
 // TxLogic provides an interface for executing transactions
 type TxLogic interface {
 	LogicCommon
+
+	// PrepareExec decodes the transaction from the abci request,
+	// performs final validation before executing the transaction.
 	PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx
+
+	// Exec execute a transaction that modifies the state.
+	// It returns error if the transaction is unknown.
 	Exec(tx *Transaction) error
+
+	// CanTransferCoin checks whether the sender can transfer
+	// the value and fee of the transaction based on the
+	// current state of their account. It also ensures that the
+	// transaction's nonce is the next/expected nonce value.
 	CanTransferCoin(txType int, senderPubKey *crypto.PubKey, recipientAddr,
 		value, fee util.String, nonce uint64) error
 }
@@ -70,5 +133,22 @@ type TxLogic interface {
 // SysLogic provides an interface for managing system/app information
 type SysLogic interface {
 	LogicCommon
-	GetCurTicketPrice() float64
+
+	// GetCurValidatorTicketPrice returns the current
+	// price for a validator ticket
+	GetCurValidatorTicketPrice() float64
+
+	// CheckSetNetMaturity checks whether the network
+	// has reached a matured period. If it has not,
+	// we return error. However, if it is just
+	// met the maturity condition in this call, we
+	// mark the network as mature
+	CheckSetNetMaturity() error
+
+	// GetEpoch return the current and next epoch
+	GetEpoch(curBlockHeight uint64) (int, int)
+
+	// GetCurretEpochSecretTx returns an TxTypeEpochSecret transaction
+	// only if the next block is the last block in the current epoch.
+	GetCurretEpochSecretTx() Tx
 }

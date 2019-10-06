@@ -15,9 +15,9 @@ import (
 
 // TicketModule provides access to various utility functions
 type TicketModule struct {
-	vm          *otto.Otto
-	service types.Service
-	ticketmgr   types.TicketManager
+	vm        *otto.Otto
+	service   types.Service
+	ticketmgr types.TicketManager
 }
 
 // NewTicketModule creates an instance of TicketModule
@@ -80,8 +80,8 @@ func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx = types.Transaction{Type: types.TxTypeTicketValidator}
-	if err = mapstructure.Decode(txObj, &tx); err != nil {
+	var tx = types.NewBareTx(types.TxTypeTicketValidator)
+	if err = mapstructure.Decode(txObj, tx); err != nil {
 		panic(errors.Wrap(err, types.ErrArgDecode("types.Transaction", 0).Error()))
 	}
 
@@ -119,9 +119,6 @@ func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{
 		tx.Nonce = nonce + 1
 	}
 
-	// Compute the hash
-	tx.SetHash(tx.ComputeHash())
-
 	// Sign the tx
 	tx.Sig, err = tx.Sign(key)
 	if err != nil {
@@ -129,7 +126,7 @@ func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{
 	}
 
 	// Process the transaction
-	hash, err := m.service.SendCoin(&tx)
+	hash, err := m.service.SendCoin(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
@@ -149,7 +146,7 @@ func (m *TicketModule) find(
 		mapstructure.Decode(queryOpts[0], &qopts)
 	}
 
-	res, err := m.ticketmgr.Get(proposerPubKey, qopts)
+	res, err := m.ticketmgr.GetByProposer(proposerPubKey, qopts)
 	if err != nil {
 		panic(err)
 	}

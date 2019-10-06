@@ -3,6 +3,9 @@ package ticket
 import (
 	"os"
 
+	"github.com/golang/mock/gomock"
+	"github.com/makeos/mosdef/types/mocks"
+
 	"github.com/makeos/mosdef/util"
 
 	"github.com/makeos/mosdef/params"
@@ -26,6 +29,7 @@ var _ = Describe("Manager", func() {
 	var mgr *Manager
 	var state *tree.SafeTree
 	var logic *l.Logic
+	var ctrl *gomock.Controller
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -39,9 +43,73 @@ var _ = Describe("Manager", func() {
 		Expect(err).To(BeNil())
 	})
 
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
 	AfterEach(func() {
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
+	})
+
+	Describe(".GetByProposer", func() {
+		ticket := &types.Ticket{ProposerPubKey: "pub_key"}
+		BeforeEach(func() {
+			err := mgr.store.Add(ticket)
+			Expect(err).To(BeNil())
+		})
+
+		It("should return 1 ticket", func() {
+			tickets, err := mgr.GetByProposer("pub_key", types.EmptyQueryOptions)
+			Expect(err).To(BeNil())
+			Expect(tickets).To(HaveLen(1))
+			Expect(tickets[0]).To(Equal(ticket))
+		})
+	})
+
+	Describe(".CountLiveTickets", func() {
+		ticket := &types.Ticket{ProposerPubKey: "pub_key", MatureBy: 100, DecayBy: 200}
+		ticket2 := &types.Ticket{ProposerPubKey: "pub_key", MatureBy: 100, DecayBy: 150}
+
+		When("only one live ticket exist", func() {
+			BeforeEach(func() {
+				err := mgr.store.Add(ticket, ticket2)
+				Expect(err).To(BeNil())
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 160}, nil)
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+				mgr.logic = mockLogic
+			})
+
+			It("should return 1", func() {
+				count, err := mgr.CountLiveTickets(types.EmptyQueryOptions)
+				Expect(err).To(BeNil())
+				Expect(count).To(Equal(1))
+			})
+		})
+
+		When("no live ticket exist", func() {
+			BeforeEach(func() {
+				err := mgr.store.Add(ticket, ticket2)
+				Expect(err).To(BeNil())
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 300}, nil)
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+				mgr.logic = mockLogic
+			})
+
+			It("should return ticket1", func() {
+				count, err := mgr.CountLiveTickets(types.EmptyQueryOptions)
+				Expect(err).To(BeNil())
+				Expect(count).To(Equal(0))
+			})
+		})
 	})
 
 	Describe(".Index", func() {
@@ -55,7 +123,7 @@ var _ = Describe("Manager", func() {
 				params.MaxTicketActiveDur = 40
 				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 2})
 				Expect(err).To(BeNil())
-				Expect(logic.Sys().GetCurTicketPrice()).To(Equal(float64(10)))
+				Expect(logic.Sys().GetCurValidatorTicketPrice()).To(Equal(float64(10)))
 				tx := &types.Transaction{Hash: util.StrToHash("hash"), Value: util.String("10")}
 				err = mgr.Index(tx, "validator_addr", 100, 1)
 				Expect(err).To(BeNil())
@@ -85,7 +153,7 @@ var _ = Describe("Manager", func() {
 				params.PricePercentIncrease = 0.2
 				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 2})
 				Expect(err).To(BeNil())
-				Expect(logic.Sys().GetCurTicketPrice()).To(Equal(float64(10)))
+				Expect(logic.Sys().GetCurValidatorTicketPrice()).To(Equal(float64(10)))
 				tx := &types.Transaction{Hash: util.StrToHash("hash"), Value: util.String("35")}
 				err = mgr.Index(tx, "validator_addr", 100, 1)
 				Expect(err).To(BeNil())

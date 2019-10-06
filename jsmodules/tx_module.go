@@ -15,7 +15,7 @@ import (
 
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
-	vm          *otto.Otto
+	vm      *otto.Otto
 	service types.Service
 }
 
@@ -76,8 +76,8 @@ func (m *TxModule) sendCoin(txObj interface{}, options ...interface{}) interface
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx types.Transaction
-	if err = mapstructure.Decode(txObj, &tx); err != nil {
+	var tx = types.NewBareTx(types.TxTypeCoinTransfer)
+	if err = mapstructure.Decode(txObj, tx); err != nil {
 		panic(errors.Wrap(err, types.ErrArgDecode("types.Transaction", 0).Error()))
 	}
 
@@ -115,9 +115,6 @@ func (m *TxModule) sendCoin(txObj interface{}, options ...interface{}) interface
 		tx.Nonce = nonce + 1
 	}
 
-	// Compute the hash
-	tx.SetHash(tx.ComputeHash())
-
 	// Sign the tx
 	tx.Sig, err = tx.Sign(key)
 	if err != nil {
@@ -125,7 +122,7 @@ func (m *TxModule) sendCoin(txObj interface{}, options ...interface{}) interface
 	}
 
 	// Process the transaction
-	hash, err := m.service.SendCoin(&tx)
+	hash, err := m.service.SendCoin(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}

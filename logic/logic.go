@@ -2,11 +2,13 @@ package logic
 
 import (
 	"github.com/makeos/mosdef/config"
+	"github.com/makeos/mosdef/crypto/rand"
 	"github.com/makeos/mosdef/logic/keepers"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/storage/tree"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
+	"github.com/pkg/errors"
 )
 
 // Logic is the central point for defining and accessing
@@ -19,17 +21,44 @@ type Logic struct {
 	stateTree     *tree.SafeTree
 	systemKeeper  *keepers.SystemKeeper
 	accountKeeper *keepers.AccountKeeper
+	validator     types.ValidatorLogic
+	ticketMgr     types.TicketManager
+	drand         rand.DRander
 }
 
 // New creates an instance of Logic
+// PANICS: when drand initialization fails
 func New(db storage.Engine, tree *tree.SafeTree, cfg *config.EngineConfig) *Logic {
 	l := &Logic{db: db, stateTree: tree}
 	l.sys = &System{logic: l}
 	l.tx = &Transaction{logic: l}
+	l.validator = &Validator{logic: l}
 	l.cfg = cfg
 	l.systemKeeper = keepers.NewSystemKeeper(db)
 	l.accountKeeper = keepers.NewAccountKeeper(tree)
+
+	// Create a drand instance
+	l.drand = rand.NewDRand()
+	if err := l.drand.Init(); err != nil {
+		panic(errors.Wrap(err, "failed to initialize drand"))
+	}
+
 	return l
+}
+
+// GetDRand returns a drand client
+func (h *Logic) GetDRand() rand.DRander {
+	return h.drand
+}
+
+// SetTicketManager sets the ticket manager
+func (h *Logic) SetTicketManager(tm types.TicketManager) {
+	h.ticketMgr = tm
+}
+
+// GetTicketManager returns the ticket manager
+func (h *Logic) GetTicketManager() types.TicketManager {
+	return h.ticketMgr
 }
 
 // Tx returns the transaction logic
@@ -60,6 +89,11 @@ func (h *Logic) SysKeeper() types.SystemKeeper {
 // AccountKeeper returns the account keeper
 func (h *Logic) AccountKeeper() types.AccountKeeper {
 	return h.accountKeeper
+}
+
+// Validator returns the validator logic
+func (h *Logic) Validator() types.ValidatorLogic {
+	return h.validator
 }
 
 // WriteGenesisState creates initial state objects such as

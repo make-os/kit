@@ -5,6 +5,10 @@ import (
 	"os"
 	"time"
 
+	drandmocks "github.com/makeos/mosdef/crypto/rand/mocks"
+
+	"github.com/golang/mock/gomock"
+	"github.com/makeos/mosdef/types/mocks"
 	"github.com/makeos/mosdef/validators"
 
 	"github.com/makeos/mosdef/config"
@@ -34,6 +38,7 @@ var _ = Describe("TxValidator", func() {
 	var cfg *config.EngineConfig
 	var state *tree.SafeTree
 	var logic *l.Logic
+	var ctrl *gomock.Controller
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -43,6 +48,14 @@ var _ = Describe("TxValidator", func() {
 		db := storage.NewTMDBAdapter(c.F(true, true))
 		state = tree.NewSafeTree(db, 128)
 		logic = l.New(c, state, cfg)
+	})
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	AfterEach(func() {
@@ -55,9 +68,7 @@ var _ = Describe("TxValidator", func() {
 
 		var to = crypto.NewKeyFromIntSeed(1)
 		var txMissingSignature = &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: util.String(to.PubKey().Base58())}
-		txMissingSignature.Hash = txMissingSignature.ComputeHash()
 		var txInvalidSig = &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: util.String(to.PubKey().Base58())}
-		txInvalidSig.Hash = txInvalidSig.ComputeHash()
 		txInvalidSig.Sig = []byte("invalid")
 
 		var cases = []txCase{
@@ -69,14 +80,12 @@ var _ = Describe("TxValidator", func() {
 			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "-1"}, desc: "value is negative", err: fmt.Errorf("field:value, error:negative figure not allowed")},
 			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1"}, desc: "fee not provided", err: fmt.Errorf("field:fee, error:fee is required")},
 			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "-1"}, desc: "fee is negative", err: fmt.Errorf("field:fee, error:negative figure not allowed")},
-			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "0.0000000001"}, desc: "fee lower than base price", err: fmt.Errorf("field:fee, error:fee cannot be lower than the base price of 0.0010")},
+			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "0.0000000001"}, desc: "fee lower than base price", err: fmt.Errorf("field:fee, error:fee cannot be lower than the base price of 0.0008")},
 			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1"}, desc: "timestamp not provided", err: fmt.Errorf("field:timestamp, error:timestamp is required")},
 			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix() + 10}, desc: "timestamp is a future time", err: fmt.Errorf("field:timestamp, error:timestamp cannot be a future time")},
 			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix() + 10}, desc: "timestamp is a future time", err: fmt.Errorf("field:timestamp, error:timestamp cannot be a future time")},
 			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix()}, desc: "sender pub key not provided", err: fmt.Errorf("field:senderPubKey, error:sender public key is required")},
 			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: "abc"}, desc: "sender pub key is not valid", err: fmt.Errorf("field:senderPubKey, error:sender public key is not valid")},
-			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: util.String(to.PubKey().Base58())}, desc: "hash is not provided", err: fmt.Errorf("field:hash, error:hash is required")},
-			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: util.String(to.PubKey().Base58()), Hash: util.StrToHash("invalid")}, desc: "hash is not correct", err: fmt.Errorf("field:hash, error:hash is not correct")},
 			{tx: txMissingSignature, desc: "signature not provided", err: fmt.Errorf("field:sig, error:signature is required")},
 			{tx: txInvalidSig, desc: "signature not valid", err: fmt.Errorf("field:sig, error:signature is not valid")},
 		}
@@ -112,6 +121,166 @@ var _ = Describe("TxValidator", func() {
 			tx := &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: "abc"}
 			err := validators.ValidateTxConsistency(tx, -1, nil)
 			Expect(err.Error()).To(Equal("field:senderPubKey, error:invalid format: version and/or checksum bytes missing"))
+		})
+	})
+
+	Describe(".ValidateEpochSecretTx", func() {
+		When("secret is not set", func() {
+			var err error
+			BeforeEach(func() {
+				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				err = validators.ValidateEpochSecretTx(tx, -1, logic)
+				Expect(err).ToNot(BeNil())
+			})
+
+			It("should return err='field:secret, error:secret is required'", func() {
+				Expect(err.Error()).To(Equal("field:secret, error:secret is required"))
+			})
+		})
+
+		When("secret length is not 64", func() {
+			var err error
+			BeforeEach(func() {
+				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Secret = util.RandBytes(2)
+				err = validators.ValidateEpochSecretTx(tx, -1, logic)
+				Expect(err).ToNot(BeNil())
+			})
+
+			It("should return err='field:secret, error:invalid length; expected 64 bytes'", func() {
+				Expect(err.Error()).To(Equal("field:secret, error:invalid length; expected 64 bytes"))
+			})
+		})
+
+		When("previous secret is not set", func() {
+			var err error
+			BeforeEach(func() {
+				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Secret = util.RandBytes(64)
+				err = validators.ValidateEpochSecretTx(tx, -1, logic)
+				Expect(err).ToNot(BeNil())
+			})
+
+			It("should return err='field:previousSecret, error:previous secret is required'", func() {
+				Expect(err.Error()).To(Equal("field:previousSecret, error:previous secret is required"))
+			})
+		})
+
+		When("previous secret length is not 64", func() {
+			var err error
+			BeforeEach(func() {
+				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(2)
+				err = validators.ValidateEpochSecretTx(tx, -1, logic)
+				Expect(err).ToNot(BeNil())
+			})
+
+			It("should return err='field:previousSecret, error:invalid length; expected 64 bytes'", func() {
+				Expect(err.Error()).To(Equal("field:previousSecret, error:invalid length; expected 64 bytes"))
+			})
+		})
+
+		When("secret round is 0", func() {
+			var err error
+			BeforeEach(func() {
+				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				err = validators.ValidateEpochSecretTx(tx, -1, logic)
+				Expect(err).ToNot(BeNil())
+			})
+
+			It("should return err='field:secretRound, error:secret round is required'", func() {
+				Expect(err.Error()).To(Equal("field:secretRound, error:secret round is required"))
+			})
+		})
+	})
+
+	Describe(".ValidateEpochSecretTxConsistency", func() {
+		When("secret is not valid", func() {
+			var err error
+			BeforeEach(func() {
+				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				err = validators.ValidateEpochSecretTxConsistency(tx, -1, logic)
+				Expect(err).ToNot(BeNil())
+			})
+
+			It("should err='field:secret, error:epoch secret is invalid'", func() {
+				Expect(err.Error()).To(Equal("field:secret, error:epoch secret is invalid"))
+			})
+		})
+
+		When("secret is valid but failed to get highest drand round", func() {
+			var err error
+			BeforeEach(func() {
+				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.SecretRound = 1000
+				tx.Secret = []uint8{
+					0x3a, 0x06, 0x2b, 0xf4, 0xac, 0x34, 0x57, 0x06, 0xcd, 0x41, 0x62, 0xa7, 0x25, 0x39, 0xb8, 0x4a,
+					0x73, 0xf7, 0xf4, 0x1e, 0x57, 0x89, 0x88, 0xdc, 0x9f, 0xef, 0xc2, 0xd4, 0x5f, 0x80, 0xe2, 0xec,
+					0x64, 0x9e, 0xdc, 0x53, 0xb7, 0x26, 0x4b, 0x0c, 0xdf, 0x41, 0xe3, 0x63, 0xb1, 0xb9, 0xf4, 0xcd,
+					0x73, 0x0c, 0x35, 0xd3, 0xf6, 0x31, 0x78, 0x14, 0x24, 0xef, 0xa4, 0x3a, 0x79, 0x63, 0xf1, 0x01,
+				}
+				tx.PreviousSecret = []uint8{
+					0x28, 0x18, 0x21, 0x0a, 0x81, 0xb6, 0x28, 0x88, 0xa9, 0x24, 0x29, 0x55, 0xf2, 0x01, 0x30, 0x80,
+					0xa9, 0x7e, 0xa3, 0x55, 0x7c, 0x6d, 0xfe, 0x8a, 0x5d, 0x94, 0x0d, 0x8f, 0x65, 0x46, 0xdd, 0x99,
+					0x69, 0xf2, 0xf9, 0x10, 0xd5, 0xcf, 0x15, 0xcc, 0x0e, 0x39, 0x17, 0xa8, 0xd9, 0x90, 0x21, 0x57,
+					0x5e, 0x27, 0xdb, 0xfd, 0x25, 0x61, 0x54, 0xb1, 0x4d, 0xdc, 0xbf, 0xb1, 0xbf, 0xb4, 0x5e, 0x44,
+				}
+
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockDrand := drandmocks.NewMockDRander(ctrl)
+				mockDrand.EXPECT().Verify(tx.Secret, tx.PreviousSecret, tx.SecretRound).Return(nil)
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockSysKeeper.EXPECT().GetHighestDrandRound().Return(uint64(0), fmt.Errorf("error"))
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+				mockLogic.EXPECT().GetDRand().Return(mockDrand)
+
+				err = validators.ValidateEpochSecretTxConsistency(tx, -1, mockLogic)
+				Expect(err).ToNot(BeNil())
+			})
+
+			It("should return err='failed to get highest drand round: error'", func() {
+				Expect(err.Error()).To(Equal("failed to get highest drand round: error"))
+			})
+		})
+
+		When("secret is valid but its round is not greater than the current highest round", func() {
+			var err error
+			BeforeEach(func() {
+				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.SecretRound = 1000
+				tx.Secret = []uint8{
+					0x3a, 0x06, 0x2b, 0xf4, 0xac, 0x34, 0x57, 0x06, 0xcd, 0x41, 0x62, 0xa7, 0x25, 0x39, 0xb8, 0x4a,
+					0x73, 0xf7, 0xf4, 0x1e, 0x57, 0x89, 0x88, 0xdc, 0x9f, 0xef, 0xc2, 0xd4, 0x5f, 0x80, 0xe2, 0xec,
+					0x64, 0x9e, 0xdc, 0x53, 0xb7, 0x26, 0x4b, 0x0c, 0xdf, 0x41, 0xe3, 0x63, 0xb1, 0xb9, 0xf4, 0xcd,
+					0x73, 0x0c, 0x35, 0xd3, 0xf6, 0x31, 0x78, 0x14, 0x24, 0xef, 0xa4, 0x3a, 0x79, 0x63, 0xf1, 0x01,
+				}
+				tx.PreviousSecret = []uint8{
+					0x28, 0x18, 0x21, 0x0a, 0x81, 0xb6, 0x28, 0x88, 0xa9, 0x24, 0x29, 0x55, 0xf2, 0x01, 0x30, 0x80,
+					0xa9, 0x7e, 0xa3, 0x55, 0x7c, 0x6d, 0xfe, 0x8a, 0x5d, 0x94, 0x0d, 0x8f, 0x65, 0x46, 0xdd, 0x99,
+					0x69, 0xf2, 0xf9, 0x10, 0xd5, 0xcf, 0x15, 0xcc, 0x0e, 0x39, 0x17, 0xa8, 0xd9, 0x90, 0x21, 0x57,
+					0x5e, 0x27, 0xdb, 0xfd, 0x25, 0x61, 0x54, 0xb1, 0x4d, 0xdc, 0xbf, 0xb1, 0xbf, 0xb4, 0x5e, 0x44,
+				}
+
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockDrand := drandmocks.NewMockDRander(ctrl)
+				mockDrand.EXPECT().Verify(tx.Secret, tx.PreviousSecret, tx.SecretRound).Return(nil)
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockSysKeeper.EXPECT().GetHighestDrandRound().Return(uint64(1001), nil)
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+				mockLogic.EXPECT().GetDRand().Return(mockDrand)
+
+				err = validators.ValidateEpochSecretTxConsistency(tx, -1, mockLogic)
+				Expect(err).ToNot(BeNil())
+			})
+
+			It("should return err='field:secretRound, error:must be greater than the previous round'", func() {
+				Expect(err.Error()).To(Equal("field:secretRound, error:must be greater than the previous round"))
+			})
 		})
 	})
 })

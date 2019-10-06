@@ -8,10 +8,16 @@ import (
 
 // Store describes an interface for storing and accessing tickets.
 type Store interface {
-	// Add adds a ticket
+	// Add stores tickets
 	Add(t ...*types.Ticket) error
-	// Query queries tickets
+	// Query queries tickets that match the given query
 	Query(query types.Ticket, queryOptions ...interface{}) ([]*types.Ticket, error)
+	// Count counts tickets that match the given query
+	Count(query types.Ticket, queryOptions ...interface{}) (int, error)
+	// GetLive returns matured and non-decayed tickets
+	GetLive(curBlockHeight int64, queryOptions ...interface{}) ([]*types.Ticket, error)
+	// CountLive returns the number of matured and live tickets
+	CountLive(curBlockHeight int64, queryOptions ...interface{}) (int, error)
 	// Close closes the store
 	Close() error
 }
@@ -33,7 +39,7 @@ func NewSQLStore(dbPath string) (*SQLStore, error) {
 	}, nil
 }
 
-// Add stores a ticket
+// Add stores tickets
 func (s *SQLStore) Add(tickets ...*types.Ticket) error {
 	db := s.db.Begin()
 	for _, t := range tickets {
@@ -56,13 +62,7 @@ func getQueryOptions(queryOptions ...interface{}) types.QueryOptions {
 	return types.QueryOptions{}
 }
 
-// Query fetches tickets by validator proposedPubKey
-func (s *SQLStore) Query(
-	query types.Ticket,
-	queryOptions ...interface{}) ([]*types.Ticket, error) {
-	opts := getQueryOptions(queryOptions...)
-	q := s.db.Where(query)
-
+func applyQueryOpts(q *gorm.DB, opts types.QueryOptions) *gorm.DB {
 	if opts.Limit > 0 {
 		q = q.Limit(opts.Limit)
 	}
@@ -78,9 +78,67 @@ func (s *SQLStore) Query(
 	if opts.NoChild {
 		q = q.Where(`"childOf" = ?`, "")
 	}
+	return q
+}
+
+// Query queries tickets that match the given query
+func (s *SQLStore) Query(
+	query types.Ticket,
+	queryOptions ...interface{}) ([]*types.Ticket, error) {
+
+	opts := getQueryOptions(queryOptions...)
+	q := s.db.Where(query)
+	q = applyQueryOpts(q, opts)
 
 	var tickets []*types.Ticket
 	return tickets, q.Find(&tickets).Error
+}
+
+// GetLive returns matured and live tickets
+func (s *SQLStore) GetLive(
+	curBlockHeight int64,
+	queryOptions ...interface{}) ([]*types.Ticket, error) {
+
+	opts := getQueryOptions(queryOptions...)
+	q := s.db.
+		Where(`"matureBy" <= ?`, curBlockHeight).
+		Where(`"decayBy" > ?`, curBlockHeight)
+	q = applyQueryOpts(q, opts)
+
+	var tickets []*types.Ticket
+	return tickets, q.Find(&tickets).Error
+}
+
+// CountLive returns the number of matured and live tickets
+func (s *SQLStore) CountLive(
+	curBlockHeight int64,
+	queryOptions ...interface{}) (int, error) {
+
+	opts := getQueryOptions(queryOptions...)
+	q := s.db.
+		Model(types.Ticket{}).
+		Where(`"matureBy" <= ?`, curBlockHeight).
+		Where(`"decayBy" > ?`, curBlockHeight)
+	q = applyQueryOpts(q, opts)
+
+	var count int
+	return count, q.Count(&count).Error
+}
+
+// Count counts tickets that match the given query
+func (s *SQLStore) Count(
+	query types.Ticket,
+	queryOptions ...interface{}) (int, error) {
+
+	opts := getQueryOptions(queryOptions...)
+	q := s.db.Model(types.Ticket{}).Where(query)
+
+	if opts.NoChild {
+		q = q.Where(`"childOf" = ?`, "")
+	}
+
+	var count int
+	return count, q.Count(&count).Error
 }
 
 // GetTicketByProposerPubKey fetches tickets by validator proposedPubKey

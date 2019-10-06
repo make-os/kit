@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/makeos/mosdef/params"
+	"github.com/pkg/errors"
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util"
@@ -62,10 +63,10 @@ var validPubKeyRule = func(err error) func(interface{}) error {
 	}
 }
 
-var requireHashRule = func(err error) func(interface{}) error {
+var validSecretRule = func(field string, index int) func(interface{}) error {
 	return func(val interface{}) error {
-		if val.(util.Hash).IsEmpty() {
-			return err
+		if len(val.([]byte)) != 64 {
+			return types.FieldErrorWithIndex(index, field, "invalid length; expected 64 bytes")
 		}
 		return nil
 	}
@@ -79,15 +80,6 @@ var validValueRule = func(field string, index int) func(interface{}) error {
 		}
 		if dVal.LessThan(decimal.Zero) {
 			return types.FieldErrorWithIndex(index, field, "negative figure not allowed")
-		}
-		return nil
-	}
-}
-
-var isSameHashRule = func(val2 util.Hash, err error) func(interface{}) error {
-	return func(val interface{}) error {
-		if !val.(util.Hash).Equal(val2) {
-			return err
 		}
 		return nil
 	}
@@ -116,15 +108,106 @@ func ValidateTxs(txs []*types.Transaction, logic types.Logic) error {
 // ValidateTx validates a transaction
 func ValidateTx(tx *types.Transaction, i int, logic types.Logic) error {
 
-	// Perform syntactic checks
+	if tx.Type == types.TxTypeEpochSecret {
+		goto checkEpochSecret
+	}
+
 	if err := ValidateTxSyntax(tx, i); err != nil {
 		return err
 	}
 
-	// Perform consistency check
 	if err := ValidateTxConsistency(tx, i, logic); err != nil {
 		return err
 	}
+
+	return nil
+
+checkEpochSecret:
+
+	if err := ValidateEpochSecretTx(tx, i, logic); err != nil {
+		return err
+	}
+
+	if err := ValidateEpochSecretTxConsistency(tx, i, logic); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ValidateEpochSecretTx validates TxTypeEpochSecret transaction.
+func ValidateEpochSecretTx(tx *types.Transaction, index int, logic types.Logic) error {
+
+	// Secret must be set and must be 64-bytes in length
+	if err := v.Validate(tx.GetSecret(),
+		v.Required.Error(types.FieldErrorWithIndex(index, "secret",
+			"secret is required").Error()), v.By(validSecretRule("secret", index)),
+	); err != nil {
+		return err
+	}
+
+	// Previous secret must be set and must be 64-bytes in length
+	if err := v.Validate(tx.GetPreviousSecret(),
+		v.Required.Error(types.FieldErrorWithIndex(index, "previousSecret",
+			"previous secret is required").Error()), v.By(validSecretRule("previousSecret", index)),
+	); err != nil {
+		return err
+	}
+
+	// Previous secret must be set and must be 64-bytes in length
+	if err := v.Validate(tx.GetSecretRound(),
+		v.Required.Error(types.FieldErrorWithIndex(index, "secretRound",
+			"secret round is required").Error()),
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// ValidateEpochSecretTxConsistency validates TxTypeEpochSecret
+// transaction to ensure the drand secret is valid and the round 
+// is obtained within an expected window. 
+func ValidateEpochSecretTxConsistency(tx *types.Transaction, index int, logic types.Logic) error {
+
+	err := logic.GetDRand().Verify(tx.Secret, tx.PreviousSecret, tx.SecretRound)
+	if err != nil {
+		return types.FieldErrorWithIndex(index, "secret", "epoch secret is invalid")
+	}
+
+	// We need to ensure that the drand round is greater 
+	// than the last known highest drand round.
+	highestDrandRound, err := logic.SysKeeper().GetHighestDrandRound()
+	if err != nil {
+		return errors.Wrap(err, "failed to get highest drand round")
+	} else if tx.SecretRound <= highestDrandRound {
+		return types.ErrStaleSecretRound(index)
+	}
+
+	// Get the last committed block
+	// bi, err := logic.SysKeeper().GetLastBlockInfo()
+	// if err != nil {
+	// 	return errors.Wrap(err, "failed to get last committed block")
+	// }
+
+	// // Determine the height of the last block of the last epoch,
+	// // then fetch the block info
+	// curBlockHeight := bi.Height + 1
+	// lastEpochBlockHeight := curBlockHeight - int64(params.NumBlocksPerEpoch)
+	// lastEpochBlockInfo, err := logic.SysKeeper().GetBlockInfo(lastEpochBlockHeight)
+	// if err != nil {
+	// 	return errors.Wrap(err, "failed to get last block of last epoch")
+	// }
+
+	// Ensure the tx secret round was not generated at
+	// an earlier period (before the epoch reaches its last block).
+	// minsPerEpoch := uint64(params.NumBlocksPerEpoch / 60)
+	// expectedRound := lastEpochBlockInfo.EpochRound + minsPerEpoch
+	// pp.Println("Expected", expectedRound, "Actual", tx.SecretRound)
+	// if tx.SecretRound < expectedRound {
+	// 	pp.Println("Too early")
+	// 	return types.FieldErrorWithIndex(index, "secretRound", "round was generated too early")
+	// }
 
 	return nil
 }
@@ -204,16 +287,6 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 		return err
 	}
 
-	// Hash is required. It must also be correct
-	if err := v.Validate(tx.GetHash(),
-		v.By(requireHashRule(types.FieldErrorWithIndex(index, "hash",
-			"hash is required"))),
-		v.By(isSameHashRule(tx.ComputeHash(), types.FieldErrorWithIndex(index,
-			"hash", "hash is not correct"))),
-	); err != nil {
-		return err
-	}
-
 	// Signature must be set
 	if err := v.Validate(tx.GetSignature(),
 		v.Required.Error(types.FieldErrorWithIndex(index, "sig",
@@ -244,7 +317,7 @@ func checkSignature(tx *types.Transaction, index int) (errs []error) {
 		return
 	}
 
-	valid, err := pubKey.Verify(tx.GetBytesNoHashAndSig(), tx.GetSignature())
+	valid, err := pubKey.Verify(tx.GetBytesNoSig(), tx.GetSignature())
 	if err != nil {
 		errs = append(errs, types.FieldErrorWithIndex(index, "sig", err.Error()))
 	} else if !valid {

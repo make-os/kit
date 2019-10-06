@@ -79,7 +79,14 @@ var (
 
 // Transaction processing errors
 const (
-	ErrCodeFailedDecode        = uint32(1)
-	ErrCodeExecFailure         = 2
-	ErrCodeMaxValTxTypeReached = 3
+	ErrCodeFailedDecode     = uint32(1)
+	ErrCodeExecFailure      = 2
+	ErrCodeMaxTxTypeReached = 3
+	ErrCodeTxTypeUnexpected = 4
+	ErrCodeTxInvalidValue   = 5
+)
+
+// Network errors
+var (
+	ErrImmatureNetwork = fmt.Errorf("network is immature")
 )

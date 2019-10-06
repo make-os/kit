@@ -20,13 +20,22 @@ type QueryOptions struct {
 	NoChild bool   `json:"noChild" mapstructure:"noChild"`
 }
 
+// EmptyQueryOptions is an empty instance of QueryOptions
+var EmptyQueryOptions = QueryOptions{}
+
 // TicketManager describes a ticket manager
 // Get finds tickets belonging to the given proposer.
 type TicketManager interface {
 	// Index adds a ticket (and child tickets) to the ticket index.
 	Index(tx *Transaction, proposerPubKey string, blockHeight uint64, txIndex int) error
-	// Get finds tickets belonging to the given proposer.
-	Get(proposerPubKey string, queryOpt QueryOptions) ([]*Ticket, error)
+
+	// GetByProposer finds tickets belonging to the
+	// given proposer public key.
+	GetByProposer(proposerPubKey string, queryOpt QueryOptions) ([]*Ticket, error)
+
+	// CountLiveTickets returns the number of matured and non-decayed tickets.
+	CountLiveTickets(...QueryOptions) (int, error)
+
 	// Stop stops the ticket manager
 	Stop() error
 }
