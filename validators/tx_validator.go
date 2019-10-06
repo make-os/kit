@@ -166,8 +166,8 @@ func ValidateEpochSecretTx(tx *types.Transaction, index int, logic types.Logic) 
 }
 
 // ValidateEpochSecretTxConsistency validates TxTypeEpochSecret
-// transaction to ensure the drand secret is valid and the round 
-// is obtained within an expected window. 
+// transaction to ensure the drand secret is valid and the round
+// is obtained within an expected window.
 func ValidateEpochSecretTxConsistency(tx *types.Transaction, index int, logic types.Logic) error {
 
 	err := logic.GetDRand().Verify(tx.Secret, tx.PreviousSecret, tx.SecretRound)
@@ -175,7 +175,7 @@ func ValidateEpochSecretTxConsistency(tx *types.Transaction, index int, logic ty
 		return types.FieldErrorWithIndex(index, "secret", "epoch secret is invalid")
 	}
 
-	// We need to ensure that the drand round is greater 
+	// We need to ensure that the drand round is greater
 	// than the last known highest drand round.
 	highestDrandRound, err := logic.SysKeeper().GetHighestDrandRound()
 	if err != nil {
@@ -184,30 +184,13 @@ func ValidateEpochSecretTxConsistency(tx *types.Transaction, index int, logic ty
 		return types.ErrStaleSecretRound(index)
 	}
 
-	// Get the last committed block
-	// bi, err := logic.SysKeeper().GetLastBlockInfo()
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to get last committed block")
-	// }
-
-	// // Determine the height of the last block of the last epoch,
-	// // then fetch the block info
-	// curBlockHeight := bi.Height + 1
-	// lastEpochBlockHeight := curBlockHeight - int64(params.NumBlocksPerEpoch)
-	// lastEpochBlockInfo, err := logic.SysKeeper().GetBlockInfo(lastEpochBlockHeight)
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to get last block of last epoch")
-	// }
-
 	// Ensure the tx secret round was not generated at
 	// an earlier period (before the epoch reaches its last block).
-	// minsPerEpoch := uint64(params.NumBlocksPerEpoch / 60)
-	// expectedRound := lastEpochBlockInfo.EpochRound + minsPerEpoch
-	// pp.Println("Expected", expectedRound, "Actual", tx.SecretRound)
-	// if tx.SecretRound < expectedRound {
-	// 	pp.Println("Too early")
-	// 	return types.FieldErrorWithIndex(index, "secretRound", "round was generated too early")
-	// }
+	minsPerEpoch := uint64(params.NumBlocksPerEpoch / 60) // 1 seconds per epoch
+	expectedRound := highestDrandRound + minsPerEpoch
+	if tx.SecretRound < expectedRound {
+		return types.FieldErrorWithIndex(index, "secretRound", "round was generated too early")
+	}
 
 	return nil
 }
