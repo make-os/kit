@@ -164,6 +164,87 @@ func (app *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBe
 	return abcitypes.ResponseBeginBlock{}
 }
 
+// preExecChecks performs some checks that attempt to spot problems
+// with specific transaction types and possible activate slashing
+// conditions and invalidate the transaction before it ever gets
+// executed.
+func (app *App) preExecChecks(tx *types.Transaction) *abcitypes.ResponseDeliverTx {
+
+	txType := tx.GetType()
+
+	// Invalidate the transaction if it is a validator ticket
+	// purchasing tx and we have reached the max per block.
+	// TODO: Slash proposer for violating the rule.
+	if txType == types.TxTypeTicketValidator &&
+		len(app.ticketPurchaseTxs) == params.MaxValTicketsPerBlock {
+		return &abcitypes.ResponseDeliverTx{
+			Code: types.ErrCodeMaxTxTypeReached,
+			Log:  "failed to execute tx: validator ticket capacity reached",
+		}
+	}
+
+	if txType == types.TxTypeEpochSecret {
+		// Invalidate the epoch secret tx if the current block is not the
+		// last block in the current epoch.
+		// TODO: Slash the proposer for violating this rule.
+		if (app.workingBlock.Height)%int64(params.NumBlocksPerEpoch) != 0 {
+			return &abcitypes.ResponseDeliverTx{
+				Code: types.ErrCodeTxTypeUnexpected,
+				Log:  "failed to execute tx: epoch secret not expected",
+			}
+		}
+
+		// Invalidate the epoch secret tx if we have already seen one in this block.
+		// TODO: Slash proposer for violating this rule.
+		if app.epochSecretTx != nil {
+			return &abcitypes.ResponseDeliverTx{
+				Code: types.ErrCodeMaxTxTypeReached,
+				Log:  "failed to execute tx: epoch secret capacity reached",
+			}
+		}
+	}
+
+	return nil
+}
+
+// postExecChecks performs some checks that reacts to the result
+// from executing a transaction. In here we can activate slashing
+// conditions and invalidate the transaction
+func (app *App) postExecChecks(
+	tx *types.Transaction,
+	resp abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
+
+	txType := tx.GetType()
+
+	if txType == types.TxTypeEpochSecret {
+
+		// Cache the epoch secret tx for use in the COMMIT stage
+		app.epochSecretTx = tx
+
+		// At the point, the proposer proposed an epoch secret tx whose round is earlier
+		// or same as the last epoch secret round. We respond by invalidating the tx
+		// object so that the COMMIT phase can flag it.
+		// Also, TODO: Slash the proposer for doing this.
+		if resp.Code != 0 && types.IsStaleSecretRoundErr(fmt.Errorf(resp.Log)) {
+			tx.Invalidate()
+			return &abcitypes.ResponseDeliverTx{
+				Code: types.ErrCodeTxInvalidValue,
+				Log:  "failed to execute tx: " + resp.Log,
+			}
+		}
+	}
+
+	// Cache ticket purchase transaction; They will be indexed in the COMMIT stage.
+	if resp.Code == 0 && txType == types.TxTypeTicketValidator {
+		app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{
+			Tx:    tx,
+			index: app.txIndex,
+		})
+	}
+
+	return &resp
+}
+
 // DeliverTx processes transactions included in a proposed block.
 // Execute the transaction such that in modifies the blockchain state.
 func (app *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
@@ -180,69 +261,16 @@ func (app *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeli
 		}
 	}
 
-	txType := tx.GetType()
-
-	// Invalidate the transaction if it is a validator ticket
-	// purchasing tx and we have reached the max per block.
-	// TODO: Slash proposer for violating the rule.
-	if txType == types.TxTypeTicketValidator &&
-		len(app.ticketPurchaseTxs) == params.MaxValTicketsPerBlock {
-		return abcitypes.ResponseDeliverTx{
-			Code: types.ErrCodeMaxTxTypeReached,
-			Log:  "failed to execute tx: validator ticket capacity reached",
-		}
+	// Perform pre execution checks
+	if resp := app.preExecChecks(tx); resp != nil {
+		return *resp
 	}
 
-	if txType == types.TxTypeEpochSecret {
-		// Invalidate the epoch secret tx if the current block is not the
-		// last block in the current epoch.
-		// TODO: Slash the proposer for violating this rule.
-		if (app.workingBlock.Height)%int64(params.NumBlocksPerEpoch) != 0 {
-			return abcitypes.ResponseDeliverTx{
-				Code: types.ErrCodeTxTypeUnexpected,
-				Log:  "failed to execute tx: epoch secret not expected",
-			}
-		}
-
-		// Invalidate the epoch secret tx if we have already seen one in this block.
-		// TODO: Slash proposer for violating this rule.
-		if app.epochSecretTx != nil {
-			return abcitypes.ResponseDeliverTx{
-				Code: types.ErrCodeMaxTxTypeReached,
-				Log:  "failed to execute tx: epoch secret capacity reached",
-			}
-		}
-	}
-
+	// Execute the transaction (does not commit the state changes yet)
 	resp := app.logic.Tx().PrepareExec(req)
 
-	if txType == types.TxTypeEpochSecret {
-
-		// Cache the epoch secret tx for use in the COMMIT stage
-		app.epochSecretTx = tx
-
-		// At the point, the proposer proposed an epoch secret tx whose round is earlier
-		// or same as the last epoch secret round. We respond by invalidating the tx
-		// object so that the COMMIT phase can flag it.
-		// Also, TODO: Slash the proposer for doing this.
-		if resp.Code != 0 && types.IsStaleSecretRoundErr(fmt.Errorf(resp.Log)) {
-			tx.Invalidate()
-			return abcitypes.ResponseDeliverTx{
-				Code: types.ErrCodeTxInvalidValue,
-				Log:  "failed to execute tx: " + resp.Log,
-			}
-		}
-	}
-
-	// Cache ticket purchase transaction; They will be indexed in the COMMIT stage.
-	if resp.Code == 0 && txType == types.TxTypeTicketValidator {
-		app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{
-			Tx:    tx,
-			index: app.txIndex,
-		})
-	}
-
-	return resp
+	// Perform post execution operations
+	return *app.postExecChecks(tx, resp)
 }
 
 // EndBlock indicates the end of a block
@@ -255,20 +283,16 @@ func (app *App) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlo
 func (app *App) Commit() abcitypes.ResponseCommit {
 	defer app.reset()
 
-	appHash, _, err := app.logic.StateTree().SaveVersion()
-	if err != nil {
-		panic(errors.Wrap(err, "failed to commit: could not save new tree version"))
-	}
-
+	// Construct a new block information object
 	bi := &types.BlockInfo{
 		Height:      app.workingBlock.Height,
 		Hash:        app.workingBlock.Hash,
 		LastAppHash: app.workingBlock.LastAppHash,
-		AppHash:     appHash,
 	}
 
-	// Add epoch secret data to the block info and
-	// update the highest known drand round
+	// Add epoch secret data to the block info object and
+	// update the highest known drand round so we are able
+	// to determine in the future what round is superior
 	if estx := app.epochSecretTx; estx != nil {
 		bi.EpochSecret = estx.Secret
 		bi.EpochPreviousSecret = estx.PreviousSecret
@@ -277,14 +301,28 @@ func (app *App) Commit() abcitypes.ResponseCommit {
 		if err := app.logic.SysKeeper().SetHighestDrandRound(estx.SecretRound); err != nil {
 			panic(errors.Wrap(err, "failed to save highest drand round"))
 		}
+	} else {
+		// Ok, so no epoch secret tx in this block. We need
+		// to ensure this block is not the last block of this epoch.
+		// If it is, we need to TODO: Slash the proposer for not adding a secret.
+		if bi.Height%int64(params.NumBlocksPerEpoch) == 0 {
+
+		}
 	}
 
-	// Store the committed block
+	// Save the uncommitted changes to the tree
+	appHash, _, err := app.logic.StateTree().SaveVersion()
+	if err != nil {
+		panic(errors.Wrap(err, "failed to commit: could not save new tree version"))
+	}
+
+	// Save the block information
+	bi.AppHash = appHash
 	if err := app.logic.SysKeeper().SaveBlockInfo(bi); err != nil {
 		panic(err)
 	}
 
-	// Index any purchased ticket collected in DeliverTx stage
+	// Index any purchased ticket we have collected so far.
 	for _, ptx := range app.ticketPurchaseTxs {
 		app.ticketMgr.Index(ptx.Tx, ptx.Tx.SenderPubKey.String(),
 			uint64(app.workingBlock.Height), ptx.index)
