@@ -232,6 +232,19 @@ func (app *App) postExecChecks(
 				Log:  "failed to execute tx: " + resp.Log,
 			}
 		}
+
+		// Here, the proposer proposed an epoch secret tx whose round was
+		// produced at a time earlier that the expected time a new drand
+		// will be produced. We respond by invalidating the tx object so
+		// that the COMMIT phase can flag it. Also, TODO: Slash the proposer for doing this.
+		if resp.Code != 0 && types.IsEarlySecretRoundErr(fmt.Errorf(resp.Log)) {
+			tx.Invalidate()
+			return &abcitypes.ResponseDeliverTx{
+				Code: types.ErrCodeTxInvalidValue,
+				Log:  "failed to execute tx: " + resp.Log,
+			}
+		}
+
 	}
 
 	// Cache ticket purchase transaction; They will be indexed in the COMMIT stage.

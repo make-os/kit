@@ -25,7 +25,7 @@ func FieldErrorWithIndex(index int, field, err string) error {
 }
 
 // ErrStaleSecretRound returns an error about `secretRound` field
-// is not greater than the previous secret round
+// of a tx when the field is not greater than the previous secret round
 var ErrStaleSecretRound = func(index int) error {
 	return FieldErrorWithIndex(index, "secretRound",
 		"must be greater than the previous round")
@@ -34,4 +34,15 @@ var ErrStaleSecretRound = func(index int) error {
 // IsStaleSecretRoundErr checks whether an error is a ErrStaleSecretRound error
 func IsStaleSecretRoundErr(err error) bool {
 	return strings.Index(err.Error(), "error:must be greater than the previous round") != -1
+}
+
+// ErrEarlySecretRound returns an error about `secretRound` field
+// of a tx when the field is lower that the expected round.
+var ErrEarlySecretRound = func(index int) error {
+	return FieldErrorWithIndex(index, "secretRound", "round was generated too early")
+}
+
+// IsEarlySecretRoundErr checks whether an error is a ErrEarlySecretRound error
+func IsEarlySecretRoundErr(err error) bool {
+	return strings.Index(err.Error(), "error:round was generated too early") != -1
 }

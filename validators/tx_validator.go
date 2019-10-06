@@ -189,7 +189,7 @@ func ValidateEpochSecretTxConsistency(tx *types.Transaction, index int, logic ty
 	minsPerEpoch := uint64(params.NumBlocksPerEpoch / 60) // 1 seconds per epoch
 	expectedRound := highestDrandRound + minsPerEpoch
 	if tx.SecretRound < expectedRound {
-		return types.FieldErrorWithIndex(index, "secretRound", "round was generated too early")
+		return types.ErrEarlySecretRound(index)
 	}
 
 	return nil

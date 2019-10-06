@@ -20,4 +20,19 @@ var _ = Describe("Util", func() {
 			Expect(res).To(BeTrue())
 		})
 	})
+
+	Describe(".ErrEarlySecretRound", func() {
+		It("should return expected error", func() {
+			err := ErrEarlySecretRound(1)
+			Expect(err.Error()).To(Equal("index:1, field:secretRound, error:round was generated too early"))
+		})
+	})
+
+	Describe(".IsEarlySecretRoundErr", func() {
+		It("should return true if err is from ErrStaleSecretRound", func() {
+			err := ErrEarlySecretRound(1)
+			res := IsEarlySecretRoundErr(err)
+			Expect(res).To(BeTrue())
+		})
+	})
 })

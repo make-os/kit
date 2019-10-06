@@ -349,8 +349,48 @@ var _ = Describe("App", func() {
 				res = app.DeliverTx(req)
 			})
 
-			It("should return code=types.ErrCodeTxInvalidValue", func() {
+			It("should return code=types.ErrCodeTxInvalidValue, err=ErrStaleSecretRound", func() {
 				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxInvalidValue)))
+				Expect(res.Log).To(ContainSubstring(types.ErrStaleSecretRound(1).Error()))
+			})
+
+			Specify("that the cached epoch tx has been invalidated", func() {
+				Expect(app.epochSecretTx.GetID()).To(Equal(tx.GetID()))
+				Expect(app.epochSecretTx.IsInvalidated()).To(BeTrue())
+			})
+		})
+
+		When("tx type TxTypeEpochSecret but it has an early, unexpected round", func() {
+			var res abcitypes.ResponseDeliverTx
+			var tx *types.Transaction
+
+			BeforeEach(func() {
+				tx = types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				tx.SecretRound = 18
+			})
+
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 5
+				app.workingBlock.Height = 5
+
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockTxLogic := mocks.NewMockTxLogic(ctrl)
+				mockTxLogic.EXPECT().PrepareExec(gomock.Any()).Return(abcitypes.ResponseDeliverTx{
+					Code: types.ErrCodeTxInvalidValue,
+					Log:  types.ErrEarlySecretRound(1).Error(),
+				})
+				mockLogic.EXPECT().Tx().Return(mockTxLogic)
+				app.logic = mockLogic
+
+				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
+				res = app.DeliverTx(req)
+			})
+
+			It("should return code=types.ErrCodeTxInvalidValue, err=ErrEarlySecretRound", func() {
+				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxInvalidValue)))
+				Expect(res.Log).To(ContainSubstring(types.ErrEarlySecretRound(1).Error()))
 			})
 
 			Specify("that the cached epoch tx has been invalidated", func() {
