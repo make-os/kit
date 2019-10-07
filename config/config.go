@@ -183,8 +183,10 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	os.MkdirAll(logPath, 0700)
 	logFile := path.Join(logPath, "main.log")
 	c.G().Log = logger.NewLogrusWithFileRotation(logFile)
+
 	if devMode {
 		c.G().Log.SetToDebug()
+		tmcfg.P2P.AllowDuplicateIP = true
 	}
 
 	// Set default version information
