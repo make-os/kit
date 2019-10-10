@@ -1,6 +1,7 @@
 package keepers
 
 import (
+	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
@@ -17,17 +18,40 @@ func NewValidatorKeeper(db storage.Engine) *ValidatorKeeper {
 	return &ValidatorKeeper{db: db}
 }
 
-// GetByHeight gets validators at the given height
+// GetByHeight gets a list of validators that produced a block.
 func (v *ValidatorKeeper) getByHeight(height int64) (types.BlockValidators, error) {
 
+	// Get the height of the block before the first block of the epoch this target
+	// block belongs to - This is known as the epoch eve block
+	// e.g [epoch 1: [eveBlock 9]] [epoch 2: [block 10]]
+	epochEveBlockHeight := height - (height % int64(params.NumBlocksPerEpoch))
+
+get:
+	// The lowest eve block is 1 (genesis block)
+	if epochEveBlockHeight <= 0 {
+		epochEveBlockHeight = 1
+	}
+
+	// Find the validator set attached to the the eve block.
 	res := make(map[string]int64)
-	key := MakeBlockValidatorsKey(height)
+	key := MakeBlockValidatorsKey(epochEveBlockHeight)
 	rec, err := v.db.Get(key)
 	if err != nil {
-		if err == storage.ErrRecordNotFound {
-			return res, nil
+		if err != storage.ErrRecordNotFound {
+			return nil, err
 		}
-		return nil, err
+	}
+
+	// At this point, the eve block has no validators.
+	// In this case, an older epoch validator must have produced it, therefore we
+	// need to find the most recent eve block with an associated validator set.
+	if err == storage.ErrRecordNotFound {
+		nextEveBlock := epochEveBlockHeight - int64(params.NumBlocksPerEpoch)
+		if nextEveBlock >= 0 {
+			epochEveBlockHeight = nextEveBlock
+			goto get
+		}
+		return res, nil
 	}
 
 	rec.Scan(&res)

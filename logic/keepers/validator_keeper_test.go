@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/makeos/mosdef/params"
+
 	"github.com/golang/mock/gomock"
 
 	"github.com/makeos/mosdef/config"
@@ -88,36 +90,71 @@ var _ = Describe("SystemKeeper", func() {
 	})
 
 	Describe(".GetByHeight", func() {
-		When("record exist and argument height = 1", func() {
-			height := int64(1)
+		When("one validator is stored at height=1, search height = 1", func() {
 			rec := map[string]int64{"pubkey": 1}
 			BeforeEach(func() {
-				key := MakeBlockValidatorsKey(height)
+				key := MakeBlockValidatorsKey(1)
 				err := valKeeper.db.Put(storage.NewFromKeyValue(key, util.ObjectToBytes(rec)))
 				Expect(err).To(BeNil())
 			})
 
-			It("should return err=nil and expected result", func() {
-				res, err := valKeeper.GetByHeight(height)
+			It("should return err=nil and one validator", func() {
+				res, err := valKeeper.GetByHeight(1)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(types.BlockValidators(rec)))
 			})
 		})
 
-		When("two records exist; rec1 at height 1, rec2 at height 2; argument height = 0", func() {
-			rec := map[string]int64{"pubkey": 1}
-			rec2 := map[string]int64{"pubkey": 2}
+		When("two two validators exist; valset1 at height 1, valset2 at height 2; argument height = 0", func() {
+			valset := map[string]int64{"pubkey": 1}
+			valset2 := map[string]int64{"pubkey": 2}
 			BeforeEach(func() {
-				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(1), util.ObjectToBytes(rec)))
+				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(1), util.ObjectToBytes(valset)))
 				Expect(err).To(BeNil())
-				err = valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ObjectToBytes(rec2)))
+				err = valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ObjectToBytes(valset2)))
 				Expect(err).To(BeNil())
 			})
 
-			It("should return err=nil and expected result", func() {
+			It("should return valset2 since it is the most recent", func() {
 				res, err := valKeeper.GetByHeight(0)
 				Expect(err).To(BeNil())
-				Expect(res).To(Equal(types.BlockValidators(rec2)))
+				Expect(res).To(Equal(types.BlockValidators(valset2)))
+			})
+		})
+
+		When("two validators exist; valset1 at height 2, valset2 at height 4; argument height = 9; blocks per epoch = 2", func() {
+			valset := map[string]int64{"pubkey": 1}
+			valset2 := map[string]int64{"pubkey": 2}
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 2
+				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ObjectToBytes(valset)))
+				Expect(err).To(BeNil())
+				err = valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(4), util.ObjectToBytes(valset2)))
+				Expect(err).To(BeNil())
+			})
+
+			It("should return valset2 since it is the most recent set", func() {
+				res, err := valKeeper.GetByHeight(9)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(types.BlockValidators(valset2)))
+			})
+		})
+
+		When("two validators exist; valset1 at height 2, valset2 at height 4; argument height = 10; blocks per epoch = 2", func() {
+			valset := map[string]int64{"pubkey": 1}
+			valset2 := map[string]int64{"pubkey": 2}
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 2
+				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ObjectToBytes(valset)))
+				Expect(err).To(BeNil())
+				err = valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(4), util.ObjectToBytes(valset2)))
+				Expect(err).To(BeNil())
+			})
+
+			It("should return valset2 since it is the most recent set", func() {
+				res, err := valKeeper.GetByHeight(10)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(types.BlockValidators(valset2)))
 			})
 		})
 	})

@@ -699,7 +699,7 @@ var _ = Describe("App", func() {
 				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 
 				app.wBlock.Height = 10
-				app.saveCurValsAt = 10
+				app.heightToSaveNewValidators = 10
 				mockVal.EXPECT().Index(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
@@ -726,7 +726,7 @@ var _ = Describe("App", func() {
 
 				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 
-				app.saveCurValsAt = 100
+				app.heightToSaveNewValidators = 100
 
 				mockTree.EXPECT().SaveVersion().Return([]byte{}, int64(0), fmt.Errorf("error"))
 
@@ -754,7 +754,7 @@ var _ = Describe("App", func() {
 
 				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 
-				app.saveCurValsAt = 100
+				app.heightToSaveNewValidators = 100
 
 				mockTree.EXPECT().SaveVersion().Return(appHash, int64(0), nil)
 

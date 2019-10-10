@@ -34,21 +34,21 @@ type tickPurchaseTx struct {
 
 // App implements tendermint ABCI interface to
 type App struct {
-	db                storage.Engine
-	node              types.CommonNode
-	logic             types.Logic
-	cfg               *config.EngineConfig
-	validateTx        validators.ValidateTxFunc
-	wBlock            *types.BlockInfo
-	log               logger.Logger
-	txIndex           int
-	ticketPurchaseTxs []*tickPurchaseTx
-	ticketMgr         types.TicketManager
-	epochSecretTx     *types.Transaction
-	curBlockProposer  bool
-	mature            bool
-	currentValidator  []abcitypes.ValidatorUpdate
-	saveCurValsAt     int64
+	db                        storage.Engine
+	node                      types.CommonNode
+	logic                     types.Logic
+	cfg                       *config.EngineConfig
+	validateTx                validators.ValidateTxFunc
+	wBlock                    *types.BlockInfo
+	log                       logger.Logger
+	txIndex                   int
+	ticketPurchaseTxs         []*tickPurchaseTx
+	ticketMgr                 types.TicketManager
+	epochSecretTx             *types.Transaction
+	curBlockProposer          bool
+	mature                    bool
+	currentValidator          []abcitypes.ValidatorUpdate
+	heightToSaveNewValidators int64
 }
 
 // NewApp creates an instance of App
@@ -371,7 +371,7 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 	// Cache the current validators; it will be persisted 2 blocks later.
 	// Note: Tendermint validator updates kicks in after H+2 block.
 	a.currentValidator = copyNewValidators
-	a.saveCurValsAt = curHeight + 2 //
+	a.heightToSaveNewValidators = curHeight + 1 
 
 	a.log.Info("Validators have successfully been updated",
 		"NumValidators", len(copyNewValidators))
@@ -447,9 +447,9 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	// Update the current validators record if the current block
 	// height is the height where the last validator update will take effect.
 	// Tendermint effects validator updates after 2 blocks; We need to index
-	// the validators to the real height when the validators were selected (3 blocks ago)
-	if a.wBlock.Height == a.saveCurValsAt {
-		if err := a.logic.Validator().Index(a.wBlock.Height-3, a.currentValidator); err != nil {
+	// the validators to the real height when the validators were selected (2 blocks ago)
+	if a.wBlock.Height == a.heightToSaveNewValidators {
+		if err := a.logic.Validator().Index(a.wBlock.Height-2, a.currentValidator); err != nil {
 			panic(errors.Wrap(err, "failed to update current validators"))
 		}
 	}
@@ -467,13 +467,19 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 
 // reset cached values
 func (a *App) reset() {
-	a.wBlock = &types.BlockInfo{}
 	a.ticketPurchaseTxs = []*tickPurchaseTx{}
 	a.txIndex = 0
 	a.epochSecretTx = nil
 	a.mature = false
 	a.curBlockProposer = false
-	a.saveCurValsAt = 0
+
+	// Only reset heightToSaveNewValidators if the current height is
+	// same as it to avoid not triggering saving of new validators at the target height.
+	if a.wBlock.Height == a.heightToSaveNewValidators {
+		a.heightToSaveNewValidators = 0
+	}
+
+	a.wBlock = &types.BlockInfo{}
 }
 
 // Query for data from the application.
