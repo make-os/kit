@@ -8,6 +8,9 @@ import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
+// BlockValidators contains validators of a block
+type BlockValidators map[string]int64
+
 // BlockInfo describes information about a block
 type BlockInfo struct {
 	AppHash             []byte `json:"appHash"`
@@ -19,6 +22,12 @@ type BlockInfo struct {
 	EpochPreviousSecret []byte `json:"epochPreviousSecret"`
 	EpochRound          uint64 `json:"epochRound"`
 	InvalidEpochSecret  bool   `json:"invalidEpochSecret"`
+}
+
+// Validator represents a validator
+type Validator struct {
+	PubKey HexBytes
+	Power  int64
 }
 
 // SystemKeeper describes an interface for accessing system data
@@ -48,6 +57,15 @@ type SystemKeeper interface {
 	// GetHighestDrandRound returns the highest drand round
 	// known to the application
 	GetHighestDrandRound() (uint64, error)
+
+	// GetSecrets fetch secrets from blocks starting from a given
+	// height back to genesis block. The argument limit puts a
+	// cap on the number of secrets to be collected. If limit is
+	// set to 0 or negative number, no limit is applied.
+	// The argument skip controls how many blocks are skipped.
+	// Skip is 1 by default. Blocks with an invalid secret or
+	// no secret are ignored.
+	GetSecrets(from, limit, skip int64) ([][]byte, error)
 }
 
 // AccountKeeper describes an interface for accessing accounts
@@ -87,6 +105,9 @@ type Logic interface {
 	// AccountKeeper manages account state
 	AccountKeeper() AccountKeeper
 
+	// ValidatorKeeper returns the validator keeper
+	ValidatorKeeper() ValidatorKeeper
+
 	// WriteGenesisState initializes the app state with initial data
 	WriteGenesisState() error
 
@@ -104,10 +125,24 @@ type Logic interface {
 // all logic providers
 type LogicCommon interface{}
 
+// ValidatorKeeper describes an interface for managing validator information
+type ValidatorKeeper interface {
+
+	// GetByHeight gets validators at the given height. If height is <= 0, the
+	// validator set of the highest height is returned.
+	GetByHeight(height int64) (BlockValidators, error)
+
+	// Index adds a set of validators associated to the given height
+	Index(height int64, validators []*Validator) error
+}
+
 // ValidatorLogic provides functionalities for managing
 // and deriving validators.
 type ValidatorLogic interface {
 	LogicCommon
+
+	// Index indexes the validator set for the given height.
+	Index(height int64, valUpdates []abcitypes.ValidatorUpdate) error
 }
 
 // TxLogic provides an interface for executing transactions
@@ -150,5 +185,12 @@ type SysLogic interface {
 
 	// GetCurretEpochSecretTx returns an TxTypeEpochSecret transaction
 	// only if the next block is the last block in the current epoch.
-	GetCurretEpochSecretTx() Tx
+	GetCurretEpochSecretTx() (Tx, error)
+
+	// MakeSecret generates a 64 bytes secret for validator
+	// selection by xoring the last 32 valid epoch secrets.
+	// The most recent secrets will be selected starting from
+	// the given height down to genesis.
+	// It returns ErrNoSecretFound if no error was found
+	MakeSecret(height int64) ([]byte, error)
 }

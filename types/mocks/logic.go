@@ -155,6 +155,21 @@ func (mr *MockSystemKeeperMockRecorder) GetHighestDrandRound() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHighestDrandRound", reflect.TypeOf((*MockSystemKeeper)(nil).GetHighestDrandRound))
 }
 
+// GetSecrets mocks base method
+func (m *MockSystemKeeper) GetSecrets(from, limit, skip int64) ([][]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSecrets", from, limit, skip)
+	ret0, _ := ret[0].([][]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSecrets indicates an expected call of GetSecrets
+func (mr *MockSystemKeeperMockRecorder) GetSecrets(from, limit, skip interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecrets", reflect.TypeOf((*MockSystemKeeper)(nil).GetSecrets), from, limit, skip)
+}
+
 // MockAccountKeeper is a mock of AccountKeeper interface
 type MockAccountKeeper struct {
 	ctrl     *gomock.Controller
@@ -330,6 +345,20 @@ func (mr *MockLogicMockRecorder) AccountKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountKeeper", reflect.TypeOf((*MockLogic)(nil).AccountKeeper))
 }
 
+// ValidatorKeeper mocks base method
+func (m *MockLogic) ValidatorKeeper() types.ValidatorKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidatorKeeper")
+	ret0, _ := ret[0].(types.ValidatorKeeper)
+	return ret0
+}
+
+// ValidatorKeeper indicates an expected call of ValidatorKeeper
+func (mr *MockLogicMockRecorder) ValidatorKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorKeeper", reflect.TypeOf((*MockLogic)(nil).ValidatorKeeper))
+}
+
 // WriteGenesisState mocks base method
 func (m *MockLogic) WriteGenesisState() error {
 	m.ctrl.T.Helper()
@@ -407,6 +436,58 @@ func (m *MockLogicCommon) EXPECT() *MockLogicCommonMockRecorder {
 	return m.recorder
 }
 
+// MockValidatorKeeper is a mock of ValidatorKeeper interface
+type MockValidatorKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockValidatorKeeperMockRecorder
+}
+
+// MockValidatorKeeperMockRecorder is the mock recorder for MockValidatorKeeper
+type MockValidatorKeeperMockRecorder struct {
+	mock *MockValidatorKeeper
+}
+
+// NewMockValidatorKeeper creates a new mock instance
+func NewMockValidatorKeeper(ctrl *gomock.Controller) *MockValidatorKeeper {
+	mock := &MockValidatorKeeper{ctrl: ctrl}
+	mock.recorder = &MockValidatorKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockValidatorKeeper) EXPECT() *MockValidatorKeeperMockRecorder {
+	return m.recorder
+}
+
+// GetByHeight mocks base method
+func (m *MockValidatorKeeper) GetByHeight(height int64) (types.BlockValidators, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByHeight", height)
+	ret0, _ := ret[0].(types.BlockValidators)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByHeight indicates an expected call of GetByHeight
+func (mr *MockValidatorKeeperMockRecorder) GetByHeight(height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByHeight", reflect.TypeOf((*MockValidatorKeeper)(nil).GetByHeight), height)
+}
+
+// Index mocks base method
+func (m *MockValidatorKeeper) Index(height int64, validators []*types.Validator) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Index", height, validators)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Index indicates an expected call of Index
+func (mr *MockValidatorKeeperMockRecorder) Index(height, validators interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Index", reflect.TypeOf((*MockValidatorKeeper)(nil).Index), height, validators)
+}
+
 // MockValidatorLogic is a mock of ValidatorLogic interface
 type MockValidatorLogic struct {
 	ctrl     *gomock.Controller
@@ -428,6 +509,20 @@ func NewMockValidatorLogic(ctrl *gomock.Controller) *MockValidatorLogic {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockValidatorLogic) EXPECT() *MockValidatorLogicMockRecorder {
 	return m.recorder
+}
+
+// Index mocks base method
+func (m *MockValidatorLogic) Index(height int64, valUpdates []types0.ValidatorUpdate) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Index", height, valUpdates)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Index indicates an expected call of Index
+func (mr *MockValidatorLogicMockRecorder) Index(height, valUpdates interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Index", reflect.TypeOf((*MockValidatorLogic)(nil).Index), height, valUpdates)
 }
 
 // MockTxLogic is a mock of TxLogic interface
@@ -562,15 +657,31 @@ func (mr *MockSysLogicMockRecorder) GetEpoch(curBlockHeight interface{}) *gomock
 }
 
 // GetCurretEpochSecretTx mocks base method
-func (m *MockSysLogic) GetCurretEpochSecretTx() types.Tx {
+func (m *MockSysLogic) GetCurretEpochSecretTx() (types.Tx, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurretEpochSecretTx")
 	ret0, _ := ret[0].(types.Tx)
-	return ret0
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetCurretEpochSecretTx indicates an expected call of GetCurretEpochSecretTx
 func (mr *MockSysLogicMockRecorder) GetCurretEpochSecretTx() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurretEpochSecretTx", reflect.TypeOf((*MockSysLogic)(nil).GetCurretEpochSecretTx))
+}
+
+// MakeSecret mocks base method
+func (m *MockSysLogic) MakeSecret(height int64) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MakeSecret", height)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MakeSecret indicates an expected call of MakeSecret
+func (mr *MockSysLogicMockRecorder) MakeSecret(height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeSecret", reflect.TypeOf((*MockSysLogic)(nil).MakeSecret), height)
 }

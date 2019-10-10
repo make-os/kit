@@ -5,10 +5,9 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/makeos/mosdef/types"
+	reflect "reflect"
 )
 
 // MockTicketManager is a mock of TicketManager interface
@@ -80,6 +79,41 @@ func (m *MockTicketManager) CountLiveTickets(arg0 ...types.QueryOptions) (int, e
 func (mr *MockTicketManagerMockRecorder) CountLiveTickets(arg0 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLiveTickets", reflect.TypeOf((*MockTicketManager)(nil).CountLiveTickets), arg0...)
+}
+
+// SelectRandom mocks base method
+func (m *MockTicketManager) SelectRandom(height int64, seed []byte, limit int) ([]*types.Ticket, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SelectRandom", height, seed, limit)
+	ret0, _ := ret[0].([]*types.Ticket)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SelectRandom indicates an expected call of SelectRandom
+func (mr *MockTicketManagerMockRecorder) SelectRandom(height, seed, limit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectRandom", reflect.TypeOf((*MockTicketManager)(nil).SelectRandom), height, seed, limit)
+}
+
+// Query mocks base method
+func (m *MockTicketManager) Query(q types.Ticket, queryOpt ...types.QueryOptions) ([]*types.Ticket, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{q}
+	for _, a := range queryOpt {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Query", varargs...)
+	ret0, _ := ret[0].([]*types.Ticket)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Query indicates an expected call of Query
+func (mr *MockTicketManagerMockRecorder) Query(q interface{}, queryOpt ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{q}, queryOpt...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockTicketManager)(nil).Query), varargs...)
 }
 
 // Stop mocks base method

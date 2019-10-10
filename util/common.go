@@ -390,3 +390,10 @@ func VMSet(vm *otto.Otto, name string, value interface{}) interface{} {
 	vm.Set(name, value)
 	return value
 }
+
+// XorBytes xor a and b
+func XorBytes(a, b []byte) []byte {
+	iA := new(big.Int).SetBytes(a)
+	iB := new(big.Int).SetBytes(b)
+	return new(big.Int).Xor(iA, iB).Bytes()
+}

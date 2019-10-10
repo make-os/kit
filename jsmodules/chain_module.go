@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/tendermint/tendermint/crypto/ed25519"
+
+	"github.com/makeos/mosdef/crypto"
+
 	"github.com/makeos/mosdef/util"
 
 	"github.com/pkg/errors"
@@ -46,6 +50,11 @@ func (m *ChainModule) funcs() []*types.JSModuleFunc {
 			Name:        "getBlockInfo",
 			Value:       m.getBlockInfo,
 			Description: "Get summary block information of a given height",
+		},
+		&types.JSModuleFunc{
+			Name:        "getValidators",
+			Value:       m.getValidators,
+			Description: "Get validators at a given height",
 		},
 	}
 }
@@ -139,4 +148,47 @@ func (m *ChainModule) getBlockInfo(height interface{}) interface{} {
 	}
 
 	return res
+}
+
+// getValidators returns the current validators
+func (m *ChainModule) getValidators(height interface{}) interface{} {
+
+	var err error
+	var blockHeight int64
+
+	// Convert to the expected type (int64)
+	switch v := height.(type) {
+	case int64:
+		blockHeight = int64(v)
+	case string:
+		blockHeight, err = strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			panic(types.ErrArgDecode("Int64", 0))
+		}
+	default:
+		panic(types.ErrArgDecode("integer/string", 0))
+	}
+
+	validators, err := m.logic.ValidatorKeeper().GetByHeight(blockHeight)
+	if err != nil {
+		panic(err)
+	}
+
+	var vList = []map[string]interface{}{}
+	for hexPubKey, power := range validators {
+
+		hexBz := types.HexBytesFromHex(hexPubKey)
+		var pub32 ed25519.PubKeyEd25519
+		copy(pub32[:], hexBz)
+
+		pubKey, _ := crypto.PubKeyFromBytes(hexBz)
+		vList = append(vList, map[string]interface{}{
+			"power":     power,
+			"publicKey": pubKey.Base58(),
+			"address":   pubKey.Addr(),
+			"tmAddress": pub32.Address().String(),
+		})
+	}
+
+	return vList
 }

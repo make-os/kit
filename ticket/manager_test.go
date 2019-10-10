@@ -1,9 +1,11 @@
 package ticket
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/golang/mock/gomock"
+	ticketsmock "github.com/makeos/mosdef/ticket/mocks"
 	"github.com/makeos/mosdef/types/mocks"
 
 	"github.com/makeos/mosdef/util"
@@ -124,16 +126,16 @@ var _ = Describe("Manager", func() {
 				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 2})
 				Expect(err).To(BeNil())
 				Expect(logic.Sys().GetCurValidatorTicketPrice()).To(Equal(float64(10)))
-				tx := &types.Transaction{Hash: util.StrToHash("hash"), Value: util.String("10")}
+				tx := &types.Transaction{Value: util.String("10")}
 				err = mgr.Index(tx, "validator_addr", 100, 1)
 				Expect(err).To(BeNil())
 			})
 
-			Specify("that only one non-child ticket is indexed", func() {
+			Specify("that power is 0", func() {
 				tickets, err := mgr.store.Query(types.Ticket{})
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(1))
-				Expect(tickets[0].ChildOf).To(BeEmpty())
+				Expect(tickets[0].Power).To(Equal(int64(1)))
 			})
 
 			Specify("that MaturedBy is 160, DecayBy is 140", func() {
@@ -154,7 +156,7 @@ var _ = Describe("Manager", func() {
 				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 2})
 				Expect(err).To(BeNil())
 				Expect(logic.Sys().GetCurValidatorTicketPrice()).To(Equal(float64(10)))
-				tx := &types.Transaction{Hash: util.StrToHash("hash"), Value: util.String("35")}
+				tx := &types.Transaction{Value: util.String("35")}
 				err = mgr.Index(tx, "validator_addr", 100, 1)
 				Expect(err).To(BeNil())
 
@@ -162,19 +164,69 @@ var _ = Describe("Manager", func() {
 				Expect(err).To(BeNil())
 			})
 
-			Specify("that there are 3 tickets created", func() {
-				Expect(tickets).To(HaveLen(3))
+			Specify("only 1 ticket was created", func() {
+				Expect(tickets).To(HaveLen(1))
 			})
 
-			Specify("that one non-child and two child tickets are indexed", func() {
-				Expect(tickets[0].ChildOf).To(BeEmpty())
-				Expect(tickets[1].ChildOf).To(Equal(tickets[0].Hash))
-				Expect(tickets[2].ChildOf).To(Equal(tickets[0].Hash))
+			Specify("that power is 3", func() {
+				Expect(tickets[0].Power).To(Equal(int64(3)))
+			})
+		})
+	})
+
+	Describe(".SelectRandom", func() {
+
+		When("err occurred when fetching live tickets", func() {
+			BeforeEach(func() {
+				mockStore := ticketsmock.NewMockStore(ctrl)
+				mockStore.EXPECT().GetLive(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("bad error"))
+				mgr.store = mockStore
 			})
 
-			Specify("that child tickets have increasing index", func() {
-				Expect(tickets[1].Index).To(Equal(0))
-				Expect(tickets[2].Index).To(Equal(1))
+			It("should return error", func() {
+				seed := []byte("seed")
+				_, err := mgr.SelectRandom(11, seed, 1)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("bad error"))
+			})
+		})
+
+		When("no error occurred", func() {
+			ticket := &types.Ticket{ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Power: 3}
+			ticket2 := &types.Ticket{ProposerPubKey: "pub_key2", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Power: 4}
+			ticket3 := &types.Ticket{ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Power: 1}
+			BeforeEach(func() {
+				err := mgr.store.Add(ticket, ticket2, ticket3)
+				Expect(err).To(BeNil())
+			})
+
+			When("seed=[]byte('seed') and limit = 1", func() {
+				It("should return 1 ticket", func() {
+					seed := []byte("seed")
+					tickets, err := mgr.SelectRandom(11, seed, 1)
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(1))
+					Expect(tickets[0].ProposerPubKey).To(Equal(ticket.ProposerPubKey))
+				})
+			})
+
+			When("seed=[]byte('seed_123_abc') and limit = 1", func() {
+				It("should return 1 ticket", func() {
+					seed := []byte("seed_123_abc")
+					tickets, err := mgr.SelectRandom(11, seed, 1)
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(1))
+					Expect(tickets[0].ProposerPubKey).To(Equal(ticket2.ProposerPubKey))
+				})
+			})
+
+			When("seed=[]byte('seed_123_abc') and limit = 10", func() {
+				It("should return 3 ticket", func() {
+					seed := []byte("seed_123_abc")
+					tickets, err := mgr.SelectRandom(11, seed, 10)
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(3))
+				})
 			})
 		})
 	})

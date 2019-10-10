@@ -56,6 +56,7 @@ func (s *SystemKeeper) GetBlockInfo(height int64) (*types.BlockInfo, error) {
 		if err == storage.ErrRecordNotFound {
 			return nil, ErrBlockInfoNotFound
 		}
+		return nil, err
 	}
 
 	var blockInfo types.BlockInfo
@@ -121,4 +122,42 @@ func (s *SystemKeeper) GetHighestDrandRound() (uint64, error) {
 		return 0, err
 	}
 	return util.DecodeNumber(rec.Value), nil
+}
+
+// GetSecrets fetch secrets from blocks starting from a given
+// height back to genesis block. The argument limit puts a
+// cap on the number of secrets to be collected. If limit is
+// set to 0 or negative number, no limit is applied.
+// The argument skip controls how many blocks are skipped.
+// Skip is 1 by default. Blocks with an invalid secret or
+// no secret are ignored.
+func (s *SystemKeeper) GetSecrets(from, limit, skip int64) ([][]byte, error) {
+	var secrets [][]byte
+	var next = from
+	if skip < 1 {
+		skip = 1
+	}
+	for next > 0 {
+		bi, err := s.GetBlockInfo(next)
+		if err != nil {
+			if err != ErrBlockInfoNotFound {
+				return nil, err
+			}
+			next = next - skip
+			continue
+		}
+
+		if len(bi.EpochSecret) == 0 || bi.InvalidEpochSecret {
+			next = next - skip
+			continue
+		}
+
+		secrets = append(secrets, bi.EpochSecret)
+		if limit > 0 && int64(len(secrets)) == limit {
+			break
+		}
+
+		next = next - skip
+	}
+	return secrets, nil
 }

@@ -184,8 +184,8 @@ var _ = Describe("Mempool", func() {
 			BeforeEach(func() {
 				mempool = NewMempool(cfg)
 				Expect(mempool.Size()).To(Equal(0))
-				mempool.SetEpochSecretGetter(func() types.Tx {
-					return tx
+				mempool.SetEpochSecretGetter(func() (types.Tx, error) {
+					return tx, nil
 				})
 			})
 

@@ -6,6 +6,9 @@ import (
 	"os"
 	path "path/filepath"
 	"strings"
+	"time"
+
+	"github.com/makeos/mosdef/params"
 
 	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
@@ -188,6 +191,9 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 		c.G().Log.SetToDebug()
 		tmcfg.P2P.AllowDuplicateIP = true
 	}
+
+	// Set block time
+	tmcfg.Consensus.TimeoutCommit = time.Second * time.Duration(params.BlockTime)
 
 	// Set default version information
 	c.VersionInfo = &VersionInfo{}

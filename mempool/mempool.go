@@ -42,7 +42,7 @@ type Mempool struct {
 
 	// epochSecretGetter is a callback that is used to fetch
 	// an epoch secret tx.
-	epochSecretGetter func() t.Tx
+	epochSecretGetter func() (t.Tx, error)
 
 	log     logger.Logger
 	metrics *mempool.Metrics
@@ -60,7 +60,7 @@ func NewMempool(
 
 // SetEpochSecretGetter sets the callback function
 // that returns an epoch secret transaction
-func (mp *Mempool) SetEpochSecretGetter(cb func() t.Tx) {
+func (mp *Mempool) SetEpochSecretGetter(cb func() (t.Tx, error)) {
 	mp.epochSecretGetter = cb
 }
 
@@ -194,13 +194,19 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 	numValTicketTxReaped := 0
 	ignoredTx := []t.Tx{}
 
-	// Get an epoch secret and add it as the first tx
+	// Get an epoch secret and add it as the first reaped tx.
+	// Exit immediately when we are unable to obtain drand random value.
+	// This is necessary to prevent the validator for proposing a
+	// epoch end block that has no epoch secret.
 	if mp.epochSecretGetter != nil {
-		if epochSecretTx := mp.epochSecretGetter(); epochSecretTx != nil {
+		epochSecretTx, err := mp.epochSecretGetter()
+		if err != nil {
+			mp.log.Fatal(err.Error())
+		} else if epochSecretTx != nil {
 			txBs := epochSecretTx.Bytes()
 			txs = append(txs, txBs)
 			totalBytes += int64(len(txBs))
-			mp.log.Debug("Added an epoch secret tx to reaped transactions")
+			mp.log.Debug("Fetched and appended next epoch secret to reaped txs")
 		}
 	}
 

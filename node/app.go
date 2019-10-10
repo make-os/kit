@@ -3,6 +3,10 @@ package node
 import (
 	"fmt"
 
+	"github.com/fatih/color"
+
+	"github.com/makeos/mosdef/crypto"
+
 	"github.com/makeos/mosdef/params"
 
 	"github.com/tendermint/tendermint/libs/common"
@@ -31,15 +35,20 @@ type tickPurchaseTx struct {
 // App implements tendermint ABCI interface to
 type App struct {
 	db                storage.Engine
+	node              types.CommonNode
 	logic             types.Logic
 	cfg               *config.EngineConfig
 	validateTx        validators.ValidateTxFunc
-	workingBlock      *types.BlockInfo
+	wBlock            *types.BlockInfo
 	log               logger.Logger
 	txIndex           int
 	ticketPurchaseTxs []*tickPurchaseTx
 	ticketMgr         types.TicketManager
 	epochSecretTx     *types.Transaction
+	curBlockProposer  bool
+	mature            bool
+	currentValidator  []abcitypes.ValidatorUpdate
+	saveCurValsAt     int64
 }
 
 // NewApp creates an instance of App
@@ -49,33 +58,39 @@ func NewApp(
 	logic types.Logic,
 	ticketMgr types.TicketManager) *App {
 	return &App{
-		db:           db,
-		logic:        logic,
-		cfg:          cfg,
-		workingBlock: &types.BlockInfo{},
-		log:          cfg.G().Log.Module("App"),
-		ticketMgr:    ticketMgr,
-		validateTx:   validators.ValidateTx,
+		db:         db,
+		logic:      logic,
+		cfg:        cfg,
+		wBlock:     &types.BlockInfo{},
+		log:        cfg.G().Log.Module("App"),
+		ticketMgr:  ticketMgr,
+		validateTx: validators.ValidateTx,
 	}
 }
 
 // InitChain is called once upon genesis.
-func (app *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitChain {
+func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitChain {
 
-	app.log.Info("Initializing chain...")
+	a.log.Info("Initializing for the first time")
+	a.log.Info("Creating the chain and populating initial state...")
 
 	// State must be empty
-	if app.logic.StateTree().WorkingHash() != nil {
+	if a.logic.StateTree().WorkingHash() != nil {
 		panic(fmt.Errorf("At init, state must be empty...It is not empty"))
 	}
 
 	// Write genesis state (e.g root accounts)
-	if err := app.logic.WriteGenesisState(); err != nil {
+	if err := a.logic.WriteGenesisState(); err != nil {
 		panic(errors.Wrap(err, "failed to write genesis state"))
 	}
 
-	workingHash := app.logic.StateTree().WorkingHash()
-	app.log.Info("Chain initialization was successful",
+	// Store genesis validators
+	if err := a.logic.Validator().Index(1, req.GetValidators()); err != nil {
+		panic(errors.Wrap(err, "failed to index validators"))
+	}
+
+	workingHash := a.logic.StateTree().WorkingHash()
+	a.log.Info("Node initialization has completed",
 		"GenesisHash", util.BytesToHash(workingHash).HexStr())
 
 	return abcitypes.ResponseInitChain{}
@@ -85,13 +100,13 @@ func (app *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInit
 // Used to sync tendermint with the application during a handshake that happens on startup.
 // The returned AppVersion will be included in the header of every block.
 // Tendermint expects LastBlockAppHash and LastBlockHeight to be updated during commit.
-func (app *App) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
+func (a *App) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
 
 	var lastBlockAppHash = []byte{}
 	var lastBlockHeight = int64(0)
 
 	// Get the last committed block information
-	lastBlock, err := app.logic.SysKeeper().GetLastBlockInfo()
+	lastBlock, err := a.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
 		if err != keepers.ErrBlockInfoNotFound {
 			panic(err)
@@ -104,7 +119,7 @@ func (app *App) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
 	}
 
 	return abcitypes.ResponseInfo{
-		Version:          app.cfg.VersionInfo.BuildVersion,
+		Version:          a.cfg.VersionInfo.BuildVersion,
 		AppVersion:       config.GetNetVersion(),
 		LastBlockHeight:  lastBlockHeight,
 		LastBlockAppHash: lastBlockAppHash,
@@ -112,14 +127,14 @@ func (app *App) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
 }
 
 // SetOption set non-consensus critical application specific options.
-func (app *App) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetOption {
+func (a *App) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetOption {
 	return abcitypes.ResponseSetOption{}
 }
 
 // CheckTx a proposed transaction for admission into the mempool.
 // A non-zero response means the transaction is rejected and will not
 // be broadcast to other nodes.
-func (app *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
+func (a *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 
 	// Decode the transaction in byte form to types.Transaction
 	tx, err := types.NewTxFromBytes(req.Tx)
@@ -131,7 +146,7 @@ func (app *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx 
 	}
 
 	// Perform syntactic validation
-	if err = app.validateTx(tx, -1, app.logic); err != nil {
+	if err = a.validateTx(tx, -1, a.logic); err != nil {
 		return abcitypes.ResponseCheckTx{
 			Code: types.ErrCodeTxFailedValidation,
 			Log:  err.Error(),
@@ -142,33 +157,39 @@ func (app *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx 
 }
 
 // BeginBlock indicates the beginning of a new block.
-func (app *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
+func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
 
 	curHeight := req.GetHeader().Height
-	app.workingBlock.Height = req.GetHeader().Height
-	app.workingBlock.Hash = req.GetHash()
-	app.workingBlock.LastAppHash = req.GetHeader().AppHash
-	app.workingBlock.ProposerAddress = common.HexBytes(req.GetHeader().ProposerAddress).String()
+	a.wBlock.Height = req.GetHeader().Height
+	a.wBlock.Hash = req.GetHash()
+	a.wBlock.LastAppHash = req.GetHeader().AppHash
+	a.wBlock.ProposerAddress = common.HexBytes(req.GetHeader().ProposerAddress).String()
 
-	// If the network is still immature, return immediately
-	if err := app.logic.Sys().CheckSetNetMaturity(); err != nil {
-		app.log.Debug("Network is currently immature", "Err",
-			err, "CurHeight", curHeight)
+	if a.cfg.G().PrivVal.GetAddress().String() == a.wBlock.ProposerAddress {
+		a.curBlockProposer = true
+	}
+
+	a.log.Info(color.YellowString("🔨 Processing a new block"),
+		"Height", req.Header.Height, "IsProposer", a.curBlockProposer)
+
+	// If the network is still immature, return immediately.
+	// The network is matured if it has reached a specific block height
+	// and has accumulated a specific number of alive tickets.
+	if err := a.logic.Sys().CheckSetNetMaturity(); err != nil {
+		a.log.Debug("The network has not reached maturity :(", "Reason", err, "Height", curHeight)
+		a.mature = false
 		return abcitypes.ResponseBeginBlock{}
 	}
 
-	// Determine current epoch
-	curEpoch, nextEpoch := app.logic.Sys().GetEpoch(uint64(curHeight))
-	app.log.Info("Epoch is known", "Epoch", curEpoch, "Next", nextEpoch)
-
+	// At this point, the network is mature
+	a.mature = true
 	return abcitypes.ResponseBeginBlock{}
 }
 
-// preExecChecks performs some checks that attempt to spot problems
-// with specific transaction types and possible activate slashing
-// conditions and invalidate the transaction before it ever gets
-// executed.
-func (app *App) preExecChecks(tx *types.Transaction) *abcitypes.ResponseDeliverTx {
+// preExecChecks performs some checks that attempt to spot problems with
+// specific transaction types and possible activate slashing conditions
+// and invalidate the transaction before it ever gets executed.
+func (a *App) preExecChecks(tx *types.Transaction) *abcitypes.ResponseDeliverTx {
 
 	txType := tx.GetType()
 
@@ -176,7 +197,7 @@ func (app *App) preExecChecks(tx *types.Transaction) *abcitypes.ResponseDeliverT
 	// purchasing tx and we have reached the max per block.
 	// TODO: Slash proposer for violating the rule.
 	if txType == types.TxTypeTicketValidator &&
-		len(app.ticketPurchaseTxs) == params.MaxValTicketsPerBlock {
+		len(a.ticketPurchaseTxs) == params.MaxValTicketsPerBlock {
 		return &abcitypes.ResponseDeliverTx{
 			Code: types.ErrCodeMaxTxTypeReached,
 			Log:  "failed to execute tx: validator ticket capacity reached",
@@ -187,7 +208,7 @@ func (app *App) preExecChecks(tx *types.Transaction) *abcitypes.ResponseDeliverT
 		// Invalidate the epoch secret tx if the current block is not the
 		// last block in the current epoch.
 		// TODO: Slash the proposer for violating this rule.
-		if (app.workingBlock.Height)%int64(params.NumBlocksPerEpoch) != 0 {
+		if (a.wBlock.Height)%int64(params.NumBlocksPerEpoch) != 0 {
 			return &abcitypes.ResponseDeliverTx{
 				Code: types.ErrCodeTxTypeUnexpected,
 				Log:  "failed to execute tx: epoch secret not expected",
@@ -196,7 +217,7 @@ func (app *App) preExecChecks(tx *types.Transaction) *abcitypes.ResponseDeliverT
 
 		// Invalidate the epoch secret tx if we have already seen one in this block.
 		// TODO: Slash proposer for violating this rule.
-		if app.epochSecretTx != nil {
+		if a.epochSecretTx != nil {
 			return &abcitypes.ResponseDeliverTx{
 				Code: types.ErrCodeMaxTxTypeReached,
 				Log:  "failed to execute tx: epoch secret capacity reached",
@@ -210,7 +231,7 @@ func (app *App) preExecChecks(tx *types.Transaction) *abcitypes.ResponseDeliverT
 // postExecChecks performs some checks that reacts to the result
 // from executing a transaction. In here we can activate slashing
 // conditions and invalidate the transaction
-func (app *App) postExecChecks(
+func (a *App) postExecChecks(
 	tx *types.Transaction,
 	resp abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
 
@@ -219,7 +240,7 @@ func (app *App) postExecChecks(
 	if txType == types.TxTypeEpochSecret {
 
 		// Cache the epoch secret tx for use in the COMMIT stage
-		app.epochSecretTx = tx
+		a.epochSecretTx = tx
 
 		// At the point, the proposer proposed an epoch secret tx whose round is earlier
 		// or same as the last epoch secret round. We respond by invalidating the tx
@@ -244,14 +265,13 @@ func (app *App) postExecChecks(
 				Log:  "failed to execute tx: " + resp.Log,
 			}
 		}
-
 	}
 
 	// Cache ticket purchase transaction; They will be indexed in the COMMIT stage.
 	if resp.Code == 0 && txType == types.TxTypeTicketValidator {
-		app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{
+		a.ticketPurchaseTxs = append(a.ticketPurchaseTxs, &tickPurchaseTx{
 			Tx:    tx,
-			index: app.txIndex,
+			index: a.txIndex,
 		})
 	}
 
@@ -260,10 +280,10 @@ func (app *App) postExecChecks(
 
 // DeliverTx processes transactions included in a proposed block.
 // Execute the transaction such that in modifies the blockchain state.
-func (app *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
+func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx {
 
 	// Increment the tx index
-	app.txIndex++
+	a.txIndex++
 
 	// Decode transaction to types.Transaction
 	tx, err := types.NewTxFromBytes(req.Tx)
@@ -275,70 +295,169 @@ func (app *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeli
 	}
 
 	// Perform pre execution checks
-	if resp := app.preExecChecks(tx); resp != nil {
+	if resp := a.preExecChecks(tx); resp != nil {
 		return *resp
 	}
 
 	// Execute the transaction (does not commit the state changes yet)
-	resp := app.logic.Tx().PrepareExec(req)
+	resp := a.logic.Tx().PrepareExec(req)
 
 	// Perform post execution operations
-	return *app.postExecChecks(tx, resp)
+	return *a.postExecChecks(tx, resp)
+}
+
+// updateValidators updates the validators of the chain.
+func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock) error {
+
+	// If it is not time to update validators, do nothing.
+	if curHeight%int64(params.NumBlocksPerEpoch) != 1 {
+		return nil
+	}
+
+	// Get secret computed from past epoch
+	secret, err := a.logic.Sys().MakeSecret(curHeight - 1)
+	if err != nil {
+		return err
+	}
+
+	// Get next validators; We made use of the
+	// secret seed to randomize the op
+	tickets, err := a.ticketMgr.SelectRandom(curHeight-1, secret, params.MaxValidatorsPerEpoch)
+	if err != nil {
+		return err
+	}
+
+	// Create a new validator list. Keep an index of validators
+	// public key for fast query
+	var newValidators []abcitypes.ValidatorUpdate
+	var vIndex = map[string]struct{}{}
+	for _, ticket := range tickets {
+		pubKey, _ := crypto.PubKeyFromBase58(ticket.ProposerPubKey)
+		pkBz := pubKey.MustBytes()
+		newValidators = append(newValidators, abcitypes.ValidatorUpdate{
+			PubKey: abcitypes.PubKey{Type: "ed25519", Data: pkBz},
+			Power:  1,
+		})
+		pkHex := types.HexBytes(pkBz)
+		vIndex[pkHex.String()] = struct{}{}
+	}
+
+	// Get current validators
+	curValidators, err := a.logic.ValidatorKeeper().GetByHeight(0)
+	if err != nil {
+		return err
+	}
+
+	// Make a copy of the randomly chosen validators
+	copyNewValidators := make([]abcitypes.ValidatorUpdate, len(newValidators))
+	copy(copyNewValidators, newValidators)
+
+	// Set the power of existing validators to zero if they are not
+	// part of the new list. It means they have been removed.
+	for pkHexStr := range curValidators {
+		pkHex := types.HexBytesFromHex(pkHexStr)
+		if _, ok := vIndex[pkHexStr]; ok {
+			continue
+		}
+		newValidators = append(newValidators, abcitypes.ValidatorUpdate{
+			PubKey: abcitypes.PubKey{Type: "ed25519", Data: pkHex},
+			Power:  0,
+		})
+	}
+
+	// Set the new validators
+	resp.ValidatorUpdates = newValidators
+
+	// Cache the current validators; it will be persisted 2 blocks later.
+	// Note: Tendermint validator updates kicks in after H+2 block.
+	a.currentValidator = copyNewValidators
+	a.saveCurValsAt = curHeight + 2 //
+
+	a.log.Info("Validators have successfully been updated",
+		"NumValidators", len(copyNewValidators))
+
+	return nil
 }
 
 // EndBlock indicates the end of a block
-func (app *App) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
-	return abcitypes.ResponseEndBlock{}
+func (a *App) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
+	resp := abcitypes.ResponseEndBlock{}
+
+	// Update validators if network is mature
+	if a.mature {
+		if err := a.updateValidators(req.Height, &resp); err != nil {
+			panic(errors.Wrap(err, "failed to update validators"))
+		}
+	}
+
+	return resp
+}
+
+func isEndOfEpoch(height int64) bool {
+	return height%int64(params.NumBlocksPerEpoch) == 0
 }
 
 // Commit persist the application state.
 // It must return a merkle root hash of the application state.
-func (app *App) Commit() abcitypes.ResponseCommit {
-	defer app.reset()
+func (a *App) Commit() abcitypes.ResponseCommit {
+	defer a.reset()
 
 	// Construct a new block information object
 	bi := &types.BlockInfo{
-		Height:      app.workingBlock.Height,
-		Hash:        app.workingBlock.Hash,
-		LastAppHash: app.workingBlock.LastAppHash,
+		Height:      a.wBlock.Height,
+		Hash:        a.wBlock.Hash,
+		LastAppHash: a.wBlock.LastAppHash,
 	}
 
 	// Add epoch secret data to the block info object and
 	// update the highest known drand round so we are able
 	// to determine in the future what round is superior
-	if estx := app.epochSecretTx; estx != nil {
+	if estx := a.epochSecretTx; estx != nil {
 		bi.EpochSecret = estx.Secret
 		bi.EpochPreviousSecret = estx.PreviousSecret
 		bi.EpochRound = estx.SecretRound
 		bi.InvalidEpochSecret = estx.IsInvalidated()
-		if err := app.logic.SysKeeper().SetHighestDrandRound(estx.SecretRound); err != nil {
+		if err := a.logic.SysKeeper().SetHighestDrandRound(estx.SecretRound); err != nil {
 			panic(errors.Wrap(err, "failed to save highest drand round"))
 		}
 	} else {
 		// Ok, so no epoch secret tx in this block. We need
 		// to ensure this block is not the last block of this epoch.
 		// If it is, we need to TODO: Slash the proposer for not adding a secret.
-		if bi.Height%int64(params.NumBlocksPerEpoch) == 0 {
+		if isEndOfEpoch(bi.Height) {
 
 		}
 	}
 
-	// Save the uncommitted changes to the tree
-	appHash, _, err := app.logic.StateTree().SaveVersion()
-	if err != nil {
-		panic(errors.Wrap(err, "failed to commit: could not save new tree version"))
-	}
+	bi.AppHash = a.logic.StateTree().WorkingHash()
 
 	// Save the block information
-	bi.AppHash = appHash
-	if err := app.logic.SysKeeper().SaveBlockInfo(bi); err != nil {
-		panic(err)
+	if err := a.logic.SysKeeper().SaveBlockInfo(bi); err != nil {
+		panic(errors.Wrap(err, "failed to save block information"))
 	}
 
 	// Index any purchased ticket we have collected so far.
-	for _, ptx := range app.ticketPurchaseTxs {
-		app.ticketMgr.Index(ptx.Tx, ptx.Tx.SenderPubKey.String(),
-			uint64(app.workingBlock.Height), ptx.index)
+	for _, ptx := range a.ticketPurchaseTxs {
+		if err := a.ticketMgr.Index(ptx.Tx, ptx.Tx.SenderPubKey.String(),
+			uint64(a.wBlock.Height), ptx.index); err != nil {
+			panic(errors.Wrap(err, "failed to index ticket"))
+		}
+	}
+
+	// Update the current validators record if the current block
+	// height is the height where the last validator update will take effect.
+	// Tendermint effects validator updates after 2 blocks; We need to index
+	// the validators to the real height when the validators were selected (3 blocks ago)
+	if a.wBlock.Height == a.saveCurValsAt {
+		if err := a.logic.Validator().Index(a.wBlock.Height-3, a.currentValidator); err != nil {
+			panic(errors.Wrap(err, "failed to update current validators"))
+		}
+	}
+
+	// Save the uncommitted changes to the tree
+	appHash, _, err := a.logic.StateTree().SaveVersion()
+	if err != nil {
+		panic(errors.Wrap(err, "failed to commit: could not save new tree version"))
 	}
 
 	return abcitypes.ResponseCommit{
@@ -347,14 +466,17 @@ func (app *App) Commit() abcitypes.ResponseCommit {
 }
 
 // reset cached values
-func (app *App) reset() {
-	app.workingBlock = &types.BlockInfo{}
-	app.ticketPurchaseTxs = []*tickPurchaseTx{}
-	app.txIndex = 0
-	app.epochSecretTx = nil
+func (a *App) reset() {
+	a.wBlock = &types.BlockInfo{}
+	a.ticketPurchaseTxs = []*tickPurchaseTx{}
+	a.txIndex = 0
+	a.epochSecretTx = nil
+	a.mature = false
+	a.curBlockProposer = false
+	a.saveCurValsAt = 0
 }
 
 // Query for data from the application.
-func (app *App) Query(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
+func (a *App) Query(req abcitypes.RequestQuery) abcitypes.ResponseQuery {
 	return abcitypes.ResponseQuery{Code: 0}
 }

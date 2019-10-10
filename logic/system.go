@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/makeos/mosdef/util"
+
 	"github.com/makeos/mosdef/logic/keepers"
 	"github.com/pkg/errors"
 
@@ -12,6 +14,9 @@ import (
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
 )
+
+// ErrNoSecretFound means no secret was found
+var ErrNoSecretFound = fmt.Errorf("no secret found")
 
 // System implements types.TxLogic.
 // Provides functionalities for executing transactions
@@ -118,28 +123,55 @@ func (s *System) GetEpoch(curBlockHeight uint64) (int, int) {
 // GetCurretEpochSecretTx generates and returns a TxTypeEpochSecret
 // transaction only if the next block height is the last in the
 // current epoch.
-func (s *System) GetCurretEpochSecretTx() types.Tx {
+func (s *System) GetCurretEpochSecretTx() (types.Tx, error) {
 
 	// Get last committed block information
 	bi, err := s.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		return nil
+		return nil, nil
 	}
 
 	// Simple calculation to determine if the next block is
 	// the last in the current epoch
 	if (bi.Height+1)%int64(params.NumBlocksPerEpoch) != 0 {
-		return nil
+		return nil, nil
 	}
 
 	// At the point, the next block is the last in the epoch,
 	// so we need to generate a 64 bytes random value wrapped
 	// in a TxTypeEpochSecret transaction
 	randVal := s.logic.GetDRand().Get(0)
+	if randVal == nil {
+		return nil, fmt.Errorf("failed to get random value from drand")
+	}
+
 	secretTx := types.NewBareTx(types.TxTypeEpochSecret)
 	secretTx.Secret = randVal.Randomness.Point
 	secretTx.PreviousSecret = randVal.Previous
 	secretTx.SecretRound = randVal.Round
 
-	return secretTx
+	return secretTx, nil
+}
+
+// MakeSecret generates a 64 bytes secret for validator
+// selection by xoring the last 32 valid epoch secrets.
+// The most recent secrets will be selected starting from
+// the given height down to genesis.
+// It returns ErrNoSecretFound if no error was found
+func (s *System) MakeSecret(height int64) ([]byte, error) {
+	secrets, err := s.logic.SysKeeper().GetSecrets(height, 32, int64(params.NumBlocksPerEpoch))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get secrets")
+	}
+
+	if len(secrets) == 0 {
+		return nil, ErrNoSecretFound
+	}
+
+	final := secrets[0]
+	for _, s := range secrets[1:] {
+		final = util.XorBytes(final, s)
+	}
+
+	return final, nil
 }

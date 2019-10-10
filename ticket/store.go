@@ -1,6 +1,8 @@
 package ticket
 
 import (
+	"strings"
+
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/makeos/mosdef/types"
@@ -15,9 +17,9 @@ type Store interface {
 	// Count counts tickets that match the given query
 	Count(query types.Ticket, queryOptions ...interface{}) (int, error)
 	// GetLive returns matured and non-decayed tickets
-	GetLive(curBlockHeight int64, queryOptions ...interface{}) ([]*types.Ticket, error)
+	GetLive(height int64, queryOptions ...interface{}) ([]*types.Ticket, error)
 	// CountLive returns the number of matured and live tickets
-	CountLive(curBlockHeight int64, queryOptions ...interface{}) (int, error)
+	CountLive(height int64, queryOptions ...interface{}) (int, error)
 	// Close closes the store
 	Close() error
 }
@@ -72,12 +74,11 @@ func applyQueryOpts(q *gorm.DB, opts types.QueryOptions) *gorm.DB {
 	}
 
 	if opts.Order != "" {
-		q = q.Order(opts.Order)
+		for _, orderPart := range strings.Split(opts.Order, ",") {
+			q = q.Order(orderPart)
+		}
 	}
 
-	if opts.NoChild {
-		q = q.Where(`"childOf" = ?`, "")
-	}
 	return q
 }
 
@@ -94,31 +95,33 @@ func (s *SQLStore) Query(
 	return tickets, q.Find(&tickets).Error
 }
 
-// GetLive returns matured and live tickets
+// GetLive returns matured and live tickets.
+// The argument height is the current/latest block;
 func (s *SQLStore) GetLive(
-	curBlockHeight int64,
+	height int64,
 	queryOptions ...interface{}) ([]*types.Ticket, error) {
 
 	opts := getQueryOptions(queryOptions...)
 	q := s.db.
-		Where(`"matureBy" <= ?`, curBlockHeight).
-		Where(`"decayBy" > ?`, curBlockHeight)
+		Where(`"matureBy" <= ?`, height).
+		Where(`"decayBy" > ?`, height)
 	q = applyQueryOpts(q, opts)
 
 	var tickets []*types.Ticket
 	return tickets, q.Find(&tickets).Error
 }
 
-// CountLive returns the number of matured and live tickets
+// CountLive returns the number of matured and live tickets.
+// The argument height is the current/latest block;
 func (s *SQLStore) CountLive(
-	curBlockHeight int64,
+	height int64,
 	queryOptions ...interface{}) (int, error) {
 
 	opts := getQueryOptions(queryOptions...)
 	q := s.db.
 		Model(types.Ticket{}).
-		Where(`"matureBy" <= ?`, curBlockHeight).
-		Where(`"decayBy" > ?`, curBlockHeight)
+		Where(`"matureBy" <= ?`, height).
+		Where(`"decayBy" > ?`, height)
 	q = applyQueryOpts(q, opts)
 
 	var count int
@@ -130,12 +133,7 @@ func (s *SQLStore) Count(
 	query types.Ticket,
 	queryOptions ...interface{}) (int, error) {
 
-	opts := getQueryOptions(queryOptions...)
 	q := s.db.Model(types.Ticket{}).Where(query)
-
-	if opts.NoChild {
-		q = q.Where(`"childOf" = ?`, "")
-	}
 
 	var count int
 	return count, q.Count(&count).Error

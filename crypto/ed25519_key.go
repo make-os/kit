@@ -121,6 +121,18 @@ func (p *PubKey) Bytes() ([]byte, error) {
 	return p.pubKey.(*crypto.Ed25519PublicKey).Raw()
 }
 
+// MustBytes is like Bytes but panics on error
+func (p *PubKey) MustBytes() []byte {
+	if p.pubKey == nil {
+		panic(fmt.Errorf("public key is nil"))
+	}
+	bz, err := p.pubKey.(*crypto.Ed25519PublicKey).Raw()
+	if err != nil {
+		panic(err)
+	}
+	return bz
+}
+
 // Hex returns the public key in hex encoding
 func (p *PubKey) Hex() string {
 	bs, _ := p.Bytes()
@@ -298,6 +310,18 @@ func PubKeyFromBase58(pk string) (*PubKey, error) {
 
 	decPubKey, _, _ := base58.CheckDecode(pk)
 	pubKey, err := crypto.UnmarshalEd25519PublicKey(decPubKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PubKey{
+		pubKey: pubKey,
+	}, nil
+}
+
+// PubKeyFromBytes returns a PubKey instance from a 32 bytes public key
+func PubKeyFromBytes(pk []byte) (*PubKey, error) {
+	pubKey, err := crypto.UnmarshalEd25519PublicKey(pk)
 	if err != nil {
 		return nil, err
 	}

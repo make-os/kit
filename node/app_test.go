@@ -91,6 +91,26 @@ var _ = Describe("App", func() {
 			})
 		})
 
+		When("validator indexing fails", func() {
+			BeforeEach(func() {
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockTree := mocks.NewMockTree(ctrl)
+				mockTree.EXPECT().WorkingHash().Return(nil)
+				mockLogic.EXPECT().StateTree().Return(mockTree)
+				mockLogic.EXPECT().WriteGenesisState().Return(nil)
+				mockValidator := mocks.NewMockValidatorLogic(ctrl)
+				mockValidator.EXPECT().Index(gomock.Any(), gomock.Any()).Return(fmt.Errorf("bad thing"))
+				mockLogic.EXPECT().Validator().Return(mockValidator)
+				app.logic = mockLogic
+			})
+
+			It("should panic", func() {
+				Expect(func() {
+					app.InitChain(abcitypes.RequestInitChain{})
+				}).To(Panic())
+			})
+		})
+
 		When("initialization succeeds", func() {
 			BeforeEach(func() {
 				mockLogic := mocks.NewMockLogic(ctrl)
@@ -98,12 +118,183 @@ var _ = Describe("App", func() {
 				mockTree.EXPECT().WorkingHash().Return(nil).Times(2)
 				mockLogic.EXPECT().StateTree().Return(mockTree).Times(2)
 				mockLogic.EXPECT().WriteGenesisState().Return(nil)
+				mockValidator := mocks.NewMockValidatorLogic(ctrl)
+				mockValidator.EXPECT().Index(gomock.Any(), gomock.Any()).Return(nil)
+				mockLogic.EXPECT().Validator().Return(mockValidator)
 				app.logic = mockLogic
 			})
 
 			It("should return an empty response", func() {
 				resp := app.InitChain(abcitypes.RequestInitChain{})
 				Expect(resp).To(Equal(abcitypes.ResponseInitChain{}))
+			})
+		})
+	})
+
+	Describe(".updateValidators", func() {
+		When("the provided height is not the block height preceding the last epoch", func() {
+			It("should return nil", func() {
+				Expect(app.updateValidators(4, nil)).To(BeNil())
+			})
+		})
+
+		When("an error occurred when making secret", func() {
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 5
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockSysLogic := mocks.NewMockSysLogic(ctrl)
+				mockSysLogic.EXPECT().MakeSecret(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
+				mockLogic.EXPECT().Sys().Return(mockSysLogic)
+				app.logic = mockLogic
+			})
+
+			It("should return error", func() {
+				err := app.updateValidators(6, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("bad error"))
+			})
+		})
+
+		When("an error occurred when selecting random validators", func() {
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 5
+				mockTickMgr := mocks.NewMockTicketManager(ctrl)
+				mockTickMgr.EXPECT().SelectRandom(gomock.Any(), gomock.Any(),
+					gomock.Any()).Return(nil, fmt.Errorf("error selecting validators"))
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockSysLogic := mocks.NewMockSysLogic(ctrl)
+				mockSysLogic.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
+				mockLogic.EXPECT().Sys().Return(mockSysLogic)
+				app.logic = mockLogic
+				app.ticketMgr = mockTickMgr
+			})
+
+			It("should return error", func() {
+				err := app.updateValidators(6, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("error selecting validators"))
+			})
+		})
+
+		When("when no validator currently exists and two tickets are randomly selected", func() {
+			var key = crypto.NewKeyFromIntSeed(1)
+			var key2 = crypto.NewKeyFromIntSeed(1)
+			var t = &types.Ticket{ProposerPubKey: key.PubKey().Base58()}
+			var t2 = &types.Ticket{ProposerPubKey: key2.PubKey().Base58()}
+			var tickets = []*types.Ticket{t, t2}
+
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 5
+				mockTickMgr := mocks.NewMockTicketManager(ctrl)
+				mockTickMgr.EXPECT().SelectRandom(gomock.Any(), gomock.Any(),
+					gomock.Any()).Return(tickets, nil)
+				app.ticketMgr = mockTickMgr
+
+				mockLogic := mocks.NewMockLogic(ctrl)
+
+				mockSysLogic := mocks.NewMockSysLogic(ctrl)
+				mockSysLogic.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
+				mockLogic.EXPECT().Sys().Return(mockSysLogic)
+
+				mockValKeeper := mocks.NewMockValidatorKeeper(ctrl)
+				mockValKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[string]int64{}, nil)
+
+				mockLogic.EXPECT().ValidatorKeeper().Return(mockValKeeper)
+				app.logic = mockLogic
+			})
+
+			It("should add the two validators to the response object", func() {
+				var resp abcitypes.ResponseEndBlock
+				err := app.updateValidators(6, &resp)
+				Expect(err).To(BeNil())
+				Expect(resp.ValidatorUpdates).To(HaveLen(2))
+			})
+		})
+
+		When("when one validator currently exists and another different validator is selected", func() {
+			var existingValKey = crypto.NewKeyFromIntSeed(1)
+			var keyOfNewTicket = crypto.NewKeyFromIntSeed(2)
+			var newTicket = &types.Ticket{ProposerPubKey: keyOfNewTicket.PubKey().Base58(), Height: 100}
+			var tickets = []*types.Ticket{newTicket}
+
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 5
+
+				// Mock the return of the tickets
+				mockTickMgr := mocks.NewMockTicketManager(ctrl)
+				mockTickMgr.EXPECT().SelectRandom(gomock.Any(), gomock.Any(), gomock.Any()).Return(tickets, nil)
+				app.ticketMgr = mockTickMgr
+
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockSysLogic := mocks.NewMockSysLogic(ctrl)
+				mockSysLogic.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
+				mockLogic.EXPECT().Sys().Return(mockSysLogic)
+
+				// Mock the return of the existing validator
+				mockValKeeper := mocks.NewMockValidatorKeeper(ctrl)
+				pubKeyBz, _ := existingValKey.PubKey().Bytes()
+				pubKeyHex := types.HexBytes(pubKeyBz)
+				mockValKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[string]int64{
+					pubKeyHex.String(): 1,
+				}, nil)
+
+				mockLogic.EXPECT().ValidatorKeeper().Return(mockValKeeper)
+				app.logic = mockLogic
+			})
+
+			It("should add existing validator but change power to zero (0)", func() {
+				var resp abcitypes.ResponseEndBlock
+				err := app.updateValidators(6, &resp)
+				Expect(err).To(BeNil())
+				Expect(resp.ValidatorUpdates).To(HaveLen(2))
+				Expect(resp.ValidatorUpdates[1].Power).To(Equal(int64(0)))
+				pubKeyBz, _ := existingValKey.PubKey().Bytes()
+				Expect(resp.ValidatorUpdates[1].PubKey.GetData()).To(Equal(pubKeyBz))
+			})
+
+			It("should add new validator and set power to 1", func() {
+				var resp abcitypes.ResponseEndBlock
+				err := app.updateValidators(6, &resp)
+				Expect(err).To(BeNil())
+				Expect(resp.ValidatorUpdates).To(HaveLen(2))
+				Expect(resp.ValidatorUpdates[0].Power).To(Equal(int64(1)))
+				pubKeyBz, _ := keyOfNewTicket.PubKey().Bytes()
+				Expect(resp.ValidatorUpdates[0].PubKey.GetData()).To(Equal(pubKeyBz))
+			})
+		})
+
+		When("when error occurred when fetching current validators", func() {
+			var key = crypto.NewKeyFromIntSeed(1)
+			var key2 = crypto.NewKeyFromIntSeed(1)
+			var t = &types.Ticket{ProposerPubKey: key.PubKey().Base58()}
+			var t2 = &types.Ticket{ProposerPubKey: key2.PubKey().Base58()}
+			var tickets = []*types.Ticket{t, t2}
+
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 5
+				mockTickMgr := mocks.NewMockTicketManager(ctrl)
+				mockTickMgr.EXPECT().SelectRandom(gomock.Any(), gomock.Any(),
+					gomock.Any()).Return(tickets, nil)
+				app.ticketMgr = mockTickMgr
+
+				mockLogic := mocks.NewMockLogic(ctrl)
+
+				mockSysLogic := mocks.NewMockSysLogic(ctrl)
+				mockSysLogic.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
+				mockLogic.EXPECT().Sys().Return(mockSysLogic)
+
+				mockValKeeper := mocks.NewMockValidatorKeeper(ctrl)
+				mockValKeeper.EXPECT().GetByHeight(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
+
+				mockLogic.EXPECT().ValidatorKeeper().Return(mockValKeeper)
+				app.logic = mockLogic
+			})
+
+			It("should return error", func() {
+				var resp abcitypes.ResponseEndBlock
+				err := app.updateValidators(6, &resp)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("bad error"))
 			})
 		})
 	})
@@ -248,7 +439,7 @@ var _ = Describe("App", func() {
 			var res abcitypes.ResponseDeliverTx
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
-				app.workingBlock.Height = 4
+				app.wBlock.Height = 4
 				tx := types.NewBareTx(types.TxTypeEpochSecret)
 				tx.Secret = util.RandBytes(64)
 				tx.PreviousSecret = util.RandBytes(64)
@@ -276,7 +467,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
-				app.workingBlock.Height = 5
+				app.wBlock.Height = 5
 				app.epochSecretTx = tx
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				res = app.DeliverTx(req)
@@ -301,7 +492,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
-				app.workingBlock.Height = 5
+				app.wBlock.Height = 5
 
 				mockLogic := mocks.NewMockLogic(ctrl)
 				mockTxLogic := mocks.NewMockTxLogic(ctrl)
@@ -334,7 +525,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
-				app.workingBlock.Height = 5
+				app.wBlock.Height = 5
 
 				mockLogic := mocks.NewMockLogic(ctrl)
 				mockTxLogic := mocks.NewMockTxLogic(ctrl)
@@ -373,7 +564,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
-				app.workingBlock.Height = 5
+				app.wBlock.Height = 5
 
 				mockLogic := mocks.NewMockLogic(ctrl)
 				mockTxLogic := mocks.NewMockTxLogic(ctrl)
@@ -401,43 +592,36 @@ var _ = Describe("App", func() {
 	})
 
 	Describe(".Commit", func() {
-		When("error occurred during tree version update", func() {
-			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockTree := mocks.NewMockTree(ctrl)
-				mockTree.EXPECT().SaveVersion().Return(nil, int64(0), fmt.Errorf("something bad"))
-				mockLogic.EXPECT().StateTree().Return(mockTree)
-				app.logic = mockLogic
-			})
 
-			It("should panic", func() {
-				Expect(func() {
-					app.Commit()
-				}).To(Panic())
+		When("epoch secret tx is set", func() {
+			var tx *types.Transaction
+
+			When("when unable to save epoch secret", func() {
+				BeforeEach(func() {
+					tx = types.NewBareTx(types.TxTypeEpochSecret)
+					tx.Secret = util.RandBytes(64)
+					tx.PreviousSecret = util.RandBytes(64)
+					tx.SecretRound = 18
+					app.epochSecretTx = tx
+				})
+
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockSysKeeper.EXPECT().SetHighestDrandRound(gomock.Any()).Return(fmt.Errorf("error"))
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+					app.logic = mockLogic
+				})
+
+				It("should panic", func() {
+					Expect(func() {
+						app.Commit()
+					}).To(Panic())
+				})
 			})
 		})
 
 		When("error occurred when saving latest block info", func() {
-			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockTree := mocks.NewMockTree(ctrl)
-				mockTree.EXPECT().SaveVersion().Return(nil, int64(0), nil)
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().SaveBlockInfo(&types.BlockInfo{}).Return(fmt.Errorf("bad"))
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
-				mockLogic.EXPECT().StateTree().Return(mockTree)
-				app.logic = mockLogic
-			})
-
-			It("should panic", func() {
-				Expect(func() {
-					app.Commit()
-				}).To(Panic())
-			})
-		})
-
-		When("epoch secret tx is set", func() {
-			var appHash = []byte("app_hash")
 			var tx *types.Transaction
 
 			BeforeEach(func() {
@@ -450,57 +634,138 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				mockLogic := mocks.NewMockLogic(ctrl)
-				mockTree := mocks.NewMockTree(ctrl)
-				mockTree.EXPECT().SaveVersion().Return(appHash, int64(0), nil)
-
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().SetHighestDrandRound(gomock.Any())
-				mockSysKeeper.EXPECT().SaveBlockInfo(&types.BlockInfo{
-					AppHash:             appHash,
-					EpochSecret:         tx.Secret,
-					EpochPreviousSecret: tx.PreviousSecret,
-					EpochRound:          tx.SecretRound,
-				}).Return(nil)
+				mockSysKeeper.EXPECT().SetHighestDrandRound(gomock.Any()).Return(nil)
 
-				mockLogic.EXPECT().StateTree().Return(mockTree)
+				mockTree := mocks.NewMockTree(ctrl)
+				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
+
+				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(fmt.Errorf("bad"))
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+				mockLogic.EXPECT().StateTree().Return(mockTree)
 				app.logic = mockLogic
 			})
 
-			Specify("SaveBlockInfo is passed the epoch secret tx fields", func() {
-				res := app.Commit()
-				Expect(res.Data).To(Equal(appHash))
+			It("should panic", func() {
+				Expect(func() {
+					app.Commit()
+				}).To(Panic())
 			})
 		})
 
-		When("cached validator tickets are indexed", func() {
-			var appHash = []byte("app_hash")
+		When("error occurred when indexing cached ticket", func() {
 
 			BeforeEach(func() {
 				mockLogic := mocks.NewMockLogic(ctrl)
-				mockTree := mocks.NewMockTree(ctrl)
-				mockTree.EXPECT().SaveVersion().Return(appHash, int64(0), nil)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().SaveBlockInfo(&types.BlockInfo{AppHash: appHash}).Return(nil)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
-				mockLogic.EXPECT().StateTree().Return(mockTree)
+
+				mockTree := mocks.NewMockTree(ctrl)
+				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
+
+				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
+
 				mockTicketMgr := mocks.NewMockTicketManager(ctrl)
 				tx := types.NewTx(types.TxTypeTicketValidator, 0, sender.Addr(), sender, "10", "1", 1)
 				app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{
 					Tx:    tx,
 					index: 1,
 				})
-				mockTicketMgr.EXPECT().Index(tx, tx.SenderPubKey.String(), uint64(0), 1)
+				mockTicketMgr.EXPECT().Index(gomock.Any(), gomock.Any(),
+					gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+				mockLogic.EXPECT().StateTree().Return(mockTree)
 				app.logic = mockLogic
 				app.ticketMgr = mockTicketMgr
-				res := app.Commit()
-				Expect(res.Data).To(Equal(appHash))
 			})
 
-			It("should reset the app's caches and flag members", func() {
-				Expect(app.ticketPurchaseTxs).To(BeEmpty())
-				Expect(app.workingBlock).To(Equal(&types.BlockInfo{}))
-				Expect(app.txIndex).To(Equal(0))
+			It("should panic", func() {
+				Expect(func() {
+					app.Commit()
+				}).To(Panic())
+			})
+		})
+
+		When("error occurred when saving validators", func() {
+
+			BeforeEach(func() {
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockVal := mocks.NewMockValidatorLogic(ctrl)
+
+				mockTree := mocks.NewMockTree(ctrl)
+				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
+
+				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
+
+				app.wBlock.Height = 10
+				app.saveCurValsAt = 10
+				mockVal.EXPECT().Index(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+				mockLogic.EXPECT().StateTree().Return(mockTree)
+				mockLogic.EXPECT().Validator().Return(mockVal)
+				app.logic = mockLogic
+			})
+
+			It("should panic", func() {
+				Expect(func() {
+					app.Commit()
+				}).To(Panic())
+			})
+		})
+
+		When("error occurred when saving tree version", func() {
+
+			BeforeEach(func() {
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+
+				mockTree := mocks.NewMockTree(ctrl)
+				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
+
+				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
+
+				app.saveCurValsAt = 100
+
+				mockTree.EXPECT().SaveVersion().Return([]byte{}, int64(0), fmt.Errorf("error"))
+
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()
+				app.logic = mockLogic
+			})
+
+			It("should panic", func() {
+				Expect(func() {
+					app.Commit()
+				}).To(Panic())
+			})
+		})
+
+		When("no error occurred", func() {
+			appHash := []byte("app_hash")
+
+			BeforeEach(func() {
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+
+				mockTree := mocks.NewMockTree(ctrl)
+				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
+
+				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
+
+				app.saveCurValsAt = 100
+
+				mockTree.EXPECT().SaveVersion().Return(appHash, int64(0), nil)
+
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()
+				app.logic = mockLogic
+			})
+
+			It("should return expected app hash", func() {
+				res := app.Commit()
+				Expect(res.Data).To(Equal(appHash))
 			})
 		})
 	})

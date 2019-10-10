@@ -17,6 +17,8 @@ const (
 	TagNetMaturity = "nm"
 	// TagHighestDrandRound is the prefix for highest drand round
 	TagHighestDrandRound = "dr"
+	// TagValidators is the prefix for block validators
+	TagValidators = "v"
 )
 
 // MakeAccountKey creates a key for accessing/store an account
@@ -42,4 +44,14 @@ func MakeNetMaturityKey() []byte {
 // MakeHighestDrandRoundKey creates a key for storing the highest know drand round
 func MakeHighestDrandRoundKey() []byte {
 	return []byte(fmt.Sprintf("%s", TagHighestDrandRound))
+}
+
+// MakeBlockValidatorsKey creates a key for storing validators of blocks
+func MakeBlockValidatorsKey(height int64) []byte {
+	return append([]byte(TagValidators+Separator), util.EncodeNumber(uint64(height))...)
+}
+
+// MakeQueryKeyBlockValidators creates a key for querying all block validators
+func MakeQueryKeyBlockValidators() []byte {
+	return []byte(fmt.Sprintf("%s%s", TagValidators, Separator))
 }

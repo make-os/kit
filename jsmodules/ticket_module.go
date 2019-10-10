@@ -43,7 +43,12 @@ func (m *TicketModule) funcs() []*types.JSModuleFunc {
 		&types.JSModuleFunc{
 			Name:        "find",
 			Value:       m.find,
-			Description: "Find tickets belonging to a given public key",
+			Description: "Get tickets belonging to a given public key",
+		},
+		&types.JSModuleFunc{
+			Name:        "top",
+			Value:       m.Top,
+			Description: "Get most recent tickets up to the given limit",
 		},
 	}
 }
@@ -147,6 +152,19 @@ func (m *TicketModule) find(
 	}
 
 	res, err := m.ticketmgr.GetByProposer(proposerPubKey, qopts)
+	if err != nil {
+		panic(err)
+	}
+
+	return res
+}
+
+// Top returns most recent tickets up to the given limit
+func (m *TicketModule) Top(limit int) interface{} {
+	res, err := m.ticketmgr.Query(types.Ticket{}, types.QueryOptions{
+		Limit: limit,
+		Order: `"height" desc`,
+	})
 	if err != nil {
 		panic(err)
 	}

@@ -1,6 +1,9 @@
 package ticket
 
 import (
+	"math/big"
+	"math/rand"
+
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
@@ -35,8 +38,6 @@ func (m *Manager) Index(
 	blockHeight uint64,
 	txIndex int) error {
 
-	tickets := []*types.Ticket{}
-
 	// Create the ticket
 	ticket := &types.Ticket{
 		Hash:           tx.GetHash().HexStr(),
@@ -50,23 +51,14 @@ func (m *Manager) Index(
 	ticket.MatureBy = blockHeight + uint64(params.MinTicketMatDur)
 	ticket.DecayBy = ticket.MatureBy + uint64(params.MaxTicketActiveDur)
 
-	// Add the ticket
-	tickets = append(tickets, ticket)
-
-	// Determine if a child ticket can be created.
-	// Child tickets are created when the value of the ticket
-	// is sufficient to purchase additional tickets
+	// Determine the ticket's power.
+	// A tickets power is the amount of tickets is value can purchase
 	curTickPrice := decimal.NewFromFloat(m.logic.Sys().GetCurValidatorTicketPrice())
 	numSubTickets := tx.Value.Decimal().Div(curTickPrice).IntPart()
-	for i := int64(1); i < numSubTickets; i++ {
-		childTicket := *ticket
-		childTicket.ChildOf = ticket.Hash
-		childTicket.Index = int(i) - 1
-		tickets = append(tickets, &childTicket)
-	}
+	ticket.Power = numSubTickets
 
 	// Add all tickets to the store
-	if err := m.store.Add(tickets...); err != nil {
+	if err := m.store.Add(ticket); err != nil {
 		return err
 	}
 
@@ -103,6 +95,38 @@ func (m *Manager) CountLiveTickets(queryOpt ...types.QueryOptions) (int, error) 
 	}
 
 	return count, nil
+}
+
+// Query finds and returns tickets that match the given query
+func (m *Manager) Query(q types.Ticket, queryOpt ...types.QueryOptions) ([]*types.Ticket, error) {
+	qOpt := types.EmptyQueryOptions
+	if len(queryOpt) > 0 {
+		qOpt = queryOpt[0]
+	}
+	return m.store.Query(q, qOpt)
+}
+
+// SelectRandom selects random live tickets up to the specified limit.
+// The provided see is used to seed the PRNG that is used to select tickets.
+func (m *Manager) SelectRandom(height int64, seed []byte, limit int) ([]*types.Ticket, error) {
+	tickets, err := m.store.GetLive(height, types.QueryOptions{
+		Order: `"power" desc, "height" asc, "index" asc`,
+		Limit: 50000,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	seedInt := new(big.Int).SetBytes(seed)
+	r := rand.New(rand.NewSource(seedInt.Int64()))
+	selected := []*types.Ticket{}
+	for len(selected) < limit && len(tickets) > 0 {
+		i := r.Intn(len(tickets))
+		selected = append(selected, tickets[i])
+		tickets = append(tickets[:i], tickets[i+1:]...)
+	}
+
+	return selected, nil
 }
 
 // Stop stores the manager

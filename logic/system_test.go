@@ -371,4 +371,60 @@ var _ = Describe("System", func() {
 			})
 		})
 	})
+
+	Describe(".MakeSecret", func() {
+		When("error is returned while trying to get secret", func() {
+			BeforeEach(func() {
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockSysKeeper.EXPECT().GetSecrets(gomock.Any(), gomock.Any(),
+					gomock.Any()).Return(nil, fmt.Errorf("error"))
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+				sysLogic.logic = mockLogic
+			})
+
+			It("should return err='failed to get secrets: error'", func() {
+				_, err := sysLogic.MakeSecret(1)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(Equal("failed to get secrets: error"))
+			})
+		})
+
+		When("no secret is found", func() {
+			BeforeEach(func() {
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockSysKeeper.EXPECT().GetSecrets(gomock.Any(), gomock.Any(),
+					gomock.Any()).Return(nil, nil)
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+				sysLogic.logic = mockLogic
+			})
+
+			It("should return err='...no secret found'", func() {
+				_, err := sysLogic.MakeSecret(1)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring(ErrNoSecretFound.Error()))
+			})
+		})
+
+		When("two secrets (0x06, 0x04) exists", func() {
+			var secrets [][]byte = [][]byte{[]byte{0x06}, []byte{0x02}}
+			BeforeEach(func() {
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockSysKeeper.EXPECT().GetSecrets(gomock.Any(), gomock.Any(),
+					gomock.Any()).Return(secrets, nil)
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+				sysLogic.logic = mockLogic
+			})
+
+			It("should return 0x04 and no error", func() {
+				res, err := sysLogic.MakeSecret(1)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal([]uint8{
+					0x04,
+				}))
+			})
+		})
+	})
 })

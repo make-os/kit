@@ -436,4 +436,13 @@ var _ = Describe("Common", func() {
 			Expect(m2).To(Equal(m))
 		})
 	})
+
+	Describe(".XorBytes", func() {
+		It("should return '4' for '6' and '2'", func() {
+			r := XorBytes([]byte("6"), []byte("2"))
+			Expect(r).To(Equal([]uint8{
+				0x04,
+			}))
+		})
+	})
 })

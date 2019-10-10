@@ -211,9 +211,11 @@ func (m *AccountModule) getStakedBalance(address string, height ...int64) interf
 // will be included in the result.
 func (m *AccountModule) getPrivateValidator(includePrivKey ...bool) interface{} {
 	key, _ := m.cfg.G().PrivVal.GetKey()
+
 	info := map[string]string{
 		"publicKey": key.PubKey().Base58(),
 		"address":   key.Addr().String(),
+		"tmAddress": m.cfg.G().PrivVal.Key.Address.String(),
 	}
 	if len(includePrivKey) > 0 && includePrivKey[0] {
 		info["privateKey"] = key.PrivKey().Base58()

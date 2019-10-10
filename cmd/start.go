@@ -19,11 +19,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/spf13/viper"
-
 	"github.com/makeos/mosdef/node"
 	"github.com/makeos/mosdef/rpc"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 func start(onStart func(n *node.Node)) {

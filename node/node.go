@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"os"
 
+	tmtypes "github.com/tendermint/tendermint/types"
+
 	"github.com/makeos/mosdef/ticket"
 
 	"github.com/makeos/mosdef/mempool"
@@ -133,6 +135,7 @@ func (n *Node) Start() error {
 
 	// Create the ABCI app and wrap with a ClientCreator
 	app := NewApp(n.cfg, n.db, n.logic, n.ticketMgr)
+	app.node = n
 	clientCreator := proxy.NewLocalClientCreator(app)
 
 	// Create custom mempool and set the epoch secret generator function
@@ -193,6 +196,12 @@ func (n *Node) GetLogic() types.Logic {
 // GetTxReactor returns the transaction reactor
 func (n *Node) GetTxReactor() *mempool.Reactor {
 	return n.txReactor
+}
+
+// GetCurrentValidators returns the current validators
+func (n *Node) GetCurrentValidators() []*tmtypes.Validator {
+	_, cv := n.tm.ConsensusState().GetValidators()
+	return cv
 }
 
 // GetService returns the node's service

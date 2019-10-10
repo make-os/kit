@@ -80,7 +80,7 @@ var _ = Describe("SQLStore", func() {
 		var store *SQLStore
 		var err error
 		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
-		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 1, Index: 2, ChildOf: "hash"}
+		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 1, Index: 2}
 
 		BeforeEach(func() {
 			store, err = NewSQLStore(cfg.GetTicketDBDir())
@@ -109,18 +109,6 @@ var _ = Describe("SQLStore", func() {
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(1))
 				Expect(tickets[0]).To(Equal(ticket))
-			})
-		})
-
-		Context("with noChild set to true", func() {
-			It("should return 1 ticket (the one with am empty childOf field)", func() {
-				tickets, err := store.GetTicketByProposerPubKey("pubkey", types.QueryOptions{
-					NoChild: true,
-				})
-				Expect(err).To(BeNil())
-				Expect(tickets).To(HaveLen(1))
-				Expect(tickets[0]).To(Equal(ticket))
-				Expect(tickets[0].ChildOf).To(BeEmpty())
 			})
 		})
 
@@ -163,7 +151,7 @@ var _ = Describe("SQLStore", func() {
 		var store *SQLStore
 		var err error
 		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
-		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2, ChildOf: "hash"}
+		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2}
 
 		BeforeEach(func() {
 			store, err = NewSQLStore(cfg.GetTicketDBDir())
@@ -205,7 +193,7 @@ var _ = Describe("SQLStore", func() {
 		var store *SQLStore
 		var err error
 		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
-		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2, ChildOf: "hash"}
+		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2}
 
 		BeforeEach(func() {
 			store, err = NewSQLStore(cfg.GetTicketDBDir())
@@ -245,7 +233,7 @@ var _ = Describe("SQLStore", func() {
 		var store *SQLStore
 		var err error
 		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
-		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 1, Index: 2, ChildOf: "hash"}
+		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 1, Index: 2}
 
 		BeforeEach(func() {
 			store, err = NewSQLStore(cfg.GetTicketDBDir())
@@ -267,20 +255,6 @@ var _ = Describe("SQLStore", func() {
 
 			It("should return 2", func() {
 				Expect(count).To(Equal(2))
-			})
-		})
-
-		Context("count tx without a childOf value", func() {
-			var count int
-			var err error
-
-			BeforeEach(func() {
-				count, err = store.Count(types.Ticket{}, types.QueryOptions{NoChild: true})
-				Expect(err).To(BeNil())
-			})
-
-			It("should return 1", func() {
-				Expect(count).To(Equal(1))
 			})
 		})
 	})

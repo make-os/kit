@@ -99,7 +99,6 @@ func (r *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 	// Add the peer to the pool
 	_, err = r.AddTx(tx)
 	if err != nil {
-		r.log.Error("Failed to add received transaction", "Err", err)
 		return
 	}
 
@@ -156,7 +155,6 @@ func (r *Reactor) broadcastTx(tx t.Tx) {
 	txBytes := tx.Bytes()
 	for _, peer := range r.Switch.Peers().List() {
 		if r.isSender(txHash, string(peer.ID())) {
-			r.log.Debug("Refusing to broadcast tx to peer that previously sent it")
 			continue
 		}
 		go peer.Send(MempoolChannel, txBytes)

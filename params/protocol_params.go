@@ -5,6 +5,9 @@ import (
 )
 
 var (
+	// BlockTime is the number of seconds between blocks
+	BlockTime = 20
+
 	// MaxBlockSize is the max size of a block
 	MaxBlockSize = int64(1000000)
 
@@ -18,7 +21,7 @@ var (
 	// TxPoolCap is the number of transactions the tx pool can contain
 	TxPoolCap = int64(10000)
 
-	// MinTicketMatDur is the number of blocks that must be created
+	// MinTicketMatDur is tchhe number of blocks that must be created
 	// before a ticket is considered matured.
 	MinTicketMatDur = 10
 
@@ -41,12 +44,15 @@ var (
 
 	// NetMaturityHeight is the block height when the network is considered
 	// ready for more responsibilities and advanced operations.
-	NetMaturityHeight = int64(50)
+	NetMaturityHeight = int64(10)
 
 	// MinBootstrapLiveTickets is the minimum number of live tickets
 	// required at bootstrap before the network is considered matured.
 	MinBootstrapLiveTickets = 1
 
 	// NumBlocksPerEpoch is the number of blocks in an epoch
-	NumBlocksPerEpoch = 120
+	NumBlocksPerEpoch = 6
+
+	// MaxValidatorsPerEpoch is the maximum number validators per epoch
+	MaxValidatorsPerEpoch = 1
 )

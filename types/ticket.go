@@ -5,7 +5,7 @@ type Ticket struct {
 	DecayBy        uint64 `gorm:"column:decayBy" json:"decayBy"`               // Block height when the ticket becomes decayed
 	MatureBy       uint64 `gorm:"column:matureBy" json:"matureBy"`             // Block height when the ticket enters maturity.
 	Hash           string `gorm:"column:hash" json:"hash"`                     // Hash of the ticket purchase transaction
-	ChildOf        string `gorm:"column:childOf" json:"childOf,omitempty"`     // The hash of another ticket which this ticket is derived from
+	Power          int64  `gorm:"column:power" json:"power,omitempty"`         // Power represents the strength of a ticket
 	ProposerPubKey string `gorm:"column:proposerPubKey" json:"proposerPubKey"` // The public key of the validator that owns the ticket.
 	Height         uint64 `gorm:"column:height" json:"height"`                 // The block height where this ticket was seen.
 	Index          int    `gorm:"column:index" json:"index"`                   // The index of the ticket in the transactions list.
@@ -14,10 +14,9 @@ type Ticket struct {
 
 // QueryOptions describe how a query should be executed.
 type QueryOptions struct {
-	Limit   int    `json:"limit" mapstructure:"limit"`
-	Offset  int    `json:"offset" mapstructure:"offset"`
-	Order   string `json:"order" mapstructure:"order"`
-	NoChild bool   `json:"noChild" mapstructure:"noChild"`
+	Limit  int    `json:"limit" mapstructure:"limit"`
+	Offset int    `json:"offset" mapstructure:"offset"`
+	Order  string `json:"order" mapstructure:"order"`
 }
 
 // EmptyQueryOptions is an empty instance of QueryOptions
@@ -35,6 +34,13 @@ type TicketManager interface {
 
 	// CountLiveTickets returns the number of matured and non-decayed tickets.
 	CountLiveTickets(...QueryOptions) (int, error)
+
+	// SelectRandom selects random live tickets up to the specified limit.
+	// The provided see is used to seed the PRNG that is used to select tickets.
+	SelectRandom(height int64, seed []byte, limit int) ([]*Ticket, error)
+
+	// Query finds and returns tickets that match the given query
+	Query(q Ticket, queryOpt ...QueryOptions) ([]*Ticket, error)
 
 	// Stop stops the ticket manager
 	Stop() error

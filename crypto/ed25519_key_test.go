@@ -30,6 +30,20 @@ var _ = Describe("Key", func() {
 
 	})
 
+	Describe(".PubKeyFromBytes", func() {
+		var key = NewKeyFromIntSeed(22)
+		var bz = []uint8{
+			0x5e, 0xed, 0xb1, 0x26, 0x49, 0x16, 0x15, 0xab, 0x16, 0xda, 0x11, 0xa4, 0x0a, 0x21, 0xff, 0x89,
+			0x25, 0x3a, 0x4c, 0x43, 0x46, 0xfc, 0xbb, 0x38, 0x82, 0xa0, 0x61, 0xac, 0xdf, 0xc7, 0xb3, 0x9b,
+		}
+
+		It("should convert bytes to PubKey successfully", func() {
+			pubKey, err := PubKeyFromBytes(bz)
+			Expect(err).To(BeNil())
+			Expect(pubKey.Addr()).To(Equal(key.Addr()))
+		})
+	})
+
 	Describe(".NewKey", func() {
 		When("seeds are '1'", func() {
 			It("multiple calls should return same private keys", func() {
