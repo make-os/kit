@@ -161,8 +161,8 @@ var _ = Describe("Mempool", func() {
 			BeforeEach(func() {
 				mempool = NewMempool(cfg)
 				tx = types.NewTx(types.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
-				tx2 = types.NewTx(types.TxTypeTicketValidator, 1, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
-				tx3 = types.NewTx(types.TxTypeTicketValidator, 2, "recipient_addr3", sender, "10", "0.1", time.Now().Unix())
+				tx2 = types.NewTx(types.TxTypeGetTicket, 1, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
+				tx3 = types.NewTx(types.TxTypeGetTicket, 2, "recipient_addr3", sender, "10", "0.1", time.Now().Unix())
 				mempool.addTx(tx.Bytes(), okRes)
 				mempool.addTx(tx2.Bytes(), okRes)
 				mempool.addTx(tx3.Bytes(), okRes)
@@ -170,12 +170,12 @@ var _ = Describe("Mempool", func() {
 				res = mempool.ReapMaxBytesMaxGas(1000, 0)
 			})
 
-			It("should return 2 txs; 1 tx must remain in the pool and it must be a types.TxTypeTicketValidator", func() {
+			It("should return 2 txs; 1 tx must remain in the pool and it must be a types.TxTypeGetTicket", func() {
 				Expect(len(res)).To(Equal(2))
 				Expect(mempool.pool.Size()).To(Equal(int64(1)))
 				Expect(mempool.pool.HasByHash(tx3.GetHash().HexStr())).To(BeTrue())
 				actual := mempool.pool.Head()
-				Expect(actual.GetType()).To(Equal(types.TxTypeTicketValidator))
+				Expect(actual.GetType()).To(Equal(types.TxTypeGetTicket))
 			})
 		})
 

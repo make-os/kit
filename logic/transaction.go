@@ -57,7 +57,7 @@ func (t *Transaction) Exec(tx *types.Transaction) error {
 	switch tx.Type {
 	case types.TxTypeCoinTransfer:
 		return t.transferCoin(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
-	case types.TxTypeTicketValidator:
+	case types.TxTypeGetTicket:
 		return t.stakeValidatorCoin(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce())
 	case types.TxTypeEpochSecret:
 		return nil
@@ -82,7 +82,7 @@ func (t *Transaction) CanTransferCoin(
 
 	// Ensure recipient address is valid.
 	// Ignore for ticket purchases tx as a recipient address is not required.
-	if txType != types.TxTypeTicketValidator {
+	if txType != types.TxTypeGetTicket {
 		if err = crypto.IsValidAddr(recipientAddr.String()); err != nil {
 			return fmt.Errorf("invalid recipient address: %s", err)
 		}
@@ -90,7 +90,7 @@ func (t *Transaction) CanTransferCoin(
 
 	// For validator ticket transaction:
 	// The tx value must be equal or greater than the current ticket price.
-	if txType == types.TxTypeTicketValidator {
+	if txType == types.TxTypeGetTicket {
 		curTicketPrice := t.logic.Sys().GetCurValidatorTicketPrice()
 		if value.Decimal().LessThan(decimal.NewFromFloat(curTicketPrice)) {
 			return fmt.Errorf("sender's spendable account balance is insufficient to cover "+
@@ -133,7 +133,7 @@ func (t *Transaction) stakeValidatorCoin(
 	}
 
 	// Ensure the account has sufficient balance and nonce
-	if err := t.CanTransferCoin(types.TxTypeTicketValidator, spk, "",
+	if err := t.CanTransferCoin(types.TxTypeGetTicket, spk, "",
 		value, fee, nonce); err != nil {
 		return err
 	}

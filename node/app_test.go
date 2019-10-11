@@ -400,13 +400,13 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("tx type is TxTypeTicketValidator; max. TxTypeTicketValidator per "+
-			"block is 1; 1 TxTypeTicketValidator tx has previously been seen", func() {
+		When("tx type is TxTypeGetTicket; max. TxTypeGetTicket per "+
+			"block is 1; 1 TxTypeGetTicket tx has previously been seen", func() {
 			var res abcitypes.ResponseDeliverTx
 			BeforeEach(func() {
 				params.MaxValTicketsPerBlock = 1
 				app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{})
-				tx := types.NewTx(types.TxTypeTicketValidator, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := types.NewTx(types.TxTypeGetTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
 			})
 
@@ -417,9 +417,9 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("tx type is TxTypeTicketValidator and is successfully executed", func() {
+		When("tx type is TxTypeGetTicket and is successfully executed", func() {
 			BeforeEach(func() {
-				tx := types.NewTx(types.TxTypeTicketValidator, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := types.NewTx(types.TxTypeGetTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic := mocks.NewMockLogic(ctrl)
 				txLogic := mocks.NewMockTxLogic(ctrl)
@@ -665,7 +665,7 @@ var _ = Describe("App", func() {
 				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 
 				mockTicketMgr := mocks.NewMockTicketManager(ctrl)
-				tx := types.NewTx(types.TxTypeTicketValidator, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := types.NewTx(types.TxTypeGetTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{
 					Tx:    tx,
 					index: 1,

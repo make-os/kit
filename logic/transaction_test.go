@@ -93,9 +93,9 @@ var _ = Describe("Transaction", func() {
 	Describe("CanTransfer", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 
-		Context("when tx type is types.TxTypeTicketValidator", func() {
+		Context("when tx type is types.TxTypeGetTicket", func() {
 			It("should not return err='invalid recipient address...'", func() {
-				err := txLogic.CanTransferCoin(types.TxTypeTicketValidator, sender.PubKey(),
+				err := txLogic.CanTransferCoin(types.TxTypeGetTicket, sender.PubKey(),
 					util.String("invalid"), util.String("100"),
 					util.String("0"), 0)
 				Expect(err).ToNot(BeNil())
@@ -103,7 +103,7 @@ var _ = Describe("Transaction", func() {
 			})
 		})
 
-		Context("tx type is TxTypeTicketValidator", func() {
+		Context("tx type is TxTypeGetTicket", func() {
 			When("current ticket price = 10; sender's account balance = 5; ticket value = 4", func() {
 				BeforeEach(func() {
 					params.InitialTicketPrice = 10
@@ -119,7 +119,7 @@ var _ = Describe("Transaction", func() {
 				})
 
 				Specify("that err='sender's spendable account balance is insufficient to cover ticket price (10.000000)' is returned", func() {
-					err := txLogic.CanTransferCoin(types.TxTypeTicketValidator, sender.PubKey(),
+					err := txLogic.CanTransferCoin(types.TxTypeGetTicket, sender.PubKey(),
 						"", util.String("4"),
 						util.String("0"), 1)
 					Expect(err).ToNot(BeNil())

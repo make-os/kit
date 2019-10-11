@@ -196,7 +196,7 @@ func (a *App) preExecChecks(tx *types.Transaction) *abcitypes.ResponseDeliverTx 
 	// Invalidate the transaction if it is a validator ticket
 	// purchasing tx and we have reached the max per block.
 	// TODO: Slash proposer for violating the rule.
-	if txType == types.TxTypeTicketValidator &&
+	if txType == types.TxTypeGetTicket &&
 		len(a.ticketPurchaseTxs) == params.MaxValTicketsPerBlock {
 		return &abcitypes.ResponseDeliverTx{
 			Code: types.ErrCodeMaxTxTypeReached,
@@ -268,7 +268,7 @@ func (a *App) postExecChecks(
 	}
 
 	// Cache ticket purchase transaction; They will be indexed in the COMMIT stage.
-	if resp.Code == 0 && txType == types.TxTypeTicketValidator {
+	if resp.Code == 0 && txType == types.TxTypeGetTicket {
 		a.ticketPurchaseTxs = append(a.ticketPurchaseTxs, &tickPurchaseTx{
 			Tx:    tx,
 			index: a.txIndex,

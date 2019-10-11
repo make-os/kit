@@ -15,8 +15,8 @@ var (
 	// TxTypeCoinTransfer represents a tx that moves coin between accounts
 	TxTypeCoinTransfer = 0x0
 
-	// TxTypeTicketValidator represents a transaction purchases validator ticket
-	TxTypeTicketValidator = 0x1
+	// TxTypeGetTicket represents a transaction purchases validator ticket
+	TxTypeGetTicket = 0x1
 
 	// TxTypeEpochSecret represents a transaction containing 64 bytes secret
 	// for selecting the next epoch block validators.

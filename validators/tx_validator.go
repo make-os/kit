@@ -23,7 +23,7 @@ type ValidateTxFunc func(tx *types.Transaction, i int, logic types.Logic) error
 // KnownTransactionTypes are the supported transaction types
 var KnownTransactionTypes = []int{
 	types.TxTypeCoinTransfer,
-	types.TxTypeTicketValidator,
+	types.TxTypeGetTicket,
 }
 
 var validTypeRule = func(err error) func(interface{}) error {
@@ -216,7 +216,7 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 
 	// For non ticket purchasing transactions,
 	// The recipient's address must be set and it must be valid.
-	if tx.Type != types.TxTypeTicketValidator {
+	if tx.Type != types.TxTypeGetTicket {
 		if err := v.Validate(tx.GetTo(),
 			v.Required.Error(types.FieldErrorWithIndex(index, "to",
 				"recipient address is required").Error()),
@@ -285,6 +285,12 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 
 	return nil
 }
+
+// func checkUnexpectedFields(tx *types.Transaction, index int) {
+// 	txType := tx.GetType()
+
+// 	if txType == types.TxTypeGetTicket
+// }
 
 // checkSignature checks whether the signature is valid.
 // Expects the transaction to have a valid sender public key.
