@@ -49,6 +49,7 @@ type App struct {
 	mature                    bool
 	latestUnsavedValidators   []*types.Validator
 	heightToSaveNewValidators int64
+	unIndexedTxs              []*types.Transaction
 }
 
 // NewApp creates an instance of App
@@ -275,6 +276,12 @@ func (a *App) postExecChecks(
 		})
 	}
 
+	// Add the successfully processed tx to the un-indexed tx cache.
+	// They will be committed in the COMMIT phase
+	if resp.Code == 0 {
+		a.unIndexedTxs = append(a.unIndexedTxs, tx)
+	}
+
 	return &resp
 }
 
@@ -462,6 +469,13 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		panic(errors.Wrap(err, "failed to commit: could not save new tree version"))
 	}
 
+	// Index the un-indexed txs
+	for _, t := range a.unIndexedTxs {
+		if err := a.logic.TxKeeper().Index(t); err != nil {
+			panic(errors.Wrap(err, "failed to index transaction after commit"))
+		}
+	}
+
 	return abcitypes.ResponseCommit{
 		Data: appHash,
 	}
@@ -474,6 +488,7 @@ func (a *App) reset() {
 	a.epochSecretTx = nil
 	a.mature = false
 	a.curBlockProposer = false
+	a.unIndexedTxs = []*types.Transaction{}
 
 	// Only reset heightToSaveNewValidators if the current height is
 	// same as it to avoid not triggering saving of new validators at the target height.

@@ -42,7 +42,7 @@ func NewModule(
 func (m *Module) Configure(vm *otto.Otto) []prompt.Suggest {
 	nodeSrv := m.service
 	sugs := []prompt.Suggest{}
-	sugs = append(sugs, NewTxModule(vm, nodeSrv).Configure()...)
+	sugs = append(sugs, NewTxModule(vm, nodeSrv, m.logic).Configure()...)
 	sugs = append(sugs, NewChainModule(vm, nodeSrv, m.logic).Configure()...)
 	sugs = append(sugs, NewPoolModule(vm, m.txReactor).Configure()...)
 	sugs = append(sugs, NewAccountModule(m.cfg, vm, m.acctmgr, nodeSrv, m.logic).Configure()...)

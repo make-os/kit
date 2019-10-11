@@ -24,6 +24,7 @@ type Logic struct {
 	systemKeeper    *keepers.SystemKeeper
 	accountKeeper   *keepers.AccountKeeper
 	validatorKeeper *keepers.ValidatorKeeper
+	txKeeper        *keepers.TxKeeper
 	drand           rand.DRander
 }
 
@@ -35,6 +36,7 @@ func New(db storage.Engine, tree *tree.SafeTree, cfg *config.EngineConfig) *Logi
 	l.tx = &Transaction{logic: l}
 	l.validator = &Validator{logic: l}
 	l.systemKeeper = keepers.NewSystemKeeper(db)
+	l.txKeeper = keepers.NewTxKeeper(db)
 	l.accountKeeper = keepers.NewAccountKeeper(tree)
 	l.validatorKeeper = keepers.NewValidatorKeeper(db)
 
@@ -85,6 +87,11 @@ func (h *Logic) StateTree() types.Tree {
 // SysKeeper returns the system keeper
 func (h *Logic) SysKeeper() types.SystemKeeper {
 	return h.systemKeeper
+}
+
+// TxKeeper returns the transaction keeper
+func (h *Logic) TxKeeper() types.TxKeeper {
+	return h.txKeeper
 }
 
 // ValidatorKeeper returns the validator keeper

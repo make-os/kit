@@ -21,12 +21,12 @@ import (
 type ChainModule struct {
 	vm      *otto.Otto
 	service types.Service
-	logic   types.Logic
+	keepers types.Keepers
 }
 
 // NewChainModule creates an instance of ChainModule
-func NewChainModule(vm *otto.Otto, service types.Service, logic types.Logic) *ChainModule {
-	return &ChainModule{vm: vm, service: service, logic: logic}
+func NewChainModule(vm *otto.Otto, service types.Service, keepers types.Keepers) *ChainModule {
+	return &ChainModule{vm: vm, service: service, keepers: keepers}
 }
 
 func (m *ChainModule) globals() []*types.JSModuleFunc {
@@ -142,7 +142,7 @@ func (m *ChainModule) getBlockInfo(height interface{}) interface{} {
 		panic(types.ErrArgDecode("integer/string", 0))
 	}
 
-	res, err := m.logic.SysKeeper().GetBlockInfo(blockHeight)
+	res, err := m.keepers.SysKeeper().GetBlockInfo(blockHeight)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get block info"))
 	}
@@ -169,7 +169,7 @@ func (m *ChainModule) getValidators(height interface{}) interface{} {
 		panic(types.ErrArgDecode("integer/string", 0))
 	}
 
-	validators, err := m.logic.ValidatorKeeper().GetByHeight(blockHeight)
+	validators, err := m.keepers.ValidatorKeeper().GetByHeight(blockHeight)
 	if err != nil {
 		panic(err)
 	}

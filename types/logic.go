@@ -69,6 +69,17 @@ type SystemKeeper interface {
 	GetSecrets(from, limit, skip int64) ([][]byte, error)
 }
 
+// TxKeeper describes an interface for managing transaction data
+type TxKeeper interface {
+
+	// Index takes a transaction and stores it.
+	// It uses the tx hash as the index key
+	Index(tx Tx) error
+
+	// GetTx gets a transaction by its hash
+	GetTx(hash string) (Tx, error)
+}
+
 // AccountKeeper describes an interface for accessing accounts
 type AccountKeeper interface {
 	// GetAccount returns an account by address.
@@ -85,6 +96,8 @@ type AccountKeeper interface {
 // Logic provides an interface that allows
 // access and modification to the state of the blockchain.
 type Logic interface {
+	Keepers
+
 	// Tx returns the transaction logic
 	Tx() TxLogic
 
@@ -100,6 +113,20 @@ type Logic interface {
 	// StateTree manages the app state tree
 	StateTree() Tree
 
+	// WriteGenesisState initializes the app state with initial data
+	WriteGenesisState() error
+
+	// SetTicketManager sets the ticket manager
+	SetTicketManager(tm TicketManager)
+
+	// GetDRand returns a drand client
+	GetDRand() rand.DRander
+}
+
+// Keepers describes modules for accessing the state and storage
+// of various application components
+type Keepers interface {
+
 	// SysKeeper manages system state
 	SysKeeper() SystemKeeper
 
@@ -109,17 +136,11 @@ type Logic interface {
 	// ValidatorKeeper returns the validator keeper
 	ValidatorKeeper() ValidatorKeeper
 
-	// WriteGenesisState initializes the app state with initial data
-	WriteGenesisState() error
-
-	// SetTicketManager sets the ticket manager
-	SetTicketManager(tm TicketManager)
+	// TxKeeper returns the transaction keeper
+	TxKeeper() TxKeeper
 
 	// GetTicketManager returns the ticket manager
 	GetTicketManager() TicketManager
-
-	// GetDRand returns a drand client
-	GetDRand() rand.DRander
 }
 
 // LogicCommon describes a common functionalities for

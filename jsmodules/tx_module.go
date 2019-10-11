@@ -16,21 +16,33 @@ import (
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
 	vm      *otto.Otto
+	keepers types.Keepers
 	service types.Service
 }
 
 // NewTxModule creates an instance of TxModule
-func NewTxModule(vm *otto.Otto, service types.Service) *TxModule {
-	return &TxModule{vm: vm, service: service}
+func NewTxModule(vm *otto.Otto, service types.Service, keepers types.Keepers) *TxModule {
+	return &TxModule{vm: vm, service: service, keepers: keepers}
 }
 
-// funcs are functions accessible using the tx.coin namespace
-func (m *TxModule) funcs() []*types.JSModuleFunc {
+// txCoinFuncs are functions accessible using the `tx.coin` namespace
+func (m *TxModule) txCoinFuncs() []*types.JSModuleFunc {
 	return []*types.JSModuleFunc{
 		&types.JSModuleFunc{
 			Name:        "send",
 			Value:       m.sendCoin,
-			Description: "Send the native coin from an account to a destination account.",
+			Description: "Send coins to another account",
+		},
+	}
+}
+
+// funcs are functions accessible using the `tx` namespace
+func (m *TxModule) funcs() []*types.JSModuleFunc {
+	return []*types.JSModuleFunc{
+		&types.JSModuleFunc{
+			Name:        "get",
+			Value:       m.get,
+			Description: "Get a transactions by hash",
 		},
 	}
 }
@@ -48,12 +60,20 @@ func (m *TxModule) Configure() []prompt.Suggest {
 	txMap := map[string]interface{}{}
 	util.VMSet(m.vm, types.NamespaceTx, txMap)
 
-	// add 'coin' namespaced functions
+	// Add 'coin' namespaced functions
 	coinMap := map[string]interface{}{}
 	txMap[types.NamespaceCoin] = coinMap
-	for _, f := range m.funcs() {
+	for _, f := range m.txCoinFuncs() {
 		coinMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s.%s", types.NamespaceTx, types.NamespaceCoin, f.Name)
+		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
+			Description: f.Description})
+	}
+
+	// Add other funcs to `tx` namespace
+	for _, f := range m.funcs() {
+		txMap[f.Name] = f.Value
+		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceTx, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
@@ -130,4 +150,13 @@ func (m *TxModule) sendCoin(txObj interface{}, options ...interface{}) interface
 	return util.EncodeForJS(map[string]interface{}{
 		"hash": hash,
 	})
+}
+
+// get fetches a tx by its hash
+func (m *TxModule) get(hash string) interface{} {
+	tx, err := m.keepers.TxKeeper().GetTx(hash)
+	if err != nil {
+		panic(err)
+	}
+	return tx
 }

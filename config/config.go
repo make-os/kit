@@ -195,6 +195,9 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	// Set block time
 	tmcfg.Consensus.TimeoutCommit = time.Second * time.Duration(params.BlockTime)
 
+	// Disable tendermint's tx indexer
+	tmcfg.TxIndex.Indexer = "null"
+
 	// Set default version information
 	c.VersionInfo = &VersionInfo{}
 	c.VersionInfo.BuildCommit = ""

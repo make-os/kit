@@ -170,6 +170,58 @@ func (mr *MockSystemKeeperMockRecorder) GetSecrets(from, limit, skip interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecrets", reflect.TypeOf((*MockSystemKeeper)(nil).GetSecrets), from, limit, skip)
 }
 
+// MockTxKeeper is a mock of TxKeeper interface
+type MockTxKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockTxKeeperMockRecorder
+}
+
+// MockTxKeeperMockRecorder is the mock recorder for MockTxKeeper
+type MockTxKeeperMockRecorder struct {
+	mock *MockTxKeeper
+}
+
+// NewMockTxKeeper creates a new mock instance
+func NewMockTxKeeper(ctrl *gomock.Controller) *MockTxKeeper {
+	mock := &MockTxKeeper{ctrl: ctrl}
+	mock.recorder = &MockTxKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockTxKeeper) EXPECT() *MockTxKeeperMockRecorder {
+	return m.recorder
+}
+
+// Index mocks base method
+func (m *MockTxKeeper) Index(tx types.Tx) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Index", tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Index indicates an expected call of Index
+func (mr *MockTxKeeperMockRecorder) Index(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Index", reflect.TypeOf((*MockTxKeeper)(nil).Index), tx)
+}
+
+// GetTx mocks base method
+func (m *MockTxKeeper) GetTx(hash string) (types.Tx, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTx", hash)
+	ret0, _ := ret[0].(types.Tx)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTx indicates an expected call of GetTx
+func (mr *MockTxKeeperMockRecorder) GetTx(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockTxKeeper)(nil).GetTx), hash)
+}
+
 // MockAccountKeeper is a mock of AccountKeeper interface
 type MockAccountKeeper struct {
 	ctrl     *gomock.Controller
@@ -247,6 +299,76 @@ func (m *MockLogic) EXPECT() *MockLogicMockRecorder {
 	return m.recorder
 }
 
+// SysKeeper mocks base method
+func (m *MockLogic) SysKeeper() types.SystemKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SysKeeper")
+	ret0, _ := ret[0].(types.SystemKeeper)
+	return ret0
+}
+
+// SysKeeper indicates an expected call of SysKeeper
+func (mr *MockLogicMockRecorder) SysKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockLogic)(nil).SysKeeper))
+}
+
+// AccountKeeper mocks base method
+func (m *MockLogic) AccountKeeper() types.AccountKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccountKeeper")
+	ret0, _ := ret[0].(types.AccountKeeper)
+	return ret0
+}
+
+// AccountKeeper indicates an expected call of AccountKeeper
+func (mr *MockLogicMockRecorder) AccountKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountKeeper", reflect.TypeOf((*MockLogic)(nil).AccountKeeper))
+}
+
+// ValidatorKeeper mocks base method
+func (m *MockLogic) ValidatorKeeper() types.ValidatorKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidatorKeeper")
+	ret0, _ := ret[0].(types.ValidatorKeeper)
+	return ret0
+}
+
+// ValidatorKeeper indicates an expected call of ValidatorKeeper
+func (mr *MockLogicMockRecorder) ValidatorKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorKeeper", reflect.TypeOf((*MockLogic)(nil).ValidatorKeeper))
+}
+
+// TxKeeper mocks base method
+func (m *MockLogic) TxKeeper() types.TxKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TxKeeper")
+	ret0, _ := ret[0].(types.TxKeeper)
+	return ret0
+}
+
+// TxKeeper indicates an expected call of TxKeeper
+func (mr *MockLogicMockRecorder) TxKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxKeeper", reflect.TypeOf((*MockLogic)(nil).TxKeeper))
+}
+
+// GetTicketManager mocks base method
+func (m *MockLogic) GetTicketManager() types.TicketManager {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTicketManager")
+	ret0, _ := ret[0].(types.TicketManager)
+	return ret0
+}
+
+// GetTicketManager indicates an expected call of GetTicketManager
+func (mr *MockLogicMockRecorder) GetTicketManager() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTicketManager", reflect.TypeOf((*MockLogic)(nil).GetTicketManager))
+}
+
 // Tx mocks base method
 func (m *MockLogic) Tx() types.TxLogic {
 	m.ctrl.T.Helper()
@@ -317,48 +439,6 @@ func (mr *MockLogicMockRecorder) StateTree() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateTree", reflect.TypeOf((*MockLogic)(nil).StateTree))
 }
 
-// SysKeeper mocks base method
-func (m *MockLogic) SysKeeper() types.SystemKeeper {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SysKeeper")
-	ret0, _ := ret[0].(types.SystemKeeper)
-	return ret0
-}
-
-// SysKeeper indicates an expected call of SysKeeper
-func (mr *MockLogicMockRecorder) SysKeeper() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockLogic)(nil).SysKeeper))
-}
-
-// AccountKeeper mocks base method
-func (m *MockLogic) AccountKeeper() types.AccountKeeper {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AccountKeeper")
-	ret0, _ := ret[0].(types.AccountKeeper)
-	return ret0
-}
-
-// AccountKeeper indicates an expected call of AccountKeeper
-func (mr *MockLogicMockRecorder) AccountKeeper() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountKeeper", reflect.TypeOf((*MockLogic)(nil).AccountKeeper))
-}
-
-// ValidatorKeeper mocks base method
-func (m *MockLogic) ValidatorKeeper() types.ValidatorKeeper {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValidatorKeeper")
-	ret0, _ := ret[0].(types.ValidatorKeeper)
-	return ret0
-}
-
-// ValidatorKeeper indicates an expected call of ValidatorKeeper
-func (mr *MockLogicMockRecorder) ValidatorKeeper() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorKeeper", reflect.TypeOf((*MockLogic)(nil).ValidatorKeeper))
-}
-
 // WriteGenesisState mocks base method
 func (m *MockLogic) WriteGenesisState() error {
 	m.ctrl.T.Helper()
@@ -385,20 +465,6 @@ func (mr *MockLogicMockRecorder) SetTicketManager(tm interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTicketManager", reflect.TypeOf((*MockLogic)(nil).SetTicketManager), tm)
 }
 
-// GetTicketManager mocks base method
-func (m *MockLogic) GetTicketManager() types.TicketManager {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTicketManager")
-	ret0, _ := ret[0].(types.TicketManager)
-	return ret0
-}
-
-// GetTicketManager indicates an expected call of GetTicketManager
-func (mr *MockLogicMockRecorder) GetTicketManager() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTicketManager", reflect.TypeOf((*MockLogic)(nil).GetTicketManager))
-}
-
 // GetDRand mocks base method
 func (m *MockLogic) GetDRand() rand.DRander {
 	m.ctrl.T.Helper()
@@ -411,6 +477,99 @@ func (m *MockLogic) GetDRand() rand.DRander {
 func (mr *MockLogicMockRecorder) GetDRand() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDRand", reflect.TypeOf((*MockLogic)(nil).GetDRand))
+}
+
+// MockKeepers is a mock of Keepers interface
+type MockKeepers struct {
+	ctrl     *gomock.Controller
+	recorder *MockKeepersMockRecorder
+}
+
+// MockKeepersMockRecorder is the mock recorder for MockKeepers
+type MockKeepersMockRecorder struct {
+	mock *MockKeepers
+}
+
+// NewMockKeepers creates a new mock instance
+func NewMockKeepers(ctrl *gomock.Controller) *MockKeepers {
+	mock := &MockKeepers{ctrl: ctrl}
+	mock.recorder = &MockKeepersMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockKeepers) EXPECT() *MockKeepersMockRecorder {
+	return m.recorder
+}
+
+// SysKeeper mocks base method
+func (m *MockKeepers) SysKeeper() types.SystemKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SysKeeper")
+	ret0, _ := ret[0].(types.SystemKeeper)
+	return ret0
+}
+
+// SysKeeper indicates an expected call of SysKeeper
+func (mr *MockKeepersMockRecorder) SysKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockKeepers)(nil).SysKeeper))
+}
+
+// AccountKeeper mocks base method
+func (m *MockKeepers) AccountKeeper() types.AccountKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccountKeeper")
+	ret0, _ := ret[0].(types.AccountKeeper)
+	return ret0
+}
+
+// AccountKeeper indicates an expected call of AccountKeeper
+func (mr *MockKeepersMockRecorder) AccountKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountKeeper", reflect.TypeOf((*MockKeepers)(nil).AccountKeeper))
+}
+
+// ValidatorKeeper mocks base method
+func (m *MockKeepers) ValidatorKeeper() types.ValidatorKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidatorKeeper")
+	ret0, _ := ret[0].(types.ValidatorKeeper)
+	return ret0
+}
+
+// ValidatorKeeper indicates an expected call of ValidatorKeeper
+func (mr *MockKeepersMockRecorder) ValidatorKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorKeeper", reflect.TypeOf((*MockKeepers)(nil).ValidatorKeeper))
+}
+
+// TxKeeper mocks base method
+func (m *MockKeepers) TxKeeper() types.TxKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TxKeeper")
+	ret0, _ := ret[0].(types.TxKeeper)
+	return ret0
+}
+
+// TxKeeper indicates an expected call of TxKeeper
+func (mr *MockKeepersMockRecorder) TxKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxKeeper", reflect.TypeOf((*MockKeepers)(nil).TxKeeper))
+}
+
+// GetTicketManager mocks base method
+func (m *MockKeepers) GetTicketManager() types.TicketManager {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTicketManager")
+	ret0, _ := ret[0].(types.TicketManager)
+	return ret0
+}
+
+// GetTicketManager indicates an expected call of GetTicketManager
+func (mr *MockKeepersMockRecorder) GetTicketManager() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTicketManager", reflect.TypeOf((*MockKeepers)(nil).GetTicketManager))
 }
 
 // MockLogicCommon is a mock of LogicCommon interface

@@ -19,6 +19,8 @@ const (
 	TagHighestDrandRound = "dr"
 	// TagValidators is the prefix for block validators
 	TagValidators = "v"
+	// TagTx is the prefix for storing/accessing transactions
+	TagTx = "t"
 )
 
 // MakeAccountKey creates a key for accessing/store an account
@@ -54,4 +56,9 @@ func MakeBlockValidatorsKey(height int64) []byte {
 // MakeQueryKeyBlockValidators creates a key for querying all block validators
 func MakeQueryKeyBlockValidators() []byte {
 	return []byte(fmt.Sprintf("%s%s", TagValidators, Separator))
+}
+
+// MakeTxKey creates a key for storing validators of blocks
+func MakeTxKey(hash string) []byte {
+	return []byte(fmt.Sprintf("%s%s%s", TagTx, Separator, hash))
 }

@@ -742,6 +742,40 @@ var _ = Describe("App", func() {
 			})
 		})
 
+		When("error occurred when trying to save un-indexed tx", func() {
+			appHash := []byte("app_hash")
+
+			BeforeEach(func() {
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockTxKeeper := mocks.NewMockTxKeeper(ctrl)
+
+				mockTree := mocks.NewMockTree(ctrl)
+				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
+
+				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
+
+				app.heightToSaveNewValidators = 100
+
+				mockTree.EXPECT().SaveVersion().Return(appHash, int64(0), nil)
+
+				mockTxKeeper.EXPECT().Index(gomock.Any()).Return(fmt.Errorf("error"))
+
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()
+				mockLogic.EXPECT().TxKeeper().Return(mockTxKeeper).AnyTimes()
+				app.logic = mockLogic
+
+				app.unIndexedTxs = append(app.unIndexedTxs, types.NewBareTx(0))
+			})
+
+			It("should panic", func() {
+				Expect(func() {
+					app.Commit()
+				}).To(Panic())
+			})
+		})
+
 		When("no error occurred", func() {
 			appHash := []byte("app_hash")
 

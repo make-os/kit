@@ -8,8 +8,7 @@ import (
 	"github.com/makeos/mosdef/util"
 )
 
-// AccountKeeper represents an identity that holds
-// balances and other user data.
+// AccountKeeper represents manages accounts.
 type AccountKeeper struct {
 	state *tree.SafeTree
 }

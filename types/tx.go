@@ -73,9 +73,9 @@ type Transaction struct {
 	Sig          []byte      `json:"sig" msgpack:"sig"`
 
 	// TxTypeEpochSecret specific field
-	Secret         []byte `json:"secret" msgpack:"secret"`
-	PreviousSecret []byte `json:"previousSecret" msgpack:"previousSecret"`
-	SecretRound    uint64 `json:"secretRound" mapstructure:"secretRound"`
+	Secret         []byte `json:"secret,omitempty" msgpack:"secret,omitempty"`
+	PreviousSecret []byte `json:"previousSecret,omitempty" msgpack:"previousSecret,omitempty"`
+	SecretRound    uint64 `json:"secretRound,omitempty" mapstructure:"secretRound,omitempty"`
 
 	// meta stores arbitrary data for message passing during tx processing
 	meta map[string]interface{}
