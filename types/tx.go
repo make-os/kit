@@ -144,6 +144,11 @@ func (tx *Transaction) GetMeta() map[string]interface{} {
 	return tx.meta
 }
 
+// SetMeta set the full meta
+func (tx *Transaction) SetMeta(meta map[string]interface{}) {
+	tx.meta = meta
+}
+
 // IsInvalidated checks whether the transaction has been marked as invalid
 func (tx *Transaction) IsInvalidated() bool {
 	if tx.meta == nil {

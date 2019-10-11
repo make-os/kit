@@ -138,6 +138,11 @@ checkEpochSecret:
 // ValidateEpochSecretTx validates TxTypeEpochSecret transaction.
 func ValidateEpochSecretTx(tx *types.Transaction, index int, logic types.Logic) error {
 
+	// Check for unexpected fields
+	if err := CheckUnexpectedFields(tx, index); err != nil {
+		return err
+	}
+
 	// Secret must be set and must be 64-bytes in length
 	if err := v.Validate(tx.GetSecret(),
 		v.Required.Error(types.FieldErrorWithIndex(index, "secret",
@@ -214,6 +219,11 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 		return err
 	}
 
+	// Check for unexpected fields
+	if err := CheckUnexpectedFields(tx, index); err != nil {
+		return err
+	}
+
 	// For non ticket purchasing transactions,
 	// The recipient's address must be set and it must be valid.
 	if tx.Type != types.TxTypeGetTicket {
@@ -286,11 +296,77 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 	return nil
 }
 
-// func checkUnexpectedFields(tx *types.Transaction, index int) {
-// 	txType := tx.GetType()
+// IsSet checks whether a value has been set.
+// Note: This function only checks types included in a transaction.
+// Therefore, it may not be appropriate for general usage.
+func IsSet(value interface{}) bool {
+	switch v := value.(type) {
+	case nil:
+		return false
+	case map[string]interface{}:
+		return len(v) > 0
+	case int:
+		return v != 0
+	case uint:
+		return v != 0
+	case int64:
+		return v != 0
+	case uint64:
+		return v != 0
+	case string:
+		return len(v) > 0
+	case util.String:
+		return v != "0" && v != ""
+	case []byte:
+		return len(v) > 0
+	default:
+		return false
+	}
+}
 
-// 	if txType == types.TxTypeGetTicket
-// }
+// CheckUnexpectedFields checks whether unexpected fields for
+// various tx type remain unset or have zero values.
+func CheckUnexpectedFields(tx *types.Transaction, index int) error {
+	txType := tx.GetType()
+
+	// Generally, `meta` field is not expected for any tx type
+	unExpected := [][]interface{}{
+		{"meta", tx.GetMeta()},
+	}
+
+	// Ensure unexpected fields are not set in TxTypeGetTicket and
+	// TxTypeTransferCoin tx. `secret`, `previousSecret` and
+	// `secretRound` are not expected
+	if txType == types.TxTypeGetTicket || txType == types.TxTypeTransferCoin {
+		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
+		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
+		unExpected = append(unExpected, []interface{}{"secretRound", tx.SecretRound})
+		for _, item := range unExpected {
+			if IsSet(item[1]) {
+				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
+			}
+		}
+	}
+
+	// For types.TxTypeEpochSecret, the only expected fields are
+	// `secret`, `previousSecret` and `secretRound`
+	if txType == types.TxTypeEpochSecret {
+		unExpected = append(unExpected, []interface{}{"nonce", tx.Nonce})
+		unExpected = append(unExpected, []interface{}{"to", tx.To})
+		unExpected = append(unExpected, []interface{}{"senderPubKey", tx.SenderPubKey})
+		unExpected = append(unExpected, []interface{}{"value", tx.Value})
+		unExpected = append(unExpected, []interface{}{"timestamp", tx.Timestamp})
+		unExpected = append(unExpected, []interface{}{"fee", tx.Fee})
+		unExpected = append(unExpected, []interface{}{"sig", tx.Sig})
+		for _, item := range unExpected {
+			if IsSet(item[1]) {
+				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
+			}
+		}
+	}
+
+	return nil
+}
 
 // checkSignature checks whether the signature is valid.
 // Expects the transaction to have a valid sender public key.

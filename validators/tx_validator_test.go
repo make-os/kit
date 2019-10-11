@@ -91,6 +91,7 @@ var _ = Describe("TxValidator", func() {
 		var cases = []txCase{
 			{tx: nil, desc: "nil is provided", err: fmt.Errorf("nil tx")},
 			{tx: &types.Transaction{Type: 1000}, desc: "tx type is invalid", err: fmt.Errorf("field:type, error:unsupported transaction type")},
+			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, SecretRound: 1}, desc: "unexpected field `secretRound` is set", err: fmt.Errorf("field:secretRound, error:unexpected field")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: ""}, desc: "recipient not set", err: fmt.Errorf("field:to, error:recipient address is required")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: "abc"}, desc: "recipient not valid", err: fmt.Errorf("field:to, error:recipient address is not valid")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: to.Addr()}, desc: "value not provided", err: fmt.Errorf("field:value, error:value is required")},
@@ -141,11 +142,152 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
+	Describe(".IsSet", func() {
+		var cases = [][]interface{}{
+			[]interface{}{map[string]interface{}{}, false},
+			[]interface{}{map[string]interface{}{"a": 1}, true},
+			[]interface{}{nil, false},
+			[]interface{}{1, true},
+			[]interface{}{-1, true},
+			[]interface{}{0, false},
+			[]interface{}{"", false},
+			[]interface{}{"a", true},
+			[]interface{}{[]byte{1}, true},
+			[]interface{}{[]byte{}, false},
+		}
+
+		for _, c := range cases {
+			It(fmt.Sprintf("should return %v for %v", c[0], c[1]), func() {
+				Expect(validators.IsSet(c[0])).To(Equal(c[1]))
+			})
+		}
+	})
+
+	Describe(".CheckUnexpectedFields", func() {
+		When("check TxTypeGetTicket", func() {
+			var tx *types.Transaction
+
+			BeforeEach(func() {
+				tx = types.NewBareTx(types.TxTypeGetTicket)
+			})
+
+			It("should not accept a set `meta` field", func() {
+				tx.SetMeta(map[string]interface{}{"a": 2})
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:meta, error:unexpected field"))
+			})
+
+			It("should not accept a set `secret` field", func() {
+				tx.Secret = []byte{1, 2, 3}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:secret, error:unexpected field"))
+			})
+			It("should not accept a set `previousSecret` field", func() {
+				tx.PreviousSecret = []byte{1, 2, 3}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:previousSecret, error:unexpected field"))
+			})
+			It("should not accept a set `secretRound` field", func() {
+				tx.SecretRound = 12
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:secretRound, error:unexpected field"))
+			})
+		})
+	})
+
+	Describe(".CheckUnexpectedFields", func() {
+		When("check TxTypeEpochSecret", func() {
+			var tx *types.Transaction
+
+			BeforeEach(func() {
+				tx = types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Timestamp = 0
+			})
+
+			It("should not accept a set `meta` field", func() {
+				tx.SetMeta(map[string]interface{}{"a": 2})
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:meta, error:unexpected field"))
+			})
+
+			It("should not accept a set `nonce` field", func() {
+				tx.Nonce = 1
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:nonce, error:unexpected field"))
+			})
+
+			It("should not accept a set `to` field", func() {
+				tx.To = "address"
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:to, error:unexpected field"))
+			})
+
+			It("should not accept a set `senderPubKey` field", func() {
+				tx.SenderPubKey = "pub_key"
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:senderPubKey, error:unexpected field"))
+			})
+
+			It("should not accept a set `value` field", func() {
+				tx.Value = "10"
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:value, error:unexpected field"))
+			})
+
+			It("should not accept a set `timestamp` field", func() {
+				tx.Timestamp = 100000
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:timestamp, error:unexpected field"))
+			})
+
+			It("should not accept a set `fee` field", func() {
+				tx.Fee = "10"
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:fee, error:unexpected field"))
+			})
+
+			It("should not accept a set `sig` field", func() {
+				tx.Sig = []byte{1, 2}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:sig, error:unexpected field"))
+			})
+		})
+	})
+
 	Describe(".ValidateEpochSecretTx", func() {
+
+		When("unexpected field is set", func() {
+			var err error
+			BeforeEach(func() {
+				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Timestamp = 0
+				tx.Value = "1"
+				err = validators.ValidateEpochSecretTx(tx, -1, logic)
+				Expect(err).ToNot(BeNil())
+			})
+
+			It("should return err='field:value, error:unexpected field'", func() {
+				Expect(err.Error()).To(Equal("field:value, error:unexpected field"))
+			})
+		})
+
 		When("secret is not set", func() {
 			var err error
 			BeforeEach(func() {
 				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Timestamp = 0
 				err = validators.ValidateEpochSecretTx(tx, -1, logic)
 				Expect(err).ToNot(BeNil())
 			})
@@ -159,6 +301,7 @@ var _ = Describe("TxValidator", func() {
 			var err error
 			BeforeEach(func() {
 				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Timestamp = 0
 				tx.Secret = util.RandBytes(2)
 				err = validators.ValidateEpochSecretTx(tx, -1, logic)
 				Expect(err).ToNot(BeNil())
@@ -173,6 +316,7 @@ var _ = Describe("TxValidator", func() {
 			var err error
 			BeforeEach(func() {
 				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Timestamp = 0
 				tx.Secret = util.RandBytes(64)
 				err = validators.ValidateEpochSecretTx(tx, -1, logic)
 				Expect(err).ToNot(BeNil())
@@ -187,6 +331,7 @@ var _ = Describe("TxValidator", func() {
 			var err error
 			BeforeEach(func() {
 				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Timestamp = 0
 				tx.Secret = util.RandBytes(64)
 				tx.PreviousSecret = util.RandBytes(2)
 				err = validators.ValidateEpochSecretTx(tx, -1, logic)
@@ -202,6 +347,7 @@ var _ = Describe("TxValidator", func() {
 			var err error
 			BeforeEach(func() {
 				tx := types.NewBareTx(types.TxTypeEpochSecret)
+				tx.Timestamp = 0
 				tx.Secret = util.RandBytes(64)
 				tx.PreviousSecret = util.RandBytes(64)
 				err = validators.ValidateEpochSecretTx(tx, -1, logic)
@@ -315,6 +461,7 @@ var _ = Describe("TxValidator", func() {
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
 				mockLogic.EXPECT().GetDRand().Return(mockDrand)
 
+				params.BlockTime = 1
 				params.NumBlocksPerEpoch = 120
 
 				err = validators.ValidateEpochSecretTxConsistency(validEpochSecretTx, -1, mockLogic)
