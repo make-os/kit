@@ -175,15 +175,21 @@ func (m *ChainModule) getValidators(height interface{}) interface{} {
 	}
 
 	var vList = []map[string]interface{}{}
-	for hexPubKey, power := range validators {
+	for hexPubKey, valInfo := range validators {
 
 		hexBz := types.HexBytesFromHex(hexPubKey)
 		var pub32 ed25519.PubKeyEd25519
 		copy(pub32[:], hexBz)
 
+		var delegator interface{} = nil
+		if valInfo.Delegator != "" {
+			delegator = valInfo.Delegator
+		}
+
 		pubKey, _ := crypto.PubKeyFromBytes(hexBz)
 		vList = append(vList, map[string]interface{}{
-			"power":     power,
+			"power":     valInfo.Power,
+			"delegator": delegator,
 			"publicKey": pubKey.Base58(),
 			"address":   pubKey.Addr(),
 			"tmAddress": pub32.Address().String(),

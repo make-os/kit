@@ -9,7 +9,7 @@ import (
 )
 
 // BlockValidators contains validators of a block
-type BlockValidators map[string]int64
+type BlockValidators map[string]*Validator
 
 // BlockInfo describes information about a block
 type BlockInfo struct {
@@ -26,8 +26,9 @@ type BlockInfo struct {
 
 // Validator represents a validator
 type Validator struct {
-	PubKey HexBytes
-	Power  int64
+	PubKey    HexBytes `json:"publicKey,omitempty" mapstructure:"publicKey"`
+	Power     int64    `json:"power" mapstructure:"power"`
+	Delegator string   `json:"delegator" mapstructure:"delegator"`
 }
 
 // SystemKeeper describes an interface for accessing system data

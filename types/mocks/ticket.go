@@ -34,17 +34,17 @@ func (m *MockTicketManager) EXPECT() *MockTicketManagerMockRecorder {
 }
 
 // Index mocks base method
-func (m *MockTicketManager) Index(tx *types.Transaction, proposerPubKey string, blockHeight uint64, txIndex int) error {
+func (m *MockTicketManager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Index", tx, proposerPubKey, blockHeight, txIndex)
+	ret := m.ctrl.Call(m, "Index", tx, blockHeight, txIndex)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Index indicates an expected call of Index
-func (mr *MockTicketManagerMockRecorder) Index(tx, proposerPubKey, blockHeight, txIndex interface{}) *gomock.Call {
+func (mr *MockTicketManagerMockRecorder) Index(tx, blockHeight, txIndex interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Index", reflect.TypeOf((*MockTicketManager)(nil).Index), tx, proposerPubKey, blockHeight, txIndex)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Index", reflect.TypeOf((*MockTicketManager)(nil).Index), tx, blockHeight, txIndex)
 }
 
 // GetByProposer mocks base method

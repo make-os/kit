@@ -47,7 +47,7 @@ type App struct {
 	epochSecretTx             *types.Transaction
 	curBlockProposer          bool
 	mature                    bool
-	currentValidator          []abcitypes.ValidatorUpdate
+	latestUnsavedValidators   []*types.Validator
 	heightToSaveNewValidators int64
 }
 
@@ -329,14 +329,20 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 
 	// Create a new validator list. Keep an index of validators
 	// public key for fast query
-	var newValidators []abcitypes.ValidatorUpdate
+	var newValUpdates []abcitypes.ValidatorUpdate // for tendermint
+	var newValidators []*types.Validator          // for validator keeper
 	var vIndex = map[string]struct{}{}
 	for _, ticket := range tickets {
 		pubKey, _ := crypto.PubKeyFromBase58(ticket.ProposerPubKey)
 		pkBz := pubKey.MustBytes()
-		newValidators = append(newValidators, abcitypes.ValidatorUpdate{
+		newValUpdates = append(newValUpdates, abcitypes.ValidatorUpdate{
 			PubKey: abcitypes.PubKey{Type: "ed25519", Data: pkBz},
 			Power:  1,
+		})
+		newValidators = append(newValidators, &types.Validator{
+			PubKey:    pkBz,
+			Power:     1,
+			Delegator: ticket.Delegator,
 		})
 		pkHex := types.HexBytes(pkBz)
 		vIndex[pkHex.String()] = struct{}{}
@@ -348,10 +354,6 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 		return err
 	}
 
-	// Make a copy of the randomly chosen validators
-	copyNewValidators := make([]abcitypes.ValidatorUpdate, len(newValidators))
-	copy(copyNewValidators, newValidators)
-
 	// Set the power of existing validators to zero if they are not
 	// part of the new list. It means they have been removed.
 	for pkHexStr := range curValidators {
@@ -359,22 +361,22 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 		if _, ok := vIndex[pkHexStr]; ok {
 			continue
 		}
-		newValidators = append(newValidators, abcitypes.ValidatorUpdate{
+		newValUpdates = append(newValUpdates, abcitypes.ValidatorUpdate{
 			PubKey: abcitypes.PubKey{Type: "ed25519", Data: pkHex},
 			Power:  0,
 		})
 	}
 
 	// Set the new validators
-	resp.ValidatorUpdates = newValidators
+	resp.ValidatorUpdates = newValUpdates
 
-	// Cache the current validators; it will be persisted 2 blocks later.
+	// Cache the current validators; it will be persisted in a future blocks.
 	// Note: Tendermint validator updates kicks in after H+2 block.
-	a.currentValidator = copyNewValidators
+	a.latestUnsavedValidators = newValidators
 	a.heightToSaveNewValidators = curHeight + 1
 
 	a.log.Info("Validators have successfully been updated",
-		"NumValidators", len(copyNewValidators))
+		"NumValidators", len(a.latestUnsavedValidators))
 
 	return nil
 }
@@ -448,7 +450,8 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	// Tendermint effects validator updates after 2 blocks; We need to index
 	// the validators to the real height when the validators were selected (2 blocks ago)
 	if a.wBlock.Height == a.heightToSaveNewValidators {
-		if err := a.logic.Validator().Index(a.wBlock.Height-2, a.currentValidator); err != nil {
+		if err := a.logic.ValidatorKeeper().
+			Index(a.wBlock.Height-2, a.latestUnsavedValidators); err != nil {
 			panic(errors.Wrap(err, "failed to update current validators"))
 		}
 	}

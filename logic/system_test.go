@@ -319,7 +319,8 @@ var _ = Describe("System", func() {
 			})
 
 			It("should return nil", func() {
-				stx := sysLogic.GetCurretEpochSecretTx()
+				stx, err := sysLogic.GetCurretEpochSecretTx()
+				Expect(err).To(BeNil())
 				Expect(stx).To(BeNil())
 			})
 		})
@@ -335,7 +336,8 @@ var _ = Describe("System", func() {
 			})
 
 			It("should return nil", func() {
-				stx := sysLogic.GetCurretEpochSecretTx()
+				stx, err := sysLogic.GetCurretEpochSecretTx()
+				Expect(err).To(BeNil())
 				Expect(stx).To(BeNil())
 			})
 		})
@@ -362,7 +364,8 @@ var _ = Describe("System", func() {
 			})
 
 			It("should return nil", func() {
-				stx := sysLogic.GetCurretEpochSecretTx()
+				stx, err := sysLogic.GetCurretEpochSecretTx()
+				Expect(err).To(BeNil())
 				Expect(stx).ToNot(BeNil())
 				Expect(stx.GetType()).To(Equal(types.TxTypeEpochSecret))
 				Expect(stx.GetSecret()).To(Equal([]byte(expected.Randomness.Point)))

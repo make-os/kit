@@ -670,7 +670,7 @@ var _ = Describe("App", func() {
 					Tx:    tx,
 					index: 1,
 				})
-				mockTicketMgr.EXPECT().Index(gomock.Any(), gomock.Any(),
+				mockTicketMgr.EXPECT().Index(gomock.Any(),
 					gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
@@ -691,7 +691,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				mockLogic := mocks.NewMockLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockVal := mocks.NewMockValidatorLogic(ctrl)
+				mockValKeeper := mocks.NewMockValidatorKeeper(ctrl)
 
 				mockTree := mocks.NewMockTree(ctrl)
 				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
@@ -700,11 +700,11 @@ var _ = Describe("App", func() {
 
 				app.wBlock.Height = 10
 				app.heightToSaveNewValidators = 10
-				mockVal.EXPECT().Index(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+				mockValKeeper.EXPECT().Index(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 				mockLogic.EXPECT().StateTree().Return(mockTree)
-				mockLogic.EXPECT().Validator().Return(mockVal)
+				mockLogic.EXPECT().ValidatorKeeper().Return(mockValKeeper)
 				app.logic = mockLogic
 			})
 
