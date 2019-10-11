@@ -22,7 +22,7 @@ type ValidateTxFunc func(tx *types.Transaction, i int, logic types.Logic) error
 
 // KnownTransactionTypes are the supported transaction types
 var KnownTransactionTypes = []int{
-	types.TxTypeCoinTransfer,
+	types.TxTypeTransferCoin,
 	types.TxTypeGetTicket,
 }
 

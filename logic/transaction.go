@@ -55,7 +55,7 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.Resp
 // It returns error if the transaction is unknown.
 func (t *Transaction) Exec(tx *types.Transaction) error {
 	switch tx.Type {
-	case types.TxTypeCoinTransfer:
+	case types.TxTypeTransferCoin:
 		return t.transferCoin(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
 	case types.TxTypeGetTicket:
 		return t.stakeValidatorCoin(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce())
@@ -176,7 +176,7 @@ func (t *Transaction) transferCoin(
 	}
 
 	// Ensure the account has sufficient balance and nonce
-	if err := t.CanTransferCoin(types.TxTypeCoinTransfer, spk, recipientAddr,
+	if err := t.CanTransferCoin(types.TxTypeTransferCoin, spk, recipientAddr,
 		value, fee, nonce); err != nil {
 		return err
 	}

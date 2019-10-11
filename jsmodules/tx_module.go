@@ -76,7 +76,7 @@ func (m *TxModule) sendCoin(txObj interface{}, options ...interface{}) interface
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx = types.NewBareTx(types.TxTypeCoinTransfer)
+	var tx = types.NewBareTx(types.TxTypeTransferCoin)
 	if err = mapstructure.Decode(txObj, tx); err != nil {
 		panic(errors.Wrap(err, types.ErrArgDecode("types.Transaction", 0).Error()))
 	}
