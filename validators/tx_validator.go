@@ -235,6 +235,15 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 		); err != nil {
 			return err
 		}
+	} else {
+		// For ticket purchasing transactions, the recipient's address
+		// must be a valid validator's public key if it is set
+		if tx.To.String() != "" {
+			if err := v.Validate(tx.To, v.By(validPubKeyRule(types.FieldErrorWithIndex(index, "to",
+				"requires a valid public key of a validator to delegate to")))); err != nil {
+				return err
+			}
+		}
 	}
 
 	// Value must be >= 0 and it must be valid number

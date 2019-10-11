@@ -94,6 +94,7 @@ var _ = Describe("TxValidator", func() {
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, SecretRound: 1}, desc: "unexpected field `secretRound` is set", err: fmt.Errorf("field:secretRound, error:unexpected field")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: ""}, desc: "recipient not set", err: fmt.Errorf("field:to, error:recipient address is required")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: "abc"}, desc: "recipient not valid", err: fmt.Errorf("field:to, error:recipient address is not valid")},
+			{tx: &types.Transaction{Type: types.TxTypeGetTicket, To: "abc"}, desc: "recipient not a valid public key", err: fmt.Errorf("field:to, error:requires a valid public key of a validator to delegate to")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: to.Addr()}, desc: "value not provided", err: fmt.Errorf("field:value, error:value is required")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: to.Addr(), Value: "-1"}, desc: "value is negative", err: fmt.Errorf("field:value, error:negative figure not allowed")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: to.Addr(), Value: "1"}, desc: "fee not provided", err: fmt.Errorf("field:fee, error:fee is required")},

@@ -33,20 +33,24 @@ func NewManager(cfg *config.EngineConfig, logic types.Logic) (*Manager, error) {
 }
 
 // Index takes a tx and creates a ticket out of it
-func (m *Manager) Index(
-	tx *types.Transaction,
-	proposerPubKey string,
-	blockHeight uint64,
-	txIndex int) error {
+func (m *Manager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) error {
 
-	// Create the ticket
-	ticket := &types.Ticket{
-		Hash:           tx.GetHash().HexStr(),
-		ProposerPubKey: proposerPubKey,
-		Height:         blockHeight,
-		Index:          txIndex,
-		Value:          tx.Value.String(),
+	ticket := &types.Ticket{}
+
+	// By default the proposer is the creator of the transaction.
+	// However, if the transaction `to` field is set, the sender
+	// is delegating the ticket to the public key set in `to`
+	var proposerPubKey = tx.SenderPubKey.String()
+	if tx.To.String() != "" {
+		proposerPubKey = tx.To.String()
+		ticket.Delegator = tx.GetFrom().String()
 	}
+
+	ticket.Hash = tx.GetHash().HexStr()
+	ticket.ProposerPubKey = proposerPubKey
+	ticket.Height = blockHeight
+	ticket.Index = txIndex
+	ticket.Value = tx.Value.String()
 
 	// Set maturity and decay heights
 	ticket.MatureBy = blockHeight + uint64(params.MinTicketMatDur)

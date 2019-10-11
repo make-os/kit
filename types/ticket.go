@@ -7,6 +7,7 @@ type Ticket struct {
 	Hash           string `gorm:"column:hash" json:"hash"`                     // Hash of the ticket purchase transaction
 	Power          int64  `gorm:"column:power" json:"power,omitempty"`         // Power represents the strength of a ticket
 	ProposerPubKey string `gorm:"column:proposerPubKey" json:"proposerPubKey"` // The public key of the validator that owns the ticket.
+	Delegator      string `gorm:"column:delegator" json:"delegator"`           // Delegator is the address of the original creator of the ticket
 	Height         uint64 `gorm:"column:height" json:"height"`                 // The block height where this ticket was seen.
 	Index          int    `gorm:"column:index" json:"index"`                   // The index of the ticket in the transactions list.
 	Value          string `gorm:"column:value" json:"value"`                   // The value paid for the ticket (as a child - then for the parent ticket)
@@ -26,7 +27,7 @@ var EmptyQueryOptions = QueryOptions{}
 // Get finds tickets belonging to the given proposer.
 type TicketManager interface {
 	// Index adds a ticket (and child tickets) to the ticket index.
-	Index(tx *Transaction, proposerPubKey string, blockHeight uint64, txIndex int) error
+	Index(tx *Transaction, blockHeight uint64, txIndex int) error
 
 	// GetByProposer finds tickets belonging to the
 	// given proposer public key.

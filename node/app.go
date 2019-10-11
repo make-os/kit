@@ -371,7 +371,7 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 	// Cache the current validators; it will be persisted 2 blocks later.
 	// Note: Tendermint validator updates kicks in after H+2 block.
 	a.currentValidator = copyNewValidators
-	a.heightToSaveNewValidators = curHeight + 1 
+	a.heightToSaveNewValidators = curHeight + 1
 
 	a.log.Info("Validators have successfully been updated",
 		"NumValidators", len(copyNewValidators))
@@ -438,8 +438,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 
 	// Index any purchased ticket we have collected so far.
 	for _, ptx := range a.ticketPurchaseTxs {
-		if err := a.ticketMgr.Index(ptx.Tx, ptx.Tx.SenderPubKey.String(),
-			uint64(a.wBlock.Height), ptx.index); err != nil {
+		if err := a.ticketMgr.Index(ptx.Tx, uint64(a.wBlock.Height), ptx.index); err != nil {
 			panic(errors.Wrap(err, "failed to index ticket"))
 		}
 	}

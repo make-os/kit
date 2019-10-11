@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/makeos/mosdef/crypto"
+
 	"github.com/golang/mock/gomock"
 	ticketsmock "github.com/makeos/mosdef/ticket/mocks"
 	"github.com/makeos/mosdef/types/mocks"
@@ -126,8 +128,8 @@ var _ = Describe("Manager", func() {
 				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 2})
 				Expect(err).To(BeNil())
 				Expect(logic.Sys().GetCurValidatorTicketPrice()).To(Equal(float64(10)))
-				tx := &types.Transaction{Value: util.String("10")}
-				err = mgr.Index(tx, "validator_addr", 100, 1)
+				tx := &types.Transaction{Value: util.String("10"), SenderPubKey: "pub_key"}
+				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
 			})
 
@@ -156,8 +158,8 @@ var _ = Describe("Manager", func() {
 				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 2})
 				Expect(err).To(BeNil())
 				Expect(logic.Sys().GetCurValidatorTicketPrice()).To(Equal(float64(10)))
-				tx := &types.Transaction{Value: util.String("35")}
-				err = mgr.Index(tx, "validator_addr", 100, 1)
+				tx := &types.Transaction{Value: util.String("35"), SenderPubKey: "pub_key"}
+				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
 
 				tickets, err = mgr.store.Query(types.Ticket{})
@@ -170,6 +172,44 @@ var _ = Describe("Manager", func() {
 
 			Specify("that power is 3", func() {
 				Expect(tickets[0].Power).To(Equal(int64(3)))
+			})
+		})
+
+		When("tx.To is set", func() {
+			var tickets []*types.Ticket
+			var tx *types.Transaction
+			var proposer = crypto.NewKeyFromIntSeed(2)
+			var delegator = crypto.NewKeyFromIntSeed(3)
+
+			BeforeEach(func() {
+				params.InitialTicketPrice = 10
+				params.NumBlocksPerPriceWindow = 100
+				params.PricePercentIncrease = 0.2
+				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 2})
+				Expect(err).To(BeNil())
+				Expect(logic.Sys().GetCurValidatorTicketPrice()).To(Equal(float64(10)))
+				tx = &types.Transaction{
+					Value:        util.String("35"),
+					SenderPubKey: util.String(delegator.PubKey().Base58()),
+					To:           util.String(proposer.PubKey().Base58()),
+				}
+				err = mgr.Index(tx, 100, 1)
+				Expect(err).To(BeNil())
+
+				tickets, err = mgr.store.Query(types.Ticket{})
+				Expect(err).To(BeNil())
+			})
+
+			Specify("only 1 ticket was created", func() {
+				Expect(tickets).To(HaveLen(1))
+			})
+
+			Specify("that delegator is set to the address of the sender", func() {
+				Expect(tickets[0].Delegator).To(Equal(delegator.Addr().String()))
+			})
+
+			Specify("that proposer public key is set to the value of tx.To", func() {
+				Expect(tickets[0].ProposerPubKey).To(Equal(tx.To.String()))
 			})
 		})
 	})
