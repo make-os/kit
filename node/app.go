@@ -340,9 +340,9 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 			Power:  1,
 		})
 		newValidators = append(newValidators, &types.Validator{
-			PubKey:    pkBz,
-			Power:     1,
-			Delegator: ticket.Delegator,
+			PubKey:   pkBz,
+			Power:    1,
+			TicketID: ticket.ID,
 		})
 		pkHex := types.HexBytes(pkBz)
 		vIndex[pkHex.String()] = struct{}{}

@@ -35,7 +35,9 @@ func NewManager(cfg *config.EngineConfig, logic types.Logic) (*Manager, error) {
 // Index takes a tx and creates a ticket out of it
 func (m *Manager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) error {
 
-	ticket := &types.Ticket{}
+	ticket := &types.Ticket{
+		ID: tx.GetID(),
+	}
 
 	// By default the proposer is the creator of the transaction.
 	// However, if the transaction `to` field is set, the sender

@@ -197,7 +197,7 @@ var _ = Describe("App", func() {
 				mockLogic.EXPECT().Sys().Return(mockSysLogic)
 
 				mockValKeeper := mocks.NewMockValidatorKeeper(ctrl)
-				mockValKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[string]int64{}, nil)
+				mockValKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[string]*types.Validator{}, nil)
 
 				mockLogic.EXPECT().ValidatorKeeper().Return(mockValKeeper)
 				app.logic = mockLogic
@@ -234,8 +234,8 @@ var _ = Describe("App", func() {
 				mockValKeeper := mocks.NewMockValidatorKeeper(ctrl)
 				pubKeyBz, _ := existingValKey.PubKey().Bytes()
 				pubKeyHex := types.HexBytes(pubKeyBz)
-				mockValKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[string]int64{
-					pubKeyHex.String(): 1,
+				mockValKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[string]*types.Validator{
+					pubKeyHex.String(): &types.Validator{Power: 1},
 				}, nil)
 
 				mockLogic.EXPECT().ValidatorKeeper().Return(mockValKeeper)

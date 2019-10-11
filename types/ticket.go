@@ -2,6 +2,7 @@ package types
 
 // Ticket represents a validator ticket
 type Ticket struct {
+	ID             string `gorm:"column:id;unique" json:"id"`
 	DecayBy        uint64 `gorm:"column:decayBy" json:"decayBy"`               // Block height when the ticket becomes decayed
 	MatureBy       uint64 `gorm:"column:matureBy" json:"matureBy"`             // Block height when the ticket enters maturity.
 	Hash           string `gorm:"column:hash" json:"hash"`                     // Hash of the ticket purchase transaction
