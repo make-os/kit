@@ -229,5 +229,27 @@ var _ = Describe("Manager", func() {
 				})
 			})
 		})
+
+		When("multiple tickets of same proposer public key are pre-selected (before random selection)", func() {
+			ticket := &types.Ticket{ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Power: 3}
+			ticket2 := &types.Ticket{ProposerPubKey: "pub_key1", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Power: 4}
+			ticket3 := &types.Ticket{ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Power: 1}
+
+			BeforeEach(func() {
+				err := mgr.store.Add(ticket, ticket2, ticket3)
+				Expect(err).To(BeNil())
+			})
+
+			When("seed=[]byte('seed') and limit = 10", func() {
+				It("should return 2 ticket with different proposer pub key", func() {
+					seed := []byte("seed")
+					tickets, err := mgr.SelectRandom(11, seed, 10)
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(2))
+					Expect(tickets[0].ProposerPubKey).To(Equal("pub_key1"))
+					Expect(tickets[1].ProposerPubKey).To(Equal("pub_key3"))
+				})
+			})
+		})
 	})
 })

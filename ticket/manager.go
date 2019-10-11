@@ -9,6 +9,7 @@ import (
 	"github.com/makeos/mosdef/types"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+	"github.com/thoas/go-funk"
 )
 
 // Manager implements types.TicketManager.
@@ -109,6 +110,7 @@ func (m *Manager) Query(q types.Ticket, queryOpt ...types.QueryOptions) ([]*type
 // SelectRandom selects random live tickets up to the specified limit.
 // The provided see is used to seed the PRNG that is used to select tickets.
 func (m *Manager) SelectRandom(height int64, seed []byte, limit int) ([]*types.Ticket, error) {
+
 	tickets, err := m.store.GetLive(height, types.QueryOptions{
 		Order: `"power" desc, "height" asc, "index" asc`,
 		Limit: 50000,
@@ -117,16 +119,29 @@ func (m *Manager) SelectRandom(height int64, seed []byte, limit int) ([]*types.T
 		return nil, err
 	}
 
+	// Create a RNG sourced with the seed
 	seedInt := new(big.Int).SetBytes(seed)
 	r := rand.New(rand.NewSource(seedInt.Int64()))
-	selected := []*types.Ticket{}
+
+	// Select random tickets up to the given limit.
+	// Note: Only 1 slot per public key.
+	selected := map[string]*types.Ticket{}
 	for len(selected) < limit && len(tickets) > 0 {
+
+		// Select a candidate ticket and remove it from the list
 		i := r.Intn(len(tickets))
-		selected = append(selected, tickets[i])
+		candidate := tickets[i]
 		tickets = append(tickets[:i], tickets[i+1:]...)
+
+		// If the candidate has already been selected, ignore
+		if _, ok := selected[candidate.ProposerPubKey]; ok {
+			continue
+		}
+
+		selected[candidate.ProposerPubKey] = candidate
 	}
 
-	return selected, nil
+	return funk.Values(selected).([]*types.Ticket), nil
 }
 
 // Stop stores the manager
