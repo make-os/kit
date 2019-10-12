@@ -1,7 +1,9 @@
 package jsmodules
 
 import (
+	"encoding/hex"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/c-bata/go-prompt"
@@ -154,7 +156,18 @@ func (m *TxModule) sendCoin(txObj interface{}, options ...interface{}) interface
 
 // get fetches a tx by its hash
 func (m *TxModule) get(hash string) interface{} {
-	tx, err := m.keepers.TxKeeper().GetTx(hash)
+
+	if strings.ToLower(hash[:2]) == "0x" {
+		hash = hash[2:]
+	}
+
+	// decode the hash from hex to byte
+	bz, err := hex.DecodeString(hash)
+	if err != nil {
+		panic(errors.Wrap(err, "invalid transaction hash"))
+	}
+
+	tx, err := m.keepers.TxKeeper().GetTx(bz)
 	if err != nil {
 		panic(err)
 	}

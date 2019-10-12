@@ -71,7 +71,7 @@ var _ = Describe("TxKeeper", func() {
 			})
 
 			It("should return nil", func() {
-				rec, err := txKeeper.db.Get(MakeTxKey(tx.GetID()))
+				rec, err := txKeeper.db.Get(MakeTxKey(tx.GetHash().Bytes()))
 				Expect(err).To(BeNil())
 				Expect(rec.Value).To(Equal(tx.Bytes()))
 			})
@@ -88,7 +88,7 @@ var _ = Describe("TxKeeper", func() {
 
 			It("should return err='failed to get tx: error'", func() {
 				tx := types.NewBareTx(types.TxTypeTransferCoin)
-				_, err := txKeeper.GetTx(tx.GetID())
+				_, err := txKeeper.GetTx(tx.GetHash().Bytes())
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to get tx: error"))
 			})
@@ -103,7 +103,7 @@ var _ = Describe("TxKeeper", func() {
 			})
 
 			It("should return tx", func() {
-				res, err := txKeeper.GetTx(tx.GetID())
+				res, err := txKeeper.GetTx(tx.GetHash().Bytes())
 				Expect(err).To(BeNil())
 				Expect(res.Bytes()).To(Equal(tx.Bytes()))
 			})
@@ -111,7 +111,7 @@ var _ = Describe("TxKeeper", func() {
 
 		When("tx is not found", func() {
 			It("should return tx", func() {
-				_, err := txKeeper.GetTx("unknown")
+				_, err := txKeeper.GetTx([]byte("unknown"))
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(ErrTxNotFound))
 			})

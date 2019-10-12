@@ -59,6 +59,6 @@ func MakeQueryKeyBlockValidators() []byte {
 }
 
 // MakeTxKey creates a key for storing validators of blocks
-func MakeTxKey(hash string) []byte {
-	return []byte(fmt.Sprintf("%s%s%s", TagTx, Separator, hash))
+func MakeTxKey(hash []byte) []byte {
+	return append([]byte(TagTx+Separator), hash...)
 }

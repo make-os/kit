@@ -77,7 +77,7 @@ type TxKeeper interface {
 	Index(tx Tx) error
 
 	// GetTx gets a transaction by its hash
-	GetTx(hash string) (Tx, error)
+	GetTx(hash []byte) (Tx, error)
 }
 
 // AccountKeeper describes an interface for accessing accounts
