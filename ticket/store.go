@@ -14,12 +14,16 @@ type Store interface {
 	Add(t ...*types.Ticket) error
 	// Query queries tickets that match the given query
 	Query(query types.Ticket, queryOptions ...interface{}) ([]*types.Ticket, error)
+	// QueryOne finds a ticket that match the given query
+	QueryOne(query types.Ticket, queryOptions ...interface{}) (*types.Ticket, error)
 	// Count counts tickets that match the given query
 	Count(query types.Ticket, queryOptions ...interface{}) (int, error)
 	// GetLive returns matured and non-decayed tickets
 	GetLive(height int64, queryOptions ...interface{}) ([]*types.Ticket, error)
 	// CountLive returns the number of matured and live tickets
 	CountLive(height int64, queryOptions ...interface{}) (int, error)
+	// MarkAsUnbonded sets a ticket unbonded status to true
+	MarkAsUnbonded(hash string) error
 	// Close closes the store
 	Close() error
 }
@@ -95,6 +99,26 @@ func (s *SQLStore) Query(
 	return tickets, q.Find(&tickets).Error
 }
 
+// QueryOne finds a ticket that match the given query
+func (s *SQLStore) QueryOne(
+	query types.Ticket,
+	queryOptions ...interface{}) (*types.Ticket, error) {
+
+	opts := getQueryOptions(queryOptions...)
+	q := s.db.Where(query)
+	q = applyQueryOpts(q, opts)
+
+	var ticket types.Ticket
+	if err := q.Find(&ticket).Error; err != nil {
+		if err != gorm.ErrRecordNotFound {
+			return nil, err
+		}
+		return nil, nil
+	}
+
+	return &ticket, nil
+}
+
 // GetLive returns matured and live tickets.
 // The argument height is the current/latest block;
 func (s *SQLStore) GetLive(
@@ -109,6 +133,13 @@ func (s *SQLStore) GetLive(
 
 	var tickets []*types.Ticket
 	return tickets, q.Find(&tickets).Error
+}
+
+// MarkAsUnbonded sets a ticket unbonded status to true
+func (s *SQLStore) MarkAsUnbonded(hash string) error {
+	return s.db.Model(&types.Ticket{}).
+		Where(&types.Ticket{Hash: hash}).
+		Update(&types.Ticket{Unbonded: true}).Error
 }
 
 // CountLive returns the number of matured and live tickets.

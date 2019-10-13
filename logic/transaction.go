@@ -3,6 +3,7 @@ package logic
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 
 	"github.com/makeos/mosdef/crypto"
@@ -13,8 +14,7 @@ import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
-// Transaction implements types.TxLogic. Provides functionalities
-// for executing transactions
+// Transaction implements types.TxLogic. Provides functionalities for executing transactions.
 type Transaction struct {
 	logic types.Logic
 }
@@ -58,18 +58,20 @@ func (t *Transaction) Exec(tx *types.Transaction) error {
 	case types.TxTypeTransferCoin:
 		return t.transferCoin(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
 	case types.TxTypeGetTicket:
-		return t.stakeValidatorCoin(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce())
+		return t.stakeCoinAsValidator(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce())
 	case types.TxTypeEpochSecret:
 		return nil
+	case types.TxTypeUnbondTicket:
+		return t.unStakeCoinAsValidator(tx.SenderPubKey, tx.TicketID)
 	default:
 		return fmt.Errorf("unknown transaction type")
 	}
 }
 
-// CanTransferCoin checks whether the sender can transfer
-// the value and fee of the transaction based on the
-// current state of their account. It also ensures that the
-// transaction's nonce is the next/expected nonce value.
+// CanTransferCoin checks whether the sender can transfer the value
+// and fee of the transaction based on the current state of their
+// account. It also ensures that the transaction's nonce is the
+// next/expected nonce value.
 func (t *Transaction) CanTransferCoin(
 	txType int,
 	senderPubKey *crypto.PubKey,
@@ -119,18 +121,16 @@ func (t *Transaction) CanTransferCoin(
 	return nil
 }
 
-// stakeValidatorCoin moves a given amount from the spendable
+// stakeCoinAsValidator moves a given amount from the spendable
 // balance of an account to the validator stake balance.
-func (t *Transaction) stakeValidatorCoin(
+// EXPECT: senderPubKey must have been validated by caller.
+func (t *Transaction) stakeCoinAsValidator(
 	senderPubKey,
 	value,
 	fee util.String,
 	nonce uint64) error {
 
-	spk, err := crypto.PubKeyFromBase58(senderPubKey.String())
-	if err != nil {
-		return fmt.Errorf("invalid sender public key: %s", err)
-	}
+	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
 
 	// Ensure the account has sufficient balance and nonce
 	if err := t.CanTransferCoin(types.TxTypeGetTicket, spk, "",
@@ -161,8 +161,47 @@ func (t *Transaction) stakeValidatorCoin(
 	return nil
 }
 
+// unStakeCoinAsValidator reclaims validator stake on the sender account.
+// EXPECT: SenderPubKey to have been validated by caller.
+func (t *Transaction) unStakeCoinAsValidator(senderPubKey util.String, ticketID []byte) error {
+
+	// Get the ticket
+	ticketHash := util.ToHex(ticketID)
+	ticketQuery := types.Ticket{Hash: ticketHash}
+	ticket, err := t.logic.GetTicketManager().QueryOne(ticketQuery)
+	if err != nil {
+		return errors.Wrap(err, "failed to get ticket")
+	}
+
+	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
+
+	acctKeeper := t.logic.AccountKeeper()
+
+	// Get sender accounts
+	sender := spk.Addr()
+	senderAcct := acctKeeper.GetAccount(sender)
+
+	// Get the current validator stakes, subtract the 
+	// ticket value from it and update the account
+	curValStake := senderAcct.Stakes.Get(types.StakeNameValidator)
+	ticketVal := util.String(ticket.Value)
+	newValStake := curValStake.Decimal().Sub(ticketVal.Decimal()).String()
+	senderAcct.Stakes.Add(types.StakeNameValidator, util.String(newValStake))
+
+	// Update the sender account
+	acctKeeper.Update(sender, senderAcct)
+
+	// Mark the ticket as 'unbonded'
+	if err := t.logic.GetTicketManager().MarkAsUnbonded(ticketHash); err != nil {
+		return fmt.Errorf("failed to unbond ticket: %s", err)
+	}
+
+	return nil
+}
+
 // transferCoin transfer units of the native currency
 // from a sender account to another account
+// EXPECT: SenderPubKey to have been validated by caller.
 func (t *Transaction) transferCoin(
 	senderPubKey,
 	recipientAddr,
@@ -170,10 +209,7 @@ func (t *Transaction) transferCoin(
 	fee util.String,
 	nonce uint64) error {
 
-	spk, err := crypto.PubKeyFromBase58(senderPubKey.String())
-	if err != nil {
-		return fmt.Errorf("invalid sender public key: %s", err)
-	}
+	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
 
 	// Ensure the account has sufficient balance and nonce
 	if err := t.CanTransferCoin(types.TxTypeTransferCoin, spk, recipientAddr,

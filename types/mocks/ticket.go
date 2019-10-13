@@ -81,6 +81,20 @@ func (mr *MockTicketManagerMockRecorder) CountLiveTickets(arg0 ...interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLiveTickets", reflect.TypeOf((*MockTicketManager)(nil).CountLiveTickets), arg0...)
 }
 
+// MarkAsUnbonded mocks base method
+func (m *MockTicketManager) MarkAsUnbonded(hash string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkAsUnbonded", hash)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkAsUnbonded indicates an expected call of MarkAsUnbonded
+func (mr *MockTicketManagerMockRecorder) MarkAsUnbonded(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsUnbonded", reflect.TypeOf((*MockTicketManager)(nil).MarkAsUnbonded), hash)
+}
+
 // SelectRandom mocks base method
 func (m *MockTicketManager) SelectRandom(height int64, seed []byte, limit int) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
@@ -114,6 +128,26 @@ func (mr *MockTicketManagerMockRecorder) Query(q interface{}, queryOpt ...interf
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{q}, queryOpt...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockTicketManager)(nil).Query), varargs...)
+}
+
+// QueryOne mocks base method
+func (m *MockTicketManager) QueryOne(q types.Ticket, queryOpt ...types.QueryOptions) (*types.Ticket, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{q}
+	for _, a := range queryOpt {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryOne", varargs...)
+	ret0, _ := ret[0].(*types.Ticket)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryOne indicates an expected call of QueryOne
+func (mr *MockTicketManagerMockRecorder) QueryOne(q interface{}, queryOpt ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{q}, queryOpt...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryOne", reflect.TypeOf((*MockTicketManager)(nil).QueryOne), varargs...)
 }
 
 // Stop mocks base method

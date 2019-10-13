@@ -32,7 +32,7 @@ func (m *TxModule) txCoinFuncs() []*types.JSModuleFunc {
 	return []*types.JSModuleFunc{
 		&types.JSModuleFunc{
 			Name:        "send",
-			Value:       m.sendCoin,
+			Value:       m.SendTx,
 			Description: "Send coins to another account",
 		},
 	}
@@ -90,11 +90,7 @@ func (m *TxModule) Configure() []prompt.Suggest {
 	return suggestions
 }
 
-// sendCoin sends the native coin from a source account
-// to a destination account. It returns an object containing
-// the hash of the transaction. It panics when an error occurs.
-func (m *TxModule) sendCoin(txObj interface{}, options ...interface{}) interface{} {
-
+func processTxArgs(txObj interface{}, options ...interface{}) (*types.Transaction, string) {
 	var err error
 
 	// Decode parameters into a transaction object
@@ -118,6 +114,16 @@ func (m *TxModule) sendCoin(txObj interface{}, options ...interface{}) interface
 	} else {
 		panic(fmt.Errorf("key is required"))
 	}
+
+	return tx, key
+}
+
+// SendTx sends the native coin from a source account
+// to a destination account. It returns an object containing
+// the hash of the transaction. It panics when an error occurs.
+func (m *TxModule) SendTx(txObj interface{}, options ...interface{}) interface{} {
+	var err error
+	tx, key := processTxArgs(txObj, options...)
 
 	// Set tx public key
 	pk, _ := crypto.PrivKeyFromBase58(key)
@@ -144,7 +150,7 @@ func (m *TxModule) sendCoin(txObj interface{}, options ...interface{}) interface
 	}
 
 	// Process the transaction
-	hash, err := m.service.SendCoin(tx)
+	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}

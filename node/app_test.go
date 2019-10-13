@@ -176,6 +176,33 @@ var _ = Describe("App", func() {
 			})
 		})
 
+		When("when no tickets are randomly selected", func() {
+			var tickets = []*types.Ticket{}
+
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 5
+				mockTickMgr := mocks.NewMockTicketManager(ctrl)
+				mockTickMgr.EXPECT().SelectRandom(gomock.Any(), gomock.Any(),
+					gomock.Any()).Return(tickets, nil)
+				app.ticketMgr = mockTickMgr
+
+				mockLogic := mocks.NewMockLogic(ctrl)
+
+				mockSysLogic := mocks.NewMockSysLogic(ctrl)
+				mockSysLogic.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
+				mockLogic.EXPECT().Sys().Return(mockSysLogic)
+
+				app.logic = mockLogic
+			})
+
+			It("should return nil and no validator updates in endblock response", func() {
+				var resp abcitypes.ResponseEndBlock
+				err := app.updateValidators(6, &resp)
+				Expect(err).To(BeNil())
+				Expect(resp.ValidatorUpdates).To(BeEmpty())
+			})
+		})
+
 		When("when no validator currently exists and two tickets are randomly selected", func() {
 			var key = crypto.NewKeyFromIntSeed(1)
 			var key2 = crypto.NewKeyFromIntSeed(1)

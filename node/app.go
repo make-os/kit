@@ -334,6 +334,12 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 		return err
 	}
 
+	// Do not update validators if no tickets were selected
+	if len(tickets) == 0 {
+		a.log.Warn("Refused to update current validators since no tickets were selected")
+		return nil
+	}
+
 	// Create a new validator list. Keep an index of validators
 	// public key for fast query
 	var newValUpdates []abcitypes.ValidatorUpdate // for tendermint
@@ -349,7 +355,7 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 		newValidators = append(newValidators, &types.Validator{
 			PubKey:   pkBz,
 			Power:    1,
-			TicketID: ticket.ID,
+			TicketID: ticket.Hash,
 		})
 		pkHex := types.HexBytes(pkBz)
 		vIndex[pkHex.String()] = struct{}{}

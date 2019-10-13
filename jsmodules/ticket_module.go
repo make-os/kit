@@ -47,8 +47,13 @@ func (m *TicketModule) funcs() []*types.JSModuleFunc {
 		},
 		&types.JSModuleFunc{
 			Name:        "top",
-			Value:       m.Top,
+			Value:       m.top,
 			Description: "Get most recent tickets up to the given limit",
+		},
+		&types.JSModuleFunc{
+			Name:        "unbond",
+			Value:       m.unbondTicket,
+			Description: "Reclaim bonded stake of a validator ticket",
 		},
 	}
 }
@@ -83,27 +88,55 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{} {
 
 	var err error
+	tx, key := processTxArgs(txObj, options...)
+	tx.Type = types.TxTypeGetTicket
 
-	// Decode parameters into a transaction object
-	var tx = types.NewBareTx(types.TxTypeGetTicket)
-	if err = mapstructure.Decode(txObj, tx); err != nil {
-		panic(errors.Wrap(err, types.ErrArgDecode("types.Transaction", 0).Error()))
+	// Set tx public key
+	pk, _ := crypto.PrivKeyFromBase58(key)
+	tx.SetSenderPubKey(util.String(crypto.NewKeyFromPrivKey(pk).PubKey().Base58()))
+
+	// Set timestamp if not already set
+	if tx.Timestamp == 0 {
+		tx.Timestamp = time.Now().Unix()
 	}
 
-	// - Expect options[0] to be the private key (base58 encoded)
-	// - options[0] must be a string
-	// - options[0] must be a valid key
-	var key string
-	var ok bool
-	if len(options) > 0 {
-		key, ok = options[0].(string)
-		if !ok {
-			panic(types.ErrArgDecode("string", 1))
-		} else if err := crypto.IsValidPrivKey(key); err != nil {
-			panic(errors.Wrap(err, types.ErrInvalidPrivKey.Error()))
+	// Set nonce if nonce is not provided
+	if tx.Nonce == 0 {
+		nonce, err := m.service.GetNonce(tx.GetFrom())
+		if err != nil {
+			panic(errors.Wrap(err, "failed to get sender's nonce"))
 		}
-	} else {
-		panic(fmt.Errorf("key is required"))
+		tx.Nonce = nonce + 1
+	}
+
+	// Sign the tx
+	tx.Sig, err = tx.Sign(key)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to sign transaction"))
+	}
+
+	// Process the transaction
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
+	}
+
+	return util.EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
+}
+
+// unbondTicket sends a request to unbond the stakes associated to an existing ticket
+func (m *TicketModule) unbondTicket(txObj interface{}, options ...interface{}) interface{} {
+
+	var err error
+	tx, key := processTxArgs(txObj, options...)
+	tx.Type = types.TxTypeUnbondTicket
+
+	// Since we expect the ticket ID to be a hex string, we need to decode it
+	tx.TicketID, err = util.FromHex(string(tx.TicketID))
+	if err != nil {
+		panic(errors.Wrap(err, "invalid ticket transaction hash"))
 	}
 
 	// Set tx public key
@@ -131,7 +164,7 @@ func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{
 	}
 
 	// Process the transaction
-	hash, err := m.service.SendCoin(tx)
+	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
@@ -159,8 +192,8 @@ func (m *TicketModule) find(
 	return res
 }
 
-// Top returns most recent tickets up to the given limit
-func (m *TicketModule) Top(limit int) interface{} {
+// top returns most recent tickets up to the given limit
+func (m *TicketModule) top(limit int) interface{} {
 	res, err := m.ticketmgr.Query(types.Ticket{}, types.QueryOptions{
 		Limit: limit,
 		Order: `"height" desc`,

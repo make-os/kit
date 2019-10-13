@@ -24,6 +24,7 @@ type ValidateTxFunc func(tx *types.Transaction, i int, logic types.Logic) error
 var KnownTransactionTypes = []int{
 	types.TxTypeTransferCoin,
 	types.TxTypeGetTicket,
+	types.TxTypeUnbondTicket,
 }
 
 var validTypeRule = func(err error) func(interface{}) error {
@@ -226,7 +227,7 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 
 	// For non ticket purchasing transactions,
 	// The recipient's address must be set and it must be valid.
-	if tx.Type != types.TxTypeGetTicket {
+	if tx.Type != types.TxTypeGetTicket && tx.Type != types.TxTypeUnbondTicket {
 		if err := v.Validate(tx.GetTo(),
 			v.Required.Error(types.FieldErrorWithIndex(index, "to",
 				"recipient address is required").Error()),
@@ -254,21 +255,23 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 		return err
 	}
 
-	// Fee must be >= 0 and it must be valid number
-	if err := v.Validate(tx.GetFee(),
-		v.Required.Error(types.FieldErrorWithIndex(index, "fee",
-			"fee is required").Error()), v.By(validValueRule("fee", index)),
-	); err != nil {
-		return err
-	}
+	if tx.Type != types.TxTypeUnbondTicket {
+		// Fee must be >= 0 and it must be valid number
+		if err := v.Validate(tx.GetFee(),
+			v.Required.Error(types.FieldErrorWithIndex(index, "fee",
+				"fee is required").Error()), v.By(validValueRule("fee", index)),
+		); err != nil {
+			return err
+		}
 
-	// Fee must be at least equal to the base fee
-	txSize := decimal.NewFromFloat(float64(tx.GetSizeNoFee()))
-	baseFee := params.FeePerByte.Mul(txSize)
-	if tx.Fee.Decimal().LessThan(baseFee) {
-		return types.FieldErrorWithIndex(index, "fee",
-			fmt.Sprintf("fee cannot be lower than the base price of %s",
-				baseFee.StringFixed(4)))
+		// Fee must be at least equal to the base fee
+		txSize := decimal.NewFromFloat(float64(tx.GetSizeNoFee()))
+		baseFee := params.FeePerByte.Mul(txSize)
+		if tx.Fee.Decimal().LessThan(baseFee) {
+			return types.FieldErrorWithIndex(index, "fee",
+				fmt.Sprintf("fee cannot be lower than the base price of %s",
+					baseFee.StringFixed(4)))
+		}
 	}
 
 	// Timestamp is required.
@@ -343,9 +346,7 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		{"meta", tx.GetMeta()},
 	}
 
-	// Ensure unexpected fields are not set in TxTypeGetTicket and
-	// TxTypeTransferCoin tx. `secret`, `previousSecret` and
-	// `secretRound` are not expected
+	// Check for unexpected fields for TxTypeGetTicket and TxTypeTransferCoin
 	if txType == types.TxTypeGetTicket || txType == types.TxTypeTransferCoin {
 		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
 		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
@@ -357,8 +358,7 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		}
 	}
 
-	// For types.TxTypeEpochSecret, the only expected fields are
-	// `secret`, `previousSecret` and `secretRound`
+	// Check for unexpected field for types.TxTypeEpochSecret,
 	if txType == types.TxTypeEpochSecret {
 		unExpected = append(unExpected, []interface{}{"nonce", tx.Nonce})
 		unExpected = append(unExpected, []interface{}{"to", tx.To})
@@ -367,6 +367,20 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		unExpected = append(unExpected, []interface{}{"timestamp", tx.Timestamp})
 		unExpected = append(unExpected, []interface{}{"fee", tx.Fee})
 		unExpected = append(unExpected, []interface{}{"sig", tx.Sig})
+		for _, item := range unExpected {
+			if IsSet(item[1]) {
+				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
+			}
+		}
+	}
+
+	// Check for unexpected field for TxTypeUnbondTicket
+	if txType == types.TxTypeUnbondTicket {
+		unExpected = append(unExpected, []interface{}{"to", tx.To})
+		unExpected = append(unExpected, []interface{}{"value", tx.Value})
+		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
+		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
+		unExpected = append(unExpected, []interface{}{"secretRound", tx.SecretRound})
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -410,11 +424,56 @@ func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) 
 		return types.FieldErrorWithIndex(index, "senderPubKey", err.Error())
 	}
 
+	if tx.Type == types.TxTypeUnbondTicket {
+		goto ticketUnbond
+	}
+
 	// Check whether the transaction is consistent with
 	// the current state of the sender's account
 	err = logic.Tx().CanTransferCoin(tx.Type, pubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
 	if err != nil {
 		return err
+	}
+
+	return nil
+
+ticketUnbond:
+
+	// Find the ticket
+	q := types.Ticket{Hash: util.ToHex(tx.TicketID)}
+	res, err := logic.GetTicketManager().Query(q)
+	if err != nil {
+		return errors.Wrap(err, "failed to find ticket")
+	} else if len(res) == 0 {
+		return types.ErrTicketNotFound
+	}
+
+	ticket := res[0]
+
+	// Check if ticket has already been unbonded
+	if ticket.Unbonded {
+		return fmt.Errorf("ticket already unbonded")
+	}
+
+	// Check if the ticket is owned by the tx sender. If the ticket was
+	// delegated, the delegator's  address and the tx sender address
+	// must match, otherwise, the proposer public key must match instead
+	if ticket.Delegator != "" && ticket.Delegator != pubKey.Addr().String() {
+		return fmt.Errorf("permission denied; only ticket delegator can perform this action")
+	} else if ticket.Delegator == "" && ticket.ProposerPubKey != tx.SenderPubKey.String() {
+		return fmt.Errorf("permission denied; only ticket proposer can perform this action")
+	}
+
+	bi, err := logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch current block info")
+	}
+
+	// Check if the ticket has reached the end of the thawing period
+	endOfThaw := ticket.DecayBy + uint64(params.NumBlocksInThawPeriod)
+	if uint64(bi.Height) < endOfThaw {
+		return fmt.Errorf("cannot unbond ticket before height %d (current height: %d)",
+			endOfThaw, bi.Height)
 	}
 
 	return nil

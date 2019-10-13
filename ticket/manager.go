@@ -35,9 +35,7 @@ func NewManager(cfg *config.EngineConfig, logic types.Logic) (*Manager, error) {
 // Index takes a tx and creates a ticket out of it
 func (m *Manager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) error {
 
-	ticket := &types.Ticket{
-		ID: tx.GetID(),
-	}
+	ticket := &types.Ticket{}
 
 	// By default the proposer is the creator of the transaction.
 	// However, if the transaction `to` field is set, the sender
@@ -111,6 +109,20 @@ func (m *Manager) Query(q types.Ticket, queryOpt ...types.QueryOptions) ([]*type
 		qOpt = queryOpt[0]
 	}
 	return m.store.Query(q, qOpt)
+}
+
+// QueryOne finds and returns a ticket that match the given query
+func (m *Manager) QueryOne(q types.Ticket, queryOpt ...types.QueryOptions) (*types.Ticket, error) {
+	qOpt := types.EmptyQueryOptions
+	if len(queryOpt) > 0 {
+		qOpt = queryOpt[0]
+	}
+	return m.store.QueryOne(q, qOpt)
+}
+
+// MarkAsUnbonded sets a ticket unbonded status to true
+func (m *Manager) MarkAsUnbonded(hash string) error {
+	return m.store.MarkAsUnbonded(hash)
 }
 
 // SelectRandom selects random live tickets up to the specified limit.

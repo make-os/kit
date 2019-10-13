@@ -189,6 +189,29 @@ var _ = Describe("SQLStore", func() {
 		})
 	})
 
+	Describe(".MarkAsUnbonded", func() {
+		var store *SQLStore
+		var err error
+		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40,
+			ProposerPubKey: "pubkey", Height: 10, Index: 2}
+
+		BeforeEach(func() {
+			store, err = NewSQLStore(cfg.GetTicketDBDir())
+			Expect(err).To(BeNil())
+			err = store.db.Create(ticket).Error
+			Expect(err).To(BeNil())
+			err = store.MarkAsUnbonded(ticket.Hash)
+			Expect(err).To(BeNil())
+		})
+
+		It("should set unbonded field to true", func() {
+			var res types.Ticket
+			err = store.db.Where(&types.Ticket{Hash: ticket.Hash}).Find(&res).Error
+			Expect(err).To(BeNil())
+			Expect(res.Unbonded).To(BeTrue())
+		})
+	})
+
 	Describe(".CountLive", func() {
 		var store *SQLStore
 		var err error
@@ -255,6 +278,76 @@ var _ = Describe("SQLStore", func() {
 
 			It("should return 2", func() {
 				Expect(count).To(Equal(2))
+			})
+		})
+	})
+
+	Describe(".Query", func() {
+		var store *SQLStore
+		var err error
+
+		When("no ticket was not found", func() {
+			BeforeEach(func() {
+				store, err = NewSQLStore(cfg.GetTicketDBDir())
+				Expect(err).To(BeNil())
+			})
+
+			It("should return no result and nil", func() {
+				res, err := store.Query(types.Ticket{})
+				Expect(err).To(BeNil())
+				Expect(res).To(BeEmpty())
+			})
+		})
+
+		When("a ticket was not found", func() {
+			var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+
+			BeforeEach(func() {
+				store, err = NewSQLStore(cfg.GetTicketDBDir())
+				Expect(err).To(BeNil())
+				err = store.Add(ticket)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return no result and nil", func() {
+				res, err := store.Query(types.Ticket{})
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(1))
+			})
+		})
+	})
+
+	Describe(".QueryOne", func() {
+		var store *SQLStore
+		var err error
+
+		When("no ticket was not found", func() {
+			BeforeEach(func() {
+				store, err = NewSQLStore(cfg.GetTicketDBDir())
+				Expect(err).To(BeNil())
+			})
+
+			It("should return no result and nil", func() {
+				res, err := store.QueryOne(types.Ticket{})
+				Expect(err).To(BeNil())
+				Expect(res).To(BeNil())
+			})
+		})
+
+		When("a ticket was not found", func() {
+			var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+
+			BeforeEach(func() {
+				store, err = NewSQLStore(cfg.GetTicketDBDir())
+				Expect(err).To(BeNil())
+				err = store.Add(ticket)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return no result and nil", func() {
+				res, err := store.QueryOne(types.Ticket{})
+				Expect(err).To(BeNil())
+				Expect(res).ToNot(BeNil())
 			})
 		})
 	})

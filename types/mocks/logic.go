@@ -208,7 +208,7 @@ func (mr *MockTxKeeperMockRecorder) Index(tx interface{}) *gomock.Call {
 }
 
 // GetTx mocks base method
-func (m *MockTxKeeper) GetTx(hash string) (types.Tx, error) {
+func (m *MockTxKeeper) GetTx(hash []byte) (types.Tx, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTx", hash)
 	ret0, _ := ret[0].(types.Tx)

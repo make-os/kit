@@ -254,6 +254,8 @@ github.com/ncodes/go-prettyjson v0.0.0-20180528130907-d229c224a219 h1:751WtwuXKL
 github.com/ncodes/go-prettyjson v0.0.0-20180528130907-d229c224a219/go.mod h1:qU26Xww0WZB3IKqgocoWe86x7WVFpzKt65G7gGiRkhs=
 github.com/ncodes/tendermint v0.32.4 h1:ogQwxCMOfX+y6nlA4lT7uWLoid2wx8sg5WHithTLQGQ=
 github.com/ncodes/tendermint v0.32.4/go.mod h1:5u59huzaEE8ekEcKNU5POnE5h8k25g5N1GeuWr1shBI=
+github.com/ncodes/tendermint v0.32.6 h1:X6mrzlR4iDpE3VmSrfNIZKMcMtS0QOlaFSuvG1sw/3A=
+github.com/ncodes/tendermint v0.32.6/go.mod h1:5u59huzaEE8ekEcKNU5POnE5h8k25g5N1GeuWr1shBI=
 github.com/nikkolasg/hexjson v0.0.0-20181101101858-78e39397e00c h1:5bFTChQxSKNwy8ALwOebjekYExl9HTT9urdawqC95tA=
 github.com/nikkolasg/hexjson v0.0.0-20181101101858-78e39397e00c/go.mod h1:7qN3Y0BvzRUf4LofcoJplQL10lsFDb4PYlePTVwrP28=
 github.com/nikkolasg/slog v0.0.0-20170921200349-3c8d441d7a1e h1:07zdEcJ4Fble5uWsqKpjW19699kQWRLXP+RZh1a6ZRg=

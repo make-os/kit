@@ -2,7 +2,7 @@ module github.com/makeos/mosdef
 
 go 1.13
 
-replace github.com/tendermint/tendermint => github.com/ncodes/tendermint v0.32.4
+replace github.com/tendermint/tendermint => github.com/ncodes/tendermint v0.32.6
 
 require (
 	github.com/BurntSushi/toml v0.3.1
@@ -52,7 +52,7 @@ require (
 	github.com/spf13/viper v1.4.0
 	github.com/stretchr/objx v0.2.0
 	github.com/tendermint/iavl v0.12.4
-	github.com/tendermint/tendermint v0.32.4
+	github.com/tendermint/tendermint v0.32.6
 	github.com/tendermint/tm-db v0.2.0
 	github.com/thoas/go-funk v0.4.0
 	github.com/vmihailenco/msgpack v4.0.4+incompatible

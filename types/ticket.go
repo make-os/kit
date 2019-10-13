@@ -2,10 +2,10 @@ package types
 
 // Ticket represents a validator ticket
 type Ticket struct {
-	ID             string `gorm:"column:id;unique" json:"id"`
+	Hash           string `gorm:"column:hash" json:"hash"`                     // Hash of the ticket purchase transaction
+	Unbonded       bool   `gorm:"column:unbonded" json:"unbonded"`             // Indicates that the ticket has been unbonded
 	DecayBy        uint64 `gorm:"column:decayBy" json:"decayBy"`               // Block height when the ticket becomes decayed
 	MatureBy       uint64 `gorm:"column:matureBy" json:"matureBy"`             // Block height when the ticket enters maturity.
-	Hash           string `gorm:"column:hash" json:"hash"`                     // Hash of the ticket purchase transaction
 	Power          int64  `gorm:"column:power" json:"power,omitempty"`         // Power represents the strength of a ticket
 	ProposerPubKey string `gorm:"column:proposerPubKey" json:"proposerPubKey"` // The public key of the validator that owns the ticket.
 	Delegator      string `gorm:"column:delegator" json:"delegator"`           // Delegator is the address of the original creator of the ticket
@@ -37,12 +37,18 @@ type TicketManager interface {
 	// CountLiveTickets returns the number of matured and non-decayed tickets.
 	CountLiveTickets(...QueryOptions) (int, error)
 
+	// MarkAsUnbonded sets a ticket unbonded status to true
+	MarkAsUnbonded(hash string) error
+
 	// SelectRandom selects random live tickets up to the specified limit.
 	// The provided see is used to seed the PRNG that is used to select tickets.
 	SelectRandom(height int64, seed []byte, limit int) ([]*Ticket, error)
 
 	// Query finds and returns tickets that match the given query
 	Query(q Ticket, queryOpt ...QueryOptions) ([]*Ticket, error)
+
+	// QueryOne finds and returns a ticket that match the given query
+	QueryOne(q Ticket, queryOpt ...QueryOptions) (*Ticket, error)
 
 	// Stop stops the ticket manager
 	Stop() error

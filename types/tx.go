@@ -21,6 +21,10 @@ var (
 	// TxTypeEpochSecret represents a transaction containing 64 bytes secret
 	// for selecting the next epoch block validators.
 	TxTypeEpochSecret = 0x2
+
+	// TxTypeUnbondTicket represents a transaction that un-bonds a decayed
+	// and thawed ticket
+	TxTypeUnbondTicket = 0x3
 )
 
 // Transaction meta keys
@@ -48,6 +52,7 @@ type Tx interface {
 	GetPreviousSecret() []byte
 	GetSecretRound() uint64
 	GetBytesNoSig() []byte
+	GetTicketID() []byte
 	Bytes() []byte
 	ComputeHash() util.Hash
 	GetID() string
@@ -75,7 +80,10 @@ type Transaction struct {
 	// TxTypeEpochSecret specific field
 	Secret         []byte `json:"secret,omitempty" msgpack:"secret,omitempty"`
 	PreviousSecret []byte `json:"previousSecret,omitempty" msgpack:"previousSecret,omitempty"`
-	SecretRound    uint64 `json:"secretRound,omitempty" mapstructure:"secretRound,omitempty"`
+	SecretRound    uint64 `json:"secretRound,omitempty" msgpack:"secretRound,omitempty"`
+
+	// TxTypeUnbondTicket specific field
+	TicketID []byte `json:"ticketID,omitempty" msgpack:"ticketID,omitempty"`
 
 	// meta stores arbitrary data for message passing during tx processing
 	meta map[string]interface{}
@@ -91,6 +99,7 @@ func NewBareTx(txType int) *Transaction {
 	tx.Value = util.String("0")
 	tx.Fee = util.String("0")
 	tx.Timestamp = time.Now().Unix()
+	tx.TicketID = []byte{}
 	tx.Secret = []byte{}
 	tx.PreviousSecret = []byte{}
 	tx.SecretRound = 0
@@ -119,6 +128,8 @@ func NewTx(txType int,
 	tx.Secret = []byte{}
 	tx.PreviousSecret = []byte{}
 	tx.SecretRound = 0
+	tx.TicketID = []byte{}
+	tx.meta = map[string]interface{}{}
 
 	var err error
 	tx.Sig, err = SignTx(tx, senderKey.PrivKey().Base58())
@@ -211,6 +222,12 @@ func (tx *Transaction) GetSecretRound() uint64 {
 	return tx.SecretRound
 }
 
+// GetTicketID returns the ticket id
+// FOR: TxTypeUnbondTicket
+func (tx *Transaction) GetTicketID() []byte {
+	return tx.TicketID
+}
+
 // ToMap decodes the transaction to a map
 func (tx *Transaction) ToMap() map[string]interface{} {
 	s := structs.New(tx)
@@ -272,6 +289,7 @@ func (tx *Transaction) GetBytesNoSig() []byte {
 		tx.Secret,
 		tx.PreviousSecret,
 		tx.SecretRound,
+		tx.TicketID,
 	})
 }
 
@@ -289,6 +307,7 @@ func (tx *Transaction) Bytes() []byte {
 		tx.Secret,
 		tx.PreviousSecret,
 		tx.SecretRound,
+		tx.TicketID,
 	})
 }
 
@@ -312,6 +331,8 @@ func NewTxFromBytes(bs []byte) (*Transaction, error) {
 	tx.Secret = fields[8].([]byte)
 	tx.PreviousSecret = fields[9].([]byte)
 	tx.SecretRound = fields[10].(uint64)
+	tx.TicketID = fields[11].([]byte)
+	tx.meta = map[string]interface{}{}
 
 	return &tx, nil
 }
@@ -332,6 +353,7 @@ func (tx *Transaction) GetSizeNoFee() int64 {
 		tx.Secret,
 		tx.PreviousSecret,
 		tx.SecretRound,
+		tx.TicketID,
 	})))
 }
 

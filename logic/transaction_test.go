@@ -1,12 +1,15 @@
 package logic
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/golang/mock/gomock"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/params"
+	"github.com/makeos/mosdef/types/mocks"
 
 	"github.com/makeos/mosdef/util"
 
@@ -28,6 +31,7 @@ var _ = Describe("Transaction", func() {
 	var logic *Logic
 	var txLogic *Transaction
 	var sysLogic *System
+	var ctrl *gomock.Controller
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -39,6 +43,14 @@ var _ = Describe("Transaction", func() {
 		logic = New(c, state, cfg)
 		txLogic = &Transaction{logic: logic}
 		sysLogic = &System{logic: logic}
+	})
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	BeforeEach(func() {
@@ -132,15 +144,6 @@ var _ = Describe("Transaction", func() {
 	Describe(".transferCoin", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var recipientKey = crypto.NewKeyFromIntSeed(2)
-
-		Context("when sender public key is not valid", func() {
-			It("should return err='invalid sender public key...'", func() {
-				err := txLogic.transferCoin(util.String("invalid"), util.String(""),
-					util.String("100"), util.String("0"), 0)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("invalid sender public key"))
-			})
-		})
 
 		Context("when recipient public key is not valid", func() {
 			It("should return err='invalid recipient address...'", func() {
@@ -271,16 +274,8 @@ var _ = Describe("Transaction", func() {
 		})
 	})
 
-	Describe(".stakeValidatorCoin", func() {
+	Describe(".stakeCoinAsValidator", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
-
-		Context("when sender public key is invalid", func() {
-			It("should return err='invalid sender public key...'", func() {
-				err := txLogic.stakeValidatorCoin(util.String("invalid"), util.String("10"), util.String("1"), 1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("invalid sender public key"))
-			})
-		})
 
 		Context("when tx has incorrect nonce", func() {
 			BeforeEach(func() {
@@ -292,7 +287,7 @@ var _ = Describe("Transaction", func() {
 
 			It("should return err='tx has invalid...'", func() {
 				senderPubKey := util.String(sender.PubKey().Base58())
-				err := txLogic.stakeValidatorCoin(senderPubKey, util.String("100"), util.String("1"), 0)
+				err := txLogic.stakeCoinAsValidator(senderPubKey, util.String("100"), util.String("1"), 0)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("tx has invalid nonce"))
 			})
@@ -308,7 +303,7 @@ var _ = Describe("Transaction", func() {
 
 			It("should return err='sender's account balance is insufficient'", func() {
 				senderPubKey := util.String(sender.PubKey().Base58())
-				err := txLogic.stakeValidatorCoin(senderPubKey, util.String("100"), util.String("1"), 1)
+				err := txLogic.stakeCoinAsValidator(senderPubKey, util.String("100"), util.String("1"), 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("sender's spendable account balance is insufficient"))
 			})
@@ -329,11 +324,79 @@ var _ = Describe("Transaction", func() {
 
 			Specify("that staking value=10 with fee=1 will make spendable balance = 39", func() {
 				senderPubKey := util.String(sender.PubKey().Base58())
-				err := txLogic.stakeValidatorCoin(senderPubKey, util.String("10"), util.String("1"), 1)
+				err := txLogic.stakeCoinAsValidator(senderPubKey, util.String("10"), util.String("1"), 1)
 				Expect(err).To(BeNil())
 				acct := logic.AccountKeeper().GetAccount(sender.Addr())
 				Expect(acct.GetBalance()).To(Equal(util.String("99")))
 				Expect(acct.GetSpendableBalance()).To(Equal(util.String("39")))
+			})
+		})
+	})
+
+	Describe(".unStakeCoinAsValidator", func() {
+		When("error occurred when fetching ticket", func() {
+			var err error
+			BeforeEach(func() {
+				mockTicketMgr := mocks.NewMockTicketManager(ctrl)
+				mockTicketMgr.EXPECT().QueryOne(gomock.Any()).Return(nil, fmt.Errorf("error"))
+				txLogic.logic.SetTicketManager(mockTicketMgr)
+				err = txLogic.unStakeCoinAsValidator(util.String("pubkey"), []byte("ticketID"))
+			})
+
+			It("should return err='failed to get ticket: error'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to get ticket: error"))
+			})
+		})
+
+		When("an account has a balance=100 and skated=50", func() {
+			var sender = crypto.NewKeyFromIntSeed(1)
+			BeforeEach(func() {
+				stakes := types.BareAccountStakes()
+				stakes.Add(types.StakeNameValidator, util.String("50"))
+				acct := &types.Account{
+					Balance: util.String("100"),
+					Stakes:  stakes,
+				}
+				logic.AccountKeeper().Update(sender.Addr(), acct)
+				Expect(acct.GetBalance()).To(Equal(util.String("100")))
+				Expect(acct.GetSpendableBalance()).To(Equal(util.String("50")))
+			})
+
+			When("ticket value is 50", func() {
+				BeforeEach(func() {
+					mockTicketMgr := mocks.NewMockTicketManager(ctrl)
+					mockTicketMgr.EXPECT().QueryOne(gomock.Any()).Return(&types.Ticket{
+						Value: "50",
+					}, nil)
+					mockTicketMgr.EXPECT().MarkAsUnbonded(gomock.Any()).Return(nil)
+					txLogic.logic.SetTicketManager(mockTicketMgr)
+					err := txLogic.unStakeCoinAsValidator(util.String(sender.PubKey().Base58()), []byte("ticketID"))
+					Expect(err).To(BeNil())
+				})
+
+				It("should subtract 50 from the account's validator stake, leave 0 as update value", func() {
+					acct := logic.AccountKeeper().GetAccount(sender.Addr())
+					Expect(acct.Stakes.Get(types.StakeNameValidator)).To(Equal(util.String("0")))
+				})
+			})
+
+			When("failed to mark ticket as unbonded", func() {
+				var err error
+				BeforeEach(func() {
+					mockTicketMgr := mocks.NewMockTicketManager(ctrl)
+					mockTicketMgr.EXPECT().QueryOne(gomock.Any()).Return(&types.Ticket{
+						Value: "50",
+					}, nil)
+					mockTicketMgr.EXPECT().MarkAsUnbonded(gomock.Any()).Return(fmt.Errorf("error unbonding"))
+					txLogic.logic.SetTicketManager(mockTicketMgr)
+					err = txLogic.unStakeCoinAsValidator(util.String(sender.PubKey().Base58()), []byte("ticketID"))
+				})
+
+				It("should return err='failed to unbond ticket: error unbonding'", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("failed to unbond ticket: error unbonding"))
+				})
 			})
 		})
 	})

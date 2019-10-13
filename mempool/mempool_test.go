@@ -50,7 +50,7 @@ var _ = Describe("Mempool", func() {
 				tx := types.NewTx(types.TxTypeTransferCoin, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				err := mempool.CheckTxWithInfo(tx.Bytes(), nil, tmmem.TxInfo{})
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("mempool is full: number of txs 1 (max: 1), total txs bytes 182 (max: 200)"))
+				Expect(err.Error()).To(Equal("mempool is full: number of txs 1 (max: 1), total txs bytes 184 (max: 200)"))
 			})
 		})
 
@@ -67,7 +67,7 @@ var _ = Describe("Mempool", func() {
 				tx := types.NewTx(types.TxTypeTransferCoin, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				err := mempool.CheckTxWithInfo(tx.Bytes(), nil, tmmem.TxInfo{})
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("mempool is full: number of txs 1 (max: 2), total txs bytes 182 (max: 100)"))
+				Expect(err.Error()).To(Equal("mempool is full: number of txs 1 (max: 2), total txs bytes 184 (max: 100)"))
 			})
 		})
 
@@ -82,7 +82,7 @@ var _ = Describe("Mempool", func() {
 				tx := types.NewTx(types.TxTypeTransferCoin, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				err := mempool.CheckTxWithInfo(tx.Bytes(), nil, tmmem.TxInfo{})
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("Tx too large. Max size is 100, but got 183"))
+				Expect(err.Error()).To(Equal("Tx too large. Max size is 100, but got 185"))
 			})
 		})
 	})
@@ -125,7 +125,7 @@ var _ = Describe("Mempool", func() {
 			})
 		})
 
-		When("pool has two transactions with total size = 366 bytes", func() {
+		When("pool has two transactions with total size = 370 bytes", func() {
 			okRes := &abci.Response{Value: &abci.Response_CheckTx{CheckTx: &abci.ResponseCheckTx{
 				Code: abci.CodeTypeOK,
 			}}}
@@ -140,13 +140,13 @@ var _ = Describe("Mempool", func() {
 				Expect(mempool.TxsBytes()).To(Equal(tx.GetSize() + tx2.GetSize()))
 			})
 
-			It("should return 1 tx if max bytes is 183", func() {
-				res := mempool.ReapMaxBytesMaxGas(183, 0)
+			It("should return 1 tx if max bytes is 185", func() {
+				res := mempool.ReapMaxBytesMaxGas(185, 0)
 				Expect(len(res)).To(Equal(1))
 			})
 
-			It("should return 2 tx if max bytes is 366", func() {
-				res := mempool.ReapMaxBytesMaxGas(366, 0)
+			It("should return 2 tx if max bytes is 370", func() {
+				res := mempool.ReapMaxBytesMaxGas(370, 0)
 				Expect(len(res)).To(Equal(2))
 			})
 		})
@@ -195,11 +195,11 @@ var _ = Describe("Mempool", func() {
 				Expect(res).To(HaveLen(1))
 			})
 
-			When("maxBytes is set to 217 (max size per tx)", func() {
+			When("maxBytes is set to 185 (max size per tx)", func() {
 				var tx2 = types.NewTx(types.TxTypeTransferCoin, 0, "recipient_addr1", sender, "20", "0.1", time.Now().Unix())
-				It("should return one the tx return by epochSecretGetter", func() {
+				It("should return one tx; the tx return by epochSecretGetter", func() {
 					mempool.pool.Put(tx2)
-					res := mempool.ReapMaxBytesMaxGas(217, 0)
+					res := mempool.ReapMaxBytesMaxGas(185, 0)
 					Expect(res).ToNot(BeEmpty())
 					Expect(res).To(HaveLen(1))
 					actual, _ := types.NewTxFromBytes(res[0])

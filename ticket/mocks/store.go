@@ -71,6 +71,26 @@ func (mr *MockStoreMockRecorder) Query(query interface{}, queryOptions ...interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockStore)(nil).Query), varargs...)
 }
 
+// QueryOne mocks base method
+func (m *MockStore) QueryOne(query types.Ticket, queryOptions ...interface{}) (*types.Ticket, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{query}
+	for _, a := range queryOptions {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "QueryOne", varargs...)
+	ret0, _ := ret[0].(*types.Ticket)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// QueryOne indicates an expected call of QueryOne
+func (mr *MockStoreMockRecorder) QueryOne(query interface{}, queryOptions ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{query}, queryOptions...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryOne", reflect.TypeOf((*MockStore)(nil).QueryOne), varargs...)
+}
+
 // Count mocks base method
 func (m *MockStore) Count(query types.Ticket, queryOptions ...interface{}) (int, error) {
 	m.ctrl.T.Helper()
@@ -129,6 +149,20 @@ func (mr *MockStoreMockRecorder) CountLive(height interface{}, queryOptions ...i
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{height}, queryOptions...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLive", reflect.TypeOf((*MockStore)(nil).CountLive), varargs...)
+}
+
+// MarkAsUnbonded mocks base method
+func (m *MockStore) MarkAsUnbonded(hash string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkAsUnbonded", hash)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkAsUnbonded indicates an expected call of MarkAsUnbonded
+func (mr *MockStoreMockRecorder) MarkAsUnbonded(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsUnbonded", reflect.TypeOf((*MockStore)(nil).MarkAsUnbonded), hash)
 }
 
 // Close mocks base method

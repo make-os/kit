@@ -90,3 +90,8 @@ const (
 var (
 	ErrImmatureNetwork = fmt.Errorf("network is immature")
 )
+
+// Ticket errors
+var (
+	ErrTicketNotFound = fmt.Errorf("ticket not found")
+)

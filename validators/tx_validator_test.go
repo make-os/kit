@@ -135,11 +135,216 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".ValidateTxConsistency", func() {
-		to := crypto.NewKeyFromIntSeed(1)
-		It("should return err='field:senderPubKey, error:invalid format: version and/or checksum bytes missing' when tx sender public key is not valid", func() {
-			tx := &types.Transaction{Type: types.TxTypeTransferCoin, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: "abc"}
-			err := validators.ValidateTxConsistency(tx, -1, nil)
-			Expect(err.Error()).To(Equal("field:senderPubKey, error:invalid format: version and/or checksum bytes missing"))
+		var key = crypto.NewKeyFromIntSeed(1)
+
+		When("tx type is TxTypeTransferCoin", func() {
+			It("should return err='field:senderPubKey, error:invalid format: version and/or checksum bytes missing' when tx sender public key is not valid", func() {
+				tx := &types.Transaction{Type: types.TxTypeTransferCoin, To: key.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: "abc"}
+				err := validators.ValidateTxConsistency(tx, -1, nil)
+				Expect(err.Error()).To(Equal("field:senderPubKey, error:invalid format: version and/or checksum bytes missing"))
+			})
+
+			When("tx failed state checks", func() {
+				var err error
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					txLogic := mocks.NewMockTxLogic(ctrl)
+					txLogic.EXPECT().CanTransferCoin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+						Return(fmt.Errorf("bad error"))
+					mockLogic.EXPECT().Tx().Return(txLogic)
+					tx := &types.Transaction{Type: types.TxTypeTransferCoin, To: key.Addr(),
+						Value: "1", Fee: "1", Timestamp: time.Now().Unix(),
+						SenderPubKey: util.String(key.PubKey().Base58())}
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return error", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("bad error"))
+				})
+			})
+		})
+
+		When("tx type is TxTypeTransferCoin", func() {
+			When("error occurred while fetching ticket", func() {
+				var err error
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					txMgr := mocks.NewMockTicketManager(ctrl)
+					txMgr.EXPECT().Query(gomock.Any()).Return(nil, fmt.Errorf("error"))
+					tx := &types.Transaction{Type: types.TxTypeUnbondTicket, SenderPubKey: util.String(key.PubKey().Base58())}
+					mockLogic.EXPECT().GetTicketManager().Return(txMgr)
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("failed to find ticket: error"))
+				})
+			})
+
+			When("ticket was not found", func() {
+				var err error
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					txMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(txMgr)
+
+					txMgr.EXPECT().Query(gomock.Any()).Return([]*types.Ticket{}, nil)
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondTicket, SenderPubKey: util.String(key.PubKey().Base58())}
+					tx.TicketID = []byte("unknown")
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err=types.ErrTicketNotFound", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(Equal(types.ErrTicketNotFound))
+				})
+			})
+
+			When("ticket is unbounded", func() {
+				var err error
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					txMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(txMgr)
+
+					ticket := &types.Ticket{Unbonded: true}
+					txMgr.EXPECT().Query(gomock.Any()).Return([]*types.Ticket{ticket}, nil)
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondTicket, SenderPubKey: util.String(key.PubKey().Base58())}
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err='ticket already unbonded'", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("ticket already unbonded"))
+				})
+			})
+
+			When("ticket has a delegator and the tx signer is not the delegator", func() {
+				var err error
+				var delegator = crypto.NewKeyFromIntSeed(33)
+
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					txMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(txMgr)
+
+					ticket := &types.Ticket{Delegator: delegator.Addr().String()}
+					txMgr.EXPECT().Query(gomock.Any()).Return([]*types.Ticket{ticket}, nil)
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondTicket, SenderPubKey: util.String(key.PubKey().Base58())}
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err='permission denied; only ticket delegator can perform this action'", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("permission denied; only ticket delegator can perform this action"))
+				})
+			})
+
+			When("ticket has no delegator and the tx signer is not the proposer", func() {
+				var err error
+				var proposer = crypto.NewKeyFromIntSeed(33)
+
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					txMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(txMgr)
+
+					ticket := &types.Ticket{ProposerPubKey: proposer.PubKey().Base58()}
+					txMgr.EXPECT().Query(gomock.Any()).Return([]*types.Ticket{ticket}, nil)
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondTicket, SenderPubKey: util.String(key.PubKey().Base58())}
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err='permission denied; only ticket proposer can perform this action'", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("permission denied; only ticket proposer can perform this action"))
+				})
+			})
+
+			When("error occurred when fetching latest block info", func() {
+				var err error
+				var proposer = crypto.NewKeyFromIntSeed(33)
+
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					txMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(txMgr)
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+
+					ticket := &types.Ticket{ProposerPubKey: proposer.PubKey().Base58()}
+					txMgr.EXPECT().Query(gomock.Any()).Return([]*types.Ticket{ticket}, nil)
+
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondTicket, SenderPubKey: util.String(proposer.PubKey().Base58())}
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err='failed to fetch current block info: error'", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("failed to fetch current block info: error"))
+				})
+			})
+
+			When("ticket has not reached the 'end of thaw' period", func() {
+				var err error
+				var proposer = crypto.NewKeyFromIntSeed(33)
+
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					txMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(txMgr)
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+
+					ticket := &types.Ticket{ProposerPubKey: proposer.PubKey().Base58(), DecayBy: 5000}
+					txMgr.EXPECT().Query(gomock.Any()).Return([]*types.Ticket{ticket}, nil)
+
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondTicket, SenderPubKey: util.String(proposer.PubKey().Base58())}
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err='cannot unbond ticket before height...'", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(ContainSubstring("cannot unbond ticket before height"))
+				})
+			})
+
+			When("ticket is valid for un-bonding", func() {
+				var err error
+				var proposer = crypto.NewKeyFromIntSeed(33)
+
+				BeforeEach(func() {
+					params.NumBlocksInThawPeriod = 1
+
+					mockLogic := mocks.NewMockLogic(ctrl)
+					txMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(txMgr)
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+
+					ticket := &types.Ticket{ProposerPubKey: proposer.PubKey().Base58(), DecayBy: 1}
+					txMgr.EXPECT().Query(gomock.Any()).Return([]*types.Ticket{ticket}, nil)
+
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 3}, nil)
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondTicket, SenderPubKey: util.String(proposer.PubKey().Base58())}
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return nil", func() {
+					Expect(err).To(BeNil())
+				})
+			})
 		})
 	})
 
@@ -263,6 +468,57 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckUnexpectedFields(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:unexpected field"))
+			})
+		})
+	})
+
+	Describe(".CheckUnexpectedFields", func() {
+		When("check TxTypeUnbondTicket", func() {
+			var tx *types.Transaction
+
+			BeforeEach(func() {
+				tx = types.NewBareTx(types.TxTypeUnbondTicket)
+				tx.Timestamp = 0
+			})
+
+			It("should not accept a set `meta` field", func() {
+				tx.SetMeta(map[string]interface{}{"a": 2})
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:meta, error:unexpected field"))
+			})
+
+			It("should not accept a set `to` field", func() {
+				tx.To = util.String("address")
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:to, error:unexpected field"))
+			})
+
+			It("should not accept a set `value` field", func() {
+				tx.Value = util.String("100")
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:value, error:unexpected field"))
+			})
+
+			It("should not accept a set `secret` field", func() {
+				tx.Secret = []byte{1, 2, 3}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:secret, error:unexpected field"))
+			})
+			It("should not accept a set `previousSecret` field", func() {
+				tx.PreviousSecret = []byte{1, 2, 3}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:previousSecret, error:unexpected field"))
+			})
+			It("should not accept a set `secretRound` field", func() {
+				tx.SecretRound = 12
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:secretRound, error:unexpected field"))
 			})
 		})
 	})

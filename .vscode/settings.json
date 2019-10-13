@@ -1,8 +1,11 @@
 {
     "cSpell.words": [
         "Renewer",
+        "Unbond",
+        "Unbonded",
         "app's",
         "delegator",
+        "delegator's",
         "drandmocks",
         "estx",
         "iavl",
@@ -11,7 +14,9 @@
         "qopts",
         "recs",
         "tmmem",
-        "tmtypes"
+        "tmtypes",
+        "unbonding",
+        "undecayed"
     ],
     "go.inferGopath": false
 }
