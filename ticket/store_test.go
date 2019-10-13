@@ -3,6 +3,8 @@ package ticket
 import (
 	"os"
 
+	"github.com/jinzhu/gorm"
+
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/testutil"
 	"github.com/makeos/mosdef/types"
@@ -73,6 +75,35 @@ var _ = Describe("SQLStore", func() {
 			err := store.db.First(&t).Error
 			Expect(err).To(BeNil())
 			Expect(t).To(Equal(*ticket))
+		})
+	})
+
+	Describe(".Remove", func() {
+		var store *SQLStore
+		var err error
+		var ticket = &types.Ticket{
+			Hash:           "hash1",
+			DecayBy:        100,
+			MatureBy:       40,
+			ProposerPubKey: "pubkey",
+			Height:         10,
+			Index:          2,
+		}
+
+		BeforeEach(func() {
+			store, err = NewSQLStore(cfg.GetTicketDBDir())
+			Expect(err).To(BeNil())
+			err = store.Add(ticket)
+			Expect(err).To(BeNil())
+			err = store.Remove(ticket.Hash)
+			Expect(err).To(BeNil())
+		})
+
+		It("should successfully add the ticket", func() {
+			var t types.Ticket
+			err := store.db.First(&t).Error
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(gorm.ErrRecordNotFound))
 		})
 	})
 

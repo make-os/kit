@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/tendermint/tendermint/privval"
+
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/util"
@@ -15,6 +17,7 @@ import (
 	"github.com/golang/mock/gomock"
 
 	abcitypes "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 
 	"github.com/makeos/mosdef/ticket"
 
@@ -25,15 +28,24 @@ import (
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/storage/tree"
 	"github.com/makeos/mosdef/testutil"
 )
+
+func genFilePV(bz []byte) *privval.FilePV {
+	privKey := ed25519.GenPrivKeyFromSecret(bz)
+	return &privval.FilePV{
+		Key: privval.FilePVKey{
+			Address: privKey.PubKey().Address(),
+			PubKey:  privKey.PubKey(),
+			PrivKey: privKey,
+		},
+	}
+}
 
 var _ = Describe("App", func() {
 	var c storage.Engine
 	var err error
 	var cfg *config.EngineConfig
-	var state *tree.SafeTree
 	var logic *l.Logic
 	var app *App
 	var ticketmgr *ticket.Manager
@@ -45,9 +57,7 @@ var _ = Describe("App", func() {
 		Expect(err).To(BeNil())
 		c = storage.NewBadger(cfg)
 		Expect(c.Init()).To(BeNil())
-		db := storage.NewTMDBAdapter(c.F(true, true))
-		state = tree.NewSafeTree(db, 128)
-		logic = l.New(c, state, cfg)
+		logic = l.New(c, cfg)
 		app = NewApp(cfg, c, logic, ticketmgr)
 	})
 
@@ -76,7 +86,7 @@ var _ = Describe("App", func() {
 
 		When("writing initial genesis file fails", func() {
 			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockTree := mocks.NewMockTree(ctrl)
 				mockTree.EXPECT().WorkingHash().Return(nil)
 				mockLogic.EXPECT().StateTree().Return(mockTree)
@@ -93,7 +103,7 @@ var _ = Describe("App", func() {
 
 		When("validator indexing fails", func() {
 			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockTree := mocks.NewMockTree(ctrl)
 				mockTree.EXPECT().WorkingHash().Return(nil)
 				mockLogic.EXPECT().StateTree().Return(mockTree)
@@ -111,13 +121,36 @@ var _ = Describe("App", func() {
 			})
 		})
 
+		When("failure to commit state", func() {
+			BeforeEach(func() {
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
+				mockTree := mocks.NewMockTree(ctrl)
+				mockTree.EXPECT().WorkingHash().Return(nil)
+				mockLogic.EXPECT().StateTree().Return(mockTree)
+				mockLogic.EXPECT().WriteGenesisState().Return(nil)
+				mockValidator := mocks.NewMockValidatorLogic(ctrl)
+				mockValidator.EXPECT().Index(gomock.Any(), gomock.Any()).Return(nil)
+				mockLogic.EXPECT().Commit().Return(fmt.Errorf("error"))
+				mockLogic.EXPECT().Validator().Return(mockValidator)
+				app.logic = mockLogic
+			})
+
+			It("should panic", func() {
+				Expect(func() {
+					app.InitChain(abcitypes.RequestInitChain{})
+				}).To(Panic())
+			})
+		})
+
 		When("initialization succeeds", func() {
 			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockTree := mocks.NewMockTree(ctrl)
 				mockTree.EXPECT().WorkingHash().Return(nil).Times(2)
-				mockLogic.EXPECT().StateTree().Return(mockTree).Times(2)
+				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()
 				mockLogic.EXPECT().WriteGenesisState().Return(nil)
+				mockLogic.EXPECT().Commit().Return(nil)
+				mockTree.EXPECT().Version().Return(int64(1))
 				mockValidator := mocks.NewMockValidatorLogic(ctrl)
 				mockValidator.EXPECT().Index(gomock.Any(), gomock.Any()).Return(nil)
 				mockLogic.EXPECT().Validator().Return(mockValidator)
@@ -141,7 +174,7 @@ var _ = Describe("App", func() {
 		When("an error occurred when making secret", func() {
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysLogic := mocks.NewMockSysLogic(ctrl)
 				mockSysLogic.EXPECT().MakeSecret(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
 				mockLogic.EXPECT().Sys().Return(mockSysLogic)
@@ -161,7 +194,7 @@ var _ = Describe("App", func() {
 				mockTickMgr := mocks.NewMockTicketManager(ctrl)
 				mockTickMgr.EXPECT().SelectRandom(gomock.Any(), gomock.Any(),
 					gomock.Any()).Return(nil, fmt.Errorf("error selecting validators"))
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysLogic := mocks.NewMockSysLogic(ctrl)
 				mockSysLogic.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
 				mockLogic.EXPECT().Sys().Return(mockSysLogic)
@@ -186,7 +219,7 @@ var _ = Describe("App", func() {
 					gomock.Any()).Return(tickets, nil)
 				app.ticketMgr = mockTickMgr
 
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 
 				mockSysLogic := mocks.NewMockSysLogic(ctrl)
 				mockSysLogic.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
@@ -217,7 +250,7 @@ var _ = Describe("App", func() {
 					gomock.Any()).Return(tickets, nil)
 				app.ticketMgr = mockTickMgr
 
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 
 				mockSysLogic := mocks.NewMockSysLogic(ctrl)
 				mockSysLogic.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
@@ -252,7 +285,7 @@ var _ = Describe("App", func() {
 				mockTickMgr.EXPECT().SelectRandom(gomock.Any(), gomock.Any(), gomock.Any()).Return(tickets, nil)
 				app.ticketMgr = mockTickMgr
 
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysLogic := mocks.NewMockSysLogic(ctrl)
 				mockSysLogic.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
 				mockLogic.EXPECT().Sys().Return(mockSysLogic)
@@ -304,7 +337,7 @@ var _ = Describe("App", func() {
 					gomock.Any()).Return(tickets, nil)
 				app.ticketMgr = mockTickMgr
 
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 
 				mockSysLogic := mocks.NewMockSysLogic(ctrl)
 				mockSysLogic.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
@@ -329,7 +362,7 @@ var _ = Describe("App", func() {
 	Describe(".Info", func() {
 		When("getting last block info and error is returned and it is not ErrBlockInfoNotFound", func() {
 			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("something bad"))
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
@@ -345,7 +378,7 @@ var _ = Describe("App", func() {
 
 		When("getting last block info and error is returned and it is ErrBlockInfoNotFound", func() {
 			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, keepers.ErrBlockInfoNotFound)
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
@@ -409,6 +442,71 @@ var _ = Describe("App", func() {
 		})
 	})
 
+	Describe(".BeginBlock", func() {
+		When("current block proposer is the same as the private validator", func() {
+			BeforeEach(func() {
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
+				sysLogic := mocks.NewMockSysLogic(ctrl)
+
+				pv := crypto.WrappedPV{FilePV: genFilePV([]byte("xyz"))}
+				cfg.G().PrivVal = &pv
+
+				req := abcitypes.RequestBeginBlock{}
+				req.Header.ProposerAddress = pv.GetAddress().Bytes()
+
+				sysLogic.EXPECT().CheckSetNetMaturity().Return(nil)
+				mockLogic.EXPECT().Sys().Return(sysLogic)
+				app.logic = mockLogic
+				app.BeginBlock(req)
+			})
+
+			It("should set `isCurrentBlockProposer` to true", func() {
+				Expect(app.isCurrentBlockProposer).To(BeTrue())
+			})
+		})
+
+		When("network is not mature", func() {
+			BeforeEach(func() {
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
+				sysLogic := mocks.NewMockSysLogic(ctrl)
+
+				pv := crypto.WrappedPV{FilePV: genFilePV([]byte("xyz"))}
+				cfg.G().PrivVal = &pv
+
+				sysLogic.EXPECT().CheckSetNetMaturity().Return(fmt.Errorf("not mature"))
+				mockLogic.EXPECT().Sys().Return(sysLogic)
+				app.logic = mockLogic
+				app.BeginBlock(abcitypes.RequestBeginBlock{})
+			})
+
+			It("should set `mature` to false", func() {
+				Expect(app.mature).To(BeFalse())
+			})
+		})
+
+		When("network is not mature", func() {
+			BeforeEach(func() {
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
+				sysLogic := mocks.NewMockSysLogic(ctrl)
+
+				pv := crypto.WrappedPV{FilePV: genFilePV([]byte("xyz"))}
+				cfg.G().PrivVal = &pv
+
+				req := abcitypes.RequestBeginBlock{}
+				req.Header.ProposerAddress = pv.GetAddress().Bytes()
+
+				sysLogic.EXPECT().CheckSetNetMaturity().Return(nil)
+				mockLogic.EXPECT().Sys().Return(sysLogic)
+				app.logic = mockLogic
+				app.BeginBlock(req)
+			})
+
+			It("should set `isCurrentBlockProposer` to true", func() {
+				Expect(app.mature).To(BeTrue())
+			})
+		})
+	})
+
 	Describe(".DeliverTx", func() {
 		When("tx could not be decoded into types.Transaction", func() {
 			var res abcitypes.ResponseDeliverTx
@@ -448,7 +546,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				tx := types.NewTx(types.TxTypeGetTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				txLogic := mocks.NewMockTxLogic(ctrl)
 				txLogic.EXPECT().PrepareExec(req).Return(abcitypes.ResponseDeliverTx{})
 				mockLogic.EXPECT().Tx().Return(txLogic)
@@ -521,7 +619,7 @@ var _ = Describe("App", func() {
 				params.NumBlocksPerEpoch = 5
 				app.wBlock.Height = 5
 
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockTxLogic := mocks.NewMockTxLogic(ctrl)
 				mockTxLogic.EXPECT().PrepareExec(gomock.Any()).Return(abcitypes.ResponseDeliverTx{
 					Code: uint32(0),
@@ -554,7 +652,7 @@ var _ = Describe("App", func() {
 				params.NumBlocksPerEpoch = 5
 				app.wBlock.Height = 5
 
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockTxLogic := mocks.NewMockTxLogic(ctrl)
 				mockTxLogic.EXPECT().PrepareExec(gomock.Any()).Return(abcitypes.ResponseDeliverTx{
 					Code: types.ErrCodeTxInvalidValue,
@@ -593,7 +691,7 @@ var _ = Describe("App", func() {
 				params.NumBlocksPerEpoch = 5
 				app.wBlock.Height = 5
 
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockTxLogic := mocks.NewMockTxLogic(ctrl)
 				mockTxLogic.EXPECT().PrepareExec(gomock.Any()).Return(abcitypes.ResponseDeliverTx{
 					Code: types.ErrCodeTxInvalidValue,
@@ -633,10 +731,13 @@ var _ = Describe("App", func() {
 				})
 
 				BeforeEach(func() {
-					mockLogic := mocks.NewMockLogic(ctrl)
+					mockLogic := mocks.NewMockAtomicLogic(ctrl)
+					mockStateTree := mocks.NewMockTree(ctrl)
+					mockStateTree.EXPECT().WorkingHash().Return(nil)
 					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 					mockSysKeeper.EXPECT().SetHighestDrandRound(gomock.Any()).Return(fmt.Errorf("error"))
 					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+					mockLogic.EXPECT().StateTree().Return(mockStateTree)
 					app.logic = mockLogic
 				})
 
@@ -660,7 +761,7 @@ var _ = Describe("App", func() {
 			})
 
 			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 				mockSysKeeper.EXPECT().SetHighestDrandRound(gomock.Any()).Return(nil)
 
@@ -683,7 +784,7 @@ var _ = Describe("App", func() {
 		When("error occurred when indexing cached ticket", func() {
 
 			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 
 				mockTree := mocks.NewMockTree(ctrl)
@@ -699,6 +800,9 @@ var _ = Describe("App", func() {
 				})
 				mockTicketMgr.EXPECT().Index(gomock.Any(),
 					gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+
+				// It should try to remove tickets if already saved
+				mockTicketMgr.EXPECT().Remove(tx.GetID())
 
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 				mockLogic.EXPECT().StateTree().Return(mockTree)
@@ -716,7 +820,7 @@ var _ = Describe("App", func() {
 		When("error occurred when saving validators", func() {
 
 			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 				mockValKeeper := mocks.NewMockValidatorKeeper(ctrl)
 
@@ -745,7 +849,7 @@ var _ = Describe("App", func() {
 		When("error occurred when saving tree version", func() {
 
 			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 
 				mockTree := mocks.NewMockTree(ctrl)
@@ -773,7 +877,7 @@ var _ = Describe("App", func() {
 			appHash := []byte("app_hash")
 
 			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 				mockTxKeeper := mocks.NewMockTxKeeper(ctrl)
 
@@ -807,7 +911,7 @@ var _ = Describe("App", func() {
 			appHash := []byte("app_hash")
 
 			BeforeEach(func() {
-				mockLogic := mocks.NewMockLogic(ctrl)
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 
 				mockTree := mocks.NewMockTree(ctrl)
@@ -818,6 +922,8 @@ var _ = Describe("App", func() {
 				app.heightToSaveNewValidators = 100
 
 				mockTree.EXPECT().SaveVersion().Return(appHash, int64(0), nil)
+
+				mockLogic.EXPECT().Commit().Return(nil)
 
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()

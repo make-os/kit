@@ -150,6 +150,20 @@ func (mr *MockTicketManagerMockRecorder) QueryOne(q interface{}, queryOpt ...int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryOne", reflect.TypeOf((*MockTicketManager)(nil).QueryOne), varargs...)
 }
 
+// Remove mocks base method
+func (m *MockTicketManager) Remove(hash string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Remove", hash)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Remove indicates an expected call of Remove
+func (mr *MockTicketManagerMockRecorder) Remove(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockTicketManager)(nil).Remove), hash)
+}
+
 // Stop mocks base method
 func (m *MockTicketManager) Stop() error {
 	m.ctrl.T.Helper()

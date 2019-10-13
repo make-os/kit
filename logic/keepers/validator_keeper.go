@@ -10,11 +10,11 @@ import (
 
 // ValidatorKeeper manages information about validators
 type ValidatorKeeper struct {
-	db storage.Engine
+	db storage.Functions
 }
 
 // NewValidatorKeeper creates an instance of ValidatorKeeper
-func NewValidatorKeeper(db storage.Engine) *ValidatorKeeper {
+func NewValidatorKeeper(db storage.Functions) *ValidatorKeeper {
 	return &ValidatorKeeper{db: db}
 }
 

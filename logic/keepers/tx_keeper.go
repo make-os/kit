@@ -13,11 +13,11 @@ var ErrTxNotFound = fmt.Errorf("transaction not found")
 
 // TxKeeper manages transaction data
 type TxKeeper struct {
-	db storage.Engine
+	db storage.Functions
 }
 
 // NewTxKeeper creates an instance of TxKeeper
-func NewTxKeeper(db storage.Engine) *TxKeeper {
+func NewTxKeeper(db storage.Functions) *TxKeeper {
 	return &TxKeeper{db: db}
 }
 

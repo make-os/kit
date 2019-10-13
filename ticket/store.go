@@ -24,6 +24,8 @@ type Store interface {
 	CountLive(height int64, queryOptions ...interface{}) (int, error)
 	// MarkAsUnbonded sets a ticket unbonded status to true
 	MarkAsUnbonded(hash string) error
+	// Remove deletes a ticket by its hash
+	Remove(hash string) error
 	// Close closes the store
 	Close() error
 }
@@ -55,6 +57,11 @@ func (s *SQLStore) Add(tickets ...*types.Ticket) error {
 		}
 	}
 	return db.Commit().Error
+}
+
+// Remove deletes a ticket by its hash
+func (s *SQLStore) Remove(hash string) error {
+	return s.db.Where(types.Ticket{Hash: hash}).Delete(types.Ticket{}).Error
 }
 
 // getQueryOptions returns a types.QueryOptions stored in a slice of interface

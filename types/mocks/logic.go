@@ -276,6 +276,235 @@ func (mr *MockAccountKeeperMockRecorder) Update(address, upd interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockAccountKeeper)(nil).Update), address, upd)
 }
 
+// MockAtomicLogic is a mock of AtomicLogic interface
+type MockAtomicLogic struct {
+	ctrl     *gomock.Controller
+	recorder *MockAtomicLogicMockRecorder
+}
+
+// MockAtomicLogicMockRecorder is the mock recorder for MockAtomicLogic
+type MockAtomicLogicMockRecorder struct {
+	mock *MockAtomicLogic
+}
+
+// NewMockAtomicLogic creates a new mock instance
+func NewMockAtomicLogic(ctrl *gomock.Controller) *MockAtomicLogic {
+	mock := &MockAtomicLogic{ctrl: ctrl}
+	mock.recorder = &MockAtomicLogicMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockAtomicLogic) EXPECT() *MockAtomicLogicMockRecorder {
+	return m.recorder
+}
+
+// SysKeeper mocks base method
+func (m *MockAtomicLogic) SysKeeper() types.SystemKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SysKeeper")
+	ret0, _ := ret[0].(types.SystemKeeper)
+	return ret0
+}
+
+// SysKeeper indicates an expected call of SysKeeper
+func (mr *MockAtomicLogicMockRecorder) SysKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).SysKeeper))
+}
+
+// AccountKeeper mocks base method
+func (m *MockAtomicLogic) AccountKeeper() types.AccountKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccountKeeper")
+	ret0, _ := ret[0].(types.AccountKeeper)
+	return ret0
+}
+
+// AccountKeeper indicates an expected call of AccountKeeper
+func (mr *MockAtomicLogicMockRecorder) AccountKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).AccountKeeper))
+}
+
+// ValidatorKeeper mocks base method
+func (m *MockAtomicLogic) ValidatorKeeper() types.ValidatorKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValidatorKeeper")
+	ret0, _ := ret[0].(types.ValidatorKeeper)
+	return ret0
+}
+
+// ValidatorKeeper indicates an expected call of ValidatorKeeper
+func (mr *MockAtomicLogicMockRecorder) ValidatorKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValidatorKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).ValidatorKeeper))
+}
+
+// TxKeeper mocks base method
+func (m *MockAtomicLogic) TxKeeper() types.TxKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TxKeeper")
+	ret0, _ := ret[0].(types.TxKeeper)
+	return ret0
+}
+
+// TxKeeper indicates an expected call of TxKeeper
+func (mr *MockAtomicLogicMockRecorder) TxKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).TxKeeper))
+}
+
+// GetTicketManager mocks base method
+func (m *MockAtomicLogic) GetTicketManager() types.TicketManager {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTicketManager")
+	ret0, _ := ret[0].(types.TicketManager)
+	return ret0
+}
+
+// GetTicketManager indicates an expected call of GetTicketManager
+func (mr *MockAtomicLogicMockRecorder) GetTicketManager() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTicketManager", reflect.TypeOf((*MockAtomicLogic)(nil).GetTicketManager))
+}
+
+// Tx mocks base method
+func (m *MockAtomicLogic) Tx() types.TxLogic {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Tx")
+	ret0, _ := ret[0].(types.TxLogic)
+	return ret0
+}
+
+// Tx indicates an expected call of Tx
+func (mr *MockAtomicLogicMockRecorder) Tx() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tx", reflect.TypeOf((*MockAtomicLogic)(nil).Tx))
+}
+
+// Sys mocks base method
+func (m *MockAtomicLogic) Sys() types.SysLogic {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Sys")
+	ret0, _ := ret[0].(types.SysLogic)
+	return ret0
+}
+
+// Sys indicates an expected call of Sys
+func (mr *MockAtomicLogicMockRecorder) Sys() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sys", reflect.TypeOf((*MockAtomicLogic)(nil).Sys))
+}
+
+// Validator mocks base method
+func (m *MockAtomicLogic) Validator() types.ValidatorLogic {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Validator")
+	ret0, _ := ret[0].(types.ValidatorLogic)
+	return ret0
+}
+
+// Validator indicates an expected call of Validator
+func (mr *MockAtomicLogicMockRecorder) Validator() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Validator", reflect.TypeOf((*MockAtomicLogic)(nil).Validator))
+}
+
+// DB mocks base method
+func (m *MockAtomicLogic) DB() storage.Engine {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DB")
+	ret0, _ := ret[0].(storage.Engine)
+	return ret0
+}
+
+// DB indicates an expected call of DB
+func (mr *MockAtomicLogicMockRecorder) DB() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DB", reflect.TypeOf((*MockAtomicLogic)(nil).DB))
+}
+
+// StateTree mocks base method
+func (m *MockAtomicLogic) StateTree() types.Tree {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "StateTree")
+	ret0, _ := ret[0].(types.Tree)
+	return ret0
+}
+
+// StateTree indicates an expected call of StateTree
+func (mr *MockAtomicLogicMockRecorder) StateTree() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StateTree", reflect.TypeOf((*MockAtomicLogic)(nil).StateTree))
+}
+
+// WriteGenesisState mocks base method
+func (m *MockAtomicLogic) WriteGenesisState() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WriteGenesisState")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WriteGenesisState indicates an expected call of WriteGenesisState
+func (mr *MockAtomicLogicMockRecorder) WriteGenesisState() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteGenesisState", reflect.TypeOf((*MockAtomicLogic)(nil).WriteGenesisState))
+}
+
+// SetTicketManager mocks base method
+func (m *MockAtomicLogic) SetTicketManager(tm types.TicketManager) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetTicketManager", tm)
+}
+
+// SetTicketManager indicates an expected call of SetTicketManager
+func (mr *MockAtomicLogicMockRecorder) SetTicketManager(tm interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTicketManager", reflect.TypeOf((*MockAtomicLogic)(nil).SetTicketManager), tm)
+}
+
+// GetDRand mocks base method
+func (m *MockAtomicLogic) GetDRand() rand.DRander {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDRand")
+	ret0, _ := ret[0].(rand.DRander)
+	return ret0
+}
+
+// GetDRand indicates an expected call of GetDRand
+func (mr *MockAtomicLogicMockRecorder) GetDRand() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDRand", reflect.TypeOf((*MockAtomicLogic)(nil).GetDRand))
+}
+
+// Commit mocks base method
+func (m *MockAtomicLogic) Commit() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Commit")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Commit indicates an expected call of Commit
+func (mr *MockAtomicLogicMockRecorder) Commit() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockAtomicLogic)(nil).Commit))
+}
+
+// Discard mocks base method
+func (m *MockAtomicLogic) Discard() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Discard")
+}
+
+// Discard indicates an expected call of Discard
+func (mr *MockAtomicLogicMockRecorder) Discard() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Discard", reflect.TypeOf((*MockAtomicLogic)(nil).Discard))
+}
+
 // MockLogic is a mock of Logic interface
 type MockLogic struct {
 	ctrl     *gomock.Controller

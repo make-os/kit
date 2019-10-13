@@ -18,7 +18,6 @@ import (
 	l "github.com/makeos/mosdef/logic"
 
 	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/storage/tree"
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/testutil"
@@ -31,7 +30,6 @@ var _ = Describe("Manager", func() {
 	var c storage.Engine
 	var cfg *config.EngineConfig
 	var mgr *Manager
-	var state *tree.SafeTree
 	var logic *l.Logic
 	var ctrl *gomock.Controller
 
@@ -40,9 +38,7 @@ var _ = Describe("Manager", func() {
 		Expect(err).To(BeNil())
 		c = storage.NewBadger(cfg)
 		Expect(c.Init()).To(BeNil())
-		db := storage.NewTMDBAdapter(c.F(true, true))
-		state = tree.NewSafeTree(db, 128)
-		logic = l.New(c, state, cfg)
+		logic = l.New(c, cfg)
 		mgr, err = NewManager(cfg, logic)
 		Expect(err).To(BeNil())
 	})

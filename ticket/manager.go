@@ -70,6 +70,11 @@ func (m *Manager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) 
 	return nil
 }
 
+// Remove deletes a ticket by its hash
+func (m *Manager) Remove(hash string) error {
+	return m.store.Remove(hash)
+}
+
 // GetByProposer finds tickets belonging to the
 // given proposer public key.
 func (m *Manager) GetByProposer(proposerPubKey string, queryOpt types.QueryOptions) ([]*types.Ticket, error) {

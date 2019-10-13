@@ -51,7 +51,7 @@ func (f *BadgerFunctions) Commit() error {
 	return f.tx.Commit()
 }
 
-// renewTx renews the transaction only if renew and finish are true
+// renewTx renews the transaction only if auto renew and auto finish are enabled
 func (f *BadgerFunctions) renewTx() {
 	f.Lock()
 	defer f.Unlock()
@@ -62,7 +62,6 @@ func (f *BadgerFunctions) renewTx() {
 
 // Discard discards the transaction
 func (f *BadgerFunctions) Discard() {
-	defer f.renewTx()
 	f.tx.Discard()
 }
 
@@ -103,10 +102,11 @@ func (f *BadgerFunctions) Get(key []byte) (*Record, error) {
 	return NewFromKeyValue(key, val), nil
 }
 
-// RenewTx renews the underlying transaction.
-// Requires auto finish and renew capabilities enabled.
+// RenewTx forcefully renews the underlying transaction.
 func (f *BadgerFunctions) RenewTx() {
-	f.renewTx()
+	f.Lock()
+	defer f.Unlock()
+	f.tx = f.db.NewTransaction(true)
 }
 
 // Del deletes a record by key

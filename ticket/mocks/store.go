@@ -165,6 +165,20 @@ func (mr *MockStoreMockRecorder) MarkAsUnbonded(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsUnbonded", reflect.TypeOf((*MockStore)(nil).MarkAsUnbonded), hash)
 }
 
+// Remove mocks base method
+func (m *MockStore) Remove(hash string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Remove", hash)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Remove indicates an expected call of Remove
+func (mr *MockStoreMockRecorder) Remove(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockStore)(nil).Remove), hash)
+}
+
 // Close mocks base method
 func (m *MockStore) Close() error {
 	m.ctrl.T.Helper()

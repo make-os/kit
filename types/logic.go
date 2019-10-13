@@ -93,6 +93,22 @@ type AccountKeeper interface {
 	Update(address util.String, upd *Account)
 }
 
+// AtomicLogic is like Logic but allows all operations
+// performed to be atomically committed. The implementer
+// must maintain a tx that all logical operations use and
+// allow the tx to be committed or discarded
+type AtomicLogic interface {
+	Logic
+
+	// Commit the underlying transaction.
+	// Panics if called when no active transaction.
+	Commit() error
+
+	// Discard the underlying transaction
+	// Panics if called when no active transaction.
+	Discard()
+}
+
 // Logic provides an interface that allows
 // access and modification to the state of the blockchain.
 type Logic interface {
@@ -121,6 +137,13 @@ type Logic interface {
 
 	// GetDRand returns a drand client
 	GetDRand() rand.DRander
+
+	// NewWithTx creates a new Logic instance but updates the keepers
+	// with a new database transaction for atomic operations.
+	// autoFinish: Commits/Discards the transaction after every operation
+	// renew: Renews the transaction after every operation (only works if
+	// autoFinish is true)
+	// NewWithTx(autoFinish, renew bool) AtomicLogic
 }
 
 // Keepers describes modules for accessing the state and storage

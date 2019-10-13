@@ -50,6 +50,9 @@ type TicketManager interface {
 	// QueryOne finds and returns a ticket that match the given query
 	QueryOne(q Ticket, queryOpt ...QueryOptions) (*Ticket, error)
 
+	// Remove deletes a ticket by its hash
+	Remove(hash string) error
+
 	// Stop stops the ticket manager
 	Stop() error
 }

@@ -36,7 +36,7 @@ type tickPurchaseTx struct {
 type App struct {
 	db                        storage.Engine
 	node                      types.CommonNode
-	logic                     types.Logic
+	logic                     types.AtomicLogic
 	cfg                       *config.EngineConfig
 	validateTx                validators.ValidateTxFunc
 	wBlock                    *types.BlockInfo
@@ -45,7 +45,7 @@ type App struct {
 	ticketPurchaseTxs         []*tickPurchaseTx
 	ticketMgr                 types.TicketManager
 	epochSecretTx             *types.Transaction
-	curBlockProposer          bool
+	isCurrentBlockProposer    bool
 	mature                    bool
 	latestUnsavedValidators   []*types.Validator
 	heightToSaveNewValidators int64
@@ -56,7 +56,7 @@ type App struct {
 func NewApp(
 	cfg *config.EngineConfig,
 	db storage.Engine,
-	logic types.Logic,
+	logic types.AtomicLogic,
 	ticketMgr types.TicketManager) *App {
 	return &App{
 		db:         db,
@@ -72,11 +72,13 @@ func NewApp(
 // InitChain is called once upon genesis.
 func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitChain {
 
+	stateTree := a.logic.StateTree()
+
 	a.log.Info("Initializing for the first time")
 	a.log.Info("Creating the chain and populating initial state...")
 
 	// State must be empty
-	if a.logic.StateTree().WorkingHash() != nil {
+	if stateTree.WorkingHash() != nil {
 		panic(fmt.Errorf("At init, state must be empty...It is not empty"))
 	}
 
@@ -90,9 +92,14 @@ func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitCh
 		panic(errors.Wrap(err, "failed to index validators"))
 	}
 
-	workingHash := a.logic.StateTree().WorkingHash()
+	// Commit all data
+	if err := a.logic.Commit(); err != nil {
+		panic(errors.Wrap(err, "failed to commit"))
+	}
+
 	a.log.Info("Node initialization has completed",
-		"GenesisHash", util.BytesToHash(workingHash).HexStr())
+		"GenesisHash", util.BytesToHash(stateTree.WorkingHash()).HexStr(),
+		"StateVersion", stateTree.Version())
 
 	return abcitypes.ResponseInitChain{}
 }
@@ -167,11 +174,11 @@ func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBegi
 	a.wBlock.ProposerAddress = common.HexBytes(req.GetHeader().ProposerAddress).String()
 
 	if a.cfg.G().PrivVal.GetAddress().String() == a.wBlock.ProposerAddress {
-		a.curBlockProposer = true
+		a.isCurrentBlockProposer = true
 	}
 
 	a.log.Info(color.YellowString("🔨 Processing a new block"),
-		"Height", req.Header.Height, "IsProposer", a.curBlockProposer)
+		"Height", req.Header.Height, "IsProposer", a.isCurrentBlockProposer)
 
 	// If the network is still immature, return immediately.
 	// The network is matured if it has reached a specific block height
@@ -412,6 +419,18 @@ func isEndOfEpoch(height int64) bool {
 	return height%int64(params.NumBlocksPerEpoch) == 0
 }
 
+// commitPanic cleans up resources or data that should not exit
+// due to commit panicking
+func (a *App) commitPanic(err error) {
+
+	// Delete any already indexed ticket purchased in this block
+	for _, t := range a.ticketPurchaseTxs {
+		a.ticketMgr.Remove(t.Tx.GetID())
+	}
+
+	panic(err)
+}
+
 // Commit persist the application state.
 // It must return a merkle root hash of the application state.
 func (a *App) Commit() abcitypes.ResponseCommit {
@@ -422,6 +441,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		Height:      a.wBlock.Height,
 		Hash:        a.wBlock.Hash,
 		LastAppHash: a.wBlock.LastAppHash,
+		AppHash:     a.logic.StateTree().WorkingHash(),
 	}
 
 	// Add epoch secret data to the block info object and
@@ -433,7 +453,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		bi.EpochRound = estx.SecretRound
 		bi.InvalidEpochSecret = estx.IsInvalidated()
 		if err := a.logic.SysKeeper().SetHighestDrandRound(estx.SecretRound); err != nil {
-			panic(errors.Wrap(err, "failed to save highest drand round"))
+			a.commitPanic(errors.Wrap(err, "failed to save highest drand round"))
 		}
 	} else {
 		// Ok, so no epoch secret tx in this block. We need
@@ -444,17 +464,15 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		}
 	}
 
-	bi.AppHash = a.logic.StateTree().WorkingHash()
-
 	// Save the block information
 	if err := a.logic.SysKeeper().SaveBlockInfo(bi); err != nil {
-		panic(errors.Wrap(err, "failed to save block information"))
+		a.commitPanic(errors.Wrap(err, "failed to save block information"))
 	}
 
 	// Index any purchased ticket we have collected so far.
 	for _, ptx := range a.ticketPurchaseTxs {
 		if err := a.ticketMgr.Index(ptx.Tx, uint64(a.wBlock.Height), ptx.index); err != nil {
-			panic(errors.Wrap(err, "failed to index ticket"))
+			a.commitPanic(errors.Wrap(err, "failed to index ticket"))
 		}
 	}
 
@@ -465,21 +483,26 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	if a.wBlock.Height == a.heightToSaveNewValidators {
 		if err := a.logic.ValidatorKeeper().
 			Index(a.wBlock.Height-2, a.latestUnsavedValidators); err != nil {
-			panic(errors.Wrap(err, "failed to update current validators"))
+			a.commitPanic(errors.Wrap(err, "failed to update current validators"))
 		}
 	}
 
 	// Save the uncommitted changes to the tree
 	appHash, _, err := a.logic.StateTree().SaveVersion()
 	if err != nil {
-		panic(errors.Wrap(err, "failed to commit: could not save new tree version"))
+		a.commitPanic(errors.Wrap(err, "failed to commit: could not save new tree version"))
 	}
 
 	// Index the un-indexed txs
 	for _, t := range a.unIndexedTxs {
 		if err := a.logic.TxKeeper().Index(t); err != nil {
-			panic(errors.Wrap(err, "failed to index transaction after commit"))
+			a.commitPanic(errors.Wrap(err, "failed to index transaction after commit"))
 		}
+	}
+
+	// Commit all state changes
+	if err := a.logic.Commit(); err != nil {
+		panic(errors.Wrap(err, "failed to commit"))
 	}
 
 	return abcitypes.ResponseCommit{
@@ -493,7 +516,7 @@ func (a *App) reset() {
 	a.txIndex = 0
 	a.epochSecretTx = nil
 	a.mature = false
-	a.curBlockProposer = false
+	a.isCurrentBlockProposer = false
 	a.unIndexedTxs = []*types.Transaction{}
 
 	// Only reset heightToSaveNewValidators if the current height is

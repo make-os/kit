@@ -12,8 +12,6 @@ import (
 
 	"github.com/makeos/mosdef/mempool"
 
-	"github.com/makeos/mosdef/storage/tree"
-
 	logic "github.com/makeos/mosdef/logic"
 
 	"github.com/makeos/mosdef/tmrpc"
@@ -50,7 +48,7 @@ type Node struct {
 	tm        *nm.Node
 	service   types.Service
 	tmrpc     *tmrpc.TMRPC
-	logic     types.Logic
+	logic     types.AtomicLogic
 	txReactor *mempool.Reactor
 	ticketMgr types.TicketManager
 }
@@ -117,14 +115,8 @@ func (n *Node) Start() error {
 	// Read private validator
 	pv := privval.LoadFilePV(n.tmcfg.PrivValidatorKeyFile(), n.tmcfg.PrivValidatorStateFile())
 
-	// Load the state tree
-	dbAdapter := storage.NewTMDBAdapter(n.db.F(true, true))
-	tree := tree.NewSafeTree(dbAdapter, 128)
-	if _, err = tree.Load(); err != nil {
-		return errors.Wrap(err, "failed to load state tree")
-	}
-
-	n.logic = logic.New(n.db, tree, n.cfg)
+	// Create the logic provider
+	n.logic = logic.New(n.db, n.cfg)
 
 	// Create ticket manager
 	n.ticketMgr, err = ticket.NewManager(n.cfg, n.logic)
