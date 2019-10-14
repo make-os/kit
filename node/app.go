@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
+	"github.com/k0kubun/pp"
 
 	"github.com/makeos/mosdef/crypto"
 
@@ -310,6 +311,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 
 	// Perform validation
 	if err = a.validateTx(tx, -1, a.logic); err != nil {
+		pp.Println(err)
 		return abcitypes.ResponseDeliverTx{
 			Code: types.ErrCodeTxFailedValidation,
 			Log:  err.Error(),
@@ -446,10 +448,11 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 
 	// Construct a new block information object
 	bi := &types.BlockInfo{
-		Height:      a.wBlock.Height,
-		Hash:        a.wBlock.Hash,
-		LastAppHash: a.wBlock.LastAppHash,
-		AppHash:     a.logic.StateTree().WorkingHash(),
+		Height:          a.wBlock.Height,
+		Hash:            a.wBlock.Hash,
+		LastAppHash:     a.wBlock.LastAppHash,
+		ProposerAddress: a.wBlock.ProposerAddress,
+		AppHash:         a.logic.StateTree().WorkingHash(),
 	}
 
 	// Add epoch secret data to the block info object and

@@ -171,7 +171,7 @@ var _ = Describe("Manager", func() {
 			})
 		})
 
-		When("tx.To is set", func() {
+		When("tx.To (proposer) is set  - delegated ticket", func() {
 			var tickets []*types.Ticket
 			var tx *types.Transaction
 			var proposer = crypto.NewKeyFromIntSeed(2)
@@ -206,6 +206,44 @@ var _ = Describe("Manager", func() {
 
 			Specify("that proposer public key is set to the value of tx.To", func() {
 				Expect(tickets[0].ProposerPubKey).To(Equal(tx.To.String()))
+			})
+		})
+
+		When("tx.To (proposer) is set and the proposer's commission rate is 50", func() {
+			var tickets []*types.Ticket
+			var tx *types.Transaction
+			var proposer = crypto.NewKeyFromIntSeed(2)
+			var delegator = crypto.NewKeyFromIntSeed(3)
+
+			BeforeEach(func() {
+				logic.AccountKeeper().Update(proposer.Addr(), &types.Account{
+					Balance:             util.String("1000"),
+					Stakes:              types.BareAccountStakes(),
+					DelegatorCommission: 50,
+				})
+			})
+
+			BeforeEach(func() {
+				params.InitialTicketPrice = 10
+				params.NumBlocksPerPriceWindow = 100
+				params.PricePercentIncrease = 0.2
+				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 2})
+				Expect(err).To(BeNil())
+				Expect(logic.Sys().GetCurValidatorTicketPrice()).To(Equal(float64(10)))
+				tx = &types.Transaction{
+					Value:        util.String("35"),
+					SenderPubKey: util.String(delegator.PubKey().Base58()),
+					To:           util.String(proposer.PubKey().Base58()),
+				}
+				err = mgr.Index(tx, 100, 1)
+				Expect(err).To(BeNil())
+
+				tickets, err = mgr.store.Query(types.Ticket{})
+				Expect(err).To(BeNil())
+			})
+
+			Specify("that the ticket has a commission rate of 50", func() {
+				Expect(tickets[0].CommissionRate).To(Equal(float64(50)))
 			})
 		})
 	})

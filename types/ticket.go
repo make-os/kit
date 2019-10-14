@@ -2,16 +2,17 @@ package types
 
 // Ticket represents a validator ticket
 type Ticket struct {
-	Hash           string `gorm:"column:hash" json:"hash"`                     // Hash of the ticket purchase transaction
-	Unbonded       bool   `gorm:"column:unbonded" json:"unbonded"`             // Indicates that the ticket has been unbonded
-	DecayBy        uint64 `gorm:"column:decayBy" json:"decayBy"`               // Block height when the ticket becomes decayed
-	MatureBy       uint64 `gorm:"column:matureBy" json:"matureBy"`             // Block height when the ticket enters maturity.
-	Power          int64  `gorm:"column:power" json:"power,omitempty"`         // Power represents the strength of a ticket
-	ProposerPubKey string `gorm:"column:proposerPubKey" json:"proposerPubKey"` // The public key of the validator that owns the ticket.
-	Delegator      string `gorm:"column:delegator" json:"delegator"`           // Delegator is the address of the original creator of the ticket
-	Height         uint64 `gorm:"column:height" json:"height"`                 // The block height where this ticket was seen.
-	Index          int    `gorm:"column:index" json:"index"`                   // The index of the ticket in the transactions list.
-	Value          string `gorm:"column:value" json:"value"`                   // The value paid for the ticket (as a child - then for the parent ticket)
+	Hash           string  `gorm:"column:hash" json:"hash"`                     // Hash of the ticket purchase transaction
+	Unbonded       bool    `gorm:"column:unbonded" json:"unbonded"`             // Indicates that the ticket has been unbonded
+	DecayBy        uint64  `gorm:"column:decayBy" json:"decayBy"`               // Block height when the ticket becomes decayed
+	MatureBy       uint64  `gorm:"column:matureBy" json:"matureBy"`             // Block height when the ticket enters maturity.
+	Power          int64   `gorm:"column:power" json:"power,omitempty"`         // Power represents the strength of a ticket
+	ProposerPubKey string  `gorm:"column:proposerPubKey" json:"proposerPubKey"` // The public key of the validator that owns the ticket.
+	Delegator      string  `gorm:"column:delegator" json:"delegator"`           // Delegator is the address of the original creator of the ticket
+	Height         uint64  `gorm:"column:height" json:"height"`                 // The block height where this ticket was seen.
+	Index          int     `gorm:"column:index" json:"index"`                   // The index of the ticket in the transactions list.
+	Value          string  `gorm:"column:value" json:"value"`                   // The value paid for the ticket (as a child - then for the parent ticket)
+	CommissionRate float64 `gorm:"column:commissionRate" json:"commissionRate"` // The percentage of reward paid to the validator
 }
 
 // QueryOptions describe how a query should be executed.

@@ -19,9 +19,9 @@ func NewAccountKeeper(state *tree.SafeTree) *AccountKeeper {
 }
 
 // GetAccount returns an account by address.
-// It returns an empty Account if no account is found.
+// CONTRACT: It returns an empty Account if no account is found.
 // If block number is specified and greater than 0,
-// the account  state at the given block number is
+// the account state at the given block number is
 // returned, otherwise the latest is returned
 func (a *AccountKeeper) GetAccount(address util.String, blockNum ...int64) *types.Account {
 

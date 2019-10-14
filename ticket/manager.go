@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"math/rand"
 
+	"github.com/makeos/mosdef/crypto"
+
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
@@ -44,6 +46,12 @@ func (m *Manager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) 
 	if tx.To.String() != "" {
 		proposerPubKey = tx.To.String()
 		ticket.Delegator = tx.GetFrom().String()
+
+		// Since this is a delegated ticket, we need to get the
+		// proposer's commission rate from their account
+		pk, _ := crypto.PubKeyFromBase58(proposerPubKey)
+		proposerAcct := m.logic.AccountKeeper().GetAccount(pk.Addr())
+		ticket.CommissionRate = proposerAcct.DelegatorCommission
 	}
 
 	ticket.Hash = tx.GetHash().HexStr()
