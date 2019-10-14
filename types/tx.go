@@ -25,6 +25,9 @@ var (
 	// TxTypeUnbondTicket represents a transaction that un-bonds a decayed
 	// and thawed ticket
 	TxTypeUnbondTicket = 0x3
+
+	// TxTypeSetDelegatorCommission sets the delegator commission
+	TxTypeSetDelegatorCommission = 0x4
 )
 
 // Transaction meta keys

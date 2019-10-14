@@ -59,4 +59,7 @@ var (
 
 	// MaxValidatorsPerEpoch is the maximum number validators per epoch
 	MaxValidatorsPerEpoch = 1
+
+	// MinDelegatorCommission is the number of percentage delegators pay validators
+	MinDelegatorCommission = decimal.NewFromFloat(10)
 )

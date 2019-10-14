@@ -59,10 +59,12 @@ func (t *Transaction) Exec(tx *types.Transaction) error {
 		return t.transferCoin(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce())
 	case types.TxTypeGetTicket:
 		return t.stakeCoinAsValidator(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce())
-	case types.TxTypeEpochSecret:
-		return nil
 	case types.TxTypeUnbondTicket:
 		return t.unStakeCoinAsValidator(tx.SenderPubKey, tx.TicketID)
+	case types.TxTypeSetDelegatorCommission:
+		return t.setDelegatorCommission(tx.SenderPubKey, tx.Value)
+	case types.TxTypeEpochSecret:
+		return nil
 	default:
 		return fmt.Errorf("unknown transaction type")
 	}
@@ -123,7 +125,7 @@ func (t *Transaction) CanTransferCoin(
 
 // stakeCoinAsValidator moves a given amount from the spendable
 // balance of an account to the validator stake balance.
-// EXPECT: senderPubKey must have been validated by caller.
+// EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) stakeCoinAsValidator(
 	senderPubKey,
 	value,
@@ -131,13 +133,6 @@ func (t *Transaction) stakeCoinAsValidator(
 	nonce uint64) error {
 
 	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
-
-	// Ensure the account has sufficient balance and nonce
-	if err := t.CanTransferCoin(types.TxTypeGetTicket, spk, "",
-		value, fee, nonce); err != nil {
-		return err
-	}
-
 	acctKeeper := t.logic.AccountKeeper()
 
 	// Get sender accounts
@@ -162,7 +157,7 @@ func (t *Transaction) stakeCoinAsValidator(
 }
 
 // unStakeCoinAsValidator reclaims validator stake on the sender account.
-// EXPECT: SenderPubKey to have been validated by caller.
+// EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) unStakeCoinAsValidator(senderPubKey util.String, ticketID []byte) error {
 
 	// Get the ticket
@@ -174,19 +169,19 @@ func (t *Transaction) unStakeCoinAsValidator(senderPubKey util.String, ticketID 
 	}
 
 	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
-
 	acctKeeper := t.logic.AccountKeeper()
 
 	// Get sender accounts
 	sender := spk.Addr()
 	senderAcct := acctKeeper.GetAccount(sender)
 
-	// Get the current validator stakes, subtract the 
-	// ticket value from it and update the account
+	// Get the current validator stakes, subtract the ticket value from
+	// it and update the account and increment nonce
 	curValStake := senderAcct.Stakes.Get(types.StakeNameValidator)
 	ticketVal := util.String(ticket.Value)
 	newValStake := curValStake.Decimal().Sub(ticketVal.Decimal()).String()
 	senderAcct.Stakes.Add(types.StakeNameValidator, util.String(newValStake))
+	senderAcct.Nonce = senderAcct.Nonce + 1
 
 	// Update the sender account
 	acctKeeper.Update(sender, senderAcct)
@@ -201,21 +196,11 @@ func (t *Transaction) unStakeCoinAsValidator(senderPubKey util.String, ticketID 
 
 // transferCoin transfer units of the native currency
 // from a sender account to another account
-// EXPECT: SenderPubKey to have been validated by caller.
-func (t *Transaction) transferCoin(
-	senderPubKey,
-	recipientAddr,
-	value,
-	fee util.String,
+// EXPECT: Syntactic and consistency validation to have been performed by caller.
+func (t *Transaction) transferCoin(senderPubKey, recipientAddr, value, fee util.String,
 	nonce uint64) error {
 
 	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
-
-	// Ensure the account has sufficient balance and nonce
-	if err := t.CanTransferCoin(types.TxTypeTransferCoin, spk, recipientAddr,
-		value, fee, nonce); err != nil {
-		return err
-	}
 
 	// Get sender and recipient accounts
 	acctKeeper := t.logic.AccountKeeper()
@@ -236,6 +221,26 @@ func (t *Transaction) transferCoin(
 	recipientBal := recipientAcct.Balance.Decimal()
 	recipientAcct.Balance = util.String(recipientBal.Add(value.Decimal()).String())
 	acctKeeper.Update(recipientAddr, recipientAcct)
+
+	return nil
+}
+
+// setDelegatorCommission sets the delegator commission of an account
+func (t *Transaction) setDelegatorCommission(senderPubKey, value util.String) error {
+
+	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
+	acctKeeper := t.logic.AccountKeeper()
+
+	// Get sender accounts
+	sender := spk.Addr()
+	senderAcct := acctKeeper.GetAccount(sender)
+
+	// Set the new commission and increment nonce
+	senderAcct.DelegatorCommission, _ = value.Decimal().Float64()
+	senderAcct.Nonce = senderAcct.Nonce + 1
+
+	// Update the sender account
+	acctKeeper.Update(sender, senderAcct)
 
 	return nil
 }

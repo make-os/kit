@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/shopspring/decimal"
+
 	"github.com/makeos/mosdef/params"
 
 	drandmocks "github.com/makeos/mosdef/crypto/rand/mocks"
@@ -78,7 +80,7 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".ValidateTxSyntax", func() {
-
+		params.MinDelegatorCommission = decimal.NewFromFloat(10)
 		var to = crypto.NewKeyFromIntSeed(1)
 		var txMissingSignature = &types.Transaction{Type: types.TxTypeTransferCoin, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: util.String(to.PubKey().Base58())}
 		var txInvalidSig = &types.Transaction{Type: types.TxTypeTransferCoin, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: util.String(to.PubKey().Base58())}
@@ -90,7 +92,6 @@ var _ = Describe("TxValidator", func() {
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, SecretRound: 1}, desc: "unexpected field `secretRound` is set", err: fmt.Errorf("field:secretRound, error:unexpected field")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: ""}, desc: "recipient not set", err: fmt.Errorf("field:to, error:recipient address is required")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: "abc"}, desc: "recipient not valid", err: fmt.Errorf("field:to, error:recipient address is not valid")},
-			{tx: &types.Transaction{Type: types.TxTypeGetTicket, To: "abc"}, desc: "recipient not a valid public key", err: fmt.Errorf("field:to, error:requires a valid public key of a validator to delegate to")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: to.Addr()}, desc: "value not provided", err: fmt.Errorf("field:value, error:value is required")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: to.Addr(), Value: "-1"}, desc: "value is negative", err: fmt.Errorf("field:value, error:negative figure not allowed")},
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: to.Addr(), Value: "1"}, desc: "fee not provided", err: fmt.Errorf("field:fee, error:fee is required")},
@@ -103,6 +104,10 @@ var _ = Describe("TxValidator", func() {
 			{tx: &types.Transaction{Type: types.TxTypeTransferCoin, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: "abc"}, desc: "sender pub key is not valid", err: fmt.Errorf("field:senderPubKey, error:sender public key is not valid")},
 			{tx: txMissingSignature, desc: "signature not provided", err: fmt.Errorf("field:sig, error:signature is required")},
 			{tx: txInvalidSig, desc: "signature not valid", err: fmt.Errorf("field:sig, error:signature is not valid")},
+			{tx: &types.Transaction{Type: types.TxTypeGetTicket, To: "abc"}, desc: "recipient not a valid public key", err: fmt.Errorf("field:to, error:requires a valid public key of a validator to delegate to")},
+			{tx: &types.Transaction{Type: types.TxTypeSetDelegatorCommission, To: "abc"}, desc: "unexpected field `to` is set", err: fmt.Errorf("field:to, error:unexpected field")},
+			{tx: &types.Transaction{Type: types.TxTypeSetDelegatorCommission, Value: "101"}, desc: "exceeded commission rate", err: fmt.Errorf("field:value, error:commission rate cannot exceed 100%%%%")},
+			{tx: &types.Transaction{Type: types.TxTypeSetDelegatorCommission, Value: "1"}, desc: "below commission rate", err: fmt.Errorf("field:value, error:commission rate cannot be below the minimum (10%%%%)")},
 		}
 
 		for _, c := range cases {
@@ -392,16 +397,22 @@ var _ = Describe("TxValidator", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:previousSecret, error:unexpected field"))
 			})
+
 			It("should not accept a set `secretRound` field", func() {
 				tx.SecretRound = 12
 				err := validators.CheckUnexpectedFields(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:secretRound, error:unexpected field"))
 			})
-		})
-	})
 
-	Describe(".CheckUnexpectedFields", func() {
+			It("should not accept a set `secretRound` field", func() {
+				tx.TicketID = []byte{1, 2}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:ticketID, error:unexpected field"))
+			})
+		})
+
 		When("check TxTypeEpochSecret", func() {
 			var tx *types.Transaction
 
@@ -465,10 +476,15 @@ var _ = Describe("TxValidator", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:unexpected field"))
 			})
-		})
-	})
 
-	Describe(".CheckUnexpectedFields", func() {
+			It("should not accept a set `secretRound` field", func() {
+				tx.TicketID = []byte{1, 2}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:ticketID, error:unexpected field"))
+			})
+		})
+
 		When("check TxTypeUnbondTicket", func() {
 			var tx *types.Transaction
 
@@ -515,6 +531,55 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckUnexpectedFields(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:secretRound, error:unexpected field"))
+			})
+		})
+
+		When("check TxTypeSetDelegatorCommission", func() {
+			var tx *types.Transaction
+
+			BeforeEach(func() {
+				tx = types.NewBareTx(types.TxTypeSetDelegatorCommission)
+				tx.Timestamp = 0
+			})
+
+			It("should not accept a set `meta` field", func() {
+				tx.SetMeta(map[string]interface{}{"a": 2})
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:meta, error:unexpected field"))
+			})
+
+			It("should not accept a set `to` field", func() {
+				tx.To = util.String("address")
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:to, error:unexpected field"))
+			})
+
+			It("should not accept a set `secret` field", func() {
+				tx.Secret = []byte{1, 2, 3}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:secret, error:unexpected field"))
+			})
+			It("should not accept a set `previousSecret` field", func() {
+				tx.PreviousSecret = []byte{1, 2, 3}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:previousSecret, error:unexpected field"))
+			})
+			It("should not accept a set `secretRound` field", func() {
+				tx.SecretRound = 12
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:secretRound, error:unexpected field"))
+			})
+
+			It("should not accept a set `secretRound` field", func() {
+				tx.TicketID = []byte{1, 2}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:ticketID, error:unexpected field"))
 			})
 		})
 	})

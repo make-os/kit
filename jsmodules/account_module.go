@@ -2,8 +2,10 @@ package jsmodules
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/makeos/mosdef/config"
+	"github.com/makeos/mosdef/crypto"
 
 	"github.com/makeos/mosdef/util"
 
@@ -78,6 +80,11 @@ func (m *AccountModule) namespacedFuncs() []*types.JSModuleFunc {
 			Name:        "getPV",
 			Value:       m.getPrivateValidator,
 			Description: "Get the private validator information",
+		},
+		&types.JSModuleFunc{
+			Name:        "setDelegatorCommissionRate",
+			Value:       m.setDelegatorCommissionRate,
+			Description: "Set the percentage of reward to share with a delegator",
 		},
 	}
 }
@@ -221,4 +228,45 @@ func (m *AccountModule) getPrivateValidator(includePrivKey ...bool) interface{} 
 		info["privateKey"] = key.PrivKey().Base58()
 	}
 	return info
+}
+
+// setDelegatorCommissionRate sets the delegator commission for an account
+func (m *AccountModule) setDelegatorCommissionRate(txObj interface{}, options ...interface{}) interface{} {
+	var err error
+	tx, key := processTxArgs(txObj, options...)
+	tx.Type = types.TxTypeSetDelegatorCommission
+
+	// Set tx public key
+	pk, _ := crypto.PrivKeyFromBase58(key)
+	tx.SetSenderPubKey(util.String(crypto.NewKeyFromPrivKey(pk).PubKey().Base58()))
+
+	// Set timestamp if not already set
+	if tx.Timestamp == 0 {
+		tx.Timestamp = time.Now().Unix()
+	}
+
+	// Set nonce if nonce is not provided
+	if tx.Nonce == 0 {
+		nonce, err := m.service.GetNonce(tx.GetFrom())
+		if err != nil {
+			panic("failed to get sender's nonce")
+		}
+		tx.Nonce = nonce + 1
+	}
+
+	// Sign the tx
+	tx.Sig, err = tx.Sign(key)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to sign transaction"))
+	}
+
+	// Process the transaction
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
+	}
+
+	return util.EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
 }

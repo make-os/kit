@@ -525,9 +525,28 @@ var _ = Describe("App", func() {
 			})
 		})
 
+		When("tx is invalid", func() {
+			var res abcitypes.ResponseDeliverTx
+			BeforeEach(func() {
+				tx := types.NewTx(100000, 0, sender.Addr(), sender, "10", "1", 1)
+				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
+			})
+
+			It("should return code=types.ErrCodeTxFailedValidation", func() {
+				Expect(res.Code).To(Equal(types.ErrCodeTxFailedValidation))
+			})
+		})
+
 		When("tx type is TxTypeGetTicket; max. TxTypeGetTicket per "+
 			"block is 1; 1 TxTypeGetTicket tx has previously been seen", func() {
 			var res abcitypes.ResponseDeliverTx
+
+			BeforeEach(func() {
+				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+					return nil
+				}
+			})
+
 			BeforeEach(func() {
 				params.MaxValTicketsPerBlock = 1
 				app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{})
@@ -543,6 +562,12 @@ var _ = Describe("App", func() {
 		})
 
 		When("tx type is TxTypeGetTicket and is successfully executed", func() {
+			BeforeEach(func() {
+				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+					return nil
+				}
+			})
+
 			BeforeEach(func() {
 				tx := types.NewTx(types.TxTypeGetTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
@@ -562,6 +587,13 @@ var _ = Describe("App", func() {
 		When("tx type is TxTypeEpochSecret and the current block "+
 			"is not last in the current epoch", func() {
 			var res abcitypes.ResponseDeliverTx
+
+			BeforeEach(func() {
+				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+					return nil
+				}
+			})
+
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
 				app.wBlock.Height = 4
@@ -582,6 +614,12 @@ var _ = Describe("App", func() {
 		When("tx type TxTypeEpochSecret has been seen/cached", func() {
 			var res abcitypes.ResponseDeliverTx
 			var tx *types.Transaction
+
+			BeforeEach(func() {
+				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+					return nil
+				}
+			})
 
 			BeforeEach(func() {
 				tx = types.NewBareTx(types.TxTypeEpochSecret)
@@ -607,6 +645,12 @@ var _ = Describe("App", func() {
 		When("tx type TxTypeEpochSecret is successfully executed", func() {
 			var res abcitypes.ResponseDeliverTx
 			var tx *types.Transaction
+
+			BeforeEach(func() {
+				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+					return nil
+				}
+			})
 
 			BeforeEach(func() {
 				tx = types.NewBareTx(types.TxTypeEpochSecret)
@@ -640,6 +684,12 @@ var _ = Describe("App", func() {
 		When("tx type TxTypeEpochSecret but it is stale", func() {
 			var res abcitypes.ResponseDeliverTx
 			var tx *types.Transaction
+
+			BeforeEach(func() {
+				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+					return nil
+				}
+			})
 
 			BeforeEach(func() {
 				tx = types.NewBareTx(types.TxTypeEpochSecret)
@@ -679,6 +729,12 @@ var _ = Describe("App", func() {
 		When("tx type TxTypeEpochSecret but it has an early, unexpected round", func() {
 			var res abcitypes.ResponseDeliverTx
 			var tx *types.Transaction
+
+			BeforeEach(func() {
+				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+					return nil
+				}
+			})
 
 			BeforeEach(func() {
 				tx = types.NewBareTx(types.TxTypeEpochSecret)

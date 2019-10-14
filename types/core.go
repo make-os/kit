@@ -46,9 +46,10 @@ func BareAccount() *Account {
 // Account represents a user's identity and includes
 // balance and other information.
 type Account struct {
-	Balance util.String   `json:"balance"`
-	Nonce   uint64        `json:"nonce"`
-	Stakes  AccountStakes `json:"staked"`
+	Balance             util.String   `json:"balance"`
+	Nonce               uint64        `json:"nonce"`
+	Stakes              AccountStakes `json:"stakes"`
+	DelegatorCommission float64       `json:"delegatorCommission"`
 }
 
 // GetBalance returns the account balance
@@ -68,6 +69,7 @@ func (a *Account) Bytes() []byte {
 		a.Balance,
 		a.Nonce,
 		a.Stakes,
+		a.DelegatorCommission,
 	})
 }
 
@@ -121,8 +123,9 @@ func NewAccountFromBytes(bz []byte) (*Account, error) {
 	}
 
 	return &Account{
-		Balance: util.String(values[0].(string)),
-		Nonce:   values[1].(uint64),
-		Stakes:  stakes,
+		Balance:             util.String(values[0].(string)),
+		Nonce:               values[1].(uint64),
+		Stakes:              stakes,
+		DelegatorCommission: values[3].(float64),
 	}, nil
 }

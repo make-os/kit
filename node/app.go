@@ -153,7 +153,7 @@ func (a *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 		}
 	}
 
-	// Perform syntactic validation
+	// Perform validation
 	if err = a.validateTx(tx, -1, a.logic); err != nil {
 		return abcitypes.ResponseCheckTx{
 			Code: types.ErrCodeTxFailedValidation,
@@ -305,6 +305,14 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 		return abcitypes.ResponseDeliverTx{
 			Code: types.ErrCodeTxBadEncode,
 			Log:  "unable to decode to types.Transaction",
+		}
+	}
+
+	// Perform validation
+	if err = a.validateTx(tx, -1, a.logic); err != nil {
+		return abcitypes.ResponseDeliverTx{
+			Code: types.ErrCodeTxFailedValidation,
+			Log:  err.Error(),
 		}
 	}
 

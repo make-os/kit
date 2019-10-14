@@ -25,6 +25,7 @@ var KnownTransactionTypes = []int{
 	types.TxTypeTransferCoin,
 	types.TxTypeGetTicket,
 	types.TxTypeUnbondTicket,
+	types.TxTypeSetDelegatorCommission,
 }
 
 var validTypeRule = func(err error) func(interface{}) error {
@@ -77,7 +78,7 @@ var validValueRule = func(field string, index int) func(interface{}) error {
 	return func(val interface{}) error {
 		dVal, _err := decimal.NewFromString(val.(util.String).String())
 		if _err != nil {
-			return types.FieldErrorWithIndex(index, field, "could not convert to decimal")
+			return types.FieldErrorWithIndex(index, field, "invalid number; must be numeric")
 		}
 		if dVal.LessThan(decimal.Zero) {
 			return types.FieldErrorWithIndex(index, field, "negative figure not allowed")
@@ -109,7 +110,8 @@ func ValidateTxs(txs []*types.Transaction, logic types.Logic) error {
 // ValidateTx validates a transaction
 func ValidateTx(tx *types.Transaction, i int, logic types.Logic) error {
 
-	if tx.Type == types.TxTypeEpochSecret {
+	switch tx.Type {
+	case types.TxTypeEpochSecret:
 		goto checkEpochSecret
 	}
 
@@ -225,9 +227,10 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 		return err
 	}
 
-	// For non ticket purchasing transactions,
 	// The recipient's address must be set and it must be valid.
-	if tx.Type != types.TxTypeGetTicket && tx.Type != types.TxTypeUnbondTicket {
+	if tx.Type != types.TxTypeGetTicket &&
+		tx.Type != types.TxTypeUnbondTicket &&
+		tx.Type != types.TxTypeSetDelegatorCommission {
 		if err := v.Validate(tx.GetTo(),
 			v.Required.Error(types.FieldErrorWithIndex(index, "to",
 				"recipient address is required").Error()),
@@ -239,7 +242,7 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 	} else {
 		// For ticket purchasing transactions, the recipient's address
 		// must be a valid validator's public key if it is set
-		if tx.To.String() != "" {
+		if tx.To.String() != "" && tx.Type == types.TxTypeGetTicket {
 			if err := v.Validate(tx.To, v.By(validPubKeyRule(types.FieldErrorWithIndex(index, "to",
 				"requires a valid public key of a validator to delegate to")))); err != nil {
 				return err
@@ -253,6 +256,20 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 			"value is required").Error()), v.By(validValueRule("value", index)),
 	); err != nil {
 		return err
+	}
+
+	if tx.Type == types.TxTypeSetDelegatorCommission {
+		// Value cannot be zero or less than the minimum commission
+		if tx.Value.Decimal().LessThan(params.MinDelegatorCommission) {
+			minPct := params.MinDelegatorCommission.String()
+			return types.FieldErrorWithIndex(index, "value",
+				"commission rate cannot be below the minimum ("+minPct+"%%%%)")
+		}
+
+		// Value cannot be greater than 100
+		if tx.Value.Decimal().GreaterThan(decimal.NewFromFloat(100)) {
+			return types.FieldErrorWithIndex(index, "value", "commission rate cannot exceed 100%%%%")
+		}
 	}
 
 	if tx.Type != types.TxTypeUnbondTicket {
@@ -351,6 +368,7 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
 		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
 		unExpected = append(unExpected, []interface{}{"secretRound", tx.SecretRound})
+		unExpected = append(unExpected, []interface{}{"ticketID", tx.TicketID})
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -367,6 +385,7 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		unExpected = append(unExpected, []interface{}{"timestamp", tx.Timestamp})
 		unExpected = append(unExpected, []interface{}{"fee", tx.Fee})
 		unExpected = append(unExpected, []interface{}{"sig", tx.Sig})
+		unExpected = append(unExpected, []interface{}{"ticketID", tx.TicketID})
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -381,6 +400,20 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
 		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
 		unExpected = append(unExpected, []interface{}{"secretRound", tx.SecretRound})
+		for _, item := range unExpected {
+			if IsSet(item[1]) {
+				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
+			}
+		}
+	}
+
+	// Check for unexpected field for TxTypeSetDelegatorCommission
+	if txType == types.TxTypeSetDelegatorCommission {
+		unExpected = append(unExpected, []interface{}{"to", tx.To})
+		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
+		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
+		unExpected = append(unExpected, []interface{}{"secretRound", tx.SecretRound})
+		unExpected = append(unExpected, []interface{}{"ticketID", tx.TicketID})
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -424,8 +457,11 @@ func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) 
 		return types.FieldErrorWithIndex(index, "senderPubKey", err.Error())
 	}
 
-	if tx.Type == types.TxTypeUnbondTicket {
+	switch tx.Type {
+	case types.TxTypeUnbondTicket:
 		goto ticketUnbond
+	case types.TxTypeSetDelegatorCommission:
+		return nil
 	}
 
 	// Check whether the transaction is consistent with
