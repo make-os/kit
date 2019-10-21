@@ -104,7 +104,7 @@ var _ = Describe("TxValidator", func() {
 			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: "abc"}, desc: "sender pub key is not valid", err: fmt.Errorf("field:senderPubKey, error:sender public key is not valid")},
 			{tx: txMissingSignature, desc: "signature not provided", err: fmt.Errorf("field:sig, error:signature is required")},
 			{tx: txInvalidSig, desc: "signature not valid", err: fmt.Errorf("field:sig, error:signature is not valid")},
-			{tx: &types.Transaction{Type: types.TxTypeGetTicket, To: "abc"}, desc: "recipient not a valid public key", err: fmt.Errorf("field:to, error:requires a valid public key of a validator to delegate to")},
+			{tx: &types.Transaction{Type: types.TxTypeGetValidatorTicket, To: "abc"}, desc: "recipient not a valid public key", err: fmt.Errorf("field:to, error:requires a valid public key of a validator to delegate to")},
 			{tx: &types.Transaction{Type: types.TxTypeSetDelegatorCommission, To: "abc"}, desc: "unexpected field `to` is set", err: fmt.Errorf("field:to, error:unexpected field")},
 			{tx: &types.Transaction{Type: types.TxTypeSetDelegatorCommission, Value: "101"}, desc: "exceeded commission rate", err: fmt.Errorf("field:value, error:commission rate cannot exceed 100%%%%")},
 			{tx: &types.Transaction{Type: types.TxTypeSetDelegatorCommission, Value: "1"}, desc: "below commission rate", err: fmt.Errorf("field:value, error:commission rate cannot be below the minimum (10%%%%)")},
@@ -216,11 +216,11 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckUnexpectedFields", func() {
-		When("check TxTypeGetTicket", func() {
+		When("check TxTypeGetValidatorTicket", func() {
 			var tx *types.Transaction
 
 			BeforeEach(func() {
-				tx = types.NewBareTx(types.TxTypeGetTicket)
+				tx = types.NewBareTx(types.TxTypeGetValidatorTicket)
 			})
 
 			It("should not accept a set `meta` field", func() {

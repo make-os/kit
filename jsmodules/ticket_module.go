@@ -84,7 +84,7 @@ func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{
 
 	var err error
 	tx, key := processTxArgs(txObj, options...)
-	tx.Type = types.TxTypeGetTicket
+	tx.Type = types.TxTypeGetValidatorTicket
 
 	// Set tx public key
 	pk, _ := crypto.PrivKeyFromBase58(key)

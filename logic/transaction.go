@@ -61,7 +61,7 @@ func (t *Transaction) Exec(tx *types.Transaction, chainHeight uint64) error {
 	switch tx.Type {
 	case types.TxTypeCoinTransfer:
 		return t.execCoinTransfer(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce(), chainHeight)
-	case types.TxTypeGetTicket:
+	case types.TxTypeGetValidatorTicket:
 		return t.execValidatorStake(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce(), chainHeight)
 	case types.TxTypeSetDelegatorCommission:
 		return t.setDelegatorCommission(tx.SenderPubKey, tx.Value)
@@ -96,7 +96,7 @@ func (t *Transaction) CanExecCoinTransfer(
 
 	// Ensure recipient address is valid.
 	// Ignore for ticket purchases tx as a recipient address is not required.
-	if txType != types.TxTypeGetTicket {
+	if txType != types.TxTypeGetValidatorTicket {
 		if err = crypto.IsValidAddr(recipientAddr.String()); err != nil {
 			return fmt.Errorf("invalid recipient address: %s", err)
 		}
@@ -104,7 +104,7 @@ func (t *Transaction) CanExecCoinTransfer(
 
 	// For validator ticket transaction:
 	// The tx value must be equal or greater than the current ticket price.
-	if txType == types.TxTypeGetTicket {
+	if txType == types.TxTypeGetValidatorTicket {
 		curTicketPrice := t.logic.Sys().GetCurValidatorTicketPrice()
 		if value.Decimal().LessThan(decimal.NewFromFloat(curTicketPrice)) {
 			return fmt.Errorf("value is lower than the minimum ticket price (%f)",
