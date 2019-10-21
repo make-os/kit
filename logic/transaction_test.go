@@ -149,12 +149,12 @@ var _ = Describe("Transaction", func() {
 					})
 				})
 
-				Specify("that err='sender's spendable account balance is insufficient to cover ticket price (10.000000)' is returned", func() {
+				Specify("that err='value is lower than the minimum ticket price (10.000000)' is returned", func() {
 					err := txLogic.CanExecCoinTransfer(types.TxTypeGetTicket, sender.PubKey(),
 						"", util.String("4"),
 						util.String("0"), 1, 1)
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("sender's spendable account balance is insufficient to cover ticket price (10.000000)"))
+					Expect(err.Error()).To(Equal("value is lower than the minimum ticket price (10.000000)"))
 				})
 			})
 		})

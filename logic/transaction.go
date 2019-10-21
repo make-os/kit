@@ -104,13 +104,11 @@ func (t *Transaction) CanExecCoinTransfer(
 
 	// For validator ticket transaction:
 	// The tx value must be equal or greater than the current ticket price.
-	// TODO: The error message is wrong. It is the transaction value that is
-	// insufficient. Not the sender's account balance
 	if txType == types.TxTypeGetTicket {
 		curTicketPrice := t.logic.Sys().GetCurValidatorTicketPrice()
 		if value.Decimal().LessThan(decimal.NewFromFloat(curTicketPrice)) {
-			return fmt.Errorf("sender's spendable account balance is insufficient to cover "+
-				"ticket price (%f)", curTicketPrice)
+			return fmt.Errorf("value is lower than the minimum ticket price (%f)",
+				curTicketPrice)
 		}
 	}
 
