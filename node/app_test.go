@@ -573,7 +573,7 @@ var _ = Describe("App", func() {
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				txLogic := mocks.NewMockTxLogic(ctrl)
-				txLogic.EXPECT().PrepareExec(req).Return(abcitypes.ResponseDeliverTx{})
+				txLogic.EXPECT().PrepareExec(req, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				mockLogic.EXPECT().Tx().Return(txLogic)
 				app.logic = mockLogic
 				app.DeliverTx(req)
@@ -665,7 +665,7 @@ var _ = Describe("App", func() {
 
 				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockTxLogic := mocks.NewMockTxLogic(ctrl)
-				mockTxLogic.EXPECT().PrepareExec(gomock.Any()).Return(abcitypes.ResponseDeliverTx{
+				mockTxLogic.EXPECT().PrepareExec(gomock.Any(), gomock.Any()).Return(abcitypes.ResponseDeliverTx{
 					Code: uint32(0),
 				})
 				mockLogic.EXPECT().Tx().Return(mockTxLogic)
@@ -704,7 +704,7 @@ var _ = Describe("App", func() {
 
 				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockTxLogic := mocks.NewMockTxLogic(ctrl)
-				mockTxLogic.EXPECT().PrepareExec(gomock.Any()).Return(abcitypes.ResponseDeliverTx{
+				mockTxLogic.EXPECT().PrepareExec(gomock.Any(), gomock.Any()).Return(abcitypes.ResponseDeliverTx{
 					Code: types.ErrCodeTxInvalidValue,
 					Log:  types.ErrStaleSecretRound(1).Error(),
 				})
@@ -749,7 +749,7 @@ var _ = Describe("App", func() {
 
 				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockTxLogic := mocks.NewMockTxLogic(ctrl)
-				mockTxLogic.EXPECT().PrepareExec(gomock.Any()).Return(abcitypes.ResponseDeliverTx{
+				mockTxLogic.EXPECT().PrepareExec(gomock.Any(), gomock.Any()).Return(abcitypes.ResponseDeliverTx{
 					Code: types.ErrCodeTxInvalidValue,
 					Log:  types.ErrEarlySecretRound(1).Error(),
 				})

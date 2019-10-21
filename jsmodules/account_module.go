@@ -201,7 +201,13 @@ func (m *AccountModule) getSpendableBalance(address string, height ...int64) int
 	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
 		panic(types.ErrAccountUnknown)
 	}
-	return account.GetSpendableBalance().String()
+
+	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		panic(errors.Wrap(err, "failed to get current block info"))
+	}
+
+	return account.GetSpendableBalance(uint64(curBlockInfo.Height)).String()
 }
 
 // getStakedBalance returns the total staked coins of an account
@@ -210,7 +216,13 @@ func (m *AccountModule) getStakedBalance(address string, height ...int64) interf
 	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
 		panic(types.ErrAccountUnknown)
 	}
-	return account.Stakes.TotalStaked().String()
+
+	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		panic(errors.Wrap(err, "failed to get current block info"))
+	}
+
+	return account.Stakes.TotalStaked(uint64(curBlockInfo.Height)).String()
 }
 
 // getPrivateValidator returns the address, public and private keys of the validator.

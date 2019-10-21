@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
-	"github.com/k0kubun/pp"
 
 	"github.com/makeos/mosdef/crypto"
 
@@ -311,7 +310,6 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 
 	// Perform validation
 	if err = a.validateTx(tx, -1, a.logic); err != nil {
-		pp.Println(err)
 		return abcitypes.ResponseDeliverTx{
 			Code: types.ErrCodeTxFailedValidation,
 			Log:  err.Error(),
@@ -324,7 +322,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	}
 
 	// Execute the transaction (does not commit the state changes yet)
-	resp := a.logic.Tx().PrepareExec(req)
+	resp := a.logic.Tx().PrepareExec(req, uint64(a.wBlock.Height-1))
 
 	// Perform post execution operations
 	return *a.postExecChecks(tx, resp)

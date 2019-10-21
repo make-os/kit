@@ -196,18 +196,22 @@ type TxLogic interface {
 
 	// PrepareExec decodes the transaction from the abci request,
 	// performs final validation before executing the transaction.
-	PrepareExec(req abcitypes.RequestDeliverTx) abcitypes.ResponseDeliverTx
+	// chainHeight: The height of the block chain
+	PrepareExec(req abcitypes.RequestDeliverTx, chainHeight uint64) abcitypes.ResponseDeliverTx
 
 	// Exec execute a transaction that modifies the state.
 	// It returns error if the transaction is unknown.
-	Exec(tx *Transaction) error
+	// tx: The transaction to be processed
+	// chainHeight: The height of the block chain
+	Exec(tx *Transaction, chainHeight uint64) error
 
-	// CanTransferCoin checks whether the sender can transfer
-	// the value and fee of the transaction based on the
-	// current state of their account. It also ensures that the
-	// transaction's nonce is the next/expected nonce value.
-	CanTransferCoin(txType int, senderPubKey *crypto.PubKey, recipientAddr,
-		value, fee util.String, nonce uint64) error
+	// CanExecCoinTransfer checks whether the sender can transfer the value
+	// and fee of the transaction based on the current state of their
+	// account. It also ensures that the transaction's nonce is the
+	// next/expected nonce value.
+	// chainHeight: The height of the block chain
+	CanExecCoinTransfer(txType int, senderPubKey *crypto.PubKey, recipientAddr,
+		value, fee util.String, nonce, chainHeight uint64) error
 }
 
 // SysLogic provides an interface for managing system/app information

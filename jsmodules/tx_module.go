@@ -94,7 +94,7 @@ func processTxArgs(txObj interface{}, options ...interface{}) (*types.Transactio
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx = types.NewBareTx(types.TxTypeTransferCoin)
+	var tx = types.NewBareTx(types.TxTypeExecCoinTransfer)
 	if err = mapstructure.Decode(txObj, tx); err != nil {
 		panic(errors.Wrap(err, types.ErrArgDecode("types.Transaction", 0).Error()))
 	}

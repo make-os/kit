@@ -937,45 +937,45 @@ func (m *MockTxLogic) EXPECT() *MockTxLogicMockRecorder {
 }
 
 // PrepareExec mocks base method
-func (m *MockTxLogic) PrepareExec(req types0.RequestDeliverTx) types0.ResponseDeliverTx {
+func (m *MockTxLogic) PrepareExec(req types0.RequestDeliverTx, chainHeight uint64) types0.ResponseDeliverTx {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PrepareExec", req)
+	ret := m.ctrl.Call(m, "PrepareExec", req, chainHeight)
 	ret0, _ := ret[0].(types0.ResponseDeliverTx)
 	return ret0
 }
 
 // PrepareExec indicates an expected call of PrepareExec
-func (mr *MockTxLogicMockRecorder) PrepareExec(req interface{}) *gomock.Call {
+func (mr *MockTxLogicMockRecorder) PrepareExec(req, chainHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareExec", reflect.TypeOf((*MockTxLogic)(nil).PrepareExec), req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareExec", reflect.TypeOf((*MockTxLogic)(nil).PrepareExec), req, chainHeight)
 }
 
 // Exec mocks base method
-func (m *MockTxLogic) Exec(tx *types.Transaction) error {
+func (m *MockTxLogic) Exec(tx *types.Transaction, chainHeight uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exec", tx)
+	ret := m.ctrl.Call(m, "Exec", tx, chainHeight)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Exec indicates an expected call of Exec
-func (mr *MockTxLogicMockRecorder) Exec(tx interface{}) *gomock.Call {
+func (mr *MockTxLogicMockRecorder) Exec(tx, chainHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exec", reflect.TypeOf((*MockTxLogic)(nil).Exec), tx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exec", reflect.TypeOf((*MockTxLogic)(nil).Exec), tx, chainHeight)
 }
 
-// CanTransferCoin mocks base method
-func (m *MockTxLogic) CanTransferCoin(txType int, senderPubKey *crypto.PubKey, recipientAddr, value, fee util.String, nonce uint64) error {
+// CanExecCoinTransfer mocks base method
+func (m *MockTxLogic) CanExecCoinTransfer(txType int, senderPubKey *crypto.PubKey, recipientAddr, value, fee util.String, nonce, chainHeight uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CanTransferCoin", txType, senderPubKey, recipientAddr, value, fee, nonce)
+	ret := m.ctrl.Call(m, "CanExecCoinTransfer", txType, senderPubKey, recipientAddr, value, fee, nonce, chainHeight)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CanTransferCoin indicates an expected call of CanTransferCoin
-func (mr *MockTxLogicMockRecorder) CanTransferCoin(txType, senderPubKey, recipientAddr, value, fee, nonce interface{}) *gomock.Call {
+// CanExecCoinTransfer indicates an expected call of CanExecCoinTransfer
+func (mr *MockTxLogicMockRecorder) CanExecCoinTransfer(txType, senderPubKey, recipientAddr, value, fee, nonce, chainHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanTransferCoin", reflect.TypeOf((*MockTxLogic)(nil).CanTransferCoin), txType, senderPubKey, recipientAddr, value, fee, nonce)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanExecCoinTransfer", reflect.TypeOf((*MockTxLogic)(nil).CanExecCoinTransfer), txType, senderPubKey, recipientAddr, value, fee, nonce, chainHeight)
 }
 
 // MockSysLogic is a mock of SysLogic interface

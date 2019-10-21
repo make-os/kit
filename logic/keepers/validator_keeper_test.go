@@ -31,7 +31,7 @@ var _ = Describe("SystemKeeper", func() {
 		Expect(err).To(BeNil())
 		c = storage.NewBadger(cfg)
 		Expect(c.Init()).To(BeNil())
-		valKeeper = NewValidatorKeeper(c)
+		valKeeper = NewValidatorKeeper(c.F(true, true))
 	})
 
 	BeforeEach(func() {
@@ -59,7 +59,7 @@ var _ = Describe("SystemKeeper", func() {
 
 		When("db error occurred", func() {
 			BeforeEach(func() {
-				mockDB := storagemocks.NewMockEngine(ctrl)
+				mockDB := storagemocks.NewMockFunctions(ctrl)
 				mockDB.EXPECT().Get(gomock.Any()).Return(nil, fmt.Errorf("error"))
 				valKeeper.db = mockDB
 			})
@@ -180,7 +180,7 @@ var _ = Describe("SystemKeeper", func() {
 
 		When("db.Put returns an error", func() {
 			BeforeEach(func() {
-				mockDB := storagemocks.NewMockEngine(ctrl)
+				mockDB := storagemocks.NewMockFunctions(ctrl)
 				mockDB.EXPECT().Put(gomock.Any()).Return(fmt.Errorf("error"))
 				valKeeper.db = mockDB
 			})

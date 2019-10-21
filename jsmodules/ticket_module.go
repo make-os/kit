@@ -50,11 +50,6 @@ func (m *TicketModule) funcs() []*types.JSModuleFunc {
 			Value:       m.top,
 			Description: "Get most recent tickets up to the given limit",
 		},
-		&types.JSModuleFunc{
-			Name:        "unbond",
-			Value:       m.unbondTicket,
-			Description: "Reclaim bonded stake of a validator ticket",
-		},
 	}
 }
 
@@ -90,54 +85,6 @@ func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{
 	var err error
 	tx, key := processTxArgs(txObj, options...)
 	tx.Type = types.TxTypeGetTicket
-
-	// Set tx public key
-	pk, _ := crypto.PrivKeyFromBase58(key)
-	tx.SetSenderPubKey(util.String(crypto.NewKeyFromPrivKey(pk).PubKey().Base58()))
-
-	// Set timestamp if not already set
-	if tx.Timestamp == 0 {
-		tx.Timestamp = time.Now().Unix()
-	}
-
-	// Set nonce if nonce is not provided
-	if tx.Nonce == 0 {
-		nonce, err := m.service.GetNonce(tx.GetFrom())
-		if err != nil {
-			panic(errors.Wrap(err, "failed to get sender's nonce"))
-		}
-		tx.Nonce = nonce + 1
-	}
-
-	// Sign the tx
-	tx.Sig, err = tx.Sign(key)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to sign transaction"))
-	}
-
-	// Process the transaction
-	hash, err := m.service.SendTx(tx)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
-	}
-
-	return util.EncodeForJS(map[string]interface{}{
-		"hash": hash,
-	})
-}
-
-// unbondTicket sends a request to unbond the stakes associated to an existing ticket
-func (m *TicketModule) unbondTicket(txObj interface{}, options ...interface{}) interface{} {
-
-	var err error
-	tx, key := processTxArgs(txObj, options...)
-	tx.Type = types.TxTypeUnbondTicket
-
-	// Since we expect the ticket ID to be a hex string, we need to decode it
-	tx.TicketID, err = util.FromHex(string(tx.TicketID))
-	if err != nil {
-		panic(errors.Wrap(err, "invalid ticket transaction hash"))
-	}
 
 	// Set tx public key
 	pk, _ := crypto.PrivKeyFromBase58(key)

@@ -58,5 +58,6 @@ require (
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	go.dedis.ch/kyber/v3 v3.0.3-0.20190501101437-0324e4ea86f1
 	golang.org/x/crypto v0.0.0-20191001103751-88343688bb37
+	gopkg.in/oleiade/lane.v1 v1.0.0
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 )

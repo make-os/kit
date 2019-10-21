@@ -7,7 +7,6 @@ import (
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
 
-	"github.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -18,7 +17,7 @@ var _ = Describe("pool", func() {
 		It("should return err = 'capacity reached' when pool capacity is reached", func() {
 			tp := New(0)
 			sender := crypto.NewKeyFromIntSeed(1)
-			tx := types.NewTx(types.TxTypeTransferCoin, 1, "something", sender, "0", "0", time.Now().Unix())
+			tx := types.NewTx(types.TxTypeExecCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
 			err := tp.Put(tx)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(ErrContainerFull))
@@ -27,7 +26,7 @@ var _ = Describe("pool", func() {
 		It("should return err = 'exact transaction already in the pool' when transaction has already been added", func() {
 			tp := New(10)
 			sender := crypto.NewKeyFromIntSeed(1)
-			tx := types.NewTx(types.TxTypeTransferCoin, 1, "something", sender, "0", "0", time.Now().Unix())
+			tx := types.NewTx(types.TxTypeExecCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
 			sig, _ := types.SignTx(tx, sender.PrivKey().Base58())
 			tx.Sig = sig
 			err := tp.Put(tx)
@@ -39,7 +38,7 @@ var _ = Describe("pool", func() {
 		It("should return nil and added to queue", func() {
 			tp := New(1)
 			sender := crypto.NewKeyFromIntSeed(1)
-			tx := types.NewTx(types.TxTypeTransferCoin, 1, "something", sender, "0", "0", time.Now().Unix())
+			tx := types.NewTx(types.TxTypeExecCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
 			sig, _ := types.SignTx(tx, sender.PrivKey().Base58())
 			tx.Sig = sig
 			err := tp.Put(tx)
@@ -58,13 +57,13 @@ var _ = Describe("pool", func() {
 		})
 
 		It("should return true when tx exist", func() {
-			tx := types.NewTx(types.TxTypeTransferCoin, 100, "something", sender, "0", "0", time.Now().Unix())
+			tx := types.NewTx(types.TxTypeExecCoinTransfer, 100, "something", sender, "0", "0", time.Now().Unix())
 			tp.Put(tx)
 			Expect(tp.Has(tx)).To(BeTrue())
 		})
 
 		It("should return false when tx does not exist", func() {
-			tx := types.NewTx(types.TxTypeTransferCoin, 100, "something", sender, "0", "0", time.Now().Unix())
+			tx := types.NewTx(types.TxTypeExecCoinTransfer, 100, "something", sender, "0", "0", time.Now().Unix())
 			Expect(tp.Has(tx)).To(BeFalse())
 		})
 	})
@@ -78,9 +77,9 @@ var _ = Describe("pool", func() {
 
 		BeforeEach(func() {
 			tp = New(3)
-			tx = types.NewTx(types.TxTypeTransferCoin, 1, "a", key1, "12.2", "0.2", time.Now().Unix())
-			tx2 = types.NewTx(types.TxTypeTransferCoin, 2, "a", key1, "12.3", "0.2", time.Now().Unix())
-			tx3 = types.NewTx(types.TxTypeTransferCoin, 2, "a", key2, "12.3", "0.2", time.Now().Unix())
+			tx = types.NewTx(types.TxTypeExecCoinTransfer, 1, "a", key1, "12.2", "0.2", time.Now().Unix())
+			tx2 = types.NewTx(types.TxTypeExecCoinTransfer, 2, "a", key1, "12.3", "0.2", time.Now().Unix())
+			tx3 = types.NewTx(types.TxTypeExecCoinTransfer, 2, "a", key2, "12.3", "0.2", time.Now().Unix())
 			_ = tp.addTx(tx)
 			_ = tp.addTx(tx2)
 			_ = tp.addTx(tx3)
@@ -106,7 +105,7 @@ var _ = Describe("pool", func() {
 		})
 
 		It("should return 1", func() {
-			tx := types.NewTx(types.TxTypeTransferCoin, 100, "something", sender, "0", "0", time.Now().Unix())
+			tx := types.NewTx(types.TxTypeExecCoinTransfer, 100, "something", sender, "0", "0", time.Now().Unix())
 			tp.Put(tx)
 			Expect(tp.Size()).To(Equal(int64(1)))
 		})
@@ -124,10 +123,8 @@ var _ = Describe("pool", func() {
 		})
 
 		BeforeEach(func() {
-			tx = types.NewTx(types.TxTypeTransferCoin, 100, "something", sender, "0", "0", time.Now().Unix())
-			tx.SetHash(util.StrToHash("hash1"))
-			tx2 = types.NewTx(types.TxTypeTransferCoin, 100, "something_2", sender2, "0", "0", time.Now().Unix())
-			tx2.SetHash(util.StrToHash("hash2"))
+			tx = types.NewTx(types.TxTypeExecCoinTransfer, 100, "something", sender, "0", "0", time.Now().Unix())
+			tx2 = types.NewTx(types.TxTypeExecCoinTransfer, 100, "something_2", sender2, "0", "0", time.Now().Unix())
 			tp.Put(tx)
 			tp.Put(tx2)
 		})
@@ -172,10 +169,8 @@ var _ = Describe("pool", func() {
 		})
 
 		BeforeEach(func() {
-			tx = types.NewTx(types.TxTypeTransferCoin, 100, "something", sender, "0", "0", time.Now().Unix())
-			tx.SetHash(util.StrToHash("hash1"))
-			tx2 = types.NewTx(types.TxTypeTransferCoin, 100, "something_2", sender2, "0", "0", time.Now().Unix())
-			tx2.SetHash(util.StrToHash("hash2"))
+			tx = types.NewTx(types.TxTypeExecCoinTransfer, 100, "something", sender, "0", "0", time.Now().Unix())
+			tx2 = types.NewTx(types.TxTypeExecCoinTransfer, 100, "something_2", sender2, "0", "0", time.Now().Unix())
 			tp.Put(tx)
 			tp.Put(tx2)
 		})
@@ -220,12 +215,10 @@ var _ = Describe("pool", func() {
 				params.TxTTL = 1
 				tp = New(2)
 
-				tx = types.NewTx(types.TxTypeTransferCoin, 100, "something", sender, "0", "0", time.Now().Unix())
-				tx.SetHash(util.StrToHash("hash1"))
+				tx = types.NewTx(types.TxTypeExecCoinTransfer, 100, "something", sender, "0", "0", time.Now().Unix())
 				tx.SetTimestamp(time.Now().UTC().AddDate(0, 0, -2).Unix())
 
-				tx2 = types.NewTx(types.TxTypeTransferCoin, 101, "something2", sender, "0", "0", time.Now().Unix())
-				tx2.SetHash(util.StrToHash("hash2"))
+				tx2 = types.NewTx(types.TxTypeExecCoinTransfer, 101, "something2", sender, "0", "0", time.Now().Unix())
 				tx2.SetTimestamp(time.Now().Unix())
 
 				tp.container.add(tx)
@@ -253,16 +246,13 @@ var _ = Describe("pool", func() {
 		BeforeEach(func() {
 			tp = New(100)
 
-			tx = types.NewTx(types.TxTypeTransferCoin, 100, "something", sender, "0", "0", time.Now().Unix())
-			tx.SetHash(tx.ComputeHash())
+			tx = types.NewTx(types.TxTypeExecCoinTransfer, 100, "something", sender, "0", "0", time.Now().Unix())
 			tp.Put(tx)
 
-			tx2 = types.NewTx(types.TxTypeTransferCoin, 100, "something2", sender2, "0", "0", time.Now().Unix())
-			tx2.SetHash(tx2.ComputeHash())
+			tx2 = types.NewTx(types.TxTypeExecCoinTransfer, 100, "something2", sender2, "0", "0", time.Now().Unix())
 			tp.Put(tx2)
 
-			tx3 = types.NewTx(types.TxTypeTransferCoin, 100, "something3", sender3, "0", "0", time.Now().Unix())
-			tx3.SetHash(tx3.ComputeHash())
+			tx3 = types.NewTx(types.TxTypeExecCoinTransfer, 100, "something3", sender3, "0", "0", time.Now().Unix())
 			tp.Put(tx3)
 		})
 
@@ -284,12 +274,10 @@ var _ = Describe("pool", func() {
 		BeforeEach(func() {
 			tp = New(100)
 
-			tx = types.NewTx(types.TxTypeTransferCoin, 100, "something", sender, "0", "0", time.Now().Unix())
-			tx.SetHash(tx.ComputeHash())
+			tx = types.NewTx(types.TxTypeExecCoinTransfer, 100, "something", sender, "0", "0", time.Now().Unix())
 			tp.Put(tx)
 
-			tx2 = types.NewTx(types.TxTypeTransferCoin, 100, "something2", sender2, "0", "0", time.Now().Unix())
-			tx2.SetHash(tx2.ComputeHash())
+			tx2 = types.NewTx(types.TxTypeExecCoinTransfer, 100, "something2", sender2, "0", "0", time.Now().Unix())
 		})
 
 		It("It should not be equal", func() {

@@ -16,19 +16,19 @@ var _ = Describe("Transaction", func() {
 	Describe(".NewTx", func() {
 		It("should successfully create and sign a new transaction", func() {
 			Expect(func() {
-				NewTx(TxTypeTransferCoin, 0, "recipient_addr", address, "10", "0.1", time.Now().Unix())
+				NewTx(TxTypeExecCoinTransfer, 0, "recipient_addr", address, "10", "0.1", time.Now().Unix())
 			}).ToNot(Panic())
 		})
 	})
 
 	Describe("Tx.GetFrom", func() {
 		It("should successfully get the sender address", func() {
-			tx := NewTx(TxTypeTransferCoin, 0, "recipient_addr", address, "10", "0.1", time.Now().Unix())
+			tx := NewTx(TxTypeExecCoinTransfer, 0, "recipient_addr", address, "10", "0.1", time.Now().Unix())
 			Expect(tx.GetFrom()).To(Equal(address.Addr()))
 		})
 
 		It("should panic if sender public key is invalid", func() {
-			tx := NewTx(TxTypeTransferCoin, 0, "recipient_addr", address, "10", "0.1", time.Now().Unix())
+			tx := NewTx(TxTypeExecCoinTransfer, 0, "recipient_addr", address, "10", "0.1", time.Now().Unix())
 			tx.SenderPubKey = util.String("invalid")
 			Expect(func() {
 				tx.GetFrom()
@@ -38,7 +38,7 @@ var _ = Describe("Transaction", func() {
 
 	Describe(".ToMap", func() {
 		It("should successfully get the correct map equivalent", func() {
-			tx := NewTx(TxTypeTransferCoin, 0, "recipient_addr", address, "10", "0.1", 1)
+			tx := NewTx(TxTypeExecCoinTransfer, 0, "recipient_addr", address, "10", "0.1", 1)
 			expected := map[string]interface{}{
 				"to":           util.String("recipient_addr"),
 				"senderPubKey": util.String("48d9u6L7tWpSVYmTE4zBDChMUasjP5pvoXE7kPw5HbJnXRnZBNC"),

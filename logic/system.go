@@ -24,7 +24,8 @@ type System struct {
 	logic types.Logic
 }
 
-// GetCurValidatorTicketPrice returns the ticket price
+// GetCurValidatorTicketPrice returns the ticket price.
+// Ticket price increases by x percent after every n blocks 
 func (s *System) GetCurValidatorTicketPrice() float64 {
 
 	bi, err := s.logic.SysKeeper().GetLastBlockInfo()

@@ -29,7 +29,8 @@ var _ = Describe("TxKeeper", func() {
 		Expect(err).To(BeNil())
 		c = storage.NewBadger(cfg)
 		Expect(c.Init()).To(BeNil())
-		txKeeper = NewTxKeeper(c)
+		dbTx := c.F(true, true)
+		txKeeper = NewTxKeeper(dbTx)
 	})
 
 	BeforeEach(func() {
@@ -49,13 +50,13 @@ var _ = Describe("TxKeeper", func() {
 	Describe(".Index", func() {
 		When("db operation failed", func() {
 			BeforeEach(func() {
-				mockDB := storagemocks.NewMockEngine(ctrl)
+				mockDB := storagemocks.NewMockFunctions(ctrl)
 				mockDB.EXPECT().Put(gomock.Any()).Return(fmt.Errorf("error"))
 				txKeeper.db = mockDB
 			})
 
 			It("should return err='failed to index tx: error'", func() {
-				tx := types.NewBareTx(types.TxTypeTransferCoin)
+				tx := types.NewBareTx(types.TxTypeExecCoinTransfer)
 				err := txKeeper.Index(tx)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to index tx: error"))
@@ -63,7 +64,7 @@ var _ = Describe("TxKeeper", func() {
 		})
 
 		When("index is successful", func() {
-			tx := types.NewBareTx(types.TxTypeTransferCoin)
+			tx := types.NewBareTx(types.TxTypeExecCoinTransfer)
 
 			BeforeEach(func() {
 				err := txKeeper.Index(tx)
@@ -81,13 +82,13 @@ var _ = Describe("TxKeeper", func() {
 	Describe(".GetTx", func() {
 		When("db operation failed", func() {
 			BeforeEach(func() {
-				mockDB := storagemocks.NewMockEngine(ctrl)
+				mockDB := storagemocks.NewMockFunctions(ctrl)
 				mockDB.EXPECT().Get(gomock.Any()).Return(nil, fmt.Errorf("error"))
 				txKeeper.db = mockDB
 			})
 
 			It("should return err='failed to get tx: error'", func() {
-				tx := types.NewBareTx(types.TxTypeTransferCoin)
+				tx := types.NewBareTx(types.TxTypeExecCoinTransfer)
 				_, err := txKeeper.GetTx(tx.GetHash().Bytes())
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to get tx: error"))
@@ -95,7 +96,7 @@ var _ = Describe("TxKeeper", func() {
 		})
 
 		When("tx is found", func() {
-			tx := types.NewBareTx(types.TxTypeTransferCoin)
+			tx := types.NewBareTx(types.TxTypeExecCoinTransfer)
 
 			BeforeEach(func() {
 				err := txKeeper.Index(tx)

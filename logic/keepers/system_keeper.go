@@ -2,6 +2,7 @@ package keepers
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/types"
@@ -15,24 +16,42 @@ var ErrBlockInfoNotFound = fmt.Errorf("block info not found")
 // app states, commit history and more.
 type SystemKeeper struct {
 	db storage.Functions
+
+	gmx       *sync.RWMutex
+	lastSaved *types.BlockInfo
 }
 
 // NewSystemKeeper creates an instance of SystemKeeper
 func NewSystemKeeper(db storage.Functions) *SystemKeeper {
-	return &SystemKeeper{db: db}
+	return &SystemKeeper{db: db, gmx: &sync.RWMutex{}}
 }
 
-// SaveBlockInfo saves a committed block information
+// SaveBlockInfo saves a committed block information.
+// Indexes the saved block info for faster future retrieval so
+// that GetLastBlockInfo will not refetch
 func (s *SystemKeeper) SaveBlockInfo(info *types.BlockInfo) error {
 	data := util.ObjectToBytes(info)
 	record := storage.NewFromKeyValue(MakeKeyBlockInfo(info.Height), data)
+
+	s.gmx.Lock()
+	s.lastSaved = info
+	s.gmx.Unlock()
+
 	return s.db.Put(record)
 }
 
-// GetLastBlockInfo returns information about the last committed block
+// GetLastBlockInfo returns information about the last committed block.
 func (s *SystemKeeper) GetLastBlockInfo() (*types.BlockInfo, error) {
-	var rec *storage.Record
 
+	// Retrieve the cached last saved block info if set
+	s.gmx.RLock()
+	lastSaved := s.lastSaved
+	s.gmx.RUnlock()
+	if lastSaved != nil {
+		return lastSaved, nil
+	}
+
+	var rec *storage.Record
 	s.db.Iterate(MakeQueryKeyBlockInfo(), false, func(r *storage.Record) bool {
 		rec = r
 		return true

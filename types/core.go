@@ -1,14 +1,17 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/c-bata/go-prompt"
 	"github.com/makeos/mosdef/util"
+	"github.com/mitchellh/mapstructure"
 	"github.com/robertkrimen/otto"
 )
 
 // Various names for staking categories
 const (
-	StakeNameValidator = "v" // Validators
+	StakeTypeValidator = "v" // Validators
 )
 
 // JSModuleFunc describes a JS module function
@@ -39,7 +42,7 @@ func BareAccount() *Account {
 	return &Account{
 		Balance: util.String("0"),
 		Nonce:   0,
-		Stakes:  AccountStakes(map[string]util.String{}),
+		Stakes:  AccountStakes(map[string]*StakeInfo{}),
 	}
 }
 
@@ -58,9 +61,11 @@ func (a *Account) GetBalance() util.String {
 }
 
 // GetSpendableBalance returns the spendable balance of the account.
-// Formula: balance - total staked
-func (a *Account) GetSpendableBalance() util.String {
-	return util.String(a.Balance.Decimal().Sub(a.Stakes.TotalStaked().Decimal()).String())
+// Formula: balance - total staked.
+// curHeight: The current blockchain height; Used to determine which stakes are unbonded.
+func (a *Account) GetSpendableBalance(curHeight uint64) util.String {
+	return util.String(a.Balance.Decimal().
+		Sub(a.Stakes.TotalStaked(curHeight).Decimal()).String())
 }
 
 // Bytes return the bytes equivalent of the account
@@ -73,17 +78,60 @@ func (a *Account) Bytes() []byte {
 	})
 }
 
+// CleanUnbonded removes unbonded stakes.
+// curHeight: The current blockchain height. Unbond
+func (a *Account) CleanUnbonded(curHeight uint64) {
+	for name, stake := range a.Stakes {
+		if stake.UnbondHeight <= curHeight {
+			delete(a.Stakes, name)
+		}
+	}
+}
+
 // BareAccountStakes returns an empty AccountStakes
 func BareAccountStakes() AccountStakes {
-	return AccountStakes(map[string]util.String{})
+	return AccountStakes(map[string]*StakeInfo{})
+}
+
+// BareStakeInfo returns an empty StakeInfo
+func BareStakeInfo() *StakeInfo {
+	return &StakeInfo{Value: util.String("0")}
+}
+
+// StakeInfo represents properties about a stake.
+type StakeInfo struct {
+	// Value is the amount staked
+	Value util.String `json:"value"`
+
+	// UnbondHeight is the height at which the stake is unbonded.
+	// A value of 0 means the stake is bonded forever
+	UnbondHeight uint64 `json:"unbondHeight"`
 }
 
 // AccountStakes holds staked balances
-type AccountStakes map[string]util.String
+type AccountStakes map[string]*StakeInfo
 
 // Add adds a staked balance
-func (s *AccountStakes) Add(name string, value util.String) {
-	(*s)[name] = value
+// stakeType: The unique stake identifier
+// value: The value staked
+// unbondHeight: The height where the stake is unbonded
+// Returns the full stake name
+func (s *AccountStakes) Add(stakeType string, value util.String, unbondHeight uint64) string {
+	var key string
+	i := len(*s)
+	for {
+		key = fmt.Sprintf("%s%d", stakeType, i)
+		if _, ok := (*s)[key]; ok {
+			i++
+			continue
+		}
+		(*s)[key] = &StakeInfo{
+			Value:        value,
+			UnbondHeight: unbondHeight,
+		}
+		break
+	}
+	return key
 }
 
 // Has checks whether a staked balance with the given name exist
@@ -92,20 +140,24 @@ func (s *AccountStakes) Has(name string) bool {
 	return ok
 }
 
-// Get the balance of a stake stored with the given name.
+// Get information about of a stake category.
 // Returns zero if not found
-func (s *AccountStakes) Get(name string) util.String {
+// name: The name of the staking category
+func (s *AccountStakes) Get(name string) *StakeInfo {
 	if !s.Has(name) {
-		return util.String("0")
+		return BareStakeInfo()
 	}
 	return (*s)[name]
 }
 
 // TotalStaked returns the sum of all staked balances
-func (s *AccountStakes) TotalStaked() util.String {
+// curHeight: The current blockchain height; Used to determine which stakes are unbonded.
+func (s *AccountStakes) TotalStaked(curHeight uint64) util.String {
 	total := util.String("0").Decimal()
-	for _, v := range *s {
-		total = total.Add(v.Decimal())
+	for _, si := range *s {
+		if si.UnbondHeight > curHeight {
+			total = total.Add(si.Value.Decimal())
+		}
 	}
 	return util.String(total.String())
 }
@@ -117,9 +169,14 @@ func NewAccountFromBytes(bz []byte) (*Account, error) {
 		return nil, err
 	}
 
-	var stakes = AccountStakes(map[string]util.String{})
+	var stakes = AccountStakes(map[string]*StakeInfo{})
 	for k, v := range values[2].(map[string]interface{}) {
-		stakes.Add(k, util.String(v.(string)))
+		var si StakeInfo
+		mapstructure.Decode(v.(map[string]interface{}), &si)
+		stakes[k] = &StakeInfo{
+			Value:        si.Value,
+			UnbondHeight: si.UnbondHeight,
+		}
 	}
 
 	return &Account{

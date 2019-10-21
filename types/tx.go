@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	// TxTypeTransferCoin represents a tx that moves coin between accounts
-	TxTypeTransferCoin = 0x0
+	// TxTypeExecCoinTransfer represents a tx that moves coin between accounts
+	TxTypeExecCoinTransfer = 0x0
 
 	// TxTypeGetTicket represents a transaction purchases validator ticket
 	TxTypeGetTicket = 0x1
@@ -22,12 +22,8 @@ var (
 	// for selecting the next epoch block validators.
 	TxTypeEpochSecret = 0x2
 
-	// TxTypeUnbondTicket represents a transaction that un-bonds a decayed
-	// and thawed ticket
-	TxTypeUnbondTicket = 0x3
-
 	// TxTypeSetDelegatorCommission sets the delegator commission
-	TxTypeSetDelegatorCommission = 0x4
+	TxTypeSetDelegatorCommission = 0x3
 )
 
 // Transaction meta keys
