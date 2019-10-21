@@ -59,7 +59,7 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx, chainHeight ui
 // chainHeight: The height of the block chain
 func (t *Transaction) Exec(tx *types.Transaction, chainHeight uint64) error {
 	switch tx.Type {
-	case types.TxTypeExecCoinTransfer:
+	case types.TxTypeCoinTransfer:
 		return t.execCoinTransfer(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce(), chainHeight)
 	case types.TxTypeGetTicket:
 		return t.execValidatorStake(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce(), chainHeight)

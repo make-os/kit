@@ -22,7 +22,7 @@ type ValidateTxFunc func(tx *types.Transaction, i int, logic types.Logic) error
 
 // KnownTransactionTypes are the supported transaction types
 var KnownTransactionTypes = []int{
-	types.TxTypeExecCoinTransfer,
+	types.TxTypeCoinTransfer,
 	types.TxTypeGetTicket,
 	types.TxTypeSetDelegatorCommission,
 }
@@ -359,8 +359,8 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		{"meta", tx.GetMeta()},
 	}
 
-	// Check for unexpected fields for TxTypeGetTicket and TxTypeExecCoinTransfer
-	if txType == types.TxTypeGetTicket || txType == types.TxTypeExecCoinTransfer {
+	// Check for unexpected fields for TxTypeGetTicket and TxTypeCoinTransfer
+	if txType == types.TxTypeGetTicket || txType == types.TxTypeCoinTransfer {
 		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
 		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
 		unExpected = append(unExpected, []interface{}{"secretRound", tx.SecretRound})
