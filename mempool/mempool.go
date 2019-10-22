@@ -149,7 +149,7 @@ func (mp *Mempool) addTx(bs []byte, res *abci.Response) {
 
 		// At this point, the transaction the ABCI app's check
 		if r.CheckTx.Code != abci.CodeTypeOK {
-			mp.log.Info("Rejected bad transaction")
+			mp.log.Debug("Rejected an invalid transaction", "Reason", r.CheckTx.Log)
 			return
 		}
 
@@ -223,7 +223,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 		// if tx is a validator ticket and we already reaped n
 		// validator tickets, we cache and ignore it. We will
 		// flush them back to the pool after reaping.
-		if memTx.GetType() == t.TxTypeGetValidatorTicket &&
+		if memTx.GetType() == t.TxTypeValidatorTicket &&
 			numValTicketTxReaped == params.MaxValTicketsPerBlock {
 			ignoredTx = append(ignoredTx, memTx)
 			continue
@@ -240,7 +240,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 		txs = append(txs, txBs)
 
 		// Increment num validator tickets seen
-		if memTx.GetType() == t.TxTypeGetValidatorTicket {
+		if memTx.GetType() == t.TxTypeValidatorTicket {
 			numValTicketTxReaped++
 		}
 	}

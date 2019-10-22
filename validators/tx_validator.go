@@ -23,8 +23,9 @@ type ValidateTxFunc func(tx *types.Transaction, i int, logic types.Logic) error
 // KnownTransactionTypes are the supported transaction types
 var KnownTransactionTypes = []int{
 	types.TxTypeCoinTransfer,
-	types.TxTypeGetValidatorTicket,
+	types.TxTypeValidatorTicket,
 	types.TxTypeSetDelegatorCommission,
+	types.TxTypeStorerTicket,
 }
 
 var validTypeRule = func(err error) func(interface{}) error {
@@ -227,8 +228,9 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 	}
 
 	// The recipient's address must be set and it must be valid.
-	if tx.Type != types.TxTypeGetValidatorTicket &&
-		tx.Type != types.TxTypeSetDelegatorCommission {
+	if tx.Type != types.TxTypeValidatorTicket &&
+		tx.Type != types.TxTypeSetDelegatorCommission &&
+		tx.Type != types.TxTypeStorerTicket {
 		if err := v.Validate(tx.GetTo(),
 			v.Required.Error(types.FieldErrorWithIndex(index, "to",
 				"recipient address is required").Error()),
@@ -240,7 +242,7 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 	} else {
 		// For ticket purchasing transactions, the recipient's address
 		// must be a valid validator's public key if it is set
-		if tx.To.String() != "" && tx.Type == types.TxTypeGetValidatorTicket {
+		if tx.To.String() != "" && tx.Type == types.TxTypeValidatorTicket {
 			if err := v.Validate(tx.To, v.By(validPubKeyRule(types.FieldErrorWithIndex(index, "to",
 				"requires a valid public key of a validator to delegate to")))); err != nil {
 				return err
@@ -359,8 +361,8 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		{"meta", tx.GetMeta()},
 	}
 
-	// Check for unexpected fields for TxTypeGetValidatorTicket and TxTypeCoinTransfer
-	if txType == types.TxTypeGetValidatorTicket || txType == types.TxTypeCoinTransfer {
+	// Check for unexpected fields for TxTypeValidatorTicket and TxTypeCoinTransfer
+	if txType == types.TxTypeValidatorTicket || txType == types.TxTypeCoinTransfer {
 		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
 		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
 		unExpected = append(unExpected, []interface{}{"secretRound", tx.SecretRound})
@@ -390,7 +392,7 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 	}
 
 	// Check for unexpected field for TxTypeSetDelegatorCommission
-	if txType == types.TxTypeSetDelegatorCommission {
+	if txType == types.TxTypeSetDelegatorCommission || txType == types.TxTypeStorerTicket {
 		unExpected = append(unExpected, []interface{}{"to", tx.To})
 		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
 		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})

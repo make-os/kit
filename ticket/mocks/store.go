@@ -5,9 +5,10 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/makeos/mosdef/types"
-	reflect "reflect"
 )
 
 // MockStore is a mock of Store interface
@@ -111,58 +112,44 @@ func (mr *MockStoreMockRecorder) Count(query interface{}, queryOptions ...interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), varargs...)
 }
 
-// GetLive mocks base method
-func (m *MockStore) GetLive(height int64, queryOptions ...interface{}) ([]*types.Ticket, error) {
+// GetLiveValidatorTickets mocks base method
+func (m *MockStore) GetLiveValidatorTickets(height int64, queryOptions ...interface{}) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{height}
 	for _, a := range queryOptions {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetLive", varargs...)
+	ret := m.ctrl.Call(m, "GetLiveValidatorTickets", varargs...)
 	ret0, _ := ret[0].([]*types.Ticket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetLive indicates an expected call of GetLive
-func (mr *MockStoreMockRecorder) GetLive(height interface{}, queryOptions ...interface{}) *gomock.Call {
+// GetLiveValidatorTickets indicates an expected call of GetLiveValidatorTickets
+func (mr *MockStoreMockRecorder) GetLiveValidatorTickets(height interface{}, queryOptions ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{height}, queryOptions...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLive", reflect.TypeOf((*MockStore)(nil).GetLive), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiveValidatorTickets", reflect.TypeOf((*MockStore)(nil).GetLiveValidatorTickets), varargs...)
 }
 
-// CountLive mocks base method
-func (m *MockStore) CountLive(height int64, queryOptions ...interface{}) (int, error) {
+// CountLiveValidators mocks base method
+func (m *MockStore) CountLiveValidators(height int64, queryOptions ...interface{}) (int, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{height}
 	for _, a := range queryOptions {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "CountLive", varargs...)
+	ret := m.ctrl.Call(m, "CountLiveValidators", varargs...)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CountLive indicates an expected call of CountLive
-func (mr *MockStoreMockRecorder) CountLive(height interface{}, queryOptions ...interface{}) *gomock.Call {
+// CountLiveValidators indicates an expected call of CountLiveValidators
+func (mr *MockStoreMockRecorder) CountLiveValidators(height interface{}, queryOptions ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{height}, queryOptions...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLive", reflect.TypeOf((*MockStore)(nil).CountLive), varargs...)
-}
-
-// MarkAsUnbonded mocks base method
-func (m *MockStore) MarkAsUnbonded(hash string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkAsUnbonded", hash)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// MarkAsUnbonded indicates an expected call of MarkAsUnbonded
-func (mr *MockStoreMockRecorder) MarkAsUnbonded(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsUnbonded", reflect.TypeOf((*MockStore)(nil).MarkAsUnbonded), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLiveValidators", reflect.TypeOf((*MockStore)(nil).CountLiveValidators), varargs...)
 }
 
 // Remove mocks base method

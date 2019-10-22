@@ -18,12 +18,10 @@ type Store interface {
 	QueryOne(query types.Ticket, queryOptions ...interface{}) (*types.Ticket, error)
 	// Count counts tickets that match the given query
 	Count(query types.Ticket, queryOptions ...interface{}) (int, error)
-	// GetLive returns matured and non-decayed tickets
-	GetLive(height int64, queryOptions ...interface{}) ([]*types.Ticket, error)
-	// CountLive returns the number of matured and live tickets
-	CountLive(height int64, queryOptions ...interface{}) (int, error)
-	// MarkAsUnbonded sets a ticket unbonded status to true
-	MarkAsUnbonded(hash string) error
+	// GetLiveValidatorTickets returns matured and non-decayed tickets
+	GetLiveValidatorTickets(height int64, queryOptions ...interface{}) ([]*types.Ticket, error)
+	// CountLiveValidators returns the number of matured and live tickets
+	CountLiveValidators(height int64, queryOptions ...interface{}) (int, error)
 	// Remove deletes a ticket by its hash
 	Remove(hash string) error
 	// Close closes the store
@@ -126,14 +124,17 @@ func (s *SQLStore) QueryOne(
 	return &ticket, nil
 }
 
-// GetLive returns matured and live tickets.
-// The argument height is the current/latest block;
-func (s *SQLStore) GetLive(
+// GetLiveValidatorTickets returns matured and undecayed
+// validator tickets. The argument height is the upper bound chain height.
+func (s *SQLStore) GetLiveValidatorTickets(
 	height int64,
 	queryOptions ...interface{}) ([]*types.Ticket, error) {
 
 	opts := getQueryOptions(queryOptions...)
 	q := s.db.
+		Where(types.Ticket{
+			Type: types.TxTypeValidatorTicket,
+		}).
 		Where(`"matureBy" <= ?`, height).
 		Where(`"decayBy" > ?`, height)
 	q = applyQueryOpts(q, opts)
@@ -142,22 +143,18 @@ func (s *SQLStore) GetLive(
 	return tickets, q.Find(&tickets).Error
 }
 
-// MarkAsUnbonded sets a ticket unbonded status to true
-func (s *SQLStore) MarkAsUnbonded(hash string) error {
-	return s.db.Model(&types.Ticket{}).
-		Where(&types.Ticket{Hash: hash}).
-		Update(&types.Ticket{Unbonded: true}).Error
-}
-
-// CountLive returns the number of matured and live tickets.
-// The argument height is the current/latest block;
-func (s *SQLStore) CountLive(
+// CountLiveValidators returns the number of matured and undecayed validator tickets.
+// The argument height is the upper bound chain height
+func (s *SQLStore) CountLiveValidators(
 	height int64,
 	queryOptions ...interface{}) (int, error) {
 
 	opts := getQueryOptions(queryOptions...)
 	q := s.db.
 		Model(types.Ticket{}).
+		Where(types.Ticket{
+			Type: types.TxTypeValidatorTicket,
+		}).
 		Where(`"matureBy" <= ?`, height).
 		Where(`"decayBy" > ?`, height)
 	q = applyQueryOpts(q, opts)
@@ -171,17 +168,12 @@ func (s *SQLStore) Count(
 	query types.Ticket,
 	queryOptions ...interface{}) (int, error) {
 
+	opts := getQueryOptions(queryOptions...)
 	q := s.db.Model(types.Ticket{}).Where(query)
+	q = applyQueryOpts(q, opts)
 
 	var count int
 	return count, q.Count(&count).Error
-}
-
-// GetTicketByProposerPubKey fetches tickets by validator proposedPubKey
-func (s *SQLStore) GetTicketByProposerPubKey(
-	proposedPubKey string,
-	queryOptions ...interface{}) ([]*types.Ticket, error) {
-	return s.Query(types.Ticket{ProposerPubKey: proposedPubKey}, queryOptions...)
 }
 
 // Close closes the store and releases held resources

@@ -56,24 +56,24 @@ var _ = Describe("Manager", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".GetByProposer", func() {
-		ticket := &types.Ticket{ProposerPubKey: "pub_key"}
+	Describe(".GetValidatorTicketByProposer", func() {
+		ticket := &types.Ticket{ProposerPubKey: "pub_key", Type: types.TxTypeValidatorTicket}
 		BeforeEach(func() {
 			err := mgr.store.Add(ticket)
 			Expect(err).To(BeNil())
 		})
 
 		It("should return 1 ticket", func() {
-			tickets, err := mgr.GetByProposer("pub_key", types.EmptyQueryOptions)
+			tickets, err := mgr.GetValidatorTicketByProposer("pub_key", types.EmptyQueryOptions)
 			Expect(err).To(BeNil())
 			Expect(tickets).To(HaveLen(1))
 			Expect(tickets[0]).To(Equal(ticket))
 		})
 	})
 
-	Describe(".CountLiveTickets", func() {
-		ticket := &types.Ticket{ProposerPubKey: "pub_key", MatureBy: 100, DecayBy: 200}
-		ticket2 := &types.Ticket{ProposerPubKey: "pub_key", MatureBy: 100, DecayBy: 150}
+	Describe(".CountLiveValidatorsValidatorTickets", func() {
+		ticket := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key", MatureBy: 100, DecayBy: 200}
+		ticket2 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key", MatureBy: 100, DecayBy: 150}
 
 		When("only one live ticket exist", func() {
 			BeforeEach(func() {
@@ -87,7 +87,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return 1", func() {
-				count, err := mgr.CountLiveTickets(types.EmptyQueryOptions)
+				count, err := mgr.CountLiveValidatorsValidatorTickets(types.EmptyQueryOptions)
 				Expect(err).To(BeNil())
 				Expect(count).To(Equal(1))
 			})
@@ -105,7 +105,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return ticket1", func() {
-				count, err := mgr.CountLiveTickets(types.EmptyQueryOptions)
+				count, err := mgr.CountLiveValidatorsValidatorTickets(types.EmptyQueryOptions)
 				Expect(err).To(BeNil())
 				Expect(count).To(Equal(0))
 			})
@@ -124,7 +124,7 @@ var _ = Describe("Manager", func() {
 				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 2})
 				Expect(err).To(BeNil())
 				Expect(logic.Sys().GetCurValidatorTicketPrice()).To(Equal(float64(10)))
-				tx := &types.Transaction{Value: util.String("10"), SenderPubKey: "pub_key"}
+				tx := &types.Transaction{Type: types.TxTypeValidatorTicket, Value: util.String("10"), SenderPubKey: "pub_key"}
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
 			})
@@ -154,7 +154,7 @@ var _ = Describe("Manager", func() {
 				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 2})
 				Expect(err).To(BeNil())
 				Expect(logic.Sys().GetCurValidatorTicketPrice()).To(Equal(float64(10)))
-				tx := &types.Transaction{Value: util.String("35"), SenderPubKey: "pub_key"}
+				tx := &types.Transaction{Type: types.TxTypeValidatorTicket, Value: util.String("35"), SenderPubKey: "pub_key"}
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
 
@@ -253,7 +253,7 @@ var _ = Describe("Manager", func() {
 		When("err occurred when fetching live tickets", func() {
 			BeforeEach(func() {
 				mockStore := ticketsmock.NewMockStore(ctrl)
-				mockStore.EXPECT().GetLive(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("bad error"))
+				mockStore.EXPECT().GetLiveValidatorTickets(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("bad error"))
 				mgr.store = mockStore
 			})
 
@@ -266,9 +266,9 @@ var _ = Describe("Manager", func() {
 		})
 
 		When("no error occurred", func() {
-			ticket := &types.Ticket{ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Power: 3}
-			ticket2 := &types.Ticket{ProposerPubKey: "pub_key2", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Power: 4}
-			ticket3 := &types.Ticket{ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Power: 1}
+			ticket := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Power: 3}
+			ticket2 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Power: 4}
+			ticket3 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Power: 1}
 			BeforeEach(func() {
 				err := mgr.store.Add(ticket, ticket2, ticket3)
 				Expect(err).To(BeNil())
@@ -305,9 +305,9 @@ var _ = Describe("Manager", func() {
 		})
 
 		When("multiple tickets of same proposer public key are pre-selected (before random selection)", func() {
-			ticket := &types.Ticket{ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Power: 3}
-			ticket2 := &types.Ticket{ProposerPubKey: "pub_key1", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Power: 4}
-			ticket3 := &types.Ticket{ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Power: 1}
+			ticket := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Power: 3}
+			ticket2 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Power: 4}
+			ticket3 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Power: 1}
 
 			BeforeEach(func() {
 				err := mgr.store.Add(ticket, ticket2, ticket3)

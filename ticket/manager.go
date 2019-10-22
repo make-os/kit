@@ -11,7 +11,6 @@ import (
 	"github.com/makeos/mosdef/types"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
-	"github.com/thoas/go-funk"
 )
 
 // Manager implements types.TicketManager.
@@ -37,38 +36,41 @@ func NewManager(cfg *config.EngineConfig, logic types.Logic) (*Manager, error) {
 // Index takes a tx and creates a ticket out of it
 func (m *Manager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) error {
 
-	ticket := &types.Ticket{}
+	ticket := &types.Ticket{
+		Type:           tx.Type,
+		Height:         blockHeight,
+		Index:          txIndex,
+		Value:          tx.Value.String(),
+		Hash:           tx.GetHash().HexStr(),
+		ProposerPubKey: tx.SenderPubKey.String(),
+	}
 
 	// By default the proposer is the creator of the transaction.
 	// However, if the transaction `to` field is set, the sender
 	// is delegating the ticket to the public key set in `to`
-	var proposerPubKey = tx.SenderPubKey.String()
-	if tx.To.String() != "" {
-		proposerPubKey = tx.To.String()
+	if !tx.To.Empty() {
+		ticket.ProposerPubKey = tx.To.String()
 		ticket.Delegator = tx.GetFrom().String()
 
 		// Since this is a delegated ticket, we need to get the
 		// proposer's commission rate from their account
-		pk, _ := crypto.PubKeyFromBase58(proposerPubKey)
+		pk, _ := crypto.PubKeyFromBase58(ticket.ProposerPubKey)
 		proposerAcct := m.logic.AccountKeeper().GetAccount(pk.Addr())
 		ticket.CommissionRate = proposerAcct.DelegatorCommission
 	}
 
-	ticket.Hash = tx.GetHash().HexStr()
-	ticket.ProposerPubKey = proposerPubKey
-	ticket.Height = blockHeight
-	ticket.Index = txIndex
-	ticket.Value = tx.Value.String()
+	if tx.Type == types.TxTypeValidatorTicket {
 
-	// Set maturity and decay heights
-	ticket.MatureBy = blockHeight + uint64(params.MinTicketMatDur)
-	ticket.DecayBy = ticket.MatureBy + uint64(params.MaxTicketActiveDur)
+		// Set maturity and decay heights
+		ticket.MatureBy = blockHeight + uint64(params.MinTicketMatDur)
+		ticket.DecayBy = ticket.MatureBy + uint64(params.MaxTicketActiveDur)
 
-	// Determine the ticket's power.
-	// A tickets power is the amount of tickets is value can purchase
-	curTickPrice := decimal.NewFromFloat(m.logic.Sys().GetCurValidatorTicketPrice())
-	numSubTickets := tx.Value.Decimal().Div(curTickPrice).IntPart()
-	ticket.Power = numSubTickets
+		// Determine the ticket's power.
+		// A tickets power is the amount of tickets is value can purchase
+		curTickPrice := decimal.NewFromFloat(m.logic.Sys().GetCurValidatorTicketPrice())
+		numSubTickets := tx.Value.Decimal().Div(curTickPrice).IntPart()
+		ticket.Power = numSubTickets
+	}
 
 	// Add all tickets to the store
 	if err := m.store.Add(ticket); err != nil {
@@ -83,18 +85,21 @@ func (m *Manager) Remove(hash string) error {
 	return m.store.Remove(hash)
 }
 
-// GetByProposer finds tickets belonging to the
+// GetValidatorTicketByProposer finds tickets belonging to the
 // given proposer public key.
-func (m *Manager) GetByProposer(proposerPubKey string, queryOpt types.QueryOptions) ([]*types.Ticket, error) {
-	res, err := m.store.Query(types.Ticket{ProposerPubKey: proposerPubKey}, queryOpt)
+func (m *Manager) GetValidatorTicketByProposer(proposerPubKey string, queryOpt types.QueryOptions) ([]*types.Ticket, error) {
+	res, err := m.store.Query(types.Ticket{
+		ProposerPubKey: proposerPubKey,
+		Type:           types.TxTypeValidatorTicket,
+	}, queryOpt)
 	if err != nil {
 		return nil, err
 	}
 	return res, nil
 }
 
-// CountLiveTickets returns the number of matured and non-decayed tickets.
-func (m *Manager) CountLiveTickets(queryOpt ...types.QueryOptions) (int, error) {
+// CountLiveValidatorsValidatorTickets returns the number of matured and non-decayed tickets.
+func (m *Manager) CountLiveValidatorsValidatorTickets(queryOpt ...types.QueryOptions) (int, error) {
 
 	qOpt := types.EmptyQueryOptions
 	if len(queryOpt) > 0 {
@@ -107,7 +112,7 @@ func (m *Manager) CountLiveTickets(queryOpt ...types.QueryOptions) (int, error) 
 		return 0, err
 	}
 
-	count, err := m.store.CountLive(bi.Height, qOpt)
+	count, err := m.store.CountLiveValidators(bi.Height, qOpt)
 	if err != nil {
 		return 0, err
 	}
@@ -133,16 +138,11 @@ func (m *Manager) QueryOne(q types.Ticket, queryOpt ...types.QueryOptions) (*typ
 	return m.store.QueryOne(q, qOpt)
 }
 
-// MarkAsUnbonded sets a ticket unbonded status to true
-func (m *Manager) MarkAsUnbonded(hash string) error {
-	return m.store.MarkAsUnbonded(hash)
-}
-
 // SelectRandom selects random live tickets up to the specified limit.
 // The provided see is used to seed the PRNG that is used to select tickets.
 func (m *Manager) SelectRandom(height int64, seed []byte, limit int) ([]*types.Ticket, error) {
 
-	tickets, err := m.store.GetLive(height, types.QueryOptions{
+	tickets, err := m.store.GetLiveValidatorTickets(height, types.QueryOptions{
 		Order: `"power" desc, "height" asc, "index" asc`,
 		Limit: 50000,
 	})
@@ -156,8 +156,9 @@ func (m *Manager) SelectRandom(height int64, seed []byte, limit int) ([]*types.T
 
 	// Select random tickets up to the given limit.
 	// Note: Only 1 slot per public key.
-	selected := map[string]*types.Ticket{}
-	for len(selected) < limit && len(tickets) > 0 {
+	index := make(map[string]struct{})
+	selected := []*types.Ticket{}
+	for len(index) < limit && len(tickets) > 0 {
 
 		// Select a candidate ticket and remove it from the list
 		i := r.Intn(len(tickets))
@@ -165,14 +166,15 @@ func (m *Manager) SelectRandom(height int64, seed []byte, limit int) ([]*types.T
 		tickets = append(tickets[:i], tickets[i+1:]...)
 
 		// If the candidate has already been selected, ignore
-		if _, ok := selected[candidate.ProposerPubKey]; ok {
+		if _, ok := index[candidate.ProposerPubKey]; ok {
 			continue
 		}
 
-		selected[candidate.ProposerPubKey] = candidate
+		index[candidate.ProposerPubKey] = struct{}{}
+		selected = append(selected, candidate)
 	}
 
-	return funk.Values(selected).([]*types.Ticket), nil
+	return selected, nil
 }
 
 // Stop stores the manager

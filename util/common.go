@@ -58,6 +58,11 @@ func (s String) String() string {
 	return string(s)
 }
 
+// Empty returns true if the string is empty
+func (s String) Empty() bool {
+	return len(s) == 0
+}
+
 // SS returns a short version of String() with the middle
 // characters truncated when length is at least 32
 func (s String) SS() string {
@@ -382,9 +387,9 @@ func IsStructChanClosed(c <-chan struct{}) bool {
 // VMSet sets a value in the vm context only if it
 // has been set before.
 func VMSet(vm *otto.Otto, name string, value interface{}) interface{} {
-	existing, _ := vm.Object(name)
-	if existing != nil {
-		val, _ := existing.Value().Export()
+	existing, _ := vm.Get(name)
+	if !existing.IsUndefined() {
+		val, _ := existing.Export()
 		return val
 	}
 	vm.Set(name, value)

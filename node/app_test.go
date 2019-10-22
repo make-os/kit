@@ -537,8 +537,8 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("tx type is TxTypeGetValidatorTicket; max. TxTypeGetValidatorTicket per "+
-			"block is 1; 1 TxTypeGetValidatorTicket tx has previously been seen", func() {
+		When("tx type is TxTypeValidatorTicket; max. TxTypeValidatorTicket per "+
+			"block is 1; 1 TxTypeValidatorTicket tx has previously been collected", func() {
 			var res abcitypes.ResponseDeliverTx
 
 			BeforeEach(func() {
@@ -549,8 +549,8 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				params.MaxValTicketsPerBlock = 1
-				app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{})
-				tx := types.NewTx(types.TxTypeGetValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				app.validatorTickets = append(app.validatorTickets, &ticketInfo{})
+				tx := types.NewTx(types.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
 			})
 
@@ -561,7 +561,7 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("tx type is TxTypeGetValidatorTicket and is successfully executed", func() {
+		When("tx type is TxTypeValidatorTicket and is successfully executed", func() {
 			BeforeEach(func() {
 				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
 					return nil
@@ -569,7 +569,7 @@ var _ = Describe("App", func() {
 			})
 
 			BeforeEach(func() {
-				tx := types.NewTx(types.TxTypeGetValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := types.NewTx(types.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				txLogic := mocks.NewMockTxLogic(ctrl)
@@ -580,7 +580,30 @@ var _ = Describe("App", func() {
 			})
 
 			It("should return cache the validator ticket tx", func() {
-				Expect(app.ticketPurchaseTxs).To(HaveLen(1))
+				Expect(app.validatorTickets).To(HaveLen(1))
+			})
+		})
+
+		When("tx type is TxTypeStorerTicket and is successfully executed", func() {
+			BeforeEach(func() {
+				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+					return nil
+				}
+			})
+
+			BeforeEach(func() {
+				tx := types.NewTx(types.TxTypeStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
+				txLogic := mocks.NewMockTxLogic(ctrl)
+				txLogic.EXPECT().PrepareExec(req, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
+				mockLogic.EXPECT().Tx().Return(txLogic)
+				app.logic = mockLogic
+				app.DeliverTx(req)
+			})
+
+			It("should return cache the storer ticket tx", func() {
+				Expect(app.storerTickets).To(HaveLen(1))
 			})
 		})
 
@@ -849,8 +872,8 @@ var _ = Describe("App", func() {
 				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 
 				mockTicketMgr := mocks.NewMockTicketManager(ctrl)
-				tx := types.NewTx(types.TxTypeGetValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
-				app.ticketPurchaseTxs = append(app.ticketPurchaseTxs, &tickPurchaseTx{
+				tx := types.NewTx(types.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				app.validatorTickets = append(app.validatorTickets, &ticketInfo{
 					Tx:    tx,
 					index: 1,
 				})

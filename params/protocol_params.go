@@ -62,4 +62,7 @@ var (
 
 	// MinDelegatorCommission is the number of percentage delegators pay validators
 	MinDelegatorCommission = decimal.NewFromFloat(10)
+
+	// MinStorerStake is the minimum stake for a storer ticket
+	MinStorerStake = decimal.NewFromFloat(10)
 )

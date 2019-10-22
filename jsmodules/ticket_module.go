@@ -2,14 +2,11 @@ package jsmodules
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )
 
@@ -18,6 +15,7 @@ type TicketModule struct {
 	vm        *otto.Otto
 	service   types.Service
 	ticketmgr types.TicketManager
+	storerObj map[string]interface{}
 }
 
 // NewTicketModule creates an instance of TicketModule
@@ -25,7 +23,12 @@ func NewTicketModule(
 	vm *otto.Otto,
 	service types.Service,
 	ticketmgr types.TicketManager) *TicketModule {
-	return &TicketModule{vm: vm, service: service, ticketmgr: ticketmgr}
+	return &TicketModule{
+		vm:        vm,
+		service:   service,
+		ticketmgr: ticketmgr,
+		storerObj: make(map[string]interface{}),
+	}
 }
 
 func (m *TicketModule) globals() []*types.JSModuleFunc {
@@ -53,18 +56,37 @@ func (m *TicketModule) funcs() []*types.JSModuleFunc {
 	}
 }
 
+// storerFuncs are `storer` funcs exposed by the module
+func (m *TicketModule) storerFuncs() []*types.JSModuleFunc {
+	return []*types.JSModuleFunc{
+		&types.JSModuleFunc{
+			Name:        "buy",
+			Value:       m.storerBuy,
+			Description: "Buy an storer ticket",
+		},
+	}
+}
+
 // Configure configures the JS context and return
 // any number of console prompt suggestions
 func (m *TicketModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
-	// Add the main namespace
-	obj := map[string]interface{}{}
-	util.VMSet(m.vm, types.NamespaceTicket, obj)
+	// Set the namespaces
+	ticketObj := map[string]interface{}{"storer": m.storerObj}
+	util.VMSet(m.vm, types.NamespaceTicket, ticketObj)
+	storerNS := fmt.Sprintf("%s.%s", types.NamespaceTicket, types.NamespaceStorer)
 
 	for _, f := range m.funcs() {
-		obj[f.Name] = f.Value
+		ticketObj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceTicket, f.Name)
+		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
+			Description: f.Description})
+	}
+
+	for _, f := range m.storerFuncs() {
+		m.storerObj[f.Name] = f.Value
+		funcFullName := fmt.Sprintf("%s.%s", storerNS, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
@@ -81,44 +103,12 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 
 // buy creates and executes a ticket purchase order
 func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{} {
+	return simpleTx(m.service, types.TxTypeValidatorTicket, txObj, options...)
+}
 
-	var err error
-	tx, key := processTxArgs(txObj, options...)
-	tx.Type = types.TxTypeGetValidatorTicket
-
-	// Set tx public key
-	pk, _ := crypto.PrivKeyFromBase58(key)
-	tx.SetSenderPubKey(util.String(crypto.NewKeyFromPrivKey(pk).PubKey().Base58()))
-
-	// Set timestamp if not already set
-	if tx.Timestamp == 0 {
-		tx.Timestamp = time.Now().Unix()
-	}
-
-	// Set nonce if nonce is not provided
-	if tx.Nonce == 0 {
-		nonce, err := m.service.GetNonce(tx.GetFrom())
-		if err != nil {
-			panic(errors.Wrap(err, "failed to get sender's nonce"))
-		}
-		tx.Nonce = nonce + 1
-	}
-
-	// Sign the tx
-	tx.Sig, err = tx.Sign(key)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to sign transaction"))
-	}
-
-	// Process the transaction
-	hash, err := m.service.SendTx(tx)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
-	}
-
-	return util.EncodeForJS(map[string]interface{}{
-		"hash": hash,
-	})
+// storerBuy creates and executes a ticket purchase order
+func (m *TicketModule) storerBuy(txObj interface{}, options ...interface{}) interface{} {
+	return simpleTx(m.service, types.TxTypeStorerTicket, txObj, options...)
 }
 
 // find finds tickets owned by a given public key
@@ -131,7 +121,7 @@ func (m *TicketModule) find(
 		mapstructure.Decode(queryOpts[0], &qopts)
 	}
 
-	res, err := m.ticketmgr.GetByProposer(proposerPubKey, qopts)
+	res, err := m.ticketmgr.GetValidatorTicketByProposer(proposerPubKey, qopts)
 	if err != nil {
 		panic(err)
 	}

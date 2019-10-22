@@ -27,7 +27,7 @@ import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
-type tickPurchaseTx struct {
+type ticketInfo struct {
 	Tx    *types.Transaction
 	index int
 }
@@ -42,7 +42,8 @@ type App struct {
 	wBlock                    *types.BlockInfo
 	log                       logger.Logger
 	txIndex                   int
-	ticketPurchaseTxs         []*tickPurchaseTx
+	validatorTickets          []*ticketInfo
+	storerTickets             []*ticketInfo
 	ticketMgr                 types.TicketManager
 	epochSecretTx             *types.Transaction
 	isCurrentBlockProposer    bool
@@ -204,8 +205,8 @@ func (a *App) preExecChecks(tx *types.Transaction) *abcitypes.ResponseDeliverTx 
 	// Invalidate the transaction if it is a validator ticket
 	// purchasing tx and we have reached the max per block.
 	// TODO: Slash proposer for violating the rule.
-	if txType == types.TxTypeGetValidatorTicket &&
-		len(a.ticketPurchaseTxs) == params.MaxValTicketsPerBlock {
+	if txType == types.TxTypeValidatorTicket &&
+		len(a.validatorTickets) == params.MaxValTicketsPerBlock {
 		return &abcitypes.ResponseDeliverTx{
 			Code: types.ErrCodeMaxTxTypeReached,
 			Log:  "failed to execute tx: validator ticket capacity reached",
@@ -275,12 +276,15 @@ func (a *App) postExecChecks(
 		}
 	}
 
-	// Cache ticket purchase transaction; They will be indexed in the COMMIT stage.
-	if resp.Code == 0 && txType == types.TxTypeGetValidatorTicket {
-		a.ticketPurchaseTxs = append(a.ticketPurchaseTxs, &tickPurchaseTx{
-			Tx:    tx,
-			index: a.txIndex,
-		})
+	// Cache ticket transactions;
+	// They will be indexed in the COMMIT stage.
+	if resp.Code == 0 {
+		switch txType {
+		case types.TxTypeValidatorTicket:
+			a.validatorTickets = append(a.validatorTickets, &ticketInfo{Tx: tx, index: a.txIndex})
+		case types.TxTypeStorerTicket:
+			a.storerTickets = append(a.storerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
+		}
 	}
 
 	// Add the successfully processed tx to the un-indexed tx cache.
@@ -431,8 +435,8 @@ func isEndOfEpoch(height int64) bool {
 // due to commit panicking
 func (a *App) commitPanic(err error) {
 
-	// Delete any already indexed ticket purchased in this block
-	for _, t := range a.ticketPurchaseTxs {
+	// Delete any already indexed ticket
+	for _, t := range append(a.validatorTickets, a.storerTickets...) {
 		a.ticketMgr.Remove(t.Tx.GetID())
 	}
 
@@ -478,8 +482,8 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		a.commitPanic(errors.Wrap(err, "failed to save block information"))
 	}
 
-	// Index any purchased ticket we have collected so far.
-	for _, ptx := range a.ticketPurchaseTxs {
+	// Index tickets we have collected so far.
+	for _, ptx := range append(a.validatorTickets, a.storerTickets...) {
 		if err := a.ticketMgr.Index(ptx.Tx, uint64(a.wBlock.Height), ptx.index); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to index ticket"))
 		}
@@ -521,7 +525,8 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 
 // reset cached values
 func (a *App) reset() {
-	a.ticketPurchaseTxs = []*tickPurchaseTx{}
+	a.validatorTickets = []*ticketInfo{}
+	a.storerTickets = []*ticketInfo{}
 	a.txIndex = 0
 	a.epochSecretTx = nil
 	a.mature = false

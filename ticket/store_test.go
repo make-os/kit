@@ -107,95 +107,23 @@ var _ = Describe("SQLStore", func() {
 		})
 	})
 
-	Describe(".GetTicketByProposerPubKey", func() {
+	Describe(".GetLiveValidatorTickets", func() {
 		var store *SQLStore
 		var err error
-		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
-		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 1, Index: 2}
+		var ticket = &types.Ticket{Type: types.TxTypeValidatorTicket, Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+		var ticket2 = &types.Ticket{Type: types.TxTypeValidatorTicket, Hash: "hash2", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2}
+		var ticket3 = &types.Ticket{Type: types.TxTypeStorerTicket, Hash: "hash3", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2}
 
 		BeforeEach(func() {
 			store, err = NewSQLStore(cfg.GetTicketDBDir())
 			Expect(err).To(BeNil())
-			err = store.Add(ticket)
-			Expect(err).To(BeNil())
-			err = store.Add(ticket2)
-			Expect(err).To(BeNil())
-		})
-
-		Context("without query options", func() {
-			It("should return 2 tickets", func() {
-				tickets, err := store.GetTicketByProposerPubKey("pubkey")
-				Expect(err).To(BeNil())
-				Expect(tickets).To(HaveLen(2))
-				Expect(tickets[0]).To(Equal(ticket))
-				Expect(tickets[1]).To(Equal(ticket2))
-			})
-		})
-
-		Context("with limit set to 1", func() {
-			It("should return 1 ticket (the first added ticket)", func() {
-				tickets, err := store.GetTicketByProposerPubKey("pubkey", types.QueryOptions{
-					Limit: 1,
-				})
-				Expect(err).To(BeNil())
-				Expect(tickets).To(HaveLen(1))
-				Expect(tickets[0]).To(Equal(ticket))
-			})
-		})
-
-		Context("with limit set to 1 and offset set to 1", func() {
-			It("should return 1 tickets (the second ticket)", func() {
-				tickets, err := store.GetTicketByProposerPubKey("pubkey", types.QueryOptions{
-					Limit:  1,
-					Offset: 1,
-				})
-				Expect(err).To(BeNil())
-				Expect(tickets).To(HaveLen(1))
-				Expect(tickets[0]).To(Equal(ticket2))
-			})
-		})
-
-		Context("with order set to 'height asc'", func() {
-			It("should return the ticket with the lowest height as the first", func() {
-				tickets, err := store.GetTicketByProposerPubKey("pubkey", types.QueryOptions{
-					Order: "height asc",
-				})
-				Expect(err).To(BeNil())
-				Expect(tickets).To(HaveLen(2))
-				Expect(tickets[0]).To(Equal(ticket2))
-			})
-		})
-
-		Context("with order set to 'height desc'", func() {
-			It("should return the ticket with the largest height as the first", func() {
-				tickets, err := store.GetTicketByProposerPubKey("pubkey", types.QueryOptions{
-					Order: "height desc",
-				})
-				Expect(err).To(BeNil())
-				Expect(tickets).To(HaveLen(2))
-				Expect(tickets[0]).To(Equal(ticket))
-			})
-		})
-	})
-
-	Describe(".GetLive", func() {
-		var store *SQLStore
-		var err error
-		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
-		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2}
-
-		BeforeEach(func() {
-			store, err = NewSQLStore(cfg.GetTicketDBDir())
-			Expect(err).To(BeNil())
-			err = store.Add(ticket)
-			Expect(err).To(BeNil())
-			err = store.Add(ticket2)
+			err = store.Add(ticket, ticket2, ticket3)
 			Expect(err).To(BeNil())
 		})
 
 		When("current block height is 50", func() {
 			It("should return 1 ticket with MatureBy = 40 and DecayBy = 100", func() {
-				tickets, err := store.GetLive(50)
+				tickets, err := store.GetLiveValidatorTickets(50)
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(1))
 				Expect(tickets[0].MatureBy).To(Equal(uint64(40)))
@@ -205,7 +133,7 @@ var _ = Describe("SQLStore", func() {
 
 		When("current block height is 100", func() {
 			It("should return 0 tickets", func() {
-				tickets, err := store.GetLive(100)
+				tickets, err := store.GetLiveValidatorTickets(100)
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(0))
 			})
@@ -213,54 +141,30 @@ var _ = Describe("SQLStore", func() {
 
 		When("current block height is 80", func() {
 			It("should return 2 tickets", func() {
-				tickets, err := store.GetLive(80)
+				tickets, err := store.GetLiveValidatorTickets(80)
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(2))
 			})
 		})
 	})
 
-	Describe(".MarkAsUnbonded", func() {
+	Describe(".CountLiveValidators", func() {
 		var store *SQLStore
 		var err error
-		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40,
-			ProposerPubKey: "pubkey", Height: 10, Index: 2}
+		var ticket = &types.Ticket{Type: types.TxTypeValidatorTicket, Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+		var ticket2 = &types.Ticket{Type: types.TxTypeValidatorTicket, Hash: "hash2", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2}
+		var ticket3 = &types.Ticket{Type: types.TxTypeStorerTicket, Hash: "hash3", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2}
 
 		BeforeEach(func() {
 			store, err = NewSQLStore(cfg.GetTicketDBDir())
 			Expect(err).To(BeNil())
-			err = store.db.Create(ticket).Error
-			Expect(err).To(BeNil())
-			err = store.MarkAsUnbonded(ticket.Hash)
-			Expect(err).To(BeNil())
-		})
-
-		It("should set unbonded field to true", func() {
-			var res types.Ticket
-			err = store.db.Where(&types.Ticket{Hash: ticket.Hash}).Find(&res).Error
-			Expect(err).To(BeNil())
-			Expect(res.Unbonded).To(BeTrue())
-		})
-	})
-
-	Describe(".CountLive", func() {
-		var store *SQLStore
-		var err error
-		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
-		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2}
-
-		BeforeEach(func() {
-			store, err = NewSQLStore(cfg.GetTicketDBDir())
-			Expect(err).To(BeNil())
-			err = store.Add(ticket)
-			Expect(err).To(BeNil())
-			err = store.Add(ticket2)
+			err = store.Add(ticket, ticket2, ticket3)
 			Expect(err).To(BeNil())
 		})
 
 		When("current block height is 50", func() {
 			It("should return 1 ticket", func() {
-				count, err := store.CountLive(50)
+				count, err := store.CountLiveValidators(50)
 				Expect(err).To(BeNil())
 				Expect(count).To(Equal(1))
 			})
@@ -268,7 +172,7 @@ var _ = Describe("SQLStore", func() {
 
 		When("current block height is 100", func() {
 			It("should return 0 tickets", func() {
-				count, err := store.CountLive(100)
+				count, err := store.CountLiveValidators(100)
 				Expect(err).To(BeNil())
 				Expect(count).To(Equal(0))
 			})
@@ -276,7 +180,7 @@ var _ = Describe("SQLStore", func() {
 
 		When("current block height is 80", func() {
 			It("should return 2 tickets", func() {
-				count, err := store.CountLive(80)
+				count, err := store.CountLiveValidators(80)
 				Expect(err).To(BeNil())
 				Expect(count).To(Equal(2))
 			})

@@ -5,9 +5,10 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/makeos/mosdef/types"
-	reflect "reflect"
 )
 
 // MockTicketManager is a mock of TicketManager interface
@@ -47,52 +48,38 @@ func (mr *MockTicketManagerMockRecorder) Index(tx, blockHeight, txIndex interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Index", reflect.TypeOf((*MockTicketManager)(nil).Index), tx, blockHeight, txIndex)
 }
 
-// GetByProposer mocks base method
-func (m *MockTicketManager) GetByProposer(proposerPubKey string, queryOpt types.QueryOptions) ([]*types.Ticket, error) {
+// GetValidatorTicketByProposer mocks base method
+func (m *MockTicketManager) GetValidatorTicketByProposer(proposerPubKey string, queryOpt types.QueryOptions) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByProposer", proposerPubKey, queryOpt)
+	ret := m.ctrl.Call(m, "GetValidatorTicketByProposer", proposerPubKey, queryOpt)
 	ret0, _ := ret[0].([]*types.Ticket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetByProposer indicates an expected call of GetByProposer
-func (mr *MockTicketManagerMockRecorder) GetByProposer(proposerPubKey, queryOpt interface{}) *gomock.Call {
+// GetValidatorTicketByProposer indicates an expected call of GetValidatorTicketByProposer
+func (mr *MockTicketManagerMockRecorder) GetValidatorTicketByProposer(proposerPubKey, queryOpt interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByProposer", reflect.TypeOf((*MockTicketManager)(nil).GetByProposer), proposerPubKey, queryOpt)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatorTicketByProposer", reflect.TypeOf((*MockTicketManager)(nil).GetValidatorTicketByProposer), proposerPubKey, queryOpt)
 }
 
-// CountLiveTickets mocks base method
-func (m *MockTicketManager) CountLiveTickets(arg0 ...types.QueryOptions) (int, error) {
+// CountLiveValidatorsValidatorTickets mocks base method
+func (m *MockTicketManager) CountLiveValidatorsValidatorTickets(arg0 ...types.QueryOptions) (int, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "CountLiveTickets", varargs...)
+	ret := m.ctrl.Call(m, "CountLiveValidatorsValidatorTickets", varargs...)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CountLiveTickets indicates an expected call of CountLiveTickets
-func (mr *MockTicketManagerMockRecorder) CountLiveTickets(arg0 ...interface{}) *gomock.Call {
+// CountLiveValidatorsValidatorTickets indicates an expected call of CountLiveValidatorsValidatorTickets
+func (mr *MockTicketManagerMockRecorder) CountLiveValidatorsValidatorTickets(arg0 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLiveTickets", reflect.TypeOf((*MockTicketManager)(nil).CountLiveTickets), arg0...)
-}
-
-// MarkAsUnbonded mocks base method
-func (m *MockTicketManager) MarkAsUnbonded(hash string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkAsUnbonded", hash)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// MarkAsUnbonded indicates an expected call of MarkAsUnbonded
-func (mr *MockTicketManagerMockRecorder) MarkAsUnbonded(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsUnbonded", reflect.TypeOf((*MockTicketManager)(nil).MarkAsUnbonded), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLiveValidatorsValidatorTickets", reflect.TypeOf((*MockTicketManager)(nil).CountLiveValidatorsValidatorTickets), arg0...)
 }
 
 // SelectRandom mocks base method

@@ -11,7 +11,8 @@ import (
 
 // Various names for staking categories
 const (
-	StakeTypeValidator = "v" // Validators
+	StakeTypeValidator = "v"
+	StakeTypeStorer    = "s"
 )
 
 // JSModuleFunc describes a JS module function
@@ -79,10 +80,11 @@ func (a *Account) Bytes() []byte {
 }
 
 // CleanUnbonded removes unbonded stakes.
-// curHeight: The current blockchain height. Unbond
+// Ignores stakes with unbond height set to 0.
+// curHeight: The current blockchain height
 func (a *Account) CleanUnbonded(curHeight uint64) {
 	for name, stake := range a.Stakes {
-		if stake.UnbondHeight <= curHeight {
+		if stake.UnbondHeight != 0 && stake.UnbondHeight <= curHeight {
 			delete(a.Stakes, name)
 		}
 	}
@@ -155,7 +157,7 @@ func (s *AccountStakes) Get(name string) *StakeInfo {
 func (s *AccountStakes) TotalStaked(curHeight uint64) util.String {
 	total := util.String("0").Decimal()
 	for _, si := range *s {
-		if si.UnbondHeight > curHeight {
+		if si.UnbondHeight == 0 || si.UnbondHeight > curHeight {
 			total = total.Add(si.Value.Decimal())
 		}
 	}

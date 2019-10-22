@@ -91,11 +91,26 @@ var _ = Describe("Account", func() {
 			})
 
 			When("unbondHeight arg is 500", func() {
-				It("should not remove the stake information", func() {
+				It("should not remove the stake entry", func() {
 					acct.CleanUnbonded(500)
 					Expect(acct.Stakes).To(HaveLen(1))
 					Expect(acct.Stakes.Get("s1")).To(Equal(stake))
 				})
+			})
+		})
+
+		When("account's unbond height is 0", func() {
+			var stake *StakeInfo
+			BeforeEach(func() {
+				stake = &StakeInfo{Value: util.String("10"), UnbondHeight: 0}
+				stakes = AccountStakes(map[string]*StakeInfo{"s1": stake})
+				acct = &Account{Balance: util.String("10"), Nonce: 2, Stakes: stakes}
+			})
+
+			It("should not remove the stake entry", func() {
+				acct.CleanUnbonded(500)
+				Expect(acct.Stakes).To(HaveLen(1))
+				Expect(acct.Stakes.Get("s1")).To(Equal(stake))
 			})
 		})
 
@@ -108,7 +123,7 @@ var _ = Describe("Account", func() {
 			})
 
 			When("unbondHeight arg is 1000", func() {
-				It("should remove the stake information", func() {
+				It("should remove the stake entry", func() {
 					acct.CleanUnbonded(1000)
 					Expect(acct.Stakes).To(HaveLen(0))
 					Expect(acct.Stakes.Get("s1")).To(Equal(BareStakeInfo()))
@@ -149,6 +164,15 @@ var _ = Describe("AccountStakes", func() {
 				stakes.Add(StakeTypeValidator, util.String("10"), 20)
 				totalStaked := stakes.TotalStaked(100)
 				Expect(totalStaked).To(Equal(util.String("0")))
+			})
+		})
+
+		When("current chain height is anything and stake unbond height is 0", func() {
+			It("should return total stakes of 10 since the stake is forever bonded", func() {
+				stakes := AccountStakes(map[string]*StakeInfo{})
+				stakes.Add(StakeTypeValidator, util.String("10"), 0)
+				totalStaked := stakes.TotalStaked(100)
+				Expect(totalStaked).To(Equal(util.String("10")))
 			})
 		})
 

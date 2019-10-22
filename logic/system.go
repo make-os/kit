@@ -25,7 +25,7 @@ type System struct {
 }
 
 // GetCurValidatorTicketPrice returns the ticket price.
-// Ticket price increases by x percent after every n blocks 
+// Ticket price increases by x percent after every n blocks
 func (s *System) GetCurValidatorTicketPrice() float64 {
 
 	bi, err := s.logic.SysKeeper().GetLastBlockInfo()
@@ -79,7 +79,7 @@ func (s *System) CheckSetNetMaturity() error {
 	}
 
 	// Ensure there are enough live tickets
-	numLiveTickets, err := s.logic.GetTicketManager().CountLiveTickets()
+	numLiveTickets, err := s.logic.GetTicketManager().CountLiveValidatorsValidatorTickets()
 	if err != nil {
 		return errors.Wrap(err, "failed to count live tickets")
 	}

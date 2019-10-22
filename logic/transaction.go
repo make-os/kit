@@ -61,10 +61,12 @@ func (t *Transaction) Exec(tx *types.Transaction, chainHeight uint64) error {
 	switch tx.Type {
 	case types.TxTypeCoinTransfer:
 		return t.execCoinTransfer(tx.SenderPubKey, tx.To, tx.Value, tx.Fee, tx.GetNonce(), chainHeight)
-	case types.TxTypeGetValidatorTicket:
+	case types.TxTypeValidatorTicket:
 		return t.execValidatorStake(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce(), chainHeight)
 	case types.TxTypeSetDelegatorCommission:
 		return t.setDelegatorCommission(tx.SenderPubKey, tx.Value)
+	case types.TxTypeStorerTicket:
+		return t.execStorerStake(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce(), chainHeight)
 	case types.TxTypeEpochSecret:
 		return nil
 	default:
@@ -76,6 +78,8 @@ func (t *Transaction) Exec(tx *types.Transaction, chainHeight uint64) error {
 // and fee of the transaction based on the current state of their
 // account. It also ensures that the transaction's nonce is the
 // next/expected nonce value.
+//
+// ARGS:
 // txType: The transaction type
 // senderPubKey: The public key of the tx sender.
 // recipientAddr: Recipient address
@@ -95,20 +99,28 @@ func (t *Transaction) CanExecCoinTransfer(
 	var err error
 
 	// Ensure recipient address is valid.
-	// Ignore for ticket purchases tx as a recipient address is not required.
-	if txType != types.TxTypeGetValidatorTicket {
+	// Ignore for ticket purchase transactions as a recipient address is not required.
+	if txType != types.TxTypeValidatorTicket && txType != types.TxTypeStorerTicket {
 		if err = crypto.IsValidAddr(recipientAddr.String()); err != nil {
-			return fmt.Errorf("invalid recipient address: %s", err)
+			return types.FieldError("to", fmt.Sprintf("invalid recipient address: %s", err))
 		}
 	}
 
-	// For validator ticket transaction:
-	// The tx value must be equal or greater than the current ticket price.
-	if txType == types.TxTypeGetValidatorTicket {
+	// For TxTypeValidatorTicket, the value must be equal or greater than the
+	// current ticket price.
+	if txType == types.TxTypeValidatorTicket {
 		curTicketPrice := t.logic.Sys().GetCurValidatorTicketPrice()
 		if value.Decimal().LessThan(decimal.NewFromFloat(curTicketPrice)) {
-			return fmt.Errorf("value is lower than the minimum ticket price (%f)",
-				curTicketPrice)
+			return types.FieldError("to", fmt.Sprintf("value is lower than the"+
+				" minimum ticket price (%f)", curTicketPrice))
+		}
+	}
+
+	// For TxTypeStorerTicket, the value must not be lower than the minimum
+	// storer stake
+	if txType == types.TxTypeStorerTicket {
+		if value.Decimal().LessThan(params.MinStorerStake) {
+			return types.FieldError("value", fmt.Sprintf("value is lower than minimum storer stake"))
 		}
 	}
 
@@ -120,20 +132,22 @@ func (t *Transaction) CanExecCoinTransfer(
 	// Ensure the transaction nonce is the next expected nonce
 	expectedNonce := senderAcct.Nonce + 1
 	if expectedNonce != nonce {
-		return fmt.Errorf("tx has invalid nonce (%d), expected (%d)", nonce, expectedNonce)
+		return types.FieldError("value", fmt.Sprintf("tx has invalid nonce (%d), expected (%d)",
+			nonce, expectedNonce))
 	}
 
 	// Ensure sender has enough spendable balance to pay transfer value + fee
 	spendAmt := value.Decimal().Add(fee.Decimal())
 	senderBal := senderAcct.GetSpendableBalance(chainHeight).Decimal()
 	if !senderBal.GreaterThanOrEqual(spendAmt) {
-		return fmt.Errorf("sender's spendable account balance is insufficient")
+		return types.FieldError("value", fmt.Sprintf("sender's spendable account "+
+			"balance is insufficient"))
 	}
 
 	return nil
 }
 
-// execValidatorStake sets aside some balance as validator stake.
+// execStorerStake sets aside some balance as storer stake.
 //
 // senderPubKey: The public key of the tx sender.
 // value: The value of the transaction.
@@ -141,13 +155,39 @@ func (t *Transaction) CanExecCoinTransfer(
 // nonce: The nonce of the transaction.
 // chainHeight: The current chain height.
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
-func (t *Transaction) execValidatorStake(
+func (t *Transaction) execStorerStake(
 	senderPubKey,
 	value,
 	fee util.String,
 	nonce,
 	chainHeight uint64) error {
+	return t.addStake(
+		types.TxTypeStorerTicket,
+		senderPubKey,
+		value,
+		fee,
+		nonce,
+		chainHeight,
+	)
+}
 
+// addStake adds a stake entry to an account
+//
+// ARGS:
+// txType: The transaction type
+// senderPubKey: The public key of the tx sender.
+// value: The value of the transaction.
+// fee: The fee paid by the sender.
+// nonce: The nonce of the transaction.
+// chainHeight: The current chain height.
+// EXPECT: Syntactic and consistency validation to have been performed by caller.
+func (t *Transaction) addStake(
+	txType int,
+	senderPubKey,
+	value,
+	fee util.String,
+	nonce,
+	chainHeight uint64) error {
 	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
 	acctKeeper := t.logic.AccountKeeper()
 
@@ -168,13 +208,42 @@ func (t *Transaction) execValidatorStake(
 		uint64(params.NumBlocksInThawPeriod)
 
 	// Add a stake entry
-	senderAcct.Stakes.Add(types.StakeTypeValidator, value, unbondHeight)
+	switch txType {
+	case types.TxTypeValidatorTicket:
+		senderAcct.Stakes.Add(types.StakeTypeValidator, value, unbondHeight)
+	case types.TxTypeStorerTicket:
+		senderAcct.Stakes.Add(types.StakeTypeStorer, value, 0)
+	}
 
 	// Update the sender account
 	senderAcct.CleanUnbonded(chainHeight)
 	acctKeeper.Update(sender, senderAcct)
 
 	return nil
+}
+
+// execValidatorStake sets aside some balance as validator stake.
+//
+// senderPubKey: The public key of the tx sender.
+// value: The value of the transaction.
+// fee: The fee paid by the sender.
+// nonce: The nonce of the transaction.
+// chainHeight: The current chain height.
+// EXPECT: Syntactic and consistency validation to have been performed by caller.
+func (t *Transaction) execValidatorStake(
+	senderPubKey,
+	value,
+	fee util.String,
+	nonce,
+	chainHeight uint64) error {
+	return t.addStake(
+		types.TxTypeValidatorTicket,
+		senderPubKey,
+		value,
+		fee,
+		nonce,
+		chainHeight,
+	)
 }
 
 // execCoinTransfer transfers units of the native currency from a sender account

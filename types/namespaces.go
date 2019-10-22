@@ -11,4 +11,5 @@ const (
 	NamespaceAccount  = "account"
 	NamespaceUtil     = "util"
 	NamespaceTicket   = "ticket"
+	NamespaceStorer   = "storer"
 )
