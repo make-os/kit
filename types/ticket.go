@@ -48,6 +48,9 @@ type TicketManager interface {
 	// QueryOne finds and returns a ticket that match the given query
 	QueryOne(q Ticket, queryOpt ...QueryOptions) (*Ticket, error)
 
+	// UpdateDecayBy updates the decay height of a ticket
+	UpdateDecayBy(hash string, newDecayHeight uint64) error
+
 	// Remove deletes a ticket by its hash
 	Remove(hash string) error
 

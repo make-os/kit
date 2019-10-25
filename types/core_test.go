@@ -207,4 +207,83 @@ var _ = Describe("AccountStakes", func() {
 			Expect(stakes.Get(key).Value).To(Equal(util.String("10")))
 		})
 	})
+
+	Describe(".Remove", func() {
+		Context("with existing entry of value=10 and key=v0 and unbondHeight=0", func() {
+			It("should remove entry with stakeType=v, value=10, unbondHeight=0", func() {
+				stakes := AccountStakes(map[string]*StakeInfo{})
+				key := stakes.Add("v", util.String("10"), 0)
+				Expect(key).To(Equal("v0"))
+				Expect(stakes).To(HaveLen(1))
+				stakes.Remove("v", util.String("10"), 0)
+				Expect(stakes).To(HaveLen(0))
+			})
+		})
+
+		Context("with existing entry of value=10 and key=v0 and unbondHeight=1", func() {
+			It("should not remove entry with stakeType=v, value=10, unbondHeight=0", func() {
+				stakes := AccountStakes(map[string]*StakeInfo{})
+				key := stakes.Add("v", util.String("10"), 1)
+				Expect(key).To(Equal("v0"))
+				Expect(stakes).To(HaveLen(1))
+				stakes.Remove("v", util.String("10"), 0)
+				Expect(stakes).To(HaveLen(1))
+			})
+		})
+
+		Context("with existing entry of value=10.5 and key=v0 and unbondHeight=0", func() {
+			It("should not remove entry with stakeType=v, value=10, unbondHeight=0", func() {
+				stakes := AccountStakes(map[string]*StakeInfo{})
+				key := stakes.Add("v", util.String("10.5"), 0)
+				Expect(key).To(Equal("v0"))
+				Expect(stakes).To(HaveLen(1))
+				stakes.Remove("v", util.String("10"), 0)
+				Expect(stakes).To(HaveLen(1))
+			})
+		})
+
+		Context("with existing entry of value=10 and key=s0 and unbondHeight=0", func() {
+			It("should not remove entry with stakeType=v, value=10, unbondHeight=0", func() {
+				stakes := AccountStakes(map[string]*StakeInfo{})
+				key := stakes.Add("s", util.String("10"), 0)
+				Expect(key).To(Equal("s0"))
+				Expect(stakes).To(HaveLen(1))
+				stakes.Remove("v", util.String("10"), 0)
+				Expect(stakes).To(HaveLen(1))
+			})
+		})
+
+		Context("with 2 existing entry of value=10 and key=v0 and unbondHeight=0 | value=10 and key=v1 and unbondHeight=0", func() {
+			var stakes AccountStakes
+			BeforeEach(func() {
+				stakes = AccountStakes(map[string]*StakeInfo{})
+				key := stakes.Add("v", util.String("10"), 0)
+				Expect(key).To(Equal("v0"))
+				key2 := stakes.Add("v", util.String("10"), 0)
+				Expect(key2).To(Equal("v1"))
+				Expect(stakes).To(HaveLen(2))
+			})
+
+			It("should remove entry with stakeType=v, value=10, unbondHeight=0 and leave v01", func() {
+				rmKey := stakes.Remove("v", util.String("10"), 0)
+				Expect(rmKey).To(Equal("v0"))
+				Expect(stakes).To(HaveLen(1))
+			})
+		})
+	})
+
+	Describe(".UpdateUnbondHeight", func() {
+		Context("with existing entry of value=10 and key=v0 and unbondHeight=0", func() {
+			It("should find entry with stakeType=v, value=10, unbondHeight=0 and unbondHeight=10", func() {
+				stakes := AccountStakes(map[string]*StakeInfo{})
+				key := stakes.Add("v", util.String("10"), 0)
+				Expect(key).To(Equal("v0"))
+				Expect(stakes).To(HaveLen(1))
+				key2 := stakes.UpdateUnbondHeight("v", util.String("10"), 0, 10)
+				Expect(key).To(Equal(key2))
+				stake := stakes[key2]
+				Expect(stake.UnbondHeight).To(Equal(uint64(10)))
+			})
+		})
+	})
 })

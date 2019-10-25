@@ -65,4 +65,8 @@ var (
 
 	// MinStorerStake is the minimum stake for a storer ticket
 	MinStorerStake = decimal.NewFromFloat(10)
+
+	// NumBlocksInStorerThawPeriod is the number of blocks before a storer stake
+	// is unbonded
+	NumBlocksInStorerThawPeriod = 10
 )

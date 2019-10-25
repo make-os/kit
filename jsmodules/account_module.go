@@ -82,8 +82,8 @@ func (m *AccountModule) namespacedFuncs() []*types.JSModuleFunc {
 			Description: "Get the private validator information",
 		},
 		&types.JSModuleFunc{
-			Name:        "setDelegatorCommissionRate",
-			Value:       m.setDelegatorCommissionRate,
+			Name:        "execSetDelegatorCommissionRate",
+			Value:       m.execSetDelegatorCommissionRate,
 			Description: "Set the percentage of reward to share with a delegator",
 		},
 	}
@@ -242,8 +242,8 @@ func (m *AccountModule) getPrivateValidator(includePrivKey ...bool) interface{} 
 	return info
 }
 
-// setDelegatorCommissionRate sets the delegator commission for an account
-func (m *AccountModule) setDelegatorCommissionRate(txObj interface{}, options ...interface{}) interface{} {
+// execSetDelegatorCommissionRate sets the delegator commission for an account
+func (m *AccountModule) execSetDelegatorCommissionRate(txObj interface{}, options ...interface{}) interface{} {
 	var err error
 	tx, key := processTxArgs(txObj, options...)
 	tx.Type = types.TxTypeSetDelegatorCommission

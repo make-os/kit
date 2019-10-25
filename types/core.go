@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/makeos/mosdef/util"
@@ -134,6 +135,38 @@ func (s *AccountStakes) Add(stakeType string, value util.String, unbondHeight ui
 		break
 	}
 	return key
+}
+
+// Remove removes a stake entry that matches the given stake type, value and
+// unbond height. Returns the key of the stake entry removed
+func (s *AccountStakes) Remove(stakeType string, value util.String, unbondHeight uint64) string {
+	for k, si := range *s {
+		if strings.HasPrefix(k, stakeType) &&
+			si.Value.Equal(value) &&
+			unbondHeight == si.UnbondHeight {
+			delete(*s, k)
+			return k
+		}
+	}
+	return ""
+}
+
+// UpdateUnbondHeight update the unbond height that matches the given stake
+// type, value and unbond height. Returns the key of the stake entry that was updated.
+func (s *AccountStakes) UpdateUnbondHeight(
+	stakeType string,
+	value util.String,
+	unbondHeight,
+	newUnbondHeight uint64) string {
+	for k, si := range *s {
+		if strings.HasPrefix(k, stakeType) &&
+			si.Value.Equal(value) &&
+			unbondHeight == si.UnbondHeight {
+			si.UnbondHeight = newUnbondHeight
+			return k
+		}
+	}
+	return ""
 }
 
 // Has checks whether a staked balance with the given name exist

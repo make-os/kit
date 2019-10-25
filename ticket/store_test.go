@@ -217,6 +217,35 @@ var _ = Describe("SQLStore", func() {
 		})
 	})
 
+	Describe(".UpdateOne", func() {
+		var store *SQLStore
+		var err error
+		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 1, Index: 2}
+
+		BeforeEach(func() {
+			store, err = NewSQLStore(cfg.GetTicketDBDir())
+			Expect(err).To(BeNil())
+			err = store.Add(ticket, ticket2)
+			Expect(err).To(BeNil())
+		})
+
+		Context("update ticket1 'DecayBy' field", func() {
+
+			BeforeEach(func() {
+				err := store.UpdateOne(types.Ticket{Hash: ticket.Hash}, types.Ticket{DecayBy: 5000})
+				Expect(err).To(BeNil())
+			})
+
+			Specify("that the ticket was updated", func() {
+				updTicket, err := store.QueryOne(types.Ticket{Hash: ticket.Hash})
+				Expect(err).To(BeNil())
+				Expect(updTicket.Hash).To(Equal(ticket.Hash))
+				Expect(updTicket.DecayBy).To(Equal(uint64(5000)))
+			})
+		})
+	})
+
 	Describe(".Query", func() {
 		var store *SQLStore
 		var err error

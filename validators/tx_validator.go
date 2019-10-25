@@ -26,6 +26,7 @@ var KnownTransactionTypes = []int{
 	types.TxTypeValidatorTicket,
 	types.TxTypeSetDelegatorCommission,
 	types.TxTypeStorerTicket,
+	types.TxTypeUnbondStorerTicket,
 }
 
 var validTypeRule = func(err error) func(interface{}) error {
@@ -228,9 +229,12 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 	}
 
 	// The recipient's address must be set and it must be valid.
+	// Ignore for: TxTypeValidatorTicket, TxTypeSetDelegatorCommission,
+	// TxTypeStorerTicket, TxTypeUnbondStorerTicket
 	if tx.Type != types.TxTypeValidatorTicket &&
 		tx.Type != types.TxTypeSetDelegatorCommission &&
-		tx.Type != types.TxTypeStorerTicket {
+		tx.Type != types.TxTypeStorerTicket &&
+		tx.Type != types.TxTypeUnbondStorerTicket {
 		if err := v.Validate(tx.GetTo(),
 			v.Required.Error(types.FieldErrorWithIndex(index, "to",
 				"recipient address is required").Error()),
@@ -250,16 +254,20 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 		}
 	}
 
-	// Value must be >= 0 and it must be valid number
-	if err := v.Validate(tx.GetValue(),
-		v.Required.Error(types.FieldErrorWithIndex(index, "value",
-			"value is required").Error()), v.By(validValueRule("value", index)),
-	); err != nil {
-		return err
+	// Value must be >= 0 and it must be valid number.
+	// Ignore for: TxTypeUnbondStorerTicket
+	if tx.Type != types.TxTypeUnbondStorerTicket {
+		if err := v.Validate(tx.GetValue(),
+			v.Required.Error(types.FieldErrorWithIndex(index, "value",
+				"value is required").Error()), v.By(validValueRule("value", index)),
+		); err != nil {
+			return err
+		}
 	}
 
+	// Value cannot be zero or less than the minimum commission
+	// Only for: TxTypeSetDelegatorCommission
 	if tx.Type == types.TxTypeSetDelegatorCommission {
-		// Value cannot be zero or less than the minimum commission
 		if tx.Value.Decimal().LessThan(params.MinDelegatorCommission) {
 			minPct := params.MinDelegatorCommission.String()
 			return types.FieldErrorWithIndex(index, "value",
@@ -295,6 +303,17 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 			"timestamp is required").Error()), v.By(validTimestampRule("timestamp", index)),
 	); err != nil {
 		return err
+	}
+
+	// Ticket ID is required
+	// Only for: TxTypeUnbondStorerTicket
+	if tx.Type == types.TxTypeUnbondStorerTicket {
+		if err := v.Validate(tx.GetTicketID(),
+			v.Required.Error(types.FieldErrorWithIndex(index, "ticket",
+				"ticket id is required").Error()),
+		); err != nil {
+			return err
+		}
 	}
 
 	// Sender's public key is required and must be a valid base58 encoded key
@@ -405,6 +424,20 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		}
 	}
 
+	// Check for unexpected field for types.TxTypeUnbondStorerTicket,
+	if txType == types.TxTypeUnbondStorerTicket {
+		unExpected = append(unExpected, []interface{}{"to", tx.To})
+		unExpected = append(unExpected, []interface{}{"value", tx.Value})
+		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
+		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
+		unExpected = append(unExpected, []interface{}{"secretRound", tx.SecretRound})
+		for _, item := range unExpected {
+			if IsSet(item[1]) {
+				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -450,6 +483,8 @@ func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) 
 	switch tx.Type {
 	case types.TxTypeSetDelegatorCommission:
 		return nil
+	case types.TxTypeUnbondStorerTicket:
+		goto unbondStoreTicket
 	}
 
 	// Check whether the transaction is consistent with
@@ -458,6 +493,32 @@ func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) 
 		tx.GetNonce(), uint64(bi.Height))
 	if err != nil {
 		return err
+	}
+
+	return nil
+
+unbondStoreTicket:
+
+	// Ticket ID must be a known ticket
+	ticket, err := logic.GetTicketManager().QueryOne(types.Ticket{Hash: string(tx.TicketID)})
+	if err != nil {
+		return errors.Wrap(err, "failed to find ticket")
+	} else if ticket == nil {
+		return types.FieldErrorWithIndex(index, "ticketID", "ticket not found")
+	}
+
+	// Ensure the tx sender is the owner of the ticket
+	if !tx.SenderPubKey.Equal(util.String(ticket.ProposerPubKey)) {
+		return types.FieldErrorWithIndex(index, "ticketID", "sender not authorized to "+
+			"unbond this ticket")
+	}
+
+	// Ensure the ticket has not decayed or is decaying.
+	decayBy := ticket.DecayBy
+	if decayBy != 0 && decayBy > uint64(bi.Height) {
+		return types.FieldErrorWithIndex(index, "ticketID", "ticket is already decaying")
+	} else if decayBy != 0 && decayBy <= uint64(bi.Height) {
+		return types.FieldErrorWithIndex(index, "ticketID", "ticket has already decayed")
 	}
 
 	return nil

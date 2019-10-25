@@ -5,10 +5,9 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/makeos/mosdef/types"
+	reflect "reflect"
 )
 
 // MockTicketManager is a mock of TicketManager interface
@@ -135,6 +134,20 @@ func (mr *MockTicketManagerMockRecorder) QueryOne(q interface{}, queryOpt ...int
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{q}, queryOpt...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryOne", reflect.TypeOf((*MockTicketManager)(nil).QueryOne), varargs...)
+}
+
+// UpdateDecayBy mocks base method
+func (m *MockTicketManager) UpdateDecayBy(hash string, newDecayHeight uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateDecayBy", hash, newDecayHeight)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateDecayBy indicates an expected call of UpdateDecayBy
+func (mr *MockTicketManagerMockRecorder) UpdateDecayBy(hash, newDecayHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDecayBy", reflect.TypeOf((*MockTicketManager)(nil).UpdateDecayBy), hash, newDecayHeight)
 }
 
 // Remove mocks base method

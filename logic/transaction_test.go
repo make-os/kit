@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/makeos/mosdef/params"
@@ -31,6 +32,7 @@ var _ = Describe("Transaction", func() {
 	var logic *Logic
 	var txLogic *Transaction
 	var ctrl *gomock.Controller
+	var sender = crypto.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -242,7 +244,7 @@ var _ = Describe("Transaction", func() {
 		})
 	})
 
-	Describe(".setDelegatorCommission", func() {
+	Describe(".execSetDelegatorCommission", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var senderAcct *types.Account
 		Context("when tx has incorrect nonce", func() {
@@ -253,7 +255,7 @@ var _ = Describe("Transaction", func() {
 					DelegatorCommission: 15.4,
 				})
 				spk := util.String(sender.PubKey().Base58())
-				err := txLogic.setDelegatorCommission(spk, util.String("23.5"))
+				err := txLogic.execSetDelegatorCommission(spk, util.String("23.5"))
 				Expect(err).To(BeNil())
 				senderAcct = logic.AccountKeeper().GetAccount(sender.Addr())
 			})
@@ -269,7 +271,6 @@ var _ = Describe("Transaction", func() {
 	})
 
 	Describe(".addStake", func() {
-		var sender = crypto.NewKeyFromIntSeed(1)
 
 		Context("for tx of type TxTypeValidatorTicket & TxTypeStorerTicket", func() {
 			Context("when [current block height]=1; an account balance is 100 with validator stake entry of value=50, unbondHeight=1", func() {
@@ -340,6 +341,94 @@ var _ = Describe("Transaction", func() {
 					Expect(acct.Stakes.TotalStaked(1)).To(Equal(util.String("10")))
 					Expect(acct.Stakes[types.StakeTypeStorer+"0"].UnbondHeight).To(Equal(uint64(0)))
 				})
+			})
+		})
+	})
+
+	Describe(".execUnbond", func() {
+		When("unable to get ticket due to query error", func() {
+			var senderPubKey util.String
+			var err error
+
+			BeforeEach(func() {
+				acct := types.BareAccount()
+				logic.AccountKeeper().Update(sender.Addr(), acct)
+
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockTickMgr := mocks.NewMockTicketManager(ctrl)
+				mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+				mockLogic.EXPECT().AccountKeeper().Return(logic.AccountKeeper())
+				txLogic.logic = mockLogic
+
+				mockTickMgr.EXPECT().QueryOne(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
+
+				senderPubKey = util.String(sender.PubKey().Base58())
+				err = txLogic.execUnbond([]byte("ticket_id"), senderPubKey, 1)
+				Expect(err).ToNot(BeNil())
+			})
+
+			It("should return err='failed to get ticket: bad error'", func() {
+				Expect(err.Error()).To(Equal("failed to get ticket: bad error"))
+			})
+		})
+
+		When("ticket is unknown", func() {
+			var senderPubKey util.String
+			var err error
+
+			BeforeEach(func() {
+				acct := types.BareAccount()
+				logic.AccountKeeper().Update(sender.Addr(), acct)
+
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockTickMgr := mocks.NewMockTicketManager(ctrl)
+				mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+				mockLogic.EXPECT().AccountKeeper().Return(logic.AccountKeeper())
+				txLogic.logic = mockLogic
+
+				mockTickMgr.EXPECT().QueryOne(gomock.Any()).Return(nil, nil)
+
+				senderPubKey = util.String(sender.PubKey().Base58())
+				err = txLogic.execUnbond([]byte("ticket_id"), senderPubKey, 1)
+				Expect(err).ToNot(BeNil())
+			})
+
+			It("should return err='ticket not found'", func() {
+				Expect(err.Error()).To(Equal("ticket not found"))
+			})
+		})
+
+		When("storer stake is 100 and unbondHeight is 0", func() {
+			var senderPubKey util.String
+			var err error
+
+			BeforeEach(func() {
+				params.NumBlocksInStorerThawPeriod = 200
+
+				acct := types.BareAccount()
+				acct.Stakes.Add(types.StakeTypeStorer, "100", 0)
+				logic.AccountKeeper().Update(sender.Addr(), acct)
+
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockTickMgr := mocks.NewMockTicketManager(ctrl)
+				mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+				mockLogic.EXPECT().AccountKeeper().Return(logic.AccountKeeper())
+				txLogic.logic = mockLogic
+
+				returnTicket := &types.Ticket{Hash: "ticket_id", Value: "100"}
+				mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: "ticket_id"}).Return(returnTicket, nil)
+
+				senderPubKey = util.String(sender.PubKey().Base58())
+				err = txLogic.execUnbond([]byte(returnTicket.Hash), senderPubKey, 1)
+				Expect(err).To(BeNil())
+			})
+
+			Specify("that the unbondHeight is 202", func() {
+				acct := logic.AccountKeeper().GetAccount(sender.Addr())
+				Expect(acct.Nonce).To(Equal(uint64(1)))
+				stake := acct.Stakes.Get("s0")
+				Expect(stake.Value.String()).To(Equal("100"))
+				Expect(stake.UnbondHeight).To(Equal(uint64(202)))
 			})
 		})
 	})

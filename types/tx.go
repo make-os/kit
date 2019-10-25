@@ -16,17 +16,20 @@ var (
 	TxTypeCoinTransfer = 0x0
 
 	// TxTypeValidatorTicket represents a transaction purchases validator ticket
-	TxTypeValidatorTicket = 0x1
+	TxTypeValidatorTicket = 0x01
 
 	// TxTypeEpochSecret represents a transaction containing 64 bytes secret
 	// for selecting the next epoch block validators.
-	TxTypeEpochSecret = 0x2
+	TxTypeEpochSecret = 0x02
 
 	// TxTypeSetDelegatorCommission sets the delegator commission
-	TxTypeSetDelegatorCommission = 0x3
+	TxTypeSetDelegatorCommission = 0x03
 
 	// TxTypeStorerTicket represents a transaction to acquire an storer ticket.
-	TxTypeStorerTicket = 0x4
+	TxTypeStorerTicket = 0x04
+
+	// TxTypeUnbondStorerTicket represents a transaction to unbond storer stake
+	TxTypeUnbondStorerTicket = 0x05
 )
 
 // Transaction meta keys

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/makeos/mosdef/params"
+	"github.com/pkg/errors"
 
 	"github.com/shopspring/decimal"
 
@@ -64,9 +65,11 @@ func (t *Transaction) Exec(tx *types.Transaction, chainHeight uint64) error {
 	case types.TxTypeValidatorTicket:
 		return t.execValidatorStake(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce(), chainHeight)
 	case types.TxTypeSetDelegatorCommission:
-		return t.setDelegatorCommission(tx.SenderPubKey, tx.Value)
+		return t.execSetDelegatorCommission(tx.SenderPubKey, tx.Value)
 	case types.TxTypeStorerTicket:
 		return t.execStorerStake(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce(), chainHeight)
+	case types.TxTypeUnbondStorerTicket:
+		return t.execUnbond(tx.TicketID, tx.SenderPubKey, chainHeight)
 	case types.TxTypeEpochSecret:
 		return nil
 	default:
@@ -147,13 +150,54 @@ func (t *Transaction) CanExecCoinTransfer(
 	return nil
 }
 
+// execUnbond sets an unbond height on a target stake
+//
+// ARG:
+// ticketID: The target ticket ID
+// senderPubKey: The public key of the tx sender.
+// chainHeight: The height of the block chain
+//
+// EXPECT: Syntactic and consistency validation to have been performed by caller.
+func (t *Transaction) execUnbond(
+	ticketID []byte,
+	senderPubKey util.String,
+	chainHeight uint64) error {
+
+	// Get sender account
+	acctKeeper := t.logic.AccountKeeper()
+	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
+	senderAcct := acctKeeper.GetAccount(spk.Addr())
+
+	// Get the ticket
+	ticket, err := t.logic.GetTicketManager().QueryOne(types.Ticket{Hash: string(ticketID)})
+	if err != nil {
+		return errors.Wrap(err, "failed to get ticket")
+	} else if ticket == nil {
+		return fmt.Errorf("ticket not found")
+	}
+
+	// Set new unbond height
+	newUnbondHeight := chainHeight + 1 + uint64(params.NumBlocksInStorerThawPeriod)
+	senderAcct.Stakes.UpdateUnbondHeight(types.StakeTypeStorer,
+		util.String(ticket.Value), 0, newUnbondHeight)
+
+	// Update the sender account
+	senderAcct.Nonce = senderAcct.Nonce + 1
+	senderAcct.CleanUnbonded(chainHeight)
+	acctKeeper.Update(spk.Addr(), senderAcct)
+
+	return nil
+}
+
 // execStorerStake sets aside some balance as storer stake.
 //
+// ARGS:
 // senderPubKey: The public key of the tx sender.
 // value: The value of the transaction.
 // fee: The fee paid by the sender.
 // nonce: The nonce of the transaction.
 // chainHeight: The current chain height.
+//
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) execStorerStake(
 	senderPubKey,
@@ -180,6 +224,7 @@ func (t *Transaction) execStorerStake(
 // fee: The fee paid by the sender.
 // nonce: The nonce of the transaction.
 // chainHeight: The current chain height.
+//
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) addStake(
 	txType int,
@@ -224,11 +269,13 @@ func (t *Transaction) addStake(
 
 // execValidatorStake sets aside some balance as validator stake.
 //
+// ARGS:
 // senderPubKey: The public key of the tx sender.
 // value: The value of the transaction.
 // fee: The fee paid by the sender.
 // nonce: The nonce of the transaction.
 // chainHeight: The current chain height.
+//
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) execValidatorStake(
 	senderPubKey,
@@ -257,6 +304,8 @@ func (t *Transaction) execValidatorStake(
 // fee: The transaction fee
 // nonce: The transaction nonce
 // chainHeight: The current chain height.
+//
+// EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) execCoinTransfer(
 	senderPubKey,
 	recipientAddr,
@@ -300,12 +349,14 @@ func (t *Transaction) execCoinTransfer(
 	return nil
 }
 
-// setDelegatorCommission sets the delegator commission of an account
+// execSetDelegatorCommission sets the delegator commission of an account
 //
 // ARGS:
 // senderPubKey: The sender's public key
 // value: The target commission (in percentage)
-func (t *Transaction) setDelegatorCommission(senderPubKey, value util.String) error {
+//
+// EXPECT: Syntactic and consistency validation to have been performed by caller.
+func (t *Transaction) execSetDelegatorCommission(senderPubKey, value util.String) error {
 
 	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
 	acctKeeper := t.logic.AccountKeeper()

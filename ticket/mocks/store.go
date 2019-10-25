@@ -5,10 +5,9 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/makeos/mosdef/types"
+	reflect "reflect"
 )
 
 // MockStore is a mock of Store interface
@@ -150,6 +149,25 @@ func (mr *MockStoreMockRecorder) CountLiveValidators(height interface{}, queryOp
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{height}, queryOptions...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLiveValidators", reflect.TypeOf((*MockStore)(nil).CountLiveValidators), varargs...)
+}
+
+// UpdateOne mocks base method
+func (m *MockStore) UpdateOne(query, update types.Ticket, queryOptions ...interface{}) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{query, update}
+	for _, a := range queryOptions {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateOne", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateOne indicates an expected call of UpdateOne
+func (mr *MockStoreMockRecorder) UpdateOne(query, update interface{}, queryOptions ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{query, update}, queryOptions...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockStore)(nil).UpdateOne), varargs...)
 }
 
 // Remove mocks base method

@@ -22,6 +22,8 @@ type Store interface {
 	GetLiveValidatorTickets(height int64, queryOptions ...interface{}) ([]*types.Ticket, error)
 	// CountLiveValidators returns the number of matured and live tickets
 	CountLiveValidators(height int64, queryOptions ...interface{}) (int, error)
+	// UpdateOne update a ticket
+	UpdateOne(query, update types.Ticket, queryOptions ...interface{}) error
 	// Remove deletes a ticket by its hash
 	Remove(hash string) error
 	// Close closes the store
@@ -122,6 +124,19 @@ func (s *SQLStore) QueryOne(
 	}
 
 	return &ticket, nil
+}
+
+// UpdateOne update a ticket
+func (s *SQLStore) UpdateOne(
+	query,
+	update types.Ticket,
+	queryOptions ...interface{}) error {
+
+	opts := getQueryOptions(queryOptions...)
+	q := s.db.Model(types.Ticket{}).Where(query)
+	q = applyQueryOpts(q, opts)
+
+	return q.Update(&update).Error
 }
 
 // GetLiveValidatorTickets returns matured and undecayed

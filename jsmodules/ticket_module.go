@@ -64,6 +64,11 @@ func (m *TicketModule) storerFuncs() []*types.JSModuleFunc {
 			Value:       m.storerBuy,
 			Description: "Buy an storer ticket",
 		},
+		&types.JSModuleFunc{
+			Name:        "unbond",
+			Value:       m.unbondStorerTicket,
+			Description: "Unbond the stake associated with a storer ticket",
+		},
 	}
 }
 
@@ -140,4 +145,9 @@ func (m *TicketModule) top(limit int) interface{} {
 	}
 
 	return res
+}
+
+// unbondStorerTicket initiates the release of stake associated with a storer ticket
+func (m *TicketModule) unbondStorerTicket(txObj interface{}, options ...interface{}) interface{} {
+	return simpleTx(m.service, types.TxTypeUnbondStorerTicket, txObj, options...)
 }

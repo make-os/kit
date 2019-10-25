@@ -156,7 +156,7 @@ func (s *System) GetCurretEpochSecretTx() (types.Tx, error) {
 }
 
 // MakeSecret generates a 64 bytes secret for validator
-// selection by xoring the last 32 valid epoch secrets.
+// selection by xor-ing the last 32 valid epoch secrets.
 // The most recent secrets will be selected starting from
 // the given height down to genesis.
 // It returns ErrNoSecretFound if no error was found

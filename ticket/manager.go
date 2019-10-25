@@ -138,6 +138,11 @@ func (m *Manager) QueryOne(q types.Ticket, queryOpt ...types.QueryOptions) (*typ
 	return m.store.QueryOne(q, qOpt)
 }
 
+// UpdateDecayBy updates the decay height of a ticket
+func (m *Manager) UpdateDecayBy(hash string, newDecayHeight uint64) error {
+	return m.store.UpdateOne(types.Ticket{Hash: hash}, types.Ticket{DecayBy: newDecayHeight})
+}
+
 // SelectRandom selects random live tickets up to the specified limit.
 // The provided see is used to seed the PRNG that is used to select tickets.
 func (m *Manager) SelectRandom(height int64, seed []byte, limit int) ([]*types.Ticket, error) {

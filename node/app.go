@@ -44,6 +44,7 @@ type App struct {
 	txIndex                   int
 	validatorTickets          []*ticketInfo
 	storerTickets             []*ticketInfo
+	unbondStorerRequests      []string
 	ticketMgr                 types.TicketManager
 	epochSecretTx             *types.Transaction
 	isCurrentBlockProposer    bool
@@ -284,6 +285,8 @@ func (a *App) postExecChecks(
 			a.validatorTickets = append(a.validatorTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 		case types.TxTypeStorerTicket:
 			a.storerTickets = append(a.storerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
+		case types.TxTypeUnbondStorerTicket:
+			a.unbondStorerRequests = append(a.unbondStorerRequests, string(tx.TicketID))
 		}
 	}
 
@@ -513,9 +516,14 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		}
 	}
 
+	// Set the decay height for each storer stake unbond request
+	for _, ticketHash := range a.unbondStorerRequests {
+		a.logic.GetTicketManager().UpdateDecayBy(ticketHash, uint64(a.wBlock.Height))
+	}
+
 	// Commit all state changes
 	if err := a.logic.Commit(); err != nil {
-		panic(errors.Wrap(err, "failed to commit"))
+		a.commitPanic(errors.Wrap(err, "failed to commit"))
 	}
 
 	return abcitypes.ResponseCommit{
@@ -527,6 +535,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 func (a *App) reset() {
 	a.validatorTickets = []*ticketInfo{}
 	a.storerTickets = []*ticketInfo{}
+	a.unbondStorerRequests = []string{}
 	a.txIndex = 0
 	a.epochSecretTx = nil
 	a.mature = false

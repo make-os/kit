@@ -105,9 +105,15 @@ var _ = Describe("TxValidator", func() {
 			{tx: txMissingSignature, desc: "signature not provided", err: fmt.Errorf("field:sig, error:signature is required")},
 			{tx: txInvalidSig, desc: "signature not valid", err: fmt.Errorf("field:sig, error:signature is not valid")},
 			{tx: &types.Transaction{Type: types.TxTypeValidatorTicket, To: "abc"}, desc: "recipient not a valid public key", err: fmt.Errorf("field:to, error:requires a valid public key of a validator to delegate to")},
+
+			// TxTypeSetDelegatorCommission specific cases
 			{tx: &types.Transaction{Type: types.TxTypeSetDelegatorCommission, To: "abc"}, desc: "unexpected field `to` is set", err: fmt.Errorf("field:to, error:unexpected field")},
 			{tx: &types.Transaction{Type: types.TxTypeSetDelegatorCommission, Value: "101"}, desc: "exceeded commission rate", err: fmt.Errorf("field:value, error:commission rate cannot exceed 100%%%%")},
 			{tx: &types.Transaction{Type: types.TxTypeSetDelegatorCommission, Value: "1"}, desc: "below commission rate", err: fmt.Errorf("field:value, error:commission rate cannot be below the minimum (10%%%%)")},
+
+			// TxTypeUnbondStorerTicket specific cases
+			{tx: &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", To: "addr"}, desc: "unexpected field `to` is set", err: fmt.Errorf("field:to, error:unexpected field")},
+			{tx: &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: 1}, desc: "ticket id not provided", err: fmt.Errorf("field:ticket, error:ticket id is required")},
 		}
 
 		for _, c := range cases {
@@ -137,6 +143,7 @@ var _ = Describe("TxValidator", func() {
 
 	Describe(".ValidateTxConsistency", func() {
 		var key = crypto.NewKeyFromIntSeed(1)
+		var key2 = crypto.NewKeyFromIntSeed(2)
 
 		When("error occurred when getting current block height", func() {
 			var err error
@@ -192,6 +199,157 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
+		When("tx type is TxTypeUnbondStorerTicket", func() {
+			It("should return err='field:senderPubKey, error:invalid format: version and/or checksum bytes missing' when tx sender public key is not valid", func() {
+				tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, To: key.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: "abc"}
+				err := validators.ValidateTxConsistency(tx, -1, nil)
+				Expect(err.Error()).To(Equal("field:senderPubKey, error:invalid format: version and/or checksum bytes missing"))
+			})
+
+			When("unable to find ticket", func() {
+				var err error
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+					mockTickMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
+
+					mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: string(tx.TicketID)}).Return(nil, fmt.Errorf("bad error"))
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err='failed to find ticket: bad error'", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("failed to find ticket: bad error"))
+				})
+			})
+
+			When("ticket is unknown", func() {
+				var err error
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+					mockTickMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
+
+					mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: string(tx.TicketID)}).Return(nil, nil)
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err='field:ticketID, error:ticket not found'", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("field:ticketID, error:ticket not found"))
+				})
+			})
+
+			When("tx sender is not the owner of the ticket", func() {
+				var err error
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+					mockTickMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
+
+					returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key2.PubKey().Base58()}
+					mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: returnTicket.Hash}).Return(returnTicket, nil)
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err='field:ticketID, error:sender not authorized to unbond this ticket'", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("field:ticketID, error:sender not authorized to unbond this ticket"))
+				})
+			})
+
+			When("ticket decay height is 0", func() {
+				var err error
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+					mockTickMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
+
+					returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key.PubKey().Base58(), DecayBy: 0}
+
+					mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: returnTicket.Hash}).Return(returnTicket, nil)
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return nil", func() {
+					Expect(err).To(BeNil())
+				})
+			})
+
+			When("ticket decay height is greater than 0 but less than current block height", func() {
+				var err error
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+					mockTickMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 10}, nil)
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
+
+					returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key.PubKey().Base58(), DecayBy: 5}
+
+					mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: returnTicket.Hash}).Return(returnTicket, nil)
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err='field:ticketID, error:ticket has already decayed'", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("field:ticketID, error:ticket has already decayed"))
+				})
+			})
+
+			When("ticket decay height is greater than 0 but greater than current block height", func() {
+				var err error
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+					mockTickMgr := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 3}, nil)
+
+					tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
+
+					returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key.PubKey().Base58(), DecayBy: 5}
+
+					mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: returnTicket.Hash}).Return(returnTicket, nil)
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err='field:ticketID, error:ticket has already decayed'", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("field:ticketID, error:ticket is already decaying"))
+				})
+			})
+		})
 	})
 
 	Describe(".IsSet", func() {
@@ -250,7 +408,7 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:secretRound, error:unexpected field"))
 			})
 
-			It("should not accept a set `secretRound` field", func() {
+			It("should not accept a set `ticketID` field", func() {
 				tx.TicketID = []byte{1, 2}
 				err := validators.CheckUnexpectedFields(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -322,7 +480,7 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:sig, error:unexpected field"))
 			})
 
-			It("should not accept a set `secretRound` field", func() {
+			It("should not accept a set `ticketID` field", func() {
 				tx.TicketID = []byte{1, 2}
 				err := validators.CheckUnexpectedFields(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -371,11 +529,60 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:secretRound, error:unexpected field"))
 			})
 
-			It("should not accept a set `secretRound` field", func() {
+			It("should not accept a set `ticketID` field", func() {
 				tx.TicketID = []byte{1, 2}
 				err := validators.CheckUnexpectedFields(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:ticketID, error:unexpected field"))
+			})
+		})
+
+		When("check TxTypeUnbondStorerTicket", func() {
+			var tx *types.Transaction
+
+			BeforeEach(func() {
+				tx = types.NewBareTx(types.TxTypeUnbondStorerTicket)
+				tx.Timestamp = 0
+			})
+
+			It("should not accept a set `meta` field", func() {
+				tx.SetMeta(map[string]interface{}{"a": 2})
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:meta, error:unexpected field"))
+			})
+
+			It("should not accept a set `to` field", func() {
+				tx.To = util.String("address")
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:to, error:unexpected field"))
+			})
+
+			It("should not accept a set `value` field", func() {
+				tx.Value = util.String("10")
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:value, error:unexpected field"))
+			})
+
+			It("should not accept a set `secret` field", func() {
+				tx.Secret = []byte{1, 2, 3}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:secret, error:unexpected field"))
+			})
+			It("should not accept a set `previousSecret` field", func() {
+				tx.PreviousSecret = []byte{1, 2, 3}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:previousSecret, error:unexpected field"))
+			})
+			It("should not accept a set `secretRound` field", func() {
+				tx.SecretRound = 12
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:secretRound, error:unexpected field"))
 			})
 		})
 	})

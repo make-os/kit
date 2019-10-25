@@ -584,7 +584,7 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("tx type is TxTypeStorerTicket and is successfully executed", func() {
+		When("tx type is TxTypeStorerTicket and response code=0", func() {
 			BeforeEach(func() {
 				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
 					return nil
@@ -599,11 +599,34 @@ var _ = Describe("App", func() {
 				txLogic.EXPECT().PrepareExec(req, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				mockLogic.EXPECT().Tx().Return(txLogic)
 				app.logic = mockLogic
-				app.DeliverTx(req)
+				Expect(app.DeliverTx(req).Code).To(Equal(uint32(0)))
 			})
 
 			It("should return cache the storer ticket tx", func() {
 				Expect(app.storerTickets).To(HaveLen(1))
+			})
+		})
+
+		When("tx type is TxTypeUnbondStorerTicket and response code=0", func() {
+			BeforeEach(func() {
+				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+					return nil
+				}
+			})
+
+			BeforeEach(func() {
+				tx := types.NewTx(types.TxTypeUnbondStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
+				txLogic := mocks.NewMockTxLogic(ctrl)
+				txLogic.EXPECT().PrepareExec(req, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
+				mockLogic.EXPECT().Tx().Return(txLogic)
+				app.logic = mockLogic
+				Expect(app.DeliverTx(req).Code).To(Equal(uint32(0)))
+			})
+
+			It("should return cache the unbond storer ticket tx", func() {
+				Expect(app.unbondStorerRequests).To(HaveLen(1))
 			})
 		})
 
@@ -1007,6 +1030,40 @@ var _ = Describe("App", func() {
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()
 				app.logic = mockLogic
+			})
+
+			It("should return expected app hash", func() {
+				res := app.Commit()
+				Expect(res.Data).To(Equal(appHash))
+			})
+		})
+
+		When("there is an unbond storer request; should attempt to update the ticket decay height", func() {
+			appHash := []byte("app_hash")
+
+			BeforeEach(func() {
+				mockLogic := mocks.NewMockAtomicLogic(ctrl)
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockTree := mocks.NewMockTree(ctrl)
+				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
+				mockTickMgr := mocks.NewMockTicketManager(ctrl)
+				mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+
+				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
+
+				app.heightToSaveNewValidators = 100
+
+				mockTree.EXPECT().SaveVersion().Return(appHash, int64(0), nil)
+
+				app.unbondStorerRequests = append(app.unbondStorerRequests, "ticket_hash")
+				mockTickMgr.EXPECT().UpdateDecayBy("ticket_hash", uint64(app.wBlock.Height))
+
+				mockLogic.EXPECT().Commit().Return(nil)
+
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
+				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()
+				app.logic = mockLogic
+
 			})
 
 			It("should return expected app hash", func() {
