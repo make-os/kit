@@ -35,8 +35,8 @@ type TicketManager interface {
 	// given proposer public key.
 	GetValidatorTicketByProposer(proposerPubKey string, queryOpt QueryOptions) ([]*Ticket, error)
 
-	// CountLiveValidatorsValidatorTickets returns the number of matured and non-decayed tickets.
-	CountLiveValidatorsValidatorTickets(...QueryOptions) (int, error)
+	// CountLiveValidatorTickets returns the number of matured and non-decayed tickets.
+	CountLiveValidatorTickets(...QueryOptions) (int, error)
 
 	// SelectRandom selects random live tickets up to the specified limit.
 	// The provided see is used to seed the PRNG that is used to select tickets.

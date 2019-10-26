@@ -5,9 +5,10 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/makeos/mosdef/types"
-	reflect "reflect"
 )
 
 // MockTicketManager is a mock of TicketManager interface
@@ -62,23 +63,23 @@ func (mr *MockTicketManagerMockRecorder) GetValidatorTicketByProposer(proposerPu
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatorTicketByProposer", reflect.TypeOf((*MockTicketManager)(nil).GetValidatorTicketByProposer), proposerPubKey, queryOpt)
 }
 
-// CountLiveValidatorsValidatorTickets mocks base method
-func (m *MockTicketManager) CountLiveValidatorsValidatorTickets(arg0 ...types.QueryOptions) (int, error) {
+// CountLiveValidatorTickets mocks base method
+func (m *MockTicketManager) CountLiveValidatorTickets(arg0 ...types.QueryOptions) (int, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range arg0 {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "CountLiveValidatorsValidatorTickets", varargs...)
+	ret := m.ctrl.Call(m, "CountLiveValidatorTickets", varargs...)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CountLiveValidatorsValidatorTickets indicates an expected call of CountLiveValidatorsValidatorTickets
-func (mr *MockTicketManagerMockRecorder) CountLiveValidatorsValidatorTickets(arg0 ...interface{}) *gomock.Call {
+// CountLiveValidatorTickets indicates an expected call of CountLiveValidatorTickets
+func (mr *MockTicketManagerMockRecorder) CountLiveValidatorTickets(arg0 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLiveValidatorsValidatorTickets", reflect.TypeOf((*MockTicketManager)(nil).CountLiveValidatorsValidatorTickets), arg0...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLiveValidatorTickets", reflect.TypeOf((*MockTicketManager)(nil).CountLiveValidatorTickets), arg0...)
 }
 
 // SelectRandom mocks base method

@@ -71,7 +71,7 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
-	Describe(".CountLiveValidatorsValidatorTickets", func() {
+	Describe(".CountLiveValidatorTickets", func() {
 		ticket := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key", MatureBy: 100, DecayBy: 200}
 		ticket2 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key", MatureBy: 100, DecayBy: 150}
 
@@ -87,7 +87,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return 1", func() {
-				count, err := mgr.CountLiveValidatorsValidatorTickets(types.EmptyQueryOptions)
+				count, err := mgr.CountLiveValidatorTickets(types.EmptyQueryOptions)
 				Expect(err).To(BeNil())
 				Expect(count).To(Equal(1))
 			})
@@ -105,7 +105,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return ticket1", func() {
-				count, err := mgr.CountLiveValidatorsValidatorTickets(types.EmptyQueryOptions)
+				count, err := mgr.CountLiveValidatorTickets(types.EmptyQueryOptions)
 				Expect(err).To(BeNil())
 				Expect(count).To(Equal(0))
 			})

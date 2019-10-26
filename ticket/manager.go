@@ -98,8 +98,8 @@ func (m *Manager) GetValidatorTicketByProposer(proposerPubKey string, queryOpt t
 	return res, nil
 }
 
-// CountLiveValidatorsValidatorTickets returns the number of matured and non-decayed tickets.
-func (m *Manager) CountLiveValidatorsValidatorTickets(queryOpt ...types.QueryOptions) (int, error) {
+// CountLiveValidatorTickets returns the number of matured and non-decayed tickets.
+func (m *Manager) CountLiveValidatorTickets(queryOpt ...types.QueryOptions) (int, error) {
 
 	qOpt := types.EmptyQueryOptions
 	if len(queryOpt) > 0 {
