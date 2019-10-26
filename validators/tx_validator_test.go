@@ -104,7 +104,12 @@ var _ = Describe("TxValidator", func() {
 			{tx: &types.Transaction{Type: types.TxTypeCoinTransfer, To: to.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: "abc"}, desc: "sender pub key is not valid", err: fmt.Errorf("field:senderPubKey, error:sender public key is not valid")},
 			{tx: txMissingSignature, desc: "signature not provided", err: fmt.Errorf("field:sig, error:signature is required")},
 			{tx: txInvalidSig, desc: "signature not valid", err: fmt.Errorf("field:sig, error:signature is not valid")},
-			{tx: &types.Transaction{Type: types.TxTypeValidatorTicket, To: "abc"}, desc: "recipient not a valid public key", err: fmt.Errorf("field:to, error:requires a valid public key of a validator to delegate to")},
+
+			// TxTypeValidatorTicket specific case
+			{tx: &types.Transaction{Type: types.TxTypeValidatorTicket, To: "abc"}, desc: "recipient not a valid public key", err: fmt.Errorf("field:to, error:requires a valid public key to delegate to")},
+
+			// TxTypeStorerTicket specific case
+			{tx: &types.Transaction{Type: types.TxTypeStorerTicket, To: "abc"}, desc: "recipient not a valid public key", err: fmt.Errorf("field:to, error:requires a valid public key to delegate to")},
 
 			// TxTypeSetDelegatorCommission specific cases
 			{tx: &types.Transaction{Type: types.TxTypeSetDelegatorCommission, To: "abc"}, desc: "unexpected field `to` is set", err: fmt.Errorf("field:to, error:unexpected field")},
@@ -252,27 +257,55 @@ var _ = Describe("TxValidator", func() {
 				})
 			})
 
-			When("tx sender is not the owner of the ticket", func() {
-				var err error
-				BeforeEach(func() {
-					mockLogic := mocks.NewMockLogic(ctrl)
-					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
-					mockTickMgr := mocks.NewMockTicketManager(ctrl)
-					mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+			Context("for non-delegated ticket", func() {
+				When("tx sender is not the proposer of the ticket", func() {
+					var err error
+					BeforeEach(func() {
+						mockLogic := mocks.NewMockLogic(ctrl)
+						mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+						mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+						mockTickMgr := mocks.NewMockTicketManager(ctrl)
+						mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
 
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+						mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
 
-					tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
+						tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
 
-					returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key2.PubKey().Base58()}
-					mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: returnTicket.Hash}).Return(returnTicket, nil)
-					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+						returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key2.PubKey().Base58()}
+						mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: returnTicket.Hash}).Return(returnTicket, nil)
+						err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+					})
+
+					It("should return err='field:ticketID, error:sender not authorized to unbond this ticket'", func() {
+						Expect(err).ToNot(BeNil())
+						Expect(err.Error()).To(Equal("field:ticketID, error:sender not authorized to unbond this ticket"))
+					})
 				})
+			})
 
-				It("should return err='field:ticketID, error:sender not authorized to unbond this ticket'", func() {
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("field:ticketID, error:sender not authorized to unbond this ticket"))
+			Context("for delegated ticket", func() {
+				When("tx sender is not the delegator of the ticket", func() {
+					var err error
+					BeforeEach(func() {
+						mockLogic := mocks.NewMockLogic(ctrl)
+						mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+						mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+						mockTickMgr := mocks.NewMockTicketManager(ctrl)
+						mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+
+						mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+
+						tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key2.PubKey().Base58())}
+
+						returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key2.PubKey().Base58(), Delegator: key.Addr().String()}
+						mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: returnTicket.Hash}).Return(returnTicket, nil)
+						err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+					})
+
+					It("should return err='field:ticketID, error:sender not authorized to unbond this ticket'", func() {
+						Expect(err).ToNot(BeNil())
+						Expect(err.Error()).To(Equal("field:ticketID, error:sender not authorized to unbond this ticket"))
+					})
 				})
 			})
 
@@ -488,7 +521,7 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("check TxTypeSetDelegatorCommission", func() {
+		When("check TxTypeSetDelegatorCommission & TxTypeStorerTicket", func() {
 			var tx *types.Transaction
 
 			BeforeEach(func() {
@@ -508,6 +541,15 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckUnexpectedFields(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:to, error:unexpected field"))
+			})
+
+			When("type is TxTypeStorerTicket", func() {
+				It("should accept a set `to` field", func() {
+					tx.Type = types.TxTypeStorerTicket
+					tx.To = util.String("address")
+					err := validators.CheckUnexpectedFields(tx, -1)
+					Expect(err).To(BeNil())
+				})
 			})
 
 			It("should not accept a set `secret` field", func() {

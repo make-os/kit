@@ -244,11 +244,12 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 			return err
 		}
 	} else {
-		// For ticket purchasing transactions, the recipient's address
-		// must be a valid validator's public key if it is set
-		if tx.To.String() != "" && tx.Type == types.TxTypeValidatorTicket {
+		// For validator or storer ticket purchasing transactions, the
+		// recipient's address must be a valid public key if it is set
+		if !tx.To.Empty() && (tx.Type == types.TxTypeValidatorTicket ||
+			tx.Type == types.TxTypeStorerTicket) {
 			if err := v.Validate(tx.To, v.By(validPubKeyRule(types.FieldErrorWithIndex(index, "to",
-				"requires a valid public key of a validator to delegate to")))); err != nil {
+				"requires a valid public key to delegate to")))); err != nil {
 				return err
 			}
 		}
@@ -410,13 +411,18 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		}
 	}
 
-	// Check for unexpected field for TxTypeSetDelegatorCommission
+	// Check for unexpected field for TxTypeSetDelegatorCommission & TxTypeStorerTicket
 	if txType == types.TxTypeSetDelegatorCommission || txType == types.TxTypeStorerTicket {
-		unExpected = append(unExpected, []interface{}{"to", tx.To})
 		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
 		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
 		unExpected = append(unExpected, []interface{}{"secretRound", tx.SecretRound})
 		unExpected = append(unExpected, []interface{}{"ticketID", tx.TicketID})
+
+		// Allow `to` field for TxTypeStorerTicket
+		if txType != types.TxTypeStorerTicket {
+			unExpected = append(unExpected, []interface{}{"to", tx.To})
+		}
+
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -507,10 +513,17 @@ unbondStoreTicket:
 		return types.FieldErrorWithIndex(index, "ticketID", "ticket not found")
 	}
 
-	// Ensure the tx sender is the owner of the ticket
-	if !tx.SenderPubKey.Equal(util.String(ticket.ProposerPubKey)) {
-		return types.FieldErrorWithIndex(index, "ticketID", "sender not authorized to "+
-			"unbond this ticket")
+	// Ensure the tx sender is the owner of the ticket.
+	// For delegated ticket, compare the delegator address with the sender
+	// address
+	authErr := types.FieldErrorWithIndex(index, "ticketID", "sender not authorized to "+
+		"unbond this ticket")
+	if ticket.Delegator == "" {
+		if !tx.SenderPubKey.Equal(util.String(ticket.ProposerPubKey)) {
+			return authErr
+		}
+	} else if ticket.Delegator != tx.GetFrom().String() {
+		return authErr
 	}
 
 	// Ensure the ticket has not decayed or is decaying.
