@@ -119,7 +119,7 @@ func (n *Node) Start() error {
 	n.logic = logic.New(n.db, n.cfg)
 
 	// Create ticket manager
-	n.ticketMgr, err = ticket.NewManager(n.cfg, n.logic)
+	n.ticketMgr = ticket.NewManager(n.logic.GetDBTx(), n.cfg, n.logic)
 	if err != nil {
 		return errors.Wrap(err, "failed to create ticket manager")
 	}

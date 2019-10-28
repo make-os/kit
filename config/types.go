@@ -144,11 +144,6 @@ func (c *EngineConfig) GetAppDBDir() string {
 	return filepath.Join(c.GetDBRootDir(), "app.db")
 }
 
-// GetTicketDBDir returns the path where ticket database files are stored
-func (c *EngineConfig) GetTicketDBDir() string {
-	return filepath.Join(c.GetDBRootDir(), "ticket.db")
-}
-
 // IsDev checks whether the current environment is 'development'
 func (c *EngineConfig) IsDev() bool {
 	return c.Node.Mode == ModeDev

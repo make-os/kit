@@ -44,9 +44,9 @@ func (m *TicketModule) funcs() []*types.JSModuleFunc {
 			Description: "Buy a validator ticket",
 		},
 		&types.JSModuleFunc{
-			Name:        "find",
-			Value:       m.find,
-			Description: "Get tickets belonging to a given public key",
+			Name:        "findByProposer",
+			Value:       m.findByProposer,
+			Description: "Get tickets associated to a given public key",
 		},
 		&types.JSModuleFunc{
 			Name:        "top",
@@ -116,8 +116,8 @@ func (m *TicketModule) storerBuy(txObj interface{}, options ...interface{}) inte
 	return simpleTx(m.service, types.TxTypeStorerTicket, txObj, options...)
 }
 
-// find finds tickets owned by a given public key
-func (m *TicketModule) find(
+// findByProposer finds tickets owned by a given public key
+func (m *TicketModule) findByProposer(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) interface{} {
 
@@ -126,7 +126,12 @@ func (m *TicketModule) find(
 		mapstructure.Decode(queryOpts[0], &qopts)
 	}
 
-	res, err := m.ticketmgr.GetValidatorTicketByProposer(proposerPubKey, qopts)
+	// If no sort by height directive, sort by height in descending order
+	if qopts.SortByHeight == 0 {
+		qopts.SortByHeight = -1
+	}
+
+	res, err := m.ticketmgr.GetByProposer(types.TxTypeValidatorTicket, proposerPubKey, qopts)
 	if err != nil {
 		panic(err)
 	}
@@ -136,14 +141,10 @@ func (m *TicketModule) find(
 
 // top returns most recent tickets up to the given limit
 func (m *TicketModule) top(limit int) interface{} {
-	res, err := m.ticketmgr.Query(types.Ticket{}, types.QueryOptions{
-		Limit: limit,
-		Order: `"height" desc`,
+	res := m.ticketmgr.Query(func(t *types.Ticket) bool { return true }, types.QueryOptions{
+		Limit:        limit,
+		SortByHeight: -1,
 	})
-	if err != nil {
-		panic(err)
-	}
-
 	return res
 }
 

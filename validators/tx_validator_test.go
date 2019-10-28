@@ -211,7 +211,7 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:senderPubKey, error:invalid format: version and/or checksum bytes missing"))
 			})
 
-			When("unable to find ticket", func() {
+			When("ticket is unknown or not found", func() {
 				var err error
 				BeforeEach(func() {
 					mockLogic := mocks.NewMockLogic(ctrl)
@@ -224,30 +224,7 @@ var _ = Describe("TxValidator", func() {
 
 					tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
 
-					mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: string(tx.TicketID)}).Return(nil, fmt.Errorf("bad error"))
-					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
-				})
-
-				It("should return err='failed to find ticket: bad error'", func() {
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("failed to find ticket: bad error"))
-				})
-			})
-
-			When("ticket is unknown", func() {
-				var err error
-				BeforeEach(func() {
-					mockLogic := mocks.NewMockLogic(ctrl)
-					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
-					mockTickMgr := mocks.NewMockTicketManager(ctrl)
-					mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
-
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
-
-					tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
-
-					mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: string(tx.TicketID)}).Return(nil, nil)
+					mockTickMgr.EXPECT().GetByHash(string(tx.TicketID)).Return(nil)
 					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
 				})
 
@@ -272,7 +249,7 @@ var _ = Describe("TxValidator", func() {
 						tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
 
 						returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key2.PubKey().Base58()}
-						mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: returnTicket.Hash}).Return(returnTicket, nil)
+						mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
 						err = validators.ValidateTxConsistency(tx, -1, mockLogic)
 					})
 
@@ -298,7 +275,7 @@ var _ = Describe("TxValidator", func() {
 						tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key2.PubKey().Base58())}
 
 						returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key2.PubKey().Base58(), Delegator: key.Addr().String()}
-						mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: returnTicket.Hash}).Return(returnTicket, nil)
+						mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
 						err = validators.ValidateTxConsistency(tx, -1, mockLogic)
 					})
 
@@ -324,7 +301,7 @@ var _ = Describe("TxValidator", func() {
 
 					returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key.PubKey().Base58(), DecayBy: 0}
 
-					mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: returnTicket.Hash}).Return(returnTicket, nil)
+					mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
 					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
 				})
 
@@ -348,7 +325,7 @@ var _ = Describe("TxValidator", func() {
 
 					returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key.PubKey().Base58(), DecayBy: 5}
 
-					mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: returnTicket.Hash}).Return(returnTicket, nil)
+					mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
 					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
 				})
 
@@ -373,7 +350,7 @@ var _ = Describe("TxValidator", func() {
 
 					returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key.PubKey().Base58(), DecayBy: 5}
 
-					mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: returnTicket.Hash}).Return(returnTicket, nil)
+					mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
 					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
 				})
 

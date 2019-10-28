@@ -434,18 +434,6 @@ func isEndOfEpoch(height int64) bool {
 	return height%int64(params.NumBlocksPerEpoch) == 0
 }
 
-// commitPanic cleans up resources or data that should not exit
-// due to commit panicking
-func (a *App) commitPanic(err error) {
-
-	// Delete any already indexed ticket
-	for _, t := range append(a.validatorTickets, a.storerTickets...) {
-		a.ticketMgr.Remove(t.Tx.GetID())
-	}
-
-	panic(err)
-}
-
 // Commit persist the application state.
 // It must return a merkle root hash of the application state.
 func (a *App) Commit() abcitypes.ResponseCommit {
@@ -469,7 +457,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		bi.EpochRound = estx.SecretRound
 		bi.InvalidEpochSecret = estx.IsInvalidated()
 		if err := a.logic.SysKeeper().SetHighestDrandRound(estx.SecretRound); err != nil {
-			a.commitPanic(errors.Wrap(err, "failed to save highest drand round"))
+			panic(errors.Wrap(err, "failed to save highest drand round"))
 		}
 	} else {
 		// Ok, so no epoch secret tx in this block. We need
@@ -482,13 +470,13 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 
 	// Save the block information
 	if err := a.logic.SysKeeper().SaveBlockInfo(bi); err != nil {
-		a.commitPanic(errors.Wrap(err, "failed to save block information"))
+		panic(errors.Wrap(err, "failed to save block information"))
 	}
 
 	// Index tickets we have collected so far.
 	for _, ptx := range append(a.validatorTickets, a.storerTickets...) {
 		if err := a.ticketMgr.Index(ptx.Tx, uint64(a.wBlock.Height), ptx.index); err != nil {
-			a.commitPanic(errors.Wrap(err, "failed to index ticket"))
+			panic(errors.Wrap(err, "failed to index ticket"))
 		}
 	}
 
@@ -499,20 +487,20 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	if a.wBlock.Height == a.heightToSaveNewValidators {
 		if err := a.logic.ValidatorKeeper().
 			Index(a.wBlock.Height-2, a.latestUnsavedValidators); err != nil {
-			a.commitPanic(errors.Wrap(err, "failed to update current validators"))
+			panic(errors.Wrap(err, "failed to update current validators"))
 		}
 	}
 
 	// Save the uncommitted changes to the tree
 	appHash, _, err := a.logic.StateTree().SaveVersion()
 	if err != nil {
-		a.commitPanic(errors.Wrap(err, "failed to commit: could not save new tree version"))
+		panic(errors.Wrap(err, "failed to commit: could not save new tree version"))
 	}
 
 	// Index the un-indexed txs
 	for _, t := range a.unIndexedTxs {
 		if err := a.logic.TxKeeper().Index(t); err != nil {
-			a.commitPanic(errors.Wrap(err, "failed to index transaction after commit"))
+			panic(errors.Wrap(err, "failed to index transaction after commit"))
 		}
 	}
 
@@ -523,7 +511,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 
 	// Commit all state changes
 	if err := a.logic.Commit(); err != nil {
-		a.commitPanic(errors.Wrap(err, "failed to commit"))
+		panic(errors.Wrap(err, "failed to commit"))
 	}
 
 	return abcitypes.ResponseCommit{

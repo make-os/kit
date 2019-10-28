@@ -883,42 +883,6 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("error occurred when indexing cached ticket", func() {
-
-			BeforeEach(func() {
-				mockLogic := mocks.NewMockAtomicLogic(ctrl)
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-
-				mockTree := mocks.NewMockTree(ctrl)
-				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
-
-				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
-
-				mockTicketMgr := mocks.NewMockTicketManager(ctrl)
-				tx := types.NewTx(types.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
-				app.validatorTickets = append(app.validatorTickets, &ticketInfo{
-					Tx:    tx,
-					index: 1,
-				})
-				mockTicketMgr.EXPECT().Index(gomock.Any(),
-					gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
-
-				// It should try to remove tickets if already saved
-				mockTicketMgr.EXPECT().Remove(tx.GetID())
-
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
-				mockLogic.EXPECT().StateTree().Return(mockTree)
-				app.logic = mockLogic
-				app.ticketMgr = mockTicketMgr
-			})
-
-			It("should panic", func() {
-				Expect(func() {
-					app.Commit()
-				}).To(Panic())
-			})
-		})
-
 		When("error occurred when saving validators", func() {
 
 			BeforeEach(func() {

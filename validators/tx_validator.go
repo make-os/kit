@@ -506,10 +506,8 @@ func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) 
 unbondStoreTicket:
 
 	// Ticket ID must be a known ticket
-	ticket, err := logic.GetTicketManager().QueryOne(types.Ticket{Hash: string(tx.TicketID)})
-	if err != nil {
-		return errors.Wrap(err, "failed to find ticket")
-	} else if ticket == nil {
+	ticket := logic.GetTicketManager().GetByHash(string(tx.TicketID))
+	if ticket == nil {
 		return types.FieldErrorWithIndex(index, "ticketID", "ticket not found")
 	}
 

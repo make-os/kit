@@ -1,67 +1,76 @@
 package ticket
 
 import (
-	"strings"
+	"bytes"
+	"sort"
 
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
+	"github.com/imdario/mergo"
+	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/util"
 )
 
-// Store describes an interface for storing and accessing tickets.
-type Store interface {
-	// Add stores tickets
-	Add(t ...*types.Ticket) error
-	// Query queries tickets that match the given query
-	Query(query types.Ticket, queryOptions ...interface{}) ([]*types.Ticket, error)
-	// QueryOne finds a ticket that match the given query
-	QueryOne(query types.Ticket, queryOptions ...interface{}) (*types.Ticket, error)
-	// Count counts tickets that match the given query
-	Count(query types.Ticket, queryOptions ...interface{}) (int, error)
-	// GetLiveValidatorTickets returns matured and non-decayed tickets
-	GetLiveValidatorTickets(height int64, queryOptions ...interface{}) ([]*types.Ticket, error)
-	// CountLiveValidators returns the number of matured and live tickets
-	CountLiveValidators(height int64, queryOptions ...interface{}) (int, error)
-	// UpdateOne update a ticket
-	UpdateOne(query, update types.Ticket, queryOptions ...interface{}) error
-	// Remove deletes a ticket by its hash
-	Remove(hash string) error
-	// Close closes the store
-	Close() error
+const (
+	// Separator separates prefixes
+	Separator = ":"
+	// TagTicket is the prefix for ticket data
+	TagTicket = "tkt"
+)
+
+// MakeKey creates a key for storing a ticket.
+func MakeKey(hash []byte, height uint64, index int) []byte {
+	bzSep := []byte(Separator)
+	tagBz := []byte(TagTicket)
+	bzHeight := util.EncodeNumber(uint64(height))
+	bzIndex := util.EncodeNumber(uint64(index))
+	return bytes.Join([][]byte{tagBz, bzSep, hash, bzSep, bzHeight, bzSep, bzIndex}, nil)
 }
 
-// SQLStore implements Store. It stores tickets in an SQLite backend.
-type SQLStore struct {
-	db *gorm.DB
+// MakeHashKey creates a key for storing a ticket.
+func MakeHashKey(hash []byte) []byte {
+	bzSep := []byte(Separator)
+	tagBz := []byte(TagTicket)
+	return bytes.Join([][]byte{tagBz, bzSep, hash}, nil)
 }
 
-// NewSQLStore opens the store and returns an instance of SQLStore
-func NewSQLStore(dbPath string) (*SQLStore, error) {
-	db, err := gorm.Open("sqlite3", dbPath)
-	if err != nil {
-		return nil, err
-	}
-	db.AutoMigrate(&types.Ticket{})
-	return &SQLStore{
-		db: db,
-	}, nil
+// Storer describes the functions of a ticker store
+type Storer interface {
+
+	// Add adds one or more tickets to the store
+	Add(tickets ...*types.Ticket) error
+
+	// GetByHash queries a ticket by its hash
+	GetByHash(hash string) *types.Ticket
+
+	// RemoveByHash deletes a ticket by its hash
+	RemoveByHash(hash string) error
+
+	// QueryOne iterates over the tickets and returns the first ticket
+	// for which the predicate returns true.
+	QueryOne(predicate func(*types.Ticket) bool) *types.Ticket
+
+	// Query iterates over the tickets and returns all tickets
+	// for which the predicate returns true.
+	Query(predicate func(*types.Ticket) bool, queryOpt ...interface{}) []*types.Ticket
+
+	// Count counts tickets for which the predicate returns true.
+	Count(predicate func(*types.Ticket) bool) int
+
+	// UpdateOne update a ticket for which the query predicate returns true.
+	// NOTE: If the fields that make up the key of the ticket is updated, a new record
+	// with different key composition will be created.
+	UpdateOne(upd types.Ticket, queryPredicate func(*types.Ticket) bool)
 }
 
-// Add stores tickets
-func (s *SQLStore) Add(tickets ...*types.Ticket) error {
-	db := s.db.Begin()
-	for _, t := range tickets {
-		if err := db.Create(t).Error; err != nil {
-			db.Rollback()
-			return err
-		}
-	}
-	return db.Commit().Error
+// Store implements Storer
+type Store struct {
+	db       storage.Functions // The DB transaction
+	fromHead bool              // If true, the iterator iterates from the tail
 }
 
-// Remove deletes a ticket by its hash
-func (s *SQLStore) Remove(hash string) error {
-	return s.db.Where(types.Ticket{Hash: hash}).Delete(types.Ticket{}).Error
+// NewStore creates an instance of Store
+func NewStore(db storage.Functions) *Store {
+	return &Store{db: db, fromHead: true}
 }
 
 // getQueryOptions returns a types.QueryOptions stored in a slice of interface
@@ -75,126 +84,123 @@ func getQueryOptions(queryOptions ...interface{}) types.QueryOptions {
 	return types.QueryOptions{}
 }
 
-func applyQueryOpts(q *gorm.DB, opts types.QueryOptions) *gorm.DB {
-	if opts.Limit > 0 {
-		q = q.Limit(opts.Limit)
-	}
-
-	if opts.Offset > 0 {
-		q = q.Offset(opts.Offset)
-	}
-
-	if opts.Order != "" {
-		for _, orderPart := range strings.Split(opts.Order, ",") {
-			q = q.Order(orderPart)
+// Add adds one or more tickets to the store
+func (s *Store) Add(tickets ...*types.Ticket) error {
+	for _, ticket := range tickets {
+		key := MakeKey([]byte(ticket.Hash), ticket.Height, ticket.Index)
+		rec := storage.NewRecord(key, util.ObjectToBytes(ticket))
+		if err := s.db.Put(rec); err != nil {
+			return err
 		}
-	}
-
-	return q
-}
-
-// Query queries tickets that match the given query
-func (s *SQLStore) Query(
-	query types.Ticket,
-	queryOptions ...interface{}) ([]*types.Ticket, error) {
-
-	opts := getQueryOptions(queryOptions...)
-	q := s.db.Where(query)
-	q = applyQueryOpts(q, opts)
-
-	var tickets []*types.Ticket
-	return tickets, q.Find(&tickets).Error
-}
-
-// QueryOne finds a ticket that match the given query
-func (s *SQLStore) QueryOne(
-	query types.Ticket,
-	queryOptions ...interface{}) (*types.Ticket, error) {
-
-	opts := getQueryOptions(queryOptions...)
-	q := s.db.Where(query)
-	q = applyQueryOpts(q, opts)
-
-	var ticket types.Ticket
-	if err := q.Find(&ticket).Error; err != nil {
-		if err != gorm.ErrRecordNotFound {
-			return nil, err
-		}
-		return nil, nil
-	}
-
-	return &ticket, nil
-}
-
-// UpdateOne update a ticket
-func (s *SQLStore) UpdateOne(
-	query,
-	update types.Ticket,
-	queryOptions ...interface{}) error {
-
-	opts := getQueryOptions(queryOptions...)
-	q := s.db.Model(types.Ticket{}).Where(query)
-	q = applyQueryOpts(q, opts)
-
-	return q.Update(&update).Error
-}
-
-// GetLiveValidatorTickets returns matured and undecayed
-// validator tickets. The argument height is the upper bound chain height.
-func (s *SQLStore) GetLiveValidatorTickets(
-	height int64,
-	queryOptions ...interface{}) ([]*types.Ticket, error) {
-
-	opts := getQueryOptions(queryOptions...)
-	q := s.db.
-		Where(types.Ticket{
-			Type: types.TxTypeValidatorTicket,
-		}).
-		Where(`"matureBy" <= ?`, height).
-		Where(`"decayBy" > ?`, height)
-	q = applyQueryOpts(q, opts)
-
-	var tickets []*types.Ticket
-	return tickets, q.Find(&tickets).Error
-}
-
-// CountLiveValidators returns the number of matured and undecayed validator tickets.
-// The argument height is the upper bound chain height
-func (s *SQLStore) CountLiveValidators(
-	height int64,
-	queryOptions ...interface{}) (int, error) {
-
-	opts := getQueryOptions(queryOptions...)
-	q := s.db.
-		Model(types.Ticket{}).
-		Where(types.Ticket{
-			Type: types.TxTypeValidatorTicket,
-		}).
-		Where(`"matureBy" <= ?`, height).
-		Where(`"decayBy" > ?`, height)
-	q = applyQueryOpts(q, opts)
-
-	var count int
-	return count, q.Count(&count).Error
-}
-
-// Count counts tickets that match the given query
-func (s *SQLStore) Count(
-	query types.Ticket,
-	queryOptions ...interface{}) (int, error) {
-
-	opts := getQueryOptions(queryOptions...)
-	q := s.db.Model(types.Ticket{}).Where(query)
-	q = applyQueryOpts(q, opts)
-
-	var count int
-	return count, q.Count(&count).Error
-}
-
-// Close closes the store and releases held resources
-func (s *SQLStore) Close() error {
-	if s.db != nil {
-		return s.db.Close()
 	}
 	return nil
+}
+
+// GetByHash queries a ticket by its hash
+func (s *Store) GetByHash(hash string) *types.Ticket {
+	var t *types.Ticket
+	s.db.Iterate(MakeHashKey([]byte(hash)), false, func(r *storage.Record) bool {
+		r.Scan(&t)
+		return true
+	})
+	return t
+}
+
+// RemoveByHash deletes a ticket by its hash
+func (s *Store) RemoveByHash(hash string) error {
+	t := s.GetByHash(hash)
+	if t == nil {
+		return nil
+	}
+	return s.db.Del(MakeKey([]byte(hash), t.Height, t.Index))
+}
+
+// QueryOne iterates over the tickets and returns the first ticket
+// for which the predicate returns true.
+func (s *Store) QueryOne(predicate func(*types.Ticket) bool) *types.Ticket {
+	var selected *types.Ticket
+	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *storage.Record) bool {
+		var t types.Ticket
+		rec.Scan(&t)
+		if predicate(&t) {
+			selected = &t
+			return true
+		}
+		return false
+	})
+	return selected
+}
+
+// Query iterates over the tickets and returns all tickets
+// for which the predicate returns true.
+func (s *Store) Query(predicate func(*types.Ticket) bool,
+	queryOpt ...interface{}) []*types.Ticket {
+	var selected []*types.Ticket
+	var qo = getQueryOptions(queryOpt...)
+	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *storage.Record) bool {
+
+		// Apply limit only when limit is set and sorting is not required
+		if qo.Limit > 0 && qo.Limit == len(selected) && qo.SortByHeight == 0 {
+			return true
+		}
+
+		var t types.Ticket
+		rec.Scan(&t)
+		if predicate(&t) {
+			selected = append(selected, &t)
+		}
+		return false
+	})
+
+	// Sort by height if required
+	if dir := qo.SortByHeight; dir != 0 {
+		sort.Slice(selected, func(i, j int) bool {
+			if dir == -1 {
+				return selected[i].Height > selected[j].Height
+			}
+			return selected[i].Height < selected[j].Height
+		})
+	}
+
+	// If limit and sort option was set, apply the limit here
+	if qo.Limit > 0 && qo.SortByHeight != 0 && len(selected) >= qo.Limit {
+		selected = selected[:qo.Limit]
+	}
+
+	return selected
+}
+
+// FromTail returns a new instance of Store that will set iterators
+// to start reading records from the bottom/tail
+func (s *Store) FromTail() *Store {
+	ts := &Store{db: s.db, fromHead: false}
+	return ts
+}
+
+// Count counts tickets for which the predicate returns true.
+func (s *Store) Count(predicate func(*types.Ticket) bool) int {
+	var count int
+	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *storage.Record) bool {
+		var t types.Ticket
+		rec.Scan(&t)
+		if predicate(&t) {
+			count++
+		}
+		return false
+	})
+	return count
+}
+
+// UpdateOne update a ticket for which the query predicate returns true.
+// NOTE: If the fields that make up the key of the ticket is updated, a new record
+// with different key composition will be created.
+func (s *Store) UpdateOne(upd types.Ticket, queryPredicate func(*types.Ticket) bool) {
+	target := s.QueryOne(queryPredicate)
+	if target == nil {
+		return
+	}
+	mergo.Merge(&upd, target)
+	key := MakeKey([]byte(target.Hash), target.Height, target.Index)
+	s.db.Del(key)
+	s.Add(&upd)
 }

@@ -479,6 +479,20 @@ func (mr *MockAtomicLogicMockRecorder) GetDRand() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDRand", reflect.TypeOf((*MockAtomicLogic)(nil).GetDRand))
 }
 
+// GetDBTx mocks base method
+func (m *MockAtomicLogic) GetDBTx() storage.Functions {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDBTx")
+	ret0, _ := ret[0].(storage.Functions)
+	return ret0
+}
+
+// GetDBTx indicates an expected call of GetDBTx
+func (mr *MockAtomicLogicMockRecorder) GetDBTx() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDBTx", reflect.TypeOf((*MockAtomicLogic)(nil).GetDBTx))
+}
+
 // Commit mocks base method
 func (m *MockAtomicLogic) Commit() error {
 	m.ctrl.T.Helper()

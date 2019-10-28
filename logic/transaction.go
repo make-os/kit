@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/makeos/mosdef/params"
-	"github.com/pkg/errors"
 
 	"github.com/shopspring/decimal"
 
@@ -169,10 +168,8 @@ func (t *Transaction) execUnbond(
 	senderAcct := acctKeeper.GetAccount(spk.Addr())
 
 	// Get the ticket
-	ticket, err := t.logic.GetTicketManager().QueryOne(types.Ticket{Hash: string(ticketID)})
-	if err != nil {
-		return errors.Wrap(err, "failed to get ticket")
-	} else if ticket == nil {
+	ticket := t.logic.GetTicketManager().GetByHash(string(ticketID))
+	if ticket == nil {
 		return fmt.Errorf("ticket not found")
 	}
 

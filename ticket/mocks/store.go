@@ -10,34 +10,34 @@ import (
 	reflect "reflect"
 )
 
-// MockStore is a mock of Store interface
-type MockStore struct {
+// MockStorer is a mock of Storer interface
+type MockStorer struct {
 	ctrl     *gomock.Controller
-	recorder *MockStoreMockRecorder
+	recorder *MockStorerMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
-type MockStoreMockRecorder struct {
-	mock *MockStore
+// MockStorerMockRecorder is the mock recorder for MockStorer
+type MockStorerMockRecorder struct {
+	mock *MockStorer
 }
 
-// NewMockStore creates a new mock instance
-func NewMockStore(ctrl *gomock.Controller) *MockStore {
-	mock := &MockStore{ctrl: ctrl}
-	mock.recorder = &MockStoreMockRecorder{mock}
+// NewMockStorer creates a new mock instance
+func NewMockStorer(ctrl *gomock.Controller) *MockStorer {
+	mock := &MockStorer{ctrl: ctrl}
+	mock.recorder = &MockStorerMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockStore) EXPECT() *MockStoreMockRecorder {
+func (m *MockStorer) EXPECT() *MockStorerMockRecorder {
 	return m.recorder
 }
 
 // Add mocks base method
-func (m *MockStore) Add(t ...*types.Ticket) error {
+func (m *MockStorer) Add(tickets ...*types.Ticket) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
-	for _, a := range t {
+	for _, a := range tickets {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Add", varargs...)
@@ -46,154 +46,94 @@ func (m *MockStore) Add(t ...*types.Ticket) error {
 }
 
 // Add indicates an expected call of Add
-func (mr *MockStoreMockRecorder) Add(t ...interface{}) *gomock.Call {
+func (mr *MockStorerMockRecorder) Add(tickets ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockStore)(nil).Add), t...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockStorer)(nil).Add), tickets...)
+}
+
+// GetByHash mocks base method
+func (m *MockStorer) GetByHash(hash string) *types.Ticket {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByHash", hash)
+	ret0, _ := ret[0].(*types.Ticket)
+	return ret0
+}
+
+// GetByHash indicates an expected call of GetByHash
+func (mr *MockStorerMockRecorder) GetByHash(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByHash", reflect.TypeOf((*MockStorer)(nil).GetByHash), hash)
+}
+
+// RemoveByHash mocks base method
+func (m *MockStorer) RemoveByHash(hash string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RemoveByHash", hash)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveByHash indicates an expected call of RemoveByHash
+func (mr *MockStorerMockRecorder) RemoveByHash(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveByHash", reflect.TypeOf((*MockStorer)(nil).RemoveByHash), hash)
+}
+
+// QueryOne mocks base method
+func (m *MockStorer) QueryOne(predicate func(*types.Ticket) bool) *types.Ticket {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueryOne", predicate)
+	ret0, _ := ret[0].(*types.Ticket)
+	return ret0
+}
+
+// QueryOne indicates an expected call of QueryOne
+func (mr *MockStorerMockRecorder) QueryOne(predicate interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryOne", reflect.TypeOf((*MockStorer)(nil).QueryOne), predicate)
 }
 
 // Query mocks base method
-func (m *MockStore) Query(query types.Ticket, queryOptions ...interface{}) ([]*types.Ticket, error) {
+func (m *MockStorer) Query(predicate func(*types.Ticket) bool, queryOpt ...interface{}) []*types.Ticket {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{query}
-	for _, a := range queryOptions {
+	varargs := []interface{}{predicate}
+	for _, a := range queryOpt {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Query", varargs...)
 	ret0, _ := ret[0].([]*types.Ticket)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	return ret0
 }
 
 // Query indicates an expected call of Query
-func (mr *MockStoreMockRecorder) Query(query interface{}, queryOptions ...interface{}) *gomock.Call {
+func (mr *MockStorerMockRecorder) Query(predicate interface{}, queryOpt ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{query}, queryOptions...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockStore)(nil).Query), varargs...)
-}
-
-// QueryOne mocks base method
-func (m *MockStore) QueryOne(query types.Ticket, queryOptions ...interface{}) (*types.Ticket, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{query}
-	for _, a := range queryOptions {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "QueryOne", varargs...)
-	ret0, _ := ret[0].(*types.Ticket)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// QueryOne indicates an expected call of QueryOne
-func (mr *MockStoreMockRecorder) QueryOne(query interface{}, queryOptions ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{query}, queryOptions...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryOne", reflect.TypeOf((*MockStore)(nil).QueryOne), varargs...)
+	varargs := append([]interface{}{predicate}, queryOpt...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockStorer)(nil).Query), varargs...)
 }
 
 // Count mocks base method
-func (m *MockStore) Count(query types.Ticket, queryOptions ...interface{}) (int, error) {
+func (m *MockStorer) Count(predicate func(*types.Ticket) bool) int {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{query}
-	for _, a := range queryOptions {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Count", varargs...)
+	ret := m.ctrl.Call(m, "Count", predicate)
 	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	return ret0
 }
 
 // Count indicates an expected call of Count
-func (mr *MockStoreMockRecorder) Count(query interface{}, queryOptions ...interface{}) *gomock.Call {
+func (mr *MockStorerMockRecorder) Count(predicate interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{query}, queryOptions...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStore)(nil).Count), varargs...)
-}
-
-// GetLiveValidatorTickets mocks base method
-func (m *MockStore) GetLiveValidatorTickets(height int64, queryOptions ...interface{}) ([]*types.Ticket, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{height}
-	for _, a := range queryOptions {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "GetLiveValidatorTickets", varargs...)
-	ret0, _ := ret[0].([]*types.Ticket)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLiveValidatorTickets indicates an expected call of GetLiveValidatorTickets
-func (mr *MockStoreMockRecorder) GetLiveValidatorTickets(height interface{}, queryOptions ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{height}, queryOptions...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiveValidatorTickets", reflect.TypeOf((*MockStore)(nil).GetLiveValidatorTickets), varargs...)
-}
-
-// CountLiveValidators mocks base method
-func (m *MockStore) CountLiveValidators(height int64, queryOptions ...interface{}) (int, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{height}
-	for _, a := range queryOptions {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CountLiveValidators", varargs...)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CountLiveValidators indicates an expected call of CountLiveValidators
-func (mr *MockStoreMockRecorder) CountLiveValidators(height interface{}, queryOptions ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{height}, queryOptions...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLiveValidators", reflect.TypeOf((*MockStore)(nil).CountLiveValidators), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStorer)(nil).Count), predicate)
 }
 
 // UpdateOne mocks base method
-func (m *MockStore) UpdateOne(query, update types.Ticket, queryOptions ...interface{}) error {
+func (m *MockStorer) UpdateOne(upd types.Ticket, queryPredicate func(*types.Ticket) bool) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{query, update}
-	for _, a := range queryOptions {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "UpdateOne", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "UpdateOne", upd, queryPredicate)
 }
 
 // UpdateOne indicates an expected call of UpdateOne
-func (mr *MockStoreMockRecorder) UpdateOne(query, update interface{}, queryOptions ...interface{}) *gomock.Call {
+func (mr *MockStorerMockRecorder) UpdateOne(upd, queryPredicate interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{query, update}, queryOptions...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockStore)(nil).UpdateOne), varargs...)
-}
-
-// Remove mocks base method
-func (m *MockStore) Remove(hash string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Remove", hash)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Remove indicates an expected call of Remove
-func (mr *MockStoreMockRecorder) Remove(hash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockStore)(nil).Remove), hash)
-}
-
-// Close mocks base method
-func (m *MockStore) Close() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Close")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Close indicates an expected call of Close
-func (mr *MockStoreMockRecorder) Close() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStore)(nil).Close))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockStorer)(nil).UpdateOne), upd, queryPredicate)
 }

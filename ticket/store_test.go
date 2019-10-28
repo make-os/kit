@@ -3,22 +3,26 @@ package ticket
 import (
 	"os"
 
-	"github.com/jinzhu/gorm"
-
 	"github.com/makeos/mosdef/config"
+	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/testutil"
 	"github.com/makeos/mosdef/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("SQLStore", func() {
+var _ = Describe("Store", func() {
 	var err error
 	var cfg *config.EngineConfig
+	var c storage.Engine
+	var store *Store
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
+		c = storage.NewBadger(cfg)
+		Expect(c.Init()).To(BeNil())
+		store = NewStore(c.F(true, true))
 	})
 
 	AfterEach(func() {
@@ -26,292 +30,251 @@ var _ = Describe("SQLStore", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".NewSQLStore", func() {
-		It("should return error if db could not be openned", func() {
-			_, err := NewSQLStore("/unknown/path")
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("unable to open database file"))
-		})
-
-		It("should return no error if db openned successfully", func() {
-			_, err := NewSQLStore(cfg.GetTicketDBDir())
-			Expect(err).To(BeNil())
-		})
-	})
-
-	Describe(".getQueryOptions", func() {
-		It("should return empty types.QueryOptions if none is passed in arg", func() {
-			expected := types.QueryOptions{}
-			Expect(getQueryOptions()).To(Equal(expected))
-		})
-
-		It("should return exact options passed to it", func() {
-			expected := types.QueryOptions{Limit: 1}
-			Expect(getQueryOptions(expected)).To(Equal(expected))
-		})
-	})
-
 	Describe(".Add", func() {
-		var store *SQLStore
 		var err error
-		var ticket = &types.Ticket{
-			Hash:           "hash1",
-			DecayBy:        100,
-			MatureBy:       40,
-			ProposerPubKey: "pubkey",
-			Height:         10,
-			Index:          2,
-		}
+		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 101, MatureBy: 40, ProposerPubKey: "pubkey", Height: 11, Index: 4}
 
 		BeforeEach(func() {
-			store, err = NewSQLStore(cfg.GetTicketDBDir())
 			Expect(err).To(BeNil())
 			err = store.Add(ticket)
 			Expect(err).To(BeNil())
 		})
 
-		It("should successfully add the ticket", func() {
-			var t types.Ticket
-			err := store.db.First(&t).Error
+		Context("add 1 record", func() {
+			It("should successfully add the ticket", func() {
+				key := MakeKey([]byte(ticket.Hash), ticket.Height, ticket.Index)
+				var t types.Ticket
+				rec, err := store.db.Get(key)
+				Expect(err).To(BeNil())
+				rec.Scan(&t)
+				Expect(t).To(Equal(*ticket))
+			})
+		})
+
+		Context("add 2 records", func() {
+			BeforeEach(func() {
+				Expect(err).To(BeNil())
+				err = store.Add(ticket, ticket2)
+				Expect(err).To(BeNil())
+			})
+
+			It("should successfully add the ticket", func() {
+				var t, t2 types.Ticket
+
+				key := MakeKey([]byte(ticket.Hash), ticket.Height, ticket.Index)
+				rec, err := store.db.Get(key)
+				Expect(err).To(BeNil())
+				rec.Scan(&t)
+				Expect(t).To(Equal(*ticket))
+
+				key = MakeKey([]byte(ticket2.Hash), ticket2.Height, ticket2.Index)
+				rec, err = store.db.Get(key)
+				Expect(err).To(BeNil())
+				rec.Scan(&t2)
+				Expect(t2).To(Equal(*ticket2))
+			})
+		})
+	})
+
+	Describe(".GetByHash", func() {
+		var store *Store
+		var err error
+		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+
+		BeforeEach(func() {
+			store = NewStore(c.F(true, true))
 			Expect(err).To(BeNil())
-			Expect(t).To(Equal(*ticket))
+			err = store.Add(ticket)
+			Expect(err).To(BeNil())
+		})
+
+		It("should successfully find the ticket", func() {
+			t := store.GetByHash(ticket.Hash)
+			Expect(t).To(Equal(ticket))
+		})
+
+		When("no ticket with matching hash exist", func() {
+			It("should return nil", func() {
+				t := store.GetByHash("unknown_hash")
+				Expect(err).To(BeNil())
+				Expect(t).To(BeNil())
+			})
 		})
 	})
 
 	Describe(".Remove", func() {
-		var store *SQLStore
-		var err error
-		var ticket = &types.Ticket{
-			Hash:           "hash1",
-			DecayBy:        100,
-			MatureBy:       40,
-			ProposerPubKey: "pubkey",
-			Height:         10,
-			Index:          2,
-		}
-
-		BeforeEach(func() {
-			store, err = NewSQLStore(cfg.GetTicketDBDir())
-			Expect(err).To(BeNil())
-			err = store.Add(ticket)
-			Expect(err).To(BeNil())
-			err = store.Remove(ticket.Hash)
-			Expect(err).To(BeNil())
-		})
-
-		It("should successfully add the ticket", func() {
-			var t types.Ticket
-			err := store.db.First(&t).Error
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(gorm.ErrRecordNotFound))
-		})
-	})
-
-	Describe(".GetLiveValidatorTickets", func() {
-		var store *SQLStore
-		var err error
-		var ticket = &types.Ticket{Type: types.TxTypeValidatorTicket, Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
-		var ticket2 = &types.Ticket{Type: types.TxTypeValidatorTicket, Hash: "hash2", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2}
-		var ticket3 = &types.Ticket{Type: types.TxTypeStorerTicket, Hash: "hash3", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2}
-
-		BeforeEach(func() {
-			store, err = NewSQLStore(cfg.GetTicketDBDir())
-			Expect(err).To(BeNil())
-			err = store.Add(ticket, ticket2, ticket3)
-			Expect(err).To(BeNil())
-		})
-
-		When("current block height is 50", func() {
-			It("should return 1 ticket with MatureBy = 40 and DecayBy = 100", func() {
-				tickets, err := store.GetLiveValidatorTickets(50)
-				Expect(err).To(BeNil())
-				Expect(tickets).To(HaveLen(1))
-				Expect(tickets[0].MatureBy).To(Equal(uint64(40)))
-				Expect(tickets[0].DecayBy).To(Equal(uint64(100)))
-			})
-		})
-
-		When("current block height is 100", func() {
-			It("should return 0 tickets", func() {
-				tickets, err := store.GetLiveValidatorTickets(100)
-				Expect(err).To(BeNil())
-				Expect(tickets).To(HaveLen(0))
-			})
-		})
-
-		When("current block height is 80", func() {
-			It("should return 2 tickets", func() {
-				tickets, err := store.GetLiveValidatorTickets(80)
-				Expect(err).To(BeNil())
-				Expect(tickets).To(HaveLen(2))
-			})
-		})
-	})
-
-	Describe(".CountLiveValidators", func() {
-		var store *SQLStore
-		var err error
-		var ticket = &types.Ticket{Type: types.TxTypeValidatorTicket, Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
-		var ticket2 = &types.Ticket{Type: types.TxTypeValidatorTicket, Hash: "hash2", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2}
-		var ticket3 = &types.Ticket{Type: types.TxTypeStorerTicket, Hash: "hash3", DecayBy: 100, MatureBy: 70, ProposerPubKey: "pubkey", Height: 1, Index: 2}
-
-		BeforeEach(func() {
-			store, err = NewSQLStore(cfg.GetTicketDBDir())
-			Expect(err).To(BeNil())
-			err = store.Add(ticket, ticket2, ticket3)
-			Expect(err).To(BeNil())
-		})
-
-		When("current block height is 50", func() {
-			It("should return 1 ticket", func() {
-				count, err := store.CountLiveValidators(50)
-				Expect(err).To(BeNil())
-				Expect(count).To(Equal(1))
-			})
-		})
-
-		When("current block height is 100", func() {
-			It("should return 0 tickets", func() {
-				count, err := store.CountLiveValidators(100)
-				Expect(err).To(BeNil())
-				Expect(count).To(Equal(0))
-			})
-		})
-
-		When("current block height is 80", func() {
-			It("should return 2 tickets", func() {
-				count, err := store.CountLiveValidators(80)
-				Expect(err).To(BeNil())
-				Expect(count).To(Equal(2))
-			})
-		})
-	})
-
-	Describe(".Count", func() {
-		var store *SQLStore
-		var err error
-		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
-		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 1, Index: 2}
-
-		BeforeEach(func() {
-			store, err = NewSQLStore(cfg.GetTicketDBDir())
-			Expect(err).To(BeNil())
-			err = store.Add(ticket)
-			Expect(err).To(BeNil())
-			err = store.Add(ticket2)
-			Expect(err).To(BeNil())
-		})
-
-		Context("a call with empty query", func() {
-			var count int
+		When("an entry with hash='hash1' exist", func() {
+			var store *Store
 			var err error
-
-			BeforeEach(func() {
-				count, err = store.Count(types.Ticket{})
-				Expect(err).To(BeNil())
-			})
-
-			It("should return 2", func() {
-				Expect(count).To(Equal(2))
-			})
-		})
-	})
-
-	Describe(".UpdateOne", func() {
-		var store *SQLStore
-		var err error
-		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
-		var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 1, Index: 2}
-
-		BeforeEach(func() {
-			store, err = NewSQLStore(cfg.GetTicketDBDir())
-			Expect(err).To(BeNil())
-			err = store.Add(ticket, ticket2)
-			Expect(err).To(BeNil())
-		})
-
-		Context("update ticket1 'DecayBy' field", func() {
-
-			BeforeEach(func() {
-				err := store.UpdateOne(types.Ticket{Hash: ticket.Hash}, types.Ticket{DecayBy: 5000})
-				Expect(err).To(BeNil())
-			})
-
-			Specify("that the ticket was updated", func() {
-				updTicket, err := store.QueryOne(types.Ticket{Hash: ticket.Hash})
-				Expect(err).To(BeNil())
-				Expect(updTicket.Hash).To(Equal(ticket.Hash))
-				Expect(updTicket.DecayBy).To(Equal(uint64(5000)))
-			})
-		})
-	})
-
-	Describe(".Query", func() {
-		var store *SQLStore
-		var err error
-
-		When("no ticket was not found", func() {
-			BeforeEach(func() {
-				store, err = NewSQLStore(cfg.GetTicketDBDir())
-				Expect(err).To(BeNil())
-			})
-
-			It("should return no result and nil", func() {
-				res, err := store.Query(types.Ticket{})
-				Expect(err).To(BeNil())
-				Expect(res).To(BeEmpty())
-			})
-		})
-
-		When("a ticket was not found", func() {
 			var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
 
 			BeforeEach(func() {
-				store, err = NewSQLStore(cfg.GetTicketDBDir())
+				store = NewStore(c.F(true, true))
 				Expect(err).To(BeNil())
 				err = store.Add(ticket)
 				Expect(err).To(BeNil())
 			})
 
-			It("should return no result and nil", func() {
-				res, err := store.Query(types.Ticket{})
+			It("should successfully remove it", func() {
+				Expect(store.RemoveByHash(ticket.Hash)).To(BeNil())
+				t := store.GetByHash(ticket.Hash)
+				Expect(t).To(BeNil())
+			})
+		})
+
+		When("no entry with hash='hash1' exist", func() {
+			var store *Store
+			var err error
+			var ticket = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+
+			BeforeEach(func() {
+				store = NewStore(c.F(true, true))
 				Expect(err).To(BeNil())
-				Expect(res).To(HaveLen(1))
+				err = store.Add(ticket)
+				Expect(err).To(BeNil())
+			})
+
+			It("should remove nothing", func() {
+				Expect(store.RemoveByHash("hash1")).To(BeNil())
+				t := store.GetByHash(ticket.Hash)
+				Expect(t).ToNot(BeNil())
 			})
 		})
 	})
 
 	Describe(".QueryOne", func() {
-		var store *SQLStore
-		var err error
-
-		When("no ticket was not found", func() {
-			BeforeEach(func() {
-				store, err = NewSQLStore(cfg.GetTicketDBDir())
-				Expect(err).To(BeNil())
-			})
-
-			It("should return no result and nil", func() {
-				res, err := store.QueryOne(types.Ticket{})
-				Expect(err).To(BeNil())
-				Expect(res).To(BeNil())
-			})
-		})
-
-		When("a ticket was not found", func() {
+		When("an entry with hash='hash1' exist", func() {
+			var store *Store
+			var err error
 			var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
 
 			BeforeEach(func() {
-				store, err = NewSQLStore(cfg.GetTicketDBDir())
+				store = NewStore(c.F(true, true))
 				Expect(err).To(BeNil())
 				err = store.Add(ticket)
 				Expect(err).To(BeNil())
 			})
 
-			It("should return no result and nil", func() {
-				res, err := store.QueryOne(types.Ticket{})
+			It("should successfully find the entry with a predicate", func() {
+				var entry = store.QueryOne(func(t *types.Ticket) bool { return t.Hash == ticket.Hash })
+				Expect(entry).To(Equal(ticket))
+			})
+		})
+
+		When("an entry with hash='hash1' exist", func() {
+			var store *Store
+			var err error
+			var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+
+			BeforeEach(func() {
+				store = NewStore(c.F(true, true))
 				Expect(err).To(BeNil())
-				Expect(res).ToNot(BeNil())
+				err = store.Add(ticket)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return nil when predicate fails to return true", func() {
+				entry := store.QueryOne(func(t *types.Ticket) bool { return t.Hash == "hash2" })
+				Expect(entry).To(BeNil())
+			})
+		})
+	})
+
+	Describe(".Query", func() {
+		When("two entries exist", func() {
+			var store *Store
+			var err error
+			var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+			var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 11, Index: 2}
+
+			BeforeEach(func() {
+				store = NewStore(c.F(true, true))
+				Expect(err).To(BeNil())
+				err = store.Add(ticket, ticket2)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return two entries when predicate returns only true", func() {
+				entries := store.Query(func(t *types.Ticket) bool { return true })
+				Expect(entries).To(HaveLen(2))
+			})
+
+			It("should return one entries when predicate returns only true for hash2", func() {
+				entries := store.Query(func(t *types.Ticket) bool { return t.Hash == "hash2" })
+				Expect(entries).To(HaveLen(1))
+				Expect(entries[0]).To(Equal(ticket2))
+			})
+
+			When("limit is set", func() {
+				It("should return 1 entry", func() {
+					entries := store.Query(func(t *types.Ticket) bool { return true }, types.QueryOptions{Limit: 1})
+					Expect(entries).To(HaveLen(1))
+				})
+			})
+
+			When("sorted by height in descending order", func() {
+				It("should return entries in the following order => hash2, hash1", func() {
+					entries := store.Query(func(t *types.Ticket) bool { return true }, types.QueryOptions{SortByHeight: -1})
+					Expect(entries).To(HaveLen(2))
+					Expect(entries[0].Height).To(Equal(uint64(11)))
+					Expect(entries[1].Height).To(Equal(uint64(10)))
+				})
+			})
+		})
+	})
+
+	Describe(".Count", func() {
+		When("two entries exist", func() {
+			var store *Store
+			var err error
+			var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+			var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+
+			BeforeEach(func() {
+				store = NewStore(c.F(true, true))
+				Expect(err).To(BeNil())
+				err = store.Add(ticket, ticket2)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return 2 when predicate returns only true", func() {
+				count := store.Count(func(t *types.Ticket) bool { return true })
+				Expect(count).To(Equal(2))
+			})
+
+			It("should return 1 when predicate returns only true for hash2", func() {
+				count := store.Count(func(t *types.Ticket) bool { return t.Hash == "hash2" })
+				Expect(count).To(Equal(1))
+			})
+		})
+	})
+
+	Describe(".UpdateOne", func() {
+		When("one entry exist", func() {
+			var store *Store
+			var err error
+			var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
+
+			BeforeEach(func() {
+				store = NewStore(c.F(true, true))
+				err = store.Add(ticket)
+				Expect(err).To(BeNil())
+			})
+
+			It("should update decay height", func() {
+				qp := func(t *types.Ticket) bool { return t.Hash == "hash1" }
+				store.UpdateOne(types.Ticket{DecayBy: 200}, qp)
+				res := store.QueryOne(qp)
+				Expect(res.DecayBy).To(Equal(uint64(200)))
+				Expect(store.Count(qp)).To(Equal(1))
+			})
+
+			It("should update nothing if predicate returns false", func() {
+				qp := func(t *types.Ticket) bool { return t.Hash == "hash2" }
+				store.UpdateOne(types.Ticket{DecayBy: 200}, qp)
+				res := store.QueryOne(qp)
+				Expect(res).To(BeNil())
 			})
 		})
 	})

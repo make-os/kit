@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/makeos/mosdef/params"
@@ -346,31 +345,6 @@ var _ = Describe("Transaction", func() {
 	})
 
 	Describe(".execUnbond", func() {
-		When("unable to get ticket due to query error", func() {
-			var senderPubKey util.String
-			var err error
-
-			BeforeEach(func() {
-				acct := types.BareAccount()
-				logic.AccountKeeper().Update(sender.Addr(), acct)
-
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockTickMgr := mocks.NewMockTicketManager(ctrl)
-				mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
-				mockLogic.EXPECT().AccountKeeper().Return(logic.AccountKeeper())
-				txLogic.logic = mockLogic
-
-				mockTickMgr.EXPECT().QueryOne(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
-
-				senderPubKey = util.String(sender.PubKey().Base58())
-				err = txLogic.execUnbond([]byte("ticket_id"), senderPubKey, 1)
-				Expect(err).ToNot(BeNil())
-			})
-
-			It("should return err='failed to get ticket: bad error'", func() {
-				Expect(err.Error()).To(Equal("failed to get ticket: bad error"))
-			})
-		})
 
 		When("ticket is unknown", func() {
 			var senderPubKey util.String
@@ -386,7 +360,7 @@ var _ = Describe("Transaction", func() {
 				mockLogic.EXPECT().AccountKeeper().Return(logic.AccountKeeper())
 				txLogic.logic = mockLogic
 
-				mockTickMgr.EXPECT().QueryOne(gomock.Any()).Return(nil, nil)
+				mockTickMgr.EXPECT().GetByHash(gomock.Any()).Return(nil)
 
 				senderPubKey = util.String(sender.PubKey().Base58())
 				err = txLogic.execUnbond([]byte("ticket_id"), senderPubKey, 1)
@@ -416,7 +390,7 @@ var _ = Describe("Transaction", func() {
 				txLogic.logic = mockLogic
 
 				returnTicket := &types.Ticket{Hash: "ticket_id", Value: "100"}
-				mockTickMgr.EXPECT().QueryOne(types.Ticket{Hash: "ticket_id"}).Return(returnTicket, nil)
+				mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
 
 				senderPubKey = util.String(sender.PubKey().Base58())
 				err = txLogic.execUnbond([]byte(returnTicket.Hash), senderPubKey, 1)

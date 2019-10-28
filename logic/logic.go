@@ -91,6 +91,11 @@ func New(db storage.Engine, cfg *config.EngineConfig) *Logic {
 	return l
 }
 
+// GetDBTx returns the db transaction used by the logic and keepers
+func (l *Logic) GetDBTx() storage.Functions {
+	return l.db
+}
+
 // Commit the underlying transaction and renews it.
 // Panics if called when no active transaction.
 func (l *Logic) Commit() error {

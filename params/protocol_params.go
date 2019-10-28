@@ -69,4 +69,8 @@ var (
 	// NumBlocksInStorerThawPeriod is the number of blocks before a storer stake
 	// is unbonded
 	NumBlocksInStorerThawPeriod = 10
+
+	// ValidatorTicketPoolSize is the size of the ticket pool from which validator
+	// tickets are selected randomly
+	ValidatorTicketPoolSize = 60000
 )

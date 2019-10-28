@@ -3,34 +3,31 @@ package ticket
 import (
 	"math/big"
 	"math/rand"
+	"sort"
+
+	"github.com/makeos/mosdef/storage"
 
 	"github.com/makeos/mosdef/crypto"
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
-	"github.com/pkg/errors"
-	"github.com/shopspring/decimal"
 )
 
 // Manager implements types.TicketManager.
 // It provides ticket management functionalities.
 type Manager struct {
-	store Store
 	cfg   *config.EngineConfig
 	logic types.Logic
+	s     Storer
 }
 
 // NewManager returns an instance of Manager.
 // Returns error if unable to initialize the store.
-func NewManager(cfg *config.EngineConfig, logic types.Logic) (*Manager, error) {
+func NewManager(db storage.Functions, cfg *config.EngineConfig, logic types.Logic) *Manager {
 	mgr := &Manager{cfg: cfg, logic: logic}
-	store, err := NewSQLStore(cfg.GetTicketDBDir())
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to start manager")
-	}
-	mgr.store = store
-	return mgr, nil
+	mgr.s = NewStore(db)
+	return mgr
 }
 
 // Index takes a tx and creates a ticket out of it
@@ -40,7 +37,7 @@ func (m *Manager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) 
 		Type:           tx.Type,
 		Height:         blockHeight,
 		Index:          txIndex,
-		Value:          tx.Value.String(),
+		Value:          tx.Value,
 		Hash:           tx.GetHash().HexStr(),
 		ProposerPubKey: tx.SenderPubKey.String(),
 	}
@@ -60,20 +57,13 @@ func (m *Manager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) 
 	}
 
 	if tx.Type == types.TxTypeValidatorTicket {
-
 		// Set maturity and decay heights
 		ticket.MatureBy = blockHeight + uint64(params.MinTicketMatDur)
 		ticket.DecayBy = ticket.MatureBy + uint64(params.MaxTicketActiveDur)
-
-		// Determine the ticket's power.
-		// A tickets power is the amount of tickets is value can purchase
-		curTickPrice := decimal.NewFromFloat(m.logic.Sys().GetCurValidatorTicketPrice())
-		numSubTickets := tx.Value.Decimal().Div(curTickPrice).IntPart()
-		ticket.Power = numSubTickets
 	}
 
 	// Add all tickets to the store
-	if err := m.store.Add(ticket); err != nil {
+	if err := m.s.Add(ticket); err != nil {
 		return err
 	}
 
@@ -82,29 +72,20 @@ func (m *Manager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) 
 
 // Remove deletes a ticket by its hash
 func (m *Manager) Remove(hash string) error {
-	return m.store.Remove(hash)
+	return m.s.RemoveByHash(hash)
 }
 
-// GetValidatorTicketByProposer finds tickets belonging to the
-// given proposer public key.
-func (m *Manager) GetValidatorTicketByProposer(proposerPubKey string, queryOpt types.QueryOptions) ([]*types.Ticket, error) {
-	res, err := m.store.Query(types.Ticket{
-		ProposerPubKey: proposerPubKey,
-		Type:           types.TxTypeValidatorTicket,
-	}, queryOpt)
-	if err != nil {
-		return nil, err
-	}
+// GetByProposer finds tickets belonging to the given proposer public key.
+func (m *Manager) GetByProposer(ticketType int, proposerPubKey string,
+	queryOpt ...interface{}) ([]*types.Ticket, error) {
+	res := m.s.Query(func(t *types.Ticket) bool {
+		return t.Type == ticketType && t.ProposerPubKey == proposerPubKey
+	}, queryOpt...)
 	return res, nil
 }
 
 // CountLiveValidatorTickets returns the number of matured and non-decayed tickets.
-func (m *Manager) CountLiveValidatorTickets(queryOpt ...types.QueryOptions) (int, error) {
-
-	qOpt := types.EmptyQueryOptions
-	if len(queryOpt) > 0 {
-		qOpt = queryOpt[0]
-	}
+func (m *Manager) CountLiveValidatorTickets() (int, error) {
 
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -112,47 +93,73 @@ func (m *Manager) CountLiveValidatorTickets(queryOpt ...types.QueryOptions) (int
 		return 0, err
 	}
 
-	count, err := m.store.CountLiveValidators(bi.Height, qOpt)
-	if err != nil {
-		return 0, err
-	}
+	count := m.s.Count(func(t *types.Ticket) bool {
+		return t.Type == types.TxTypeValidatorTicket &&
+			t.MatureBy <= uint64(bi.Height) &&
+			t.DecayBy > uint64(bi.Height)
+	})
 
 	return count, nil
 }
 
 // Query finds and returns tickets that match the given query
-func (m *Manager) Query(q types.Ticket, queryOpt ...types.QueryOptions) ([]*types.Ticket, error) {
-	qOpt := types.EmptyQueryOptions
-	if len(queryOpt) > 0 {
-		qOpt = queryOpt[0]
-	}
-	return m.store.Query(q, qOpt)
+func (m *Manager) Query(qf func(t *types.Ticket) bool, queryOpt ...interface{}) []*types.Ticket {
+	return m.s.Query(qf, queryOpt...)
 }
 
 // QueryOne finds and returns a ticket that match the given query
-func (m *Manager) QueryOne(q types.Ticket, queryOpt ...types.QueryOptions) (*types.Ticket, error) {
-	qOpt := types.EmptyQueryOptions
-	if len(queryOpt) > 0 {
-		qOpt = queryOpt[0]
-	}
-	return m.store.QueryOne(q, qOpt)
+func (m *Manager) QueryOne(qf func(t *types.Ticket) bool) *types.Ticket {
+	return m.s.QueryOne(qf)
 }
 
 // UpdateDecayBy updates the decay height of a ticket
 func (m *Manager) UpdateDecayBy(hash string, newDecayHeight uint64) error {
-	return m.store.UpdateOne(types.Ticket{Hash: hash}, types.Ticket{DecayBy: newDecayHeight})
+	m.s.UpdateOne(types.Ticket{DecayBy: newDecayHeight},
+		func(t *types.Ticket) bool { return t.Hash == hash })
+	return nil
+}
+
+// GetOrderedLiveValidatorTickets returns live tickets ordered by
+// value in desc. order, height asc order and index asc order
+func (m *Manager) GetOrderedLiveValidatorTickets(height int64) []*types.Ticket {
+
+	// Get matured, non-decayed tickets
+	tickets := m.s.Query(func(t *types.Ticket) bool {
+		return t.Type == types.TxTypeValidatorTicket &&
+			t.MatureBy <= uint64(height) &&
+			t.DecayBy > uint64(height)
+	})
+
+	sort.Slice(tickets, func(i, j int) bool {
+		iVal := tickets[i].Value.Decimal()
+		jVal := tickets[j].Value.Decimal()
+		if iVal.GreaterThan(jVal) {
+			return true
+		} else if iVal.LessThan(jVal) {
+			return false
+		}
+
+		if tickets[i].Height < tickets[j].Height {
+			return true
+		} else if tickets[i].Height > tickets[j].Height {
+			return false
+		}
+
+		return tickets[i].Index < tickets[j].Index
+	})
+
+	return tickets
 }
 
 // SelectRandom selects random live tickets up to the specified limit.
 // The provided see is used to seed the PRNG that is used to select tickets.
 func (m *Manager) SelectRandom(height int64, seed []byte, limit int) ([]*types.Ticket, error) {
 
-	tickets, err := m.store.GetLiveValidatorTickets(height, types.QueryOptions{
-		Order: `"power" desc, "height" asc, "index" asc`,
-		Limit: 50000,
-	})
-	if err != nil {
-		return nil, err
+	tickets := m.GetOrderedLiveValidatorTickets(height)
+
+	// Get top validators
+	if len(tickets) >= params.ValidatorTicketPoolSize {
+		tickets = tickets[:params.ValidatorTicketPoolSize]
 	}
 
 	// Create a RNG sourced with the seed
@@ -182,12 +189,12 @@ func (m *Manager) SelectRandom(height int64, seed []byte, limit int) ([]*types.T
 	return selected, nil
 }
 
+// GetByHash get a ticket by hash
+func (m *Manager) GetByHash(hash string) *types.Ticket {
+	return m.QueryOne(func(t *types.Ticket) bool { return t.Hash == hash })
+}
+
 // Stop stores the manager
 func (m *Manager) Stop() error {
-	if m.store != nil {
-		if err := m.store.Close(); err != nil {
-			return err
-		}
-	}
 	return nil
 }
