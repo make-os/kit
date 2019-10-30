@@ -121,14 +121,14 @@ func (m *Manager) UpdateDecayBy(hash string, newDecayHeight uint64) error {
 
 // GetOrderedLiveValidatorTickets returns live tickets ordered by
 // value in desc. order, height asc order and index asc order
-func (m *Manager) GetOrderedLiveValidatorTickets(height int64) []*types.Ticket {
+func (m *Manager) GetOrderedLiveValidatorTickets(height int64, limit int) []*types.Ticket {
 
 	// Get matured, non-decayed tickets
 	tickets := m.s.Query(func(t *types.Ticket) bool {
 		return t.Type == types.TxTypeValidatorTicket &&
 			t.MatureBy <= uint64(height) &&
 			t.DecayBy > uint64(height)
-	})
+	}, types.QueryOptions{Limit: limit})
 
 	sort.Slice(tickets, func(i, j int) bool {
 		iVal := tickets[i].Value.Decimal()
@@ -155,12 +155,7 @@ func (m *Manager) GetOrderedLiveValidatorTickets(height int64) []*types.Ticket {
 // The provided see is used to seed the PRNG that is used to select tickets.
 func (m *Manager) SelectRandom(height int64, seed []byte, limit int) ([]*types.Ticket, error) {
 
-	tickets := m.GetOrderedLiveValidatorTickets(height)
-
-	// Get top validators
-	if len(tickets) >= params.ValidatorTicketPoolSize {
-		tickets = tickets[:params.ValidatorTicketPoolSize]
-	}
+	tickets := m.GetOrderedLiveValidatorTickets(height, params.ValidatorTicketPoolSize)
 
 	// Create a RNG sourced with the seed
 	seedInt := new(big.Int).SetBytes(seed)

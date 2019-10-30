@@ -263,7 +263,7 @@ var _ = Describe("Manager", func() {
 				ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 3, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
 				ticket3 := &types.Ticket{Hash: "h3", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
 				Expect(mgr.s.Add(ticket, ticket2, ticket3)).To(BeNil())
-				tickets = mgr.GetOrderedLiveValidatorTickets(11)
+				tickets = mgr.GetOrderedLiveValidatorTickets(11, 0)
 			})
 
 			Specify("that ticket order should be ", func() {
@@ -282,7 +282,7 @@ var _ = Describe("Manager", func() {
 				ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 4, Index: 1, MatureBy: 10, DecayBy: 100, Value: "3"}
 				ticket3 := &types.Ticket{Hash: "h3", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
 				Expect(mgr.s.Add(ticket, ticket2, ticket3)).To(BeNil())
-				tickets = mgr.GetOrderedLiveValidatorTickets(11)
+				tickets = mgr.GetOrderedLiveValidatorTickets(11, 0)
 			})
 
 			Specify("that ticket order should be ", func() {
@@ -301,7 +301,7 @@ var _ = Describe("Manager", func() {
 				ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "3"}
 				ticket3 := &types.Ticket{Hash: "h3", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
 				Expect(mgr.s.Add(ticket, ticket2, ticket3)).To(BeNil())
-				tickets = mgr.GetOrderedLiveValidatorTickets(11)
+				tickets = mgr.GetOrderedLiveValidatorTickets(11, 0)
 			})
 
 			Specify("that ticket order should be ", func() {
@@ -309,6 +309,22 @@ var _ = Describe("Manager", func() {
 				Expect(tickets[0].Hash).To(Equal("h2"))
 				Expect(tickets[1].Hash).To(Equal("h1"))
 				Expect(tickets[2].Hash).To(Equal("h3"))
+			})
+		})
+
+		Context("with limit", func() {
+			var tickets []*types.Ticket
+
+			BeforeEach(func() {
+				ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+				ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "3"}
+				ticket3 := &types.Ticket{Hash: "h3", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+				Expect(mgr.s.Add(ticket, ticket2, ticket3)).To(BeNil())
+				tickets = mgr.GetOrderedLiveValidatorTickets(11, 1)
+			})
+
+			Specify("that ticket order should be ", func() {
+				Expect(tickets).To(HaveLen(1))
 			})
 		})
 	})
