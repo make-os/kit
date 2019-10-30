@@ -82,7 +82,7 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
-	Describe(".CountLiveValidatorTickets", func() {
+	Describe(".CountActiveValidatorTickets", func() {
 		ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key", MatureBy: 100, DecayBy: 200}
 		ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key", MatureBy: 100, DecayBy: 150}
 
@@ -98,7 +98,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return 1", func() {
-				count, err := mgr.CountLiveValidatorTickets()
+				count, err := mgr.CountActiveValidatorTickets()
 				Expect(err).To(BeNil())
 				Expect(count).To(Equal(1))
 			})
@@ -116,7 +116,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return ticket1", func() {
-				count, err := mgr.CountLiveValidatorTickets()
+				count, err := mgr.CountActiveValidatorTickets()
 				Expect(err).To(BeNil())
 				Expect(count).To(Equal(0))
 			})
@@ -348,6 +348,72 @@ var _ = Describe("Manager", func() {
 			It("should find no ticket by hash", func() {
 				t := mgr.GetByHash("h1")
 				Expect(t).To(BeNil())
+			})
+		})
+	})
+
+	Describe(".GetActiveTicketsByProposer", func() {
+		ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+		ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+		ticket3 := &types.Ticket{Hash: "h3", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+		ticket3_2 := &types.Ticket{Hash: "h3_2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+		ticket3_3 := &types.Ticket{Hash: "h3_3", Type: types.TxTypeStorerTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+		ticket3_4 := &types.Ticket{Hash: "h3_4", Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+
+		When("proposer='pub_key3', type=TxTypeValidatorTicket, addDelegated=false", func() {
+			BeforeEach(func() {
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 11}, nil)
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+				mgr.logic = mockLogic
+
+				err := mgr.s.Add(ticket, ticket2, ticket3, ticket3_2, ticket3_4)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return 2 tickets", func() {
+				res, err := mgr.GetActiveTicketsByProposer("pub_key3", types.TxTypeValidatorTicket, false)
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(2))
+			})
+		})
+
+		When("proposer='pub_key3', type=TxTypeStorerTicket, addDelegated=false", func() {
+			BeforeEach(func() {
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 11}, nil)
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+				mgr.logic = mockLogic
+
+				err := mgr.s.Add(ticket, ticket2, ticket3, ticket3_2, ticket3_3)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return 1 tickets", func() {
+				res, err := mgr.GetActiveTicketsByProposer("pub_key3", types.TxTypeStorerTicket, false)
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(1))
+			})
+		})
+
+		When("proposer='pub_key3', type=TxTypeStorerTicket, addDelegated=true", func() {
+			BeforeEach(func() {
+				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+				mockLogic := mocks.NewMockLogic(ctrl)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 11}, nil)
+				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+				mgr.logic = mockLogic
+
+				err := mgr.s.Add(ticket, ticket2, ticket3, ticket3_2, ticket3_3, ticket3_4)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return 2 tickets", func() {
+				res, err := mgr.GetActiveTicketsByProposer("pub_key3", types.TxTypeStorerTicket, true)
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(2))
 			})
 		})
 	})

@@ -81,19 +81,19 @@ func (mr *MockTicketManagerMockRecorder) GetByProposer(ticketType, proposerPubKe
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByProposer", reflect.TypeOf((*MockTicketManager)(nil).GetByProposer), varargs...)
 }
 
-// CountLiveValidatorTickets mocks base method
-func (m *MockTicketManager) CountLiveValidatorTickets() (int, error) {
+// CountActiveValidatorTickets mocks base method
+func (m *MockTicketManager) CountActiveValidatorTickets() (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CountLiveValidatorTickets")
+	ret := m.ctrl.Call(m, "CountActiveValidatorTickets")
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CountLiveValidatorTickets indicates an expected call of CountLiveValidatorTickets
-func (mr *MockTicketManagerMockRecorder) CountLiveValidatorTickets() *gomock.Call {
+// CountActiveValidatorTickets indicates an expected call of CountActiveValidatorTickets
+func (mr *MockTicketManagerMockRecorder) CountActiveValidatorTickets() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountLiveValidatorTickets", reflect.TypeOf((*MockTicketManager)(nil).CountLiveValidatorTickets))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountActiveValidatorTickets", reflect.TypeOf((*MockTicketManager)(nil).CountActiveValidatorTickets))
 }
 
 // SelectRandom mocks base method

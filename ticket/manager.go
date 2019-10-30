@@ -84,8 +84,8 @@ func (m *Manager) GetByProposer(ticketType int, proposerPubKey string,
 	return res, nil
 }
 
-// CountLiveValidatorTickets returns the number of matured and non-decayed tickets.
-func (m *Manager) CountLiveValidatorTickets() (int, error) {
+// CountActiveValidatorTickets returns the number of matured and non-decayed tickets.
+func (m *Manager) CountActiveValidatorTickets() (int, error) {
 
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -100,6 +100,29 @@ func (m *Manager) CountLiveValidatorTickets() (int, error) {
 	})
 
 	return count, nil
+}
+
+// GetActiveTicketsByProposer returns all active tickets associated to a
+// proposer
+// proposer: The public key of the proposer
+// ticketType: Filter the search to a specific ticket type
+// addDelegated: When true, delegated tickets are added.
+func (m *Manager) GetActiveTicketsByProposer(proposer string, ticketType int,
+	addDelegated bool) ([]*types.Ticket, error) {
+
+	// Get the last committed block
+	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	result := m.s.Query(func(t *types.Ticket) bool {
+		return t.Type == ticketType &&
+			t.MatureBy <= uint64(bi.Height) && t.DecayBy > uint64(bi.Height) &&
+			t.ProposerPubKey == proposer && (t.Delegator == "" || t.Delegator != "" && addDelegated)
+	})
+
+	return result, nil
 }
 
 // Query finds and returns tickets that match the given query

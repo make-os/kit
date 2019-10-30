@@ -79,7 +79,7 @@ func (s *System) CheckSetNetMaturity() error {
 	}
 
 	// Ensure there are enough live tickets
-	numLiveTickets, err := s.logic.GetTicketManager().CountLiveValidatorTickets()
+	numLiveTickets, err := s.logic.GetTicketManager().CountActiveValidatorTickets()
 	if err != nil {
 		return errors.Wrap(err, "failed to count live tickets")
 	}
