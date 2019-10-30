@@ -1,14 +1,11 @@
 package keepers
 
 import (
-	"fmt"
-
+	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/util"
 )
 
 const (
-	// Separator separates prefixes
-	Separator = ":"
 	// TagAccount is the prefix for account data
 	TagAccount = "a"
 	// TagBlockInfo is the prefix for last block data
@@ -25,40 +22,40 @@ const (
 
 // MakeAccountKey creates a key for accessing/store an account
 func MakeAccountKey(address string) []byte {
-	return []byte(fmt.Sprintf("%s%s%s", TagAccount, Separator, address))
+	return storage.MakePrefix([]byte(TagAccount), []byte(address))
 }
 
 // MakeKeyBlockInfo creates a key for accessing/storing committed block data.
 func MakeKeyBlockInfo(height int64) []byte {
-	return append([]byte(TagBlockInfo+Separator), util.EncodeNumber(uint64(height))...)
+	return storage.MakeKey(util.EncodeNumber(uint64(height)), []byte(TagBlockInfo))
 }
 
 // MakeQueryKeyBlockInfo creates a key for querying committed block data
 func MakeQueryKeyBlockInfo() []byte {
-	return []byte(fmt.Sprintf("%s%s", TagBlockInfo, Separator))
+	return storage.MakePrefix([]byte(TagBlockInfo))
 }
 
 // MakeNetMaturityKey creates a key indicating the network's maturity status
 func MakeNetMaturityKey() []byte {
-	return []byte(fmt.Sprintf("%s", TagNetMaturity))
+	return storage.MakePrefix([]byte(TagNetMaturity))
 }
 
 // MakeHighestDrandRoundKey creates a key for storing the highest know drand round
 func MakeHighestDrandRoundKey() []byte {
-	return []byte(fmt.Sprintf("%s", TagHighestDrandRound))
+	return storage.MakePrefix([]byte(TagHighestDrandRound))
 }
 
 // MakeBlockValidatorsKey creates a key for storing validators of blocks
 func MakeBlockValidatorsKey(height int64) []byte {
-	return append([]byte(TagValidators+Separator), util.EncodeNumber(uint64(height))...)
+	return storage.MakeKey(util.EncodeNumber(uint64(height)), []byte(TagValidators))
 }
 
 // MakeQueryKeyBlockValidators creates a key for querying all block validators
 func MakeQueryKeyBlockValidators() []byte {
-	return []byte(fmt.Sprintf("%s%s", TagValidators, Separator))
+	return storage.MakePrefix([]byte(TagValidators))
 }
 
 // MakeTxKey creates a key for storing validators of blocks
 func MakeTxKey(hash []byte) []byte {
-	return append([]byte(TagTx+Separator), hash...)
+	return storage.MakePrefix([]byte(TagTx), hash)
 }

@@ -106,7 +106,7 @@ var _ = Describe("SystemKeeper", func() {
 		When("error is returned", func() {
 			err := fmt.Errorf("bad error")
 			BeforeEach(func() {
-				db := storagemocks.NewMockFunctions(ctrl)
+				db := storagemocks.NewMockTx(ctrl)
 				db.EXPECT().Get(gomock.Any()).Return(nil, err)
 				sysKeeper.db = db
 			})
@@ -289,7 +289,7 @@ var _ = Describe("SystemKeeper", func() {
 			var err error
 			var returnedErr = fmt.Errorf("error")
 			BeforeEach(func() {
-				db := storagemocks.NewMockFunctions(ctrl)
+				db := storagemocks.NewMockTx(ctrl)
 				db.EXPECT().Get(gomock.Any()).Return(nil, returnedErr)
 				sysKeeper.db = db
 				_, err = sysKeeper.GetSecrets(10, 0, 0)
@@ -304,7 +304,7 @@ var _ = Describe("SystemKeeper", func() {
 		When("an error=ErrBlockInfoNotFound occurred when attempting to fetch block info", func() {
 			var err error
 			BeforeEach(func() {
-				db := storagemocks.NewMockFunctions(ctrl)
+				db := storagemocks.NewMockTx(ctrl)
 				db.EXPECT().Get(gomock.Any()).Return(nil, ErrBlockInfoNotFound).AnyTimes()
 				sysKeeper.db = db
 				_, err = sysKeeper.GetSecrets(10, 0, 0)
@@ -322,7 +322,7 @@ var _ = Describe("SystemKeeper", func() {
 				rec := storage.NewRecord([]byte("key"), util.ObjectToBytes(types.BlockInfo{
 					InvalidEpochSecret: true,
 				}))
-				db := storagemocks.NewMockFunctions(ctrl)
+				db := storagemocks.NewMockTx(ctrl)
 				db.EXPECT().Get(gomock.Any()).Return(rec, nil).AnyTimes()
 				sysKeeper.db = db
 				res, err = sysKeeper.GetSecrets(10, 0, 0)
@@ -339,7 +339,7 @@ var _ = Describe("SystemKeeper", func() {
 			var res [][]byte
 			BeforeEach(func() {
 				rec := storage.NewRecord([]byte("key"), util.ObjectToBytes(types.BlockInfo{}))
-				db := storagemocks.NewMockFunctions(ctrl)
+				db := storagemocks.NewMockTx(ctrl)
 				db.EXPECT().Get(gomock.Any()).Return(rec, nil).AnyTimes()
 				sysKeeper.db = db
 				res, err = sysKeeper.GetSecrets(10, 0, 0)
@@ -359,7 +359,7 @@ var _ = Describe("SystemKeeper", func() {
 					Height:      10,
 					EpochSecret: util.RandBytes(64),
 				}))
-				db := storagemocks.NewMockFunctions(ctrl)
+				db := storagemocks.NewMockTx(ctrl)
 				db.EXPECT().Get(MakeKeyBlockInfo(10)).Return(rec, nil).AnyTimes()
 				db.EXPECT().Get(MakeKeyBlockInfo(9)).Return(nil, ErrBlockInfoNotFound).AnyTimes()
 				db.EXPECT().Get(MakeKeyBlockInfo(8)).Return(nil, ErrBlockInfoNotFound).AnyTimes()
@@ -393,7 +393,7 @@ var _ = Describe("SystemKeeper", func() {
 					Height:      5,
 					EpochSecret: []byte("b"),
 				}))
-				db := storagemocks.NewMockFunctions(ctrl)
+				db := storagemocks.NewMockTx(ctrl)
 				db.EXPECT().Get(MakeKeyBlockInfo(10)).Return(rec, nil).AnyTimes()
 				db.EXPECT().Get(MakeKeyBlockInfo(5)).Return(rec2, nil).AnyTimes()
 				sysKeeper.db = db
@@ -421,7 +421,7 @@ var _ = Describe("SystemKeeper", func() {
 					Height:      5,
 					EpochSecret: []byte("b"),
 				}))
-				db := storagemocks.NewMockFunctions(ctrl)
+				db := storagemocks.NewMockTx(ctrl)
 				db.EXPECT().Get(MakeKeyBlockInfo(10)).Return(rec, nil).AnyTimes()
 				db.EXPECT().Get(MakeKeyBlockInfo(5)).Return(rec2, nil).AnyTimes()
 				sysKeeper.db = db
