@@ -12,7 +12,7 @@ var ErrRecordNotFound = fmt.Errorf("record not found")
 
 const (
 	// KeyPrefixSeparator is used to separate prefix and key
-	KeyPrefixSeparator = "@@"
+	KeyPrefixSeparator = ";"
 	prefixSeparator    = ":"
 )
 
