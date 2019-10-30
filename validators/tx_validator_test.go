@@ -149,9 +149,9 @@ var _ = Describe("TxValidator", func() {
 	Describe(".ValidateTxConsistency", func() {
 		var key = crypto.NewKeyFromIntSeed(1)
 		var key2 = crypto.NewKeyFromIntSeed(2)
+		var err error
 
 		When("error occurred when getting current block height", func() {
-			var err error
 			BeforeEach(func() {
 				mockLogic := mocks.NewMockLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
@@ -177,7 +177,6 @@ var _ = Describe("TxValidator", func() {
 			})
 
 			When("tx failed state checks", func() {
-				var err error
 				BeforeEach(func() {
 					mockLogic := mocks.NewMockLogic(ctrl)
 					txLogic := mocks.NewMockTxLogic(ctrl)
@@ -284,79 +283,147 @@ var _ = Describe("TxValidator", func() {
 						Expect(err.Error()).To(Equal("field:ticketID, error:sender not authorized to unbond this ticket"))
 					})
 				})
-			})
 
-			When("ticket decay height is 0", func() {
-				var err error
+				When("ticket decay height is 0", func() {
+					var err error
+					BeforeEach(func() {
+						mockLogic := mocks.NewMockLogic(ctrl)
+						mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+						mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+						mockTickMgr := mocks.NewMockTicketManager(ctrl)
+						mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+
+						mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+
+						tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
+
+						returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key.PubKey().Base58(), DecayBy: 0}
+
+						mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
+						err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+					})
+
+					It("should return nil", func() {
+						Expect(err).To(BeNil())
+					})
+				})
+
+				When("ticket decay height is greater than 0 but less than current block height", func() {
+					var err error
+					BeforeEach(func() {
+						mockLogic := mocks.NewMockLogic(ctrl)
+						mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+						mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+						mockTickMgr := mocks.NewMockTicketManager(ctrl)
+						mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+
+						mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 10}, nil)
+
+						tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
+
+						returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key.PubKey().Base58(), DecayBy: 5}
+
+						mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
+						err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+					})
+
+					It("should return err='field:ticketID, error:ticket has already decayed'", func() {
+						Expect(err).ToNot(BeNil())
+						Expect(err.Error()).To(Equal("field:ticketID, error:ticket has already decayed"))
+					})
+				})
+
+				When("ticket decay height is greater than 0 but greater than current block height", func() {
+					var err error
+					BeforeEach(func() {
+						mockLogic := mocks.NewMockLogic(ctrl)
+						mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+						mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+						mockTickMgr := mocks.NewMockTicketManager(ctrl)
+						mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+
+						mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 3}, nil)
+
+						tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
+
+						returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key.PubKey().Base58(), DecayBy: 5}
+
+						mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
+						err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+					})
+
+					It("should return err='field:ticketID, error:ticket has already decayed'", func() {
+						Expect(err).ToNot(BeNil())
+						Expect(err.Error()).To(Equal("field:ticketID, error:ticket is already decaying"))
+					})
+				})
+			})
+		})
+
+		When("tx type is TxTypeValidatorTicket | TxTypeStorerTicket", func() {
+			When("failed to get list of active ticket by the tx target proposer/delegate", func() {
 				BeforeEach(func() {
 					mockLogic := mocks.NewMockLogic(ctrl)
 					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
-					mockTickMgr := mocks.NewMockTicketManager(ctrl)
-					mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
+					mockTickMan := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(mockTickMan)
+					mockTickMan.EXPECT().GetActiveTicketsByProposer(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
+
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+					tx := &types.Transaction{Type: types.TxTypeValidatorTicket, To: key.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: util.String(key.PubKey().Base58())}
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return error", func() {
+					Expect(err.Error()).To(Equal("failed to get active delegate tickets: error"))
+				})
+			})
+
+			When("target proposer/delegate has no active tickets", func() {
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+					mockTickMan := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(mockTickMan)
+
+					tickets := []*types.Ticket{}
+					mockTickMan.EXPECT().GetActiveTicketsByProposer(gomock.Any(), gomock.Any(), gomock.Any()).Return(tickets, nil)
+
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+					tx := &types.Transaction{Type: types.TxTypeValidatorTicket, To: key.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: util.String(key.PubKey().Base58())}
+					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return error", func() {
+					Expect(err.Error()).To(Equal("field:to, error:the delegate is not active"))
+				})
+			})
+
+			When("target proposer/delegate has active tickets", func() {
+				BeforeEach(func() {
+					mockLogic := mocks.NewMockLogic(ctrl)
+					txLogic := mocks.NewMockTxLogic(ctrl)
+					mockLogic.EXPECT().Tx().Return(txLogic)
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+					mockTickMan := mocks.NewMockTicketManager(ctrl)
+					mockLogic.EXPECT().GetTicketManager().Return(mockTickMan)
 
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
 
-					tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
+					tickets := []*types.Ticket{&types.Ticket{Hash: "h1"}}
+					mockTickMan.EXPECT().GetActiveTicketsByProposer(gomock.Any(), gomock.Any(), gomock.Any()).Return(tickets, nil)
 
-					returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key.PubKey().Base58(), DecayBy: 0}
+					txLogic.EXPECT().CanExecCoinTransfer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 
-					mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
+					tx := &types.Transaction{Type: types.TxTypeValidatorTicket, To: key.Addr(), Value: "1", Fee: "1", Timestamp: time.Now().Unix(), SenderPubKey: util.String(key.PubKey().Base58())}
 					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
 				})
 
 				It("should return nil", func() {
 					Expect(err).To(BeNil())
-				})
-			})
-
-			When("ticket decay height is greater than 0 but less than current block height", func() {
-				var err error
-				BeforeEach(func() {
-					mockLogic := mocks.NewMockLogic(ctrl)
-					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
-					mockTickMgr := mocks.NewMockTicketManager(ctrl)
-					mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
-
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 10}, nil)
-
-					tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
-
-					returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key.PubKey().Base58(), DecayBy: 5}
-
-					mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
-					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
-				})
-
-				It("should return err='field:ticketID, error:ticket has already decayed'", func() {
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("field:ticketID, error:ticket has already decayed"))
-				})
-			})
-
-			When("ticket decay height is greater than 0 but greater than current block height", func() {
-				var err error
-				BeforeEach(func() {
-					mockLogic := mocks.NewMockLogic(ctrl)
-					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
-					mockTickMgr := mocks.NewMockTicketManager(ctrl)
-					mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
-
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 3}, nil)
-
-					tx := &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: time.Now().Unix(), TicketID: []byte("ticket_id"), SenderPubKey: util.String(key.PubKey().Base58())}
-
-					returnTicket := &types.Ticket{Hash: string(tx.TicketID), ProposerPubKey: key.PubKey().Base58(), DecayBy: 5}
-
-					mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
-					err = validators.ValidateTxConsistency(tx, -1, mockLogic)
-				})
-
-				It("should return err='field:ticketID, error:ticket has already decayed'", func() {
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("field:ticketID, error:ticket is already decaying"))
 				})
 			})
 		})

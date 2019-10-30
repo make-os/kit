@@ -118,8 +118,10 @@ func (m *Manager) GetActiveTicketsByProposer(proposer string, ticketType int,
 
 	result := m.s.Query(func(t *types.Ticket) bool {
 		return t.Type == ticketType &&
-			t.MatureBy <= uint64(bi.Height) && t.DecayBy > uint64(bi.Height) &&
-			t.ProposerPubKey == proposer && (t.Delegator == "" || t.Delegator != "" && addDelegated)
+			t.MatureBy <= uint64(bi.Height) &&
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) &&
+			t.ProposerPubKey == proposer &&
+			(t.Delegator == "" || t.Delegator != "" && addDelegated)
 	})
 
 	return result, nil

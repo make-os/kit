@@ -121,27 +121,6 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("failure to commit state", func() {
-			BeforeEach(func() {
-				mockLogic := mocks.NewMockAtomicLogic(ctrl)
-				mockTree := mocks.NewMockTree(ctrl)
-				mockTree.EXPECT().WorkingHash().Return(nil)
-				mockLogic.EXPECT().StateTree().Return(mockTree)
-				mockLogic.EXPECT().WriteGenesisState().Return(nil)
-				mockValidator := mocks.NewMockValidatorLogic(ctrl)
-				mockValidator.EXPECT().Index(gomock.Any(), gomock.Any()).Return(nil)
-				mockLogic.EXPECT().Commit(true).Return(fmt.Errorf("error"))
-				mockLogic.EXPECT().Validator().Return(mockValidator)
-				app.logic = mockLogic
-			})
-
-			It("should panic", func() {
-				Expect(func() {
-					app.InitChain(abcitypes.RequestInitChain{})
-				}).To(Panic())
-			})
-		})
-
 		When("initialization succeeds", func() {
 			BeforeEach(func() {
 				mockLogic := mocks.NewMockAtomicLogic(ctrl)
@@ -149,7 +128,6 @@ var _ = Describe("App", func() {
 				mockTree.EXPECT().WorkingHash().Return(nil).Times(2)
 				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()
 				mockLogic.EXPECT().WriteGenesisState().Return(nil)
-				mockLogic.EXPECT().Commit(true).Return(nil)
 				mockTree.EXPECT().Version().Return(int64(1))
 				mockValidator := mocks.NewMockValidatorLogic(ctrl)
 				mockValidator.EXPECT().Index(gomock.Any(), gomock.Any()).Return(nil)
@@ -956,13 +934,13 @@ var _ = Describe("App", func() {
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 
 				mockTree := mocks.NewMockTree(ctrl)
-				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash")).Times(2)
+				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash")).Times(1)
 
 				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 
 				app.heightToSaveNewValidators = 100
 
-				mockLogic.EXPECT().Commit(false).Return(nil)
+				mockLogic.EXPECT().Commit().Return(nil)
 
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()
@@ -982,7 +960,7 @@ var _ = Describe("App", func() {
 				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 				mockTree := mocks.NewMockTree(ctrl)
-				mockTree.EXPECT().WorkingHash().Return([]byte("app_hash")).Times(2)
+				mockTree.EXPECT().WorkingHash().Return([]byte("app_hash")).Times(1)
 				mockTickMgr := mocks.NewMockTicketManager(ctrl)
 				mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
 
@@ -993,7 +971,7 @@ var _ = Describe("App", func() {
 				app.unbondStorerRequests = append(app.unbondStorerRequests, "ticket_hash")
 				mockTickMgr.EXPECT().UpdateDecayBy("ticket_hash", uint64(app.wBlock.Height))
 
-				mockLogic.EXPECT().Commit(false).Return(nil)
+				mockLogic.EXPECT().Commit().Return(nil)
 
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()

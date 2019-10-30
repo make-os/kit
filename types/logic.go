@@ -103,9 +103,11 @@ type AtomicLogic interface {
 	// GetDBTx returns the db transaction used by the logic and keepers
 	GetDBTx() storage.Tx
 
-	// Commit the underlying transaction.
-	// Panics if called when no active transaction.
-	Commit(dbOnly bool) error
+	// Commit the state tree, database transaction and other
+	// processes that needs to be finalized after a new tree
+	// version is saved.
+	// NOTE: The operations are not all atomic.
+	Commit() error
 
 	// Discard the underlying transaction
 	// Panics if called when no active transaction.

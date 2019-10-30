@@ -359,6 +359,7 @@ var _ = Describe("Manager", func() {
 		ticket3_2 := &types.Ticket{Hash: "h3_2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
 		ticket3_3 := &types.Ticket{Hash: "h3_3", Type: types.TxTypeStorerTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
 		ticket3_4 := &types.Ticket{Hash: "h3_4", Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+		ticket4 := &types.Ticket{Hash: "h3_4", Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: "pub_key4", Height: 1, Index: 1, MatureBy: 10, DecayBy: 0, Value: "1"}
 
 		When("proposer='pub_key3', type=TxTypeValidatorTicket, addDelegated=false", func() {
 			BeforeEach(func() {
@@ -414,6 +415,27 @@ var _ = Describe("Manager", func() {
 				res, err := mgr.GetActiveTicketsByProposer("pub_key3", types.TxTypeStorerTicket, true)
 				Expect(err).To(BeNil())
 				Expect(res).To(HaveLen(2))
+			})
+		})
+
+		When("ticket decay height = 0", func() {
+			When("args are proposer='pub_key4', type=TxTypeStorerTicket, addDelegated=true", func() {
+				BeforeEach(func() {
+					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
+					mockLogic := mocks.NewMockLogic(ctrl)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 11}, nil)
+					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
+					mgr.logic = mockLogic
+
+					err := mgr.s.Add(ticket, ticket2, ticket3, ticket3_2, ticket3_3, ticket4)
+					Expect(err).To(BeNil())
+				})
+
+				It("should return 2 tickets", func() {
+					res, err := mgr.GetActiveTicketsByProposer("pub_key4", types.TxTypeStorerTicket, true)
+					Expect(err).To(BeNil())
+					Expect(res).To(HaveLen(1))
+				})
 			})
 		})
 	})

@@ -11,7 +11,7 @@ const (
 	// TagBlockInfo is the prefix for last block data
 	TagBlockInfo = "b"
 	// TagNetMaturity is the prefix for account data
-	TagNetMaturity = "nm"
+	TagNetMaturity = "m"
 	// TagHighestDrandRound is the prefix for highest drand round
 	TagHighestDrandRound = "dr"
 	// TagValidators is the prefix for block validators

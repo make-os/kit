@@ -45,6 +45,13 @@ type TicketManager interface {
 	// CountActiveValidatorTickets returns the number of matured and non-decayed tickets.
 	CountActiveValidatorTickets() (int, error)
 
+	// GetActiveTicketsByProposer returns all active tickets associated to a
+	// proposer
+	// proposer: The public key of the proposer
+	// ticketType: Filter the search to a specific ticket type
+	// addDelegated: When true, delegated tickets are added.
+	GetActiveTicketsByProposer(proposer string, ticketType int, addDelegated bool) ([]*Ticket, error)
+
 	// SelectRandom selects random live tickets up to the specified limit.
 	// The provided see is used to seed the PRNG that is used to select tickets.
 	SelectRandom(height int64, seed []byte, limit int) ([]*Ticket, error)
@@ -63,7 +70,7 @@ type TicketManager interface {
 
 	// GetOrderedLiveValidatorTickets returns live tickets ordered by
 	// value in desc. order, height asc order and index asc order
-	GetOrderedLiveValidatorTickets(height int64) []*Ticket
+	GetOrderedLiveValidatorTickets(height int64, limit int) []*Ticket
 
 	// Stop stops the ticket manager
 	Stop() error

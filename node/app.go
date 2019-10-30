@@ -94,11 +94,6 @@ func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitCh
 		panic(errors.Wrap(err, "failed to index validators"))
 	}
 
-	// Commit state
-	if err := a.logic.Commit(true); err != nil {
-		panic(errors.Wrap(err, "failed to commit"))
-	}
-
 	a.log.Info("Node initialization has completed",
 		"GenesisHash", util.BytesToHash(stateTree.WorkingHash()).HexStr(),
 		"StateVersion", stateTree.Version())
@@ -122,10 +117,6 @@ func (a *App) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
 			panic(err)
 		}
 	}
-
-	a.logic.GetDBTx().Iterate(nil, true, func(rec *storage.Record) bool {
-		return false
-	})
 
 	if lastBlock != nil {
 		lastBlockAppHash = lastBlock.AppHash
@@ -508,7 +499,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	}
 
 	// Commit all state changes
-	if err := a.logic.Commit(false); err != nil {
+	if err := a.logic.Commit(); err != nil {
 		a.commitPanic(errors.Wrap(err, "failed to commit"))
 	}
 

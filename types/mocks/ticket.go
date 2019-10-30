@@ -96,6 +96,21 @@ func (mr *MockTicketManagerMockRecorder) CountActiveValidatorTickets() *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountActiveValidatorTickets", reflect.TypeOf((*MockTicketManager)(nil).CountActiveValidatorTickets))
 }
 
+// GetActiveTicketsByProposer mocks base method
+func (m *MockTicketManager) GetActiveTicketsByProposer(proposer string, ticketType int, addDelegated bool) ([]*types.Ticket, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetActiveTicketsByProposer", proposer, ticketType, addDelegated)
+	ret0, _ := ret[0].([]*types.Ticket)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetActiveTicketsByProposer indicates an expected call of GetActiveTicketsByProposer
+func (mr *MockTicketManagerMockRecorder) GetActiveTicketsByProposer(proposer, ticketType, addDelegated interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveTicketsByProposer", reflect.TypeOf((*MockTicketManager)(nil).GetActiveTicketsByProposer), proposer, ticketType, addDelegated)
+}
+
 // SelectRandom mocks base method
 func (m *MockTicketManager) SelectRandom(height int64, seed []byte, limit int) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
@@ -173,17 +188,17 @@ func (mr *MockTicketManagerMockRecorder) UpdateDecayBy(hash, newDecayHeight inte
 }
 
 // GetOrderedLiveValidatorTickets mocks base method
-func (m *MockTicketManager) GetOrderedLiveValidatorTickets(height int64) []*types.Ticket {
+func (m *MockTicketManager) GetOrderedLiveValidatorTickets(height int64, limit int) []*types.Ticket {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrderedLiveValidatorTickets", height)
+	ret := m.ctrl.Call(m, "GetOrderedLiveValidatorTickets", height, limit)
 	ret0, _ := ret[0].([]*types.Ticket)
 	return ret0
 }
 
 // GetOrderedLiveValidatorTickets indicates an expected call of GetOrderedLiveValidatorTickets
-func (mr *MockTicketManagerMockRecorder) GetOrderedLiveValidatorTickets(height interface{}) *gomock.Call {
+func (mr *MockTicketManagerMockRecorder) GetOrderedLiveValidatorTickets(height, limit interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderedLiveValidatorTickets", reflect.TypeOf((*MockTicketManager)(nil).GetOrderedLiveValidatorTickets), height)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderedLiveValidatorTickets", reflect.TypeOf((*MockTicketManager)(nil).GetOrderedLiveValidatorTickets), height, limit)
 }
 
 // Stop mocks base method

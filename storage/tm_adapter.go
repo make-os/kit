@@ -109,7 +109,6 @@ func (tm *TMDBAdapter) Stats() map[string]string {
 // TMDBBatchAdapter implements github.com/tendermint/tm-db.Batch
 type TMDBBatchAdapter struct {
 	bw *badger.WriteBatch
-	m  [][][]byte
 }
 
 // Write writes to the batch writer
@@ -132,7 +131,6 @@ func (b *TMDBBatchAdapter) Close() {
 
 // Set adds a set of key and value pair to the batch
 func (b *TMDBBatchAdapter) Set(key, value []byte) {
-	b.m = append(b.m, [][]byte{key, value})
 	b.bw.Set(key, value)
 }
 
@@ -261,4 +259,5 @@ func (it *TMDBIteratorAdapter) Value() (value []byte) {
 // Close releases the Iterator.
 func (it *TMDBIteratorAdapter) Close() {
 	it.it.Close()
+	it.db.Discard()
 }

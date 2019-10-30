@@ -493,6 +493,18 @@ func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) 
 		goto unbondStoreTicket
 	}
 
+	// For delegated ticket transactions, ensure the delegate has an active,
+	// non-delegated ticket
+	if (tx.Type == types.TxTypeStorerTicket || tx.Type == types.TxTypeValidatorTicket) &&
+		!tx.To.Empty() {
+		r, err := logic.GetTicketManager().GetActiveTicketsByProposer(tx.To.String(), tx.Type, false)
+		if err != nil {
+			return errors.Wrap(err, "failed to get active delegate tickets")
+		} else if len(r) == 0 {
+			return types.FieldErrorWithIndex(index, "to", "the delegate is not active")
+		}
+	}
+
 	// Check whether the transaction is consistent with
 	// the current state of the sender's account
 	err = logic.Tx().CanExecCoinTransfer(tx.Type, pubKey, tx.To, tx.Value, tx.Fee,

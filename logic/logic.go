@@ -112,15 +112,16 @@ func (l *Logic) GetDBTx() storage.Tx {
 	return l.db
 }
 
-// Commit the state tree and database transaction. Renew
-// the database transaction for next state changes.
-func (l *Logic) Commit(dbOnly bool) error {
+// Commit the state tree, database transaction and other
+// processes that needs to be finalized after a new tree
+// version is saved.
+// NOTE: The operations are not all atomic.
+func (l *Logic) Commit() error {
 
-	if !dbOnly {
-		_, _, err := l.stateTree.SaveVersion()
-		if err != nil {
-			return errors.Wrap(err, "failed to save tree")
-		}
+	// Save the state tree.
+	_, _, err := l.stateTree.SaveVersion()
+	if err != nil {
+		return errors.Wrap(err, "failed to save tree")
 	}
 
 	// Commit the database transaction.
