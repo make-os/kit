@@ -31,7 +31,7 @@ var _ = Describe("SystemKeeper", func() {
 		Expect(err).To(BeNil())
 		c = storage.NewBadger(cfg)
 		Expect(c.Init()).To(BeNil())
-		valKeeper = NewValidatorKeeper(c.F(true, true))
+		valKeeper = NewValidatorKeeper(c.NewTx(true, true))
 	})
 
 	BeforeEach(func() {

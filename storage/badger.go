@@ -41,12 +41,12 @@ func (b *Badger) Init() error {
 	return nil
 }
 
-// F returns the functions the engine is capable of executing.
-// The argument autoFinish ensure that the underlying transaction
-// is committed after each successful operation.
-// The argument renew reinitializes the transaction after
-// only when autoFinish is true.
-func (b *Badger) F(autoFinish, renew bool) Functions {
+// NewTx creates a new transaction.
+// autoFinish: ensure that the underlying transaction is committed after
+// each successful operation.
+// renew: reinitializes the transaction after each operation. Requires
+// autoFinish to be enabled.
+func (b *Badger) NewTx(autoFinish, renew bool) Tx {
 	return NewBadgerFunctions(b.db, autoFinish, renew)
 }
 

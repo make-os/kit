@@ -115,8 +115,8 @@ func (n *Node) Start() error {
 	// Read private validator
 	pv := privval.LoadFilePV(n.tmcfg.PrivValidatorKeyFile(), n.tmcfg.PrivValidatorStateFile())
 
-	// Create the logic provider
-	n.logic = logic.New(n.db, n.cfg)
+	// Create an atomic logic provider
+	n.logic = logic.NewAtomic(n.db, n.cfg)
 
 	// Create ticket manager
 	n.ticketMgr = ticket.NewManager(n.logic.GetDBTx(), n.cfg, n.logic)

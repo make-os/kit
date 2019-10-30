@@ -145,15 +145,15 @@ func (mr *MockEngineMockRecorder) Close() *gomock.Call {
 }
 
 // F mocks base method
-func (m *MockEngine) F(autoFinish, renew bool) storage.Functions {
+func (m *MockEngine) NewTx(autoFinish, renew bool) storage.Tx {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "F", autoFinish, renew)
-	ret0, _ := ret[0].(storage.Functions)
+	ret0, _ := ret[0].(storage.Tx)
 	return ret0
 }
 
 // F indicates an expected call of F
-func (mr *MockEngineMockRecorder) F(autoFinish, renew interface{}) *gomock.Call {
+func (mr *MockEngineMockRecorder) NewTx(autoFinish, renew interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "F", reflect.TypeOf((*MockEngine)(nil).F), autoFinish, renew)
 }

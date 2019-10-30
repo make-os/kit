@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("TMDBAdapter", func() {
 	var c Engine
-	var tx Functions
+	var tx Tx
 	var err error
 	var cfg *config.EngineConfig
 	var adapter *TMDBAdapter
@@ -22,7 +22,7 @@ var _ = Describe("TMDBAdapter", func() {
 		Expect(err).To(BeNil())
 		c = NewBadger(cfg)
 		Expect(c.Init())
-		tx = c.F(true, true)
+		tx = c.NewTx(true, true)
 		adapter = NewTMDBAdapter(tx)
 	})
 

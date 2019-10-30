@@ -11,15 +11,6 @@ type Engine interface {
 
 	// Close closes the database engine and frees resources
 	Close() error
-
-	// F returns the functions the engine is capable of executing.
-	// Each call to this function returns storage.Functions with a unique
-	// transaction.
-	// The argument autoFinish ensure that the underlying transaction
-	// is committed after each successful operation.
-	// The argument renew reinitializes the transaction after
-	// only when autoFinish is true.
-	F(autoFinish, renew bool) Functions
 }
 
 // TxCommitDiscarder represents an interface for committing and
@@ -60,10 +51,17 @@ type Operations interface {
 
 	// NewBatch returns a batch writer
 	NewBatch() interface{}
+
+	// NewTx creates a new transaction.
+	// autoFinish: ensure that the underlying transaction is committed after
+	// each successful operation.
+	// renew: reinitializes the transaction after each operation. Requires
+	// autoFinish to be enabled.
+	NewTx(autoFinish, renew bool) Tx
 }
 
-// Functions describes the functions of a storage engine
-type Functions interface {
+// Tx describes a transaction
+type Tx interface {
 	TxCommitDiscarder
 	Operations
 	TxRenewer

@@ -46,6 +46,7 @@ func (s *SafeTree) Get(key []byte) (index int64, value []byte) {
 }
 
 // Set sets a key in the working tree. Nil values are not supported.
+// Returns true if the key existed and was updated.
 func (s *SafeTree) Set(key, value []byte) bool {
 	s.Lock()
 	defer s.Unlock()
@@ -80,4 +81,11 @@ func (s *SafeTree) Hash() []byte {
 	s.RLock()
 	defer s.RUnlock()
 	return s.state.Hash()
+}
+
+// Rollback rolls back the tree to the latest version, discarding unsaved changes.
+func (s *SafeTree) Rollback() {
+	s.Lock()
+	defer s.Unlock()
+	s.state.Rollback()
 }

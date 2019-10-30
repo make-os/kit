@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// BadgerFunctions implements storage.Functions.
+// BadgerFunctions implements storage.Tx.
 type BadgerFunctions struct {
 	sync.RWMutex
 
@@ -29,6 +29,15 @@ type BadgerFunctions struct {
 // NewBadgerFunctions returns an instance of BadgerFunctions
 func NewBadgerFunctions(db *badger.DB, finish, renew bool) *BadgerFunctions {
 	return &BadgerFunctions{db: db, tx: db.NewTransaction(true), finish: finish, renew: renew}
+}
+
+// NewTx creates a new transaction.
+// autoFinish: ensure that the underlying transaction is committed after
+// each successful operation.
+// renew: reinitializes the transaction after each operation. Requires
+// autoFinish to be enabled.
+func (f *BadgerFunctions) NewTx(autoFinish, renew bool) Tx {
+	return NewBadgerFunctions(f.db, autoFinish, renew)
 }
 
 // CanFinish checks whether transaction is automatically committed

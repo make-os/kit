@@ -480,10 +480,10 @@ func (mr *MockAtomicLogicMockRecorder) GetDRand() *gomock.Call {
 }
 
 // GetDBTx mocks base method
-func (m *MockAtomicLogic) GetDBTx() storage.Functions {
+func (m *MockAtomicLogic) GetDBTx() storage.Tx {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDBTx")
-	ret0, _ := ret[0].(storage.Functions)
+	ret0, _ := ret[0].(storage.Tx)
 	return ret0
 }
 
@@ -494,17 +494,17 @@ func (mr *MockAtomicLogicMockRecorder) GetDBTx() *gomock.Call {
 }
 
 // Commit mocks base method
-func (m *MockAtomicLogic) Commit() error {
+func (m *MockAtomicLogic) Commit(dbOnly bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Commit")
+	ret := m.ctrl.Call(m, "Commit", dbOnly)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Commit indicates an expected call of Commit
-func (mr *MockAtomicLogicMockRecorder) Commit() *gomock.Call {
+func (mr *MockAtomicLogicMockRecorder) Commit(dbOnly interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockAtomicLogic)(nil).Commit))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Commit", reflect.TypeOf((*MockAtomicLogic)(nil).Commit), dbOnly)
 }
 
 // Discard mocks base method

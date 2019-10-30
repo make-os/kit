@@ -22,7 +22,7 @@ var _ = Describe("Store", func() {
 		Expect(err).To(BeNil())
 		c = storage.NewBadger(cfg)
 		Expect(c.Init()).To(BeNil())
-		store = NewStore(c.F(true, true))
+		store = NewStore(c.NewTx(true, true))
 	})
 
 	AfterEach(func() {
@@ -83,7 +83,7 @@ var _ = Describe("Store", func() {
 		var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
 
 		BeforeEach(func() {
-			store = NewStore(c.F(true, true))
+			store = NewStore(c.NewTx(true, true))
 			Expect(err).To(BeNil())
 			err = store.Add(ticket)
 			Expect(err).To(BeNil())
@@ -110,7 +110,7 @@ var _ = Describe("Store", func() {
 			var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
 
 			BeforeEach(func() {
-				store = NewStore(c.F(true, true))
+				store = NewStore(c.NewTx(true, true))
 				Expect(err).To(BeNil())
 				err = store.Add(ticket)
 				Expect(err).To(BeNil())
@@ -129,7 +129,7 @@ var _ = Describe("Store", func() {
 			var ticket = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
 
 			BeforeEach(func() {
-				store = NewStore(c.F(true, true))
+				store = NewStore(c.NewTx(true, true))
 				Expect(err).To(BeNil())
 				err = store.Add(ticket)
 				Expect(err).To(BeNil())
@@ -150,7 +150,7 @@ var _ = Describe("Store", func() {
 			var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
 
 			BeforeEach(func() {
-				store = NewStore(c.F(true, true))
+				store = NewStore(c.NewTx(true, true))
 				Expect(err).To(BeNil())
 				err = store.Add(ticket)
 				Expect(err).To(BeNil())
@@ -168,7 +168,7 @@ var _ = Describe("Store", func() {
 			var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
 
 			BeforeEach(func() {
-				store = NewStore(c.F(true, true))
+				store = NewStore(c.NewTx(true, true))
 				Expect(err).To(BeNil())
 				err = store.Add(ticket)
 				Expect(err).To(BeNil())
@@ -189,7 +189,7 @@ var _ = Describe("Store", func() {
 			var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 11, Index: 2}
 
 			BeforeEach(func() {
-				store = NewStore(c.F(true, true))
+				store = NewStore(c.NewTx(true, true))
 				Expect(err).To(BeNil())
 				err = store.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
@@ -232,7 +232,7 @@ var _ = Describe("Store", func() {
 			var ticket2 = &types.Ticket{Hash: "hash2", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
 
 			BeforeEach(func() {
-				store = NewStore(c.F(true, true))
+				store = NewStore(c.NewTx(true, true))
 				Expect(err).To(BeNil())
 				err = store.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
@@ -257,7 +257,7 @@ var _ = Describe("Store", func() {
 			var ticket = &types.Ticket{Hash: "hash1", DecayBy: 100, MatureBy: 40, ProposerPubKey: "pubkey", Height: 10, Index: 2}
 
 			BeforeEach(func() {
-				store = NewStore(c.F(true, true))
+				store = NewStore(c.NewTx(true, true))
 				err = store.Add(ticket)
 				Expect(err).To(BeNil())
 			})

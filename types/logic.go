@@ -101,11 +101,11 @@ type AtomicLogic interface {
 	Logic
 
 	// GetDBTx returns the db transaction used by the logic and keepers
-	GetDBTx() storage.Functions
+	GetDBTx() storage.Tx
 
 	// Commit the underlying transaction.
 	// Panics if called when no active transaction.
-	Commit() error
+	Commit(dbOnly bool) error
 
 	// Discard the underlying transaction
 	// Panics if called when no active transaction.

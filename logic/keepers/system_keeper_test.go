@@ -29,7 +29,7 @@ var _ = Describe("SystemKeeper", func() {
 		Expect(err).To(BeNil())
 		c = storage.NewBadger(cfg)
 		Expect(c.Init()).To(BeNil())
-		dbTx := c.F(true, true)
+		dbTx := c.NewTx(true, true)
 		sysKeeper = NewSystemKeeper(dbTx)
 	})
 

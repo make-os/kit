@@ -6,7 +6,7 @@ import (
 
 var (
 	// BlockTime is the number of seconds between blocks
-	BlockTime = 20
+	BlockTime = 50
 
 	// MaxBlockSize is the max size of a block
 	MaxBlockSize = int64(1000000)

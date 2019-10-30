@@ -64,12 +64,12 @@ type Storer interface {
 
 // Store implements Storer
 type Store struct {
-	db       storage.Functions // The DB transaction
+	db       storage.Tx // The DB transaction
 	fromHead bool              // If true, the iterator iterates from the tail
 }
 
 // NewStore creates an instance of Store
-func NewStore(db storage.Functions) *Store {
+func NewStore(db storage.Tx) *Store {
 	return &Store{db: db, fromHead: true}
 }
 

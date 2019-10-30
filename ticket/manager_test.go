@@ -34,7 +34,7 @@ var _ = Describe("Manager", func() {
 		c = storage.NewBadger(cfg)
 		Expect(c.Init()).To(BeNil())
 		logic = l.New(c, cfg)
-		mgr = NewManager(c.F(true, true), cfg, logic)
+		mgr = NewManager(c.NewTx(true, true), cfg, logic)
 		Expect(err).To(BeNil())
 	})
 

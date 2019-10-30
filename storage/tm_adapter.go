@@ -9,11 +9,11 @@ import (
 
 // TMDBAdapter fully implements some of github.com/tendermint/tm-db.DB interface.
 type TMDBAdapter struct {
-	db Functions
+	db Tx
 }
 
 // NewTMDBAdapter creates an instance TMDBAdapter.
-func NewTMDBAdapter(db Functions) *TMDBAdapter {
+func NewTMDBAdapter(db Tx) *TMDBAdapter {
 	return &TMDBAdapter{db: db}
 }
 
@@ -68,8 +68,9 @@ func (tm *TMDBAdapter) DeleteSync([]byte) {
 // If end is nil, iterates up to the last item (inclusive).
 // CONTRACT: No writes may happen within a domain while an iterator exists over it.
 // CONTRACT: start, end readonly []byte
+// CONTRACT: Runs in a new managed transaction
 func (tm *TMDBAdapter) Iterator(start, end []byte) tmdb.Iterator {
-	return NewTMDBIteratorAdapter(tm.db, start, end, false)
+	return NewTMDBIteratorAdapter(tm.db.NewTx(true, true), start, end, false)
 }
 
 // ReverseIterator iterate over a domain of keys in descending order. End is exclusive.
@@ -78,8 +79,9 @@ func (tm *TMDBAdapter) Iterator(start, end []byte) tmdb.Iterator {
 // If end is nil, iterates from the last/greatest item (inclusive).
 // CONTRACT: No writes may happen within a domain while an iterator exists over it.
 // CONTRACT: start, end readonly []byte
+// CONTRACT: Runs in a new managed transaction.
 func (tm *TMDBAdapter) ReverseIterator(start, end []byte) tmdb.Iterator {
-	return NewTMDBIteratorAdapter(tm.db, start, end, true)
+	return NewTMDBIteratorAdapter(tm.db.NewTx(true, true), start, end, true)
 }
 
 // Close closes the connection.
@@ -90,8 +92,7 @@ func (tm *TMDBAdapter) Close() {
 // NewBatch creates a batch for atomic updates.
 func (tm *TMDBAdapter) NewBatch() tmdb.Batch {
 	return &TMDBBatchAdapter{
-		bw:        tm.db.NewBatch().(*badger.WriteBatch),
-		txRenewer: tm.db,
+		bw: tm.db.NewBatch().(*badger.WriteBatch),
 	}
 }
 
@@ -107,9 +108,8 @@ func (tm *TMDBAdapter) Stats() map[string]string {
 
 // TMDBBatchAdapter implements github.com/tendermint/tm-db.Batch
 type TMDBBatchAdapter struct {
-	bw        *badger.WriteBatch
-	txRenewer TxRenewer
-	m         [][][]byte
+	bw *badger.WriteBatch
+	m  [][][]byte
 }
 
 // Write writes to the batch writer
@@ -127,7 +127,6 @@ func (b *TMDBBatchAdapter) WriteSync() {
 
 // Close cancels the batch writer
 func (b *TMDBBatchAdapter) Close() {
-	defer b.txRenewer.RenewTx()
 	b.bw.Cancel()
 }
 
@@ -144,7 +143,7 @@ func (b *TMDBBatchAdapter) Delete(key []byte) {
 
 // TMDBIteratorAdapter implements github.com/tendermint/tm-db.Iterator
 type TMDBIteratorAdapter struct {
-	db      Functions
+	db      Tx
 	k       []byte
 	v       []byte
 	valid   bool
@@ -155,7 +154,7 @@ type TMDBIteratorAdapter struct {
 }
 
 // NewTMDBIteratorAdapter returns an instance of TMDBIteratorAdapter
-func NewTMDBIteratorAdapter(db Functions, start, end []byte, reverse bool) *TMDBIteratorAdapter {
+func NewTMDBIteratorAdapter(db Tx, start, end []byte, reverse bool) *TMDBIteratorAdapter {
 	iOpts := badger.DefaultIteratorOptions
 	iOpts.Reverse = reverse
 	it := db.RawIterator(iOpts).(*badger.Iterator)

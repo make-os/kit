@@ -24,7 +24,7 @@ type Manager struct {
 
 // NewManager returns an instance of Manager.
 // Returns error if unable to initialize the store.
-func NewManager(db storage.Functions, cfg *config.EngineConfig, logic types.Logic) *Manager {
+func NewManager(db storage.Tx, cfg *config.EngineConfig, logic types.Logic) *Manager {
 	mgr := &Manager{cfg: cfg, logic: logic}
 	mgr.s = NewStore(db)
 	return mgr

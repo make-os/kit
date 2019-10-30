@@ -15,14 +15,14 @@ var ErrBlockInfoNotFound = fmt.Errorf("block info not found")
 // SystemKeeper stores system information such as
 // app states, commit history and more.
 type SystemKeeper struct {
-	db storage.Functions
+	db storage.Tx
 
 	gmx       *sync.RWMutex
 	lastSaved *types.BlockInfo
 }
 
 // NewSystemKeeper creates an instance of SystemKeeper
-func NewSystemKeeper(db storage.Functions) *SystemKeeper {
+func NewSystemKeeper(db storage.Tx) *SystemKeeper {
 	return &SystemKeeper{db: db, gmx: &sync.RWMutex{}}
 }
 

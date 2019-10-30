@@ -130,7 +130,7 @@ var _ = Describe("App", func() {
 				mockLogic.EXPECT().WriteGenesisState().Return(nil)
 				mockValidator := mocks.NewMockValidatorLogic(ctrl)
 				mockValidator.EXPECT().Index(gomock.Any(), gomock.Any()).Return(nil)
-				mockLogic.EXPECT().Commit().Return(fmt.Errorf("error"))
+				mockLogic.EXPECT().Commit(true).Return(fmt.Errorf("error"))
 				mockLogic.EXPECT().Validator().Return(mockValidator)
 				app.logic = mockLogic
 			})
@@ -149,7 +149,7 @@ var _ = Describe("App", func() {
 				mockTree.EXPECT().WorkingHash().Return(nil).Times(2)
 				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()
 				mockLogic.EXPECT().WriteGenesisState().Return(nil)
-				mockLogic.EXPECT().Commit().Return(nil)
+				mockLogic.EXPECT().Commit(true).Return(nil)
 				mockTree.EXPECT().Version().Return(int64(1))
 				mockValidator := mocks.NewMockValidatorLogic(ctrl)
 				mockValidator.EXPECT().Index(gomock.Any(), gomock.Any()).Return(nil)
@@ -838,6 +838,7 @@ var _ = Describe("App", func() {
 					mockStateTree.EXPECT().WorkingHash().Return(nil)
 					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 					mockSysKeeper.EXPECT().SetHighestDrandRound(gomock.Any()).Return(fmt.Errorf("error"))
+					mockLogic.EXPECT().Discard().Return()
 					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 					mockLogic.EXPECT().StateTree().Return(mockStateTree)
 					app.logic = mockLogic
@@ -871,6 +872,8 @@ var _ = Describe("App", func() {
 				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
 
 				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(fmt.Errorf("bad"))
+
+				mockLogic.EXPECT().Discard().Return()
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 				mockLogic.EXPECT().StateTree().Return(mockTree)
 				app.logic = mockLogic
@@ -899,6 +902,7 @@ var _ = Describe("App", func() {
 				app.heightToSaveNewValidators = 10
 				mockValKeeper.EXPECT().Index(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 
+				mockLogic.EXPECT().Discard().Return()
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 				mockLogic.EXPECT().StateTree().Return(mockTree)
 				mockLogic.EXPECT().ValidatorKeeper().Return(mockValKeeper)
@@ -912,35 +916,7 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("error occurred when saving tree version", func() {
-
-			BeforeEach(func() {
-				mockLogic := mocks.NewMockAtomicLogic(ctrl)
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-
-				mockTree := mocks.NewMockTree(ctrl)
-				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
-
-				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
-
-				app.heightToSaveNewValidators = 100
-
-				mockTree.EXPECT().SaveVersion().Return([]byte{}, int64(0), fmt.Errorf("error"))
-
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
-				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()
-				app.logic = mockLogic
-			})
-
-			It("should panic", func() {
-				Expect(func() {
-					app.Commit()
-				}).To(Panic())
-			})
-		})
-
 		When("error occurred when trying to save un-indexed tx", func() {
-			appHash := []byte("app_hash")
 
 			BeforeEach(func() {
 				mockLogic := mocks.NewMockAtomicLogic(ctrl)
@@ -954,10 +930,9 @@ var _ = Describe("App", func() {
 
 				app.heightToSaveNewValidators = 100
 
-				mockTree.EXPECT().SaveVersion().Return(appHash, int64(0), nil)
-
 				mockTxKeeper.EXPECT().Index(gomock.Any()).Return(fmt.Errorf("error"))
 
+				mockLogic.EXPECT().Discard().Return()
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()
 				mockLogic.EXPECT().TxKeeper().Return(mockTxKeeper).AnyTimes()
@@ -974,22 +949,20 @@ var _ = Describe("App", func() {
 		})
 
 		When("no error occurred", func() {
-			appHash := []byte("app_hash")
+			appHash := []byte("working_hash")
 
 			BeforeEach(func() {
 				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 
 				mockTree := mocks.NewMockTree(ctrl)
-				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
+				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash")).Times(2)
 
 				mockSysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 
 				app.heightToSaveNewValidators = 100
 
-				mockTree.EXPECT().SaveVersion().Return(appHash, int64(0), nil)
-
-				mockLogic.EXPECT().Commit().Return(nil)
+				mockLogic.EXPECT().Commit(false).Return(nil)
 
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()
@@ -1009,7 +982,7 @@ var _ = Describe("App", func() {
 				mockLogic := mocks.NewMockAtomicLogic(ctrl)
 				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
 				mockTree := mocks.NewMockTree(ctrl)
-				mockTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
+				mockTree.EXPECT().WorkingHash().Return([]byte("app_hash")).Times(2)
 				mockTickMgr := mocks.NewMockTicketManager(ctrl)
 				mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
 
@@ -1017,12 +990,10 @@ var _ = Describe("App", func() {
 
 				app.heightToSaveNewValidators = 100
 
-				mockTree.EXPECT().SaveVersion().Return(appHash, int64(0), nil)
-
 				app.unbondStorerRequests = append(app.unbondStorerRequests, "ticket_hash")
 				mockTickMgr.EXPECT().UpdateDecayBy("ticket_hash", uint64(app.wBlock.Height))
 
-				mockLogic.EXPECT().Commit().Return(nil)
+				mockLogic.EXPECT().Commit(false).Return(nil)
 
 				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
 				mockLogic.EXPECT().StateTree().Return(mockTree).AnyTimes()

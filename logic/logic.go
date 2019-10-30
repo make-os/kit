@@ -23,7 +23,7 @@ type Logic struct {
 
 	// db is the db handle for transaction-centric operations.
 	// Use this to store records that should run a transaction managed by ABCI app.
-	db storage.Functions
+	db storage.Tx
 
 	// stateTree is the chain's state tree
 	stateTree *tree.SafeTree
@@ -60,8 +60,24 @@ type Logic struct {
 // PANICS: If unable to load state tree
 // PANICS: when drand initialization fails
 func New(db storage.Engine, cfg *config.EngineConfig) *Logic {
+	dbTx := db.NewTx(true, true)
+	l := newLogicWithTx(dbTx, cfg)
+	l._db = db
+	return l
+}
 
-	dbTx := db.F(true, true)
+// NewAtomic creates an instance of Logic that supports atomic operations across
+// all sub-logic providers and keepers.
+// PANICS: If unable to load state tree
+// PANICS: when drand initialization fails
+func NewAtomic(db storage.Engine, cfg *config.EngineConfig) *Logic {
+	dbTx := db.NewTx(false, false)
+	l := newLogicWithTx(dbTx, cfg)
+	l._db = db
+	return l
+}
+
+func newLogicWithTx(dbTx storage.Tx, cfg *config.EngineConfig) *Logic {
 
 	// Load the state tree
 	dbAdapter := storage.NewTMDBAdapter(dbTx)
@@ -71,7 +87,7 @@ func New(db storage.Engine, cfg *config.EngineConfig) *Logic {
 	}
 
 	// Create the logic instances
-	l := &Logic{_db: db, stateTree: tree, cfg: cfg, db: dbTx}
+	l := &Logic{stateTree: tree, cfg: cfg, db: dbTx}
 	l.sys = &System{logic: l}
 	l.tx = &Transaction{logic: l}
 	l.validator = &Validator{logic: l}
@@ -91,31 +107,38 @@ func New(db storage.Engine, cfg *config.EngineConfig) *Logic {
 	return l
 }
 
-// GetDBTx returns the db transaction used by the logic and keepers
-func (l *Logic) GetDBTx() storage.Functions {
+// GetDBTx returns the db transaction used by the logic providers and keepers
+func (l *Logic) GetDBTx() storage.Tx {
 	return l.db
 }
 
-// Commit the underlying transaction and renews it.
-// Panics if called when no active transaction.
-func (l *Logic) Commit() error {
-	if l.db == nil {
-		panic("no active transaction")
+// Commit the state tree and database transaction. Renew
+// the database transaction for next state changes.
+func (l *Logic) Commit(dbOnly bool) error {
+
+	if !dbOnly {
+		_, _, err := l.stateTree.SaveVersion()
+		if err != nil {
+			return errors.Wrap(err, "failed to save tree")
+		}
 	}
+
+	// Commit the database transaction.
 	if err := l.db.Commit(); err != nil {
-		return err
+		return errors.Wrap(err, "failed to commit transaction")
 	}
+
+	// Renew the database transaction
 	l.db.RenewTx()
+
 	return nil
 }
 
-// Discard the underlying transaction and renews it.
-// Panics if called when no active transaction.
+// Discard the underlying transaction and renew it.
+// Also rollback any uncommitted tree modifications.
 func (l *Logic) Discard() {
-	if l.db == nil {
-		panic("no active transaction")
-	}
 	l.db.Discard()
+	l.stateTree.Rollback()
 	l.db.RenewTx()
 }
 
