@@ -73,6 +73,8 @@ type Tx interface {
 
 // Transaction represents a transaction
 type Transaction struct {
+
+	// Common fields
 	Type         int         `json:"type" msgpack:"type"`
 	Nonce        uint64      `json:"nonce" msgpack:"nonce"`
 	To           util.String `json:"to" msgpack:"to"`
@@ -83,12 +85,10 @@ type Transaction struct {
 	Sig          []byte      `json:"sig" msgpack:"sig"`
 
 	// TxTypeEpochSecret specific field
-	Secret         []byte `json:"secret,omitempty" msgpack:"secret,omitempty"`
-	PreviousSecret []byte `json:"previousSecret,omitempty" msgpack:"previousSecret,omitempty"`
-	SecretRound    uint64 `json:"secretRound,omitempty" msgpack:"secretRound,omitempty"`
+	EpochSecret *EpochSecret `json:"epochSecret,omitempty" msgpack:"epochSecret,omitempty"`
 
 	// TxTypeUnbondTicket specific field
-	TicketID []byte `json:"ticketID,omitempty" msgpack:"ticketID,omitempty"`
+	UnbondTicket *UnbondTicket `json:"unbondTicket,omitempty" msgpack:"unbondTicket,omitempty"`
 
 	// meta stores arbitrary data for message passing during tx processing
 	meta map[string]interface{}
@@ -104,10 +104,8 @@ func NewBareTx(txType int) *Transaction {
 	tx.Value = util.String("0")
 	tx.Fee = util.String("0")
 	tx.Timestamp = time.Now().Unix()
-	tx.TicketID = []byte{}
-	tx.Secret = []byte{}
-	tx.PreviousSecret = []byte{}
-	tx.SecretRound = 0
+	tx.UnbondTicket = &UnbondTicket{}
+	tx.EpochSecret = &EpochSecret{}
 	tx.Sig = []byte{}
 	tx.meta = map[string]interface{}{}
 	return tx
@@ -130,10 +128,8 @@ func NewTx(txType int,
 	tx.Value = value
 	tx.Timestamp = timestamp
 	tx.Fee = fee
-	tx.Secret = []byte{}
-	tx.PreviousSecret = []byte{}
-	tx.SecretRound = 0
-	tx.TicketID = []byte{}
+	tx.EpochSecret = nil
+	tx.UnbondTicket = nil
 	tx.meta = map[string]interface{}{}
 
 	var err error
@@ -212,25 +208,28 @@ func (tx *Transaction) SetTimestamp(t int64) {
 // GetSecret returns the secret
 // FOR: TxTypeEpochSecret
 func (tx *Transaction) GetSecret() []byte {
-	return tx.Secret
+	return tx.EpochSecret.Secret
 }
 
 // GetPreviousSecret returns the previous secret
 // FOR: TxTypeEpochSecret
 func (tx *Transaction) GetPreviousSecret() []byte {
-	return tx.PreviousSecret
+	return tx.EpochSecret.PreviousSecret
 }
 
 // GetSecretRound returns the secret round
 // FOR: TxTypeEpochSecret
 func (tx *Transaction) GetSecretRound() uint64 {
-	return tx.SecretRound
+	return tx.EpochSecret.SecretRound
 }
 
 // GetTicketID returns the ticket id
 // FOR: TxTypeUnbondTicket
 func (tx *Transaction) GetTicketID() []byte {
-	return tx.TicketID
+	if tx.UnbondTicket == nil {
+		return nil
+	}
+	return tx.UnbondTicket.TicketID
 }
 
 // ToMap decodes the transaction to a map
@@ -283,6 +282,17 @@ func (tx *Transaction) GetType() int {
 // GetBytesNoSig returns a serialized transaction
 // but omits the signature in the result.
 func (tx *Transaction) GetBytesNoSig() []byte {
+
+	var epochSecretBz []byte
+	if tx.EpochSecret != nil {
+		epochSecretBz = tx.EpochSecret.Bytes()
+	}
+
+	var unbondTicketBz []byte
+	if tx.UnbondTicket != nil {
+		unbondTicketBz = tx.UnbondTicket.Bytes()
+	}
+
 	return util.ObjectToBytes([]interface{}{
 		tx.Fee,
 		tx.Nonce,
@@ -291,15 +301,24 @@ func (tx *Transaction) GetBytesNoSig() []byte {
 		tx.To,
 		tx.Type,
 		tx.Value,
-		tx.Secret,
-		tx.PreviousSecret,
-		tx.SecretRound,
-		tx.TicketID,
+		epochSecretBz,
+		unbondTicketBz,
 	})
 }
 
 // Bytes returns the serializes version of the transaction
 func (tx *Transaction) Bytes() []byte {
+
+	var epochSecretBz []byte
+	if tx.EpochSecret != nil {
+		epochSecretBz = tx.EpochSecret.Bytes()
+	}
+
+	var unbondTicketBz []byte
+	if tx.UnbondTicket != nil {
+		unbondTicketBz = tx.UnbondTicket.Bytes()
+	}
+
 	return util.ObjectToBytes([]interface{}{
 		tx.Fee,
 		tx.Nonce,
@@ -309,10 +328,8 @@ func (tx *Transaction) Bytes() []byte {
 		tx.To,
 		tx.Type,
 		tx.Value,
-		tx.Secret,
-		tx.PreviousSecret,
-		tx.SecretRound,
-		tx.TicketID,
+		epochSecretBz,
+		unbondTicketBz,
 	})
 }
 
@@ -333,10 +350,17 @@ func NewTxFromBytes(bs []byte) (*Transaction, error) {
 	tx.To = util.String(fields[5].(string))
 	tx.Type = int(fields[6].(int64))
 	tx.Value = util.String(fields[7].(string))
-	tx.Secret = fields[8].([]byte)
-	tx.PreviousSecret = fields[9].([]byte)
-	tx.SecretRound = fields[10].(uint64)
-	tx.TicketID = fields[11].([]byte)
+
+	tx.EpochSecret = nil
+	if fields[8] != nil {
+		tx.EpochSecret = EpochSecretFromBytes(fields[8].([]byte))
+	}
+
+	tx.UnbondTicket = nil
+	if fields[9] != nil {
+		tx.UnbondTicket = UnbondTicketFromBytes(fields[9].([]byte))
+	}
+
 	tx.meta = map[string]interface{}{}
 
 	return &tx, nil
@@ -347,6 +371,17 @@ func NewTxFromBytes(bs []byte) (*Transaction, error) {
 // the `fee` field. The value does not represent the true size
 // of the transaction on disk.
 func (tx *Transaction) GetSizeNoFee() int64 {
+
+	var epochSecretBz []byte
+	if tx.EpochSecret != nil {
+		epochSecretBz = tx.EpochSecret.Bytes()
+	}
+
+	var unbondTicketBz []byte
+	if tx.UnbondTicket != nil {
+		unbondTicketBz = tx.UnbondTicket.Bytes()
+	}
+
 	return int64(len(util.ObjectToBytes([]interface{}{
 		tx.Nonce,
 		tx.SenderPubKey,
@@ -355,10 +390,8 @@ func (tx *Transaction) GetSizeNoFee() int64 {
 		tx.To,
 		tx.Type,
 		tx.Value,
-		tx.Secret,
-		tx.PreviousSecret,
-		tx.SecretRound,
-		tx.TicketID,
+		epochSecretBz,
+		unbondTicketBz,
 	})))
 }
 
@@ -436,4 +469,90 @@ func SignTx(tx *Transaction, privKey string) ([]byte, error) {
 	}
 
 	return sig, nil
+}
+
+// EpochSecret contains information about an epoch secret
+type EpochSecret struct {
+	Secret         []byte `json:"secret,omitempty" msgpack:"secret,omitempty"`
+	PreviousSecret []byte `json:"previousSecret,omitempty" msgpack:"previousSecret,omitempty"`
+	SecretRound    uint64 `json:"secretRound,omitempty" msgpack:"secretRound,omitempty"`
+}
+
+// Bytes returns the serialized version of the object
+func (e *EpochSecret) Bytes() []byte {
+
+	if e == (&EpochSecret{}) {
+		return []byte{}
+	}
+
+	return util.ObjectToBytes([]interface{}{
+		e.Secret,
+		e.SecretRound,
+		e.PreviousSecret,
+	})
+}
+
+// EpochSecretFromBytes deserialize bz to EpochSecret.
+// Returns empty EpochSecret when bz is empty
+func EpochSecretFromBytes(bz []byte) *EpochSecret {
+
+	var es = &EpochSecret{}
+	if len(bz) == 0 {
+		return es
+	}
+
+	var ob []interface{}
+	if err := util.BytesToObject(bz, &ob); err != nil {
+		panic(err)
+	}
+
+	if ob[0] != nil {
+		es.Secret = ob[0].([]byte)
+	}
+
+	es.SecretRound = ob[1].(uint64)
+
+	if ob[2] != nil {
+		es.PreviousSecret = ob[2].([]byte)
+	}
+
+	return es
+}
+
+// UnbondTicket contains information about a ticket to be unbonded
+type UnbondTicket struct {
+	TicketID []byte `json:"ticketID,omitempty" msgpack:"ticketID,omitempty"`
+}
+
+// Bytes returns the serialized version of the object
+func (u *UnbondTicket) Bytes() []byte {
+
+	if u == (&UnbondTicket{}) {
+		return []byte{}
+	}
+
+	return util.ObjectToBytes([]interface{}{
+		u.TicketID,
+	})
+}
+
+// UnbondTicketFromBytes deserialize bz to EpochSecret.
+// Returns empty UnbondTicket when bz is empty
+func UnbondTicketFromBytes(bz []byte) *UnbondTicket {
+
+	var ut = &UnbondTicket{}
+	if len(bz) == 0 {
+		return ut
+	}
+
+	var ob []interface{}
+	if err := util.BytesToObject(bz, &ob); err != nil {
+		panic(err)
+	}
+
+	if ob[0] != nil {
+		ut.TicketID = ob[0].([]byte)
+	}
+
+	return ut
 }

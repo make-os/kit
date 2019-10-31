@@ -264,9 +264,9 @@ var _ = Describe("AccountStakes", func() {
 				Expect(stakes).To(HaveLen(2))
 			})
 
-			It("should remove entry with stakeType=v, value=10, unbondHeight=0 and leave v01", func() {
+			It("should remove entry with stakeType=v, value=10, unbondHeight=0 and leave one entry", func() {
 				rmKey := stakes.Remove("v", util.String("10"), 0)
-				Expect(rmKey).To(Equal("v0"))
+				Expect(rmKey).To(Or(Equal("v0"), Equal("v1")))
 				Expect(stakes).To(HaveLen(1))
 			})
 		})

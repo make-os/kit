@@ -622,9 +622,9 @@ var _ = Describe("App", func() {
 				params.NumBlocksPerEpoch = 5
 				app.wBlock.Height = 4
 				tx := types.NewBareTx(types.TxTypeEpochSecret)
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 18
+				tx.EpochSecret.Secret = util.RandBytes(64)
+				tx.EpochSecret.PreviousSecret = util.RandBytes(64)
+				tx.EpochSecret.SecretRound = 18
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				res = app.DeliverTx(req)
 			})
@@ -647,9 +647,9 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				tx = types.NewBareTx(types.TxTypeEpochSecret)
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 18
+				tx.EpochSecret.Secret = util.RandBytes(64)
+				tx.EpochSecret.PreviousSecret = util.RandBytes(64)
+				tx.EpochSecret.SecretRound = 18
 			})
 
 			BeforeEach(func() {
@@ -678,9 +678,9 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				tx = types.NewBareTx(types.TxTypeEpochSecret)
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 18
+				tx.EpochSecret.Secret = util.RandBytes(64)
+				tx.EpochSecret.PreviousSecret = util.RandBytes(64)
+				tx.EpochSecret.SecretRound = 18
 			})
 
 			BeforeEach(func() {
@@ -717,9 +717,9 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				tx = types.NewBareTx(types.TxTypeEpochSecret)
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 18
+				tx.EpochSecret.Secret = util.RandBytes(64)
+				tx.EpochSecret.PreviousSecret = util.RandBytes(64)
+				tx.EpochSecret.SecretRound = 18
 			})
 
 			BeforeEach(func() {
@@ -762,9 +762,9 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				tx = types.NewBareTx(types.TxTypeEpochSecret)
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 18
+				tx.EpochSecret.Secret = util.RandBytes(64)
+				tx.EpochSecret.PreviousSecret = util.RandBytes(64)
+				tx.EpochSecret.SecretRound = 18
 			})
 
 			BeforeEach(func() {
@@ -804,9 +804,9 @@ var _ = Describe("App", func() {
 			When("when unable to save epoch secret", func() {
 				BeforeEach(func() {
 					tx = types.NewBareTx(types.TxTypeEpochSecret)
-					tx.Secret = util.RandBytes(64)
-					tx.PreviousSecret = util.RandBytes(64)
-					tx.SecretRound = 18
+					tx.EpochSecret.Secret = util.RandBytes(64)
+					tx.EpochSecret.PreviousSecret = util.RandBytes(64)
+					tx.EpochSecret.SecretRound = 18
 					app.epochSecretTx = tx
 				})
 
@@ -835,9 +835,9 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				tx = types.NewBareTx(types.TxTypeEpochSecret)
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 18
+				tx.EpochSecret.Secret = util.RandBytes(64)
+				tx.EpochSecret.PreviousSecret = util.RandBytes(64)
+				tx.EpochSecret.SecretRound = 18
 				app.epochSecretTx = tx
 			})
 

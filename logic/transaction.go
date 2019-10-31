@@ -68,7 +68,7 @@ func (t *Transaction) Exec(tx *types.Transaction, chainHeight uint64) error {
 	case types.TxTypeStorerTicket:
 		return t.execStorerStake(tx.SenderPubKey, tx.Value, tx.Fee, tx.GetNonce(), chainHeight)
 	case types.TxTypeUnbondStorerTicket:
-		return t.execUnbond(tx.TicketID, tx.SenderPubKey, chainHeight)
+		return t.execUnbond(tx.UnbondTicket.TicketID, tx.SenderPubKey, chainHeight)
 	case types.TxTypeEpochSecret:
 		return nil
 	default:

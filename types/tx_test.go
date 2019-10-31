@@ -45,17 +45,14 @@ var _ = Describe("Transaction", func() {
 				"value":        util.String("10"),
 				"timestamp":    int64(1),
 				"sig": []uint8{
-					22, 251, 175, 244, 34, 163, 137, 130, 237, 44, 187, 144, 52, 233, 138, 118,
-					255, 212, 181, 92, 253, 203, 178, 92, 253, 204, 7, 100, 123, 238, 171, 125,
-					17, 84, 31, 50, 190, 184, 131, 253, 68, 62, 49, 252, 161, 180, 163, 220, 44,
-					113, 35, 180, 22, 49, 12, 1, 94, 12, 153, 121, 156, 75, 158, 2,
+					0x14, 0x77, 0x79, 0x0f, 0x25, 0xa2, 0x04, 0x75, 0x59, 0xb6, 0x84, 0xe0, 0xb4, 0x9a, 0xf6, 0xf8,
+					0xee, 0xd3, 0x6a, 0x20, 0x2f, 0x40, 0xd9, 0x28, 0xa9, 0x79, 0x8b, 0xda, 0x06, 0x0f, 0xc2, 0x71,
+					0x21, 0x10, 0x95, 0xa6, 0x69, 0x92, 0xd1, 0x6f, 0x3d, 0xd6, 0xc4, 0xed, 0xa0, 0x92, 0x3e, 0xf1,
+					0xcf, 0xb4, 0xa8, 0x53, 0xed, 0x3f, 0x85, 0x87, 0xe5, 0x50, 0xfa, 0x0c, 0x7b, 0xca, 0x28, 0x07,
 				},
-				"type":           0,
-				"previousSecret": []uint8{},
-				"secret":         []uint8{},
-				"fee":            util.String("0.1"),
-				"nonce":          uint64(0x0000000000000000),
-				"ticketID":       []uint8{},
+				"type":  0,
+				"fee":   util.String("0.1"),
+				"nonce": uint64(0x0000000000000000),
 			}
 			Expect(tx.ToMap()).To(Equal(expected))
 		})
@@ -66,18 +63,23 @@ var _ = Describe("Transaction", func() {
 		It("should return expected bytes", func() {
 			tx := &Transaction{Type: 1, Nonce: 1, To: "some_address", SenderPubKey: "some_pub_key"}
 			bs := tx.GetBytesNoSig()
-			expected := []byte{155, 160, 207, 0, 0, 0, 0, 0, 0, 0, 1, 172, 115, 111, 109, 101, 95,
-				112, 117, 98, 95, 107, 101, 121, 211, 0, 0, 0, 0, 0, 0, 0, 0, 172, 115, 111, 109,
-				101, 95, 97, 100, 100, 114, 101, 115, 115, 211, 0, 0, 0, 0, 0, 0, 0, 1, 160, 192,
-				192, 207, 0, 0, 0, 0, 0, 0, 0, 0, 192}
+			expected := []byte{153, 160, 207, 0, 0, 0, 0, 0, 0, 0, 1, 172, 115, 111, 109, 101, 95, 112, 117, 98, 95, 107, 101, 121, 211, 0, 0, 0, 0, 0, 0, 0, 0, 172, 115, 111, 109, 101, 95, 97, 100, 100, 114, 101, 115, 115, 211, 0, 0, 0, 0, 0, 0, 0, 1, 160, 192, 192}
 			Expect(bs).ToNot(BeEmpty())
 			Expect(bs).To(Equal(expected))
 		})
 	})
 
 	Describe(".NewTxFromBytes", func() {
-		It("should", func() {
+		It("case 1", func() {
 			tx := NewBareTx(1)
+			decTx, err := NewTxFromBytes(tx.Bytes())
+			Expect(err).To(BeNil())
+			Expect(tx).To(Equal(decTx))
+		})
+
+		It("case 2 - with EpochSecret not nil", func() {
+			tx := NewBareTx(1)
+			tx.EpochSecret = &EpochSecret{}
 			decTx, err := NewTxFromBytes(tx.Bytes())
 			Expect(err).To(BeNil())
 			Expect(tx).To(Equal(decTx))
@@ -96,10 +98,7 @@ var _ = Describe("Transaction", func() {
 			a, _ := crypto.NewKey(&seed)
 			tx := &Transaction{Type: 1, Nonce: 1, To: "some_address", SenderPubKey: "some_pub_key"}
 			sig, err := SignTx(tx, a.PrivKey().Base58())
-			expected := []byte{42, 156, 185, 145, 109, 109, 40, 219, 179, 38, 191, 84, 132, 205,
-				137, 217, 2, 9, 123, 47, 9, 231, 246, 198, 254, 202, 4, 48, 201, 92, 189, 66, 254,
-				35, 161, 101, 29, 137, 8, 216, 61, 45, 95, 61, 64, 19, 114, 210, 57, 119, 150,
-				149, 160, 8, 182, 148, 162, 146, 202, 218, 248, 16, 233, 2}
+			expected := []byte{203, 34, 205, 183, 7, 223, 56, 51, 205, 220, 127, 251, 152, 81, 195, 10, 28, 69, 216, 158, 173, 154, 177, 209, 213, 71, 65, 251, 168, 6, 61, 207, 90, 205, 216, 247, 69, 202, 194, 16, 97, 135, 46, 193, 253, 228, 14, 170, 230, 42, 168, 140, 21, 157, 201, 124, 179, 10, 111, 104, 6, 248, 31, 10}
 			Expect(err).To(BeNil())
 			Expect(sig).ToNot(BeEmpty())
 			Expect(sig).To(Equal(expected))
@@ -176,9 +175,7 @@ var _ = Describe("Transaction", func() {
 			tx.Timestamp = 1
 			tx.SetSenderPubKey(util.String(sender.PubKey().Base58()))
 			tx.To = "address_1"
-			expected := util.BytesToHash([]byte{217, 252, 254, 135, 48, 92, 119, 119, 85, 94, 123,
-				175, 44, 174, 52, 11, 143, 80, 118, 7, 113, 96, 179, 96, 167, 221, 45, 113, 187,
-				133, 7, 132})
+			expected := util.BytesToHash([]byte{211, 88, 40, 205, 16, 123, 77, 20, 177, 108, 116, 100, 82, 0, 39, 181, 4, 239, 156, 161, 60, 221, 255, 217, 23, 166, 112, 238, 245, 70, 71, 96})
 			Expect(tx.ComputeHash()).To(Equal(expected))
 		})
 	})
@@ -190,7 +187,7 @@ var _ = Describe("Transaction", func() {
 			tx.Timestamp = 1
 			tx.SetSenderPubKey(util.String(sender.PubKey().Base58()))
 			tx.To = "address_1"
-			Expect(tx.GetID()).To(Equal("0xd9fcfe87305c7777555e7baf2cae340b8f5076077160b360a7dd2d71bb850784"))
+			Expect(tx.GetID()).To(Equal("0xd35828cd107b4d14b16c7464520027b504ef9ca13cddffd917a670eef5464760"))
 		})
 	})
 
@@ -220,6 +217,40 @@ var _ = Describe("Transaction", func() {
 			tx := NewBareTx(1)
 			tx.Invalidate()
 			Expect(tx.GetMeta()).To(HaveKey(TxMetaKeyInvalidated))
+		})
+	})
+
+	Describe("EpochSecret.Bytes", func() {
+		It("should return expected bytes", func() {
+			es := &EpochSecret{Secret: []byte("secret"), PreviousSecret: []byte("p_secret"), SecretRound: 1}
+			bz := es.Bytes()
+			Expect(bz).To(Equal([]byte{0x93, 0xc4, 0x06, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0xcf, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xc4, 0x08, 0x70, 0x5f, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74}))
+		})
+	})
+
+	Describe("EpochSecret.EpochSecretFromBytes", func() {
+		Context("with empty argument", func() {
+			It("should return empty EpochSecret", func() {
+				es := EpochSecretFromBytes([]byte{})
+				Expect(es).To(Equal(&EpochSecret{}))
+			})
+		})
+
+		Context("with invalid/malformed bytes", func() {
+			It("should panic", func() {
+				Expect(func() {
+					EpochSecretFromBytes([]byte{1, 2, 3})
+				}).To(Panic())
+			})
+		})
+
+		Context("with valid bytes", func() {
+			bz := []byte{0x93, 0xc4, 0x06, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74, 0xcf, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xc4, 0x08, 0x70, 0x5f, 0x73, 0x65, 0x63, 0x72, 0x65, 0x74}
+			es := &EpochSecret{Secret: []byte("secret"), PreviousSecret: []byte("p_secret"), SecretRound: 1}
+			It("should return expected EpochSecret object", func() {
+				res := EpochSecretFromBytes(bz)
+				Expect(res).To(Equal(es))
+			})
 		})
 	})
 })

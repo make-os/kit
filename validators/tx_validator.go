@@ -179,7 +179,8 @@ func ValidateEpochSecretTx(tx *types.Transaction, index int, logic types.Logic) 
 // is obtained within an expected window.
 func ValidateEpochSecretTxConsistency(tx *types.Transaction, index int, logic types.Logic) error {
 
-	err := logic.GetDRand().Verify(tx.Secret, tx.PreviousSecret, tx.SecretRound)
+	err := logic.GetDRand().
+		Verify(tx.EpochSecret.Secret, tx.EpochSecret.PreviousSecret, tx.EpochSecret.SecretRound)
 	if err != nil {
 		return types.FieldErrorWithIndex(index, "secret", "epoch secret is invalid")
 	}
@@ -189,7 +190,7 @@ func ValidateEpochSecretTxConsistency(tx *types.Transaction, index int, logic ty
 	highestDrandRound, err := logic.SysKeeper().GetHighestDrandRound()
 	if err != nil {
 		return errors.Wrap(err, "failed to get highest drand round")
-	} else if tx.SecretRound <= highestDrandRound {
+	} else if tx.EpochSecret.SecretRound <= highestDrandRound {
 		return types.ErrStaleSecretRound(index)
 	}
 
@@ -197,7 +198,7 @@ func ValidateEpochSecretTxConsistency(tx *types.Transaction, index int, logic ty
 	// an earlier period (before the epoch reaches its last block).
 	minsPerEpoch := (uint64(params.NumBlocksPerEpoch * params.BlockTime)) / 60
 	expectedRound := highestDrandRound + minsPerEpoch
-	if tx.SecretRound < expectedRound {
+	if tx.EpochSecret.SecretRound < expectedRound {
 		return types.ErrEarlySecretRound(index)
 	}
 
@@ -366,6 +367,10 @@ func IsSet(value interface{}) bool {
 		return v != "0" && v != ""
 	case []byte:
 		return len(v) > 0
+	case *types.EpochSecret:
+		return v != nil && v != &types.EpochSecret{}
+	case *types.UnbondTicket:
+		return v != nil && v != &types.UnbondTicket{}
 	default:
 		return false
 	}
@@ -383,10 +388,8 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 
 	// Check for unexpected fields for TxTypeValidatorTicket and TxTypeCoinTransfer
 	if txType == types.TxTypeValidatorTicket || txType == types.TxTypeCoinTransfer {
-		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
-		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
-		unExpected = append(unExpected, []interface{}{"secretRound", tx.SecretRound})
-		unExpected = append(unExpected, []interface{}{"ticketID", tx.TicketID})
+		unExpected = append(unExpected, []interface{}{"epochSecret", tx.EpochSecret})
+		unExpected = append(unExpected, []interface{}{"unbondTicket", tx.UnbondTicket})
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -403,7 +406,7 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		unExpected = append(unExpected, []interface{}{"timestamp", tx.Timestamp})
 		unExpected = append(unExpected, []interface{}{"fee", tx.Fee})
 		unExpected = append(unExpected, []interface{}{"sig", tx.Sig})
-		unExpected = append(unExpected, []interface{}{"ticketID", tx.TicketID})
+		unExpected = append(unExpected, []interface{}{"unbondTicket", tx.UnbondTicket})
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -413,10 +416,8 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 
 	// Check for unexpected field for TxTypeSetDelegatorCommission & TxTypeStorerTicket
 	if txType == types.TxTypeSetDelegatorCommission || txType == types.TxTypeStorerTicket {
-		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
-		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
-		unExpected = append(unExpected, []interface{}{"secretRound", tx.SecretRound})
-		unExpected = append(unExpected, []interface{}{"ticketID", tx.TicketID})
+		unExpected = append(unExpected, []interface{}{"epochSecret", tx.EpochSecret})
+		unExpected = append(unExpected, []interface{}{"unbondTicket", tx.UnbondTicket})
 
 		// Allow `to` field for TxTypeStorerTicket
 		if txType != types.TxTypeStorerTicket {
@@ -434,9 +435,7 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 	if txType == types.TxTypeUnbondStorerTicket {
 		unExpected = append(unExpected, []interface{}{"to", tx.To})
 		unExpected = append(unExpected, []interface{}{"value", tx.Value})
-		unExpected = append(unExpected, []interface{}{"secret", tx.Secret})
-		unExpected = append(unExpected, []interface{}{"previousSecret", tx.PreviousSecret})
-		unExpected = append(unExpected, []interface{}{"secretRound", tx.SecretRound})
+		unExpected = append(unExpected, []interface{}{"epochSecret", tx.EpochSecret})
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -518,7 +517,7 @@ func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) 
 unbondStoreTicket:
 
 	// Ticket ID must be a known ticket
-	ticket := logic.GetTicketManager().GetByHash(string(tx.TicketID))
+	ticket := logic.GetTicketManager().GetByHash(string(tx.UnbondTicket.TicketID))
 	if ticket == nil {
 		return types.FieldErrorWithIndex(index, "ticketID", "ticket not found")
 	}

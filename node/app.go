@@ -272,8 +272,8 @@ func (a *App) postExecChecks(
 		}
 	}
 
-	// Cache ticket transactions;
-	// They will be indexed in the COMMIT stage.
+	// Cache ticket related transactions;
+	// They will be processed in the COMMIT stage.
 	if resp.Code == 0 {
 		switch txType {
 		case types.TxTypeValidatorTicket:
@@ -281,7 +281,7 @@ func (a *App) postExecChecks(
 		case types.TxTypeStorerTicket:
 			a.storerTickets = append(a.storerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 		case types.TxTypeUnbondStorerTicket:
-			a.unbondStorerRequests = append(a.unbondStorerRequests, string(tx.TicketID))
+			a.unbondStorerRequests = append(a.unbondStorerRequests, string(tx.UnbondTicket.TicketID))
 		}
 	}
 
@@ -447,11 +447,11 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	// update the highest known drand round so we are able
 	// to determine in the future what round is superior
 	if estx := a.epochSecretTx; estx != nil {
-		bi.EpochSecret = estx.Secret
-		bi.EpochPreviousSecret = estx.PreviousSecret
-		bi.EpochRound = estx.SecretRound
+		bi.EpochSecret = estx.EpochSecret.Secret
+		bi.EpochPreviousSecret = estx.EpochSecret.PreviousSecret
+		bi.EpochRound = estx.EpochSecret.SecretRound
 		bi.InvalidEpochSecret = estx.IsInvalidated()
-		if err := a.logic.SysKeeper().SetHighestDrandRound(estx.SecretRound); err != nil {
+		if err := a.logic.SysKeeper().SetHighestDrandRound(estx.EpochSecret.SecretRound); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to save highest drand round"))
 		}
 	} else {

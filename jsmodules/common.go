@@ -20,6 +20,22 @@ func simpleTx(
 	tx, key := processTxArgs(txObj, options...)
 	tx.Type = txType
 
+	// For non-TxTypeEpochSecret set EpochSecret to nil
+	if tx.Type != types.TxTypeEpochSecret {
+		tx.EpochSecret = nil
+	}
+
+	// For non-TxTypeUnbondStorerTicket set UnbondTicket to nil
+	if tx.Type != types.TxTypeUnbondStorerTicket {
+		tx.UnbondTicket = nil
+	}
+
+	// Set ticket ID
+	ticketID := txObj.(map[string]interface{})["ticketID"]
+	if ticketID != nil && ticketID.(string) != "" {
+		tx.UnbondTicket.TicketID = []byte(ticketID.(string))
+	}
+
 	// Set tx public key
 	pk, _ := crypto.PrivKeyFromBase58(key)
 	tx.SetSenderPubKey(util.String(crypto.NewKeyFromPrivKey(pk).PubKey().Base58()))
