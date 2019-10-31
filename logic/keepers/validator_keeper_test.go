@@ -19,7 +19,7 @@ import (
 )
 
 var _ = Describe("SystemKeeper", func() {
-	var c storage.Engine
+	var appDB storage.Engine
 	var err error
 	var cfg *config.EngineConfig
 	var valKeeper *ValidatorKeeper
@@ -29,9 +29,8 @@ var _ = Describe("SystemKeeper", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		c = storage.NewBadger(cfg)
-		Expect(c.Init()).To(BeNil())
-		valKeeper = NewValidatorKeeper(c.NewTx(true, true))
+		appDB, _ = testutil.GetDB(cfg)
+		valKeeper = NewValidatorKeeper(appDB.NewTx(true, true))
 	})
 
 	BeforeEach(func() {
@@ -43,7 +42,7 @@ var _ = Describe("SystemKeeper", func() {
 	})
 
 	AfterEach(func() {
-		Expect(c.Close()).To(BeNil())
+		Expect(appDB.Close()).To(BeNil())
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})

@@ -7,7 +7,8 @@ type Engine interface {
 
 	// Init initializes the engine. This is where to
 	// run and open the storage engine
-	Init() error
+	// dir: The path to the db file
+	Init(dir string) error
 
 	// Close closes the database engine and frees resources
 	Close() error

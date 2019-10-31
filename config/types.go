@@ -141,7 +141,12 @@ func (c *EngineConfig) GetDBRootDir() string {
 
 // GetAppDBDir returns the path where app's database files are stored
 func (c *EngineConfig) GetAppDBDir() string {
-	return filepath.Join(c.GetDBRootDir(), "app.db")
+	return filepath.Join(c.GetDBRootDir(), "appdata.db")
+}
+
+// GetStateTreeDBDir returns the path where state's database files are stored
+func (c *EngineConfig) GetStateTreeDBDir() string {
+	return filepath.Join(c.GetDBRootDir(), "appstate.db")
 }
 
 // IsDev checks whether the current environment is 'development'

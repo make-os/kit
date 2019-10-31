@@ -2,7 +2,6 @@ package storage
 
 import (
 	"github.com/dgraph-io/badger"
-	"github.com/makeos/mosdef/config"
 	"github.com/pkg/errors"
 )
 
@@ -10,19 +9,18 @@ import (
 // storage functions built on top of badger.
 type Badger struct {
 	*BadgerFunctions
-	cfg *config.EngineConfig
-	db  *badger.DB
+	db *badger.DB
 }
 
 // NewBadger creates an instance of Badger storage engine.
-func NewBadger(cfg *config.EngineConfig) *Badger {
-	return &Badger{cfg: cfg}
+func NewBadger() *Badger {
+	return &Badger{}
 }
 
 // Init starts the database
-func (b *Badger) Init() error {
+func (b *Badger) Init(dir string) error {
 
-	opts := badger.DefaultOptions(b.cfg.GetAppDBDir())
+	opts := badger.DefaultOptions(dir)
 	opts.Logger = &noLogger{}
 	db, err := badger.Open(opts)
 	if err != nil {

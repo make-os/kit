@@ -39,18 +39,19 @@ import (
 
 // Node represents the client
 type Node struct {
-	app       *App
-	cfg       *config.EngineConfig
-	tmcfg     *tmconfig.Config
-	nodeKey   *p2p.NodeKey
-	log       logger.Logger
-	db        storage.Engine
-	tm        *nm.Node
-	service   types.Service
-	tmrpc     *tmrpc.TMRPC
-	logic     types.AtomicLogic
-	txReactor *mempool.Reactor
-	ticketMgr types.TicketManager
+	app         *App
+	cfg         *config.EngineConfig
+	tmcfg       *tmconfig.Config
+	nodeKey     *p2p.NodeKey
+	log         logger.Logger
+	db          storage.Engine
+	stateTreeDB storage.Engine
+	tm          *nm.Node
+	service     types.Service
+	tmrpc       *tmrpc.TMRPC
+	logic       types.AtomicLogic
+	txReactor   *mempool.Reactor
+	ticketMgr   types.TicketManager
 }
 
 // NewNode creates an instance of Node
@@ -82,12 +83,18 @@ func (n *Node) OpenDB() error {
 		return fmt.Errorf("db already open")
 	}
 
-	db := storage.NewBadger(n.cfg)
-	if err := db.Init(); err != nil {
+	db := storage.NewBadger()
+	if err := db.Init(n.cfg.GetAppDBDir()); err != nil {
+		return err
+	}
+
+	stateTreeDB := storage.NewBadger()
+	if err := stateTreeDB.Init(n.cfg.GetStateTreeDBDir()); err != nil {
 		return err
 	}
 
 	n.db = db
+	n.stateTreeDB = stateTreeDB
 	return nil
 }
 
@@ -116,7 +123,7 @@ func (n *Node) Start() error {
 	pv := privval.LoadFilePV(n.tmcfg.PrivValidatorKeyFile(), n.tmcfg.PrivValidatorStateFile())
 
 	// Create an atomic logic provider
-	n.logic = logic.NewAtomic(n.db, n.cfg)
+	n.logic = logic.NewAtomic(n.db, n.stateTreeDB, n.cfg)
 
 	// Create ticket manager
 	n.ticketMgr = ticket.NewManager(n.logic.GetDBTx(), n.cfg, n.logic)
@@ -208,12 +215,15 @@ func (n *Node) Stop() {
 	n.tm.Stop()
 
 	if n.db != nil {
-		n.log.Info("Database is closing")
 		n.db.Close()
-		n.log.Info("Database has been closed")
+	}
+
+	if n.stateTreeDB != nil {
+		n.stateTreeDB.Close()
 	}
 
 	n.tm.Wait()
 
+	n.log.Info("Databases have been closed")
 	n.log.Info("mosdef has stopped")
 }

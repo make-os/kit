@@ -59,9 +59,9 @@ type Logic struct {
 // New creates an instance of Logic
 // PANICS: If unable to load state tree
 // PANICS: when drand initialization fails
-func New(db storage.Engine, cfg *config.EngineConfig) *Logic {
+func New(db storage.Engine, stateTreeDB storage.Engine, cfg *config.EngineConfig) *Logic {
 	dbTx := db.NewTx(true, true)
-	l := newLogicWithTx(dbTx, cfg)
+	l := newLogicWithTx(dbTx, stateTreeDB.NewTx(true, true), cfg)
 	l._db = db
 	return l
 }
@@ -70,18 +70,17 @@ func New(db storage.Engine, cfg *config.EngineConfig) *Logic {
 // all sub-logic providers and keepers.
 // PANICS: If unable to load state tree
 // PANICS: when drand initialization fails
-func NewAtomic(db storage.Engine, cfg *config.EngineConfig) *Logic {
-	dbTx := db.NewTx(false, false)
-	l := newLogicWithTx(dbTx, cfg)
+func NewAtomic(db storage.Engine, stateTreeDB storage.Engine, cfg *config.EngineConfig) *Logic {
+	l := newLogicWithTx(db.NewTx(false, false), stateTreeDB.NewTx(true, true), cfg)
 	l._db = db
 	return l
 }
 
-func newLogicWithTx(dbTx storage.Tx, cfg *config.EngineConfig) *Logic {
+func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.EngineConfig) *Logic {
 
 	// Load the state tree
-	dbAdapter := storage.NewTMDBAdapter(dbTx)
-	tree := tree.NewSafeTree(dbAdapter, 128)
+	dbAdapter := storage.NewTMDBAdapter(stateTreeDBTx)
+	tree := tree.NewSafeTree(dbAdapter, 5000)
 	if _, err := tree.Load(); err != nil {
 		panic(errors.Wrap(err, "failed to load state tree"))
 	}

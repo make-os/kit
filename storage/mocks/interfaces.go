@@ -131,17 +131,17 @@ func (mr *MockEngineMockRecorder) NewTx(autoFinish, renew interface{}) *gomock.C
 }
 
 // Init mocks base method
-func (m *MockEngine) Init() error {
+func (m *MockEngine) Init(dir string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Init")
+	ret := m.ctrl.Call(m, "Init", dir)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Init indicates an expected call of Init
-func (mr *MockEngineMockRecorder) Init() *gomock.Call {
+func (mr *MockEngineMockRecorder) Init(dir interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockEngine)(nil).Init))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockEngine)(nil).Init), dir)
 }
 
 // Close mocks base method

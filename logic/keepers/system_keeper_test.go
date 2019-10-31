@@ -18,7 +18,7 @@ import (
 )
 
 var _ = Describe("SystemKeeper", func() {
-	var c storage.Engine
+	var appDB storage.Engine
 	var err error
 	var cfg *config.EngineConfig
 	var sysKeeper *SystemKeeper
@@ -27,9 +27,8 @@ var _ = Describe("SystemKeeper", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		c = storage.NewBadger(cfg)
-		Expect(c.Init()).To(BeNil())
-		dbTx := c.NewTx(true, true)
+		appDB, _ = testutil.GetDB(cfg)
+		dbTx := appDB.NewTx(true, true)
 		sysKeeper = NewSystemKeeper(dbTx)
 	})
 
@@ -42,7 +41,7 @@ var _ = Describe("SystemKeeper", func() {
 	})
 
 	AfterEach(func() {
-		Expect(c.Close()).To(BeNil())
+		Expect(appDB.Close()).To(BeNil())
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})
@@ -56,7 +55,7 @@ var _ = Describe("SystemKeeper", func() {
 		})
 
 		It("should store last block info", func() {
-			rec, err := c.Get(MakeKeyBlockInfo(info.Height))
+			rec, err := appDB.Get(MakeKeyBlockInfo(info.Height))
 			Expect(err).To(BeNil())
 			var actual types.BlockInfo
 			err = rec.Scan(&actual)

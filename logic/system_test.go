@@ -23,7 +23,7 @@ import (
 )
 
 var _ = Describe("System", func() {
-	var c storage.Engine
+	var appDB, stateTreeDB storage.Engine
 	var err error
 	var cfg *config.EngineConfig
 	var logic *Logic
@@ -33,9 +33,10 @@ var _ = Describe("System", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		c = storage.NewBadger(cfg)
-		Expect(c.Init()).To(BeNil())
-		logic = New(c, cfg)
+
+		appDB, stateTreeDB = testutil.GetDB(cfg)
+		logic = New(appDB, stateTreeDB, cfg)
+
 		sysLogic = &System{logic: logic}
 	})
 
@@ -48,7 +49,8 @@ var _ = Describe("System", func() {
 	})
 
 	AfterEach(func() {
-		Expect(c.Close()).To(BeNil())
+		Expect(appDB.Close()).To(BeNil())
+		Expect(stateTreeDB.Close()).To(BeNil())
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})

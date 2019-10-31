@@ -3,6 +3,7 @@ package testutil
 import (
 	"os"
 
+	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/util/logger"
 
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
@@ -52,4 +53,17 @@ func SetTestCfg() (*config.EngineConfig, error) {
 	cfg.G().Log = logger.NewLogrusNoOp()
 
 	return cfg, err
+}
+
+// GetDB test databases
+func GetDB(cfg *config.EngineConfig) (*storage.Badger, *storage.Badger) {
+	appDB := storage.NewBadger()
+	if err := appDB.Init(cfg.GetAppDBDir()); err != nil {
+		panic(err)
+	}
+	stateTreeDB := storage.NewBadger()
+	if err := stateTreeDB.Init(cfg.GetStateTreeDBDir()); err != nil {
+		panic(err)
+	}
+	return appDB, stateTreeDB
 }

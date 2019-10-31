@@ -13,7 +13,7 @@ import (
 )
 
 var _ = Describe("TMDBAdapter", func() {
-	var c storage.Engine
+	var appDB storage.Engine
 	var err error
 	var cfg *config.EngineConfig
 	var tree *SafeTree
@@ -21,14 +21,13 @@ var _ = Describe("TMDBAdapter", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		c = storage.NewBadger(cfg)
-		Expect(c.Init())
-		dbAdapter := storage.NewTMDBAdapter(c.NewTx(true, true))
+		appDB, _ = testutil.GetDB(cfg)
+		dbAdapter := storage.NewTMDBAdapter(appDB.NewTx(true, true))
 		tree = NewSafeTree(dbAdapter, 128)
 	})
 
 	AfterEach(func() {
-		Expect(c.Close()).To(BeNil())
+		Expect(appDB.Close()).To(BeNil())
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})
@@ -138,7 +137,7 @@ var _ = Describe("TMDBAdapter", func() {
 			tree.Set(key, []byte("val"))
 			_, _, err := tree.SaveVersion()
 			Expect(err).To(BeNil())
-			dbAdapter := storage.NewTMDBAdapter(c.NewTx(true, true))
+			dbAdapter := storage.NewTMDBAdapter(appDB.NewTx(true, true))
 			tree2 = NewSafeTree(dbAdapter, 128)
 			v, err := tree2.Load()
 			Expect(err).To(BeNil())

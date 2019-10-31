@@ -36,7 +36,7 @@ type txCase struct {
 }
 
 var _ = Describe("TxValidator", func() {
-	var c storage.Engine
+	var appDB, stateTreeDB storage.Engine
 	var err error
 	var cfg *config.EngineConfig
 	var logic *l.Logic
@@ -60,9 +60,8 @@ var _ = Describe("TxValidator", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		c = storage.NewBadger(cfg)
-		Expect(c.Init()).To(BeNil())
-		logic = l.New(c, cfg)
+		appDB, stateTreeDB = testutil.GetDB(cfg)
+		logic = l.New(appDB, stateTreeDB, cfg)
 	})
 
 	BeforeEach(func() {
@@ -74,7 +73,8 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	AfterEach(func() {
-		Expect(c.Close()).To(BeNil())
+		Expect(appDB.Close()).To(BeNil())
+		Expect(stateTreeDB.Close()).To(BeNil())
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})

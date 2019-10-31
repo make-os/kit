@@ -25,7 +25,7 @@ import (
 )
 
 var _ = Describe("Transaction", func() {
-	var c storage.Engine
+	var appDB, stateTreeDB storage.Engine
 	var err error
 	var cfg *config.EngineConfig
 	var logic *Logic
@@ -36,9 +36,8 @@ var _ = Describe("Transaction", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		c = storage.NewBadger(cfg)
-		Expect(c.Init()).To(BeNil())
-		logic = New(c, cfg)
+		appDB, stateTreeDB = testutil.GetDB(cfg)
+		logic = New(appDB, stateTreeDB, cfg)
 		txLogic = &Transaction{logic: logic}
 	})
 
@@ -56,7 +55,8 @@ var _ = Describe("Transaction", func() {
 	})
 
 	AfterEach(func() {
-		Expect(c.Close()).To(BeNil())
+		Expect(appDB.Close()).To(BeNil())
+		Expect(stateTreeDB.Close()).To(BeNil())
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})

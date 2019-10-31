@@ -18,7 +18,7 @@ import (
 )
 
 var _ = Describe("TxKeeper", func() {
-	var c storage.Engine
+	var appDB storage.Engine
 	var err error
 	var cfg *config.EngineConfig
 	var txKeeper *TxKeeper
@@ -27,9 +27,8 @@ var _ = Describe("TxKeeper", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		c = storage.NewBadger(cfg)
-		Expect(c.Init()).To(BeNil())
-		dbTx := c.NewTx(true, true)
+		appDB, _ = testutil.GetDB(cfg)
+		dbTx := appDB.NewTx(true, true)
 		txKeeper = NewTxKeeper(dbTx)
 	})
 
@@ -42,7 +41,7 @@ var _ = Describe("TxKeeper", func() {
 	})
 
 	AfterEach(func() {
-		Expect(c.Close()).To(BeNil())
+		Expect(appDB.Close()).To(BeNil())
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})

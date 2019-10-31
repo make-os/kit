@@ -43,7 +43,7 @@ func genFilePV(bz []byte) *privval.FilePV {
 }
 
 var _ = Describe("App", func() {
-	var c storage.Engine
+	var c, stateTreeDB storage.Engine
 	var err error
 	var cfg *config.EngineConfig
 	var logic *l.Logic
@@ -55,9 +55,8 @@ var _ = Describe("App", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		c = storage.NewBadger(cfg)
-		Expect(c.Init()).To(BeNil())
-		logic = l.New(c, cfg)
+		c, stateTreeDB = testutil.GetDB(cfg)
+		logic = l.New(c, stateTreeDB, cfg)
 		app = NewApp(cfg, c, logic, ticketmgr)
 	})
 
@@ -71,6 +70,7 @@ var _ = Describe("App", func() {
 
 	AfterEach(func() {
 		Expect(c.Close()).To(BeNil())
+		Expect(stateTreeDB.Close()).To(BeNil())
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})

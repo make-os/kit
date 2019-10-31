@@ -22,7 +22,7 @@ import (
 
 var _ = Describe("Manager", func() {
 	var err error
-	var c storage.Engine
+	var appDB, stateTreeDB storage.Engine
 	var cfg *config.EngineConfig
 	var mgr *Manager
 	var logic *l.Logic
@@ -31,10 +31,9 @@ var _ = Describe("Manager", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		c = storage.NewBadger(cfg)
-		Expect(c.Init()).To(BeNil())
-		logic = l.New(c, cfg)
-		mgr = NewManager(c.NewTx(true, true), cfg, logic)
+		appDB, stateTreeDB = testutil.GetDB(cfg)
+		logic = l.New(appDB, stateTreeDB, cfg)
+		mgr = NewManager(appDB.NewTx(true, true), cfg, logic)
 		Expect(err).To(BeNil())
 	})
 

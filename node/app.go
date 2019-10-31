@@ -94,7 +94,7 @@ func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitCh
 		panic(errors.Wrap(err, "failed to index validators"))
 	}
 
-	a.log.Info("Node initialization has completed",
+	a.log.Info("Initialization state has been loaded",
 		"GenesisHash", util.BytesToHash(stateTree.WorkingHash()).HexStr(),
 		"StateVersion", stateTree.Version())
 
