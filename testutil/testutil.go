@@ -56,12 +56,12 @@ func SetTestCfg() (*config.EngineConfig, error) {
 }
 
 // GetDB test databases
-func GetDB(cfg *config.EngineConfig) (*storage.Badger, *storage.Badger) {
-	appDB := storage.NewBadger()
+func GetDB(cfg *config.EngineConfig) (appDB *storage.Badger, stateTreeDB *storage.Badger) {
+	appDB = storage.NewBadger()
 	if err := appDB.Init(cfg.GetAppDBDir()); err != nil {
 		panic(err)
 	}
-	stateTreeDB := storage.NewBadger()
+	stateTreeDB = storage.NewBadger()
 	if err := stateTreeDB.Init(cfg.GetStateTreeDBDir()); err != nil {
 		panic(err)
 	}

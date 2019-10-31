@@ -31,6 +31,11 @@ func NewBadgerFunctions(db *badger.DB, finish, renew bool) *BadgerFunctions {
 	return &BadgerFunctions{db: db, tx: db.NewTransaction(true), finish: finish, renew: renew}
 }
 
+// GetTx get the underlying transaction
+func (f *BadgerFunctions) GetTx() *badger.Txn {
+	return f.tx
+}
+
 // NewTx creates a new transaction.
 // autoFinish: ensure that the underlying transaction is committed after
 // each successful operation.

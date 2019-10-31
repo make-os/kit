@@ -39,6 +39,11 @@ func (b *Badger) Init(dir string) error {
 	return nil
 }
 
+// GetDB get the underlying db
+func (b *Badger) GetDB() *badger.DB {
+	return b.db
+}
+
 // NewTx creates a new transaction.
 // autoFinish: ensure that the underlying transaction is committed after
 // each successful operation.

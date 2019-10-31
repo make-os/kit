@@ -1,4 +1,4 @@
-package storage
+package storage_test
 
 import (
 	"os"
@@ -7,23 +7,24 @@ import (
 	. "github.com/onsi/gomega"
 
 	"github.com/makeos/mosdef/config"
+	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/testutil"
 )
 
 var _ = Describe("TMDBAdapter", func() {
-	var c Engine
-	var tx Tx
+	var c storage.Engine
+	var tx storage.Tx
 	var err error
 	var cfg *config.EngineConfig
-	var adapter *TMDBAdapter
+	var adapter *storage.TMDBAdapter
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-		c = NewBadger(cfg)
-		Expect(c.Init())
+		c = storage.NewBadger()
+		Expect(c.Init(cfg.GetAppDBDir()))
 		tx = c.NewTx(true, true)
-		adapter = NewTMDBAdapter(tx)
+		adapter = storage.NewTMDBAdapter(tx)
 	})
 
 	AfterEach(func() {
