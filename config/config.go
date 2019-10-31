@@ -179,6 +179,7 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	// Create network data directory
 	os.MkdirAll(c.NetDataDir(), 0700)
 	os.MkdirAll(path.Join(c.NetDataDir(), "data"), 0700)
+	os.MkdirAll(path.Join(c.NetDataDir(), "repos"), 0700)
 	os.MkdirAll(path.Join(c.NetDataDir(), "config"), 0700)
 
 	// Create logger with file rotation enabled

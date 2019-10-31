@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/makeos/mosdef/repobase"
+
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/makeos/mosdef/ticket"
@@ -171,6 +173,10 @@ func (n *Node) Start() error {
 	n.txReactor = txReactor
 	n.service = services.New(n.tmrpc, n.logic, txReactor)
 
+	// Start repository server
+	rb := repobase.NewRepoBase(n.log, ":6000", n.cfg.GetRepoRoot(), "/usr/bin/git")
+	go rb.Start()
+	
 	// Start tendermint
 	n.tm.Start()
 

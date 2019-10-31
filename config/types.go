@@ -139,6 +139,11 @@ func (c *EngineConfig) GetDBRootDir() string {
 	return filepath.Join(c.NetDataDir(), "data")
 }
 
+// GetRepoRoot returns the repo root directory
+func (c *EngineConfig) GetRepoRoot() string {
+	return filepath.Join(c.NetDataDir(), "repos")
+}
+
 // GetAppDBDir returns the path where app's database files are stored
 func (c *EngineConfig) GetAppDBDir() string {
 	return filepath.Join(c.GetDBRootDir(), "appdata.db")
