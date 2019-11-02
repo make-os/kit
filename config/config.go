@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	golog "log"
 	"os"
 	path "path/filepath"
@@ -191,6 +192,13 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	if devMode {
 		c.G().Log.SetToDebug()
 		tmcfg.P2P.AllowDuplicateIP = true
+	}
+
+	// If no logger is wanted, set mosdef and tendermint log level to `error`
+	noLog, _ := rootCmd.Flags().GetBool("nolog")
+	if noLog {
+		tmcfg.LogLevel = fmt.Sprintf("*:error")
+		c.G().Log.SetToError()
 	}
 
 	// Set block time

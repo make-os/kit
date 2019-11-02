@@ -29,7 +29,7 @@ func (m *TxModule) txCoinFuncs() []*types.JSModuleFunc {
 	return []*types.JSModuleFunc{
 		&types.JSModuleFunc{
 			Name:        "send",
-			Value:       m.SendTx,
+			Value:       m.sendTx,
 			Description: "Send coins to another account",
 		},
 	}
@@ -87,10 +87,10 @@ func (m *TxModule) Configure() []prompt.Suggest {
 	return suggestions
 }
 
-// SendTx sends the native coin from a source account
+// sendTx sends the native coin from a source account
 // to a destination account. It returns an object containing
 // the hash of the transaction. It panics when an error occurs.
-func (m *TxModule) SendTx(txObj interface{}, options ...interface{}) interface{} {
+func (m *TxModule) sendTx(txObj map[string]interface{}, options ...interface{}) interface{} {
 	return simpleTx(m.service, types.TxTypeCoinTransfer, txObj, options...)
 }
 

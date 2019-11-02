@@ -1,4 +1,4 @@
-package repobase
+package repo
 
 import (
 	"fmt"

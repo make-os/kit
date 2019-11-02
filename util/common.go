@@ -88,10 +88,12 @@ func (s String) IsDecimal() bool {
 	return true
 }
 
-// ObjectToBytes returns msgpack encoded representation of s
+// ObjectToBytes returns msgpack encoded representation of s.
 func ObjectToBytes(s interface{}) []byte {
 	var buf bytes.Buffer
-	if err := msgpack.NewEncoder(&buf).SortMapKeys(true).Encode(s); err != nil {
+	if err := msgpack.NewEncoder(&buf).
+		SortMapKeys(true).
+		Encode(s); err != nil {
 		panic(err)
 	}
 	return buf.Bytes()

@@ -276,6 +276,60 @@ func (mr *MockAccountKeeperMockRecorder) Update(address, upd interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockAccountKeeper)(nil).Update), address, upd)
 }
 
+// MockRepoKeeper is a mock of RepoKeeper interface
+type MockRepoKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockRepoKeeperMockRecorder
+}
+
+// MockRepoKeeperMockRecorder is the mock recorder for MockRepoKeeper
+type MockRepoKeeperMockRecorder struct {
+	mock *MockRepoKeeper
+}
+
+// NewMockRepoKeeper creates a new mock instance
+func NewMockRepoKeeper(ctrl *gomock.Controller) *MockRepoKeeper {
+	mock := &MockRepoKeeper{ctrl: ctrl}
+	mock.recorder = &MockRepoKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockRepoKeeper) EXPECT() *MockRepoKeeperMockRecorder {
+	return m.recorder
+}
+
+// GetRepo mocks base method
+func (m *MockRepoKeeper) GetRepo(name string, blockNum ...int64) *types.Repository {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{name}
+	for _, a := range blockNum {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRepo", varargs...)
+	ret0, _ := ret[0].(*types.Repository)
+	return ret0
+}
+
+// GetRepo indicates an expected call of GetRepo
+func (mr *MockRepoKeeperMockRecorder) GetRepo(name interface{}, blockNum ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{name}, blockNum...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockRepoKeeper)(nil).GetRepo), varargs...)
+}
+
+// Update mocks base method
+func (m *MockRepoKeeper) Update(name string, upd *types.Repository) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Update", name, upd)
+}
+
+// Update indicates an expected call of Update
+func (mr *MockRepoKeeperMockRecorder) Update(name, upd interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRepoKeeper)(nil).Update), name, upd)
+}
+
 // MockAtomicLogic is a mock of AtomicLogic interface
 type MockAtomicLogic struct {
 	ctrl     *gomock.Controller
@@ -353,6 +407,20 @@ func (m *MockAtomicLogic) TxKeeper() types.TxKeeper {
 func (mr *MockAtomicLogicMockRecorder) TxKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).TxKeeper))
+}
+
+// RepoKeeper mocks base method
+func (m *MockAtomicLogic) RepoKeeper() types.RepoKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RepoKeeper")
+	ret0, _ := ret[0].(types.RepoKeeper)
+	return ret0
+}
+
+// RepoKeeper indicates an expected call of RepoKeeper
+func (mr *MockAtomicLogicMockRecorder) RepoKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).RepoKeeper))
 }
 
 // GetTicketManager mocks base method
@@ -479,6 +547,32 @@ func (mr *MockAtomicLogicMockRecorder) GetDRand() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDRand", reflect.TypeOf((*MockAtomicLogic)(nil).GetDRand))
 }
 
+// SetRepoManager mocks base method
+func (m_2 *MockAtomicLogic) SetRepoManager(m types.RepoManager) {
+	m_2.ctrl.T.Helper()
+	m_2.ctrl.Call(m_2, "SetRepoManager", m)
+}
+
+// SetRepoManager indicates an expected call of SetRepoManager
+func (mr *MockAtomicLogicMockRecorder) SetRepoManager(m interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRepoManager", reflect.TypeOf((*MockAtomicLogic)(nil).SetRepoManager), m)
+}
+
+// GetRepoManager mocks base method
+func (m *MockAtomicLogic) GetRepoManager() types.RepoManager {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRepoManager")
+	ret0, _ := ret[0].(types.RepoManager)
+	return ret0
+}
+
+// GetRepoManager indicates an expected call of GetRepoManager
+func (mr *MockAtomicLogicMockRecorder) GetRepoManager() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoManager", reflect.TypeOf((*MockAtomicLogic)(nil).GetRepoManager))
+}
+
 // GetDBTx mocks base method
 func (m *MockAtomicLogic) GetDBTx() storage.Tx {
 	m.ctrl.T.Helper()
@@ -596,6 +690,20 @@ func (m *MockLogic) TxKeeper() types.TxKeeper {
 func (mr *MockLogicMockRecorder) TxKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxKeeper", reflect.TypeOf((*MockLogic)(nil).TxKeeper))
+}
+
+// RepoKeeper mocks base method
+func (m *MockLogic) RepoKeeper() types.RepoKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RepoKeeper")
+	ret0, _ := ret[0].(types.RepoKeeper)
+	return ret0
+}
+
+// RepoKeeper indicates an expected call of RepoKeeper
+func (mr *MockLogicMockRecorder) RepoKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoKeeper", reflect.TypeOf((*MockLogic)(nil).RepoKeeper))
 }
 
 // GetTicketManager mocks base method
@@ -722,6 +830,32 @@ func (mr *MockLogicMockRecorder) GetDRand() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDRand", reflect.TypeOf((*MockLogic)(nil).GetDRand))
 }
 
+// SetRepoManager mocks base method
+func (m_2 *MockLogic) SetRepoManager(m types.RepoManager) {
+	m_2.ctrl.T.Helper()
+	m_2.ctrl.Call(m_2, "SetRepoManager", m)
+}
+
+// SetRepoManager indicates an expected call of SetRepoManager
+func (mr *MockLogicMockRecorder) SetRepoManager(m interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRepoManager", reflect.TypeOf((*MockLogic)(nil).SetRepoManager), m)
+}
+
+// GetRepoManager mocks base method
+func (m *MockLogic) GetRepoManager() types.RepoManager {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRepoManager")
+	ret0, _ := ret[0].(types.RepoManager)
+	return ret0
+}
+
+// GetRepoManager indicates an expected call of GetRepoManager
+func (mr *MockLogicMockRecorder) GetRepoManager() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoManager", reflect.TypeOf((*MockLogic)(nil).GetRepoManager))
+}
+
 // MockKeepers is a mock of Keepers interface
 type MockKeepers struct {
 	ctrl     *gomock.Controller
@@ -799,6 +933,20 @@ func (m *MockKeepers) TxKeeper() types.TxKeeper {
 func (mr *MockKeepersMockRecorder) TxKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxKeeper", reflect.TypeOf((*MockKeepers)(nil).TxKeeper))
+}
+
+// RepoKeeper mocks base method
+func (m *MockKeepers) RepoKeeper() types.RepoKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RepoKeeper")
+	ret0, _ := ret[0].(types.RepoKeeper)
+	return ret0
+}
+
+// RepoKeeper indicates an expected call of RepoKeeper
+func (mr *MockKeepersMockRecorder) RepoKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoKeeper", reflect.TypeOf((*MockKeepers)(nil).RepoKeeper))
 }
 
 // GetTicketManager mocks base method
@@ -979,17 +1127,17 @@ func (mr *MockTxLogicMockRecorder) Exec(tx, chainHeight interface{}) *gomock.Cal
 }
 
 // CanExecCoinTransfer mocks base method
-func (m *MockTxLogic) CanExecCoinTransfer(txType int, senderPubKey *crypto.PubKey, recipientAddr, value, fee util.String, nonce, chainHeight uint64) error {
+func (m *MockTxLogic) CanExecCoinTransfer(txType int, senderPubKey *crypto.PubKey, value, fee util.String, nonce, chainHeight uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CanExecCoinTransfer", txType, senderPubKey, recipientAddr, value, fee, nonce, chainHeight)
+	ret := m.ctrl.Call(m, "CanExecCoinTransfer", txType, senderPubKey, value, fee, nonce, chainHeight)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CanExecCoinTransfer indicates an expected call of CanExecCoinTransfer
-func (mr *MockTxLogicMockRecorder) CanExecCoinTransfer(txType, senderPubKey, recipientAddr, value, fee, nonce, chainHeight interface{}) *gomock.Call {
+func (mr *MockTxLogicMockRecorder) CanExecCoinTransfer(txType, senderPubKey, value, fee, nonce, chainHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanExecCoinTransfer", reflect.TypeOf((*MockTxLogic)(nil).CanExecCoinTransfer), txType, senderPubKey, recipientAddr, value, fee, nonce, chainHeight)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanExecCoinTransfer", reflect.TypeOf((*MockTxLogic)(nil).CanExecCoinTransfer), txType, senderPubKey, value, fee, nonce, chainHeight)
 }
 
 // MockSysLogic is a mock of SysLogic interface

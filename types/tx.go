@@ -30,6 +30,9 @@ var (
 
 	// TxTypeUnbondStorerTicket represents a transaction to unbond storer stake
 	TxTypeUnbondStorerTicket = 0x05
+
+	// TxTypeRepoCreate represents a transaction to create a repository
+	TxTypeRepoCreate = 0x06
 )
 
 // Transaction meta keys
@@ -53,11 +56,10 @@ type Tx interface {
 	GetTo() util.String
 	GetHash() util.Hash
 	GetType() int
-	GetSecret() []byte
-	GetPreviousSecret() []byte
-	GetSecretRound() uint64
+	GetEpochSecret() *EpochSecret
 	GetBytesNoSig() []byte
-	GetTicketID() []byte
+	GetUnbondTicket() *UnbondTicket
+	GetRepoCreate() *RepoCreate
 	Bytes() []byte
 	ComputeHash() util.Hash
 	GetID() string
@@ -90,6 +92,9 @@ type Transaction struct {
 	// TxTypeUnbondTicket specific field
 	UnbondTicket *UnbondTicket `json:"unbondTicket,omitempty" msgpack:"unbondTicket,omitempty"`
 
+	// TxTypeRepoCreate specific field
+	RepoCreate *RepoCreate `json:"repoCreate,omitempty" msgpack:"repoCreate,omitempty"`
+
 	// meta stores arbitrary data for message passing during tx processing
 	meta map[string]interface{}
 }
@@ -104,8 +109,6 @@ func NewBareTx(txType int) *Transaction {
 	tx.Value = util.String("0")
 	tx.Fee = util.String("0")
 	tx.Timestamp = time.Now().Unix()
-	tx.UnbondTicket = &UnbondTicket{}
-	tx.EpochSecret = &EpochSecret{}
 	tx.Sig = []byte{}
 	tx.meta = map[string]interface{}{}
 	return tx
@@ -130,6 +133,7 @@ func NewTx(txType int,
 	tx.Fee = fee
 	tx.EpochSecret = nil
 	tx.UnbondTicket = nil
+	tx.RepoCreate = nil
 	tx.meta = map[string]interface{}{}
 
 	var err error
@@ -205,24 +209,6 @@ func (tx *Transaction) SetTimestamp(t int64) {
 	tx.Timestamp = t
 }
 
-// GetSecret returns the secret
-// FOR: TxTypeEpochSecret
-func (tx *Transaction) GetSecret() []byte {
-	return tx.EpochSecret.Secret
-}
-
-// GetPreviousSecret returns the previous secret
-// FOR: TxTypeEpochSecret
-func (tx *Transaction) GetPreviousSecret() []byte {
-	return tx.EpochSecret.PreviousSecret
-}
-
-// GetSecretRound returns the secret round
-// FOR: TxTypeEpochSecret
-func (tx *Transaction) GetSecretRound() uint64 {
-	return tx.EpochSecret.SecretRound
-}
-
 // GetTicketID returns the ticket id
 // FOR: TxTypeUnbondTicket
 func (tx *Transaction) GetTicketID() []byte {
@@ -242,6 +228,21 @@ func (tx *Transaction) ToMap() map[string]interface{} {
 // ToHex returns the hex encoded representation of the tx
 func (tx *Transaction) ToHex() string {
 	return hex.EncodeToString(tx.Bytes())
+}
+
+// GetEpochSecret returns the EpochSecret object
+func (tx *Transaction) GetEpochSecret() *EpochSecret {
+	return tx.EpochSecret
+}
+
+// GetUnbondTicket returns the UnbondTicket object
+func (tx *Transaction) GetUnbondTicket() *UnbondTicket {
+	return tx.UnbondTicket
+}
+
+// GetRepoCreate returns the RepoCreate object
+func (tx *Transaction) GetRepoCreate() *RepoCreate {
+	return tx.RepoCreate
 }
 
 // GetNonce gets the nonce
@@ -293,6 +294,11 @@ func (tx *Transaction) GetBytesNoSig() []byte {
 		unbondTicketBz = tx.UnbondTicket.Bytes()
 	}
 
+	var repoCreateBz []byte
+	if tx.RepoCreate != nil {
+		repoCreateBz = tx.RepoCreate.Bytes()
+	}
+
 	return util.ObjectToBytes([]interface{}{
 		tx.Fee,
 		tx.Nonce,
@@ -303,6 +309,7 @@ func (tx *Transaction) GetBytesNoSig() []byte {
 		tx.Value,
 		epochSecretBz,
 		unbondTicketBz,
+		repoCreateBz,
 	})
 }
 
@@ -319,6 +326,11 @@ func (tx *Transaction) Bytes() []byte {
 		unbondTicketBz = tx.UnbondTicket.Bytes()
 	}
 
+	var repoCreateBz []byte
+	if tx.RepoCreate != nil {
+		repoCreateBz = tx.RepoCreate.Bytes()
+	}
+
 	return util.ObjectToBytes([]interface{}{
 		tx.Fee,
 		tx.Nonce,
@@ -330,7 +342,43 @@ func (tx *Transaction) Bytes() []byte {
 		tx.Value,
 		epochSecretBz,
 		unbondTicketBz,
+		repoCreateBz,
 	})
+}
+
+// GetSizeNoFee returns the serialized size of the transaction
+// by summing up the byte size of every field value except
+// the `fee` field. The value does not represent the true size
+// of the transaction on disk.
+func (tx *Transaction) GetSizeNoFee() int64 {
+
+	var epochSecretBz []byte
+	if tx.EpochSecret != nil {
+		epochSecretBz = tx.EpochSecret.Bytes()
+	}
+
+	var unbondTicketBz []byte
+	if tx.UnbondTicket != nil {
+		unbondTicketBz = tx.UnbondTicket.Bytes()
+	}
+
+	var repoCreateBz []byte
+	if tx.RepoCreate != nil {
+		repoCreateBz = tx.RepoCreate.Bytes()
+	}
+
+	return int64(len(util.ObjectToBytes([]interface{}{
+		tx.Nonce,
+		tx.SenderPubKey,
+		tx.Sig,
+		tx.Timestamp,
+		tx.To,
+		tx.Type,
+		tx.Value,
+		epochSecretBz,
+		unbondTicketBz,
+		repoCreateBz,
+	})))
 }
 
 // NewTxFromBytes creates a transaction object from a slice of
@@ -351,48 +399,21 @@ func NewTxFromBytes(bs []byte) (*Transaction, error) {
 	tx.Type = int(fields[6].(int64))
 	tx.Value = util.String(fields[7].(string))
 
-	tx.EpochSecret = nil
-	if fields[8] != nil {
+	if fields[8] != nil && len(fields[8].([]byte)) > 0 {
 		tx.EpochSecret = EpochSecretFromBytes(fields[8].([]byte))
 	}
 
-	tx.UnbondTicket = nil
-	if fields[9] != nil {
+	if fields[9] != nil && len(fields[9].([]byte)) > 0 {
 		tx.UnbondTicket = UnbondTicketFromBytes(fields[9].([]byte))
+	}
+
+	if fields[10] != nil && len(fields[10].([]byte)) > 0 {
+		tx.RepoCreate = RepoCreateFromBytes(fields[10].([]byte))
 	}
 
 	tx.meta = map[string]interface{}{}
 
 	return &tx, nil
-}
-
-// GetSizeNoFee returns the virtual size of the transaction
-// by summing up the byte size of every fields content except
-// the `fee` field. The value does not represent the true size
-// of the transaction on disk.
-func (tx *Transaction) GetSizeNoFee() int64 {
-
-	var epochSecretBz []byte
-	if tx.EpochSecret != nil {
-		epochSecretBz = tx.EpochSecret.Bytes()
-	}
-
-	var unbondTicketBz []byte
-	if tx.UnbondTicket != nil {
-		unbondTicketBz = tx.UnbondTicket.Bytes()
-	}
-
-	return int64(len(util.ObjectToBytes([]interface{}{
-		tx.Nonce,
-		tx.SenderPubKey,
-		tx.Sig,
-		tx.Timestamp,
-		tx.To,
-		tx.Type,
-		tx.Value,
-		epochSecretBz,
-		unbondTicketBz,
-	})))
 }
 
 // GetSize returns the size of the transaction
@@ -478,22 +499,37 @@ type EpochSecret struct {
 	SecretRound    uint64 `json:"secretRound,omitempty" msgpack:"secretRound,omitempty"`
 }
 
-// Bytes returns the serialized version of the object
-func (e *EpochSecret) Bytes() []byte {
+// GetSecret returns the secret
+func (es *EpochSecret) GetSecret() []byte {
+	return es.Secret
+}
 
-	if e == (&EpochSecret{}) {
+// GetPreviousSecret returns the previous secret
+func (es *EpochSecret) GetPreviousSecret() []byte {
+	return es.PreviousSecret
+}
+
+// GetSecretRound returns the secret round
+func (es *EpochSecret) GetSecretRound() uint64 {
+	return es.SecretRound
+}
+
+// Bytes returns the serialized version of the object
+func (es *EpochSecret) Bytes() []byte {
+
+	if es == (&EpochSecret{}) {
 		return []byte{}
 	}
 
 	return util.ObjectToBytes([]interface{}{
-		e.Secret,
-		e.SecretRound,
-		e.PreviousSecret,
+		es.Secret,
+		es.SecretRound,
+		es.PreviousSecret,
 	})
 }
 
-// EpochSecretFromBytes deserialize bz to EpochSecret.
-// Returns empty EpochSecret when bz is empty
+// EpochSecretFromBytes deserialize bz to EpochSecret object.
+// Returns empty EpochSecret object when bz is empty
 func EpochSecretFromBytes(bz []byte) *EpochSecret {
 
 	var es = &EpochSecret{}
@@ -519,9 +555,14 @@ func EpochSecretFromBytes(bz []byte) *EpochSecret {
 	return es
 }
 
-// UnbondTicket contains information about a ticket to be unbonded
+// UnbondTicket represents a request to unbond a ticket
 type UnbondTicket struct {
 	TicketID []byte `json:"ticketID,omitempty" msgpack:"ticketID,omitempty"`
+}
+
+// GetTicketID returns the ticket ID
+func (u *UnbondTicket) GetTicketID() []byte {
+	return u.TicketID
 }
 
 // Bytes returns the serialized version of the object
@@ -536,8 +577,8 @@ func (u *UnbondTicket) Bytes() []byte {
 	})
 }
 
-// UnbondTicketFromBytes deserialize bz to EpochSecret.
-// Returns empty UnbondTicket when bz is empty
+// UnbondTicketFromBytes deserialize bz to UnbondTicket object.
+// Returns empty UnbondTicket object when bz is empty
 func UnbondTicketFromBytes(bz []byte) *UnbondTicket {
 
 	var ut = &UnbondTicket{}
@@ -555,4 +596,47 @@ func UnbondTicketFromBytes(bz []byte) *UnbondTicket {
 	}
 
 	return ut
+}
+
+// RepoCreate represents a request to create a repository
+type RepoCreate struct {
+	Name string `json:"name,omitempty" msgpack:"name,omitempty"`
+}
+
+// GetName returns the name of the repo
+func (rc *RepoCreate) GetName() string {
+	return rc.Name
+}
+
+// Bytes returns the serialized version of the object
+func (rc *RepoCreate) Bytes() []byte {
+
+	if rc == (&RepoCreate{}) {
+		return []byte{}
+	}
+
+	return util.ObjectToBytes([]interface{}{
+		rc.Name,
+	})
+}
+
+// RepoCreateFromBytes deserialize bz to RepoCreate object.
+// Returns empty RepoCreate object when bz is empty.
+func RepoCreateFromBytes(bz []byte) *RepoCreate {
+
+	var rc = &RepoCreate{}
+	if len(bz) == 0 {
+		return rc
+	}
+
+	var ob []interface{}
+	if err := util.BytesToObject(bz, &ob); err != nil {
+		panic(err)
+	}
+
+	if ob[0] != nil {
+		rc.Name = ob[0].(string)
+	}
+
+	return rc
 }

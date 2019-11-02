@@ -107,12 +107,12 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 }
 
 // buy creates and executes a ticket purchase order
-func (m *TicketModule) buy(txObj interface{}, options ...interface{}) interface{} {
+func (m *TicketModule) buy(txObj map[string]interface{}, options ...interface{}) interface{} {
 	return simpleTx(m.service, types.TxTypeValidatorTicket, txObj, options...)
 }
 
 // storerBuy creates and executes a ticket purchase order
-func (m *TicketModule) storerBuy(txObj interface{}, options ...interface{}) interface{} {
+func (m *TicketModule) storerBuy(txObj map[string]interface{}, options ...interface{}) interface{} {
 	return simpleTx(m.service, types.TxTypeStorerTicket, txObj, options...)
 }
 
@@ -149,6 +149,7 @@ func (m *TicketModule) top(limit int) interface{} {
 }
 
 // unbondStorerTicket initiates the release of stake associated with a storer ticket
-func (m *TicketModule) unbondStorerTicket(txObj interface{}, options ...interface{}) interface{} {
+func (m *TicketModule) unbondStorerTicket(txObj map[string]interface{},
+	options ...interface{}) interface{} {
 	return simpleTx(m.service, types.TxTypeUnbondStorerTicket, txObj, options...)
 }

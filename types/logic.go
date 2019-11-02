@@ -80,17 +80,42 @@ type TxKeeper interface {
 	GetTx(hash []byte) (Tx, error)
 }
 
-// AccountKeeper describes an interface for accessing accounts
+// AccountKeeper describes an interface for accessing account data
 type AccountKeeper interface {
 	// GetAccount returns an account by address.
-	// It returns an empty Account if no account is found.
-	// If block number is specified and greater than 0,
-	// the account state at the given block number is
-	// returned, otherwise the latest is returned
+	//
+	// ARGS:
+	// address: The address of the account
+	// blockNum: The target block to query (Optional. Default: latest)
+	//
+	// CONTRACT: It returns an empty Account if no account is found.
 	GetAccount(address util.String, blockNum ...int64) *Account
 
-	// Update resets an account to a new value
+	// Update sets a new object at the given address.
+	//
+	// ARGS:
+	// address: The address of the account to update
+	// udp: The updated account object to replace the existing object.
 	Update(address util.String, upd *Account)
+}
+
+// RepoKeeper describes an interface for accessing repository data
+type RepoKeeper interface {
+	// GetRepo finds a repository by name.
+	//
+	// ARGS:
+	// name: The name of the repository to find.
+	// blockNum: The target block to query (Optional. Default: latest)
+	//
+	// CONTRACT: It returns an empty Repository if no repo is found.
+	GetRepo(name string, blockNum ...int64) *Repository
+
+	// Update sets a new object at the given address.
+	//
+	// ARGS:
+	// address: The address of the repository to update
+	// udp: The updated repository object to replace the existing object.
+	Update(name string, upd *Repository)
 }
 
 // AtomicLogic is like Logic but allows all operations
@@ -143,12 +168,11 @@ type Logic interface {
 	// GetDRand returns a drand client
 	GetDRand() rand.DRander
 
-	// NewWithTx creates a new Logic instance but updates the keepers
-	// with a new database transaction for atomic operations.
-	// autoFinish: Commits/Discards the transaction after every operation
-	// renew: Renews the transaction after every operation (only works if
-	// autoFinish is true)
-	// NewWithTx(autoFinish, renew bool) AtomicLogic
+	// SetRepoManager sets the repository manager
+	SetRepoManager(m RepoManager)
+
+	// GetRepoManager returns the repository manager
+	GetRepoManager() RepoManager
 }
 
 // Keepers describes modules for accessing the state and storage
@@ -166,6 +190,9 @@ type Keepers interface {
 
 	// TxKeeper returns the transaction keeper
 	TxKeeper() TxKeeper
+
+	// RepoKeeper returns the repository keeper
+	RepoKeeper() RepoKeeper
 
 	// GetTicketManager returns the ticket manager
 	GetTicketManager() TicketManager
@@ -215,7 +242,7 @@ type TxLogic interface {
 	// account. It also ensures that the transaction's nonce is the
 	// next/expected nonce value.
 	// chainHeight: The height of the block chain
-	CanExecCoinTransfer(txType int, senderPubKey *crypto.PubKey, recipientAddr,
+	CanExecCoinTransfer(txType int, senderPubKey *crypto.PubKey,
 		value, fee util.String, nonce, chainHeight uint64) error
 }
 

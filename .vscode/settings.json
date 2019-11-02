@@ -10,6 +10,7 @@
         "estx",
         "iavl",
         "memcfg",
+        "nolog",
         "objx",
         "qopts",
         "recs",

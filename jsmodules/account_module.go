@@ -243,7 +243,8 @@ func (m *AccountModule) getPrivateValidator(includePrivKey ...bool) interface{} 
 }
 
 // execSetDelegatorCommissionRate sets the delegator commission for an account
-func (m *AccountModule) execSetDelegatorCommissionRate(txObj interface{}, options ...interface{}) interface{} {
+func (m *AccountModule) execSetDelegatorCommissionRate(txObj map[string]interface{},
+	options ...interface{}) interface{} {
 	var err error
 	tx, key := processTxArgs(txObj, options...)
 	tx.Type = types.TxTypeSetDelegatorCommission

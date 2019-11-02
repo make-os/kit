@@ -8,6 +8,8 @@ import (
 const (
 	// TagAccount is the prefix for account data
 	TagAccount = "a"
+	// TagRepo is the prefix for account data
+	TagRepo = "r"
 	// TagBlockInfo is the prefix for last block data
 	TagBlockInfo = "b"
 	// TagNetMaturity is the prefix for account data
@@ -23,6 +25,11 @@ const (
 // MakeAccountKey creates a key for accessing/store an account
 func MakeAccountKey(address string) []byte {
 	return storage.MakePrefix([]byte(TagAccount), []byte(address))
+}
+
+// MakeRepoKey creates a key for accessing/store a repository object
+func MakeRepoKey(name string) []byte {
+	return storage.MakePrefix([]byte(TagRepo), []byte(name))
 }
 
 // MakeKeyBlockInfo creates a key for accessing/storing committed block data.

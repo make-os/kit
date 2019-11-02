@@ -5,9 +5,7 @@ import (
 	"os"
 
 	"github.com/makeos/mosdef/crypto/rand"
-	randmocks "github.com/makeos/mosdef/crypto/rand/mocks"
 	"github.com/makeos/mosdef/logic/keepers"
-	"github.com/makeos/mosdef/types/mocks"
 
 	"github.com/golang/mock/gomock"
 	"github.com/makeos/mosdef/types"
@@ -29,6 +27,7 @@ var _ = Describe("System", func() {
 	var logic *Logic
 	var sysLogic *System
 	var ctrl *gomock.Controller
+	var mockLogic *testutil.MockObjects
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -42,6 +41,7 @@ var _ = Describe("System", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
+		mockLogic = testutil.MockLogic(ctrl)
 	})
 
 	AfterEach(func() {
@@ -90,11 +90,8 @@ var _ = Describe("System", func() {
 	Describe(".CheckSetNetMaturity", func() {
 		When("unable to determine network maturity status", func() {
 			BeforeEach(func() {
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().IsMarkedAsMature().Return(false, fmt.Errorf("bad error"))
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
-				sysLogic.logic = mockLogic
+				mockLogic.SysKeeper.EXPECT().IsMarkedAsMature().Return(false, fmt.Errorf("bad error"))
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should return err='failed to determine network maturity status'", func() {
@@ -106,11 +103,8 @@ var _ = Describe("System", func() {
 
 		When("network has been marked as matured", func() {
 			BeforeEach(func() {
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().IsMarkedAsMature().Return(true, nil)
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
-				sysLogic.logic = mockLogic
+				mockLogic.SysKeeper.EXPECT().IsMarkedAsMature().Return(true, nil)
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should return nil", func() {
@@ -121,12 +115,9 @@ var _ = Describe("System", func() {
 
 		When("network has not been marked as matured and no recent committed block", func() {
 			BeforeEach(func() {
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().IsMarkedAsMature().Return(false, nil)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, keepers.ErrBlockInfoNotFound)
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).Times(2)
-				sysLogic.logic = mockLogic
+				mockLogic.SysKeeper.EXPECT().IsMarkedAsMature().Return(false, nil)
+				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(nil, keepers.ErrBlockInfoNotFound)
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should return err='no committed block yet'", func() {
@@ -138,12 +129,9 @@ var _ = Describe("System", func() {
 
 		When("network has not been marked as matured and an error occurred when fetching last committed block", func() {
 			BeforeEach(func() {
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().IsMarkedAsMature().Return(false, nil)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("bad error"))
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).Times(2)
-				sysLogic.logic = mockLogic
+				mockLogic.SysKeeper.EXPECT().IsMarkedAsMature().Return(false, nil)
+				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("bad error"))
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should return err='no committed block yet'", func() {
@@ -157,12 +145,9 @@ var _ = Describe("System", func() {
 			When("last committed block height = 10, params.NetMaturityHeight = 20", func() {
 				BeforeEach(func() {
 					params.NetMaturityHeight = 20
-					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-					mockSysKeeper.EXPECT().IsMarkedAsMature().Return(false, nil)
-					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 10}, nil)
-					mockLogic := mocks.NewMockLogic(ctrl)
-					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).Times(2)
-					sysLogic.logic = mockLogic
+					mockLogic.SysKeeper.EXPECT().IsMarkedAsMature().Return(false, nil)
+					mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 10}, nil)
+					sysLogic.logic = mockLogic.Logic
 				})
 
 				It("should return err='network maturity period has not been reached...'", func() {
@@ -177,15 +162,10 @@ var _ = Describe("System", func() {
 					BeforeEach(func() {
 						params.NetMaturityHeight = 10
 						params.MinBootstrapLiveTickets = 2
-						mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-						mockSysKeeper.EXPECT().IsMarkedAsMature().Return(false, nil)
-						mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 10}, nil)
-						mockTicketMgr := mocks.NewMockTicketManager(ctrl)
-						mockTicketMgr.EXPECT().CountActiveValidatorTickets().Return(0, fmt.Errorf("bad error"))
-						mockLogic := mocks.NewMockLogic(ctrl)
-						mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).Times(2)
-						mockLogic.EXPECT().GetTicketManager().Return(mockTicketMgr)
-						sysLogic.logic = mockLogic
+						mockLogic.SysKeeper.EXPECT().IsMarkedAsMature().Return(false, nil)
+						mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 10}, nil)
+						mockLogic.TicketManager.EXPECT().CountActiveValidatorTickets().Return(0, fmt.Errorf("bad error"))
+						sysLogic.logic = mockLogic.Logic
 					})
 
 					It("should return err='insufficient live bootstrap tickets'", func() {
@@ -201,15 +181,10 @@ var _ = Describe("System", func() {
 					BeforeEach(func() {
 						params.NetMaturityHeight = 10
 						params.MinBootstrapLiveTickets = 2
-						mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-						mockSysKeeper.EXPECT().IsMarkedAsMature().Return(false, nil)
-						mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 10}, nil)
-						mockTicketMgr := mocks.NewMockTicketManager(ctrl)
-						mockTicketMgr.EXPECT().CountActiveValidatorTickets().Return(1, nil)
-						mockLogic := mocks.NewMockLogic(ctrl)
-						mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).Times(2)
-						mockLogic.EXPECT().GetTicketManager().Return(mockTicketMgr)
-						sysLogic.logic = mockLogic
+						mockLogic.SysKeeper.EXPECT().IsMarkedAsMature().Return(false, nil)
+						mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 10}, nil)
+						mockLogic.TicketManager.EXPECT().CountActiveValidatorTickets().Return(1, nil)
+						sysLogic.logic = mockLogic.Logic
 					})
 
 					It("should return err='insufficient live bootstrap tickets'", func() {
@@ -225,16 +200,11 @@ var _ = Describe("System", func() {
 					BeforeEach(func() {
 						params.NetMaturityHeight = 10
 						params.MinBootstrapLiveTickets = 1
-						mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-						mockSysKeeper.EXPECT().IsMarkedAsMature().Return(false, nil)
-						mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 10}, nil)
-						mockSysKeeper.EXPECT().MarkAsMatured(uint64(10)).Return(fmt.Errorf("bad error"))
-						mockTicketMgr := mocks.NewMockTicketManager(ctrl)
-						mockTicketMgr.EXPECT().CountActiveValidatorTickets().Return(1, nil)
-						mockLogic := mocks.NewMockLogic(ctrl)
-						mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).Times(3)
-						mockLogic.EXPECT().GetTicketManager().Return(mockTicketMgr)
-						sysLogic.logic = mockLogic
+						mockLogic.SysKeeper.EXPECT().IsMarkedAsMature().Return(false, nil)
+						mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 10}, nil)
+						mockLogic.SysKeeper.EXPECT().MarkAsMatured(uint64(10)).Return(fmt.Errorf("bad error"))
+						mockLogic.TicketManager.EXPECT().CountActiveValidatorTickets().Return(1, nil)
+						sysLogic.logic = mockLogic.Logic
 					})
 
 					It("should return err='insufficient live bootstrap tickets'", func() {
@@ -253,11 +223,8 @@ var _ = Describe("System", func() {
 		When("the network is not matured", func() {
 			BeforeEach(func() {
 				params.NetMaturityHeight = 20
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().GetNetMaturityHeight().Return(uint64(0), fmt.Errorf("error"))
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).Times(1)
-				sysLogic.logic = mockLogic
+				mockLogic.SysKeeper.EXPECT().GetNetMaturityHeight().Return(uint64(0), fmt.Errorf("error"))
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should panic", func() {
@@ -271,11 +238,8 @@ var _ = Describe("System", func() {
 			BeforeEach(func() {
 				params.NetMaturityHeight = 20
 				params.NumBlocksPerEpoch = 100
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().GetNetMaturityHeight().Return(uint64(100), nil)
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).Times(1)
-				sysLogic.logic = mockLogic
+				mockLogic.SysKeeper.EXPECT().GetNetMaturityHeight().Return(uint64(100), nil)
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should curEpoch = 1 and nextEpoch = 2", func() {
@@ -289,11 +253,8 @@ var _ = Describe("System", func() {
 			BeforeEach(func() {
 				params.NetMaturityHeight = 20
 				params.NumBlocksPerEpoch = 100
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().GetNetMaturityHeight().Return(uint64(100), nil)
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).Times(1)
-				sysLogic.logic = mockLogic
+				mockLogic.SysKeeper.EXPECT().GetNetMaturityHeight().Return(uint64(100), nil)
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should curEpoch = 1 and nextEpoch = 1", func() {
@@ -309,11 +270,8 @@ var _ = Describe("System", func() {
 			BeforeEach(func() {
 				params.NetMaturityHeight = 20
 				params.NumBlocksPerEpoch = 100
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).Times(1)
-				sysLogic.logic = mockLogic
+				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should return nil", func() {
@@ -326,11 +284,8 @@ var _ = Describe("System", func() {
 		When("last committed block height is 8; params.NumBlocksPerEpoch = 10", func() {
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 10
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 8}, nil)
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).Times(1)
-				sysLogic.logic = mockLogic
+				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 8}, nil)
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should return nil", func() {
@@ -351,14 +306,9 @@ var _ = Describe("System", func() {
 			}
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 10
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 9}, nil)
-				mockDrand := randmocks.NewMockDRander(ctrl)
-				mockDrand.EXPECT().Get(0).Return(expected)
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().GetDRand().Return(mockDrand)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).Times(1)
-				sysLogic.logic = mockLogic
+				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 9}, nil)
+				mockLogic.Drand.EXPECT().Get(0).Return(expected)
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should return nil", func() {
@@ -366,9 +316,9 @@ var _ = Describe("System", func() {
 				Expect(err).To(BeNil())
 				Expect(stx).ToNot(BeNil())
 				Expect(stx.GetType()).To(Equal(types.TxTypeEpochSecret))
-				Expect(stx.GetSecret()).To(Equal([]byte(expected.Randomness.Point)))
-				Expect(stx.GetPreviousSecret()).To(Equal([]byte(expected.Previous)))
-				Expect(stx.GetSecretRound()).To(Equal(expected.Round))
+				Expect(stx.GetEpochSecret().GetSecret()).To(Equal([]byte(expected.Randomness.Point)))
+				Expect(stx.GetEpochSecret().GetPreviousSecret()).To(Equal([]byte(expected.Previous)))
+				Expect(stx.GetEpochSecret().GetSecretRound()).To(Equal(expected.Round))
 			})
 		})
 	})
@@ -376,12 +326,9 @@ var _ = Describe("System", func() {
 	Describe(".MakeSecret", func() {
 		When("error is returned while trying to get secret", func() {
 			BeforeEach(func() {
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().GetSecrets(gomock.Any(), gomock.Any(),
+				mockLogic.SysKeeper.EXPECT().GetSecrets(gomock.Any(), gomock.Any(),
 					gomock.Any()).Return(nil, fmt.Errorf("error"))
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
-				sysLogic.logic = mockLogic
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should return err='failed to get secrets: error'", func() {
@@ -393,12 +340,9 @@ var _ = Describe("System", func() {
 
 		When("no secret is found", func() {
 			BeforeEach(func() {
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().GetSecrets(gomock.Any(), gomock.Any(),
+				mockLogic.SysKeeper.EXPECT().GetSecrets(gomock.Any(), gomock.Any(),
 					gomock.Any()).Return(nil, nil)
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
-				sysLogic.logic = mockLogic
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should return err='...no secret found'", func() {
@@ -411,12 +355,9 @@ var _ = Describe("System", func() {
 		When("two secrets (0x06, 0x04) exists", func() {
 			var secrets [][]byte = [][]byte{[]byte{0x06}, []byte{0x02}}
 			BeforeEach(func() {
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockSysKeeper.EXPECT().GetSecrets(gomock.Any(), gomock.Any(),
+				mockLogic.SysKeeper.EXPECT().GetSecrets(gomock.Any(), gomock.Any(),
 					gomock.Any()).Return(secrets, nil)
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper).AnyTimes()
-				sysLogic.logic = mockLogic
+				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should return 0x04 and no error", func() {

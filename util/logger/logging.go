@@ -4,6 +4,7 @@ package logger
 type Logger interface {
 	SetToDebug()
 	SetToInfo()
+	SetToError()
 	Module(ns string) Logger
 	Debug(msg string, keyValues ...interface{})
 	Info(msg string, keyValues ...interface{})

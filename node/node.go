@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/makeos/mosdef/repobase"
+	"github.com/makeos/mosdef/repo"
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
@@ -174,9 +174,12 @@ func (n *Node) Start() error {
 	n.service = services.New(n.tmrpc, n.logic, txReactor)
 
 	// Start repository server
-	rb := repobase.NewRepoBase(n.log, ":6000", n.cfg.GetRepoRoot(), "/usr/bin/git")
-	go rb.Start()
-	
+	rm := repo.NewManager(n.cfg, ":6000")
+	go rm.Start()
+
+	// Pass repo manager to logic manager
+	n.logic.SetRepoManager(rm)
+
 	// Start tendermint
 	n.tm.Start()
 

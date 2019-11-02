@@ -12,11 +12,10 @@ import (
 
 // Logrus implements Logger
 type Logrus struct {
-	log        *logrus.Logger
-	filePath   string
-	ns         string
-	debugLevel bool
-	noop       bool
+	log      *logrus.Logger
+	filePath string
+	ns       string
+	noop     bool
 }
 
 // NewLogrus creates a logrus backed logger
@@ -104,10 +103,9 @@ func isValidKeyValues(kv []interface{}) error {
 // logger is also set to debug.
 func (l *Logrus) Module(ns string) Logger {
 	newLog := &Logrus{
-		log:        logrus.New(),
-		filePath:   l.filePath,
-		ns:         ns,
-		debugLevel: l.debugLevel,
+		log:      logrus.New(),
+		filePath: l.filePath,
+		ns:       ns,
 	}
 	if l.noop {
 		newLog.log.Out = ioutil.Discard
@@ -116,22 +114,23 @@ func (l *Logrus) Module(ns string) Logger {
 	if newLog.filePath != "" {
 		configureFileRotation(newLog)
 	}
-	if l.debugLevel {
-		newLog.log.SetLevel(logrus.DebugLevel)
-	}
+	newLog.log.SetLevel(l.log.GetLevel())
 	return newLog
 }
 
 // SetToDebug sets the logger to DEBUG level
 func (l *Logrus) SetToDebug() {
-	l.debugLevel = true
 	l.log.SetLevel(logrus.DebugLevel)
 }
 
 // SetToInfo sets the logger to INFO level
 func (l *Logrus) SetToInfo() {
-	l.debugLevel = false
 	l.log.SetLevel(logrus.InfoLevel)
+}
+
+// SetToError sets the logger to ERROR level
+func (l *Logrus) SetToError() {
+	l.log.SetLevel(logrus.ErrorLevel)
 }
 
 func (l *Logrus) toFields(kv []interface{}) (f logrus.Fields) {

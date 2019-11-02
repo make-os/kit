@@ -50,7 +50,7 @@ var _ = Describe("Mempool", func() {
 				tx := types.NewTx(types.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				err := mempool.CheckTxWithInfo(tx.Bytes(), nil, tmmem.TxInfo{})
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("mempool is full: number of txs 1 (max: 1), total txs bytes 171 (max: 200)"))
+				Expect(err.Error()).To(Equal("mempool is full: number of txs 1 (max: 1), total txs bytes 172 (max: 200)"))
 			})
 		})
 
@@ -67,7 +67,7 @@ var _ = Describe("Mempool", func() {
 				tx := types.NewTx(types.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				err := mempool.CheckTxWithInfo(tx.Bytes(), nil, tmmem.TxInfo{})
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("mempool is full: number of txs 1 (max: 2), total txs bytes 171 (max: 100)"))
+				Expect(err.Error()).To(Equal("mempool is full: number of txs 1 (max: 2), total txs bytes 172 (max: 100)"))
 			})
 		})
 
@@ -82,7 +82,7 @@ var _ = Describe("Mempool", func() {
 				tx := types.NewTx(types.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				err := mempool.CheckTxWithInfo(tx.Bytes(), nil, tmmem.TxInfo{})
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("Tx too large. Max size is 100, but got 172"))
+				Expect(err.Error()).To(Equal("Tx too large. Max size is 100, but got 173"))
 			})
 		})
 	})

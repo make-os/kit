@@ -14,26 +14,18 @@ import (
 func simpleTx(
 	service types.Service,
 	txType int,
-	txObj interface{}, options ...interface{}) interface{} {
+	txObj map[string]interface{}, options ...interface{}) interface{} {
 
 	var err error
 	tx, key := processTxArgs(txObj, options...)
 	tx.Type = txType
 
-	// For non-TxTypeEpochSecret set EpochSecret to nil
-	if tx.Type != types.TxTypeEpochSecret {
-		tx.EpochSecret = nil
-	}
-
-	// For non-TxTypeUnbondStorerTicket set UnbondTicket to nil
-	if tx.Type != types.TxTypeUnbondStorerTicket {
-		tx.UnbondTicket = nil
-	}
-
-	// Set ticket ID
-	ticketID := txObj.(map[string]interface{})["ticketID"]
-	if ticketID != nil && ticketID.(string) != "" {
-		tx.UnbondTicket.TicketID = []byte(ticketID.(string))
+	// For TxTypeUnbondStorerTicket, Set ticket ID
+	if ticketID := txObj["ticketID"]; tx.Type == types.TxTypeUnbondStorerTicket &&
+		ticketID != nil && ticketID.(string) != "" {
+		tx.UnbondTicket = &types.UnbondTicket{
+			TicketID: []byte(ticketID.(string)),
+		}
 	}
 
 	// Set tx public key
@@ -71,7 +63,7 @@ func simpleTx(
 	})
 }
 
-func processTxArgs(txObj interface{}, options ...interface{}) (*types.Transaction, string) {
+func processTxArgs(txObj map[string]interface{}, options ...interface{}) (*types.Transaction, string) {
 	var err error
 
 	// Decode parameters into a transaction object

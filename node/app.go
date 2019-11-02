@@ -52,6 +52,7 @@ type App struct {
 	latestUnsavedValidators   []*types.Validator
 	heightToSaveNewValidators int64
 	unIndexedTxs              []*types.Transaction
+	newRepos                  []string
 }
 
 // NewApp creates an instance of App
@@ -272,7 +273,7 @@ func (a *App) postExecChecks(
 		}
 	}
 
-	// Cache ticket related transactions;
+	// Cache tasks derived from transactions;
 	// They will be processed in the COMMIT stage.
 	if resp.Code == 0 {
 		switch txType {
@@ -282,6 +283,8 @@ func (a *App) postExecChecks(
 			a.storerTickets = append(a.storerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 		case types.TxTypeUnbondStorerTicket:
 			a.unbondStorerRequests = append(a.unbondStorerRequests, string(tx.UnbondTicket.TicketID))
+		case types.TxTypeRepoCreate:
+			a.newRepos = append(a.newRepos, tx.RepoCreate.Name)
 		}
 	}
 
@@ -498,6 +501,13 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		a.logic.GetTicketManager().UpdateDecayBy(ticketHash, uint64(a.wBlock.Height))
 	}
 
+	// Create new repositories
+	for _, repoName := range a.newRepos {
+		if err := a.logic.GetRepoManager().CreateRepository(repoName); err != nil {
+			a.commitPanic(errors.Wrap(err, "failed to create repository"))
+		}
+	}
+
 	// Commit all state changes
 	if err := a.logic.Commit(); err != nil {
 		a.commitPanic(errors.Wrap(err, "failed to commit"))
@@ -524,6 +534,7 @@ func (a *App) reset() {
 	a.mature = false
 	a.isCurrentBlockProposer = false
 	a.unIndexedTxs = []*types.Transaction{}
+	a.newRepos = []string{}
 
 	// Only reset heightToSaveNewValidators if the current height is
 	// same as it to avoid not triggering saving of new validators at the target height.

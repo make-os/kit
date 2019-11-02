@@ -31,21 +31,20 @@ import (
 )
 
 var (
-	// BuildVersion is the build version
-	// set by goreleaser
+	// BuildVersion is the build version set by goreleaser
 	BuildVersion = ""
 
-	// BuildCommit is the git hash of
-	// the build. It is set by goreleaser
+	// BuildCommit is the git hash of the build. It is set by goreleaser
 	BuildCommit = ""
 
-	// BuildDate is the date the build
-	// was created. Its is set by goreleaser
+	// BuildDate is the date the build was created. Its is set by goreleaser
 	BuildDate = ""
 
-	// GoVersion is the version of go
-	// used to build the client
+	// GoVersion is the version of go used to build the client
 	GoVersion = "go1.12.4"
+
+	// DefaultGitBin is the default git executable path
+	DefaultGitBin = "/usr/bin/git"
 )
 
 var (
@@ -142,6 +141,10 @@ func initialize() {
 	rootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Set the path to the home directory")
 	rootCmd.PersistentFlags().String("home.prefix", "", "Adds a prefix to the home directory in dev mode")
 	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
+	rootCmd.PersistentFlags().Bool("nolog", false, "Disables loggers")
+	rootCmd.PersistentFlags().String("gitbin", "/usr/bin/git", "Path to git executable")
+	viper.BindPFlag("node.gitbin", rootCmd.PersistentFlags().Lookup("gitbin"))
+
 	setStartFlags(startCmd, consoleCmd)
 	setAccountCmdAndFlags()
 }

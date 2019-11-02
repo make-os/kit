@@ -148,9 +148,11 @@ func (s *System) GetCurretEpochSecretTx() (types.Tx, error) {
 
 	secretTx := types.NewBareTx(types.TxTypeEpochSecret)
 	secretTx.Timestamp = 0
-	secretTx.EpochSecret.Secret = randVal.Randomness.Point
-	secretTx.EpochSecret.PreviousSecret = randVal.Previous
-	secretTx.EpochSecret.SecretRound = randVal.Round
+	secretTx.EpochSecret = &types.EpochSecret{
+		Secret:         randVal.Randomness.Point,
+		PreviousSecret: randVal.Previous,
+		SecretRound:    randVal.Round,
+	}
 
 	return secretTx, nil
 }

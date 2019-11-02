@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/asaskevich/govalidator"
+
 	"github.com/makeos/mosdef/params"
 	"github.com/pkg/errors"
 
@@ -27,6 +29,7 @@ var KnownTransactionTypes = []int{
 	types.TxTypeSetDelegatorCommission,
 	types.TxTypeStorerTicket,
 	types.TxTypeUnbondStorerTicket,
+	types.TxTypeRepoCreate,
 }
 
 var validTypeRule = func(err error) func(interface{}) error {
@@ -83,6 +86,20 @@ var validValueRule = func(field string, index int) func(interface{}) error {
 		}
 		if dVal.LessThan(decimal.Zero) {
 			return types.FieldErrorWithIndex(index, field, "negative figure not allowed")
+		}
+		return nil
+	}
+}
+
+var validRepoNameRule = func(field string, index int) func(interface{}) error {
+	return func(val interface{}) error {
+		name := val.(string)
+		if !govalidator.Matches(name, "^[a-zA-Z0-9_-]+$") {
+			msg := "invalid characters in name. Only alphanumeric, _ and - characters are allowed"
+			return types.FieldErrorWithIndex(index, field, msg)
+		} else if len(name) > 128 {
+			msg := "name is too long. Maximum character length is 128"
+			return types.FieldErrorWithIndex(index, field, msg)
 		}
 		return nil
 	}
@@ -148,7 +165,7 @@ func ValidateEpochSecretTx(tx *types.Transaction, index int, logic types.Logic) 
 	}
 
 	// Secret must be set and must be 64-bytes in length
-	if err := v.Validate(tx.GetSecret(),
+	if err := v.Validate(tx.EpochSecret.GetSecret(),
 		v.Required.Error(types.FieldErrorWithIndex(index, "secret",
 			"secret is required").Error()), v.By(validSecretRule("secret", index)),
 	); err != nil {
@@ -156,7 +173,7 @@ func ValidateEpochSecretTx(tx *types.Transaction, index int, logic types.Logic) 
 	}
 
 	// Previous secret must be set and must be 64-bytes in length
-	if err := v.Validate(tx.GetPreviousSecret(),
+	if err := v.Validate(tx.EpochSecret.GetPreviousSecret(),
 		v.Required.Error(types.FieldErrorWithIndex(index, "previousSecret",
 			"previous secret is required").Error()), v.By(validSecretRule("previousSecret", index)),
 	); err != nil {
@@ -164,7 +181,7 @@ func ValidateEpochSecretTx(tx *types.Transaction, index int, logic types.Logic) 
 	}
 
 	// Previous secret must be set and must be 64-bytes in length
-	if err := v.Validate(tx.GetSecretRound(),
+	if err := v.Validate(tx.EpochSecret.GetSecretRound(),
 		v.Required.Error(types.FieldErrorWithIndex(index, "secretRound",
 			"secret round is required").Error()),
 	); err != nil {
@@ -230,12 +247,11 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 	}
 
 	// The recipient's address must be set and it must be valid.
-	// Ignore for: TxTypeValidatorTicket, TxTypeSetDelegatorCommission,
-	// TxTypeStorerTicket, TxTypeUnbondStorerTicket
 	if tx.Type != types.TxTypeValidatorTicket &&
 		tx.Type != types.TxTypeSetDelegatorCommission &&
 		tx.Type != types.TxTypeStorerTicket &&
-		tx.Type != types.TxTypeUnbondStorerTicket {
+		tx.Type != types.TxTypeUnbondStorerTicket &&
+		tx.Type != types.TxTypeRepoCreate {
 		if err := v.Validate(tx.GetTo(),
 			v.Required.Error(types.FieldErrorWithIndex(index, "to",
 				"recipient address is required").Error()),
@@ -307,12 +323,24 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 		return err
 	}
 
+	// For TxTypeUnbondStorerTicket
 	// Ticket ID is required
-	// Only for: TxTypeUnbondStorerTicket
 	if tx.Type == types.TxTypeUnbondStorerTicket {
 		if err := v.Validate(tx.GetTicketID(),
 			v.Required.Error(types.FieldErrorWithIndex(index, "ticket",
 				"ticket id is required").Error()),
+		); err != nil {
+			return err
+		}
+	}
+
+	// For TxTypeRepoCreate:
+	// Ensure the repo name is provided and valid.
+	if tx.Type == types.TxTypeRepoCreate {
+		if err := v.Validate(tx.RepoCreate.Name,
+			v.Required.Error(types.FieldErrorWithIndex(index, "repoCreate.name",
+				"name is required").Error()),
+			v.By(validRepoNameRule("repoCreate.name", index)),
 		); err != nil {
 			return err
 		}
@@ -371,6 +399,8 @@ func IsSet(value interface{}) bool {
 		return v != nil && v != &types.EpochSecret{}
 	case *types.UnbondTicket:
 		return v != nil && v != &types.UnbondTicket{}
+	case *types.RepoCreate:
+		return v != nil && v != &types.RepoCreate{}
 	default:
 		return false
 	}
@@ -390,6 +420,7 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 	if txType == types.TxTypeValidatorTicket || txType == types.TxTypeCoinTransfer {
 		unExpected = append(unExpected, []interface{}{"epochSecret", tx.EpochSecret})
 		unExpected = append(unExpected, []interface{}{"unbondTicket", tx.UnbondTicket})
+		unExpected = append(unExpected, []interface{}{"repoCreate", tx.RepoCreate})
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -407,6 +438,7 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		unExpected = append(unExpected, []interface{}{"fee", tx.Fee})
 		unExpected = append(unExpected, []interface{}{"sig", tx.Sig})
 		unExpected = append(unExpected, []interface{}{"unbondTicket", tx.UnbondTicket})
+		unExpected = append(unExpected, []interface{}{"repoCreate", tx.RepoCreate})
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -418,6 +450,7 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 	if txType == types.TxTypeSetDelegatorCommission || txType == types.TxTypeStorerTicket {
 		unExpected = append(unExpected, []interface{}{"epochSecret", tx.EpochSecret})
 		unExpected = append(unExpected, []interface{}{"unbondTicket", tx.UnbondTicket})
+		unExpected = append(unExpected, []interface{}{"repoCreate", tx.RepoCreate})
 
 		// Allow `to` field for TxTypeStorerTicket
 		if txType != types.TxTypeStorerTicket {
@@ -436,6 +469,20 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 		unExpected = append(unExpected, []interface{}{"to", tx.To})
 		unExpected = append(unExpected, []interface{}{"value", tx.Value})
 		unExpected = append(unExpected, []interface{}{"epochSecret", tx.EpochSecret})
+		unExpected = append(unExpected, []interface{}{"repoCreate", tx.RepoCreate})
+		for _, item := range unExpected {
+			if IsSet(item[1]) {
+				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
+			}
+		}
+	}
+
+	// Check for unexpected field for types.TxTypeRepoCreate,
+	if txType == types.TxTypeRepoCreate {
+		unExpected = append(unExpected, []interface{}{"to", tx.To})
+		unExpected = append(unExpected, []interface{}{"value", tx.Value})
+		unExpected = append(unExpected, []interface{}{"epochSecret", tx.EpochSecret})
+		unExpected = append(unExpected, []interface{}{"unbondTicket", tx.UnbondTicket})
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -451,15 +498,10 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 // The argument index is used to describe the position in
 // the slice this transaction was accessed when constructing
 // error messages; Use -1 if tx is not part of a collection.
+//
+// CONTRACT: Sender public key must be validated by the caller.
 func checkSignature(tx *types.Transaction, index int) (errs []error) {
-
-	pubKey, err := crypto.PubKeyFromBase58(tx.GetSenderPubKey().String())
-	if err != nil {
-		errs = append(errs, types.FieldErrorWithIndex(index,
-			"senderPubKey", err.Error()))
-		return
-	}
-
+	pubKey, _ := crypto.PubKeyFromBase58(tx.GetSenderPubKey().String())
 	valid, err := pubKey.Verify(tx.GetBytesNoSig(), tx.GetSignature())
 	if err != nil {
 		errs = append(errs, types.FieldErrorWithIndex(index, "sig", err.Error()))
@@ -472,12 +514,9 @@ func checkSignature(tx *types.Transaction, index int) (errs []error) {
 
 // ValidateTxConsistency checks whether the transaction includes
 // values that are consistent with the current state of the app
+//
+// CONTRACT: Sender public key must be validated by the caller.
 func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) error {
-
-	pubKey, err := crypto.PubKeyFromBase58(tx.GetSenderPubKey().String())
-	if err != nil {
-		return types.FieldErrorWithIndex(index, "senderPubKey", err.Error())
-	}
 
 	// Get current block height
 	bi, err := logic.SysKeeper().GetLastBlockInfo()
@@ -485,63 +524,84 @@ func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) 
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	switch tx.Type {
-	case types.TxTypeSetDelegatorCommission:
-		return nil
-	case types.TxTypeUnbondStorerTicket:
-		goto unbondStoreTicket
-	}
+	// For validator/storer ticket transaction
+	if tx.Type == types.TxTypeStorerTicket || tx.Type == types.TxTypeValidatorTicket {
 
-	// For delegated ticket transactions, ensure the delegate has an active,
-	// non-delegated ticket
-	if (tx.Type == types.TxTypeStorerTicket || tx.Type == types.TxTypeValidatorTicket) &&
-		!tx.To.Empty() {
-		r, err := logic.GetTicketManager().GetActiveTicketsByProposer(tx.To.String(), tx.Type, false)
-		if err != nil {
-			return errors.Wrap(err, "failed to get active delegate tickets")
-		} else if len(r) == 0 {
-			return types.FieldErrorWithIndex(index, "to", "the delegate is not active")
+		// For store ticket transaction, ensure that the value is not be
+		// lesser than the minimum storer ticket stake
+		if tx.Type == types.TxTypeStorerTicket {
+			if tx.Value.Decimal().LessThan(params.MinStorerStake) {
+				return types.FieldError("value", fmt.Sprintf("value is lower than minimum storer stake"))
+			}
+		}
+
+		// When `to` field is set, ensure the delegate has an active, non-delegated ticket
+		if !tx.To.Empty() {
+			r, err := logic.GetTicketManager().GetActiveTicketsByProposer(tx.To.String(), tx.Type, false)
+			if err != nil {
+				return errors.Wrap(err, "failed to get active delegate tickets")
+			} else if len(r) == 0 {
+				return types.FieldErrorWithIndex(index, "to", "the delegate is not active")
+			}
+		}
+
+		// For validator ticket transaction, ensure the value is not lesser than
+		// the current price per ticket
+		if tx.Type == types.TxTypeValidatorTicket {
+			curTicketPrice := logic.Sys().GetCurValidatorTicketPrice()
+			if tx.Value.Decimal().LessThan(decimal.NewFromFloat(curTicketPrice)) {
+				return types.FieldErrorWithIndex(index, "value", fmt.Sprintf("value is lower than the"+
+					" minimum ticket price (%f)", curTicketPrice))
+			}
 		}
 	}
 
-	// Check whether the transaction is consistent with
-	// the current state of the sender's account
-	err = logic.Tx().CanExecCoinTransfer(tx.Type, pubKey, tx.To, tx.Value, tx.Fee,
-		tx.GetNonce(), uint64(bi.Height))
-	if err != nil {
-		return err
-	}
+	// For ticket unbonding transaction
+	if tx.Type == types.TxTypeUnbondStorerTicket {
 
-	return nil
+		// Ticket ID must be a known ticket
+		ticket := logic.GetTicketManager().GetByHash(string(tx.UnbondTicket.TicketID))
+		if ticket == nil {
+			return types.FieldErrorWithIndex(index, "ticketID", "ticket not found")
+		}
 
-unbondStoreTicket:
-
-	// Ticket ID must be a known ticket
-	ticket := logic.GetTicketManager().GetByHash(string(tx.UnbondTicket.TicketID))
-	if ticket == nil {
-		return types.FieldErrorWithIndex(index, "ticketID", "ticket not found")
-	}
-
-	// Ensure the tx sender is the owner of the ticket.
-	// For delegated ticket, compare the delegator address with the sender
-	// address
-	authErr := types.FieldErrorWithIndex(index, "ticketID", "sender not authorized to "+
-		"unbond this ticket")
-	if ticket.Delegator == "" {
-		if !tx.SenderPubKey.Equal(util.String(ticket.ProposerPubKey)) {
+		// Ensure the tx sender is the owner of the ticket.
+		// For delegated ticket, compare the delegator address with the sender
+		// address
+		authErr := types.FieldErrorWithIndex(index, "ticketID", "sender not authorized to "+
+			"unbond this ticket")
+		if ticket.Delegator == "" {
+			if !tx.SenderPubKey.Equal(util.String(ticket.ProposerPubKey)) {
+				return authErr
+			}
+		} else if ticket.Delegator != tx.GetFrom().String() {
 			return authErr
 		}
-	} else if ticket.Delegator != tx.GetFrom().String() {
-		return authErr
+
+		// Ensure the ticket has not decayed or is decaying.
+		decayBy := ticket.DecayBy
+		if decayBy != 0 && decayBy > uint64(bi.Height) {
+			return types.FieldErrorWithIndex(index, "ticketID", "ticket is already decaying")
+		} else if decayBy != 0 && decayBy <= uint64(bi.Height) {
+			return types.FieldErrorWithIndex(index, "ticketID", "ticket has already decayed")
+		}
 	}
 
-	// Ensure the ticket has not decayed or is decaying.
-	decayBy := ticket.DecayBy
-	if decayBy != 0 && decayBy > uint64(bi.Height) {
-		return types.FieldErrorWithIndex(index, "ticketID", "ticket is already decaying")
-	} else if decayBy != 0 && decayBy <= uint64(bi.Height) {
-		return types.FieldErrorWithIndex(index, "ticketID", "ticket has already decayed")
+	// For TxTypeRepoCreate
+	// Check whether there is an existing repo with matching name
+	if tx.Type == types.TxTypeRepoCreate {
+		repo := logic.RepoKeeper().GetRepo(tx.RepoCreate.Name)
+		if !repo.IsNil() {
+			msg := "name is not available. Choose another."
+			return types.FieldErrorWithIndex(index, "repoCreate.name", msg)
+		}
 	}
 
-	return nil
+	// Check the sender account balance is sufficient to deduct the total
+	// deductible (fee + transfer value)
+	pubKey, _ := crypto.PubKeyFromBase58(tx.GetSenderPubKey().String())
+	err = logic.Tx().CanExecCoinTransfer(tx.Type, pubKey, tx.Value, tx.Fee,
+		tx.GetNonce(), uint64(bi.Height))
+
+	return errors.Wrap(err, "failed to check balance sufficiency")
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/makeos/mosdef/util"
 )
 
-// AccountKeeper represents manages accounts.
+// AccountKeeper manages account state.
 type AccountKeeper struct {
 	state *tree.SafeTree
 }
@@ -19,10 +19,12 @@ func NewAccountKeeper(state *tree.SafeTree) *AccountKeeper {
 }
 
 // GetAccount returns an account by address.
+//
+// ARGS:
+// address: The address of the account
+// blockNum: The target block to query (Optional. Default: latest)
+//
 // CONTRACT: It returns an empty Account if no account is found.
-// If block number is specified and greater than 0,
-// the account state at the given block number is
-// returned, otherwise the latest is returned
 func (a *AccountKeeper) GetAccount(address util.String, blockNum ...int64) *types.Account {
 
 	// Get version is provided
@@ -55,7 +57,11 @@ func (a *AccountKeeper) GetAccount(address util.String, blockNum ...int64) *type
 	return acct
 }
 
-// Update resets an account to a new value
+// Update sets a new object at the given address.
+//
+// ARGS:
+// address: The address of the account to update
+// udp: The updated account object to replace the existing object.
 func (a *AccountKeeper) Update(address util.String, upd *types.Account) {
 	a.state.Set(MakeAccountKey(address.String()), upd.Bytes())
 }

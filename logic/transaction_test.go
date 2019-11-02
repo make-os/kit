@@ -4,9 +4,6 @@ import (
 	"os"
 
 	"github.com/makeos/mosdef/params"
-	"github.com/shopspring/decimal"
-
-	"github.com/makeos/mosdef/types/mocks"
 
 	"github.com/golang/mock/gomock"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -32,6 +29,7 @@ var _ = Describe("Transaction", func() {
 	var txLogic *Transaction
 	var ctrl *gomock.Controller
 	var sender = crypto.NewKeyFromIntSeed(1)
+	var mockLogic *testutil.MockObjects
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -43,6 +41,7 @@ var _ = Describe("Transaction", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
+		mockLogic = testutil.MockLogic(ctrl)
 	})
 
 	AfterEach(func() {
@@ -101,57 +100,10 @@ var _ = Describe("Transaction", func() {
 
 	Describe("CanExecCoinTransfer", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
-		var receiver = crypto.NewKeyFromIntSeed(2)
-
-		Context("tx type is types.TxTypeCoinTransfer", func() {
-			When("recipient address is invalid", func() {
-				It("should not return err='invalid recipient address...'", func() {
-					err := txLogic.CanExecCoinTransfer(types.TxTypeCoinTransfer, sender.PubKey(),
-						util.String("invalid"), util.String("100"),
-						util.String("0"), 0, 1)
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(ContainSubstring("field:to, error:invalid recipient address"))
-				})
-			})
-		})
-
-		Context("tx type is TxTypeValidatorTicket", func() {
-			When("current ticket price = 10; ticket value = 4", func() {
-				BeforeEach(func() {
-					mockSysLogic := mocks.NewMockSysLogic(ctrl)
-					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(float64(10))
-					logic.sys = mockSysLogic
-				})
-
-				Specify("that err='field:to, error:value is lower than the minimum ticket price (10.000000)'", func() {
-					err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(),
-						"", util.String("4"),
-						util.String("0"), 1, 1)
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("field:to, error:value is lower than the minimum ticket price (10.000000)"))
-				})
-			})
-		})
-
-		Context("when tx type is types.TxTypeStorerTicket", func() {
-			When("value is lower than the minimum storer stake", func() {
-				BeforeEach(func() {
-					params.MinStorerStake = decimal.NewFromFloat(10)
-				})
-
-				It("should not return err='invalid recipient address...'", func() {
-					err := txLogic.CanExecCoinTransfer(types.TxTypeStorerTicket, sender.PubKey(),
-						sender.Addr(), util.String("1"), util.String("0"), 0, 1)
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("field:value, error:value is lower than minimum storer stake"))
-				})
-			})
-		})
 
 		Context("when sender account has insufficient spendable balance", func() {
 			It("should not return err='sender's spendable account balance is insufficient'", func() {
-				err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(),
-					receiver.Addr(), util.String("100"), util.String("0"), 1, 1)
+				err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(), util.String("100"), util.String("0"), 1, 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, error:sender's spendable account balance is insufficient"))
 			})
@@ -159,8 +111,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("when nonce is invalid", func() {
 			It("should return no error", func() {
-				err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(),
-					receiver.Addr(), util.String("100"), util.String("0"), 3, 1)
+				err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(), util.String("100"), util.String("0"), 3, 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, error:tx has invalid nonce (3), expected (1)"))
 			})
@@ -175,8 +126,7 @@ var _ = Describe("Transaction", func() {
 			})
 
 			It("should return no error", func() {
-				err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(),
-					receiver.Addr(), util.String("100"), util.String("0"), 1, 1)
+				err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(), util.String("100"), util.String("0"), 1, 0)
 				Expect(err).To(BeNil())
 			})
 		})
@@ -201,7 +151,7 @@ var _ = Describe("Transaction", func() {
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
 					senderPubKey := util.String(sender.PubKey().Base58())
-					err := txLogic.execCoinTransfer(senderPubKey, recipientKey.Addr(), util.String("10"), util.String("1"), 1, 1)
+					err := txLogic.execCoinTransfer(senderPubKey, recipientKey.Addr(), util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -230,7 +180,7 @@ var _ = Describe("Transaction", func() {
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
 					senderPubKey := util.String(sender.PubKey().Base58())
-					err := txLogic.execCoinTransfer(senderPubKey, sender.Addr(), util.String("10"), util.String("1"), 1, 1)
+					err := txLogic.execCoinTransfer(senderPubKey, sender.Addr(), util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -254,7 +204,7 @@ var _ = Describe("Transaction", func() {
 					DelegatorCommission: 15.4,
 				})
 				spk := util.String(sender.PubKey().Base58())
-				err := txLogic.execSetDelegatorCommission(spk, util.String("23.5"))
+				err := txLogic.execSetDelegatorCommission(spk, util.String("23.5"), util.String("2"), 0)
 				Expect(err).To(BeNil())
 				senderAcct = logic.AccountKeeper().GetAccount(sender.Addr())
 			})
@@ -265,6 +215,10 @@ var _ = Describe("Transaction", func() {
 
 			It("should increment nonce", func() {
 				Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+			})
+
+			It("should have balance of 8", func() {
+				Expect(senderAcct.Balance).To(Equal(util.String("8")))
 			})
 		})
 	})
@@ -287,7 +241,7 @@ var _ = Describe("Transaction", func() {
 
 				Specify("that when another stake entry value=10, unbondHeight=100 is added with fee=1 then spendable balance = 89", func() {
 					senderPubKey := util.String(sender.PubKey().Base58())
-					err := txLogic.addStake(types.TxTypeValidatorTicket, senderPubKey, util.String("10"), util.String("1"), 1, 1)
+					err := txLogic.addStake(types.TxTypeValidatorTicket, senderPubKey, util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 					acct := logic.AccountKeeper().GetAccount(sender.Addr())
 					Expect(acct.GetBalance()).To(Equal(util.String("99")))
@@ -310,7 +264,7 @@ var _ = Describe("Transaction", func() {
 
 				Specify("that when another stake entry value=10, unbondHeight=100 is added with fee=1 then spendable balance = 39", func() {
 					senderPubKey := util.String(sender.PubKey().Base58())
-					err := txLogic.addStake(types.TxTypeValidatorTicket, senderPubKey, util.String("10"), util.String("1"), 1, 1)
+					err := txLogic.addStake(types.TxTypeValidatorTicket, senderPubKey, util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 					acct := logic.AccountKeeper().GetAccount(sender.Addr())
 					Expect(acct.GetBalance()).To(Equal(util.String("99")))
@@ -330,7 +284,7 @@ var _ = Describe("Transaction", func() {
 					Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("100")))
 
 					senderPubKey = util.String(sender.PubKey().Base58())
-					err := txLogic.addStake(types.TxTypeStorerTicket, senderPubKey, util.String("10"), util.String("1"), 1, 1)
+					err := txLogic.addStake(types.TxTypeStorerTicket, senderPubKey, util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -354,16 +308,13 @@ var _ = Describe("Transaction", func() {
 				acct := types.BareAccount()
 				logic.AccountKeeper().Update(sender.Addr(), acct)
 
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockTickMgr := mocks.NewMockTicketManager(ctrl)
-				mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
-				mockLogic.EXPECT().AccountKeeper().Return(logic.AccountKeeper())
-				txLogic.logic = mockLogic
+				txLogic.logic = mockLogic.Logic
 
-				mockTickMgr.EXPECT().GetByHash(gomock.Any()).Return(nil)
+				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), int64(0)).Return(acct)
+				mockLogic.TicketManager.EXPECT().GetByHash(gomock.Any()).Return(nil)
 
 				senderPubKey = util.String(sender.PubKey().Base58())
-				err = txLogic.execUnbond([]byte("ticket_id"), senderPubKey, 1)
+				err = txLogic.execUnbond([]byte("ticket_id"), senderPubKey, util.String(1), 0)
 				Expect(err).ToNot(BeNil())
 			})
 
@@ -372,37 +323,44 @@ var _ = Describe("Transaction", func() {
 			})
 		})
 
-		When("storer stake is 100 and unbondHeight is 0", func() {
+		When("storer stake=100, unbondHeight=0, balance=1000 and fee=1", func() {
 			var senderPubKey util.String
 			var err error
+			var acct *types.Account
 
 			BeforeEach(func() {
 				params.NumBlocksInStorerThawPeriod = 200
 
-				acct := types.BareAccount()
-				acct.Stakes.Add(types.StakeTypeStorer, "100", 0)
-				logic.AccountKeeper().Update(sender.Addr(), acct)
+				txLogic.logic = mockLogic.Logic
 
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockTickMgr := mocks.NewMockTicketManager(ctrl)
-				mockLogic.EXPECT().GetTicketManager().Return(mockTickMgr)
-				mockLogic.EXPECT().AccountKeeper().Return(logic.AccountKeeper())
-				txLogic.logic = mockLogic
+				acct = types.BareAccount()
+				acct.Balance = util.String("1000")
+				acct.Stakes.Add(types.StakeTypeStorer, "100", 0)
+
+				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), int64(1)).Return(acct)
 
 				returnTicket := &types.Ticket{Hash: "ticket_id", Value: "100"}
-				mockTickMgr.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
+				mockLogic.TicketManager.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
+
+				mockLogic.AccountKeeper.EXPECT().Update(sender.Addr(), acct)
 
 				senderPubKey = util.String(sender.PubKey().Base58())
-				err = txLogic.execUnbond([]byte(returnTicket.Hash), senderPubKey, 1)
+				err = txLogic.execUnbond([]byte(returnTicket.Hash), senderPubKey, util.String("1"), 1)
 				Expect(err).To(BeNil())
 			})
 
 			Specify("that the unbondHeight is 202", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr())
-				Expect(acct.Nonce).To(Equal(uint64(1)))
 				stake := acct.Stakes.Get("s0")
 				Expect(stake.Value.String()).To(Equal("100"))
 				Expect(stake.UnbondHeight).To(Equal(uint64(202)))
+			})
+
+			Specify("that the nonce is 1", func() {
+				Expect(acct.Nonce).To(Equal(uint64(1)))
+			})
+
+			Specify("that balance is 999", func() {
+				Expect(acct.Balance).To(Equal(util.String("999")))
 			})
 		})
 	})

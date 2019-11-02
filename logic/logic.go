@@ -43,14 +43,20 @@ type Logic struct {
 	// systemKeeper provides functionalities for managing system data
 	systemKeeper *keepers.SystemKeeper
 
-	// accountKeeper provides functionalities for managing the chain's account information
+	// accountKeeper provides functionalities for managing account data
 	accountKeeper *keepers.AccountKeeper
+
+	// repoKeeper provides functionalities for managing repository data
+	repoKeeper *keepers.RepoKeeper
 
 	// validatorKeeper provides functionalities for managing validator data
 	validatorKeeper *keepers.ValidatorKeeper
 
 	// txKeeper provides functionalities for managing transaction data
 	txKeeper *keepers.TxKeeper
+
+	// repoMgr provides access to the git repository manager
+	repoMgr types.RepoManager
 
 	// drand provides random number generation via DRand
 	drand rand.DRander
@@ -96,6 +102,7 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.EngineConfig) *L
 	l.txKeeper = keepers.NewTxKeeper(dbTx)
 	l.accountKeeper = keepers.NewAccountKeeper(tree)
 	l.validatorKeeper = keepers.NewValidatorKeeper(dbTx)
+	l.repoKeeper = keepers.NewRepoKeeper(tree)
 
 	// Create a drand instance
 	l.drand = rand.NewDRand()
@@ -104,6 +111,16 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.EngineConfig) *L
 	}
 
 	return l
+}
+
+// SetRepoManager sets the repository manager
+func (l *Logic) SetRepoManager(m types.RepoManager) {
+	l.repoMgr = m
+}
+
+// GetRepoManager returns the repository manager
+func (l *Logic) GetRepoManager() types.RepoManager {
+	return l.repoMgr
 }
 
 // GetDBTx returns the db transaction used by the logic providers and keepers
@@ -195,6 +212,11 @@ func (l *Logic) ValidatorKeeper() types.ValidatorKeeper {
 // AccountKeeper returns the account keeper
 func (l *Logic) AccountKeeper() types.AccountKeeper {
 	return l.accountKeeper
+}
+
+// RepoKeeper returns the repo keeper
+func (l *Logic) RepoKeeper() types.RepoKeeper {
+	return l.repoKeeper
 }
 
 // Validator returns the validator logic

@@ -24,6 +24,9 @@ type NodeConfig struct {
 
 	// Peers is a comma separated list of persistent peers to connect to.
 	Peers string `json:"addpeer" mapstructure:"addpeer"`
+
+	// GitBinPath is the path to the git executable
+	GitBinPath string `json:"gitbin" mapstructure:"gitbin"`
 }
 
 // VersionInfo describes the clients

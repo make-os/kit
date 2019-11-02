@@ -23,12 +23,11 @@ var _ = Describe("Account", func() {
 		When("account does not exist", func() {
 			It("should return a bare account", func() {
 				acct := ak.GetAccount(util.String("unknown"), 0)
-				Expect(acct.Balance).To(Equal(util.String("0")))
-				Expect(acct.Nonce).To(Equal(uint64(0)))
+				Expect(acct).To(Equal(types.BareAccount()))
 			})
 		})
 
-		When("account exist on the latest block", func() {
+		When("account exists on the latest block", func() {
 			var testAcct = types.BareAccount()
 
 			BeforeEach(func() {
@@ -40,37 +39,9 @@ var _ = Describe("Account", func() {
 				Expect(err).To(BeNil())
 			})
 
-			It("should successfully return the block", func() {
+			It("should successfully return the expected account object", func() {
 				acct := ak.GetAccount("addr1", 0)
 				Expect(acct).To(BeEquivalentTo(testAcct))
-			})
-		})
-
-		When("account exist on two different blocks", func() {
-			var testAcct = types.BareAccount()
-			var testAcct2 = types.BareAccount()
-
-			BeforeEach(func() {
-				testAcct.Nonce = 1
-				testAcct.Balance = util.String("100")
-				acctKey := MakeAccountKey("addr1")
-				state.Set(acctKey, testAcct.Bytes())
-				_, _, err := state.SaveVersion()
-				Expect(err).To(BeNil())
-
-				testAcct2.Nonce = 20
-				testAcct2.Balance = util.String("200")
-				acctKey = MakeAccountKey("addr1")
-				state.Set(acctKey, testAcct2.Bytes())
-				_, _, err = state.SaveVersion()
-				Expect(err).To(BeNil())
-			})
-
-			It("should successfully return the block", func() {
-				acct := ak.GetAccount("addr1", 1)
-				Expect(acct).To(BeEquivalentTo(testAcct))
-				acct = ak.GetAccount("addr1", 2)
-				Expect(acct).To(BeEquivalentTo(testAcct2))
 			})
 		})
 	})
