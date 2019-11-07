@@ -34,7 +34,7 @@ func (g *GitOps) RefDelete(refname string) error {
 	return nil
 }
 
-// RefUpdate executes `git update-ref <refname> <commit hash>` to delete a reference
+// RefUpdate executes `git update-ref <refname> <commit hash>` to update/create a reference
 func (g *GitOps) RefUpdate(refname, commitHash string) error {
 	_, err := execGitCmd(g.gitBinPath, g.path, "update-ref", refname, commitHash)
 	if err != nil {

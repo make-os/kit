@@ -10,12 +10,14 @@ type ActionType int
 const (
 	// ActionTypeHardReset represents an action to delete a commit and all its children
 	ActionTypeHardReset ActionType = iota
-	// ActionTypeRefDelete represents an action to delete a reference
-	ActionTypeRefDelete
-	// ActionTypeRefUpdate represents an action to update a reference
-	ActionTypeRefUpdate
-	// ActionTypeAnnTagDelete represents an action to delete an annotated tag
-	ActionTypeAnnTagDelete
+	// ActionTypeBranchDelete represents an action to delete a branch reference
+	ActionTypeBranchDelete
+	// ActionTypeBranchUpdate represents an action to update a branch reference
+	ActionTypeBranchUpdate
+	// ActionTypeTagDelete represents an action to delete an annotated tag
+	ActionTypeTagDelete
+	// ActionTypeTagRefUpdate represents an action to update a tag's reference hash
+	ActionTypeTagRefUpdate
 )
 
 // Repo represents a git repository

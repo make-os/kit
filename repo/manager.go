@@ -12,7 +12,6 @@ import (
 	"github.com/makeos/mosdef/util/logger"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var services = [][]interface{}{
@@ -122,20 +121,8 @@ func (rb *Manager) GetRepoState(path string) (*State, error) {
 	}), nil
 }
 
-// GetRepoState returns the state of the repository at the given path
+// GetRepoState returns the state of the repository
 func (rb *Manager) getRepoState(repo *Repo) *State {
-
-	// Get tags
-	tags := make(map[string]*Obj)
-	tagsI, _ := repo.TagObjects()
-	tagsI.ForEach(func(tag *object.Tag) error {
-		tags[tag.Name] = &Obj{
-			Type: "tag",
-			Name: tag.Name,
-			Data: tag.ID().String(),
-		}
-		return nil
-	})
 
 	// Get references
 	refs := make(map[string]*Obj)
@@ -152,7 +139,6 @@ func (rb *Manager) getRepoState(repo *Repo) *State {
 	})
 
 	return &State{
-		Tags: NewObjCol(tags),
 		Refs: NewObjCol(refs),
 	}
 }

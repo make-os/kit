@@ -25,7 +25,56 @@ var _ = Describe("Changes", func() {
 		Expect(err).To(BeNil())
 	})
 
+	Describe(".getChanges", func() {
+		When("update is nil", func() {
+			It("should return empty ref changes", func() {
+				curState := &State{Refs: NewObjCol(map[string]*Obj{
+					"ref": &Obj{Name: "abc"},
+				})}
+				changeLog := getChanges(curState.Refs, nil)
+				Expect(changeLog).To(Equal(emptyChangeResult()))
+			})
+		})
+	})
+
 	Describe(".GetChanges - Check references", func() {
+
+		When("update state is empty", func() {
+			var curState, newState *State
+			var changeLog *Changes
+			BeforeEach(func() {
+				curState = &State{Refs: NewObjCol(map[string]*Obj{
+					"ref": &Obj{Name: "abc"},
+				})}
+				newState = &State{Refs: NewObjCol(map[string]*Obj{})}
+				changeLog = curState.GetChanges(newState)
+			})
+
+			It("should return no ref changes", func() {
+				Expect(changeLog.References.Changes).To(Equal([]*ItemChange{
+					{
+						Item:   &Obj{Type: "", Name: "abc", Data: ""},
+						Action: ColChangeTypeRemove,
+					},
+				}))
+			})
+		})
+
+		When("update state is nil", func() {
+			var curState *State
+			var changeLog *Changes
+			BeforeEach(func() {
+				curState = &State{Refs: NewObjCol(map[string]*Obj{
+					"ref": &Obj{Name: "abc"},
+				})}
+				changeLog = curState.GetChanges(nil)
+			})
+
+			It("should return no ref changes", func() {
+				Expect(changeLog.References.Changes).To(BeEmpty())
+			})
+		})
+
 		When("both current state and new state are empty", func() {
 			var curState, newState *State
 			var changeLog *Changes
@@ -36,7 +85,7 @@ var _ = Describe("Changes", func() {
 			})
 
 			It("should return no ref changes", func() {
-				Expect(changeLog.RefChange.Changes).To(BeEmpty())
+				Expect(changeLog.References.Changes).To(BeEmpty())
 			})
 		})
 
@@ -52,12 +101,12 @@ var _ = Describe("Changes", func() {
 			})
 
 			It("should set size change to true", func() {
-				Expect(changeLog.RefChange.SizeChange).To(BeTrue())
+				Expect(changeLog.References.SizeChange).To(BeTrue())
 			})
 
 			It("should return 1 ref change with action=remove", func() {
-				Expect(changeLog.RefChange.Changes).To(HaveLen(1))
-				Expect(changeLog.RefChange.Changes).To(ContainElement(&ItemChange{
+				Expect(changeLog.References.Changes).To(HaveLen(1))
+				Expect(changeLog.References.Changes).To(ContainElement(&ItemChange{
 					Item:   &Obj{Name: "ref1", Data: "hash1"},
 					Action: ColChangeTypeRemove,
 				}))
@@ -78,11 +127,11 @@ var _ = Describe("Changes", func() {
 			})
 
 			It("should set size change to false", func() {
-				Expect(changeLog.RefChange.SizeChange).To(BeFalse())
+				Expect(changeLog.References.SizeChange).To(BeFalse())
 			})
 
 			It("should return no ref changes", func() {
-				Expect(changeLog.RefChange.Changes).To(HaveLen(0))
+				Expect(changeLog.References.Changes).To(HaveLen(0))
 			})
 		})
 
@@ -101,8 +150,8 @@ var _ = Describe("Changes", func() {
 			})
 
 			It("should return 1 ref change with action=remove", func() {
-				Expect(changeLog.RefChange.Changes).To(HaveLen(1))
-				Expect(changeLog.RefChange.Changes).To(ContainElement(&ItemChange{
+				Expect(changeLog.References.Changes).To(HaveLen(1))
+				Expect(changeLog.References.Changes).To(ContainElement(&ItemChange{
 					Item:   &Obj{Name: "ref2", Data: "hash2"},
 					Action: ColChangeTypeRemove,
 				}))
@@ -124,8 +173,8 @@ var _ = Describe("Changes", func() {
 			})
 
 			It("should return 1 ref change with action=add", func() {
-				Expect(changeLog.RefChange.Changes).To(HaveLen(1))
-				Expect(changeLog.RefChange.Changes).To(ContainElement(&ItemChange{
+				Expect(changeLog.References.Changes).To(HaveLen(1))
+				Expect(changeLog.References.Changes).To(ContainElement(&ItemChange{
 					Item:   &Obj{Name: "ref2", Data: "hash2"},
 					Action: ColChangeTypeNew,
 				}))
@@ -148,13 +197,50 @@ var _ = Describe("Changes", func() {
 			})
 
 			It("should return 2 ref changes [{ref2,add},{ref3,add}]", func() {
-				Expect(changeLog.RefChange.Changes).To(HaveLen(2))
-				Expect(changeLog.RefChange.Changes).To(ContainElement(&ItemChange{
+				Expect(changeLog.References.Changes).To(HaveLen(2))
+				Expect(changeLog.References.Changes).To(ContainElement(&ItemChange{
 					Item:   &Obj{Name: "ref2", Data: "hash2"},
 					Action: ColChangeTypeNew,
 				}))
-				Expect(changeLog.RefChange.Changes).To(ContainElement(&ItemChange{
+				Expect(changeLog.References.Changes).To(ContainElement(&ItemChange{
 					Item:   &Obj{Name: "ref3", Data: "hash3"},
+					Action: ColChangeTypeNew,
+				}))
+			})
+		})
+
+		When("current state has refs=[ref1,ref2,ref3] and new state has refs=[ref1,ref4]", func() {
+			var curState, newState *State
+			var changeLog *Changes
+			BeforeEach(func() {
+				curState = &State{Refs: NewObjCol(map[string]*Obj{
+					"ref1": &Obj{Name: "ref1", Data: "hash1"},
+					"ref2": &Obj{Name: "ref2", Data: "hash2"},
+					"ref3": &Obj{Name: "ref3", Data: "hash3"},
+				})}
+				newState = &State{Refs: NewObjCol(map[string]*Obj{
+					"ref1": &Obj{Name: "ref1", Data: "hash2"},
+					"ref4": &Obj{Name: "ref4", Data: "hash4"},
+				})}
+				changeLog = curState.GetChanges(newState)
+			})
+
+			It("should return 2 ref changes [{ref1,update},{ref2,remove},{ref3,remove},{ref4,add}]", func() {
+				Expect(changeLog.References.Changes).To(HaveLen(4))
+				Expect(changeLog.References.Changes).To(ContainElement(&ItemChange{
+					Item:   &Obj{Name: "ref1", Data: "hash2"},
+					Action: ColChangeTypeUpdate,
+				}))
+				Expect(changeLog.References.Changes).To(ContainElement(&ItemChange{
+					Item:   &Obj{Name: "ref2", Data: "hash2"},
+					Action: ColChangeTypeRemove,
+				}))
+				Expect(changeLog.References.Changes).To(ContainElement(&ItemChange{
+					Item:   &Obj{Name: "ref3", Data: "hash3"},
+					Action: ColChangeTypeRemove,
+				}))
+				Expect(changeLog.References.Changes).To(ContainElement(&ItemChange{
+					Item:   &Obj{Name: "ref4", Data: "hash4"},
 					Action: ColChangeTypeNew,
 				}))
 			})
@@ -174,181 +260,17 @@ var _ = Describe("Changes", func() {
 			})
 
 			It("should set size change to false", func() {
-				Expect(changeLog.RefChange.SizeChange).To(BeFalse())
+				Expect(changeLog.References.SizeChange).To(BeFalse())
 			})
 
 			It("should return 1 ref change with action=replace", func() {
-				Expect(changeLog.RefChange.Changes).To(HaveLen(1))
-				Expect(changeLog.RefChange.Changes).To(ContainElement(&ItemChange{
+				Expect(changeLog.References.Changes).To(HaveLen(1))
+				Expect(changeLog.References.Changes).To(ContainElement(&ItemChange{
 					Item:   &Obj{Name: "ref1", Data: "hash_x"},
 					Action: ColChangeTypeUpdate,
 				}))
 			})
 		})
-	})
-
-	Describe(".GetChanges - Check annotated tags", func() {
-
-		When("both current state and new state are empty", func() {
-			var curState, newState *State
-			var changeLog *Changes
-			BeforeEach(func() {
-				curState = &State{Tags: NewObjCol(map[string]*Obj{})}
-				newState = &State{Tags: NewObjCol(map[string]*Obj{})}
-				changeLog = curState.GetChanges(newState)
-			})
-
-			It("should return no annotated tag changes", func() {
-				Expect(changeLog.AnnTagChange.Changes).To(BeEmpty())
-			})
-		})
-
-		When("current state has 1 tag and new state has no tag", func() {
-			var curState, newState *State
-			var changeLog *Changes
-			BeforeEach(func() {
-				curState = &State{Tags: NewObjCol(map[string]*Obj{
-					"ann1": &Obj{Name: "ann1", Data: "hash1"},
-				})}
-				newState = &State{Tags: NewObjCol(map[string]*Obj{})}
-				changeLog = curState.GetChanges(newState)
-			})
-
-			It("should set size change to true", func() {
-				Expect(changeLog.AnnTagChange.SizeChange).To(BeTrue())
-			})
-
-			It("should return 1 tag change with action=remove", func() {
-				Expect(changeLog.AnnTagChange.Changes).To(HaveLen(1))
-				Expect(changeLog.AnnTagChange.Changes).To(ContainElement(&ItemChange{
-					Item:   &Obj{Name: "ann1", Data: "hash1"},
-					Action: ColChangeTypeRemove,
-				}))
-			})
-		})
-
-		When("current state has tags=[ann1] and new state has tags=[ann1]", func() {
-			var curState, newState *State
-			var changeLog *Changes
-			BeforeEach(func() {
-				curState = &State{Tags: NewObjCol(map[string]*Obj{
-					"ann1": &Obj{Name: "ann1", Data: "hash1"},
-				})}
-				newState = &State{Tags: NewObjCol(map[string]*Obj{
-					"ann1": &Obj{Name: "ann1", Data: "hash1"},
-				})}
-				changeLog = curState.GetChanges(newState)
-			})
-
-			It("should set size change to false", func() {
-				Expect(changeLog.AnnTagChange.SizeChange).To(BeFalse())
-			})
-
-			It("should return no tag changes", func() {
-				Expect(changeLog.AnnTagChange.Changes).To(HaveLen(0))
-			})
-		})
-
-		When("current state has tags=[ann1,ann2] and new state has tags=[ann1]", func() {
-			var curState, newState *State
-			var changeLog *Changes
-			BeforeEach(func() {
-				curState = &State{Tags: NewObjCol(map[string]*Obj{
-					"ann1": &Obj{Name: "ann1", Data: "hash1"},
-					"ann2": &Obj{Name: "ann2", Data: "hash2"},
-				})}
-				newState = &State{Tags: NewObjCol(map[string]*Obj{
-					"ann1": &Obj{Name: "ann1", Data: "hash1"},
-				})}
-				changeLog = curState.GetChanges(newState)
-			})
-
-			It("should return 1 tag change with action=remove", func() {
-				Expect(changeLog.AnnTagChange.Changes).To(HaveLen(1))
-				Expect(changeLog.AnnTagChange.Changes).To(ContainElement(&ItemChange{
-					Item:   &Obj{Name: "ann2", Data: "hash2"},
-					Action: ColChangeTypeRemove,
-				}))
-			})
-		})
-
-		When("current state has tags=[ann1] and new state has tags=[ann1,ann2]", func() {
-			var curState, newState *State
-			var changeLog *Changes
-			BeforeEach(func() {
-				curState = &State{Tags: NewObjCol(map[string]*Obj{
-					"ann1": &Obj{Name: "ann1", Data: "hash1"},
-				})}
-				newState = &State{Tags: NewObjCol(map[string]*Obj{
-					"ann1": &Obj{Name: "ann1", Data: "hash1"},
-					"ann2": &Obj{Name: "ann2", Data: "hash2"},
-				})}
-				changeLog = curState.GetChanges(newState)
-			})
-
-			It("should return 1 tag change with action=add", func() {
-				Expect(changeLog.AnnTagChange.Changes).To(HaveLen(1))
-				Expect(changeLog.AnnTagChange.Changes).To(ContainElement(&ItemChange{
-					Item:   &Obj{Name: "ann2", Data: "hash2"},
-					Action: ColChangeTypeNew,
-				}))
-			})
-		})
-
-		When("current state has tags=[ann1] and new state has tags=[ann1,ann2,ann3]", func() {
-			var curState, newState *State
-			var changeLog *Changes
-			BeforeEach(func() {
-				curState = &State{Tags: NewObjCol(map[string]*Obj{
-					"ann1": &Obj{Name: "ann1", Data: "hash1"},
-				})}
-				newState = &State{Tags: NewObjCol(map[string]*Obj{
-					"ann1": &Obj{Name: "ann1", Data: "hash1"},
-					"ann2": &Obj{Name: "ann2", Data: "hash2"},
-					"ann3": &Obj{Name: "ann3", Data: "hash3"},
-				})}
-				changeLog = curState.GetChanges(newState)
-			})
-
-			It("should return 2 tag changes [{ann2,add},{ann3,add}]", func() {
-				Expect(changeLog.AnnTagChange.Changes).To(HaveLen(2))
-				Expect(changeLog.AnnTagChange.Changes).To(ContainElement(&ItemChange{
-					Item:   &Obj{Name: "ann2", Data: "hash2"},
-					Action: ColChangeTypeNew,
-				}))
-				Expect(changeLog.AnnTagChange.Changes).To(ContainElement(&ItemChange{
-					Item:   &Obj{Name: "ann3", Data: "hash3"},
-					Action: ColChangeTypeNew,
-				}))
-			})
-		})
-
-		When("current state has tags=[{ref1,hash=hash1}] and new state has tags=[{ref1,hash=hash_x}]", func() {
-			var curState, newState *State
-			var changeLog *Changes
-			BeforeEach(func() {
-				curState = &State{Tags: NewObjCol(map[string]*Obj{
-					"ann1": &Obj{Name: "ann1", Data: "hash1"},
-				})}
-				newState = &State{Tags: NewObjCol(map[string]*Obj{
-					"ann1": &Obj{Name: "ann1", Data: "hash_x"},
-				})}
-				changeLog = curState.GetChanges(newState)
-			})
-
-			It("should set size change to false", func() {
-				Expect(changeLog.AnnTagChange.SizeChange).To(BeFalse())
-			})
-
-			It("should return 1 tag change with action=replace", func() {
-				Expect(changeLog.AnnTagChange.Changes).To(HaveLen(1))
-				Expect(changeLog.AnnTagChange.Changes).To(ContainElement(&ItemChange{
-					Item:   &Obj{Name: "ann1", Data: "hash_x"},
-					Action: ColChangeTypeUpdate,
-				}))
-			})
-		})
-
 	})
 })
 

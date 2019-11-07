@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/bitfield/script"
-	"github.com/k0kubun/pp"
 	"github.com/phayes/freeport"
 
 	. "github.com/onsi/ginkgo"
@@ -47,8 +46,17 @@ func appendCommit(path, file, fileData, commitMsg string) {
 func createAnnotatedTag(path, file, fileData, commitMsg, tagName string) {
 	appendToFile(path, file, fileData)
 	execGitCommit(path, commitMsg)
-	// fmt.Println(script.ExecInDir(fmt.Sprintf(`ls`), path).String())
-	execGit(path, "tag", "-a", tagName, "-m", `""`)
+	execGit(path, "tag", "-a", tagName, "-m", `""`, "-f")
+}
+
+func createLightWeightTag(path, file, fileData, commitMsg, tagName string) {
+	appendToFile(path, file, fileData)
+	execGitCommit(path, commitMsg)
+	execGit(path, "tag", tagName, "-f")
+}
+
+func deleteTag(path, name string) {
+	execGit(path, "tag", "-d", name)
 }
 
 func scriptFile(path, file string) *script.Pipe {
@@ -252,20 +260,103 @@ var _ = Describe("Changes", func() {
 			execGit(cfg.GetRepoRoot(), "init", repoName)
 		})
 
-		FWhen("repo old state has 0 tags; new state has 1 tag", func() {
+		When("repo old state has 0 tags; new state has 1 tag", func() {
 
 			BeforeEach(func() {
 				prevState, _ = repoMgr.GetRepoState(path)
 				Expect(prevState.IsEmpty()).To(BeTrue())
-				createAnnotatedTag(path, "file.txt", "v1 file", "v1 commit", "v1Tag")
+				createAnnotatedTag(path, "file.txt", "v1 file", "v1 commit", "v1")
 			})
 
-			It("", func() {
+			It("should remove the new tag and old state should equal current state", func() {
 				err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(path)
-				pp.Println(curState)
-				// Expect(curState).To(Equal(prevState))
+				Expect(curState).To(Equal(prevState))
+			})
+		})
+
+		When("repo old state has 1 tags; new state has 3 tag", func() {
+
+			BeforeEach(func() {
+				createAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
+				prevState, _ = repoMgr.GetRepoState(path)
+				createAnnotatedTag(path, "file.txt", "first file", "commit 2", "v2")
+				createAnnotatedTag(path, "file.txt", "first file", "commit 3", "v3")
+				createAnnotatedTag(path, "file.txt", "first file", "commit 4", "v4")
+			})
+
+			It("should remove the new tags and old state should equal current state", func() {
+				err := repoMgr.Revert(path, prevState)
+				Expect(err).To(BeNil())
+				curState, _ := repoMgr.GetRepoState(path)
+				Expect(curState).To(Equal(prevState))
+			})
+		})
+
+		When("repo old state has 1 annotated tag (v1); new state has same 1 annotated tag (v1) but with different value", func() {
+
+			BeforeEach(func() {
+				createAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
+				prevState, _ = repoMgr.GetRepoState(path)
+				createAnnotatedTag(path, "file.txt", "updated file", "second commit", "v1")
+			})
+
+			It("should update the reference value of the tag to the old value and old state should equal current state", func() {
+				err := repoMgr.Revert(path, prevState)
+				Expect(err).To(BeNil())
+				curState, _ := repoMgr.GetRepoState(path)
+				Expect(curState).To(Equal(prevState))
+			})
+		})
+
+		When("repo old state has 1 lightweight tag (v1); new state has same 1 lightweight tag (v1) but with different value", func() {
+
+			BeforeEach(func() {
+				createLightWeightTag(path, "file.txt", "first file", "first commit", "v1")
+				prevState, _ = repoMgr.GetRepoState(path)
+				createLightWeightTag(path, "file.txt", "updated file", "second commit", "v1")
+			})
+
+			It("should update the reference value of the tag to the old value and old state should equal current state", func() {
+				err := repoMgr.Revert(path, prevState)
+				Expect(err).To(BeNil())
+				curState, _ := repoMgr.GetRepoState(path)
+				Expect(curState).To(Equal(prevState))
+			})
+		})
+
+		When("repo old state has 2 annotated tag (v1,v2); new state has same 2 annotated tag (v1,v2) but with different value", func() {
+
+			BeforeEach(func() {
+				createAnnotatedTag(path, "file.txt", "file1", "first commit", "v1")
+				createAnnotatedTag(path, "file.txt", "file2", "second commit", "v2")
+				prevState, _ = repoMgr.GetRepoState(path)
+				createAnnotatedTag(path, "file.txt", "file3", "third commit", "v1")
+				createAnnotatedTag(path, "file.txt", "file4", "fourth commit", "v2")
+			})
+
+			It("should update the reference value of the tags to their old value and old state should equal current state", func() {
+				err := repoMgr.Revert(path, prevState)
+				Expect(err).To(BeNil())
+				curState, _ := repoMgr.GetRepoState(path)
+				Expect(curState).To(Equal(prevState))
+			})
+		})
+
+		When("repo old state has 1 annotated tag (v1); new state has 0 annotated tag (v1) but", func() {
+
+			BeforeEach(func() {
+				createAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
+				prevState, _ = repoMgr.GetRepoState(path)
+				deleteTag(path, "v1")
+			})
+
+			It("should reset the tag value to the old tag value and old state should equal current state", func() {
+				err := repoMgr.Revert(path, prevState)
+				Expect(err).To(BeNil())
+				curState, _ := repoMgr.GetRepoState(path)
+				Expect(curState).To(Equal(prevState))
 			})
 		})
 	})

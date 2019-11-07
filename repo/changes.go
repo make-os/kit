@@ -142,6 +142,10 @@ type ChangeResult struct {
 	Changes    []*ItemChange
 }
 
+func emptyChangeResult() *ChangeResult {
+	return &ChangeResult{Changes: []*ItemChange{}}
+}
+
 // ItemChange describes a change event
 type ItemChange struct {
 	Item   Item
@@ -157,12 +161,9 @@ func newChange(i Item, action ColChangeType) *ItemChange {
 // the old collection before it is equal to the updated collection.
 func getChanges(old, update Items) *ChangeResult {
 
-	// pp.Println("OLD", old)
-	// pp.Println("Update", update)
-
 	var result = new(ChangeResult)
 	if update == nil {
-		return result
+		return emptyChangeResult()
 	}
 
 	// Detect size change between the collections.
@@ -240,14 +241,8 @@ func getRefChanges(old, update *ObjCol) *ChangeResult {
 	return getChanges(old, update)
 }
 
-// getAnnTagChanges returns the annotated tag changes from old to upd.
-func getAnnTagChanges(old, update *ObjCol) *ChangeResult {
-	return getChanges(old, update)
-}
-
 // Changes describes reference changes that happened to a repository
 // from a previous state to its current state.
 type Changes struct {
-	RefChange    *ChangeResult
-	AnnTagChange *ChangeResult
+	References *ChangeResult
 }

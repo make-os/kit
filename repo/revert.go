@@ -2,9 +2,9 @@ package repo
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 )
 
@@ -17,34 +17,34 @@ func (rb *Manager) revert(repo *Repo, prevState *State) error {
 	var actions []*Action
 
 	// Determine actions required to revert references to previous state
-	for _, ref := range changes.RefChange.Changes {
+	for _, ref := range changes.References.Changes {
 		oldStateRef := findRefInCol(ref.Item.GetName(), prevState.Refs)
-		revertActs, err := getBranchRevertActions(repo, ref, oldStateRef)
-		if err != nil {
-			return err
-		}
-		actions = append(actions, revertActs...)
-	}
+		refname := ref.Item.GetName()
 
-	// Determine actions required to revert annotated tags to previous state
-	for _, tag := range changes.AnnTagChange.Changes {
-		oldStateTag := findRefInCol(tag.Item.GetName(), prevState.Tags)
-		revertActs, err := getAnnotatedTagRevertActions(repo, tag, oldStateTag)
-		if err != nil {
-			return err
+		// For branch references
+		if isBranch(refname) {
+			acts, err := getBranchRevertActions(repo, ref, oldStateRef)
+			if err != nil {
+				return err
+			}
+			actions = append(actions, acts...)
 		}
-		actions = append(actions, revertActs...)
+
+		// For tags
+		if isTag(refname) {
+			acts, err := getTagRevertActions(repo, ref, oldStateRef)
+			if err != nil {
+				return err
+			}
+			actions = append(actions, acts...)
+		}
+
 	}
 
 	// Execute actions
 	if err := execActions(repo, actions); err != nil {
 		return errors.Wrap(err, "exec failed")
 	}
-
-	// TODO: ensure new state matches old state
-
-	// pp.Println("Changes:", changes)
-	// pp.Println("Actions", actions)
 
 	return nil
 }
@@ -55,14 +55,14 @@ func execActions(repo *Repo, actions []*Action) (err error) {
 		switch action.Type {
 		case ActionTypeHardReset:
 			err = repo.HardReset(action.Data)
-		case ActionTypeRefDelete:
+		case ActionTypeBranchDelete:
 			err = repo.RefDelete(action.Data)
-		case ActionTypeRefUpdate:
-			ref := action.DataAny.(Item)
-			err = repo.RefUpdate(ref.GetName(), ref.GetData())
-		case ActionTypeAnnTagDelete:
-			pp.Println("DELELE", action.Data)
+		case ActionTypeBranchUpdate:
+			err = repo.RefUpdate(action.DataItem.GetName(), action.DataItem.GetData())
+		case ActionTypeTagDelete:
 			err = repo.TagDelete(action.Data)
+		case ActionTypeTagRefUpdate:
+			err = repo.RefUpdate(action.DataItem.GetName(), action.DataItem.GetData())
 		}
 	}
 	return
@@ -80,41 +80,42 @@ func findRefInCol(refname string, refCol *ObjCol) (found Item) {
 	return
 }
 
-// isBranch checks whether a reference name belong to a branch
+// isBranch checks whether a reference name indicates a branch
 func isBranch(refname string) bool {
 	return govalidator.Matches(refname, "^refs/heads/.*$")
 }
 
+// isTag checks whether a reference name indicates a tag
+func isTag(refname string) bool {
+	return govalidator.Matches(refname, "^refs/tags/.*$")
+}
+
 // Action describes a repo action to be effected on a repo object
 type Action struct {
-	Data    string
-	DataAny interface{}
-	Type    ActionType
+	Data     string
+	DataItem Item
+	Type     ActionType
 }
 
 // getBranchRevertActions returns a set of actions to be executed against
-// repo in other to bring its branch state to a specific target
+// repo in other to bring its branch state to a specific target.
+//
 // repo: The repo whose current state is to be reverted.
-// ref: The reference that was changed in the repo.
+// branchRef: The reference that was changed in the repo.
 // oldRef: The version of ref that was in the old state (this one we want to
 // revert to)
-func getBranchRevertActions(repo *Repo, ref *ItemChange, oldRef Item) ([]*Action, error) {
+func getBranchRevertActions(repo *Repo, branchRef *ItemChange, oldRef Item) ([]*Action, error) {
 
 	var actions []*Action
-	refname := ref.Item.GetName()
+	refname := branchRef.Item.GetName()
 
-	// Do nothing if the reference type is not a branch
-	if !isBranch(refname) {
-		return actions, nil
-	}
-
-	switch ref.Action {
+	switch branchRef.Action {
 	case ColChangeTypeUpdate:
 		actions = append(actions, &Action{Type: ActionTypeHardReset, Data: oldRef.GetData()})
 	case ColChangeTypeNew:
-		actions = append(actions, &Action{Type: ActionTypeRefDelete, Data: refname})
+		actions = append(actions, &Action{Type: ActionTypeBranchDelete, Data: refname})
 	case ColChangeTypeRemove:
-		actions = append(actions, &Action{Type: ActionTypeRefUpdate, DataAny: ref.Item})
+		actions = append(actions, &Action{Type: ActionTypeBranchUpdate, DataItem: branchRef.Item})
 	default:
 		return nil, fmt.Errorf("unknown change type")
 	}
@@ -122,20 +123,28 @@ func getBranchRevertActions(repo *Repo, ref *ItemChange, oldRef Item) ([]*Action
 	return actions, nil
 }
 
-// getAnnotatedTagRevertActions returns a set of actions to be executed against
-// repo in other to bring its annotated tag state to a specific target
+// getTagRevertActions returns a set of actions to be executed against
+// repo in other to bring its tag state to a specific target.
+//
 // repo: The repo whose current state is to be reverted.
-// ref: The reference that was changed in the repo.
+// tagRef: The reference that was changed in the repo.
 // oldRef: The version of ref that was in the old state (this one we want to
 // revert to)
-func getAnnotatedTagRevertActions(repo *Repo, tag *ItemChange, oldRef Item) ([]*Action, error) {
+func getTagRevertActions(repo *Repo, tagRef *ItemChange, oldRef Item) ([]*Action, error) {
 
 	var actions []*Action
-	tagname := tag.Item.GetName()
+	tagname := tagRef.Item.GetName()
+	shortTagName := strings.ReplaceAll(tagname, "refs/tags/", "")
 
-	switch tag.Action {
+	switch tagRef.Action {
 	case ColChangeTypeNew:
-		actions = append(actions, &Action{Type: ActionTypeAnnTagDelete, Data: tagname})
+		actions = append(actions, &Action{Type: ActionTypeTagDelete, Data: shortTagName})
+	case ColChangeTypeUpdate:
+		actions = append(actions, &Action{Type: ActionTypeTagRefUpdate, DataItem: oldRef})
+	case ColChangeTypeRemove:
+		actions = append(actions, &Action{Type: ActionTypeTagRefUpdate, DataItem: tagRef.Item})
+	default:
+		return nil, fmt.Errorf("unknown change type")
 	}
 
 	return actions, nil

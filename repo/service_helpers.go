@@ -140,3 +140,4 @@ func getIdxFile(s *serviceParams) error {
 	hdrCacheForever(s.w)
 	return sendFile(s.op, "application/x-git-packed-objects-toc", s)
 }
+
