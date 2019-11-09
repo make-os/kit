@@ -24,7 +24,18 @@ func (rb *Manager) CreateRepository(name string) error {
 		return errors.Wrap(err, "failed to create repo")
 	}
 
-	return nil
+	// Set config options
+	options := [][]string{
+		{"gc.auto", "0"},
+	}
+	for _, opt := range options {
+		_, err = execGitCmd(rb.gitBinPath, path, append([]string{"config"}, opt...)...)
+		if err != nil {
+			return errors.Wrap(err, "failed to set config")
+		}
+	}
+
+	return err
 }
 
 // HasRepository returns true if a valid repository exist
