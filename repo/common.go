@@ -8,10 +8,8 @@ import (
 type ActionType int
 
 const (
-	// ActionTypeHardReset represents an action to delete a commit and all its children
-	ActionTypeHardReset ActionType = iota
 	// ActionTypeBranchDelete represents an action to delete a branch reference
-	ActionTypeBranchDelete
+	ActionTypeBranchDelete ActionType = iota
 	// ActionTypeBranchUpdate represents an action to update a branch reference
 	ActionTypeBranchUpdate
 	// ActionTypeTagDelete represents an action to delete an annotated tag

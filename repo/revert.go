@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 )
 
@@ -13,7 +14,7 @@ func (rb *Manager) revert(repo *Repo, prevState *State) error {
 
 	// Get the changes from prev state to the current
 	changes := prevState.GetChanges(rb.getRepoState(repo))
-
+	pp.Println(changes)
 	var actions []*Action
 
 	// Determine actions required to revert references to previous state
@@ -53,8 +54,6 @@ func (rb *Manager) revert(repo *Repo, prevState *State) error {
 func execActions(repo *Repo, actions []*Action) (err error) {
 	for _, action := range actions {
 		switch action.Type {
-		case ActionTypeHardReset:
-			err = repo.HardReset(action.Data)
 		case ActionTypeBranchDelete:
 			err = repo.RefDelete(action.Data)
 		case ActionTypeBranchUpdate:
@@ -111,7 +110,7 @@ func getBranchRevertActions(repo *Repo, branchRef *ItemChange, oldRef Item) ([]*
 
 	switch branchRef.Action {
 	case ColChangeTypeUpdate:
-		actions = append(actions, &Action{Type: ActionTypeHardReset, Data: oldRef.GetData()})
+		actions = append(actions, &Action{Type: ActionTypeTagRefUpdate, DataItem: oldRef})
 	case ColChangeTypeNew:
 		actions = append(actions, &Action{Type: ActionTypeBranchDelete, Data: refname})
 	case ColChangeTypeRemove:

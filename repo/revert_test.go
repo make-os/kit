@@ -121,11 +121,9 @@ var _ = Describe("Changes", func() {
 				Expect(lastLine).To(Equal("line 4\n"))
 			})
 
-			Specify("that last line is `line 3` and current state equal previous state", func() {
+			Specify("that current state equal previous state", func() {
 				err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
-				lastLine, _ := scriptFile(path, "file.txt").Last(1).String()
-				Expect(lastLine).To(Equal("line 3\n"))
 				curState, _ := repoMgr.GetRepoState(path)
 				Expect(curState).To(Equal(prevState))
 			})
@@ -145,11 +143,9 @@ var _ = Describe("Changes", func() {
 				Expect(lastLine).To(Equal("line 4\n"))
 			})
 
-			Specify("that last line is `line 2` and current state equal previous state", func() {
+			Specify("that current state equal previous state", func() {
 				err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
-				lastLine, _ := scriptFile(path, "file.txt").Last(1).String()
-				Expect(lastLine).To(Equal("line 2\n"))
 				curState, _ := repoMgr.GetRepoState(path)
 				Expect(curState).To(Equal(prevState))
 			})
@@ -174,7 +170,7 @@ var _ = Describe("Changes", func() {
 			It("should return err='exec failed: hard reset failed'", func() {
 				err := repoMgr.Revert(path, prevState)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("exec failed: hard reset failed"))
+				Expect(err.Error()).To(ContainSubstring("exec failed: reference update failed"))
 			})
 		})
 

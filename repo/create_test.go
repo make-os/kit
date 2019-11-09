@@ -19,6 +19,7 @@ var _ = Describe("App", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
+		cfg.Node.GitBinPath = "/usr/bin/git"
 		repoMgr = NewManager(cfg, ":45000")
 	})
 

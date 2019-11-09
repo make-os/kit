@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 )
 
 // service describes a git service and its handler
@@ -21,7 +22,8 @@ type service struct {
 type serviceParams struct {
 	w          http.ResponseWriter
 	r          *http.Request
-	repo       string
+	hook       *Hook
+	repo       *Repo
 	repoDir    string
 	op         string
 	srvName    string
@@ -42,7 +44,7 @@ func getInfoRefs(s *serviceParams) error {
 		goto dumbReq
 	}
 
-	// Execute `git-upload-pack` command which will return references
+	// Execute git command which will return references
 	refs, err = execGitCmd(s.gitBinPath, s.repoDir, args...)
 	if err != nil {
 		return err
@@ -80,8 +82,8 @@ dumbReq:
 	return sendFile(s.op, "text/plain; charset=utf-8", s)
 }
 
-// doSmartService calls git-upload/fetch-pack and pipes it to the request
-func doSmartService(s *serviceParams) error {
+// serveService handles git-upload & fetch-pack requests
+func serveService(s *serviceParams) error {
 	w, r, op, dir := s.w, s.r, s.op, s.repoDir
 	op = strings.ReplaceAll(op, "git-", "")
 
@@ -135,29 +137,40 @@ func doSmartService(s *serviceParams) error {
 		reader = r.Body
 	}
 
-	// Send the wants/have request to the git command
+	if err := s.hook.BeforeInput(); err != nil {
+		reader.Close()
+		w.WriteHeader(http.StatusInternalServerError)
+		return errors.Wrap(err, "BeforeInput hook err")
+	}
+
+	// Send the request to the git command
 	io.Copy(in, reader)
 	in.Close()
 
-	flusher, _ := w.(http.Flusher)
+	scn := pktline.NewScanner(stdout)
+	pktEnc := pktline.NewEncoder(w)
 
-	// Here, we will continuously read from the git command process
-	// and pipe the output to the client.
-	p := make([]byte, 1024)
-	for {
-		nRead, err := stdout.Read(p)
-		if err == io.EOF {
-			break
-		}
-		nWrite, err := w.Write(p[:nRead])
-		if err != nil {
-			return errors.Wrap(err, "failed to write to client")
-		}
-		if nRead != nWrite {
-			return fmt.Errorf("failed to write data%d read, %d written\n ", nRead, nWrite)
-		}
-		flusher.Flush()
+	if err := s.hook.BeforeOutput(pktEnc); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return errors.Wrap(err, "BeforeOutput hook err")
 	}
+
+	// Read from the git command stdout and pipe the output to http response
+	for scn.Scan() {
+		fmt.Print("LINE:", string(scn.Bytes()))
+		if err := pktEnc.Encode(scn.Bytes()); err != nil {
+			return errors.Wrap(err, "failed to write git stdout data to http response")
+		}
+	}
+
+	// Ensure no error occurred while reading command stdout
+	if scn.Err() != nil {
+		return errors.Wrap(err, fmt.Sprintf("failed to read from from git-%s", op))
+	}
+
+	pktEnc.Flush()
+
+	s.hook.AfterOutput()
 
 	return cmd.Wait()
 }

@@ -15,16 +15,6 @@ func NewGitOps(gitBinPath, path string) *GitOps {
 	return &GitOps{gitBinPath: gitBinPath, path: path}
 }
 
-// HardReset executes `git reset --hard <commit>` to reset
-// the repository to the given commit
-func (g *GitOps) HardReset(commit string) error {
-	_, err := execGitCmd(g.gitBinPath, g.path, "reset", "--hard", commit)
-	if err != nil {
-		return errors.Wrap(err, "hard reset failed")
-	}
-	return nil
-}
-
 // RefDelete executes `git update-ref -d <refname>` to delete a reference
 func (g *GitOps) RefDelete(refname string) error {
 	_, err := execGitCmd(g.gitBinPath, g.path, "update-ref", "-d", refname)
