@@ -445,4 +445,24 @@ var _ = Describe("Common", func() {
 			}))
 		})
 	})
+
+	Describe(".RemoveTxLine", func() {
+		It("should remove tx line", func() {
+			str := "This is a line\nThis is another line\ntx: args args"
+			expected := "This is a line\nThis is another line\n"
+			Expect(RemoveTxLine(str)).To(Equal(expected))
+		})
+
+		It("should not remove tx line if label is capitalized", func() {
+			str := "This is a line\nThis is another line\nTX: args args"
+			expected := "This is a line\nThis is another line\nTX: args args"
+			Expect(RemoveTxLine(str)).To(Equal(expected))
+		})
+
+		It("should return exact text when label is not present", func() {
+			str := "This is a line\nThis is another line\n"
+			expected := "This is a line\nThis is another line\n"
+			Expect(RemoveTxLine(str)).To(Equal(expected))
+		})
+	})
 })

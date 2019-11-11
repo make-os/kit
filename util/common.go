@@ -404,3 +404,20 @@ func XorBytes(a, b []byte) []byte {
 	iB := new(big.Int).SetBytes(b)
 	return new(big.Int).Xor(iA, iB).Bytes()
 }
+
+// RemoveTxLine removes all lines beginning with a 'Tx Line' prefix 'tx'.
+// NOTE: It is case-sensitive.
+func RemoveTxLine(msg string) string {
+	lines := strings.Split(msg, "\n")
+	newMsg := ""
+	for i := 0; i < len(lines); i++ {
+		line := lines[i]
+		if !strings.HasPrefix(line, "tx:") {
+			newMsg += line
+			if (i + 1) != len(lines) {
+				newMsg += "\n"
+			}
+		}
+	}
+	return newMsg
+}

@@ -38,7 +38,7 @@ func (c *EngineConfig) PrepareNodeValKeys(
 	// Load the node key
 	nodeKey, err := p2p.LoadNodeKey(nodeKeyFile)
 	if err != nil {
-		golog.Fatalf("Failed to load node key")
+		golog.Fatalf("Failed to load node key: " + err.Error())
 	}
 
 	// Load the private validator

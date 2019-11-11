@@ -1,6 +1,8 @@
 package util
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/hex"
 
 	. "github.com/onsi/ginkgo"
@@ -56,6 +58,24 @@ var _ = Describe("Crypto", func() {
 			var bs = []byte("hello")
 			var expected = []byte{50, 77, 207, 2, 125, 212, 163, 10, 147, 44, 68, 31, 54, 90, 37, 232, 107, 23, 61, 239, 164, 184, 229, 137, 72, 37, 52, 113, 184, 27, 114, 207}
 			Expect(Blake2b256(bs)).To(Equal(expected))
+		})
+	})
+
+	Describe(".RIPEMD160", func() {
+		It("should return 20 bytes output", func() {
+			var bz = []byte("hello")
+			out := RIPEMD160(bz)
+			Expect(out).To(HaveLen(20))
+		})
+	})
+
+	Describe(".RSAPubKeyID", func() {
+		It("should return a 42 character string", func() {
+			key, err := rsa.GenerateKey(rand.Reader, 2048)
+			Expect(err).To(BeNil())
+			out := RSAPubKeyID(key.Public().(*rsa.PublicKey))
+			Expect(len(out)).To(Equal(42))
+			Expect(out[:2]).To(Equal("0x"))
 		})
 	})
 

@@ -5,10 +5,13 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/rsa"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"math/big"
+
+	"golang.org/x/crypto/ripemd160"
 
 	"golang.org/x/crypto/blake2b"
 
@@ -125,11 +128,23 @@ func Decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 	return data, nil
 }
 
-// Blake2b256 returns blake2b 256bit hash of v
+// Blake2b256 returns blake2b 256 bytes hash of v
 func Blake2b256(v []byte) []byte {
 	hash, _ := blake2b.New256(nil)
 	if _, err := hash.Write(v); err != nil {
 		panic(err)
 	}
 	return hash.Sum(nil)
+}
+
+// RIPEMD160 returns RIPEMD160 (20 bytes) hash of v
+func RIPEMD160(v []byte) []byte {
+	h := ripemd160.New()
+	h.Write(v)
+	return h.Sum(nil)
+}
+
+// RSAPubKeyID returns a 20 bytes fingerprint of the public key
+func RSAPubKeyID(pk *rsa.PublicKey) string {
+	return ToHex(RIPEMD160(pk.N.Bytes()))
 }

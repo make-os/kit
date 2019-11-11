@@ -35,7 +35,7 @@ func appendToFile(path, file string, data string) {
 
 func execGitCommit(path, msg string) []byte {
 	execGit(path, "add", ".")
-	return execGit(path, "commit", "-m", `"`+msg+`"`)
+	return execGit(path, "commit", "-m", msg)
 }
 
 func appendCommit(path, file, fileData, commitMsg string) {
@@ -77,7 +77,7 @@ func execAnyCmd(workDir, name string, arg ...string) []byte {
 	return bz
 }
 
-var _ = Describe("Changes", func() {
+var _ = Describe("Revert", func() {
 	var err error
 	var cfg *config.EngineConfig
 	var repoMgr *Manager

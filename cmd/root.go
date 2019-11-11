@@ -147,4 +147,5 @@ func initialize() {
 
 	setStartFlags(startCmd, consoleCmd)
 	setAccountCmdAndFlags()
+	initCommit()
 }
