@@ -11,7 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
+	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp/sideband"
 )
 
 // sendFile fetches a file and sends it to the requester
@@ -159,4 +161,8 @@ func getPackFile(s *serviceParams) error {
 func getIdxFile(s *serviceParams) error {
 	hdrCacheForever(s.w)
 	return sendFile(s.op, "application/x-git-packed-objects-toc", s)
+}
+
+func sidebandErr(msg string) []byte {
+	return sideband.ErrorMessage.WithPayload([]byte(color.RedString(msg)))
 }

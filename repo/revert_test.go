@@ -3,7 +3,6 @@ package repo
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/bitfield/script"
@@ -18,64 +17,6 @@ import (
 )
 
 var gitPath = "/usr/bin/git"
-
-func execGit(workDir string, arg ...string) []byte {
-	cmd := exec.Command(gitPath, arg...)
-	cmd.Dir = workDir
-	bz, err := cmd.Output()
-	if err != nil {
-		panic(err)
-	}
-	return bz
-}
-
-func appendToFile(path, file string, data string) {
-	script.Echo(data).AppendFile(filepath.Join(path, file))
-}
-
-func execGitCommit(path, msg string) []byte {
-	execGit(path, "add", ".")
-	return execGit(path, "commit", "-m", msg)
-}
-
-func appendCommit(path, file, fileData, commitMsg string) {
-	appendToFile(path, file, fileData)
-	execGitCommit(path, commitMsg)
-}
-
-func createAnnotatedTag(path, file, fileData, commitMsg, tagName string) {
-	appendToFile(path, file, fileData)
-	execGitCommit(path, commitMsg)
-	execGit(path, "tag", "-a", tagName, "-m", `""`, "-f")
-}
-
-func createLightWeightTag(path, file, fileData, commitMsg, tagName string) {
-	appendToFile(path, file, fileData)
-	execGitCommit(path, commitMsg)
-	execGit(path, "tag", tagName, "-f")
-}
-
-func deleteTag(path, name string) {
-	execGit(path, "tag", "-d", name)
-}
-
-func scriptFile(path, file string) *script.Pipe {
-	return script.File(filepath.Join(path, file))
-}
-
-func createCheckoutBranch(path, branch string) {
-	execGit(path, "checkout", "-b", branch)
-}
-
-func execAnyCmd(workDir, name string, arg ...string) []byte {
-	cmd := exec.Command(name, arg...)
-	cmd.Dir = workDir
-	bz, err := cmd.Output()
-	if err != nil {
-		panic(err)
-	}
-	return bz
-}
 
 var _ = Describe("Revert", func() {
 	var err error
@@ -122,10 +63,10 @@ var _ = Describe("Revert", func() {
 			})
 
 			Specify("that current state equal previous state", func() {
-				err := repoMgr.Revert(path, prevState)
+				_, err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(path)
-				Expect(curState).To(Equal(prevState))
+				Expect(curState.References).To(Equal(prevState.References))
 			})
 		})
 
@@ -144,10 +85,10 @@ var _ = Describe("Revert", func() {
 			})
 
 			Specify("that current state equal previous state", func() {
-				err := repoMgr.Revert(path, prevState)
+				_, err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(path)
-				Expect(curState).To(Equal(prevState))
+				Expect(curState.References).To(Equal(prevState.References))
 			})
 		})
 
@@ -157,8 +98,8 @@ var _ = Describe("Revert", func() {
 				appendCommit(path, "file.txt", "line 1\n", "commit 1")
 				appendCommit(path, "file.txt", "line 2\n", "commit 2")
 				prevState = &State{
-					Refs: NewObjCol(map[string]*Obj{
-						"refs/heads/master": {
+					References: NewObjCol(map[string]Item{
+						"refs/heads/master": &Obj{
 							Type: "ref",
 							Name: "refs/heads/master",
 							Data: "6ac8e9cf08409c169a12b526b20488d549106d69",
@@ -168,7 +109,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should return err='exec failed: hard reset failed'", func() {
-				err := repoMgr.Revert(path, prevState)
+				_, err := repoMgr.Revert(path, prevState)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("exec failed: reference update failed"))
 			})
@@ -186,12 +127,12 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should return err=nil and only 1 reference should exist and current state equal previous state", func() {
-				err := repoMgr.Revert(path, prevState)
+				_, err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
 				numRefs, _ := script.ExecInDir("git show-ref --heads", path).CountLines()
 				Expect(numRefs).To(Equal(1))
 				curState, _ := repoMgr.GetRepoState(path)
-				Expect(curState).To(Equal(prevState))
+				Expect(curState.References).To(Equal(prevState.References))
 			})
 		})
 
@@ -208,7 +149,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should return err=nil and only 2 references should exist and current state equal previous state", func() {
-				err := repoMgr.Revert(path, prevState)
+				_, err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
 				numRefs, _ := script.ExecInDir("git show-ref --heads", path).CountLines()
 				Expect(numRefs).To(Equal(2))
@@ -236,7 +177,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should return err=nil and only 2 references should exist and current state equal previous state", func() {
-				err := repoMgr.Revert(path, prevState)
+				_, err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
 				numRefs, _ := script.ExecInDir("git show-ref --heads", path).CountLines()
 				Expect(numRefs).To(Equal(4))
@@ -261,98 +202,199 @@ var _ = Describe("Revert", func() {
 			BeforeEach(func() {
 				prevState, _ = repoMgr.GetRepoState(path)
 				Expect(prevState.IsEmpty()).To(BeTrue())
-				createAnnotatedTag(path, "file.txt", "v1 file", "v1 commit", "v1")
+				createCommitAndAnnotatedTag(path, "file.txt", "v1 file", "v1 commit", "v1")
 			})
 
 			It("should remove the new tag and old state should equal current state", func() {
-				err := repoMgr.Revert(path, prevState)
+				_, err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(path)
-				Expect(curState).To(Equal(prevState))
+				Expect(curState.References).To(Equal(prevState.References))
 			})
 		})
 
 		When("repo old state has 1 tags; new state has 3 tag", func() {
 
 			BeforeEach(func() {
-				createAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
 				prevState, _ = repoMgr.GetRepoState(path)
-				createAnnotatedTag(path, "file.txt", "first file", "commit 2", "v2")
-				createAnnotatedTag(path, "file.txt", "first file", "commit 3", "v3")
-				createAnnotatedTag(path, "file.txt", "first file", "commit 4", "v4")
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", "commit 2", "v2")
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", "commit 3", "v3")
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", "commit 4", "v4")
 			})
 
 			It("should remove the new tags and old state should equal current state", func() {
-				err := repoMgr.Revert(path, prevState)
+				_, err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(path)
-				Expect(curState).To(Equal(prevState))
+				Expect(curState.References).To(Equal(prevState.References))
 			})
 		})
 
 		When("repo old state has 1 annotated tag (v1); new state has same 1 annotated tag (v1) but with different value", func() {
 
 			BeforeEach(func() {
-				createAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
 				prevState, _ = repoMgr.GetRepoState(path)
-				createAnnotatedTag(path, "file.txt", "updated file", "second commit", "v1")
+				createCommitAndAnnotatedTag(path, "file.txt", "updated file", "second commit", "v1")
 			})
 
 			It("should update the reference value of the tag to the old value and old state should equal current state", func() {
-				err := repoMgr.Revert(path, prevState)
+				_, err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(path)
-				Expect(curState).To(Equal(prevState))
+				Expect(curState.References).To(Equal(prevState.References))
 			})
 		})
 
 		When("repo old state has 1 lightweight tag (v1); new state has same 1 lightweight tag (v1) but with different value", func() {
 
 			BeforeEach(func() {
-				createLightWeightTag(path, "file.txt", "first file", "first commit", "v1")
+				createCommitAndLightWeightTag(path, "file.txt", "first file", "first commit", "v1")
 				prevState, _ = repoMgr.GetRepoState(path)
-				createLightWeightTag(path, "file.txt", "updated file", "second commit", "v1")
+				createCommitAndLightWeightTag(path, "file.txt", "updated file", "second commit", "v1")
 			})
 
 			It("should update the reference value of the tag to the old value and old state should equal current state", func() {
-				err := repoMgr.Revert(path, prevState)
+				_, err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(path)
-				Expect(curState).To(Equal(prevState))
+				Expect(curState.References).To(Equal(prevState.References))
 			})
 		})
 
 		When("repo old state has 2 annotated tag (v1,v2); new state has same 2 annotated tag (v1,v2) but with different value", func() {
 
 			BeforeEach(func() {
-				createAnnotatedTag(path, "file.txt", "file1", "first commit", "v1")
-				createAnnotatedTag(path, "file.txt", "file2", "second commit", "v2")
+				createCommitAndAnnotatedTag(path, "file.txt", "file1", "first commit", "v1")
+				createCommitAndAnnotatedTag(path, "file.txt", "file2", "second commit", "v2")
 				prevState, _ = repoMgr.GetRepoState(path)
-				createAnnotatedTag(path, "file.txt", "file3", "third commit", "v1")
-				createAnnotatedTag(path, "file.txt", "file4", "fourth commit", "v2")
+				createCommitAndAnnotatedTag(path, "file.txt", "file3", "third commit", "v1")
+				createCommitAndAnnotatedTag(path, "file.txt", "file4", "fourth commit", "v2")
 			})
 
 			It("should update the reference value of the tags to their old value and old state should equal current state", func() {
-				err := repoMgr.Revert(path, prevState)
+				_, err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(path)
-				Expect(curState).To(Equal(prevState))
+				Expect(curState.References).To(Equal(prevState.References))
 			})
 		})
 
-		When("repo old state has 1 annotated tag (v1); new state has 0 annotated tag (v1) but", func() {
+		When("repo old state has 1 annotated tag (v1); new state has 0 annotated tag (v1)", func() {
 
 			BeforeEach(func() {
-				createAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
 				prevState, _ = repoMgr.GetRepoState(path)
 				deleteTag(path, "v1")
 			})
 
 			It("should reset the tag value to the old tag value and old state should equal current state", func() {
-				err := repoMgr.Revert(path, prevState)
+				_, err := repoMgr.Revert(path, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(path)
-				Expect(curState).To(Equal(prevState))
+				Expect(curState.References).To(Equal(prevState.References))
+			})
+		})
+	})
+
+	FDescribe(".Revert (notes)", func() {
+		var path string
+		var prevState *State
+
+		BeforeEach(func() {
+			repoName := util.RandString(5)
+			path = filepath.Join(cfg.GetRepoRoot(), repoName)
+			execGit(cfg.GetRepoRoot(), "init", repoName)
+		})
+
+		When("repo old state has 0 notes; new state has 1 note", func() {
+
+			BeforeEach(func() {
+				prevState, _ = repoMgr.GetRepoState(path)
+				Expect(prevState.IsEmpty()).To(BeTrue())
+				createCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "note1")
+			})
+
+			It("should remove the new note reference and old state should equal current state", func() {
+				_, err := repoMgr.Revert(path, prevState)
+				Expect(err).To(BeNil())
+				curState, _ := repoMgr.GetRepoState(path)
+				Expect(curState.References).To(Equal(prevState.References))
+			})
+		})
+
+		When("repo old state has 1 note; new state has 1 note but with updated content", func() {
+
+			BeforeEach(func() {
+				createCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "note1")
+				prevState, _ = repoMgr.GetRepoState(path)
+				createCommitAndNote(path, "file.txt", "v1 file", "v2 commit", "note1")
+			})
+
+			It("should reset the note reference to the previous value and old state should equal current state", func() {
+				_, err := repoMgr.Revert(path, prevState)
+				Expect(err).To(BeNil())
+				curState, _ := repoMgr.GetRepoState(path)
+				Expect(curState.References).To(Equal(prevState.References))
+			})
+		})
+
+		FWhen("repo old state has 1 note; new state has 0 note", func() {
+
+			BeforeEach(func() {
+				createCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "note1")
+				prevState, _ = repoMgr.GetRepoState(path)
+				deleteNote(path, "refs/notes/note1")
+			})
+
+			It("should reset the note reference to the initial value and old state should equal current state", func() {
+				_, err := repoMgr.Revert(path, prevState)
+				Expect(err).To(BeNil())
+				curState, _ := repoMgr.GetRepoState(path)
+				Expect(curState.References).To(Equal(prevState.References))
+			})
+		})
+	})
+
+	Describe(".getBranchRevertActions", func() {
+		When("change type is unknown", func() {
+			It("should return err=unknown change type", func() {
+				changeItem := &ItemChange{
+					Action: 100,
+					Item:   &Obj{Name: "refs/heads/branch"},
+				}
+				_, err := getBranchRevertActions(changeItem, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("unknown change type"))
+			})
+		})
+	})
+
+	Describe(".getTagRevertActions", func() {
+		When("change type is unknown", func() {
+			It("should return err=unknown change type", func() {
+				changeItem := &ItemChange{
+					Action: 100,
+					Item:   &Obj{Name: "refs/tags/tagname"},
+				}
+				_, err := getTagRevertActions(changeItem, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("unknown change type"))
+			})
+		})
+	})
+
+	Describe(".getNoteRevertActions", func() {
+		When("change type is unknown", func() {
+			It("should return err=unknown change type", func() {
+				changeItem := &ItemChange{
+					Action: 100,
+					Item:   &Obj{Name: "refs/notes/notename"},
+				}
+				_, err := getNoteRevertActions(changeItem, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("unknown change type"))
 			})
 		})
 	})

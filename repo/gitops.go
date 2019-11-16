@@ -2,6 +2,7 @@ package repo
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -136,10 +137,38 @@ func (g *GitOps) GetConfig(path string) string {
 }
 
 // UpdateRecentCommitMsg updates the recent commit message
-func (g *GitOps) UpdateRecentCommitMsg(msg string) error {
-	cmd := exec.Command(g.gitBinPath, "commit", "--amend",
-		"--quiet", "--allow-empty-message", "--file", "-")
+// msg: The commit message which is passed to the command's stdin.
+// signingKey: The signing key
+// env: Optional environment variables to pass to the command.
+func (g *GitOps) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
+	args := []string{"commit", "--amend", "--quiet", "--allow-empty-message", "--file", "-"}
+	if signingKey != "" {
+		args = append(args, "--gpg-sign="+signingKey)
+	}
+	cmd := exec.Command(g.gitBinPath, args...)
 	cmd.Dir = g.path
 	cmd.Stdin = strings.NewReader(msg)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(), env...)
 	return errors.Wrap(cmd.Run(), "failed to update recent commit msg")
+}
+
+// CreateTagWithMsg an annotated tag
+// args: `git tag` options (NOTE: -a and --file=- are added by default)
+// msg: The tag's message which is passed to the command's stdin.
+// signingKey: The signing key to use
+// env: Optional environment variables to pass to the command.
+func (g *GitOps) CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error {
+	if signingKey != "" {
+		args = append(args, "-u", signingKey)
+	}
+	args = append([]string{"tag", "-a", "--file", "-"}, args...)
+	cmd := exec.Command(g.gitBinPath, args...)
+	cmd.Dir = g.path
+	cmd.Stdin = strings.NewReader(msg)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(), env...)
+	return errors.Wrap(cmd.Run(), "failed to create tag")
 }

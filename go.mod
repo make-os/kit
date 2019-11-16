@@ -9,6 +9,7 @@ replace (
 
 require (
 	github.com/BurntSushi/toml v0.3.1
+	github.com/Workiva/go-datastructures v1.0.50
 	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
 	github.com/bitfield/script v0.14.0
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
@@ -46,10 +47,13 @@ require (
 	github.com/mattn/go-tty v0.0.0-20190424173100-523744f04859 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.1.2
+	github.com/motemen/go-quickfix v0.0.0-20160413151302-5c522febc679 // indirect
+	github.com/motemen/gore v0.4.1 // indirect
 	github.com/ncodes/go-prettyjson v0.0.0-20180528130907-d229c224a219
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
 	github.com/onsi/ginkgo v1.7.0
 	github.com/onsi/gomega v1.4.3
+	github.com/peterh/liner v1.1.0 // indirect
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.8.1
 	github.com/pkg/term v0.0.0-20190109203006-aa71e9d9e942 // indirect

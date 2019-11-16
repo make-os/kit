@@ -110,7 +110,7 @@ var _ = Describe("Gitops", func() {
 	Describe(".TagDelete", func() {
 		When("tag exists", func() {
 			BeforeEach(func() {
-				createAnnotatedTag(path, "file.txt", "some text", "commit msg", "tag_v1")
+				createCommitAndAnnotatedTag(path, "file.txt", "some text", "commit msg", "tag_v1")
 				nTag, _ := script.ExecInDir(`git --no-pager tag -l`, path).CountLines()
 				Expect(nTag).To(Equal(1))
 				err = gitOps.TagDelete("tag_v1")
@@ -235,18 +235,63 @@ var _ = Describe("Gitops", func() {
 		})
 	})
 
-	FDescribe(".UpdateRecentCommitMsg", func() {
+	Describe(".UpdateRecentCommitMsg", func() {
+		var gpgUserID string
+
 		BeforeEach(func() {
 			appendCommit(path, "file.txt", "some text", "commit msg")
 			msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
 			Expect(strings.TrimSpace(msg)).To(Equal("commit msg"))
+			gpgUserID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
 		})
 
-		It("should update recent commit to `an updated msg`", func() {
-			err := gitOps.UpdateRecentCommitMsg("an updated msg")
-			Expect(err).To(BeNil())
+		When("signingKey is not set", func() {
+			It("should update recent commit to `an updated msg`", func() {
+				err := gitOps.UpdateRecentCommitMsg("an updated msg", "", "GNUPGHOME="+cfg.DataDir())
+				Expect(err).To(BeNil())
+				msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
+				Expect(strings.TrimSpace(msg)).To(Equal("an updated msg"))
+			})
+		})
+
+		When("signingKey is set", func() {
+			It("should update recent commit to `an updated msg` and sign the commit", func() {
+				err := gitOps.UpdateRecentCommitMsg("an updated msg", gpgUserID, "GNUPGHOME="+cfg.DataDir())
+				Expect(err).To(BeNil())
+				msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
+				Expect(strings.TrimSpace(msg)).To(Equal("an updated msg"))
+				msg, _ = script.ExecInDir(`git --no-pager log --oneline -1 --show-signature`, path).String()
+				Expect(msg).To(ContainSubstring("gpg: Signature"))
+			})
+		})
+	})
+
+	Describe(".CreateTagWithMsg", func() {
+		var gpgUserID string
+
+		BeforeEach(func() {
+			appendCommit(path, "file.txt", "some text", "commit msg")
 			msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
-			Expect(strings.TrimSpace(msg)).To(Equal("an updated msg"))
+			Expect(strings.TrimSpace(msg)).To(Equal("commit msg"))
+			gpgUserID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
+		})
+
+		When("when signingKey is not set", func() {
+			It("should create an annotated tag with message", func() {
+				err := gitOps.CreateTagWithMsg([]string{"my_tag"}, "a new tag", "")
+				Expect(err).To(BeNil())
+				out, _ := script.ExecInDir(`git cat-file -p refs/tags/my_tag`, path).Last(1).String()
+				Expect(strings.TrimSpace(out)).To(Equal("a new tag"))
+			})
+		})
+
+		When("when signingKey is set", func() {
+			It("should create a signed annotated tag with message", func() {
+				err := gitOps.CreateTagWithMsg([]string{"my_tag"}, "a new tag", gpgUserID, "GNUPGHOME="+cfg.DataDir())
+				Expect(err).To(BeNil())
+				out, _ := script.ExecInDir(`git cat-file -p refs/tags/my_tag`, path).Last(1).String()
+				Expect(out).To(ContainSubstring("PGP SIGNATURE"))
+			})
 		})
 	})
 })

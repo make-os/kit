@@ -1,10 +1,12 @@
 package util
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"math/big"
 	r "math/rand"
 	"os"
@@ -405,19 +407,64 @@ func XorBytes(a, b []byte) []byte {
 	return new(big.Int).Xor(iA, iB).Bytes()
 }
 
-// RemoveTxLine removes all lines beginning with a 'Tx Line' prefix 'tx'.
-// NOTE: It is case-sensitive.
-func RemoveTxLine(msg string) string {
-	lines := strings.Split(msg, "\n")
-	newMsg := ""
-	for i := 0; i < len(lines); i++ {
-		line := lines[i]
-		if !strings.HasPrefix(line, "tx:") {
-			newMsg += line
-			if (i + 1) != len(lines) {
-				newMsg += "\n"
+// TouchReader reads one byte from reader into a buffer.
+func TouchReader(reader io.Reader) io.Reader {
+	bf := bufio.NewReader(reader)
+	bf.ReadByte()
+	bf.UnreadByte()
+	return bf
+}
+
+// RemoveFlagVal takes a slice of arguments and remove
+// flags matching flagname and their value
+func RemoveFlagVal(args []string, flags []string) []string {
+	newArgs := []string{}
+	curFlag := ""
+	curFlagRemoved := false
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg[:1] == "-" {
+			curFlag = strings.Trim(arg[1:], "-")
+			curFlag = strings.Split(curFlag, "=")[0]
+			if !funk.ContainsString(flags, curFlag) {
+				newArgs = append(newArgs, arg)
+				curFlagRemoved = false
+				continue
+			} else {
+				curFlagRemoved = true
 			}
 		}
+		if !curFlagRemoved {
+			newArgs = append(newArgs, arg)
+		}
 	}
-	return newMsg
+	return newArgs
+}
+
+// ParseSimpleArgs passes a programs argument into string
+// key and value map.
+func ParseSimpleArgs(args []string) (m map[string]string) {
+	m = make(map[string]string)
+	curFlag := ""
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg[:1] == "-" {
+			curFlag = strings.Trim(arg[1:], "-")
+			curFlagParts := strings.Split(curFlag, "=")
+			curFlag = curFlagParts[0]
+			val := ""
+			if len(curFlagParts) >= 2 {
+				val = curFlagParts[1]
+				m[curFlag] = val
+				curFlag = ""
+			}
+			continue
+		}
+		if curFlag != "" {
+			m[curFlag] = arg
+			curFlag = ""
+			continue
+		}
+	}
+	return
 }

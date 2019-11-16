@@ -10,12 +10,12 @@ type (
 )
 
 const (
-	// ColChangeTypeNew represents a new, unique item added to a collection
-	ColChangeTypeNew = iota
-	// ColChangeTypeRemove represents a removal of a collection item
-	ColChangeTypeRemove
-	// ColChangeTypeUpdate represents an update to the value of a collection item
-	ColChangeTypeUpdate
+	// ChangeTypeNew represents a new, unique item added to a collection
+	ChangeTypeNew = iota
+	// ChangeTypeRemove represents a removal of a collection item
+	ChangeTypeRemove
+	// ChangeTypeUpdate represents an update to the value of a collection item
+	ChangeTypeUpdate
 )
 
 // Item represents a git object or reference
@@ -68,11 +68,11 @@ func (ob *Obj) Equal(o interface{}) bool {
 
 // ObjCol implements Items. It is a collection of objects.
 type ObjCol struct {
-	items map[string]*Obj
+	items map[string]Item
 }
 
 // NewObjCol creates an ObjCol instance
-func NewObjCol(r map[string]*Obj) *ObjCol {
+func NewObjCol(r map[string]Item) *ObjCol {
 	return &ObjCol{items: r}
 }
 
@@ -160,7 +160,6 @@ func newChange(i Item, action ColChangeType) *ItemChange {
 // items and attempts to determine the changes that must be executed against
 // the old collection before it is equal to the updated collection.
 func getChanges(old, update Items) *ChangeResult {
-
 	var result = new(ChangeResult)
 	if update == nil {
 		return emptyChangeResult()
@@ -194,7 +193,7 @@ func getChanges(old, update Items) *ChangeResult {
 		// item is not in the shorter collection, it means the current item is
 		// new and unknown to the old collection.
 		if updateIsLonger && curItemInShorter == nil {
-			result.Changes = append(result.Changes, newChange(curItem, ColChangeTypeNew))
+			result.Changes = append(result.Changes, newChange(curItem, ChangeTypeNew))
 			return false
 		}
 
@@ -202,7 +201,7 @@ func getChanges(old, update Items) *ChangeResult {
 		// is not in the shorter collection (updated collection), it means the
 		// current was removed in the updated collection.
 		if !updateIsLonger && curItemInShorter == nil {
-			result.Changes = append(result.Changes, newChange(curItem, ColChangeTypeRemove))
+			result.Changes = append(result.Changes, newChange(curItem, ChangeTypeRemove))
 			return false
 		}
 
@@ -215,7 +214,7 @@ func getChanges(old, update Items) *ChangeResult {
 			if updateIsLonger {
 				updRef = curItem
 			}
-			result.Changes = append(result.Changes, newChange(updRef, ColChangeTypeUpdate))
+			result.Changes = append(result.Changes, newChange(updRef, ChangeTypeUpdate))
 		}
 
 		return false
@@ -228,7 +227,7 @@ func getChanges(old, update Items) *ChangeResult {
 			if old.Has(curNewRef.GetName()) {
 				return false
 			}
-			result.Changes = append(result.Changes, newChange(curNewRef, ColChangeTypeNew))
+			result.Changes = append(result.Changes, newChange(curNewRef, ChangeTypeNew))
 			return false
 		})
 	}
@@ -245,4 +244,54 @@ func getRefChanges(old, update *ObjCol) *ChangeResult {
 // from a previous state to its current state.
 type Changes struct {
 	References *ChangeResult
+}
+
+// State describes the current state of repository
+type State struct {
+	References *ObjCol
+}
+
+// StateFromItem creates a State instance from an Item.
+// If Item is nil, an empty State is returned
+func StateFromItem(item Item) *State {
+	obj := map[string]Item{}
+	if item != nil {
+		obj[item.GetName()] = item
+	}
+	return &State{References: NewObjCol(obj)}
+}
+
+// IsEmpty checks whether the state is empty
+func (s *State) IsEmpty() bool {
+	return s.References.Len() == 0
+}
+
+// Hash returns the 32-bytes hash of the state
+func (s *State) Hash() util.Hash {
+	bz := util.ObjectToBytes([]interface{}{
+		s.References.Bytes(),
+	})
+	return util.BytesToHash(util.Blake2b256(bz))
+}
+
+// GetChanges summarizes the changes between State s and y.
+func (s *State) GetChanges(y *State) *Changes {
+
+	var refChange *ChangeResult
+
+	// If y is nil, return an empty change result since
+	// there is nothing to compare s with.
+	if y == nil {
+		return &Changes{References: emptyChangeResult()}
+	}
+
+	// As long as State y has a reference collection,
+	// we can check for changes
+	if s.References != nil {
+		refChange = getRefChanges(s.References, y.References)
+	}
+
+	return &Changes{
+		References: refChange,
+	}
 }

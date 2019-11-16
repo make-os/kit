@@ -34,10 +34,44 @@ var services = [][]interface{}{
 	{"(.*?)/objects/pack/pack-[0-9a-f]{40}\\.idx$", service{method: "GET", handle: getIdxFile}},
 }
 
-// StateOperator provides functionality for manipulating a repository's state
-type StateOperator interface {
-	GetRepoState(path string) (*State, error)
-	Revert(path string, prevState *State) error
+func samplePGPPubKeyGetter(pkID string) (string, error) {
+	return `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQENBF3D1yoBCACjdSC/KibksNrQ+gMb3Cw0I603SMwK8rvw5rE/L3oif7xc9Ghw
+ZeQbSgpNCFVY9yUGX0WznQirAd5o4pleb6p/AmFtj3huLuPQ9IPA5xvPvf8k39Ky
+aos5KHLK/tt6f+kG36IQpV2xryZs7ny4tNFKIHcl0HPC1oySFmAo0nVzDcpjFkYU
+k2tryQo8JerFfOLp6NwTdXSsqFozKSSXHOwDDi8v811Wik48RKWaJ68LCS50CGFl
+NYlYVkmZd29QIqJc4nUXrR/PmZqOklXC3feEJhSlmoFgMAWpfE6ffkGzqK7BQfAh
+BarTbNGyV7mGZvY7w1wklFc6dlBGMWrsFZ6JABEBAAG0EEtlbm5lZHkgKHRlc3Qg
+MymJAU4EEwEIADgWIQRpC08nO1qMBK/UHh3hTuV6RZk83wUCXcPXKgIbAwULCQgH
+AgYVCgkICwIEFgIDAQIeAQIXgAAKCRDhTuV6RZk832u8B/9gZ4cT5rCkUUxH4s6F
+oRtnEL01Q+iK9IyissVY1ZMM7p4+u5eXwljCqG5pw/KoHHIOZ98NuytRcgAM9dsi
+vaWjKGxEOWD1VeKNEPDHu7KEQBfwYzfz+obf01e89E1NwvTQWmu/lK75hNajZPrh
+EBIFoYI8ZiSsCnHESqI8hblezGYhxwXysD6zz3+tE5mcCswT5s95JQ6uYmeWrmlh
+1B07BQ7d5GH5XAI+Bg4O90AXODCr4OKnuDcquqkpgwjBs1dDMFOtqn7V3qIsfsQF
+cDwi7Nac0GbnW4arjTozjzYwEN34vDxJvvRQNM8467fZh4YHMWVnI80wf/HeI5ZR
+ELi6uQENBF3D1yoBCADNLl6k97YZyKO30UE4/tyG0eQuEvCWa504MBIaVNa77F7e
+snZaekKFIzrTAZJACu/2uCEJIfNyvsMp8EovVScw3Zm8SK4BVscot1KAntXZlf/3
+4vWUnQqUb5ANav3I0l1a5ndtOmQCTuiZ5kW+6eUjra01pt1J9GxUMc/2DDC+HkYY
+/emc/Uc44HPbIy8NlGCjSXCG0/QvyB+nHBxQtEAyX/aK5ylUQ/frPakS23yFviZs
+cYb3ywAfMadWtchk7eG2ywLHpSVhuKhbHQdTtUSjLhllcjzrfMF1qUplrk+IDnp4
+SRwSdbZ2E2CbeL0h/hifzGkYblWdYDe+lh5i+IDvABEBAAGJATYEGAEIACAWIQRp
+C08nO1qMBK/UHh3hTuV6RZk83wUCXcPXKgIbDAAKCRDhTuV6RZk832c+CACIpykT
+D3ZtAg+YsF2cb0xeQtvK4Hm0q2eaj0ri04b56K8+LeQxruuiQVEffE72lX+Sqpin
+765wmOoK26eQ1IlRlwUEgoSusdko2cpgNaC5IgYXyG3pyRQ9wewudXM68jYXy5x9
+FmSjybTOkWVO5qudYk2Cu6g4T7UyPrgGJ2iMunjDAVyK+BvhwZhx/HxLBTAx3uve
+QpQXS1MnYXkyQz5mbqElHf0ELDX5zQ0JPNEL7CEf9dgBGUo02aGFCl0/oFR7O2el
+yYXxF8MfL+q9HPVL7IrFOI3bLtrVuEt1qE6/vCzC804ODi4gfc9a2di3bKpMyoUU
+svCU0gx1j1vi1SKS
+=vHUA
+-----END PGP PUBLIC KEY BLOCK-----`, nil
+}
+
+// ReposManager provides functionality for manipulating a repository's state
+type ReposManager interface {
+	GetRepoState(path string, options ...kvOption) (*State, error)
+	Revert(path string, prevState *State, options ...kvOption) (*Changes, error)
+	GetPGPPubKeyGetter() PGPPubKeyGetter
 }
 
 // Manager implements types.Manager. It provides a system for managing
@@ -147,52 +181,98 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 	writeMethodNotAllowed(w, r)
 }
 
-// GetRepoState returns the state of the repository at the given path
-func (m *Manager) GetRepoState(path string) (*State, error) {
+// GetPGPPubKeyGetter returns the gpg getter function
+func (m *Manager) GetPGPPubKeyGetter() PGPPubKeyGetter {
+	return samplePGPPubKeyGetter // TODO: Remove sample. This should be passed in to NewManager
+}
+
+func getRepo(path string) (*Repo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
 	}
-	return m.getRepoState(&Repo{
+	return &Repo{
 		Repository: repo,
 		Path:       path,
-	}), nil
+	}, nil
+}
+
+func getRepoWithGitOpt(gitBinPath, path string) (*Repo, error) {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return nil, err
+	}
+	return &Repo{
+		GitOps:     NewGitOps(gitBinPath, path),
+		Repository: repo,
+		Path:       path,
+	}, nil
+}
+
+// GetRepoState returns the state of the repository at the given path
+// options: Allows the caller to configure how and what state are gathered
+func (m *Manager) GetRepoState(path string, options ...kvOption) (*State, error) {
+	repo, err := getRepo(path)
+	if err != nil {
+		return nil, err
+	}
+	return m.getRepoState(repo, options...), nil
 }
 
 // GetRepoState returns the state of the repository
-func (m *Manager) getRepoState(repo *Repo) *State {
+// repo: The target repository
+// options: Allows the caller to configure how and what state are gathered
+func (m *Manager) getRepoState(repo *Repo, options ...kvOption) *State {
+
+	refPrefix := ""
+	if opt := getKVOpt("prefix", options); opt != nil {
+		refPrefix = opt.(string)
+	}
 
 	// Get references
-	refs := make(map[string]*Obj)
-	refsI, _ := repo.References()
-	refsI.ForEach(func(ref *plumbing.Reference) error {
-		if strings.ToLower(ref.Name().String()) != "head" {
+	refs := make(map[string]Item)
+	if refPrefix == "" || strings.HasPrefix(refPrefix, "refs") {
+		refsI, _ := repo.References()
+		refsI.ForEach(func(ref *plumbing.Reference) error {
+
+			// Ignore HEAD reference
+			if strings.ToLower(ref.Name().String()) == "head" {
+				return nil
+			}
+
+			// If a prefix is set, ignore a reference whose name does not match
+			// the prefix we are searching for.
+			if refPrefix != "" && !strings.HasPrefix(ref.Name().String(), refPrefix) {
+				return nil
+			}
+
 			refs[ref.Name().String()] = &Obj{
 				Type: "ref",
 				Name: ref.Name().String(),
 				Data: ref.Hash().String(),
 			}
-		}
-		return nil
-	})
+
+			return nil
+		})
+	}
 
 	return &State{
-		Refs: NewObjCol(refs),
+		References: NewObjCol(refs),
 	}
 }
 
 // Revert reverts the repository from its current state to the previous state.
 // path: The path to a valid repository
-func (m *Manager) Revert(path string, prevState *State) error {
+func (m *Manager) Revert(path string, prevState *State, options ...kvOption) (*Changes, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	return m.revert(&Repo{
 		Repository: repo,
 		GitOps:     NewGitOps(m.gitBinPath, path),
 		Path:       path,
-	}, prevState)
+	}, prevState, options...)
 }
 
 // Wait can be used by the caller to wait till the server terminates

@@ -446,23 +446,56 @@ var _ = Describe("Common", func() {
 		})
 	})
 
-	Describe(".RemoveTxLine", func() {
-		It("should remove tx line", func() {
-			str := "This is a line\nThis is another line\ntx: args args"
-			expected := "This is a line\nThis is another line\n"
-			Expect(RemoveTxLine(str)).To(Equal(expected))
+	Describe(".RemoveFlagVal", func() {
+		Specify("that nothing is removed when flag to remove is not present", func() {
+			res := RemoveFlagVal([]string{"-nickname", "abc", "--age", "12"}, []string{"name", "height"})
+			Expect(res).To(Equal([]string{"-nickname", "abc", "--age", "12"}))
+		})
+		Specify("that `age` flag and value are removed when flag to remove is not present", func() {
+			res := RemoveFlagVal([]string{"--nickname", "abc", "--age", "12"}, []string{"name", "age"})
+			Expect(res).To(Equal([]string{"--nickname", "abc"}))
+		})
+		Specify("that `nickname` flag and value are removed when flag to remove is not present", func() {
+			res := RemoveFlagVal([]string{"--nickname", "abc", "--age", "12"}, []string{"nickname", "height"})
+			Expect(res).To(Equal([]string{"--age", "12"}))
 		})
 
-		It("should not remove tx line if label is capitalized", func() {
-			str := "This is a line\nThis is another line\nTX: args args"
-			expected := "This is a line\nThis is another line\nTX: args args"
-			Expect(RemoveTxLine(str)).To(Equal(expected))
+		Specify("that `nickname` flag and value are removed when flag to remove is not present (case 2)", func() {
+			res := RemoveFlagVal([]string{"--nickname=abc", "--age", "12"}, []string{"nickname", "height"})
+			Expect(res).To(Equal([]string{"--age", "12"}))
+		})
+	})
+
+	Describe(".ParseSimpleArgs", func() {
+		Specify("that '--nickname, abc, --age, 12' map {nickname:abc, age:12} is returned", func() {
+			res := ParseSimpleArgs([]string{"-nickname", "abc", "--age", "12"})
+			Expect(res).To(Equal(map[string]string{
+				"nickname": "abc",
+				"age":      "12",
+			}))
+		})
+		Specify("that '--nickname=abc, --age, 12' map {nickname:abc, age:12} is returned", func() {
+			res := ParseSimpleArgs([]string{"--nickname=abc", "--age", "12"})
+			Expect(res).To(Equal(map[string]string{
+				"nickname": "abc",
+				"age":      "12",
+			}))
 		})
 
-		It("should return exact text when label is not present", func() {
-			str := "This is a line\nThis is another line\n"
-			expected := "This is a line\nThis is another line\n"
-			Expect(RemoveTxLine(str)).To(Equal(expected))
+		Specify("that '--nickname, \"abc xyz\", --age, 12' map {nickname:abc xyz, age:12} is returned", func() {
+			res := ParseSimpleArgs([]string{"--nickname", "abc xyz", "--age", "12"})
+			Expect(res).To(Equal(map[string]string{
+				"nickname": "abc xyz",
+				"age":      "12",
+			}))
+		})
+
+		Specify("that '--nickname, abc, xyz, --age, 12' map {nickname:abc xyz, age:12} is returned", func() {
+			res := ParseSimpleArgs([]string{"--nickname", "abc", "xyz", "--age", "12"})
+			Expect(res).To(Equal(map[string]string{
+				"nickname": "abc",
+				"age":      "12",
+			}))
 		})
 	})
 })

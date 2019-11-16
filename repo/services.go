@@ -9,9 +9,13 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 )
+
+// PGPPubKeyGetter represents a function for fetching PGP public key
+type PGPPubKeyGetter func(pkId string) (string, error)
 
 // service describes a git service and its handler
 type service struct {
@@ -127,7 +131,7 @@ func serveService(s *serviceParams) error {
 	}
 
 	// If the request is compressed, we need to uncompress
-	// before we feed it to the git command.
+	// before we feed it to the git.
 	var reader io.ReadCloser
 	switch r.Header.Get("Content-Encoding") {
 	case "gzip":
@@ -135,42 +139,56 @@ func serveService(s *serviceParams) error {
 		defer reader.Close()
 	default:
 		reader = r.Body
+		defer reader.Close()
 	}
 
+	// Run BeforeInput service cycle method.
+	// In here we capture the repository's current state.
 	if err := s.hook.BeforeInput(); err != nil {
-		reader.Close()
-		w.WriteHeader(http.StatusInternalServerError)
 		return errors.Wrap(err, "BeforeInput hook err")
 	}
 
-	// Send the request to the git command
-	io.Copy(in, reader)
+	// Here, we send the request data to the git command
+	packIns := &PackInspector{}
+	io.Copy(in, io.TeeReader(reader, packIns))
 	in.Close()
+	// time.Sleep(15 * time.Second)
 
-	scn := pktline.NewScanner(stdout)
+	// Even though we have written to git, git will not apply the updates to the
+	// repository until we start to read from its stdin. As a trick, we read 1
+	// byte and unread it to get git to update the repository.
+	stdoutBf := util.TouchReader(stdout)
+	defer stdout.Close()
+
+	// Create a packfile scanner and encoding for reading
+	// the stdout buffer and writing to the http response
+	scn := pktline.NewScanner(stdoutBf)
 	pktEnc := pktline.NewEncoder(w)
+	defer pktEnc.Flush()
 
-	if err := s.hook.BeforeOutput(pktEnc); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	// BeforeOutput hook: Do work that needs to be done after the repository is
+	// updated - Commit validation, broadcasting etc
+	if err := s.hook.BeforeOutput(packIns.GetBranches()); err != nil {
+		pktEnc.Encode(sidebandErr(err.Error()))
 		return errors.Wrap(err, "BeforeOutput hook err")
 	}
 
 	// Read from the git command stdout and pipe the output to http response
 	for scn.Scan() {
-		fmt.Print("LINE:", string(scn.Bytes()))
 		if err := pktEnc.Encode(scn.Bytes()); err != nil {
 			return errors.Wrap(err, "failed to write git stdout data to http response")
 		}
 	}
 
-	// Ensure no error occurred while reading command stdout
+	// Ensure no error occurred while reading from git
 	if scn.Err() != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed to read from from git-%s", op))
 	}
 
-	pktEnc.Flush()
+	// AfterOutput hook:
+	if err := s.hook.AfterOutput(); err != nil {
+		return errors.Wrap(err, "AfterOutput hook err")
+	}
 
-	s.hook.AfterOutput()
-
-	return cmd.Wait()
+	return nil
 }

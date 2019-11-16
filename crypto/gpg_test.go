@@ -1,10 +1,14 @@
 package crypto_test
 
 import (
+	"os"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/makeos/mosdef/config"
 	. "github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/testutil"
 )
 
 var pk = `-----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -40,11 +44,26 @@ svCU0gx1j1vi1SKS
 
 var _ = Describe("Gpg", func() {
 
-	Describe(".GPGEntityFromPubKey", func() {
+	var err error
+	var cfg *config.EngineConfig
+	var gpgHome string
+
+	BeforeEach(func() {
+		cfg, err = testutil.SetTestCfg()
+		gpgHome = cfg.DataDir()
+		Expect(err).To(BeNil())
+	})
+
+	AfterEach(func() {
+		err = os.RemoveAll(cfg.DataDir())
+		Expect(err).To(BeNil())
+	})
+
+	Describe(".PGPEntityFromPubKey", func() {
 		When("pub key is not valid", func() {
 			It("should return err", func() {
 				pubKey := "abc"
-				_, err := GPGEntityFromPubKey(pubKey)
+				_, err := PGPEntityFromPubKey(pubKey)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("openpgp: invalid argument: no armored data found"))
 			})
@@ -52,8 +71,74 @@ var _ = Describe("Gpg", func() {
 
 		When("pub key is valid", func() {
 			It("should return nil", func() {
-				_, err := GPGEntityFromPubKey(pk)
+				_, err := PGPEntityFromPubKey(pk)
 				Expect(err).To(BeNil())
+			})
+		})
+	})
+
+	Describe(".GetGPGPublicKey", func() {
+		When("program execution fail", func() {
+			It("should return error", func() {
+				_, err := GetGPGPublicKey("unknown_key", "unknown_program", "")
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal(`failed to get public key (target id: unknown_key): ` +
+					`exec: "unknown_program": executable file not found in $PATH`))
+			})
+		})
+
+		When("key doesn't exist", func() {
+			It("should return err", func() {
+				_, err := GetGPGPublicKey("unknown_key", testutil.GPGProgramPath, "")
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("gpg public key not found"))
+			})
+		})
+
+		When("key exist", func() {
+			var keyID string
+
+			BeforeEach(func() {
+				keyID = testutil.CreateGPGKey(testutil.GPGProgramPath, gpgHome)
+			})
+
+			It("should return nil", func() {
+				en, err := GetGPGPublicKey(keyID, testutil.GPGProgramPath, gpgHome)
+				Expect(err).To(BeNil())
+				Expect(en.PrimaryKey.KeyIdString()).To(Equal(keyID))
+			})
+		})
+	})
+
+	Describe(".GetGPGPublicKey", func() {
+		When("program execution fail", func() {
+			It("should return error", func() {
+				_, err := GetGPGPublicKeyStr("unknown_key", "unknown_program", "")
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal(`failed to get public key (target id: unknown_key): ` +
+					`exec: "unknown_program": executable file not found in $PATH`))
+			})
+		})
+
+		When("key doesn't exist", func() {
+			It("should return err", func() {
+				_, err := GetGPGPublicKeyStr("unknown_key", testutil.GPGProgramPath, "")
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("gpg public key not found"))
+			})
+		})
+
+		When("key exist", func() {
+			var keyID string
+
+			BeforeEach(func() {
+				keyID = testutil.CreateGPGKey(testutil.GPGProgramPath, gpgHome)
+			})
+
+			It("should return nil", func() {
+				pkStr, err := GetGPGPublicKeyStr(keyID, testutil.GPGProgramPath, gpgHome)
+				Expect(err).To(BeNil())
+				Expect(pkStr).To(ContainSubstring("BEGIN PGP PUBLIC KEY BLOCK"))
 			})
 		})
 	})
@@ -80,7 +165,7 @@ committer Kennedy Idialu <email@example.com> 1573368035 +0100
 Changes made
 `
 			It("should return true", func() {
-				entity, err := GPGEntityFromPubKey(pk)
+				entity, err := PGPEntityFromPubKey(pk)
 				Expect(err).To(BeNil())
 				ok, err := VerifyGPGSignature(entity, []byte(sig), []byte(msg))
 				Expect(err).To(BeNil())
@@ -103,7 +188,7 @@ committer Kennedy Idialu <kennedyidialu@gmail.com> 1573236412 +0100
 lala
 `
 			It("should return true", func() {
-				entity, err := GPGEntityFromPubKey(pk)
+				entity, err := PGPEntityFromPubKey(pk)
 				Expect(err).To(BeNil())
 				ok, err := VerifyGPGSignature(entity, []byte(sig), []byte(msg))
 				Expect(err).ToNot(BeNil())
