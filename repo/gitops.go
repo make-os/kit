@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -171,4 +172,70 @@ func (g *GitOps) CreateTagWithMsg(args []string, msg, signingKey string, env ...
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), env...)
 	return errors.Wrap(cmd.Run(), "failed to create tag")
+}
+
+// ListTreeObjects returns a map containing tree entries (filename: objectname)
+func (g *GitOps) ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error) {
+	args := []string{"ls-tree", treename}
+	if recursive {
+		args = append(args, "-r")
+	}
+
+	cmd := exec.Command(g.gitBinPath, args...)
+	cmd.Dir = g.path
+	out := bytes.NewBuffer(nil)
+	cmd.Stdout = out
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(), env...)
+	err := cmd.Run()
+	if err != nil {
+		out.WriteTo(os.Stdout)
+		return nil, err
+	}
+
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	var treeMap = make(map[string]string)
+	for _, entry := range lines {
+		fields := strings.Fields(entry)
+		treeMap[fields[2]] = fields[3]
+	}
+
+	return treeMap, nil
+}
+
+// RemoveEntryFromNote removes a note
+func (g *GitOps) RemoveEntryFromNote(notename, objectHash string, env ...string) error {
+	args := []string{"notes", "--ref", notename, "add", "-m", "", "-f", objectHash}
+	cmd := exec.Command(g.gitBinPath, args...)
+	cmd.Dir = g.path
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(), env...)
+	return errors.Wrap(cmd.Run(), "failed to remove note")
+}
+
+// AddEntryToNote adds a note
+func (g *GitOps) AddEntryToNote(notename, objectHash, note string, env ...string) error {
+	args := []string{"notes", "--ref", notename, "add", "-m", note, "-f", objectHash}
+	cmd := exec.Command(g.gitBinPath, args...)
+	cmd.Dir = g.path
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(), env...)
+	return errors.Wrap(cmd.Run(), "failed to create note entry")
+}
+
+// CreateBlob creates a blob object
+func (g *GitOps) CreateBlob(content string) (string, error) {
+	cmd := exec.Command(g.gitBinPath, []string{"hash-object", "-w", "--stdin"}...)
+	cmd.Dir = g.path
+	cmd.Stdin = strings.NewReader(content)
+	out := bytes.NewBuffer(nil)
+	cmd.Stdout = out
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		out.WriteTo(os.Stdout)
+		return "", errors.Wrap(err, "failed to create blob")
+	}
+	return strings.TrimSpace(out.String()), nil
 }

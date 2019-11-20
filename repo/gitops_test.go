@@ -294,4 +294,77 @@ var _ = Describe("Gitops", func() {
 			})
 		})
 	})
+
+	Describe(".ListTreeObjects", func() {
+		var err error
+		var entries map[string]string
+
+		BeforeEach(func() {
+			createCommitAndNote(path, "file.txt", "hello", "commit 1", "note1")
+			createNoteEntry(path, "note1", "some note")
+			entries, err = gitOps.ListTreeObjects("refs/notes/note1", true)
+			Expect(err).To(BeNil())
+		})
+
+		It("should return 2 entries", func() {
+			Expect(entries).To(HaveLen(2))
+		})
+	})
+
+	Describe(".RemoveEntryFromNote", func() {
+		var err error
+		var entries map[string]string
+
+		BeforeEach(func() {
+			createCommitAndNote(path, "file.txt", "hello", "commit 1", "note1")
+			entryHash := createNoteEntry(path, "note1", "some note")
+			entries, err = gitOps.ListTreeObjects("refs/notes/note1", true)
+			Expect(err).To(BeNil())
+			Expect(entries).To(HaveLen(2))
+			err = gitOps.RemoveEntryFromNote("refs/notes/note1", entryHash)
+			entries, _ = gitOps.ListTreeObjects("refs/notes/note1", true)
+		})
+
+		It("should return 1 entry", func() {
+			Expect(err).To(BeNil())
+			Expect(entries).To(HaveLen(1))
+		})
+	})
+
+	Describe(".AddEntryToNote", func() {
+		var err error
+		var entries map[string]string
+
+		BeforeEach(func() {
+			createCommitAndNote(path, "file.txt", "hello", "commit 1", "note1")
+			entries, err = gitOps.ListTreeObjects("refs/notes/note1", true)
+			Expect(err).To(BeNil())
+			Expect(entries).To(HaveLen(1))
+
+			hash := createBlob(path, "some content")
+			err = gitOps.AddEntryToNote("refs/notes/note1", hash, "a note")
+			Expect(err).To(BeNil())
+
+			entries, err = gitOps.ListTreeObjects("refs/notes/note1", true)
+		})
+
+		It("should return 2 entries", func() {
+			Expect(err).To(BeNil())
+			Expect(entries).To(HaveLen(2))
+		})
+	})
+
+	Describe(".CreateBlob", func() {
+		var hash string
+		var err error
+
+		BeforeEach(func() {
+			hash, err = gitOps.CreateBlob("some content")
+			Expect(err).To(BeNil())
+		})
+
+		It("should return 40 character hash", func() {
+			Expect(hash).To(HaveLen(40))
+		})
+	})
 })

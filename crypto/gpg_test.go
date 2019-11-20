@@ -110,7 +110,7 @@ var _ = Describe("Gpg", func() {
 		})
 	})
 
-	Describe(".GetGPGPublicKey", func() {
+	Describe(".GetGPGPublicKeyStr", func() {
 		When("program execution fail", func() {
 			It("should return error", func() {
 				_, err := GetGPGPublicKeyStr("unknown_key", "unknown_program", "")
@@ -139,6 +139,39 @@ var _ = Describe("Gpg", func() {
 				pkStr, err := GetGPGPublicKeyStr(keyID, testutil.GPGProgramPath, gpgHome)
 				Expect(err).To(BeNil())
 				Expect(pkStr).To(ContainSubstring("BEGIN PGP PUBLIC KEY BLOCK"))
+			})
+		})
+	})
+
+	Describe(".GetGPGPrivateKey", func() {
+		When("program execution fail", func() {
+			It("should return error", func() {
+				_, err := GetGPGPrivateKey("unknown_key", "unknown_program", "")
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal(`failed to get private key (target id: unknown_key): ` +
+					`exec: "unknown_program": executable file not found in $PATH`))
+			})
+		})
+
+		When("key doesn't exist", func() {
+			It("should return err", func() {
+				_, err := GetGPGPrivateKey("unknown_key", testutil.GPGProgramPath, "")
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("gpg private key not found"))
+			})
+		})
+
+		When("key exist", func() {
+			var keyID string
+
+			BeforeEach(func() {
+				keyID = testutil.CreateGPGKey(testutil.GPGProgramPath, gpgHome)
+			})
+
+			It("should return nil", func() {
+				en, err := GetGPGPrivateKey(keyID, testutil.GPGProgramPath, gpgHome)
+				Expect(err).To(BeNil())
+				Expect(en.PrimaryKey.KeyIdString()).To(Equal(keyID))
 			})
 		})
 	})

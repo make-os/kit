@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -114,11 +115,28 @@ func (m *Manager) Start() {
 	m.wg.Done()
 }
 
+// TODO: Authorization
+func (m *Manager) handleAuth(r *http.Request) error {
+	// username, password, _ := r.BasicAuth()
+	// pp.Println(username, password)
+	// if username != "username" || password != "password" {
+	// 	return fmt.Errorf("unauthorized")
+	// }
+	return nil
+}
+
 // handler handles incoming http request from a git client
 func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 
 	m.log.Debug("New request", "Method", r.Method,
 		"URL", r.URL.String(), "ProtocolVersion", r.Proto)
+
+	if err := m.handleAuth(r); err != nil {
+		w.Header().Set("WWW-Authenticate", "Basic")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, http.StatusText(http.StatusUnauthorized))
+		return
+	}
 
 	// De-construct the URL to get the repo name and operation
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")

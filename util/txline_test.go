@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = FDescribe("TxLine", func() {
+var _ = Describe("TxLine", func() {
 	Describe(".RemoveTxLine", func() {
 		It("should remove tx line", func() {
 			str := "This is a line\nThis is another line\ntx: args args"
@@ -88,6 +88,77 @@ var _ = FDescribe("TxLine", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:fee, msg: fee must be numeric"))
 			})
+		})
+
+		When("txline has signature field but no value", func() {
+			It("should return error", func() {
+				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00 sig="
+				_, err := ParseTxLine(str)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:sig, msg: signature value is required"))
+			})
+		})
+
+		When("txline has signature value that does not begin with 0x", func() {
+			It("should return error", func() {
+				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00 sig=abc"
+				_, err := ParseTxLine(str)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:sig, msg: signature format is not valid"))
+			})
+		})
+
+		When("txline has signature value that is not a valid hex", func() {
+			It("should return error", func() {
+				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00 sig=0xabc"
+				_, err := ParseTxLine(str)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:sig, msg: signature format is not valid"))
+			})
+		})
+
+		When("txline has signature format", func() {
+			It("should return error", func() {
+				sigHex := ToHex([]byte("abc"))
+				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00 sig=" + sigHex
+				txLine, err := ParseTxLine(str)
+				Expect(err).To(BeNil())
+				Expect(txLine).To(Equal(&TxLine{
+					Fee:       "1",
+					Nonce:     0x0000000000000002,
+					PubKeyID:  "0x9aed9dbda362c75e9feaa07241aac207d5ef4e00",
+					Signature: "abc",
+				}))
+			})
+		})
+	})
+
+	Describe(".MakeTxLine", func() {
+		When("when signature is nil", func() {
+			It("should return expected string", func() {
+				txLine := MakeTxLine("1", "1", "pkID", nil)
+				Expect(txLine).To(Equal("tx: fee=1, nonce=1, pkId=pkID"))
+			})
+		})
+
+		When("when signature is set", func() {
+			It("should return expected string", func() {
+				txLine := MakeTxLine("1", "1", "pkID", []byte("abc"))
+				Expect(txLine).To(Equal("tx: fee=1, nonce=1, pkId=pkID sig=0x616263"))
+			})
+		})
+	})
+
+	Describe("TxLine.String", func() {
+		It("should return", func() {
+			txLine := &TxLine{
+				Fee:       "1",
+				Nonce:     0x0000000000000002,
+				PubKeyID:  "0x9aed9dbda362c75e9feaa07241aac207d5ef4e00",
+				Signature: "abc",
+			}
+			expected := `tx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00 sig=0x616263`
+			Expect(txLine.String()).To(Equal(expected))
 		})
 	})
 })

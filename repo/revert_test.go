@@ -298,7 +298,7 @@ var _ = Describe("Revert", func() {
 		})
 	})
 
-	FDescribe(".Revert (notes)", func() {
+	Describe(".Revert (notes)", func() {
 		var path string
 		var prevState *State
 
@@ -340,7 +340,7 @@ var _ = Describe("Revert", func() {
 			})
 		})
 
-		FWhen("repo old state has 1 note; new state has 0 note", func() {
+		When("repo old state has 1 note; new state has 0 note", func() {
 
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "note1")

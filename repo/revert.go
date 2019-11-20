@@ -30,8 +30,7 @@ const (
 // options: Additional options. prefixOpt forces the operation to ignore
 // any reference that does not contain the provided prefix.
 func (rb *Manager) revert(repo *Repo, prevState *State, options ...kvOption) (*Changes, error) {
-
-	var actions []*Action
+ 	var actions []*Action
 	changes := getKVOpt("changes", options)
 
 	// Get the changes from previous state to the current

@@ -4,9 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"strings"
+	"regexp"
 
-	"github.com/bitfield/script"
 	drandmocks "github.com/makeos/mosdef/crypto/rand/mocks"
 
 	"github.com/golang/mock/gomock"
@@ -145,6 +144,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 
 // CreateGPGKey creates a GPG RSA key and returns the key id
 func CreateGPGKey(gpgProgram, tempDir string) string {
+	randStr := util.RandString(5)
 	f, err := ioutil.TempFile(tempDir, "testkey")
 	if err != nil {
 		panic(err)
@@ -155,8 +155,8 @@ Key-Type: RSA
 Key-Length: 2048
 Subkey-Type: 1
 Subkey-Length: 2048
-Name-Real: Root Superuser
-Name-Email: root@example.com
+Name-Real: Root ` + randStr + `
+Name-Email: ` + randStr + `@example.com
 Expire-Date: 0`)
 	args := []string{"--batch", "--gen-key", f.Name()}
 	cmd := exec.Command(gpgProgram, args...)
@@ -166,9 +166,8 @@ Expire-Date: 0`)
 	if err != nil {
 		panic(err)
 	}
-	x, err := script.Echo(string(out)).First(3).Column(3).Last(1).String()
-	if err != nil {
-		panic(err)
-	}
-	return strings.TrimSpace(x)
+
+	reg := regexp.MustCompile("\\s([A-Z0-9]{16})\\s")
+	match := reg.FindStringSubmatch(string(out))
+	return match[1]
 }

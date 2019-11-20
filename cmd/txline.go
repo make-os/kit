@@ -61,10 +61,30 @@ var txlineTagCmd = &cobra.Command{
 	},
 }
 
+var txlineSignNoteCmd = &cobra.Command{
+	Use:   "note",
+	Short: "Sign and add transaction information to a note",
+	Long:  `Sign and add transaction information to a note`,
+	Run: func(cmd *cobra.Command, args []string) {
+		fee, _ := cmd.Flags().GetString("fee")
+		nonce, _ := cmd.Flags().GetString("nonce")
+		sk, _ := cmd.Flags().GetString("signingKey")
+
+		if len(args) == 0 {
+			log.Fatal("tag name is required")
+		}
+
+		if err := repo.AddSignedTxBlob(cfg.Node.GitBinPath, fee, nonce, sk, args[0]); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
 func initCommit() {
 	rootCmd.AddCommand(txlineCmd)
 	txlineCmd.AddCommand(txlineTagCmd)
 	txlineCmd.AddCommand(txlineCommitCmd)
+	txlineCmd.AddCommand(txlineSignNoteCmd)
 
 	txlineCmd.PersistentFlags().StringP("fee", "f", "0", "Set the transaction fee")
 	txlineCmd.PersistentFlags().StringP("nonce", "n", "0", "Set the transaction nonce")

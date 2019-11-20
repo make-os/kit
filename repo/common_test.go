@@ -73,7 +73,7 @@ var _ = Describe("Gitops", func() {
 			Expect(objsID).To(HaveLen(6))
 			size, err := objsID.GetSize(repo)
 			Expect(err).To(BeNil())
-			Expect(size).To(Equal(int64(533)))
+			Expect(size).To(Equal(int64(493)))
 		})
 	})
 })

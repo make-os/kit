@@ -2,12 +2,14 @@ package repo
 
 import (
 	"crypto/rsa"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/bitfield/script"
+	"golang.org/x/crypto/openpgp"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
@@ -27,9 +29,15 @@ var _ = Describe("Validation", func() {
 	var path string
 	var gpgKeyID string
 	var pubKey string
+	var privKey *openpgp.Entity
+	var privKey2 *openpgp.Entity
 
 	var gpgPubKeyGetter = func(pkId string) (string, error) {
 		return pubKey, nil
+	}
+
+	var gpgInvalidPubKeyGetter = func(pkId string) (string, error) {
+		return "invalid key", nil
 	}
 
 	var gpgPubKeyGetterWithErr = func(err error) func(pkId string) (string, error) {
@@ -43,7 +51,10 @@ var _ = Describe("Validation", func() {
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		gpgKeyID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
+		gpgKeyID2 := testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
 		pubKey, err = crypto.GetGPGPublicKeyStr(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
+		privKey, err = crypto.GetGPGPrivateKey(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
+		privKey2, err = crypto.GetGPGPrivateKey(gpgKeyID2, testutil.GPGProgramPath, cfg.DataDir())
 		Expect(err).To(BeNil())
 		GitEnv = append(GitEnv, "GNUPGHOME="+cfg.DataDir())
 	})
@@ -105,9 +116,9 @@ var _ = Describe("Validation", func() {
 				err = checkCommit(cob, false, repo, gpgPubKeyGetter)
 			})
 
-			It("should return err='is unsigned. Please sign the commit with your gpg key'", func() {
+			It("should return err='is unsigned. please sign the commit with your gpg key'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("is unsigned. Please sign the commit with your gpg key"))
+				Expect(err.Error()).To(ContainSubstring("is unsigned. please sign the commit with your gpg key"))
 			})
 		})
 
@@ -123,9 +134,9 @@ var _ = Describe("Validation", func() {
 				err = checkCommit(cob, false, repo, gpgPubKeyGetterWithErr(fmt.Errorf("bad error")))
 			})
 
-			It("should return err='..Public key..was not found'", func() {
+			It("should return err='..public key..was not found'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp(".*Public key.*was not found"))
+				Expect(err.Error()).To(MatchRegexp(".*public key.*was not found"))
 			})
 		})
 
@@ -208,9 +219,9 @@ var _ = Describe("Validation", func() {
 				err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
 			})
 
-			It("should return err='is unsigned. Please sign the tag with your gpg key'", func() {
+			It("should return err='is unsigned. please sign the tag with your gpg key'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("is unsigned. Please sign the tag with your gpg key"))
+				Expect(err.Error()).To(ContainSubstring("is unsigned. please sign the tag with your gpg key"))
 			})
 		})
 
@@ -226,9 +237,9 @@ var _ = Describe("Validation", func() {
 				err = checkAnnotatedTag(tob, repo, gpgPubKeyGetterWithErr(fmt.Errorf("bad error")))
 			})
 
-			It("should return err='..Public key..was not found'", func() {
+			It("should return err='..public key..was not found'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp(".*Public key.*was not found"))
+				Expect(err.Error()).To(MatchRegexp(".*public key.*was not found"))
 			})
 		})
 
@@ -276,6 +287,141 @@ var _ = Describe("Validation", func() {
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 				err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
+			})
+
+			It("should return nil", func() {
+				Expect(err).To(BeNil())
+			})
+		})
+	})
+
+	Describe(".checkNote", func() {
+		var err error
+
+		When("target note does not exist", func() {
+			BeforeEach(func() {
+				err = checkNote(repo, "unknown", gpgPubKeyGetter)
+			})
+
+			It("should return err='unable to fetch note entries (unknown)'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("unable to fetch note entries (unknown)"))
+			})
+		})
+
+		When("a note does not have a tx blob object", func() {
+			BeforeEach(func() {
+				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
+				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+			})
+
+			It("should return err='unacceptable note. it does not have a signed transaction object'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("unacceptable note. it does not have a signed transaction object"))
+			})
+		})
+
+		When("a notes tx blob has invalid tx line", func() {
+			BeforeEach(func() {
+				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
+				createNoteEntry(path, "note1", "tx:invalid")
+				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+			})
+
+			It("should return err='note (refs/notes/note1): txline is malformed'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("note (refs/notes/note1): txline is malformed"))
+			})
+		})
+
+		When("a notes tx blob has invalid signature format", func() {
+			BeforeEach(func() {
+				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=xyz")
+				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+			})
+
+			It("should return err='note (refs/notes/note1): field:sig, msg: signature format is not valid'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("note (refs/notes/note1): field:sig, msg: signature format is not valid"))
+			})
+		})
+
+		When("a notes tx blob has an unknown public key id", func() {
+			BeforeEach(func() {
+				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x616263")
+				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetterWithErr(fmt.Errorf("error finding pub key")))
+			})
+
+			It("should return err='unable to verify note (refs/notes/note1). public key was not found.'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("unable to verify note (refs/notes/note1). public key was not found"))
+			})
+		})
+
+		When("a notes tx blob includes a public key id to an invalid public key", func() {
+			BeforeEach(func() {
+				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x616263")
+				err = checkNote(repo, "refs/notes/note1", gpgInvalidPubKeyGetter)
+			})
+
+			It("should return err='unable to verify note (refs/notes/note1). public key .. was not found.'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("unable to verify note (refs/notes/note1). public key is not valid"))
+			})
+		})
+
+		When("a note's signature is not signed with an expected private key", func() {
+			var sig []byte
+			BeforeEach(func() {
+				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
+				commitHash := getRecentCommitHash(path, "refs/notes/note1")
+				msg := []byte("0" + "0" + "0x0000000000000000000000000000000000000000" + commitHash)
+				sig, err = crypto.GPGSign(privKey2, msg)
+				Expect(err).To(BeNil())
+				sigHex := hex.EncodeToString(sig)
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x"+sigHex)
+				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+			})
+
+			It("should return err='invalid signature: RSA verification failure'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("invalid signature: RSA verification failure"))
+			})
+		})
+
+		When("a note's signature message content/format is not expected", func() {
+			var sig []byte
+			BeforeEach(func() {
+				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
+				commitHash := getRecentCommitHash(path, "refs/notes/note1")
+				msg := []byte("0" + "0" + "0x0000000000000000000000000000000000000001" + commitHash)
+				sig, err = crypto.GPGSign(privKey, msg)
+				Expect(err).To(BeNil())
+				sigHex := hex.EncodeToString(sig)
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x"+sigHex)
+				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+			})
+
+			It("should return err='...invalid signature: hash tag doesn't match'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("invalid signature: hash tag doesn't match"))
+			})
+		})
+
+		When("a note's signature is valid", func() {
+			var sig []byte
+			BeforeEach(func() {
+				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
+				commitHash := getRecentCommitHash(path, "refs/notes/note1")
+				msg := []byte("0" + "0" + "0x0000000000000000000000000000000000000000" + commitHash)
+				sig, err = crypto.GPGSign(privKey, msg)
+				Expect(err).To(BeNil())
+				sigHex := hex.EncodeToString(sig)
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x"+sigHex)
+				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
 			It("should return nil", func() {

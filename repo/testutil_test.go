@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/bitfield/script"
 )
@@ -83,6 +84,23 @@ func createCommitAndNote(path, file, fileData, commitMsg, noteName string) {
 	execGit(path, "notes", "--ref", noteName, "add", "-m", commitMsg, "-f")
 }
 
+func createBlob(path, content string) string {
+	hash, err := script.Echo("").ExecInDir(`git hash-object -w --stdin`, path).String()
+	if err != nil {
+		panic(err)
+	}
+	return strings.TrimSpace(hash)
+}
+
+func createNoteEntry(path, noteName, msg string) string {
+	hash, err := script.Echo("").ExecInDir(`git hash-object -w --stdin`, path).String()
+	if err != nil {
+		panic(err)
+	}
+	execGit(path, "notes", "--ref", noteName, "add", "-m", msg, "-f", strings.TrimSpace(hash))
+	return strings.TrimSpace(hash)
+}
+
 func deleteTag(path, name string) {
 	execGit(path, "tag", "-d", name)
 }
@@ -107,4 +125,8 @@ func execAnyCmd(workDir, name string, arg ...string) []byte {
 		panic(err)
 	}
 	return bz
+}
+
+func getRecentCommitHash(path, ref string) string {
+	return strings.TrimSpace(string(execGit(path, "--no-pager", "log", ref, "-1", "--format=%H")))
 }

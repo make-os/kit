@@ -57,6 +57,39 @@ func GetGPGPublicKey(keyID string, gpgProgram, gpgHome string) (*openpgp.Entity,
 	return entities[0], nil
 }
 
+// GetGPGPrivateKey finds the GPG privkate key on the machine
+// keyID: The id of the key
+// gpgProgram: The path to the gpg executeable
+func GetGPGPrivateKey(keyID string, gpgProgram, gpgHome string) (*openpgp.Entity, error) {
+
+	// Run the command to fetch the public key
+	cmd := exec.Command(gpgProgram, "--export-secret-keys", "-a", keyID)
+
+	if gpgHome != "" {
+		cmd.Env = os.Environ()
+		cmd.Env = append(cmd.Env, "GNUPGHOME="+gpgHome)
+	}
+
+	bz, err := cmd.Output()
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.
+			Sprintf("failed to get private key (target id: %s)", keyID))
+	}
+
+	// If no output, then the private key does not exist
+	if len(bz) == 0 {
+		return nil, fmt.Errorf("gpg private key not found")
+	}
+
+	// Read the private key into an entity
+	entities, err := openpgp.ReadArmoredKeyRing(bytes.NewReader(bz))
+	if err != nil {
+		return nil, err
+	}
+
+	return entities[0], nil
+}
+
 // GetGPGPublicKeyStr finds and returns the GPG public key as a string
 // keyID: The id of the key
 // gpgProgram: The path to the gpg executeable
@@ -116,4 +149,15 @@ func VerifyGPGSignature(pubKeyEntity *openpgp.Entity, sig []byte, msg []byte) (b
 	}
 
 	return true, nil
+}
+
+// GPGSign sign a message
+func GPGSign(entity *openpgp.Entity, message []byte) ([]byte, error) {
+	writer := new(bytes.Buffer)
+	reader := bytes.NewReader(message)
+	err := openpgp.ArmoredDetachSign(writer, entity, reader, nil)
+	if err != nil {
+		return nil, err
+	}
+	return writer.Bytes(), nil
 }
