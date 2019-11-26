@@ -11,7 +11,7 @@ type (
 
 const (
 	// ChangeTypeNew represents a new, unique item added to a collection
-	ChangeTypeNew = iota
+	ChangeTypeNew ColChangeType = iota
 	// ChangeTypeRemove represents a removal of a collection item
 	ChangeTypeRemove
 	// ChangeTypeUpdate represents an update to the value of a collection item

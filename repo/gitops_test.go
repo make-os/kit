@@ -311,6 +311,22 @@ var _ = Describe("Gitops", func() {
 		})
 	})
 
+	Describe(".ListTreeObjectsSlice", func() {
+		var err error
+		var entries []string
+
+		BeforeEach(func() {
+			createCommitAndNote(path, "file.txt", "hello", "commit 1", "note1")
+			createNoteEntry(path, "note1", "some note")
+			entries, err = gitOps.ListTreeObjectsSlice("refs/notes/note1", true, false)
+			Expect(err).To(BeNil())
+		})
+
+		It("should return a slice containing 2 entries", func() {
+			Expect(entries).To(HaveLen(2))
+		})
+	})
+
 	Describe(".RemoveEntryFromNote", func() {
 		var err error
 		var entries map[string]string

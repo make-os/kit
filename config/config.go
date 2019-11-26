@@ -176,6 +176,7 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	c.netDataDir = path.Join(dataDir, viper.GetString("net.version"))
 	c.accountDir = path.Join(c.DataDir(), AccountDirName)
 	c.consoleHistoryPath = path.Join(c.DataDir(), ".console_history")
+	c.repoDir = path.Join(c.NetDataDir(), "repos")
 
 	// Create network data directory
 	os.MkdirAll(c.NetDataDir(), 0700)

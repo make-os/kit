@@ -43,6 +43,12 @@ func appendCommit(path, file, fileData, commitMsg string) {
 	execGitCommit(path, commitMsg)
 }
 
+func appendDirAndCommitFile(path, targetDir, file, fileData, commitMsg string) {
+	execAnyCmd(path, "mkdir", targetDir)
+	appendToFile(path, filepath.Join(targetDir, file), fileData)
+	execGitCommit(path, commitMsg)
+}
+
 func appendSignedCommit(path, file, fileData, commitMsg, keyID string) {
 	appendToFile(path, file, fileData)
 	execGitSignedCommit(path, commitMsg, keyID)

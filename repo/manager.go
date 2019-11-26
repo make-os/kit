@@ -8,9 +8,11 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/util/logger"
+	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -70,32 +72,40 @@ svCU0gx1j1vi1SKS
 
 // ReposManager provides functionality for manipulating a repository's state
 type ReposManager interface {
-	GetRepoState(path string, options ...kvOption) (*State, error)
-	Revert(path string, prevState *State, options ...kvOption) (*Changes, error)
+	GetRepoState(repo *Repo, options ...kvOption) (*State, error)
+	Revert(repo *Repo, prevState *State, options ...kvOption) (*Changes, error)
 	GetPGPPubKeyGetter() PGPPubKeyGetter
 }
 
 // Manager implements types.Manager. It provides a system for managing
 // and service a git repositories through http and ssh protocols.
 type Manager struct {
-	log        logger.Logger
-	wg         *sync.WaitGroup
-	srv        *http.Server
-	rootDir    string
-	addr       string
-	gitBinPath string
+	log         logger.Logger
+	wg          *sync.WaitGroup
+	srv         *http.Server
+	rootDir     string
+	addr        string
+	gitBinPath  string
+	repoDBCache *DBCache
 }
 
 // NewManager creates an instance of Manager
 func NewManager(cfg *config.EngineConfig, addr string) *Manager {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
+
+	dbCache, err := NewDBCache(1000, cfg.GetRepoRoot(), 5*time.Minute)
+	if err != nil {
+		panic(errors.Wrap(err, "failed create repo db cache"))
+	}
+
 	return &Manager{
-		log:        cfg.G().Log.Module("Manager"),
-		addr:       addr,
-		rootDir:    cfg.GetRepoRoot(),
-		gitBinPath: cfg.Node.GitBinPath,
-		wg:         wg,
+		log:         cfg.G().Log.Module("Manager"),
+		addr:        addr,
+		rootDir:     cfg.GetRepoRoot(),
+		gitBinPath:  cfg.Node.GitBinPath,
+		wg:          wg,
+		repoDBCache: dbCache,
 	}
 }
 
@@ -108,7 +118,6 @@ func (m *Manager) SetRootDir(dir string) {
 func (m *Manager) Start() {
 	s := http.NewServeMux()
 	s.HandleFunc("/", m.handler)
-
 	m.log.Info("Server has started", "Address", m.addr)
 	m.srv = &http.Server{Addr: m.addr, Handler: s}
 	m.srv.ListenAndServe()
@@ -128,8 +137,10 @@ func (m *Manager) handleAuth(r *http.Request) error {
 // handler handles incoming http request from a git client
 func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 
-	m.log.Debug("New request", "Method", r.Method,
-		"URL", r.URL.String(), "ProtocolVersion", r.Proto)
+	m.log.Debug("New request",
+		"Method", r.Method,
+		"URL", r.URL.String(),
+		"ProtocolVersion", r.Proto)
 
 	if err := m.handleAuth(r); err != nil {
 		w.Header().Set("WWW-Authenticate", "Basic")
@@ -162,9 +173,11 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 		w: w,
 		r: r,
 		repo: &Repo{
+			Name:       repoName,
 			Repository: repo,
 			GitOps:     NewGitOps(m.gitBinPath, fullRepoDir),
 			Path:       fullRepoDir,
+			DBOps:      NewDBOps(m.repoDBCache, repoName),
 		},
 		repoDir:    fullRepoDir,
 		op:         op,
@@ -229,11 +242,7 @@ func getRepoWithGitOpt(gitBinPath, path string) (*Repo, error) {
 
 // GetRepoState returns the state of the repository at the given path
 // options: Allows the caller to configure how and what state are gathered
-func (m *Manager) GetRepoState(path string, options ...kvOption) (*State, error) {
-	repo, err := getRepo(path)
-	if err != nil {
-		return nil, err
-	}
+func (m *Manager) GetRepoState(repo *Repo, options ...kvOption) (*State, error) {
 	return m.getRepoState(repo, options...), nil
 }
 
@@ -242,14 +251,14 @@ func (m *Manager) GetRepoState(path string, options ...kvOption) (*State, error)
 // options: Allows the caller to configure how and what state are gathered
 func (m *Manager) getRepoState(repo *Repo, options ...kvOption) *State {
 
-	refPrefix := ""
-	if opt := getKVOpt("prefix", options); opt != nil {
-		refPrefix = opt.(string)
+	refMatch := ""
+	if opt := getKVOpt("match", options); opt != nil {
+		refMatch = opt.(string)
 	}
 
 	// Get references
 	refs := make(map[string]Item)
-	if refPrefix == "" || strings.HasPrefix(refPrefix, "refs") {
+	if refMatch == "" || strings.HasPrefix(refMatch, "refs") {
 		refsI, _ := repo.References()
 		refsI.ForEach(func(ref *plumbing.Reference) error {
 
@@ -258,9 +267,8 @@ func (m *Manager) getRepoState(repo *Repo, options ...kvOption) *State {
 				return nil
 			}
 
-			// If a prefix is set, ignore a reference whose name does not match
-			// the prefix we are searching for.
-			if refPrefix != "" && !strings.HasPrefix(ref.Name().String(), refPrefix) {
+			// If a ref match is set, ignore a reference whose name does not match
+			if refMatch != "" && ref.Name().String() != refMatch {
 				return nil
 			}
 
@@ -280,17 +288,8 @@ func (m *Manager) getRepoState(repo *Repo, options ...kvOption) *State {
 }
 
 // Revert reverts the repository from its current state to the previous state.
-// path: The path to a valid repository
-func (m *Manager) Revert(path string, prevState *State, options ...kvOption) (*Changes, error) {
-	repo, err := git.PlainOpen(path)
-	if err != nil {
-		return nil, err
-	}
-	return m.revert(&Repo{
-		Repository: repo,
-		GitOps:     NewGitOps(m.gitBinPath, path),
-		Path:       path,
-	}, prevState, options...)
+func (m *Manager) Revert(repo *Repo, prevState *State, options ...kvOption) (*Changes, error) {
+	return m.revert(repo, prevState, options...)
 }
 
 // Wait can be used by the caller to wait till the server terminates
@@ -303,5 +302,6 @@ func (m *Manager) Stop(ctx context.Context) {
 	if m.srv != nil {
 		m.log.Info("Server is stopped")
 		m.srv.Shutdown(ctx)
+		m.repoDBCache.Clear()
 	}
 }

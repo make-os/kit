@@ -93,6 +93,9 @@ type EngineConfig struct {
 	// dbDir is where the node's database files are stored
 	dbDir string
 
+	// repoDir is where repositories are stored
+	repoDir string
+
 	// consoleHistoryPath is the path to the file where console input
 	// history is stored.
 	consoleHistoryPath string
@@ -144,7 +147,12 @@ func (c *EngineConfig) GetDBRootDir() string {
 
 // GetRepoRoot returns the repo root directory
 func (c *EngineConfig) GetRepoRoot() string {
-	return filepath.Join(c.NetDataDir(), "repos")
+	return c.repoDir
+}
+
+// SetRepoRoot sets the repo root directory
+func (c *EngineConfig) SetRepoRoot(dir string) {
+	c.repoDir = dir
 }
 
 // GetAppDBDir returns the path where app's database files are stored

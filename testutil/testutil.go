@@ -53,6 +53,8 @@ func SetTestCfg() (*config.EngineConfig, error) {
 	// Initialize the config using the test root command
 	config.Configure(rootCmd, cfg, tmcfg)
 	cfg.Node.Mode = config.ModeTest
+	os.MkdirAll(path.Join(cfg.NetDataDir(), "repos"), 0700)
+	cfg.SetRepoRoot(path.Join(cfg.NetDataDir(), "repos"))
 
 	// Initialize the directory
 	commands.SetConfig(tmcfg)
@@ -76,6 +78,15 @@ func GetDB(cfg *config.EngineConfig) (appDB *storage.Badger, stateTreeDB *storag
 		panic(err)
 	}
 	return appDB, stateTreeDB
+}
+
+// GetDBAtDir test databases at a directory
+func GetDBAtDir(cfg *config.EngineConfig, dir string) *storage.Badger {
+	db := storage.NewBadger()
+	if err := db.Init(dir); err != nil {
+		panic(err)
+	}
+	return db
 }
 
 // MockObjects contains mocks for various structs

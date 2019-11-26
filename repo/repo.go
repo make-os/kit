@@ -6,15 +6,25 @@ import (
 	"os"
 	"strings"
 
-	"github.com/k0kubun/pp"
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util"
+	"github.com/thoas/go-funk"
 
+	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	"github.com/pkg/errors"
 )
+
+// Repo represents a git repository
+type Repo struct {
+	*git.Repository
+	*GitOps
+	*DBOps
+	Path string
+	Name string
+}
 
 // getCurrentWDRepo returns a Repo instance pointed to the repository
 // in the current working directory.
@@ -36,12 +46,12 @@ func getCurrentWDRepo(gitBinDir string) (*Repo, error) {
 	return repo, nil
 }
 
-// AmendRecentCommitTxLine attempts to add or amend transaction argument to
+// amendRecentCommitTxLine attempts to add or amend transaction argument to
 // the recent commit. If no transaction line exist, it will add a new
 // one populated with the provided arguments.
 // Transaction line allows the user to set transaction arguments such as
 // fee, public key, etc. A txline has the format tx: fee=10, pk=ad1..xyz, nonce=1
-func AmendRecentCommitTxLine(gitBinDir, txFee, txNonce, signingKey string) error {
+func amendRecentCommitTxLine(gitBinDir, txFee, txNonce, signingKey string) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
 	if err != nil {
@@ -92,8 +102,8 @@ func AmendRecentCommitTxLine(gitBinDir, txFee, txNonce, signingKey string) error
 	return nil
 }
 
-// CreateTagWithTxLine creates a tag and adds a txline to the tag message
-func CreateTagWithTxLine(args []string, gitBinDir, txFee, txNonce, signingKey string) error {
+// createTagWithTxLine creates a tag and adds a txline to the tag message
+func createTagWithTxLine(args []string, gitBinDir, txFee, txNonce, signingKey string) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
 	if err != nil {
@@ -150,8 +160,8 @@ func CreateTagWithTxLine(args []string, gitBinDir, txFee, txNonce, signingKey st
 	return nil
 }
 
-// AddSignedTxBlob creates a blob object that contains a signed tx line.
-func AddSignedTxBlob(gitBinDir, txFee, txNonce, signingKey, note string) error {
+// addSignedTxBlob creates a blob object that contains a signed tx line.
+func addSignedTxBlob(gitBinDir, txFee, txNonce, signingKey, note string) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
 	if err != nil {
@@ -229,7 +239,6 @@ func AddSignedTxBlob(gitBinDir, txFee, txNonce, signingKey, note string) error {
 	// Sign a message composed of the tx information
 	// fee + nonce + public key id + note hash
 	sigMsg := []byte(txFee + txNonce + pkID + noteHash)
-	pp.Println(">>", noteHash)
 	sig, err := crypto.GPGSign(pkEntity, sigMsg)
 	if err != nil {
 		return errors.Wrap(err, "failed to sign transaction parameters")
@@ -252,4 +261,50 @@ func AddSignedTxBlob(gitBinDir, txFee, txNonce, signingKey, note string) error {
 	fmt.Println("Added signed transaction object to note")
 
 	return nil
+}
+
+// getTreeEntries returns all entries in a tree.
+func getTreeEntries(repo *Repo, treeHash string) ([]string, error) {
+	entries, err := repo.ListTreeObjectsSlice(treeHash, true, true)
+	if err != nil {
+		return nil, err
+	}
+	return entries, nil
+}
+
+// getCommitHistory gets all objects that led up to the given commit, such
+// as parent commits, trees and blobs.
+// repo: The target repository
+// commit: The target commit
+// stopCommitHash: A commit hash that when found triggers the end of the search.
+func getCommitHistory(repo *Repo, commit *object.Commit, stopCommitHash string) ([]string, error) {
+	var hashes []string
+
+	// Stop if commit hash matches the stop hash
+	if commit.Hash.String() == stopCommitHash {
+		return hashes, nil
+	}
+
+	// Add the commit and the tree hash
+	hashes = append(hashes, commit.Hash.String())
+	hashes = append(hashes, commit.TreeHash.String())
+
+	// Get entries of the tree (blobs and sub-trees)
+	entries, err := getTreeEntries(repo, commit.TreeHash.String())
+	if err != nil {
+		return nil, err
+	}
+	hashes = append(hashes, entries...)
+
+	// Perform same operation on the parents of the commit
+	err = commit.Parents().ForEach(func(parent *object.Commit) error {
+		childHashes, err := getCommitHistory(repo, parent, stopCommitHash)
+		if err != nil {
+			return err
+		}
+		hashes = append(hashes, childHashes...)
+		return nil
+	})
+
+	return funk.UniqString(hashes), err
 }

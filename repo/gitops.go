@@ -203,6 +203,38 @@ func (g *GitOps) ListTreeObjects(treename string, recursive bool, env ...string)
 	return treeMap, nil
 }
 
+// ListTreeObjectsSlice returns a slice containing objects name of tree entries
+func (g *GitOps) ListTreeObjectsSlice(treename string, recursive, showTrees bool, env ...string) ([]string, error) {
+	args := []string{"ls-tree", treename}
+	if recursive {
+		args = append(args, "-r")
+	}
+	if recursive && showTrees {
+		args = append(args, "-t")
+	}
+
+	cmd := exec.Command(g.gitBinPath, args...)
+	cmd.Dir = g.path
+	out := bytes.NewBuffer(nil)
+	cmd.Stdout = out
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(), env...)
+	err := cmd.Run()
+	if err != nil {
+		out.WriteTo(os.Stdout)
+		return nil, err
+	}
+
+	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
+	var entriesHash = []string{}
+	for _, entry := range lines {
+		fields := strings.Fields(entry)
+		entriesHash = append(entriesHash, fields[2])
+	}
+
+	return entriesHash, nil
+}
+
 // RemoveEntryFromNote removes a note
 func (g *GitOps) RemoveEntryFromNote(notename, objectHash string, env ...string) error {
 	args := []string{"notes", "--ref", notename, "add", "-m", "", "-f", objectHash}
