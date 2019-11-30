@@ -29,7 +29,7 @@ const (
 // Revert reverts the repository from its current state to the previous state.
 // options: Additional options. prefixOpt forces the operation to ignore
 // any reference that does not contain the provided prefix.
-func (rb *Manager) revert(repo *Repo, prevState *State, options ...kvOption) (*Changes, error) {
+func (rb *Manager) revert(repo *Repo, prevState *State, options ...KVOption) (*Changes, error) {
 	var actions []*Action
 	changes := getKVOpt("changes", options)
 

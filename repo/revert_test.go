@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/bitfield/script"
+	"github.com/golang/mock/gomock"
 	"github.com/phayes/freeport"
 
 	. "github.com/onsi/ginkgo"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/testutil"
+	"github.com/makeos/mosdef/testutil/mockutil"
 	"github.com/makeos/mosdef/util"
 )
 
@@ -24,6 +26,8 @@ var _ = Describe("Revert", func() {
 	var repoMgr *Manager
 	var repo *Repo
 	var path string
+	var ctrl *gomock.Controller
+	var mockLogic *mockutil.MockObjects
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -34,8 +38,10 @@ var _ = Describe("Revert", func() {
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
 
+		ctrl = gomock.NewController(GinkgoT())
+		mockLogic = mockutil.MockLogic(ctrl)
 		port, _ := freeport.GetFreePort()
-		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port))
+		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic)
 		repo, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})

@@ -39,7 +39,8 @@ var txlineCommitCmd = &cobra.Command{
 		nonce, _ := cmd.Flags().GetString("nonce")
 		sk, _ := cmd.Flags().GetString("signingKey")
 
-		if err := repo.AmendRecentCommitTxLine(cfg.Node.GitBinPath, fee, nonce, sk); err != nil {
+		if err := repo.AmendRecentCommitTxLineCmd(cfg.Node.GitBinPath, fee,
+			nonce, sk); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -55,7 +56,8 @@ var txlineTagCmd = &cobra.Command{
 		sk, _ := cmd.Flags().GetString("signingKey")
 
 		args = cmd.Flags().Args()
-		if err := repo.CreateTagWithTxLine(args, cfg.Node.GitBinPath, fee, nonce, sk); err != nil {
+		if err := repo.CreateTagWithTxLineCmd(args, cfg.Node.GitBinPath, fee,
+			nonce, sk); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -74,7 +76,8 @@ var txlineSignNoteCmd = &cobra.Command{
 			log.Fatal("tag name is required")
 		}
 
-		if err := repo.AddSignedTxBlob(cfg.Node.GitBinPath, fee, nonce, sk, args[0]); err != nil {
+		if err := repo.AddSignedTxBlobCmd(cfg.Node.GitBinPath, fee, nonce,
+			sk, args[0]); err != nil {
 			log.Fatal(err.Error())
 		}
 	},

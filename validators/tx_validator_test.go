@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/makeos/mosdef/testutil/mockutil"
 	"github.com/makeos/mosdef/types"
 )
 
@@ -38,7 +39,7 @@ var _ = Describe("TxValidator", func() {
 	var cfg *config.EngineConfig
 	var logic *l.Logic
 	var ctrl *gomock.Controller
-	var mockLogic *testutil.MockObjects
+	var mockLogic *mockutil.MockObjects
 
 	validEpochSecretTx := types.NewBareTx(types.TxTypeEpochSecret)
 	validEpochSecretTx.EpochSecret = &types.EpochSecret{}
@@ -65,7 +66,7 @@ var _ = Describe("TxValidator", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockLogic = testutil.MockLogic(ctrl)
+		mockLogic = mockutil.MockLogic(ctrl)
 	})
 
 	AfterEach(func() {

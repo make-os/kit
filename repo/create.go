@@ -9,11 +9,11 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 )
 
-// CreateRepository creates a local git repository
-func (rb *Manager) CreateRepository(name string) error {
+// CreateRepository creates a bare git repository
+func (m *Manager) CreateRepository(name string) error {
 
 	// Create the path if it does not exist
-	path := filepath.Join(rb.rootDir, name)
+	path := filepath.Join(m.rootDir, name)
 	if _, err := os.Stat(path); err == nil {
 		return fmt.Errorf("a repository with name (%s) already exist", name)
 	}
@@ -29,7 +29,7 @@ func (rb *Manager) CreateRepository(name string) error {
 		{"gc.auto", "0"},
 	}
 	for _, opt := range options {
-		_, err = execGitCmd(rb.gitBinPath, path, append([]string{"config"}, opt...)...)
+		_, err = execGitCmd(m.gitBinPath, path, append([]string{"config"}, opt...)...)
 		if err != nil {
 			return errors.Wrap(err, "failed to set config")
 		}
@@ -40,9 +40,9 @@ func (rb *Manager) CreateRepository(name string) error {
 
 // HasRepository returns true if a valid repository exist
 // for the given name
-func (rb *Manager) HasRepository(name string) bool {
+func (m *Manager) HasRepository(name string) bool {
 
-	path := filepath.Join(rb.rootDir, name)
+	path := filepath.Join(m.rootDir, name)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false
 	}

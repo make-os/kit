@@ -20,7 +20,7 @@ import (
 func validateChange(
 	repo *Repo,
 	change *ItemChange,
-	gpgPubKeyGetter PGPPubKeyGetter) error {
+	gpgPubKeyGetter PGPPubKeyGetter) (*util.TxLine, error) {
 
 	var commit *object.Commit
 	var err error
@@ -38,25 +38,25 @@ func validateChange(
 		goto validatedNote
 	}
 
-	return fmt.Errorf("unrecognised change item")
+	return nil, fmt.Errorf("unrecognised change item")
 
 validateBranch:
 	commit, err = repo.CommitObject(plumbing.NewHash(change.Item.GetData()))
 	if err != nil {
-		return errors.Wrap(err, "unable to get commit object")
+		return nil, errors.Wrap(err, "unable to get commit object")
 	}
 	return checkCommit(commit, false, repo, gpgPubKeyGetter)
 
 validateTag:
 	tagRef, err = repo.Tag(strings.ReplaceAll(change.Item.GetName(), "refs/tags/", ""))
 	if err != nil {
-		return errors.Wrap(err, "unable to get tag object")
+		return nil, errors.Wrap(err, "unable to get tag object")
 	}
 
 	// Get the tag object (for annotated tags)
 	tagObj, err = repo.TagObject(tagRef.Hash())
 	if err != nil && err != plumbing.ErrObjectNotFound {
-		return err
+		return nil, err
 	}
 
 	// Here, the tag is not an annotated tag, so we need to
@@ -64,7 +64,7 @@ validateTag:
 	if tagObj == nil {
 		commit, err := repo.CommitObject(tagRef.Hash())
 		if err != nil {
-			return errors.Wrap(err, "unable to get commit")
+			return nil, errors.Wrap(err, "unable to get commit")
 		}
 		return checkCommit(commit, true, repo, gpgPubKeyGetter)
 	}
@@ -85,13 +85,13 @@ validatedNote:
 func checkNote(
 	repo *Repo,
 	noteName string,
-	gpgPubKeyGetter PGPPubKeyGetter) error {
+	gpgPubKeyGetter PGPPubKeyGetter) (*util.TxLine, error) {
 
 	// Find a all notes entries
 	noteEntries, err := repo.ListTreeObjects(noteName, false)
 	if err != nil {
 		msg := fmt.Sprintf("unable to fetch note entries (%s)", noteName)
-		return errors.Wrap(err, msg)
+		return nil, errors.Wrap(err, msg)
 	}
 
 	// From the entries, find a blob that contains a txline format
@@ -100,11 +100,11 @@ func checkNote(
 	for hash := range noteEntries {
 		obj, err := repo.BlobObject(plumbing.NewHash(hash))
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to read object (%s)", hash))
+			return nil, errors.Wrap(err, fmt.Sprintf("failed to read object (%s)", hash))
 		}
 		r, err := obj.Reader()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		prefix := make([]byte, 3)
 		r.Read(prefix)
@@ -116,33 +116,33 @@ func checkNote(
 
 	// Reject note if we didn't find a tx blob
 	if txBlob == nil {
-		return fmt.Errorf("unacceptable note. it does not have a signed transaction object")
+		return nil, fmt.Errorf("unacceptable note. it does not have a signed transaction object")
 	}
 
 	// Get and parse the transaction line
 	r, err := txBlob.Reader()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	bz, err := ioutil.ReadAll(r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	txLine, err := util.ParseTxLine(string(bz))
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("note (%s)", noteName))
+		return nil, errors.Wrap(err, fmt.Sprintf("note (%s)", noteName))
 	}
 
 	// Get the public key
 	pubKeyStr, err := gpgPubKeyGetter(txLine.PubKeyID)
 	if err != nil {
 		msg := "unable to verify note (%s). public key was not found"
-		return errors.Errorf(msg, noteName)
+		return nil, errors.Errorf(msg, noteName)
 	}
 	pubKey, err := crypto.PGPEntityFromPubKey(pubKeyStr)
 	if err != nil {
 		msg := "unable to verify note (%s). public key is not valid"
-		return errors.Errorf(msg, noteName)
+		return nil, errors.Errorf(msg, noteName)
 	}
 
 	// Get the parent of the commit referenced by the note.
@@ -151,15 +151,15 @@ func checkNote(
 	noteHash := ""
 	noteRef, err := repo.Reference(plumbing.ReferenceName(noteName), false)
 	if err != nil {
-		return errors.Wrap(err, "failed to get note reference")
+		return nil, errors.Wrap(err, "failed to get note reference")
 	} else if noteRef != nil {
 		noteRefCommit, err := repo.CommitObject(noteRef.Hash())
 		if err != nil {
-			return err
+			return nil, err
 		}
 		parent, err := noteRefCommit.Parent(0)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		noteHash = parent.Hash.String()
 	}
@@ -169,10 +169,10 @@ func checkNote(
 	_, err = crypto.VerifyGPGSignature(pubKey, []byte(txLine.Signature), msg)
 	if err != nil {
 		msg := "note (%s) signature verification failed: %s"
-		return errors.Errorf(msg, noteName, err.Error())
+		return nil, errors.Errorf(msg, noteName, err.Error())
 	}
 
-	return nil
+	return txLine, nil
 }
 
 // checkAnnotatedTag validates an annotated tag.
@@ -182,36 +182,36 @@ func checkNote(
 func checkAnnotatedTag(
 	tag *object.Tag,
 	repo *Repo,
-	gpgPubKeyGetter PGPPubKeyGetter) error {
+	gpgPubKeyGetter PGPPubKeyGetter) (*util.TxLine, error) {
 
 	// Get and parse tx line from the commit message
 	txLine, err := util.ParseTxLine(tag.Message)
 	if err != nil {
 		msg := fmt.Sprintf("tag (%s)", tag.Hash.String())
-		return errors.Wrap(err, msg)
+		return nil, errors.Wrap(err, msg)
 	}
 
 	if tag.PGPSignature == "" {
 		msg := "tag (%s) is unsigned. please sign the tag with your gpg key"
-		return errors.Errorf(msg, tag.Hash.String())
+		return nil, errors.Errorf(msg, tag.Hash.String())
 	}
 
 	// Get the public key
 	pubKey, err := gpgPubKeyGetter(txLine.PubKeyID)
 	if err != nil {
 		msg := "unable to verify tag (%s). public key (id:%s) was not found"
-		return errors.Errorf(msg, tag.Hash.String(), txLine.PubKeyID)
+		return nil, errors.Errorf(msg, tag.Hash.String(), txLine.PubKeyID)
 	}
 
 	// Verify tag signature
 	if _, err = tag.Verify(pubKey); err != nil {
 		msg := "tag (%s) signature verification failed: %s"
-		return errors.Errorf(msg, tag.Hash.String(), err.Error())
+		return nil, errors.Errorf(msg, tag.Hash.String(), err.Error())
 	}
 
 	commit, err := tag.Commit()
 	if err != nil {
-		return errors.Wrap(err, "unable to get referenced commit")
+		return nil, errors.Wrap(err, "unable to get referenced commit")
 	}
 	return checkCommit(commit, true, repo, gpgPubKeyGetter)
 }
@@ -225,7 +225,7 @@ func checkCommit(
 	commit *object.Commit,
 	isReferenced bool,
 	repo *Repo,
-	gpgPubKeyGetter PGPPubKeyGetter) error {
+	gpgPubKeyGetter PGPPubKeyGetter) (*util.TxLine, error) {
 
 	referencedStr := ""
 	if isReferenced {
@@ -236,26 +236,26 @@ func checkCommit(
 	txLine, err := util.ParseTxLine(commit.Message)
 	if err != nil {
 		msg := fmt.Sprintf("%scommit (%s)", referencedStr, commit.Hash.String())
-		return errors.Wrap(err, msg)
+		return nil, errors.Wrap(err, msg)
 	}
 
 	if commit.PGPSignature == "" {
 		msg := "%scommit (%s) is unsigned. please sign the commit with your gpg key"
-		return errors.Errorf(msg, referencedStr, commit.Hash.String())
+		return nil, errors.Errorf(msg, referencedStr, commit.Hash.String())
 	}
 
 	// Get the public key
 	pubKey, err := gpgPubKeyGetter(txLine.PubKeyID)
 	if err != nil {
 		msg := "unable to verify %scommit (%s). public key (id:%s) was not found"
-		return errors.Errorf(msg, referencedStr, commit.Hash.String(), txLine.PubKeyID)
+		return nil, errors.Errorf(msg, referencedStr, commit.Hash.String(), txLine.PubKeyID)
 	}
 
 	// Verify commit signature
 	if _, err = commit.Verify(pubKey); err != nil {
 		msg := "%scommit (%s) signature verification failed: %s"
-		return errors.Errorf(msg, referencedStr, commit.Hash.String(), err.Error())
+		return nil, errors.Errorf(msg, referencedStr, commit.Hash.String(), err.Error())
 	}
 
-	return nil
+	return txLine, nil
 }

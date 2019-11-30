@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	"github.com/makeos/mosdef/config"
@@ -37,6 +38,27 @@ var _ = Describe("Gitops", func() {
 	AfterEach(func() {
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
+	})
+
+	Describe(".getObjectsSize", func() {
+		var objs []string
+		var expectedSize = int64(0)
+		BeforeEach(func() {
+			appendCommit(path, "file.txt", "some text", "commit msg")
+			it, _ := repo.Objects()
+			it.ForEach(func(obj object.Object) error {
+				objs = append(objs, obj.ID().String())
+				encoded := &plumbing.MemoryObject{}
+				obj.Encode(encoded)
+				expectedSize += encoded.Size()
+				return nil
+			})
+		})
+
+		It("should return expected size", func() {
+			size := getObjectsSize(repo, objs)
+			Expect(size).To(Equal(uint64(expectedSize)))
+		})
 	})
 
 	Describe(".getTreeEntries", func() {

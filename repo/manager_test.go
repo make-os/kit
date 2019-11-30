@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/golang/mock/gomock"
 	"github.com/phayes/freeport"
 
 	. "github.com/onsi/ginkgo"
@@ -21,13 +22,17 @@ var _ = Describe("Manager", func() {
 	var repoMgr *Manager
 	var path string
 	var repo *Repo
+	var ctrl *gomock.Controller
+	var mockLogic *testutil.MockObjects
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		port, _ := freeport.GetFreePort()
-		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port))
+		ctrl = gomock.NewController(GinkgoT())
+		mockLogic = testutil.MockLogic(ctrl)
+		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic)
 	})
 
 	BeforeEach(func() {

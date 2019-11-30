@@ -10,3 +10,8 @@ type DBOps struct {
 func NewDBOps(dbCache *DBCache, repoName string) *DBOps {
 	return &DBOps{dbCache: dbCache, repoName: repoName}
 }
+
+// GetCache Implements types.RepoDBOps
+func (c *DBOps) GetCache() *DBCache {
+	return c.dbCache
+}

@@ -174,7 +174,7 @@ func (n *Node) Start() error {
 	n.service = services.New(n.tmrpc, n.logic, txReactor)
 
 	// Start repository server
-	rm := repo.NewManager(n.cfg, ":6000")
+	rm := repo.NewManager(n.cfg, ":6000", n.logic)
 	go rm.Start()
 
 	// Pass repo manager to logic manager

@@ -22,7 +22,7 @@ type service struct {
 type serviceParams struct {
 	w          http.ResponseWriter
 	r          *http.Request
-	hook       *Hook
+	hook       *PushHook
 	repo       *Repo
 	repoDir    string
 	op         string
@@ -153,13 +153,13 @@ func serveService(s *serviceParams) error {
 
 	// Inspect the pushed data and extract useful information.
 	// When we done inspecting, send the pushed data to git.
-	var pushInspector *PushInspector
-	pushInspector, err = newPushInspector(in, s.repo)
+	var pushReader *PushReader
+	pushReader, err = newPushReader(in, s.repo)
 	if err != nil {
 		return errors.Wrap(err, "unable to create push inspector")
 	}
-	io.Copy(pushInspector, reader)
-	if err = pushInspector.Inspect(); err != nil {
+	io.Copy(pushReader, reader)
+	if err = pushReader.Read(); err != nil {
 		return errors.Wrap(err, "push inspection failed")
 	}
 
@@ -168,7 +168,7 @@ func serveService(s *serviceParams) error {
 	defer pktEnc.Flush()
 
 	// Do work that needs to be done after git finished processing the pushed data.
-	if err := s.hook.AfterPush(pushInspector); err != nil {
+	if err := s.hook.AfterPush(pushReader); err != nil {
 		pktEnc.Encode(sidebandErr(err.Error()))
 		return errors.Wrap(err, "BeforeOutput hook err")
 	}

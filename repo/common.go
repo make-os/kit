@@ -7,12 +7,13 @@ import (
 // ErrRepoNotFound means a repo was not found on the local storage
 var ErrRepoNotFound = fmt.Errorf("repo not found")
 
-type kvOption struct {
+// KVOption holds key-value structure of options
+type KVOption struct {
 	Key   string
 	Value interface{}
 }
 
-func getKVOpt(key string, options []kvOption) interface{} {
+func getKVOpt(key string, options []KVOption) interface{} {
 	for _, opt := range options {
 		if opt.Key == key {
 			return opt.Value
@@ -21,12 +22,12 @@ func getKVOpt(key string, options []kvOption) interface{} {
 	return nil
 }
 
-func matchOpt(val string) kvOption {
-	return kvOption{Key: "match", Value: val}
+func matchOpt(val string) KVOption {
+	return KVOption{Key: "match", Value: val}
 }
 
-func changesOpt(ch *Changes) kvOption {
-	return kvOption{Key: "changes", Value: ch}
+func changesOpt(ch *Changes) KVOption {
+	return KVOption{Key: "changes", Value: ch}
 }
 
 // PGPPubKeyGetter represents a function for fetching PGP public key

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/thoas/go-funk"
 
@@ -22,8 +23,32 @@ type Repo struct {
 	*git.Repository
 	*GitOps
 	*DBOps
-	Path string
-	Name string
+	Path  string
+	Name  string
+	state *types.Repository
+}
+
+func getRepo(path string) (*Repo, error) {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return nil, err
+	}
+	return &Repo{
+		Repository: repo,
+		Path:       path,
+	}, nil
+}
+
+func getRepoWithGitOpt(gitBinPath, path string) (*Repo, error) {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return nil, err
+	}
+	return &Repo{
+		GitOps:     NewGitOps(gitBinPath, path),
+		Repository: repo,
+		Path:       path,
+	}, nil
 }
 
 // getCurrentWDRepo returns a Repo instance pointed to the repository
@@ -46,12 +71,12 @@ func getCurrentWDRepo(gitBinDir string) (*Repo, error) {
 	return repo, nil
 }
 
-// amendRecentCommitTxLine attempts to add or amend transaction argument to
+// AmendRecentCommitTxLineCmd attempts to add or amend transaction argument to
 // the recent commit. If no transaction line exist, it will add a new
 // one populated with the provided arguments.
 // Transaction line allows the user to set transaction arguments such as
 // fee, public key, etc. A txline has the format tx: fee=10, pk=ad1..xyz, nonce=1
-func amendRecentCommitTxLine(gitBinDir, txFee, txNonce, signingKey string) error {
+func AmendRecentCommitTxLineCmd(gitBinDir, txFee, txNonce, signingKey string) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
 	if err != nil {
@@ -102,8 +127,8 @@ func amendRecentCommitTxLine(gitBinDir, txFee, txNonce, signingKey string) error
 	return nil
 }
 
-// createTagWithTxLine creates a tag and adds a txline to the tag message
-func createTagWithTxLine(args []string, gitBinDir, txFee, txNonce, signingKey string) error {
+// CreateTagWithTxLineCmd creates a tag and adds a txline to the tag message
+func CreateTagWithTxLineCmd(args []string, gitBinDir, txFee, txNonce, signingKey string) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
 	if err != nil {
@@ -160,8 +185,8 @@ func createTagWithTxLine(args []string, gitBinDir, txFee, txNonce, signingKey st
 	return nil
 }
 
-// addSignedTxBlob creates a blob object that contains a signed tx line.
-func addSignedTxBlob(gitBinDir, txFee, txNonce, signingKey, note string) error {
+// AddSignedTxBlobCmd creates a blob object that contains a signed tx line.
+func AddSignedTxBlobCmd(gitBinDir, txFee, txNonce, signingKey, note string) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
 	if err != nil {
@@ -307,4 +332,22 @@ func getCommitHistory(repo *Repo, commit *object.Commit, stopCommitHash string) 
 	})
 
 	return funk.UniqString(hashes), err
+}
+
+// getObjectsSize returns the total size of the given objects in the repo.
+// Panics if unable to find an object.
+func getObjectsSize(repo *Repo, objects []string) uint64 {
+	var size int64
+	for _, hash := range objects {
+		obj, err := repo.Object(plumbing.AnyObject, plumbing.NewHash(hash))
+		if err != nil {
+			panic(err)
+		}
+		encoded := &plumbing.MemoryObject{}
+		if err = obj.Encode(encoded); err != nil {
+			panic(err)
+		}
+		size += encoded.Size()
+	}
+	return uint64(size)
 }

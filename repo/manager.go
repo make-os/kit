@@ -11,6 +11,9 @@ import (
 	"time"
 
 	"github.com/makeos/mosdef/config"
+	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/params"
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util/logger"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4"
@@ -70,27 +73,59 @@ svCU0gx1j1vi1SKS
 -----END PGP PUBLIC KEY BLOCK-----`, nil
 }
 
-// ReposManager provides functionality for manipulating a repository's state
-type ReposManager interface {
-	GetRepoState(repo *Repo, options ...kvOption) (*State, error)
-	Revert(repo *Repo, prevState *State, options ...kvOption) (*Changes, error)
+// RepositoryManager provides functionality for manipulating a repositories.
+type RepositoryManager interface {
+
+	// GetRepoState returns the state of the repository at the given path
+	// options: Allows the caller to configure how and what state are gathered
+	GetRepoState(target *Repo, options ...KVOption) (*State, error)
+
+	// Revert reverts the repository from its current state to the previous state.
+	Revert(target *Repo, prevState *State, options ...KVOption) (*Changes, error)
+
+	// GetPGPPubKeyGetter returns the gpg getter function for finding GPG public
+	// keys by their ID
 	GetPGPPubKeyGetter() PGPPubKeyGetter
+
+	// GetLogic returns the application logic provider
+	GetLogic() types.Logic
+
+	// GetNodeKey returns the node's private key
+	GetNodeKey() *crypto.Key
+
+	// GetPushPool returns the push pool
+	GetPushPool() *PushPool
+
+	// Start starts the server
+	Start()
+
+	// Wait can be used by the caller to wait till the server terminates
+	Wait()
+
+	// Stop shutsdown the server
+	Stop(ctx context.Context)
+
+	// CreateRepository creates a local git repository
+	CreateRepository(name string) error
 }
 
 // Manager implements types.Manager. It provides a system for managing
 // and service a git repositories through http and ssh protocols.
 type Manager struct {
-	log         logger.Logger
-	wg          *sync.WaitGroup
-	srv         *http.Server
-	rootDir     string
-	addr        string
-	gitBinPath  string
-	repoDBCache *DBCache
+	log         logger.Logger   // log is the application logger
+	wg          *sync.WaitGroup // wait group for waiting for the manager
+	srv         *http.Server    // the http server
+	rootDir     string          // the root directory where all repos are stored
+	addr        string          // addr is the listening address for the http server
+	gitBinPath  string          // gitBinPath is the path of the git executable
+	repoDBCache *DBCache        // stores database handles of repositories
+	pool        *PushPool       // this is the push transaction pool
+	logic       types.Logic     // logic is the application logic provider
+	nodeKey     *crypto.Key     // the node's private key for signing transactions
 }
 
 // NewManager creates an instance of Manager
-func NewManager(cfg *config.EngineConfig, addr string) *Manager {
+func NewManager(cfg *config.EngineConfig, addr string, logic types.Logic) *Manager {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
@@ -99,6 +134,7 @@ func NewManager(cfg *config.EngineConfig, addr string) *Manager {
 		panic(errors.Wrap(err, "failed create repo db cache"))
 	}
 
+	key, _ := cfg.G().PrivVal.GetKey()
 	return &Manager{
 		log:         cfg.G().Log.Module("Manager"),
 		addr:        addr,
@@ -106,6 +142,9 @@ func NewManager(cfg *config.EngineConfig, addr string) *Manager {
 		gitBinPath:  cfg.Node.GitBinPath,
 		wg:          wg,
 		repoDBCache: dbCache,
+		pool:        NewPushPool(params.PushPoolCap),
+		logic:       logic,
+		nodeKey:     key,
 	}
 }
 
@@ -122,6 +161,21 @@ func (m *Manager) Start() {
 	m.srv = &http.Server{Addr: m.addr, Handler: s}
 	m.srv.ListenAndServe()
 	m.wg.Done()
+}
+
+// GetLogic returns the application logic provider
+func (m *Manager) GetLogic() types.Logic {
+	return m.logic
+}
+
+// GetNodeKey implements RepositoryManager
+func (m *Manager) GetNodeKey() *crypto.Key {
+	return m.nodeKey
+}
+
+// GetPushPool implements RepositoryManager
+func (m *Manager) GetPushPool() *PushPool {
+	return m.pool
 }
 
 // TODO: Authorization
@@ -155,7 +209,18 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 	fullRepoDir := filepath.Join(m.rootDir, repoName)
 	op := pathParts[1]
 
-	// Attempt to load the repository at the given directory
+	// Check if the repository exist
+	repoState := m.logic.RepoKeeper().GetRepo(repoName)
+	if repoState.IsNil() {
+		w.WriteHeader(http.StatusNotFound)
+		m.log.Debug("Unknown repository",
+			"Name", repoName,
+			"StatusCode", http.StatusNotFound,
+			"StatusText", http.StatusText(http.StatusNotFound))
+		return
+	}
+
+	// Attempt to load the repository at the given path
 	repo, err := git.PlainOpen(fullRepoDir)
 	if err != nil {
 		statusCode := http.StatusInternalServerError
@@ -164,6 +229,7 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(statusCode)
 		m.log.Debug("Failed to open target repository",
+			"Name", repoName,
 			"StatusCode", statusCode,
 			"StatusText", http.StatusText(statusCode))
 		return
@@ -178,6 +244,7 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 			GitOps:     NewGitOps(m.gitBinPath, fullRepoDir),
 			Path:       fullRepoDir,
 			DBOps:      NewDBOps(m.repoDBCache, repoName),
+			state:      repoState,
 		},
 		repoDir:    fullRepoDir,
 		op:         op,
@@ -185,7 +252,7 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 		gitBinPath: m.gitBinPath,
 	}
 
-	srvParams.hook = NewHook(strings.ReplaceAll(op, "git-", ""), srvParams.repo, m)
+	srvParams.hook = newPushHook(srvParams.repo, m)
 
 	for _, s := range services {
 		srvPattern := s[0].(string)
@@ -212,44 +279,21 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 	writeMethodNotAllowed(w, r)
 }
 
-// GetPGPPubKeyGetter returns the gpg getter function
+// GetPGPPubKeyGetter implements RepositoryManager
+// TODO: Requires full implementation
 func (m *Manager) GetPGPPubKeyGetter() PGPPubKeyGetter {
-	return samplePGPPubKeyGetter // TODO: Remove sample. This should be passed in to NewManager
+	return samplePGPPubKeyGetter
 }
 
-func getRepo(path string) (*Repo, error) {
-	repo, err := git.PlainOpen(path)
-	if err != nil {
-		return nil, err
-	}
-	return &Repo{
-		Repository: repo,
-		Path:       path,
-	}, nil
-}
-
-func getRepoWithGitOpt(gitBinPath, path string) (*Repo, error) {
-	repo, err := git.PlainOpen(path)
-	if err != nil {
-		return nil, err
-	}
-	return &Repo{
-		GitOps:     NewGitOps(gitBinPath, path),
-		Repository: repo,
-		Path:       path,
-	}, nil
-}
-
-// GetRepoState returns the state of the repository at the given path
-// options: Allows the caller to configure how and what state are gathered
-func (m *Manager) GetRepoState(repo *Repo, options ...kvOption) (*State, error) {
+// GetRepoState implements RepositoryManager
+func (m *Manager) GetRepoState(repo *Repo, options ...KVOption) (*State, error) {
 	return m.getRepoState(repo, options...), nil
 }
 
 // GetRepoState returns the state of the repository
 // repo: The target repository
 // options: Allows the caller to configure how and what state are gathered
-func (m *Manager) getRepoState(repo *Repo, options ...kvOption) *State {
+func (m *Manager) getRepoState(repo *Repo, options ...KVOption) *State {
 
 	refMatch := ""
 	if opt := getKVOpt("match", options); opt != nil {
@@ -287,8 +331,8 @@ func (m *Manager) getRepoState(repo *Repo, options ...kvOption) *State {
 	}
 }
 
-// Revert reverts the repository from its current state to the previous state.
-func (m *Manager) Revert(repo *Repo, prevState *State, options ...kvOption) (*Changes, error) {
+// Revert implements RepositoryManager
+func (m *Manager) Revert(repo *Repo, prevState *State, options ...KVOption) (*Changes, error) {
 	return m.revert(repo, prevState, options...)
 }
 

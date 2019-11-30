@@ -6,6 +6,7 @@ import (
 
 	"github.com/makeos/mosdef/crypto/rand"
 	"github.com/makeos/mosdef/logic/keepers"
+	"github.com/makeos/mosdef/testutil"
 
 	"github.com/golang/mock/gomock"
 	"github.com/makeos/mosdef/types"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/testutil"
+	"github.com/makeos/mosdef/testutil/mockutil"
 )
 
 var _ = Describe("System", func() {
@@ -27,7 +28,7 @@ var _ = Describe("System", func() {
 	var logic *Logic
 	var sysLogic *System
 	var ctrl *gomock.Controller
-	var mockLogic *testutil.MockObjects
+	var mockLogic *mockutil.MockObjects
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -41,7 +42,7 @@ var _ = Describe("System", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockLogic = testutil.MockLogic(ctrl)
+		mockLogic = mockutil.MockLogic(ctrl)
 	})
 
 	AfterEach(func() {

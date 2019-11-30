@@ -19,6 +19,7 @@ import (
 	"github.com/makeos/mosdef/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/makeos/mosdef/testutil/mockutil"
 )
 
 var _ = Describe("Transaction", func() {
@@ -29,7 +30,7 @@ var _ = Describe("Transaction", func() {
 	var txLogic *Transaction
 	var ctrl *gomock.Controller
 	var sender = crypto.NewKeyFromIntSeed(1)
-	var mockLogic *testutil.MockObjects
+	var mockLogic *mockutil.MockObjects
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -41,7 +42,7 @@ var _ = Describe("Transaction", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockLogic = testutil.MockLogic(ctrl)
+		mockLogic = mockutil.MockLogic(ctrl)
 	})
 
 	AfterEach(func() {

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -15,12 +16,16 @@ var _ = Describe("App", func() {
 	var err error
 	var cfg *config.EngineConfig
 	var repoMgr *Manager
+	var ctrl *gomock.Controller
+	var mockLogic *testutil.MockObjects
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
-		repoMgr = NewManager(cfg, ":45000")
+		ctrl = gomock.NewController(GinkgoT())
+		mockLogic = testutil.MockLogic(ctrl)
+		repoMgr = NewManager(cfg, ":45000", mockLogic.Logic)
 	})
 
 	AfterEach(func() {

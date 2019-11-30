@@ -34,7 +34,8 @@ func RemoveTxLine(msg string) string {
 	return newMsg
 }
 
-// TxLine contains txline data
+// TxLine represents transaction information usually included in commits, notes
+// and tag objects
 type TxLine struct {
 	Fee       String
 	Nonce     uint64
@@ -91,7 +92,7 @@ func ParseTxLine(msg string) (*TxLine, error) {
 		}
 
 		if kvParts[0] == "fee" {
-			if !govalidator.IsNumeric(kvParts[1]) {
+			if !govalidator.IsFloat(kvParts[1]) {
 				return nil, fmt.Errorf("field:fee, msg: fee must be numeric")
 			}
 			txLine.Fee = String(kvParts[1])

@@ -6,9 +6,8 @@ import (
 	"os/exec"
 	"regexp"
 
-	drandmocks "github.com/makeos/mosdef/crypto/rand/mocks"
-
 	"github.com/golang/mock/gomock"
+	drandmocks "github.com/makeos/mosdef/crypto/rand/mocks"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/types/mocks"
 	"github.com/makeos/mosdef/util/logger"
@@ -30,10 +29,15 @@ import (
 const GPGProgramPath = "gpg"
 
 // SetTestCfg prepare a config directory for tests
-func SetTestCfg() (*config.EngineConfig, error) {
+func SetTestCfg(opts ...string) (*config.EngineConfig, error) {
+	var dataDirName = util.RandString(5)
+	if len(opts) > 0 {
+		dataDirName = opts[0]
+	}
+
 	var err error
 	dir, _ := homedir.Dir()
-	dataDir := path.Join(dir, util.RandString(5))
+	dataDir := path.Join(dir, dataDirName)
 	os.MkdirAll(dataDir, 0700)
 
 	// Create test root command and
@@ -60,6 +64,8 @@ func SetTestCfg() (*config.EngineConfig, error) {
 	commands.SetConfig(tmcfg)
 	commands.InitFilesCmd.RunE(nil, nil)
 	tmconfig.EnsureRoot(tmcfg.RootDir)
+	cfg.PrepareNodeValKeys(tmcfg.NodeKeyFile(), tmcfg.PrivValidatorKeyFile(),
+		tmcfg.PrivValidatorStateFile())
 
 	// Replace logger with Noop logger
 	cfg.G().Log = logger.NewLogrusNoOp()

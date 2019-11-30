@@ -79,9 +79,10 @@ var _ = Describe("Validation", func() {
 		When("txline is not set", func() {
 			BeforeEach(func() {
 				appendCommit(path, "file.txt", "line 1", "commit 1")
-				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
+				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`,
+					path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				err = checkCommit(cob, false, repo, gpgPubKeyGetter)
+				_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
 			})
 
 			It("should return err='txline was not set'", func() {
@@ -94,9 +95,10 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				txLine := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", "invalid_pk_id")
 				appendCommit(path, "file.txt", "line 1", txLine)
-				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
+				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`,
+					path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				err = checkCommit(cob, false, repo, gpgPubKeyGetter)
+				_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
 			})
 
 			It("should return err='public key id is invalid'", func() {
@@ -113,7 +115,7 @@ var _ = Describe("Validation", func() {
 				appendCommit(path, "file.txt", "line 1", txLine)
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				err = checkCommit(cob, false, repo, gpgPubKeyGetter)
+				_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
 			})
 
 			It("should return err='is unsigned. please sign the commit with your gpg key'", func() {
@@ -131,7 +133,7 @@ var _ = Describe("Validation", func() {
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				cob.PGPSignature = "signature"
-				err = checkCommit(cob, false, repo, gpgPubKeyGetterWithErr(fmt.Errorf("bad error")))
+				_, err = checkCommit(cob, false, repo, gpgPubKeyGetterWithErr(fmt.Errorf("bad error")))
 			})
 
 			It("should return err='..public key..was not found'", func() {
@@ -149,7 +151,7 @@ var _ = Describe("Validation", func() {
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				cob.PGPSignature = "signature"
-				err = checkCommit(cob, false, repo, gpgPubKeyGetter)
+				_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
 			})
 
 			It("should return err='..signature verification failed..'", func() {
@@ -166,7 +168,7 @@ var _ = Describe("Validation", func() {
 				appendSignedCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				err = checkCommit(cob, false, repo, gpgPubKeyGetter)
+				_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
 			})
 
 			It("should return nil", func() {
@@ -184,7 +186,7 @@ var _ = Describe("Validation", func() {
 				createCommitAndAnnotatedTag(path, "file.txt", "first file", "commit 1", "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
-				err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
+				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
 			})
 
 			It("should return err='txline was not set'", func() {
@@ -199,7 +201,7 @@ var _ = Describe("Validation", func() {
 				createCommitAndAnnotatedTag(path, "file.txt", "first file", txLine, "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
-				err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
+				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
 			})
 
 			It("should return err='public key id is invalid'", func() {
@@ -216,7 +218,7 @@ var _ = Describe("Validation", func() {
 				createCommitAndAnnotatedTag(path, "file.txt", "first file", txLine, "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
-				err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
+				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
 			})
 
 			It("should return err='is unsigned. please sign the tag with your gpg key'", func() {
@@ -234,7 +236,7 @@ var _ = Describe("Validation", func() {
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 				tob.PGPSignature = "signature"
-				err = checkAnnotatedTag(tob, repo, gpgPubKeyGetterWithErr(fmt.Errorf("bad error")))
+				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetterWithErr(fmt.Errorf("bad error")))
 			})
 
 			It("should return err='..public key..was not found'", func() {
@@ -252,7 +254,7 @@ var _ = Describe("Validation", func() {
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 				tob.PGPSignature = "signature"
-				err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
+				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
 			})
 
 			It("should return err='..signature verification failed..'", func() {
@@ -269,7 +271,7 @@ var _ = Describe("Validation", func() {
 				createCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txLine, "v1", gpgKeyID)
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
-				err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
+				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
 			})
 
 			It("should return err=''", func() {
@@ -286,7 +288,7 @@ var _ = Describe("Validation", func() {
 				createSignedCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txLine, "v1", gpgKeyID)
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
-				err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
+				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
 			})
 
 			It("should return nil", func() {
@@ -300,7 +302,7 @@ var _ = Describe("Validation", func() {
 
 		When("target note does not exist", func() {
 			BeforeEach(func() {
-				err = checkNote(repo, "unknown", gpgPubKeyGetter)
+				_, err = checkNote(repo, "unknown", gpgPubKeyGetter)
 			})
 
 			It("should return err='unable to fetch note entries (unknown)'", func() {
@@ -312,7 +314,7 @@ var _ = Describe("Validation", func() {
 		When("a note does not have a tx blob object", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
 			It("should return err='unacceptable note. it does not have a signed transaction object'", func() {
@@ -325,7 +327,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
 				createNoteEntry(path, "note1", "tx:invalid")
-				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
 			It("should return err='note (refs/notes/note1): txline is malformed'", func() {
@@ -338,7 +340,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
 				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=xyz")
-				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
 			It("should return err='note (refs/notes/note1): field:sig, msg: signature format is not valid'", func() {
@@ -351,7 +353,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
 				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x616263")
-				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetterWithErr(fmt.Errorf("error finding pub key")))
+				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetterWithErr(fmt.Errorf("error finding pub key")))
 			})
 
 			It("should return err='unable to verify note (refs/notes/note1). public key was not found.'", func() {
@@ -364,7 +366,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
 				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x616263")
-				err = checkNote(repo, "refs/notes/note1", gpgInvalidPubKeyGetter)
+				_, err = checkNote(repo, "refs/notes/note1", gpgInvalidPubKeyGetter)
 			})
 
 			It("should return err='unable to verify note (refs/notes/note1). public key .. was not found.'", func() {
@@ -383,7 +385,7 @@ var _ = Describe("Validation", func() {
 				Expect(err).To(BeNil())
 				sigHex := hex.EncodeToString(sig)
 				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x"+sigHex)
-				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
 			It("should return err='invalid signature: RSA verification failure'", func() {
@@ -402,7 +404,7 @@ var _ = Describe("Validation", func() {
 				Expect(err).To(BeNil())
 				sigHex := hex.EncodeToString(sig)
 				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x"+sigHex)
-				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
 			It("should return err='...invalid signature: hash tag doesn't match'", func() {
@@ -421,7 +423,7 @@ var _ = Describe("Validation", func() {
 				Expect(err).To(BeNil())
 				sigHex := hex.EncodeToString(sig)
 				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x"+sigHex)
-				err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
 			It("should return nil", func() {
@@ -436,7 +438,7 @@ var _ = Describe("Validation", func() {
 		When("change item has a reference name format that is not known", func() {
 			BeforeEach(func() {
 				change := &ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
-				err = validateChange(repo, change, gpgPubKeyGetter)
+				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
 			It("should return err='unrecognised change item'", func() {
@@ -448,7 +450,7 @@ var _ = Describe("Validation", func() {
 		When("change item referenced object is an unknown commit object", func() {
 			BeforeEach(func() {
 				change := &ItemChange{Item: &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
-				err = validateChange(repo, change, gpgPubKeyGetter)
+				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
 			It("should return err='unable to get commit object: object not found'", func() {
@@ -460,7 +462,7 @@ var _ = Describe("Validation", func() {
 		When("change item referenced object is an unknown tag object", func() {
 			BeforeEach(func() {
 				change := &ItemChange{Item: &Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
-				err = validateChange(repo, change, gpgPubKeyGetter)
+				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
 			It("should return err='unable to get tag object: tag not found'", func() {
@@ -482,7 +484,7 @@ var _ = Describe("Validation", func() {
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 
 				change := &ItemChange{Item: &Obj{Name: "refs/heads/master", Data: cob.Hash.String()}}
-				err = validateChange(repo, change, gpgPubKeyGetter)
+				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
 			It("should return nil", func() {
@@ -503,7 +505,7 @@ var _ = Describe("Validation", func() {
 				tob, _ = repo.TagObject(tagRef.Hash())
 
 				change := &ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tob.Hash.String()}}
-				err = validateChange(repo, change, gpgPubKeyGetter)
+				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
 			It("should return nil", func() {
@@ -522,7 +524,7 @@ var _ = Describe("Validation", func() {
 				tagRef, _ := repo.Tag("v1")
 
 				change := &ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tagRef.Target().String()}}
-				err = validateChange(repo, change, gpgPubKeyGetter)
+				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
 			It("should return nil", func() {

@@ -2,6 +2,7 @@ package params
 
 import (
 	"github.com/shopspring/decimal"
+	"time"
 )
 
 var (
@@ -73,4 +74,13 @@ var (
 	// ValidatorTicketPoolSize is the size of the ticket pool from which validator
 	// tickets are selected randomly
 	ValidatorTicketPoolSize = 60000
+
+	// PushPoolCap is the pool transaction capacity
+	PushPoolCap = 1000
+
+	// PushPoolCleanUpInt is duration between each push pool clean-up operation
+	PushPoolCleanUpInt = 30 * time.Minute
+
+	// PushPoolItemTTL is the maximum life time of an item in the push pool
+	PushPoolItemTTL = 24 * 3 * time.Hour
 )

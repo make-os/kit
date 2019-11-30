@@ -18,9 +18,9 @@ import (
 
 // packedReferenceObject represent references added to a pack file
 type packedReferenceObject struct {
-	name      string
-	startHash string
-	endHash   string
+	name    string
+	oldHash string
+	newHash string
 }
 
 // packedReferences represents a collection of packed references
@@ -34,17 +34,17 @@ func (p *packedReferences) names() (refs []string) {
 	return
 }
 
-// PushInspector inspects push data from git client, extracting data such as the
+// PushReader inspects push data from git client, extracting data such as the
 // pushed references, objects and object to reference mapping. It also pipes the
 // pushed stream to a destination (git-receive-pack) when finished.
-type PushInspector struct {
-	dst          io.WriteCloser
-	packFile     *os.File
-	buf          []byte
-	references   packedReferences
-	objects      []*packObject
-	objectRefMap objRefMap
-	repo         *Repo
+type PushReader struct {
+	dst         io.WriteCloser
+	packFile    *os.File
+	buf         []byte
+	references  packedReferences
+	objects     []*packObject
+	objectsRefs objRefMap
+	repo        *Repo
 }
 
 type packObject struct {
@@ -52,6 +52,7 @@ type packObject struct {
 	Hash plumbing.Hash
 }
 
+// objObserver implements packfile.Observer
 type objectObserver struct {
 	objects []*packObject
 }
@@ -71,15 +72,15 @@ func (o *objectObserver) OnInflatedObjectContent(h plumbing.Hash, pos int64,
 func (o *objectObserver) OnHeader(count uint32) error    { return nil }
 func (o *objectObserver) OnFooter(h plumbing.Hash) error { return nil }
 
-// newPushInspector creates an instance of PushInspector, and after inspection, the
+// newPushReader creates an instance of PushReader, and after inspection, the
 // written content will be copied to dst.
-func newPushInspector(dst io.WriteCloser, repo *Repo) (*PushInspector, error) {
+func newPushReader(dst io.WriteCloser, repo *Repo) (*PushReader, error) {
 	packFile, err := ioutil.TempFile(os.TempDir(), "pack")
 	if err != nil {
 		return nil, err
 	}
 
-	return &PushInspector{
+	return &PushReader{
 		dst:      dst,
 		packFile: packFile,
 		repo:     repo,
@@ -87,37 +88,38 @@ func newPushInspector(dst io.WriteCloser, repo *Repo) (*PushInspector, error) {
 }
 
 // Write implements the io.Writer interface.
-func (pi *PushInspector) Write(p []byte) (int, error) {
-	return pi.packFile.Write(p)
+func (r *PushReader) Write(p []byte) (int, error) {
+	return r.packFile.Write(p)
 }
 
 // Inspect reads the packfile, extracting object and reference information
-func (pi *PushInspector) Inspect() error {
+// and finally writes the read data to a provided destination
+func (r *PushReader) Read() error {
 
-	pi.packFile.Seek(0, 0)
+	r.packFile.Seek(0, 0)
 
 	// Read the packlines and get specific information from it.
-	scn := pktline.NewScanner(pi.packFile)
-	pi.references = append(pi.references, pi.getReferences(scn)...)
+	scn := pktline.NewScanner(r.packFile)
+	r.references = append(r.references, r.getReferences(scn)...)
 
 	// Since the packline scanner stops after unable to parse 'PACK',
 	// we have to go back 4 bytes backwards before we start scanning the pack file.
-	pi.packFile.Seek(-4, 1)
+	r.packFile.Seek(-4, 1)
 
 	// Read the pack file
 	var err error
-	packfileScn := packfile.NewScanner(pi.packFile)
+	packfileScn := packfile.NewScanner(r.packFile)
 	defer packfileScn.Close()
-	pi.objects, err = pi.getObjects(packfileScn)
+	r.objects, err = r.getObjects(packfileScn)
 	if err != nil {
 		return errors.Wrap(err, "failed to get objects")
 	}
 
-	return pi.done()
+	return r.done()
 }
 
 // getObjects returns a list of objects in the packfile
-func (pi *PushInspector) getObjects(scanner *packfile.Scanner) (objs []*packObject, err error) {
+func (r *PushReader) getObjects(scanner *packfile.Scanner) (objs []*packObject, err error) {
 	objObserver := &objectObserver{}
 	packfileParser, err := packfile.NewParser(scanner, objObserver)
 	if err != nil {
@@ -130,7 +132,7 @@ func (pi *PushInspector) getObjects(scanner *packfile.Scanner) (objs []*packObje
 }
 
 // getReferences returns the references found in the pack buffer
-func (pi *PushInspector) getReferences(scanner *pktline.Scanner) (references []*packedReferenceObject) {
+func (r *PushReader) getReferences(scanner *pktline.Scanner) (references []*packedReferenceObject) {
 	for {
 		if !scanner.Scan() {
 			break
@@ -138,9 +140,9 @@ func (pi *PushInspector) getReferences(scanner *pktline.Scanner) (references []*
 		pkLine := strings.Fields(string(scanner.Bytes()))
 		if len(pkLine) > 0 {
 			refObj := &packedReferenceObject{
-				name:      strings.Trim(pkLine[2], "\x00"),
-				startHash: pkLine[0],
-				endHash:   pkLine[1],
+				name:    strings.Trim(pkLine[2], "\x00"),
+				oldHash: pkLine[0],
+				newHash: pkLine[1],
 			}
 			references = append(references, refObj)
 		}
@@ -150,34 +152,38 @@ func (pi *PushInspector) getReferences(scanner *pktline.Scanner) (references []*
 
 // done copies the written content from the inspector to dst and closes the
 // destination and source readers and creates a mapping of objects to references.
-func (pi *PushInspector) done() (err error) {
+func (r *PushReader) done() (err error) {
 
-	pi.packFile.Seek(0, 0)
-	if _, err = io.Copy(pi.dst, pi.packFile); err != nil {
+	r.packFile.Seek(0, 0)
+	if _, err = io.Copy(r.dst, r.packFile); err != nil {
 		return
 	}
 
-	if err = pi.packFile.Close(); err != nil {
+	if err = r.packFile.Close(); err != nil {
 		return
 	}
 
-	if err = pi.dst.Close(); err != nil {
+	if err = r.dst.Close(); err != nil {
 		return
 	}
 
 	// Give git some time to process the input
 	time.Sleep(100 * time.Millisecond)
 
-	pi.objectRefMap, err = pi.mapObjectsToRef()
+	r.objectsRefs, err = r.mapObjectsToRef()
 	if err != nil {
 		return errors.Wrap(err, "failed to map objects to references")
 	}
 
+	os.Remove(r.packFile.Name())
+
 	return
 }
 
+// objRefMap maps objects to the references they belong to.
 type objRefMap map[string][]string
 
+// removeRef removes a reference from the list of references an object belongs to
 func (m *objRefMap) removeRef(objHash, ref string) error {
 	refs, ok := (*m)[objHash]
 	if !ok {
@@ -193,25 +199,35 @@ func (m *objRefMap) removeRef(objHash, ref string) error {
 	return nil
 }
 
+// getObjects returns a list of objects that map to the given ref
+func (m *objRefMap) getObjectsOf(ref string) (objs []string) {
+	for obj, refs := range *m {
+		if funk.ContainsString(refs, ref) {
+			objs = append(objs, obj)
+		}
+	}
+	return
+}
+
 // mapObjectsToRef returns a map that pairs pushed objects to one or more
 // repository references they belong to.
-func (pi *PushInspector) mapObjectsToRef() (objRefMap, error) {
+func (r *PushReader) mapObjectsToRef() (objRefMap, error) {
 	var mappings = make(map[string][]string)
 
-	if len(pi.objects) == 0 {
+	if len(r.objects) == 0 {
 		return mappings, nil
 	}
 
-	for _, ref := range pi.references.names() {
+	for _, ref := range r.references.names() {
 		var entries []string
 		var err error
 
-		refObj, err := pi.repo.Reference(plumbing.ReferenceName(ref), true)
+		refObj, err := r.repo.Reference(plumbing.ReferenceName(ref), true)
 		if err != nil {
 			return nil, err
 		}
 
-		obj, err := pi.repo.Object(plumbing.AnyObject, refObj.Hash())
+		obj, err := r.repo.Object(plumbing.AnyObject, refObj.Hash())
 		if err != nil {
 			return nil, err
 		}
@@ -219,7 +235,7 @@ func (pi *PushInspector) mapObjectsToRef() (objRefMap, error) {
 		objType := obj.Type()
 
 		if objType == plumbing.CommitObject {
-			entries, err = getCommitHistory(pi.repo, obj.(*object.Commit), "")
+			entries, err = getCommitHistory(r.repo, obj.(*object.Commit), "")
 			if err != nil {
 				return nil, err
 			}
@@ -230,14 +246,14 @@ func (pi *PushInspector) mapObjectsToRef() (objRefMap, error) {
 			if err != nil {
 				return nil, err
 			}
-			entries, err = getCommitHistory(pi.repo, commit, "")
+			entries, err = getCommitHistory(r.repo, commit, "")
 			if err != nil {
 				return nil, err
 			}
 			entries = append(entries, obj.(*object.Tag).ID().String())
 		}
 
-		for _, obj := range pi.objects {
+		for _, obj := range r.objects {
 			if funk.ContainsString(entries, obj.Hash.String()) {
 				objRefs, ok := mappings[obj.Hash.String()]
 				if !ok {
