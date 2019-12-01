@@ -220,15 +220,7 @@ func removePackedObjectsFromRef(ref string, repo types.BareRepo, pr *PushReader)
 // pr: Push inspector object
 func removePackedObjectsFromRefs(refs []string, repo types.BareRepo, pr *PushReader) (errs []error) {
 	for _, ref := range refs {
-		for _, obj := range pr.objects {
-			relatedRefs := pr.objectsRefs[obj.Hash.String()]
-			if len(relatedRefs) == 1 && funk.ContainsString(relatedRefs, ref) {
-				if err := repo.DeleteObject(obj.Hash); err != nil {
-					errs = append(errs, err)
-				}
-			}
-			pr.objectsRefs.removeRef(obj.Hash.String(), ref)
-		}
+		errs = append(errs, removePackedObjectsFromRef(ref, repo, pr)...)
 	}
 	return
 }
