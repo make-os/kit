@@ -13,6 +13,7 @@ import (
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/testutil"
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 )
 
@@ -21,7 +22,7 @@ var _ = Describe("Manager", func() {
 	var cfg *config.EngineConfig
 	var repoMgr *Manager
 	var path string
-	var repo *Repo
+	var repo types.BareRepo
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
 
@@ -65,7 +66,7 @@ var _ = Describe("Manager", func() {
 			It("should return 1 ref", func() {
 				st, err := repoMgr.GetRepoState(repo)
 				Expect(err).To(BeNil())
-				Expect(st.References.Len()).To(Equal(int64(1)))
+				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
 			})
 		})
 
@@ -79,7 +80,7 @@ var _ = Describe("Manager", func() {
 			It("should return 2 refs", func() {
 				st, err := repoMgr.GetRepoState(repo)
 				Expect(err).To(BeNil())
-				Expect(st.References.Len()).To(Equal(int64(2)))
+				Expect(st.GetReferences().Len()).To(Equal(int64(2)))
 			})
 		})
 
@@ -93,13 +94,13 @@ var _ = Describe("Manager", func() {
 			Specify("that the repo has ref refs/heads/master", func() {
 				st, err := repoMgr.GetRepoState(repo, matchOpt("refs/heads/master"))
 				Expect(err).To(BeNil())
-				Expect(st.References.Len()).To(Equal(int64(1)))
+				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
 			})
 
 			Specify("that the repo has ref refs/heads/dev", func() {
 				st, err := repoMgr.GetRepoState(repo, matchOpt("refs/heads/dev"))
 				Expect(err).To(BeNil())
-				Expect(st.References.Len()).To(Equal(int64(1)))
+				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
 			})
 		})
 
@@ -113,7 +114,7 @@ var _ = Describe("Manager", func() {
 			It("should return 1 ref", func() {
 				st, err := repoMgr.GetRepoState(repo, matchOpt("refs/heads/dev"))
 				Expect(err).To(BeNil())
-				Expect(st.References.Len()).To(Equal(int64(1)))
+				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
 			})
 		})
 
@@ -128,13 +129,13 @@ var _ = Describe("Manager", func() {
 			Specify("that the repo has ref=refs/tags/tag", func() {
 				st, err := repoMgr.GetRepoState(repo, matchOpt("refs/tags/tag"))
 				Expect(err).To(BeNil())
-				Expect(st.References.Len()).To(Equal(int64(1)))
+				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
 			})
 
 			Specify("that the repo has ref=refs/tags/tag2", func() {
 				st, err := repoMgr.GetRepoState(repo, matchOpt("refs/tags/tag2"))
 				Expect(err).To(BeNil())
-				Expect(st.References.Len()).To(Equal(int64(1)))
+				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
 			})
 		})
 	})

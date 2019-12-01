@@ -12,6 +12,7 @@ import (
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/testutil"
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 )
 
@@ -19,7 +20,7 @@ var _ = Describe("Gitops", func() {
 	var err error
 	var cfg *config.EngineConfig
 	var path string
-	var repo *Repo
+	var repo types.BareRepo
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()

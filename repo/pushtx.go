@@ -33,7 +33,7 @@ func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&pr.Nonce, &pr.AccountNonce, &pr.Fee, &pr.Objects, &pr.Sig)
 }
 
-// PushTx represents a repository push request
+// PushTx implements types.PushTx
 type PushTx struct {
 	RepoName    string           `json:"repoName" msgpack:"repoName"`       // The name of the repo
 	References  PushedReferences `json:"references" msgpack:"references"`   // A list of references pushed

@@ -1,5 +1,9 @@
 package repo
 
+type DBOperations interface {
+	GetCache() *DBCache
+}
+
 // DBOps is a local database for storing repo-specific data
 type DBOps struct {
 	dbCache  *DBCache

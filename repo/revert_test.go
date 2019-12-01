@@ -15,6 +15,7 @@ import (
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/testutil"
 	"github.com/makeos/mosdef/testutil/mockutil"
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 )
 
@@ -24,7 +25,7 @@ var _ = Describe("Revert", func() {
 	var err error
 	var cfg *config.EngineConfig
 	var repoMgr *Manager
-	var repo *Repo
+	var repo types.BareRepo
 	var path string
 	var ctrl *gomock.Controller
 	var mockLogic *mockutil.MockObjects
@@ -52,7 +53,7 @@ var _ = Describe("Revert", func() {
 	})
 
 	Describe(".Revert (head references)", func() {
-		var prevState *State
+		var prevState types.BareRepoState
 
 		When("a repo has 1 ref and 4 commits; revert the 4th commit", func() {
 
@@ -74,7 +75,7 @@ var _ = Describe("Revert", func() {
 				_, err := repoMgr.Revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
-				Expect(curState.References).To(Equal(prevState.References))
+				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 
@@ -96,7 +97,7 @@ var _ = Describe("Revert", func() {
 				_, err := repoMgr.Revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
-				Expect(curState.References).To(Equal(prevState.References))
+				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 
@@ -106,7 +107,7 @@ var _ = Describe("Revert", func() {
 				appendCommit(path, "file.txt", "line 1\n", "commit 1")
 				appendCommit(path, "file.txt", "line 2\n", "commit 2")
 				prevState = &State{
-					References: NewObjCol(map[string]Item{
+					References: NewObjCol(map[string]types.Item{
 						"refs/heads/master": &Obj{
 							Type: "ref",
 							Name: "refs/heads/master",
@@ -140,7 +141,7 @@ var _ = Describe("Revert", func() {
 				numRefs, _ := script.ExecInDir("git show-ref --heads", path).CountLines()
 				Expect(numRefs).To(Equal(1))
 				curState, _ := repoMgr.GetRepoState(repo)
-				Expect(curState.References).To(Equal(prevState.References))
+				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 
@@ -197,7 +198,7 @@ var _ = Describe("Revert", func() {
 
 	Describe(".Revert (annotated tags)", func() {
 		var path string
-		var prevState *State
+		var prevState types.BareRepoState
 
 		BeforeEach(func() {
 			repoName := util.RandString(5)
@@ -217,7 +218,7 @@ var _ = Describe("Revert", func() {
 				_, err := repoMgr.Revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
-				Expect(curState.References).To(Equal(prevState.References))
+				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 
@@ -235,7 +236,7 @@ var _ = Describe("Revert", func() {
 				_, err := repoMgr.Revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
-				Expect(curState.References).To(Equal(prevState.References))
+				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 
@@ -251,7 +252,7 @@ var _ = Describe("Revert", func() {
 				_, err := repoMgr.Revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
-				Expect(curState.References).To(Equal(prevState.References))
+				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 
@@ -267,7 +268,7 @@ var _ = Describe("Revert", func() {
 				_, err := repoMgr.Revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
-				Expect(curState.References).To(Equal(prevState.References))
+				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 
@@ -285,7 +286,7 @@ var _ = Describe("Revert", func() {
 				_, err := repoMgr.Revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
-				Expect(curState.References).To(Equal(prevState.References))
+				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 
@@ -301,14 +302,14 @@ var _ = Describe("Revert", func() {
 				_, err := repoMgr.Revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
-				Expect(curState.References).To(Equal(prevState.References))
+				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 	})
 
 	Describe(".Revert (notes)", func() {
 		var path string
-		var prevState *State
+		var prevState types.BareRepoState
 
 		BeforeEach(func() {
 			repoName := util.RandString(5)
@@ -328,7 +329,7 @@ var _ = Describe("Revert", func() {
 				_, err := repoMgr.Revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
-				Expect(curState.References).To(Equal(prevState.References))
+				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 
@@ -344,7 +345,7 @@ var _ = Describe("Revert", func() {
 				_, err := repoMgr.Revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
-				Expect(curState.References).To(Equal(prevState.References))
+				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 
@@ -360,7 +361,7 @@ var _ = Describe("Revert", func() {
 				_, err := repoMgr.Revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
-				Expect(curState.References).To(Equal(prevState.References))
+				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
 	})
@@ -368,7 +369,7 @@ var _ = Describe("Revert", func() {
 	Describe(".getBranchRevertActions", func() {
 		When("change type is unknown", func() {
 			It("should return err=unknown change type", func() {
-				changeItem := &ItemChange{
+				changeItem := &types.ItemChange{
 					Action: 100,
 					Item:   &Obj{Name: "refs/heads/branch"},
 				}
@@ -382,7 +383,7 @@ var _ = Describe("Revert", func() {
 	Describe(".getTagRevertActions", func() {
 		When("change type is unknown", func() {
 			It("should return err=unknown change type", func() {
-				changeItem := &ItemChange{
+				changeItem := &types.ItemChange{
 					Action: 100,
 					Item:   &Obj{Name: "refs/tags/tagname"},
 				}
@@ -396,7 +397,7 @@ var _ = Describe("Revert", func() {
 	Describe(".getNoteRevertActions", func() {
 		When("change type is unknown", func() {
 			It("should return err=unknown change type", func() {
-				changeItem := &ItemChange{
+				changeItem := &types.ItemChange{
 					Action: 100,
 					Item:   &Obj{Name: "refs/notes/notename"},
 				}

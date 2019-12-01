@@ -81,4 +81,5 @@ require (
 	gopkg.in/oleiade/lane.v1 v1.0.0
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1
+	honnef.co/go/tools v0.0.0-20190523083050-ea95bdfd59fc
 )

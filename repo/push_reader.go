@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/makeos/mosdef/types"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -44,7 +45,7 @@ type PushReader struct {
 	references  packedReferences
 	objects     []*packObject
 	objectsRefs objRefMap
-	repo        *Repo
+	repo        types.BareRepo
 }
 
 type packObject struct {
@@ -74,7 +75,7 @@ func (o *objectObserver) OnFooter(h plumbing.Hash) error { return nil }
 
 // newPushReader creates an instance of PushReader, and after inspection, the
 // written content will be copied to dst.
-func newPushReader(dst io.WriteCloser, repo *Repo) (*PushReader, error) {
+func newPushReader(dst io.WriteCloser, repo types.BareRepo) (*PushReader, error) {
 	packFile, err := ioutil.TempFile(os.TempDir(), "pack")
 	if err != nil {
 		return nil, err

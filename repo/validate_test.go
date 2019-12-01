@@ -19,13 +19,14 @@ import (
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/testutil"
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Validation", func() {
 	var err error
 	var cfg *config.EngineConfig
-	var repo *Repo
+	var repo types.BareRepo
 	var path string
 	var gpgKeyID string
 	var pubKey string
@@ -437,7 +438,7 @@ var _ = Describe("Validation", func() {
 
 		When("change item has a reference name format that is not known", func() {
 			BeforeEach(func() {
-				change := &ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
+				change := &types.ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
 				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
@@ -449,7 +450,7 @@ var _ = Describe("Validation", func() {
 
 		When("change item referenced object is an unknown commit object", func() {
 			BeforeEach(func() {
-				change := &ItemChange{Item: &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
 				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
@@ -461,7 +462,7 @@ var _ = Describe("Validation", func() {
 
 		When("change item referenced object is an unknown tag object", func() {
 			BeforeEach(func() {
-				change := &ItemChange{Item: &Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
+				change := &types.ItemChange{Item: &Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
 				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
@@ -483,7 +484,7 @@ var _ = Describe("Validation", func() {
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 
-				change := &ItemChange{Item: &Obj{Name: "refs/heads/master", Data: cob.Hash.String()}}
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: cob.Hash.String()}}
 				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
@@ -504,7 +505,7 @@ var _ = Describe("Validation", func() {
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 
-				change := &ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tob.Hash.String()}}
+				change := &types.ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tob.Hash.String()}}
 				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
@@ -523,7 +524,7 @@ var _ = Describe("Validation", func() {
 				createSignedCommitAndLightWeightTag(path, "file.txt", "first file", txLine, "v1", gpgKeyID)
 				tagRef, _ := repo.Tag("v1")
 
-				change := &ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tagRef.Target().String()}}
+				change := &types.ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tagRef.Target().String()}}
 				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
@@ -13,13 +14,13 @@ import (
 // called during git push operation request.
 type PushHook struct {
 	op       string
-	repo     *Repo
-	rMgr     RepositoryManager
-	oldState *State
+	repo     types.BareRepo
+	rMgr     types.RepoManager
+	oldState types.BareRepoState
 }
 
 // newPushHook returns an instance of Hook
-func newPushHook(repo *Repo, rMgr RepositoryManager) *PushHook {
+func newPushHook(repo types.BareRepo, rMgr types.RepoManager) *PushHook {
 	return &PushHook{
 		repo: repo,
 		rMgr: rMgr,
@@ -98,7 +99,7 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 
 	// At this point, there are no errors. We need to construct a PushTx
 	var pushTx = &PushTx{
-		RepoName:    h.repo.repoName,
+		RepoName:    h.repo.GetName(),
 		PusherKeyID: pkID,
 		Timestamp:   time.Now().Unix(),
 		References:  PushedReferences([]*PushedReference{}),
@@ -110,7 +111,7 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 			Name:         ref.name,
 			OldObjectID:  ref.oldHash,
 			NewObjectID:  ref.newHash,
-			Nonce:        h.repo.state.References.Get(ref.name).Nonce + 1,
+			Nonce:        h.repo.State().References.Get(ref.name).Nonce + 1,
 			Fee:          refsTxLine[ref.name].Fee,
 			Sig:          refsTxLine[ref.name].Signature,
 			AccountNonce: refsTxLine[ref.name].Nonce,
@@ -150,7 +151,7 @@ func (h *PushHook) onPushReference(ref string, pr *PushReader) (*util.TxLine, []
 
 	// Find the old version of the reference prior to the push
 	// and create a lone state object of the old state
-	oldRef := h.oldState.References.Get(ref)
+	oldRef := h.oldState.GetReferences().Get(ref)
 	oldRefState := StateFromItem(oldRef)
 
 	// Get the current state of the repository; limit the query to only the
@@ -162,8 +163,8 @@ func (h *PushHook) onPushReference(ref string, pr *PushReader) (*util.TxLine, []
 	}
 
 	// Now, compute the changes from the target reference old state to its current.
-	changes := oldRefState.GetChanges(curState)
-	var change *ItemChange
+	changes := oldRefState.GetChanges(curState.(*State))
+	var change *types.ItemChange
 	if len(changes.References.Changes) > 0 {
 		change = changes.References.Changes[0]
 	}
@@ -199,7 +200,7 @@ func (h *PushHook) onPushReference(ref string, pr *PushReader) (*util.TxLine, []
 // ref: The target ref whose contained object are to be deleted.
 // repo: The repository where this object exist.
 // pr: Push inspector object
-func removePackedObjectsFromRef(ref string, repo *Repo, pr *PushReader) (errs []error) {
+func removePackedObjectsFromRef(ref string, repo types.BareRepo, pr *PushReader) (errs []error) {
 	for _, obj := range pr.objects {
 		relatedRefs := pr.objectsRefs[obj.Hash.String()]
 		if len(relatedRefs) == 1 && funk.ContainsString(relatedRefs, ref) {
@@ -217,7 +218,7 @@ func removePackedObjectsFromRef(ref string, repo *Repo, pr *PushReader) (errs []
 // refs: A list of refs whose contained object are to be deleted.
 // repo: The repository where this object exist.
 // pr: Push inspector object
-func removePackedObjectsFromRefs(refs []string, repo *Repo, pr *PushReader) (errs []error) {
+func removePackedObjectsFromRefs(refs []string, repo types.BareRepo, pr *PushReader) (errs []error) {
 	for _, ref := range refs {
 		for _, obj := range pr.objects {
 			relatedRefs := pr.objectsRefs[obj.Hash.String()]

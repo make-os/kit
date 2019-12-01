@@ -3,6 +3,7 @@ package repo
 import (
 	"crypto/rsa"
 	"fmt"
+	"gopkg.in/src-d/go-git.v4/config"
 	"os"
 	"strings"
 
@@ -14,46 +15,192 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 
 	"github.com/pkg/errors"
 )
 
 // Repo represents a git repository
 type Repo struct {
-	*git.Repository
-	*GitOps
-	*DBOps
-	Path  string
-	Name  string
+	git   *git.Repository
+	db    DBOperations
+	path  string
+	name  string
+	ops   *GitOps
 	state *types.Repository
 }
 
-func getRepo(path string) (*Repo, error) {
+// State returns the repository's network state
+func (r *Repo) State() *types.Repository {
+	return r.state
+}
+
+// Path returns the repository's path
+func (r *Repo) Path() string {
+	return r.path
+}
+
+// References returns an unsorted ReferenceIter for all references.
+func (r *Repo) References() (storer.ReferenceIter, error) {
+	return r.git.References()
+}
+
+// RefDelete executes `git update-ref -d <refname>` to delete a reference
+func (r *Repo) RefDelete(refname string) error {
+	return r.ops.RefDelete(refname)
+}
+
+// RefUpdate executes `git update-ref <refname> <commit hash>` to update/create a reference
+func (r *Repo) RefUpdate(refname, commitHash string) error {
+	return r.ops.RefUpdate(refname, commitHash)
+}
+
+// RefGet returns the hash content of a reference.
+func (r *Repo) RefGet(refname string) (string, error) {
+	return r.ops.RefGet(refname)
+}
+
+// TagDelete executes `git tag -d <tagname>` to delete a tag
+func (r *Repo) TagDelete(tagname string) error {
+	return r.ops.TagDelete(tagname)
+}
+
+// ListTreeObjects executes `git tag -d <tagname>` to delete a tag
+func (r *Repo) ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string,
+	error) {
+	return r.ops.ListTreeObjects(treename, recursive, env...)
+}
+
+// DeleteObject deletes an object from a repository.
+func (r *Repo) DeleteObject(hash plumbing.Hash) error {
+	return r.git.DeleteObject(hash)
+}
+
+// Reference deletes an object from a repository.
+func (r *Repo) Reference(name plumbing.ReferenceName, resolved bool) (*plumbing.Reference, error) {
+	return r.git.Reference(name, resolved)
+}
+
+// Object returns an Object with the given hash.
+func (r *Repo) Object(t plumbing.ObjectType, h plumbing.Hash) (object.Object, error) {
+	return r.git.Object(t, h)
+}
+
+// Objects returns an unsorted ObjectIter with all the objects in the repository.
+func (r *Repo) Objects() (*object.ObjectIter, error) {
+	return r.git.Objects()
+}
+
+// CommitObjects returns an unsorted ObjectIter with all the objects in the repository.
+func (r *Repo) CommitObjects() (object.CommitIter, error) {
+	return r.git.CommitObjects()
+}
+
+// CommitObject returns an unsorted ObjectIter with all the objects in the repository.
+func (r *Repo) CommitObject(h plumbing.Hash) (*object.Commit, error) {
+	return r.git.CommitObject(h)
+}
+
+// BlobObject returns a Blob with the given hash.
+func (r *Repo) BlobObject(h plumbing.Hash) (*object.Blob, error) {
+	return r.git.BlobObject(h)
+}
+
+// TagObject returns a Tag with the given hash.
+func (r *Repo) TagObject(h plumbing.Hash) (*object.Tag, error) {
+	return r.git.TagObject(h)
+}
+
+// Tag returns a tag from the repository.
+func (r *Repo) Tag(name string) (*plumbing.Reference, error) {
+	return r.git.Tag(name)
+}
+
+// Config return the repository config
+func (r *Repo) Config() (*config.Config, error) {
+	return r.git.Config()
+}
+
+// GetConfig finds and returns a config value
+func (r *Repo) GetConfig(path string) string {
+	return r.ops.GetConfig(path)
+}
+
+// GetRecentCommit gets the hash of the recent commit.
+// Returns ErrNoCommits if no commits exist
+func (r *Repo) GetRecentCommit() (string, error) {
+	return r.ops.GetRecentCommit()
+}
+
+// UpdateRecentCommitMsg updates the recent commit message.
+// msg: The commit message which is passed to the command's stdin.
+// signingKey: The signing key
+// env: Optional environment variables to pass to the command.
+func (r *Repo) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
+	return r.ops.UpdateRecentCommitMsg(msg, signingKey, env...)
+}
+
+// CreateTagWithMsg an annotated tag.
+// args: `git tag` options (NOTE: -a and --file=- are added by default)
+// msg: The tag's message which is passed to the command's stdin.
+// signingKey: The signing key to use
+// env: Optional environment variables to pass to the command.
+func (r *Repo) CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error {
+	return r.ops.CreateTagWithMsg(args, msg, signingKey, env...)
+}
+
+// RemoveEntryFromNote removes a note
+func (r *Repo) RemoveEntryFromNote(notename, objectHash string, env ...string) error {
+	return r.ops.RemoveEntryFromNote(notename, objectHash, env...)
+}
+
+// CreateBlob creates a blob object
+func (r *Repo) CreateBlob(content string) (string, error) {
+	return r.ops.CreateBlob(content)
+}
+
+// AddEntryToNote adds a note
+func (r *Repo) AddEntryToNote(notename, objectHash, note string, env ...string) error {
+	return r.AddEntryToNote(notename, objectHash, note, env...)
+}
+
+// ListTreeObjectsSlice returns a slice containing objects name of tree entries
+func (r *Repo) ListTreeObjectsSlice(treename string, recursive, showTrees bool,
+	env ...string) ([]string, error) {
+	return r.ops.ListTreeObjectsSlice(treename, recursive, showTrees, env...)
+}
+
+// GetName returns the name of the repo
+func (r *Repo) GetName() string {
+	return r.name
+}
+
+func getRepo(path string) (types.BareRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
 	}
 	return &Repo{
-		Repository: repo,
-		Path:       path,
+		git:  repo,
+		path: path,
 	}, nil
 }
 
-func getRepoWithGitOpt(gitBinPath, path string) (*Repo, error) {
+func getRepoWithGitOpt(gitBinPath, path string) (types.BareRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
 	}
 	return &Repo{
-		GitOps:     NewGitOps(gitBinPath, path),
-		Repository: repo,
-		Path:       path,
+		ops:  NewGitOps(gitBinPath, path),
+		git:  repo,
+		path: path,
 	}, nil
 }
 
 // getCurrentWDRepo returns a Repo instance pointed to the repository
 // in the current working directory.
-func getCurrentWDRepo(gitBinDir string) (*Repo, error) {
+func getCurrentWDRepo(gitBinDir string) (types.BareRepo, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current working directory")
@@ -289,7 +436,7 @@ func AddSignedTxBlobCmd(gitBinDir, txFee, txNonce, signingKey, note string) erro
 }
 
 // getTreeEntries returns all entries in a tree.
-func getTreeEntries(repo *Repo, treeHash string) ([]string, error) {
+func getTreeEntries(repo types.BareRepo, treeHash string) ([]string, error) {
 	entries, err := repo.ListTreeObjectsSlice(treeHash, true, true)
 	if err != nil {
 		return nil, err
@@ -302,7 +449,7 @@ func getTreeEntries(repo *Repo, treeHash string) ([]string, error) {
 // repo: The target repository
 // commit: The target commit
 // stopCommitHash: A commit hash that when found triggers the end of the search.
-func getCommitHistory(repo *Repo, commit *object.Commit, stopCommitHash string) ([]string, error) {
+func getCommitHistory(repo types.BareRepo, commit *object.Commit, stopCommitHash string) ([]string, error) {
 	var hashes []string
 
 	// Stop if commit hash matches the stop hash
@@ -336,7 +483,7 @@ func getCommitHistory(repo *Repo, commit *object.Commit, stopCommitHash string) 
 
 // getObjectsSize returns the total size of the given objects in the repo.
 // Panics if unable to find an object.
-func getObjectsSize(repo *Repo, objects []string) uint64 {
+func getObjectsSize(repo types.BareRepo, objects []string) uint64 {
 	var size int64
 	for _, hash := range objects {
 		obj, err := repo.Object(plumbing.AnyObject, plumbing.NewHash(hash))

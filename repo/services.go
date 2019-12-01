@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/makeos/mosdef/types"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 )
@@ -23,7 +24,7 @@ type serviceParams struct {
 	w          http.ResponseWriter
 	r          *http.Request
 	hook       *PushHook
-	repo       *Repo
+	repo       types.BareRepo
 	repoDir    string
 	op         string
 	srvName    string

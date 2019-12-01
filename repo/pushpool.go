@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/makeos/mosdef/params"
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
@@ -79,13 +80,7 @@ func newItem(tx *PushTx) *containerItem {
 	return item
 }
 
-// Pool represents a pool for holding and ordering git push transactions
-type Pool interface {
-	Add(tx *PushTx) error
-	Full() bool
-}
-
-// PushPool implements pushpool.Pool.
+// PushPool implements types.PushPool.
 type PushPool struct {
 	gmx         *sync.RWMutex
 	cap         int
@@ -135,7 +130,7 @@ func (p *PushPool) Full() bool {
 // reference of tx is superior to multiple references in multiple transactions,
 // replacement will only happen if the fee rate of tx is higher than the
 // combined fee rate of the replaceable transactions.
-func (p *PushPool) Add(tx *PushTx) error {
+func (p *PushPool) Add(tx types.PushTx) error {
 
 	if p.Full() {
 		return errFullPushPool
@@ -149,7 +144,7 @@ func (p *PushPool) Add(tx *PushTx) error {
 		return errTxExistInPushPool
 	}
 
-	item := newItem(tx)
+	item := newItem(tx.(*PushTx))
 
 	// Calculate and set fee rate
 	billableTxSize := decimal.NewFromFloat(float64(tx.BillableSize()))
@@ -159,9 +154,9 @@ func (p *PushPool) Add(tx *PushTx) error {
 	// or can replace existing transaction
 	var replaceable = make(map[string]*PushTx)
 	var totalReplaceableFee = decimal.NewFromFloat(0)
-	for _, ref := range tx.References {
+	for _, ref := range tx.(*PushTx).References {
 
-		existingRefNonce := p.refNonceIdx.getNonce(makeRefKey(tx.RepoName, ref.Name))
+		existingRefNonce := p.refNonceIdx.getNonce(makeRefKey(tx.(*PushTx).RepoName, ref.Name))
 		if existingRefNonce == 0 {
 			continue
 		}
@@ -174,14 +169,14 @@ func (p *PushPool) Add(tx *PushTx) error {
 				"nonce has been staged")
 		}
 
-		existingItem := p.refIndex.get(makeRefKey(tx.RepoName, ref.Name))
+		existingItem := p.refIndex.get(makeRefKey(tx.(*PushTx).RepoName, ref.Name))
 		if existingItem == nil {
 			panic(fmt.Errorf("unexpectedly failed to find existing reference tx"))
 		}
 
 		if existingItem.Tx.TotalFee().Decimal().GreaterThanOrEqual(tx.TotalFee().Decimal()) {
 			msg := fmt.Sprintf("replace-by-fee on staged reference (ref:%s, repo:%s) "+
-				"not allowed due to inferior fee.", ref.Name, tx.RepoName)
+				"not allowed due to inferior fee.", ref.Name, tx.(*PushTx).RepoName)
 			return fmt.Errorf(msg)
 		}
 
@@ -209,8 +204,8 @@ func (p *PushPool) Add(tx *PushTx) error {
 	// Add indexes for faster queries
 	p.index.add(id.HexStr(), item)
 	for _, ref := range item.Tx.References {
-		p.refIndex.add(makeRefKey(tx.RepoName, ref.Name), item)
-		p.refNonceIdx.add(makeRefKey(tx.RepoName, ref.Name), ref.Nonce)
+		p.refIndex.add(makeRefKey(tx.(*PushTx).RepoName, ref.Name), item)
+		p.refNonceIdx.add(makeRefKey(tx.(*PushTx).RepoName, ref.Name), ref.Nonce)
 	}
 
 	p.broadcast(tx)
@@ -254,7 +249,7 @@ func (p *PushPool) sort() {
 }
 
 // broadcast a push transaction
-func (p *PushPool) broadcast(tx *PushTx) error {
+func (p *PushPool) broadcast(tx types.PushTx) error {
 	return nil
 }
 

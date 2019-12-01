@@ -73,42 +73,6 @@ svCU0gx1j1vi1SKS
 -----END PGP PUBLIC KEY BLOCK-----`, nil
 }
 
-// RepositoryManager provides functionality for manipulating a repositories.
-type RepositoryManager interface {
-
-	// GetRepoState returns the state of the repository at the given path
-	// options: Allows the caller to configure how and what state are gathered
-	GetRepoState(target *Repo, options ...KVOption) (*State, error)
-
-	// Revert reverts the repository from its current state to the previous state.
-	Revert(target *Repo, prevState *State, options ...KVOption) (*Changes, error)
-
-	// GetPGPPubKeyGetter returns the gpg getter function for finding GPG public
-	// keys by their ID
-	GetPGPPubKeyGetter() PGPPubKeyGetter
-
-	// GetLogic returns the application logic provider
-	GetLogic() types.Logic
-
-	// GetNodeKey returns the node's private key
-	GetNodeKey() *crypto.Key
-
-	// GetPushPool returns the push pool
-	GetPushPool() *PushPool
-
-	// Start starts the server
-	Start()
-
-	// Wait can be used by the caller to wait till the server terminates
-	Wait()
-
-	// Stop shutsdown the server
-	Stop(ctx context.Context)
-
-	// CreateRepository creates a local git repository
-	CreateRepository(name string) error
-}
-
 // Manager implements types.Manager. It provides a system for managing
 // and service a git repositories through http and ssh protocols.
 type Manager struct {
@@ -119,7 +83,7 @@ type Manager struct {
 	addr        string          // addr is the listening address for the http server
 	gitBinPath  string          // gitBinPath is the path of the git executable
 	repoDBCache *DBCache        // stores database handles of repositories
-	pool        *PushPool       // this is the push transaction pool
+	pool        types.PushPool  // this is the push transaction pool
 	logic       types.Logic     // logic is the application logic provider
 	nodeKey     *crypto.Key     // the node's private key for signing transactions
 }
@@ -174,7 +138,7 @@ func (m *Manager) GetNodeKey() *crypto.Key {
 }
 
 // GetPushPool implements RepositoryManager
-func (m *Manager) GetPushPool() *PushPool {
+func (m *Manager) GetPushPool() types.PushPool {
 	return m.pool
 }
 
@@ -239,12 +203,12 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 		w: w,
 		r: r,
 		repo: &Repo{
-			Name:       repoName,
-			Repository: repo,
-			GitOps:     NewGitOps(m.gitBinPath, fullRepoDir),
-			Path:       fullRepoDir,
-			DBOps:      NewDBOps(m.repoDBCache, repoName),
-			state:      repoState,
+			name:  repoName,
+			git:   repo,
+			ops:   NewGitOps(m.gitBinPath, fullRepoDir),
+			path:  fullRepoDir,
+			db:    NewDBOps(m.repoDBCache, repoName),
+			state: repoState,
 		},
 		repoDir:    fullRepoDir,
 		op:         op,
@@ -281,19 +245,19 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 
 // GetPGPPubKeyGetter implements RepositoryManager
 // TODO: Requires full implementation
-func (m *Manager) GetPGPPubKeyGetter() PGPPubKeyGetter {
+func (m *Manager) GetPGPPubKeyGetter() types.PGPPubKeyGetter {
 	return samplePGPPubKeyGetter
 }
 
 // GetRepoState implements RepositoryManager
-func (m *Manager) GetRepoState(repo *Repo, options ...KVOption) (*State, error) {
+func (m *Manager) GetRepoState(repo types.BareRepo, options ...types.KVOption) (types.BareRepoState, error) {
 	return m.getRepoState(repo, options...), nil
 }
 
 // GetRepoState returns the state of the repository
 // repo: The target repository
 // options: Allows the caller to configure how and what state are gathered
-func (m *Manager) getRepoState(repo *Repo, options ...KVOption) *State {
+func (m *Manager) getRepoState(repo types.BareRepo, options ...types.KVOption) types.BareRepoState {
 
 	refMatch := ""
 	if opt := getKVOpt("match", options); opt != nil {
@@ -301,7 +265,7 @@ func (m *Manager) getRepoState(repo *Repo, options ...KVOption) *State {
 	}
 
 	// Get references
-	refs := make(map[string]Item)
+	refs := make(map[string]types.Item)
 	if refMatch == "" || strings.HasPrefix(refMatch, "refs") {
 		refsI, _ := repo.References()
 		refsI.ForEach(func(ref *plumbing.Reference) error {
@@ -332,7 +296,8 @@ func (m *Manager) getRepoState(repo *Repo, options ...KVOption) *State {
 }
 
 // Revert implements RepositoryManager
-func (m *Manager) Revert(repo *Repo, prevState *State, options ...KVOption) (*Changes, error) {
+func (m *Manager) Revert(repo types.BareRepo, prevState types.BareRepoState,
+	options ...types.KVOption) (*types.Changes, error) {
 	return m.revert(repo, prevState, options...)
 }
 

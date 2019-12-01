@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 
 	"github.com/pkg/errors"
@@ -18,9 +19,9 @@ import (
 // change: The item that changed the repository
 // gpgPubKeyGetter: Getter function for reading gpg public key
 func validateChange(
-	repo *Repo,
-	change *ItemChange,
-	gpgPubKeyGetter PGPPubKeyGetter) (*util.TxLine, error) {
+	repo types.BareRepo,
+	change *types.ItemChange,
+	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxLine, error) {
 
 	var commit *object.Commit
 	var err error
@@ -83,9 +84,9 @@ validatedNote:
 // repo: The repo where the tag exists in.
 // gpgPubKeyGetter: Getter function for reading gpg public key
 func checkNote(
-	repo *Repo,
+	repo types.BareRepo,
 	noteName string,
-	gpgPubKeyGetter PGPPubKeyGetter) (*util.TxLine, error) {
+	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxLine, error) {
 
 	// Find a all notes entries
 	noteEntries, err := repo.ListTreeObjects(noteName, false)
@@ -181,8 +182,8 @@ func checkNote(
 // gpgPubKeyGetter: Getter function for reading gpg public key
 func checkAnnotatedTag(
 	tag *object.Tag,
-	repo *Repo,
-	gpgPubKeyGetter PGPPubKeyGetter) (*util.TxLine, error) {
+	repo types.BareRepo,
+	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxLine, error) {
 
 	// Get and parse tx line from the commit message
 	txLine, err := util.ParseTxLine(tag.Message)
@@ -224,8 +225,8 @@ func checkAnnotatedTag(
 func checkCommit(
 	commit *object.Commit,
 	isReferenced bool,
-	repo *Repo,
-	gpgPubKeyGetter PGPPubKeyGetter) (*util.TxLine, error) {
+	repo types.BareRepo,
+	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxLine, error) {
 
 	referencedStr := ""
 	if isReferenced {
