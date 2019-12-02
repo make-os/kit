@@ -218,7 +218,8 @@ func removePackedObjectsFromRef(ref string, repo types.BareRepo, pr *PushReader)
 // refs: A list of refs whose contained object are to be deleted.
 // repo: The repository where this object exist.
 // pr: Push inspector object
-func removePackedObjectsFromRefs(refs []string, repo types.BareRepo, pr *PushReader) (errs []error) {
+func removePackedObjectsFromRefs(refs []string, repo types.BareRepo,
+	pr *PushReader) (errs []error) {
 	for _, ref := range refs {
 		errs = append(errs, removePackedObjectsFromRef(ref, repo, pr)...)
 	}

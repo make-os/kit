@@ -7,7 +7,8 @@ import (
 	"fmt"
 	mrand "math/rand"
 
-	pb "github.com/libp2p/go-libp2p-crypto/pb"
+	"github.com/libp2p/go-libp2p-core/crypto"
+	pb "github.com/libp2p/go-libp2p-core/crypto/pb"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/ellcrys/go-ethereum/crypto/sha3"
@@ -15,9 +16,7 @@ import (
 	"github.com/makeos/mosdef/util"
 	"golang.org/x/crypto/ripemd160"
 
-	peer "github.com/libp2p/go-libp2p-peer"
-
-	crypto "github.com/libp2p/go-libp2p-crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
 )
 
 // AddressVersion is the base58 encode version adopted

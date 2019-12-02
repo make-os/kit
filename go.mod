@@ -24,7 +24,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/gobuffalo/packr v1.30.1
-	github.com/gogo/protobuf v1.3.0
+	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.3.1
 	github.com/google/martian v2.1.0+incompatible
 	github.com/gorilla/mux v1.7.3
@@ -39,6 +39,7 @@ require (
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/lestrrat-go/file-rotatelogs v2.2.0+incompatible
 	github.com/lestrrat-go/strftime v0.0.0-20190725011945-5c849dd2c51d // indirect
+	github.com/libp2p/go-libp2p-core v0.2.5
 	github.com/libp2p/go-libp2p-crypto v0.1.0
 	github.com/libp2p/go-libp2p-peer v0.2.0
 	github.com/mattn/go-colorable v0.1.4 // indirect

@@ -3,10 +3,8 @@ package crypto
 import (
 	"fmt"
 
-	// "github.com/k0kubun/pp"
-
 	"github.com/btcsuite/btcutil/base58"
-	crypto "github.com/libp2p/go-libp2p-crypto"
+	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
