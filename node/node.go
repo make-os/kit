@@ -69,7 +69,7 @@ func NewNode(cfg *config.EngineConfig, tmcfg *tmconfig.Config) *Node {
 	return &Node{
 		cfg:     cfg,
 		nodeKey: cfg.G().NodeKey,
-		log:     cfg.G().Log.Module("Node"),
+		log:     cfg.G().Log.Module("node"),
 		tmcfg:   tmcfg,
 		service: services.New(tmrpc, nil, nil),
 		tmrpc:   tmrpc,
@@ -181,7 +181,10 @@ func (n *Node) Start() error {
 	n.logic.SetRepoManager(rm)
 
 	// Start tendermint
-	n.tm.Start()
+	if err := n.tm.Start(); err != nil {
+		n.Stop()
+		return err
+	}
 
 	return nil
 }

@@ -29,7 +29,7 @@ type Executor struct {
 func newExecutor(l logger.Logger) *Executor {
 	e := new(Executor)
 	e.vm = otto.New()
-	e.log = l.Module("ConsoleExecutor")
+	e.log = l.Module("console/executor")
 	return e
 }
 

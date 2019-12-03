@@ -66,7 +66,7 @@ func NewApp(
 		logic:      logic,
 		cfg:        cfg,
 		wBlock:     &types.BlockInfo{},
-		log:        cfg.G().Log.Module("App"),
+		log:        cfg.G().Log.Module("app"),
 		ticketMgr:  ticketMgr,
 		validateTx: validators.ValidateTx,
 	}

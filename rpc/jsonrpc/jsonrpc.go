@@ -131,7 +131,7 @@ func New(log logger.Logger, addr string) *JSONRPC {
 	rpc := &JSONRPC{
 		addr:   addr,
 		apiSet: APISet{},
-		log:    log.Module("JSONRPC"),
+		log:    log.Module("jsonrpc"),
 	}
 	rpc.MergeAPISet(rpc.APIs())
 	return rpc

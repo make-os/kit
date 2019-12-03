@@ -56,7 +56,7 @@ func NewReactor(cfg *config.EngineConfig, mempool *Mempool) *Reactor {
 		config:  cfg.G().TMConfig.Mempool,
 		mempool: mempool,
 		cache:   cache.NewCache(cfg.Mempool.CacheSize),
-		log:     cfg.G().Log.Module("MempoolReactor"),
+		log:     cfg.G().Log.Module("mempool/reactor"),
 	}
 	r.BaseReactor = *p2p.NewBaseReactor("Reactor", r)
 	return r

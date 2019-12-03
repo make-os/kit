@@ -54,7 +54,7 @@ func NewMempool(
 	return &Mempool{
 		config: config,
 		pool:   pool.New(int64(config.Mempool.Size)),
-		log:    config.G().Log.Module("Mempool"),
+		log:    config.G().Log.Module("mempool"),
 	}
 }
 

@@ -74,7 +74,7 @@ var startCmd = &cobra.Command{
 	Short: "Launch the node to join the network.",
 	Long:  `Launch the node to join the network.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		log = cfg.G().Log.Module("Main")
+		log = cfg.G().Log.Module("main")
 		listenForInterrupt()
 		start(nil)
 	},
