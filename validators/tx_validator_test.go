@@ -120,6 +120,15 @@ var _ = Describe("TxValidator", func() {
 			// TxTypeUnbondStorerTicket specific cases
 			{tx: &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", To: "addr"}, desc: "unexpected field `to` is set", err: fmt.Errorf("field:to, error:unexpected field")},
 			{tx: &types.Transaction{Type: types.TxTypeUnbondStorerTicket, Fee: "1", Timestamp: 1}, desc: "ticket id not provided", err: fmt.Errorf("field:ticket, error:ticket id is required")},
+
+			// TxTypeAddGPGPubKey specific cases
+			{tx: &types.Transaction{Type: types.TxTypeAddGPGPubKey}, desc: "fee not set", err: fmt.Errorf("field:fee, error:fee is required")},
+			{tx: &types.Transaction{Type: types.TxTypeAddGPGPubKey, Fee: "1", Timestamp: 1}, desc: "gpg public key not provided", err: fmt.Errorf("field:gpgPubKey.pubKey, error:public key is required")},
+			{tx: &types.Transaction{Type: types.TxTypeAddGPGPubKey, Fee: "1", Timestamp: 1, GPGPubKey: &types.AddGPGPubKey{PublicKey: "invalid"}}, desc: "gpg key is invalid", err: fmt.Errorf("field:gpgPubKey.pubKey, error:invalid gpg public key")},
+
+			// TxTypeRepoCreate specific cases
+			{tx: &types.Transaction{Type: types.TxTypeRepoCreate}, desc: "missing fee", err: fmt.Errorf("field:fee, error:fee is required")},
+			{tx: &types.Transaction{Type: types.TxTypeRepoCreate, Fee: "1", Timestamp: 1}, desc: "missing repo name", err: fmt.Errorf("field:repoCreate.name, error:name is required")},
 		}
 
 		for _, c := range cases {
@@ -508,7 +517,7 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckUnexpectedFields", func() {
-		When("check TxTypeValidatorTicket", func() {
+		FWhen("check TxTypeValidatorTicket", func() {
 			var tx *types.Transaction
 
 			BeforeEach(func() {
@@ -541,6 +550,13 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckUnexpectedFields(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:repoCreate, error:unexpected field"))
+			})
+
+			It("should not accept a set `gpgPubKey` field", func() {
+				tx.GPGPubKey = &types.AddGPGPubKey{}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:gpgPubKey, error:unexpected field"))
 			})
 		})
 
@@ -621,6 +637,13 @@ var _ = Describe("TxValidator", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:repoCreate, error:unexpected field"))
 			})
+
+			It("should not accept a set `gpgPubKey` field", func() {
+				tx.GPGPubKey = &types.AddGPGPubKey{}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:gpgPubKey, error:unexpected field"))
+			})
 		})
 
 		When("check TxTypeSetDelegatorCommission", func() {
@@ -665,6 +688,13 @@ var _ = Describe("TxValidator", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:repoCreate, error:unexpected field"))
 			})
+
+			It("should not accept a set `gpgPubKey` field", func() {
+				tx.GPGPubKey = &types.AddGPGPubKey{}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:gpgPubKey, error:unexpected field"))
+			})
 		})
 
 		When("check TxTypeStorerTicket", func() {
@@ -701,6 +731,13 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckUnexpectedFields(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:repoCreate, error:unexpected field"))
+			})
+
+			It("should not accept a set `gpgPubKey` field", func() {
+				tx.GPGPubKey = &types.AddGPGPubKey{}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:gpgPubKey, error:unexpected field"))
 			})
 		})
 
@@ -746,6 +783,13 @@ var _ = Describe("TxValidator", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:repoCreate, error:unexpected field"))
 			})
+
+			It("should not accept a set `gpgPubKey` field", func() {
+				tx.GPGPubKey = &types.AddGPGPubKey{}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:gpgPubKey, error:unexpected field"))
+			})
 		})
 
 		When("check TxTypeRepoCreate", func() {
@@ -784,11 +828,69 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:epochSecret, error:unexpected field"))
 			})
 
-			It("should not accept a set `repoCreate` field", func() {
+			It("should not accept a set `unbondTicket` field", func() {
 				tx.UnbondTicket = &types.UnbondTicket{TicketID: []byte("repo")}
 				err := validators.CheckUnexpectedFields(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:unbondTicket, error:unexpected field"))
+			})
+
+			It("should not accept a set `gpgPubKey` field", func() {
+				tx.GPGPubKey = &types.AddGPGPubKey{}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:gpgPubKey, error:unexpected field"))
+			})
+		})
+
+		When("check TxTypeAddGPGPubKey", func() {
+			var tx *types.Transaction
+
+			BeforeEach(func() {
+				tx = &types.Transaction{Type: types.TxTypeAddGPGPubKey}
+				tx.Timestamp = 0
+			})
+
+			It("should not accept a set `meta` field", func() {
+				tx.SetMeta(map[string]interface{}{"a": 2})
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:meta, error:unexpected field"))
+			})
+
+			It("should not accept a set `to` field", func() {
+				tx.To = util.String("address")
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:to, error:unexpected field"))
+			})
+
+			It("should not accept a set `value` field", func() {
+				tx.Value = util.String("10")
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:value, error:unexpected field"))
+			})
+
+			It("should not accept a set `epochSecret` field", func() {
+				tx.EpochSecret = &types.EpochSecret{}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:epochSecret, error:unexpected field"))
+			})
+
+			It("should not accept a set `unbondTicket` field", func() {
+				tx.UnbondTicket = &types.UnbondTicket{TicketID: []byte("repo")}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:unbondTicket, error:unexpected field"))
+			})
+
+			It("should not accept a set `repoCreate` field", func() {
+				tx.RepoCreate = &types.RepoCreate{}
+				err := validators.CheckUnexpectedFields(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:repoCreate, error:unexpected field"))
 			})
 		})
 	})

@@ -8,6 +8,10 @@ import (
 const (
 	// TagAccount is the prefix for account data
 	TagAccount = "a"
+	// TagGPGPubKey is the prefix for storing gpg public key data
+	TagGPGPubKey = "g"
+	// TagAddressGPGPkID is the prefix for indexing address -> gpg pkID mapping
+	TagAddressGPGPkID = "ag"
 	// TagRepo is the prefix for account data
 	TagRepo = "r"
 	// TagBlockInfo is the prefix for last block data
@@ -25,6 +29,22 @@ const (
 // MakeAccountKey creates a key for accessing/store an account
 func MakeAccountKey(address string) []byte {
 	return storage.MakePrefix([]byte(TagAccount), []byte(address))
+}
+
+// MakeGPGPubKeyKey creates a key for storing GPG public key
+func MakeGPGPubKeyKey(pkID string) []byte {
+	return storage.MakePrefix([]byte(TagGPGPubKey), []byte(pkID))
+}
+
+// MakeAddrGPGPkIDIndexKey creates a key for address to gpg pub key index
+func MakeAddrGPGPkIDIndexKey(address, pkID string) []byte {
+	return storage.MakePrefix([]byte(TagAddressGPGPkID), []byte(address), []byte(pkID))
+}
+
+// MakeQueryPkIDs creates a key for querying public key ids belonging
+// to an address
+func MakeQueryPkIDs(address string) []byte {
+	return storage.MakePrefix([]byte(TagAddressGPGPkID), []byte(address))
 }
 
 // MakeRepoKey creates a key for accessing/store a repository object

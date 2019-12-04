@@ -20,14 +20,15 @@ func (t *Transaction) execRepoCreate(
 	fee util.String,
 	chainHeight uint64) error {
 
+	spk, _ := crypto.PubKeyFromBase58(creatorPubKey.String())
+
 	// Create the repo object
 	newRepo := types.BareRepository()
-	newRepo.CreatorPubKey = creatorPubKey
+	newRepo.CreatorAddress = spk.Addr()
 	t.logic.RepoKeeper().Update(name, newRepo)
 
 	// Get the sender account and balance
 	acctKeeper := t.logic.AccountKeeper()
-	spk, _ := crypto.PubKeyFromBase58(creatorPubKey.String())
 	senderAcct := acctKeeper.GetAccount(spk.Addr(), int64(chainHeight))
 	senderBal := senderAcct.Balance.Decimal()
 

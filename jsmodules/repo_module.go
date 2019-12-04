@@ -20,12 +20,12 @@ type RepoModule struct {
 }
 
 // NewRepoModule creates an instance of RepoModule
-func NewRepoModule(vm *otto.Otto, service types.Service, keepers types.Keepers) RepoModule {
-	return RepoModule{vm: vm, service: service, keepers: keepers}
+func NewRepoModule(vm *otto.Otto, service types.Service, keepers types.Keepers) *RepoModule {
+	return &RepoModule{vm: vm, service: service, keepers: keepers}
 }
 
 // funcs are functions accessible using the `repo` namespace
-func (m RepoModule) funcs() []*types.JSModuleFunc {
+func (m *RepoModule) funcs() []*types.JSModuleFunc {
 	return []*types.JSModuleFunc{
 		&types.JSModuleFunc{
 			Name:        "create",
@@ -35,13 +35,13 @@ func (m RepoModule) funcs() []*types.JSModuleFunc {
 	}
 }
 
-func (m RepoModule) globals() []*types.JSModuleFunc {
+func (m *RepoModule) globals() []*types.JSModuleFunc {
 	return []*types.JSModuleFunc{}
 }
 
 // Configure configures the JS context and return
 // any number of console prompt suggestions
-func (m RepoModule) Configure() []prompt.Suggest {
+func (m *RepoModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
 	// Add the main namespace
@@ -69,7 +69,7 @@ func (m RepoModule) Configure() []prompt.Suggest {
 // params: The parameters required to create the repository
 // options: Additional call options.
 // options[0]: Private key for signing the transaction
-func (m RepoModule) create(params map[string]interface{}, options ...interface{}) interface{} {
+func (m *RepoModule) create(params map[string]interface{}, options ...interface{}) interface{} {
 
 	var err error
 

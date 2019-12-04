@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/hex"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/fatih/structs"
@@ -33,6 +34,10 @@ var (
 
 	// TxTypeRepoCreate represents a transaction to create a repository
 	TxTypeRepoCreate = 0x06
+
+	// TxTypeAddGPGPubKey represents a transaction to add a GPG public key to an
+	// account
+	TxTypeAddGPGPubKey = 0x07
 )
 
 // Transaction meta keys
@@ -60,6 +65,7 @@ type Tx interface {
 	GetBytesNoSig() []byte
 	GetUnbondTicket() *UnbondTicket
 	GetRepoCreate() *RepoCreate
+	GetGPGPubKey() *AddGPGPubKey
 	Bytes() []byte
 	ComputeHash() util.Hash
 	GetID() string
@@ -94,6 +100,9 @@ type Transaction struct {
 
 	// TxTypeRepoCreate specific field
 	RepoCreate *RepoCreate `json:"repoCreate,omitempty" msgpack:"repoCreate,omitempty"`
+
+	// TxTypeAddGPGPubKey specific field
+	GPGPubKey *AddGPGPubKey `json:"gpgPubKey,omitempty" msgpack:"gpgPubKey,omitempty"`
 
 	// meta stores arbitrary data for message passing during tx processing
 	meta map[string]interface{}
@@ -134,6 +143,7 @@ func NewTx(txType int,
 	tx.EpochSecret = nil
 	tx.UnbondTicket = nil
 	tx.RepoCreate = nil
+	tx.GPGPubKey = nil
 	tx.meta = map[string]interface{}{}
 
 	var err error
@@ -210,12 +220,29 @@ func (tx *Transaction) SetTimestamp(t int64) {
 }
 
 // GetTicketID returns the ticket id
-// FOR: TxTypeUnbondTicket
 func (tx *Transaction) GetTicketID() []byte {
 	if tx.UnbondTicket == nil {
 		return nil
 	}
 	return tx.UnbondTicket.TicketID
+}
+
+// GetGPGPublicKey returns GPGPubKey.PublicKey.
+// Returns empty string if tx.GPGPubKey is not set
+func (tx *Transaction) GetGPGPublicKey() string {
+	if tx.GPGPubKey == nil {
+		return ""
+	}
+	return tx.GPGPubKey.PublicKey
+}
+
+// GetRepoCreateName returns RepoCreate.Name.
+// Returns empty string if tx.RepoCreate is not set
+func (tx *Transaction) GetRepoCreateName() string {
+	if tx.RepoCreate == nil {
+		return ""
+	}
+	return tx.RepoCreate.Name
 }
 
 // ToMap decodes the transaction to a map
@@ -233,6 +260,11 @@ func (tx *Transaction) ToHex() string {
 // GetEpochSecret returns the EpochSecret object
 func (tx *Transaction) GetEpochSecret() *EpochSecret {
 	return tx.EpochSecret
+}
+
+// GetGPGPubKey returns the AddGPGPubKey object
+func (tx *Transaction) GetGPGPubKey() *AddGPGPubKey {
+	return tx.GPGPubKey
 }
 
 // GetUnbondTicket returns the UnbondTicket object
@@ -283,22 +315,6 @@ func (tx *Transaction) GetType() int {
 // GetBytesNoSig returns a serialized transaction
 // but omits the signature in the result.
 func (tx *Transaction) GetBytesNoSig() []byte {
-
-	var epochSecretBz []byte
-	if tx.EpochSecret != nil {
-		epochSecretBz = tx.EpochSecret.Bytes()
-	}
-
-	var unbondTicketBz []byte
-	if tx.UnbondTicket != nil {
-		unbondTicketBz = tx.UnbondTicket.Bytes()
-	}
-
-	var repoCreateBz []byte
-	if tx.RepoCreate != nil {
-		repoCreateBz = tx.RepoCreate.Bytes()
-	}
-
 	return util.ObjectToBytes([]interface{}{
 		tx.Fee,
 		tx.Nonce,
@@ -307,30 +323,26 @@ func (tx *Transaction) GetBytesNoSig() []byte {
 		tx.To,
 		tx.Type,
 		tx.Value,
-		epochSecretBz,
-		unbondTicketBz,
-		repoCreateBz,
+		bytesOrNil(tx.EpochSecret),
+		bytesOrNil(tx.UnbondTicket),
+		bytesOrNil(tx.RepoCreate),
+		bytesOrNil(tx.GPGPubKey),
 	})
+}
+
+type txObject interface {
+	Bytes() []byte
+}
+
+func bytesOrNil(o txObject) []byte {
+	if reflect.ValueOf(o).IsNil() {
+		return nil
+	}
+	return o.Bytes()
 }
 
 // Bytes returns the serializes version of the transaction
 func (tx *Transaction) Bytes() []byte {
-
-	var epochSecretBz []byte
-	if tx.EpochSecret != nil {
-		epochSecretBz = tx.EpochSecret.Bytes()
-	}
-
-	var unbondTicketBz []byte
-	if tx.UnbondTicket != nil {
-		unbondTicketBz = tx.UnbondTicket.Bytes()
-	}
-
-	var repoCreateBz []byte
-	if tx.RepoCreate != nil {
-		repoCreateBz = tx.RepoCreate.Bytes()
-	}
-
 	return util.ObjectToBytes([]interface{}{
 		tx.Fee,
 		tx.Nonce,
@@ -340,9 +352,10 @@ func (tx *Transaction) Bytes() []byte {
 		tx.To,
 		tx.Type,
 		tx.Value,
-		epochSecretBz,
-		unbondTicketBz,
-		repoCreateBz,
+		bytesOrNil(tx.EpochSecret),
+		bytesOrNil(tx.UnbondTicket),
+		bytesOrNil(tx.RepoCreate),
+		bytesOrNil(tx.GPGPubKey),
 	})
 }
 
@@ -351,22 +364,6 @@ func (tx *Transaction) Bytes() []byte {
 // the `fee` field. The value does not represent the true size
 // of the transaction on disk.
 func (tx *Transaction) GetSizeNoFee() int64 {
-
-	var epochSecretBz []byte
-	if tx.EpochSecret != nil {
-		epochSecretBz = tx.EpochSecret.Bytes()
-	}
-
-	var unbondTicketBz []byte
-	if tx.UnbondTicket != nil {
-		unbondTicketBz = tx.UnbondTicket.Bytes()
-	}
-
-	var repoCreateBz []byte
-	if tx.RepoCreate != nil {
-		repoCreateBz = tx.RepoCreate.Bytes()
-	}
-
 	return int64(len(util.ObjectToBytes([]interface{}{
 		tx.Nonce,
 		tx.SenderPubKey,
@@ -375,10 +372,18 @@ func (tx *Transaction) GetSizeNoFee() int64 {
 		tx.To,
 		tx.Type,
 		tx.Value,
-		epochSecretBz,
-		unbondTicketBz,
-		repoCreateBz,
+		bytesOrNil(tx.EpochSecret),
+		bytesOrNil(tx.UnbondTicket),
+		bytesOrNil(tx.RepoCreate),
+		bytesOrNil(tx.GPGPubKey),
 	})))
+}
+
+func isByteSliceFieldSet(field interface{}) (bool, []byte) {
+	if field != nil && len(field.([]byte)) > 0 {
+		return true, field.([]byte)
+	}
+	return false, nil
 }
 
 // NewTxFromBytes creates a transaction object from a slice of
@@ -399,16 +404,20 @@ func NewTxFromBytes(bs []byte) (*Transaction, error) {
 	tx.Type = int(fields[6].(int64))
 	tx.Value = util.String(fields[7].(string))
 
-	if fields[8] != nil && len(fields[8].([]byte)) > 0 {
-		tx.EpochSecret = EpochSecretFromBytes(fields[8].([]byte))
+	if ok, field := isByteSliceFieldSet(fields[8]); ok {
+		tx.EpochSecret = EpochSecretFromBytes(field)
 	}
 
-	if fields[9] != nil && len(fields[9].([]byte)) > 0 {
-		tx.UnbondTicket = UnbondTicketFromBytes(fields[9].([]byte))
+	if ok, field := isByteSliceFieldSet(fields[9]); ok {
+		tx.UnbondTicket = UnbondTicketFromBytes(field)
 	}
 
-	if fields[10] != nil && len(fields[10].([]byte)) > 0 {
-		tx.RepoCreate = RepoCreateFromBytes(fields[10].([]byte))
+	if ok, field := isByteSliceFieldSet(fields[10]); ok {
+		tx.RepoCreate = RepoCreateFromBytes(field)
+	}
+
+	if ok, field := isByteSliceFieldSet(fields[11]); ok {
+		tx.GPGPubKey = AddGPGPubKeyFromBytes(field)
 	}
 
 	tx.meta = map[string]interface{}{}
@@ -639,4 +648,42 @@ func RepoCreateFromBytes(bz []byte) *RepoCreate {
 	}
 
 	return rc
+}
+
+// AddGPGPubKey represents a request to add a GPG public key
+type AddGPGPubKey struct {
+	PublicKey string `json:"pubKey,omitempty" msgpack:"pubKey,omitempty"`
+}
+
+// Bytes returns the serialized version of the object
+func (a *AddGPGPubKey) Bytes() []byte {
+
+	if a == (&AddGPGPubKey{}) {
+		return []byte{}
+	}
+
+	return util.ObjectToBytes([]interface{}{
+		a.PublicKey,
+	})
+}
+
+// AddGPGPubKeyFromBytes deserialize bz to RepoCreate object.
+// Returns empty object when bz is empty.
+func AddGPGPubKeyFromBytes(bz []byte) *AddGPGPubKey {
+
+	var a = &AddGPGPubKey{}
+	if len(bz) == 0 {
+		return a
+	}
+
+	var ob []interface{}
+	if err := util.BytesToObject(bz, &ob); err != nil {
+		panic(err)
+	}
+
+	if ob[0] != nil {
+		a.PublicKey = ob[0].(string)
+	}
+
+	return a
 }

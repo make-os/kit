@@ -133,7 +133,7 @@ type RepoManager interface {
 	GetPushPool() PushPool
 
 	// Start starts the server
-	Start()
+	Start() error
 
 	// Wait can be used by the caller to wait till the server terminates
 	Wait()
@@ -143,6 +143,9 @@ type RepoManager interface {
 
 	// CreateRepository creates a local git repository
 	CreateRepository(name string) error
+
+	// SetPGPPubKeyGetter sets the PGP public key query function
+	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
 }
 
 // PushPool represents a pool for holding and ordering git push transactions

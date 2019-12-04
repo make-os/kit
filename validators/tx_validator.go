@@ -1,6 +1,7 @@
 package validators
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"time"
 
@@ -30,6 +31,7 @@ var KnownTransactionTypes = []int{
 	types.TxTypeStorerTicket,
 	types.TxTypeUnbondStorerTicket,
 	types.TxTypeRepoCreate,
+	types.TxTypeAddGPGPubKey,
 }
 
 var validTypeRule = func(err error) func(interface{}) error {
@@ -100,6 +102,16 @@ var validRepoNameRule = func(field string, index int) func(interface{}) error {
 		} else if len(name) > 128 {
 			msg := "name is too long. Maximum character length is 128"
 			return types.FieldErrorWithIndex(index, field, msg)
+		}
+		return nil
+	}
+}
+
+var validGPGPubKeyRule = func(field string, index int) func(interface{}) error {
+	return func(val interface{}) error {
+		pubKey := val.(string)
+		if _, err := crypto.PGPEntityFromPubKey(pubKey); err != nil {
+			return types.FieldErrorWithIndex(index, field, "invalid gpg public key")
 		}
 		return nil
 	}
@@ -246,11 +258,12 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 		return err
 	}
 
-	// The recipient's address must be set and it must be valid.
+	// For certain transactions, the recipient's address must be set and it must be valid.
 	if tx.Type != types.TxTypeValidatorTicket &&
 		tx.Type != types.TxTypeSetDelegatorCommission &&
 		tx.Type != types.TxTypeStorerTicket &&
 		tx.Type != types.TxTypeUnbondStorerTicket &&
+		tx.Type != types.TxTypeAddGPGPubKey &&
 		tx.Type != types.TxTypeRepoCreate {
 		if err := v.Validate(tx.GetTo(),
 			v.Required.Error(types.FieldErrorWithIndex(index, "to",
@@ -273,8 +286,10 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 	}
 
 	// Value must be >= 0 and it must be valid number.
-	// Ignore for: TxTypeUnbondStorerTicket
-	if tx.Type != types.TxTypeUnbondStorerTicket {
+	// Ignore for some tx types
+	if tx.Type != types.TxTypeUnbondStorerTicket &&
+		tx.Type != types.TxTypeRepoCreate &&
+		tx.Type != types.TxTypeAddGPGPubKey {
 		if err := v.Validate(tx.GetValue(),
 			v.Required.Error(types.FieldErrorWithIndex(index, "value",
 				"value is required").Error()), v.By(validValueRule("value", index)),
@@ -337,10 +352,22 @@ func ValidateTxSyntax(tx *types.Transaction, index int) error {
 	// For TxTypeRepoCreate:
 	// Ensure the repo name is provided and valid.
 	if tx.Type == types.TxTypeRepoCreate {
-		if err := v.Validate(tx.RepoCreate.Name,
+		if err := v.Validate(tx.GetRepoCreateName(),
 			v.Required.Error(types.FieldErrorWithIndex(index, "repoCreate.name",
 				"name is required").Error()),
 			v.By(validRepoNameRule("repoCreate.name", index)),
+		); err != nil {
+			return err
+		}
+	}
+
+	// For TxTypeAddGPGPubKey
+	// Ensure public key is provided and valid
+	if tx.Type == types.TxTypeAddGPGPubKey {
+		if err := v.Validate(tx.GetGPGPublicKey(),
+			v.Required.Error(types.FieldErrorWithIndex(index, "gpgPubKey.pubKey",
+				"public key is required").Error()),
+			v.By(validGPGPubKeyRule("gpgPubKey.pubKey", index)),
 		); err != nil {
 			return err
 		}
@@ -401,6 +428,8 @@ func IsSet(value interface{}) bool {
 		return v != nil && v != &types.UnbondTicket{}
 	case *types.RepoCreate:
 		return v != nil && v != &types.RepoCreate{}
+	case *types.AddGPGPubKey:
+		return v != nil && v != &types.AddGPGPubKey{}
 	default:
 		return false
 	}
@@ -418,9 +447,11 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 
 	// Check for unexpected fields for TxTypeValidatorTicket and TxTypeCoinTransfer
 	if txType == types.TxTypeValidatorTicket || txType == types.TxTypeCoinTransfer {
-		unExpected = append(unExpected, []interface{}{"epochSecret", tx.EpochSecret})
-		unExpected = append(unExpected, []interface{}{"unbondTicket", tx.UnbondTicket})
-		unExpected = append(unExpected, []interface{}{"repoCreate", tx.RepoCreate})
+		unExpected = append(unExpected, [][]interface{}{
+			{"epochSecret", tx.EpochSecret},
+			{"unbondTicket", tx.UnbondTicket},
+			{"gpgPubKey", tx.GPGPubKey},
+			{"repoCreate", tx.RepoCreate}}...)
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -430,15 +461,18 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 
 	// Check for unexpected field for types.TxTypeEpochSecret,
 	if txType == types.TxTypeEpochSecret {
-		unExpected = append(unExpected, []interface{}{"nonce", tx.Nonce})
-		unExpected = append(unExpected, []interface{}{"to", tx.To})
-		unExpected = append(unExpected, []interface{}{"senderPubKey", tx.SenderPubKey})
-		unExpected = append(unExpected, []interface{}{"value", tx.Value})
-		unExpected = append(unExpected, []interface{}{"timestamp", tx.Timestamp})
-		unExpected = append(unExpected, []interface{}{"fee", tx.Fee})
-		unExpected = append(unExpected, []interface{}{"sig", tx.Sig})
-		unExpected = append(unExpected, []interface{}{"unbondTicket", tx.UnbondTicket})
-		unExpected = append(unExpected, []interface{}{"repoCreate", tx.RepoCreate})
+		unExpected = append(unExpected, [][]interface{}{
+			{"nonce", tx.Nonce},
+			{"to", tx.To},
+			{"senderPubKey", tx.SenderPubKey},
+			{"value", tx.Value},
+			{"timestamp", tx.Timestamp},
+			{"fee", tx.Fee},
+			{"sig", tx.Sig},
+			{"gpgPubKey", tx.GPGPubKey},
+			{"unbondTicket", tx.UnbondTicket},
+			{"repoCreate", tx.RepoCreate}}...)
+
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -448,9 +482,11 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 
 	// Check for unexpected field for TxTypeSetDelegatorCommission & TxTypeStorerTicket
 	if txType == types.TxTypeSetDelegatorCommission || txType == types.TxTypeStorerTicket {
-		unExpected = append(unExpected, []interface{}{"epochSecret", tx.EpochSecret})
-		unExpected = append(unExpected, []interface{}{"unbondTicket", tx.UnbondTicket})
-		unExpected = append(unExpected, []interface{}{"repoCreate", tx.RepoCreate})
+		unExpected = append(unExpected, [][]interface{}{
+			{"epochSecret", tx.EpochSecret},
+			{"gpgPubKey", tx.GPGPubKey},
+			{"unbondTicket", tx.UnbondTicket},
+			{"repoCreate", tx.RepoCreate}}...)
 
 		// Allow `to` field for TxTypeStorerTicket
 		if txType != types.TxTypeStorerTicket {
@@ -466,10 +502,12 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 
 	// Check for unexpected field for types.TxTypeUnbondStorerTicket,
 	if txType == types.TxTypeUnbondStorerTicket {
-		unExpected = append(unExpected, []interface{}{"to", tx.To})
-		unExpected = append(unExpected, []interface{}{"value", tx.Value})
-		unExpected = append(unExpected, []interface{}{"epochSecret", tx.EpochSecret})
-		unExpected = append(unExpected, []interface{}{"repoCreate", tx.RepoCreate})
+		unExpected = append(unExpected, [][]interface{}{
+			{"to", tx.To},
+			{"value", tx.Value},
+			{"epochSecret", tx.EpochSecret},
+			{"gpgPubKey", tx.GPGPubKey},
+			{"repoCreate", tx.RepoCreate}}...)
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -479,10 +517,27 @@ func CheckUnexpectedFields(tx *types.Transaction, index int) error {
 
 	// Check for unexpected field for types.TxTypeRepoCreate,
 	if txType == types.TxTypeRepoCreate {
-		unExpected = append(unExpected, []interface{}{"to", tx.To})
-		unExpected = append(unExpected, []interface{}{"value", tx.Value})
-		unExpected = append(unExpected, []interface{}{"epochSecret", tx.EpochSecret})
-		unExpected = append(unExpected, []interface{}{"unbondTicket", tx.UnbondTicket})
+		unExpected = append(unExpected, [][]interface{}{
+			{"to", tx.To},
+			{"value", tx.Value},
+			{"epochSecret", tx.EpochSecret},
+			{"gpgPubKey", tx.GPGPubKey},
+			{"unbondTicket", tx.UnbondTicket}}...)
+		for _, item := range unExpected {
+			if IsSet(item[1]) {
+				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
+			}
+		}
+	}
+
+	// Check for unexpected field for types.TxTypeAddGPGPubKey,
+	if txType == types.TxTypeAddGPGPubKey {
+		unExpected = append(unExpected, [][]interface{}{
+			{"to", tx.To},
+			{"value", tx.Value},
+			{"epochSecret", tx.EpochSecret},
+			{"repoCreate", tx.RepoCreate},
+			{"unbondTicket", tx.UnbondTicket}}...)
 		for _, item := range unExpected {
 			if IsSet(item[1]) {
 				return types.FieldErrorWithIndex(index, item[0].(string), "unexpected field")
@@ -594,6 +649,27 @@ func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) 
 		if !repo.IsNil() {
 			msg := "name is not available. Choose another."
 			return types.FieldErrorWithIndex(index, "repoCreate.name", msg)
+		}
+	}
+
+	// For TxTypeAddGPGPubKey
+	// CONTRACT: Expect caller to have validated PublicKey
+	if tx.Type == types.TxTypeAddGPGPubKey {
+		entity, _ := crypto.PGPEntityFromPubKey(tx.GPGPubKey.PublicKey)
+		pk := entity.PrimaryKey.PublicKey.(*rsa.PublicKey)
+
+		// Ensure bit length is not less than 256
+		if pk.Size() < 256 {
+			msg := "gpg public key bit length must be at least 2048 bits"
+			return types.FieldErrorWithIndex(index, "gpgPubKey.pubKey", msg)
+		}
+
+		// Check whether there is a matching gpg key already existing
+		pkID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+		gpgPubKey := logic.GPGPubKeyKeeper().GetGPGPubKey(pkID)
+		if !gpgPubKey.IsEmpty() {
+			msg := "gpg public key already registered"
+			return types.FieldErrorWithIndex(index, "gpgPubKey.pubKey", msg)
 		}
 	}
 

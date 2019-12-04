@@ -40,52 +40,21 @@ var services = [][]interface{}{
 	{"(.*?)/objects/pack/pack-[0-9a-f]{40}\\.idx$", service{method: "GET", handle: getIdxFile}},
 }
 
-func samplePGPPubKeyGetter(pkID string) (string, error) {
-	return `-----BEGIN PGP PUBLIC KEY BLOCK-----
-
-mQENBF3D1yoBCACjdSC/KibksNrQ+gMb3Cw0I603SMwK8rvw5rE/L3oif7xc9Ghw
-ZeQbSgpNCFVY9yUGX0WznQirAd5o4pleb6p/AmFtj3huLuPQ9IPA5xvPvf8k39Ky
-aos5KHLK/tt6f+kG36IQpV2xryZs7ny4tNFKIHcl0HPC1oySFmAo0nVzDcpjFkYU
-k2tryQo8JerFfOLp6NwTdXSsqFozKSSXHOwDDi8v811Wik48RKWaJ68LCS50CGFl
-NYlYVkmZd29QIqJc4nUXrR/PmZqOklXC3feEJhSlmoFgMAWpfE6ffkGzqK7BQfAh
-BarTbNGyV7mGZvY7w1wklFc6dlBGMWrsFZ6JABEBAAG0EEtlbm5lZHkgKHRlc3Qg
-MymJAU4EEwEIADgWIQRpC08nO1qMBK/UHh3hTuV6RZk83wUCXcPXKgIbAwULCQgH
-AgYVCgkICwIEFgIDAQIeAQIXgAAKCRDhTuV6RZk832u8B/9gZ4cT5rCkUUxH4s6F
-oRtnEL01Q+iK9IyissVY1ZMM7p4+u5eXwljCqG5pw/KoHHIOZ98NuytRcgAM9dsi
-vaWjKGxEOWD1VeKNEPDHu7KEQBfwYzfz+obf01e89E1NwvTQWmu/lK75hNajZPrh
-EBIFoYI8ZiSsCnHESqI8hblezGYhxwXysD6zz3+tE5mcCswT5s95JQ6uYmeWrmlh
-1B07BQ7d5GH5XAI+Bg4O90AXODCr4OKnuDcquqkpgwjBs1dDMFOtqn7V3qIsfsQF
-cDwi7Nac0GbnW4arjTozjzYwEN34vDxJvvRQNM8467fZh4YHMWVnI80wf/HeI5ZR
-ELi6uQENBF3D1yoBCADNLl6k97YZyKO30UE4/tyG0eQuEvCWa504MBIaVNa77F7e
-snZaekKFIzrTAZJACu/2uCEJIfNyvsMp8EovVScw3Zm8SK4BVscot1KAntXZlf/3
-4vWUnQqUb5ANav3I0l1a5ndtOmQCTuiZ5kW+6eUjra01pt1J9GxUMc/2DDC+HkYY
-/emc/Uc44HPbIy8NlGCjSXCG0/QvyB+nHBxQtEAyX/aK5ylUQ/frPakS23yFviZs
-cYb3ywAfMadWtchk7eG2ywLHpSVhuKhbHQdTtUSjLhllcjzrfMF1qUplrk+IDnp4
-SRwSdbZ2E2CbeL0h/hifzGkYblWdYDe+lh5i+IDvABEBAAGJATYEGAEIACAWIQRp
-C08nO1qMBK/UHh3hTuV6RZk83wUCXcPXKgIbDAAKCRDhTuV6RZk832c+CACIpykT
-D3ZtAg+YsF2cb0xeQtvK4Hm0q2eaj0ri04b56K8+LeQxruuiQVEffE72lX+Sqpin
-765wmOoK26eQ1IlRlwUEgoSusdko2cpgNaC5IgYXyG3pyRQ9wewudXM68jYXy5x9
-FmSjybTOkWVO5qudYk2Cu6g4T7UyPrgGJ2iMunjDAVyK+BvhwZhx/HxLBTAx3uve
-QpQXS1MnYXkyQz5mbqElHf0ELDX5zQ0JPNEL7CEf9dgBGUo02aGFCl0/oFR7O2el
-yYXxF8MfL+q9HPVL7IrFOI3bLtrVuEt1qE6/vCzC804ODi4gfc9a2di3bKpMyoUU
-svCU0gx1j1vi1SKS
-=vHUA
------END PGP PUBLIC KEY BLOCK-----`, nil
-}
-
 // Manager implements types.Manager. It provides a system for managing
 // and service a git repositories through http and ssh protocols.
 type Manager struct {
-	log         logger.Logger   // log is the application logger
-	wg          *sync.WaitGroup // wait group for waiting for the manager
-	srv         *http.Server    // the http server
-	rootDir     string          // the root directory where all repos are stored
-	addr        string          // addr is the listening address for the http server
-	gitBinPath  string          // gitBinPath is the path of the git executable
-	repoDBCache *DBCache        // stores database handles of repositories
-	pool        types.PushPool  // this is the push transaction pool
-	logic       types.Logic     // logic is the application logic provider
-	nodeKey     *crypto.Key     // the node's private key for signing transactions
+	cfg             *config.EngineConfig
+	log             logger.Logger         // log is the application logger
+	wg              *sync.WaitGroup       // wait group for waiting for the manager
+	srv             *http.Server          // the http server
+	rootDir         string                // the root directory where all repos are stored
+	addr            string                // addr is the listening address for the http server
+	gitBinPath      string                // gitBinPath is the path of the git executable
+	repoDBCache     *DBCache              // stores database handles of repositories
+	pool            types.PushPool        // this is the push transaction pool
+	logic           types.Logic           // logic is the application logic provider
+	nodeKey         *crypto.Key           // the node's private key for signing transactions
+	pgpPubKeyGetter types.PGPPubKeyGetter // finds and returns PGP public key
 }
 
 // NewManager creates an instance of Manager
@@ -100,7 +69,8 @@ func NewManager(cfg *config.EngineConfig, addr string, logic types.Logic) *Manag
 
 	key, _ := cfg.G().PrivVal.GetKey()
 	return &Manager{
-		log:         cfg.G().Log.Module("Manager"),
+		cfg:         cfg,
+		log:         cfg.G().Log.Module("manager"),
 		addr:        addr,
 		rootDir:     cfg.GetRepoRoot(),
 		gitBinPath:  cfg.Node.GitBinPath,
@@ -118,13 +88,16 @@ func (m *Manager) SetRootDir(dir string) {
 }
 
 // Start starts the server that serves the repos.
-func (m *Manager) Start() {
+func (m *Manager) Start() error {
 	s := http.NewServeMux()
 	s.HandleFunc("/", m.handler)
 	m.log.Info("Server has started", "Address", m.addr)
+
 	m.srv = &http.Server{Addr: m.addr, Handler: s}
-	m.srv.ListenAndServe()
+	err := m.srv.ListenAndServe()
 	m.wg.Done()
+
+	return err
 }
 
 // GetLogic returns the application logic provider
@@ -244,9 +217,13 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetPGPPubKeyGetter implements RepositoryManager
-// TODO: Requires full implementation
 func (m *Manager) GetPGPPubKeyGetter() types.PGPPubKeyGetter {
-	return samplePGPPubKeyGetter
+	return m.pgpPubKeyGetter
+}
+
+// SetPGPPubKeyGetter implements SetPGPPubKeyGetter
+func (m *Manager) SetPGPPubKeyGetter(pkGetter types.PGPPubKeyGetter) {
+	m.pgpPubKeyGetter = pkGetter
 }
 
 // GetRepoState implements RepositoryManager

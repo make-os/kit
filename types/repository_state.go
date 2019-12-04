@@ -34,23 +34,28 @@ func BareRepository() *Repository {
 
 // Repository represents a git repository
 type Repository struct {
-	CreatorPubKey util.String `json:"creatorPubKey" msgpack:"creatorPubKey"`
-	References    References  `json:"references" msgpack:"references"`
+	CreatorAddress util.String `json:"creatorAddress" msgpack:"creatorAddress"`
+	References     References  `json:"references" msgpack:"references"`
+}
+
+// IsEmpty returns true if the repository's fields have zero values
+func (r *Repository) IsEmpty() bool {
+	return r.CreatorAddress.Empty() && len(r.References) == 0
 }
 
 // IsNil returns true if the repo fields are set to their nil value
 func (r *Repository) IsNil() bool {
-	return r.CreatorPubKey.Empty() && len(r.References) == 0
+	return r.CreatorAddress.Empty() && len(r.References) == 0
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(r.CreatorPubKey, r.References)
+	return enc.EncodeMulti(r.CreatorAddress, r.References)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&r.CreatorPubKey, &r.References)
+	return dec.DecodeMulti(&r.CreatorAddress, &r.References)
 }
 
 // Bytes return the bytes equivalent of the account

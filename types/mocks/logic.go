@@ -330,6 +330,76 @@ func (mr *MockRepoKeeperMockRecorder) Update(name, upd interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRepoKeeper)(nil).Update), name, upd)
 }
 
+// MockGPGPubKeyKeeper is a mock of GPGPubKeyKeeper interface
+type MockGPGPubKeyKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockGPGPubKeyKeeperMockRecorder
+}
+
+// MockGPGPubKeyKeeperMockRecorder is the mock recorder for MockGPGPubKeyKeeper
+type MockGPGPubKeyKeeperMockRecorder struct {
+	mock *MockGPGPubKeyKeeper
+}
+
+// NewMockGPGPubKeyKeeper creates a new mock instance
+func NewMockGPGPubKeyKeeper(ctrl *gomock.Controller) *MockGPGPubKeyKeeper {
+	mock := &MockGPGPubKeyKeeper{ctrl: ctrl}
+	mock.recorder = &MockGPGPubKeyKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockGPGPubKeyKeeper) EXPECT() *MockGPGPubKeyKeeperMockRecorder {
+	return m.recorder
+}
+
+// Update mocks base method
+func (m *MockGPGPubKeyKeeper) Update(pkID string, upd *types.GPGPubKey) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", pkID, upd)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Update indicates an expected call of Update
+func (mr *MockGPGPubKeyKeeperMockRecorder) Update(pkID, upd interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).Update), pkID, upd)
+}
+
+// GetGPGPubKey mocks base method
+func (m *MockGPGPubKeyKeeper) GetGPGPubKey(pkID string, blockNum ...int64) *types.GPGPubKey {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{pkID}
+	for _, a := range blockNum {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetGPGPubKey", varargs...)
+	ret0, _ := ret[0].(*types.GPGPubKey)
+	return ret0
+}
+
+// GetGPGPubKey indicates an expected call of GetGPGPubKey
+func (mr *MockGPGPubKeyKeeperMockRecorder) GetGPGPubKey(pkID interface{}, blockNum ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{pkID}, blockNum...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGPGPubKey", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).GetGPGPubKey), varargs...)
+}
+
+// GetByPubKeyIDs mocks base method
+func (m *MockGPGPubKeyKeeper) GetByPubKeyIDs(address string) []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByPubKeyIDs", address)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetByPubKeyIDs indicates an expected call of GetByPubKeyIDs
+func (mr *MockGPGPubKeyKeeperMockRecorder) GetByPubKeyIDs(address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPubKeyIDs", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).GetByPubKeyIDs), address)
+}
+
 // MockAtomicLogic is a mock of AtomicLogic interface
 type MockAtomicLogic struct {
 	ctrl     *gomock.Controller
@@ -421,6 +491,20 @@ func (m *MockAtomicLogic) RepoKeeper() types.RepoKeeper {
 func (mr *MockAtomicLogicMockRecorder) RepoKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).RepoKeeper))
+}
+
+// GPGPubKeyKeeper mocks base method
+func (m *MockAtomicLogic) GPGPubKeyKeeper() types.GPGPubKeyKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GPGPubKeyKeeper")
+	ret0, _ := ret[0].(types.GPGPubKeyKeeper)
+	return ret0
+}
+
+// GPGPubKeyKeeper indicates an expected call of GPGPubKeyKeeper
+func (mr *MockAtomicLogicMockRecorder) GPGPubKeyKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GPGPubKeyKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).GPGPubKeyKeeper))
 }
 
 // GetTicketManager mocks base method
@@ -706,6 +790,20 @@ func (mr *MockLogicMockRecorder) RepoKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoKeeper", reflect.TypeOf((*MockLogic)(nil).RepoKeeper))
 }
 
+// GPGPubKeyKeeper mocks base method
+func (m *MockLogic) GPGPubKeyKeeper() types.GPGPubKeyKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GPGPubKeyKeeper")
+	ret0, _ := ret[0].(types.GPGPubKeyKeeper)
+	return ret0
+}
+
+// GPGPubKeyKeeper indicates an expected call of GPGPubKeyKeeper
+func (mr *MockLogicMockRecorder) GPGPubKeyKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GPGPubKeyKeeper", reflect.TypeOf((*MockLogic)(nil).GPGPubKeyKeeper))
+}
+
 // GetTicketManager mocks base method
 func (m *MockLogic) GetTicketManager() types.TicketManager {
 	m.ctrl.T.Helper()
@@ -947,6 +1045,20 @@ func (m *MockKeepers) RepoKeeper() types.RepoKeeper {
 func (mr *MockKeepersMockRecorder) RepoKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoKeeper", reflect.TypeOf((*MockKeepers)(nil).RepoKeeper))
+}
+
+// GPGPubKeyKeeper mocks base method
+func (m *MockKeepers) GPGPubKeyKeeper() types.GPGPubKeyKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GPGPubKeyKeeper")
+	ret0, _ := ret[0].(types.GPGPubKeyKeeper)
+	return ret0
+}
+
+// GPGPubKeyKeeper indicates an expected call of GPGPubKeyKeeper
+func (mr *MockKeepersMockRecorder) GPGPubKeyKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GPGPubKeyKeeper", reflect.TypeOf((*MockKeepers)(nil).GPGPubKeyKeeper))
 }
 
 // GetTicketManager mocks base method

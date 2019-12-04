@@ -38,6 +38,11 @@ func MakePrefix(prefixes ...[]byte) (result []byte) {
 	return bytes.Join(prefixes, []byte(prefixSeparator))
 }
 
+// SplitPrefix splits joined prefixes into their individual parts
+func SplitPrefix(prefixes []byte) [][]byte {
+	return bytes.Split(prefixes, []byte(prefixSeparator))
+}
+
 // MakeKey constructs a key from the key and prefixes
 func MakeKey(key []byte, prefixes ...[]byte) []byte {
 	var prefix = MakePrefix(prefixes...)

@@ -3,6 +3,7 @@ package jsmodules
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/c-bata/go-prompt"
@@ -39,6 +40,16 @@ func (m *UtilModule) globals() []*types.JSModuleFunc {
 			Value:       m.evalScript,
 			Description: "Execute javascript code stored in a file",
 		},
+		&types.JSModuleFunc{
+			Name:        "readFile",
+			Value:       m.readFile,
+			Description: "Read a file",
+		},
+		&types.JSModuleFunc{
+			Name:        "readTextFile",
+			Value:       m.readTextFile,
+			Description: "Read a text file",
+		},
 	}
 }
 
@@ -59,6 +70,16 @@ func (m *UtilModule) funcs() []*types.JSModuleFunc {
 			Name:        "evalScript",
 			Value:       m.evalScript,
 			Description: "Execute javascript code stored in a file",
+		},
+		&types.JSModuleFunc{
+			Name:        "readFile",
+			Value:       m.readFile,
+			Description: "Read a file",
+		},
+		&types.JSModuleFunc{
+			Name:        "readTextFile",
+			Value:       m.readTextFile,
+			Description: "Read a text file",
 		},
 	}
 }
@@ -129,4 +150,27 @@ func (m *UtilModule) evalScript(file string) {
 	}
 
 	m.eval(content)
+}
+
+func (m *UtilModule) readFile(filename string) interface{} {
+
+	if !filepath.IsAbs(filename) {
+		dir, err := os.Getwd()
+		if err != nil {
+			panic(err)
+		}
+		filename = filepath.Join(dir, filename)
+	}
+
+	bz, err := ioutil.ReadFile(filename)
+	if err != nil {
+		panic(err)
+	}
+
+	return bz
+}
+
+func (m *UtilModule) readTextFile(filename string) string {
+	bz := m.readFile(filename)
+	return string(bz.([]byte))
 }

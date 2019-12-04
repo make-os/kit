@@ -55,6 +55,9 @@ type Logic struct {
 	// txKeeper provides functionalities for managing transaction data
 	txKeeper *keepers.TxKeeper
 
+	// gpgPubKeyKeeper provides functionalities for managing gpg public keys
+	gpgPubKeyKeeper *keepers.GPGPubKeyKeeper
+
 	// repoMgr provides access to the git repository manager
 	repoMgr types.RepoManager
 
@@ -103,6 +106,7 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.EngineConfig) *L
 	l.accountKeeper = keepers.NewAccountKeeper(tree)
 	l.validatorKeeper = keepers.NewValidatorKeeper(dbTx)
 	l.repoKeeper = keepers.NewRepoKeeper(tree)
+	l.gpgPubKeyKeeper = keepers.NewGPGPubKeyKeeper(tree, dbTx)
 
 	// Create a drand instance
 	l.drand = rand.NewDRand()
@@ -217,6 +221,11 @@ func (l *Logic) AccountKeeper() types.AccountKeeper {
 // RepoKeeper returns the repo keeper
 func (l *Logic) RepoKeeper() types.RepoKeeper {
 	return l.repoKeeper
+}
+
+// GPGPubKeyKeeper returns the gpg public key keeper
+func (l *Logic) GPGPubKeyKeeper() types.GPGPubKeyKeeper {
+	return l.gpgPubKeyKeeper
 }
 
 // Validator returns the validator logic

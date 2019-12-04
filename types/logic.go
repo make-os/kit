@@ -118,6 +118,32 @@ type RepoKeeper interface {
 	Update(name string, upd *Repository)
 }
 
+// GPGPubKeyKeeper describes an interface for accessing gpg public key data
+type GPGPubKeyKeeper interface {
+
+	// Update sets a new value for the given public key id
+	//
+	// ARGS:
+	// pkID: The public key unique ID
+	// udp: The updated object to replace the existing object.
+	Update(pkID string, upd *GPGPubKey) error
+
+	// GetGPGPubKey returns a GPG public key
+	//
+	// ARGS:
+	// pkID: The unique ID of the public key
+	// blockNum: The target block to query (Optional. Default: latest)
+	//
+	// CONTRACT: It returns an empty Account if no account is found.
+	GetGPGPubKey(pkID string, blockNum ...int64) *GPGPubKey
+
+	// GetByPubKeyIDs returns all public keys associated with the given address
+	//
+	// ARGS:
+	// address: The target address
+	GetByPubKeyIDs(address string) (pkIDs []string)
+}
+
 // AtomicLogic is like Logic but allows all operations
 // performed to be atomically committed. The implementer
 // must maintain a tx that all logical operations use and
@@ -193,6 +219,9 @@ type Keepers interface {
 
 	// RepoKeeper returns the repository keeper
 	RepoKeeper() RepoKeeper
+
+	// GPGPubKeyKeeper returns the gpg public key keeper
+	GPGPubKeyKeeper() GPGPubKeyKeeper
 
 	// GetTicketManager returns the ticket manager
 	GetTicketManager() TicketManager

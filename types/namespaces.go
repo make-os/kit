@@ -10,6 +10,7 @@ const (
 	NamespacePool     = "pool"
 	NamespaceRepo     = "repo"
 	NamespaceAccount  = "account"
+	NamespaceGPG      = "gpg"
 	NamespaceUtil     = "util"
 	NamespaceTicket   = "ticket"
 	NamespaceStorer   = "storer"

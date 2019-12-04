@@ -144,7 +144,12 @@ func RIPEMD160(v []byte) []byte {
 	return h.Sum(nil)
 }
 
-// RSAPubKeyID returns a 20 bytes fingerprint of the public key
+// RSAPubKeyID is like RSAPubKeyIDRaw except it returns hex encoded version
 func RSAPubKeyID(pk *rsa.PublicKey) string {
-	return ToHex(RIPEMD160(pk.N.Bytes()))
+	return ToHex(RSAPubKeyIDRaw(pk))
+}
+
+// RSAPubKeyIDRaw returns a 20 bytes fingerprint of the public key
+func RSAPubKeyIDRaw(pk *rsa.PublicKey) []byte {
+	return RIPEMD160(pk.N.Bytes())
 }

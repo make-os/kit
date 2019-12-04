@@ -583,9 +583,11 @@ func (mr *MockRepoManagerMockRecorder) GetPushPool() *gomock.Call {
 }
 
 // Start mocks base method
-func (m *MockRepoManager) Start() {
+func (m *MockRepoManager) Start() error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Start")
+	ret := m.ctrl.Call(m, "Start")
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Start indicates an expected call of Start
@@ -630,6 +632,18 @@ func (m *MockRepoManager) CreateRepository(name string) error {
 func (mr *MockRepoManagerMockRecorder) CreateRepository(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRepository", reflect.TypeOf((*MockRepoManager)(nil).CreateRepository), name)
+}
+
+// SetPGPPubKeyGetter mocks base method
+func (m *MockRepoManager) SetPGPPubKeyGetter(pkGetter types.PGPPubKeyGetter) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetPGPPubKeyGetter", pkGetter)
+}
+
+// SetPGPPubKeyGetter indicates an expected call of SetPGPPubKeyGetter
+func (mr *MockRepoManagerMockRecorder) SetPGPPubKeyGetter(pkGetter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPGPPubKeyGetter", reflect.TypeOf((*MockRepoManager)(nil).SetPGPPubKeyGetter), pkGetter)
 }
 
 // MockPushPool is a mock of PushPool interface

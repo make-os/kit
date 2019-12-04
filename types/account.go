@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/makeos/mosdef/util"
-	"github.com/mitchellh/mapstructure"
+	"github.com/vmihailenco/msgpack"
 )
 
 // BareAccount returns an empty account
@@ -39,14 +39,19 @@ func (a *Account) GetSpendableBalance(curHeight uint64) util.String {
 		Sub(a.Stakes.TotalStaked(curHeight).Decimal()).String())
 }
 
-// Bytes return the bytes equivalent of the account
+// EncodeMsgpack implements msgpack.CustomEncoder
+func (a *Account) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeMulti(a.Balance, a.Nonce, a.Stakes, a.DelegatorCommission)
+}
+
+// DecodeMsgpack implements msgpack.CustomDecoder
+func (a *Account) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return dec.DecodeMulti(&a.Balance, &a.Nonce, &a.Stakes, &a.DelegatorCommission)
+}
+
+// Bytes return the serialized equivalent of the account
 func (a *Account) Bytes() []byte {
-	return util.ObjectToBytes([]interface{}{
-		a.Balance,
-		a.Nonce,
-		a.Stakes,
-		a.DelegatorCommission,
-	})
+	return util.ObjectToBytes(a)
 }
 
 // CleanUnbonded removes unbonded stakes.
@@ -168,25 +173,6 @@ func (s *AccountStakes) TotalStaked(curHeight uint64) util.String {
 
 // NewAccountFromBytes decodes bz to Account
 func NewAccountFromBytes(bz []byte) (*Account, error) {
-	var values []interface{}
-	if err := util.BytesToObject(bz, &values); err != nil {
-		return nil, err
-	}
-
-	var stakes = AccountStakes(map[string]*StakeInfo{})
-	for k, v := range values[2].(map[string]interface{}) {
-		var si StakeInfo
-		mapstructure.Decode(v.(map[string]interface{}), &si)
-		stakes[k] = &StakeInfo{
-			Value:        si.Value,
-			UnbondHeight: si.UnbondHeight,
-		}
-	}
-
-	return &Account{
-		Balance:             util.String(values[0].(string)),
-		Nonce:               values[1].(uint64),
-		Stakes:              stakes,
-		DelegatorCommission: values[3].(float64),
-	}, nil
+	var a = &Account{}
+	return a, util.BytesToObject(bz, a)
 }

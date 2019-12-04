@@ -30,7 +30,7 @@ var _ = Describe("Account", func() {
 			var testRepo = types.BareRepository()
 
 			BeforeEach(func() {
-				testRepo.CreatorPubKey = "creator_pk"
+				testRepo.CreatorAddress = "creator_addr"
 				repoKey := MakeRepoKey("repo1")
 				state.Set(repoKey, testRepo.Bytes())
 				_, _, err := state.SaveVersion()
@@ -48,9 +48,9 @@ var _ = Describe("Account", func() {
 		It("should update balance", func() {
 			key := "repo1"
 			repo := rk.GetRepo(key)
-			Expect(repo.CreatorPubKey).To(Equal(util.String("")))
+			Expect(repo.CreatorAddress).To(Equal(util.String("")))
 
-			repo.CreatorPubKey = "creator_pk"
+			repo.CreatorAddress = "creator_addr"
 			rk.Update(key, repo)
 
 			repo2 := rk.GetRepo(key)
