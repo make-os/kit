@@ -68,7 +68,7 @@ func NewManager(cfg *config.EngineConfig, addr string, logic types.Logic) *Manag
 	}
 
 	key, _ := cfg.G().PrivVal.GetKey()
-	return &Manager{
+	mgr := &Manager{
 		cfg:         cfg,
 		log:         cfg.G().Log.Module("manager"),
 		addr:        addr,
@@ -80,11 +80,21 @@ func NewManager(cfg *config.EngineConfig, addr string, logic types.Logic) *Manag
 		logic:       logic,
 		nodeKey:     key,
 	}
+	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
+	return mgr
 }
 
 // SetRootDir sets the directory where repositories are stored
 func (m *Manager) SetRootDir(dir string) {
 	m.rootDir = dir
+}
+
+func (m *Manager) defaultGPGPubKeyGetter(pkID string) (string, error) {
+	gpgPK := m.logic.GPGPubKeyKeeper().GetGPGPubKey(pkID)
+	if gpgPK.IsEmpty() {
+		return "", fmt.Errorf("gpg public key not found for the given ID")
+	}
+	return gpgPK.PubKey, nil
 }
 
 // Start starts the server that serves the repos.
