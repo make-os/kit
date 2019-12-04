@@ -1,6 +1,7 @@
 package jsmodules
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"time"
 
@@ -141,8 +142,12 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
+	entity, _ := crypto.PGPEntityFromPubKey(pubKey.(string))
+	pkID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+
 	return util.EncodeForJS(map[string]interface{}{
 		"hash": hash,
+		"pkID": pkID,
 	})
 }
 
