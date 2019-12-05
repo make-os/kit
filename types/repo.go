@@ -146,15 +146,6 @@ type RepoManager interface {
 
 	// SetPGPPubKeyGetter sets the PGP public key query function
 	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
-
-	// GetIPFS returns the IPFS storer
-	GetIPFS() IpfsStore
-}
-
-// IpfsStore represents an IPFS storage provider
-type IpfsStore interface {
-	// AddFile adds a file to the object store
-	AddFile(ctx context.Context, path string) (string, error)
 }
 
 // PushPool represents a pool for holding and ordering git push transactions

@@ -177,14 +177,12 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	c.accountDir = path.Join(c.DataDir(), AccountDirName)
 	c.consoleHistoryPath = path.Join(c.DataDir(), ".console_history")
 	c.repoDir = path.Join(c.NetDataDir(), "repos")
-	c.objStoreDir = path.Join(c.NetDataDir(), "objstore")
 
 	// Create network data directory
 	os.MkdirAll(c.NetDataDir(), 0700)
 	os.MkdirAll(path.Join(c.NetDataDir(), "data"), 0700)
 	os.MkdirAll(path.Join(c.NetDataDir(), "repos"), 0700)
 	os.MkdirAll(path.Join(c.NetDataDir(), "config"), 0700)
-	os.MkdirAll(path.Join(c.NetDataDir(), "objstore"), 0700)
 
 	// Create logger with file rotation enabled
 	logPath := path.Join(c.NetDataDir(), "logs")

@@ -1,12 +1,9 @@
 package repo
 
 import (
-	"context"
 	"fmt"
-	"path/filepath"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
@@ -138,15 +135,6 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 			return errors.Wrap(errs[0], "failed to remove packed objects from ref")
 		}
 		return err
-	}
-
-	for _, obj := range pr.objects {
-		objPath := filepath.Join(obj.Hash.String()[:2], obj.Hash.String()[2:])
-		cid, err := h.rMgr.GetIPFS().AddFile(context.Background(), filepath.Join(h.repo.Path(), "objects", objPath))
-		if err != nil {
-			return errors.Wrap(err, "failed to add pushed object to object store")
-		}
-		pp.Println(">>>", cid)
 	}
 
 	return nil
