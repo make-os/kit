@@ -260,7 +260,7 @@ func AmendRecentCommitTxLineCmd(gitBinDir, txFee, txNonce, signingKey string) er
 	pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
 	// TODO:If nonce is not provided, get nonce from a --source (remote node or local
-	// node)
+	// node). Requires an RPC endpoint
 
 	// Construct the tx line and append to the current message
 	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil)
@@ -318,7 +318,7 @@ func CreateTagWithTxLineCmd(args []string, gitBinDir, txFee, txNonce, signingKey
 	pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
 	// TODO:If nonce is not provided, get nonce from a --source (remote node or local
-	// node)
+	// node). Requires an RPC endpoint
 
 	// Construct the tx line and append to the current message
 	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil)
@@ -406,7 +406,7 @@ func AddSignedTxBlobCmd(gitBinDir, txFee, txNonce, signingKey, note string) erro
 	pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
 	// TODO:If nonce is not provided, get nonce from a --source (remote node or local
-	// node)
+	// node). Requires an RPC endpoint
 
 	// Sign a message composed of the tx information
 	// fee + nonce + public key id + note hash

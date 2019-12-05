@@ -55,7 +55,6 @@ func NewKey(seed *int64) (*Key, error) {
 		r = mrand.New(mrand.NewSource(*seed))
 	}
 
-	// TODO: crypto.GenerateEd25519Key has been deprecated
 	priv, _, err := crypto.GenerateEd25519Key(r)
 	if err != nil {
 		return nil, err

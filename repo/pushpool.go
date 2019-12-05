@@ -240,16 +240,18 @@ func (p *PushPool) remove(txs ...*PushTx) {
 
 // validate validates a push transaction
 func (p *PushPool) validate(tx *PushTx) error {
+	// TODO(not implemented)
 	return nil
 }
 
 // sort sorts the pool
 func (p *PushPool) sort() {
-
+	// TODO(not implemented)
 }
 
 // broadcast a push transaction
 func (p *PushPool) broadcast(tx types.PushTx) error {
+	// TODO(not implemented)
 	return nil
 }
 
