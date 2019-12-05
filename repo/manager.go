@@ -107,14 +107,18 @@ func (m *Manager) Start() error {
 	m.log.Info("Server has started", "Address", m.addr)
 
 	if err := m.ipfs.(*Ipfs).init(context.Background()); err != nil {
+		m.wg.Done()
 		return errors.Wrap(err, "failed to initialize ipfs storer")
 	}
 
 	m.srv = &http.Server{Addr: m.addr, Handler: s}
-	err := m.srv.ListenAndServe()
-	m.wg.Done()
 
-	return err
+	go func() {
+		m.srv.ListenAndServe()
+		m.wg.Done()
+	}()
+
+	return nil
 }
 
 // GetLogic returns the application logic provider

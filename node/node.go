@@ -178,7 +178,10 @@ func (n *Node) Start() error {
 	n.service = services.New(n.tmrpc, n.logic, txReactor)
 
 	// Start repository server
-	go rm.Start()
+	if err := rm.Start(); err != nil {
+		n.Stop()
+		return errors.Wrap(err, "failed to start repo manager")
+	}
 
 	// Pass repo manager to logic manager
 	n.logic.SetRepoManager(rm)
@@ -227,7 +230,9 @@ func (n *Node) GetService() types.Service {
 func (n *Node) Stop() {
 	n.log.Info("mosdef is stopping...")
 
-	n.tm.Stop()
+	if n.tm.IsRunning() {
+		n.tm.Stop()
+	}
 
 	if n.db != nil {
 		n.db.Close()
@@ -236,8 +241,6 @@ func (n *Node) Stop() {
 	if n.stateTreeDB != nil {
 		n.stateTreeDB.Close()
 	}
-
-	n.tm.Wait()
 
 	n.log.Info("Databases have been closed")
 	n.log.Info("mosdef has stopped")

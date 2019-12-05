@@ -142,23 +142,12 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 
 	for _, obj := range pr.objects {
 		objPath := filepath.Join(obj.Hash.String()[:2], obj.Hash.String()[2:])
-		cid, err := h.rMgr.GetIPFS().AddFile(context.Background(),
-			filepath.Join(h.repo.Path(), "objects", objPath))
+		cid, err := h.rMgr.GetIPFS().AddFile(context.Background(), filepath.Join(h.repo.Path(), "objects", objPath))
 		if err != nil {
-			panic(err)
+			return errors.Wrap(err, "failed to add pushed object to object store")
 		}
 		pp.Println(">>>", cid)
 	}
-
-	t := time.NewTicker(5 * time.Second)
-	go func() {
-		for range t.C {
-			xx, _ := h.rMgr.GetIPFS().(*Ipfs).core.Swarm().ListenAddrs(context.Background())
-			for _, x := range xx {
-				pp.Println(x.String())
-			}
-		}
-	}()
 
 	return nil
 }
