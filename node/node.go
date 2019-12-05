@@ -175,6 +175,7 @@ func (n *Node) Start() error {
 
 	// Start repository server
 	rm := repo.NewManager(n.cfg, ":6000", n.logic)
+	n.logic.SetRepoManager(rm)
 	go rm.Start()
 
 	// Pass repo manager to logic manager

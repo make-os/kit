@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
-	"github.com/k0kubun/pp"
 
 	"github.com/makeos/mosdef/crypto"
 
@@ -504,7 +503,6 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 
 	// Create new repositories
 	for _, repoName := range a.newRepos {
-		pp.Println("debug:", a.logic.GetRepoManager())
 		if err := a.logic.GetRepoManager().CreateRepository(repoName); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to create repository"))
 		}
