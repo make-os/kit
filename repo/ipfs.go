@@ -62,7 +62,7 @@ func (i *Ipfs) AddFile(ctx context.Context, path string) (string, error) {
 		return "", err
 	}
 
-	if err := i.api.Pin().Add(ctx, res.Cid(); err != nil {
+	if err := i.api.Pin().Add(ctx, res); err != nil {
 		return "", err
 	}
 
