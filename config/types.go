@@ -96,6 +96,9 @@ type EngineConfig struct {
 	// repoDir is where repositories are stored
 	repoDir string
 
+	// objStoreDir is where ipfs objects are stored
+	objStoreDir string
+
 	// consoleHistoryPath is the path to the file where console input
 	// history is stored.
 	consoleHistoryPath string
@@ -143,6 +146,11 @@ func (c *EngineConfig) SetDataDir(d string) {
 // GetDBRootDir returns the directory where all database files are stored
 func (c *EngineConfig) GetDBRootDir() string {
 	return filepath.Join(c.NetDataDir(), "data")
+}
+
+// GetObjectStoreDir returns ipfs object store directory
+func (c *EngineConfig) GetObjectStoreDir() string {
+	return c.objStoreDir
 }
 
 // GetRepoRoot returns the repo root directory

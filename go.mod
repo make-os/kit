@@ -44,6 +44,7 @@ require (
 	github.com/ipfs/go-log v1.0.0 // indirect
 	github.com/ipfs/interface-go-ipfs-core v0.0.9
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
+	github.com/jondot/goweight v1.0.5 // indirect
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/lestrrat-go/file-rotatelogs v2.2.0+incompatible

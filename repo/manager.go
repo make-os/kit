@@ -55,6 +55,7 @@ type Manager struct {
 	logic           types.Logic           // logic is the application logic provider
 	nodeKey         *crypto.Key           // the node's private key for signing transactions
 	pgpPubKeyGetter types.PGPPubKeyGetter // finds and returns PGP public key
+	ipfs            types.IpfsStore
 }
 
 // NewManager creates an instance of Manager
@@ -79,8 +80,10 @@ func NewManager(cfg *config.EngineConfig, addr string, logic types.Logic) *Manag
 		pool:        NewPushPool(params.PushPoolCap),
 		logic:       logic,
 		nodeKey:     key,
+		ipfs:        newIpfs(cfg),
 	}
 	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
+
 	return mgr
 }
 
@@ -103,6 +106,10 @@ func (m *Manager) Start() error {
 	s.HandleFunc("/", m.handler)
 	m.log.Info("Server has started", "Address", m.addr)
 
+	if err := m.ipfs.(*Ipfs).init(context.Background()); err != nil {
+		return errors.Wrap(err, "failed to initialize ipfs storer")
+	}
+
 	m.srv = &http.Server{Addr: m.addr, Handler: s}
 	err := m.srv.ListenAndServe()
 	m.wg.Done()
@@ -123,6 +130,11 @@ func (m *Manager) GetNodeKey() *crypto.Key {
 // GetPushPool implements RepositoryManager
 func (m *Manager) GetPushPool() types.PushPool {
 	return m.pool
+}
+
+// GetIPFS returns the IPFS storer
+func (m *Manager) GetIPFS() types.IpfsStore {
+	return m.ipfs
 }
 
 // TODO: Authorization

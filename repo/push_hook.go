@@ -1,9 +1,12 @@
 package repo
 
 import (
+	"context"
 	"fmt"
+	"path/filepath"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
@@ -136,6 +139,26 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 		}
 		return err
 	}
+
+	for _, obj := range pr.objects {
+		objPath := filepath.Join(obj.Hash.String()[:2], obj.Hash.String()[2:])
+		cid, err := h.rMgr.GetIPFS().AddFile(context.Background(),
+			filepath.Join(h.repo.Path(), "objects", objPath))
+		if err != nil {
+			panic(err)
+		}
+		pp.Println(">>>", cid)
+	}
+
+	t := time.NewTicker(5 * time.Second)
+	go func() {
+		for range t.C {
+			xx, _ := h.rMgr.GetIPFS().(*Ipfs).core.Swarm().ListenAddrs(context.Background())
+			for _, x := range xx {
+				pp.Println(x.String())
+			}
+		}
+	}()
 
 	return nil
 }
