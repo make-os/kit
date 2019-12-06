@@ -37,8 +37,20 @@ var (
 	// AppEnvPrefix is used as the prefix for environment variables
 	AppEnvPrefix = "MD"
 
+	// DefaultNodeAddress is the default Node listening address
+	DefaultNodeAddress = "127.0.0.1:9000"
+
+	// DefaultTMRPCAddress is the default RPC listening address for the tendermint
+	DefaultTMRPCAddress = "127.0.0.1:9001"
+
 	// DefaultRPCAddress is the default RPC listening address
-	DefaultRPCAddress = "127.0.0.1:8999"
+	DefaultRPCAddress = "127.0.0.1:9002"
+
+	// DefaultDHTAddress is the default DHT listening address
+	DefaultDHTAddress = "127.0.0.1:9003"
+
+	// DefaultRepoManagerAddress is the default DHT listening address
+	DefaultRepoManagerAddress = "127.0.0.1:9004"
 )
 
 // getGenesisAccounts returns the genesis/root accounts
@@ -61,18 +73,11 @@ func getGenesisAccounts() []map[string]interface{} {
 // They are used when their values is not provided
 // in flag, env or config file.
 func setDefaultViperConfig(cmd *cobra.Command) {
-	viper.SetDefault("net.version", DefaultNetVersion)
-	viper.BindPFlag("net.version", cmd.Flags().Lookup("net"))
-	viper.SetDefault("rpc.address", DefaultRPCAddress)
 	viper.SetDefault("genaccounts", getGenesisAccounts())
 	viper.SetDefault("mempool.size", 5000)
 	viper.SetDefault("mempool.cacheSize", 10000)
 	viper.SetDefault("mempool.maxTxSize", 1024*1024)       // 1MB
 	viper.SetDefault("mempool.maxTxsSize", 1024*1024*1024) // 1GB
-}
-
-func setDevDefaultConfig() {
-	// viper.SetDefault("txPool.capacity", 100)
 }
 
 // readTendermintConfig reads tendermint config into a tendermint
@@ -136,9 +141,6 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 
 	// Set viper configuration
 	setDefaultViperConfig(rootCmd)
-	if devMode {
-		setDevDefaultConfig()
-	}
 
 	viper.SetConfigName(AppName)
 	viper.AddConfigPath(dataDir)
@@ -219,7 +221,7 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	tmcfg.P2P.ListenAddress = c.Node.ListeningAddr
 	tmcfg.P2P.AddrBookStrict = !devMode
 	tmcfg.P2P.PersistentPeers = c.Node.Peers
-	tmcfg.RPC.ListenAddress = c.RPC.TMRPCAddress
+	tmcfg.RPC.ListenAddress = "tcp://" + c.RPC.TMRPCAddress
 
 	c.G().TMConfig = tmcfg
 	*cfg = c

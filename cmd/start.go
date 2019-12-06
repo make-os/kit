@@ -19,6 +19,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/node"
 	"github.com/makeos/mosdef/rpc"
 	"github.com/spf13/cobra"
@@ -44,7 +45,7 @@ func start(onStart func(n *node.Node)) {
 
 	// Start the RPC server
 	rpcAddr := viper.GetString("rpc.address")
-	rpcServer := rpc.NewServer(rpcAddr, cfg, log.Module("RPCServer"), interrupt)
+	rpcServer := rpc.NewServer(rpcAddr, cfg, log.Module("rpc-sever"), interrupt)
 	go rpcServer.Serve()
 
 	// Once all processes have been started call the onStart callback
@@ -82,13 +83,24 @@ var startCmd = &cobra.Command{
 
 func setStartFlags(cmds ...*cobra.Command) {
 	for _, cmd := range cmds {
-		cmd.Flags().String("rpc.address", "127.0.0.1:8999", "Set the RPC listening address")
+		cmd.Flags().String("node.address", config.DefaultNodeAddress,
+			"Set the node's p2p listening address")
+		cmd.Flags().String("rpc.address", config.DefaultRPCAddress,
+			"Set the RPC listening address")
+		cmd.Flags().String("rpc.tmaddress", config.DefaultTMRPCAddress,
+			"Set tendermint RPC listening address")
+		cmd.Flags().String("dht.address", config.DefaultDHTAddress,
+			"Set the DHT listening address")
+		cmd.Flags().String("repoman.address", config.DefaultRepoManagerAddress,
+			"Set the repository manager listening address")
+		cmd.Flags().String("node.addpeer", "",
+			"Connect to one or more persistent node")
+
 		viper.BindPFlag("rpc.address", cmd.Flags().Lookup("rpc.address"))
-		cmd.Flags().String("node.address", "127.0.0.1:9000", "Set the node's p2p listening address")
 		viper.BindPFlag("node.address", cmd.Flags().Lookup("node.address"))
-		cmd.Flags().String("node.addpeer", "", "Connect to one or more persistent node")
-		viper.BindPFlag("node.addpeer", cmd.Flags().Lookup("node.addpeer"))
-		cmd.Flags().String("rpc.tmaddress", "tcp://127.0.0.1:26657", "Set tendermint RPC listening address")
+		viper.BindPFlag("dht.address", cmd.Flags().Lookup("dht.address"))
 		viper.BindPFlag("rpc.tmaddress", cmd.Flags().Lookup("rpc.tmaddress"))
+		viper.BindPFlag("repoman.address", cmd.Flags().Lookup("repoman.address"))
+		viper.BindPFlag("node.addpeer", cmd.Flags().Lookup("node.addpeer"))
 	}
 }

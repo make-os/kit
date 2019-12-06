@@ -70,7 +70,7 @@ func NewManager(cfg *config.EngineConfig, addr string, logic types.Logic) *Manag
 	key, _ := cfg.G().PrivVal.GetKey()
 	mgr := &Manager{
 		cfg:         cfg,
-		log:         cfg.G().Log.Module("manager"),
+		log:         cfg.G().Log.Module("repo-manager"),
 		addr:        addr,
 		rootDir:     cfg.GetRepoRoot(),
 		gitBinPath:  cfg.Node.GitBinPath,

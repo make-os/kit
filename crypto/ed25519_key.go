@@ -199,6 +199,11 @@ func (p *PrivKey) Sign(data []byte) ([]byte, error) {
 	return p.privKey.Sign(data)
 }
 
+// Wrapped returns the wrapped crypto.PrivKey
+func (p *PrivKey) Wrapped() crypto.PrivKey {
+	return p.privKey
+}
+
 // IsValidAddr checks whether an address is valid
 func IsValidAddr(addr string) error {
 	if addr == "" {

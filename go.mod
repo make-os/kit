@@ -35,16 +35,21 @@ require (
 	github.com/howeyc/gopass v0.0.0-20190910152052-7cb4b85ec19c // indirect
 	github.com/imdario/mergo v0.3.8
 	github.com/imroc/req v0.2.4
-	github.com/ipfs/go-ipfs-files v0.0.4
-	github.com/ipfs/go-ipfs-http-client v0.0.5
-	github.com/ipfs/interface-go-ipfs-core v0.2.3
+	github.com/ipfs/go-datastore v0.3.1 // indirect
+	github.com/ipfs/go-log v1.0.0 // indirect
+	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 // indirect
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/lestrrat-go/file-rotatelogs v2.2.0+incompatible
 	github.com/lestrrat-go/strftime v0.0.0-20190725011945-5c849dd2c51d // indirect
+	github.com/libp2p/go-flow-metrics v0.0.3 // indirect
+	github.com/libp2p/go-libp2p v0.4.2
 	github.com/libp2p/go-libp2p-core v0.2.5
 	github.com/libp2p/go-libp2p-crypto v0.1.0
+	github.com/libp2p/go-libp2p-discovery v0.2.0 // indirect
+	github.com/libp2p/go-libp2p-kad-dht v0.3.1
+	github.com/libp2p/go-yamux v1.2.4 // indirect
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
@@ -52,7 +57,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/mr-tron/base58 v1.1.3 // indirect
-	github.com/multiformats/go-multiaddr v0.1.2
 	github.com/multiformats/go-multihash v0.0.10 // indirect
 	github.com/ncodes/go-prettyjson v0.0.0-20180528130907-d229c224a219
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
@@ -61,6 +65,7 @@ require (
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.8.1
 	github.com/pkg/term v0.0.0-20190109203006-aa71e9d9e942 // indirect
+	github.com/prometheus/client_golang v1.1.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a // indirect
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5
 	github.com/robertkrimen/otto v0.0.0-20180617131154-15f95af6e78d
@@ -77,9 +82,16 @@ require (
 	github.com/thoas/go-funk v0.4.0
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	go.dedis.ch/kyber/v3 v3.0.3-0.20190501101437-0324e4ea86f1
-	golang.org/x/crypto v0.0.0-20191202143827-86a70503ff7e
-	golang.org/x/net v0.0.0-20191101175033-0deb6923b6d9 // indirect
+	go.opencensus.io v0.22.2 // indirect
+	go.uber.org/atomic v1.5.1 // indirect
+	go.uber.org/multierr v1.4.0 // indirect
+	go.uber.org/zap v1.13.0 // indirect
+	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
+	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
+	golang.org/x/net v0.0.0-20191204025024-5ee1b9f4859a // indirect
 	golang.org/x/sys v0.0.0-20191204072324-ce4227a45e2e // indirect
+	golang.org/x/tools v0.0.0-20191205225056-3393d29bb9fe // indirect
+	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/oleiade/lane.v1 v1.0.0
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect

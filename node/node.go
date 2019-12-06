@@ -1,11 +1,13 @@
 package node
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/url"
 	"os"
 
+	"github.com/makeos/mosdef/dht"
 	"github.com/makeos/mosdef/repo"
 
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -135,8 +137,16 @@ func (n *Node) Start() error {
 	n.logic.SetTicketManager(n.ticketMgr)
 
 	// Create repository manager and pass it to logic
-	rm := repo.NewManager(n.cfg, ":6000", n.logic)
+	rm := repo.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic)
 	n.logic.SetRepoManager(rm)
+
+	// Create the DHT
+	key, _ := n.cfg.G().PrivVal.GetKey()
+	dht, err := dht.New(context.Background(), key.PrivKey().Wrapped(), n.cfg.DHT.Address)
+	if err != nil {
+		return err
+	}
+	_ = dht
 
 	// Create the ABCI app and wrap with a ClientCreator
 	app := NewApp(n.cfg, n.db, n.logic, n.ticketMgr)

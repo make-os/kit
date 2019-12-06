@@ -55,6 +55,16 @@ type RPCConfig struct {
 	TMRPCAddress string `json:"tmaddress" mapstructure:"tmaddress"`
 }
 
+// DHTConfig describes DHT config parameters
+type DHTConfig struct {
+	Address string `json:"address" mapstructure:"address"`
+}
+
+// RepoManagerConfig describes repository manager config parameters
+type RepoManagerConfig struct {
+	Address string `json:"address" mapstructure:"address"`
+}
+
 // MempoolConfig describes mempool config parameters
 type MempoolConfig struct {
 	Size       int   `json:"size" mapstructure:"size"`
@@ -74,6 +84,12 @@ type EngineConfig struct {
 
 	// RPC holds RPC configurations
 	RPC *RPCConfig `json:"rpc" mapstructure:"rpc"`
+
+	// DHT holds DHT configurations
+	DHT *DHTConfig `json:"dht" mapstructure:"dht"`
+
+	// RepoMan holds repository manager configurations
+	RepoMan *RepoManagerConfig `json:"repoman" mapstructure:"repoman"`
 
 	// Mempool holds mempool configurations
 	Mempool *MempoolConfig `json:"mempool" mapstructure:"mempool"`

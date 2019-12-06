@@ -143,7 +143,10 @@ func initialize() {
 	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
 	rootCmd.PersistentFlags().Bool("nolog", false, "Disables loggers")
 	rootCmd.PersistentFlags().String("gitbin", "/usr/bin/git", "Path to git executable")
+
+	// Viper bindings
 	viper.BindPFlag("node.gitbin", rootCmd.PersistentFlags().Lookup("gitbin"))
+	viper.BindPFlag("net.version", rootCmd.PersistentFlags().Lookup("net"))
 
 	setStartFlags(startCmd, consoleCmd)
 	setAccountCmdAndFlags()
