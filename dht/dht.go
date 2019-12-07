@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ipfs/go-cid"
+	badger "github.com/ipfs/go-ds-badger"
 	"github.com/multiformats/go-multihash"
 
 	lru "github.com/hashicorp/golang-lru"
@@ -54,14 +55,13 @@ func New(ctx context.Context, cfg *config.AppConfig, key crypto.PrivKey, addr st
 		return nil, errors.Wrap(err, "failed to create host")
 	}
 
-	// opts := &badger.DefaultOptions
-	// ds, err := badger.NewDatastore(cfg.GetDHTStoreDir(), opts)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// dhtopts.Datastore(ds)
+	opts := &badger.DefaultOptions
+	ds, err := badger.NewDatastore(cfg.GetDHTStoreDir(), opts)
+	if err != nil {
+		return nil, err
+	}
 
-	ipfsDht, err := dht.New(ctx, h, dhtopts.Validator(validator{}))
+	ipfsDht, err := dht.New(ctx, h, dhtopts.Validator(validator{}), dhtopts.Datastore(ds))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialize dht")
 	}
