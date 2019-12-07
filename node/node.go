@@ -248,24 +248,17 @@ func (n *Node) GetService() types.Service {
 func (n *Node) Stop() {
 	n.log.Info("mosdef is stopping...")
 
-	fmt.Println("A")
 	if n.tm.IsRunning() {
-		fmt.Println("B")
 		n.tm.Stop()
 	}
 
-	fmt.Println("C")
 	if n.db != nil {
-		fmt.Println("D")
 		n.db.Close()
 	}
 
-	fmt.Println("E")
 	if n.stateTreeDB != nil {
-		fmt.Println("F")
 		n.stateTreeDB.Close()
 	}
-	fmt.Println("G")
 
 	n.log.Info("Databases have been closed")
 	n.log.Info("mosdef has stopped")

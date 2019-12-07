@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gobuffalo/packr"
+	"github.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 
 	"github.com/BurntSushi/toml"
@@ -74,14 +75,16 @@ type DRand struct {
 	g           *key.Group
 	gFile       string
 	drandClient *core.Client
+	interrupt   *util.Interrupt
 }
 
 // NewDRand creates an instance of Rand.
 // The argument groupFile is the drand group file.
-func NewDRand() *DRand {
+func NewDRand(interrupt *util.Interrupt) *DRand {
 	return &DRand{
 		g:           &key.Group{},
 		drandClient: core.NewRESTClient(),
+		interrupt:   interrupt,
 	}
 }
 
@@ -127,10 +130,13 @@ func (r *DRand) Get(index int) *DrandRandData {
 
 	// Continuously request for randomness from
 	// all nodes till one returns a valid value
-	fmt.Println("Getting")
 	for len(nodes) > 0 {
+
+		if r.interrupt.IsClosed() {
+			return nil
+		}
+
 		node := nodes[0]
-		fmt.Println("Checking node", node.Address())
 		resp, err := request.Get(fmt.Sprintf("https://%s/api/public/%d", node.Addr, index))
 		if err != nil {
 			nodes = nodes[1:]
@@ -154,7 +160,6 @@ func (r *DRand) Get(index int) *DrandRandData {
 		result = &res
 		break
 	}
-	fmt.Println("Done")
 
 	if result == nil {
 		return nil

@@ -45,7 +45,7 @@ func start(onStart func(n *node.Node)) {
 
 	// Start the RPC server
 	rpcAddr := viper.GetString("rpc.address")
-	rpcServer := rpc.NewServer(rpcAddr, cfg, log.Module("rpc-sever"), interrupt)
+	rpcServer := rpc.NewServer(rpcAddr, cfg, log.Module("rpc-sever"), &itr)
 	go rpcServer.Serve()
 
 	// Once all processes have been started call the onStart callback
@@ -55,7 +55,7 @@ func start(onStart func(n *node.Node)) {
 		onStart(n)
 	}
 
-	<-interrupt
+	itr.Wait()
 	rpcServer.Stop()
 	n.Stop()
 }
@@ -65,7 +65,7 @@ func listenForInterrupt() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		<-c
-		close(interrupt)
+		itr.Close()
 	}()
 }
 

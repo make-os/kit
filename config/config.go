@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/makeos/mosdef/params"
+	"github.com/makeos/mosdef/util"
 
 	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
@@ -102,12 +103,14 @@ func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
 // Configure sets up the application command structure, tendermint
 // and mosdef configuration. This is where all configuration and
 // settings are prepared
-func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config) {
+func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 
 	var c = AppConfig{
 		Node: &NodeConfig{Mode: ModeProd},
 		Net:  &NetConfig{},
-		g:    &Globals{},
+		g: &Globals{
+			Interrupt: itr,
+		},
 	}
 
 	dataDir := DefaultDataDir

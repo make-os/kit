@@ -468,3 +468,23 @@ func ParseSimpleArgs(args []string) (m map[string]string) {
 	}
 	return
 }
+
+// Interrupt is used to signal program interruption
+type Interrupt chan struct{}
+
+// IsClosed checks if the channel is closed
+func (i *Interrupt) IsClosed() bool {
+	return IsStructChanClosed(*i)
+}
+
+// Close closes the channel only when it is not closed
+func (i *Interrupt) Close() {
+	if !i.IsClosed() {
+		close(*i)
+	}
+}
+
+// Wait blocks the calling goroutine till the channel is closed
+func (i *Interrupt) Wait() {
+	<-*i
+}

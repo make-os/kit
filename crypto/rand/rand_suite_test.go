@@ -10,6 +10,4 @@ import (
 func TestRand(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Rand Suite")
-	rand := NewDRand()
-	rand.Init()
 }

@@ -18,6 +18,7 @@ import (
 	golog "log"
 	"os"
 
+	"github.com/makeos/mosdef/util"
 	"github.com/makeos/mosdef/util/logger"
 
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -59,8 +60,8 @@ var (
 	// rootCmd is the root command
 	rootCmd *cobra.Command
 
-	// interrupt is used to inform the stoppage of all modules
-	interrupt = make(chan struct{})
+	// itr is used to inform the stoppage of all modules
+	itr = util.Interrupt(make(chan struct{}))
 )
 
 // initializeTendermint initializes tendermint
@@ -106,7 +107,7 @@ development network that allows anyone, anywhere to create software products
 and organizations without a centralized authority.`,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 
-			config.Configure(rootCmd, cfg, tmconfig)
+			config.Configure(rootCmd, cfg, tmconfig, &itr)
 			log = cfg.G().Log
 
 			if cmd.CalledAs() != "init" {

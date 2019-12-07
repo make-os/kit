@@ -5,6 +5,7 @@ import (
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/rpc/jsonrpc"
+	"github.com/makeos/mosdef/util"
 	"github.com/makeos/mosdef/util/logger"
 )
 
@@ -18,7 +19,6 @@ type Result struct {
 
 // Server represents a rpc server
 type Server struct {
-	interrupt <-chan struct{}
 	sync.RWMutex
 
 	// addr is the address to bind the server to
@@ -33,14 +33,15 @@ type Server struct {
 	// rpc is the JSONRPC 2.0 server
 	rpc *jsonrpc.JSONRPC
 
-	// started indicates the start state
-	// of the server
+	// started indicates the start state of the server
 	started bool
+
+	interrupt *util.Interrupt
 }
 
 // NewServer creates a new RPC server
 func NewServer(addr string, cfg *config.AppConfig, log logger.Logger,
-	interrupt <-chan struct{}) *Server {
+	interrupt *util.Interrupt) *Server {
 	return &Server{
 		addr:      addr,
 		log:       log,
@@ -61,7 +62,7 @@ func (s *Server) GetAddr() string {
 func (s *Server) Serve() {
 	go func() {
 		if s.interrupt != nil {
-			<-s.interrupt
+			s.interrupt.Wait()
 			s.Stop()
 		}
 	}()

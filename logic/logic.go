@@ -109,7 +109,7 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 	l.gpgPubKeyKeeper = keepers.NewGPGPubKeyKeeper(tree, dbTx)
 
 	// Create a drand instance
-	l.drand = rand.NewDRand()
+	l.drand = rand.NewDRand(cfg.G().Interrupt)
 	if err := l.drand.Init(); err != nil {
 		panic(errors.Wrap(err, "failed to initialize drand"))
 	}

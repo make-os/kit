@@ -20,7 +20,6 @@ import (
 	"github.com/makeos/mosdef/console"
 	jsm "github.com/makeos/mosdef/jsmodules"
 	"github.com/makeos/mosdef/node"
-	"github.com/makeos/mosdef/util"
 	"github.com/spf13/cobra"
 )
 
@@ -41,10 +40,8 @@ var consoleCmd = &cobra.Command{
 
 			// On stop, close the node and interrupt other processes
 			console.OnStop(func() {
+				itr.Close()
 				n.Stop()
-				if !util.IsStructChanClosed(interrupt) {
-					close(interrupt)
-				}
 			})
 
 			// Add modules
