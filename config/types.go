@@ -125,6 +125,21 @@ type AppConfig struct {
 	g *Globals
 }
 
+// EmptyAppConfig returns an empty Config Object
+func EmptyAppConfig() AppConfig {
+	return AppConfig{
+		Node:            &NodeConfig{},
+		Net:             &NetConfig{},
+		RPC:             &RPCConfig{},
+		DHT:             &DHTConfig{},
+		RepoMan:         &RepoManagerConfig{},
+		Mempool:         &MempoolConfig{},
+		GenesisAccounts: []*GenAccount{},
+		VersionInfo:     &VersionInfo{},
+		g:               &Globals{},
+	}
+}
+
 // GetConsoleHistoryPath returns the filepath where the console
 // input history is stored
 func (c *AppConfig) GetConsoleHistoryPath() string {

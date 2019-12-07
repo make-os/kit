@@ -105,13 +105,9 @@ func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
 // settings are prepared
 func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 
-	var c = AppConfig{
-		Node: &NodeConfig{Mode: ModeProd},
-		Net:  &NetConfig{},
-		g: &Globals{
-			Interrupt: itr,
-		},
-	}
+	var c = EmptyAppConfig()
+	c.Node.Mode = ModeProd
+	c.g.Interrupt = itr
 
 	dataDir := DefaultDataDir
 
@@ -226,7 +222,7 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 	tmcfg.P2P.PersistentPeers = c.Node.Peers
 	tmcfg.RPC.ListenAddress = "tcp://" + c.RPC.TMRPCAddress
 
-	if c.DHT.Address[:1] == ":" {
+	if c.DHT.Address != "" && c.DHT.Address[:1] == ":" {
 		c.DHT.Address = "127.0.0.1" + c.DHT.Address
 	}
 

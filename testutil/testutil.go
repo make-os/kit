@@ -55,7 +55,8 @@ func SetTestCfg(opts ...string) (*config.AppConfig, error) {
 	commands.SetLoggerToNoop()
 
 	// Initialize the config using the test root command
-	config.Configure(rootCmd, cfg, tmcfg)
+	interrupt := util.Interrupt(make(chan struct{}))
+	config.Configure(rootCmd, cfg, tmcfg, &interrupt)
 	cfg.Node.Mode = config.ModeTest
 	os.MkdirAll(path.Join(cfg.NetDataDir(), "repos"), 0700)
 	cfg.SetRepoRoot(path.Join(cfg.NetDataDir(), "repos"))

@@ -646,58 +646,6 @@ func (mr *MockRepoManagerMockRecorder) SetPGPPubKeyGetter(pkGetter interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPGPPubKeyGetter", reflect.TypeOf((*MockRepoManager)(nil).SetPGPPubKeyGetter), pkGetter)
 }
 
-// GetIPFS mocks base method
-func (m *MockRepoManager) GetIPFS() types.IpfsStore {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetIPFS")
-	ret0, _ := ret[0].(types.IpfsStore)
-	return ret0
-}
-
-// GetIPFS indicates an expected call of GetIPFS
-func (mr *MockRepoManagerMockRecorder) GetIPFS() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIPFS", reflect.TypeOf((*MockRepoManager)(nil).GetIPFS))
-}
-
-// MockIpfsStore is a mock of IpfsStore interface
-type MockIpfsStore struct {
-	ctrl     *gomock.Controller
-	recorder *MockIpfsStoreMockRecorder
-}
-
-// MockIpfsStoreMockRecorder is the mock recorder for MockIpfsStore
-type MockIpfsStoreMockRecorder struct {
-	mock *MockIpfsStore
-}
-
-// NewMockIpfsStore creates a new mock instance
-func NewMockIpfsStore(ctrl *gomock.Controller) *MockIpfsStore {
-	mock := &MockIpfsStore{ctrl: ctrl}
-	mock.recorder = &MockIpfsStoreMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockIpfsStore) EXPECT() *MockIpfsStoreMockRecorder {
-	return m.recorder
-}
-
-// AddFile mocks base method
-func (m *MockIpfsStore) AddFile(ctx context.Context, path string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddFile", ctx, path)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AddFile indicates an expected call of AddFile
-func (mr *MockIpfsStoreMockRecorder) AddFile(ctx, path interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddFile", reflect.TypeOf((*MockIpfsStore)(nil).AddFile), ctx, path)
-}
-
 // MockPushPool is a mock of PushPool interface
 type MockPushPool struct {
 	ctrl     *gomock.Controller
