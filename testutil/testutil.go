@@ -29,7 +29,7 @@ import (
 const GPGProgramPath = "gpg"
 
 // SetTestCfg prepare a config directory for tests
-func SetTestCfg(opts ...string) (*config.EngineConfig, error) {
+func SetTestCfg(opts ...string) (*config.AppConfig, error) {
 	var dataDirName = util.RandString(5)
 	if len(opts) > 0 {
 		dataDirName = opts[0]
@@ -49,7 +49,7 @@ func SetTestCfg(opts ...string) (*config.EngineConfig, error) {
 	rootCmd.PersistentFlags().Set("net", dataDir)
 	viper.Set("net.version", 10000000)
 
-	var cfg = &config.EngineConfig{}
+	var cfg = &config.AppConfig{}
 	var tmcfg = tmconfig.DefaultConfig()
 
 	commands.SetLoggerToNoop()
@@ -74,7 +74,7 @@ func SetTestCfg(opts ...string) (*config.EngineConfig, error) {
 }
 
 // GetDB test databases
-func GetDB(cfg *config.EngineConfig) (appDB *storage.Badger, stateTreeDB *storage.Badger) {
+func GetDB(cfg *config.AppConfig) (appDB *storage.Badger, stateTreeDB *storage.Badger) {
 	appDB = storage.NewBadger()
 	if err := appDB.Init(cfg.GetAppDBDir()); err != nil {
 		panic(err)
@@ -87,7 +87,7 @@ func GetDB(cfg *config.EngineConfig) (appDB *storage.Badger, stateTreeDB *storag
 }
 
 // GetDBAtDir test databases at a directory
-func GetDBAtDir(cfg *config.EngineConfig, dir string) *storage.Badger {
+func GetDBAtDir(cfg *config.AppConfig, dir string) *storage.Badger {
 	db := storage.NewBadger()
 	if err := db.Init(dir); err != nil {
 		panic(err)

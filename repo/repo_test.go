@@ -18,7 +18,7 @@ import (
 
 var _ = Describe("Gitops", func() {
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var path string
 	var repo types.BareRepo
 

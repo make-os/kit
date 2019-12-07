@@ -37,7 +37,7 @@ type App struct {
 	db                        storage.Engine
 	node                      types.CommonNode
 	logic                     types.AtomicLogic
-	cfg                       *config.EngineConfig
+	cfg                       *config.AppConfig
 	validateTx                validators.ValidateTxFunc
 	wBlock                    *types.BlockInfo
 	log                       logger.Logger
@@ -57,7 +57,7 @@ type App struct {
 
 // NewApp creates an instance of App
 func NewApp(
-	cfg *config.EngineConfig,
+	cfg *config.AppConfig,
 	db storage.Engine,
 	logic types.AtomicLogic,
 	ticketMgr types.TicketManager) *App {

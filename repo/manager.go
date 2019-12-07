@@ -43,7 +43,7 @@ var services = [][]interface{}{
 // Manager implements types.Manager. It provides a system for managing
 // and service a git repositories through http and ssh protocols.
 type Manager struct {
-	cfg             *config.EngineConfig
+	cfg             *config.AppConfig
 	log             logger.Logger         // log is the application logger
 	wg              *sync.WaitGroup       // wait group for waiting for the manager
 	srv             *http.Server          // the http server
@@ -58,7 +58,7 @@ type Manager struct {
 }
 
 // NewManager creates an instance of Manager
-func NewManager(cfg *config.EngineConfig, addr string, logic types.Logic) *Manager {
+func NewManager(cfg *config.AppConfig, addr string, logic types.Logic) *Manager {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 

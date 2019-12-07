@@ -10,6 +10,7 @@ import (
 	"github.com/makeos/mosdef/dht"
 	"github.com/makeos/mosdef/repo"
 
+	"github.com/tendermint/tendermint/node"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/makeos/mosdef/ticket"
@@ -43,23 +44,24 @@ import (
 
 // Node represents the client
 type Node struct {
-	app         *App
-	cfg         *config.EngineConfig
-	tmcfg       *tmconfig.Config
-	nodeKey     *p2p.NodeKey
-	log         logger.Logger
-	db          storage.Engine
-	stateTreeDB storage.Engine
-	tm          *nm.Node
-	service     types.Service
-	tmrpc       *tmrpc.TMRPC
-	logic       types.AtomicLogic
-	txReactor   *mempool.Reactor
-	ticketMgr   types.TicketManager
+	app            *App
+	cfg            *config.AppConfig
+	tmcfg          *tmconfig.Config
+	nodeKey        *p2p.NodeKey
+	log            logger.Logger
+	db             storage.Engine
+	stateTreeDB    storage.Engine
+	tm             *nm.Node
+	service        types.Service
+	tmrpc          *tmrpc.TMRPC
+	logic          types.AtomicLogic
+	mempoolReactor *mempool.Reactor
+	ticketMgr      types.TicketManager
+	dht            types.DHT
 }
 
 // NewNode creates an instance of Node
-func NewNode(cfg *config.EngineConfig, tmcfg *tmconfig.Config) *Node {
+func NewNode(cfg *config.AppConfig, tmcfg *tmconfig.Config) *Node {
 
 	// Parse the RPC address
 	parsedURL, err := url.Parse(tmcfg.RPC.ListenAddress)
@@ -104,7 +106,7 @@ func (n *Node) OpenDB() error {
 
 // createCustomMempool creates a custom mempool and mempool reactor
 // to replace tendermint's default mempool
-func createCustomMempool(cfg *config.EngineConfig, log logger.Logger) *nm.CustomMempool {
+func createCustomMempool(cfg *config.AppConfig, log logger.Logger) *nm.CustomMempool {
 	memp := mempool.NewMempool(cfg)
 	mempReactor := mempool.NewReactor(cfg, memp)
 	return &nm.CustomMempool{
@@ -140,30 +142,27 @@ func (n *Node) Start() error {
 	rm := repo.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic)
 	n.logic.SetRepoManager(rm)
 
-	// Create the DHT
-	key, _ := n.cfg.G().PrivVal.GetKey()
-	dht, err := dht.New(context.Background(), key.PrivKey().Wrapped(), n.cfg.DHT.Address)
-	if err != nil {
-		return err
-	}
-	_ = dht
-
 	// Create the ABCI app and wrap with a ClientCreator
 	app := NewApp(n.cfg, n.db, n.logic, n.ticketMgr)
 	app.node = n
 	clientCreator := proxy.NewLocalClientCreator(app)
 
 	// Create custom mempool and set the epoch secret generator function
-	memp := createCustomMempool(n.cfg, n.log)
-	memp.Mempool.(*mempool.Mempool).SetEpochSecretGetter(n.logic.Sys().GetCurretEpochSecretTx)
+	cusMemp := createCustomMempool(n.cfg, n.log)
+	memp := cusMemp.Mempool.(*mempool.Mempool)
+	memp.SetEpochSecretGetter(n.logic.Sys().GetCurretEpochSecretTx)
+	mempR := cusMemp.MempoolReactor.(*mempool.Reactor)
+
+	// Register custom reactor channels
+	node.AddChannels([]byte{dht.DHTReactor})
 
 	// Create node
-	node, err := nm.NewNodeWithCustomMempool(
+	tmNode, err := nm.NewNodeWithCustomMempool(
 		n.tmcfg,
 		pv,
 		n.nodeKey,
 		clientCreator,
-		memp,
+		cusMemp,
 		nm.DefaultGenesisDocProviderFunc(n.tmcfg),
 		nm.DefaultDBProvider,
 		nm.DefaultMetricsProvider(n.tmcfg.Instrumentation),
@@ -173,19 +172,23 @@ func (n *Node) Start() error {
 	}
 
 	// Pass the proxy app to the mempool
-	memp.Mempool.(*mempool.Mempool).SetProxyApp(node.ProxyApp().Mempool())
+	memp.SetProxyApp(tmNode.ProxyApp().Mempool())
 
 	fullAddr := fmt.Sprintf("%s@%s", n.nodeKey.ID(), n.tmcfg.P2P.ListenAddress)
 	n.log.Info("Node is now listening for connections", "Address", fullAddr)
 
-	// Cache a reference of tendermint node
-	n.tm = node
+	// Set references of various instances on the node
+	n.tm = tmNode
+	n.mempoolReactor = mempR
+	n.service = services.New(n.tmrpc, n.logic, mempR)
 
-	// Create reactors and pass to service
-	txReactor := mempool.NewReactor(n.cfg, memp.Mempool.(*mempool.Mempool))
-	txReactor.SetSwitch(node.Switch())
-	n.txReactor = txReactor
-	n.service = services.New(n.tmrpc, n.logic, txReactor)
+	// Create DHT reactor
+	key, _ := n.cfg.G().PrivVal.GetKey()
+	n.dht, err = dht.New(context.Background(), n.cfg, key.PrivKey().Wrapped(), n.cfg.DHT.Address)
+	if err != nil {
+		return err
+	}
+	tmNode.Switch().AddReactor("DHT", n.dht.(*dht.DHT))
 
 	// Start repository server
 	if err := rm.Start(); err != nil {
@@ -220,9 +223,14 @@ func (n *Node) GetLogic() types.Logic {
 	return n.logic
 }
 
+// GetDHT returns the DHT service
+func (n *Node) GetDHT() types.DHT {
+	return n.dht
+}
+
 // GetTxReactor returns the transaction reactor
 func (n *Node) GetTxReactor() *mempool.Reactor {
-	return n.txReactor
+	return n.mempoolReactor
 }
 
 // GetCurrentValidators returns the current validators
@@ -240,17 +248,24 @@ func (n *Node) GetService() types.Service {
 func (n *Node) Stop() {
 	n.log.Info("mosdef is stopping...")
 
+	fmt.Println("A")
 	if n.tm.IsRunning() {
+		fmt.Println("B")
 		n.tm.Stop()
 	}
 
+	fmt.Println("C")
 	if n.db != nil {
+		fmt.Println("D")
 		n.db.Close()
 	}
 
+	fmt.Println("E")
 	if n.stateTreeDB != nil {
+		fmt.Println("F")
 		n.stateTreeDB.Close()
 	}
+	fmt.Println("G")
 
 	n.log.Info("Databases have been closed")
 	n.log.Info("mosdef has stopped")

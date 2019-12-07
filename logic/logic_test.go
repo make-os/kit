@@ -17,7 +17,7 @@ import (
 var _ = Describe("Logic", func() {
 	var appDB, stateTreeDB storage.Engine
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var logic *l.Logic
 
 	BeforeEach(func() {

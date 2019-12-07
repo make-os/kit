@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("Store", func() {
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var appDB storage.Engine
 	var store *Store
 

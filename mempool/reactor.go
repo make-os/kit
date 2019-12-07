@@ -51,7 +51,7 @@ type Reactor struct {
 }
 
 // NewReactor returns a new Reactor with the given config and mempool.
-func NewReactor(cfg *config.EngineConfig, mempool *Mempool) *Reactor {
+func NewReactor(cfg *config.AppConfig, mempool *Mempool) *Reactor {
 	r := &Reactor{
 		config:  cfg.G().TMConfig.Mempool,
 		mempool: mempool,
@@ -59,6 +59,7 @@ func NewReactor(cfg *config.EngineConfig, mempool *Mempool) *Reactor {
 		log:     cfg.G().Log.Module("mempool/reactor"),
 	}
 	r.BaseReactor = *p2p.NewBaseReactor("Reactor", r)
+
 	return r
 }
 

@@ -23,7 +23,7 @@ var gitPath = "/usr/bin/git"
 
 var _ = Describe("Revert", func() {
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var repoMgr *Manager
 	var repo types.BareRepo
 	var path string

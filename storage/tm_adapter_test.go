@@ -15,7 +15,7 @@ var _ = Describe("TMDBAdapter", func() {
 	var c storage.Engine
 	var tx storage.Tx
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var adapter *storage.TMDBAdapter
 
 	BeforeEach(func() {

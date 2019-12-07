@@ -36,7 +36,7 @@ type txCase struct {
 var _ = Describe("TxValidator", func() {
 	var appDB, stateTreeDB storage.Engine
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var logic *l.Logic
 	var ctrl *gomock.Controller
 	var mockLogic *mockutil.MockObjects

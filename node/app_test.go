@@ -45,7 +45,7 @@ func genFilePV(bz []byte) *privval.FilePV {
 var _ = Describe("App", func() {
 	var c, stateTreeDB storage.Engine
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var logic *l.Logic
 	var app *App
 	var ticketmgr *ticket.Manager

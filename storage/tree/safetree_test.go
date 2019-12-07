@@ -15,7 +15,7 @@ import (
 var _ = Describe("TMDBAdapter", func() {
 	var appDB storage.Engine
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var tree *SafeTree
 
 	BeforeEach(func() {

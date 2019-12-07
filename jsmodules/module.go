@@ -12,22 +12,24 @@ import (
 // Module provides functionalities that are accessible
 // through the javascript console environment
 type Module struct {
-	cfg       *config.EngineConfig
+	cfg       *config.AppConfig
 	service   types.Service
 	logic     types.Logic
 	txReactor *mempool.Reactor
 	acctmgr   *accountmgr.AccountManager
 	ticketmgr types.TicketManager
+	dht       types.DHT
 }
 
 // NewModule creates an instance of Module
 func NewModule(
-	cfg *config.EngineConfig,
+	cfg *config.AppConfig,
 	acctmgr *accountmgr.AccountManager,
 	service types.Service,
 	logic types.Logic,
 	txReactor *mempool.Reactor,
-	ticketmgr types.TicketManager) *Module {
+	ticketmgr types.TicketManager,
+	dht types.DHT) *Module {
 	return &Module{
 		cfg:       cfg,
 		acctmgr:   acctmgr,
@@ -35,6 +37,7 @@ func NewModule(
 		logic:     logic,
 		txReactor: txReactor,
 		ticketmgr: ticketmgr,
+		dht:       dht,
 	}
 }
 
@@ -50,5 +53,6 @@ func (m *Module) Configure(vm *otto.Otto) []prompt.Suggest {
 	sugs = append(sugs, NewUtilModule(vm).Configure()...)
 	sugs = append(sugs, NewTicketModule(vm, nodeSrv, m.ticketmgr).Configure()...)
 	sugs = append(sugs, NewRepoModule(vm, nodeSrv, m.logic).Configure()...)
+	sugs = append(sugs, NewDHTModule(m.cfg, vm, m.dht).Configure()...)
 	return sugs
 }

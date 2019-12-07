@@ -54,7 +54,7 @@ type Console struct {
 	history []string
 
 	// cfg is the client config
-	cfg *config.EngineConfig
+	cfg *config.AppConfig
 
 	confirmedStop bool
 
@@ -75,7 +75,7 @@ type Console struct {
 
 // New creates a new Console instance.
 // signatory is the address
-func New(historyPath string, cfg *config.EngineConfig, log logger.Logger) *Console {
+func New(historyPath string, cfg *config.AppConfig, log logger.Logger) *Console {
 	c := new(Console)
 	c.historyFile = historyPath
 	c.executor = newExecutor(log)
@@ -96,7 +96,7 @@ func New(historyPath string, cfg *config.EngineConfig, log logger.Logger) *Conso
 }
 
 // NewAttached is like New but enables attach mode
-func NewAttached(historyPath string, cfg *config.EngineConfig, log logger.Logger) *Console {
+func NewAttached(historyPath string, cfg *config.AppConfig, log logger.Logger) *Console {
 	c := New(historyPath, cfg, log)
 	c.attached = true
 	return c

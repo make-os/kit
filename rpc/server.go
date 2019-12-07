@@ -25,7 +25,7 @@ type Server struct {
 	addr string
 
 	// cfg is the engine config
-	cfg *config.EngineConfig
+	cfg *config.AppConfig
 
 	// log is the logger
 	log logger.Logger
@@ -39,7 +39,7 @@ type Server struct {
 }
 
 // NewServer creates a new RPC server
-func NewServer(addr string, cfg *config.EngineConfig, log logger.Logger,
+func NewServer(addr string, cfg *config.AppConfig, log logger.Logger,
 	interrupt <-chan struct{}) *Server {
 	return &Server{
 		addr:      addr,

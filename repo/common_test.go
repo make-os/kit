@@ -12,7 +12,7 @@ import (
 
 var _ = Describe("Gitops", func() {
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()

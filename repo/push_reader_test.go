@@ -14,7 +14,7 @@ import (
 
 var _ = Describe("PushReader", func() {
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var path string
 
 	BeforeEach(func() {

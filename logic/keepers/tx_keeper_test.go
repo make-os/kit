@@ -20,7 +20,7 @@ import (
 var _ = Describe("TxKeeper", func() {
 	var appDB storage.Engine
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var txKeeper *TxKeeper
 	var ctrl *gomock.Controller
 

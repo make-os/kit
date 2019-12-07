@@ -116,6 +116,7 @@ func (r *DRand) Get(index int) *DrandRandData {
 
 	// Configure the request object
 	request := req.New()
+	request.SetTimeout(10 * time.Second)
 	transport, _ := request.Client().Transport.(*http.Transport)
 	transport.TLSClientConfig = &tls.Config{
 		MinVersion: tls.VersionTLS12,
@@ -126,8 +127,10 @@ func (r *DRand) Get(index int) *DrandRandData {
 
 	// Continuously request for randomness from
 	// all nodes till one returns a valid value
+	fmt.Println("Getting")
 	for len(nodes) > 0 {
 		node := nodes[0]
+		fmt.Println("Checking node", node.Address())
 		resp, err := request.Get(fmt.Sprintf("https://%s/api/public/%d", node.Addr, index))
 		if err != nil {
 			nodes = nodes[1:]
@@ -151,6 +154,7 @@ func (r *DRand) Get(index int) *DrandRandData {
 		result = &res
 		break
 	}
+	fmt.Println("Done")
 
 	if result == nil {
 		return nil

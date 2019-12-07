@@ -45,7 +45,7 @@ svCU0gx1j1vi1SKS
 var _ = Describe("Gpg", func() {
 
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var gpgHome string
 
 	BeforeEach(func() {

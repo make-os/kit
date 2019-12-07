@@ -22,7 +22,7 @@ import (
 
 var _ = Describe("Mempool", func() {
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var mempool *Mempool
 	var sender = crypto.NewKeyFromIntSeed(1)
 

@@ -51,7 +51,7 @@ var (
 	log logger.Logger
 
 	// cfg is the application config
-	cfg = &config.EngineConfig{}
+	cfg = &config.AppConfig{}
 
 	// Get a reference to tendermint's config object
 	tmconfig = tmcfg.DefaultConfig()

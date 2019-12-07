@@ -102,9 +102,9 @@ func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
 // Configure sets up the application command structure, tendermint
 // and mosdef configuration. This is where all configuration and
 // settings are prepared
-func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) {
+func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config) {
 
-	var c = EngineConfig{
+	var c = AppConfig{
 		Node: &NodeConfig{Mode: ModeProd},
 		Net:  &NetConfig{},
 		g:    &Globals{},
@@ -163,7 +163,7 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	viper.SetEnvKeyReplacer(replacer)
 	viper.AutomaticEnv()
 
-	// Read the loaded config into EngineConfig
+	// Read the loaded config into AppConfig
 	if err := viper.Unmarshal(&c); err != nil {
 		golog.Fatalf("Failed to unmarshal configuration file: %s", err)
 	}
@@ -222,6 +222,10 @@ func Configure(rootCmd *cobra.Command, cfg *EngineConfig, tmcfg *config.Config) 
 	tmcfg.P2P.AddrBookStrict = !devMode
 	tmcfg.P2P.PersistentPeers = c.Node.Peers
 	tmcfg.RPC.ListenAddress = "tcp://" + c.RPC.TMRPCAddress
+
+	if c.DHT.Address[:1] == ":" {
+		c.DHT.Address = "127.0.0.1" + c.DHT.Address
+	}
 
 	c.G().TMConfig = tmcfg
 	*cfg = c

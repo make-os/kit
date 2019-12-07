@@ -24,13 +24,13 @@ type Globals struct {
 }
 
 // G returns the global object
-func (c *EngineConfig) G() *Globals {
+func (c *AppConfig) G() *Globals {
 	return c.g
 }
 
 // PrepareNodeValKeys gets the node key from the node key file
 // and caches it for fast access
-func (c *EngineConfig) PrepareNodeValKeys(
+func (c *AppConfig) PrepareNodeValKeys(
 	nodeKeyFile,
 	privValKeyFile,
 	privValStateFile string) *p2p.NodeKey {

@@ -73,8 +73,8 @@ type MempoolConfig struct {
 	MaxTxsSize int64 `json:"maxTxsSize" mapstructure:"maxTxsSize"`
 }
 
-// EngineConfig represents the client's configuration
-type EngineConfig struct {
+// AppConfig represents the applications configuration
+type AppConfig struct {
 
 	// Node holds the node configurations
 	Node *NodeConfig `json:"node" mapstructure:"node"`
@@ -127,61 +127,66 @@ type EngineConfig struct {
 
 // GetConsoleHistoryPath returns the filepath where the console
 // input history is stored
-func (c *EngineConfig) GetConsoleHistoryPath() string {
+func (c *AppConfig) GetConsoleHistoryPath() string {
 	return c.consoleHistoryPath
 }
 
 // SetNetDataDir sets the network's data directory
-func (c *EngineConfig) SetNetDataDir(d string) {
+func (c *AppConfig) SetNetDataDir(d string) {
 	c.netDataDir = d
 }
 
 // NetDataDir returns the network's data directory
-func (c *EngineConfig) NetDataDir() string {
+func (c *AppConfig) NetDataDir() string {
 	return c.netDataDir
 }
 
 // DataDir returns the application's data directory
-func (c *EngineConfig) DataDir() string {
+func (c *AppConfig) DataDir() string {
 	return c.dataDir
 }
 
 // AccountDir returns the application's accounts directory
-func (c *EngineConfig) AccountDir() string {
+func (c *AppConfig) AccountDir() string {
 	return c.accountDir
 }
 
 // SetDataDir sets the application's data directory
-func (c *EngineConfig) SetDataDir(d string) {
+func (c *AppConfig) SetDataDir(d string) {
 	c.dataDir = d
 }
 
 // GetDBRootDir returns the directory where all database files are stored
-func (c *EngineConfig) GetDBRootDir() string {
+func (c *AppConfig) GetDBRootDir() string {
 	return filepath.Join(c.NetDataDir(), "data")
 }
 
 // GetRepoRoot returns the repo root directory
-func (c *EngineConfig) GetRepoRoot() string {
+func (c *AppConfig) GetRepoRoot() string {
 	return c.repoDir
 }
 
 // SetRepoRoot sets the repo root directory
-func (c *EngineConfig) SetRepoRoot(dir string) {
+func (c *AppConfig) SetRepoRoot(dir string) {
 	c.repoDir = dir
 }
 
 // GetAppDBDir returns the path where app's database files are stored
-func (c *EngineConfig) GetAppDBDir() string {
+func (c *AppConfig) GetAppDBDir() string {
 	return filepath.Join(c.GetDBRootDir(), "appdata.db")
 }
 
+// GetDHTStoreDir returns the path where dht database files are stored
+func (c *AppConfig) GetDHTStoreDir() string {
+	return filepath.Join(c.GetDBRootDir(), "dht.db")
+}
+
 // GetStateTreeDBDir returns the path where state's database files are stored
-func (c *EngineConfig) GetStateTreeDBDir() string {
+func (c *AppConfig) GetStateTreeDBDir() string {
 	return filepath.Join(c.GetDBRootDir(), "appstate.db")
 }
 
 // IsDev checks whether the current environment is 'development'
-func (c *EngineConfig) IsDev() bool {
+func (c *AppConfig) IsDev() bool {
 	return c.Node.Mode == ModeDev
 }

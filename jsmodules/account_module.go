@@ -21,7 +21,7 @@ import (
 // AccountModule provides account management functionalities
 // that are accessed through the javascript console environment
 type AccountModule struct {
-	cfg     *config.EngineConfig
+	cfg     *config.AppConfig
 	acctMgr *accountmgr.AccountManager
 	vm      *otto.Otto
 	service types.Service
@@ -30,7 +30,7 @@ type AccountModule struct {
 
 // NewAccountModule creates an instance of AccountModule
 func NewAccountModule(
-	cfg *config.EngineConfig,
+	cfg *config.AppConfig,
 	vm *otto.Otto,
 	acctmgr *accountmgr.AccountManager,
 	service types.Service,

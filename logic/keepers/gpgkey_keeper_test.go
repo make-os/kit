@@ -14,7 +14,7 @@ import (
 var _ = Describe("Account", func() {
 	var state *tree.SafeTree
 	var appDB storage.Engine
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var err error
 	var gpgKeeper *GPGPubKeyKeeper
 

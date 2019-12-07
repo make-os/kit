@@ -25,7 +25,7 @@ type Option func(*Mempool)
 
 // Mempool implements mempool.Mempool
 type Mempool struct {
-	config *config.EngineConfig
+	config *config.AppConfig
 
 	proxyMtx     sync.Mutex
 	proxyAppConn proxy.AppConnMempool
@@ -50,7 +50,7 @@ type Mempool struct {
 
 // NewMempool creates an instance of Mempool
 func NewMempool(
-	config *config.EngineConfig) *Mempool {
+	config *config.AppConfig) *Mempool {
 	return &Mempool{
 		config: config,
 		pool:   pool.New(int64(config.Mempool.Size)),

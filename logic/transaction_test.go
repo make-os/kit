@@ -21,7 +21,7 @@ import (
 var _ = Describe("Transaction", func() {
 	var appDB, stateTreeDB storage.Engine
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var logic *Logic
 	var txLogic *Transaction
 

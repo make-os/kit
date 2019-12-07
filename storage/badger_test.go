@@ -17,7 +17,7 @@ import (
 var _ = Describe("storage.Badger", func() {
 	var c storage.Engine
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 
 	BeforeEach(func() {
 		Expect(err).To(BeNil())

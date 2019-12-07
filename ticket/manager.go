@@ -17,14 +17,14 @@ import (
 // Manager implements types.TicketManager.
 // It provides ticket management functionalities.
 type Manager struct {
-	cfg   *config.EngineConfig
+	cfg   *config.AppConfig
 	logic types.Logic
 	s     Storer
 }
 
 // NewManager returns an instance of Manager.
 // Returns error if unable to initialize the store.
-func NewManager(db storage.Tx, cfg *config.EngineConfig, logic types.Logic) *Manager {
+func NewManager(db storage.Tx, cfg *config.AppConfig, logic types.Logic) *Manager {
 	mgr := &Manager{cfg: cfg, logic: logic}
 	mgr.s = NewStore(db)
 	return mgr

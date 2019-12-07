@@ -19,7 +19,7 @@ import (
 
 var _ = Describe("Manager", func() {
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var repoMgr *Manager
 	var path string
 	var repo types.BareRepo

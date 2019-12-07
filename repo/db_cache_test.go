@@ -16,7 +16,7 @@ import (
 
 var _ = Describe("DBCache", func() {
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var cache *DBCache
 
 	BeforeEach(func() {

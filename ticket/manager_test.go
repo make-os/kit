@@ -23,7 +23,7 @@ import (
 var _ = Describe("Manager", func() {
 	var err error
 	var appDB, stateTreeDB storage.Engine
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var mgr *Manager
 	var logic *l.Logic
 	var ctrl *gomock.Controller

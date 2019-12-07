@@ -25,7 +25,7 @@ import (
 
 var _ = Describe("Validation", func() {
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var repo types.BareRepo
 	var path string
 	var gpgKeyID string

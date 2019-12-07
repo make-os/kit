@@ -17,7 +17,7 @@ import (
 
 var _ = Describe("PushHook", func() {
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var path string
 	var repo types.BareRepo
 	var repoMgr *Manager

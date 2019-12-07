@@ -14,7 +14,7 @@ import (
 
 var _ = Describe("App", func() {
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var repoMgr *Manager
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects

@@ -15,7 +15,7 @@ import (
 // and modifying different type of state.
 type Logic struct {
 	// cfg is the application's config
-	cfg *config.EngineConfig
+	cfg *config.AppConfig
 
 	// _db is the db handle for instantly committed database operations.
 	// Use this to store records that should be be run in a transaction.
@@ -68,7 +68,7 @@ type Logic struct {
 // New creates an instance of Logic
 // PANICS: If unable to load state tree
 // PANICS: when drand initialization fails
-func New(db storage.Engine, stateTreeDB storage.Engine, cfg *config.EngineConfig) *Logic {
+func New(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *Logic {
 	dbTx := db.NewTx(true, true)
 	l := newLogicWithTx(dbTx, stateTreeDB.NewTx(true, true), cfg)
 	l._db = db
@@ -79,13 +79,13 @@ func New(db storage.Engine, stateTreeDB storage.Engine, cfg *config.EngineConfig
 // all sub-logic providers and keepers.
 // PANICS: If unable to load state tree
 // PANICS: when drand initialization fails
-func NewAtomic(db storage.Engine, stateTreeDB storage.Engine, cfg *config.EngineConfig) *Logic {
+func NewAtomic(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *Logic {
 	l := newLogicWithTx(db.NewTx(false, false), stateTreeDB.NewTx(true, true), cfg)
 	l._db = db
 	return l
 }
 
-func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.EngineConfig) *Logic {
+func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logic {
 
 	// Load the state tree
 	dbAdapter := storage.NewTMDBAdapter(stateTreeDBTx)

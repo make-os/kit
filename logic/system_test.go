@@ -24,7 +24,7 @@ import (
 var _ = Describe("System", func() {
 	var appDB, stateTreeDB storage.Engine
 	var err error
-	var cfg *config.EngineConfig
+	var cfg *config.AppConfig
 	var logic *Logic
 	var sysLogic *System
 	var ctrl *gomock.Controller

@@ -19,7 +19,7 @@ import (
 
 // GPGModule provides gpg key management functionality
 type GPGModule struct {
-	cfg     *config.EngineConfig
+	cfg     *config.AppConfig
 	vm      *otto.Otto
 	service types.Service
 	logic   types.Logic
@@ -27,7 +27,7 @@ type GPGModule struct {
 
 // NewGPGModule creates an instance of GPGModule
 func NewGPGModule(
-	cfg *config.EngineConfig,
+	cfg *config.AppConfig,
 	vm *otto.Otto,
 	service types.Service,
 	logic types.Logic) *GPGModule {
