@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -24,6 +25,7 @@ import (
 const (
 	ServiceReceivePack = "receive-pack"
 	ServiceUploadPack  = "upload-pack"
+	RepoObjectModule   = "repo-object"
 )
 
 var services = [][]interface{}{
@@ -55,10 +57,11 @@ type Manager struct {
 	logic           types.Logic           // logic is the application logic provider
 	nodeKey         *crypto.Key           // the node's private key for signing transactions
 	pgpPubKeyGetter types.PGPPubKeyGetter // finds and returns PGP public key
+	dht             types.DHT             // The dht service
 }
 
 // NewManager creates an instance of Manager
-func NewManager(cfg *config.AppConfig, addr string, logic types.Logic) *Manager {
+func NewManager(cfg *config.AppConfig, addr string, logic types.Logic, dht types.DHT) *Manager {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
@@ -79,6 +82,7 @@ func NewManager(cfg *config.AppConfig, addr string, logic types.Logic) *Manager 
 		pool:        NewPushPool(params.PushPoolCap),
 		logic:       logic,
 		nodeKey:     key,
+		dht:         dht,
 	}
 	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
 
@@ -127,6 +131,11 @@ func (m *Manager) GetNodeKey() *crypto.Key {
 // GetPushPool implements RepositoryManager
 func (m *Manager) GetPushPool() types.PushPool {
 	return m.pool
+}
+
+// GetDHT returns the dht service
+func (m *Manager) GetDHT() types.DHT {
+	return m.dht
 }
 
 // TODO: Authorization
@@ -267,6 +276,7 @@ func (m *Manager) getRepoState(repo types.BareRepo, options ...types.KVOption) t
 			}
 
 			// If a ref match is set, ignore a reference whose name does not match
+
 			if refMatch != "" && ref.Name().String() != refMatch {
 				return nil
 			}
@@ -295,6 +305,27 @@ func (m *Manager) Revert(repo types.BareRepo, prevState types.BareRepoState,
 // Wait can be used by the caller to wait till the server terminates
 func (m *Manager) Wait() {
 	m.wg.Wait()
+}
+
+// FindObject implements dht.ObjectFinder
+func (m *Manager) FindObject(key []byte) ([]byte, error) {
+
+	repoName, objHash, err := ParseRepoObjectDHTKey(string(key))
+	if err != nil {
+		return nil, fmt.Errorf("invalid repo object key")
+	}
+
+	if len(objHash) != 40 {
+		return nil, fmt.Errorf("invalid object hash")
+	}
+
+	objPath := filepath.Join(m.rootDir, repoName, "objects", objHash[:2], objHash[2:])
+	bz, err := ioutil.ReadFile(objPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read object")
+	}
+
+	return bz, nil
 }
 
 // Stop shutsdown the server

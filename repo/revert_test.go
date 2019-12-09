@@ -16,6 +16,7 @@ import (
 	"github.com/makeos/mosdef/testutil"
 	"github.com/makeos/mosdef/testutil/mockutil"
 	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/types/mocks"
 	"github.com/makeos/mosdef/util"
 )
 
@@ -29,6 +30,7 @@ var _ = Describe("Revert", func() {
 	var path string
 	var ctrl *gomock.Controller
 	var mockLogic *mockutil.MockObjects
+	var mockDHT *mocks.MockDHT
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -42,7 +44,8 @@ var _ = Describe("Revert", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = mockutil.MockLogic(ctrl)
 		port, _ := freeport.GetFreePort()
-		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic)
+		mockDHT = mocks.NewMockDHT(ctrl)
+		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic, mockDHT)
 		repo, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})

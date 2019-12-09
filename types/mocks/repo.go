@@ -646,6 +646,20 @@ func (mr *MockRepoManagerMockRecorder) SetPGPPubKeyGetter(pkGetter interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPGPPubKeyGetter", reflect.TypeOf((*MockRepoManager)(nil).SetPGPPubKeyGetter), pkGetter)
 }
 
+// GetDHT mocks base method
+func (m *MockRepoManager) GetDHT() types.DHT {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDHT")
+	ret0, _ := ret[0].(types.DHT)
+	return ret0
+}
+
+// GetDHT indicates an expected call of GetDHT
+func (mr *MockRepoManagerMockRecorder) GetDHT() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDHT", reflect.TypeOf((*MockRepoManager)(nil).GetDHT))
+}
+
 // MockPushPool is a mock of PushPool interface
 type MockPushPool struct {
 	ctrl     *gomock.Controller

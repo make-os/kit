@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/golang/mock/gomock"
 	"github.com/phayes/freeport"
@@ -14,6 +15,7 @@ import (
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/testutil"
 	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/types/mocks"
 	"github.com/makeos/mosdef/util"
 )
 
@@ -21,10 +23,11 @@ var _ = Describe("Manager", func() {
 	var err error
 	var cfg *config.AppConfig
 	var repoMgr *Manager
-	var path string
+	var path, repoName string
 	var repo types.BareRepo
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
+	var mockDHT *mocks.MockDHT
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -33,11 +36,12 @@ var _ = Describe("Manager", func() {
 		port, _ := freeport.GetFreePort()
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = testutil.MockLogic(ctrl)
-		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic)
+		mockDHT = mocks.NewMockDHT(ctrl)
+		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic, mockDHT)
 	})
 
 	BeforeEach(func() {
-		repoName := util.RandString(5)
+		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
 		repo, err = getRepo(path)
@@ -136,6 +140,32 @@ var _ = Describe("Manager", func() {
 				st, err := repoMgr.GetRepoState(repo, matchOpt("refs/tags/tag2"))
 				Expect(err).To(BeNil())
 				Expect(st.GetReferences().Len()).To(Equal(int64(1)))
+			})
+		})
+	})
+
+	Describe(".FindObject", func() {
+		When("key is not valid", func() {
+			It("should return err", func() {
+				_, err := repoMgr.FindObject([]byte("invalid"))
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("invalid repo object key"))
+			})
+		})
+
+		When("key includes an object hash with unexpected length", func() {
+			It("should return err", func() {
+				_, err := repoMgr.FindObject([]byte("repo/object_hash"))
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("invalid object hash"))
+			})
+		})
+
+		When("target object does not exist", func() {
+			It("should return err", func() {
+				_, err := repoMgr.FindObject([]byte("repo/" + strings.Repeat("0", 40)))
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("failed to read object"))
 			})
 		})
 	})

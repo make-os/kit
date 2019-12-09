@@ -199,8 +199,8 @@ func (p *PrivKey) Sign(data []byte) ([]byte, error) {
 	return p.privKey.Sign(data)
 }
 
-// Wrapped returns the wrapped crypto.PrivKey
-func (p *PrivKey) Wrapped() crypto.PrivKey {
+// Key returns the wrapped crypto.PrivKey
+func (p *PrivKey) Key() crypto.PrivKey {
 	return p.privKey
 }
 

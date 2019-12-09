@@ -3,6 +3,7 @@ package jsmodules
 import (
 	"context"
 	"fmt"
+	"github.com/makeos/mosdef/repo"
 
 	"github.com/makeos/mosdef/config"
 
@@ -50,6 +51,11 @@ func (m *DHTModule) namespacedFuncs() []*types.JSModuleFunc {
 			Name:        "getProviders",
 			Value:       m.getProviders,
 			Description: "Get providers for a given key",
+		},
+		&types.JSModuleFunc{
+			Name:        "getRepoObject",
+			Value:       m.getRepoObject,
+			Description: "Find and return a repo object",
 		},
 	}
 }
@@ -124,4 +130,17 @@ func (m *DHTModule) getProviders(key string) (res []map[string]interface{}) {
 		})
 	}
 	return
+}
+
+// getRepoObject finds a repository object from a provider
+func (m *DHTModule) getRepoObject(objURI string) []byte {
+	bz, err := m.dht.GetObject(context.Background(), &types.DHTObjectQuery{
+		Module:    repo.RepoObjectModule,
+		ObjectKey: []byte(objURI),
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	return bz
 }

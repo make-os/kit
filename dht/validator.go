@@ -1,6 +1,8 @@
 package dht
 
-import "errors"
+import (
+	"errors"
+)
 
 type validator struct {
 }

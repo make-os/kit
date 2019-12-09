@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"github.com/makeos/mosdef/types/mocks"
 	"os"
 	"path/filepath"
 
@@ -18,6 +19,7 @@ var _ = Describe("App", func() {
 	var repoMgr *Manager
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
+	var mockDHT *mocks.MockDHT
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -25,7 +27,8 @@ var _ = Describe("App", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = testutil.MockLogic(ctrl)
-		repoMgr = NewManager(cfg, ":45000", mockLogic.Logic)
+		mockDHT = mocks.NewMockDHT(ctrl)
+		repoMgr = NewManager(cfg, ":45000", mockLogic.Logic, mockDHT)
 	})
 
 	AfterEach(func() {

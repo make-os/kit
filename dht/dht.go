@@ -3,6 +3,7 @@ package dht
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"time"
 
@@ -16,7 +17,9 @@ import (
 	libp2p "github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peerstore"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	dhtopts "github.com/libp2p/go-libp2p-kad-dht/opts"
 	"github.com/makeos/mosdef/config"
@@ -25,6 +28,12 @@ import (
 	"github.com/makeos/mosdef/util/logger"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
+)
+
+// Errors
+var (
+	ErrObjNotFound        = fmt.Errorf("object not found")
+	ErrInvalidObjIDFormat = fmt.Errorf("invalid object id format")
 )
 
 // DHTReactor is the channel id for the reactor
@@ -39,10 +48,16 @@ type DHT struct {
 	dht            *dht.IpfsDHT
 	log            logger.Logger
 	connectedPeers *lru.Cache
+	objectFinders  map[string]types.ObjectFinder
+	receiveErr     error // holds Receive() error (for testing)
 }
 
 // New creates a new DHT service
-func New(ctx context.Context, cfg *config.AppConfig, key crypto.PrivKey, addr string) (*DHT, error) {
+func New(
+	ctx context.Context,
+	cfg *config.AppConfig,
+	key crypto.PrivKey,
+	addr string) (*DHT, error) {
 
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -61,7 +76,9 @@ func New(ctx context.Context, cfg *config.AppConfig, key crypto.PrivKey, addr st
 		return nil, err
 	}
 
-	ipfsDht, err := dht.New(ctx, h, dhtopts.Validator(validator{}), dhtopts.Datastore(ds))
+	ipfsDht, err := dht.New(ctx, h,
+		dhtopts.Validator(validator{}),
+		dhtopts.Datastore(ds))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to initialize dht")
 	}
@@ -70,16 +87,24 @@ func New(ctx context.Context, cfg *config.AppConfig, key crypto.PrivKey, addr st
 	log.Info("DHT service has started", "Address", h.Addrs()[0].String())
 
 	dht := &DHT{
-		host: h,
-		dht:  ipfsDht,
-		cfg:  cfg,
-		log:  log,
+		host:          h,
+		dht:           ipfsDht,
+		cfg:           cfg,
+		log:           log,
+		objectFinders: make(map[string]types.ObjectFinder),
 	}
+
+	h.SetStreamHandler("/fetch/1", dht.handleFetch)
 
 	dht.BaseReactor = *p2p.NewBaseReactor("Reactor", dht)
 	dht.connectedPeers, err = lru.New(100)
 
 	return dht, err
+}
+
+// RegisterObjFinder registers a finder to handle module-targetted find operations
+func (dht *DHT) RegisterObjFinder(module string, finder types.ObjectFinder) {
+	dht.objectFinders[module] = finder
 }
 
 // connect connects the host to a remote dht peer using the given DHT info
@@ -89,7 +114,8 @@ func (dht *DHT) connect(remotePeerDHTInfo *types.DHTInfo, p p2p.Peer) error {
 
 	var err error
 	addrInfo := peer.AddrInfo{}
-	addr, _ := ma.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%s", remotePeerDHTInfo.Address, remotePeerDHTInfo.Port))
+	addr, _ := ma.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%s",
+		remotePeerDHTInfo.Address, remotePeerDHTInfo.Port))
 	addrInfo.Addrs = append(addrInfo.Addrs, addr)
 	addrInfo.ID, err = peer.IDB58Decode(remotePeerDHTInfo.ID)
 	if err != nil {
@@ -98,6 +124,7 @@ func (dht *DHT) connect(remotePeerDHTInfo *types.DHTInfo, p p2p.Peer) error {
 
 	if err := dht.host.Connect(ctx, addrInfo); err != nil {
 		dht.log.Error("failed to connect to peer", "Err", err.Error())
+		return errors.Wrap(err, "failed to connect")
 	}
 
 	// Add to the connected peers index the tendermint ID of the remote peer
@@ -112,14 +139,15 @@ func (dht *DHT) connect(remotePeerDHTInfo *types.DHTInfo, p p2p.Peer) error {
 	return nil
 }
 
-// AddPeer is called when a peer connects to the switch
+// AddPeer implements Reactor. It is called when a new peer connects to the
+// switch. We respond by requesting the peer to send its dht info
 func (dht *DHT) AddPeer(peer p2p.Peer) {
 	dht.requestDHTInfo(peer)
 }
 
-// RemovePeer is called when a peer disconnects from the switch.
-// We respond by checking if the peer is dht node we are connected to and then
-// disconnect from it
+// RemovePeer implements Reactor. It is called when a peer disconnects from the
+// switch. We respond by checking if the peer is dht node we are connected to
+// and then disconnect from it
 func (dht *DHT) RemovePeer(tmPeer p2p.Peer, reason interface{}) {
 
 	dhtPeerID, ok := dht.connectedPeers.Peek(tmPeer.ID())
@@ -173,9 +201,10 @@ func (dht *DHT) requestDHTInfo(p p2p.Peer) error {
 
 	if p.Send(DHTReactor, types.BareDHTInfo().Bytes()) {
 		dht.log.Debug("Requested DHTInfo information from peer", "PeerID", p.ID())
+		return nil
 	}
 
-	return nil
+	return fmt.Errorf("failed to send request")
 }
 
 // GetChannels implements Reactor.
@@ -190,6 +219,7 @@ func (dht *DHT) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 
 	var dhtInfo types.DHTInfo
 	if err := util.BytesToObject(msgBytes, &dhtInfo); err != nil {
+		dht.receiveErr = errors.Wrap(err, "failed to decode message")
 		dht.log.Error("failed to decoded message to types.DHTInfo")
 		return
 	}
@@ -198,6 +228,7 @@ func (dht *DHT) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 	if dhtInfo.IsEmpty() {
 		host, port, err := net.SplitHostPort(dht.cfg.DHT.Address)
 		if err != nil {
+			dht.receiveErr = errors.Wrap(err, "failed to parse local peer dht address")
 			dht.log.Error("failed parse dht address")
 			return
 		}
@@ -210,6 +241,8 @@ func (dht *DHT) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 		if peer.Send(DHTReactor, info.Bytes()) {
 			dht.log.Debug("Sent DHT information to peer", "PeerID", peer.ID())
 		}
+
+		dht.receiveErr = fmt.Errorf("failed to send DHT Info")
 		return
 	}
 
@@ -255,4 +288,111 @@ func (dht *DHT) Close() error {
 		return dht.host.Close()
 	}
 	return nil
+}
+
+// fetchValue requests sends a query to a peer
+func (dht *DHT) fetchValue(
+	ctx context.Context,
+	query *types.DHTObjectQuery,
+	peer peer.AddrInfo) ([]byte, error) {
+
+	if len(peer.Addrs) == 0 {
+		return nil, fmt.Errorf("no known provider")
+	}
+
+	dht.host.Peerstore().AddAddr(peer.ID, peer.Addrs[0], peerstore.TempAddrTTL)
+	str, err := dht.host.NewStream(ctx, peer.ID, "/fetch/1")
+	if err != nil {
+		return nil, err
+	}
+	defer str.Close()
+
+	_, err = str.Write(query.Bytes())
+	if err != nil {
+		return nil, err
+	}
+
+	val, err := ioutil.ReadAll(str)
+	if err != nil {
+		return nil, err
+	}
+
+	return val, nil
+}
+
+// GetObject returns an object from a provider
+func (dht *DHT) GetObject(
+	ctx context.Context,
+	query *types.DHTObjectQuery) (obj []byte, err error) {
+
+	addrs, err := dht.GetProviders(ctx, query.ObjectKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get providers")
+	}
+
+	err = ErrObjNotFound
+	for i := 0; i < len(addrs); i++ {
+		addr := addrs[i]
+
+		// If this address matches the local host, we should get the object locally
+		if addr.ID.String() == dht.host.ID().String() {
+			finder := dht.objectFinders[query.Module]
+			if finder == nil {
+				return nil, fmt.Errorf("finder for module `%s` not registered", query.Module)
+			}
+			obj, err = finder.FindObject(query.ObjectKey)
+			if err != nil {
+				err = errors.Wrap(err, "finder error")
+				continue
+			} else if obj == nil {
+				err = ErrObjNotFound
+				continue
+			}
+			return
+		}
+
+		obj, err = dht.fetchValue(ctx, query, addr)
+		if err != nil {
+			continue
+		}
+
+		return
+	}
+
+	return nil, err
+}
+
+// handleFetch processes incoming fetch requests
+func (dht *DHT) handleFetch(s network.Stream) {
+	defer s.Close()
+
+	bz := make([]byte, 256)
+	if _, err := s.Read(bz); err != nil {
+		dht.log.Error("failed to read query", "Err", err.Error())
+		return
+	}
+
+	var query types.DHTObjectQuery
+	if err := util.BytesToObject(bz, &query); err != nil {
+		dht.log.Error("failed to decode query", "Err", err.Error())
+		return
+	}
+
+	finder := dht.objectFinders[query.Module]
+	if finder == nil {
+		msg := fmt.Sprintf("finder for module `%s` not registered", query.Module)
+		dht.log.Error("failed to process query", "Err", msg)
+		return
+	}
+
+	objBz, err := finder.FindObject(query.ObjectKey)
+	if err != nil {
+		dht.log.Error("failed finder execution", "Err", err.Error())
+		return
+	}
+
+	if _, err := s.Write(objBz); err != nil {
+		dht.log.Error("failed to write back find result", "Err", err.Error())
+		return
+	}
 }

@@ -146,6 +146,9 @@ type RepoManager interface {
 
 	// SetPGPPubKeyGetter sets the PGP public key query function
 	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
+
+	// GetDHT returns the dht service
+	GetDHT() DHT
 }
 
 // PushPool represents a pool for holding and ordering git push transactions

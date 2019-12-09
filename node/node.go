@@ -138,9 +138,19 @@ func (n *Node) Start() error {
 	}
 	n.logic.SetTicketManager(n.ticketMgr)
 
+	// Create DHT reactor and add it to the switch
+	key, _ := n.cfg.G().PrivVal.GetKey()
+	n.dht, err = dht.New(
+		context.Background(),
+		n.cfg, key.PrivKey().Key(),
+		n.cfg.DHT.Address)
+	if err != nil {
+		return err
+	}
+
 	// Create repository manager and pass it to logic
-	rm := repo.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic)
-	n.logic.SetRepoManager(rm)
+	repoMgr := repo.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht)
+	n.logic.SetRepoManager(repoMgr)
 
 	// Create the ABCI app and wrap with a ClientCreator
 	app := NewApp(n.cfg, n.db, n.logic, n.ticketMgr)
@@ -171,6 +181,9 @@ func (n *Node) Start() error {
 		return errors.Wrap(err, "failed to fully create node")
 	}
 
+	// Add the DHT to the switch
+	tmNode.Switch().AddReactor("DHT", n.dht.(*dht.DHT))
+
 	// Pass the proxy app to the mempool
 	memp.SetProxyApp(tmNode.ProxyApp().Mempool())
 
@@ -182,22 +195,17 @@ func (n *Node) Start() error {
 	n.mempoolReactor = mempR
 	n.service = services.New(n.tmrpc, n.logic, mempR)
 
-	// Create DHT reactor
-	key, _ := n.cfg.G().PrivVal.GetKey()
-	n.dht, err = dht.New(context.Background(), n.cfg, key.PrivKey().Wrapped(), n.cfg.DHT.Address)
-	if err != nil {
-		return err
-	}
-	tmNode.Switch().AddReactor("DHT", n.dht.(*dht.DHT))
+	// Register some object finder on the dht
+	n.dht.RegisterObjFinder(repo.RepoObjectModule, repoMgr)
 
 	// Start repository server
-	if err := rm.Start(); err != nil {
+	if err := repoMgr.Start(); err != nil {
 		n.Stop()
 		return errors.Wrap(err, "failed to start repo manager")
 	}
 
 	// Pass repo manager to logic manager
-	n.logic.SetRepoManager(rm)
+	n.logic.SetRepoManager(repoMgr)
 
 	// Start tendermint
 	if err := n.tm.Start(); err != nil {

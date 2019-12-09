@@ -12,6 +12,7 @@ import (
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/testutil"
 	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/types/mocks"
 	"github.com/makeos/mosdef/util"
 )
 
@@ -22,6 +23,7 @@ var _ = Describe("PushHook", func() {
 	var repo types.BareRepo
 	var repoMgr *Manager
 	var hook *PushHook
+	var mockDHT *mocks.MockDHT
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -39,7 +41,8 @@ var _ = Describe("PushHook", func() {
 		port, _ := freeport.GetFreePort()
 		ctrl := gomock.NewController(GinkgoT())
 		mockLogic := testutil.MockLogic(ctrl)
-		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic)
+		mockDHT = mocks.NewMockDHT(ctrl)
+		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic, mockDHT)
 
 		hook = newPushHook(repo, repoMgr)
 	})

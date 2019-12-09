@@ -1,11 +1,13 @@
 package repo
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
+	"github.com/makeos/mosdef/util/logger"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 )
@@ -17,13 +19,15 @@ type PushHook struct {
 	repo     types.BareRepo
 	rMgr     types.RepoManager
 	oldState types.BareRepoState
+	log      logger.Logger
 }
 
 // newPushHook returns an instance of Hook
-func newPushHook(repo types.BareRepo, rMgr types.RepoManager) *PushHook {
+func newPushHook(repo types.BareRepo, rMgr types.RepoManager, log logger.Logger) *PushHook {
 	return &PushHook{
 		repo: repo,
 		rMgr: rMgr,
+		log:  log.Module("push-hook"),
 	}
 }
 
@@ -135,6 +139,17 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 			return errors.Wrap(errs[0], "failed to remove packed objects from ref")
 		}
 		return err
+	}
+
+	// Announce the objects to the dht
+	for _, obj := range pr.objects {
+		dhtKey := MakeRepoObjectDHTKey(h.repo.GetName(), obj.Hash.String())
+		ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
+		defer c()
+		if err := h.rMgr.GetDHT().Annonce(ctx, []byte(dhtKey)); err != nil {
+			h.log.Error("unable to announce git object", "Err", err)
+			continue
+		}
 	}
 
 	return nil

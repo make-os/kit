@@ -28,7 +28,6 @@ import (
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/testutil/mockutil"
 )
 
 func genFilePV(bz []byte) *privval.FilePV {
@@ -51,7 +50,7 @@ var _ = Describe("App", func() {
 	var ticketmgr *ticket.Manager
 	var ctrl *gomock.Controller
 	var sender = crypto.NewKeyFromIntSeed(1)
-	var mockLogic *mockutil.MockObjects
+	var mockLogic *testutil.MockObjects
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -63,7 +62,7 @@ var _ = Describe("App", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockLogic = mockutil.MockLogic(ctrl)
+		mockLogic = testutil.MockLogic(ctrl)
 	})
 
 	AfterEach(func() {
