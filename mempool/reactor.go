@@ -35,8 +35,8 @@ const (
 
 // PoolSizeInfo describes the transaction byte size an count of the tx pool
 type PoolSizeInfo struct {
-	TotalTxSize int64
-	TxCount     int
+	TotalTxSize int64 `json:"totalTxSize"`
+	TxCount     int   `json:"txCount"`
 }
 
 // Reactor handles mempool tx broadcasting amongst peers.
