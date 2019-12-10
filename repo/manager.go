@@ -212,7 +212,7 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 		gitBinPath: m.gitBinPath,
 	}
 
-	srvParams.hook = newPushHook(srvParams.repo, m)
+	srvParams.hook = newPushHook(srvParams.repo, m, m.log)
 
 	for _, s := range services {
 		srvPattern := s[0].(string)
