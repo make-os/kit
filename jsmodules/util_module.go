@@ -36,8 +36,8 @@ func (m *UtilModule) globals() []*types.JSModuleFunc {
 			Description: "Execute javascript code represented as a string",
 		},
 		&types.JSModuleFunc{
-			Name:        "evalScript",
-			Value:       m.evalScript,
+			Name:        "evalFile",
+			Value:       m.evalFile,
 			Description: "Execute javascript code stored in a file",
 		},
 		&types.JSModuleFunc{
@@ -67,8 +67,8 @@ func (m *UtilModule) funcs() []*types.JSModuleFunc {
 			Description: "Execute javascript code represented as a string",
 		},
 		&types.JSModuleFunc{
-			Name:        "evalScript",
-			Value:       m.evalScript,
+			Name:        "evalFile",
+			Value:       m.evalFile,
 			Description: "Execute javascript code stored in a file",
 		},
 		&types.JSModuleFunc{
@@ -125,19 +125,21 @@ func (m *UtilModule) prettyPrint(values ...interface{}) {
 }
 
 // eval executes javascript represent as string
-func (m *UtilModule) eval(src interface{}) {
+func (m *UtilModule) eval(src interface{}) interface{} {
 	script, err := m.vm.Compile("", src)
 	if err != nil {
 		panic(m.vm.MakeCustomError("ExecError", err.Error()))
 	}
 
-	_, err = m.vm.Run(script)
+	out, err := m.vm.Run(script)
 	if err != nil {
 		panic(m.vm.MakeCustomError("ExecError", err.Error()))
 	}
+
+	return out
 }
 
-func (m *UtilModule) evalScript(file string) {
+func (m *UtilModule) evalFile(file string) interface{} {
 
 	fullPath, err := filepath.Abs(file)
 	if err != nil {
@@ -149,7 +151,7 @@ func (m *UtilModule) evalScript(file string) {
 		panic(m.vm.MakeCustomError("ExecError", err.Error()))
 	}
 
-	m.eval(content)
+	return m.eval(content)
 }
 
 func (m *UtilModule) readFile(filename string) interface{} {
