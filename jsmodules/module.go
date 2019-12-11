@@ -15,7 +15,7 @@ type Module struct {
 	cfg       *config.AppConfig
 	service   types.Service
 	logic     types.Logic
-	txReactor *mempool.Reactor
+	mempoolReactor *mempool.Reactor
 	acctmgr   *accountmgr.AccountManager
 	ticketmgr types.TicketManager
 	dht       types.DHT
@@ -27,7 +27,7 @@ func NewModule(
 	acctmgr *accountmgr.AccountManager,
 	service types.Service,
 	logic types.Logic,
-	txReactor *mempool.Reactor,
+	mempoolReactor *mempool.Reactor,
 	ticketmgr types.TicketManager,
 	dht types.DHT) *Module {
 	return &Module{
@@ -35,7 +35,7 @@ func NewModule(
 		acctmgr:   acctmgr,
 		service:   service,
 		logic:     logic,
-		txReactor: txReactor,
+		mempoolReactor: mempoolReactor,
 		ticketmgr: ticketmgr,
 		dht:       dht,
 	}
@@ -47,7 +47,7 @@ func (m *Module) Configure(vm *otto.Otto) []prompt.Suggest {
 	sugs := []prompt.Suggest{}
 	sugs = append(sugs, NewTxModule(vm, nodeSrv, m.logic).Configure()...)
 	sugs = append(sugs, NewChainModule(vm, nodeSrv, m.logic).Configure()...)
-	sugs = append(sugs, NewPoolModule(vm, m.txReactor).Configure()...)
+	sugs = append(sugs, NewPoolModule(vm, m.mempoolReactor).Configure()...)
 	sugs = append(sugs, NewAccountModule(m.cfg, vm, m.acctmgr, nodeSrv, m.logic).Configure()...)
 	sugs = append(sugs, NewGPGModule(m.cfg, vm, nodeSrv, m.logic).Configure()...)
 	sugs = append(sugs, NewUtilModule(vm).Configure()...)

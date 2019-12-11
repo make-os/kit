@@ -13,13 +13,13 @@ import (
 
 // PoolModule provides access to the transaction pool
 type PoolModule struct {
-	vm        *otto.Otto
-	txReactor *mempool.Reactor
+	vm      *otto.Otto
+	reactor *mempool.Reactor
 }
 
 // NewPoolModule creates an instance of PoolModule
-func NewPoolModule(vm *otto.Otto, txReactor *mempool.Reactor) *PoolModule {
-	return &PoolModule{vm: vm, txReactor: txReactor}
+func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor) *PoolModule {
+	return &PoolModule{vm: vm, reactor: reactor}
 }
 
 func (m *PoolModule) globals() []*types.JSModuleFunc {
@@ -70,13 +70,13 @@ func (m *PoolModule) Configure() []prompt.Suggest {
 
 // getSize returns the size of the pool
 func (m *PoolModule) getSize() interface{} {
-	return util.EncodeForJS(m.txReactor.GetPoolSize())
+	return util.EncodeForJS(m.reactor.GetPoolSize())
 }
 
 // getTop returns all the transactions in the pool
 func (m *PoolModule) getTop(n int) interface{} {
 	var res = []interface{}{}
-	for _, tx := range m.txReactor.GetTop(n) {
+	for _, tx := range m.reactor.GetTop(n) {
 		res = append(res, util.EncodeForJS(tx.ToMap()))
 	}
 	return res
