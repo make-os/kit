@@ -30,6 +30,9 @@ type NodeConfig struct {
 
 	// Extensions contains list of extensions to run on startup
 	Extensions []string `json:"exts" mapstructure:"exts"`
+
+	// ExtensionsArgs constains arguments for extensions
+	ExtensionsArgs map[string]string `json:"extsargs" mapstructure:"extsargs"`
 }
 
 // VersionInfo describes the clients

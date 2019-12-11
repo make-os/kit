@@ -121,7 +121,7 @@ func (m *Manager) Configure() []prompt.Suggest {
 	return suggestions
 }
 
-func (m *Manager) prepare(name string, args ...map[string]interface{}) *ExtensionControl {
+func (m *Manager) prepare(name string, args ...map[string]string) *ExtensionControl {
 
 	var extPath = filepath.Join(m.cfg.GetExtensionDir(), name)
 	if filepath.Ext(name) == "" {
@@ -133,7 +133,7 @@ func (m *Manager) prepare(name string, args ...map[string]interface{}) *Extensio
 		panic(fmt.Errorf("failed to read extension ('%s'), ensure the extension exists", name))
 	}
 
-	var argsMap map[string]interface{}
+	var argsMap map[string]string
 	if len(args) > 0 {
 		argsMap = args[0]
 	}
@@ -175,7 +175,7 @@ func (m *Manager) Installed() (extensions []string) {
 }
 
 // Load loads an extension
-func (m *Manager) Load(name string, args ...map[string]interface{}) map[string]interface{} {
+func (m *Manager) Load(name string, args ...map[string]string) map[string]interface{} {
 	ec := m.prepare(name, args...)
 	return map[string]interface{}{
 		"isRunning": ec.hasStopped,
@@ -199,7 +199,7 @@ func (m *Manager) Load(name string, args ...map[string]interface{}) map[string]i
 }
 
 // Run loads and starts an extension
-func (m *Manager) Run(name string, args ...map[string]interface{}) map[string]interface{} {
+func (m *Manager) Run(name string, args ...map[string]string) map[string]interface{} {
 	ec := m.prepare(name, args...)
 
 	if m.IsRunning(name) {
@@ -244,7 +244,7 @@ type ExtensionControl struct {
 	closed         bool
 	running        bool
 	script         []byte
-	args           map[string]interface{}
+	args           map[string]string
 }
 
 // stop stops the extension's runtime

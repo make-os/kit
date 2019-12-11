@@ -27,7 +27,6 @@ import (
 )
 
 func start(onStart func(n *node.Node)) {
-
 	log.Info("Starting node...", "NodeID", cfg.G().NodeKey.ID(), "DevMode", cfg.IsDev())
 
 	// Create the node and open the database
@@ -95,7 +94,10 @@ func setStartFlags(cmds ...*cobra.Command) {
 			"Set the repository manager listening address")
 		cmd.Flags().String("node.addpeer", "",
 			"Connect to one or more persistent node")
-		cmd.Flags().StringSlice("node.exts", []string{}, "Specify an extension to run on startup")
+		cmd.Flags().StringSlice("node.exts", []string{},
+			"Specify an extension to run on startup")
+		extArgsMap := map[string]string{}
+		cmd.Flags().StringToStringVar(&extArgsMap, "node.extsargs", map[string]string{}, "Specify arguments for extensions")
 
 		// Apply only to the active command
 		if os.Args[1] == cmd.Name() {
@@ -106,6 +108,7 @@ func setStartFlags(cmds ...*cobra.Command) {
 			viper.BindPFlag("repoman.address", cmd.Flags().Lookup("repoman.address"))
 			viper.BindPFlag("node.addpeer", cmd.Flags().Lookup("node.addpeer"))
 			viper.BindPFlag("node.exts", cmd.Flags().Lookup("node.exts"))
+			viper.Set("node.extsargs", &extArgsMap)
 		}
 	}
 

@@ -499,3 +499,26 @@ func (i *Interrupt) Close() {
 func (i *Interrupt) Wait() {
 	<-*i
 }
+
+// ParseExtArgs parses an extension arguments map.
+// It takes a map of the form:
+// 'extName.arg = value' and returns 'extName={arg=value...arg2=value2}'
+func ParseExtArgs(extArgs map[string]string) (extsArgs map[string]map[string]string, common map[string]string) {
+	extsArgs = make(map[string]map[string]string)
+	common = make(map[string]string)
+	for k, v := range extArgs {
+		if strings.Index(k, ".") == -1 {
+			common[k] = v
+			continue
+		}
+		kPart := strings.Split(k, ".")
+		argM, ok := extsArgs[kPart[0]]
+		if !ok {
+			extsArgs[kPart[0]] = map[string]string{}
+			argM = map[string]string{}
+		}
+		argM[kPart[1]] = v
+		extsArgs[kPart[0]] = argM
+	}
+	return
+}

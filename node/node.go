@@ -3,11 +3,13 @@ package node
 import (
 	"context"
 	"fmt"
-	jsm "github.com/makeos/mosdef/jsmodules"
-	"github.com/thoas/go-funk"
 	"net"
 	"net/url"
 	"os"
+
+	jsm "github.com/makeos/mosdef/jsmodules"
+	"github.com/makeos/mosdef/util"
+	"github.com/thoas/go-funk"
 
 	"github.com/makeos/mosdef/accountmgr"
 	"github.com/makeos/mosdef/dht"
@@ -224,8 +226,7 @@ func (n *Node) Start() error {
 	return nil
 }
 
-// initExtensionMgr initializes the extension manager and
-// starts requested extensions
+// initExtensionMgr initializes and starts the extension manager
 func (n *Node) initExtensionMgr() {
 
 	// Create extension manager
@@ -252,9 +253,20 @@ func (n *Node) initExtensionMgr() {
 		n.jsModule.ConfigureVM(vm)
 	}
 
-	// Run  startup extensions
+	// Parse the arguments and run extensions
+	args, common := util.ParseExtArgs(n.cfg.Node.ExtensionsArgs)
 	for _, name := range funk.UniqString(n.cfg.Node.Extensions) {
-		extMgr.Run(name)
+		args, ok := args[name]
+		if !ok {
+			args = common
+		} else if ok {
+			for k, v := range common {
+				if _, ok := args[k]; !ok {
+					args[k] = v
+				}
+			}
+		}
+		extMgr.Run(name, args)
 	}
 }
 

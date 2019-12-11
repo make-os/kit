@@ -498,4 +498,36 @@ var _ = Describe("Common", func() {
 			}))
 		})
 	})
+
+	Describe(".ParseExtArgs", func() {
+		It("case 1", func() {
+			extArgs := map[string]string{"e1.size": "200", "e2.phase": "start"}
+			res, common := ParseExtArgs(extArgs)
+			Expect(res).To(Equal(map[string]map[string]string{
+				"e1": map[string]string{"size": "200"},
+				"e2": map[string]string{"phase": "start"},
+			}))
+			Expect(common).To(BeEmpty())
+		})
+
+		It("case 2 - with a common argument", func() {
+			extArgs := map[string]string{"e1.size": "200", "e2.phase": "start", "env": "dev"}
+			res, common := ParseExtArgs(extArgs)
+			Expect(res).To(Equal(map[string]map[string]string{
+				"e1": map[string]string{"size": "200"},
+				"e2": map[string]string{"phase": "start"},
+			}))
+			Expect(common).To(Equal(map[string]string{"env": "dev"}))
+		})
+
+		It("case 3 - with a non-unique common argument ", func() {
+			extArgs := map[string]string{"e1.size": "200", "e2.phase": "start", "size": "100"}
+			res, common := ParseExtArgs(extArgs)
+			Expect(res).To(Equal(map[string]map[string]string{
+				"e1": map[string]string{"size": "200"},
+				"e2": map[string]string{"phase": "start"},
+			}))
+			Expect(common).To(Equal(map[string]string{"size": "100"}))
+		})
+	})
 })
