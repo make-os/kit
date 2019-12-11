@@ -97,12 +97,16 @@ func setStartFlags(cmds ...*cobra.Command) {
 			"Connect to one or more persistent node")
 		cmd.Flags().StringSlice("node.exts", []string{}, "Specify an extension to run on startup")
 
-		viper.BindPFlag("rpc.address", cmd.Flags().Lookup("rpc.address"))
-		viper.BindPFlag("node.address", cmd.Flags().Lookup("node.address"))
-		viper.BindPFlag("dht.address", cmd.Flags().Lookup("dht.address"))
-		viper.BindPFlag("rpc.tmaddress", cmd.Flags().Lookup("rpc.tmaddress"))
-		viper.BindPFlag("repoman.address", cmd.Flags().Lookup("repoman.address"))
-		viper.BindPFlag("node.addpeer", cmd.Flags().Lookup("node.addpeer"))
-		viper.BindPFlag("node.exts", cmd.Flags().Lookup("node.exts"))
+		// Apply only to the active command
+		if os.Args[1] == cmd.Name() {
+			viper.BindPFlag("rpc.address", cmd.Flags().Lookup("rpc.address"))
+			viper.BindPFlag("node.address", cmd.Flags().Lookup("node.address"))
+			viper.BindPFlag("dht.address", cmd.Flags().Lookup("dht.address"))
+			viper.BindPFlag("rpc.tmaddress", cmd.Flags().Lookup("rpc.tmaddress"))
+			viper.BindPFlag("repoman.address", cmd.Flags().Lookup("repoman.address"))
+			viper.BindPFlag("node.addpeer", cmd.Flags().Lookup("node.addpeer"))
+			viper.BindPFlag("node.exts", cmd.Flags().Lookup("node.exts"))
+		}
 	}
+
 }
