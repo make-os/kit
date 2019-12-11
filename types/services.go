@@ -22,7 +22,7 @@ type JSModuleFunc struct {
 // JSModule describes a mechanism for providing functionalities
 // accessible in the JS console environment.
 type JSModule interface {
-	Configure(vm *otto.Otto) []prompt.Suggest
+	ConfigureVM(vm *otto.Otto) []prompt.Suggest
 }
 
 // Service provides an interface for exposing functionalities.

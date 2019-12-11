@@ -27,6 +27,9 @@ type NodeConfig struct {
 
 	// GitBinPath is the path to the git executable
 	GitBinPath string `json:"gitbin" mapstructure:"gitbin"`
+
+	// Extensions contains list of extensions to run on startup
+	Extensions []string `json:"exts" mapstructure:"exts"`
 }
 
 // VersionInfo describes the clients

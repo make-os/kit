@@ -11,6 +11,7 @@
         "dhtopts",
         "drandmocks",
         "estx",
+        "exts",
         "fsrepo",
         "iavl",
         "icore",

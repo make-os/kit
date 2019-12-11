@@ -3,12 +3,17 @@ package node
 import (
 	"context"
 	"fmt"
+	jsm "github.com/makeos/mosdef/jsmodules"
+	"github.com/thoas/go-funk"
 	"net"
 	"net/url"
 	"os"
 
+	"github.com/makeos/mosdef/accountmgr"
 	"github.com/makeos/mosdef/dht"
+	"github.com/makeos/mosdef/extensions"
 	"github.com/makeos/mosdef/repo"
+	"github.com/robertkrimen/otto"
 
 	"github.com/tendermint/tendermint/node"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -58,6 +63,7 @@ type Node struct {
 	mempoolReactor *mempool.Reactor
 	ticketMgr      types.TicketManager
 	dht            types.DHT
+	jsModule       types.JSModule
 }
 
 // NewNode creates an instance of Node
@@ -154,7 +160,6 @@ func (n *Node) Start() error {
 
 	// Create the ABCI app and wrap with a ClientCreator
 	app := NewApp(n.cfg, n.db, n.logic, n.ticketMgr)
-	app.node = n
 	clientCreator := proxy.NewLocalClientCreator(app)
 
 	// Create custom mempool and set the epoch secret generator function
@@ -213,12 +218,59 @@ func (n *Node) Start() error {
 		return err
 	}
 
+	// Initialize extension manager and start extensions
+	n.initExtensionMgr()
+
 	return nil
+}
+
+// initExtensionMgr initializes the extension manager and
+// starts requested extensions
+func (n *Node) initExtensionMgr() {
+
+	// Create extension manager
+	vm := otto.New()
+	extMgr := extensions.NewManager(n.cfg, vm)
+
+	// Create the javascript module instance
+	n.jsModule = jsm.NewModule(
+		n.cfg,
+		accountmgr.New(n.cfg.AccountDir()),
+		n.GetService(),
+		n.GetLogic(),
+		n.GetTxReactor(),
+		n.GetTicketManager(),
+		n.GetDHT(),
+		extMgr,
+	)
+
+	// Set the js module to be the main module of the extension manager
+	extMgr.SetMainModule(n.jsModule)
+
+	// Configure the js module if we are not in console mode
+	if !n.ConsoleOn() {
+		n.jsModule.ConfigureVM(vm)
+	}
+
+	// Run  startup extensions
+	for _, name := range funk.UniqString(n.cfg.Node.Extensions) {
+		extMgr.Run(name)
+	}
 }
 
 // GetDB returns the database instance
 func (n *Node) GetDB() storage.Engine {
 	return n.db
+}
+
+// ConsoleOn checks whether the console is running
+func (n *Node) ConsoleOn() bool {
+	return os.Args[1] == "console"
+}
+
+// GetJSModule returns the javascript module instance
+func (n *Node) GetJSModule() types.JSModule {
+	return n.jsModule
 }
 
 // GetTicketManager returns the ticket manager

@@ -15,10 +15,8 @@
 package cmd
 
 import (
-	"github.com/makeos/mosdef/accountmgr"
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/console"
-	jsm "github.com/makeos/mosdef/jsmodules"
 	"github.com/makeos/mosdef/node"
 	"github.com/spf13/cobra"
 )
@@ -29,8 +27,6 @@ var consoleCmd = &cobra.Command{
 	Short: "Start an interactive javascript console mode and start the node",
 	Long:  `Start an interactive javascript console mode and start the node`,
 	Run: func(cmd *cobra.Command, args []string) {
-
-		acctmgr := accountmgr.New(cfg.AccountDir())
 
 		// Start the node and also start the console
 		// after the node has started
@@ -44,16 +40,8 @@ var consoleCmd = &cobra.Command{
 				n.Stop()
 			})
 
-			// Add modules
-			console.AddJSModules(jsm.NewModule(
-				cfg,
-				acctmgr,
-				n.GetService(),
-				n.GetLogic(),
-				n.GetTxReactor(),
-				n.GetTicketManager(),
-				n.GetDHT()),
-			)
+			// Add JS module
+			console.AddJSModules(n.GetJSModule())
 
 			// Run the console
 			go func() {

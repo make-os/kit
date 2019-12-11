@@ -130,7 +130,7 @@ func (c *Console) Prepare() error {
 
 	// Apply JS module
 	for _, jm := range c.jsModules {
-		c.suggestMgr.add(jm.Configure(c.executor.vm)...)
+		c.suggestMgr.add(jm.ConfigureVM(c.executor.vm)...)
 	}
 
 	c.suggestMgr.add(suggestions...)

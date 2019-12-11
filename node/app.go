@@ -35,7 +35,6 @@ type ticketInfo struct {
 // App implements tendermint ABCI interface to
 type App struct {
 	db                        storage.Engine
-	node                      types.CommonNode
 	logic                     types.AtomicLogic
 	cfg                       *config.AppConfig
 	validateTx                validators.ValidateTxFunc

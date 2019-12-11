@@ -95,6 +95,7 @@ func setStartFlags(cmds ...*cobra.Command) {
 			"Set the repository manager listening address")
 		cmd.Flags().String("node.addpeer", "",
 			"Connect to one or more persistent node")
+		cmd.Flags().StringSlice("node.exts", []string{}, "Specify an extension to run on startup")
 
 		viper.BindPFlag("rpc.address", cmd.Flags().Lookup("rpc.address"))
 		viper.BindPFlag("node.address", cmd.Flags().Lookup("node.address"))
@@ -102,5 +103,6 @@ func setStartFlags(cmds ...*cobra.Command) {
 		viper.BindPFlag("rpc.tmaddress", cmd.Flags().Lookup("rpc.tmaddress"))
 		viper.BindPFlag("repoman.address", cmd.Flags().Lookup("repoman.address"))
 		viper.BindPFlag("node.addpeer", cmd.Flags().Lookup("node.addpeer"))
+		viper.BindPFlag("node.exts", cmd.Flags().Lookup("node.exts"))
 	}
 }
