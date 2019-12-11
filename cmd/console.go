@@ -45,9 +45,14 @@ var consoleCmd = &cobra.Command{
 			})
 
 			// Add modules
-			console.AddJSModules(
-				jsm.NewModule(cfg, acctmgr, n.GetService(),
-					n.GetLogic(), n.GetTxReactor(), n.GetTicketManager(), n.GetDHT()),
+			console.AddJSModules(jsm.NewModule(
+				cfg,
+				acctmgr,
+				n.GetService(),
+				n.GetLogic(),
+				n.GetTxReactor(),
+				n.GetTicketManager(),
+				n.GetDHT()),
 			)
 
 			// Run the console

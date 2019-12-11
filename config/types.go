@@ -112,6 +112,9 @@ type AppConfig struct {
 	// repoDir is where repositories are stored
 	repoDir string
 
+	// extensionDir is where extensions are stored
+	extensionDir string
+
 	// consoleHistoryPath is the path to the file where console input
 	// history is stored.
 	consoleHistoryPath string
@@ -179,6 +182,11 @@ func (c *AppConfig) GetDBRootDir() string {
 // GetRepoRoot returns the repo root directory
 func (c *AppConfig) GetRepoRoot() string {
 	return c.repoDir
+}
+
+// GetExtensionDir returns the extension directory
+func (c *AppConfig) GetExtensionDir() string {
+	return c.extensionDir
 }
 
 // SetRepoRoot sets the repo root directory

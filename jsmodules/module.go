@@ -54,5 +54,6 @@ func (m *Module) Configure(vm *otto.Otto) []prompt.Suggest {
 	sugs = append(sugs, NewTicketModule(vm, nodeSrv, m.ticketmgr).Configure()...)
 	sugs = append(sugs, NewRepoModule(vm, nodeSrv, m.logic).Configure()...)
 	sugs = append(sugs, NewDHTModule(m.cfg, vm, m.dht).Configure()...)
+	sugs = append(sugs, NewExtentionModule(m.cfg, vm, m).Configure()...)
 	return sugs
 }

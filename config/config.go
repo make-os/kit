@@ -178,8 +178,9 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 	c.accountDir = path.Join(c.DataDir(), AccountDirName)
 	c.consoleHistoryPath = path.Join(c.DataDir(), ".console_history")
 	c.repoDir = path.Join(c.NetDataDir(), "repos")
+	c.extensionDir = path.Join(c.DataDir(), "extensions")
+	os.MkdirAll(c.extensionDir, 0700)
 
-	// Create network data directory
 	os.MkdirAll(c.NetDataDir(), 0700)
 	os.MkdirAll(path.Join(c.NetDataDir(), "data"), 0700)
 	os.MkdirAll(path.Join(c.NetDataDir(), "repos"), 0700)

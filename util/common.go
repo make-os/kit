@@ -388,6 +388,17 @@ func IsStructChanClosed(c <-chan struct{}) bool {
 	return false
 }
 
+// IsFuncChanClosed checks whether a function channel is closed
+func IsFuncChanClosed(c <-chan func()) bool {
+	select {
+	case <-c:
+		return true
+	default:
+	}
+
+	return false
+}
+
 // VMSet sets a value in the vm context only if it
 // has been set before.
 func VMSet(vm *otto.Otto, name string, value interface{}) interface{} {
