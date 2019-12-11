@@ -11,6 +11,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/makeos/mosdef/config"
 	"github.com/pkg/errors"
+	"github.com/thoas/go-funk"
 
 	"github.com/makeos/mosdef/util"
 
@@ -21,9 +22,10 @@ import (
 
 // ExtensionModule provides extension management capabilities
 type ExtensionModule struct {
-	cfg  *config.AppConfig
-	vm   *otto.Otto
-	main types.JSModule
+	cfg        *config.AppConfig
+	vm         *otto.Otto
+	main       types.JSModule
+	runningExt map[string]*ExtensionControl
 }
 
 // NewExtentionModule creates an instance of ExtensionModule
@@ -31,9 +33,10 @@ func NewExtentionModule(
 	cfg *config.AppConfig,
 	vm *otto.Otto, main types.JSModule) *ExtensionModule {
 	return &ExtensionModule{
-		cfg:  cfg,
-		vm:   vm,
-		main: main,
+		cfg:        cfg,
+		vm:         vm,
+		main:       main,
+		runningExt: make(map[string]*ExtensionControl),
 	}
 }
 
@@ -58,6 +61,21 @@ func (m *ExtensionModule) namespacedFuncs() []*types.JSModuleFunc {
 			Name:        "installed",
 			Value:       m.Installed,
 			Description: "Fetch all installed extensions",
+		},
+		&types.JSModuleFunc{
+			Name:        "running",
+			Value:       m.Running,
+			Description: "Fetch a list of running extensions",
+		},
+		&types.JSModuleFunc{
+			Name:        "isRunning",
+			Value:       m.IsRunning,
+			Description: "Check whether an extension is currently running",
+		},
+		&types.JSModuleFunc{
+			Name:        "stop",
+			Value:       m.Stop,
+			Description: "Stop a running extension",
 		},
 	}
 }
@@ -151,14 +169,21 @@ func (m *ExtensionModule) Installed() (extensions []string) {
 func (m *ExtensionModule) Load(name string, args ...map[string]interface{}) map[string]interface{} {
 	ec := m.prepare(name, args...)
 	return map[string]interface{}{
-		"stop":      ec.stop,
 		"isRunning": ec.hasStopped,
+		"stop": func() {
+			ec.stop()
+			delete(m.runningExt, name)
+		},
 		"run": func() {
 			if ec.closed {
 				panic(fmt.Errorf("stopped extension cannot be restarted"))
 			}
+			if m.IsRunning(name) {
+				panic(fmt.Errorf("an instance of the extension is currently running"))
+			}
 			if !ec.running {
 				ec.run()
+				m.runningExt[name] = ec
 			}
 		},
 	}
@@ -167,11 +192,40 @@ func (m *ExtensionModule) Load(name string, args ...map[string]interface{}) map[
 // Run loads and starts an extension
 func (m *ExtensionModule) Run(name string, args ...map[string]interface{}) map[string]interface{} {
 	ec := m.prepare(name, args...)
-	ec.run()
-	return map[string]interface{}{
-		"stop":      ec.stop,
-		"isRunning": ec.hasStopped,
+
+	if m.IsRunning(name) {
+		panic(fmt.Errorf("an instance of the extension is currently running"))
 	}
+
+	ec.run()
+	m.runningExt[name] = ec
+	return map[string]interface{}{
+		"isRunning": ec.hasStopped,
+		"stop": func() {
+			ec.stop()
+			delete(m.runningExt, name)
+		},
+	}
+}
+
+// Stop a running extension
+func (m *ExtensionModule) Stop(name string) {
+	if !m.IsRunning(name) {
+		panic(fmt.Errorf("no running extension named '%s'", name))
+	}
+	ec, _ := m.runningExt[name]
+	ec.stop()
+	delete(m.runningExt, name)
+}
+
+// Running returns a list of running extension
+func (m *ExtensionModule) Running() []string {
+	return funk.Keys(m.runningExt).([]string)
+}
+
+// IsRunning checks whether an extension is running
+func (m *ExtensionModule) IsRunning(name string) bool {
+	return m.runningExt[name] != nil
 }
 
 // ExtensionControl provides functionalities for controlling a loaded extension
