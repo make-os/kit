@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/makeos/mosdef/rpc"
+
 	jsm "github.com/makeos/mosdef/jsmodules"
 	"github.com/makeos/mosdef/util"
 	"github.com/thoas/go-funk"
@@ -66,6 +68,7 @@ type Node struct {
 	ticketMgr      types.TicketManager
 	dht            types.DHT
 	jsModule       types.JSModule
+	rpcServer      *rpc.Server
 }
 
 // NewNode creates an instance of Node
@@ -220,6 +223,12 @@ func (n *Node) Start() error {
 		return err
 	}
 
+	// Start the RPC server
+	if n.cfg.RPC.On {
+		n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-sever"), n.cfg.G().Interrupt)
+		go n.rpcServer.Serve()
+	}
+
 	// Initialize extension manager and start extensions
 	n.initExtensionMgr()
 
@@ -237,12 +246,13 @@ func (n *Node) initExtensionMgr() {
 	n.jsModule = jsm.NewModule(
 		n.cfg,
 		accountmgr.New(n.cfg.AccountDir()),
-		n.GetService(),
-		n.GetLogic(),
-		n.GetTxReactor(),
-		n.GetTicketManager(),
-		n.GetDHT(),
+		n.service,
+		n.logic,
+		n.mempoolReactor,
+		n.ticketMgr,
+		n.dht,
 		extMgr,
+		n.rpcServer,
 	)
 
 	// Set the js module to be the main module of the extension manager
@@ -300,8 +310,8 @@ func (n *Node) GetDHT() types.DHT {
 	return n.dht
 }
 
-// GetTxReactor returns the transaction reactor
-func (n *Node) GetTxReactor() *mempool.Reactor {
+// GetMempoolReactor returns the mempool reactor
+func (n *Node) GetMempoolReactor() *mempool.Reactor {
 	return n.mempoolReactor
 }
 
@@ -330,6 +340,10 @@ func (n *Node) Stop() {
 
 	if n.stateTreeDB != nil {
 		n.stateTreeDB.Close()
+	}
+
+	if n.rpcServer != nil {
+		n.rpcServer.Stop()
 	}
 
 	n.log.Info("Databases have been closed")

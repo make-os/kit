@@ -21,7 +21,6 @@ import (
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/node"
-	"github.com/makeos/mosdef/rpc"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -40,14 +39,6 @@ func start(onStart func(n *node.Node)) {
 	// Start the node
 	if err := n.Start(); err != nil {
 		log.Fatal("Failed to prepare node", "Err", err)
-	}
-
-	// Start the RPC server
-	if cfg.RPC.On {
-		rpcAddr := viper.GetString("rpc.address")
-		rpcServer := rpc.NewServer(rpcAddr, cfg, log.Module("rpc-sever"), &itr)
-		go rpcServer.Serve()
-		defer rpcServer.Stop()
 	}
 
 	// Once all processes have been started call the onStart callback

@@ -16,18 +16,19 @@ import (
 	"github.com/gorilla/rpc/v2/json"
 )
 
-const RequestTimeout = time.Duration(15 * time.Second)
+// Timeout is the max duration for connection and read attempt
+const Timeout = time.Duration(15 * time.Second)
 
-// IClient represents a JSON-RPC client
-type IClient interface {
+// Client represents a JSON-RPC client
+type Client interface {
 	Call(method string, params interface{}) (interface{}, error)
-	New(opts *Options) IClient
+	New(opts *Options) Client
 	GetOptions() *Options
 }
 
-// Client provides the ability create and
+// RPCClient provides the ability create and
 // send requests to a JSON-RPC 2.0 service
-type Client struct {
+type RPCClient struct {
 	c    *http.Client
 	opts *Options
 }
@@ -35,15 +36,21 @@ type Client struct {
 // Options describes the options used to
 // configure the client
 type Options struct {
-	Host  string
-	Port  int
-	HTTPS bool
+	Host     string
+	Port     int
+	HTTPS    bool
+	User     string
+	Password string
 }
 
 // URL returns a fully formed url to
 // use for making requests
 func (o *Options) URL() string {
-	return "http://" + net.JoinHostPort(o.Host, strconv.Itoa(o.Port))
+	protocol := "http://"
+	if o.HTTPS {
+		protocol = "https://"
+	}
+	return protocol + net.JoinHostPort(o.Host, strconv.Itoa(o.Port))
 }
 
 // Error represents a custom JSON-RPC error
@@ -56,7 +63,7 @@ func (e *Error) Error() string {
 }
 
 // NewClient creates an instance of Client
-func NewClient(opts *Options) *Client {
+func NewClient(opts *Options) *RPCClient {
 
 	if opts == nil {
 		opts = &Options{}
@@ -67,22 +74,22 @@ func NewClient(opts *Options) *Client {
 	}
 
 	if opts.Port == 0 {
-		opts.Port = 8999
+		panic("options.port is required")
 	}
 
-	return &Client{
+	return &RPCClient{
 		c:    new(http.Client),
 		opts: opts,
 	}
 }
 
 // GetOptions returns the client's option
-func (c *Client) GetOptions() *Options {
+func (c *RPCClient) GetOptions() *Options {
 	return c.opts
 }
 
 // Call calls a method on the RPC service.
-func (c *Client) Call(method string, params interface{}) (interface{}, error) {
+func (c *RPCClient) Call(method string, params interface{}) (interface{}, error) {
 
 	if c.c == nil {
 		return nil, fmt.Errorf("http client and options not set")
@@ -105,8 +112,13 @@ func (c *Client) Call(method string, params interface{}) (interface{}, error) {
 		return nil, err
 	}
 
-	c.c.Timeout = RequestTimeout
 	req.Header.Set("Content-Type", "application/json")
+
+	if c.opts.User != "" && c.opts.Password != "" {
+		req.SetBasicAuth(c.opts.User, c.opts.Password)
+	}
+
+	c.c.Timeout = Timeout
 	resp, err := c.c.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call method: %s", err)

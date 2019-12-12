@@ -21,15 +21,17 @@ var _ = Describe("Client", func() {
 			}).To(Panic())
 		})
 
-		It("should set default option.port to 8999 when option.port is not set", func() {
-			c := NewClient(&Options{Host: "127.0.0.1"})
-			Expect(c.GetOptions().Port).To(Equal(8999))
+		It("should panic when option.port is not set", func() {
+			Expect(func() {
+				opt := Options{Host: "127.0.0.1"}
+				NewClient(&opt)
+			}).To(Panic())
 		})
 	})
 
 	Describe(".Call", func() {
 		It("should return error when options haven't been set", func() {
-			c := Client{opts: &Options{Host: "127.0.0.1"}}
+			c := RPCClient{opts: &Options{Host: "127.0.0.1"}}
 			_, err := c.Call("", nil)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("http client and options not set"))
@@ -38,7 +40,7 @@ var _ = Describe("Client", func() {
 
 	Describe(".GetOptions", func() {
 		It("should return options", func() {
-			opts := &Options{Host: "hostA"}
+			opts := &Options{Host: "hostA", Port: 9000}
 			Expect(NewClient(opts).GetOptions()).To(Equal(opts))
 		})
 	})

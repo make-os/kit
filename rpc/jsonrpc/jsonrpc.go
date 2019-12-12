@@ -128,7 +128,7 @@ func New(addr string, cfg *config.RPCConfig, log logger.Logger) *JSONRPC {
 	return rpc
 }
 
-// APIs returns system APIs
+// APIs returns APIs for the jsonrpc package
 func (s *JSONRPC) APIs() APISet {
 	return APISet{
 		"methods": APIInfo{

@@ -6,6 +6,7 @@ import (
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/extensions"
 	"github.com/makeos/mosdef/mempool"
+	"github.com/makeos/mosdef/rpc"
 	"github.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
 )
@@ -21,6 +22,7 @@ type Module struct {
 	ticketmgr      types.TicketManager
 	dht            types.DHT
 	extMgr         *extensions.Manager
+	rpcServer      *rpc.Server
 }
 
 // NewModule creates an instance of Module
@@ -32,7 +34,8 @@ func NewModule(
 	mempoolReactor *mempool.Reactor,
 	ticketmgr types.TicketManager,
 	dht types.DHT,
-	extMgr *extensions.Manager) *Module {
+	extMgr *extensions.Manager,
+	rpcServer *rpc.Server) *Module {
 	return &Module{
 		cfg:            cfg,
 		acctmgr:        acctmgr,
@@ -42,6 +45,7 @@ func NewModule(
 		ticketmgr:      ticketmgr,
 		dht:            dht,
 		extMgr:         extMgr,
+		rpcServer:      rpcServer,
 	}
 }
 
@@ -59,5 +63,6 @@ func (m *Module) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	sugs = append(sugs, NewRepoModule(vm, nodeSrv, m.logic).Configure()...)
 	sugs = append(sugs, NewDHTModule(m.cfg, vm, m.dht).Configure()...)
 	sugs = append(sugs, m.extMgr.SetVM(vm).Configure()...)
+	sugs = append(sugs, NewRPCModule(m.cfg, vm, m.rpcServer).Configure()...)
 	return sugs
 }

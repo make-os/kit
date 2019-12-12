@@ -40,13 +40,13 @@ type Server struct {
 }
 
 // NewServer creates a new RPC server
-func NewServer(addr string, cfg *config.AppConfig, log logger.Logger,
+func NewServer(cfg *config.AppConfig, log logger.Logger,
 	interrupt *util.Interrupt) *Server {
 	return &Server{
-		addr:      addr,
+		addr:      cfg.RPC.Address,
 		log:       log,
 		cfg:       cfg,
-		rpc:       jsonrpc.New(addr, cfg.RPC, log),
+		rpc:       jsonrpc.New(cfg.RPC.Address, cfg.RPC, log),
 		interrupt: interrupt,
 	}
 }
@@ -77,8 +77,8 @@ func (s *Server) Serve() {
 	s.rpc.Serve()
 }
 
-// IsStarted returns the start state
-func (s *Server) IsStarted() bool {
+// IsRunning returns the start state
+func (s *Server) IsRunning() bool {
 	s.RLock()
 	defer s.RUnlock()
 	return s.started
@@ -101,4 +101,9 @@ func (s *Server) AddAPI(apis ...jsonrpc.APISet) {
 	s.Lock()
 	defer s.Unlock()
 	s.rpc.MergeAPISet(apis...)
+}
+
+// GetMethods returns all registered RPC methods
+func (s *Server) GetMethods() []jsonrpc.MethodInfo {
+	return s.rpc.Methods()
 }
