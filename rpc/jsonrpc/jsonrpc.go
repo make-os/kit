@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/util/logger"
 
 	"github.com/gorilla/mux"
@@ -80,26 +81,22 @@ func (r Response) IsError() bool {
 // that works with RPC functions of type `types.API`
 // defined in packages that offer RPC APIs.`
 type JSONRPC struct {
-
-	// log is the logger for this package
 	log logger.Logger
+
+	cfg *config.RPCConfig
 
 	// addr is the listening address
 	addr string
 
-	// apiSet is a collection of
-	// all known API functions
+	// apiSet is a collection of all known API methods
 	apiSet APISet
 
-	// onRequest accepts a function. It is called
-	// each time a request is received. It is a good
-	// place to verify authentication. If error
-	// is returned, the handler is not called and
-	// the error is returned.
+	// onRequest is called before the request handler is called. If it returns
+	// an error, the request handle is never called and the error is returned as
+	// the request response.
 	onRequest OnRequestFunc
 
-	// handlerConfigured lets us know when the
-	// handle has been configured
+	// handlerConfigured lets us know when the request handler has been configured
 	handlerConfigured bool
 
 	// server is the rpc server
@@ -110,25 +107,19 @@ type JSONRPC struct {
 func Error(code int, message string, data interface{}) *Response {
 	return &Response{
 		JSONRPCVersion: "2.0",
-		Err: &Err{
-			Code:    code,
-			Message: message,
-			Data:    data,
-		},
+		Err:            &Err{Code: code, Message: message, Data: data},
 	}
 }
 
 // Success creates a success response
 func Success(result interface{}) *Response {
-	return &Response{
-		JSONRPCVersion: "2.0",
-		Result:         result,
-	}
+	return &Response{JSONRPCVersion: "2.0", Result: result}
 }
 
 // New creates a JSONRPC server
-func New(log logger.Logger, addr string) *JSONRPC {
+func New(addr string, cfg *config.RPCConfig, log logger.Logger) *JSONRPC {
 	rpc := &JSONRPC{
+		cfg:    cfg,
 		addr:   addr,
 		apiSet: APISet{},
 		log:    log.Module("jsonrpc"),
@@ -150,8 +141,7 @@ func (s *JSONRPC) APIs() APISet {
 	}
 }
 
-// Methods gets the names of all methods
-// in the API set.
+// Methods gets the names of all methods in the API set.
 func (s *JSONRPC) Methods() (methodsInfo []MethodInfo) {
 	for name, d := range s.apiSet {
 		methodsInfo = append(methodsInfo, MethodInfo{
@@ -200,11 +190,12 @@ func (s *JSONRPC) registerHandler() {
 
 // Stop stops the RPC server
 func (s *JSONRPC) Stop() {
-	if s.server != nil {
-		s.log.Debug("Server is shutting down...")
-		s.server.Shutdown(context.Background())
-		s.log.Debug("Server has shutdown")
+	if s.server == nil {
+		return
 	}
+	s.log.Debug("Server is shutting down...")
+	s.server.Shutdown(context.Background())
+	s.log.Debug("Server has shutdown")
 }
 
 // MergeAPISet merges an API set with s current api sets
@@ -216,40 +207,50 @@ func (s *JSONRPC) MergeAPISet(apiSets ...APISet) {
 	}
 }
 
-// MakeFullAPIName returns the full API name used to map
+// makeFullAPIName returns the full API name used to map
 // a RPC method to a server
-func MakeFullAPIName(namespace, apiName string) string {
+func makeFullAPIName(namespace, apiName string) string {
 	return fmt.Sprintf("%s_%s", namespace, apiName)
 }
 
 // AddAPI adds an API to s api set
 func (s *JSONRPC) AddAPI(name string, api APIInfo) {
-	s.apiSet[MakeFullAPIName(api.Namespace, name)] = api
+	s.apiSet[makeFullAPIName(api.Namespace, name)] = api
 }
 
 // handle processes incoming requests. It validates
 // the request according to JSON RPC specification,
-// find the method and passes it off.
+// find and execute the target rpc method
 func (s *JSONRPC) handle(w http.ResponseWriter, r *http.Request) *Response {
 
-	// Decode the body
 	var newReq Request
 	if err := json.NewDecoder(r.Body).Decode(&newReq); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return Error(-32700, "Parse error", nil)
 	}
 
-	// JSON RPC version must be 2.0
 	if newReq.JSONRPCVersion != "2.0" {
 		w.WriteHeader(http.StatusBadRequest)
 		return Error(-32600, "`jsonrpc` value is required", nil)
 	}
 
-	// Method must be known
+	// Target method must be known
 	f := s.apiSet.Get(newReq.Method)
 	if f == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return Error(-32601, "Method not found", nil)
+	}
+
+	if !s.cfg.DisableAuth && (f.Private || s.cfg.AuthPubMethod) {
+		username, password, ok := r.BasicAuth()
+		if !ok {
+			w.WriteHeader(http.StatusUnauthorized)
+			return Error(-34000, "basic authentication header is invalid", nil)
+		}
+		if username != s.cfg.User || password != s.cfg.Password {
+			w.WriteHeader(http.StatusUnauthorized)
+			return Error(-34001, "authentication has failed. Invalid credentials", nil)
+		}
 	}
 
 	var resp *Response

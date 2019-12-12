@@ -46,7 +46,7 @@ func NewServer(addr string, cfg *config.AppConfig, log logger.Logger,
 		addr:      addr,
 		log:       log,
 		cfg:       cfg,
-		rpc:       jsonrpc.New(log, addr),
+		rpc:       jsonrpc.New(addr, cfg.RPC, log),
 		interrupt: interrupt,
 	}
 }
@@ -68,9 +68,11 @@ func (s *Server) Serve() {
 	}()
 
 	s.AddAPI(s.APIs())
+
 	s.Lock()
 	s.started = true
 	s.Unlock()
+
 	s.log.Info("RPC service started", "Address", s.addr)
 	s.rpc.Serve()
 }

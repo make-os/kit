@@ -57,8 +57,13 @@ type NetConfig struct {
 
 // RPCConfig describes RPC config settings
 type RPCConfig struct {
-	Address      string `json:"address" mapstructure:"address"`
-	TMRPCAddress string `json:"tmaddress" mapstructure:"tmaddress"`
+	On            bool   `json:"on" mapstructure:"on"`
+	Address       string `json:"address" mapstructure:"address"`
+	User          string `json:"user" mapstructure:"user"`
+	Password      string `json:"password" mapstructure:"password"`
+	DisableAuth   bool   `json:"disableauth" mapstructure:"disableauth"`
+	AuthPubMethod bool   `json:"authpubmethod" mapstructure:"authpubmethod"`
+	TMRPCAddress  string `json:"tmaddress" mapstructure:"tmaddress"`
 }
 
 // DHTConfig describes DHT config parameters

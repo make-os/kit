@@ -43,9 +43,12 @@ func start(onStart func(n *node.Node)) {
 	}
 
 	// Start the RPC server
-	rpcAddr := viper.GetString("rpc.address")
-	rpcServer := rpc.NewServer(rpcAddr, cfg, log.Module("rpc-sever"), &itr)
-	go rpcServer.Serve()
+	if cfg.RPC.On {
+		rpcAddr := viper.GetString("rpc.address")
+		rpcServer := rpc.NewServer(rpcAddr, cfg, log.Module("rpc-sever"), &itr)
+		go rpcServer.Serve()
+		defer rpcServer.Stop()
+	}
 
 	// Once all processes have been started call the onStart callback
 	// so the caller can perform other operations that rely on the already
@@ -55,7 +58,6 @@ func start(onStart func(n *node.Node)) {
 	}
 
 	itr.Wait()
-	rpcServer.Stop()
 	n.Stop()
 }
 
@@ -82,26 +84,30 @@ var startCmd = &cobra.Command{
 
 func setStartFlags(cmds ...*cobra.Command) {
 	for _, cmd := range cmds {
-		cmd.Flags().String("node.address", config.DefaultNodeAddress,
-			"Set the node's p2p listening address")
-		cmd.Flags().String("rpc.address", config.DefaultRPCAddress,
-			"Set the RPC listening address")
-		cmd.Flags().String("rpc.tmaddress", config.DefaultTMRPCAddress,
-			"Set tendermint RPC listening address")
-		cmd.Flags().String("dht.address", config.DefaultDHTAddress,
-			"Set the DHT listening address")
-		cmd.Flags().String("repoman.address", config.DefaultRepoManagerAddress,
-			"Set the repository manager listening address")
-		cmd.Flags().String("node.addpeer", "",
-			"Connect to one or more persistent node")
-		cmd.Flags().StringSlice("node.exts", []string{},
-			"Specify an extension to run on startup")
+		f := cmd.Flags()
+		f.String("node.address", config.DefaultNodeAddress, "Set the node's p2p listening address")
+		f.Bool("rpc.on", false, "Start the RPC service")
+		f.String("rpc.user", "", "Set the RPC username")
+		f.String("rpc.password", "", "Set the RPC password")
+		f.Bool("rpc.disableauth", false, "Disable RPC authentication")
+		f.Bool("rpc.authpubmethod", false, "Enable RPC authentication for non-private methods")
+		f.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")
+		f.String("rpc.tmaddress", config.DefaultTMRPCAddress, "Set tendermint RPC listening address")
+		f.String("dht.address", config.DefaultDHTAddress, "Set the DHT listening address")
+		f.String("repoman.address", config.DefaultRepoManagerAddress, "Set the repository manager listening address")
+		f.String("node.addpeer", "", "Connect to one or more persistent node")
+		f.StringSlice("node.exts", []string{}, "Specify an extension to run on startup")
 		extArgsMap := map[string]string{}
-		cmd.Flags().StringToStringVar(&extArgsMap, "node.extsargs", map[string]string{}, "Specify arguments for extensions")
+		f.StringToStringVar(&extArgsMap, "node.extsargs", map[string]string{}, "Specify arguments for extensions")
 
 		// Apply only to the active command
 		if os.Args[1] == cmd.Name() {
+			viper.BindPFlag("rpc.on", cmd.Flags().Lookup("rpc.on"))
 			viper.BindPFlag("rpc.address", cmd.Flags().Lookup("rpc.address"))
+			viper.BindPFlag("rpc.user", cmd.Flags().Lookup("rpc.user"))
+			viper.BindPFlag("rpc.password", cmd.Flags().Lookup("rpc.password"))
+			viper.BindPFlag("rpc.disableauth", cmd.Flags().Lookup("rpc.disableauth"))
+			viper.BindPFlag("rpc.authpubmethod", cmd.Flags().Lookup("rpc.authpubmethod"))
 			viper.BindPFlag("node.address", cmd.Flags().Lookup("node.address"))
 			viper.BindPFlag("dht.address", cmd.Flags().Lookup("dht.address"))
 			viper.BindPFlag("rpc.tmaddress", cmd.Flags().Lookup("rpc.tmaddress"))

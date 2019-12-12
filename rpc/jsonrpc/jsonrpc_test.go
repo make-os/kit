@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/util/logger"
 
 	. "github.com/onsi/ginkgo"
@@ -16,9 +17,11 @@ var _ = Describe("RPC", func() {
 
 	var rpc *JSONRPC
 	var log = logger.NewLogrusNoOp()
+	var cfg *config.RPCConfig
 
 	BeforeEach(func() {
-		rpc = New(log, "")
+		cfg = &config.RPCConfig{}
+		rpc = New("", cfg, log)
 	})
 
 	Describe(".handle", func() {
@@ -217,8 +220,51 @@ var _ = Describe("RPC", func() {
 	})
 
 	Context("Call private method", func() {
-		When("authorization is not set", func() {
+		When("rpc.disableauth=false, method is private and authorization is not set", func() {
+			var req *http.Request
+			var rr *httptest.ResponseRecorder
+			BeforeEach(func() {
+				cfg.DisableAuth = false
+
+				rpc.apiSet["echo"] = APIInfo{
+					Private:   true,
+					Namespace: "test",
+					Func: func(params interface{}) *Response {
+						return Success(params)
+					},
+				}
+
+				data, _ := json.Marshal(Request{
+					JSONRPCVersion: "2.0",
+					Method:         "echo",
+					Params:         map[string]interface{}{},
+				})
+
+				req, _ = http.NewRequest("POST", "/rpc", bytes.NewReader(data))
+				rr = httptest.NewRecorder()
+				rr.Header().Set("Content-Type", "application/json")
+			})
+
 			It("should return error response", func() {
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					resp := rpc.handle(w, r)
+					Expect(resp.Err).ToNot(BeNil())
+					Expect(resp.Err.Message).To(Equal("basic authentication header is invalid"))
+					Expect(resp.Err.Code).To(Equal(-34000))
+					Expect(rr.Code).To(Equal(401))
+				})
+				handler.ServeHTTP(rr, req)
+			})
+		})
+
+		When("rpc.disableauth=false, method is private and credentials are not valid", func() {
+			var req *http.Request
+			var rr *httptest.ResponseRecorder
+			BeforeEach(func() {
+				cfg.DisableAuth = false
+				cfg.User = "correct_user"
+				cfg.Password = "correct_pass"
+
 				rpc.apiSet["echo"] = APIInfo{
 					Private:   true,
 					Namespace: "test",
@@ -233,25 +279,32 @@ var _ = Describe("RPC", func() {
 					Params:         map[string]interface{}{},
 				})
 
-				req, _ := http.NewRequest("POST", "/rpc", bytes.NewReader(data))
-
-				rr := httptest.NewRecorder()
+				req, _ = http.NewRequest("POST", "/rpc", bytes.NewReader(data))
+				req.SetBasicAuth("invalid", "invalid")
+				rr = httptest.NewRecorder()
 				rr.Header().Set("Content-Type", "application/json")
-
-				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					resp := rpc.handle(w, r)
-					Expect(resp.Err).ToNot(BeNil())
-					Expect(resp.Err.Message).To(Equal("Invalid Request: Authorization header required"))
-					Expect(resp.Err.Code).To(Equal(-32600))
-					Expect(rr.Code).To(Equal(401))
-				})
-
-				handler.ServeHTTP(rr, req)
 			})
-		})
 
-		When("authorization format invalid", func() {
 			It("should return error response", func() {
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					resp := rpc.handle(w, r)
+					Expect(resp.Err).ToNot(BeNil())
+					Expect(resp.Err.Message).To(Equal("authentication has failed. Invalid credentials"))
+					Expect(resp.Err.Code).To(Equal(-34001))
+					Expect(rr.Code).To(Equal(401))
+				})
+				handler.ServeHTTP(rr, req)
+			})
+		})
+
+		When("rpc.disableauth=true, method is private and credentials are not valid", func() {
+			var req *http.Request
+			var rr *httptest.ResponseRecorder
+			BeforeEach(func() {
+				cfg.DisableAuth = true
+				cfg.User = "correct_user"
+				cfg.Password = "correct_pass"
+
 				rpc.apiSet["echo"] = APIInfo{
 					Private:   true,
 					Namespace: "test",
@@ -266,28 +319,33 @@ var _ = Describe("RPC", func() {
 					Params:         map[string]interface{}{},
 				})
 
-				req, _ := http.NewRequest("POST", "/rpc", bytes.NewReader(data))
-				req.Header.Set("Authorization", "bea")
-
-				rr := httptest.NewRecorder()
+				req, _ = http.NewRequest("POST", "/rpc", bytes.NewReader(data))
+				req.SetBasicAuth("invalid", "invalid")
+				rr = httptest.NewRecorder()
 				rr.Header().Set("Content-Type", "application/json")
+			})
 
+			It("should return no error", func() {
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					resp := rpc.handle(w, r)
-					Expect(resp.Err).ToNot(BeNil())
-					Expect(resp.Err.Message).To(Equal("Invalid Request: Authorization requires Bearer scheme"))
-					Expect(resp.Err.Code).To(Equal(-32600))
-					Expect(rr.Code).To(Equal(401))
+					Expect(resp.Err).To(BeNil())
+					Expect(rr.Code).To(Equal(200))
 				})
-
 				handler.ServeHTTP(rr, req)
 			})
 		})
 
-		When("authorization format is valid", func() {
-			It("should return error response when bearer token is invalid", func() {
+		When("rpc.disableauth=false, rpc.authpubmethod=true, method is public and credentials are not valid", func() {
+			var req *http.Request
+			var rr *httptest.ResponseRecorder
+			BeforeEach(func() {
+				cfg.DisableAuth = false
+				cfg.AuthPubMethod = true
+				cfg.User = "correct_user"
+				cfg.Password = "correct_pass"
+
 				rpc.apiSet["echo"] = APIInfo{
-					Private:   true,
+					Private:   false,
 					Namespace: "test",
 					Func: func(params interface{}) *Response {
 						return Success(params)
@@ -300,24 +358,62 @@ var _ = Describe("RPC", func() {
 					Params:         map[string]interface{}{},
 				})
 
-				req, _ := http.NewRequest("POST", "/rpc", bytes.NewReader(data))
-				req.Header.Set("Authorization", "Bearer abcxyz")
-
-				rr := httptest.NewRecorder()
+				req, _ = http.NewRequest("POST", "/rpc", bytes.NewReader(data))
+				req.SetBasicAuth("invalid", "invalid")
+				rr = httptest.NewRecorder()
 				rr.Header().Set("Content-Type", "application/json")
+			})
 
+			It("should return error response", func() {
 				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					resp := rpc.handle(w, r)
 					Expect(resp.Err).ToNot(BeNil())
-					Expect(resp.Err.Message).To(Equal("Authorization Error: session token is not valid"))
-					Expect(resp.Err.Code).To(Equal(-32600))
+					Expect(resp.Err.Message).To(Equal("authentication has failed. Invalid credentials"))
+					Expect(resp.Err.Code).To(Equal(-34001))
 					Expect(rr.Code).To(Equal(401))
 				})
-
 				handler.ServeHTTP(rr, req)
 			})
 		})
 
+		When("rpc.disableauth=false, rpc.authpubmethod=false, method is public and credentials are not valid", func() {
+			var req *http.Request
+			var rr *httptest.ResponseRecorder
+			BeforeEach(func() {
+				cfg.DisableAuth = false
+				cfg.AuthPubMethod = false
+				cfg.User = "correct_user"
+				cfg.Password = "correct_pass"
+
+				rpc.apiSet["echo"] = APIInfo{
+					Private:   false,
+					Namespace: "test",
+					Func: func(params interface{}) *Response {
+						return Success(params)
+					},
+				}
+
+				data, _ := json.Marshal(Request{
+					JSONRPCVersion: "2.0",
+					Method:         "echo",
+					Params:         map[string]interface{}{},
+				})
+
+				req, _ = http.NewRequest("POST", "/rpc", bytes.NewReader(data))
+				req.SetBasicAuth("invalid", "invalid")
+				rr = httptest.NewRecorder()
+				rr.Header().Set("Content-Type", "application/json")
+			})
+
+			It("should return no error", func() {
+				handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					resp := rpc.handle(w, r)
+					Expect(resp.Err).To(BeNil())
+					Expect(rr.Code).To(Equal(200))
+				})
+				handler.ServeHTTP(rr, req)
+			})
+		})
 	})
 
 	Describe(".AddAPI", func() {

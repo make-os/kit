@@ -227,6 +227,10 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 		c.DHT.Address = "127.0.0.1" + c.DHT.Address
 	}
 
+	if c.RPC.User == "" && c.RPC.Password == "" {
+		c.RPC.DisableAuth = true
+	}
+
 	c.G().TMConfig = tmcfg
 	*cfg = c
 	*tmcfg = *tmcfg.SetRoot(cfg.NetDataDir())
