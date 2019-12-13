@@ -3,11 +3,13 @@ package repo
 import (
 	"crypto/rsa"
 	"fmt"
-	"gopkg.in/src-d/go-git.v4/config"
 	"os"
 	"strings"
 
+	"gopkg.in/src-d/go-git.v4/config"
+
 	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/rpc/client"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/thoas/go-funk"
@@ -161,7 +163,7 @@ func (r *Repo) CreateBlob(content string) (string, error) {
 
 // AddEntryToNote adds a note
 func (r *Repo) AddEntryToNote(notename, objectHash, note string, env ...string) error {
-	return r.AddEntryToNote(notename, objectHash, note, env...)
+	return r.ops.AddEntryToNote(notename, objectHash, note, env...)
 }
 
 // ListTreeObjectsSlice returns a slice containing objects name of tree entries
@@ -218,12 +220,31 @@ func getCurrentWDRepo(gitBinDir string) (types.BareRepo, error) {
 	return repo, nil
 }
 
-// AmendRecentCommitTxLineCmd attempts to add or amend transaction argument to
-// the recent commit. If no transaction line exist, it will add a new
-// one populated with the provided arguments.
-// Transaction line allows the user to set transaction arguments such as
-// fee, public key, etc. A txline has the format tx: fee=10, pk=ad1..xyz, nonce=1
-func AmendRecentCommitTxLineCmd(gitBinDir, txFee, txNonce, signingKey string) error {
+func getNextNonceFromClient(pkID string, client *client.RPCClient) (string, error) {
+	out, err := client.Call("gpg_find", pkID)
+	if err != nil {
+		msg := "can't find registered gpg key corresponding to the signing key"
+		return "", errors.Wrap(err, msg)
+	}
+
+	ownerAddress := out.(map[string]interface{})["address"]
+	nonce, err := client.Call("account_getNonce", ownerAddress)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to query nonce")
+	}
+
+	return fmt.Sprintf("%d", uint64(nonce.(float64))+1), nil
+}
+
+// SignCommitCmd adds transaction information to the recent commit and signs it.
+// If rpcClient is set, the transaction nonce of the signing account is fetched
+// from the rpc server.
+func SignCommitCmd(
+	gitBinDir,
+	txFee,
+	txNonce,
+	signingKey string,
+	rpcClient *client.RPCClient) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
 	if err != nil {
@@ -259,8 +280,13 @@ func AmendRecentCommitTxLineCmd(gitBinDir, txFee, txNonce, signingKey string) er
 	// Get the public key network ID
 	pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
-	// TODO:If nonce is not provided, get nonce from a --source (remote node or local
-	// node). Requires an RPC endpoint
+	// If rpc client is provided, get nonce using the client
+	if rpcClient != nil {
+		txNonce, err = getNextNonceFromClient(pkID, rpcClient)
+		if err != nil {
+			return err
+		}
+	}
 
 	// Construct the tx line and append to the current message
 	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil)
@@ -274,8 +300,17 @@ func AmendRecentCommitTxLineCmd(gitBinDir, txFee, txNonce, signingKey string) er
 	return nil
 }
 
-// CreateTagWithTxLineCmd creates a tag and adds a txline to the tag message
-func CreateTagWithTxLineCmd(args []string, gitBinDir, txFee, txNonce, signingKey string) error {
+// SignTagCmd creates an annotated tag, appends transaction information to its
+// message and signs it.
+// If rpcClient is set, the transaction nonce of the signing account is fetched
+// from the rpc server.
+func SignTagCmd(
+	args []string,
+	gitBinDir,
+	txFee,
+	txNonce,
+	signingKey string,
+	rpcClient *client.RPCClient) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
 	if err != nil {
@@ -317,8 +352,13 @@ func CreateTagWithTxLineCmd(args []string, gitBinDir, txFee, txNonce, signingKey
 	// Get the public key network ID
 	pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
-	// TODO:If nonce is not provided, get nonce from a --source (remote node or local
-	// node). Requires an RPC endpoint
+	// If rpc client is provided, get nonce using the client
+	if rpcClient != nil {
+		txNonce, err = getNextNonceFromClient(pkID, rpcClient)
+		if err != nil {
+			return err
+		}
+	}
 
 	// Construct the tx line and append to the current message
 	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil)
@@ -332,8 +372,16 @@ func CreateTagWithTxLineCmd(args []string, gitBinDir, txFee, txNonce, signingKey
 	return nil
 }
 
-// AddSignedTxBlobCmd creates a blob object that contains a signed tx line.
-func AddSignedTxBlobCmd(gitBinDir, txFee, txNonce, signingKey, note string) error {
+// SignNoteCmd creates adds transaction information to a note and signs it.
+// If rpcClient is set, the transaction nonce of the signing account is fetched
+// from the rpc server.
+func SignNoteCmd(
+	gitBinDir,
+	txFee,
+	txNonce,
+	signingKey,
+	note string,
+	rpcClient *client.RPCClient) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
 	if err != nil {
@@ -405,8 +453,13 @@ func AddSignedTxBlobCmd(gitBinDir, txFee, txNonce, signingKey, note string) erro
 	// Get the public key network ID
 	pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
-	// TODO:If nonce is not provided, get nonce from a --source (remote node or local
-	// node). Requires an RPC endpoint
+	// If rpc client is provided, get nonce using the client
+	if rpcClient != nil {
+		txNonce, err = getNextNonceFromClient(pkID, rpcClient)
+		if err != nil {
+			return err
+		}
+	}
 
 	// Sign a message composed of the tx information
 	// fee + nonce + public key id + note hash
@@ -429,8 +482,6 @@ func AddSignedTxBlobCmd(gitBinDir, txFee, txNonce, signingKey, note string) erro
 	if err = repo.AddEntryToNote(note, blobHash, txLine); err != nil {
 		return errors.Wrap(err, "failed to add tx blob")
 	}
-
-	fmt.Println("Added signed transaction object to note")
 
 	return nil
 }

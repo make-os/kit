@@ -10,6 +10,7 @@ func (l *Logic) APIs() jsonrpc.APISet {
 
 	var apiSets = []jsonrpc.APISet{
 		api.NewAccountAPI(l).APIs(),
+		api.NewGPGAPI(l).APIs(),
 	}
 
 	var mainSet = make(map[string]jsonrpc.APIInfo)

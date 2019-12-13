@@ -122,7 +122,7 @@ func (m *RPCModule) local() rpcMethods {
 // connect to an RPC server
 func (m *RPCModule) connect(host string, port int, https bool, user, pass string) rpcMethods {
 
-	c := client.NewClient(&client.Options{
+	c := client.NewClient(&types.Options{
 		Host:     host,
 		Port:     port,
 		HTTPS:    https,

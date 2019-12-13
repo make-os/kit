@@ -49,7 +49,7 @@ func (m *GPGModule) namespacedFuncs() []*types.JSModuleFunc {
 		&types.JSModuleFunc{
 			Name:        "find",
 			Value:       m.find,
-			Description: "Find a GPG public key by its key id",
+			Description: "Find a GPG public key by its key ID",
 		},
 		&types.JSModuleFunc{
 			Name:        "ownedBy",

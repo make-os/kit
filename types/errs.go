@@ -28,6 +28,8 @@ const (
 const (
 	// ErrCodeAccountNotFound for missing account
 	ErrCodeAccountNotFound = 30000
+	// ErrCodeGPGKeyNotFound for missing gpg key
+	ErrCodeGPGKeyNotFound = 30001
 )
 
 // Account package errors
