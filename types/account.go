@@ -26,6 +26,14 @@ type Account struct {
 	DelegatorCommission float64       `json:"delegatorCommission"`
 }
 
+// IsEmpty checks whether an account is empty/unset
+func (a *Account) IsEmpty() bool {
+	return a.Balance.Empty() || a.Balance.Equal("0") &&
+		a.Nonce == uint64(0) &&
+		len(a.Stakes) == 0 &&
+		a.DelegatorCommission == float64(0)
+}
+
 // GetBalance returns the account balance
 func (a *Account) GetBalance() util.String {
 	return a.Balance

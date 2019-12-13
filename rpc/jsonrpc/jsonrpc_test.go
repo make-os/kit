@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 
 	"github.com/makeos/mosdef/config"
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util/logger"
 
 	. "github.com/onsi/ginkgo"
@@ -250,7 +251,7 @@ var _ = Describe("RPC", func() {
 					resp := rpc.handle(w, r)
 					Expect(resp.Err).ToNot(BeNil())
 					Expect(resp.Err.Message).To(Equal("basic authentication header is invalid"))
-					Expect(resp.Err.Code).To(Equal(-34000))
+					Expect(resp.Err.Code).To(Equal(types.ErrCodeInvalidAuthHeader))
 					Expect(rr.Code).To(Equal(401))
 				})
 				handler.ServeHTTP(rr, req)
@@ -290,7 +291,7 @@ var _ = Describe("RPC", func() {
 					resp := rpc.handle(w, r)
 					Expect(resp.Err).ToNot(BeNil())
 					Expect(resp.Err.Message).To(Equal("authentication has failed. Invalid credentials"))
-					Expect(resp.Err.Code).To(Equal(-34001))
+					Expect(resp.Err.Code).To(Equal(types.ErrCodeInvalidAuthCredentials))
 					Expect(rr.Code).To(Equal(401))
 				})
 				handler.ServeHTTP(rr, req)
@@ -369,7 +370,7 @@ var _ = Describe("RPC", func() {
 					resp := rpc.handle(w, r)
 					Expect(resp.Err).ToNot(BeNil())
 					Expect(resp.Err.Message).To(Equal("authentication has failed. Invalid credentials"))
-					Expect(resp.Err.Code).To(Equal(-34001))
+					Expect(resp.Err.Code).To(Equal(types.ErrCodeInvalidAuthCredentials))
 					Expect(rr.Code).To(Equal(401))
 				})
 				handler.ServeHTTP(rr, req)

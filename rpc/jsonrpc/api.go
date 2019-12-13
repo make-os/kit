@@ -16,7 +16,7 @@ func (p *Params) Scan(dest interface{}) error {
 // and other parameters.
 type APIInfo struct {
 
-	// Func is the API function to be execute.
+	// Func is the API function to be executed.
 	Func func(params interface{}) *Response
 
 	// Private indicates a requirement for a private, authenticated

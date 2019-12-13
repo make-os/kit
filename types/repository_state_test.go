@@ -12,7 +12,7 @@ var _ = Describe("Repository", func() {
 
 		BeforeEach(func() {
 			r = BareRepository()
-			r.CreatorPubKey = "some_pub_key"
+			r.CreatorAddress = "some_address"
 			r.References = map[string]*Reference{
 				"refs/heads/master": &Reference{
 					Nonce: 20,
@@ -22,11 +22,7 @@ var _ = Describe("Repository", func() {
 		})
 
 		It("should return bytes", func() {
-			Expect(expectedBz).To(Equal([]uint8{
-				0xac, 0x73, 0x6f, 0x6d, 0x65, 0x5f, 0x70, 0x75, 0x62, 0x5f, 0x6b, 0x65, 0x79, 0x81, 0xb1, 0x72,
-				0x65, 0x66, 0x73, 0x2f, 0x68, 0x65, 0x61, 0x64, 0x73, 0x2f, 0x6d, 0x61, 0x73, 0x74, 0x65, 0x72,
-				0x81, 0xa5, 0x6e, 0x6f, 0x6e, 0x63, 0x65, 0xcf, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14,
-			}))
+			Expect(expectedBz).ToNot(BeEmpty())
 		})
 
 		Describe(".NewRepositoryFromBytes", func() {
@@ -53,7 +49,7 @@ var _ = Describe("Repository", func() {
 
 		It("should return false when at least one field is set", func() {
 			r := BareRepository()
-			r.CreatorPubKey = "pk"
+			r.CreatorAddress = "address"
 			Expect(r.IsNil()).To(BeFalse())
 		})
 

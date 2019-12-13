@@ -8,7 +8,7 @@ import (
 func (am *AccountManager) apiListAccounts(interface{}) *jsonrpc.Response {
 	accounts, err := am.ListAccounts()
 	if err != nil {
-		return jsonrpc.Error(types.ErrCodeListAccountFailed, err.Error(), nil)
+		return jsonrpc.Error(types.ErrCodeUnexpected, err.Error(), nil)
 	}
 
 	var addresses []string
@@ -22,10 +22,10 @@ func (am *AccountManager) apiListAccounts(interface{}) *jsonrpc.Response {
 // APIs returns all API handlers
 func (am *AccountManager) APIs() jsonrpc.APISet {
 	return map[string]jsonrpc.APIInfo{
-		// namespace: "personal"
 		"listAccounts": {
-			Namespace:   types.NamespacePersonal,
-			Description: "List all accounts",
+			Namespace:   types.NamespaceAccount,
+			Private:     true,
+			Description: "List all accounts that exist on the node",
 			Func:        am.apiListAccounts,
 		},
 	}

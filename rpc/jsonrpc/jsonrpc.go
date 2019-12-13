@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/makeos/mosdef/config"
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util/logger"
 
 	"github.com/gorilla/mux"
@@ -245,11 +246,11 @@ func (s *JSONRPC) handle(w http.ResponseWriter, r *http.Request) *Response {
 		username, password, ok := r.BasicAuth()
 		if !ok {
 			w.WriteHeader(http.StatusUnauthorized)
-			return Error(-34000, "basic authentication header is invalid", nil)
+			return Error(types.ErrCodeInvalidAuthHeader, "basic authentication header is invalid", nil)
 		}
 		if username != s.cfg.User || password != s.cfg.Password {
 			w.WriteHeader(http.StatusUnauthorized)
-			return Error(-34001, "authentication has failed. Invalid credentials", nil)
+			return Error(types.ErrCodeInvalidAuthCredentials, "authentication has failed. Invalid credentials", nil)
 		}
 	}
 

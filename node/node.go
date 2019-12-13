@@ -55,6 +55,7 @@ import (
 type Node struct {
 	app            *App
 	cfg            *config.AppConfig
+	acctMgr        *accountmgr.AccountManager
 	tmcfg          *tmconfig.Config
 	nodeKey        *p2p.NodeKey
 	log            logger.Logger
@@ -88,6 +89,7 @@ func NewNode(cfg *config.AppConfig, tmcfg *tmconfig.Config) *Node {
 		tmcfg:   tmcfg,
 		service: services.New(tmrpc, nil, nil),
 		tmrpc:   tmrpc,
+		acctMgr: accountmgr.New(cfg.AccountDir()),
 	}
 }
 
@@ -126,23 +128,11 @@ func createCustomMempool(cfg *config.AppConfig, log logger.Logger) *nm.CustomMem
 	}
 }
 
-func (n *Node) noServerStart() error {
-
-	// Create the rpc server, add APIs but don't start it.
-	// The console will need a non-nil instance to learn about the RPC methods.
-	n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-sever"), n.cfg.G().Interrupt)
-
-	// Initialize and start JS modules and extensions
-	n.initJSModuleAndExtension()
-
-	return nil
-}
-
 // Start starts the tendermint node
 func (n *Node) Start() error {
 
 	if n.cfg.ConsoleOnly() {
-		return n.noServerStart()
+		return n.startConsoleOnly()
 	}
 
 	n.log.Info("Starting node...", "NodeID", n.cfg.G().NodeKey.ID(), "DevMode", n.cfg.IsDev())
@@ -248,12 +238,40 @@ func (n *Node) Start() error {
 	}
 
 	// Start the RPC server
-	if n.cfg.RPC.On {
-		n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-sever"), n.cfg.G().Interrupt)
-		go n.rpcServer.Serve()
-	}
+	n.startRPCServer()
 
 	// Initialize extension manager and start extensions
+	n.initJSModuleAndExtension()
+
+	return nil
+}
+
+// startRPCServer starts RPC service
+func (n *Node) startRPCServer() {
+	if n.cfg.RPC.On {
+		n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-sever"), n.cfg.G().Interrupt)
+		n.addRPCAPIs()
+		go n.rpcServer.Serve()
+	}
+}
+
+func (n *Node) addRPCAPIs() {
+	n.rpcServer.AddAPI(
+		n.acctMgr.APIs(),
+		n.logic.(*logic.Logic).APIs(),
+	)
+}
+
+func (n *Node) startConsoleOnly() error {
+
+	// Create the rpc server, add APIs but don't start it.
+	// The console will need a non-nil instance to learn about the RPC methods.
+	n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-sever"), n.cfg.G().Interrupt)
+
+	// Add RPC APIs
+	n.addRPCAPIs()
+
+	// Initialize and start JS modules and extensions
 	n.initJSModuleAndExtension()
 
 	return nil

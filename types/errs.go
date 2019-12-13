@@ -4,16 +4,16 @@ import "fmt"
 
 // RPC package error codes
 const (
-	// ErrCodeInvalidAuthParams for invalid authorization parameter
-	ErrCodeInvalidAuthParams = 40000
+	// ErrCodeInvalidAuthHeader for invalid authorization parameter
+	ErrCodeInvalidAuthHeader = 40000
 	// ErrCodeInvalidAuthCredentials for invalid authorization credentials
 	ErrCodeInvalidAuthCredentials = 40001
 )
 
 // General error codes
 const (
-	// ErrCodeUnexpectedArgType for when an argument type is invalid
-	ErrCodeUnexpectedArgType = 60000
+	// ErrCodeInvalidParamType for when an parameter type is invalid
+	ErrCodeInvalidParamType = 60000
 	// ErrCodeCallParamError for when a call parameter is invalid
 	ErrCodeCallParamError = 60001
 	// ErrValueDecodeFailed for when decoding a value failed
@@ -26,10 +26,8 @@ const (
 
 // Account package error codes
 const (
-	// ErrCodeListAccountFailed for failure to list account
-	ErrCodeListAccountFailed = 30000
 	// ErrCodeAccountNotFound for missing account
-	ErrCodeAccountNotFound = 30001
+	ErrCodeAccountNotFound = 30000
 )
 
 // Account package errors
@@ -49,6 +47,10 @@ var (
 	// ErrArgDecode means a parameter could not be decoded
 	ErrArgDecode = func(castType string, index int) error {
 		return fmt.Errorf("Failed to decode argument.%d to %s", index, castType)
+	}
+	// ErrParamDecode means a parameter could not be decoded
+	ErrParamDecode = func(castType string) error {
+		return fmt.Errorf("Failed to decode parameter to %s", castType)
 	}
 )
 

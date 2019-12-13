@@ -1,0 +1,23 @@
+package logic
+
+import (
+	"github.com/makeos/mosdef/logic/api"
+	"github.com/makeos/mosdef/rpc/jsonrpc"
+)
+
+// APIs returns all API handlers
+func (l *Logic) APIs() jsonrpc.APISet {
+
+	var apiSets = []jsonrpc.APISet{
+		api.NewAccountAPI(l).APIs(),
+	}
+
+	var mainSet = make(map[string]jsonrpc.APIInfo)
+	for _, set := range apiSets {
+		for k, v := range set {
+			mainSet[k] = v
+		}
+	}
+
+	return mainSet
+}

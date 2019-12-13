@@ -22,6 +22,13 @@ var _ = Describe("Account", func() {
 		}
 	})
 
+	Describe(".IsEmpty", func() {
+		It("should return true for bare account", func() {
+			acct := BareAccount()
+			Expect(acct.IsEmpty()).To(BeTrue())
+		})
+	})
+
 	Describe(".Bytes", func() {
 		It("should return serialized byte", func() {
 			bz := acct.Bytes()
