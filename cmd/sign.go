@@ -15,25 +15,26 @@
 package cmd
 
 import (
+	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/repo"
 
 	"github.com/spf13/cobra"
 )
 
-// txlineCmd represents the commit command
-var txlineCmd = &cobra.Command{
-	Use:   "txline",
-	Short: "Add transaction information to git objects",
-	Long:  `Add transaction information to git objects`,
+// signCmd represents the commit command
+var signCmd = &cobra.Command{
+	Use:   "sign",
+	Short: "Add transaction information and sign git commits, tags and notes",
+	Long:  `Add transaction information and sign git commits, tags and notes`,
 	Run: func(cmd *cobra.Command, args []string) {
 
 	},
 }
 
-var txlineCommitCmd = &cobra.Command{
+var signCommitCmd = &cobra.Command{
 	Use:   "commit",
-	Short: "Amend the recent commit message to include transaction information",
-	Long:  `Amend the recent commit message to include transaction information`,
+	Short: "Add transaction information and sign the last commit",
+	Long:  `Add transaction information and sign the last commit`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
@@ -46,10 +47,10 @@ var txlineCommitCmd = &cobra.Command{
 	},
 }
 
-var txlineTagCmd = &cobra.Command{
+var signTagCmd = &cobra.Command{
 	Use:   "tag",
-	Short: "Create an annotated tag with transaction information",
-	Long:  `Create an annotated tags with transaction information`,
+	Short: "Create an annotated tag with transaction information and sign it",
+	Long:  `Create an annotated tags with transaction information and sign it`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
@@ -63,10 +64,10 @@ var txlineTagCmd = &cobra.Command{
 	},
 }
 
-var txlineSignNoteCmd = &cobra.Command{
+var signNoteCmd = &cobra.Command{
 	Use:   "note",
-	Short: "Sign and add transaction information to a note",
-	Long:  `Sign and add transaction information to a note`,
+	Short: "Create a note, add transaction information and sign it",
+	Long:  `Create a note, add transaction information and sign it`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
@@ -84,12 +85,17 @@ var txlineSignNoteCmd = &cobra.Command{
 }
 
 func initCommit() {
-	rootCmd.AddCommand(txlineCmd)
-	txlineCmd.AddCommand(txlineTagCmd)
-	txlineCmd.AddCommand(txlineCommitCmd)
-	txlineCmd.AddCommand(txlineSignNoteCmd)
+	rootCmd.AddCommand(signCmd)
+	signCmd.AddCommand(signTagCmd)
+	signCmd.AddCommand(signCommitCmd)
+	signCmd.AddCommand(signNoteCmd)
 
-	txlineCmd.PersistentFlags().StringP("fee", "f", "0", "Set the transaction fee")
-	txlineCmd.PersistentFlags().StringP("nonce", "n", "0", "Set the transaction nonce")
-	txlineCmd.PersistentFlags().StringP("signingKey", "s", "", "Set the GPG signing key ID")
+	signCmd.PersistentFlags().StringP("fee", "f", "0", "Set the transaction fee")
+	signCmd.PersistentFlags().StringP("nonce", "n", "0", "Set the transaction nonce")
+	signCmd.PersistentFlags().StringP("signingKey", "s", "", "Set the GPG signing key ID")
+	signCmd.PersistentFlags().String("rpc.user", "", "Set the RPC username")
+	signCmd.PersistentFlags().String("rpc.password", "", "Set the RPC password")
+	signCmd.PersistentFlags().String("rpc.address", config.DefaultRPCAddress,
+		"Set the RPC listening address")
+	signCmd.PersistentFlags().String("rpc.https", "", "Force the client to use https:// protocol")
 }
