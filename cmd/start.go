@@ -26,15 +26,9 @@ import (
 )
 
 func start(onStart func(n *node.Node)) {
-	log.Info("Starting node...", "NodeID", cfg.G().NodeKey.ID(), "DevMode", cfg.IsDev())
 
-	// Create the node and open the database
+	// Create the node
 	n := node.NewNode(cfg, tmconfig)
-	if err := n.OpenDB(); err != nil {
-		log.Fatal("Failed to open database", "Err", err)
-	}
-
-	log.Info("App database has been loaded", "AppDBDir", cfg.GetAppDBDir())
 
 	// Start the node
 	if err := n.Start(); err != nil {

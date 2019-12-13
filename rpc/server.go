@@ -42,13 +42,15 @@ type Server struct {
 // NewServer creates a new RPC server
 func NewServer(cfg *config.AppConfig, log logger.Logger,
 	interrupt *util.Interrupt) *Server {
-	return &Server{
+	srv := &Server{
 		addr:      cfg.RPC.Address,
 		log:       log,
 		cfg:       cfg,
 		rpc:       jsonrpc.New(cfg.RPC.Address, cfg.RPC, log),
 		interrupt: interrupt,
 	}
+	srv.AddAPI(srv.APIs())
+	return srv
 }
 
 // GetAddr gets the address
@@ -66,8 +68,6 @@ func (s *Server) Serve() {
 			s.Stop()
 		}
 	}()
-
-	s.AddAPI(s.APIs())
 
 	s.Lock()
 	s.started = true

@@ -53,6 +53,13 @@ func NewModule(
 func (m *Module) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	nodeSrv := m.service
 	sugs := []prompt.Suggest{}
+
+	if m.cfg.ConsoleOnly() {
+		sugs = append(sugs, NewRPCModule(m.cfg, vm, m.rpcServer).Configure()...)
+		sugs = append(sugs, NewUtilModule(vm).Configure()...)
+		return sugs
+	}
+
 	sugs = append(sugs, NewTxModule(vm, nodeSrv, m.logic).Configure()...)
 	sugs = append(sugs, NewChainModule(vm, nodeSrv, m.logic).Configure()...)
 	sugs = append(sugs, NewPoolModule(vm, m.mempoolReactor).Configure()...)

@@ -144,9 +144,6 @@ func (m *RPCModule) connect(host string, port int, https bool, user, pass string
 
 	rpcNs := make(map[string]interface{})
 	rpcNs["call"] = callFunc
-	if !m.isRunning() {
-		return rpcNs
-	}
 
 	for _, method := range m.rpcServer.GetMethods() {
 		methodName := method.Name

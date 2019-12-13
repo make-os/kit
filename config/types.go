@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/spf13/viper"
 	"path/filepath"
 )
 
@@ -203,6 +204,11 @@ func (c *AppConfig) GetExtensionDir() string {
 // SetRepoRoot sets the repo root directory
 func (c *AppConfig) SetRepoRoot(dir string) {
 	c.repoDir = dir
+}
+
+// ConsoleOnly checks whether --only flag is set
+func (c *AppConfig) ConsoleOnly() bool {
+	return viper.GetBool("console.only")
 }
 
 // GetAppDBDir returns the path where app's database files are stored

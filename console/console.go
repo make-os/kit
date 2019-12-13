@@ -180,7 +180,9 @@ func (c *Console) Run() error {
 		return errors.Wrap(err, "failed to prepare console")
 	}
 
-	fmt.Println("")
+	if !c.cfg.ConsoleOnly() {
+		fmt.Println("")
+	}
 	c.about()
 	c.prompt.Run()
 

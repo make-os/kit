@@ -37,7 +37,6 @@ var consoleCmd = &cobra.Command{
 			// On stop, close the node and interrupt other processes
 			console.OnStop(func() {
 				itr.Close()
-				n.Stop()
 			})
 
 			// Add JS module

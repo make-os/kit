@@ -126,8 +126,26 @@ func createCustomMempool(cfg *config.AppConfig, log logger.Logger) *nm.CustomMem
 	}
 }
 
+func (n *Node) noServerStart() error {
+
+	// Create the rpc server, add APIs but don't start it.
+	// The console will need a non-nil instance to learn about the RPC methods.
+	n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-sever"), n.cfg.G().Interrupt)
+
+	// Initialize and start JS modules and extensions
+	n.initJSModuleAndExtension()
+
+	return nil
+}
+
 // Start starts the tendermint node
 func (n *Node) Start() error {
+
+	if n.cfg.ConsoleOnly() {
+		return n.noServerStart()
+	}
+
+	n.log.Info("Starting node...", "NodeID", n.cfg.G().NodeKey.ID(), "DevMode", n.cfg.IsDev())
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	var err error
@@ -135,6 +153,12 @@ func (n *Node) Start() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to parse log level")
 	}
+
+	if err := n.OpenDB(); err != nil {
+		n.log.Fatal("Failed to open database", "Err", err)
+	}
+
+	n.log.Info("App database has been loaded", "AppDBDir", n.cfg.GetAppDBDir())
 
 	// Read private validator
 	pv := privval.LoadFilePV(n.tmcfg.PrivValidatorKeyFile(), n.tmcfg.PrivValidatorStateFile())
@@ -230,13 +254,13 @@ func (n *Node) Start() error {
 	}
 
 	// Initialize extension manager and start extensions
-	n.initExtensionMgr()
+	n.initJSModuleAndExtension()
 
 	return nil
 }
 
-// initExtensionMgr initializes and starts the extension manager
-func (n *Node) initExtensionMgr() {
+// initJSModuleAndExtension initializes  and starts the extension manager
+func (n *Node) initJSModuleAndExtension() {
 
 	// Create extension manager
 	vm := otto.New()
@@ -330,7 +354,7 @@ func (n *Node) GetService() types.Service {
 func (n *Node) Stop() {
 	n.log.Info("mosdef is stopping...")
 
-	if n.tm.IsRunning() {
+	if n.tm != nil && n.tm.IsRunning() {
 		n.tm.Stop()
 	}
 
@@ -346,6 +370,9 @@ func (n *Node) Stop() {
 		n.rpcServer.Stop()
 	}
 
-	n.log.Info("Databases have been closed")
+	if !n.cfg.ConsoleOnly() {
+		n.log.Info("Databases have been closed")
+	}
+
 	n.log.Info("mosdef has stopped")
 }
