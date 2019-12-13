@@ -21,8 +21,8 @@ func (a *AccountAPI) getNonce(params interface{}) *jsonrpc.Response {
 
 	address, ok := params.(string)
 	if !ok {
-		return jsonrpc.Error(types.ErrCodeInvalidParamType,
-			types.ErrParamDecode("string").Error(), nil)
+		err := types.ErrParamDecode("string")
+		return jsonrpc.Error(types.ErrCodeInvalidParamType, err.Error(), nil)
 	}
 
 	account := a.logic.AccountKeeper().GetAccount(util.String(address))
