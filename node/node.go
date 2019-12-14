@@ -256,10 +256,10 @@ func (n *Node) startRPCServer() {
 }
 
 func (n *Node) addRPCAPIs() {
-	n.rpcServer.AddAPI(
-		n.acctMgr.APIs(),
-		n.logic.(*logic.Logic).APIs(),
-	)
+	n.rpcServer.AddAPI(n.acctMgr.APIs())
+	if n.logic != nil {
+		n.rpcServer.AddAPI(n.logic.(*logic.Logic).APIs())
+	}
 }
 
 func (n *Node) startConsoleOnly() error {

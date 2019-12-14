@@ -145,17 +145,39 @@ func (m *RPCModule) connect(host string, port int, https bool, user, pass string
 	rpcNs := make(map[string]interface{})
 	rpcNs["call"] = callFunc
 
-	for _, method := range m.rpcServer.GetMethods() {
-		methodName := method.Name
-		ns := method.Namespace
-		curNs, ok := rpcNs[ns]
-		if !ok {
-			curNs = make(map[string]interface{})
-			rpcNs[ns] = curNs
+	// Fill the rpc namespace with convenience methods that allow calls such
+	// as namespace.method(param).
+	if m.rpcServer != nil && m.rpcServer.IsRunning() {
+		for _, method := range m.rpcServer.GetMethods() {
+			methodName := method.Name
+			ns := method.Namespace
+			curNs, ok := rpcNs[ns]
+			if !ok {
+				curNs = make(map[string]interface{})
+				rpcNs[ns] = curNs
+			}
+			curNs.(map[string]interface{})[strings.Split(methodName, "_")[1]] = func(
+				params ...interface{}) interface{} {
+				return callFunc(methodName, params...)
+			}
 		}
-		curNs.(map[string]interface{})[strings.Split(methodName, "_")[1]] = func(
-			params ...interface{}) interface{} {
-			return callFunc(methodName, params...)
+	} else {
+		methods, err := c.Call("rpc_methods", nil)
+		if err == nil {
+			for _, method := range methods.([]interface{}) {
+				fullName := method.(map[string]interface{})["name"].(string)
+				parts := strings.Split(fullName, "_")
+				ns := parts[0]
+				curNs, ok := rpcNs[ns]
+				if !ok {
+					curNs = make(map[string]interface{})
+					rpcNs[ns] = curNs
+				}
+				curNs.(map[string]interface{})[parts[1]] = func(
+					params ...interface{}) interface{} {
+					return callFunc(fullName, params...)
+				}
+			}
 		}
 	}
 
