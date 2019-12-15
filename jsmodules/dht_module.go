@@ -57,6 +57,11 @@ func (m *DHTModule) namespacedFuncs() []*types.JSModuleFunc {
 			Value:       m.getRepoObject,
 			Description: "Find and return a repo object",
 		},
+		&types.JSModuleFunc{
+			Name:        "getPeers",
+			Value:       m.getPeers,
+			Description: "Returns a list of all DHT peers",
+		},
 	}
 }
 
@@ -143,4 +148,13 @@ func (m *DHTModule) getRepoObject(objURI string) []byte {
 	}
 
 	return bz
+}
+
+// getPeers returns a list of all DHT peers
+func (m *DHTModule) getPeers() []string {
+	peers := m.dht.Peers()
+	if len(peers) == 0 {
+		return []string{}
+	}
+	return peers
 }
