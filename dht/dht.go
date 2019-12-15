@@ -108,16 +108,15 @@ func (dht *DHT) RegisterObjFinder(module string, finder types.ObjectFinder) {
 }
 
 // connect connects the host to a remote dht peer using the given DHT info
-func (dht *DHT) connect(remotePeerDHTInfo *types.DHTInfo, p p2p.Peer) error {
+func (dht *DHT) connect(peerInfo *types.DHTInfo, p p2p.Peer) error {
 	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cn()
 
 	var err error
 	addrInfo := peer.AddrInfo{}
-	addr, _ := ma.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%s",
-		remotePeerDHTInfo.Address, remotePeerDHTInfo.Port))
+	addr, _ := ma.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%s", peerInfo.Address, peerInfo.Port))
 	addrInfo.Addrs = append(addrInfo.Addrs, addr)
-	addrInfo.ID, err = peer.IDB58Decode(remotePeerDHTInfo.ID)
+	addrInfo.ID, err = peer.IDB58Decode(peerInfo.ID)
 	if err != nil {
 		return errors.Wrap(err, "bad peer id")
 	}
@@ -172,7 +171,10 @@ func (dht *DHT) isConnected(p p2p.Peer) bool {
 // and remove peers that are no longer connected to the host.
 func (dht *DHT) verifyConnections(ctx context.Context) {
 	for _, peerID := range dht.connectedPeers.Keys() {
-		remoteDHTHostID, _ := dht.connectedPeers.Peek(peerID)
+		remoteDHTHostID, ok := dht.connectedPeers.Peek(peerID)
+		if !ok {
+			continue
+		}
 		found := false
 		for _, con := range dht.host.Network().Conns() {
 			if con.RemotePeer() == remoteDHTHostID.(peer.ID) {
@@ -190,6 +192,14 @@ func (dht *DHT) verifyConnections(ctx context.Context) {
 // OnStart implements p2p.BaseReactor.
 func (dht *DHT) OnStart() error {
 	return nil
+}
+
+// Peers returns a list of all peers
+func (dht *DHT) Peers() (peers []string) {
+	for _, p := range dht.dht.RoutingTable().ListPeers() {
+		peers = append(peers, p.String())
+	}
+	return
 }
 
 func (dht *DHT) requestDHTInfo(p p2p.Peer) error {

@@ -608,4 +608,33 @@ var _ = Describe("App", func() {
 			})
 		})
 	})
+
+	FDescribe(".Peers", func() {
+		When("two nodes are connected", func() {
+			var node1, node2 *DHT
+			var err error
+			var remotePeerID = p2p.ID("xyz")
+
+			BeforeEach(func() {
+				node1, err = New(context.Background(), cfg, key.PrivKey().Key(), randomAddr())
+				Expect(err).To(BeNil())
+				node2, err = New(context.Background(), cfg2, key2.PrivKey().Key(), randomAddr())
+				Expect(err).To(BeNil())
+				node2Port, _ := node2.host.Addrs()[0].ValueForProtocol(multiaddr.P_TCP)
+				remotePeerMock := mocks.NewMockPeer(ctrl)
+				remotePeerMock.EXPECT().ID().Return(remotePeerID).AnyTimes()
+				err = node1.connect(&types.DHTInfo{
+					ID:      node2.host.ID().String(),
+					Address: "127.0.0.1",
+					Port:    node2Port,
+				}, remotePeerMock)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return one peer", func() {
+				Expect(node1.Peers()).To(HaveLen(1))
+				Expect(node2.Peers()).To(HaveLen(1))
+			})
+		})
+	})
 })
