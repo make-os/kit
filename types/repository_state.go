@@ -27,6 +27,11 @@ func (r *References) Get(name string) *Reference {
 	return ref
 }
 
+// Has checks whether a reference exist
+func (r *References) Has(name string) bool {
+	return (*r)[name] != nil
+}
+
 // BareRepository returns an empty repository object
 func BareRepository() *Repository {
 	return &Repository{}
@@ -36,11 +41,6 @@ func BareRepository() *Repository {
 type Repository struct {
 	CreatorAddress util.String `json:"creatorAddress" msgpack:"creatorAddress"`
 	References     References  `json:"references" msgpack:"references"`
-}
-
-// IsEmpty returns true if the repository's fields have zero values
-func (r *Repository) IsEmpty() bool {
-	return r.CreatorAddress.Empty() && len(r.References) == 0
 }
 
 // IsNil returns true if the repo fields are set to their nil value

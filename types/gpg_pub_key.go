@@ -30,8 +30,8 @@ func (g *GPGPubKey) Bytes() []byte {
 	return util.ObjectToBytes(g)
 }
 
-// IsEmpty returns true if g is empty
-func (g *GPGPubKey) IsEmpty() bool {
+// IsNil returns true if g fields have zero values
+func (g *GPGPubKey) IsNil() bool {
 	return g.PubKey == "" && g.Address.Empty()
 }
 

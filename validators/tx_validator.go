@@ -667,7 +667,7 @@ func ValidateTxConsistency(tx *types.Transaction, index int, logic types.Logic) 
 		// Check whether there is a matching gpg key already existing
 		pkID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 		gpgPubKey := logic.GPGPubKeyKeeper().GetGPGPubKey(pkID)
-		if !gpgPubKey.IsEmpty() {
+		if !gpgPubKey.IsNil() {
 			msg := "gpg public key already registered"
 			return types.FieldErrorWithIndex(index, "gpgPubKey.pubKey", msg)
 		}

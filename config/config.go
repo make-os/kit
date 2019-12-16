@@ -224,7 +224,11 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 	tmcfg.RPC.ListenAddress = "tcp://" + c.RPC.TMRPCAddress
 
 	if c.DHT.Address != "" && c.DHT.Address[:1] == ":" {
-		c.DHT.Address = "127.0.0.1" + c.DHT.Address
+		c.DHT.Address = "0.0.0.0" + c.DHT.Address
+	}
+
+	if c.RPC.Address != "" && c.RPC.Address[:1] == ":" {
+		c.RPC.Address = "0.0.0.0" + c.RPC.Address
 	}
 
 	if c.RPC.User == "" && c.RPC.Password == "" {

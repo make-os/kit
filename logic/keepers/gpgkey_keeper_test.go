@@ -64,7 +64,7 @@ var _ = Describe("Account", func() {
 		})
 	})
 
-	Describe(".GetByPubKeyIDs", func() {
+	Describe(".GetPubKeyIDs", func() {
 		BeforeEach(func() {
 			err = gpgKeeper.Update("pk_id", &types.GPGPubKey{PubKey: "pub_key", Address: "addr"})
 			Expect(err).To(BeNil())
@@ -73,7 +73,7 @@ var _ = Describe("Account", func() {
 		})
 
 		It("should return expected pk ids", func() {
-			pkIDs := gpgKeeper.GetByPubKeyIDs("addr")
+			pkIDs := gpgKeeper.GetPubKeyIDs("addr")
 			Expect(pkIDs).To(HaveLen(2))
 			Expect(pkIDs).To(ConsistOf("pk_id", "pk_id2"))
 		})

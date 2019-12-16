@@ -25,7 +25,7 @@ func (a *GPGAPI) find(params interface{}) *jsonrpc.Response {
 	}
 
 	key := a.logic.GPGPubKeyKeeper().GetGPGPubKey(pkID)
-	if key.IsEmpty() {
+	if key.IsNil() {
 		return jsonrpc.Error(types.ErrCodeGPGKeyNotFound, "gpg key not found", nil)
 	}
 

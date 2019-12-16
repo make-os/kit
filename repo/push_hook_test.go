@@ -44,7 +44,7 @@ var _ = Describe("PushHook", func() {
 		mockDHT = mocks.NewMockDHT(ctrl)
 		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic, mockDHT)
 
-		hook = newPushHook(repo, repoMgr)
+		hook = newPushHook(repo, repoMgr, cfg.G().Log)
 	})
 
 	Describe(".BeforePush", func() {

@@ -3,7 +3,9 @@ package repo
 import (
 	"crypto/rsa"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"gopkg.in/src-d/go-git.v4/config"
@@ -40,6 +42,11 @@ func (r *Repo) State() *types.Repository {
 // Path returns the repository's path
 func (r *Repo) Path() string {
 	return r.path
+}
+
+// SetPath sets the repository root path
+func (r *Repo) SetPath(path string) {
+	r.path = path
 }
 
 // References returns an unsorted ReferenceIter for all references.
@@ -175,6 +182,62 @@ func (r *Repo) ListTreeObjectsSlice(treename string, recursive, showTrees bool,
 // GetName returns the name of the repo
 func (r *Repo) GetName() string {
 	return r.name
+}
+
+// ObjectExist checks whether an object exist in the target repository
+func (r *Repo) ObjectExist(objHash string) bool {
+	_, err := r.Object(plumbing.AnyObject, plumbing.NewHash(objHash))
+	return err == nil
+}
+
+// GetObject returns an object
+func (r *Repo) GetObject(objHash string) (object.Object, error) {
+	obj, err := r.Object(plumbing.AnyObject, plumbing.NewHash(objHash))
+	if err != nil {
+		return nil, err
+	}
+	return obj, nil
+}
+
+// GetEncodedObject returns an object
+func (r *Repo) GetEncodedObject(objHash string) (plumbing.EncodedObject, error) {
+	obj, err := r.Object(plumbing.AnyObject, plumbing.NewHash(objHash))
+	if err != nil {
+		return nil, err
+	}
+	encoded := &plumbing.MemoryObject{}
+	if err = obj.Encode(encoded); err != nil {
+		return nil, err
+	}
+	return encoded, nil
+}
+
+// GetObjectSize returns the size of an object
+func (r *Repo) GetObjectSize(objHash string) (int64, error) {
+	obj, err := r.Object(plumbing.AnyObject, plumbing.NewHash(objHash))
+	if err != nil {
+		return 0, err
+	}
+	encoded := &plumbing.MemoryObject{}
+	if err = obj.Encode(encoded); err != nil {
+		return 0, err
+	}
+	return encoded.Size(), nil
+}
+
+// WriteObjectToFile writes an object to the repository's objects directory
+func (r *Repo) WriteObjectToFile(objectHash string, content []byte) error {
+
+	objDir := filepath.Join(r.path, "objects", objectHash[:2])
+	os.MkdirAll(objDir, 0700)
+
+	fullPath := filepath.Join(objDir, objectHash[2:])
+	err := ioutil.WriteFile(fullPath, content, 0644)
+	if err != nil {
+		return errors.Wrap(err, "failed to write object")
+	}
+
+	return nil
 }
 
 func getRepo(path string) (types.BareRepo, error) {

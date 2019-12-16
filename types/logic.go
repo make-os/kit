@@ -137,11 +137,11 @@ type GPGPubKeyKeeper interface {
 	// CONTRACT: It returns an empty Account if no account is found.
 	GetGPGPubKey(pkID string, blockNum ...int64) *GPGPubKey
 
-	// GetByPubKeyIDs returns all public keys associated with the given address
+	// GetPubKeyIDs returns all public keys associated with the given address
 	//
 	// ARGS:
 	// address: The target address
-	GetByPubKeyIDs(address string) (pkIDs []string)
+	GetPubKeyIDs(address string) (pkIDs []string)
 }
 
 // AtomicLogic is like Logic but allows all operations

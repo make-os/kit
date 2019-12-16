@@ -435,6 +435,18 @@ func (mr *MockBareRepoMockRecorder) ListTreeObjectsSlice(treename, recursive, sh
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTreeObjectsSlice", reflect.TypeOf((*MockBareRepo)(nil).ListTreeObjectsSlice), varargs...)
 }
 
+// SetPath mocks base method
+func (m *MockBareRepo) SetPath(path string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetPath", path)
+}
+
+// SetPath indicates an expected call of SetPath
+func (mr *MockBareRepoMockRecorder) SetPath(path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPath", reflect.TypeOf((*MockBareRepo)(nil).SetPath), path)
+}
+
 // Path mocks base method
 func (m *MockBareRepo) Path() string {
 	m.ctrl.T.Helper()
@@ -461,6 +473,79 @@ func (m *MockBareRepo) State() *types.Repository {
 func (mr *MockBareRepoMockRecorder) State() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "State", reflect.TypeOf((*MockBareRepo)(nil).State))
+}
+
+// ObjectExist mocks base method
+func (m *MockBareRepo) ObjectExist(objHash string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ObjectExist", objHash)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ObjectExist indicates an expected call of ObjectExist
+func (mr *MockBareRepoMockRecorder) ObjectExist(objHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObjectExist", reflect.TypeOf((*MockBareRepo)(nil).ObjectExist), objHash)
+}
+
+// GetObjectSize mocks base method
+func (m *MockBareRepo) GetObjectSize(objHash string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetObjectSize", objHash)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetObjectSize indicates an expected call of GetObjectSize
+func (mr *MockBareRepoMockRecorder) GetObjectSize(objHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObjectSize", reflect.TypeOf((*MockBareRepo)(nil).GetObjectSize), objHash)
+}
+
+// GetEncodedObject mocks base method
+func (m *MockBareRepo) GetEncodedObject(objHash string) (plumbing.EncodedObject, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetEncodedObject", objHash)
+	ret0, _ := ret[0].(plumbing.EncodedObject)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetEncodedObject indicates an expected call of GetEncodedObject
+func (mr *MockBareRepoMockRecorder) GetEncodedObject(objHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEncodedObject", reflect.TypeOf((*MockBareRepo)(nil).GetEncodedObject), objHash)
+}
+
+// WriteObjectToFile mocks base method
+func (m *MockBareRepo) WriteObjectToFile(objectHash string, content []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WriteObjectToFile", objectHash, content)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// WriteObjectToFile indicates an expected call of WriteObjectToFile
+func (mr *MockBareRepoMockRecorder) WriteObjectToFile(objectHash, content interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WriteObjectToFile", reflect.TypeOf((*MockBareRepo)(nil).WriteObjectToFile), objectHash, content)
+}
+
+// GetObject mocks base method
+func (m *MockBareRepo) GetObject(objHash string) (object.Object, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetObject", objHash)
+	ret0, _ := ret[0].(object.Object)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetObject indicates an expected call of GetObject
+func (mr *MockBareRepoMockRecorder) GetObject(objHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObject", reflect.TypeOf((*MockBareRepo)(nil).GetObject), objHash)
 }
 
 // MockRepoManager is a mock of RepoManager interface
@@ -734,6 +819,20 @@ func (m *MockPushTx) EXPECT() *MockPushTxMockRecorder {
 	return m.recorder
 }
 
+// GetRepoName mocks base method
+func (m *MockPushTx) GetRepoName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRepoName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetRepoName indicates an expected call of GetRepoName
+func (mr *MockPushTxMockRecorder) GetRepoName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoName", reflect.TypeOf((*MockPushTx)(nil).GetRepoName))
+}
+
 // Bytes mocks base method
 func (m *MockPushTx) Bytes() []byte {
 	m.ctrl.T.Helper()
@@ -830,6 +929,62 @@ func (m *MockPushTx) TotalFee() util.String {
 func (mr *MockPushTxMockRecorder) TotalFee() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalFee", reflect.TypeOf((*MockPushTx)(nil).TotalFee))
+}
+
+// GetPushedReferences mocks base method
+func (m *MockPushTx) GetPushedReferences() types.PushedReferences {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPushedReferences")
+	ret0, _ := ret[0].(types.PushedReferences)
+	return ret0
+}
+
+// GetPushedReferences indicates an expected call of GetPushedReferences
+func (mr *MockPushTxMockRecorder) GetPushedReferences() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushedReferences", reflect.TypeOf((*MockPushTx)(nil).GetPushedReferences))
+}
+
+// GetPusherKeyID mocks base method
+func (m *MockPushTx) GetPusherKeyID() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPusherKeyID")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetPusherKeyID indicates an expected call of GetPusherKeyID
+func (mr *MockPushTxMockRecorder) GetPusherKeyID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPusherKeyID", reflect.TypeOf((*MockPushTx)(nil).GetPusherKeyID))
+}
+
+// GetTargetRepo mocks base method
+func (m *MockPushTx) GetTargetRepo() types.BareRepo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTargetRepo")
+	ret0, _ := ret[0].(types.BareRepo)
+	return ret0
+}
+
+// GetTargetRepo indicates an expected call of GetTargetRepo
+func (mr *MockPushTxMockRecorder) GetTargetRepo() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTargetRepo", reflect.TypeOf((*MockPushTx)(nil).GetTargetRepo))
+}
+
+// GetSize mocks base method
+func (m *MockPushTx) GetSize() uint64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSize")
+	ret0, _ := ret[0].(uint64)
+	return ret0
+}
+
+// GetSize indicates an expected call of GetSize
+func (mr *MockPushTxMockRecorder) GetSize() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSize", reflect.TypeOf((*MockPushTx)(nil).GetSize))
 }
 
 // MockBareRepoState is a mock of BareRepoState interface

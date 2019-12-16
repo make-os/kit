@@ -386,18 +386,18 @@ func (mr *MockGPGPubKeyKeeperMockRecorder) GetGPGPubKey(pkID interface{}, blockN
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGPGPubKey", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).GetGPGPubKey), varargs...)
 }
 
-// GetByPubKeyIDs mocks base method
-func (m *MockGPGPubKeyKeeper) GetByPubKeyIDs(address string) []string {
+// GetPubKeyIDs mocks base method
+func (m *MockGPGPubKeyKeeper) GetPubKeyIDs(address string) []string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByPubKeyIDs", address)
+	ret := m.ctrl.Call(m, "GetPubKeyIDs", address)
 	ret0, _ := ret[0].([]string)
 	return ret0
 }
 
-// GetByPubKeyIDs indicates an expected call of GetByPubKeyIDs
-func (mr *MockGPGPubKeyKeeperMockRecorder) GetByPubKeyIDs(address interface{}) *gomock.Call {
+// GetPubKeyIDs indicates an expected call of GetPubKeyIDs
+func (mr *MockGPGPubKeyKeeperMockRecorder) GetPubKeyIDs(address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByPubKeyIDs", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).GetByPubKeyIDs), address)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubKeyIDs", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).GetPubKeyIDs), address)
 }
 
 // MockAtomicLogic is a mock of AtomicLogic interface

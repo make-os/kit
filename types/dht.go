@@ -55,6 +55,9 @@ type DHT interface {
 
 	// RegisterObjFinder registers a finder for an object type
 	RegisterObjFinder(objType string, finder ObjectFinder)
+
+	// Peers returns a list of all peers
+	Peers() (peers []string)
 }
 
 // DHTObjectQuery describes a query for an object that is maintained by a module

@@ -83,4 +83,7 @@ var (
 
 	// PushPoolItemTTL is the maximum life time of an item in the push pool
 	PushPoolItemTTL = 24 * 3 * time.Hour
+
+	// MaxPushTxAge is the duration afterwhich a push transaction is considered old.
+	MaxPushTxAge = 30 * time.Minute
 )

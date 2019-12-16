@@ -5,6 +5,7 @@ import (
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util"
+	"github.com/vmihailenco/msgpack"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -98,11 +99,29 @@ type BareRepo interface {
 	ListTreeObjectsSlice(treename string, recursive, showTrees bool,
 		env ...string) ([]string, error)
 
+	// SetPath sets the repository root path
+	SetPath(path string)
+
 	// Path returns the repository's path
 	Path() string
 
 	// State returns the repository's network state
 	State() *Repository
+
+	// ObjectExist checks whether an object exist in the target repository
+	ObjectExist(objHash string) bool
+
+	// GetObjectSize returns the size of an object
+	GetObjectSize(objHash string) (int64, error)
+
+	// GetEncodedObject returns an object
+	GetEncodedObject(objHash string) (plumbing.EncodedObject, error)
+
+	// WriteObjectToFile writes an object to the repository's objects directory
+	WriteObjectToFile(objectHash string, content []byte) error
+
+	// GetObject returns an object
+	GetObject(objHash string) (object.Object, error)
 }
 
 // PGPPubKeyGetter represents a function for fetching PGP public key
@@ -174,6 +193,9 @@ type PushPool interface {
 // PushTx represents a repository push request
 type PushTx interface {
 
+	// RepoName returns the name of the repo receiving the push
+	GetRepoName() string
+
 	// Bytes returns a serialized version of the object
 	Bytes() []byte
 
@@ -195,7 +217,46 @@ type PushTx interface {
 
 	// TotalFee returns the sum of reference update fees
 	TotalFee() util.String
+
+	// GetPushedReferences returns the pushed references
+	GetPushedReferences() PushedReferences
+
+	// GetPusherKeyID returns the pusher gpg key ID
+	GetPusherKeyID() string
+
+	// GetTargetRepo returns the target repository
+	GetTargetRepo() BareRepo
+
+	// GetSize returns the total pushed objects size
+	GetSize() uint64
 }
+
+// PushedReference represents a reference that was pushed by git client
+type PushedReference struct {
+	Name         string      `json:"name" msgpack:"name"`                 // The full name of the reference
+	OldHash      string      `json:"oldHash" msgpack:"oldHash"`           // The hash of the reference before the push
+	NewHash      string      `json:"newHash" msgpack:"newHash"`           // The hash of the reference after the push
+	Nonce        uint64      `json:"nonce" msgpack:"nonce"`               // The next repo nonce of the reference
+	AccountNonce uint64      `json:"accountNonce" msgpack:"accountNonce"` // The pusher's account nonce
+	Fee          util.String `json:"fee" msgpack:"fee"`                   // The fee the pusher is willing to pay to validators
+	Objects      []string    `json:"objects" msgpack:"objects"`           // A list of objects pushed to the reference
+	// Sig          string      `json:"sig" msgpack:"sig"`                   // The signature of the pusher
+}
+
+// EncodeMsgpack implements msgpack.CustomEncoder
+func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeMulti(pr.Name, pr.OldHash, pr.NewHash,
+		pr.Nonce, pr.AccountNonce, pr.Fee, pr.Objects)
+}
+
+// DecodeMsgpack implements msgpack.CustomDecoder
+func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return dec.DecodeMulti(&pr.Name, &pr.OldHash, &pr.NewHash,
+		&pr.Nonce, &pr.AccountNonce, &pr.Fee, &pr.Objects)
+}
+
+// PushedReferences represents a collection of pushed references
+type PushedReferences []*PushedReference
 
 type (
 	// ColChangeType describes a change to a collection item

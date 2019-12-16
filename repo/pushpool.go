@@ -8,6 +8,7 @@ import (
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
+	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
 )
@@ -88,10 +89,13 @@ type PushPool struct {
 	index       containerIndex
 	refIndex    containerIndex
 	refNonceIdx refNonceIndex
+	keepers     types.Keepers
+	dht         types.DHT
+	txChecker   poolTxChecker
 }
 
 // NewPushPool creates an instance of PushPool
-func NewPushPool(cap int) *PushPool {
+func NewPushPool(cap int, keepers types.Keepers, dht types.DHT) *PushPool {
 	pool := &PushPool{
 		gmx:         &sync.RWMutex{},
 		cap:         cap,
@@ -99,6 +103,9 @@ func NewPushPool(cap int) *PushPool {
 		index:       containerIndex(map[string]*containerItem{}),
 		refIndex:    containerIndex(map[string]*containerItem{}),
 		refNonceIdx: refNonceIndex(map[string]uint64{}),
+		keepers:     keepers,
+		dht:         dht,
+		txChecker:   checkPushTx,
 	}
 
 	tick := time.NewTicker(params.PushPoolCleanUpInt)
@@ -198,6 +205,11 @@ func (p *PushPool) Add(tx types.PushTx) error {
 		p.remove(funk.Values(replaceable).([]*PushTx)...)
 	}
 
+	// Validate the transaction
+	if err := p.validate(tx); err != nil {
+		return errors.Wrap(err, "validation failed")
+	}
+
 	// Add new tx item to container
 	p.container = append(p.container, item)
 
@@ -239,9 +251,8 @@ func (p *PushPool) remove(txs ...*PushTx) {
 }
 
 // validate validates a push transaction
-func (p *PushPool) validate(tx *PushTx) error {
-	// TODO(not implemented)
-	return nil
+func (p *PushPool) validate(tx types.PushTx) error {
+	return p.txChecker(tx, p.keepers, p.dht)
 }
 
 // sort sorts the pool

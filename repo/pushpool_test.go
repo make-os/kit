@@ -1,32 +1,50 @@
 package repo
 
 import (
+	"time"
+
+	"github.com/golang/mock/gomock"
 	"github.com/makeos/mosdef/params"
+	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/types/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
 )
+
+func txCheckNoIssue(tx types.PushTx, keepers types.Keepers, dht types.DHT) error {
+	return nil
+}
 
 var _ = Describe("PushPool", func() {
 	var pool *PushPool
 	var tx *PushTx
 	var tx2 *PushTx
+	var ctrl *gomock.Controller
+	var mockKeeper *mocks.MockKeepers
+	var mockDHT *mocks.MockDHT
 
 	BeforeEach(func() {
-		pool = NewPushPool(10)
+		ctrl = gomock.NewController(GinkgoT())
+		mockKeeper = mocks.NewMockKeepers(ctrl)
+		mockDHT = mocks.NewMockDHT(ctrl)
+		pool = NewPushPool(10, mockKeeper, mockDHT)
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	BeforeEach(func() {
 		tx = &PushTx{
 			RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
-			References: []*PushedReference{
-				{Name: "refs/heads/master", Nonce: 1, Sig: "abc_xyz", Fee: "0.2", AccountNonce: 2},
+			References: []*types.PushedReference{
+				{Name: "refs/heads/master", Nonce: 1, Fee: "0.2", AccountNonce: 2},
 			},
 		}
 		tx2 = &PushTx{
 			RepoName: "repo2", NodeSig: []byte("sig_2"), PusherKeyID: "pk_id_2",
-			References: []*PushedReference{
-				{Name: "refs/heads/master", Nonce: 1, Sig: "abc_xyz", Fee: "0.2", AccountNonce: 2},
+			References: []*types.PushedReference{
+				{Name: "refs/heads/master", Nonce: 1, Fee: "0.2", AccountNonce: 2},
 			},
 		}
 	})
@@ -36,7 +54,8 @@ var _ = Describe("PushPool", func() {
 
 		When("pool has one item and pool TTL is 10ms", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(1)
+				pool = NewPushPool(1, mockKeeper, mockDHT)
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 				params.PushPoolItemTTL = 10 * time.Millisecond
@@ -59,7 +78,8 @@ var _ = Describe("PushPool", func() {
 
 		When("pool has reached capacity", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(1)
+				pool = NewPushPool(1, mockKeeper, mockDHT)
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 				err = pool.Add(tx2)
@@ -73,7 +93,8 @@ var _ = Describe("PushPool", func() {
 
 		When("tx already exist in pool", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(2)
+				pool = NewPushPool(2, mockKeeper, mockDHT)
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 				err = pool.Add(tx)
@@ -87,7 +108,8 @@ var _ = Describe("PushPool", func() {
 
 		When("tx doesn't already exist", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(2)
+				pool = NewPushPool(2, mockKeeper, mockDHT)
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 			})
 
@@ -108,14 +130,15 @@ var _ = Describe("PushPool", func() {
 		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool and tx_X and tx_Y have equal fee", func() {
 			BeforeEach(func() {
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
 				tx2 := &PushTx{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
-					References: []*PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Sig: "abc_xyz", Fee: "0.2", AccountNonce: 2},
+					References: []*types.PushedReference{
+						{Name: "refs/heads/master", Nonce: 1, Fee: "0.2", AccountNonce: 2},
 					},
 				}
 
@@ -133,14 +156,15 @@ var _ = Describe("PushPool", func() {
 			"that already exist in the pool but ref0 has a higher nonce", func() {
 			var tx2 *PushTx
 			BeforeEach(func() {
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
 				tx2 = &PushTx{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
-					References: []*PushedReference{
-						{Name: "refs/heads/master", Nonce: 2, Sig: "abc_xyz", Fee: "0.01", AccountNonce: 2},
+					References: []*types.PushedReference{
+						{Name: "refs/heads/master", Nonce: 2, Fee: "0.01", AccountNonce: 2},
 					},
 				}
 				pool.refIndex = containerIndex(map[string]*containerItem{})
@@ -157,14 +181,15 @@ var _ = Describe("PushPool", func() {
 			"that already exist in the pool but failed to read the ref index of the existing reference", func() {
 			var tx2 *PushTx
 			BeforeEach(func() {
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
 				tx2 = &PushTx{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
-					References: []*PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Sig: "abc_xyz", Fee: "0.01", AccountNonce: 2},
+					References: []*types.PushedReference{
+						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
 					},
 				}
 				pool.refIndex = containerIndex(map[string]*containerItem{})
@@ -180,14 +205,15 @@ var _ = Describe("PushPool", func() {
 		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool and tx_X has a lower fee", func() {
 			BeforeEach(func() {
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
 				tx2 := &PushTx{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
-					References: []*PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Sig: "abc_xyz", Fee: "0.01", AccountNonce: 2},
+					References: []*types.PushedReference{
+						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
 					},
 				}
 
@@ -205,14 +231,15 @@ var _ = Describe("PushPool", func() {
 			"that already exist in the pool and tx_X has a higher fee", func() {
 			var tx2 *PushTx
 			BeforeEach(func() {
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
 				tx2 = &PushTx{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
-					References: []*PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Sig: "abc_xyz", Fee: "0.5", AccountNonce: 2}},
+					References: []*types.PushedReference{
+						{Name: "refs/heads/master", Nonce: 1, Fee: "0.5", AccountNonce: 2}},
 				}
 
 				err = pool.Add(tx2)
@@ -238,28 +265,29 @@ var _ = Describe("PushPool", func() {
 				txY = &PushTx{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
-					References: []*PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Sig: "abc_xyz", Fee: "0.01", AccountNonce: 2},
+					References: []*types.PushedReference{
+						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
 					},
 				}
 
 				txZ = &PushTx{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
-					References: []*PushedReference{
-						{Name: "refs/heads/update", Nonce: 1, Sig: "abc_xyz", Fee: "0.01", AccountNonce: 2},
+					References: []*types.PushedReference{
+						{Name: "refs/heads/update", Nonce: 1, Fee: "0.01", AccountNonce: 2},
 					},
 				}
 
 				txX = &PushTx{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
-					References: []*PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Sig: "abc_xyz", Fee: "0.02", AccountNonce: 2},
-						{Name: "refs/heads/update", Nonce: 1, Sig: "abc_xyz", Fee: "0.01", AccountNonce: 2},
+					References: []*types.PushedReference{
+						{Name: "refs/heads/master", Nonce: 1, Fee: "0.02", AccountNonce: 2},
+						{Name: "refs/heads/update", Nonce: 1, Fee: "0.01", AccountNonce: 2},
 					},
 				}
 
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(txY)
 				Expect(err).To(BeNil())
 				err = pool.Add(txZ)
@@ -288,28 +316,29 @@ var _ = Describe("PushPool", func() {
 				txY = &PushTx{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
-					References: []*PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Sig: "abc_xyz", Fee: "0.4", AccountNonce: 2},
+					References: []*types.PushedReference{
+						{Name: "refs/heads/master", Nonce: 1, Fee: "0.4", AccountNonce: 2},
 					},
 				}
 
 				txZ = &PushTx{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
-					References: []*PushedReference{
-						{Name: "refs/heads/update", Nonce: 1, Sig: "abc_xyz", Fee: "0.4", AccountNonce: 2},
+					References: []*types.PushedReference{
+						{Name: "refs/heads/update", Nonce: 1, Fee: "0.4", AccountNonce: 2},
 					},
 				}
 
 				txX = &PushTx{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
-					References: []*PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Sig: "abc_xyz", Fee: "0.4", AccountNonce: 2},
-						{Name: "refs/heads/update", Nonce: 1, Sig: "abc_xyz", Fee: "0.3", AccountNonce: 2},
+					References: []*types.PushedReference{
+						{Name: "refs/heads/master", Nonce: 1, Fee: "0.4", AccountNonce: 2},
+						{Name: "refs/heads/update", Nonce: 1, Fee: "0.3", AccountNonce: 2},
 					},
 				}
 
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(txY)
 				Expect(err).To(BeNil())
 				err = pool.Add(txZ)
@@ -330,7 +359,8 @@ var _ = Describe("PushPool", func() {
 
 		When("pool has a tx", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(2)
+				pool = NewPushPool(2, mockKeeper, mockDHT)
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 				Expect(pool.container).To(HaveLen(1))
@@ -350,7 +380,8 @@ var _ = Describe("PushPool", func() {
 
 		When("pool has two txs", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(2)
+				pool = NewPushPool(2, mockKeeper, mockDHT)
+				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				err = pool.Add(tx2)
 				Expect(err).To(BeNil())

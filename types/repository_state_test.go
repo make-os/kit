@@ -77,5 +77,23 @@ var _ = Describe("Repository", func() {
 				Expect(refs.Get("refs/heads/dev")).To(Equal(ref))
 			})
 		})
+
+		Describe(".Has", func() {
+			When("reference does not exist", func() {
+				It("should return false", func() {
+					ref := &Reference{Nonce: 10}
+					refs := References(map[string]*Reference{"refs/heads/dev": ref})
+					Expect(refs.Has("refs/heads/master")).To(BeFalse())
+				})
+			})
+
+			When("reference exist", func() {
+				It("should return true", func() {
+					ref := &Reference{Nonce: 10}
+					refs := References(map[string]*Reference{"refs/heads/dev": ref})
+					Expect(refs.Has("refs/heads/dev")).To(BeTrue())
+				})
+			})
+		})
 	})
 })

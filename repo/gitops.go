@@ -17,7 +17,8 @@ var (
 	ErrNoCommits   = fmt.Errorf("no commits")
 )
 
-// GitOps provides git operations
+// GitOps provides convenience methods that utilize
+// the git tool to access and modify a repository
 type GitOps struct {
 	gitBinPath string
 	path       string

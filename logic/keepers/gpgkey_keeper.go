@@ -69,11 +69,11 @@ func (g *GPGPubKeyKeeper) Update(pkID string, upd *types.GPGPubKey) error {
 	return g.db.Put(idx)
 }
 
-// GetByPubKeyIDs returns all public keys associated with the given address
+// GetPubKeyIDs returns all public keys associated with the given address
 //
 // ARGS:
 // address: The target address
-func (g *GPGPubKeyKeeper) GetByPubKeyIDs(address string) []string {
+func (g *GPGPubKeyKeeper) GetPubKeyIDs(address string) []string {
 	pkIDs := []string{}
 	g.db.Iterate(MakeQueryPkIDs(address), true, func(rec *storage.Record) bool {
 		parts := storage.SplitPrefix(rec.Key)

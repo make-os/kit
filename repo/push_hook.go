@@ -103,21 +103,22 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 
 	// At this point, there are no errors. We need to construct a PushTx
 	var pushTx = &PushTx{
+		targetRepo:  h.repo,
 		RepoName:    h.repo.GetName(),
 		PusherKeyID: pkID,
 		Timestamp:   time.Now().Unix(),
-		References:  PushedReferences([]*PushedReference{}),
+		References:  types.PushedReferences([]*types.PushedReference{}),
 		Size:        getObjectsSize(h.repo, funk.Keys(pr.objectsRefs).([]string)),
 		NodePubKey:  h.rMgr.GetNodeKey().PubKey().Base58(),
 	}
+
 	for _, ref := range pr.references {
-		pushTx.References = append(pushTx.References, &PushedReference{
+		pushTx.References = append(pushTx.References, &types.PushedReference{
 			Name:         ref.name,
-			OldObjectID:  ref.oldHash,
-			NewObjectID:  ref.newHash,
+			OldHash:      ref.oldHash,
+			NewHash:      ref.newHash,
 			Nonce:        h.repo.State().References.Get(ref.name).Nonce + 1,
 			Fee:          refsTxLine[ref.name].Fee,
-			Sig:          refsTxLine[ref.name].Signature,
 			AccountNonce: refsTxLine[ref.name].Nonce,
 			Objects:      pr.objectsRefs.getObjectsOf(ref.name),
 		})

@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -14,13 +15,12 @@ var _ = Describe("PushTx", func() {
 			RepoName:    "repo",
 			NodeSig:     []byte("node_signer_sig"),
 			PusherKeyID: "pk_id",
-			References: []*PushedReference{
+			References: []*types.PushedReference{
 				{
 					Nonce:        1,
-					NewObjectID:  "new_object_hash",
+					NewHash:      "new_object_hash",
 					Name:         "refs/heads/master",
-					OldObjectID:  "old_object_hash",
-					Sig:          "abc_xyz",
+					OldHash:      "old_object_hash",
 					Fee:          "0.2",
 					AccountNonce: 2,
 				},
@@ -46,12 +46,11 @@ var _ = Describe("PushTx", func() {
 		})
 
 		It("should return expected total fee", func() {
-			pushTx.References = append(pushTx.References, &PushedReference{
+			pushTx.References = append(pushTx.References, &types.PushedReference{
 				Nonce:        1,
-				NewObjectID:  "new_object_hash",
+				NewHash:      "new_object_hash",
 				Name:         "refs/heads/master",
-				OldObjectID:  "old_object_hash",
-				Sig:          "abc_xyz",
+				OldHash:      "old_object_hash",
 				Fee:          "0.2",
 				AccountNonce: 2,
 			})
@@ -70,7 +69,7 @@ var _ = Describe("PushTx", func() {
 
 	Describe(".Len", func() {
 		It("should return expected length", func() {
-			Expect(pushTx.Len()).To(Equal(uint64(128)))
+			Expect(pushTx.Len()).To(Equal(uint64(120)))
 		})
 	})
 

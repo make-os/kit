@@ -157,3 +157,17 @@ func (mr *MockDHTMockRecorder) RegisterObjFinder(objType, finder interface{}) *g
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterObjFinder", reflect.TypeOf((*MockDHT)(nil).RegisterObjFinder), objType, finder)
 }
+
+// Peers mocks base method
+func (m *MockDHT) Peers() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Peers")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// Peers indicates an expected call of Peers
+func (mr *MockDHTMockRecorder) Peers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Peers", reflect.TypeOf((*MockDHT)(nil).Peers))
+}

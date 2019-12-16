@@ -79,7 +79,7 @@ func NewManager(cfg *config.AppConfig, addr string, logic types.Logic, dht types
 		gitBinPath:  cfg.Node.GitBinPath,
 		wg:          wg,
 		repoDBCache: dbCache,
-		pool:        NewPushPool(params.PushPoolCap),
+		pool:        NewPushPool(params.PushPoolCap, logic, dht),
 		logic:       logic,
 		nodeKey:     key,
 		dht:         dht,
@@ -96,7 +96,7 @@ func (m *Manager) SetRootDir(dir string) {
 
 func (m *Manager) defaultGPGPubKeyGetter(pkID string) (string, error) {
 	gpgPK := m.logic.GPGPubKeyKeeper().GetGPGPubKey(pkID)
-	if gpgPK.IsEmpty() {
+	if gpgPK.IsNil() {
 		return "", fmt.Errorf("gpg public key not found for the given ID")
 	}
 	return gpgPK.PubKey, nil
@@ -275,8 +275,7 @@ func (m *Manager) getRepoState(repo types.BareRepo, options ...types.KVOption) t
 				return nil
 			}
 
-			// If a ref match is set, ignore a reference whose name does not match
-
+			// If a ref match option is set, ignore non-matching reference
 			if refMatch != "" && ref.Name().String() != refMatch {
 				return nil
 			}

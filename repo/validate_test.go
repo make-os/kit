@@ -7,6 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
+
+	"github.com/golang/mock/gomock"
+	"github.com/makeos/mosdef/types/mocks"
 
 	"github.com/bitfield/script"
 	"golang.org/x/crypto/openpgp"
@@ -32,6 +36,7 @@ var _ = Describe("Validation", func() {
 	var pubKey string
 	var privKey *openpgp.Entity
 	var privKey2 *openpgp.Entity
+	var ctrl *gomock.Controller
 
 	var gpgPubKeyGetter = func(pkId string) (string, error) {
 		return pubKey, nil
@@ -50,6 +55,9 @@ var _ = Describe("Validation", func() {
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
+
+		ctrl = gomock.NewController(GinkgoT())
+
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		gpgKeyID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
 		gpgKeyID2 := testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
@@ -69,6 +77,7 @@ var _ = Describe("Validation", func() {
 	})
 
 	AfterEach(func() {
+		ctrl.Finish()
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})
@@ -530,6 +539,322 @@ var _ = Describe("Validation", func() {
 
 			It("should return nil", func() {
 				Expect(err).To(BeNil())
+			})
+		})
+	})
+
+	Describe(".checkPushTxSyntax", func() {
+		key := crypto.NewKeyFromIntSeed(1)
+		okTx := &PushTx{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().Base58()}
+		bz, _ := key.PrivKey().Sign(okTx.Bytes())
+		okTx.NodeSig = bz
+
+		var cases = [][]interface{}{
+			{&PushTx{}, fmt.Errorf("field:repoName, error:repo name is required")},
+			{&PushTx{RepoName: "repo"}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key id is required")},
+			{&PushTx{RepoName: "repo", PusherKeyID: "xyz"}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key is not valid")},
+			{&PushTx{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42)}, fmt.Errorf("field:timestamp, error:timestamp is too old")},
+			{&PushTx{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix()}, fmt.Errorf("field:nodePubKey, error:push node public key is required")},
+			{&PushTx{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix(), NodePubKey: "key"}, fmt.Errorf("field:nodePubKey, error:push node public key is not valid")},
+			{&PushTx{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().Base58()}, fmt.Errorf("field:nodeSig, error:push node signature is required")},
+			{&PushTx{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().Base58(), NodeSig: []byte("invalid")}, fmt.Errorf("field:nodeSig, error:failed to verify signature with public key")},
+			{okTx, nil},
+			{&PushTx{RepoName: "repo", References: []*types.PushedReference{
+				{},
+			}}, fmt.Errorf("index:0, field:references.name, error:name is required")},
+			{&PushTx{RepoName: "repo", References: []*types.PushedReference{{Name: "ref"}}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is required")},
+			{&PushTx{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: "abc"}}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is not valid")},
+			{&PushTx{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40)}}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is required")},
+			{&PushTx{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: "abc"}}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is not valid")},
+			{&PushTx{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40)}}}, fmt.Errorf("index:0, field:references.nonce, error:reference nonce must be greater than zero")},
+			{&PushTx{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1}}}, fmt.Errorf("index:0, field:references.accountNonce, error:account nonce must be greater than zero")},
+			{&PushTx{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1}}}, fmt.Errorf("index:0, field:references.fee, error:fee must be numeric")},
+			{&PushTx{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1, Fee: "0a"}}}, fmt.Errorf("index:0, field:references.fee, error:fee must be numeric")},
+			{&PushTx{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1, Fee: "1", Objects: []string{"abc"}}}}, fmt.Errorf("index:0, field:references.objects.0, error:object hash is not valid")},
+		}
+
+		It("should check cases", func() {
+			for _, c := range cases {
+				_c := c
+				if _c[1] != nil {
+					Expect(checkPushTxSyntax(_c[0].(*PushTx))).To(Equal(_c[1]))
+				} else {
+					Expect(checkPushTxSyntax(_c[0].(*PushTx))).To(BeNil())
+				}
+			}
+		})
+	})
+
+	Describe(".checkPushedReference", func() {
+		var mockKeepers *mocks.MockKeepers
+		BeforeEach(func() {
+			mockKeepers = mocks.NewMockKeepers(ctrl)
+		})
+
+		When("old hash is non-zero and pushed reference does not exist", func() {
+			BeforeEach(func() {
+				refs := []*types.PushedReference{
+					{Name: "refs/heads/master"},
+				}
+				repository := &types.Repository{
+					References: types.References(map[string]*types.Reference{}),
+				}
+				gpgKey := &types.GPGPubKey{}
+				err = checkPushedReference(refs, repository, gpgKey, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' is unknown"))
+			})
+		})
+
+		When("old hash is zero and pushed reference does not exist", func() {
+			BeforeEach(func() {
+				refs := []*types.PushedReference{
+					{Name: "refs/heads/master", OldHash: strings.Repeat("0", 40)},
+				}
+				repository := &types.Repository{
+					References: types.References(map[string]*types.Reference{}),
+				}
+				gpgKey := &types.GPGPubKey{}
+				err = checkPushedReference(refs, repository, gpgKey, mockKeepers)
+			})
+
+			It("should not return error about unknown reference", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).ToNot(Equal("index:0, field:references, error:reference 'refs/heads/master' is unknown"))
+			})
+		})
+
+		When("pushed reference nonce is unexpected", func() {
+			BeforeEach(func() {
+				refs := []*types.PushedReference{
+					{Name: "refs/heads/master", Nonce: 2},
+				}
+				repository := &types.Repository{
+					References: types.References(map[string]*types.Reference{
+						"refs/heads/master": &types.Reference{Nonce: 0},
+					}),
+				}
+				gpgKey := &types.GPGPubKey{}
+				err = checkPushedReference(refs, repository, gpgKey, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' has nonce '2', expecting '1'"))
+			})
+		})
+
+		When("pusher account nonce is unexpected", func() {
+			BeforeEach(func() {
+				refs := []*types.PushedReference{
+					{Name: "refs/heads/master", Nonce: 1, AccountNonce: 12},
+				}
+				repository := &types.Repository{
+					References: types.References(map[string]*types.Reference{
+						"refs/heads/master": &types.Reference{Nonce: 0},
+					}),
+				}
+				gpgKey := &types.GPGPubKey{Address: "pusher_address"}
+				accountKeeper := mocks.NewMockAccountKeeper(ctrl)
+				accountKeeper.EXPECT().GetAccount(gpgKey.Address).Return(&types.Account{
+					Nonce: 10,
+				})
+				mockKeepers.EXPECT().AccountKeeper().Return(accountKeeper)
+				err = checkPushedReference(refs, repository, gpgKey, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' has account nonce '12', expecting '11'"))
+			})
+		})
+
+		When("no validation error", func() {
+			BeforeEach(func() {
+				refs := []*types.PushedReference{
+					{Name: "refs/heads/master", Nonce: 1, AccountNonce: 11},
+				}
+				repository := &types.Repository{
+					References: types.References(map[string]*types.Reference{
+						"refs/heads/master": &types.Reference{Nonce: 0},
+					}),
+				}
+				gpgKey := &types.GPGPubKey{Address: "pusher_address"}
+				accountKeeper := mocks.NewMockAccountKeeper(ctrl)
+				accountKeeper.EXPECT().GetAccount(gpgKey.Address).Return(&types.Account{
+					Nonce: 10,
+				})
+				mockKeepers.EXPECT().AccountKeeper().Return(accountKeeper)
+				err = checkPushedReference(refs, repository, gpgKey, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).To(BeNil())
+			})
+		})
+	})
+
+	Describe(".checkPushTxConsistency", func() {
+		var mockKeepers *mocks.MockKeepers
+		BeforeEach(func() {
+			mockKeepers = mocks.NewMockKeepers(ctrl)
+		})
+
+		When("no repository with matching name exist", func() {
+			BeforeEach(func() {
+				tx := &PushTx{RepoName: "unknown"}
+				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(types.BareRepository())
+				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
+				err = checkPushTxConsistency(tx, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:repoName, error:repository named 'unknown' is unknown"))
+			})
+		})
+
+		When("pusher public id is unknown", func() {
+			BeforeEach(func() {
+				tx := &PushTx{RepoName: "repo1", PusherKeyID: "pkID"}
+				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{CreatorAddress: "addr1"})
+				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
+				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
+				mockGPGKeeper.EXPECT().GetGPGPubKey(tx.PusherKeyID).Return(types.BareGPGPubKey())
+				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
+				err = checkPushTxConsistency(tx, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:pusherKeyId, error:pusher's public key id 'pkID' is unknown"))
+			})
+		})
+	})
+
+	Describe(".fetchAndCheckReferenceObjects", func() {
+		When("object does not exist in the dht", func() {
+			BeforeEach(func() {
+				objHash := "obj_hash"
+
+				tx := &PushTx{RepoName: "repo1", References: []*types.PushedReference{
+					{Name: "refs/heads/master", Objects: []string{objHash}},
+				}}
+
+				mockRepo := mocks.NewMockBareRepo(ctrl)
+				mockRepo.EXPECT().GetEncodedObject(objHash).Return(nil, fmt.Errorf("object not found"))
+				tx.targetRepo = mockRepo
+
+				mockDHT := mocks.NewMockDHT(ctrl)
+				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
+				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
+					Module:    RepoObjectModule,
+					ObjectKey: []byte(dhtKey),
+				}).Return(nil, fmt.Errorf("object not found"))
+
+				err = fetchAndCheckReferenceObjects(tx, mockDHT)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to fetch object 'obj_hash': object not found"))
+			})
+		})
+
+		When("object exist in the dht but failed to write to repository", func() {
+			BeforeEach(func() {
+				objHash := "obj_hash"
+
+				tx := &PushTx{RepoName: "repo1", References: []*types.PushedReference{
+					{Name: "refs/heads/master", Objects: []string{objHash}},
+				}}
+
+				mockRepo := mocks.NewMockBareRepo(ctrl)
+				mockRepo.EXPECT().GetEncodedObject(objHash).Return(nil, fmt.Errorf("object not found"))
+				tx.targetRepo = mockRepo
+
+				mockDHT := mocks.NewMockDHT(ctrl)
+				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
+				content := []byte("content")
+				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
+					Module:    RepoObjectModule,
+					ObjectKey: []byte(dhtKey),
+				}).Return(content, nil)
+
+				mockRepo.EXPECT().WriteObjectToFile(objHash, content).Return(fmt.Errorf("something bad"))
+
+				err = fetchAndCheckReferenceObjects(tx, mockDHT)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to write fetched object 'obj_hash' to disk: something bad"))
+			})
+		})
+
+		When("object exist in the dht and successfully written to disk", func() {
+			BeforeEach(func() {
+				objHash := "obj_hash"
+
+				tx := &PushTx{RepoName: "repo1", References: []*types.PushedReference{
+					{Name: "refs/heads/master", Objects: []string{objHash}},
+				}, Size: 7}
+
+				mockRepo := mocks.NewMockBareRepo(ctrl)
+				mockRepo.EXPECT().GetEncodedObject(objHash).Return(nil, fmt.Errorf("object not found"))
+				tx.targetRepo = mockRepo
+
+				mockDHT := mocks.NewMockDHT(ctrl)
+				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
+				content := []byte("content")
+				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
+					Module:    RepoObjectModule,
+					ObjectKey: []byte(dhtKey),
+				}).Return(content, nil)
+
+				mockRepo.EXPECT().WriteObjectToFile(objHash, content).Return(nil)
+
+				err = fetchAndCheckReferenceObjects(tx, mockDHT)
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("object exist in the dht, successfully written to disk and object size is different from actual size", func() {
+			BeforeEach(func() {
+				objHash := "obj_hash"
+
+				tx := &PushTx{RepoName: "repo1", References: []*types.PushedReference{
+					{Name: "refs/heads/master", Objects: []string{objHash}},
+				}, Size: 10}
+
+				mockRepo := mocks.NewMockBareRepo(ctrl)
+				mockRepo.EXPECT().GetEncodedObject(objHash).Return(nil, fmt.Errorf("object not found"))
+				tx.targetRepo = mockRepo
+
+				mockDHT := mocks.NewMockDHT(ctrl)
+				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
+				content := []byte("content")
+				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
+					Module:    RepoObjectModule,
+					ObjectKey: []byte(dhtKey),
+				}).Return(content, nil)
+
+				mockRepo.EXPECT().WriteObjectToFile(objHash, content).Return(nil)
+
+				err = fetchAndCheckReferenceObjects(tx, mockDHT)
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:size, error:invalid size (10 bytes). actual object size (7 bytes) is different"))
 			})
 		})
 	})

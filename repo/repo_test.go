@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -19,7 +20,7 @@ import (
 var _ = Describe("Gitops", func() {
 	var err error
 	var cfg *config.AppConfig
-	var path string
+	var path, dotGitPath string
 	var repo types.BareRepo
 
 	BeforeEach(func() {
@@ -31,6 +32,7 @@ var _ = Describe("Gitops", func() {
 	BeforeEach(func() {
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
+		dotGitPath = filepath.Join(path, ".git")
 		execGit(cfg.GetRepoRoot(), "init", repoName)
 		repo, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
@@ -39,6 +41,83 @@ var _ = Describe("Gitops", func() {
 	AfterEach(func() {
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
+	})
+
+	Describe(".ObjectExist", func() {
+		It("should return true when object exist", func() {
+			hash := createBlob(path, "hello world")
+			Expect(repo.ObjectExist(hash)).To(BeTrue())
+		})
+
+		It("should return false when object does not exist", func() {
+			hash := strings.Repeat("0", 40)
+			Expect(repo.ObjectExist(hash)).To(BeFalse())
+		})
+	})
+
+	Describe(".GetObject", func() {
+		It("should return object if it exists", func() {
+			hash := createBlob(path, "hello world")
+			obj, err := repo.GetObject(hash)
+			Expect(err).To(BeNil())
+			Expect(obj).NotTo(BeNil())
+			Expect(obj.ID().String()).To(Equal(hash))
+		})
+
+		It("should return error if object does not exists", func() {
+			obj, err := repo.GetObject("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(plumbing.ErrObjectNotFound))
+			Expect(obj).To(BeNil())
+		})
+	})
+
+	Describe(".GetEncodedObject", func() {
+		It("should return object if it exists", func() {
+			hash := createBlob(path, "hello world")
+			obj, err := repo.GetEncodedObject(hash)
+			Expect(err).To(BeNil())
+			Expect(obj).NotTo(BeNil())
+			Expect(obj.Hash().String()).To(Equal(hash))
+		})
+
+		It("should return error if object does not exists", func() {
+			obj, err := repo.GetEncodedObject("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(plumbing.ErrObjectNotFound))
+			Expect(obj).To(BeNil())
+		})
+	})
+
+	Describe(".GetObjectSize", func() {
+		It("should return size of content", func() {
+			appendCommit(path, "file.txt", "some text", "commit msg")
+			hash, err := repo.GetRecentCommit()
+			Expect(err).To(BeNil())
+			size, err := repo.GetObjectSize(hash)
+			Expect(err).To(BeNil())
+			Expect(size).ToNot(Equal(int64(0)))
+		})
+	})
+
+	Describe(".WriteObjectToFile", func() {
+		hash := "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+
+		BeforeEach(func() {
+			repo.SetPath(dotGitPath)
+			Expect(repo.ObjectExist(hash)).To(BeFalse())
+		})
+
+		It("should successfully write object", func() {
+			content := []byte("hello world")
+			err := repo.WriteObjectToFile(hash, content)
+			Expect(err).To(BeNil())
+
+			objPath := filepath.Join(dotGitPath, "objects", hash[:2], hash[2:])
+			fi, err := os.Stat(objPath)
+			Expect(err).To(BeNil())
+			Expect(fi.Size()).To(Equal(int64(len(content))))
+		})
 	})
 
 	Describe(".getObjectsSize", func() {

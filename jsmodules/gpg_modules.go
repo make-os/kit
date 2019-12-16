@@ -154,7 +154,7 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 // find fetches a gpg public key object by pkID
 func (m *GPGModule) find(pkID string) interface{} {
 	o := m.logic.GPGPubKeyKeeper().GetGPGPubKey(pkID)
-	if o.IsEmpty() {
+	if o.IsNil() {
 		panic(fmt.Errorf("gpg public key not found"))
 	}
 	return o
@@ -162,5 +162,5 @@ func (m *GPGModule) find(pkID string) interface{} {
 
 // ownedBy returns the gpg public key ownedBy associated with the given address
 func (m *GPGModule) ownedBy(address string) []string {
-	return m.logic.GPGPubKeyKeeper().GetByPubKeyIDs(address)
+	return m.logic.GPGPubKeyKeeper().GetPubKeyIDs(address)
 }
