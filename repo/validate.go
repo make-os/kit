@@ -9,6 +9,7 @@ import (
 
 	gv "github.com/asaskevich/govalidator"
 	"github.com/k0kubun/pp"
+	"github.com/thoas/go-funk"
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/params"
@@ -347,36 +348,63 @@ func checkPushTxSyntax(tx *PushTx) error {
 
 // checkPushedReference validates pushed transactions
 func checkPushedReference(
+	targetRepo types.BareRepo,
 	pRefs types.PushedReferences,
 	repo *types.Repository,
 	gpgKey *types.GPGPubKey,
 	keepers types.Keepers) error {
 	for i, ref := range pRefs {
 
+		rName := ref.Name
+		rNonce := ref.Nonce
+		fmts := fmt.Sprintf
+		oldHashIsZero := plumbing.NewHash(ref.OldHash).IsZero()
+
 		// 1. We need to check if the reference exists in the repo.
 		// Ignore references whose old hash is a 0-hash, these are new
 		// references and as such we don't expect to find it in the repo.
-		if ref.OldHash != strings.Repeat("0", 40) && !repo.References.Has(ref.Name) {
-			msg := fmt.Sprintf("reference '%s' is unknown", ref.Name)
+		if !oldHashIsZero && !repo.References.Has(rName) {
+			msg := fmts("reference '%s' is unknown", rName)
 			return types.FieldErrorWithIndex(i, "references", msg)
 		}
 
-		// 2. We need to check that the nonce is the expected next nonce of the
+		// 2 If old hash is non-zero, we need to ensure the current hash of the
+		// local version of the reference is the same as the old hash,
+		// otherwise the pushed reference will not be compatible.
+		if !oldHashIsZero {
+			localRef, err := targetRepo.Reference(plumbing.ReferenceName(rName), false)
+			if err != nil {
+				msg := fmts("reference '%s' does not exist locally", rName)
+				return types.FieldErrorWithIndex(i, "references", msg)
+			}
+
+			if ref.OldHash != localRef.Hash().String() {
+				msg := fmts("reference '%s' old hash does not match its local version", rName)
+				return types.FieldErrorWithIndex(i, "references", msg)
+			}
+		}
+
+		// 3. New hash must be included in the list of objects for this reference
+		if !funk.ContainsString(ref.Objects, ref.NewHash) {
+			msg := fmts("reference '%s' new hash not included in the list of objects", rName)
+			return types.FieldErrorWithIndex(i, "references", msg)
+		}
+
+		// 4. We need to check that the nonce is the expected next nonce of the
 		// reference, otherwise we return an error.
-		refInfo := repo.References.Get(ref.Name)
+		refInfo := repo.References.Get(rName)
 		nextNonce := refInfo.Nonce + 1
 		if nextNonce != ref.Nonce {
-			msg := fmt.Sprintf("reference '%s' has nonce '%d', expecting '%d'", ref.Name,
-				ref.Nonce, nextNonce)
+			msg := fmts("reference '%s' has nonce '%d', expecting '%d'", rName, rNonce, nextNonce)
 			return types.FieldErrorWithIndex(i, "references", msg)
 		}
 
-		// 3. We need to ensure that the pusher's account nonce is the expected
+		// 5. We need to ensure that the pusher's account nonce is the expected
 		// next nonce, otherwise we return an error.
 		pusherAccount := keepers.AccountKeeper().GetAccount(gpgKey.Address)
 		nextNonce = pusherAccount.Nonce + 1
 		if nextNonce != ref.AccountNonce {
-			msg := fmt.Sprintf("reference '%s' has account nonce '%d', expecting '%d'", ref.Name,
+			msg := fmts("reference '%s' has account nonce '%d', expecting '%d'", rName,
 				ref.AccountNonce, nextNonce)
 			return types.FieldErrorWithIndex(i, "references", msg)
 		}
@@ -404,7 +432,12 @@ func checkPushTxConsistency(tx *PushTx, keepers types.Keepers) error {
 	}
 
 	// 2. Check each references against the state version
-	if err := checkPushedReference(tx.GetPushedReferences(), repo, gpgKey, keepers); err != nil {
+	if err := checkPushedReference(
+		tx.GetTargetRepo(),
+		tx.GetPushedReferences(),
+		repo,
+		gpgKey,
+		keepers); err != nil {
 		return err
 	}
 

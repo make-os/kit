@@ -585,22 +585,26 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
-	Describe(".checkPushedReference", func() {
+	FDescribe(".checkPushedReference", func() {
 		var mockKeepers *mocks.MockKeepers
+		var mockRepo *mocks.MockBareRepo
+		var oldHash = fmt.Sprintf("%x", util.Sha1(util.RandBytes(16)))
+
 		BeforeEach(func() {
 			mockKeepers = mocks.NewMockKeepers(ctrl)
+			mockRepo = mocks.NewMockBareRepo(ctrl)
 		})
 
 		When("old hash is non-zero and pushed reference does not exist", func() {
 			BeforeEach(func() {
 				refs := []*types.PushedReference{
-					{Name: "refs/heads/master"},
+					{Name: "refs/heads/master", OldHash: oldHash},
 				}
 				repository := &types.Repository{
 					References: types.References(map[string]*types.Reference{}),
 				}
 				gpgKey := &types.GPGPubKey{}
-				err = checkPushedReference(refs, repository, gpgKey, mockKeepers)
+				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
 			})
 
 			It("should return err", func() {
@@ -618,7 +622,7 @@ var _ = Describe("Validation", func() {
 					References: types.References(map[string]*types.Reference{}),
 				}
 				gpgKey := &types.GPGPubKey{}
-				err = checkPushedReference(refs, repository, gpgKey, mockKeepers)
+				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
 			})
 
 			It("should not return error about unknown reference", func() {
@@ -627,18 +631,135 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("pushed reference nonce is unexpected", func() {
+		When("old hash of reference is different from the local hash of same reference", func() {
 			BeforeEach(func() {
+				refName := "refs/heads/master"
 				refs := []*types.PushedReference{
-					{Name: "refs/heads/master", Nonce: 2},
+					{Name: refName, OldHash: oldHash},
 				}
 				repository := &types.Repository{
 					References: types.References(map[string]*types.Reference{
-						"refs/heads/master": &types.Reference{Nonce: 0},
+						refName: &types.Reference{Nonce: 0},
 					}),
 				}
+				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
+					Return(plumbing.NewReferenceFromStrings("", util.RandString(40)), nil)
 				gpgKey := &types.GPGPubKey{}
-				err = checkPushedReference(refs, repository, gpgKey, mockKeepers)
+
+				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' old hash does not match its local version"))
+			})
+		})
+
+		When("old hash of reference is non-zero and the local equivalent reference is not accessible", func() {
+			BeforeEach(func() {
+				refName := "refs/heads/master"
+				refs := []*types.PushedReference{
+					{Name: refName, OldHash: oldHash},
+				}
+				repository := &types.Repository{
+					References: types.References(map[string]*types.Reference{
+						refName: &types.Reference{Nonce: 0},
+					}),
+				}
+				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
+					Return(nil, plumbing.ErrReferenceNotFound)
+				gpgKey := &types.GPGPubKey{}
+
+				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' does not exist locally"))
+			})
+		})
+
+		When("old hash of reference is non-zero and it is different from the hash of the equivalent local reference", func() {
+			BeforeEach(func() {
+				refName := "refs/heads/master"
+				refs := []*types.PushedReference{
+					{Name: refName, OldHash: oldHash},
+				}
+				repository := &types.Repository{
+					References: types.References(map[string]*types.Reference{
+						refName: &types.Reference{Nonce: 0},
+					}),
+				}
+				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
+					Return(plumbing.NewReferenceFromStrings("", util.RandString(40)), nil)
+				gpgKey := &types.GPGPubKey{}
+
+				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' old hash does not match its local version"))
+			})
+		})
+
+		When("new hash of reference is not included in the object's list", func() {
+			BeforeEach(func() {
+				refName := "refs/heads/master"
+				refs := []*types.PushedReference{
+					{
+						Name:    refName,
+						OldHash: oldHash,
+						NewHash: util.RandString(40),
+						Objects: []string{},
+					},
+				}
+				repository := &types.Repository{
+					References: types.References(map[string]*types.Reference{
+						refName: &types.Reference{Nonce: 0},
+					}),
+				}
+
+				mockRepo.EXPECT().
+					Reference(plumbing.ReferenceName(refName), false).
+					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
+				gpgKey := &types.GPGPubKey{}
+
+				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' new hash not included in the list of objects"))
+			})
+		})
+
+		When("pushed reference nonce is unexpected", func() {
+			BeforeEach(func() {
+				refName := "refs/heads/master"
+				newHash := util.RandString(40)
+				refs := []*types.PushedReference{
+					{
+						Name:    refName,
+						OldHash: oldHash,
+						NewHash: newHash,
+						Objects: []string{newHash},
+						Nonce:   2,
+					},
+				}
+
+				repository := &types.Repository{
+					References: types.References(map[string]*types.Reference{
+						refName: &types.Reference{Nonce: 0},
+					}),
+				}
+
+				mockRepo.EXPECT().
+					Reference(plumbing.ReferenceName(refName), false).
+					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
+
+				gpgKey := &types.GPGPubKey{}
+				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
 			})
 
 			It("should return err", func() {
@@ -649,21 +770,37 @@ var _ = Describe("Validation", func() {
 
 		When("pusher account nonce is unexpected", func() {
 			BeforeEach(func() {
+				refName := "refs/heads/master"
+				newHash := util.RandString(40)
 				refs := []*types.PushedReference{
-					{Name: "refs/heads/master", Nonce: 1, AccountNonce: 12},
+					{
+						Name:         refName,
+						OldHash:      oldHash,
+						NewHash:      newHash,
+						Objects:      []string{newHash},
+						Nonce:        1,
+						AccountNonce: 12,
+					},
 				}
+
 				repository := &types.Repository{
 					References: types.References(map[string]*types.Reference{
-						"refs/heads/master": &types.Reference{Nonce: 0},
+						refName: &types.Reference{Nonce: 0},
 					}),
 				}
+
+				mockRepo.EXPECT().
+					Reference(plumbing.ReferenceName(refName), false).
+					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
+
 				gpgKey := &types.GPGPubKey{Address: "pusher_address"}
 				accountKeeper := mocks.NewMockAccountKeeper(ctrl)
 				accountKeeper.EXPECT().GetAccount(gpgKey.Address).Return(&types.Account{
 					Nonce: 10,
 				})
 				mockKeepers.EXPECT().AccountKeeper().Return(accountKeeper)
-				err = checkPushedReference(refs, repository, gpgKey, mockKeepers)
+
+				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
 			})
 
 			It("should return err", func() {
@@ -674,21 +811,37 @@ var _ = Describe("Validation", func() {
 
 		When("no validation error", func() {
 			BeforeEach(func() {
+				refName := "refs/heads/master"
+				newHash := util.RandString(40)
 				refs := []*types.PushedReference{
-					{Name: "refs/heads/master", Nonce: 1, AccountNonce: 11},
+					{
+						Name:         refName,
+						OldHash:      oldHash,
+						NewHash:      newHash,
+						Objects:      []string{newHash},
+						Nonce:        1,
+						AccountNonce: 11,
+					},
 				}
+
 				repository := &types.Repository{
 					References: types.References(map[string]*types.Reference{
-						"refs/heads/master": &types.Reference{Nonce: 0},
+						refName: &types.Reference{Nonce: 0},
 					}),
 				}
+
+				mockRepo.EXPECT().
+					Reference(plumbing.ReferenceName(refName), false).
+					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
+
 				gpgKey := &types.GPGPubKey{Address: "pusher_address"}
 				accountKeeper := mocks.NewMockAccountKeeper(ctrl)
 				accountKeeper.EXPECT().GetAccount(gpgKey.Address).Return(&types.Account{
 					Nonce: 10,
 				})
 				mockKeepers.EXPECT().AccountKeeper().Return(accountKeeper)
-				err = checkPushedReference(refs, repository, gpgKey, mockKeepers)
+
+				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
 			})
 
 			It("should return err", func() {
