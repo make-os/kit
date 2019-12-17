@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/makeos/mosdef/types"
@@ -13,8 +12,8 @@ import (
 	"github.com/thoas/go-funk"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
-	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 )
 
 // packedReferenceObject represent references added to a pack file
@@ -97,21 +96,33 @@ func (r *PushReader) Write(p []byte) (int, error) {
 // and finally writes the read data to a provided destination
 func (r *PushReader) Read() error {
 
+	var err error
+
 	r.packFile.Seek(0, 0)
 
-	// Read the packlines and get specific information from it.
-	scn := pktline.NewScanner(r.packFile)
-	r.references = append(r.references, r.getReferences(scn)...)
+	// bz, _ := ioutil.ReadAll(r.packFile)
+	// pp.Print(string(bz))
+	// r.packFile.Seek(0, 0)
 
-	// Since the packline scanner stops after unable to parse 'PACK',
-	// we have to go back 4 bytes backwards before we start scanning the pack file.
+	ur := packp.NewReferenceUpdateRequest()
+	if err = ur.Decode(r.packFile); err != nil {
+		return err
+	}
+
+	r.references = append(r.references, r.getReferences(ur)...)
+
+	// Confirm if the next 4 bytes are indeed 'PACK', otherwise, no packfile
+	packSig := make([]byte, 4)
+	r.packFile.Read(packSig)
+	if string(packSig) != "PACK" {
+		return r.done()
+	}
 	r.packFile.Seek(-4, 1)
 
-	// Read the pack file
-	var err error
-	packfileScn := packfile.NewScanner(r.packFile)
-	defer packfileScn.Close()
-	r.objects, err = r.getObjects(packfileScn)
+	// Read the packfile
+	scn := packfile.NewScanner(r.packFile)
+	defer scn.Close()
+	r.objects, err = r.getObjects(scn)
 	if err != nil {
 		return errors.Wrap(err, "failed to get objects")
 	}
@@ -133,20 +144,14 @@ func (r *PushReader) getObjects(scanner *packfile.Scanner) (objs []*packObject, 
 }
 
 // getReferences returns the references found in the pack buffer
-func (r *PushReader) getReferences(scanner *pktline.Scanner) (references []*packedReferenceObject) {
-	for {
-		if !scanner.Scan() {
-			break
+func (r *PushReader) getReferences(ur *packp.ReferenceUpdateRequest) (references []*packedReferenceObject) {
+	for _, cmd := range ur.Commands {
+		refObj := &packedReferenceObject{
+			name:    cmd.Name.String(),
+			oldHash: cmd.Old.String(),
+			newHash: cmd.New.String(),
 		}
-		pkLine := strings.Fields(string(scanner.Bytes()))
-		if len(pkLine) > 0 {
-			refObj := &packedReferenceObject{
-				name:    strings.Trim(pkLine[2], "\x00"),
-				oldHash: pkLine[0],
-				newHash: pkLine[1],
-			}
-			references = append(references, refObj)
-		}
+		references = append(references, refObj)
 	}
 	return
 }

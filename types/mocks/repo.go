@@ -14,6 +14,7 @@ import (
 	plumbing "gopkg.in/src-d/go-git.v4/plumbing"
 	object "gopkg.in/src-d/go-git.v4/plumbing/object"
 	storer "gopkg.in/src-d/go-git.v4/plumbing/storer"
+	storage "gopkg.in/src-d/go-git.v4/storage"
 	reflect "reflect"
 )
 
@@ -546,6 +547,20 @@ func (m *MockBareRepo) GetObject(objHash string) (object.Object, error) {
 func (mr *MockBareRepoMockRecorder) GetObject(objHash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObject", reflect.TypeOf((*MockBareRepo)(nil).GetObject), objHash)
+}
+
+// GetStorer mocks base method
+func (m *MockBareRepo) GetStorer() storage.Storer {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetStorer")
+	ret0, _ := ret[0].(storage.Storer)
+	return ret0
+}
+
+// GetStorer indicates an expected call of GetStorer
+func (mr *MockBareRepoMockRecorder) GetStorer() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStorer", reflect.TypeOf((*MockBareRepo)(nil).GetStorer))
 }
 
 // MockRepoManager is a mock of RepoManager interface

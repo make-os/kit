@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"gopkg.in/src-d/go-git.v4/config"
+	"gopkg.in/src-d/go-git.v4/storage"
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/rpc/client"
@@ -238,6 +239,11 @@ func (r *Repo) WriteObjectToFile(objectHash string, content []byte) error {
 	}
 
 	return nil
+}
+
+// GetStorer returns the storage engine of the repository
+func (r *Repo) GetStorer() storage.Storer {
+	return r.git.Storer
 }
 
 func getRepo(path string) (types.BareRepo, error) {
@@ -558,8 +564,8 @@ func getTreeEntries(repo types.BareRepo, treeHash string) ([]string, error) {
 	return entries, nil
 }
 
-// getCommitHistory gets all objects that led up to the given commit, such
-// as parent commits, trees and blobs.
+// getCommitHistory gets all objects that led/make up to the given commit, such as
+// parent commits, trees and blobs.
 // repo: The target repository
 // commit: The target commit
 // stopCommitHash: A commit hash that when found triggers the end of the search.

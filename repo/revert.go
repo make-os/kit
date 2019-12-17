@@ -30,13 +30,13 @@ const (
 // Revert reverts the repository from its current state to the previous state.
 // options: Additional options. prefixOpt forces the operation to ignore
 // any reference that does not contain the provided prefix.
-func (rb *Manager) revert(repo types.BareRepo, prevState types.BareRepoState, options ...types.KVOption) (*types.Changes, error) {
+func revert(repo types.BareRepo, prevState types.BareRepoState, options ...types.KVOption) (*types.Changes, error) {
 	var actions []*Action
 	changes := getKVOpt("changes", options)
 
 	// Get the changes from previous state to the current
 	if changes == nil {
-		changes = prevState.GetChanges(rb.getRepoState(repo, options...))
+		changes = prevState.GetChanges(getRepoState(repo, options...))
 	}
 
 	// Determine actions required to revert references to previous state

@@ -10,6 +10,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
+	"gopkg.in/src-d/go-git.v4/storage"
 )
 
 // BareRepo represents a local git repository on disk
@@ -122,6 +123,9 @@ type BareRepo interface {
 
 	// GetObject returns an object
 	GetObject(objHash string) (object.Object, error)
+
+	// GetStorer returns the storage engine of the repository
+	GetStorer() storage.Storer
 }
 
 // PGPPubKeyGetter represents a function for fetching PGP public key
@@ -258,6 +262,16 @@ func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
 // PushedReferences represents a collection of pushed references
 type PushedReferences []*PushedReference
 
+// GetByName finds a pushed reference by name
+func (pf *PushedReferences) GetByName(name string) *PushedReference {
+	for _, r := range *pf {
+		if r.Name == name {
+			return r
+		}
+	}
+	return nil
+}
+
 type (
 	// ColChangeType describes a change to a collection item
 	ColChangeType int
@@ -286,7 +300,7 @@ type ItemChange struct {
 
 // ChangeResult includes information about changes
 type ChangeResult struct {
-	SizeChange bool
+	SizeChange bool // TODO: remove if no use so far
 	Changes    []*ItemChange
 }
 

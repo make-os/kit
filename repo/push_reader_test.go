@@ -1,21 +1,34 @@
 package repo
 
 import (
+	"bytes"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/thoas/go-funk"
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/testutil"
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 )
+
+type WriteCloser struct {
+	*bytes.Buffer
+}
+
+func (mwc *WriteCloser) Close() error {
+	return nil
+}
 
 var _ = Describe("PushReader", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
+	var repo types.BareRepo
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -27,7 +40,7 @@ var _ = Describe("PushReader", func() {
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
-		_, err = getRepo(path)
+		repo, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 
@@ -85,6 +98,49 @@ var _ = Describe("PushReader", func() {
 					Expect(err.Error()).To(Equal("object not found"))
 				})
 			})
+		})
+	})
+
+	Describe("pushReader", func() {
+		var pr *PushReader
+		var dst = bytes.NewBuffer(nil)
+		var err error
+
+		BeforeEach(func() {
+			oldState := getRepoState(repo)
+			appendCommit(path, "file.txt", "some text", "commit msg")
+			newState := getRepoState(repo)
+
+			reader, err := makePackfile(repo, oldState, newState)
+			Expect(err).To(BeNil())
+			packData, err := ioutil.ReadAll(reader)
+			Expect(err).To(BeNil())
+
+			pr, err = newPushReader(&WriteCloser{Buffer: dst}, repo)
+			pr.Write(packData)
+			err = pr.Read()
+		})
+
+		It("should return no error", func() {
+			Expect(err).To(BeNil())
+		})
+
+		Specify("that the push reader decoded 3 objects", func() {
+			Expect(pr.objects).To(HaveLen(3))
+		})
+
+		Specify("that only 1 ref is decoded", func() {
+			refs := pr.references
+			Expect(refs).To(HaveLen(1))
+			Expect(refs.names()).To(Equal([]string{"refs/heads/master"}))
+		})
+
+		Specify("object ref map has 3 objects with value 'refs/heads/master'", func() {
+			Expect(pr.objectsRefs).To(HaveLen(3))
+			Expect(funk.Values(pr.objectsRefs)).To(Equal([][]string{
+				[]string{"refs/heads/master"},
+				[]string{"refs/heads/master"},
+				[]string{"refs/heads/master"}}))
 		})
 	})
 })

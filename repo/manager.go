@@ -251,13 +251,13 @@ func (m *Manager) SetPGPPubKeyGetter(pkGetter types.PGPPubKeyGetter) {
 
 // GetRepoState implements RepositoryManager
 func (m *Manager) GetRepoState(repo types.BareRepo, options ...types.KVOption) (types.BareRepoState, error) {
-	return m.getRepoState(repo, options...), nil
+	return getRepoState(repo, options...), nil
 }
 
-// GetRepoState returns the state of the repository
+// getRepoState returns the state of the repository
 // repo: The target repository
 // options: Allows the caller to configure how and what state are gathered
-func (m *Manager) getRepoState(repo types.BareRepo, options ...types.KVOption) types.BareRepoState {
+func getRepoState(repo types.BareRepo, options ...types.KVOption) types.BareRepoState {
 
 	refMatch := ""
 	if opt := getKVOpt("match", options); opt != nil {
@@ -298,7 +298,7 @@ func (m *Manager) getRepoState(repo types.BareRepo, options ...types.KVOption) t
 // Revert implements RepositoryManager
 func (m *Manager) Revert(repo types.BareRepo, prevState types.BareRepoState,
 	options ...types.KVOption) (*types.Changes, error) {
-	return m.revert(repo, prevState, options...)
+	return revert(repo, prevState, options...)
 }
 
 // Wait can be used by the caller to wait till the server terminates

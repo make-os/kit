@@ -8,7 +8,6 @@ import (
 	"time"
 
 	gv "github.com/asaskevich/govalidator"
-	"github.com/k0kubun/pp"
 	"github.com/thoas/go-funk"
 
 	"github.com/makeos/mosdef/crypto"
@@ -446,8 +445,6 @@ func checkPushTxConsistency(tx *PushTx, keepers types.Keepers) error {
 
 // checkPushTx performs validation checks on a push transaction
 func checkPushTx(tx types.PushTx, keepers types.Keepers, dht types.DHT) error {
-
-	pp.Println(tx)
 
 	if err := checkPushTxSyntax(tx.(*PushTx)); err != nil {
 		return err

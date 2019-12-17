@@ -90,6 +90,10 @@ func createCommitAndNote(path, file, fileData, commitMsg, noteName string) {
 	execGit(path, "notes", "--ref", noteName, "add", "-m", commitMsg, "-f")
 }
 
+func createNote(path, msg, noteName string) {
+	execGit(path, "notes", "--ref", noteName, "add", "-m", msg, "-f")
+}
+
 func createBlob(path, content string) string {
 	hash, err := script.Echo("").ExecInDir(`git hash-object -w --stdin`, path).String()
 	if err != nil {

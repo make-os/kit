@@ -609,7 +609,7 @@ var _ = Describe("App", func() {
 		})
 	})
 
-	FDescribe(".Peers", func() {
+	Describe(".Peers", func() {
 		When("two nodes are connected", func() {
 			var node1, node2 *DHT
 			var err error

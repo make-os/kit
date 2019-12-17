@@ -585,7 +585,7 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
-	FDescribe(".checkPushedReference", func() {
+	Describe(".checkPushedReference", func() {
 		var mockKeepers *mocks.MockKeepers
 		var mockRepo *mocks.MockBareRepo
 		var oldHash = fmt.Sprintf("%x", util.Sha1(util.RandBytes(16)))
