@@ -231,7 +231,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				remotePeerMock := mocks.NewMockPeer(ctrl)
 				remotePeerMock.EXPECT().ID().Return(remotePeerID).AnyTimes()
-				remotePeerMock.EXPECT().Send(DHTReactor, types.BareDHTInfo().Bytes()).Return(true)
+				remotePeerMock.EXPECT().Send(DHTReactorChannelChannel, types.BareDHTInfo().Bytes()).Return(true)
 				err = node1.requestDHTInfo(remotePeerMock)
 			})
 
@@ -244,7 +244,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				remotePeerMock := mocks.NewMockPeer(ctrl)
 				remotePeerMock.EXPECT().ID().Return(remotePeerID).AnyTimes()
-				remotePeerMock.EXPECT().Send(DHTReactor, types.BareDHTInfo().Bytes()).Return(false)
+				remotePeerMock.EXPECT().Send(DHTReactorChannelChannel, types.BareDHTInfo().Bytes()).Return(false)
 				err = node1.requestDHTInfo(remotePeerMock)
 			})
 

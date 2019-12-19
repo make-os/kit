@@ -10,6 +10,7 @@ import (
 	crypto "github.com/makeos/mosdef/crypto"
 	types "github.com/makeos/mosdef/types"
 	util "github.com/makeos/mosdef/util"
+	logger "github.com/makeos/mosdef/util/logger"
 	config "gopkg.in/src-d/go-git.v4/config"
 	plumbing "gopkg.in/src-d/go-git.v4/plumbing"
 	object "gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -505,6 +506,21 @@ func (mr *MockBareRepoMockRecorder) GetObjectSize(objHash interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObjectSize", reflect.TypeOf((*MockBareRepo)(nil).GetObjectSize), objHash)
 }
 
+// GetObjectDiskSize mocks base method
+func (m *MockBareRepo) GetObjectDiskSize(objHash string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetObjectDiskSize", objHash)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetObjectDiskSize indicates an expected call of GetObjectDiskSize
+func (mr *MockBareRepoMockRecorder) GetObjectDiskSize(objHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObjectDiskSize", reflect.TypeOf((*MockBareRepo)(nil).GetObjectDiskSize), objHash)
+}
+
 // GetEncodedObject mocks base method
 func (m *MockBareRepo) GetEncodedObject(objHash string) (plumbing.EncodedObject, error) {
 	m.ctrl.T.Helper()
@@ -549,6 +565,21 @@ func (mr *MockBareRepoMockRecorder) GetObject(objHash interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObject", reflect.TypeOf((*MockBareRepo)(nil).GetObject), objHash)
 }
 
+// GetCompressedObject mocks base method
+func (m *MockBareRepo) GetCompressedObject(hash string) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCompressedObject", hash)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCompressedObject indicates an expected call of GetCompressedObject
+func (mr *MockBareRepoMockRecorder) GetCompressedObject(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCompressedObject", reflect.TypeOf((*MockBareRepo)(nil).GetCompressedObject), hash)
+}
+
 // GetStorer mocks base method
 func (m *MockBareRepo) GetStorer() storage.Storer {
 	m.ctrl.T.Helper()
@@ -584,6 +615,20 @@ func NewMockRepoManager(ctrl *gomock.Controller) *MockRepoManager {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockRepoManager) EXPECT() *MockRepoManagerMockRecorder {
 	return m.recorder
+}
+
+// Log mocks base method
+func (m *MockRepoManager) Log() logger.Logger {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Log")
+	ret0, _ := ret[0].(logger.Logger)
+	return ret0
+}
+
+// Log indicates an expected call of Log
+func (mr *MockRepoManagerMockRecorder) Log() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Log", reflect.TypeOf((*MockRepoManager)(nil).Log))
 }
 
 // GetRepoState mocks base method
@@ -708,18 +753,6 @@ func (mr *MockRepoManagerMockRecorder) Wait() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Wait", reflect.TypeOf((*MockRepoManager)(nil).Wait))
 }
 
-// Stop mocks base method
-func (m *MockRepoManager) Stop(ctx context.Context) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Stop", ctx)
-}
-
-// Stop indicates an expected call of Stop
-func (mr *MockRepoManagerMockRecorder) Stop(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockRepoManager)(nil).Stop), ctx)
-}
-
 // CreateRepository mocks base method
 func (m *MockRepoManager) CreateRepository(name string) error {
 	m.ctrl.T.Helper()
@@ -732,6 +765,18 @@ func (m *MockRepoManager) CreateRepository(name string) error {
 func (mr *MockRepoManagerMockRecorder) CreateRepository(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRepository", reflect.TypeOf((*MockRepoManager)(nil).CreateRepository), name)
+}
+
+// BroadcastMsg mocks base method
+func (m *MockRepoManager) BroadcastMsg(ch byte, msg []byte) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "BroadcastMsg", ch, msg)
+}
+
+// BroadcastMsg indicates an expected call of BroadcastMsg
+func (mr *MockRepoManagerMockRecorder) BroadcastMsg(ch, msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastMsg", reflect.TypeOf((*MockRepoManager)(nil).BroadcastMsg), ch, msg)
 }
 
 // SetPGPPubKeyGetter mocks base method
@@ -758,6 +803,32 @@ func (m *MockRepoManager) GetDHT() types.DHT {
 func (mr *MockRepoManagerMockRecorder) GetDHT() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDHT", reflect.TypeOf((*MockRepoManager)(nil).GetDHT))
+}
+
+// Shutdown mocks base method
+func (m *MockRepoManager) Shutdown(ctx context.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Shutdown", ctx)
+}
+
+// Shutdown indicates an expected call of Shutdown
+func (mr *MockRepoManagerMockRecorder) Shutdown(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockRepoManager)(nil).Shutdown), ctx)
+}
+
+// Stop mocks base method
+func (m *MockRepoManager) Stop() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Stop")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Stop indicates an expected call of Stop
+func (mr *MockRepoManagerMockRecorder) Stop() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockRepoManager)(nil).Stop))
 }
 
 // MockPushPool is a mock of PushPool interface
@@ -1000,6 +1071,20 @@ func (m *MockPushTx) GetSize() uint64 {
 func (mr *MockPushTxMockRecorder) GetSize() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSize", reflect.TypeOf((*MockPushTx)(nil).GetSize))
+}
+
+// GetPushedObjects mocks base method
+func (m *MockPushTx) GetPushedObjects() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPushedObjects")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetPushedObjects indicates an expected call of GetPushedObjects
+func (mr *MockPushTxMockRecorder) GetPushedObjects() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushedObjects", reflect.TypeOf((*MockPushTx)(nil).GetPushedObjects))
 }
 
 // MockBareRepoState is a mock of BareRepoState interface

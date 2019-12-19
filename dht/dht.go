@@ -36,8 +36,8 @@ var (
 	ErrInvalidObjIDFormat = fmt.Errorf("invalid object id format")
 )
 
-// DHTReactor is the channel id for the reactor
-const DHTReactor = byte(0x31)
+// DHTReactorChannel is the channel id for the reactor
+const DHTReactorChannel = byte(0x31)
 
 // DHT provides distributed hash table functionalities
 // specifically required for storing and
@@ -209,7 +209,7 @@ func (dht *DHT) requestDHTInfo(p p2p.Peer) error {
 		return nil
 	}
 
-	if p.Send(DHTReactor, types.BareDHTInfo().Bytes()) {
+	if p.Send(DHTReactorChannel, types.BareDHTInfo().Bytes()) {
 		dht.log.Debug("Requested DHTInfo information from peer", "PeerID", p.ID())
 		return nil
 	}
@@ -220,7 +220,7 @@ func (dht *DHT) requestDHTInfo(p p2p.Peer) error {
 // GetChannels implements Reactor.
 func (dht *DHT) GetChannels() []*p2p.ChannelDescriptor {
 	return []*p2p.ChannelDescriptor{
-		{ID: DHTReactor, Priority: 5},
+		{ID: DHTReactorChannel, Priority: 5},
 	}
 }
 
@@ -248,7 +248,7 @@ func (dht *DHT) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 			Address: host,
 			Port:    port,
 		}
-		if peer.Send(DHTReactor, info.Bytes()) {
+		if peer.Send(DHTReactorChannel, info.Bytes()) {
 			dht.log.Debug("Sent DHT information to peer", "PeerID", peer.ID())
 		}
 

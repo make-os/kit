@@ -44,18 +44,26 @@ func (pt *PushTx) GetPusherKeyID() string {
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (pt *PushTx) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(pt.RepoName, pt.References, pt.PusherKeyID,
-		pt.NodeSig, pt.Size, pt.Timestamp)
+		pt.Size, pt.Timestamp, pt.NodeSig, &pt.NodePubKey)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (pt *PushTx) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return dec.DecodeMulti(&pt.RepoName, &pt.References, &pt.PusherKeyID,
-		&pt.NodeSig, &pt.Size, &pt.Timestamp)
+		&pt.Size, &pt.Timestamp, &pt.NodeSig, &pt.NodePubKey)
 }
 
 // Bytes returns a serialized version of the object
 func (pt *PushTx) Bytes() []byte {
 	return util.ObjectToBytes(pt)
+}
+
+// GetPushedObjects returns all objects from all pushed references
+func (pt *PushTx) GetPushedObjects() (objs []string) {
+	for _, ref := range pt.GetPushedReferences() {
+		objs = append(objs, ref.Objects...)
+	}
+	return
 }
 
 // LenMinusFee returns the length of the serialized tx minus

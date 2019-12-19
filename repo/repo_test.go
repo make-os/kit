@@ -100,6 +100,21 @@ var _ = Describe("Gitops", func() {
 		})
 	})
 
+	Describe(".GetObjectDiskSize", func() {
+		BeforeEach(func() {
+			repo.SetPath(dotGitPath)
+		})
+
+		It("should return size of content", func() {
+			appendCommit(path, "file.txt", "some text", "commit msg")
+			hash, err := repo.GetRecentCommit()
+			Expect(err).To(BeNil())
+			size, err := repo.GetObjectDiskSize(hash)
+			Expect(err).To(BeNil())
+			Expect(size).ToNot(Equal(int64(0)))
+		})
+	})
+
 	Describe(".WriteObjectToFile", func() {
 		hash := "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
 
@@ -127,16 +142,15 @@ var _ = Describe("Gitops", func() {
 			appendCommit(path, "file.txt", "some text", "commit msg")
 			it, _ := repo.Objects()
 			it.ForEach(func(obj object.Object) error {
-				objs = append(objs, obj.ID().String())
-				encoded := &plumbing.MemoryObject{}
-				obj.Encode(encoded)
-				expectedSize += encoded.Size()
+				size, _ := repo.GetObjectDiskSize(obj.ID().String())
+				expectedSize += size
 				return nil
 			})
 		})
 
 		It("should return expected size", func() {
-			size := getObjectsSize(repo, objs)
+			size, err := getObjectsSize(repo, objs)
+			Expect(err).To(BeNil())
 			Expect(size).To(Equal(uint64(expectedSize)))
 		})
 	})

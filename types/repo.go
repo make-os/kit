@@ -5,6 +5,7 @@ import (
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util"
+	"github.com/makeos/mosdef/util/logger"
 	"github.com/vmihailenco/msgpack"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -115,6 +116,9 @@ type BareRepo interface {
 	// GetObjectSize returns the size of an object
 	GetObjectSize(objHash string) (int64, error)
 
+	// GetObjectDiskSize returns the size of the object as it exist on the system
+	GetObjectDiskSize(objHash string) (int64, error)
+
 	// GetEncodedObject returns an object
 	GetEncodedObject(objHash string) (plumbing.EncodedObject, error)
 
@@ -123,6 +127,9 @@ type BareRepo interface {
 
 	// GetObject returns an object
 	GetObject(objHash string) (object.Object, error)
+
+	// GetCompressedObject compressed version of an object
+	GetCompressedObject(hash string) ([]byte, error)
 
 	// GetStorer returns the storage engine of the repository
 	GetStorer() storage.Storer
@@ -133,6 +140,9 @@ type PGPPubKeyGetter func(pkId string) (string, error)
 
 // RepoManager provides functionality for manipulating repositories.
 type RepoManager interface {
+
+	// Log returns the logger
+	Log() logger.Logger
 
 	// GetRepoState returns the state of the repository at the given path
 	// options: Allows the caller to configure how and what state are gathered
@@ -161,17 +171,23 @@ type RepoManager interface {
 	// Wait can be used by the caller to wait till the server terminates
 	Wait()
 
-	// Stop shutsdown the server
-	Stop(ctx context.Context)
-
 	// CreateRepository creates a local git repository
 	CreateRepository(name string) error
+
+	// BroadcastMsg broadcast push messages to peers
+	BroadcastMsg(ch byte, msg []byte)
 
 	// SetPGPPubKeyGetter sets the PGP public key query function
 	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
 
 	// GetDHT returns the dht service
 	GetDHT() DHT
+
+	// Shutdown shuts down the server
+	Shutdown(ctx context.Context)
+
+	// Stop implements Reactor
+	Stop() error
 }
 
 // PushPool represents a pool for holding and ordering git push transactions
@@ -233,6 +249,9 @@ type PushTx interface {
 
 	// GetSize returns the total pushed objects size
 	GetSize() uint64
+
+	// GetPushedObjects returns all objects from all pushed references
+	GetPushedObjects() (objs []string)
 }
 
 // PushedReference represents a reference that was pushed by git client
@@ -244,7 +263,6 @@ type PushedReference struct {
 	AccountNonce uint64      `json:"accountNonce" msgpack:"accountNonce"` // The pusher's account nonce
 	Fee          util.String `json:"fee" msgpack:"fee"`                   // The fee the pusher is willing to pay to validators
 	Objects      []string    `json:"objects" msgpack:"objects"`           // A list of objects pushed to the reference
-	// Sig          string      `json:"sig" msgpack:"sig"`                   // The signature of the pusher
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -270,6 +288,14 @@ func (pf *PushedReferences) GetByName(name string) *PushedReference {
 		}
 	}
 	return nil
+}
+
+// Names returns the names of the references
+func (pf *PushedReferences) Names() (names []string) {
+	for _, r := range *pf {
+		names = append(names, r.Name)
+	}
+	return
 }
 
 type (

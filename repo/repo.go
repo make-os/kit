@@ -1,8 +1,10 @@
 package repo
 
 import (
+	"bytes"
 	"crypto/rsa"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -19,6 +21,7 @@ import (
 
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/format/objfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 
@@ -200,7 +203,7 @@ func (r *Repo) GetObject(objHash string) (object.Object, error) {
 	return obj, nil
 }
 
-// GetEncodedObject returns an object
+// GetEncodedObject returns an object in decompressed state
 func (r *Repo) GetEncodedObject(objHash string) (plumbing.EncodedObject, error) {
 	obj, err := r.Object(plumbing.AnyObject, plumbing.NewHash(objHash))
 	if err != nil {
@@ -213,20 +216,26 @@ func (r *Repo) GetEncodedObject(objHash string) (plumbing.EncodedObject, error) 
 	return encoded, nil
 }
 
-// GetObjectSize returns the size of an object
+// GetObjectSize returns the size of a decompressed object
 func (r *Repo) GetObjectSize(objHash string) (int64, error) {
-	obj, err := r.Object(plumbing.AnyObject, plumbing.NewHash(objHash))
+	obj, err := r.GetEncodedObject(objHash)
 	if err != nil {
 		return 0, err
 	}
-	encoded := &plumbing.MemoryObject{}
-	if err = obj.Encode(encoded); err != nil {
-		return 0, err
-	}
-	return encoded.Size(), nil
+	return obj.Size(), nil
 }
 
-// WriteObjectToFile writes an object to the repository's objects directory
+// GetObjectDiskSize returns the size of the object as it exist on the system
+func (r *Repo) GetObjectDiskSize(objHash string) (int64, error) {
+	path := filepath.Join(r.path, "objects", objHash[:2], objHash[2:])
+	fi, err := os.Stat(path)
+	if err != nil {
+		return 0, err
+	}
+	return fi.Size(), nil
+}
+
+// WriteObjectToFile writes an object to the repository's objects store
 func (r *Repo) WriteObjectToFile(objectHash string, content []byte) error {
 
 	objDir := filepath.Join(r.path, "objects", objectHash[:2])
@@ -239,6 +248,34 @@ func (r *Repo) WriteObjectToFile(objectHash string, content []byte) error {
 	}
 
 	return nil
+}
+
+// GetCompressedObject compressed version of an object
+func (r *Repo) GetCompressedObject(hash string) ([]byte, error) {
+	obj, err := r.GetEncodedObject(hash)
+	if err != nil {
+		return nil, err
+	}
+
+	rdr, err := obj.Reader()
+	if err != nil {
+		return nil, err
+	}
+
+	var buf = bytes.NewBuffer(nil)
+	objW := objfile.NewWriter(buf)
+	defer objW.Close()
+	if err := objW.WriteHeader(obj.Type(), obj.Size()); err != nil {
+		return nil, err
+	}
+
+	if _, err := io.Copy(objW, rdr); err != nil {
+		return nil, err
+	}
+
+	objW.Close()
+
+	return buf.Bytes(), nil
 }
 
 // GetStorer returns the storage engine of the repository
@@ -601,20 +638,15 @@ func getCommitHistory(repo types.BareRepo, commit *object.Commit, stopCommitHash
 	return funk.UniqString(hashes), err
 }
 
-// getObjectsSize returns the total size of the given objects in the repo.
-// Panics if unable to find an object.
-func getObjectsSize(repo types.BareRepo, objects []string) uint64 {
+// getObjectsSize returns the total size of the given objects.
+func getObjectsSize(repo types.BareRepo, objects []string) (uint64, error) {
 	var size int64
 	for _, hash := range objects {
-		obj, err := repo.Object(plumbing.AnyObject, plumbing.NewHash(hash))
+		objSize, err := repo.GetObjectSize(hash)
 		if err != nil {
-			panic(err)
+			return 0, err
 		}
-		encoded := &plumbing.MemoryObject{}
-		if err = obj.Encode(encoded); err != nil {
-			panic(err)
-		}
-		size += encoded.Size()
+		size += objSize
 	}
-	return uint64(size)
+	return uint64(size), nil
 }

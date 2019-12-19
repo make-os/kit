@@ -21,14 +21,14 @@ type service struct {
 }
 
 type serviceParams struct {
-	w          http.ResponseWriter
-	r          *http.Request
-	hook       *PushHook
-	repo       types.BareRepo
-	repoDir    string
-	op         string
-	srvName    string
-	gitBinPath string
+	w           http.ResponseWriter
+	r           *http.Request
+	pushHandler *PushHandler
+	repo        types.BareRepo
+	repoDir     string
+	op          string
+	srvName     string
+	gitBinPath  string
 }
 
 // getInfoRefs Handle incoming request for a repository's references
@@ -148,30 +148,19 @@ func serveService(s *serviceParams) error {
 		return nil
 	}
 
-	if err := s.hook.BeforePush(); err != nil {
-		return errors.Wrap(err, "BeforePush error")
-	}
-
-	// Inspect the pushed data and extract useful information.
-	// When we done inspecting, send the pushed data to git.
-	var pushReader *PushReader
-	pushReader, err = newPushReader(in, s.repo)
-	if err != nil {
-		return errors.Wrap(err, "unable to create push inspector")
-	}
-	io.Copy(pushReader, reader)
-	if err = pushReader.Read(); err != nil {
-		return errors.Wrap(err, "push inspection failed")
+	// Read, analyse and pass the packfile to git
+	if err := s.pushHandler.HandleStream(reader, in); err != nil {
+		return errors.Wrap(err, "HandleStream error")
 	}
 
 	scn := pktline.NewScanner(stdout)
 	pktEnc := pktline.NewEncoder(w)
 	defer pktEnc.Flush()
 
-	// Do work that needs to be done after git finished processing the pushed data.
-	if err := s.hook.AfterPush(pushReader); err != nil {
+	// Handle validate, revert and broadcast the changes
+	if err := s.pushHandler.HandleUpdate(); err != nil {
 		pktEnc.Encode(sidebandErr(err.Error()))
-		return errors.Wrap(err, "BeforeOutput hook err")
+		return errors.Wrap(err, "HandleUpdate err")
 	}
 
 	// Write output from git to the http response

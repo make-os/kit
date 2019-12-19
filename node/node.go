@@ -173,6 +173,12 @@ func (n *Node) Start() error {
 		return err
 	}
 
+	// Register custom reactor channels
+	node.AddChannels([]byte{
+		dht.DHTReactorChannel,
+		repo.PushTxReactorChannel,
+	})
+
 	// Create repository manager and pass it to logic
 	repoMgr := repo.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht)
 	n.logic.SetRepoManager(repoMgr)
@@ -186,9 +192,6 @@ func (n *Node) Start() error {
 	memp := cusMemp.Mempool.(*mempool.Mempool)
 	memp.SetEpochSecretGetter(n.logic.Sys().GetCurretEpochSecretTx)
 	mempR := cusMemp.MempoolReactor.(*mempool.Reactor)
-
-	// Register custom reactor channels
-	node.AddChannels([]byte{dht.DHTReactor})
 
 	// Create node
 	tmNode, err := nm.NewNodeWithCustomMempool(
@@ -205,8 +208,9 @@ func (n *Node) Start() error {
 		return errors.Wrap(err, "failed to fully create node")
 	}
 
-	// Add the DHT to the switch
+	// Add the custom reactors
 	tmNode.Switch().AddReactor("DHT", n.dht.(*dht.DHT))
+	tmNode.Switch().AddReactor("PushReactor", repoMgr)
 
 	// Pass the proxy app to the mempool
 	memp.SetProxyApp(tmNode.ProxyApp().Mempool())

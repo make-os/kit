@@ -95,7 +95,7 @@ func createNote(path, msg, noteName string) {
 }
 
 func createBlob(path, content string) string {
-	hash, err := script.Echo("").ExecInDir(`git hash-object -w --stdin`, path).String()
+	hash, err := script.Echo(content).ExecInDir(`git hash-object -w --stdin`, path).String()
 	if err != nil {
 		panic(err)
 	}

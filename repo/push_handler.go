@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/makeos/mosdef/types"
@@ -12,27 +13,29 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-// PushHook provides lifecycle methods that are
-// called during git push operation request.
-type PushHook struct {
-	op       string
-	repo     types.BareRepo
-	rMgr     types.RepoManager
-	oldState types.BareRepoState
-	log      logger.Logger
+// PushHandler provides handles all phases of a push operation
+type PushHandler struct {
+	op         string
+	repo       types.BareRepo
+	rMgr       types.RepoManager
+	oldState   types.BareRepoState
+	log        logger.Logger
+	pushReader *PushReader
 }
 
-// newPushHook returns an instance of Hook
-func newPushHook(repo types.BareRepo, rMgr types.RepoManager, log logger.Logger) *PushHook {
-	return &PushHook{
+// newPushHandler returns an instance of PushHandler
+func newPushHandler(repo types.BareRepo, rMgr types.RepoManager) *PushHandler {
+	return &PushHandler{
 		repo: repo,
 		rMgr: rMgr,
-		log:  log.Module("push-hook"),
+		log:  rMgr.Log().Module("push-handler"),
 	}
 }
 
-// BeforePush is called before the push request packfile is written to the repository
-func (h *PushHook) BeforePush() error {
+// HandleStream processes git push request stream
+func (h *PushHandler) HandleStream(
+	packfile io.Reader,
+	gitReceivePack io.WriteCloser) error {
 
 	var err error
 
@@ -42,17 +45,30 @@ func (h *PushHook) BeforePush() error {
 		return err
 	}
 
+	// Create a push reader to read, analyse and extract info.
+	// Also, pass the git input pipe so the pack data is written to it.
+	h.pushReader, err = newPushReader(gitReceivePack, h.repo)
+	if err != nil {
+		return errors.Wrap(err, "unable to create push reader")
+	}
+
+	// Write the packfile to the push reader and read it
+	io.Copy(h.pushReader, packfile)
+	if err = h.pushReader.Read(); err != nil {
+		return errors.Wrap(err, "failed to read pushed update")
+	}
+
 	return nil
 }
 
-// AfterPush is called after the pushed data have been processed by git.
-// targetRefs: are git references pushed by the client
-// pr: push inspector provides information about the push operation
-func (h *PushHook) AfterPush(pr *PushReader) error {
+// HandleValidateAndRevert validates the transaction information and signatures
+// that must accompany pushed references afterwhich the changes introduced by
+// the push are reverted.
+func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxLine, string, error) {
 
-	// Panic when old state was not captured
+	// Expect old state to have been captured before the push was processed
 	if h.oldState == nil {
-		return fmt.Errorf("hook: expected old state to have been captured")
+		return nil, "", fmt.Errorf("push-handler: expected old state to have been captured")
 	}
 
 	var errs []error
@@ -60,8 +76,8 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 
 	// Here, we need to validate the changes introduced by the push and also
 	// collect the transaction information pushed alongside the references
-	for _, ref := range pr.references.names() {
-		txLine, pushErrs := h.onPushReference(ref, pr)
+	for _, ref := range h.pushReader.references.names() {
+		txLine, pushErrs := h.onPushReference(ref)
 		if len(pushErrs) == 0 {
 			refsTxLine[ref] = txLine
 			continue
@@ -71,7 +87,7 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 
 	// If we got errors, return the first
 	if len(errs) != 0 {
-		return errs[0]
+		return nil, "", errs[0]
 	}
 
 	// When we have more than one pushed references, we need to ensure they both
@@ -87,8 +103,8 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 			if pkID != txLine.PubKeyID {
 				errs = append(errs, fmt.Errorf("rejected because the pushed references "+
 					"were signed with multiple pgp keys"))
-				errs = append(errs, removePackedObjectsFromRefs(pr.references.names(),
-					h.repo, pr)...)
+				errs = append(errs, removeObjsRelatedToRefs(h.pushReader.references.names(),
+					h.repo, h.pushReader)...)
 				break
 			}
 		}
@@ -96,9 +112,22 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 		pkID = funk.Values(refsTxLine).([]*util.TxLine)[0].PubKeyID
 	}
 
-	// If we got errors, return the first
 	if len(errs) != 0 {
-		return errs[0]
+		return nil, "", errs[0]
+	}
+
+	return refsTxLine, pkID, nil
+}
+
+// HandleUpdate is called after the pushed data have been analysed and
+// processed by git-receive-pack. Here, we attempt to determine what changed,
+// validate the pushed objects, construct a push transaction and broadcast to
+// the rest of the network
+func (h *PushHandler) HandleUpdate() error {
+
+	refsTxLine, pkID, err := h.HandleValidateAndRevert()
+	if err != nil {
+		return err
 	}
 
 	// At this point, there are no errors. We need to construct a PushTx
@@ -108,11 +137,16 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 		PusherKeyID: pkID,
 		Timestamp:   time.Now().Unix(),
 		References:  types.PushedReferences([]*types.PushedReference{}),
-		Size:        getObjectsSize(h.repo, funk.Keys(pr.objectsRefs).([]string)),
 		NodePubKey:  h.rMgr.GetNodeKey().PubKey().Base58(),
 	}
 
-	for _, ref := range pr.references {
+	// Get the total size of the pushed objects
+	pushTx.Size, err = getObjectsSize(h.repo, funk.Keys(h.pushReader.objectsRefs).([]string))
+	if err != nil {
+		return errors.Wrap(err, "failed to get pushed objects size")
+	}
+
+	for _, ref := range h.pushReader.references {
 		pushTx.References = append(pushTx.References, &types.PushedReference{
 			Name:         ref.name,
 			OldHash:      ref.oldHash,
@@ -120,14 +154,12 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 			Nonce:        h.repo.State().References.Get(ref.name).Nonce + 1,
 			Fee:          refsTxLine[ref.name].Fee,
 			AccountNonce: refsTxLine[ref.name].Nonce,
-			Objects:      pr.objectsRefs.getObjectsOf(ref.name),
+			Objects:      h.pushReader.objectsRefs.getObjectsOf(ref.name),
 		})
 	}
 
 	// Sign the push transaction
-	var err error
-	sigMsg := pushTx.Bytes()
-	pushTx.NodeSig, err = h.rMgr.GetNodeKey().PrivKey().Sign(sigMsg)
+	pushTx.NodeSig, err = h.rMgr.GetNodeKey().PrivKey().Sign(pushTx.Bytes())
 	if err != nil {
 		return errors.Wrap(err, "failed to sign push tx")
 	}
@@ -136,14 +168,14 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 	// will attempt to remove the pushed objects from the references and node
 	// and return an error.
 	if err := h.rMgr.GetPushPool().Add(pushTx); err != nil {
-		if errs = removePackedObjectsFromRefs(pr.references.names(), h.repo, pr); len(errs) > 0 {
+		if errs := removeObjsRelatedToRefs(h.pushReader.references.names(), h.repo, h.pushReader); len(errs) > 0 {
 			return errors.Wrap(errs[0], "failed to remove packed objects from ref")
 		}
 		return err
 	}
 
 	// Announce the objects to the dht
-	for _, obj := range pr.objects {
+	for _, obj := range h.pushReader.objects {
 		dhtKey := MakeRepoObjectDHTKey(h.repo.GetName(), obj.Hash.String())
 		ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
 		defer c()
@@ -153,15 +185,18 @@ func (h *PushHook) AfterPush(pr *PushReader) error {
 		}
 	}
 
+	// Broadcast the push tx
+	h.rMgr.BroadcastMsg(PushTxReactorChannel, pushTx.Bytes())
+
 	return nil
 }
 
 // onPushReference handles push updates to references.
 // The goal of this function is to:
 // - Determine what changed as a result of the recent push.
-// - Validate the update references their current state meet protocol rules.
+// - Validate the pushed references transaction information & signature.
 // - Revert the changes and delete the new objects if validation failed.
-func (h *PushHook) onPushReference(ref string, pr *PushReader) (*util.TxLine, []error) {
+func (h *PushHandler) onPushReference(ref string) (*util.TxLine, []error) {
 
 	var errs = []error{}
 
@@ -205,18 +240,18 @@ func (h *PushHook) onPushReference(ref string, pr *PushReader) (*util.TxLine, []
 	// current ref. If it is not, we simply remove the current refer from the
 	// list of related refs and let the next refs decide what to do with it.
 	if len(errs) > 0 {
-		errs = append(errs, removePackedObjectsFromRef(ref, h.repo, pr)...)
+		errs = append(errs, removeObjRelatedToOnlyRef(ref, h.repo, h.pushReader)...)
 	}
 
 	return txLine, errs
 }
 
-// removePackedObjectsFromRef deletes pushed objects contained in the given ref;
+// removeObjRelatedToOnlyRef deletes pushed objects contained in the given ref;
 // Objects that are also linked to other references are not deleted.
 // ref: The target ref whose contained object are to be deleted.
 // repo: The repository where this object exist.
 // pr: Push inspector object
-func removePackedObjectsFromRef(ref string, repo types.BareRepo, pr *PushReader) (errs []error) {
+func removeObjRelatedToOnlyRef(ref string, repo types.BareRepo, pr *PushReader) (errs []error) {
 	for _, obj := range pr.objects {
 		relatedRefs := pr.objectsRefs[obj.Hash.String()]
 		if len(relatedRefs) == 1 && funk.ContainsString(relatedRefs, ref) {
@@ -229,15 +264,15 @@ func removePackedObjectsFromRef(ref string, repo types.BareRepo, pr *PushReader)
 	return
 }
 
-// removePackedObjectsFromRefs deletes pushed objects contained in the given refs;
+// removeObjsRelatedToRefs deletes pushed objects contained in the given refs;
 // Objects that are also linked to other references are not deleted.
 // refs: A list of refs whose contained object are to be deleted.
 // repo: The repository where this object exist.
 // pr: Push inspector object
-func removePackedObjectsFromRefs(refs []string, repo types.BareRepo,
+func removeObjsRelatedToRefs(refs []string, repo types.BareRepo,
 	pr *PushReader) (errs []error) {
 	for _, ref := range refs {
-		errs = append(errs, removePackedObjectsFromRef(ref, repo, pr)...)
+		errs = append(errs, removeObjRelatedToOnlyRef(ref, repo, pr)...)
 	}
 	return
 }

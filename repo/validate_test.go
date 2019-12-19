@@ -900,7 +900,7 @@ var _ = Describe("Validation", func() {
 				}}
 
 				mockRepo := mocks.NewMockBareRepo(ctrl)
-				mockRepo.EXPECT().GetEncodedObject(objHash).Return(nil, fmt.Errorf("object not found"))
+				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
 				tx.targetRepo = mockRepo
 
 				mockDHT := mocks.NewMockDHT(ctrl)
@@ -928,7 +928,7 @@ var _ = Describe("Validation", func() {
 				}}
 
 				mockRepo := mocks.NewMockBareRepo(ctrl)
-				mockRepo.EXPECT().GetEncodedObject(objHash).Return(nil, fmt.Errorf("object not found"))
+				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
 				tx.targetRepo = mockRepo
 
 				mockDHT := mocks.NewMockDHT(ctrl)
@@ -959,7 +959,7 @@ var _ = Describe("Validation", func() {
 				}, Size: 7}
 
 				mockRepo := mocks.NewMockBareRepo(ctrl)
-				mockRepo.EXPECT().GetEncodedObject(objHash).Return(nil, fmt.Errorf("object not found"))
+				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
 				tx.targetRepo = mockRepo
 
 				mockDHT := mocks.NewMockDHT(ctrl)
@@ -971,6 +971,7 @@ var _ = Describe("Validation", func() {
 				}).Return(content, nil)
 
 				mockRepo.EXPECT().WriteObjectToFile(objHash, content).Return(nil)
+				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(len(content)), nil)
 
 				err = fetchAndCheckReferenceObjects(tx, mockDHT)
 			})
@@ -989,7 +990,7 @@ var _ = Describe("Validation", func() {
 				}, Size: 10}
 
 				mockRepo := mocks.NewMockBareRepo(ctrl)
-				mockRepo.EXPECT().GetEncodedObject(objHash).Return(nil, fmt.Errorf("object not found"))
+				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
 				tx.targetRepo = mockRepo
 
 				mockDHT := mocks.NewMockDHT(ctrl)
@@ -1001,6 +1002,7 @@ var _ = Describe("Validation", func() {
 				}).Return(content, nil)
 
 				mockRepo.EXPECT().WriteObjectToFile(objHash, content).Return(nil)
+				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(len(content)), nil)
 
 				err = fetchAndCheckReferenceObjects(tx, mockDHT)
 			})

@@ -98,7 +98,7 @@ var _ = Describe("PushTx", func() {
 
 	Describe(".Len", func() {
 		It("should return expected length", func() {
-			Expect(pushTx.Len()).To(Equal(uint64(120)))
+			Expect(pushTx.Len()).To(Equal(uint64(121)))
 		})
 	})
 

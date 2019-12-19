@@ -338,6 +338,9 @@ func checkPushTxSyntax(tx *PushTx) error {
 
 	nodeSig := tx.NodeSig
 	tx.NodeSig = nil
+	defer func() {
+		tx.NodeSig = nodeSig
+	}()
 	if ok, err := pk.Verify(tx.Bytes(), nodeSig); err != nil || !ok {
 		return types.FieldError("nodeSig", "failed to verify signature with public key")
 	}
@@ -468,39 +471,37 @@ func checkPushTx(tx types.PushTx, keepers types.Keepers, dht types.DHT) error {
 func fetchAndCheckReferenceObjects(tx types.PushTx, dht types.DHT) error {
 	objectsSize := int64(0)
 
-	for _, ref := range tx.GetPushedReferences() {
-		for _, objHash := range ref.Objects {
+	for _, objHash := range tx.GetPushedObjects() {
 
-			// Attempt to get the object, if we find it, it means the object
-			// already exist and we don't have to fetch it from the dht. However,
-			// we still need to keep track of its size
-			obj, err := tx.GetTargetRepo().GetEncodedObject(objHash)
-			if err == nil {
-				objectsSize += obj.Size()
-				continue
-			}
-
-			// Since the object doesn't exist locally, read the object from the DHT
-			dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
-			ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
-			defer cn()
-			objValue, err := dht.GetObject(ctx, &types.DHTObjectQuery{
-				Module:    RepoObjectModule,
-				ObjectKey: []byte(dhtKey),
-			})
-			if err != nil {
-				msg := fmt.Sprintf("failed to fetch object '%s'", objHash)
-				return errors.Wrap(err, msg)
-			}
-
-			// Write the object's content to disk
-			if err := tx.GetTargetRepo().WriteObjectToFile(objHash, objValue); err != nil {
-				msg := fmt.Sprintf("failed to write fetched object '%s' to disk", objHash)
-				return errors.Wrap(err, msg)
-			}
-
-			objectsSize += int64(len(objValue))
+	getSize:
+		// Attempt to get the object's size. If we find it, it means the object
+		// already exist so we don't have to fetch it from the dht.
+		objSize, err := tx.GetTargetRepo().GetObjectSize(objHash)
+		if err == nil {
+			objectsSize += objSize
+			continue
 		}
+
+		// Since the object doesn't exist locally, read the object from the DHT
+		dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
+		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cn()
+		objValue, err := dht.GetObject(ctx, &types.DHTObjectQuery{
+			Module:    RepoObjectModule,
+			ObjectKey: []byte(dhtKey),
+		})
+		if err != nil {
+			msg := fmt.Sprintf("failed to fetch object '%s'", objHash)
+			return errors.Wrap(err, msg)
+		}
+
+		// Write the object's content to disk
+		if err := tx.GetTargetRepo().WriteObjectToFile(objHash, objValue); err != nil {
+			msg := fmt.Sprintf("failed to write fetched object '%s' to disk", objHash)
+			return errors.Wrap(err, msg)
+		}
+
+		goto getSize
 	}
 
 	if objectsSize != int64(tx.GetSize()) {

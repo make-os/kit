@@ -161,11 +161,19 @@ var _ = Describe("Manager", func() {
 			})
 		})
 
-		When("target object does not exist", func() {
+		When("target repo does not exist", func() {
 			It("should return err", func() {
 				_, err := repoMgr.FindObject([]byte("repo/" + strings.Repeat("0", 40)))
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("failed to read object"))
+				Expect(err.Error()).To(ContainSubstring("repository does not exist"))
+			})
+		})
+
+		When("target object does not exist", func() {
+			It("should return err", func() {
+				_, err := repoMgr.FindObject([]byte(repoName + "/" + strings.Repeat("0", 40)))
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("object not found"))
 			})
 		})
 	})

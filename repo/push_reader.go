@@ -81,9 +81,12 @@ func newPushReader(dst io.WriteCloser, repo types.BareRepo) (*PushReader, error)
 	}
 
 	return &PushReader{
-		dst:      dst,
-		packFile: packFile,
-		repo:     repo,
+		dst:         dst,
+		packFile:    packFile,
+		repo:        repo,
+		objectsRefs: make(map[string][]string),
+		objects:     []*packObject{},
+		references:  []*packedReferenceObject{},
 	}, nil
 }
 
@@ -92,17 +95,22 @@ func (r *PushReader) Write(p []byte) (int, error) {
 	return r.packFile.Write(p)
 }
 
-// Inspect reads the packfile, extracting object and reference information
+// Copy writes from the content of a reader
+func (r *PushReader) Copy(rd io.Reader) (int, error) {
+	bz, err := ioutil.ReadAll(rd)
+	if err != nil {
+		return 0, err
+	}
+	return r.Write(bz)
+}
+
+// Read reads the packfile, extracting object and reference information
 // and finally writes the read data to a provided destination
 func (r *PushReader) Read() error {
 
 	var err error
 
 	r.packFile.Seek(0, 0)
-
-	// bz, _ := ioutil.ReadAll(r.packFile)
-	// pp.Print(string(bz))
-	// r.packFile.Seek(0, 0)
 
 	ur := packp.NewReferenceUpdateRequest()
 	if err = ur.Decode(r.packFile); err != nil {

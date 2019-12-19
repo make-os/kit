@@ -1,8 +1,11 @@
 package repo
 
 import (
+	"strings"
+
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // Obj implements Item. It represents a repository item.
@@ -248,5 +251,46 @@ func (s *State) GetChanges(y types.BareRepoState) *types.Changes {
 
 	return &types.Changes{
 		References: refChange,
+	}
+}
+
+// getRepoState returns the state of the repository
+// repo: The target repository
+// options: Allows the caller to configure how and what state are gathered
+func getRepoState(repo types.BareRepo, options ...types.KVOption) types.BareRepoState {
+
+	refMatch := ""
+	if opt := getKVOpt("match", options); opt != nil {
+		refMatch = opt.(string)
+	}
+
+	// Get references
+	refs := make(map[string]types.Item)
+	if refMatch == "" || strings.HasPrefix(refMatch, "refs") {
+		refsI, _ := repo.References()
+		refsI.ForEach(func(ref *plumbing.Reference) error {
+
+			// Ignore HEAD reference
+			if strings.ToLower(ref.Name().String()) == "head" {
+				return nil
+			}
+
+			// If a ref match option is set, ignore non-matching reference
+			if refMatch != "" && ref.Name().String() != refMatch {
+				return nil
+			}
+
+			refs[ref.Name().String()] = &Obj{
+				Type: "ref",
+				Name: ref.Name().String(),
+				Data: ref.Hash().String(),
+			}
+
+			return nil
+		})
+	}
+
+	return &State{
+		References: NewObjCol(refs),
 	}
 }

@@ -145,6 +145,11 @@ func Sha1(v []byte) []byte {
 	return h.Sum(nil)
 }
 
+// Sha1Hex returns sha1 in hex format
+func Sha1Hex(v []byte) string {
+	return fmt.Sprintf("%x", Sha1(v))
+}
+
 // RIPEMD160 returns RIPEMD160 (20 bytes) hash of v
 func RIPEMD160(v []byte) []byte {
 	h := ripemd160.New()

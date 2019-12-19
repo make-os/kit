@@ -3,7 +3,6 @@ package repo
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -17,9 +16,12 @@ import (
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util/logger"
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/p2p"
 	"gopkg.in/src-d/go-git.v4"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
+
+// PushTxReactorChannel is the channel id for reacting to push tx messages
+const PushTxReactorChannel = byte(0x32)
 
 // Git services
 const (
@@ -45,6 +47,7 @@ var services = [][]interface{}{
 // Manager implements types.Manager. It provides a system for managing
 // and service a git repositories through http and ssh protocols.
 type Manager struct {
+	p2p.BaseReactor
 	cfg             *config.AppConfig
 	log             logger.Logger         // log is the application logger
 	wg              *sync.WaitGroup       // wait group for waiting for the manager
@@ -85,6 +88,7 @@ func NewManager(cfg *config.AppConfig, addr string, logic types.Logic, dht types
 		dht:         dht,
 	}
 	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
+	mgr.BaseReactor = *p2p.NewBaseReactor("Reactor", mgr)
 
 	return mgr
 }
@@ -148,6 +152,10 @@ func (m *Manager) handleAuth(r *http.Request) error {
 	return nil
 }
 
+func (m *Manager) getRepoPath(name string) string {
+	return filepath.Join(m.rootDir, name)
+}
+
 // handler handles incoming http request from a git client
 func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 
@@ -166,7 +174,7 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 	// De-construct the URL to get the repo name and operation
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 	repoName := pathParts[0]
-	fullRepoDir := filepath.Join(m.rootDir, repoName)
+	fullRepoDir := m.getRepoPath(repoName)
 	op := pathParts[1]
 
 	// Check if the repository exist
@@ -212,7 +220,7 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 		gitBinPath: m.gitBinPath,
 	}
 
-	srvParams.hook = newPushHook(srvParams.repo, m, m.log)
+	srvParams.pushHandler = newPushHandler(srvParams.repo, m)
 
 	for _, s := range services {
 		srvPattern := s[0].(string)
@@ -244,6 +252,11 @@ func (m *Manager) GetPGPPubKeyGetter() types.PGPPubKeyGetter {
 	return m.pgpPubKeyGetter
 }
 
+// Log returns the logger
+func (m *Manager) Log() logger.Logger {
+	return m.log
+}
+
 // SetPGPPubKeyGetter implements SetPGPPubKeyGetter
 func (m *Manager) SetPGPPubKeyGetter(pkGetter types.PGPPubKeyGetter) {
 	m.pgpPubKeyGetter = pkGetter
@@ -252,47 +265,6 @@ func (m *Manager) SetPGPPubKeyGetter(pkGetter types.PGPPubKeyGetter) {
 // GetRepoState implements RepositoryManager
 func (m *Manager) GetRepoState(repo types.BareRepo, options ...types.KVOption) (types.BareRepoState, error) {
 	return getRepoState(repo, options...), nil
-}
-
-// getRepoState returns the state of the repository
-// repo: The target repository
-// options: Allows the caller to configure how and what state are gathered
-func getRepoState(repo types.BareRepo, options ...types.KVOption) types.BareRepoState {
-
-	refMatch := ""
-	if opt := getKVOpt("match", options); opt != nil {
-		refMatch = opt.(string)
-	}
-
-	// Get references
-	refs := make(map[string]types.Item)
-	if refMatch == "" || strings.HasPrefix(refMatch, "refs") {
-		refsI, _ := repo.References()
-		refsI.ForEach(func(ref *plumbing.Reference) error {
-
-			// Ignore HEAD reference
-			if strings.ToLower(ref.Name().String()) == "head" {
-				return nil
-			}
-
-			// If a ref match option is set, ignore non-matching reference
-			if refMatch != "" && ref.Name().String() != refMatch {
-				return nil
-			}
-
-			refs[ref.Name().String()] = &Obj{
-				Type: "ref",
-				Name: ref.Name().String(),
-				Data: ref.Hash().String(),
-			}
-
-			return nil
-		})
-	}
-
-	return &State{
-		References: NewObjCol(refs),
-	}
 }
 
 // Revert implements RepositoryManager
@@ -318,20 +290,31 @@ func (m *Manager) FindObject(key []byte) ([]byte, error) {
 		return nil, fmt.Errorf("invalid object hash")
 	}
 
-	objPath := filepath.Join(m.rootDir, repoName, "objects", objHash[:2], objHash[2:])
-	bz, err := ioutil.ReadFile(objPath)
+	repo, err := getRepo(m.getRepoPath(repoName))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to read object")
+		return nil, err
+	}
+
+	bz, err := repo.GetCompressedObject(objHash)
+	if err != nil {
+		return nil, err
 	}
 
 	return bz, nil
 }
 
-// Stop shutsdown the server
-func (m *Manager) Stop(ctx context.Context) {
+// Shutdown shuts down the server
+func (m *Manager) Shutdown(ctx context.Context) {
 	if m.srv != nil {
 		m.log.Info("Server is stopped")
 		m.srv.Shutdown(ctx)
 		m.repoDBCache.Clear()
 	}
+}
+
+// Stop implements Reactor
+func (m *Manager) Stop() error {
+	m.BaseReactor.Stop()
+	m.Shutdown(context.Background())
+	return nil
 }
