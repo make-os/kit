@@ -10,7 +10,8 @@ import (
 	"sync"
 	"time"
 
-	lru "github.com/hashicorp/golang-lru"
+	"github.com/makeos/mosdef/util/cache"
+
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/params"
@@ -65,8 +66,8 @@ type Manager struct {
 	dht             types.DHT             // The dht service
 
 	// TODO: remove objects that make it into a block.
-	unfinalizedObjects *lru.Cache // A cache holding unfinalized git object pointers
-	pushTxSenders      *lru.Cache
+	unfinalizedObjects *cache.Cache // A cache holding unfinalized git object pointers
+	pushTxSenders      *cache.Cache
 }
 
 // NewManager creates an instance of Manager
@@ -81,22 +82,22 @@ func NewManager(cfg *config.AppConfig, addr string, logic types.Logic, dht types
 
 	key, _ := cfg.G().PrivVal.GetKey()
 	mgr := &Manager{
-		cfg:         cfg,
-		log:         cfg.G().Log.Module("repo-manager"),
-		addr:        addr,
-		rootDir:     cfg.GetRepoRoot(),
-		gitBinPath:  cfg.Node.GitBinPath,
-		wg:          wg,
-		repoDBCache: dbCache,
-		pool:        NewPushPool(params.PushPoolCap, logic, dht),
-		logic:       logic,
-		nodeKey:     key,
-		dht:         dht,
+		cfg:                cfg,
+		log:                cfg.G().Log.Module("repo-manager"),
+		addr:               addr,
+		rootDir:            cfg.GetRepoRoot(),
+		gitBinPath:         cfg.Node.GitBinPath,
+		wg:                 wg,
+		repoDBCache:        dbCache,
+		pool:               NewPushPool(params.PushPoolCap, logic, dht),
+		logic:              logic,
+		nodeKey:            key,
+		dht:                dht,
+		unfinalizedObjects: cache.NewActiveCache(params.UnfinalizedObjectsCacheSize),
+		pushTxSenders:      cache.NewActiveCache(params.PushTxSendersCacheSize),
 	}
 
 	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
-	mgr.unfinalizedObjects, _ = lru.New(params.UnfinalizedObjectsCacheSize)
-	mgr.pushTxSenders, _ = lru.New(params.PushTxSendersCacheSize)
 	mgr.BaseReactor = *p2p.NewBaseReactor("Reactor", mgr)
 
 	return mgr
@@ -118,7 +119,7 @@ func (m *Manager) defaultGPGPubKeyGetter(pkID string) (string, error) {
 // AddUnfinalizedObject adds an object to the unfinalized object cache
 func (m *Manager) AddUnfinalizedObject(repo, objHash string) {
 	key := util.Sha1Hex([]byte(repo + objHash))
-	m.unfinalizedObjects.Add(key, struct{}{})
+	m.unfinalizedObjects.AddWithExp(key, struct{}{}, time.Now().Add(10*time.Minute))
 }
 
 // RemoveUnfinalizedObject removes an object from the unfinalized object cache
@@ -130,21 +131,21 @@ func (m *Manager) RemoveUnfinalizedObject(repo, objHash string) {
 // IsUnfinalizedObject checks whether an object exist in the unfinalized object cache
 func (m *Manager) IsUnfinalizedObject(repo, objHash string) bool {
 	key := util.Sha1Hex([]byte(repo + objHash))
-	_, ok := m.unfinalizedObjects.Get(key)
-	return ok
+	v := m.unfinalizedObjects.Get(key)
+	return v == struct{}{}
 }
 
 // cachePushTxSender caches a push tx sender
 func (m *Manager) cachePushTxSender(senderID string, txID string) {
 	key := util.Sha1Hex([]byte(senderID + txID))
-	m.pushTxSenders.Add(key, struct{}{})
+	m.pushTxSenders.AddWithExp(key, struct{}{}, time.Now().Add(10*time.Minute))
 }
 
 // isPushTxSender checks whether a push tx was sent by the given sender ID
 func (m *Manager) isPushTxSender(senderID string, txID string) bool {
 	key := util.Sha1Hex([]byte(senderID + txID))
-	_, ok := m.pushTxSenders.Get(key)
-	return ok
+	v := m.pushTxSenders.Get(key)
+	return v == struct{}{}
 }
 
 // Start starts the server that serves the repos.

@@ -18,7 +18,7 @@ func Sec(sec int) time.Time {
 }
 
 type cacheValue struct {
-	value      interface{}
+	value interface{}
 	expAt time.Time
 }
 
@@ -38,8 +38,7 @@ func NewCache(capacity int) *Cache {
 	return cache
 }
 
-// NewActiveCache creates a new Cache instance with
-// period removal of expired cache items
+// NewActiveCache creates a new Cache instance with that removes expired cache items
 func NewActiveCache(capacity int) *Cache {
 	cache := NewCache(capacity)
 	go func() {
@@ -77,7 +76,7 @@ func (c *Cache) HasMulti(values ...interface{}) bool {
 func (c *Cache) add(key, val interface{}, expTime time.Time) {
 	c.removeExpired()
 	c.container.Add(key, &cacheValue{
-		value:      val,
+		value: val,
 		expAt: expTime,
 	})
 }
