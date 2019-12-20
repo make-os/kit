@@ -177,4 +177,39 @@ var _ = Describe("Manager", func() {
 			})
 		})
 	})
+
+	Describe(".AddUnfinalizedObject", func() {
+		It("should add object", func() {
+			repo := "repo"
+			objHash := "hash"
+			repoMgr.AddUnfinalizedObject(repo, objHash)
+			Expect(repoMgr.unfinalizedObjects.Len()).To(Equal(1))
+		})
+	})
+
+	Describe(".RemoveUnfinalizedObject", func() {
+		It("should remove object", func() {
+			repo := "repo"
+			objHash := "hash"
+			repoMgr.AddUnfinalizedObject(repo, objHash)
+			Expect(repoMgr.unfinalizedObjects.Len()).To(Equal(1))
+			repoMgr.RemoveUnfinalizedObject(repo, objHash)
+			Expect(repoMgr.unfinalizedObjects.Len()).To(Equal(0))
+		})
+	})
+
+	Describe(".IsUnfinalizedObject", func() {
+		It("should return true when object exist in the unfinalized object cache", func() {
+			repo := "repo"
+			objHash := "hash"
+			repoMgr.AddUnfinalizedObject(repo, objHash)
+			Expect(repoMgr.IsUnfinalizedObject(repo, objHash)).To(BeTrue())
+		})
+
+		It("should return false when object does not exist in the unfinalized object cache", func() {
+			repo := "repo"
+			objHash := "hash"
+			Expect(repoMgr.IsUnfinalizedObject(repo, objHash)).To(BeFalse())
+		})
+	})
 })

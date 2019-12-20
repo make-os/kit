@@ -791,6 +791,44 @@ func (mr *MockRepoManagerMockRecorder) SetPGPPubKeyGetter(pkGetter interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPGPPubKeyGetter", reflect.TypeOf((*MockRepoManager)(nil).SetPGPPubKeyGetter), pkGetter)
 }
 
+// AddUnfinalizedObject mocks base method
+func (m *MockRepoManager) AddUnfinalizedObject(repo, objHash string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddUnfinalizedObject", repo, objHash)
+}
+
+// AddUnfinalizedObject indicates an expected call of AddUnfinalizedObject
+func (mr *MockRepoManagerMockRecorder) AddUnfinalizedObject(repo, objHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUnfinalizedObject", reflect.TypeOf((*MockRepoManager)(nil).AddUnfinalizedObject), repo, objHash)
+}
+
+// RemoveUnfinalizedObject mocks base method
+func (m *MockRepoManager) RemoveUnfinalizedObject(repo, objHash string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RemoveUnfinalizedObject", repo, objHash)
+}
+
+// RemoveUnfinalizedObject indicates an expected call of RemoveUnfinalizedObject
+func (mr *MockRepoManagerMockRecorder) RemoveUnfinalizedObject(repo, objHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveUnfinalizedObject", reflect.TypeOf((*MockRepoManager)(nil).RemoveUnfinalizedObject), repo, objHash)
+}
+
+// IsUnfinalizedObject mocks base method
+func (m *MockRepoManager) IsUnfinalizedObject(repo, objHash string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsUnfinalizedObject", repo, objHash)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsUnfinalizedObject indicates an expected call of IsUnfinalizedObject
+func (mr *MockRepoManagerMockRecorder) IsUnfinalizedObject(repo, objHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUnfinalizedObject", reflect.TypeOf((*MockRepoManager)(nil).IsUnfinalizedObject), repo, objHash)
+}
+
 // GetDHT mocks base method
 func (m *MockRepoManager) GetDHT() types.DHT {
 	m.ctrl.T.Helper()
@@ -829,6 +867,67 @@ func (m *MockRepoManager) Stop() error {
 func (mr *MockRepoManagerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockRepoManager)(nil).Stop))
+}
+
+// MockUnfinalizedObjectCache is a mock of UnfinalizedObjectCache interface
+type MockUnfinalizedObjectCache struct {
+	ctrl     *gomock.Controller
+	recorder *MockUnfinalizedObjectCacheMockRecorder
+}
+
+// MockUnfinalizedObjectCacheMockRecorder is the mock recorder for MockUnfinalizedObjectCache
+type MockUnfinalizedObjectCacheMockRecorder struct {
+	mock *MockUnfinalizedObjectCache
+}
+
+// NewMockUnfinalizedObjectCache creates a new mock instance
+func NewMockUnfinalizedObjectCache(ctrl *gomock.Controller) *MockUnfinalizedObjectCache {
+	mock := &MockUnfinalizedObjectCache{ctrl: ctrl}
+	mock.recorder = &MockUnfinalizedObjectCacheMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockUnfinalizedObjectCache) EXPECT() *MockUnfinalizedObjectCacheMockRecorder {
+	return m.recorder
+}
+
+// AddUnfinalizedObject mocks base method
+func (m *MockUnfinalizedObjectCache) AddUnfinalizedObject(repo, objHash string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddUnfinalizedObject", repo, objHash)
+}
+
+// AddUnfinalizedObject indicates an expected call of AddUnfinalizedObject
+func (mr *MockUnfinalizedObjectCacheMockRecorder) AddUnfinalizedObject(repo, objHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUnfinalizedObject", reflect.TypeOf((*MockUnfinalizedObjectCache)(nil).AddUnfinalizedObject), repo, objHash)
+}
+
+// RemoveUnfinalizedObject mocks base method
+func (m *MockUnfinalizedObjectCache) RemoveUnfinalizedObject(repo, objHash string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "RemoveUnfinalizedObject", repo, objHash)
+}
+
+// RemoveUnfinalizedObject indicates an expected call of RemoveUnfinalizedObject
+func (mr *MockUnfinalizedObjectCacheMockRecorder) RemoveUnfinalizedObject(repo, objHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveUnfinalizedObject", reflect.TypeOf((*MockUnfinalizedObjectCache)(nil).RemoveUnfinalizedObject), repo, objHash)
+}
+
+// IsUnfinalizedObject mocks base method
+func (m *MockUnfinalizedObjectCache) IsUnfinalizedObject(repo, objHash string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsUnfinalizedObject", repo, objHash)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsUnfinalizedObject indicates an expected call of IsUnfinalizedObject
+func (mr *MockUnfinalizedObjectCacheMockRecorder) IsUnfinalizedObject(repo, objHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUnfinalizedObject", reflect.TypeOf((*MockUnfinalizedObjectCache)(nil).IsUnfinalizedObject), repo, objHash)
 }
 
 // MockPushPool is a mock of PushPool interface

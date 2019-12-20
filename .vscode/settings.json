@@ -30,7 +30,8 @@
         "tmmem",
         "tmtypes",
         "unbonding",
-        "undecayed"
+        "undecayed",
+        "unfinalized"
     ],
     "go.inferGopath": false
 }

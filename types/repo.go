@@ -180,6 +180,15 @@ type RepoManager interface {
 	// SetPGPPubKeyGetter sets the PGP public key query function
 	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
 
+	// AddUnfinalizedObject adds an object to the unfinalized object cache
+	AddUnfinalizedObject(repo, objHash string)
+
+	// Remove removes an object from the unfinalized object cache
+	RemoveUnfinalizedObject(repo, objHash string)
+
+	// IsUnfinalizedObject checks whether an object exist in the unfinalized object cache
+	IsUnfinalizedObject(repo, objHash string) bool
+
 	// GetDHT returns the dht service
 	GetDHT() DHT
 
@@ -188,6 +197,18 @@ type RepoManager interface {
 
 	// Stop implements Reactor
 	Stop() error
+}
+
+// UnfinalizedObjectCache keeps track of unfinalized repository objects
+type UnfinalizedObjectCache interface {
+	// AddUnfinalizedObject adds an object to the unfinalized object cache
+	AddUnfinalizedObject(repo, objHash string)
+
+	// Remove removes an object from the unfinalized object cache
+	RemoveUnfinalizedObject(repo, objHash string)
+
+	// IsUnfinalizedObject checks whether an object exist in the unfinalized object cache
+	IsUnfinalizedObject(repo, objHash string) bool
 }
 
 // PushPool represents a pool for holding and ordering git push transactions

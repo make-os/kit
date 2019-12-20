@@ -100,7 +100,7 @@ var _ = Describe("PushHandler", func() {
 		var err error
 		var hash1, hash2 string
 
-		When("object is related to 1 reference 'master' only", func() {
+		When("object is related to 1 reference 'master' only and target ref is master", func() {
 			BeforeEach(func() {
 				pr, err = newPushReader(&WriteCloser{Buffer: bytes.NewBuffer(nil)}, repo)
 				Expect(err).To(BeNil())
@@ -112,7 +112,10 @@ var _ = Describe("PushHandler", func() {
 					{Type: 1, Hash: plumbing.NewHash(hash1)},
 				}
 				pr.objectsRefs[hash1] = []string{"master"}
-				errs := removeObjRelatedToOnlyRef("master", repo, pr)
+
+				repoMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
+
+				errs := removeObjRelatedToOnlyRef(repo, pr, repoMgr, "master")
 				Expect(errs).To(HaveLen(0))
 			})
 
@@ -126,7 +129,38 @@ var _ = Describe("PushHandler", func() {
 			})
 		})
 
-		When("object is related to 2 reference 'master' and 'dev'", func() {
+		When("object is related to 1 reference 'master' only and target ref is master", func() {
+			When("object is also included in the unfinalized object cache", func() {
+				BeforeEach(func() {
+					pr, err = newPushReader(&WriteCloser{Buffer: bytes.NewBuffer(nil)}, repo)
+					Expect(err).To(BeNil())
+
+					hash1 = createBlob(path, "abc")
+					Expect(repo.ObjectExist(hash1)).To(BeTrue())
+
+					pr.objects = []*packObject{
+						{Type: 1, Hash: plumbing.NewHash(hash1)},
+					}
+					pr.objectsRefs[hash1] = []string{"master"}
+
+					repoMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(true)
+
+					errs := removeObjRelatedToOnlyRef(repo, pr, repoMgr, "master")
+					Expect(errs).To(HaveLen(0))
+				})
+
+				It("should not remove the reference 'master' from the object's reference list", func() {
+					Expect(pr.objectsRefs[hash1]).To(ContainElement("master"))
+					Expect(pr.objectsRefs[hash1]).ToNot(BeEmpty())
+				})
+
+				It("should not remove the object from disk", func() {
+					Expect(repo.ObjectExist(hash1)).To(BeTrue())
+				})
+			})
+		})
+
+		When("object is related to 2 reference 'master' and 'dev' and target ref is master", func() {
 			BeforeEach(func() {
 				pr, err = newPushReader(&WriteCloser{Buffer: bytes.NewBuffer(nil)}, repo)
 				Expect(err).To(BeNil())
@@ -139,7 +173,10 @@ var _ = Describe("PushHandler", func() {
 				}
 
 				pr.objectsRefs[hash1] = []string{"master", "dev"}
-				errs := removeObjRelatedToOnlyRef("master", repo, pr)
+
+				repoMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
+
+				errs := removeObjRelatedToOnlyRef(repo, pr, repoMgr, "master")
 				Expect(errs).To(HaveLen(0))
 			})
 
@@ -153,7 +190,7 @@ var _ = Describe("PushHandler", func() {
 			})
 		})
 
-		When("2 objects are related to reference 'master'", func() {
+		When("2 objects are related to reference 'master' and target ref is master", func() {
 			BeforeEach(func() {
 				pr, err = newPushReader(&WriteCloser{Buffer: bytes.NewBuffer(nil)}, repo)
 				Expect(err).To(BeNil())
@@ -170,7 +207,11 @@ var _ = Describe("PushHandler", func() {
 
 				pr.objectsRefs[hash1] = []string{"master"}
 				pr.objectsRefs[hash2] = []string{"master"}
-				errs := removeObjRelatedToOnlyRef("master", repo, pr)
+
+				repoMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
+				repoMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash2).Return(false)
+
+				errs := removeObjRelatedToOnlyRef(repo, pr, repoMgr, "master")
 				Expect(errs).To(HaveLen(0))
 			})
 
@@ -205,7 +246,10 @@ var _ = Describe("PushHandler", func() {
 					{Type: 1, Hash: plumbing.NewHash(hash1)},
 				}
 				pr.objectsRefs[hash1] = []string{"master"}
-				errs := removeObjsRelatedToRefs([]string{"master"}, repo, pr)
+
+				repoMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
+
+				errs := removeObjsRelatedToRefs(repo, pr, repoMgr, []string{"master"})
 				Expect(errs).To(HaveLen(0))
 			})
 

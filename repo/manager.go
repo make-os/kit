@@ -10,10 +10,12 @@ import (
 	"sync"
 	"time"
 
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/util"
 	"github.com/makeos/mosdef/util/logger"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
@@ -61,6 +63,9 @@ type Manager struct {
 	nodeKey         *crypto.Key           // the node's private key for signing transactions
 	pgpPubKeyGetter types.PGPPubKeyGetter // finds and returns PGP public key
 	dht             types.DHT             // The dht service
+
+	// TODO: remove objects that make it into a block.
+	unfinalizedObjects *lru.Cache // A cache holding unfinalized git object pointers
 }
 
 // NewManager creates an instance of Manager
@@ -87,7 +92,9 @@ func NewManager(cfg *config.AppConfig, addr string, logic types.Logic, dht types
 		nodeKey:     key,
 		dht:         dht,
 	}
+
 	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
+	mgr.unfinalizedObjects, _ = lru.New(10000)
 	mgr.BaseReactor = *p2p.NewBaseReactor("Reactor", mgr)
 
 	return mgr
@@ -104,6 +111,25 @@ func (m *Manager) defaultGPGPubKeyGetter(pkID string) (string, error) {
 		return "", fmt.Errorf("gpg public key not found for the given ID")
 	}
 	return gpgPK.PubKey, nil
+}
+
+// AddUnfinalizedObject adds an object to the unfinalized object cache
+func (m *Manager) AddUnfinalizedObject(repo, objHash string) {
+	key := util.Sha1Hex([]byte(repo + objHash))
+	m.unfinalizedObjects.Add(key, struct{}{})
+}
+
+// RemoveUnfinalizedObject removes an object from the unfinalized object cache
+func (m *Manager) RemoveUnfinalizedObject(repo, objHash string) {
+	key := util.Sha1Hex([]byte(repo + objHash))
+	m.unfinalizedObjects.Remove(key)
+}
+
+// IsUnfinalizedObject checks whether an object exist in the unfinalized object cache
+func (m *Manager) IsUnfinalizedObject(repo, objHash string) bool {
+	key := util.Sha1Hex([]byte(repo + objHash))
+	_, ok := m.unfinalizedObjects.Get(key)
+	return ok
 }
 
 // Start starts the server that serves the repos.
