@@ -97,6 +97,12 @@ func (pt *PushTx) ID() util.Hash {
 	return util.BytesToHash(util.Blake2b256(pt.Bytes()))
 }
 
+// BytesAndID returns the serialized version of the tx and the id
+func (pt *PushTx) BytesAndID() ([]byte, util.Hash) {
+	bz := pt.Bytes()
+	return bz, util.BytesToHash(bz)
+}
+
 // TxSize is the size of the transaction
 func (pt *PushTx) TxSize() uint {
 	return uint(len(pt.Bytes()))

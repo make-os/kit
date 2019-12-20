@@ -163,7 +163,7 @@ func (h *PushHandler) HandleUpdate() error {
 	}
 
 	// Broadcast the push tx
-	h.rMgr.BroadcastMsg(PushTxReactorChannel, pushTx.Bytes())
+	h.rMgr.BroadcastPushTx(pushTx)
 
 	return nil
 }
@@ -207,6 +207,7 @@ func (h *PushHandler) createPushTx(pkID string, refsTxLine map[string]*util.TxLi
 	return pushTx, nil
 }
 
+// announceObject announces a packed object to DHT peers
 func (h *PushHandler) announceObject(obj *packObject) error {
 	dhtKey := MakeRepoObjectDHTKey(h.repo.GetName(), obj.Hash.String())
 	ctx, c := context.WithTimeout(context.Background(), 60*time.Second)

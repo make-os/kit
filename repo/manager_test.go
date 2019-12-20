@@ -212,4 +212,27 @@ var _ = Describe("Manager", func() {
 			Expect(repoMgr.IsUnfinalizedObject(repo, objHash)).To(BeFalse())
 		})
 	})
+
+	Describe(".cachePushTxSender", func() {
+		It("should add to cache", func() {
+			Expect(repoMgr.pushTxSenders.Len()).To(Equal(0))
+			repoMgr.cachePushTxSender("sender", "txID")
+			Expect(repoMgr.pushTxSenders.Len()).To(Equal(1))
+		})
+	})
+
+	Describe(".isPushTxSender", func() {
+		It("should return true if sender + txID is cached", func() {
+			repoMgr.cachePushTxSender("sender", "txID")
+			Expect(repoMgr.pushTxSenders.Len()).To(Equal(1))
+			isSender := repoMgr.isPushTxSender("sender", "txID")
+			Expect(isSender).To(BeTrue())
+		})
+
+		It("should return false if sender + txID is not cached", func() {
+			isSender := repoMgr.isPushTxSender("sender", "txID")
+			Expect(isSender).To(BeFalse())
+		})
+	})
+
 })

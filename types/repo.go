@@ -174,8 +174,11 @@ type RepoManager interface {
 	// CreateRepository creates a local git repository
 	CreateRepository(name string) error
 
-	// BroadcastMsg broadcast push messages to peers
+	// BroadcastMsg broadcast messages to peers
 	BroadcastMsg(ch byte, msg []byte)
+
+	// BroadcastPushTx broadcast push transaction to peers
+	BroadcastPushTx(pushTx PushTx)
 
 	// SetPGPPubKeyGetter sets the PGP public key query function
 	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
@@ -273,6 +276,9 @@ type PushTx interface {
 
 	// GetPushedObjects returns all objects from all pushed references
 	GetPushedObjects() (objs []string)
+
+	// BytesAndID returns the serialized version of the tx and the id
+	BytesAndID() ([]byte, util.Hash)
 }
 
 // PushedReference represents a reference that was pushed by git client

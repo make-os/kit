@@ -66,6 +66,7 @@ type Manager struct {
 
 	// TODO: remove objects that make it into a block.
 	unfinalizedObjects *lru.Cache // A cache holding unfinalized git object pointers
+	pushTxSenders      *lru.Cache
 }
 
 // NewManager creates an instance of Manager
@@ -94,7 +95,8 @@ func NewManager(cfg *config.AppConfig, addr string, logic types.Logic, dht types
 	}
 
 	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
-	mgr.unfinalizedObjects, _ = lru.New(10000)
+	mgr.unfinalizedObjects, _ = lru.New(params.UnfinalizedObjectsCacheSize)
+	mgr.pushTxSenders, _ = lru.New(params.PushTxSendersCacheSize)
 	mgr.BaseReactor = *p2p.NewBaseReactor("Reactor", mgr)
 
 	return mgr
@@ -129,6 +131,19 @@ func (m *Manager) RemoveUnfinalizedObject(repo, objHash string) {
 func (m *Manager) IsUnfinalizedObject(repo, objHash string) bool {
 	key := util.Sha1Hex([]byte(repo + objHash))
 	_, ok := m.unfinalizedObjects.Get(key)
+	return ok
+}
+
+// cachePushTxSender caches a push tx sender
+func (m *Manager) cachePushTxSender(senderID string, txID string) {
+	key := util.Sha1Hex([]byte(senderID + txID))
+	m.pushTxSenders.Add(key, struct{}{})
+}
+
+// isPushTxSender checks whether a push tx was sent by the given sender ID
+func (m *Manager) isPushTxSender(senderID string, txID string) bool {
+	key := util.Sha1Hex([]byte(senderID + txID))
+	_, ok := m.pushTxSenders.Get(key)
 	return ok
 }
 

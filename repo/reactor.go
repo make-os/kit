@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/k0kubun/pp"
+	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
@@ -31,6 +31,9 @@ func (m *Manager) onPushTx(peer p2p.Peer, msgBytes []byte) error {
 	if err := util.BytesToObject(msgBytes, &tx); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
+
+	// Add a cache entry that indicates the sender of the push tx
+	m.cachePushTxSender(string(peer.ID()), tx.ID().String())
 
 	m.log.Debug("Received push transaction from peer", "PeerID",
 		peer.ID(), "TxID", tx.ID().String())
@@ -113,7 +116,6 @@ func (m *Manager) onPushTx(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	if err := cmd.Wait(); err != nil {
-		pp.Println(err.Error())
 		return errors.Wrap(err, "failed to process packfile derived from push tx")
 	}
 
@@ -134,15 +136,32 @@ func (m *Manager) onPushTx(peer p2p.Peer, msgBytes []byte) error {
 		}
 	}
 
+	// Broadcast the push tx to peers
+	m.BroadcastPushTx(&tx)
+
 	m.log.Info("Added valid push tx to push pool", "TxID", tx.ID().String())
 
 	return nil
 }
 
-// BroadcastMsg broadcast push messages to peers
+// BroadcastPushTx broadcast push transaction to peers.
+// It will not send to original sender of the push tx.
+func (m *Manager) BroadcastPushTx(pushTx types.PushTx) {
+	for _, peer := range m.Switch.Peers().List() {
+		bz, id := pushTx.BytesAndID()
+		if m.isPushTxSender(string(peer.ID()), id.String()) {
+			continue
+		}
+		if peer.Send(PushTxReactorChannel, bz) {
+			m.log.Debug("Sent push transaction to peer", "PeerID", peer.ID(), "TxID", id)
+		}
+	}
+}
+
+// BroadcastMsg broadcast messages to peers
 func (m *Manager) BroadcastMsg(ch byte, msg []byte) {
 	for _, peer := range m.Switch.Peers().List() {
-		go peer.Send(ch, msg)
+		peer.Send(ch, msg)
 	}
 }
 

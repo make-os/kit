@@ -779,6 +779,18 @@ func (mr *MockRepoManagerMockRecorder) BroadcastMsg(ch, msg interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastMsg", reflect.TypeOf((*MockRepoManager)(nil).BroadcastMsg), ch, msg)
 }
 
+// BroadcastPushTx mocks base method
+func (m *MockRepoManager) BroadcastPushTx(pushTx types.PushTx) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "BroadcastPushTx", pushTx)
+}
+
+// BroadcastPushTx indicates an expected call of BroadcastPushTx
+func (mr *MockRepoManagerMockRecorder) BroadcastPushTx(pushTx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastPushTx", reflect.TypeOf((*MockRepoManager)(nil).BroadcastPushTx), pushTx)
+}
+
 // SetPGPPubKeyGetter mocks base method
 func (m *MockRepoManager) SetPGPPubKeyGetter(pkGetter types.PGPPubKeyGetter) {
 	m.ctrl.T.Helper()
@@ -1184,6 +1196,21 @@ func (m *MockPushTx) GetPushedObjects() []string {
 func (mr *MockPushTxMockRecorder) GetPushedObjects() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushedObjects", reflect.TypeOf((*MockPushTx)(nil).GetPushedObjects))
+}
+
+// BytesAndID mocks base method
+func (m *MockPushTx) BytesAndID() ([]byte, util.Hash) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BytesAndID")
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(util.Hash)
+	return ret0, ret1
+}
+
+// BytesAndID indicates an expected call of BytesAndID
+func (mr *MockPushTxMockRecorder) BytesAndID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockPushTx)(nil).BytesAndID))
 }
 
 // MockBareRepoState is a mock of BareRepoState interface

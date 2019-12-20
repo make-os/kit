@@ -86,4 +86,10 @@ var (
 
 	// MaxPushTxAge is the duration afterwhich a push transaction is considered old.
 	MaxPushTxAge = 30 * time.Minute
+
+	// UnfinalizedObjectsCacheSize is the max size for unfinalized objects cache
+	UnfinalizedObjectsCacheSize = 10000
+
+	// PushTxSendersCacheSize is the max size for push tx senders cache
+	PushTxSendersCacheSize = 5000
 )
