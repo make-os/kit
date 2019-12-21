@@ -5,6 +5,8 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	crypto "github.com/makeos/mosdef/crypto"
 	rand "github.com/makeos/mosdef/crypto/rand"
@@ -12,7 +14,6 @@ import (
 	types "github.com/makeos/mosdef/types"
 	util "github.com/makeos/mosdef/util"
 	types0 "github.com/tendermint/tendermint/abci/types"
-	reflect "reflect"
 )
 
 // MockSystemKeeper is a mock of SystemKeeper interface

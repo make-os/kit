@@ -2,7 +2,9 @@ package repo
 
 import (
 	"bytes"
+	"crypto/rsa"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,6 +15,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	"github.com/makeos/mosdef/config"
+	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/testutil"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/types/mocks"
@@ -24,28 +27,45 @@ var _ = Describe("PushHandler", func() {
 	var cfg *config.AppConfig
 	var path string
 	var repo types.BareRepo
-	var repoMgr *mocks.MockRepoManager
+	var mockMgr *mocks.MockRepoManager
+	var mgr *Manager
 	var handler *PushHandler
 	var ctrl *gomock.Controller
+	var mockLogic *mocks.MockLogic
+	var pubKey, pubKey2 string
+	var gpgKeyID, gpgKeyID2 string
+	var repoName string
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
+		ctrl = gomock.NewController(GinkgoT())
 	})
 
 	BeforeEach(func() {
-		repoName := util.RandString(5)
+		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
 		repo, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
-		ctrl = gomock.NewController(GinkgoT())
-		repoMgr = mocks.NewMockRepoManager(ctrl)
+		mockLogic = mocks.NewMockLogic(ctrl)
+		dht := mocks.NewMockDHT(ctrl)
+		mgr = NewManager(cfg, ":9000", mockLogic, dht)
 
-		repoMgr.EXPECT().Log().Return(cfg.G().Log)
-		handler = newPushHandler(repo, repoMgr)
+		mockMgr = mocks.NewMockRepoManager(ctrl)
+
+		mockMgr.EXPECT().Log().Return(cfg.G().Log)
+		handler = newPushHandler(repo, mockMgr)
+
+		gpgKeyID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
+		pubKey, err = crypto.GetGPGPublicKeyStr(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
+		Expect(err).To(BeNil())
+		gpgKeyID2 = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
+		pubKey2, err = crypto.GetGPGPublicKeyStr(gpgKeyID2, testutil.GPGProgramPath, cfg.DataDir())
+		Expect(err).To(BeNil())
+		GitEnv = append(GitEnv, "GNUPGHOME="+cfg.DataDir())
 	})
 
 	AfterEach(func() {
@@ -57,7 +77,7 @@ var _ = Describe("PushHandler", func() {
 	Describe(".HandleStream", func() {
 		When("unable to get repo old state", func() {
 			BeforeEach(func() {
-				repoMgr.EXPECT().GetRepoState(repo).Return(nil, fmt.Errorf("error"))
+				mockMgr.EXPECT().GetRepoState(repo).Return(nil, fmt.Errorf("error"))
 				err = handler.HandleStream(nil, nil)
 			})
 
@@ -70,7 +90,7 @@ var _ = Describe("PushHandler", func() {
 		When("packfile is invalid", func() {
 			BeforeEach(func() {
 				oldState := &State{}
-				repoMgr.EXPECT().GetRepoState(repo).Return(oldState, nil)
+				mockMgr.EXPECT().GetRepoState(repo).Return(oldState, nil)
 				err = handler.HandleStream(strings.NewReader("invalid"), nil)
 			})
 
@@ -90,6 +110,105 @@ var _ = Describe("PushHandler", func() {
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("push-handler: expected old state to have been captured"))
+			})
+		})
+
+		When("txline was not set", func() {
+			var err error
+			BeforeEach(func() {
+				handler.rMgr = mgr
+
+				oldState := getRepoState(repo)
+				appendCommit(path, "file.txt", "line 1\n", "commit 1")
+				newState := getRepoState(repo)
+				var packfile io.ReadSeeker
+				packfile, err = makePackfile(repo, oldState, newState)
+
+				Expect(err).To(BeNil())
+				handler.oldState = oldState
+				err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
+				Expect(err).To(BeNil())
+
+				_, _, err = handler.HandleValidateAndRevert()
+			})
+
+			It("should return err='validation error.*txline was not set'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("validation error.*txline was not set"))
+			})
+		})
+
+		When("txline is set and valid", func() {
+			var err error
+			BeforeEach(func() {
+				handler.rMgr = mgr
+
+				oldState := getRepoState(repo)
+				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
+				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txLine := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
+				appendSignedCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
+
+				newState := getRepoState(repo)
+				var packfile io.ReadSeeker
+				packfile, err = makePackfile(repo, oldState, newState)
+
+				Expect(err).To(BeNil())
+				handler.oldState = oldState
+
+				gpgPubKeyKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
+				gpgPubKeyKeeper.EXPECT().GetGPGPubKey(pkID).Return(&types.GPGPubKey{PubKey: pubKey})
+				mockLogic.EXPECT().GPGPubKeyKeeper().Return(gpgPubKeyKeeper)
+
+				err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
+				Expect(err).To(BeNil())
+				_, _, err = handler.HandleValidateAndRevert()
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+		})
+
+		Context("with two references", func() {
+			When("txline for both references are set and valid but pkIDs are different", func() {
+				var err error
+				BeforeEach(func() {
+					handler.rMgr = mgr
+
+					oldState := getRepoState(repo)
+					pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
+					pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+					txLine := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
+					appendSignedCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
+
+					createCheckoutBranch(path, "branch2")
+					pkEntity, _ = crypto.PGPEntityFromPubKey(pubKey2)
+					pkID2 := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+					txLine = fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID2)
+					appendSignedCommit(path, "file.txt", "line 1", txLine, gpgKeyID2)
+
+					newState := getRepoState(repo)
+					var packfile io.ReadSeeker
+					packfile, err = makePackfile(repo, oldState, newState)
+
+					Expect(err).To(BeNil())
+					handler.oldState = oldState
+
+					gpgPubKeyKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
+					gpgPubKeyKeeper.EXPECT().GetGPGPubKey(pkID).Return(&types.GPGPubKey{PubKey: pubKey})
+					gpgPubKeyKeeper.EXPECT().GetGPGPubKey(pkID2).Return(&types.GPGPubKey{PubKey: pubKey2})
+					mockLogic.EXPECT().GPGPubKeyKeeper().Return(gpgPubKeyKeeper).Times(2)
+
+					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
+					Expect(err).To(BeNil())
+					_, _, err = handler.HandleValidateAndRevert()
+				})
+
+				It("should return err='rejected because the pushed references were signed with multiple pgp keys'", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("rejected because the pushed references were signed with multiple pgp keys"))
+				})
 			})
 		})
 
@@ -113,9 +232,9 @@ var _ = Describe("PushHandler", func() {
 				}
 				pr.objectsRefs[hash1] = []string{"master"}
 
-				repoMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
+				mockMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
 
-				errs := removeObjRelatedToOnlyRef(repo, pr, repoMgr, "master")
+				errs := removeObjRelatedToOnlyRef(repo, pr, mockMgr, "master")
 				Expect(errs).To(HaveLen(0))
 			})
 
@@ -143,9 +262,9 @@ var _ = Describe("PushHandler", func() {
 					}
 					pr.objectsRefs[hash1] = []string{"master"}
 
-					repoMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(true)
+					mockMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(true)
 
-					errs := removeObjRelatedToOnlyRef(repo, pr, repoMgr, "master")
+					errs := removeObjRelatedToOnlyRef(repo, pr, mockMgr, "master")
 					Expect(errs).To(HaveLen(0))
 				})
 
@@ -174,9 +293,9 @@ var _ = Describe("PushHandler", func() {
 
 				pr.objectsRefs[hash1] = []string{"master", "dev"}
 
-				repoMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
+				mockMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
 
-				errs := removeObjRelatedToOnlyRef(repo, pr, repoMgr, "master")
+				errs := removeObjRelatedToOnlyRef(repo, pr, mockMgr, "master")
 				Expect(errs).To(HaveLen(0))
 			})
 
@@ -208,10 +327,10 @@ var _ = Describe("PushHandler", func() {
 				pr.objectsRefs[hash1] = []string{"master"}
 				pr.objectsRefs[hash2] = []string{"master"}
 
-				repoMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
-				repoMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash2).Return(false)
+				mockMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
+				mockMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash2).Return(false)
 
-				errs := removeObjRelatedToOnlyRef(repo, pr, repoMgr, "master")
+				errs := removeObjRelatedToOnlyRef(repo, pr, mockMgr, "master")
 				Expect(errs).To(HaveLen(0))
 			})
 
@@ -247,9 +366,9 @@ var _ = Describe("PushHandler", func() {
 				}
 				pr.objectsRefs[hash1] = []string{"master"}
 
-				repoMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
+				mockMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
 
-				errs := removeObjsRelatedToRefs(repo, pr, repoMgr, []string{"master"})
+				errs := removeObjsRelatedToRefs(repo, pr, mockMgr, []string{"master"})
 				Expect(errs).To(HaveLen(0))
 			})
 

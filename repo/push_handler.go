@@ -40,13 +40,15 @@ func (h *PushHandler) HandleStream(
 	var err error
 
 	// Get the repository state and record it as the old state
-	h.oldState, err = h.rMgr.GetRepoState(h.repo)
-	if err != nil {
-		return err
+	if h.oldState == nil {
+		h.oldState, err = h.rMgr.GetRepoState(h.repo)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Create a push reader to read, analyse and extract info.
-	// Also, pass the git input pipe so the pack data is written to it.
+	// Also, pass the git writer so the pack data is written to it.
 	h.pushReader, err = newPushReader(gitReceivePack, h.repo)
 	if err != nil {
 		return errors.Wrap(err, "unable to create push reader")
