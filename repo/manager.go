@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/k0kubun/pp"
+	"github.com/makeos/mosdef/mempool"
 	"github.com/makeos/mosdef/util/cache"
 
 	"github.com/makeos/mosdef/config"
@@ -51,27 +53,33 @@ var services = [][]interface{}{
 // and service a git repositories through http and ssh protocols.
 type Manager struct {
 	p2p.BaseReactor
-	cfg             *config.AppConfig
-	log             logger.Logger         // log is the application logger
-	wg              *sync.WaitGroup       // wait group for waiting for the manager
-	srv             *http.Server          // the http server
-	rootDir         string                // the root directory where all repos are stored
-	addr            string                // addr is the listening address for the http server
-	gitBinPath      string                // gitBinPath is the path of the git executable
-	repoDBCache     *DBCache              // stores database handles of repositories
-	pool            types.PushPool        // this is the push transaction pool
-	logic           types.Logic           // logic is the application logic provider
-	nodeKey         *crypto.Key           // the node's private key for signing transactions
-	pgpPubKeyGetter types.PGPPubKeyGetter // finds and returns PGP public key
-	dht             types.DHT             // The dht service
-
-	// TODO: remove objects that make it into a block.
-	unfinalizedObjects *cache.Cache // A cache holding unfinalized git object pointers
+	cfg                *config.AppConfig
+	log                logger.Logger         // log is the application logger
+	wg                 *sync.WaitGroup       // wait group for waiting for the manager
+	srv                *http.Server          // the http server
+	rootDir            string                // the root directory where all repos are stored
+	addr               string                // addr is the listening address for the http server
+	gitBinPath         string                // gitBinPath is the path of the git executable
+	repoDBCache        *DBCache              // stores database handles of repositories
+	pushPool           types.PushPool        // The transaction pool for push transactions
+	txPool             types.Mempool         // The general transaction pool for block-bound transaction
+	logic              types.Logic           // logic is the application logic provider
+	nodeKey            *crypto.Key           // the node's private key for signing transactions
+	pgpPubKeyGetter    types.PGPPubKeyGetter // finds and returns PGP public key
+	dht                types.DHT             // The dht service
+	pruner             types.Pruner          // The repo runner
+	txPoolRepoTxsIndex repoTxsIndex
 	pushTxSenders      *cache.Cache
 }
 
 // NewManager creates an instance of Manager
-func NewManager(cfg *config.AppConfig, addr string, logic types.Logic, dht types.DHT) *Manager {
+func NewManager(
+	cfg *config.AppConfig,
+	addr string,
+	logic types.Logic,
+	dht types.DHT,
+	txPool types.Mempool) *Manager {
+
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
@@ -82,23 +90,25 @@ func NewManager(cfg *config.AppConfig, addr string, logic types.Logic, dht types
 
 	key, _ := cfg.G().PrivVal.GetKey()
 	mgr := &Manager{
-		cfg:                cfg,
-		log:                cfg.G().Log.Module("repo-manager"),
-		addr:               addr,
-		rootDir:            cfg.GetRepoRoot(),
-		gitBinPath:         cfg.Node.GitBinPath,
-		wg:                 wg,
-		repoDBCache:        dbCache,
-		pool:               NewPushPool(params.PushPoolCap, logic, dht),
-		logic:              logic,
-		nodeKey:            key,
-		dht:                dht,
-		unfinalizedObjects: cache.NewActiveCache(params.UnfinalizedObjectsCacheSize),
-		pushTxSenders:      cache.NewActiveCache(params.PushTxSendersCacheSize),
+		cfg:           cfg,
+		log:           cfg.G().Log.Module("repo-manager"),
+		addr:          addr,
+		rootDir:       cfg.GetRepoRoot(),
+		gitBinPath:    cfg.Node.GitBinPath,
+		wg:            wg,
+		repoDBCache:   dbCache,
+		pushPool:      NewPushPool(params.PushPoolCap, logic, dht),
+		logic:         logic,
+		nodeKey:       key,
+		dht:           dht,
+		txPool:        txPool,
+		pushTxSenders: cache.NewActiveCache(params.PushTxSendersCacheSize),
 	}
 
 	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
 	mgr.BaseReactor = *p2p.NewBaseReactor("Reactor", mgr)
+	mgr.pruner = newPruner(mgr, mgr.rootDir)
+	go mgr.pruner.Start()
 
 	return mgr
 }
@@ -116,25 +126,6 @@ func (m *Manager) defaultGPGPubKeyGetter(pkID string) (string, error) {
 	return gpgPK.PubKey, nil
 }
 
-// AddUnfinalizedObject adds an object to the unfinalized object cache
-func (m *Manager) AddUnfinalizedObject(repo, objHash string) {
-	key := util.Sha1Hex([]byte(repo + objHash))
-	m.unfinalizedObjects.AddWithExp(key, struct{}{}, time.Now().Add(10*time.Minute))
-}
-
-// RemoveUnfinalizedObject removes an object from the unfinalized object cache
-func (m *Manager) RemoveUnfinalizedObject(repo, objHash string) {
-	key := util.Sha1Hex([]byte(repo + objHash))
-	m.unfinalizedObjects.Remove(key)
-}
-
-// IsUnfinalizedObject checks whether an object exist in the unfinalized object cache
-func (m *Manager) IsUnfinalizedObject(repo, objHash string) bool {
-	key := util.Sha1Hex([]byte(repo + objHash))
-	v := m.unfinalizedObjects.Get(key)
-	return v == struct{}{}
-}
-
 // cachePushTxSender caches a push tx sender
 func (m *Manager) cachePushTxSender(senderID string, txID string) {
 	key := util.Sha1Hex([]byte(senderID + txID))
@@ -148,7 +139,14 @@ func (m *Manager) isPushTxSender(senderID string, txID string) bool {
 	return v == struct{}{}
 }
 
+func (m *Manager) subscribe() {
+	for evt := range m.cfg.G().Bus.On(mempool.EvtMempoolTxAdded) {
+		pp.Println("MESSAGE RECEIVED", evt.Args)
+	}
+}
+
 // Start starts the server that serves the repos.
+// Implements p2p.Reactor
 func (m *Manager) Start() error {
 	s := http.NewServeMux()
 	s.HandleFunc("/", m.handler)
@@ -160,6 +158,8 @@ func (m *Manager) Start() error {
 		m.srv.ListenAndServe()
 		m.wg.Done()
 	}()
+
+	go m.subscribe()
 
 	return nil
 }
@@ -174,9 +174,19 @@ func (m *Manager) GetNodeKey() *crypto.Key {
 	return m.nodeKey
 }
 
-// GetPushPool implements RepositoryManager
+// GetPruner returns the repo pruner
+func (m *Manager) GetPruner() types.Pruner {
+	return m.pruner
+}
+
+// GetPushPool returns the push pool
 func (m *Manager) GetPushPool() types.PushPool {
-	return m.pool
+	return m.pushPool
+}
+
+// GetTxPool returns the transaction pool
+func (m *Manager) GetTxPool() types.Mempool {
+	return m.txPool
 }
 
 // GetDHT returns the dht service
@@ -347,16 +357,20 @@ func (m *Manager) FindObject(key []byte) ([]byte, error) {
 
 // Shutdown shuts down the server
 func (m *Manager) Shutdown(ctx context.Context) {
+	m.log.Info("Shutting down")
 	if m.srv != nil {
-		m.log.Info("Server is stopped")
 		m.srv.Shutdown(ctx)
+	}
+	if m.repoDBCache != nil {
 		m.repoDBCache.Clear()
 	}
+	m.pruner.Stop()
 }
 
 // Stop implements Reactor
 func (m *Manager) Stop() error {
 	m.BaseReactor.Stop()
 	m.Shutdown(context.Background())
+	m.log.Info("Shutdown")
 	return nil
 }

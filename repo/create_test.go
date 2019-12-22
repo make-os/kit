@@ -20,6 +20,7 @@ var _ = Describe("App", func() {
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
 	var mockDHT *mocks.MockDHT
+	var mockMempool *mocks.MockMempool
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -28,7 +29,8 @@ var _ = Describe("App", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = testutil.MockLogic(ctrl)
 		mockDHT = mocks.NewMockDHT(ctrl)
-		repoMgr = NewManager(cfg, ":45000", mockLogic.Logic, mockDHT)
+		mockMempool = mocks.NewMockMempool(ctrl)
+		repoMgr = NewManager(cfg, ":45000", mockLogic.Logic, mockDHT, mockMempool)
 	})
 
 	AfterEach(func() {

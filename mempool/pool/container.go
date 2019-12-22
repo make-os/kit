@@ -27,16 +27,16 @@ var (
 		"low/equal fee rate. Fee rate must be higher to replace the existing transaction")
 )
 
-// ContainerItem represents the a container item.
+// containerItem represents the a container item.
 // It wraps a transaction and other important properties.
-type ContainerItem struct {
+type containerItem struct {
 	Tx      types.Tx
 	FeeRate util.String
 }
 
 // newItem creates an instance of ContainerItem
-func newItem(tx types.Tx) *ContainerItem {
-	item := &ContainerItem{Tx: tx}
+func newItem(tx types.Tx) *containerItem {
+	item := &containerItem{Tx: tx}
 	return item
 }
 
@@ -112,7 +112,7 @@ func (sn *senderNonces) len() int {
 // The container is thread-safe.
 type TxContainer struct {
 	gmx        *sync.RWMutex
-	container  []*ContainerItem       // main transaction container (the pool)
+	container  []*containerItem       // main transaction container (the pool)
 	cap        int64                  // cap is the amount of transactions in the
 	len        int64                  // length of the container
 	noSorting  bool                   // noSorting indicates that sorting is enabled/disabled
@@ -120,20 +120,20 @@ type TxContainer struct {
 	byteSize   int64                  // byteSize is the total txs size of the container (excluding fee field)
 	actualSize int64                  // actualSize is the total tx size of the container (includes all fields)
 
-	// nonceInfo maps sending addresses to nonces of transaction.
-	// We use this to find transactions from same sender with
-	// matching nonce for implementing a replay-by-fee mechanism.
-	nonceInfo senderNonces
+	// senderNonceIndex maps sending addresses to nonces of transaction.
+	// We use this to find transactions from same sender with matching nonce for
+	// implementing a replay-by-fee mechanism.
+	senderNonceIndex senderNonces
 }
 
 // newTxContainer creates a new container
 func newTxContainer(cap int64) *TxContainer {
 	q := new(TxContainer)
-	q.container = []*ContainerItem{}
+	q.container = []*containerItem{}
 	q.cap = cap
 	q.gmx = &sync.RWMutex{}
 	q.hashIndex = map[string]interface{}{}
-	q.nonceInfo = map[util.String]*nonceCollection{}
+	q.senderNonceIndex = map[util.String]*nonceCollection{}
 	return q
 }
 
@@ -141,12 +141,12 @@ func newTxContainer(cap int64) *TxContainer {
 // with sorting turned off
 func NewQueueNoSort(cap int64) *TxContainer {
 	q := new(TxContainer)
-	q.container = []*ContainerItem{}
+	q.container = []*containerItem{}
 	q.cap = cap
 	q.gmx = &sync.RWMutex{}
 	q.hashIndex = map[string]interface{}{}
 	q.noSorting = true
-	q.nonceInfo = map[util.String]*nonceCollection{}
+	q.senderNonceIndex = map[util.String]*nonceCollection{}
 	return q
 }
 
@@ -204,7 +204,7 @@ func (q *TxContainer) add(tx types.Tx) error {
 	sender := tx.GetFrom()
 
 	// Get the sender's nonce info. If not found create a new one
-	senderNonceInfo, ok := q.nonceInfo[sender]
+	senderNonceInfo, ok := q.senderNonceIndex[sender]
 	if !ok {
 		senderNonceInfo = defaultNonceCollection()
 	}
@@ -232,7 +232,7 @@ func (q *TxContainer) add(tx types.Tx) error {
 		senderNonceInfo.add(tx.GetNonce(), &nonceInfo{TxHash: tx.GetHash(), FeeRate: item.FeeRate})
 	}
 
-	q.nonceInfo[sender] = senderNonceInfo
+	q.senderNonceIndex[sender] = senderNonceInfo
 	q.container = append(q.container, item)
 	q.hashIndex[tx.GetHash().HexStr()] = struct{}{}
 	q.len++
@@ -276,7 +276,7 @@ func (q *TxContainer) First() types.Tx {
 	item := q.container[0]
 	q.container = q.container[1:]
 	delete(q.hashIndex, item.Tx.GetHash().HexStr())
-	q.nonceInfo.remove(item.Tx.GetFrom(), item.Tx.GetNonce())
+	q.senderNonceIndex.remove(item.Tx.GetFrom(), item.Tx.GetNonce())
 	q.byteSize -= item.Tx.GetSizeNoFee()
 	q.actualSize -= int64(len(item.Tx.Bytes()))
 	q.len--
@@ -298,7 +298,7 @@ func (q *TxContainer) Last() types.Tx {
 	item := q.container[lastIndex]
 	q.container = q.container[0:lastIndex]
 	delete(q.hashIndex, item.Tx.GetHash().HexStr())
-	q.nonceInfo.remove(item.Tx.GetFrom(), item.Tx.GetNonce())
+	q.senderNonceIndex.remove(item.Tx.GetFrom(), item.Tx.GetNonce())
 	q.byteSize -= item.Tx.GetSizeNoFee()
 	q.actualSize -= int64(len(item.Tx.Bytes()))
 	q.len--
@@ -349,12 +349,12 @@ func (q *TxContainer) Find(iteratee func(types.Tx) bool) types.Tx {
 // remove removes transactions.
 // Note: Not thread-safe
 func (q *TxContainer) remove(txs ...types.Tx) {
-	finalTxs := funk.Filter(q.container, func(o *ContainerItem) bool {
+	finalTxs := funk.Filter(q.container, func(o *containerItem) bool {
 		if funk.Find(txs, func(tx types.Tx) bool {
 			return o.Tx.GetHash().Equal(tx.GetHash())
 		}) != nil {
 			delete(q.hashIndex, o.Tx.GetHash().HexStr())
-			q.nonceInfo.remove(o.Tx.GetFrom(), o.Tx.GetNonce())
+			q.senderNonceIndex.remove(o.Tx.GetFrom(), o.Tx.GetNonce())
 			q.byteSize -= o.Tx.GetSizeNoFee()
 			q.actualSize -= int64(len(o.Tx.Bytes()))
 			q.len--
@@ -363,18 +363,18 @@ func (q *TxContainer) remove(txs ...types.Tx) {
 		return true
 	})
 
-	q.container = finalTxs.([]*ContainerItem)
+	q.container = finalTxs.([]*containerItem)
 }
 
 // removeByHash removes transactions by hash
 // Note: Not thread-safe
 func (q *TxContainer) removeByHash(txsHash ...util.Hash) {
-	finalTxs := funk.Filter(q.container, func(o *ContainerItem) bool {
+	finalTxs := funk.Filter(q.container, func(o *containerItem) bool {
 		if funk.Find(txsHash, func(hash util.Hash) bool {
 			return o.Tx.GetHash().Equal(hash)
 		}) != nil {
 			delete(q.hashIndex, o.Tx.GetHash().HexStr())
-			q.nonceInfo.remove(o.Tx.GetFrom(), o.Tx.GetNonce())
+			q.senderNonceIndex.remove(o.Tx.GetFrom(), o.Tx.GetNonce())
 			q.byteSize -= o.Tx.GetSizeNoFee()
 			q.actualSize -= int64(len(o.Tx.Bytes()))
 			q.len--
@@ -383,7 +383,7 @@ func (q *TxContainer) removeByHash(txsHash ...util.Hash) {
 		return true
 	})
 
-	q.container = finalTxs.([]*ContainerItem)
+	q.container = finalTxs.([]*containerItem)
 }
 
 // Remove removes a transaction

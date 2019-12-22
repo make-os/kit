@@ -49,6 +49,40 @@ func (idx *containerIndex) remove(key string) {
 	delete(*idx, key)
 }
 
+type repoTxsIndex map[string][]*containerItem
+
+// has checks whether a repo exist in the index
+func (idx *repoTxsIndex) has(repo string) bool {
+	_, ok := (*idx)[repo]
+	return ok
+}
+
+// adds an a new entry to a repo's list of txs
+func (idx *repoTxsIndex) add(repo string, item *containerItem) {
+	if !idx.has(repo) {
+		(*idx)[repo] = []*containerItem{item}
+		return
+	}
+	(*idx)[repo] = append((*idx)[repo], item)
+}
+
+// remove removes a tx from a repo's list of txs
+func (idx *repoTxsIndex) remove(repo, txID string) {
+	if !idx.has(repo) {
+		return
+	}
+
+	curTxs := (*idx)[repo]
+	curTxs = funk.Filter(curTxs, func(item *containerItem) bool {
+		return item.Tx.ID().String() != txID
+	}).([]*containerItem)
+	(*idx)[repo] = curTxs
+
+	if len(curTxs) == 0 {
+		delete(*idx, repo)
+	}
+}
+
 // refNonceIndex stores a mapping of references and the nonce
 type refNonceIndex map[string]uint64
 
@@ -83,15 +117,16 @@ func newItem(tx *PushTx) *containerItem {
 
 // PushPool implements types.PushPool.
 type PushPool struct {
-	gmx         *sync.RWMutex
-	cap         int
-	container   []*containerItem
-	index       containerIndex
-	refIndex    containerIndex
-	refNonceIdx refNonceIndex
-	keepers     types.Keepers
-	dht         types.DHT
-	txChecker   poolTxChecker
+	gmx         *sync.RWMutex    // general lock
+	cap         int              // The number of transaction the pool is capable of holding.
+	container   []*containerItem // Holds all the transactions in the pool
+	index       containerIndex   // Helps keep track of tx in the pool
+	refIndex    containerIndex   // Helps keep track of tx targeting references of a repository
+	refNonceIdx refNonceIndex    // Helps keep track of the nonce of repo references
+	repoTxsIdx  repoTxsIndex     // Helps keep track of repos and transactions target them
+	keepers     types.Keepers    // The application data keeper
+	dht         types.DHT        // The application's DHT provider
+	txChecker   poolTxChecker    // Function used to validate a transaction
 }
 
 // NewPushPool creates an instance of PushPool
@@ -102,6 +137,7 @@ func NewPushPool(cap int, keepers types.Keepers, dht types.DHT) *PushPool {
 		container:   []*containerItem{},
 		index:       containerIndex(map[string]*containerItem{}),
 		refIndex:    containerIndex(map[string]*containerItem{}),
+		repoTxsIdx:  repoTxsIndex(map[string][]*containerItem{}),
 		refNonceIdx: refNonceIndex(map[string]uint64{}),
 		keepers:     keepers,
 		dht:         dht,
@@ -215,12 +251,11 @@ func (p *PushPool) Add(tx types.PushTx) error {
 
 	// Add indexes for faster queries
 	p.index.add(id.HexStr(), item)
+	p.repoTxsIdx.add(tx.GetRepoName(), item)
 	for _, ref := range item.Tx.References {
 		p.refIndex.add(makeRefKey(tx.(*PushTx).RepoName, ref.Name), item)
 		p.refNonceIdx.add(makeRefKey(tx.(*PushTx).RepoName, ref.Name), ref.Nonce)
 	}
-
-	p.broadcast(tx)
 
 	return nil
 }
@@ -229,6 +264,7 @@ func (p *PushPool) Add(tx types.PushTx) error {
 // Note: Not thread safe
 func (p *PushPool) removeOps(tx *PushTx) {
 	delete(p.index, tx.ID().HexStr())
+	p.repoTxsIdx.remove(tx.RepoName, tx.ID().String())
 	for _, ref := range tx.References {
 		p.refIndex.remove(makeRefKey(tx.RepoName, ref.Name))
 		p.refNonceIdx.remove(makeRefKey(tx.RepoName, ref.Name))
@@ -260,10 +296,9 @@ func (p *PushPool) sort() {
 	// TODO(not implemented)
 }
 
-// broadcast a push transaction
-func (p *PushPool) broadcast(tx types.PushTx) error {
-	// TODO(not implemented)
-	return nil
+// RepoHasPushTx returns true if the given repo has a transaction in the pool
+func (p *PushPool) RepoHasPushTx(repo string) bool {
+	return p.repoTxsIdx.has(repo)
 }
 
 // removeOld finds and removes transactions that

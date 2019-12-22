@@ -12,7 +12,6 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/crypto"
@@ -35,6 +34,7 @@ var _ = Describe("PushHandler", func() {
 	var pubKey, pubKey2 string
 	var gpgKeyID, gpgKeyID2 string
 	var repoName string
+	var mockMempool *mocks.MockMempool
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -51,8 +51,9 @@ var _ = Describe("PushHandler", func() {
 		Expect(err).To(BeNil())
 
 		mockLogic = mocks.NewMockLogic(ctrl)
-		dht := mocks.NewMockDHT(ctrl)
-		mgr = NewManager(cfg, ":9000", mockLogic, dht)
+		mockDHT := mocks.NewMockDHT(ctrl)
+		mockMempool = mocks.NewMockMempool(ctrl)
+		mgr = NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool)
 
 		mockMgr = mocks.NewMockRepoManager(ctrl)
 
@@ -214,172 +215,4 @@ var _ = Describe("PushHandler", func() {
 
 	})
 
-	Describe(".removeObjRelatedToOnlyRef", func() {
-		var pr *PushReader
-		var err error
-		var hash1, hash2 string
-
-		When("object is related to 1 reference 'master' only and target ref is master", func() {
-			BeforeEach(func() {
-				pr, err = newPushReader(&WriteCloser{Buffer: bytes.NewBuffer(nil)}, repo)
-				Expect(err).To(BeNil())
-
-				hash1 = createBlob(path, "abc")
-				Expect(repo.ObjectExist(hash1)).To(BeTrue())
-
-				pr.objects = []*packObject{
-					{Type: 1, Hash: plumbing.NewHash(hash1)},
-				}
-				pr.objectsRefs[hash1] = []string{"master"}
-
-				mockMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
-
-				errs := removeObjRelatedToOnlyRef(repo, pr, mockMgr, "master")
-				Expect(errs).To(HaveLen(0))
-			})
-
-			It("should remove the reference 'master' from the object's reference list", func() {
-				Expect(pr.objectsRefs[hash1]).ToNot(ContainElement("master"))
-				Expect(pr.objectsRefs[hash1]).To(BeEmpty())
-			})
-
-			It("should remove the object from disk", func() {
-				Expect(repo.ObjectExist(hash1)).To(BeFalse())
-			})
-		})
-
-		When("object is related to 1 reference 'master' only and target ref is master", func() {
-			When("object is also included in the unfinalized object cache", func() {
-				BeforeEach(func() {
-					pr, err = newPushReader(&WriteCloser{Buffer: bytes.NewBuffer(nil)}, repo)
-					Expect(err).To(BeNil())
-
-					hash1 = createBlob(path, "abc")
-					Expect(repo.ObjectExist(hash1)).To(BeTrue())
-
-					pr.objects = []*packObject{
-						{Type: 1, Hash: plumbing.NewHash(hash1)},
-					}
-					pr.objectsRefs[hash1] = []string{"master"}
-
-					mockMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(true)
-
-					errs := removeObjRelatedToOnlyRef(repo, pr, mockMgr, "master")
-					Expect(errs).To(HaveLen(0))
-				})
-
-				It("should not remove the reference 'master' from the object's reference list", func() {
-					Expect(pr.objectsRefs[hash1]).To(ContainElement("master"))
-					Expect(pr.objectsRefs[hash1]).ToNot(BeEmpty())
-				})
-
-				It("should not remove the object from disk", func() {
-					Expect(repo.ObjectExist(hash1)).To(BeTrue())
-				})
-			})
-		})
-
-		When("object is related to 2 reference 'master' and 'dev' and target ref is master", func() {
-			BeforeEach(func() {
-				pr, err = newPushReader(&WriteCloser{Buffer: bytes.NewBuffer(nil)}, repo)
-				Expect(err).To(BeNil())
-
-				hash1 = createBlob(path, "abc")
-				Expect(repo.ObjectExist(hash1)).To(BeTrue())
-
-				pr.objects = []*packObject{
-					{Type: 1, Hash: plumbing.NewHash(hash1)},
-				}
-
-				pr.objectsRefs[hash1] = []string{"master", "dev"}
-
-				mockMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
-
-				errs := removeObjRelatedToOnlyRef(repo, pr, mockMgr, "master")
-				Expect(errs).To(HaveLen(0))
-			})
-
-			It("should remove the reference 'master' from the object's reference list", func() {
-				Expect(pr.objectsRefs[hash1]).ToNot(ContainElement("master"))
-				Expect(pr.objectsRefs[hash1]).To(HaveLen(1))
-			})
-
-			It("should not remove the object from disk", func() {
-				Expect(repo.ObjectExist(hash1)).To(BeTrue())
-			})
-		})
-
-		When("2 objects are related to reference 'master' and target ref is master", func() {
-			BeforeEach(func() {
-				pr, err = newPushReader(&WriteCloser{Buffer: bytes.NewBuffer(nil)}, repo)
-				Expect(err).To(BeNil())
-
-				hash1 = createBlob(path, "abc")
-				hash2 = createBlob(path, "xyz")
-				Expect(repo.ObjectExist(hash1)).To(BeTrue())
-				Expect(repo.ObjectExist(hash2)).To(BeTrue())
-
-				pr.objects = []*packObject{
-					{Type: 1, Hash: plumbing.NewHash(hash1)},
-					{Type: 1, Hash: plumbing.NewHash(hash2)},
-				}
-
-				pr.objectsRefs[hash1] = []string{"master"}
-				pr.objectsRefs[hash2] = []string{"master"}
-
-				mockMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
-				mockMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash2).Return(false)
-
-				errs := removeObjRelatedToOnlyRef(repo, pr, mockMgr, "master")
-				Expect(errs).To(HaveLen(0))
-			})
-
-			It("should remove the reference 'master' from the objects' reference list", func() {
-				Expect(pr.objectsRefs[hash1]).ToNot(ContainElement("master"))
-				Expect(pr.objectsRefs[hash1]).To(HaveLen(0))
-				Expect(pr.objectsRefs[hash2]).ToNot(ContainElement("master"))
-				Expect(pr.objectsRefs[hash2]).To(HaveLen(0))
-			})
-
-			It("should not remove both objects from disk", func() {
-				Expect(repo.ObjectExist(hash1)).To(BeFalse())
-				Expect(repo.ObjectExist(hash2)).To(BeFalse())
-			})
-		})
-	})
-
-	Describe(".removeObjsRelatedToRefs", func() {
-		var pr *PushReader
-		var err error
-		var hash1 string
-
-		When("object is related to 1 reference 'master' only", func() {
-			BeforeEach(func() {
-				pr, err = newPushReader(&WriteCloser{Buffer: bytes.NewBuffer(nil)}, repo)
-				Expect(err).To(BeNil())
-
-				hash1 = createBlob(path, "abc")
-				Expect(repo.ObjectExist(hash1)).To(BeTrue())
-
-				pr.objects = []*packObject{
-					{Type: 1, Hash: plumbing.NewHash(hash1)},
-				}
-				pr.objectsRefs[hash1] = []string{"master"}
-
-				mockMgr.EXPECT().IsUnfinalizedObject(repo.GetName(), hash1).Return(false)
-
-				errs := removeObjsRelatedToRefs(repo, pr, mockMgr, []string{"master"})
-				Expect(errs).To(HaveLen(0))
-			})
-
-			It("should remove the reference 'master' from the object's reference list", func() {
-				Expect(pr.objectsRefs[hash1]).ToNot(ContainElement("master"))
-				Expect(pr.objectsRefs[hash1]).To(BeEmpty())
-			})
-
-			It("should remove the object from disk", func() {
-				Expect(repo.ObjectExist(hash1)).To(BeFalse())
-			})
-		})
-	})
 })

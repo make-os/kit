@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/storage"
@@ -281,6 +282,16 @@ func (r *Repo) GetCompressedObject(hash string) ([]byte, error) {
 // GetStorer returns the storage engine of the repository
 func (r *Repo) GetStorer() storage.Storer {
 	return r.git.Storer
+}
+
+// Prune deletes objects older than the given time
+func (r *Repo) Prune(olderThan time.Time) error {
+	return r.git.Prune(git.PruneOptions{
+		OnlyObjectsOlderThan: olderThan,
+		Handler: func(hash plumbing.Hash) error {
+			return r.DeleteObject(hash)
+		},
+	})
 }
 
 func getRepo(path string) (types.BareRepo, error) {

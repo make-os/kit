@@ -17,11 +17,16 @@ type RepoModule struct {
 	vm      *otto.Otto
 	keepers types.Keepers
 	service types.Service
+	repoMgr types.RepoManager
 }
 
 // NewRepoModule creates an instance of RepoModule
-func NewRepoModule(vm *otto.Otto, service types.Service, keepers types.Keepers) *RepoModule {
-	return &RepoModule{vm: vm, service: service, keepers: keepers}
+func NewRepoModule(
+	vm *otto.Otto,
+	service types.Service,
+	repoMgr types.RepoManager,
+	keepers types.Keepers) *RepoModule {
+	return &RepoModule{vm: vm, service: service, keepers: keepers, repoMgr: repoMgr}
 }
 
 // funcs are functions accessible using the `repo` namespace
@@ -30,7 +35,12 @@ func (m *RepoModule) funcs() []*types.JSModuleFunc {
 		&types.JSModuleFunc{
 			Name:        "create",
 			Value:       m.create,
-			Description: "Create a git repository",
+			Description: "Create a git repository on the network",
+		},
+		&types.JSModuleFunc{
+			Name:        "prune",
+			Value:       m.prune,
+			Description: "Delete all dangling and unreachable loose objects from a repository",
 		},
 	}
 }
@@ -120,4 +130,16 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 	return util.EncodeForJS(map[string]interface{}{
 		"hash": hash,
 	})
+}
+
+// prune removes dangling or unreachable objects from a repository.
+// If force is true, the repository is immediately pruned.
+func (m *RepoModule) prune(name string, force bool) {
+	if force {
+		if err := m.repoMgr.GetPruner().Prune(name, true); err != nil {
+			panic(err)
+		}
+		return
+	}
+	m.repoMgr.GetPruner().Schedule(name)
 }

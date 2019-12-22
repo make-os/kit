@@ -11,6 +11,7 @@ import (
 
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/util"
+	"github.com/olebedev/emitter"
 
 	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
@@ -235,6 +236,7 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 		c.RPC.DisableAuth = true
 	}
 
+	c.G().Bus = emitter.New(0)
 	c.G().TMConfig = tmcfg
 	*cfg = c
 	*tmcfg = *tmcfg.SetRoot(cfg.NetDataDir())

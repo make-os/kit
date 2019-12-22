@@ -28,6 +28,7 @@ var _ = Describe("Manager", func() {
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
 	var mockDHT *mocks.MockDHT
+	var mockMempool *mocks.MockMempool
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -37,7 +38,8 @@ var _ = Describe("Manager", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = testutil.MockLogic(ctrl)
 		mockDHT = mocks.NewMockDHT(ctrl)
-		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic, mockDHT)
+		mockMempool = mocks.NewMockMempool(ctrl)
+		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic, mockDHT, mockMempool)
 	})
 
 	BeforeEach(func() {
@@ -175,41 +177,6 @@ var _ = Describe("Manager", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("object not found"))
 			})
-		})
-	})
-
-	Describe(".AddUnfinalizedObject", func() {
-		It("should add object", func() {
-			repo := "repo"
-			objHash := "hash"
-			repoMgr.AddUnfinalizedObject(repo, objHash)
-			Expect(repoMgr.unfinalizedObjects.Len()).To(Equal(1))
-		})
-	})
-
-	Describe(".RemoveUnfinalizedObject", func() {
-		It("should remove object", func() {
-			repo := "repo"
-			objHash := "hash"
-			repoMgr.AddUnfinalizedObject(repo, objHash)
-			Expect(repoMgr.unfinalizedObjects.Len()).To(Equal(1))
-			repoMgr.RemoveUnfinalizedObject(repo, objHash)
-			Expect(repoMgr.unfinalizedObjects.Len()).To(Equal(0))
-		})
-	})
-
-	Describe(".IsUnfinalizedObject", func() {
-		It("should return true when object exist in the unfinalized object cache", func() {
-			repo := "repo"
-			objHash := "hash"
-			repoMgr.AddUnfinalizedObject(repo, objHash)
-			Expect(repoMgr.IsUnfinalizedObject(repo, objHash)).To(BeTrue())
-		})
-
-		It("should return false when object does not exist in the unfinalized object cache", func() {
-			repo := "repo"
-			objHash := "hash"
-			Expect(repoMgr.IsUnfinalizedObject(repo, objHash)).To(BeFalse())
 		})
 	})
 

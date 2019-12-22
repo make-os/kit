@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"time"
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util"
@@ -133,13 +134,27 @@ type BareRepo interface {
 
 	// GetStorer returns the storage engine of the repository
 	GetStorer() storage.Storer
+
+	// Prune prunes objects older than the given time
+	Prune(olderThan time.Time) error
 }
 
 // PGPPubKeyGetter represents a function for fetching PGP public key
 type PGPPubKeyGetter func(pkId string) (string, error)
 
+// PoolGetter returns various pools
+type PoolGetter interface {
+
+	// GetPushPool returns the push pool
+	GetPushPool() PushPool
+
+	// GetTxPool returns the transaction pool
+	GetTxPool() Mempool
+}
+
 // RepoManager provides functionality for manipulating repositories.
 type RepoManager interface {
+	PoolGetter
 
 	// Log returns the logger
 	Log() logger.Logger
@@ -162,9 +177,6 @@ type RepoManager interface {
 	// GetNodeKey returns the node's private key
 	GetNodeKey() *crypto.Key
 
-	// GetPushPool returns the push pool
-	GetPushPool() PushPool
-
 	// Start starts the server
 	Start() error
 
@@ -183,14 +195,8 @@ type RepoManager interface {
 	// SetPGPPubKeyGetter sets the PGP public key query function
 	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
 
-	// AddUnfinalizedObject adds an object to the unfinalized object cache
-	AddUnfinalizedObject(repo, objHash string)
-
-	// Remove removes an object from the unfinalized object cache
-	RemoveUnfinalizedObject(repo, objHash string)
-
-	// IsUnfinalizedObject checks whether an object exist in the unfinalized object cache
-	IsUnfinalizedObject(repo, objHash string) bool
+	// GetPruner returns the repo pruner
+	GetPruner() Pruner
 
 	// GetDHT returns the dht service
 	GetDHT() DHT
@@ -232,6 +238,9 @@ type PushPool interface {
 
 	// Full returns true if the pool is full
 	Full() bool
+
+	// RepoHasPushTx returns true if the given repo has a transaction in the pool
+	RepoHasPushTx(repo string) bool
 }
 
 // PushTx represents a repository push request
@@ -279,6 +288,24 @@ type PushTx interface {
 
 	// BytesAndID returns the serialized version of the tx and the id
 	BytesAndID() ([]byte, util.Hash)
+}
+
+// Pruner provides repository pruning functionality
+type Pruner interface {
+
+	// Start starts the pruner
+	Start()
+
+	// Schedule schedules a repository for pruning
+	Schedule(repoName string)
+
+	// Prune prunes a repository only if it has no transactions in the transaction
+	// and push pool. If force is set to true, the repo will be pruned regardless of
+	// the existence of transactions in the pools.
+	Prune(repoName string, force bool) error
+
+	// Stop stops the pruner
+	Stop()
 }
 
 // PushedReference represents a reference that was pushed by git client

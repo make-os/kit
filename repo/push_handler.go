@@ -105,11 +105,7 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxLine, string
 			if pkID != txLine.PubKeyID {
 				errs = append(errs, fmt.Errorf("rejected because the pushed references "+
 					"were signed with multiple pgp keys"))
-				errs = append(errs, removeObjsRelatedToRefs(
-					h.repo,
-					h.pushReader,
-					h.rMgr,
-					h.pushReader.references.names())...)
+				h.rMgr.GetPruner().Schedule(h.repo.GetName())
 				break
 			}
 		}
@@ -141,27 +137,11 @@ func (h *PushHandler) HandleUpdate() error {
 		return err
 	}
 
-	// Add the push transaction to the push pool. If an error is returned we
-	// will attempt to remove the pushed objects from the references and node
-	// and return an error.
+	// Add the push transaction to the push pool. If an error is returned
+	// schedule the repository for pruning
 	if err := h.rMgr.GetPushPool().Add(pushTx); err != nil {
-		if errs := removeObjsRelatedToRefs(
-			h.repo,
-			h.pushReader,
-			h.rMgr,
-			h.pushReader.references.names()); len(errs) > 0 {
-			return errors.Wrap(errs[0], "failed to remove packed objects from ref")
-		}
+		h.rMgr.GetPruner().Schedule(h.repo.GetName())
 		return err
-	}
-
-	// Add the objects to unfinalized cache to prevent premature deletion
-	// Announce the objects to the dht
-	for _, obj := range h.pushReader.objects {
-		h.rMgr.AddUnfinalizedObject(h.repo.GetName(), obj.Hash.String())
-		if err := h.announceObject(obj); err != nil {
-			continue
-		}
 	}
 
 	// Broadcast the push tx
@@ -267,58 +247,10 @@ func (h *PushHandler) handleReference(ref string) (*util.TxLine, []error) {
 
 	// Now, we need to delete the pushed objects if an error has occurred.
 	// We are only able to delete the object if it is related to only the
-	// current ref. If it is not, we simply remove the current ref from the
-	// list of related refs and let the next refs decide what to do with it.
+	// current ref. If it is not, we schedule the repository for pruning.
 	if len(errs) > 0 {
-		errs = append(errs, removeObjRelatedToOnlyRef(h.repo, h.pushReader, h.rMgr, ref)...)
+		h.rMgr.GetPruner().Schedule(h.repo.GetName())
 	}
 
 	return txLine, errs
-}
-
-// removeObjRelatedToOnlyRef deletes pushed objects associated with only the given ref.
-// Objects that are linked to other references are not deleted.
-// Also, objects that have been cached in the unfinalized object cache are not deleted.
-// ref: The target ref whose contained object are to be deleted.
-// repo: The repository where this object exist.
-// pr: Push reader object
-// unfinalized: A cache containing pushed objects that should not be deleted
-func removeObjRelatedToOnlyRef(
-	repo types.BareRepo,
-	pr *PushReader,
-	unfinalized types.UnfinalizedObjectCache,
-	ref string) (errs []error) {
-
-	for _, obj := range pr.objects {
-
-		if unfinalized.IsUnfinalizedObject(repo.GetName(), obj.Hash.String()) {
-			continue
-		}
-
-		relatedRefs := pr.objectsRefs[obj.Hash.String()]
-		if len(relatedRefs) == 1 && funk.ContainsString(relatedRefs, ref) {
-			if err := repo.DeleteObject(obj.Hash); err != nil {
-				errs = append(errs, err)
-			}
-		}
-
-		pr.objectsRefs.removeRef(obj.Hash.String(), ref)
-	}
-	return
-}
-
-// removeObjsRelatedToRefs deletes pushed objects contained in the given refs;
-// Objects that are also linked to other references are not deleted.
-// refs: A list of refs whose contained object are to be deleted.
-// repo: The repository where this object exist.
-// pr: Push inspector object
-func removeObjsRelatedToRefs(
-	repo types.BareRepo,
-	pr *PushReader,
-	unfinalized types.UnfinalizedObjectCache,
-	refs []string) (errs []error) {
-	for _, ref := range refs {
-		errs = append(errs, removeObjRelatedToOnlyRef(repo, pr, unfinalized, ref)...)
-	}
-	return
 }

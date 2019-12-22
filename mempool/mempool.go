@@ -20,12 +20,19 @@ import (
 	"github.com/tendermint/tendermint/types"
 )
 
+// Mempool related events
+const (
+	EvtMempoolTxAdded    = "mempool_tx_added"
+	EvtMempoolTxRemoved  = "mempool_tx_removed"
+	EvtMempoolTxRejected = "mempool_tx_rejected"
+)
+
 // Option sets an optional parameter on the mempool.
 type Option func(*Mempool)
 
 // Mempool implements mempool.Mempool
 type Mempool struct {
-	config *config.AppConfig
+	cfg *config.AppConfig
 
 	proxyMtx     sync.Mutex
 	proxyAppConn proxy.AppConnMempool
@@ -49,12 +56,11 @@ type Mempool struct {
 }
 
 // NewMempool creates an instance of Mempool
-func NewMempool(
-	config *config.AppConfig) *Mempool {
+func NewMempool(cfg *config.AppConfig) *Mempool {
 	return &Mempool{
-		config: config,
-		pool:   pool.New(int64(config.Mempool.Size)),
-		log:    config.G().Log.Module("mempool"),
+		cfg:  cfg,
+		pool: pool.New(int64(cfg.Mempool.Size)),
+		log:  cfg.G().Log.Module("mempool"),
 	}
 }
 
@@ -95,19 +101,19 @@ func (mp *Mempool) CheckTxWithInfo(tx types.Tx,
 
 	// Check whether the pool has sufficient capacity
 	// to accommodate this new transaction
-	if memSize >= mp.config.Mempool.Size ||
-		int64(txSize)+txsBytes > mp.config.Mempool.MaxTxsSize {
+	if memSize >= mp.cfg.Mempool.Size ||
+		int64(txSize)+txsBytes > mp.cfg.Mempool.MaxTxsSize {
 		return fmt.Errorf(
 			"mempool is full: number of txs %d (max: %d), total txs bytes %d (max: %d)",
-			memSize, mp.config.Mempool.Size, txsBytes, mp.config.Mempool.MaxTxsSize)
+			memSize, mp.cfg.Mempool.Size, txsBytes, mp.cfg.Mempool.MaxTxsSize)
 	}
 
 	// The size of the corresponding amino-encoded TxMessage
 	// can't be larger than the maxMsgSize, otherwise we can't
 	// relay it to peers.
-	if txSize > mp.config.Mempool.MaxTxSize {
+	if txSize > mp.cfg.Mempool.MaxTxSize {
 		return fmt.Errorf("Tx too large. Max size is %d, but got %d",
-			mp.config.Mempool.MaxTxSize, txSize)
+			mp.cfg.Mempool.MaxTxSize, txSize)
 	}
 
 	// NOTE: proxyAppConn may error if tx buffer is full
@@ -147,21 +153,25 @@ func (mp *Mempool) addTx(bs []byte, res *abci.Response) {
 	switch r := res.Value.(type) {
 	case *abci.Response_CheckTx:
 
-		// At this point, the transaction the ABCI app's check
+		tx, _ := t.NewTxFromBytes(bs)
+
+		// At this point, the transaction failed the ABCI check
 		if r.CheckTx.Code != abci.CodeTypeOK {
+			mp.cfg.G().Bus.Emit(EvtMempoolTxRejected, fmt.Errorf(r.CheckTx.Log), tx)
 			mp.log.Debug("Rejected an invalid transaction", "Reason", r.CheckTx.Log)
 			return
 		}
 
-		tx, _ := t.NewTxFromBytes(bs)
 		err := mp.pool.Put(tx)
 		if err != nil {
+			mp.cfg.G().Bus.Emit(EvtMempoolTxRejected, []interface{}{tx, err})
 			r.CheckTx.Code = t.ErrCodeTxPoolReject
 			r.CheckTx.Log = err.Error()
 			return
 		}
 
 		mp.log.Info("Added a new transaction to the pool", "Hash", tx.GetHash())
+		mp.cfg.G().Bus.Emit(EvtMempoolTxAdded, []interface{}{nil, tx})
 		mp.notifyTxsAvailable()
 	}
 }
@@ -285,6 +295,7 @@ func (mp *Mempool) Update(blockHeight int64, txs types.Txs,
 	for _, txBs := range txs {
 		tx, _ := t.NewTxFromBytes(txBs)
 		mp.pool.Remove(tx)
+		mp.cfg.G().Bus.Emit(EvtMempoolTxRemoved, []interface{}{nil, tx})
 	}
 
 	// Notify that there are transactions still in the pool

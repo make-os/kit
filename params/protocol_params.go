@@ -92,4 +92,7 @@ var (
 
 	// PushTxSendersCacheSize is the max size for push tx senders cache
 	PushTxSendersCacheSize = 5000
+
+	// RepoPrunerTickDur is the duration between each repo pruning operation
+	RepoPrunerTickDur = 10 * time.Second
 )

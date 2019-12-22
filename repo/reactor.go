@@ -35,8 +35,8 @@ func (m *Manager) onPushTx(peer p2p.Peer, msgBytes []byte) error {
 	// Add a cache entry that indicates the sender of the push tx
 	m.cachePushTxSender(string(peer.ID()), tx.ID().String())
 
-	m.log.Debug("Received push transaction from peer", "PeerID",
-		peer.ID(), "TxID", tx.ID().String())
+	m.log.Debug("Received push transaction from peer",
+		"PeerID", peer.ID(), "TxID", tx.ID().String())
 
 	repoName := tx.GetRepoName()
 	repoPath := m.getRepoPath(repoName)
@@ -63,8 +63,11 @@ func (m *Manager) onPushTx(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Validate the push tx.
-	if err := checkPushTx(&tx, m.logic, m.dht); err != nil {
-		return errors.Wrap(err, "failed push tx validation")
+	// if err := checkPushTx(&tx, m.logic, m.dht); err != nil {
+	// 	return errors.Wrap(err, "failed push tx validation")
+	// }
+	if err := m.GetPushPool().Add(&tx); err != nil {
+		return errors.Wrap(err, "failed to add push tx to push pool")
 	}
 
 	// At this point, we know that the push tx is valid and consistent with the
@@ -121,9 +124,9 @@ func (m *Manager) onPushTx(peer p2p.Peer, msgBytes []byte) error {
 
 	// At this point, the transaction has passed all validation and
 	// compatibility checks. We can now attempt to add the push tx to the PushPool
-	if err := m.GetPushPool().Add(&tx); err != nil {
-		return errors.Wrap(err, "failed to add push tx to push pool")
-	}
+	// if err := m.GetPushPool().Add(&tx); err != nil {
+	// 	return errors.Wrap(err, "failed to add push tx to push pool")
+	// }
 
 	// Announce the objects of the push tx to the dht
 	for _, hash := range tx.GetPushedObjects() {

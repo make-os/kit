@@ -367,6 +367,7 @@ var _ = Describe("PushPool", func() {
 				Expect(pool.index).To(HaveLen(1))
 				Expect(pool.refIndex).To(HaveLen(1))
 				Expect(pool.refNonceIdx).To(HaveLen(1))
+				Expect(pool.repoTxsIdx).To(HaveLen(1))
 				pool.remove(tx)
 			})
 
@@ -375,6 +376,7 @@ var _ = Describe("PushPool", func() {
 				Expect(pool.index).To(HaveLen(0))
 				Expect(pool.refIndex).To(HaveLen(0))
 				Expect(pool.refNonceIdx).To(HaveLen(0))
+				Expect(pool.repoTxsIdx).To(BeEmpty())
 			})
 		})
 
@@ -389,6 +391,7 @@ var _ = Describe("PushPool", func() {
 				Expect(pool.index).To(HaveLen(2))
 				Expect(pool.refIndex).To(HaveLen(2))
 				Expect(pool.refNonceIdx).To(HaveLen(2))
+				Expect(pool.repoTxsIdx).To(HaveLen(2))
 				pool.remove(tx)
 			})
 
@@ -397,6 +400,7 @@ var _ = Describe("PushPool", func() {
 				Expect(pool.index).To(HaveLen(1))
 				Expect(pool.refIndex).To(HaveLen(1))
 				Expect(pool.refNonceIdx).To(HaveLen(1))
+				Expect(pool.repoTxsIdx).To(HaveLen(1))
 			})
 		})
 	})
@@ -455,6 +459,91 @@ var _ = Describe("refNonceIndex", func() {
 
 			It("should return nonce=0", func() {
 				Expect(nonce).To(Equal(uint64(0)))
+			})
+		})
+	})
+})
+
+var _ = Describe("repoTxsIndex", func() {
+	Describe(".add", func() {
+		var idx repoTxsIndex
+		BeforeEach(func() {
+			idx = repoTxsIndex(map[string][]*containerItem{})
+		})
+
+		It("should add successfully", func() {
+			idx.add("repo1", &containerItem{})
+			Expect(idx).To(HaveKey("repo1"))
+			Expect(idx["repo1"]).To(HaveLen(1))
+		})
+	})
+
+	Describe(".has", func() {
+		var idx repoTxsIndex
+		When("repo does not exist in index", func() {
+			var has bool
+
+			BeforeEach(func() {
+				idx = repoTxsIndex(map[string][]*containerItem{})
+				has = idx.has("repo1")
+			})
+
+			It("should return false", func() {
+				Expect(has).To(BeFalse())
+			})
+		})
+
+		When("repo exist in index", func() {
+			var has bool
+
+			BeforeEach(func() {
+				idx = repoTxsIndex(map[string][]*containerItem{
+					"repo1": []*containerItem{},
+				})
+				has = idx.has("repo1")
+			})
+
+			It("should return true", func() {
+				Expect(has).To(BeTrue())
+			})
+		})
+	})
+
+	Describe(".remove", func() {
+		var idx repoTxsIndex
+
+		When("repo has 1 txA and txA is removed", func() {
+			var txA *PushTx
+			BeforeEach(func() {
+				txA = &PushTx{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 100000000}
+				idx = repoTxsIndex(map[string][]*containerItem{})
+				idx.add("repo1", &containerItem{Tx: txA})
+				Expect(idx["repo1"]).To(HaveLen(1))
+			})
+
+			It("should remove repo completely", func() {
+				idx.remove("repo1", txA.ID().String())
+				Expect(idx).To(BeEmpty())
+			})
+		})
+
+		When("repo has 2 txs (txA and TxB) and txA is removed", func() {
+			var txA, txB *PushTx
+			BeforeEach(func() {
+				txA = &PushTx{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 100000000}
+				txB = &PushTx{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 200000000}
+				idx = repoTxsIndex(map[string][]*containerItem{})
+				idx.add("repo1", &containerItem{Tx: txA})
+				idx.add("repo1", &containerItem{Tx: txB})
+				Expect(idx["repo1"]).To(HaveLen(2))
+			})
+
+			It("should remove only txA", func() {
+				idx.remove("repo1", txA.ID().String())
+				Expect(idx).ToNot(BeEmpty())
+				Expect(idx["repo1"]).To(HaveLen(1))
+				actual := idx["repo1"][0]
+				Expect(actual.Tx.ID()).To(Equal(txB.ID()))
 			})
 		})
 	})

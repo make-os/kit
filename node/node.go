@@ -70,6 +70,7 @@ type Node struct {
 	dht            types.DHT
 	jsModule       types.JSModule
 	rpcServer      *rpc.Server
+	repoMgr        types.RepoManager
 }
 
 // NewNode creates an instance of Node
@@ -179,10 +180,6 @@ func (n *Node) Start() error {
 		repo.PushTxReactorChannel,
 	})
 
-	// Create repository manager and pass it to logic
-	repoMgr := repo.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht)
-	n.logic.SetRepoManager(repoMgr)
-
 	// Create the ABCI app and wrap with a ClientCreator
 	app := NewApp(n.cfg, n.db, n.logic, n.ticketMgr)
 	clientCreator := proxy.NewLocalClientCreator(app)
@@ -192,6 +189,11 @@ func (n *Node) Start() error {
 	memp := cusMemp.Mempool.(*mempool.Mempool)
 	memp.SetEpochSecretGetter(n.logic.Sys().GetCurretEpochSecretTx)
 	mempR := cusMemp.MempoolReactor.(*mempool.Reactor)
+
+	// Create repository manager and pass it to logic
+	repoMgr := repo.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht, memp)
+	n.repoMgr = repoMgr
+	n.logic.SetRepoManager(repoMgr)
 
 	// Create node
 	tmNode, err := nm.NewNodeWithCustomMempool(
@@ -225,12 +227,6 @@ func (n *Node) Start() error {
 
 	// Register some object finder on the dht
 	n.dht.RegisterObjFinder(repo.RepoObjectModule, repoMgr)
-
-	// Start repository server
-	if err := repoMgr.Start(); err != nil {
-		n.Stop()
-		return errors.Wrap(err, "failed to start repo manager")
-	}
 
 	// Pass repo manager to logic manager
 	n.logic.SetRepoManager(repoMgr)
@@ -299,6 +295,7 @@ func (n *Node) initJSModuleAndExtension() {
 		n.dht,
 		extMgr,
 		n.rpcServer,
+		n.repoMgr,
 	)
 
 	// Set the js module to be the main module of the extension manager

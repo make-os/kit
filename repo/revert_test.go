@@ -31,6 +31,7 @@ var _ = Describe("Revert", func() {
 	var ctrl *gomock.Controller
 	var mockLogic *mockutil.MockObjects
 	var mockDHT *mocks.MockDHT
+	var mockMempool *mocks.MockMempool
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -45,7 +46,8 @@ var _ = Describe("Revert", func() {
 		mockLogic = mockutil.MockLogic(ctrl)
 		port, _ := freeport.GetFreePort()
 		mockDHT = mocks.NewMockDHT(ctrl)
-		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic, mockDHT)
+		mockMempool = mocks.NewMockMempool(ctrl)
+		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic, mockDHT, mockMempool)
 		repo, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})

@@ -17,6 +17,7 @@ import (
 	storer "gopkg.in/src-d/go-git.v4/plumbing/storer"
 	storage "gopkg.in/src-d/go-git.v4/storage"
 	reflect "reflect"
+	time "time"
 )
 
 // MockBareRepo is a mock of BareRepo interface
@@ -594,6 +595,71 @@ func (mr *MockBareRepoMockRecorder) GetStorer() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStorer", reflect.TypeOf((*MockBareRepo)(nil).GetStorer))
 }
 
+// Prune mocks base method
+func (m *MockBareRepo) Prune(olderThan time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Prune", olderThan)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Prune indicates an expected call of Prune
+func (mr *MockBareRepoMockRecorder) Prune(olderThan interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prune", reflect.TypeOf((*MockBareRepo)(nil).Prune), olderThan)
+}
+
+// MockPoolGetter is a mock of PoolGetter interface
+type MockPoolGetter struct {
+	ctrl     *gomock.Controller
+	recorder *MockPoolGetterMockRecorder
+}
+
+// MockPoolGetterMockRecorder is the mock recorder for MockPoolGetter
+type MockPoolGetterMockRecorder struct {
+	mock *MockPoolGetter
+}
+
+// NewMockPoolGetter creates a new mock instance
+func NewMockPoolGetter(ctrl *gomock.Controller) *MockPoolGetter {
+	mock := &MockPoolGetter{ctrl: ctrl}
+	mock.recorder = &MockPoolGetterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockPoolGetter) EXPECT() *MockPoolGetterMockRecorder {
+	return m.recorder
+}
+
+// GetPushPool mocks base method
+func (m *MockPoolGetter) GetPushPool() types.PushPool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPushPool")
+	ret0, _ := ret[0].(types.PushPool)
+	return ret0
+}
+
+// GetPushPool indicates an expected call of GetPushPool
+func (mr *MockPoolGetterMockRecorder) GetPushPool() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushPool", reflect.TypeOf((*MockPoolGetter)(nil).GetPushPool))
+}
+
+// GetTxPool mocks base method
+func (m *MockPoolGetter) GetTxPool() types.Mempool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxPool")
+	ret0, _ := ret[0].(types.Mempool)
+	return ret0
+}
+
+// GetTxPool indicates an expected call of GetTxPool
+func (mr *MockPoolGetterMockRecorder) GetTxPool() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxPool", reflect.TypeOf((*MockPoolGetter)(nil).GetTxPool))
+}
+
 // MockRepoManager is a mock of RepoManager interface
 type MockRepoManager struct {
 	ctrl     *gomock.Controller
@@ -615,6 +681,34 @@ func NewMockRepoManager(ctrl *gomock.Controller) *MockRepoManager {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockRepoManager) EXPECT() *MockRepoManagerMockRecorder {
 	return m.recorder
+}
+
+// GetPushPool mocks base method
+func (m *MockRepoManager) GetPushPool() types.PushPool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPushPool")
+	ret0, _ := ret[0].(types.PushPool)
+	return ret0
+}
+
+// GetPushPool indicates an expected call of GetPushPool
+func (mr *MockRepoManagerMockRecorder) GetPushPool() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushPool", reflect.TypeOf((*MockRepoManager)(nil).GetPushPool))
+}
+
+// GetTxPool mocks base method
+func (m *MockRepoManager) GetTxPool() types.Mempool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxPool")
+	ret0, _ := ret[0].(types.Mempool)
+	return ret0
+}
+
+// GetTxPool indicates an expected call of GetTxPool
+func (mr *MockRepoManagerMockRecorder) GetTxPool() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxPool", reflect.TypeOf((*MockRepoManager)(nil).GetTxPool))
 }
 
 // Log mocks base method
@@ -713,20 +807,6 @@ func (mr *MockRepoManagerMockRecorder) GetNodeKey() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeKey", reflect.TypeOf((*MockRepoManager)(nil).GetNodeKey))
 }
 
-// GetPushPool mocks base method
-func (m *MockRepoManager) GetPushPool() types.PushPool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types.PushPool)
-	return ret0
-}
-
-// GetPushPool indicates an expected call of GetPushPool
-func (mr *MockRepoManagerMockRecorder) GetPushPool() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushPool", reflect.TypeOf((*MockRepoManager)(nil).GetPushPool))
-}
-
 // Start mocks base method
 func (m *MockRepoManager) Start() error {
 	m.ctrl.T.Helper()
@@ -803,42 +883,18 @@ func (mr *MockRepoManagerMockRecorder) SetPGPPubKeyGetter(pkGetter interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPGPPubKeyGetter", reflect.TypeOf((*MockRepoManager)(nil).SetPGPPubKeyGetter), pkGetter)
 }
 
-// AddUnfinalizedObject mocks base method
-func (m *MockRepoManager) AddUnfinalizedObject(repo, objHash string) {
+// GetPruner mocks base method
+func (m *MockRepoManager) GetPruner() types.Pruner {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddUnfinalizedObject", repo, objHash)
-}
-
-// AddUnfinalizedObject indicates an expected call of AddUnfinalizedObject
-func (mr *MockRepoManagerMockRecorder) AddUnfinalizedObject(repo, objHash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUnfinalizedObject", reflect.TypeOf((*MockRepoManager)(nil).AddUnfinalizedObject), repo, objHash)
-}
-
-// RemoveUnfinalizedObject mocks base method
-func (m *MockRepoManager) RemoveUnfinalizedObject(repo, objHash string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RemoveUnfinalizedObject", repo, objHash)
-}
-
-// RemoveUnfinalizedObject indicates an expected call of RemoveUnfinalizedObject
-func (mr *MockRepoManagerMockRecorder) RemoveUnfinalizedObject(repo, objHash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveUnfinalizedObject", reflect.TypeOf((*MockRepoManager)(nil).RemoveUnfinalizedObject), repo, objHash)
-}
-
-// IsUnfinalizedObject mocks base method
-func (m *MockRepoManager) IsUnfinalizedObject(repo, objHash string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsUnfinalizedObject", repo, objHash)
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "GetPruner")
+	ret0, _ := ret[0].(types.Pruner)
 	return ret0
 }
 
-// IsUnfinalizedObject indicates an expected call of IsUnfinalizedObject
-func (mr *MockRepoManagerMockRecorder) IsUnfinalizedObject(repo, objHash interface{}) *gomock.Call {
+// GetPruner indicates an expected call of GetPruner
+func (mr *MockRepoManagerMockRecorder) GetPruner() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUnfinalizedObject", reflect.TypeOf((*MockRepoManager)(nil).IsUnfinalizedObject), repo, objHash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPruner", reflect.TypeOf((*MockRepoManager)(nil).GetPruner))
 }
 
 // GetDHT mocks base method
@@ -991,6 +1047,20 @@ func (m *MockPushPool) Full() bool {
 func (mr *MockPushPoolMockRecorder) Full() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Full", reflect.TypeOf((*MockPushPool)(nil).Full))
+}
+
+// RepoHasPushTx mocks base method
+func (m *MockPushPool) RepoHasPushTx(repo string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RepoHasPushTx", repo)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// RepoHasPushTx indicates an expected call of RepoHasPushTx
+func (mr *MockPushPoolMockRecorder) RepoHasPushTx(repo interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoHasPushTx", reflect.TypeOf((*MockPushPool)(nil).RepoHasPushTx), repo)
 }
 
 // MockPushTx is a mock of PushTx interface
@@ -1211,6 +1281,79 @@ func (m *MockPushTx) BytesAndID() ([]byte, util.Hash) {
 func (mr *MockPushTxMockRecorder) BytesAndID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockPushTx)(nil).BytesAndID))
+}
+
+// MockPruner is a mock of Pruner interface
+type MockPruner struct {
+	ctrl     *gomock.Controller
+	recorder *MockPrunerMockRecorder
+}
+
+// MockPrunerMockRecorder is the mock recorder for MockPruner
+type MockPrunerMockRecorder struct {
+	mock *MockPruner
+}
+
+// NewMockPruner creates a new mock instance
+func NewMockPruner(ctrl *gomock.Controller) *MockPruner {
+	mock := &MockPruner{ctrl: ctrl}
+	mock.recorder = &MockPrunerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockPruner) EXPECT() *MockPrunerMockRecorder {
+	return m.recorder
+}
+
+// Start mocks base method
+func (m *MockPruner) Start() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Start")
+}
+
+// Start indicates an expected call of Start
+func (mr *MockPrunerMockRecorder) Start() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockPruner)(nil).Start))
+}
+
+// Schedule mocks base method
+func (m *MockPruner) Schedule(repoName string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Schedule", repoName)
+}
+
+// Schedule indicates an expected call of Schedule
+func (mr *MockPrunerMockRecorder) Schedule(repoName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Schedule", reflect.TypeOf((*MockPruner)(nil).Schedule), repoName)
+}
+
+// Prune mocks base method
+func (m *MockPruner) Prune(repoName string, force bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Prune", repoName, force)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Prune indicates an expected call of Prune
+func (mr *MockPrunerMockRecorder) Prune(repoName, force interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prune", reflect.TypeOf((*MockPruner)(nil).Prune), repoName, force)
+}
+
+// Stop mocks base method
+func (m *MockPruner) Stop() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Stop")
+}
+
+// Stop indicates an expected call of Stop
+func (mr *MockPrunerMockRecorder) Stop() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockPruner)(nil).Stop))
 }
 
 // MockBareRepoState is a mock of BareRepoState interface

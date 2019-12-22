@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -51,6 +52,16 @@ var _ = Describe("Gitops", func() {
 
 		It("should return false when object does not exist", func() {
 			hash := strings.Repeat("0", 40)
+			Expect(repo.ObjectExist(hash)).To(BeFalse())
+		})
+	})
+
+	Describe(".Prune", func() {
+		It("should remove unreachable objects", func() {
+			hash := createBlob(path, "hello world")
+			Expect(repo.ObjectExist(hash)).To(BeTrue())
+			err := repo.Prune(time.Time{})
+			Expect(err).To(BeNil())
 			Expect(repo.ObjectExist(hash)).To(BeFalse())
 		})
 	})
