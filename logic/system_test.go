@@ -18,7 +18,6 @@ import (
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/testutil/mockutil"
 )
 
 var _ = Describe("System", func() {
@@ -28,7 +27,7 @@ var _ = Describe("System", func() {
 	var logic *Logic
 	var sysLogic *System
 	var ctrl *gomock.Controller
-	var mockLogic *mockutil.MockObjects
+	var mockLogic *testutil.MockObjects
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -42,7 +41,7 @@ var _ = Describe("System", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockLogic = mockutil.MockLogic(ctrl)
+		mockLogic = testutil.MockLogic(ctrl)
 	})
 
 	AfterEach(func() {
@@ -317,9 +316,9 @@ var _ = Describe("System", func() {
 				Expect(err).To(BeNil())
 				Expect(stx).ToNot(BeNil())
 				Expect(stx.GetType()).To(Equal(types.TxTypeEpochSecret))
-				Expect(stx.GetEpochSecret().GetSecret()).To(Equal([]byte(expected.Randomness.Point)))
-				Expect(stx.GetEpochSecret().GetPreviousSecret()).To(Equal([]byte(expected.Previous)))
-				Expect(stx.GetEpochSecret().GetSecretRound()).To(Equal(expected.Round))
+				Expect(stx.(*types.TxEpochSecret).Secret).To(Equal([]byte(expected.Randomness.Point)))
+				Expect(stx.(*types.TxEpochSecret).PreviousSecret).To(Equal([]byte(expected.Previous)))
+				Expect(stx.(*types.TxEpochSecret).SecretRound).To(Equal(expected.Round))
 			})
 		})
 	})

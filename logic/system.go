@@ -124,7 +124,7 @@ func (s *System) GetEpoch(curBlockHeight uint64) (int, int) {
 // GetCurretEpochSecretTx generates and returns a TxTypeEpochSecret
 // transaction only if the next block height is the last in the
 // current epoch.
-func (s *System) GetCurretEpochSecretTx() (types.Tx, error) {
+func (s *System) GetCurretEpochSecretTx() (types.BaseTx, error) {
 
 	// Get last committed block information
 	bi, err := s.logic.SysKeeper().GetLastBlockInfo()
@@ -146,13 +146,11 @@ func (s *System) GetCurretEpochSecretTx() (types.Tx, error) {
 		return nil, fmt.Errorf("failed to get random value from drand")
 	}
 
-	secretTx := types.NewBareTx(types.TxTypeEpochSecret)
+	secretTx := types.NewBareTxEpochSecret()
 	secretTx.Timestamp = 0
-	secretTx.EpochSecret = &types.EpochSecret{
-		Secret:         randVal.Randomness.Point,
-		PreviousSecret: randVal.Previous,
-		SecretRound:    randVal.Round,
-	}
+	secretTx.Secret = randVal.Randomness.Point
+	secretTx.PreviousSecret = randVal.Previous
+	secretTx.SecretRound = randVal.Round
 
 	return secretTx, nil
 }

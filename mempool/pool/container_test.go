@@ -19,13 +19,13 @@ var _ = Describe("TxContainer", func() {
 
 	Describe(".Add", func() {
 		It("should return ErrContainerFull when capacity is reached", func() {
-			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
+			tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
 			q := newTxContainer(0)
 			Expect(q.add(tx)).To(Equal(ErrContainerFull))
 		})
 
 		It("should return nil when transaction is successfully added", func() {
-			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
+			tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
 			q := newTxContainer(1)
 			Expect(q.add(tx)).To(BeNil())
 			Expect(q.container).To(HaveLen(1))
@@ -33,8 +33,8 @@ var _ = Describe("TxContainer", func() {
 
 		When("sorting is disabled", func() {
 			It("should return transactions in the following order tx2, tx1", func() {
-				tx1 := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.10", time.Now().Unix())
-				tx2 := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender2, "0", "1", time.Now().Unix())
+				tx1 := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.10", time.Now().Unix())
+				tx2 := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender2, "0", "1", time.Now().Unix())
 				q := NewQueueNoSort(2)
 				q.add(tx1)
 				q.add(tx2)
@@ -47,8 +47,8 @@ var _ = Describe("TxContainer", func() {
 		When("sender has two transactions with same nonce and same fee rate", func() {
 			Specify("that error is returned when attempting to add the second transaction", func() {
 				q := newTxContainer(2)
-				tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "1", time.Now().Unix())
-				tx2 := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "1", time.Now().Unix())
+				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "1", time.Now().Unix())
+				tx2 := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "1", time.Now().Unix())
 				err := q.add(tx)
 				Expect(err).To(BeNil())
 				Expect(q.container).To(HaveLen(1))
@@ -61,7 +61,7 @@ var _ = Describe("TxContainer", func() {
 
 	Describe(".Size", func() {
 		It("should return size = 1", func() {
-			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
+			tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
 			q := newTxContainer(2)
 			Expect(q.add(tx)).To(BeNil())
 			Expect(q.Size()).To(Equal(int64(1)))
@@ -78,8 +78,8 @@ var _ = Describe("TxContainer", func() {
 		Context("with sorting disabled", func() {
 			It("should return first transaction in the queue and reduce queue size to 1", func() {
 				q := NewQueueNoSort(2)
-				tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
-				tx2 := types.NewTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "0", time.Now().Unix())
+				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
+				tx2 := types.NewBaseTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "0", time.Now().Unix())
 				q.add(tx)
 				q.add(tx2)
 				Expect(q.First()).To(Equal(tx))
@@ -94,8 +94,8 @@ var _ = Describe("TxContainer", func() {
 			When("sender has two transactions with same nonce and different fee rate", func() {
 				Specify("that only one transaction exist in the pool and the transaction has the higher fee rate", func() {
 					q := newTxContainer(2)
-					tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "1", time.Now().Unix())
-					tx2 := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "1.2", time.Now().Unix())
+					tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "1", time.Now().Unix())
+					tx2 := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "1.2", time.Now().Unix())
 					err := q.add(tx)
 					Expect(err).To(BeNil())
 					Expect(q.container).To(HaveLen(1))
@@ -109,8 +109,8 @@ var _ = Describe("TxContainer", func() {
 			When("sender has two transaction with different nonce", func() {
 				It("after sorting, the first transaction must be the one with the lowest nonce", func() {
 					q := newTxContainer(2)
-					tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
-					tx2 := types.NewTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "1", time.Now().Unix())
+					tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+					tx2 := types.NewBaseTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "1", time.Now().Unix())
 					q.add(tx)
 					q.add(tx2)
 					Expect(q.container).To(HaveLen(2))
@@ -123,9 +123,9 @@ var _ = Describe("TxContainer", func() {
 				It("after sorting, the first transaction must be the one with the highest fee rate", func() {
 					sender2 := crypto.NewKeyFromIntSeed(2)
 					q := newTxContainer(3)
-					tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
-					tx2 := types.NewTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "1", time.Now().Unix())
-					tx3 := types.NewTx(types.TxTypeCoinTransfer, 2, "something", sender2, "0", "2", time.Now().Unix())
+					tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+					tx2 := types.NewBaseTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "1", time.Now().Unix())
+					tx3 := types.NewBaseTx(types.TxTypeCoinTransfer, 2, "something", sender2, "0", "2", time.Now().Unix())
 					q.add(tx)
 					q.add(tx2)
 					q.add(tx3)
@@ -148,8 +148,8 @@ var _ = Describe("TxContainer", func() {
 		Context("with sorting disabled", func() {
 			It("should return last transaction in the queue and reduce queue size to 1", func() {
 				q := newTxContainer(2)
-				tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
-				tx2 := types.NewTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "0", time.Now().Unix())
+				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
+				tx2 := types.NewBaseTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "0", time.Now().Unix())
 				q.add(tx)
 				q.add(tx2)
 				Expect(q.Last()).To(Equal(tx2))
@@ -160,8 +160,8 @@ var _ = Describe("TxContainer", func() {
 		When("sender has two transaction with different nonce", func() {
 			It("after sorting, the last transaction must be the one with the highest nonce", func() {
 				q := newTxContainer(2)
-				tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
-				tx2 := types.NewTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "1", time.Now().Unix())
+				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+				tx2 := types.NewBaseTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "1", time.Now().Unix())
 				q.add(tx)
 				q.add(tx2)
 				Expect(q.container).To(HaveLen(2))
@@ -174,9 +174,9 @@ var _ = Describe("TxContainer", func() {
 			It("after sorting, the last transaction must be sender (A) transaction with the highest nonce", func() {
 				sender2 := crypto.NewKeyFromIntSeed(2)
 				q := newTxContainer(3)
-				tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
-				tx2 := types.NewTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "1", time.Now().Unix())
-				tx3 := types.NewTx(types.TxTypeCoinTransfer, 2, "something", sender2, "0", "2", time.Now().Unix())
+				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+				tx2 := types.NewBaseTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "1", time.Now().Unix())
+				tx3 := types.NewBaseTx(types.TxTypeCoinTransfer, 2, "something", sender2, "0", "2", time.Now().Unix())
 				q.add(tx)
 				q.add(tx2)
 				q.add(tx3)
@@ -195,9 +195,9 @@ var _ = Describe("TxContainer", func() {
 
 		It("with 2 transactions by same sender; sort by nonce in ascending order", func() {
 			q := newTxContainer(2)
-			items := []*ContainerItem{
-				{Tx: &types.Transaction{SenderPubKey: util.String(sender.PubKey().Base58()), Nonce: 2, Value: "10"}},
-				{Tx: &types.Transaction{SenderPubKey: util.String(sender.PubKey().Base58()), Nonce: 1, Value: "10"}},
+			items := []*containerItem{
+				{Tx: types.NewBaseTx(0, 2, "", sender, "10", "0", 0)},
+				{Tx: types.NewBaseTx(0, 1, "", sender, "10", "0", 0)},
 			}
 			q.container = append(q.container, items...)
 			q.Sort()
@@ -206,9 +206,9 @@ var _ = Describe("TxContainer", func() {
 
 		It("with 2 transactions by same sender; same nonce; sort by fee rate in descending order", func() {
 			q := newTxContainer(2)
-			items := []*ContainerItem{
-				{Tx: &types.Transaction{SenderPubKey: util.String(sender.PubKey().Base58()), Nonce: 1, Value: "10"}, FeeRate: "0.1"},
-				{Tx: &types.Transaction{SenderPubKey: util.String(sender.PubKey().Base58()), Nonce: 1, Value: "10"}, FeeRate: "0.2"},
+			items := []*containerItem{
+				{Tx: types.NewBaseTx(0, 1, "", sender, "10", "0", 0), FeeRate: "0.1"},
+				{Tx: types.NewBaseTx(0, 1, "", sender, "10", "0", 0), FeeRate: "0.2"},
 			}
 			q.container = append(q.container, items...)
 			q.Sort()
@@ -221,10 +221,10 @@ var _ = Describe("TxContainer", func() {
 				sort by nonce (ascending) for the same sender txs;
 				sort by fee rate (descending) for others`, func() {
 			q := newTxContainer(2)
-			items := []*ContainerItem{
-				{Tx: &types.Transaction{SenderPubKey: util.String(sender.PubKey().Base58()), Nonce: 1, Value: "10"}, FeeRate: "0.1"},
-				{Tx: &types.Transaction{SenderPubKey: util.String(sender.PubKey().Base58()), Nonce: 2, Value: "10"}, FeeRate: "0.2"},
-				{Tx: &types.Transaction{SenderPubKey: util.String(sender2.PubKey().Base58()), Nonce: 4, Value: "10"}, FeeRate: "1.2"},
+			items := []*containerItem{
+				{Tx: types.NewBaseTx(0, 1, "", sender, "10", "0", 0), FeeRate: "0.1"},
+				{Tx: types.NewBaseTx(0, 2, "", sender, "10", "0", 0), FeeRate: "0.2"},
+				{Tx: types.NewBaseTx(0, 4, "", sender2, "10", "0", 0), FeeRate: "1.2"},
 			}
 			q.container = append(q.container, items...)
 			q.Sort()
@@ -237,7 +237,7 @@ var _ = Describe("TxContainer", func() {
 	Describe(".Has", func() {
 		It("should return true when tx exist in queue", func() {
 			q := newTxContainer(1)
-			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+			tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
 			err := q.add(tx)
 			Expect(err).To(BeNil())
 			has := q.Has(tx)
@@ -246,7 +246,7 @@ var _ = Describe("TxContainer", func() {
 
 		It("should return false when tx does not exist in queue", func() {
 			q := newTxContainer(1)
-			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+			tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
 			has := q.Has(tx)
 			Expect(has).To(BeFalse())
 		})
@@ -255,7 +255,7 @@ var _ = Describe("TxContainer", func() {
 	Describe(".HasByHash", func() {
 		It("should return true when tx exist in queue", func() {
 			q := newTxContainer(1)
-			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+			tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
 			err := q.add(tx)
 			Expect(err).To(BeNil())
 			has := q.HasByHash(tx.GetHash().HexStr())
@@ -264,7 +264,7 @@ var _ = Describe("TxContainer", func() {
 
 		It("should return false when tx does not exist in queue", func() {
 			q := newTxContainer(1)
-			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+			tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
 			has := q.HasByHash(tx.GetHash().HexStr())
 			Expect(has).To(BeFalse())
 		})
@@ -273,22 +273,23 @@ var _ = Describe("TxContainer", func() {
 	Describe(".remove", func() {
 
 		var q *TxContainer
-		var tx, tx2, tx3, tx4 *types.Transaction
+		var tx, tx2, tx3, tx4 types.BaseTx
 
 		BeforeEach(func() {
 			q = newTxContainer(4)
-			tx = types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+			tx = types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
 			q.add(tx)
-			tx2 = types.NewTx(types.TxTypeCoinTransfer, 2, "something2", sender, "0", "0.2", time.Now().Unix())
+			tx2 = types.NewBaseTx(types.TxTypeCoinTransfer, 2, "something2", sender, "0", "0.2", time.Now().Unix())
 			q.add(tx2)
-			tx3 = types.NewTx(types.TxTypeCoinTransfer, 3, "something2", sender, "0", "0.2", time.Now().Unix())
+			tx3 = types.NewBaseTx(types.TxTypeCoinTransfer, 3, "something2", sender, "0", "0.2", time.Now().Unix())
 			q.add(tx3)
-			tx4 = types.NewTx(types.TxTypeCoinTransfer, 4, "something2", sender, "0", "0.4", time.Now().Unix())
+			tx4 = types.NewBaseTx(types.TxTypeCoinTransfer, 4, "something2", sender, "0", "0.4", time.Now().Unix())
 			q.add(tx4)
+			Expect(q.Size()).To(Equal(int64(4)))
 		})
 
 		It("should do nothing when transaction does not exist in the container", func() {
-			unknownTx := types.NewTx(types.TxTypeCoinTransfer, 1, "unknown", sender, "0", "0.2", time.Now().Unix())
+			unknownTx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "unknown", sender, "0", "0.2", time.Now().Unix())
 			q.Remove(unknownTx)
 			Expect(q.Size()).To(Equal(int64(4)))
 		})
@@ -299,28 +300,28 @@ var _ = Describe("TxContainer", func() {
 			Expect(q.container[0].Tx).To(Equal(tx))
 			Expect(q.container[1].Tx).To(Equal(tx4))
 			Expect(q.len).To(Equal(int64(2)))
-			Expect(q.byteSize).To(Equal(int64(tx.GetSizeNoFee() + tx4.GetSizeNoFee())))
+			Expect(q.byteSize).To(Equal(int64(tx.GetEcoSize() + tx4.GetEcoSize())))
 		})
 	})
 
 	Describe(".Find", func() {
 
 		var q *TxContainer
-		var tx1, tx2, tx3 types.Tx
+		var tx1, tx2, tx3 types.BaseTx
 
 		BeforeEach(func() {
 			q = newTxContainer(3)
-			tx1 = types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
-			tx2 = types.NewTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "0.2", time.Now().Unix())
-			tx3 = types.NewTx(types.TxTypeCoinTransfer, 3, "something", sender, "0", "0.2", time.Now().Unix())
+			tx1 = types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+			tx2 = types.NewBaseTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "0.2", time.Now().Unix())
+			tx3 = types.NewBaseTx(types.TxTypeCoinTransfer, 3, "something", sender, "0", "0.2", time.Now().Unix())
 			q.add(tx1)
 			q.add(tx2)
 			q.add(tx3)
 		})
 
 		It("should stop iterating when predicate returns true", func() {
-			var iterated []types.Tx
-			result := q.Find(func(tx types.Tx) bool {
+			var iterated []types.BaseTx
+			result := q.Find(func(tx types.BaseTx) bool {
 				iterated = append(iterated, tx)
 				return tx.GetNonce() == 2
 			})
@@ -336,8 +337,8 @@ var _ = Describe("TxContainer", func() {
 		})
 
 		It("should return nil when predicate did not return true", func() {
-			var iterated []types.Tx
-			result := q.Find(func(tx types.Tx) bool {
+			var iterated []types.BaseTx
+			result := q.Find(func(tx types.BaseTx) bool {
 				iterated = append(iterated, tx)
 				return false
 			})
@@ -352,7 +353,7 @@ var _ = Describe("TxContainer", func() {
 	Describe(".Get", func() {
 		It("should return Not nil when tx exist in queue", func() {
 			q := newTxContainer(1)
-			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+			tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
 			err := q.add(tx)
 			Expect(err).To(BeNil())
 			txData := q.GetByHash(tx.GetHash().HexStr())
@@ -361,7 +362,7 @@ var _ = Describe("TxContainer", func() {
 
 		It("should return nil when tx does not exist in queue", func() {
 			q := newTxContainer(1)
-			tx := types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+			tx := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
 			txData := q.GetByHash(tx.GetHash().HexStr())
 			Expect(txData).To(BeNil())
 		})
@@ -372,8 +373,8 @@ var _ = Describe("TxContainer", func() {
 
 var _ = Describe("senderNonces", func() {
 	var sender = crypto.NewKeyFromIntSeed(1)
-	var tx = types.NewTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
-	var tx2 = types.NewTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "0.2", time.Now().Unix())
+	var tx = types.NewBaseTx(types.TxTypeCoinTransfer, 1, "something", sender, "0", "0.2", time.Now().Unix())
+	var tx2 = types.NewBaseTx(types.TxTypeCoinTransfer, 2, "something", sender, "0", "0.2", time.Now().Unix())
 	var nc *nonceCollection
 	var sn senderNonces
 

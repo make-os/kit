@@ -27,6 +27,7 @@ var _ = Describe("Manager", func() {
 	var mgr *Manager
 	var logic *l.Logic
 	var ctrl *gomock.Controller
+	var key = crypto.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -127,16 +128,15 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				params.MinTicketMatDur = 60
 				params.MaxTicketActiveDur = 40
-				tx := &types.Transaction{Type: types.TxTypeValidatorTicket, Value: util.String("10"), SenderPubKey: "pub_key"}
+				tx := types.NewBaseTx(types.TxTypeValidatorTicket, 1, "", key, "10", "1", 0)
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
 			})
 
-			Specify("that a ticket exist", func() {
+			Specify("that a ticket was found", func() {
 				tickets := mgr.s.Query(func(*types.Ticket) bool { return true })
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(1))
-				Expect(tickets[0].ProposerPubKey).To(Equal("pub_key"))
 			})
 
 			Specify("that the ticket's matureBy=160 and decayBy=200", func() {
@@ -148,18 +148,18 @@ var _ = Describe("Manager", func() {
 			})
 		})
 
-		When("tx.To (proposer) is set  - delegated ticket", func() {
+		When("tx.Delegate is set  - delegated ticket", func() {
 			var tickets []*types.Ticket
-			var tx *types.Transaction
+			var tx types.BaseTx
 			var proposer = crypto.NewKeyFromIntSeed(2)
 			var delegator = crypto.NewKeyFromIntSeed(3)
 
 			BeforeEach(func() {
-				tx = &types.Transaction{
-					Value:        util.String("35"),
-					SenderPubKey: util.String(delegator.PubKey().Base58()),
-					To:           util.String(proposer.PubKey().Base58()),
-				}
+				txn := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
+				txn.Value = util.String("35")
+				txn.SenderPubKey = delegator.PubKey().Base58()
+				txn.Delegate = proposer.PubKey().Base58()
+				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
 
@@ -174,14 +174,14 @@ var _ = Describe("Manager", func() {
 				Expect(tickets[0].Delegator).To(Equal(delegator.Addr().String()))
 			})
 
-			Specify("that proposer public key is set to the value of tx.To", func() {
-				Expect(tickets[0].ProposerPubKey).To(Equal(tx.To.String()))
+			Specify("that proposer public key is set to the value of tx.Delegate", func() {
+				Expect(tickets[0].ProposerPubKey).To(Equal(tx.(*types.TxTicketPurchase).Delegate))
 			})
 		})
 
-		When("tx.To (proposer) is set and the proposer's commission rate is 50", func() {
+		When("tx.Delegate is set and the proposer's commission rate is 50", func() {
 			var tickets []*types.Ticket
-			var tx *types.Transaction
+			var tx types.BaseTx
 			var proposer = crypto.NewKeyFromIntSeed(2)
 			var delegator = crypto.NewKeyFromIntSeed(3)
 
@@ -194,10 +194,13 @@ var _ = Describe("Manager", func() {
 			})
 
 			BeforeEach(func() {
-				tx = &types.Transaction{Value: util.String("35"), SenderPubKey: util.String(delegator.PubKey().Base58()), To: util.String(proposer.PubKey().Base58())}
+				txn := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
+				txn.Value = util.String("35")
+				txn.SenderPubKey = delegator.PubKey().Base58()
+				txn.Delegate = proposer.PubKey().Base58()
+				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
-
 				tickets = mgr.s.Query(func(*types.Ticket) bool { return true })
 			})
 
@@ -209,11 +212,14 @@ var _ = Describe("Manager", func() {
 
 	Describe(".Remove", func() {
 		var tickets []*types.Ticket
-		var tx *types.Transaction
+		var tx types.BaseTx
 
 		When("one ticket exist", func() {
 			BeforeEach(func() {
-				tx = &types.Transaction{Value: util.String("35"), SenderPubKey: "pub_key"}
+				txn := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
+				txn.Value = util.String("35")
+				txn.SenderPubKey = "pub_key"
+				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
 			})
@@ -230,14 +236,17 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe(".UpdateDecayBy", func() {
-		var tx *types.Transaction
+		var tx types.BaseTx
 		var tickets []*types.Ticket
 
 		When("one ticket exist", func() {
 			BeforeEach(func() {
 				params.MinTicketMatDur = 60
 				params.MaxTicketActiveDur = 40
-				tx = &types.Transaction{Type: types.TxTypeValidatorTicket, Value: util.String("35"), SenderPubKey: "pub_key"}
+				txn := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
+				txn.Value = util.String("35")
+				txn.SenderPubKey = "pub_key"
+				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
 				tickets = mgr.s.Query(func(*types.Ticket) bool { return true })

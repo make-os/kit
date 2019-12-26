@@ -29,7 +29,7 @@ type JSModule interface {
 // It is meant to be used by packages that offer operations
 // that other packages or processes might need
 type Service interface {
-	SendTx(tx *Transaction) (util.Hash, error)
+	SendTx(tx BaseTx) (util.Hash, error)
 	GetBlock(height int64) (map[string]interface{}, error)
 	GetCurrentHeight() (int64, error)
 	GetNonce(address util.String) (uint64, error)

@@ -323,7 +323,7 @@ var _ = Describe("App", func() {
 			It("should return code=types.ErrCodeTxBadEncode and"+
 				" log='unable to decode to types.Transaction'", func() {
 				Expect(res.Code).To(Equal(types.ErrCodeTxBadEncode))
-				Expect(res.Log).To(Equal("unable to decode to types.Transaction"))
+				Expect(res.Log).To(Equal("unable to decode to types.BaseTx"))
 			})
 		})
 
@@ -331,10 +331,10 @@ var _ = Describe("App", func() {
 			var res abcitypes.ResponseCheckTx
 			var expectedHash util.Hash
 			BeforeEach(func() {
-				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
-				tx := types.NewTx(199, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := types.NewBaseTx(0, 0, sender.Addr(), sender, "10", "1", 1)
 				expectedHash = tx.GetHash()
 				res = app.CheckTx(abcitypes.RequestCheckTx{Tx: tx.Bytes()})
 			})
@@ -348,10 +348,10 @@ var _ = Describe("App", func() {
 		When("tx failed validation", func() {
 			var res abcitypes.ResponseCheckTx
 			BeforeEach(func() {
-				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return fmt.Errorf("bad error")
 				}
-				tx := types.NewTx(199, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := types.NewBaseTx(0, 0, sender.Addr(), sender, "10", "1", 1)
 				res = app.CheckTx(abcitypes.RequestCheckTx{Tx: tx.Bytes()})
 			})
 
@@ -425,7 +425,7 @@ var _ = Describe("App", func() {
 			It("should return code=types.ErrCodeTxBadEncode and"+
 				" log='unable to decode to types.Transaction'", func() {
 				Expect(res.Code).To(Equal(types.ErrCodeTxBadEncode))
-				Expect(res.Log).To(Equal("unable to decode to types.Transaction"))
+				Expect(res.Log).To(Equal("unable to decode to types.BaseTx"))
 			})
 
 			Specify("that txIndex is incremented", func() {
@@ -436,7 +436,10 @@ var _ = Describe("App", func() {
 		When("tx is invalid", func() {
 			var res abcitypes.ResponseDeliverTx
 			BeforeEach(func() {
-				tx := types.NewTx(100000, 0, sender.Addr(), sender, "10", "1", 1)
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
+					return fmt.Errorf("validation error")
+				}
+				tx := types.NewBaseTx(0, 0, sender.Addr(), sender, "10", "1", 1)
 				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
 			})
 
@@ -450,7 +453,7 @@ var _ = Describe("App", func() {
 			var res abcitypes.ResponseDeliverTx
 
 			BeforeEach(func() {
-				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
 			})
@@ -458,7 +461,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				params.MaxValTicketsPerBlock = 1
 				app.validatorTickets = append(app.validatorTickets, &ticketInfo{})
-				tx := types.NewTx(types.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := types.NewBaseTx(types.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
 			})
 
@@ -471,13 +474,13 @@ var _ = Describe("App", func() {
 
 		When("tx type is TxTypeValidatorTicket and is successfully executed", func() {
 			BeforeEach(func() {
-				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
 			})
 
 			BeforeEach(func() {
-				tx := types.NewTx(types.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := types.NewBaseTx(types.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.Tx.EXPECT().PrepareExec(req, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
@@ -491,13 +494,13 @@ var _ = Describe("App", func() {
 
 		When("tx type is TxTypeStorerTicket and response code=0", func() {
 			BeforeEach(func() {
-				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
 			})
 
 			BeforeEach(func() {
-				tx := types.NewTx(types.TxTypeStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := types.NewBaseTx(types.TxTypeStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.Tx.EXPECT().PrepareExec(req, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
@@ -511,14 +514,14 @@ var _ = Describe("App", func() {
 
 		When("tx type is TxTypeUnbondStorerTicket and response code=0", func() {
 			BeforeEach(func() {
-				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
 			})
 
 			BeforeEach(func() {
-				tx := types.NewTx(types.TxTypeUnbondStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
-				tx.UnbondTicket = &types.UnbondTicket{TicketID: []byte("tid")}
+				tx := types.NewBaseTx(types.TxTypeUnbondStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx.(*types.TxTicketUnbond).TicketHash = "tid"
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.Tx.EXPECT().PrepareExec(req, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
@@ -535,7 +538,7 @@ var _ = Describe("App", func() {
 			var res abcitypes.ResponseDeliverTx
 
 			BeforeEach(func() {
-				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
 			})
@@ -543,11 +546,10 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
 				app.wBlock.Height = 4
-				tx := types.NewBareTx(types.TxTypeEpochSecret)
-				tx.EpochSecret = &types.EpochSecret{}
-				tx.EpochSecret.Secret = util.RandBytes(64)
-				tx.EpochSecret.PreviousSecret = util.RandBytes(64)
-				tx.EpochSecret.SecretRound = 18
+				tx := types.NewBareTxEpochSecret()
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				tx.SecretRound = 18
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				res = app.DeliverTx(req)
 			})
@@ -560,20 +562,19 @@ var _ = Describe("App", func() {
 
 		When("tx type TxTypeEpochSecret has been seen/cached", func() {
 			var res abcitypes.ResponseDeliverTx
-			var tx *types.Transaction
+			var tx types.BaseTx
 
 			BeforeEach(func() {
-				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
 			})
 
 			BeforeEach(func() {
-				tx = types.NewBareTx(types.TxTypeEpochSecret)
-				tx.EpochSecret = &types.EpochSecret{}
-				tx.EpochSecret.Secret = util.RandBytes(64)
-				tx.EpochSecret.PreviousSecret = util.RandBytes(64)
-				tx.EpochSecret.SecretRound = 18
+				tx = types.NewBareTxEpochSecret()
+				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
+				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
+				tx.(*types.TxEpochSecret).SecretRound = 18
 			})
 
 			BeforeEach(func() {
@@ -592,20 +593,19 @@ var _ = Describe("App", func() {
 
 		When("tx type TxTypeEpochSecret is successfully executed", func() {
 			var res abcitypes.ResponseDeliverTx
-			var tx *types.Transaction
+			var tx types.BaseTx
 
 			BeforeEach(func() {
-				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
 			})
 
 			BeforeEach(func() {
-				tx = types.NewBareTx(types.TxTypeEpochSecret)
-				tx.EpochSecret = &types.EpochSecret{}
-				tx.EpochSecret.Secret = util.RandBytes(64)
-				tx.EpochSecret.PreviousSecret = util.RandBytes(64)
-				tx.EpochSecret.SecretRound = 18
+				tx = types.NewBareTxEpochSecret()
+				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
+				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
+				tx.(*types.TxEpochSecret).SecretRound = 18
 			})
 
 			BeforeEach(func() {
@@ -629,20 +629,19 @@ var _ = Describe("App", func() {
 
 		When("tx type TxTypeEpochSecret but it is stale", func() {
 			var res abcitypes.ResponseDeliverTx
-			var tx *types.Transaction
+			var tx types.BaseTx
 
 			BeforeEach(func() {
-				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
 			})
 
 			BeforeEach(func() {
-				tx = types.NewBareTx(types.TxTypeEpochSecret)
-				tx.EpochSecret = &types.EpochSecret{}
-				tx.EpochSecret.Secret = util.RandBytes(64)
-				tx.EpochSecret.PreviousSecret = util.RandBytes(64)
-				tx.EpochSecret.SecretRound = 18
+				tx = types.NewBareTxEpochSecret()
+				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
+				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
+				tx.(*types.TxEpochSecret).SecretRound = 18
 			})
 
 			BeforeEach(func() {
@@ -672,20 +671,19 @@ var _ = Describe("App", func() {
 
 		When("tx type TxTypeEpochSecret but it has an early, unexpected round", func() {
 			var res abcitypes.ResponseDeliverTx
-			var tx *types.Transaction
+			var tx types.BaseTx
 
 			BeforeEach(func() {
-				app.validateTx = func(tx *types.Transaction, i int, logic types.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
 			})
 
 			BeforeEach(func() {
-				tx = types.NewBareTx(types.TxTypeEpochSecret)
-				tx.EpochSecret = &types.EpochSecret{}
-				tx.EpochSecret.Secret = util.RandBytes(64)
-				tx.EpochSecret.PreviousSecret = util.RandBytes(64)
-				tx.EpochSecret.SecretRound = 18
+				tx = types.NewBareTxEpochSecret()
+				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
+				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
+				tx.(*types.TxEpochSecret).SecretRound = 18
 			})
 
 			BeforeEach(func() {
@@ -717,15 +715,14 @@ var _ = Describe("App", func() {
 	Describe(".Commit", func() {
 
 		When("epoch secret tx is set", func() {
-			var tx *types.Transaction
+			var tx types.BaseTx
 
 			When("when unable to save epoch secret", func() {
 				BeforeEach(func() {
-					tx = types.NewBareTx(types.TxTypeEpochSecret)
-					tx.EpochSecret = &types.EpochSecret{}
-					tx.EpochSecret.Secret = util.RandBytes(64)
-					tx.EpochSecret.PreviousSecret = util.RandBytes(64)
-					tx.EpochSecret.SecretRound = 18
+					tx = types.NewBareTxEpochSecret()
+					tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
+					tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
+					tx.(*types.TxEpochSecret).SecretRound = 18
 					app.epochSecretTx = tx
 				})
 
@@ -745,14 +742,13 @@ var _ = Describe("App", func() {
 		})
 
 		When("error occurred when saving latest block info", func() {
-			var tx *types.Transaction
+			var tx types.BaseTx
 
 			BeforeEach(func() {
-				tx = types.NewBareTx(types.TxTypeEpochSecret)
-				tx.EpochSecret = &types.EpochSecret{}
-				tx.EpochSecret.Secret = util.RandBytes(64)
-				tx.EpochSecret.PreviousSecret = util.RandBytes(64)
-				tx.EpochSecret.SecretRound = 18
+				tx = types.NewBareTxEpochSecret()
+				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
+				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
+				tx.(*types.TxEpochSecret).SecretRound = 18
 				app.epochSecretTx = tx
 			})
 
@@ -790,7 +786,7 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("error occurred when trying to save un-indexed tx", func() {
+		When("error occurred when trying to save non-indexed tx", func() {
 
 			BeforeEach(func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
@@ -800,7 +796,7 @@ var _ = Describe("App", func() {
 				mockLogic.AtomicLogic.EXPECT().Discard().Return()
 				mockLogic.AtomicLogic.EXPECT().TxKeeper().Return(mockLogic.TxKeeper).AnyTimes()
 				app.logic = mockLogic.AtomicLogic
-				app.unIndexedTxs = append(app.unIndexedTxs, types.NewBareTx(0))
+				app.unIndexedTxs = append(app.unIndexedTxs, types.NewBareTxCoinTransfer())
 			})
 
 			It("should panic", func() {

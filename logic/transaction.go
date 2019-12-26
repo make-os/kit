@@ -20,7 +20,7 @@ type Transaction struct {
 func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx, chainHeight uint64) abcitypes.ResponseDeliverTx {
 
 	// Decode tx bytes to types.Transaction
-	tx, err := types.NewTxFromBytes(req.Tx)
+	tx, err := types.DecodeTx(req.Tx)
 	if err != nil {
 		return abcitypes.ResponseDeliverTx{
 			Code: types.ErrCodeFailedDecode,
@@ -51,25 +51,38 @@ func (t *Transaction) PrepareExec(req abcitypes.RequestDeliverTx, chainHeight ui
 // It returns error if the transaction is unknown.
 // tx: The transaction to be processed
 // chainHeight: The height of the block chain
-func (t *Transaction) Exec(tx *types.Transaction, chainHeight uint64) error {
-	spk := tx.SenderPubKey
-	switch tx.Type {
-	case types.TxTypeCoinTransfer:
-		return t.execCoinTransfer(spk, tx.To, tx.Value, tx.Fee, chainHeight)
-	case types.TxTypeValidatorTicket:
-		return t.execValidatorStake(spk, tx.Value, tx.Fee, chainHeight)
-	case types.TxTypeStorerTicket:
-		return t.execStorerStake(spk, tx.Value, tx.Fee, chainHeight)
-	case types.TxTypeSetDelegatorCommission:
-		return t.execSetDelegatorCommission(spk, tx.Value, tx.Fee, chainHeight)
-	case types.TxTypeUnbondStorerTicket:
-		return t.execUnbond(tx.UnbondTicket.TicketID, spk, tx.Fee, chainHeight)
-	case types.TxTypeRepoCreate:
-		return t.execRepoCreate(spk, tx.RepoCreate.Name, tx.Fee, chainHeight)
-	case types.TxTypeAddGPGPubKey:
-		return t.execAddGPGKey(tx.GetGPGPublicKey(), spk, tx.Fee, chainHeight)
-	case types.TxTypeEpochSecret:
+func (t *Transaction) Exec(tx types.BaseTx, chainHeight uint64) error {
+	spk := tx.GetSenderPubKey()
+
+	switch o := tx.(type) {
+	case *types.TxCoinTransfer:
+		return t.execCoinTransfer(spk, o.To, o.Value, o.Fee, chainHeight)
+
+	case *types.TxTicketPurchase:
+		switch o.GetType() {
+		case types.TxTypeValidatorTicket:
+			return t.execValidatorStake(spk, o.Value, o.Fee, chainHeight)
+		case types.TxTypeStorerTicket:
+			return t.execStorerStake(spk, o.Value, o.Fee, chainHeight)
+		default:
+			return fmt.Errorf("unknown transaction type")
+		}
+
+	case *types.TxSetDelegateCommission:
+		return t.execSetDelegatorCommission(spk, o.Commission, o.Fee, chainHeight)
+
+	case *types.TxTicketUnbond:
+		return t.execUnbond([]byte(o.TicketHash), spk, o.Fee, chainHeight)
+
+	case *types.TxRepoCreate:
+		return t.execRepoCreate(spk, o.Name, o.Fee, chainHeight)
+
+	case *types.TxAddGPGPubKey:
+		return t.execAddGPGKey(o.PublicKey, spk, o.Fee, chainHeight)
+
+	case *types.TxEpochSecret:
 		return nil
+
 	default:
 		return fmt.Errorf("unknown transaction type")
 	}

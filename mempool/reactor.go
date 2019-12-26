@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/tendermint/tendermint/abci/types"
-
 	"github.com/makeos/mosdef/config"
 
 	"github.com/makeos/mosdef/util/cache"
@@ -15,6 +13,7 @@ import (
 
 	t "github.com/makeos/mosdef/types"
 
+	"github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/p2p"
 )
@@ -87,7 +86,7 @@ func (r *Reactor) RemovePeer(peer p2p.Peer, reason interface{}) {}
 // It adds any received transactions to the mempool.
 func (r *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 
-	tx, err := t.NewTxFromBytes(msgBytes)
+	tx, err := t.DecodeTx(msgBytes)
 	if err != nil {
 		r.log.Error("Failed to decode received transaction", "Err", err)
 		return
@@ -117,9 +116,9 @@ func (r *Reactor) GetPoolSize() *PoolSizeInfo {
 
 // GetTop returns the top n transactions in the pool.
 // It will return all transactions if n is zero or negative.
-func (r *Reactor) GetTop(n int) []t.Tx {
-	var txs []t.Tx
-	r.mempool.pool.Find(func(tx t.Tx) bool {
+func (r *Reactor) GetTop(n int) []t.BaseTx {
+	var txs []t.BaseTx
+	r.mempool.pool.Find(func(tx t.BaseTx) bool {
 		txs = append(txs, tx)
 		if n > 0 && len(txs) == n {
 			return true
@@ -130,7 +129,7 @@ func (r *Reactor) GetTop(n int) []t.Tx {
 }
 
 // AddTx adds a transaction to the tx pool and broadcasts it.
-func (r *Reactor) AddTx(tx t.Tx) (hash util.Hash, err error) {
+func (r *Reactor) AddTx(tx t.BaseTx) (hash util.Hash, err error) {
 
 	var errCh = make(chan error, 1)
 
@@ -151,7 +150,7 @@ func (r *Reactor) AddTx(tx t.Tx) (hash util.Hash, err error) {
 // broadcastTx sends a valid transaction to all known peers.
 // It will not resend the transaction to peers that have previously
 // sent the same transaction
-func (r *Reactor) broadcastTx(tx t.Tx) {
+func (r *Reactor) broadcastTx(tx t.BaseTx) {
 	txHash := tx.GetHash().HexStr()
 	txBytes := tx.Bytes()
 	for _, peer := range r.Switch.Peers().List() {

@@ -55,7 +55,7 @@ var _ = Describe("Repo", func() {
 	Describe(".execRepoCreate", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
-		var spk util.String
+		var spk string
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
@@ -67,14 +67,14 @@ var _ = Describe("Repo", func() {
 
 		When("successful", func() {
 			BeforeEach(func() {
-				spk = util.String(sender.PubKey().Base58())
+				spk = sender.PubKey().Base58()
 				err = txLogic.execRepoCreate(spk, "repo", "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
 			Specify("that the repo was added to the tree", func() {
 				repo := txLogic.logic.RepoKeeper().GetRepo("repo")
-				Expect(repo.IsEmpty()).To(BeFalse())
+				Expect(repo.IsNil()).To(BeFalse())
 				Expect(repo.CreatorAddress).To(Equal(sender.Addr()))
 			})
 

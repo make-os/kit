@@ -2,10 +2,9 @@ package jsmodules
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/crypto"
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/makeos/mosdef/util"
 
@@ -243,35 +242,42 @@ func (m *AccountModule) getPrivateValidator(includePrivKey ...bool) interface{} 
 }
 
 // setCommission sets the delegator commission for an account
-func (m *AccountModule) setCommission(txObj map[string]interface{},
+// params {
+// 		nonce: number,
+//		fee: string,
+//		commission: float
+//		timestamp: number
+// }
+// options: key
+func (m *AccountModule) setCommission(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
-	tx, key := processTxArgs(txObj, options...)
-	tx.Type = types.TxTypeSetDelegatorCommission
 
-	// Set tx public key
-	pk, _ := crypto.PrivKeyFromBase58(key)
-	tx.SetSenderPubKey(util.String(crypto.NewKeyFromPrivKey(pk).PubKey().Base58()))
+	// Decode parameters into a transaction object
+	var tx = types.NewBareTxSetDelegateCommission()
+	mapstructure.Decode(params, tx)
 
-	// Set timestamp if not already set
-	if tx.Timestamp == 0 {
-		tx.Timestamp = time.Now().Unix()
+	if nonce, ok := params["nonce"]; ok {
+		defer castPanic("nonce")
+		tx.Nonce = uint64(nonce.(int64))
 	}
 
-	// Set nonce if nonce is not provided
-	if tx.Nonce == 0 {
-		nonce, err := m.service.GetNonce(tx.GetFrom())
-		if err != nil {
-			panic("failed to get sender's nonce")
-		}
-		tx.Nonce = nonce + 1
+	if fee, ok := params["fee"]; ok {
+		defer castPanic("fee")
+		tx.Fee = util.String(fee.(string))
 	}
 
-	// Sign the tx
-	tx.Sig, err = tx.Sign(key)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to sign transaction"))
+	if commission, ok := params["commission"]; ok {
+		defer castPanic("commission")
+		tx.Commission = util.String(commission.(string))
 	}
+
+	if timestamp, ok := params["timestamp"]; ok {
+		defer castPanic("timestamp")
+		tx.Timestamp = timestamp.(int64)
+	}
+
+	setCommonTxFields(tx, m.service, options...)
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)

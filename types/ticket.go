@@ -32,7 +32,7 @@ var EmptyQueryOptions = QueryOptions{}
 type TicketManager interface {
 
 	// Index adds a ticket (and child tickets) to the ticket index.
-	Index(tx *Transaction, blockHeight uint64, txIndex int) error
+	Index(tx BaseTx, blockHeight uint64, txIndex int) error
 
 	// Remove deletes a ticket by its hash
 	Remove(hash string) error

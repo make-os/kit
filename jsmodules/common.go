@@ -2,91 +2,19 @@ package jsmodules
 
 import (
 	"fmt"
-	"time"
-
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
-	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
+	"strings"
 )
 
-func simpleTx(
-	service types.Service,
-	txType int,
-	txObj map[string]interface{}, options ...interface{}) interface{} {
+// type castPanick
 
-	var err error
-	tx, key := processTxArgs(txObj, options...)
-	tx.Type = txType
-
-	// For TxTypeUnbondStorerTicket, Set ticket ID
-	if ticketID := txObj["ticketID"]; tx.Type == types.TxTypeUnbondStorerTicket &&
-		ticketID != nil && ticketID.(string) != "" {
-		tx.UnbondTicket = &types.UnbondTicket{
-			TicketID: []byte(ticketID.(string)),
+func castPanic(field string) {
+	if err := recover(); err != nil {
+		if strings.HasPrefix(err.(error).Error(), "interface conversion") {
+			msg := fmt.Sprintf("field '%s' has invalid value type: %s", field, err)
+			msg = strings.ReplaceAll(msg, "interface conversion: interface {} is", "has")
+			msg = strings.ReplaceAll(msg, "not", "want")
+			panic(fmt.Errorf(msg))
 		}
+		panic(err)
 	}
-
-	// Set tx public key
-	pk, _ := crypto.PrivKeyFromBase58(key)
-	tx.SetSenderPubKey(util.String(crypto.NewKeyFromPrivKey(pk).PubKey().Base58()))
-
-	// Set timestamp if not already set
-	if tx.Timestamp == 0 {
-		tx.Timestamp = time.Now().Unix()
-	}
-
-	// Set nonce if nonce is not provided
-	if tx.Nonce == 0 {
-		nonce, err := service.GetNonce(tx.GetFrom())
-		if err != nil {
-			panic(errors.Wrap(err, "failed to get sender's nonce"))
-		}
-		tx.Nonce = nonce + 1
-	}
-
-	// Sign the tx
-	tx.Sig, err = tx.Sign(key)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to sign transaction"))
-	}
-
-	// Process the transaction
-	hash, err := service.SendTx(tx)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
-	}
-
-	return util.EncodeForJS(map[string]interface{}{
-		"hash": hash,
-	})
-}
-
-func processTxArgs(txObj map[string]interface{}, options ...interface{}) (*types.Transaction, string) {
-	var err error
-
-	// Decode parameters into a transaction object
-	var tx = types.NewBareTx(types.TxTypeCoinTransfer)
-	if err = mapstructure.Decode(txObj, tx); err != nil {
-		panic(errors.Wrap(err, types.ErrArgDecode("types.Transaction", 0).Error()))
-	}
-
-	// - Expect options[0] to be the private key (base58 encoded)
-	// - options[0] must be a string
-	// - options[0] must be a valid key
-	var key string
-	var ok bool
-	if len(options) > 0 {
-		key, ok = options[0].(string)
-		if !ok {
-			panic(types.ErrArgDecode("string", 1))
-		} else if err := crypto.IsValidPrivKey(key); err != nil {
-			panic(errors.Wrap(err, types.ErrInvalidPrivKey.Error()))
-		}
-	} else {
-		panic(fmt.Errorf("key is required"))
-	}
-
-	return tx, key
 }

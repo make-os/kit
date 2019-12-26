@@ -73,7 +73,7 @@ var _ = Describe("GPG", func() {
 
 			BeforeEach(func() {
 				gpgPubKey = string(getTestFile("gpgpubkey.pub"))
-				senderPubKey := util.String(sender.PubKey().Base58())
+				senderPubKey := sender.PubKey().Base58()
 				err = txLogic.execAddGPGKey(gpgPubKey, senderPubKey, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
@@ -82,7 +82,7 @@ var _ = Describe("GPG", func() {
 				entity, _ := crypto.PGPEntityFromPubKey(gpgPubKey)
 				pkID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				gpgKey := logic.gpgPubKeyKeeper.GetGPGPubKey(pkID, 0)
-				Expect(gpgKey.IsEmpty()).To(BeFalse())
+				Expect(gpgKey.IsNil()).To(BeFalse())
 				Expect(gpgKey.Address).To(Equal(sender.Addr()))
 				Expect(gpgKey.PubKey).To(Equal(gpgPubKey))
 			})

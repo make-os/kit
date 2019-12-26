@@ -7,6 +7,7 @@ import (
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )
 
@@ -107,13 +108,113 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 }
 
 // buy creates and executes a ticket purchase order
-func (m *TicketModule) buy(txObj map[string]interface{}, options ...interface{}) interface{} {
-	return simpleTx(m.service, types.TxTypeValidatorTicket, txObj, options...)
+//
+// params {
+// 		nonce: number,
+//		fee: string,
+// 		value: string,
+//		delegate: string
+//		timestamp: number
+// }
+// options: key
+func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}) interface{} {
+	var err error
+
+	// Decode parameters into a transaction object
+	var tx = types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
+	mapstructure.Decode(params, tx)
+
+	if nonce, ok := params["nonce"]; ok {
+		defer castPanic("nonce")
+		tx.Nonce = uint64(nonce.(int64))
+	}
+
+	if fee, ok := params["fee"]; ok {
+		defer castPanic("fee")
+		tx.Fee = util.String(fee.(string))
+	}
+
+	if value, ok := params["value"]; ok {
+		defer castPanic("value")
+		tx.Value = util.String(value.(string))
+	}
+
+	if to, ok := params["delegate"]; ok {
+		defer castPanic("delegate")
+		tx.Delegate = to.(string)
+	}
+
+	if timestamp, ok := params["timestamp"]; ok {
+		defer castPanic("timestamp")
+		tx.Timestamp = timestamp.(int64)
+	}
+
+	setCommonTxFields(tx, m.service, options...)
+
+	// Process the transaction
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
+	}
+
+	return util.EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
 }
 
-// storerBuy creates and executes a ticket purchase order
-func (m *TicketModule) storerBuy(txObj map[string]interface{}, options ...interface{}) interface{} {
-	return simpleTx(m.service, types.TxTypeStorerTicket, txObj, options...)
+// buy creates and executes a ticket purchase order
+//
+// params {
+// 		nonce: number,
+//		fee: string,
+// 		value: string,
+//		delegate: string
+//		timestamp: number
+// }
+// options: key
+func (m *TicketModule) storerBuy(params map[string]interface{}, options ...interface{}) interface{} {
+	var err error
+
+	// Decode parameters into a transaction object
+	var tx = types.NewBareTxTicketPurchase(types.TxTypeStorerTicket)
+	mapstructure.Decode(params, tx)
+
+	if nonce, ok := params["nonce"]; ok {
+		defer castPanic("nonce")
+		tx.Nonce = uint64(nonce.(int64))
+	}
+
+	if fee, ok := params["fee"]; ok {
+		defer castPanic("fee")
+		tx.Fee = util.String(fee.(string))
+	}
+
+	if value, ok := params["value"]; ok {
+		defer castPanic("value")
+		tx.Value = util.String(value.(string))
+	}
+
+	if to, ok := params["delegate"]; ok {
+		defer castPanic("delegate")
+		tx.Delegate = to.(string)
+	}
+
+	if timestamp, ok := params["timestamp"]; ok {
+		defer castPanic("timestamp")
+		tx.Timestamp = timestamp.(int64)
+	}
+
+	setCommonTxFields(tx, m.service, options...)
+
+	// Process the transaction
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
+	}
+
+	return util.EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
 }
 
 // findByProposer finds tickets owned by a given public key
@@ -148,8 +249,53 @@ func (m *TicketModule) top(limit int) interface{} {
 	return res
 }
 
-// unbondStorerTicket initiates the release of stake associated with a storer ticket
-func (m *TicketModule) unbondStorerTicket(txObj map[string]interface{},
+// unbondStorerTicket initiates the release of stake associated with a storer
+// ticket
+//
+// params {
+// 		nonce: number,
+//		fee: string,
+//		hash: string    // ticket hash
+//		timestamp: number
+// }
+// options: key
+func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 	options ...interface{}) interface{} {
-	return simpleTx(m.service, types.TxTypeUnbondStorerTicket, txObj, options...)
+	var err error
+
+	// Decode parameters into a transaction object
+	var tx = types.NewBareTxTicketUnbond(types.TxTypeUnbondStorerTicket)
+	mapstructure.Decode(params, tx)
+
+	if nonce, ok := params["nonce"]; ok {
+		defer castPanic("nonce")
+		tx.Nonce = uint64(nonce.(int64))
+	}
+
+	if fee, ok := params["fee"]; ok {
+		defer castPanic("fee")
+		tx.Fee = util.String(fee.(string))
+	}
+
+	if ticketHash, ok := params["hash"]; ok {
+		defer castPanic("hash")
+		tx.TicketHash = ticketHash.(string)
+	}
+
+	if timestamp, ok := params["timestamp"]; ok {
+		defer castPanic("timestamp")
+		tx.Timestamp = timestamp.(int64)
+	}
+
+	setCommonTxFields(tx, m.service, options...)
+
+	// Process the transaction
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
+	}
+
+	return util.EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
 }

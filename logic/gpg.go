@@ -20,12 +20,12 @@ import (
 // - Sender's public key must be valid public key
 // - The gpg public key must be valid
 func (t *Transaction) execAddGPGKey(
-	gpgPublicKey string,
-	senderPubKey util.String,
+	gpgPublicKey,
+	senderPubKey string,
 	fee util.String,
 	chainHeight uint64) error {
 
-	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
+	spk, _ := crypto.PubKeyFromBase58(senderPubKey)
 	acctKeeper := t.logic.AccountKeeper()
 
 	// Create a new GPGPubKey

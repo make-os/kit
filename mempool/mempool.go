@@ -49,7 +49,7 @@ type Mempool struct {
 
 	// epochSecretGetter is a callback that is used to fetch
 	// an epoch secret tx.
-	epochSecretGetter func() (t.Tx, error)
+	epochSecretGetter func() (t.BaseTx, error)
 
 	log     logger.Logger
 	metrics *mempool.Metrics
@@ -66,7 +66,7 @@ func NewMempool(cfg *config.AppConfig) *Mempool {
 
 // SetEpochSecretGetter sets the callback function
 // that returns an epoch secret transaction
-func (mp *Mempool) SetEpochSecretGetter(cb func() (t.Tx, error)) {
+func (mp *Mempool) SetEpochSecretGetter(cb func() (t.BaseTx, error)) {
 	mp.epochSecretGetter = cb
 }
 
@@ -153,7 +153,7 @@ func (mp *Mempool) addTx(bs []byte, res *abci.Response) {
 	switch r := res.Value.(type) {
 	case *abci.Response_CheckTx:
 
-		tx, _ := t.NewTxFromBytes(bs)
+		tx, _ := t.DecodeTx(bs)
 
 		// At this point, the transaction failed the ABCI check
 		if r.CheckTx.Code != abci.CodeTypeOK {
@@ -202,7 +202,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 	var totalBytes int64
 	txs := make([]types.Tx, 0, mp.pool.Size())
 	numValTicketTxReaped := 0
-	ignoredTx := []t.Tx{}
+	ignoredTx := []t.BaseTx{}
 
 	// Get an epoch secret and add it as the first reaped tx.
 	// Exit immediately when we are unable to obtain drand random value.
@@ -293,7 +293,7 @@ func (mp *Mempool) Update(blockHeight int64, txs types.Txs,
 
 	// Remove the transactions
 	for _, txBs := range txs {
-		tx, _ := t.NewTxFromBytes(txBs)
+		tx, _ := t.DecodeTx(txBs)
 		mp.pool.Remove(tx)
 		mp.cfg.G().Bus.Emit(EvtMempoolTxRemoved, []interface{}{nil, tx})
 	}

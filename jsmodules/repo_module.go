@@ -2,12 +2,11 @@ package jsmodules
 
 import (
 	"fmt"
-	"time"
 
 	prompt "github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )
@@ -76,50 +75,47 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 }
 
 // create sends a TxTypeRepoCreate transaction to create a git repository
-// params: The parameters required to create the repository
-// options: Additional call options.
-// options[0]: Private key for signing the transaction
+// params {
+// 		nonce: number,
+//		fee: string,
+// 		value: string,
+//		name: string
+//		timestamp: number
+// }
+// options: key
 func (m *RepoModule) create(params map[string]interface{}, options ...interface{}) interface{} {
-
 	var err error
 
-	// Name is required
-	name, ok := params["name"]
-	if !ok {
-		panic(fmt.Errorf("name is required"))
-	} else if _, ok = name.(string); !ok {
-		panic(fmt.Errorf("'name' value must be a string"))
+	// Decode parameters into a transaction object
+	var tx = types.NewBareTxRepoCreate()
+	mapstructure.Decode(params, tx)
+
+	if nonce, ok := params["nonce"]; ok {
+		defer castPanic("nonce")
+		tx.Nonce = uint64(nonce.(int64))
 	}
 
-	tx, key := processTxArgs(params, options...)
-	tx.Type = types.TxTypeRepoCreate
-	tx.RepoCreate = &types.RepoCreate{
-		Name: name.(string),
+	if fee, ok := params["fee"]; ok {
+		defer castPanic("fee")
+		tx.Fee = util.String(fee.(string))
 	}
 
-	// Set tx public key
-	pk, _ := crypto.PrivKeyFromBase58(key)
-	tx.SetSenderPubKey(util.String(crypto.NewKeyFromPrivKey(pk).PubKey().Base58()))
-
-	// Set timestamp if not already set
-	if tx.Timestamp == 0 {
-		tx.Timestamp = time.Now().Unix()
+	if value, ok := params["value"]; ok {
+		defer castPanic("value")
+		tx.Value = util.String(value.(string))
 	}
 
-	// Set nonce if nonce is not provided
-	if tx.Nonce == 0 {
-		nonce, err := m.service.GetNonce(tx.GetFrom())
-		if err != nil {
-			panic(errors.Wrap(err, "failed to get sender's nonce"))
-		}
-		tx.Nonce = nonce + 1
+	if repoName, ok := params["name"]; ok {
+		defer castPanic("name")
+		tx.Name = repoName.(string)
 	}
 
-	// Sign the tx
-	tx.Sig, err = tx.Sign(key)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to sign transaction"))
+	if timestamp, ok := params["timestamp"]; ok {
+		defer castPanic("timestamp")
+		tx.Timestamp = timestamp.(int64)
 	}
+
+	setCommonTxFields(tx, m.service, options...)
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)

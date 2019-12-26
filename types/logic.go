@@ -74,10 +74,10 @@ type TxKeeper interface {
 
 	// Index takes a transaction and stores it.
 	// It uses the tx hash as the index key
-	Index(tx Tx) error
+	Index(tx BaseTx) error
 
 	// GetTx gets a transaction by its hash
-	GetTx(hash []byte) (Tx, error)
+	GetTx(hash []byte) (BaseTx, error)
 }
 
 // AccountKeeper describes an interface for accessing account data
@@ -264,7 +264,7 @@ type TxLogic interface {
 	// It returns error if the transaction is unknown.
 	// tx: The transaction to be processed
 	// chainHeight: The height of the block chain
-	Exec(tx *Transaction, chainHeight uint64) error
+	Exec(tx BaseTx, chainHeight uint64) error
 
 	// CanExecCoinTransfer checks whether the sender can transfer the value
 	// and fee of the transaction based on the current state of their
@@ -295,7 +295,7 @@ type SysLogic interface {
 
 	// GetCurretEpochSecretTx returns an TxTypeEpochSecret transaction
 	// only if the next block is the last block in the current epoch.
-	GetCurretEpochSecretTx() (Tx, error)
+	GetCurretEpochSecretTx() (BaseTx, error)
 
 	// MakeSecret generates a 64 bytes secret for validator
 	// selection by xoring the last 32 valid epoch secrets.

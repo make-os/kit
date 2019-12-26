@@ -18,6 +18,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+type unknownTxType struct {
+	*types.TxCoinTransfer
+}
+
 var _ = Describe("Transaction", func() {
 	var appDB, stateTreeDB storage.Engine
 	var err error
@@ -60,7 +64,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("when tx is invalid", func() {
 			It("should return err='tx failed validation...'", func() {
-				tx := types.NewBareTx(1)
+				tx := types.NewBareTxCoinTransfer()
 				tx.Sig = []byte("sig")
 				req := abcitypes.RequestDeliverTx(abcitypes.RequestDeliverTx{
 					Tx: tx.Bytes(),
@@ -75,7 +79,16 @@ var _ = Describe("Transaction", func() {
 	Describe(".Exec", func() {
 		Context("with unknown transaction type", func() {
 			It("should return err", func() {
-				tx := &types.Transaction{Type: 100}
+				tx := &unknownTxType{TxCoinTransfer: types.NewBareTxCoinTransfer()}
+				err := logic.Tx().Exec(tx, 1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("unknown transaction type"))
+			})
+		})
+
+		Context("with unknown ticket purchase tx type", func() {
+			It("should return err", func() {
+				tx := types.NewBareTxTicketPurchase(1000)
 				err := logic.Tx().Exec(tx, 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("unknown transaction type"))

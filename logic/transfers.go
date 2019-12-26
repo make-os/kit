@@ -21,13 +21,13 @@ import (
 //
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) execCoinTransfer(
-	senderPubKey,
+	senderPubKey string,
 	recipientAddr,
 	value util.String,
 	fee util.String,
 	chainHeight uint64) error {
 
-	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
+	spk, _ := crypto.PubKeyFromBase58(senderPubKey)
 	acctKeeper := t.logic.AccountKeeper()
 
 	// Get sender account and balance

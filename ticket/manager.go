@@ -31,23 +31,25 @@ func NewManager(db storage.Tx, cfg *config.AppConfig, logic types.Logic) *Manage
 }
 
 // Index takes a tx and creates a ticket out of it
-func (m *Manager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) error {
+func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error {
+
+	t := tx.(*types.TxTicketPurchase)
 
 	ticket := &types.Ticket{
-		Type:           tx.Type,
+		Type:           tx.GetType(),
 		Height:         blockHeight,
 		Index:          txIndex,
-		Value:          tx.Value,
-		Hash:           tx.GetHash().HexStr(),
-		ProposerPubKey: tx.SenderPubKey.String(),
+		Value:          t.Value,
+		Hash:           t.GetHash().HexStr(),
+		ProposerPubKey: t.GetSenderPubKey(),
 	}
 
 	// By default the proposer is the creator of the transaction.
-	// However, if the transaction `to` field is set, the sender
-	// is delegating the ticket to the public key set in `to`
-	if !tx.To.Empty() {
-		ticket.ProposerPubKey = tx.To.String()
-		ticket.Delegator = tx.GetFrom().String()
+	// However, if the transaction `delegate` field is set, the sender
+	// is delegating the ticket to the public key set in `delegate`
+	if t.Delegate != "" {
+		ticket.ProposerPubKey = t.Delegate
+		ticket.Delegator = t.GetFrom().String()
 
 		// Since this is a delegated ticket, we need to get the
 		// proposer's commission rate from their account
@@ -56,7 +58,7 @@ func (m *Manager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) 
 		ticket.CommissionRate = proposerAcct.DelegatorCommission
 	}
 
-	if tx.Type == types.TxTypeValidatorTicket {
+	if t.Type == types.TxTypeValidatorTicket {
 		// Set maturity and decay heights
 		ticket.MatureBy = blockHeight + uint64(params.MinTicketMatDur)
 		ticket.DecayBy = ticket.MatureBy + uint64(params.MaxTicketActiveDur)

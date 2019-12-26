@@ -20,13 +20,13 @@ import (
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) execUnbond(
 	ticketID []byte,
-	senderPubKey util.String,
+	senderPubKey string,
 	fee util.String,
 	chainHeight uint64) error {
 
 	// Get sender account
 	acctKeeper := t.logic.AccountKeeper()
-	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
+	spk, _ := crypto.PubKeyFromBase58(senderPubKey)
 	senderAcct := acctKeeper.GetAccount(spk.Addr(), int64(chainHeight))
 	senderBal := senderAcct.Balance.Decimal()
 
@@ -65,7 +65,7 @@ func (t *Transaction) execUnbond(
 //
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) execStorerStake(
-	senderPubKey,
+	senderPubKey string,
 	value util.String,
 	fee util.String,
 	chainHeight uint64) error {
@@ -89,7 +89,7 @@ func (t *Transaction) execStorerStake(
 //
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) execValidatorStake(
-	senderPubKey,
+	senderPubKey string,
 	value,
 	fee util.String,
 	chainHeight uint64) error {
@@ -115,11 +115,11 @@ func (t *Transaction) execValidatorStake(
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) addStake(
 	txType int,
-	senderPubKey,
+	senderPubKey string,
 	value,
 	fee util.String,
 	chainHeight uint64) error {
-	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
+	spk, _ := crypto.PubKeyFromBase58(senderPubKey)
 	acctKeeper := t.logic.AccountKeeper()
 
 	// Get sender accounts

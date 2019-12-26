@@ -30,6 +30,7 @@
         "tmmem",
         "tmtypes",
         "unbonding",
+        "unbonds",
         "undecayed",
         "unfinalized"
     ],

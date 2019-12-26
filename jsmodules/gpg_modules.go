@@ -1,16 +1,13 @@
 package jsmodules
 
 import (
-	"crypto/rsa"
 	"fmt"
-	"time"
 
 	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/crypto"
+	"github.com/mitchellh/mapstructure"
+	"github.com/pkg/errors"
 
 	"github.com/makeos/mosdef/util"
-
-	"github.com/pkg/errors"
 
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/makeos/mosdef/types"
@@ -91,50 +88,41 @@ func (m *GPGModule) Configure() []prompt.Suggest {
 }
 
 // addPk adds a GPG public key to an account.
-// params: The parameters required to add the public key
-// options: Additional call options.
-// options[0]: Private key for signing the transaction
+// params {
+// 		nonce: number,
+//		fee: string,
+//		pubKey: string
+//		timestamp: number
+// }
+// options: key
 func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{}) interface{} {
-
 	var err error
 
-	// Public key is required
-	pubKey, ok := params["pubKey"]
-	if !ok {
-		panic(fmt.Errorf("GPG public key is required"))
-	} else if _, ok = pubKey.(string); !ok {
-		panic(fmt.Errorf("'pubKey' value must be a string"))
+	// Decode parameters into a transaction object
+	var tx = types.NewBareTxAddGPGPubKey()
+	mapstructure.Decode(params, tx)
+
+	if nonce, ok := params["nonce"]; ok {
+		defer castPanic("nonce")
+		tx.Nonce = uint64(nonce.(int64))
 	}
 
-	tx, key := processTxArgs(params, options...)
-	tx.Type = types.TxTypeAddGPGPubKey
-	tx.GPGPubKey = &types.AddGPGPubKey{
-		PublicKey: pubKey.(string),
+	if fee, ok := params["fee"]; ok {
+		defer castPanic("fee")
+		tx.Fee = util.String(fee.(string))
 	}
 
-	// Set tx public key
-	pk, _ := crypto.PrivKeyFromBase58(key)
-	tx.SetSenderPubKey(util.String(crypto.NewKeyFromPrivKey(pk).PubKey().Base58()))
-
-	// Set timestamp if not already set
-	if tx.Timestamp == 0 {
-		tx.Timestamp = time.Now().Unix()
+	if pubKey, ok := params["pubKey"]; ok {
+		defer castPanic("pubKey")
+		tx.PublicKey = pubKey.(string)
 	}
 
-	// Set nonce if nonce is not provided
-	if tx.Nonce == 0 {
-		nonce, err := m.service.GetNonce(tx.GetFrom())
-		if err != nil {
-			panic(errors.Wrap(err, "failed to find sender's nonce"))
-		}
-		tx.Nonce = nonce + 1
+	if timestamp, ok := params["timestamp"]; ok {
+		defer castPanic("timestamp")
+		tx.Timestamp = timestamp.(int64)
 	}
 
-	// Sign the tx
-	tx.Sig, err = tx.Sign(key)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to sign transaction"))
-	}
+	setCommonTxFields(tx, m.service, options...)
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
@@ -142,12 +130,8 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
-	entity, _ := crypto.PGPEntityFromPubKey(pubKey.(string))
-	pkID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-
 	return util.EncodeForJS(map[string]interface{}{
 		"hash": hash,
-		"pkID": pkID,
 	})
 }
 

@@ -4,10 +4,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )
@@ -87,11 +90,111 @@ func (m *TxModule) Configure() []prompt.Suggest {
 	return suggestions
 }
 
+func checkAndGetKey(options ...interface{}) string {
+	// - Expect options[0] to be the private key (base58 encoded)
+	// - options[0] must be a string
+	// - options[0] must be a valid key
+	var key string
+	var ok bool
+	if len(options) > 0 {
+		key, ok = options[0].(string)
+		if !ok {
+			panic(types.ErrArgDecode("string", 1))
+		} else if err := crypto.IsValidPrivKey(key); err != nil {
+			panic(errors.Wrap(err, types.ErrInvalidPrivKey.Error()))
+		}
+	} else {
+		panic(fmt.Errorf("key is required"))
+	}
+
+	return key
+}
+
+func setCommonTxFields(tx types.BaseTx, service types.Service, options ...interface{}) {
+	key := checkAndGetKey(options...)
+
+	// Set tx public key
+	pk, _ := crypto.PrivKeyFromBase58(key)
+	tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(pk).PubKey().Base58())
+
+	// Set timestamp if not already set
+	if tx.GetTimestamp() == 0 {
+		tx.SetTimestamp(time.Now().Unix())
+	}
+
+	// Set nonce if nonce is not provided
+	if tx.GetNonce() == 0 {
+		nonce, err := service.GetNonce(tx.GetFrom())
+		if err != nil {
+			panic(errors.Wrap(err, "failed to get sender's nonce"))
+		}
+		tx.SetNonce(nonce + 1)
+	}
+
+	// Sign the tx
+	sig, err := tx.Sign(key)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to sign transaction"))
+	}
+	tx.SetSignature(sig)
+}
+
 // sendTx sends the native coin from a source account
 // to a destination account. It returns an object containing
 // the hash of the transaction. It panics when an error occurs.
-func (m *TxModule) sendTx(txObj map[string]interface{}, options ...interface{}) interface{} {
-	return simpleTx(m.service, types.TxTypeCoinTransfer, txObj, options...)
+//
+// params {
+// 		nonce: number,
+//		fee: string,
+// 		value: string,
+//		to: string
+//		timestamp: number
+// }
+// options: key
+func (m *TxModule) sendTx(params map[string]interface{}, options ...interface{}) interface{} {
+
+	var err error
+
+	// Decode parameters into a transaction object
+	var tx = types.NewBareTxCoinTransfer()
+	mapstructure.Decode(params, tx)
+
+	if nonce, ok := params["nonce"]; ok {
+		defer castPanic("nonce")
+		tx.Nonce = uint64(nonce.(int64))
+	}
+
+	if fee, ok := params["fee"]; ok {
+		defer castPanic("fee")
+		tx.Fee = util.String(fee.(string))
+	}
+
+	if value, ok := params["value"]; ok {
+		defer castPanic("value")
+		tx.Value = util.String(value.(string))
+	}
+
+	if to, ok := params["to"]; ok {
+		defer castPanic("to")
+		tx.To = util.String(to.(string))
+	}
+
+	if timestamp, ok := params["timestamp"]; ok {
+		defer castPanic("timestamp")
+		tx.Timestamp = timestamp.(int64)
+	}
+
+	setCommonTxFields(tx, m.service, options...)
+
+	// Process the transaction
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
+	}
+
+	return util.EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
 }
 
 // get fetches a tx by its hash

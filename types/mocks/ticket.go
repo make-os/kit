@@ -34,7 +34,7 @@ func (m *MockTicketManager) EXPECT() *MockTicketManagerMockRecorder {
 }
 
 // Index mocks base method
-func (m *MockTicketManager) Index(tx *types.Transaction, blockHeight uint64, txIndex int) error {
+func (m *MockTicketManager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Index", tx, blockHeight, txIndex)
 	ret0, _ := ret[0].(error)

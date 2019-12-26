@@ -15,12 +15,12 @@ import (
 //
 // CONTRACT: Creator's public key must be valid
 func (t *Transaction) execRepoCreate(
-	creatorPubKey util.String,
+	creatorPubKey string,
 	name string,
 	fee util.String,
 	chainHeight uint64) error {
 
-	spk, _ := crypto.PubKeyFromBase58(creatorPubKey.String())
+	spk, _ := crypto.PubKeyFromBase58(creatorPubKey)
 
 	// Create the repo object
 	newRepo := types.BareRepository()

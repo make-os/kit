@@ -23,7 +23,7 @@ func NewTxKeeper(db storage.Tx) *TxKeeper {
 
 // Index takes a transaction and stores it.
 // It uses the tx hash as the index key
-func (tk *TxKeeper) Index(tx types.Tx) error {
+func (tk *TxKeeper) Index(tx types.BaseTx) error {
 	rec := storage.NewFromKeyValue(MakeTxKey(tx.GetHash().Bytes()), tx.Bytes())
 	if err := tk.db.Put(rec); err != nil {
 		return errors.Wrap(err, "failed to index tx")
@@ -32,7 +32,7 @@ func (tk *TxKeeper) Index(tx types.Tx) error {
 }
 
 // GetTx gets a transaction by its hash
-func (tk *TxKeeper) GetTx(hash []byte) (types.Tx, error) {
+func (tk *TxKeeper) GetTx(hash []byte) (types.BaseTx, error) {
 	rec, err := tk.db.Get(MakeTxKey(hash))
 	if err != nil {
 		if err != storage.ErrRecordNotFound {
@@ -40,5 +40,5 @@ func (tk *TxKeeper) GetTx(hash []byte) (types.Tx, error) {
 		}
 		return nil, ErrTxNotFound
 	}
-	return types.NewTxFromBytes(rec.Value)
+	return types.DecodeTx(rec.Value)
 }

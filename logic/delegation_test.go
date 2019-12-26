@@ -64,7 +64,7 @@ var _ = Describe("Delegation", func() {
 					Stakes:              types.BareAccountStakes(),
 					DelegatorCommission: 15.4,
 				})
-				spk := util.String(sender.PubKey().Base58())
+				spk := sender.PubKey().Base58()
 				err := txLogic.execSetDelegatorCommission(spk, util.String("23.5"), util.String("2"), 0)
 				Expect(err).To(BeNil())
 				senderAcct = logic.AccountKeeper().GetAccount(sender.Addr())

@@ -28,7 +28,7 @@ import (
 )
 
 type ticketInfo struct {
-	Tx    *types.Transaction
+	Tx    types.BaseTx
 	index int
 }
 
@@ -45,12 +45,12 @@ type App struct {
 	storerTickets             []*ticketInfo
 	unbondStorerRequests      []string
 	ticketMgr                 types.TicketManager
-	epochSecretTx             *types.Transaction
+	epochSecretTx             types.BaseTx
 	isCurrentBlockProposer    bool
 	mature                    bool
 	latestUnsavedValidators   []*types.Validator
 	heightToSaveNewValidators int64
-	unIndexedTxs              []*types.Transaction
+	unIndexedTxs              []types.BaseTx
 	newRepos                  []string
 }
 
@@ -141,12 +141,12 @@ func (a *App) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetOpt
 // be broadcast to other nodes.
 func (a *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 
-	// Decode the transaction in byte form to types.Transaction
-	tx, err := types.NewTxFromBytes(req.Tx)
+	// Decode the transaction in byte form to types.BaseTx
+	tx, err := types.DecodeTx(req.Tx)
 	if err != nil {
 		return abcitypes.ResponseCheckTx{
 			Code: types.ErrCodeTxBadEncode,
-			Log:  "unable to decode to types.Transaction",
+			Log:  "unable to decode to types.BaseTx",
 		}
 	}
 
@@ -194,7 +194,7 @@ func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBegi
 // preExecChecks performs some checks that attempt to spot problems with
 // specific transaction types and possible activate slashing conditions
 // and invalidate the transaction before it ever gets executed.
-func (a *App) preExecChecks(tx *types.Transaction) *abcitypes.ResponseDeliverTx {
+func (a *App) preExecChecks(tx types.BaseTx) *abcitypes.ResponseDeliverTx {
 
 	txType := tx.GetType()
 
@@ -237,7 +237,7 @@ func (a *App) preExecChecks(tx *types.Transaction) *abcitypes.ResponseDeliverTx 
 // from executing a transaction. In here we can activate slashing
 // conditions and invalidate the transaction
 func (a *App) postExecChecks(
-	tx *types.Transaction,
+	tx types.BaseTx,
 	resp abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
 
 	txType := tx.GetType()
@@ -281,9 +281,9 @@ func (a *App) postExecChecks(
 		case types.TxTypeStorerTicket:
 			a.storerTickets = append(a.storerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 		case types.TxTypeUnbondStorerTicket:
-			a.unbondStorerRequests = append(a.unbondStorerRequests, string(tx.UnbondTicket.TicketID))
+			a.unbondStorerRequests = append(a.unbondStorerRequests, string(tx.(*types.TxTicketUnbond).TicketHash))
 		case types.TxTypeRepoCreate:
-			a.newRepos = append(a.newRepos, tx.RepoCreate.Name)
+			a.newRepos = append(a.newRepos, tx.(*types.TxRepoCreate).Name)
 		}
 	}
 
@@ -303,12 +303,12 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	// Increment the tx index
 	a.txIndex++
 
-	// Decode transaction to types.Transaction
-	tx, err := types.NewTxFromBytes(req.Tx)
+	// Decode transaction to types.BaseTx
+	tx, err := types.DecodeTx(req.Tx)
 	if err != nil {
 		return abcitypes.ResponseDeliverTx{
 			Code: types.ErrCodeTxBadEncode,
-			Log:  "unable to decode to types.Transaction",
+			Log:  "unable to decode to types.BaseTx",
 		}
 	}
 
@@ -449,11 +449,11 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	// update the highest known drand round so we are able
 	// to determine in the future what round is superior
 	if estx := a.epochSecretTx; estx != nil {
-		bi.EpochSecret = estx.EpochSecret.Secret
-		bi.EpochPreviousSecret = estx.EpochSecret.PreviousSecret
-		bi.EpochRound = estx.EpochSecret.SecretRound
+		bi.EpochSecret = estx.(*types.TxEpochSecret).Secret
+		bi.EpochPreviousSecret = estx.(*types.TxEpochSecret).PreviousSecret
+		bi.EpochRound = estx.(*types.TxEpochSecret).SecretRound
 		bi.InvalidEpochSecret = estx.IsInvalidated()
-		if err := a.logic.SysKeeper().SetHighestDrandRound(estx.EpochSecret.SecretRound); err != nil {
+		if err := a.logic.SysKeeper().SetHighestDrandRound(estx.(*types.TxEpochSecret).SecretRound); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to save highest drand round"))
 		}
 	} else {
@@ -532,7 +532,7 @@ func (a *App) reset() {
 	a.epochSecretTx = nil
 	a.mature = false
 	a.isCurrentBlockProposer = false
-	a.unIndexedTxs = []*types.Transaction{}
+	a.unIndexedTxs = []types.BaseTx{}
 	a.newRepos = []string{}
 
 	// Only reset heightToSaveNewValidators if the current height is

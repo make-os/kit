@@ -7,6 +7,6 @@ import (
 
 // SendTx sends a types.TxTypeCoinTransfer transaction to the network.
 // CONTRACT: Expects a signed transaction.
-func (s *Service) SendTx(tx *types.Transaction) (util.Hash, error) {
+func (s *Service) SendTx(tx types.BaseTx) (util.Hash, error) {
 	return s.txRec.AddTx(tx)
 }

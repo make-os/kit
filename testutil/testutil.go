@@ -112,6 +112,7 @@ type MockObjects struct {
 	StateTree       *mocks.MockTree
 	Drand           *drandmocks.MockDRander
 	RepoManager     *mocks.MockRepoManager
+	GPGPubKeyKeeper *mocks.MockGPGPubKeyKeeper
 }
 
 // MockLogic returns logic package mocks
@@ -133,6 +134,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.StateTree = mocks.NewMockTree(ctrl)
 	mo.Drand = drandmocks.NewMockDRander(ctrl)
 	mo.RepoManager = mocks.NewMockRepoManager(ctrl)
+	mo.GPGPubKeyKeeper = mocks.NewMockGPGPubKeyKeeper(ctrl)
 
 	mo.Logic.EXPECT().Sys().Return(mo.Sys).MinTimes(0)
 	mo.Logic.EXPECT().Tx().Return(mo.Tx).MinTimes(0)
@@ -145,6 +147,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.Logic.EXPECT().StateTree().Return(mo.StateTree).MinTimes(0)
 	mo.Logic.EXPECT().GetDRand().Return(mo.Drand).MinTimes(0)
 	mo.Logic.EXPECT().GetRepoManager().Return(mo.RepoManager).MinTimes(0)
+	mo.Logic.EXPECT().GPGPubKeyKeeper().Return(mo.GPGPubKeyKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().Sys().Return(mo.Sys).MinTimes(0)
 	mo.AtomicLogic.EXPECT().Tx().Return(mo.Tx).MinTimes(0)
 	mo.AtomicLogic.EXPECT().Validator().Return(mo.Validator).MinTimes(0)
@@ -156,6 +159,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.AtomicLogic.EXPECT().StateTree().Return(mo.StateTree).MinTimes(0)
 	mo.AtomicLogic.EXPECT().GetDRand().Return(mo.Drand).MinTimes(0)
 	mo.AtomicLogic.EXPECT().GetRepoManager().Return(mo.RepoManager).MinTimes(0)
+	mo.AtomicLogic.EXPECT().GPGPubKeyKeeper().Return(mo.GPGPubKeyKeeper).MinTimes(0)
 
 	return mo
 }

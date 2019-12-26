@@ -5,8 +5,6 @@
 package mocks
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	crypto "github.com/makeos/mosdef/crypto"
 	rand "github.com/makeos/mosdef/crypto/rand"
@@ -14,6 +12,7 @@ import (
 	types "github.com/makeos/mosdef/types"
 	util "github.com/makeos/mosdef/util"
 	types0 "github.com/tendermint/tendermint/abci/types"
+	reflect "reflect"
 )
 
 // MockSystemKeeper is a mock of SystemKeeper interface
@@ -195,7 +194,7 @@ func (m *MockTxKeeper) EXPECT() *MockTxKeeperMockRecorder {
 }
 
 // Index mocks base method
-func (m *MockTxKeeper) Index(tx types.Tx) error {
+func (m *MockTxKeeper) Index(tx types.BaseTx) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Index", tx)
 	ret0, _ := ret[0].(error)
@@ -209,10 +208,10 @@ func (mr *MockTxKeeperMockRecorder) Index(tx interface{}) *gomock.Call {
 }
 
 // GetTx mocks base method
-func (m *MockTxKeeper) GetTx(hash []byte) (types.Tx, error) {
+func (m *MockTxKeeper) GetTx(hash []byte) (types.BaseTx, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTx", hash)
-	ret0, _ := ret[0].(types.Tx)
+	ret0, _ := ret[0].(types.BaseTx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1226,7 +1225,7 @@ func (mr *MockTxLogicMockRecorder) PrepareExec(req, chainHeight interface{}) *go
 }
 
 // Exec mocks base method
-func (m *MockTxLogic) Exec(tx *types.Transaction, chainHeight uint64) error {
+func (m *MockTxLogic) Exec(tx types.BaseTx, chainHeight uint64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Exec", tx, chainHeight)
 	ret0, _ := ret[0].(error)
@@ -1320,10 +1319,10 @@ func (mr *MockSysLogicMockRecorder) GetEpoch(curBlockHeight interface{}) *gomock
 }
 
 // GetCurretEpochSecretTx mocks base method
-func (m *MockSysLogic) GetCurretEpochSecretTx() (types.Tx, error) {
+func (m *MockSysLogic) GetCurretEpochSecretTx() (types.BaseTx, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCurretEpochSecretTx")
-	ret0, _ := ret[0].(types.Tx)
+	ret0, _ := ret[0].(types.BaseTx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

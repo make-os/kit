@@ -15,12 +15,12 @@ import (
 //
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) execSetDelegatorCommission(
-	senderPubKey,
+	senderPubKey string,
 	value,
 	fee util.String,
 	chainHeight uint64) error {
 
-	spk, _ := crypto.PubKeyFromBase58(senderPubKey.String())
+	spk, _ := crypto.PubKeyFromBase58(senderPubKey)
 	acctKeeper := t.logic.AccountKeeper()
 
 	// Get sender accounts

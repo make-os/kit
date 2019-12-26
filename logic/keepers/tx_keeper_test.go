@@ -55,7 +55,7 @@ var _ = Describe("TxKeeper", func() {
 			})
 
 			It("should return err='failed to index tx: error'", func() {
-				tx := types.NewBareTx(types.TxTypeCoinTransfer)
+				tx := types.NewBareTxCoinTransfer()
 				err := txKeeper.Index(tx)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to index tx: error"))
@@ -63,7 +63,7 @@ var _ = Describe("TxKeeper", func() {
 		})
 
 		When("index is successful", func() {
-			tx := types.NewBareTx(types.TxTypeCoinTransfer)
+			tx := types.NewBareTxCoinTransfer()
 
 			BeforeEach(func() {
 				err := txKeeper.Index(tx)
@@ -87,7 +87,7 @@ var _ = Describe("TxKeeper", func() {
 			})
 
 			It("should return err='failed to get tx: error'", func() {
-				tx := types.NewBareTx(types.TxTypeCoinTransfer)
+				tx := types.NewBareTxCoinTransfer()
 				_, err := txKeeper.GetTx(tx.GetHash().Bytes())
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to get tx: error"))
@@ -95,7 +95,7 @@ var _ = Describe("TxKeeper", func() {
 		})
 
 		When("tx is found", func() {
-			tx := types.NewBareTx(types.TxTypeCoinTransfer)
+			tx := types.NewBareTxCoinTransfer()
 
 			BeforeEach(func() {
 				err := txKeeper.Index(tx)
