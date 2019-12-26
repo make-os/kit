@@ -11,8 +11,7 @@ import (
 type TxPush struct {
 	*TxCommon `json:"-" mapstructure:"-"`
 	*TxType   `json:"-" msgpack:"-"`
-	PushNote
-	Name string `json:"name" msgpack:"name"`
+	PushNote  PushNote
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -24,7 +23,7 @@ func (tx *TxPush) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.Sig,
 		tx.Timestamp,
 		tx.SenderPubKey,
-		tx.Name)
+		tx.PushNote)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -36,7 +35,7 @@ func (tx *TxPush) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.Sig,
 		&tx.Timestamp,
 		&tx.SenderPubKey,
-		&tx.Name)
+		&tx.PushNote)
 }
 
 // Bytes returns the serialized transaction

@@ -9,7 +9,6 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
-
 var (
 	// TxTypeCoinTransfer represents a tx that moves coin between accounts
 	TxTypeCoinTransfer = 0x0
@@ -36,13 +35,15 @@ var (
 	// TxTypeAddGPGPubKey represents a transaction to add a GPG public key to an
 	// account
 	TxTypeAddGPGPubKey = 0x07
+
+	// TxTypePush represents a transaction that describes a git push operation
+	TxTypePush = 0x08
 )
 
 // Transaction meta keys
 var (
 	TxMetaKeyInvalidated = "invalidated"
 )
-
 
 // TxMeta stores arbitrary, self-contained state information for a transaction
 type TxMeta struct {
