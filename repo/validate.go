@@ -20,7 +20,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-type poolTxChecker func(tx types.PushTx, keepers types.Keepers, dht types.DHT) error
+type poolTxChecker func(tx types.PushNote, keepers types.Keepers, dht types.DHT) error
 
 // validateChange validates a change to a repository
 // repo: The target repository
@@ -269,8 +269,8 @@ func checkCommit(
 	return txLine, nil
 }
 
-// checkPushTxSyntax performs syntactic checks on the fields of a push transaction
-func checkPushTxSyntax(tx *PushTx) error {
+// checkPushNoteSyntax performs syntactic checks on the fields of a push transaction
+func checkPushNoteSyntax(tx *PushNote) error {
 
 	if tx.RepoName == "" {
 		return types.FieldError("repoName", "repo name is required")
@@ -319,7 +319,7 @@ func checkPushTxSyntax(tx *PushTx) error {
 	if tx.Timestamp > time.Now().Unix() {
 		return types.FieldError("timestamp", "timestamp cannot be a future time")
 	} else if time.Now().Sub(time.Unix(tx.Timestamp, 0)).Seconds() >
-		params.MaxPushTxAge.Seconds() {
+		params.MaxPushNoteAge.Seconds() {
 		return types.FieldError("timestamp", "timestamp is too old")
 	}
 
@@ -415,9 +415,9 @@ func checkPushedReference(
 	return nil
 }
 
-// checkPushTxConsistency performs consistency checks against the state of the
+// checkPushNoteConsistency performs consistency checks against the state of the
 // repository as seen by the node
-func checkPushTxConsistency(tx *PushTx, keepers types.Keepers) error {
+func checkPushNoteConsistency(tx *PushNote, keepers types.Keepers) error {
 
 	// 1. Ensure the repository exist
 	repo := keepers.RepoKeeper().GetRepo(tx.GetRepoName())
@@ -446,14 +446,14 @@ func checkPushTxConsistency(tx *PushTx, keepers types.Keepers) error {
 	return nil
 }
 
-// checkPushTx performs validation checks on a push transaction
-func checkPushTx(tx types.PushTx, keepers types.Keepers, dht types.DHT) error {
+// checkPushNote performs validation checks on a push transaction
+func checkPushNote(tx types.PushNote, keepers types.Keepers, dht types.DHT) error {
 
-	if err := checkPushTxSyntax(tx.(*PushTx)); err != nil {
+	if err := checkPushNoteSyntax(tx.(*PushNote)); err != nil {
 		return err
 	}
 
-	if err := checkPushTxConsistency(tx.(*PushTx), keepers); err != nil {
+	if err := checkPushNoteConsistency(tx.(*PushNote), keepers); err != nil {
 		return err
 	}
 
@@ -468,7 +468,7 @@ func checkPushTx(tx types.PushTx, keepers types.Keepers, dht types.DHT) error {
 // fetchAndCheckReferenceObjects attempts to fetch and store new objects
 // introduced by the pushed references. After fetching it performs checks
 // on the objects
-func fetchAndCheckReferenceObjects(tx types.PushTx, dht types.DHT) error {
+func fetchAndCheckReferenceObjects(tx types.PushNote, dht types.DHT) error {
 	objectsSize := int64(0)
 
 	for _, objHash := range tx.GetPushedObjects() {

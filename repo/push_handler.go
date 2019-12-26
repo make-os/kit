@@ -131,29 +131,29 @@ func (h *PushHandler) HandleUpdate() error {
 		return err
 	}
 
-	// At this point, there are no errors. We need to construct a PushTx
-	pushTx, err := h.createPushTx(pkID, refsTxLine)
+	// At this point, there are no errors. We need to construct a PushNote
+	pushNote, err := h.createPushNote(pkID, refsTxLine)
 	if err != nil {
 		return err
 	}
 
 	// Add the push transaction to the push pool. If an error is returned
 	// schedule the repository for pruning
-	if err := h.rMgr.GetPushPool().Add(pushTx); err != nil {
+	if err := h.rMgr.GetPushPool().Add(pushNote); err != nil {
 		h.rMgr.GetPruner().Schedule(h.repo.GetName())
 		return err
 	}
 
-	// Broadcast the push tx
-	h.rMgr.BroadcastPushTx(pushTx)
+	// Broadcast the push note
+	h.rMgr.BroadcastPushNote(pushNote)
 
 	return nil
 }
 
-func (h *PushHandler) createPushTx(pkID string, refsTxLine map[string]*util.TxLine) (*PushTx, error) {
+func (h *PushHandler) createPushNote(pkID string, refsTxLine map[string]*util.TxLine) (*PushNote, error) {
 
 	var err error
-	var pushTx = &PushTx{
+	var pushNote = &PushNote{
 		targetRepo:  h.repo,
 		RepoName:    h.repo.GetName(),
 		PusherKeyID: pkID,
@@ -163,13 +163,13 @@ func (h *PushHandler) createPushTx(pkID string, refsTxLine map[string]*util.TxLi
 	}
 
 	// Get the total size of the pushed objects
-	pushTx.Size, err = getObjectsSize(h.repo, funk.Keys(h.pushReader.objectsRefs).([]string))
+	pushNote.Size, err = getObjectsSize(h.repo, funk.Keys(h.pushReader.objectsRefs).([]string))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get pushed objects size")
 	}
 
 	for _, ref := range h.pushReader.references {
-		pushTx.References = append(pushTx.References, &types.PushedReference{
+		pushNote.References = append(pushNote.References, &types.PushedReference{
 			Name:         ref.name,
 			OldHash:      ref.oldHash,
 			NewHash:      ref.newHash,
@@ -181,12 +181,12 @@ func (h *PushHandler) createPushTx(pkID string, refsTxLine map[string]*util.TxLi
 	}
 
 	// Sign the push transaction
-	pushTx.NodeSig, err = h.rMgr.GetNodeKey().PrivKey().Sign(pushTx.Bytes())
+	pushNote.NodeSig, err = h.rMgr.GetNodeKey().PrivKey().Sign(pushNote.Bytes())
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to sign push tx")
+		return nil, errors.Wrap(err, "failed to sign push note")
 	}
 
-	return pushTx, nil
+	return pushNote, nil
 }
 
 // announceObject announces a packed object to DHT peers

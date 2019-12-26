@@ -72,7 +72,7 @@ var _ = Describe("Pruner", func() {
 		When("repo has tx in the push pool", func() {
 			BeforeEach(func() {
 				mockPushPool := mocks.NewMockPushPool(ctrl)
-				mockPushPool.EXPECT().RepoHasPushTx(repoName).Return(true)
+				mockPushPool.EXPECT().RepoHasPushNote(repoName).Return(true)
 				mgr.EXPECT().GetPushPool().Return(mockPushPool)
 				err = pruner.doPrune(repoName, false)
 			})
@@ -90,7 +90,7 @@ var _ = Describe("Pruner", func() {
 				Expect(repo.ObjectExist(hash)).To(BeTrue())
 
 				mockPushPool := mocks.NewMockPushPool(ctrl)
-				mockPushPool.EXPECT().RepoHasPushTx(repoName).Return(false)
+				mockPushPool.EXPECT().RepoHasPushNote(repoName).Return(false)
 				mgr.EXPECT().GetPushPool().Return(mockPushPool)
 				err = pruner.doPrune(repoName, false)
 			})
@@ -109,7 +109,7 @@ var _ = Describe("Pruner", func() {
 				Expect(repo.ObjectExist(hash)).To(BeTrue())
 
 				mockPushPool := mocks.NewMockPushPool(ctrl)
-				mockPushPool.EXPECT().RepoHasPushTx(repoName).Return(true)
+				mockPushPool.EXPECT().RepoHasPushNote(repoName).Return(true)
 				mgr.EXPECT().GetPushPool().Return(mockPushPool)
 				err = pruner.doPrune(repoName, true)
 			})

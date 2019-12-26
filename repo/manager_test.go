@@ -180,24 +180,24 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
-	Describe(".cachePushTxSender", func() {
+	Describe(".cachePushNoteSender", func() {
 		It("should add to cache", func() {
-			Expect(repoMgr.pushTxSenders.Len()).To(Equal(0))
-			repoMgr.cachePushTxSender("sender", "txID")
-			Expect(repoMgr.pushTxSenders.Len()).To(Equal(1))
+			Expect(repoMgr.pushNoteSenders.Len()).To(Equal(0))
+			repoMgr.cachePushNoteSender("sender", "txID")
+			Expect(repoMgr.pushNoteSenders.Len()).To(Equal(1))
 		})
 	})
 
-	Describe(".isPushTxSender", func() {
+	Describe(".isPushNoteSender", func() {
 		It("should return true if sender + txID is cached", func() {
-			repoMgr.cachePushTxSender("sender", "txID")
-			Expect(repoMgr.pushTxSenders.Len()).To(Equal(1))
-			isSender := repoMgr.isPushTxSender("sender", "txID")
+			repoMgr.cachePushNoteSender("sender", "txID")
+			Expect(repoMgr.pushNoteSenders.Len()).To(Equal(1))
+			isSender := repoMgr.isPushNoteSender("sender", "txID")
 			Expect(isSender).To(BeTrue())
 		})
 
 		It("should return false if sender + txID is not cached", func() {
-			isSender := repoMgr.isPushTxSender("sender", "txID")
+			isSender := repoMgr.isPushNoteSender("sender", "txID")
 			Expect(isSender).To(BeFalse())
 		})
 	})

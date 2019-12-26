@@ -14,7 +14,6 @@ import (
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/testutil/mockutil"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/types/mocks"
 	"github.com/makeos/mosdef/util"
@@ -29,7 +28,7 @@ var _ = Describe("Revert", func() {
 	var repo types.BareRepo
 	var path string
 	var ctrl *gomock.Controller
-	var mockLogic *mockutil.MockObjects
+	var mockLogic *testutil.MockObjects
 	var mockDHT *mocks.MockDHT
 	var mockMempool *mocks.MockMempool
 
@@ -43,7 +42,7 @@ var _ = Describe("Revert", func() {
 		execGit(cfg.GetRepoRoot(), "init", repoName)
 
 		ctrl = gomock.NewController(GinkgoT())
-		mockLogic = mockutil.MockLogic(ctrl)
+		mockLogic = testutil.MockLogic(ctrl)
 		port, _ := freeport.GetFreePort()
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)

@@ -25,8 +25,8 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 )
 
-// PushTxReactorChannel is the channel id for reacting to push tx messages
-const PushTxReactorChannel = byte(0x32)
+// PushNoteReactorChannel is the channel id for reacting to push note messages
+const PushNoteReactorChannel = byte(0x32)
 
 // Git services
 const (
@@ -69,7 +69,7 @@ type Manager struct {
 	dht                types.DHT             // The dht service
 	pruner             types.Pruner          // The repo runner
 	txPoolRepoTxsIndex repoTxsIndex
-	pushTxSenders      *cache.Cache
+	pushNoteSenders    *cache.Cache
 }
 
 // NewManager creates an instance of Manager
@@ -90,19 +90,19 @@ func NewManager(
 
 	key, _ := cfg.G().PrivVal.GetKey()
 	mgr := &Manager{
-		cfg:           cfg,
-		log:           cfg.G().Log.Module("repo-manager"),
-		addr:          addr,
-		rootDir:       cfg.GetRepoRoot(),
-		gitBinPath:    cfg.Node.GitBinPath,
-		wg:            wg,
-		repoDBCache:   dbCache,
-		pushPool:      NewPushPool(params.PushPoolCap, logic, dht),
-		logic:         logic,
-		nodeKey:       key,
-		dht:           dht,
-		txPool:        txPool,
-		pushTxSenders: cache.NewActiveCache(params.PushTxSendersCacheSize),
+		cfg:             cfg,
+		log:             cfg.G().Log.Module("repo-manager"),
+		addr:            addr,
+		rootDir:         cfg.GetRepoRoot(),
+		gitBinPath:      cfg.Node.GitBinPath,
+		wg:              wg,
+		repoDBCache:     dbCache,
+		pushPool:        NewPushPool(params.PushPoolCap, logic, dht),
+		logic:           logic,
+		nodeKey:         key,
+		dht:             dht,
+		txPool:          txPool,
+		pushNoteSenders: cache.NewActiveCache(params.PushNoteSendersCacheSize),
 	}
 
 	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
@@ -126,16 +126,16 @@ func (m *Manager) defaultGPGPubKeyGetter(pkID string) (string, error) {
 	return gpgPK.PubKey, nil
 }
 
-// cachePushTxSender caches a push tx sender
-func (m *Manager) cachePushTxSender(senderID string, txID string) {
+// cachePushNoteSender caches a push note sender
+func (m *Manager) cachePushNoteSender(senderID string, txID string) {
 	key := util.Sha1Hex([]byte(senderID + txID))
-	m.pushTxSenders.AddWithExp(key, struct{}{}, time.Now().Add(10*time.Minute))
+	m.pushNoteSenders.AddWithExp(key, struct{}{}, time.Now().Add(10*time.Minute))
 }
 
-// isPushTxSender checks whether a push tx was sent by the given sender ID
-func (m *Manager) isPushTxSender(senderID string, txID string) bool {
+// isPushNoteSender checks whether a push note was sent by the given sender ID
+func (m *Manager) isPushNoteSender(senderID string, txID string) bool {
 	key := util.Sha1Hex([]byte(senderID + txID))
-	v := m.pushTxSenders.Get(key)
+	v := m.pushNoteSenders.Get(key)
 	return v == struct{}{}
 }
 

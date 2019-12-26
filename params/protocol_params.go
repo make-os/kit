@@ -84,14 +84,14 @@ var (
 	// PushPoolItemTTL is the maximum life time of an item in the push pool
 	PushPoolItemTTL = 24 * 3 * time.Hour
 
-	// MaxPushTxAge is the duration afterwhich a push transaction is considered old.
-	MaxPushTxAge = 30 * time.Minute
+	// MaxPushNoteAge is the duration afterwhich a push transaction is considered old.
+	MaxPushNoteAge = 30 * time.Minute
 
 	// UnfinalizedObjectsCacheSize is the max size for unfinalized objects cache
 	UnfinalizedObjectsCacheSize = 10000
 
-	// PushTxSendersCacheSize is the max size for push tx senders cache
-	PushTxSendersCacheSize = 5000
+	// PushNoteSendersCacheSize is the max size for push note senders cache
+	PushNoteSendersCacheSize = 5000
 
 	// RepoPrunerTickDur is the duration between each repo pruning operation
 	RepoPrunerTickDur = 10 * time.Second

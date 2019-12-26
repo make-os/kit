@@ -16,8 +16,8 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
 )
 
-var _ = Describe("PushTx", func() {
-	var pushTx *PushTx
+var _ = Describe("PushNote", func() {
+	var pushNote *PushNote
 	var cfg *config.AppConfig
 	var repo types.BareRepo
 	var path string
@@ -40,7 +40,7 @@ var _ = Describe("PushTx", func() {
 	})
 
 	BeforeEach(func() {
-		pushTx = &PushTx{
+		pushNote = &PushNote{
 			RepoName:    "repo",
 			NodeSig:     []byte("node_signer_sig"),
 			PusherKeyID: "pk_id",
@@ -59,23 +59,23 @@ var _ = Describe("PushTx", func() {
 
 	Describe(".Bytes", func() {
 		It("should return expected bytes", func() {
-			Expect(pushTx.Bytes()).ToNot(HaveLen(0))
+			Expect(pushNote.Bytes()).ToNot(HaveLen(0))
 		})
 	})
 
 	Describe(".ID", func() {
 		It("should return expected bytes", func() {
-			Expect(len(pushTx.ID())).To(Equal(32))
+			Expect(len(pushNote.ID())).To(Equal(32))
 		})
 	})
 
 	Describe(".TotalFee", func() {
 		It("should return expected total fee", func() {
-			Expect(pushTx.TotalFee()).To(Equal(util.String("0.2")))
+			Expect(pushNote.TotalFee()).To(Equal(util.String("0.2")))
 		})
 
 		It("should return expected total fee", func() {
-			pushTx.References = append(pushTx.References, &types.PushedReference{
+			pushNote.References = append(pushNote.References, &types.PushedReference{
 				Nonce:        1,
 				NewHash:      "new_object_hash",
 				Name:         "refs/heads/master",
@@ -83,38 +83,38 @@ var _ = Describe("PushTx", func() {
 				Fee:          "0.2",
 				AccountNonce: 2,
 			})
-			Expect(pushTx.TotalFee()).To(Equal(util.String("0.4")))
+			Expect(pushNote.TotalFee()).To(Equal(util.String("0.4")))
 		})
 	})
 
 	Describe(".LenMinusFee", func() {
 		It("should return expected length without the fee fields", func() {
-			lenFee := len(util.ObjectToBytes(pushTx.References[0].Fee))
-			lenWithFee := pushTx.Len()
+			lenFee := len(util.ObjectToBytes(pushNote.References[0].Fee))
+			lenWithFee := pushNote.Len()
 			expected := lenWithFee - uint64(lenFee)
-			Expect(pushTx.LenMinusFee()).To(Equal(expected))
+			Expect(pushNote.LenMinusFee()).To(Equal(expected))
 		})
 	})
 
 	Describe(".Len", func() {
 		It("should return expected length", func() {
-			Expect(pushTx.Len()).To(Equal(uint64(121)))
+			Expect(pushNote.Len()).To(Equal(uint64(121)))
 		})
 	})
 
 	Describe(".TxSize", func() {
 		It("should be non-zero", func() {
-			Expect(pushTx.TxSize()).ToNot(Equal(0))
+			Expect(pushNote.TxSize()).ToNot(Equal(0))
 		})
 	})
 
 	Describe(".OverallSize", func() {
 		It("should be non-zero", func() {
-			Expect(pushTx.BillableSize()).ToNot(Equal(0))
+			Expect(pushNote.BillableSize()).ToNot(Equal(0))
 		})
 	})
 
-	Describe(".makePackfileFromPushTx", func() {
+	Describe(".makePackfileFromPushNote", func() {
 		var buf io.ReadSeeker
 		var commitHash, commitHash2 string
 
@@ -122,12 +122,12 @@ var _ = Describe("PushTx", func() {
 			BeforeEach(func() {
 				appendCommit(path, "file.txt", "some text", "commit msg")
 				commitHash, _ = repo.GetRecentCommit()
-				tx := &PushTx{
+				tx := &PushNote{
 					References: []*types.PushedReference{
 						{Objects: []string{commitHash}},
 					},
 				}
-				buf, err = makePackfileFromPushTx(repo, tx)
+				buf, err = makePackfileFromPushNote(repo, tx)
 				Expect(err).To(BeNil())
 			})
 
@@ -154,12 +154,12 @@ var _ = Describe("PushTx", func() {
 				commitHash, _ = repo.GetRecentCommit()
 				appendCommit(path, "file.txt", "some text", "commit msg")
 				commitHash2, _ = repo.GetRecentCommit()
-				tx := &PushTx{
+				tx := &PushNote{
 					References: []*types.PushedReference{
 						{Objects: []string{commitHash, commitHash2}},
 					},
 				}
-				buf, err = makePackfileFromPushTx(repo, tx)
+				buf, err = makePackfileFromPushNote(repo, tx)
 				Expect(err).To(BeNil())
 			})
 
@@ -173,17 +173,17 @@ var _ = Describe("PushTx", func() {
 		When("a hash that does not exist in the repository is added to a reference object list", func() {
 			BeforeEach(func() {
 				commitHash = "c212fb1166aeb2f42a54203f9f9315107265028f"
-				tx := &PushTx{
+				tx := &PushNote{
 					References: []*types.PushedReference{
 						{Objects: []string{commitHash}},
 					},
 				}
-				buf, err = makePackfileFromPushTx(repo, tx)
+				buf, err = makePackfileFromPushNote(repo, tx)
 			})
 
 			It("should return error about missing object", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to encoded push tx to pack format: object not found"))
+				Expect(err.Error()).To(Equal("failed to encoded push note to pack format: object not found"))
 			})
 		})
 	})
@@ -195,7 +195,7 @@ var _ = Describe("PushTx", func() {
 		BeforeEach(func() {
 			appendCommit(path, "file.txt", "some text", "commit msg")
 			commitHash, _ = repo.GetRecentCommit()
-			tx := &PushTx{
+			tx := &PushNote{
 				References: []*types.PushedReference{
 					{Name: "refs/heads/master", OldHash: plumbing.ZeroHash.String(), NewHash: commitHash, Objects: []string{commitHash}},
 				},
@@ -210,10 +210,10 @@ var _ = Describe("PushTx", func() {
 		})
 	})
 
-	Describe("makePushTxFromStateChange", func() {
+	Describe("makePushNoteFromStateChange", func() {
 		Context("branch changes", func() {
 			When("an empty repository is updated with a new branch with 1 commit (with 1 file)", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var latestCommitHash string
 
 				BeforeEach(func() {
@@ -221,10 +221,10 @@ var _ = Describe("PushTx", func() {
 					appendCommit(path, "file.txt", "some text", "commit msg")
 					latestCommitHash = getRecentCommitHash(path, "refs/heads/master")
 					newState := getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
-				It("should successfully return expected push tx", func() {
+				It("should successfully return expected push note", func() {
 					Expect(err).To(BeNil())
 					Expect(tx.References).To(HaveLen(1))
 					Expect(tx.References[0].Name).To(Equal("refs/heads/master"))
@@ -235,7 +235,7 @@ var _ = Describe("PushTx", func() {
 			})
 
 			When("a repo's old state has 1 branch, with 1 commit (1 file) and new state adds 1 commit (1 file)", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var oldCommitHash, latestCommitHash string
 
 				BeforeEach(func() {
@@ -245,10 +245,10 @@ var _ = Describe("PushTx", func() {
 					appendCommit(path, "file.txt", "some update", "commit updated")
 					latestCommitHash = getRecentCommitHash(path, "refs/heads/master")
 					newState := getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
-				It("should successfully return expected push tx", func() {
+				It("should successfully return expected push note", func() {
 					Expect(err).To(BeNil())
 					Expect(tx.References).To(HaveLen(1))
 					Expect(tx.References[0].Name).To(Equal("refs/heads/master"))
@@ -259,7 +259,7 @@ var _ = Describe("PushTx", func() {
 			})
 
 			When("old state has 2 branches with 1 commit (1 file each); new state has only 1 branch with 1 commit (1 file)", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var oldCommitHash string
 
 				BeforeEach(func() {
@@ -270,10 +270,10 @@ var _ = Describe("PushTx", func() {
 					oldState := getRepoState(repo)
 					execGit(path, "update-ref", "-d", "refs/heads/branch2")
 					newState := getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
-				It("should successfully return expected push tx", func() {
+				It("should successfully return expected push note", func() {
 					Expect(err).To(BeNil())
 					Expect(tx.References).To(HaveLen(1))
 					Expect(tx.References[0].Name).To(Equal("refs/heads/branch2"))
@@ -284,7 +284,7 @@ var _ = Describe("PushTx", func() {
 			})
 
 			When("old state has 1 branch with 1 commit (1 file each); new state has 0 branch", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var oldCommitHash string
 
 				BeforeEach(func() {
@@ -293,10 +293,10 @@ var _ = Describe("PushTx", func() {
 					oldState := getRepoState(repo)
 					execGit(path, "update-ref", "-d", "refs/heads/master")
 					newState := getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
-				It("should successfully return expected push tx", func() {
+				It("should successfully return expected push note", func() {
 					Expect(err).To(BeNil())
 					Expect(tx.References).To(HaveLen(1))
 					Expect(tx.References[0].Name).To(Equal("refs/heads/master"))
@@ -309,17 +309,17 @@ var _ = Describe("PushTx", func() {
 
 		Context("annotated tag changes", func() {
 			When("old state is empty; new state has 1 annotated tag and 1 commit (with 1 file)", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var newState types.BareRepoState
 
 				BeforeEach(func() {
 					oldState := getRepoState(repo)
 					createCommitAndAnnotatedTag(path, "file.txt", "first file", "first commit", "v1")
 					newState = getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
-				It("should successfully return expected push tx", func() {
+				It("should successfully return expected push note", func() {
 					Expect(err).To(BeNil())
 					Expect(tx.References).To(HaveLen(2))
 					newTag := newState.GetReferences().Get("refs/tags/v1")
@@ -331,7 +331,7 @@ var _ = Describe("PushTx", func() {
 			})
 
 			When("old state has tag A; new state updates tag A", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var oldState types.BareRepoState
 
 				BeforeEach(func() {
@@ -339,10 +339,10 @@ var _ = Describe("PushTx", func() {
 					oldState = getRepoState(repo)
 					createCommitAndAnnotatedTag(path, "file.txt", "first file 2", "commit 2", "v1")
 					newState := getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
-				It("should successfully return expected push tx", func() {
+				It("should successfully return expected push note", func() {
 					Expect(err).To(BeNil())
 					Expect(tx.References).To(HaveLen(2))
 					oldTag := oldState.GetReferences().Get("refs/tags/v1")
@@ -353,7 +353,7 @@ var _ = Describe("PushTx", func() {
 			})
 
 			When("old state has tag A; new state deletes tag A", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var oldState types.BareRepoState
 
 				BeforeEach(func() {
@@ -361,10 +361,10 @@ var _ = Describe("PushTx", func() {
 					oldState = getRepoState(repo)
 					deleteTag(path, "v1")
 					newState := getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
-				It("should successfully return expected push tx", func() {
+				It("should successfully return expected push note", func() {
 					Expect(err).To(BeNil())
 					Expect(tx.References).To(HaveLen(1))
 					oldTag := oldState.GetReferences().Get("refs/tags/v1")
@@ -378,17 +378,17 @@ var _ = Describe("PushTx", func() {
 
 		Context("lightweight tag changes", func() {
 			When("old state is empty; new state has 1 tag and 1 commit (with 1 file)", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var newState types.BareRepoState
 
 				BeforeEach(func() {
 					oldState := getRepoState(repo)
 					createCommitAndLightWeightTag(path, "file.txt", "first file", "first commit", "v1")
 					newState = getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
-				It("should successfully return expected push tx", func() {
+				It("should successfully return expected push note", func() {
 					Expect(err).To(BeNil())
 					Expect(tx.References).To(HaveLen(2))
 					newTag := newState.GetReferences().Get("refs/tags/v1")
@@ -400,7 +400,7 @@ var _ = Describe("PushTx", func() {
 			})
 
 			When("old state has tag A; new state updates tag A", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var oldState types.BareRepoState
 
 				BeforeEach(func() {
@@ -408,10 +408,10 @@ var _ = Describe("PushTx", func() {
 					oldState = getRepoState(repo)
 					createCommitAndLightWeightTag(path, "file.txt", "first file 2", "commit 2", "v1")
 					newState := getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
-				It("should successfully return expected push tx", func() {
+				It("should successfully return expected push note", func() {
 					Expect(err).To(BeNil())
 					Expect(tx.References).To(HaveLen(2))
 					oldTag := oldState.GetReferences().Get("refs/tags/v1")
@@ -422,7 +422,7 @@ var _ = Describe("PushTx", func() {
 			})
 
 			When("old state has tag A; new state deletes tag A", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var oldState types.BareRepoState
 
 				BeforeEach(func() {
@@ -430,10 +430,10 @@ var _ = Describe("PushTx", func() {
 					oldState = getRepoState(repo)
 					deleteTag(path, "v1")
 					newState := getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
-				It("should successfully return expected push tx", func() {
+				It("should successfully return expected push note", func() {
 					Expect(err).To(BeNil())
 					Expect(tx.References).To(HaveLen(1))
 					oldTag := oldState.GetReferences().Get("refs/tags/v1")
@@ -447,14 +447,14 @@ var _ = Describe("PushTx", func() {
 
 		Context("note changes", func() {
 			When("an empty repo is updated with a note and 1 commit (with 1 file)", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var newState types.BareRepoState
 
 				BeforeEach(func() {
 					oldState := getRepoState(repo)
 					createCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "note1")
 					newState = getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
 				It("should successfully return update request", func() {
@@ -469,7 +469,7 @@ var _ = Describe("PushTx", func() {
 			})
 
 			When("repo has note A for commit A and note A is updated for commit B", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var newState, oldState types.BareRepoState
 
 				BeforeEach(func() {
@@ -477,7 +477,7 @@ var _ = Describe("PushTx", func() {
 					oldState = getRepoState(repo)
 					createCommitAndNote(path, "file.txt", "v2 file", "v2 commit", "noteA")
 					newState = getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
 				It("should successfully return update request", func() {
@@ -493,7 +493,7 @@ var _ = Describe("PushTx", func() {
 			})
 
 			When("repo has note A for commit A and note A's message is updated", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var newState, oldState types.BareRepoState
 
 				BeforeEach(func() {
@@ -501,7 +501,7 @@ var _ = Describe("PushTx", func() {
 					oldState = getRepoState(repo)
 					createNote(path, "msg updated", "noteA")
 					newState = getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
 				It("should successfully return update request", func() {
@@ -517,7 +517,7 @@ var _ = Describe("PushTx", func() {
 			})
 
 			When("old state has note A and new state has no note A", func() {
-				var tx *PushTx
+				var tx *PushNote
 				var newState, oldState types.BareRepoState
 
 				BeforeEach(func() {
@@ -525,7 +525,7 @@ var _ = Describe("PushTx", func() {
 					oldState = getRepoState(repo)
 					deleteNote(path, "refs/notes/noteA")
 					newState = getRepoState(repo)
-					tx, err = makePushTxFromStateChange(repo, oldState, newState)
+					tx, err = makePushNoteFromStateChange(repo, oldState, newState)
 				})
 
 				It("should successfully return update request", func() {

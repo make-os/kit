@@ -19,47 +19,47 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp/capability"
 )
 
-// PushTx implements types.PushTx
-type PushTx struct {
+// PushNote implements types.PushNote
+type PushNote struct {
 	targetRepo  types.BareRepo
 	RepoName    string                 `json:"repoName" msgpack:"repoName"`       // The name of the repo
 	References  types.PushedReferences `json:"references" msgpack:"references"`   // A list of references pushed
 	PusherKeyID string                 `json:"pusherKeyId" msgpack:"pusherKeyId"` // The PGP key of the pusher
 	Size        uint64                 `json:"size" msgpack:"size"`               // Total size of all objects pushed
 	Timestamp   int64                  `json:"timestamp" msgpack:"timestamp"`     // Unix timestamp
-	NodeSig     []byte                 `json:"nodeSig" msgpack:"nodeSig"`         // The signature of the node that created the PushTx
-	NodePubKey  string                 `json:"nodePubKey" msgpack:"nodePubKey"`   // The public key of the push tx signer
+	NodeSig     []byte                 `json:"nodeSig" msgpack:"nodeSig"`         // The signature of the node that created the PushNote
+	NodePubKey  string                 `json:"nodePubKey" msgpack:"nodePubKey"`   // The public key of the push note signer
 }
 
 // GetTargetRepo returns the target repository
-func (pt *PushTx) GetTargetRepo() types.BareRepo {
+func (pt *PushNote) GetTargetRepo() types.BareRepo {
 	return pt.targetRepo
 }
 
 // GetPusherKeyID returns the pusher gpg key ID
-func (pt *PushTx) GetPusherKeyID() string {
+func (pt *PushNote) GetPusherKeyID() string {
 	return pt.PusherKeyID
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
-func (pt *PushTx) EncodeMsgpack(enc *msgpack.Encoder) error {
+func (pt *PushNote) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(pt.RepoName, pt.References, pt.PusherKeyID,
 		pt.Size, pt.Timestamp, pt.NodeSig, &pt.NodePubKey)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
-func (pt *PushTx) DecodeMsgpack(dec *msgpack.Decoder) error {
+func (pt *PushNote) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return dec.DecodeMulti(&pt.RepoName, &pt.References, &pt.PusherKeyID,
 		&pt.Size, &pt.Timestamp, &pt.NodeSig, &pt.NodePubKey)
 }
 
 // Bytes returns a serialized version of the object
-func (pt *PushTx) Bytes() []byte {
+func (pt *PushNote) Bytes() []byte {
 	return util.ObjectToBytes(pt)
 }
 
 // GetPushedObjects returns all objects from all pushed references
-func (pt *PushTx) GetPushedObjects() (objs []string) {
+func (pt *PushNote) GetPushedObjects() (objs []string) {
 	for _, ref := range pt.GetPushedReferences() {
 		objs = append(objs, ref.Objects...)
 	}
@@ -68,7 +68,7 @@ func (pt *PushTx) GetPushedObjects() (objs []string) {
 
 // LenMinusFee returns the length of the serialized tx minus
 // the total length of fee fields.
-func (pt *PushTx) LenMinusFee() uint64 {
+func (pt *PushNote) LenMinusFee() uint64 {
 	var feeFieldsLen = 0
 	for _, r := range pt.References {
 		feeFieldsLen += len(util.ObjectToBytes(r.Fee))
@@ -78,48 +78,48 @@ func (pt *PushTx) LenMinusFee() uint64 {
 }
 
 // GetRepoName returns the name of the repo receiving the push
-func (pt *PushTx) GetRepoName() string {
+func (pt *PushNote) GetRepoName() string {
 	return pt.RepoName
 }
 
 // GetPushedReferences returns the pushed references
-func (pt *PushTx) GetPushedReferences() types.PushedReferences {
+func (pt *PushNote) GetPushedReferences() types.PushedReferences {
 	return pt.References
 }
 
 // Len returns the length of the serialized tx
-func (pt *PushTx) Len() uint64 {
+func (pt *PushNote) Len() uint64 {
 	return uint64(len(pt.Bytes()))
 }
 
-// ID returns the hash of the push tx
-func (pt *PushTx) ID() util.Hash {
+// ID returns the hash of the push note
+func (pt *PushNote) ID() util.Hash {
 	return util.BytesToHash(util.Blake2b256(pt.Bytes()))
 }
 
 // BytesAndID returns the serialized version of the tx and the id
-func (pt *PushTx) BytesAndID() ([]byte, util.Hash) {
+func (pt *PushNote) BytesAndID() ([]byte, util.Hash) {
 	bz := pt.Bytes()
 	return bz, util.BytesToHash(bz)
 }
 
 // TxSize is the size of the transaction
-func (pt *PushTx) TxSize() uint {
+func (pt *PushNote) TxSize() uint {
 	return uint(len(pt.Bytes()))
 }
 
 // BillableSize is the size of the transaction + pushed objects
-func (pt *PushTx) BillableSize() uint64 {
+func (pt *PushNote) BillableSize() uint64 {
 	return pt.LenMinusFee() + pt.Size
 }
 
 // GetSize returns the total pushed objects size
-func (pt *PushTx) GetSize() uint64 {
+func (pt *PushNote) GetSize() uint64 {
 	return pt.Size
 }
 
 // TotalFee returns the sum of reference update fees
-func (pt *PushTx) TotalFee() util.String {
+func (pt *PushNote) TotalFee() util.String {
 	sum := decimal.NewFromFloat(0)
 	for _, r := range pt.References {
 		sum = sum.Add(r.Fee.Decimal())
@@ -127,8 +127,8 @@ func (pt *PushTx) TotalFee() util.String {
 	return util.String(sum.String())
 }
 
-// makePackfileFromPushTx creates a packfile from a PushTx
-func makePackfileFromPushTx(repo types.BareRepo, tx *PushTx) (io.ReadSeeker, error) {
+// makePackfileFromPushNote creates a packfile from a PushNote
+func makePackfileFromPushNote(repo types.BareRepo, tx *PushNote) (io.ReadSeeker, error) {
 
 	var buf = bytes.NewBuffer(nil)
 	enc := packfile.NewEncoder(buf, repo.GetStorer(), true)
@@ -142,7 +142,7 @@ func makePackfileFromPushTx(repo types.BareRepo, tx *PushTx) (io.ReadSeeker, err
 
 	_, err := enc.Encode(hashes, 0)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to encoded push tx to pack format")
+		return nil, errors.Wrap(err, "failed to encoded push note to pack format")
 	}
 
 	return bytes.NewReader(buf.Bytes()), nil
@@ -150,10 +150,10 @@ func makePackfileFromPushTx(repo types.BareRepo, tx *PushTx) (io.ReadSeeker, err
 
 // makeReferenceUpdateRequest creates a git reference update request from a push
 // transaction. This is what git push sends to the git-receive-pack.
-func makeReferenceUpdateRequest(repo types.BareRepo, tx *PushTx) (io.ReadSeeker, error) {
+func makeReferenceUpdateRequest(repo types.BareRepo, tx *PushNote) (io.ReadSeeker, error) {
 
 	// Generate a packfile
-	packfile, err := makePackfileFromPushTx(repo, tx)
+	packfile, err := makePackfileFromPushNote(repo, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -182,15 +182,15 @@ func makeReferenceUpdateRequest(repo types.BareRepo, tx *PushTx) (io.ReadSeeker,
 	return bytes.NewReader(buf.Bytes()), nil
 }
 
-// makePushTxFromStateChange creates a PushTx object from changes between two
-// states. Only the reference information is set in the PushTx object returned.
-func makePushTxFromStateChange(
+// makePushNoteFromStateChange creates a PushNote object from changes between two
+// states. Only the reference information is set in the PushNote object returned.
+func makePushNoteFromStateChange(
 	repo types.BareRepo,
 	oldState,
-	newState types.BareRepoState) (*PushTx, error) {
+	newState types.BareRepoState) (*PushNote, error) {
 
 	// Compute the changes between old and new states
-	tx := &PushTx{References: []*types.PushedReference{}}
+	tx := &PushNote{References: []*types.PushedReference{}}
 	changes := oldState.GetChanges(newState)
 
 	// For each changed references, generate a PushedReference object
@@ -323,10 +323,10 @@ func makePackfile(
 	oldState,
 	newState types.BareRepoState) (io.ReadSeeker, error) {
 
-	pushTx, err := makePushTxFromStateChange(repo, oldState, newState)
+	pushNote, err := makePushNoteFromStateChange(repo, oldState, newState)
 	if err != nil {
 		return nil, err
 	}
 
-	return makeReferenceUpdateRequest(repo, pushTx)
+	return makeReferenceUpdateRequest(repo, pushNote)
 }

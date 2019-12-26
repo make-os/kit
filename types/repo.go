@@ -189,8 +189,8 @@ type RepoManager interface {
 	// BroadcastMsg broadcast messages to peers
 	BroadcastMsg(ch byte, msg []byte)
 
-	// BroadcastPushTx broadcast push transaction to peers
-	BroadcastPushTx(pushTx PushTx)
+	// BroadcastPushNote broadcast push transaction to peers
+	BroadcastPushNote(pushNote PushNote)
 
 	// SetPGPPubKeyGetter sets the PGP public key query function
 	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
@@ -234,17 +234,17 @@ type PushPool interface {
 	// reference of tx is superior to multiple references in multiple transactions,
 	// replacement will only happen if the fee rate of tx is higher than the
 	// combined fee rate of the replaceable transactions.
-	Add(tx PushTx) error
+	Add(tx PushNote) error
 
 	// Full returns true if the pool is full
 	Full() bool
 
-	// RepoHasPushTx returns true if the given repo has a transaction in the pool
-	RepoHasPushTx(repo string) bool
+	// RepoHasPushNote returns true if the given repo has a transaction in the pool
+	RepoHasPushNote(repo string) bool
 }
 
-// PushTx represents a repository push request
-type PushTx interface {
+// PushNote represents a repository push request
+type PushNote interface {
 
 	// RepoName returns the name of the repo receiving the push
 	GetRepoName() string
@@ -259,7 +259,7 @@ type PushTx interface {
 	// Len returns the length of the serialized tx
 	Len() uint64
 
-	// ID returns the hash of the push tx
+	// ID returns the hash of the push note
 	ID() util.Hash
 
 	// TxSize is the size of the transaction

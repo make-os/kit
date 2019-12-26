@@ -57,7 +57,7 @@ func (p *Pruner) Prune(repoName string, force bool) error {
 func (p *Pruner) doPrune(repoName string, force bool) error {
 
 	// Abort if repo has a tx in the push pool
-	if p.poolGetter.GetPushPool().RepoHasPushTx(repoName) && !force {
+	if p.poolGetter.GetPushPool().RepoHasPushNote(repoName) && !force {
 		return fmt.Errorf("refused because repo still has transactions in the push pool")
 	}
 

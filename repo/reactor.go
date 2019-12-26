@@ -16,24 +16,24 @@ import (
 // Receive implements Reactor
 func (m *Manager) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 	switch chID {
-	case PushTxReactorChannel:
-		if err := m.onPushTx(peer, msgBytes); err != nil {
+	case PushNoteReactorChannel:
+		if err := m.onPushNote(peer, msgBytes); err != nil {
 			m.log.Error(err.Error())
 		}
 	}
 }
 
-// onPushTx is the handler for incoming PushTx messages
-func (m *Manager) onPushTx(peer p2p.Peer, msgBytes []byte) error {
+// onPushNote is the handler for incoming PushNote messages
+func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 
-	// Attempt to decode message to PushTx
-	var tx PushTx
+	// Attempt to decode message to PushNote
+	var tx PushNote
 	if err := util.BytesToObject(msgBytes, &tx); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
 
-	// Add a cache entry that indicates the sender of the push tx
-	m.cachePushTxSender(string(peer.ID()), tx.ID().String())
+	// Add a cache entry that indicates the sender of the push note
+	m.cachePushNoteSender(string(peer.ID()), tx.ID().String())
 
 	m.log.Debug("Received push transaction from peer",
 		"PeerID", peer.ID(), "TxID", tx.ID().String())
@@ -62,15 +62,15 @@ func (m *Manager) onPushTx(peer p2p.Peer, msgBytes []byte) error {
 		state: repoState,
 	}
 
-	// Validate the push tx.
-	// if err := checkPushTx(&tx, m.logic, m.dht); err != nil {
-	// 	return errors.Wrap(err, "failed push tx validation")
+	// Validate the push note.
+	// if err := checkPushNote(&tx, m.logic, m.dht); err != nil {
+	// 	return errors.Wrap(err, "failed push note validation")
 	// }
 	if err := m.GetPushPool().Add(&tx); err != nil {
-		return errors.Wrap(err, "failed to add push tx to push pool")
+		return errors.Wrap(err, "failed to add push note to push pool")
 	}
 
-	// At this point, we know that the push tx is valid and consistent with the
+	// At this point, we know that the push note is valid and consistent with the
 	// state of the repository, but we need to also check that the pushed
 	// references and objects are well signed, have correct
 	// transaction information and are compatible with the state of the
@@ -80,7 +80,7 @@ func (m *Manager) onPushTx(peer p2p.Peer, msgBytes []byte) error {
 	// Create the pack file
 	packfile, err := makeReferenceUpdateRequest(tx.targetRepo, &tx)
 	if err != nil {
-		return errors.Wrap(err, "failed to create packfile from push tx")
+		return errors.Wrap(err, "failed to create packfile from push note")
 	}
 
 	// Create the git-receive-pack command
@@ -119,16 +119,16 @@ func (m *Manager) onPushTx(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	if err := cmd.Wait(); err != nil {
-		return errors.Wrap(err, "failed to process packfile derived from push tx")
+		return errors.Wrap(err, "failed to process packfile derived from push note")
 	}
 
 	// At this point, the transaction has passed all validation and
-	// compatibility checks. We can now attempt to add the push tx to the PushPool
+	// compatibility checks. We can now attempt to add the push note to the PushPool
 	// if err := m.GetPushPool().Add(&tx); err != nil {
-	// 	return errors.Wrap(err, "failed to add push tx to push pool")
+	// 	return errors.Wrap(err, "failed to add push note to push pool")
 	// }
 
-	// Announce the objects of the push tx to the dht
+	// Announce the objects of the push note to the dht
 	for _, hash := range tx.GetPushedObjects() {
 		dhtKey := MakeRepoObjectDHTKey(repoName, hash)
 		ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
@@ -139,23 +139,23 @@ func (m *Manager) onPushTx(peer p2p.Peer, msgBytes []byte) error {
 		}
 	}
 
-	// Broadcast the push tx to peers
-	m.BroadcastPushTx(&tx)
+	// Broadcast the push note to peers
+	m.BroadcastPushNote(&tx)
 
-	m.log.Info("Added valid push tx to push pool", "TxID", tx.ID().String())
+	m.log.Info("Added valid push note to push pool", "TxID", tx.ID().String())
 
 	return nil
 }
 
-// BroadcastPushTx broadcast push transaction to peers.
-// It will not send to original sender of the push tx.
-func (m *Manager) BroadcastPushTx(pushTx types.PushTx) {
+// BroadcastPushNote broadcast push transaction to peers.
+// It will not send to original sender of the push note.
+func (m *Manager) BroadcastPushNote(pushNote types.PushNote) {
 	for _, peer := range m.Switch.Peers().List() {
-		bz, id := pushTx.BytesAndID()
-		if m.isPushTxSender(string(peer.ID()), id.String()) {
+		bz, id := pushNote.BytesAndID()
+		if m.isPushNoteSender(string(peer.ID()), id.String()) {
 			continue
 		}
-		if peer.Send(PushTxReactorChannel, bz) {
+		if peer.Send(PushNoteReactorChannel, bz) {
 			m.log.Debug("Sent push transaction to peer", "PeerID", peer.ID(), "TxID", id)
 		}
 	}
@@ -171,6 +171,6 @@ func (m *Manager) BroadcastMsg(ch byte, msg []byte) {
 // GetChannels implements Reactor.
 func (m *Manager) GetChannels() []*p2p.ChannelDescriptor {
 	return []*p2p.ChannelDescriptor{
-		{ID: PushTxReactorChannel, Priority: 5},
+		{ID: PushNoteReactorChannel, Priority: 5},
 	}
 }
