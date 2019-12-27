@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/golang/mock/gomock"
@@ -13,6 +14,12 @@ import (
 
 func txCheckNoIssue(tx types.RepoPushNote, keepers types.Keepers, dht types.DHT) error {
 	return nil
+}
+
+func txCheckErr(err error) func(tx types.RepoPushNote, keepers types.Keepers, dht types.DHT) error {
+	return func(tx types.RepoPushNote, keepers types.Keepers, dht types.DHT) error {
+		return err
+	}
 }
 
 var _ = Describe("PushPool", func() {
@@ -352,6 +359,46 @@ var _ = Describe("PushPool", func() {
 			})
 		})
 
+		When("validation check fails", func() {
+			var txX *types.PushNote
+			BeforeEach(func() {
+				txX = &types.PushNote{
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					Timestamp: 100000000,
+					References: []*types.PushedReference{
+						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
+					},
+				}
+
+				pool.txChecker = txCheckErr(fmt.Errorf("check failed"))
+				err = pool.Add(txX)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("validation failed: check failed"))
+			})
+		})
+
+		When("noValidation argument is true", func() {
+			var txX *types.PushNote
+			BeforeEach(func() {
+				txX = &types.PushNote{
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					Timestamp: 100000000,
+					References: []*types.PushedReference{
+						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
+					},
+				}
+
+				pool.txChecker = txCheckErr(fmt.Errorf("check failed"))
+				err = pool.Add(txX, true)
+			})
+
+			It("should return no err", func() {
+				Expect(err).To(BeNil())
+			})
+		})
 	})
 
 	Describe(".remove", func() {

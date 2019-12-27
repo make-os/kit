@@ -235,7 +235,9 @@ type PushPool interface {
 	// reference of tx is superior to multiple references in multiple transactions,
 	// replacement will only happen if the fee rate of tx is higher than the
 	// combined fee rate of the replaceable transactions.
-	Add(tx RepoPushNote) error
+	//
+	// noValidation disables tx validation
+	Add(tx RepoPushNote, noValidation ...bool) error
 
 	// Full returns true if the pool is full
 	Full() bool
@@ -505,7 +507,7 @@ func (pt *PushNote) ID() util.Hash {
 // BytesAndID returns the serialized version of the tx and the id
 func (pt *PushNote) BytesAndID() ([]byte, util.Hash) {
 	bz := pt.Bytes()
-	return bz, util.BytesToHash(bz)
+	return bz, util.BytesToHash(util.Blake2b256(bz))
 }
 
 // TxSize is the size of the transaction

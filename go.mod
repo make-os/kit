@@ -55,6 +55,7 @@ require (
 	github.com/libp2p/go-libp2p-crypto v0.1.0
 	github.com/libp2p/go-libp2p-discovery v0.2.0 // indirect
 	github.com/libp2p/go-libp2p-kad-dht v0.3.1
+	github.com/libp2p/go-libp2p-peer v0.2.0
 	github.com/libp2p/go-yamux v1.2.4 // indirect
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect

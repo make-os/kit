@@ -173,7 +173,9 @@ func (p *PushPool) Full() bool {
 // reference of tx is superior to multiple references in multiple transactions,
 // replacement will only happen if the fee rate of tx is higher than the
 // combined fee rate of the replaceable transactions.
-func (p *PushPool) Add(tx types.RepoPushNote) error {
+//
+// noValidation disables tx validation
+func (p *PushPool) Add(tx types.RepoPushNote, noValidation ...bool) error {
 
 	if p.Full() {
 		return errFullPushPool
@@ -242,8 +244,10 @@ func (p *PushPool) Add(tx types.RepoPushNote) error {
 	}
 
 	// Validate the transaction
-	if err := p.validate(tx); err != nil {
-		return errors.Wrap(err, "validation failed")
+	if len(noValidation) == 0 || noValidation[0] == false {
+		if err := p.validate(tx); err != nil {
+			return errors.Wrap(err, "validation failed")
+		}
 	}
 
 	// Add new tx item to container

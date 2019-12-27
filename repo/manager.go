@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/makeos/mosdef/mempool"
 	"github.com/makeos/mosdef/util/cache"
 
@@ -141,7 +140,8 @@ func (m *Manager) isPushNoteSender(senderID string, txID string) bool {
 
 func (m *Manager) subscribe() {
 	for evt := range m.cfg.G().Bus.On(mempool.EvtMempoolTxAdded) {
-		pp.Println("MESSAGE RECEIVED", evt.Args)
+		_ = evt
+		// pp.Println("MESSAGE RECEIVED", evt.Args)
 	}
 }
 

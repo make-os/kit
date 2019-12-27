@@ -32,9 +32,6 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		return errors.Wrap(err, "failed to decoded message")
 	}
 
-	// Add a cache entry that indicates the sender of the push note
-	m.cachePushNoteSender(string(peer.ID()), tx.ID().String())
-
 	m.log.Debug("Received push transaction from peer",
 		"PeerID", peer.ID(), "TxID", tx.ID().String())
 
@@ -53,6 +50,10 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		return errors.Wrap(err, fmt.Sprintf("failed to open repo '%s'", repoName))
 	}
 
+	// Add a cache entry that indicates the sender of the push note
+	m.cachePushNoteSender(string(peer.ID()), tx.ID().String())
+
+	// Set the target repository object
 	tx.TargetRepo = &Repo{
 		name:  repoName,
 		git:   repo,
@@ -62,20 +63,24 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		state: repoState,
 	}
 
+	defer m.pruner.Schedule(tx.GetRepoName())
+
 	// Validate the push note.
-	// if err := checkPushNote(&tx, m.logic, m.dht); err != nil {
-	// 	return errors.Wrap(err, "failed push note validation")
-	// }
-	if err := m.GetPushPool().Add(&tx); err != nil {
-		return errors.Wrap(err, "failed to add push note to push pool")
+	// Downloads the git objects, performs sanity and consistency checks on the
+	// push note. Does not check if the push note can extend the repository without issue
+	if err := checkPushNote(&tx, m.logic, m.dht); err != nil {
+		return errors.Wrap(err, "failed push note validation")
 	}
 
-	// At this point, we know that the push note is valid and consistent with the
-	// state of the repository, but we need to also check that the pushed
-	// references and objects are well signed, have correct
-	// transaction information and are compatible with the state of the
-	// repository on disk. To do this, we create a packfile from the push
-	// tx and attempt to let git-receive-pack process it.
+	// ------------------------------------------------------------------------
+	// At this point, we know that the push note is valid and its proposed
+	// reference updates are consistent with the state of the repository,
+	// but we need to also check that the proposed references and objects are
+	// well signed, have correct transaction information and can update the
+	// state of the repository on disk without issue.
+	// To do this, we create a packfile from the push tx and attempt to let
+	// git-receive-pack process it.
+	// ------------------------------------------------------------------------
 
 	// Create the pack file
 	packfile, err := makeReferenceUpdateRequest(tx.TargetRepo, &tx)
@@ -113,7 +118,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		return errors.Wrap(err, "HandleStream error")
 	}
 
-	// Handle transaction validation and revert operation changes
+	// Handle transaction validation and revert pre-commit changes
 	if _, _, err := pushHandler.HandleValidateAndRevert(); err != nil {
 		return errors.Wrap(err, "HandleValidateAndRevert error")
 	}
@@ -123,10 +128,11 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// At this point, the transaction has passed all validation and
-	// compatibility checks. We can now attempt to add the push note to the PushPool
-	// if err := m.GetPushPool().Add(&tx); err != nil {
-	// 	return errors.Wrap(err, "failed to add push note to push pool")
-	// }
+	// compatibility checks. We can now attempt to add the push note to the
+	// PushPool without validation
+	if err := m.GetPushPool().Add(&tx, true); err != nil {
+		return errors.Wrap(err, "failed to add push note to push pool")
+	}
 
 	// Announce the objects of the push note to the dht
 	for _, hash := range tx.GetPushedObjects() {

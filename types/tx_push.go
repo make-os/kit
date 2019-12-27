@@ -71,11 +71,13 @@ func (tx *TxPush) GetID() string {
 func (tx *TxPush) GetEcoSize() int64 {
 	fee := tx.Fee
 	tx.Fee = ""
+	
 	bz := tx.Bytes()
-	tx.Fee = fee
 	size := uint64(len(bz))
 	pushNoteEcoSize := tx.PushNote.GetEcoSize()
 	diff := size - pushNoteEcoSize
+	
+	tx.Fee = fee
 	return int64(size - diff)
 }
 

@@ -1022,17 +1022,22 @@ func (m *MockPushPool) EXPECT() *MockPushPoolMockRecorder {
 }
 
 // Add mocks base method
-func (m *MockPushPool) Add(tx types.RepoPushNote) error {
+func (m *MockPushPool) Add(tx types.RepoPushNote, noValidation ...bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Add", tx)
+	varargs := []interface{}{tx}
+	for _, a := range noValidation {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Add", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Add indicates an expected call of Add
-func (mr *MockPushPoolMockRecorder) Add(tx interface{}) *gomock.Call {
+func (mr *MockPushPoolMockRecorder) Add(tx interface{}, noValidation ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockPushPool)(nil).Add), tx)
+	varargs := append([]interface{}{tx}, noValidation...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockPushPool)(nil).Add), varargs...)
 }
 
 // Full mocks base method

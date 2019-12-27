@@ -144,6 +144,11 @@ func (h *PushHandler) HandleUpdate() error {
 		return err
 	}
 
+	// Announce the pushed objects
+	for _, obj := range h.pushReader.objects {
+		h.announceObject(obj.Hash.String())
+	}
+
 	// Broadcast the push note
 	h.rMgr.BroadcastPushNote(pushNote)
 
@@ -191,8 +196,8 @@ func (h *PushHandler) createPushNote(pkID string,
 }
 
 // announceObject announces a packed object to DHT peers
-func (h *PushHandler) announceObject(obj *packObject) error {
-	dhtKey := MakeRepoObjectDHTKey(h.repo.GetName(), obj.Hash.String())
+func (h *PushHandler) announceObject(objHash string) error {
+	dhtKey := MakeRepoObjectDHTKey(h.repo.GetName(), objHash)
 	ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
 	defer c()
 	if err := h.rMgr.GetDHT().Annonce(ctx, []byte(dhtKey)); err != nil {
