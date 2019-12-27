@@ -19,7 +19,7 @@ var (
 )
 
 type containerItem struct {
-	Tx        *PushNote
+	Tx        *types.PushNote
 	FeeRate   util.String
 	TimeAdded time.Time
 }
@@ -110,7 +110,7 @@ func (i *refNonceIndex) remove(refKey string) {
 }
 
 // newItem creates an instance of ContainerItem
-func newItem(tx *PushNote) *containerItem {
+func newItem(tx *types.PushNote) *containerItem {
 	item := &containerItem{Tx: tx, TimeAdded: time.Now()}
 	return item
 }
@@ -173,7 +173,7 @@ func (p *PushPool) Full() bool {
 // reference of tx is superior to multiple references in multiple transactions,
 // replacement will only happen if the fee rate of tx is higher than the
 // combined fee rate of the replaceable transactions.
-func (p *PushPool) Add(tx types.PushNote) error {
+func (p *PushPool) Add(tx types.RepoPushNote) error {
 
 	if p.Full() {
 		return errFullPushPool
@@ -187,7 +187,7 @@ func (p *PushPool) Add(tx types.PushNote) error {
 		return errTxExistInPushPool
 	}
 
-	item := newItem(tx.(*PushNote))
+	item := newItem(tx.(*types.PushNote))
 
 	// Calculate and set fee rate
 	billableTxSize := decimal.NewFromFloat(float64(tx.BillableSize()))
@@ -195,11 +195,11 @@ func (p *PushPool) Add(tx types.PushNote) error {
 
 	// Check if references of the transactions are valid
 	// or can replace existing transaction
-	var replaceable = make(map[string]*PushNote)
+	var replaceable = make(map[string]*types.PushNote)
 	var totalReplaceableFee = decimal.NewFromFloat(0)
-	for _, ref := range tx.(*PushNote).References {
+	for _, ref := range tx.(*types.PushNote).References {
 
-		existingRefNonce := p.refNonceIdx.getNonce(makeRefKey(tx.(*PushNote).RepoName, ref.Name))
+		existingRefNonce := p.refNonceIdx.getNonce(makeRefKey(tx.(*types.PushNote).RepoName, ref.Name))
 		if existingRefNonce == 0 {
 			continue
 		}
@@ -212,14 +212,14 @@ func (p *PushPool) Add(tx types.PushNote) error {
 				"nonce has been staged")
 		}
 
-		existingItem := p.refIndex.get(makeRefKey(tx.(*PushNote).RepoName, ref.Name))
+		existingItem := p.refIndex.get(makeRefKey(tx.(*types.PushNote).RepoName, ref.Name))
 		if existingItem == nil {
 			panic(fmt.Errorf("unexpectedly failed to find existing reference tx"))
 		}
 
 		if existingItem.Tx.TotalFee().Decimal().GreaterThanOrEqual(tx.TotalFee().Decimal()) {
 			msg := fmt.Sprintf("replace-by-fee on staged reference (ref:%s, repo:%s) "+
-				"not allowed due to inferior fee.", ref.Name, tx.(*PushNote).RepoName)
+				"not allowed due to inferior fee.", ref.Name, tx.(*types.PushNote).RepoName)
 			return fmt.Errorf(msg)
 		}
 
@@ -238,7 +238,7 @@ func (p *PushPool) Add(tx types.PushNote) error {
 				"allowed due to inferior fee.")
 			return fmt.Errorf(msg)
 		}
-		p.remove(funk.Values(replaceable).([]*PushNote)...)
+		p.remove(funk.Values(replaceable).([]*types.PushNote)...)
 	}
 
 	// Validate the transaction
@@ -253,8 +253,8 @@ func (p *PushPool) Add(tx types.PushNote) error {
 	p.index.add(id.HexStr(), item)
 	p.repoTxsIdx.add(tx.GetRepoName(), item)
 	for _, ref := range item.Tx.References {
-		p.refIndex.add(makeRefKey(tx.(*PushNote).RepoName, ref.Name), item)
-		p.refNonceIdx.add(makeRefKey(tx.(*PushNote).RepoName, ref.Name), ref.Nonce)
+		p.refIndex.add(makeRefKey(tx.(*types.PushNote).RepoName, ref.Name), item)
+		p.refNonceIdx.add(makeRefKey(tx.(*types.PushNote).RepoName, ref.Name), ref.Nonce)
 	}
 
 	return nil
@@ -262,7 +262,7 @@ func (p *PushPool) Add(tx types.PushNote) error {
 
 // removeOps removes a transaction from all indexes.
 // Note: Not thread safe
-func (p *PushPool) removeOps(tx *PushNote) {
+func (p *PushPool) removeOps(tx *types.PushNote) {
 	delete(p.index, tx.ID().HexStr())
 	p.repoTxsIdx.remove(tx.RepoName, tx.ID().String())
 	for _, ref := range tx.References {
@@ -273,9 +273,9 @@ func (p *PushPool) removeOps(tx *PushNote) {
 
 // remove removes transactions from the pool
 // Note: Not thread-safe.
-func (p *PushPool) remove(txs ...*PushNote) {
+func (p *PushPool) remove(txs ...*types.PushNote) {
 	finalTxs := funk.Filter(p.container, func(o *containerItem) bool {
-		if funk.Find(txs, func(tx *PushNote) bool {
+		if funk.Find(txs, func(tx *types.PushNote) bool {
 			return o.Tx.ID().Equal(tx.ID())
 		}) != nil {
 			p.removeOps(o.Tx)
@@ -287,7 +287,7 @@ func (p *PushPool) remove(txs ...*PushNote) {
 }
 
 // validate validates a push transaction
-func (p *PushPool) validate(tx types.PushNote) error {
+func (p *PushPool) validate(tx types.RepoPushNote) error {
 	return p.txChecker(tx, p.keepers, p.dht)
 }
 

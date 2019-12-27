@@ -7,6 +7,7 @@ import (
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util"
 	"github.com/makeos/mosdef/util/logger"
+	"github.com/shopspring/decimal"
 	"github.com/vmihailenco/msgpack"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -190,7 +191,7 @@ type RepoManager interface {
 	BroadcastMsg(ch byte, msg []byte)
 
 	// BroadcastPushNote broadcast push transaction to peers
-	BroadcastPushNote(pushNote PushNote)
+	BroadcastPushNote(pushNote RepoPushNote)
 
 	// SetPGPPubKeyGetter sets the PGP public key query function
 	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
@@ -234,7 +235,7 @@ type PushPool interface {
 	// reference of tx is superior to multiple references in multiple transactions,
 	// replacement will only happen if the fee rate of tx is higher than the
 	// combined fee rate of the replaceable transactions.
-	Add(tx PushNote) error
+	Add(tx RepoPushNote) error
 
 	// Full returns true if the pool is full
 	Full() bool
@@ -243,8 +244,8 @@ type PushPool interface {
 	RepoHasPushNote(repo string) bool
 }
 
-// PushNote represents a repository push request
-type PushNote interface {
+// RepoPushNote represents a repository push request
+type RepoPushNote interface {
 
 	// RepoName returns the name of the repo receiving the push
 	GetRepoName() string
@@ -252,9 +253,9 @@ type PushNote interface {
 	// Bytes returns a serialized version of the object
 	Bytes() []byte
 
-	// LenMinusFee returns the length of the serialized tx minus
+	// GetEcoSize returns the length of the serialized tx minus
 	// the total length of fee fields.
-	LenMinusFee() uint64
+	GetEcoSize() uint64
 
 	// Len returns the length of the serialized tx
 	Len() uint64
@@ -419,4 +420,114 @@ type Items interface {
 	Len() int64
 	Bytes() []byte
 	Hash() util.Hash
+}
+
+// PushNote implements types.PushNote
+type PushNote struct {
+	TargetRepo  BareRepo         `json:"-" msgpack:"-" mapstructure:"-"`
+	RepoName    string           `json:"repoName" msgpack:"repoName"`       // The name of the repo
+	References  PushedReferences `json:"references" msgpack:"references"`   // A list of references pushed
+	PusherKeyID string           `json:"pusherKeyId" msgpack:"pusherKeyId"` // The PGP key of the pusher
+	Size        uint64           `json:"size" msgpack:"size"`               // Total size of all objects pushed
+	Timestamp   int64            `json:"timestamp" msgpack:"timestamp"`     // Unix timestamp
+	NodeSig     []byte           `json:"nodeSig" msgpack:"nodeSig"`         // The signature of the node that created the PushNote
+	NodePubKey  string           `json:"nodePubKey" msgpack:"nodePubKey"`   // The public key of the push note signer
+}
+
+// GetTargetRepo returns the target repository
+func (pt *PushNote) GetTargetRepo() BareRepo {
+	return pt.TargetRepo
+}
+
+// GetPusherKeyID returns the pusher gpg key ID
+func (pt *PushNote) GetPusherKeyID() string {
+	return pt.PusherKeyID
+}
+
+// EncodeMsgpack implements msgpack.CustomEncoder
+func (pt *PushNote) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeMulti(pt.RepoName, pt.References, pt.PusherKeyID,
+		pt.Size, pt.Timestamp, pt.NodeSig, pt.NodePubKey)
+}
+
+// DecodeMsgpack implements msgpack.CustomDecoder
+func (pt *PushNote) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return dec.DecodeMulti(&pt.RepoName, &pt.References, &pt.PusherKeyID,
+		&pt.Size, &pt.Timestamp, &pt.NodeSig, &pt.NodePubKey)
+}
+
+// Bytes returns a serialized version of the object
+func (pt *PushNote) Bytes() []byte {
+	return util.ObjectToBytes(pt)
+}
+
+// GetPushedObjects returns all objects from all pushed references
+func (pt *PushNote) GetPushedObjects() (objs []string) {
+	for _, ref := range pt.GetPushedReferences() {
+		objs = append(objs, ref.Objects...)
+	}
+	return
+}
+
+// GetEcoSize returns a size of the push note used for economics calculation.
+// Here, the size of the fee fields in the references are subtracted from the
+// size of the serialized push note. This ensures change in fees do not affect
+// the final size used for base fee calculations.
+func (pt *PushNote) GetEcoSize() uint64 {
+	var feeFieldsLen = 0
+	for _, r := range pt.References {
+		feeFieldsLen += len(util.ObjectToBytes(r.Fee))
+	}
+
+	return pt.Len() - uint64(feeFieldsLen)
+}
+
+// GetRepoName returns the name of the repo receiving the push
+func (pt *PushNote) GetRepoName() string {
+	return pt.RepoName
+}
+
+// GetPushedReferences returns the pushed references
+func (pt *PushNote) GetPushedReferences() PushedReferences {
+	return pt.References
+}
+
+// Len returns the length of the serialized tx
+func (pt *PushNote) Len() uint64 {
+	return uint64(len(pt.Bytes()))
+}
+
+// ID returns the hash of the push note
+func (pt *PushNote) ID() util.Hash {
+	return util.BytesToHash(util.Blake2b256(pt.Bytes()))
+}
+
+// BytesAndID returns the serialized version of the tx and the id
+func (pt *PushNote) BytesAndID() ([]byte, util.Hash) {
+	bz := pt.Bytes()
+	return bz, util.BytesToHash(bz)
+}
+
+// TxSize is the size of the transaction
+func (pt *PushNote) TxSize() uint {
+	return uint(len(pt.Bytes()))
+}
+
+// BillableSize is the size of the transaction + pushed objects
+func (pt *PushNote) BillableSize() uint64 {
+	return pt.GetEcoSize() + pt.Size
+}
+
+// GetSize returns the total pushed objects size
+func (pt *PushNote) GetSize() uint64 {
+	return pt.Size
+}
+
+// TotalFee returns the sum of reference update fees
+func (pt *PushNote) TotalFee() util.String {
+	sum := decimal.NewFromFloat(0)
+	for _, r := range pt.References {
+		sum = sum.Add(r.Fee.Decimal())
+	}
+	return util.String(sum.String())
 }

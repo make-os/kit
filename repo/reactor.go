@@ -27,7 +27,7 @@ func (m *Manager) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 
 	// Attempt to decode message to PushNote
-	var tx PushNote
+	var tx types.PushNote
 	if err := util.BytesToObject(msgBytes, &tx); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
@@ -53,7 +53,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		return errors.Wrap(err, fmt.Sprintf("failed to open repo '%s'", repoName))
 	}
 
-	tx.targetRepo = &Repo{
+	tx.TargetRepo = &Repo{
 		name:  repoName,
 		git:   repo,
 		ops:   NewGitOps(m.gitBinPath, repoPath),
@@ -78,7 +78,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	// tx and attempt to let git-receive-pack process it.
 
 	// Create the pack file
-	packfile, err := makeReferenceUpdateRequest(tx.targetRepo, &tx)
+	packfile, err := makeReferenceUpdateRequest(tx.TargetRepo, &tx)
 	if err != nil {
 		return errors.Wrap(err, "failed to create packfile from push note")
 	}
@@ -108,7 +108,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Read, analyse and pass the packfile to git
-	pushHandler := newPushHandler(tx.targetRepo, m)
+	pushHandler := newPushHandler(tx.TargetRepo, m)
 	if err := pushHandler.HandleStream(packfile, in); err != nil {
 		return errors.Wrap(err, "HandleStream error")
 	}
@@ -149,7 +149,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 
 // BroadcastPushNote broadcast push transaction to peers.
 // It will not send to original sender of the push note.
-func (m *Manager) BroadcastPushNote(pushNote types.PushNote) {
+func (m *Manager) BroadcastPushNote(pushNote types.RepoPushNote) {
 	for _, peer := range m.Switch.Peers().List() {
 		bz, id := pushNote.BytesAndID()
 		if m.isPushNoteSender(string(peer.ID()), id.String()) {

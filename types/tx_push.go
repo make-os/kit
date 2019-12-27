@@ -11,7 +11,7 @@ import (
 type TxPush struct {
 	*TxCommon `json:"-" mapstructure:"-"`
 	*TxType   `json:"-" msgpack:"-"`
-	PushNote  PushNote
+	PushNote  *PushNote `json:"push" mapstructure:"push"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -67,13 +67,16 @@ func (tx *TxPush) GetID() string {
 	return tx.ComputeHash().HexStr()
 }
 
-// GetEcoSize returns the size of the transaction for use in protocol economics
+// GetEcoSize returns the size of the transaction for use in economic calculations
 func (tx *TxPush) GetEcoSize() int64 {
 	fee := tx.Fee
 	tx.Fee = ""
 	bz := tx.Bytes()
 	tx.Fee = fee
-	return int64(len(bz))
+	size := uint64(len(bz))
+	pushNoteEcoSize := tx.PushNote.GetEcoSize()
+	diff := size - pushNoteEcoSize
+	return int64(size - diff)
 }
 
 // GetSize returns the size of the tx object (excluding nothing)

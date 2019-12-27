@@ -11,14 +11,14 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func txCheckNoIssue(tx types.PushNote, keepers types.Keepers, dht types.DHT) error {
+func txCheckNoIssue(tx types.RepoPushNote, keepers types.Keepers, dht types.DHT) error {
 	return nil
 }
 
 var _ = Describe("PushPool", func() {
 	var pool *PushPool
-	var tx *PushNote
-	var tx2 *PushNote
+	var tx *types.PushNote
+	var tx2 *types.PushNote
 	var ctrl *gomock.Controller
 	var mockKeeper *mocks.MockKeepers
 	var mockDHT *mocks.MockDHT
@@ -35,13 +35,13 @@ var _ = Describe("PushPool", func() {
 	})
 
 	BeforeEach(func() {
-		tx = &PushNote{
+		tx = &types.PushNote{
 			RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 			References: []*types.PushedReference{
 				{Name: "refs/heads/master", Nonce: 1, Fee: "0.2", AccountNonce: 2},
 			},
 		}
-		tx2 = &PushNote{
+		tx2 = &types.PushNote{
 			RepoName: "repo2", NodeSig: []byte("sig_2"), PusherKeyID: "pk_id_2",
 			References: []*types.PushedReference{
 				{Name: "refs/heads/master", Nonce: 1, Fee: "0.2", AccountNonce: 2},
@@ -134,7 +134,7 @@ var _ = Describe("PushPool", func() {
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
-				tx2 := &PushNote{
+				tx2 := &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
@@ -154,13 +154,13 @@ var _ = Describe("PushPool", func() {
 
 		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool but ref0 has a higher nonce", func() {
-			var tx2 *PushNote
+			var tx2 *types.PushNote
 			BeforeEach(func() {
 				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
-				tx2 = &PushNote{
+				tx2 = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
@@ -179,13 +179,13 @@ var _ = Describe("PushPool", func() {
 
 		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool but failed to read the ref index of the existing reference", func() {
-			var tx2 *PushNote
+			var tx2 *types.PushNote
 			BeforeEach(func() {
 				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
-				tx2 = &PushNote{
+				tx2 = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
@@ -209,7 +209,7 @@ var _ = Describe("PushPool", func() {
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
-				tx2 := &PushNote{
+				tx2 := &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
@@ -229,13 +229,13 @@ var _ = Describe("PushPool", func() {
 
 		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool and tx_X has a higher fee", func() {
-			var tx2 *PushNote
+			var tx2 *types.PushNote
 			BeforeEach(func() {
 				pool.txChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
-				tx2 = &PushNote{
+				tx2 = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
@@ -260,9 +260,9 @@ var _ = Describe("PushPool", func() {
 
 		When("a reference (ref0) in new tx (tx_X) match identical references (ref0) of tx (tx_Y) and (ref0) of tx (tx_Z) "+
 			"that already exist in the pool and tx_X has a higher fee", func() {
-			var txX, txY, txZ *PushNote
+			var txX, txY, txZ *types.PushNote
 			BeforeEach(func() {
-				txY = &PushNote{
+				txY = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
@@ -270,7 +270,7 @@ var _ = Describe("PushPool", func() {
 					},
 				}
 
-				txZ = &PushNote{
+				txZ = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
@@ -278,7 +278,7 @@ var _ = Describe("PushPool", func() {
 					},
 				}
 
-				txX = &PushNote{
+				txX = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
@@ -311,9 +311,9 @@ var _ = Describe("PushPool", func() {
 
 		When("a references (ref0, ref1) in new tx (tx_X) match identical references (ref0) of tx (tx_Y) and (ref0) of tx (tx_Z) "+
 			"that already exist in the pool and tx_X has lower total fee", func() {
-			var txX, txY, txZ *PushNote
+			var txX, txY, txZ *types.PushNote
 			BeforeEach(func() {
-				txY = &PushNote{
+				txY = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
@@ -321,7 +321,7 @@ var _ = Describe("PushPool", func() {
 					},
 				}
 
-				txZ = &PushNote{
+				txZ = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
@@ -329,7 +329,7 @@ var _ = Describe("PushPool", func() {
 					},
 				}
 
-				txX = &PushNote{
+				txX = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
@@ -513,9 +513,9 @@ var _ = Describe("repoTxsIndex", func() {
 		var idx repoTxsIndex
 
 		When("repo has 1 txA and txA is removed", func() {
-			var txA *PushNote
+			var txA *types.PushNote
 			BeforeEach(func() {
-				txA = &PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 100000000}
+				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 100000000}
 				idx = repoTxsIndex(map[string][]*containerItem{})
 				idx.add("repo1", &containerItem{Tx: txA})
 				Expect(idx["repo1"]).To(HaveLen(1))
@@ -528,10 +528,10 @@ var _ = Describe("repoTxsIndex", func() {
 		})
 
 		When("repo has 2 txs (txA and TxB) and txA is removed", func() {
-			var txA, txB *PushNote
+			var txA, txB *types.PushNote
 			BeforeEach(func() {
-				txA = &PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 100000000}
-				txB = &PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 200000000}
+				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 100000000}
+				txB = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 200000000}
 				idx = repoTxsIndex(map[string][]*containerItem{})
 				idx.add("repo1", &containerItem{Tx: txA})
 				idx.add("repo1", &containerItem{Tx: txB})

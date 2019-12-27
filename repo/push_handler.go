@@ -150,11 +150,12 @@ func (h *PushHandler) HandleUpdate() error {
 	return nil
 }
 
-func (h *PushHandler) createPushNote(pkID string, refsTxLine map[string]*util.TxLine) (*PushNote, error) {
+func (h *PushHandler) createPushNote(pkID string,
+	refsTxLine map[string]*util.TxLine) (*types.PushNote, error) {
 
 	var err error
-	var pushNote = &PushNote{
-		targetRepo:  h.repo,
+	var pushNote = &types.PushNote{
+		TargetRepo:  h.repo,
 		RepoName:    h.repo.GetName(),
 		PusherKeyID: pkID,
 		Timestamp:   time.Now().Unix(),

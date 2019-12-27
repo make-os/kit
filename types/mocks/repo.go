@@ -860,7 +860,7 @@ func (mr *MockRepoManagerMockRecorder) BroadcastMsg(ch, msg interface{}) *gomock
 }
 
 // BroadcastPushNote mocks base method
-func (m *MockRepoManager) BroadcastPushNote(pushNote types.PushNote) {
+func (m *MockRepoManager) BroadcastPushNote(pushNote types.RepoPushNote) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "BroadcastPushNote", pushNote)
 }
@@ -1022,7 +1022,7 @@ func (m *MockPushPool) EXPECT() *MockPushPoolMockRecorder {
 }
 
 // Add mocks base method
-func (m *MockPushPool) Add(tx types.PushNote) error {
+func (m *MockPushPool) Add(tx types.RepoPushNote) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", tx)
 	ret0, _ := ret[0].(error)
@@ -1063,31 +1063,31 @@ func (mr *MockPushPoolMockRecorder) RepoHasPushNote(repo interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoHasPushNote", reflect.TypeOf((*MockPushPool)(nil).RepoHasPushNote), repo)
 }
 
-// MockPushNote is a mock of PushNote interface
-type MockPushNote struct {
+// MockRepoPushNote is a mock of RepoPushNote interface
+type MockRepoPushNote struct {
 	ctrl     *gomock.Controller
-	recorder *MockPushNoteMockRecorder
+	recorder *MockRepoPushNoteMockRecorder
 }
 
-// MockPushNoteMockRecorder is the mock recorder for MockPushNote
-type MockPushNoteMockRecorder struct {
-	mock *MockPushNote
+// MockRepoPushNoteMockRecorder is the mock recorder for MockRepoPushNote
+type MockRepoPushNoteMockRecorder struct {
+	mock *MockRepoPushNote
 }
 
-// NewMockPushNote creates a new mock instance
-func NewMockPushNote(ctrl *gomock.Controller) *MockPushNote {
-	mock := &MockPushNote{ctrl: ctrl}
-	mock.recorder = &MockPushNoteMockRecorder{mock}
+// NewMockRepoPushNote creates a new mock instance
+func NewMockRepoPushNote(ctrl *gomock.Controller) *MockRepoPushNote {
+	mock := &MockRepoPushNote{ctrl: ctrl}
+	mock.recorder = &MockRepoPushNoteMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockPushNote) EXPECT() *MockPushNoteMockRecorder {
+func (m *MockRepoPushNote) EXPECT() *MockRepoPushNoteMockRecorder {
 	return m.recorder
 }
 
 // GetRepoName mocks base method
-func (m *MockPushNote) GetRepoName() string {
+func (m *MockRepoPushNote) GetRepoName() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRepoName")
 	ret0, _ := ret[0].(string)
@@ -1095,13 +1095,13 @@ func (m *MockPushNote) GetRepoName() string {
 }
 
 // GetRepoName indicates an expected call of GetRepoName
-func (mr *MockPushNoteMockRecorder) GetRepoName() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) GetRepoName() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoName", reflect.TypeOf((*MockPushNote)(nil).GetRepoName))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoName", reflect.TypeOf((*MockRepoPushNote)(nil).GetRepoName))
 }
 
 // Bytes mocks base method
-func (m *MockPushNote) Bytes() []byte {
+func (m *MockRepoPushNote) Bytes() []byte {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Bytes")
 	ret0, _ := ret[0].([]byte)
@@ -1109,27 +1109,27 @@ func (m *MockPushNote) Bytes() []byte {
 }
 
 // Bytes indicates an expected call of Bytes
-func (mr *MockPushNoteMockRecorder) Bytes() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) Bytes() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockPushNote)(nil).Bytes))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockRepoPushNote)(nil).Bytes))
 }
 
-// LenMinusFee mocks base method
-func (m *MockPushNote) LenMinusFee() uint64 {
+// GetEcoSize mocks base method
+func (m *MockRepoPushNote) GetEcoSize() uint64 {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LenMinusFee")
+	ret := m.ctrl.Call(m, "GetEcoSize")
 	ret0, _ := ret[0].(uint64)
 	return ret0
 }
 
-// LenMinusFee indicates an expected call of LenMinusFee
-func (mr *MockPushNoteMockRecorder) LenMinusFee() *gomock.Call {
+// GetEcoSize indicates an expected call of GetEcoSize
+func (mr *MockRepoPushNoteMockRecorder) GetEcoSize() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LenMinusFee", reflect.TypeOf((*MockPushNote)(nil).LenMinusFee))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEcoSize", reflect.TypeOf((*MockRepoPushNote)(nil).GetEcoSize))
 }
 
 // Len mocks base method
-func (m *MockPushNote) Len() uint64 {
+func (m *MockRepoPushNote) Len() uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Len")
 	ret0, _ := ret[0].(uint64)
@@ -1137,13 +1137,13 @@ func (m *MockPushNote) Len() uint64 {
 }
 
 // Len indicates an expected call of Len
-func (mr *MockPushNoteMockRecorder) Len() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) Len() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockPushNote)(nil).Len))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockRepoPushNote)(nil).Len))
 }
 
 // ID mocks base method
-func (m *MockPushNote) ID() util.Hash {
+func (m *MockRepoPushNote) ID() util.Hash {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ID")
 	ret0, _ := ret[0].(util.Hash)
@@ -1151,13 +1151,13 @@ func (m *MockPushNote) ID() util.Hash {
 }
 
 // ID indicates an expected call of ID
-func (mr *MockPushNoteMockRecorder) ID() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) ID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockPushNote)(nil).ID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockRepoPushNote)(nil).ID))
 }
 
 // TxSize mocks base method
-func (m *MockPushNote) TxSize() uint {
+func (m *MockRepoPushNote) TxSize() uint {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TxSize")
 	ret0, _ := ret[0].(uint)
@@ -1165,13 +1165,13 @@ func (m *MockPushNote) TxSize() uint {
 }
 
 // TxSize indicates an expected call of TxSize
-func (mr *MockPushNoteMockRecorder) TxSize() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) TxSize() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxSize", reflect.TypeOf((*MockPushNote)(nil).TxSize))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxSize", reflect.TypeOf((*MockRepoPushNote)(nil).TxSize))
 }
 
 // BillableSize mocks base method
-func (m *MockPushNote) BillableSize() uint64 {
+func (m *MockRepoPushNote) BillableSize() uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BillableSize")
 	ret0, _ := ret[0].(uint64)
@@ -1179,13 +1179,13 @@ func (m *MockPushNote) BillableSize() uint64 {
 }
 
 // BillableSize indicates an expected call of BillableSize
-func (mr *MockPushNoteMockRecorder) BillableSize() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) BillableSize() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BillableSize", reflect.TypeOf((*MockPushNote)(nil).BillableSize))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BillableSize", reflect.TypeOf((*MockRepoPushNote)(nil).BillableSize))
 }
 
 // TotalFee mocks base method
-func (m *MockPushNote) TotalFee() util.String {
+func (m *MockRepoPushNote) TotalFee() util.String {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TotalFee")
 	ret0, _ := ret[0].(util.String)
@@ -1193,13 +1193,13 @@ func (m *MockPushNote) TotalFee() util.String {
 }
 
 // TotalFee indicates an expected call of TotalFee
-func (mr *MockPushNoteMockRecorder) TotalFee() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) TotalFee() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalFee", reflect.TypeOf((*MockPushNote)(nil).TotalFee))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalFee", reflect.TypeOf((*MockRepoPushNote)(nil).TotalFee))
 }
 
 // GetPushedReferences mocks base method
-func (m *MockPushNote) GetPushedReferences() types.PushedReferences {
+func (m *MockRepoPushNote) GetPushedReferences() types.PushedReferences {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushedReferences")
 	ret0, _ := ret[0].(types.PushedReferences)
@@ -1207,13 +1207,13 @@ func (m *MockPushNote) GetPushedReferences() types.PushedReferences {
 }
 
 // GetPushedReferences indicates an expected call of GetPushedReferences
-func (mr *MockPushNoteMockRecorder) GetPushedReferences() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) GetPushedReferences() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushedReferences", reflect.TypeOf((*MockPushNote)(nil).GetPushedReferences))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushedReferences", reflect.TypeOf((*MockRepoPushNote)(nil).GetPushedReferences))
 }
 
 // GetPusherKeyID mocks base method
-func (m *MockPushNote) GetPusherKeyID() string {
+func (m *MockRepoPushNote) GetPusherKeyID() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPusherKeyID")
 	ret0, _ := ret[0].(string)
@@ -1221,13 +1221,13 @@ func (m *MockPushNote) GetPusherKeyID() string {
 }
 
 // GetPusherKeyID indicates an expected call of GetPusherKeyID
-func (mr *MockPushNoteMockRecorder) GetPusherKeyID() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) GetPusherKeyID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPusherKeyID", reflect.TypeOf((*MockPushNote)(nil).GetPusherKeyID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPusherKeyID", reflect.TypeOf((*MockRepoPushNote)(nil).GetPusherKeyID))
 }
 
 // GetTargetRepo mocks base method
-func (m *MockPushNote) GetTargetRepo() types.BareRepo {
+func (m *MockRepoPushNote) GetTargetRepo() types.BareRepo {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTargetRepo")
 	ret0, _ := ret[0].(types.BareRepo)
@@ -1235,13 +1235,13 @@ func (m *MockPushNote) GetTargetRepo() types.BareRepo {
 }
 
 // GetTargetRepo indicates an expected call of GetTargetRepo
-func (mr *MockPushNoteMockRecorder) GetTargetRepo() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) GetTargetRepo() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTargetRepo", reflect.TypeOf((*MockPushNote)(nil).GetTargetRepo))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTargetRepo", reflect.TypeOf((*MockRepoPushNote)(nil).GetTargetRepo))
 }
 
 // GetSize mocks base method
-func (m *MockPushNote) GetSize() uint64 {
+func (m *MockRepoPushNote) GetSize() uint64 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSize")
 	ret0, _ := ret[0].(uint64)
@@ -1249,13 +1249,13 @@ func (m *MockPushNote) GetSize() uint64 {
 }
 
 // GetSize indicates an expected call of GetSize
-func (mr *MockPushNoteMockRecorder) GetSize() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) GetSize() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSize", reflect.TypeOf((*MockPushNote)(nil).GetSize))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSize", reflect.TypeOf((*MockRepoPushNote)(nil).GetSize))
 }
 
 // GetPushedObjects mocks base method
-func (m *MockPushNote) GetPushedObjects() []string {
+func (m *MockRepoPushNote) GetPushedObjects() []string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushedObjects")
 	ret0, _ := ret[0].([]string)
@@ -1263,13 +1263,13 @@ func (m *MockPushNote) GetPushedObjects() []string {
 }
 
 // GetPushedObjects indicates an expected call of GetPushedObjects
-func (mr *MockPushNoteMockRecorder) GetPushedObjects() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) GetPushedObjects() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushedObjects", reflect.TypeOf((*MockPushNote)(nil).GetPushedObjects))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushedObjects", reflect.TypeOf((*MockRepoPushNote)(nil).GetPushedObjects))
 }
 
 // BytesAndID mocks base method
-func (m *MockPushNote) BytesAndID() ([]byte, util.Hash) {
+func (m *MockRepoPushNote) BytesAndID() ([]byte, util.Hash) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BytesAndID")
 	ret0, _ := ret[0].([]byte)
@@ -1278,9 +1278,9 @@ func (m *MockPushNote) BytesAndID() ([]byte, util.Hash) {
 }
 
 // BytesAndID indicates an expected call of BytesAndID
-func (mr *MockPushNoteMockRecorder) BytesAndID() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) BytesAndID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockPushNote)(nil).BytesAndID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockRepoPushNote)(nil).BytesAndID))
 }
 
 // MockPruner is a mock of Pruner interface

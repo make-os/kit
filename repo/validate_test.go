@@ -545,41 +545,41 @@ var _ = Describe("Validation", func() {
 
 	Describe(".checkPushNoteSyntax", func() {
 		key := crypto.NewKeyFromIntSeed(1)
-		okTx := &PushNote{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().Base58()}
+		okTx := &types.PushNote{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().Base58()}
 		bz, _ := key.PrivKey().Sign(okTx.Bytes())
 		okTx.NodeSig = bz
 
 		var cases = [][]interface{}{
-			{&PushNote{}, fmt.Errorf("field:repoName, error:repo name is required")},
-			{&PushNote{RepoName: "repo"}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key id is required")},
-			{&PushNote{RepoName: "repo", PusherKeyID: "xyz"}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key is not valid")},
-			{&PushNote{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42)}, fmt.Errorf("field:timestamp, error:timestamp is too old")},
-			{&PushNote{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix()}, fmt.Errorf("field:nodePubKey, error:push node public key is required")},
-			{&PushNote{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix(), NodePubKey: "key"}, fmt.Errorf("field:nodePubKey, error:push node public key is not valid")},
-			{&PushNote{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().Base58()}, fmt.Errorf("field:nodeSig, error:push node signature is required")},
-			{&PushNote{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().Base58(), NodeSig: []byte("invalid")}, fmt.Errorf("field:nodeSig, error:failed to verify signature with public key")},
+			{&types.PushNote{}, fmt.Errorf("field:repoName, error:repo name is required")},
+			{&types.PushNote{RepoName: "repo"}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key id is required")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: "xyz"}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key is not valid")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42)}, fmt.Errorf("field:timestamp, error:timestamp is too old")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix()}, fmt.Errorf("field:nodePubKey, error:push node public key is required")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix(), NodePubKey: "key"}, fmt.Errorf("field:nodePubKey, error:push node public key is not valid")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().Base58()}, fmt.Errorf("field:nodeSig, error:push node signature is required")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: strings.Repeat("x", 42), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().Base58(), NodeSig: []byte("invalid")}, fmt.Errorf("field:nodeSig, error:failed to verify signature with public key")},
 			{okTx, nil},
-			{&PushNote{RepoName: "repo", References: []*types.PushedReference{
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
 				{},
 			}}, fmt.Errorf("index:0, field:references.name, error:name is required")},
-			{&PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref"}}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is required")},
-			{&PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: "abc"}}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is not valid")},
-			{&PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40)}}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is required")},
-			{&PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: "abc"}}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is not valid")},
-			{&PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40)}}}, fmt.Errorf("index:0, field:references.nonce, error:reference nonce must be greater than zero")},
-			{&PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1}}}, fmt.Errorf("index:0, field:references.accountNonce, error:account nonce must be greater than zero")},
-			{&PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1}}}, fmt.Errorf("index:0, field:references.fee, error:fee must be numeric")},
-			{&PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1, Fee: "0a"}}}, fmt.Errorf("index:0, field:references.fee, error:fee must be numeric")},
-			{&PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1, Fee: "1", Objects: []string{"abc"}}}}, fmt.Errorf("index:0, field:references.objects.0, error:object hash is not valid")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref"}}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is required")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: "abc"}}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is not valid")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40)}}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is required")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: "abc"}}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is not valid")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40)}}}, fmt.Errorf("index:0, field:references.nonce, error:reference nonce must be greater than zero")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1}}}, fmt.Errorf("index:0, field:references.accountNonce, error:account nonce must be greater than zero")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1}}}, fmt.Errorf("index:0, field:references.fee, error:fee must be numeric")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1, Fee: "0a"}}}, fmt.Errorf("index:0, field:references.fee, error:fee must be numeric")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1, Fee: "1", Objects: []string{"abc"}}}}, fmt.Errorf("index:0, field:references.objects.0, error:object hash is not valid")},
 		}
 
 		It("should check cases", func() {
 			for _, c := range cases {
 				_c := c
 				if _c[1] != nil {
-					Expect(checkPushNoteSyntax(_c[0].(*PushNote))).To(Equal(_c[1]))
+					Expect(checkPushNoteSyntax(_c[0].(*types.PushNote))).To(Equal(_c[1]))
 				} else {
-					Expect(checkPushNoteSyntax(_c[0].(*PushNote))).To(BeNil())
+					Expect(checkPushNoteSyntax(_c[0].(*types.PushNote))).To(BeNil())
 				}
 			}
 		})
@@ -858,7 +858,7 @@ var _ = Describe("Validation", func() {
 
 		When("no repository with matching name exist", func() {
 			BeforeEach(func() {
-				tx := &PushNote{RepoName: "unknown"}
+				tx := &types.PushNote{RepoName: "unknown"}
 				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(types.BareRepository())
 				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
@@ -873,7 +873,7 @@ var _ = Describe("Validation", func() {
 
 		When("pusher public id is unknown", func() {
 			BeforeEach(func() {
-				tx := &PushNote{RepoName: "repo1", PusherKeyID: "pkID"}
+				tx := &types.PushNote{RepoName: "repo1", PusherKeyID: "pkID"}
 				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{CreatorAddress: "addr1"})
 				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
@@ -895,13 +895,13 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				objHash := "obj_hash"
 
-				tx := &PushNote{RepoName: "repo1", References: []*types.PushedReference{
+				tx := &types.PushNote{RepoName: "repo1", References: []*types.PushedReference{
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}}
 
 				mockRepo := mocks.NewMockBareRepo(ctrl)
 				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
-				tx.targetRepo = mockRepo
+				tx.TargetRepo = mockRepo
 
 				mockDHT := mocks.NewMockDHT(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
@@ -923,13 +923,13 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				objHash := "obj_hash"
 
-				tx := &PushNote{RepoName: "repo1", References: []*types.PushedReference{
+				tx := &types.PushNote{RepoName: "repo1", References: []*types.PushedReference{
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}}
 
 				mockRepo := mocks.NewMockBareRepo(ctrl)
 				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
-				tx.targetRepo = mockRepo
+				tx.TargetRepo = mockRepo
 
 				mockDHT := mocks.NewMockDHT(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
@@ -954,13 +954,13 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				objHash := "obj_hash"
 
-				tx := &PushNote{RepoName: "repo1", References: []*types.PushedReference{
+				tx := &types.PushNote{RepoName: "repo1", References: []*types.PushedReference{
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}, Size: 7}
 
 				mockRepo := mocks.NewMockBareRepo(ctrl)
 				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
-				tx.targetRepo = mockRepo
+				tx.TargetRepo = mockRepo
 
 				mockDHT := mocks.NewMockDHT(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
@@ -985,13 +985,13 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				objHash := "obj_hash"
 
-				tx := &PushNote{RepoName: "repo1", References: []*types.PushedReference{
+				tx := &types.PushNote{RepoName: "repo1", References: []*types.PushedReference{
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}, Size: 10}
 
 				mockRepo := mocks.NewMockBareRepo(ctrl)
 				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
-				tx.targetRepo = mockRepo
+				tx.TargetRepo = mockRepo
 
 				mockDHT := mocks.NewMockDHT(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
