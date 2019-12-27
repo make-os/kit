@@ -1,6 +1,7 @@
 package rand
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/hex"
 	"fmt"
@@ -91,17 +92,22 @@ func NewDRand(interrupt *util.Interrupt) *DRand {
 // Init initializes components required to generate a random value
 func (r *DRand) Init() error {
 	bx := packr.NewBox("./")
-	groupData, err := bx.FindString("group.toml")
+	groupData, err := bx.Find("group.toml")
 	if err != nil {
 		return err
 	}
 
+	return r.init(groupData)
+}
+
+func (r *DRand) init(groupData []byte) error {
+
 	tomlVal := r.g.TOMLValue()
-	if _, err = toml.Decode(groupData, tomlVal); err != nil {
+	if _, err := toml.DecodeReader(bytes.NewBuffer(groupData), tomlVal); err != nil {
 		return errors.Wrap(err, "failed to decode group data")
 	}
 
-	if err = r.g.FromTOML(tomlVal); err != nil {
+	if err := r.g.FromTOML(tomlVal); err != nil {
 		return errors.Wrap(err, "failed to decode from toml struct")
 	}
 
