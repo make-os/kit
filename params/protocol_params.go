@@ -1,8 +1,9 @@
 package params
 
 import (
-	"github.com/shopspring/decimal"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 var (
@@ -90,9 +91,19 @@ var (
 	// UnfinalizedObjectsCacheSize is the max size for unfinalized objects cache
 	UnfinalizedObjectsCacheSize = 10000
 
-	// PushNoteSendersCacheSize is the max size for push note senders cache
-	PushNoteSendersCacheSize = 5000
+	// PushObjectsSendersCacheSize is the max size for push note senders cache
+	PushObjectsSendersCacheSize = 5000
+
+	// PushNotesEndorsementsCacheSize is the max size for push note senders cache
+	PushNotesEndorsementsCacheSize = 5000
 
 	// RepoPrunerTickDur is the duration between each repo pruning operation
 	RepoPrunerTickDur = 10 * time.Second
+
+	// PushOKQuorumSize is the minimum number of PushOKs a push note requires
+	// for approval
+	PushOKQuorumSize = 2
+
+	// NumTopStorersLimit is maximum the number of top storers
+	NumTopStorersLimit = 21
 )

@@ -20,8 +20,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-type poolTxChecker func(tx types.RepoPushNote, keepers types.Keepers, dht types.DHT) error
-
 // validateChange validates a change to a repository
 // repo: The target repository
 // change: The item that changed the repository

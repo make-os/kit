@@ -28,25 +28,24 @@ var _ = Describe("Manager", func() {
 	var logic *l.Logic
 	var ctrl *gomock.Controller
 	var key = crypto.NewKeyFromIntSeed(1)
+	var mockSysKeeper *mocks.MockSystemKeeper
+	var mockLogic *mocks.MockLogic
 
 	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		appDB, stateTreeDB = testutil.GetDB(cfg)
 		logic = l.New(appDB, stateTreeDB, cfg)
 		mgr = NewManager(appDB.NewTx(true, true), cfg, logic)
+		mockObjects := testutil.MockLogic(ctrl)
+		mockLogic = mockObjects.Logic
+		mockSysKeeper = mockObjects.SysKeeper
 		Expect(err).To(BeNil())
-	})
-
-	BeforeEach(func() {
-		ctrl = gomock.NewController(GinkgoT())
 	})
 
 	AfterEach(func() {
 		ctrl.Finish()
-	})
-
-	AfterEach(func() {
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})
@@ -90,11 +89,8 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				err := mgr.s.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockLogic := mocks.NewMockLogic(ctrl)
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 160}, nil)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
 				mgr.logic = mockLogic
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 160}, nil)
 			})
 
 			It("should return 1", func() {
@@ -108,10 +104,7 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				err := mgr.s.Add(ticket, ticket2)
 				Expect(err).To(BeNil())
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockLogic := mocks.NewMockLogic(ctrl)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 300}, nil)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
 				mgr.logic = mockLogic
 			})
 
@@ -125,26 +118,52 @@ var _ = Describe("Manager", func() {
 
 	Describe(".Index", func() {
 		When("no ticket currently exist", func() {
-			BeforeEach(func() {
-				params.MinTicketMatDur = 60
-				params.MaxTicketActiveDur = 40
-				tx := types.NewBaseTx(types.TxTypeValidatorTicket, 1, "", key, "10", "1", 0)
-				err = mgr.Index(tx, 100, 1)
-				Expect(err).To(BeNil())
+			When("a ticket is indexed", func() {
+				BeforeEach(func() {
+					params.MinTicketMatDur = 60
+					params.MaxTicketActiveDur = 40
+					tx := types.NewBaseTx(types.TxTypeValidatorTicket, 1, "", key, "10", "1", 0)
+					err = mgr.Index(tx, 100, 1)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that a ticket was indexed", func() {
+					tickets := mgr.s.Query(func(*types.Ticket) bool { return true })
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(1))
+				})
+
+				Specify("that the ticket's matureBy=160 and decayBy=200", func() {
+					tickets := mgr.s.Query(func(*types.Ticket) bool { return true })
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(1))
+					Expect(tickets[0].MatureBy).To(Equal(uint64(160)))
+					Expect(tickets[0].DecayBy).To(Equal(uint64(200)))
+				})
 			})
 
-			Specify("that a ticket was found", func() {
-				tickets := mgr.s.Query(func(*types.Ticket) bool { return true })
-				Expect(err).To(BeNil())
-				Expect(tickets).To(HaveLen(1))
-			})
+			When("a storer ticket is indexed", func() {
+				BeforeEach(func() {
+					params.MinTicketMatDur = 60
+					params.MaxTicketActiveDur = 40
+					tx := types.NewBaseTx(types.TxTypeStorerTicket, 1, "", key, "10", "1", 0)
+					err = mgr.Index(tx, 100, 1)
+					Expect(err).To(BeNil())
+				})
 
-			Specify("that the ticket's matureBy=160 and decayBy=200", func() {
-				tickets := mgr.s.Query(func(*types.Ticket) bool { return true })
-				Expect(err).To(BeNil())
-				Expect(tickets).To(HaveLen(1))
-				Expect(tickets[0].MatureBy).To(Equal(uint64(160)))
-				Expect(tickets[0].DecayBy).To(Equal(uint64(200)))
+				Specify("that a ticket was indexed", func() {
+					tickets := mgr.s.Query(func(*types.Ticket) bool { return true })
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(1))
+				})
+
+				Specify("that the ticket's matureBy=160 and decayBy=0", func() {
+					tickets := mgr.s.Query(func(*types.Ticket) bool { return true })
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(1))
+					Expect(tickets[0].MatureBy).To(Equal(uint64(160)))
+					Expect(tickets[0].DecayBy).To(Equal(uint64(0)))
+				})
 			})
 		})
 
@@ -360,6 +379,45 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
+	Describe(".GetTopStorers", func() {
+		When("proposer (pub_key1) has 1 self-owned ticket (value=3) and 1 delegated ticket (value=1) and proposer (pub_key2) has 1 delegated ticket (value=10)", func() {
+			ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeStorerTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+			ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: "pub_key1", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+			ticket3 := &types.Ticket{Hash: "h3", Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: "pub_key2", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "10"}
+
+			BeforeEach(func() {
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 11}, nil)
+				mgr.logic = mockLogic
+				err := mgr.s.Add(ticket, ticket2, ticket3)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return two tickets in the order; pub_key2 (value=10) and pub_key1 (value=4)", func() {
+				res, err := mgr.GetTopStorers(0)
+				Expect(err).To(BeNil())
+				Expect(res).To(HaveLen(2))
+				Expect(res[0].PubKey).To(Equal("pub_key2"))
+				Expect(res[0].Value).To(Equal("10"))
+				Expect(res[1].PubKey).To(Equal("pub_key1"))
+				Expect(res[1].Value).To(Equal("4"))
+				Expect(res.Has("pub_key2")).To(BeTrue())
+				Expect(res.Has("pub_key1")).To(BeTrue())
+			})
+
+			When("limit is 1", func() {
+				It("should return 1 ticket in the order; pub_key2 (value=10)", func() {
+					res, err := mgr.GetTopStorers(1)
+					Expect(err).To(BeNil())
+					Expect(res).To(HaveLen(1))
+					Expect(res[0].PubKey).To(Equal("pub_key2"))
+					Expect(res.Has("pub_key2")).To(BeTrue())
+					Expect(res.Has("pub_key1")).To(BeFalse())
+					Expect(res[0].Value).To(Equal("10"))
+				})
+			})
+		})
+	})
+
 	Describe(".GetActiveTicketsByProposer", func() {
 		ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
 		ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
@@ -371,10 +429,7 @@ var _ = Describe("Manager", func() {
 
 		When("proposer='pub_key3', type=TxTypeValidatorTicket, addDelegated=false", func() {
 			BeforeEach(func() {
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockLogic := mocks.NewMockLogic(ctrl)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 11}, nil)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
 				mgr.logic = mockLogic
 
 				err := mgr.s.Add(ticket, ticket2, ticket3, ticket3_2, ticket3_4)
@@ -390,10 +445,7 @@ var _ = Describe("Manager", func() {
 
 		When("proposer='pub_key3', type=TxTypeStorerTicket, addDelegated=false", func() {
 			BeforeEach(func() {
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockLogic := mocks.NewMockLogic(ctrl)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 11}, nil)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
 				mgr.logic = mockLogic
 
 				err := mgr.s.Add(ticket, ticket2, ticket3, ticket3_2, ticket3_3)
@@ -409,10 +461,7 @@ var _ = Describe("Manager", func() {
 
 		When("proposer='pub_key3', type=TxTypeStorerTicket, addDelegated=true", func() {
 			BeforeEach(func() {
-				mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-				mockLogic := mocks.NewMockLogic(ctrl)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 11}, nil)
-				mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
 				mgr.logic = mockLogic
 
 				err := mgr.s.Add(ticket, ticket2, ticket3, ticket3_2, ticket3_3, ticket3_4)
@@ -429,10 +478,7 @@ var _ = Describe("Manager", func() {
 		When("ticket decay height = 0", func() {
 			When("args are proposer='pub_key4', type=TxTypeStorerTicket, addDelegated=true", func() {
 				BeforeEach(func() {
-					mockSysKeeper := mocks.NewMockSystemKeeper(ctrl)
-					mockLogic := mocks.NewMockLogic(ctrl)
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 11}, nil)
-					mockLogic.EXPECT().SysKeeper().Return(mockSysKeeper)
 					mgr.logic = mockLogic
 
 					err := mgr.s.Add(ticket, ticket2, ticket3, ticket3_2, ticket3_3, ticket4)
@@ -448,7 +494,7 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
-	Describe(".SelectRandom", func() {
+	Describe(".SelectRandomValidatorTickets", func() {
 
 		ticket := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
 		ticket2 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
@@ -461,7 +507,7 @@ var _ = Describe("Manager", func() {
 		When("seed=[]byte('seed') and limit = 1", func() {
 			It("should return 1 ticket", func() {
 				seed := []byte("seed")
-				tickets, err := mgr.SelectRandom(11, seed, 1)
+				tickets, err := mgr.SelectRandomValidatorTickets(11, seed, 1)
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(1))
 				Expect(tickets[0].ProposerPubKey).To(Equal(ticket.ProposerPubKey))
@@ -471,7 +517,7 @@ var _ = Describe("Manager", func() {
 		When("seed=[]byte('seed_123_abc') and limit = 1", func() {
 			It("should return 1 ticket", func() {
 				seed := []byte("seed_123_abc")
-				tickets, err := mgr.SelectRandom(11, seed, 1)
+				tickets, err := mgr.SelectRandomValidatorTickets(11, seed, 1)
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(1))
 				Expect(tickets[0].ProposerPubKey).To(Equal(ticket2.ProposerPubKey))
@@ -481,7 +527,7 @@ var _ = Describe("Manager", func() {
 		When("seed=[]byte('seed_123_abc') and limit = 10", func() {
 			It("should return 3 ticket", func() {
 				seed := []byte("seed_123_abc")
-				tickets, err := mgr.SelectRandom(11, seed, 10)
+				tickets, err := mgr.SelectRandomValidatorTickets(11, seed, 10)
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(3))
 			})
@@ -500,7 +546,7 @@ var _ = Describe("Manager", func() {
 			When("seed=[]byte('seed') and limit = 10", func() {
 				It("should return 2 ticket with different proposer pub key", func() {
 					seed := []byte("seed")
-					tickets, err := mgr.SelectRandom(11, seed, 10)
+					tickets, err := mgr.SelectRandomValidatorTickets(11, seed, 10)
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(2))
 					Expect(tickets[0].ProposerPubKey).To(Equal("pub_key1"))

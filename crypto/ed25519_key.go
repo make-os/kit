@@ -199,6 +199,15 @@ func (p *PrivKey) Sign(data []byte) ([]byte, error) {
 	return p.privKey.Sign(data)
 }
 
+// MustSign signs a message but panics if error occurs
+func (p *PrivKey) MustSign(data []byte) []byte {
+	sig, err := p.privKey.Sign(data)
+	if err != nil {
+		panic(err)
+	}
+	return sig
+}
+
 // Key returns the wrapped crypto.PrivKey
 func (p *PrivKey) Key() crypto.PrivKey {
 	return p.privKey

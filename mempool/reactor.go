@@ -13,7 +13,6 @@ import (
 
 	t "github.com/makeos/mosdef/types"
 
-	"github.com/tendermint/tendermint/abci/types"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/p2p"
 )
@@ -130,21 +129,14 @@ func (r *Reactor) GetTop(n int) []t.BaseTx {
 
 // AddTx adds a transaction to the tx pool and broadcasts it.
 func (r *Reactor) AddTx(tx t.BaseTx) (hash util.Hash, err error) {
+	err = r.mempool.Add(tx)
+	if err != nil {
+		return util.Hash{}, err
+	}
 
-	var errCh = make(chan error, 1)
+	r.broadcastTx(tx)
 
-	// Check and add the transaction to the pool.
-	// On success, broadcast the transaction to peers.
-	err = r.mempool.CheckTx(tx.Bytes(), func(res *types.Response) {
-		if chkRes := res.GetCheckTx(); chkRes.Code != 0 {
-			errCh <- fmt.Errorf(chkRes.GetLog())
-			return
-		}
-		r.broadcastTx(tx)
-		errCh <- nil
-	})
-
-	return tx.GetHash(), <-errCh
+	return tx.GetHash(), nil
 }
 
 // broadcastTx sends a valid transaction to all known peers.

@@ -7,6 +7,7 @@ import (
 	"os"
 
 	randmocks "github.com/makeos/mosdef/crypto/rand/mocks"
+	"github.com/makeos/mosdef/params"
 
 	"github.com/golang/mock/gomock"
 	"github.com/makeos/mosdef/config"
@@ -23,6 +24,7 @@ import (
 
 var _ = Describe("TxValidator", func() {
 	var key = crypto.NewKeyFromIntSeed(1)
+	var key2 = crypto.NewKeyFromIntSeed(2)
 	var appDB, stateTreeDB storage.Engine
 	var err error
 	var cfg *config.AppConfig
@@ -596,6 +598,68 @@ var _ = Describe("TxValidator", func() {
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("error"))
+			})
+		})
+	})
+
+	Describe(".CheckTxPushConsistency", func() {
+		When("a PushOK signer is not among the top storers", func() {
+			BeforeEach(func() {
+				params.NumTopStorersLimit = 10
+				storers := []*types.PubKeyValue{
+					&types.PubKeyValue{PubKey: key.PubKey().Base58()},
+				}
+				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
+
+				tx := types.NewBareTxPush()
+				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
+					PushNoteID:   util.StrToHash("pn1"),
+					SenderPubKey: util.BytesToHash(key2.PubKey().MustBytes()),
+				})
+
+				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, error:sender public key does not belong to an active storer"))
+			})
+		})
+
+		When("a PushOK signer is not among the top storers", func() {
+			BeforeEach(func() {
+				params.NumTopStorersLimit = 10
+				storers := []*types.PubKeyValue{
+					&types.PubKeyValue{PubKey: key.PubKey().Base58()},
+				}
+				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
+
+				tx := types.NewBareTxPush()
+				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
+					PushNoteID:   util.StrToHash("pn1"),
+					SenderPubKey: util.BytesToHash(key2.PubKey().MustBytes()),
+				})
+
+				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, error:sender public key does not belong to an active storer"))
+			})
+		})
+
+		When("unable to get top storers", func() {
+			BeforeEach(func() {
+				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(nil, fmt.Errorf("error"))
+				tx := types.NewBareTxPush()
+				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
+				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to get top storers: error"))
 			})
 		})
 	})

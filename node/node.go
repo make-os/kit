@@ -178,6 +178,7 @@ func (n *Node) Start() error {
 	node.AddChannels([]byte{
 		dht.DHTReactorChannel,
 		repo.PushNoteReactorChannel,
+		repo.PushOKReactorChannel,
 	})
 
 	// Create the ABCI app and wrap with a ClientCreator

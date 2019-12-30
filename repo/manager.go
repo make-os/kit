@@ -24,8 +24,12 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 )
 
-// PushNoteReactorChannel is the channel id for reacting to push note messages
-const PushNoteReactorChannel = byte(0x32)
+const (
+	// PushNoteReactorChannel is the channel id sending/receiving push notes
+	PushNoteReactorChannel = byte(0x32)
+	// PushOKReactorChannel is the channel id for sending/receiving push okays
+	PushOKReactorChannel = byte(0x33)
+)
 
 // Git services
 const (
@@ -52,23 +56,24 @@ var services = [][]interface{}{
 // and service a git repositories through http and ssh protocols.
 type Manager struct {
 	p2p.BaseReactor
-	cfg                *config.AppConfig
-	log                logger.Logger         // log is the application logger
-	wg                 *sync.WaitGroup       // wait group for waiting for the manager
-	srv                *http.Server          // the http server
-	rootDir            string                // the root directory where all repos are stored
-	addr               string                // addr is the listening address for the http server
-	gitBinPath         string                // gitBinPath is the path of the git executable
-	repoDBCache        *DBCache              // stores database handles of repositories
-	pushPool           types.PushPool        // The transaction pool for push transactions
-	txPool             types.Mempool         // The general transaction pool for block-bound transaction
-	logic              types.Logic           // logic is the application logic provider
-	nodeKey            *crypto.Key           // the node's private key for signing transactions
-	pgpPubKeyGetter    types.PGPPubKeyGetter // finds and returns PGP public key
-	dht                types.DHT             // The dht service
-	pruner             types.Pruner          // The repo runner
-	txPoolRepoTxsIndex repoTxsIndex
-	pushNoteSenders    *cache.Cache
+	cfg                  *config.AppConfig
+	log                  logger.Logger         // log is the application logger
+	wg                   *sync.WaitGroup       // wait group for waiting for the manager
+	srv                  *http.Server          // the http server
+	rootDir              string                // the root directory where all repos are stored
+	addr                 string                // addr is the listening address for the http server
+	gitBinPath           string                // gitBinPath is the path of the git executable
+	repoDBCache          *DBCache              // stores database handles of repositories
+	pushPool             types.PushPool        // The transaction pool for push transactions
+	mempool              types.Mempool         // The general transaction pool for block-bound transaction
+	logic                types.Logic           // logic is the application logic provider
+	nodeKey              *crypto.Key           // the node's private key for signing transactions
+	pgpPubKeyGetter      types.PGPPubKeyGetter // finds and returns PGP public key
+	dht                  types.DHT             // The dht service
+	pruner               types.Pruner          // The repo runner
+	pushNoteSenders      *cache.Cache
+	pushOKSenders        *cache.Cache
+	pushNoteEndorsements *cache.Cache
 }
 
 // NewManager creates an instance of Manager
@@ -77,7 +82,7 @@ func NewManager(
 	addr string,
 	logic types.Logic,
 	dht types.DHT,
-	txPool types.Mempool) *Manager {
+	mempool types.Mempool) *Manager {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -89,19 +94,21 @@ func NewManager(
 
 	key, _ := cfg.G().PrivVal.GetKey()
 	mgr := &Manager{
-		cfg:             cfg,
-		log:             cfg.G().Log.Module("repo-manager"),
-		addr:            addr,
-		rootDir:         cfg.GetRepoRoot(),
-		gitBinPath:      cfg.Node.GitBinPath,
-		wg:              wg,
-		repoDBCache:     dbCache,
-		pushPool:        NewPushPool(params.PushPoolCap, logic, dht),
-		logic:           logic,
-		nodeKey:         key,
-		dht:             dht,
-		txPool:          txPool,
-		pushNoteSenders: cache.NewActiveCache(params.PushNoteSendersCacheSize),
+		cfg:                  cfg,
+		log:                  cfg.G().Log.Module("repo-manager"),
+		addr:                 addr,
+		rootDir:              cfg.GetRepoRoot(),
+		gitBinPath:           cfg.Node.GitBinPath,
+		wg:                   wg,
+		repoDBCache:          dbCache,
+		pushPool:             NewPushPool(params.PushPoolCap, logic, dht),
+		logic:                logic,
+		nodeKey:              key,
+		dht:                  dht,
+		mempool:              mempool,
+		pushNoteSenders:      cache.NewActiveCache(params.PushObjectsSendersCacheSize),
+		pushOKSenders:        cache.NewActiveCache(params.PushObjectsSendersCacheSize),
+		pushNoteEndorsements: cache.NewActiveCache(params.PushNotesEndorsementsCacheSize),
 	}
 
 	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
@@ -126,9 +133,15 @@ func (m *Manager) defaultGPGPubKeyGetter(pkID string) (string, error) {
 }
 
 // cachePushNoteSender caches a push note sender
-func (m *Manager) cachePushNoteSender(senderID string, txID string) {
-	key := util.Sha1Hex([]byte(senderID + txID))
+func (m *Manager) cachePushNoteSender(senderID string, pushNoteID string) {
+	key := util.Sha1Hex([]byte(senderID + pushNoteID))
 	m.pushNoteSenders.AddWithExp(key, struct{}{}, time.Now().Add(10*time.Minute))
+}
+
+// cachePushOkSender caches a push OK sender
+func (m *Manager) cachePushOkSender(senderID string, pushOkID string) {
+	key := util.Sha1Hex([]byte(senderID + pushOkID))
+	m.pushOKSenders.AddWithExp(key, struct{}{}, time.Now().Add(60*time.Minute))
 }
 
 // isPushNoteSender checks whether a push note was sent by the given sender ID
@@ -136,6 +149,23 @@ func (m *Manager) isPushNoteSender(senderID string, txID string) bool {
 	key := util.Sha1Hex([]byte(senderID + txID))
 	v := m.pushNoteSenders.Get(key)
 	return v == struct{}{}
+}
+
+// isPushOKSender checks whether a "push OK" was sent by the given sender ID
+func (m *Manager) isPushOKSender(senderID string, txID string) bool {
+	key := util.Sha1Hex([]byte(senderID + txID))
+	v := m.pushOKSenders.Get(key)
+	return v == struct{}{}
+}
+
+// addPushNoteEndorsement indexes a PushOK for a given push note
+func (m *Manager) addPushNoteEndorsement(pnID string, pok *types.PushOK) {
+	pokList := m.pushNoteEndorsements.Get(pnID)
+	if pokList == nil {
+		pokList = map[string]*types.PushOK{}
+	}
+	pokList.(map[string]*types.PushOK)[pok.ID().String()] = pok
+	m.pushNoteEndorsements.Add(pnID, pokList)
 }
 
 func (m *Manager) subscribe() {
@@ -184,9 +214,9 @@ func (m *Manager) GetPushPool() types.PushPool {
 	return m.pushPool
 }
 
-// GetTxPool returns the transaction pool
-func (m *Manager) GetTxPool() types.Mempool {
-	return m.txPool
+// GetMempool returns the transaction pool
+func (m *Manager) GetMempool() types.Mempool {
+	return m.mempool
 }
 
 // GetDHT returns the dht service

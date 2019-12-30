@@ -111,19 +111,19 @@ func (mr *MockTicketManagerMockRecorder) GetActiveTicketsByProposer(proposer, ti
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveTicketsByProposer", reflect.TypeOf((*MockTicketManager)(nil).GetActiveTicketsByProposer), proposer, ticketType, addDelegated)
 }
 
-// SelectRandom mocks base method
-func (m *MockTicketManager) SelectRandom(height int64, seed []byte, limit int) ([]*types.Ticket, error) {
+// SelectRandomValidatorTickets mocks base method
+func (m *MockTicketManager) SelectRandomValidatorTickets(height int64, seed []byte, limit int) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SelectRandom", height, seed, limit)
+	ret := m.ctrl.Call(m, "SelectRandomValidatorTickets", height, seed, limit)
 	ret0, _ := ret[0].([]*types.Ticket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SelectRandom indicates an expected call of SelectRandom
-func (mr *MockTicketManagerMockRecorder) SelectRandom(height, seed, limit interface{}) *gomock.Call {
+// SelectRandomValidatorTickets indicates an expected call of SelectRandomValidatorTickets
+func (mr *MockTicketManagerMockRecorder) SelectRandomValidatorTickets(height, seed, limit interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectRandom", reflect.TypeOf((*MockTicketManager)(nil).SelectRandom), height, seed, limit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectRandomValidatorTickets", reflect.TypeOf((*MockTicketManager)(nil).SelectRandomValidatorTickets), height, seed, limit)
 }
 
 // Query mocks base method
@@ -199,6 +199,21 @@ func (m *MockTicketManager) GetOrderedLiveValidatorTickets(height int64, limit i
 func (mr *MockTicketManagerMockRecorder) GetOrderedLiveValidatorTickets(height, limit interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderedLiveValidatorTickets", reflect.TypeOf((*MockTicketManager)(nil).GetOrderedLiveValidatorTickets), height, limit)
+}
+
+// GetTopStorers mocks base method
+func (m *MockTicketManager) GetTopStorers(limit int) (types.PubKeyValues, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTopStorers", limit)
+	ret0, _ := ret[0].(types.PubKeyValues)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTopStorers indicates an expected call of GetTopStorers
+func (mr *MockTicketManagerMockRecorder) GetTopStorers(limit interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopStorers", reflect.TypeOf((*MockTicketManager)(nil).GetTopStorers), limit)
 }
 
 // Stop mocks base method

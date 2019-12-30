@@ -154,7 +154,7 @@ var _ = Describe("App", func() {
 		When("an error occurred when selecting random validators", func() {
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
-				mockLogic.TicketManager.EXPECT().SelectRandom(gomock.Any(), gomock.Any(),
+				mockLogic.TicketManager.EXPECT().SelectRandomValidatorTickets(gomock.Any(), gomock.Any(),
 					gomock.Any()).Return(nil, fmt.Errorf("error selecting validators"))
 				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
 				app.logic = mockLogic.AtomicLogic
@@ -173,7 +173,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
-				mockLogic.TicketManager.EXPECT().SelectRandom(gomock.Any(), gomock.Any(),
+				mockLogic.TicketManager.EXPECT().SelectRandomValidatorTickets(gomock.Any(), gomock.Any(),
 					gomock.Any()).Return(tickets, nil)
 				app.ticketMgr = mockLogic.TicketManager
 				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
@@ -197,7 +197,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
-				mockLogic.TicketManager.EXPECT().SelectRandom(gomock.Any(), gomock.Any(),
+				mockLogic.TicketManager.EXPECT().SelectRandomValidatorTickets(gomock.Any(), gomock.Any(),
 					gomock.Any()).Return(tickets, nil)
 				app.ticketMgr = mockLogic.TicketManager
 				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
@@ -223,7 +223,7 @@ var _ = Describe("App", func() {
 				params.NumBlocksPerEpoch = 5
 
 				// Mock the return of the tickets
-				mockLogic.TicketManager.EXPECT().SelectRandom(gomock.Any(), gomock.Any(), gomock.Any()).Return(tickets, nil)
+				mockLogic.TicketManager.EXPECT().SelectRandomValidatorTickets(gomock.Any(), gomock.Any(), gomock.Any()).Return(tickets, nil)
 				app.ticketMgr = mockLogic.TicketManager
 
 				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
@@ -268,7 +268,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
-				mockLogic.TicketManager.EXPECT().SelectRandom(gomock.Any(), gomock.Any(),
+				mockLogic.TicketManager.EXPECT().SelectRandomValidatorTickets(gomock.Any(), gomock.Any(),
 					gomock.Any()).Return(tickets, nil)
 				app.ticketMgr = mockLogic.TicketManager
 				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)

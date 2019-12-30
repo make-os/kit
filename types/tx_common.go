@@ -93,6 +93,7 @@ type BaseTx interface {
 	GetMeta() map[string]interface{}     // Returns the meta information of the transaction
 	IsInvalidated() bool                 // Checks if the tx has been invalidated by a process
 	Invalidate()                         // Invalidates the transaction
+	Is(txType int) bool                  // Checks if the tx is a given type
 }
 
 // TxType implements some of BaseTx, it includes type information about a transaction
@@ -103,6 +104,11 @@ type TxType struct {
 // GetType returns the type of the transaction
 func (tx *TxType) GetType() int {
 	return tx.Type
+}
+
+// Is checks if the tx is a given type
+func (tx *TxType) Is(txType int) bool {
+	return tx.Type == txType
 }
 
 // TxCommon implements some of BaseTx, it includes some common fields and methods
@@ -235,6 +241,8 @@ func DecodeTx(txBz []byte) (BaseTx, error) {
 		tx = NewBareTxAddGPGPubKey()
 	case TxTypeEpochSecret:
 		tx = NewBareTxEpochSecret()
+	case TxTypePush:
+		tx = NewBareTxPush()
 	default:
 		return nil, fmt.Errorf("unsupported tx type")
 	}

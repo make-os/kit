@@ -62,7 +62,7 @@ var _ = Describe("PushPool", func() {
 		When("pool has one item and pool TTL is 10ms", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(1, mockKeeper, mockDHT)
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 				params.PushPoolItemTTL = 10 * time.Millisecond
@@ -86,7 +86,7 @@ var _ = Describe("PushPool", func() {
 		When("pool has reached capacity", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(1, mockKeeper, mockDHT)
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 				err = pool.Add(tx2)
@@ -101,7 +101,7 @@ var _ = Describe("PushPool", func() {
 		When("tx already exist in pool", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(2, mockKeeper, mockDHT)
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 				err = pool.Add(tx)
@@ -116,7 +116,7 @@ var _ = Describe("PushPool", func() {
 		When("tx doesn't already exist", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(2, mockKeeper, mockDHT)
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 			})
 
@@ -137,7 +137,7 @@ var _ = Describe("PushPool", func() {
 		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool and tx_X and tx_Y have equal fee", func() {
 			BeforeEach(func() {
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
@@ -163,7 +163,7 @@ var _ = Describe("PushPool", func() {
 			"that already exist in the pool but ref0 has a higher nonce", func() {
 			var tx2 *types.PushNote
 			BeforeEach(func() {
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
@@ -188,7 +188,7 @@ var _ = Describe("PushPool", func() {
 			"that already exist in the pool but failed to read the ref index of the existing reference", func() {
 			var tx2 *types.PushNote
 			BeforeEach(func() {
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
@@ -212,7 +212,7 @@ var _ = Describe("PushPool", func() {
 		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool and tx_X has a lower fee", func() {
 			BeforeEach(func() {
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
@@ -238,7 +238,7 @@ var _ = Describe("PushPool", func() {
 			"that already exist in the pool and tx_X has a higher fee", func() {
 			var tx2 *types.PushNote
 			BeforeEach(func() {
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
@@ -294,7 +294,7 @@ var _ = Describe("PushPool", func() {
 					},
 				}
 
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(txY)
 				Expect(err).To(BeNil())
 				err = pool.Add(txZ)
@@ -345,7 +345,7 @@ var _ = Describe("PushPool", func() {
 					},
 				}
 
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(txY)
 				Expect(err).To(BeNil())
 				err = pool.Add(txZ)
@@ -370,7 +370,7 @@ var _ = Describe("PushPool", func() {
 					},
 				}
 
-				pool.txChecker = txCheckErr(fmt.Errorf("check failed"))
+				pool.noteChecker = txCheckErr(fmt.Errorf("check failed"))
 				err = pool.Add(txX)
 			})
 
@@ -391,12 +391,42 @@ var _ = Describe("PushPool", func() {
 					},
 				}
 
-				pool.txChecker = txCheckErr(fmt.Errorf("check failed"))
+				pool.noteChecker = txCheckErr(fmt.Errorf("check failed"))
 				err = pool.Add(txX, true)
 			})
 
 			It("should return no err", func() {
 				Expect(err).To(BeNil())
+			})
+		})
+	})
+
+	Describe(".Get", func() {
+		var err error
+
+		When("note exist", func() {
+			BeforeEach(func() {
+				pool = NewPushPool(2, mockKeeper, mockDHT)
+				pool.noteChecker = txCheckNoIssue
+				err = pool.Add(tx)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return the push note", func() {
+				note := pool.Get(tx.ID().String())
+				Expect(note).To(Equal(tx))
+			})
+		})
+
+		When("note does not exist", func() {
+			BeforeEach(func() {
+				pool = NewPushPool(2, mockKeeper, mockDHT)
+				pool.noteChecker = txCheckNoIssue
+			})
+
+			It("should return the push note", func() {
+				note := pool.Get(tx.ID().String())
+				Expect(note).To(BeNil())
 			})
 		})
 	})
@@ -407,14 +437,14 @@ var _ = Describe("PushPool", func() {
 		When("pool has a tx", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(2, mockKeeper, mockDHT)
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 				Expect(pool.container).To(HaveLen(1))
 				Expect(pool.index).To(HaveLen(1))
 				Expect(pool.refIndex).To(HaveLen(1))
 				Expect(pool.refNonceIdx).To(HaveLen(1))
-				Expect(pool.repoTxsIdx).To(HaveLen(1))
+				Expect(pool.repoNotesIdx).To(HaveLen(1))
 				pool.remove(tx)
 			})
 
@@ -423,14 +453,14 @@ var _ = Describe("PushPool", func() {
 				Expect(pool.index).To(HaveLen(0))
 				Expect(pool.refIndex).To(HaveLen(0))
 				Expect(pool.refNonceIdx).To(HaveLen(0))
-				Expect(pool.repoTxsIdx).To(BeEmpty())
+				Expect(pool.repoNotesIdx).To(BeEmpty())
 			})
 		})
 
 		When("pool has two txs", func() {
 			BeforeEach(func() {
 				pool = NewPushPool(2, mockKeeper, mockDHT)
-				pool.txChecker = txCheckNoIssue
+				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				err = pool.Add(tx2)
 				Expect(err).To(BeNil())
@@ -438,7 +468,7 @@ var _ = Describe("PushPool", func() {
 				Expect(pool.index).To(HaveLen(2))
 				Expect(pool.refIndex).To(HaveLen(2))
 				Expect(pool.refNonceIdx).To(HaveLen(2))
-				Expect(pool.repoTxsIdx).To(HaveLen(2))
+				Expect(pool.repoNotesIdx).To(HaveLen(2))
 				pool.remove(tx)
 			})
 
@@ -447,7 +477,7 @@ var _ = Describe("PushPool", func() {
 				Expect(pool.index).To(HaveLen(1))
 				Expect(pool.refIndex).To(HaveLen(1))
 				Expect(pool.refNonceIdx).To(HaveLen(1))
-				Expect(pool.repoTxsIdx).To(HaveLen(1))
+				Expect(pool.repoNotesIdx).To(HaveLen(1))
 			})
 		})
 	})
@@ -511,11 +541,11 @@ var _ = Describe("refNonceIndex", func() {
 	})
 })
 
-var _ = Describe("repoTxsIndex", func() {
+var _ = Describe("repoNotesIndex", func() {
 	Describe(".add", func() {
-		var idx repoTxsIndex
+		var idx repoNotesIndex
 		BeforeEach(func() {
-			idx = repoTxsIndex(map[string][]*containerItem{})
+			idx = repoNotesIndex(map[string][]*containerItem{})
 		})
 
 		It("should add successfully", func() {
@@ -526,12 +556,12 @@ var _ = Describe("repoTxsIndex", func() {
 	})
 
 	Describe(".has", func() {
-		var idx repoTxsIndex
+		var idx repoNotesIndex
 		When("repo does not exist in index", func() {
 			var has bool
 
 			BeforeEach(func() {
-				idx = repoTxsIndex(map[string][]*containerItem{})
+				idx = repoNotesIndex(map[string][]*containerItem{})
 				has = idx.has("repo1")
 			})
 
@@ -544,7 +574,7 @@ var _ = Describe("repoTxsIndex", func() {
 			var has bool
 
 			BeforeEach(func() {
-				idx = repoTxsIndex(map[string][]*containerItem{
+				idx = repoNotesIndex(map[string][]*containerItem{
 					"repo1": []*containerItem{},
 				})
 				has = idx.has("repo1")
@@ -557,14 +587,14 @@ var _ = Describe("repoTxsIndex", func() {
 	})
 
 	Describe(".remove", func() {
-		var idx repoTxsIndex
+		var idx repoNotesIndex
 
 		When("repo has 1 txA and txA is removed", func() {
 			var txA *types.PushNote
 			BeforeEach(func() {
 				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 100000000}
-				idx = repoTxsIndex(map[string][]*containerItem{})
-				idx.add("repo1", &containerItem{Tx: txA})
+				idx = repoNotesIndex(map[string][]*containerItem{})
+				idx.add("repo1", &containerItem{Note: txA})
 				Expect(idx["repo1"]).To(HaveLen(1))
 			})
 
@@ -579,9 +609,9 @@ var _ = Describe("repoTxsIndex", func() {
 			BeforeEach(func() {
 				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 100000000}
 				txB = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 200000000}
-				idx = repoTxsIndex(map[string][]*containerItem{})
-				idx.add("repo1", &containerItem{Tx: txA})
-				idx.add("repo1", &containerItem{Tx: txB})
+				idx = repoNotesIndex(map[string][]*containerItem{})
+				idx.add("repo1", &containerItem{Note: txA})
+				idx.add("repo1", &containerItem{Note: txB})
 				Expect(idx["repo1"]).To(HaveLen(2))
 			})
 
@@ -590,7 +620,7 @@ var _ = Describe("repoTxsIndex", func() {
 				Expect(idx).ToNot(BeEmpty())
 				Expect(idx["repo1"]).To(HaveLen(1))
 				actual := idx["repo1"][0]
-				Expect(actual.Tx.ID()).To(Equal(txB.ID()))
+				Expect(actual.Note.ID()).To(Equal(txB.ID()))
 			})
 		})
 	})

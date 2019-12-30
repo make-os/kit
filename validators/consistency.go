@@ -218,14 +218,39 @@ func CheckTxAddGPGPubKeyConsistency(
 	pkID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 	gpgPubKey := logic.GPGPubKeyKeeper().GetGPGPubKey(pkID)
 	if !gpgPubKey.IsNil() {
-		msg := "gpg public key already registered"
-		return feI(index, "pubKey", msg)
+		return feI(index, "pubKey", "gpg public key already registered")
 	}
 
 	pubKey, _ := crypto.PubKeyFromBase58(tx.GetSenderPubKey())
 	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// CheckTxPushConsistency performs consistency checks on TxPush
+func CheckTxPushConsistency(
+	tx *types.TxPush,
+	index int,
+	logic types.Logic) error {
+
+	storers, err := logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
+	if err != nil {
+		return errors.Wrap(err, "failed to get top storers")
+	}
+
+	// Ensure that the signers of the PushOK are part of the storers
+	for _, pok := range tx.PushOKs {
+		spk, err := crypto.PubKeyFromBytes(pok.SenderPubKey.Bytes())
+		if err != nil {
+			return err
+		}
+		if !storers.Has(spk.Base58()) {
+			return feI(index, "endorsements.senderPubKey", "sender public key does "+
+				"not belong to an active storer")
+		}
 	}
 
 	return nil

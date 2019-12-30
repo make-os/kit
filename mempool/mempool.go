@@ -83,6 +83,19 @@ func (mp *Mempool) CheckTx(tx types.Tx, callback func(*abci.Response)) error {
 	return mp.CheckTxWithInfo(tx, callback, mempool.TxInfo{SenderID: mempool.UnknownPeerID})
 }
 
+// Add attempts to add a transaction to the pool
+func (mp *Mempool) Add(tx t.BaseTx) error {
+	var errCh = make(chan error, 1)
+	mp.CheckTx(tx.Bytes(), func(res *abci.Response) {
+		if chkRes := res.GetCheckTx(); chkRes.Code != 0 {
+			errCh <- fmt.Errorf(chkRes.GetLog())
+			return
+		}
+		errCh <- nil
+	})
+	return <-errCh
+}
+
 // CheckTxWithInfo performs the same operation as CheckTx, but with extra
 // meta data about the tx.
 // Currently this metadata is the peer who sent it, used to prevent the tx
@@ -206,7 +219,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 
 	// Get an epoch secret and add it as the first reaped tx.
 	// Exit immediately when we are unable to obtain drand random value.
-	// This is necessary to prevent the validator for proposing a
+	// This is necessary to prevent the validator from proposing an
 	// epoch end block that has no epoch secret.
 	if mp.epochSecretGetter != nil {
 		epochSecretTx, err := mp.epochSecretGetter()
@@ -307,15 +320,8 @@ func (mp *Mempool) Update(blockHeight int64, txs types.Txs,
 	return nil
 }
 
-// FlushAppConn flushes the mempool connection to ensure async reqResCb calls are
-// done. E.g. from CheckTx.
-func (mp *Mempool) FlushAppConn() error {
-	return mp.proxyAppConn.FlushSync()
-}
-
 // Flush removes all transactions from the mempool and cache
-func (mp *Mempool) Flush() {
-}
+func (mp *Mempool) Flush() {}
 
 // TxsAvailable returns a channel which fires once for every height,
 // and only when transactions are available in the mempool.
@@ -343,11 +349,14 @@ func (mp *Mempool) TxsBytes() int64 {
 func (mp *Mempool) globalCb(req *abci.Request, res *abci.Response) {}
 
 // InitWAL creates a directory for the WAL file and opens a file itself.
-func (mp *Mempool) InitWAL() {
-}
+func (mp *Mempool) InitWAL() {}
 
 // CloseWAL closes and discards the underlying WAL file.
 // Any further writes will not be relayed to disk.
-func (mp *Mempool) CloseWAL() {
-	return
+func (mp *Mempool) CloseWAL() {}
+
+// FlushAppConn flushes the mempool connection to ensure async reqResCb calls are
+// done. E.g. from CheckTx.
+func (mp *Mempool) FlushAppConn() error {
+	return mp.proxyAppConn.FlushSync()
 }

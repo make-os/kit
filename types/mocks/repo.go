@@ -646,18 +646,18 @@ func (mr *MockPoolGetterMockRecorder) GetPushPool() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushPool", reflect.TypeOf((*MockPoolGetter)(nil).GetPushPool))
 }
 
-// GetTxPool mocks base method
-func (m *MockPoolGetter) GetTxPool() types.Mempool {
+// GetMempool mocks base method
+func (m *MockPoolGetter) GetMempool() types.Mempool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxPool")
+	ret := m.ctrl.Call(m, "GetMempool")
 	ret0, _ := ret[0].(types.Mempool)
 	return ret0
 }
 
-// GetTxPool indicates an expected call of GetTxPool
-func (mr *MockPoolGetterMockRecorder) GetTxPool() *gomock.Call {
+// GetMempool indicates an expected call of GetMempool
+func (mr *MockPoolGetterMockRecorder) GetMempool() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxPool", reflect.TypeOf((*MockPoolGetter)(nil).GetTxPool))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMempool", reflect.TypeOf((*MockPoolGetter)(nil).GetMempool))
 }
 
 // MockRepoManager is a mock of RepoManager interface
@@ -697,18 +697,18 @@ func (mr *MockRepoManagerMockRecorder) GetPushPool() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushPool", reflect.TypeOf((*MockRepoManager)(nil).GetPushPool))
 }
 
-// GetTxPool mocks base method
-func (m *MockRepoManager) GetTxPool() types.Mempool {
+// GetMempool mocks base method
+func (m *MockRepoManager) GetMempool() types.Mempool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxPool")
+	ret := m.ctrl.Call(m, "GetMempool")
 	ret0, _ := ret[0].(types.Mempool)
 	return ret0
 }
 
-// GetTxPool indicates an expected call of GetTxPool
-func (mr *MockRepoManagerMockRecorder) GetTxPool() *gomock.Call {
+// GetMempool indicates an expected call of GetMempool
+func (mr *MockRepoManagerMockRecorder) GetMempool() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxPool", reflect.TypeOf((*MockRepoManager)(nil).GetTxPool))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMempool", reflect.TypeOf((*MockRepoManager)(nil).GetMempool))
 }
 
 // Log mocks base method
@@ -859,16 +859,18 @@ func (mr *MockRepoManagerMockRecorder) BroadcastMsg(ch, msg interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastMsg", reflect.TypeOf((*MockRepoManager)(nil).BroadcastMsg), ch, msg)
 }
 
-// BroadcastPushNote mocks base method
-func (m *MockRepoManager) BroadcastPushNote(pushNote types.RepoPushNote) {
+// BroadcastPushObjects mocks base method
+func (m *MockRepoManager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "BroadcastPushNote", pushNote)
+	ret := m.ctrl.Call(m, "BroadcastPushObjects", pushNote)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
-// BroadcastPushNote indicates an expected call of BroadcastPushNote
-func (mr *MockRepoManagerMockRecorder) BroadcastPushNote(pushNote interface{}) *gomock.Call {
+// BroadcastPushObjects indicates an expected call of BroadcastPushObjects
+func (mr *MockRepoManagerMockRecorder) BroadcastPushObjects(pushNote interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastPushNote", reflect.TypeOf((*MockRepoManager)(nil).BroadcastPushNote), pushNote)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastPushObjects", reflect.TypeOf((*MockRepoManager)(nil).BroadcastPushObjects), pushNote)
 }
 
 // SetPGPPubKeyGetter mocks base method
@@ -1636,4 +1638,70 @@ func (m *MockItems) Hash() util.Hash {
 func (mr *MockItemsMockRecorder) Hash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockItems)(nil).Hash))
+}
+
+// MockRepoPushOK is a mock of RepoPushOK interface
+type MockRepoPushOK struct {
+	ctrl     *gomock.Controller
+	recorder *MockRepoPushOKMockRecorder
+}
+
+// MockRepoPushOKMockRecorder is the mock recorder for MockRepoPushOK
+type MockRepoPushOKMockRecorder struct {
+	mock *MockRepoPushOK
+}
+
+// NewMockRepoPushOK creates a new mock instance
+func NewMockRepoPushOK(ctrl *gomock.Controller) *MockRepoPushOK {
+	mock := &MockRepoPushOK{ctrl: ctrl}
+	mock.recorder = &MockRepoPushOKMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockRepoPushOK) EXPECT() *MockRepoPushOKMockRecorder {
+	return m.recorder
+}
+
+// ID mocks base method
+func (m *MockRepoPushOK) ID() util.Hash {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ID")
+	ret0, _ := ret[0].(util.Hash)
+	return ret0
+}
+
+// ID indicates an expected call of ID
+func (mr *MockRepoPushOKMockRecorder) ID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockRepoPushOK)(nil).ID))
+}
+
+// Bytes mocks base method
+func (m *MockRepoPushOK) Bytes() []byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Bytes")
+	ret0, _ := ret[0].([]byte)
+	return ret0
+}
+
+// Bytes indicates an expected call of Bytes
+func (mr *MockRepoPushOKMockRecorder) Bytes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockRepoPushOK)(nil).Bytes))
+}
+
+// BytesAndID mocks base method
+func (m *MockRepoPushOK) BytesAndID() ([]byte, util.Hash) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BytesAndID")
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(util.Hash)
+	return ret0, ret1
+}
+
+// BytesAndID indicates an expected call of BytesAndID
+func (mr *MockRepoPushOKMockRecorder) BytesAndID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockRepoPushOK)(nil).BytesAndID))
 }

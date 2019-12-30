@@ -131,19 +131,21 @@ func (t *Transaction) addStake(
 	senderAcct.Balance = util.String(senderBal.Sub(fee.Decimal()).String())
 	senderAcct.Nonce = senderAcct.Nonce + 1
 
-	// Determine unbond height. The unbond height is height of the next block
-	// (or proposed block) plus minimum ticket maturation duration, max ticket
-	// active duration + thawing period.
-	unbondHeight := chainHeight + 1 + uint64(params.MinTicketMatDur) +
-		uint64(params.MaxTicketActiveDur) +
-		uint64(params.NumBlocksInThawPeriod)
+	unbondHeight := uint64(0)
 
 	// Add a stake entry
 	switch txType {
 	case types.TxTypeValidatorTicket:
+		// Determine unbond height. The unbond height is height of the next block
+		// (or proposed block) plus minimum ticket maturation duration, max ticket
+		// active duration + thawing period.
+		unbondHeight = chainHeight + 1 + uint64(params.MinTicketMatDur) +
+			uint64(params.MaxTicketActiveDur) +
+			uint64(params.NumBlocksInThawPeriod)
 		senderAcct.Stakes.Add(types.StakeTypeValidator, value, unbondHeight)
+
 	case types.TxTypeStorerTicket:
-		senderAcct.Stakes.Add(types.StakeTypeStorer, value, 0)
+		senderAcct.Stakes.Add(types.StakeTypeStorer, value, unbondHeight)
 	}
 
 	// Update the sender account

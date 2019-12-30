@@ -13,7 +13,7 @@ import (
 	"github.com/makeos/mosdef/testutil"
 )
 
-var _ = Describe("App", func() {
+var _ = Describe("Repo", func() {
 	var err error
 	var cfg *config.AppConfig
 	var repoMgr *Manager

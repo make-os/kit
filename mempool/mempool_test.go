@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/golang/mock/gomock"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -25,13 +26,17 @@ var _ = Describe("Mempool", func() {
 	var cfg *config.AppConfig
 	var mempool *Mempool
 	var sender = crypto.NewKeyFromIntSeed(1)
+	var ctrl *gomock.Controller
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
+		mempool = NewMempool(cfg)
+		ctrl = gomock.NewController(GinkgoT())
 	})
 
 	AfterEach(func() {
+		ctrl.Finish()
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})
@@ -41,7 +46,6 @@ var _ = Describe("Mempool", func() {
 			BeforeEach(func() {
 				cfg.Mempool.Size = 1
 				cfg.Mempool.MaxTxsSize = 200
-				mempool = NewMempool(cfg)
 				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr", sender, "10", "0.1", time.Now().Unix())
 				mempool.pool.Put(tx)
 			})
@@ -58,7 +62,6 @@ var _ = Describe("Mempool", func() {
 			BeforeEach(func() {
 				cfg.Mempool.Size = 2
 				cfg.Mempool.MaxTxsSize = 100
-				mempool = NewMempool(cfg)
 				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr", sender, "10", "0.1", time.Now().Unix())
 				mempool.pool.Put(tx)
 			})
@@ -75,7 +78,6 @@ var _ = Describe("Mempool", func() {
 			BeforeEach(func() {
 				cfg.Mempool.Size = 2
 				cfg.Mempool.MaxTxSize = 100
-				mempool = NewMempool(cfg)
 			})
 
 			It("should return error when we try to add a tx", func() {
@@ -88,10 +90,6 @@ var _ = Describe("Mempool", func() {
 	})
 
 	Describe(".addTx", func() {
-		BeforeEach(func() {
-			mempool = NewMempool(cfg)
-		})
-
 		When("status code is not OK", func() {
 			It("should not add tx to pool", func() {
 				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
@@ -115,10 +113,6 @@ var _ = Describe("Mempool", func() {
 
 	Describe(".ReapMaxBytesMaxGas", func() {
 		When("pool is empty", func() {
-			BeforeEach(func() {
-				mempool = NewMempool(cfg)
-			})
-
 			It("should return empty result", func() {
 				res := mempool.ReapMaxBytesMaxGas(0, 0)
 				Expect(res).To(BeEmpty())
@@ -131,7 +125,6 @@ var _ = Describe("Mempool", func() {
 			}}}
 
 			BeforeEach(func() {
-				mempool = NewMempool(cfg)
 				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
 				tx2 := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				mempool.addTx(tx.Bytes(), okRes)
@@ -159,7 +152,6 @@ var _ = Describe("Mempool", func() {
 			}}}
 
 			BeforeEach(func() {
-				mempool = NewMempool(cfg)
 				tx = types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
 				tx2 = types.NewBaseTx(types.TxTypeValidatorTicket, 1, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				tx3 = types.NewBaseTx(types.TxTypeValidatorTicket, 2, "recipient_addr3", sender, "10", "0.1", time.Now().Unix())
@@ -182,7 +174,6 @@ var _ = Describe("Mempool", func() {
 		Context("epochSecretGetter is set and returns a tx", func() {
 			var tx = types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
 			BeforeEach(func() {
-				mempool = NewMempool(cfg)
 				Expect(mempool.Size()).To(Equal(0))
 				mempool.SetEpochSecretGetter(func() (types.BaseTx, error) {
 					return tx, nil

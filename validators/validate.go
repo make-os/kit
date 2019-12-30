@@ -63,6 +63,8 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxEpochSecret(o, index)
 	case *types.TxAddGPGPubKey:
 		return CheckTxAddGPGPubKey(o, index)
+	case *types.TxPush:
+		return CheckTxPush(o, index)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}
@@ -88,6 +90,8 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic types.Logic) error 
 		return CheckTxEpochSecretConsistency(o, index, logic)
 	case *types.TxAddGPGPubKey:
 		return CheckTxAddGPGPubKeyConsistency(o, index, logic)
+	case *types.TxPush:
+		return CheckTxPushConsistency(o, index, logic)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}

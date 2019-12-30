@@ -149,8 +149,8 @@ type PoolGetter interface {
 	// GetPushPool returns the push pool
 	GetPushPool() PushPool
 
-	// GetTxPool returns the transaction pool
-	GetTxPool() Mempool
+	// GetMempool returns the transaction pool
+	GetMempool() Mempool
 }
 
 // RepoManager provides functionality for manipulating repositories.
@@ -190,8 +190,8 @@ type RepoManager interface {
 	// BroadcastMsg broadcast messages to peers
 	BroadcastMsg(ch byte, msg []byte)
 
-	// BroadcastPushNote broadcast push transaction to peers
-	BroadcastPushNote(pushNote RepoPushNote)
+	// BroadcastPushObjects broadcasts repo push note and push OK
+	BroadcastPushObjects(pushNote RepoPushNote) error
 
 	// SetPGPPubKeyGetter sets the PGP public key query function
 	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
@@ -244,6 +244,9 @@ type PushPool interface {
 
 	// RepoHasPushNote returns true if the given repo has a transaction in the pool
 	RepoHasPushNote(repo string) bool
+
+	// Get finds and returns a push note
+	Get(noteID string) *PushNote
 }
 
 // RepoPushNote represents a repository push request
@@ -525,6 +528,11 @@ func (pt *PushNote) GetSize() uint64 {
 	return pt.Size
 }
 
+// GetAccountNonce returns the account nonce of the first reference
+func (pt *PushNote) GetAccountNonce() uint64 {
+	return pt.References[0].AccountNonce
+}
+
 // TotalFee returns the sum of reference update fees
 func (pt *PushNote) TotalFee() util.String {
 	sum := decimal.NewFromFloat(0)
@@ -532,4 +540,56 @@ func (pt *PushNote) TotalFee() util.String {
 		sum = sum.Add(r.Fee.Decimal())
 	}
 	return util.String(sum.String())
+}
+
+// PushOK is used to endorse a push note
+type PushOK struct {
+	PushNoteID   util.Hash `json:"pushNoteID" mapstructure:"pushNoteID"`
+	SenderPubKey util.Hash `json:"senderPubKey" mapstructure:"senderPubKey"`
+	Sig          util.Sig  `json:"sig" mapstructure:"sig"`
+}
+
+// EncodeMsgpack implements msgpack.CustomEncoder
+func (po *PushOK) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeMulti(po.PushNoteID, po.SenderPubKey, po.Sig)
+}
+
+// DecodeMsgpack implements msgpack.CustomDecoder
+func (po *PushOK) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return dec.DecodeMulti(&po.PushNoteID, &po.SenderPubKey, &po.Sig)
+}
+
+// ID returns the hash of the object
+func (po *PushOK) ID() util.Hash {
+	return util.BytesToHash(util.Blake2b256(po.Bytes()))
+}
+
+// Bytes returns a serialized version of the object
+func (po *PushOK) Bytes() []byte {
+	return util.ObjectToBytes(po)
+}
+
+// BytesNoSig returns the serialized version of
+func (po *PushOK) BytesNoSig() []byte {
+	sig := po.Sig
+	po.Sig = util.EmptySig
+	msg := po.Bytes()
+	po.Sig = sig
+	return msg
+}
+
+// BytesAndID returns the serialized version of the tx and the id
+func (po *PushOK) BytesAndID() ([]byte, util.Hash) {
+	bz := po.Bytes()
+	return bz, util.BytesToHash(util.Blake2b256(bz))
+}
+
+// RepoPushOK represents a push endorsement
+type RepoPushOK interface {
+	// ID returns the hash of the object
+	ID() util.Hash
+	// Bytes returns a serialized version of the object
+	Bytes() []byte
+	// BytesAndID returns the serialized version of the tx and the id
+	BytesAndID() ([]byte, util.Hash)
 }

@@ -6,9 +6,10 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/tendermint/tendermint/abci/types"
+	types "github.com/makeos/mosdef/types"
+	types0 "github.com/tendermint/tendermint/abci/types"
 	mempool "github.com/tendermint/tendermint/mempool"
-	types0 "github.com/tendermint/tendermint/types"
+	types1 "github.com/tendermint/tendermint/types"
 	reflect "reflect"
 )
 
@@ -36,7 +37,7 @@ func (m *MockMempool) EXPECT() *MockMempoolMockRecorder {
 }
 
 // CheckTx mocks base method
-func (m *MockMempool) CheckTx(tx types0.Tx, callback func(*types.Response)) error {
+func (m *MockMempool) CheckTx(tx types1.Tx, callback func(*types0.Response)) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckTx", tx, callback)
 	ret0, _ := ret[0].(error)
@@ -50,7 +51,7 @@ func (mr *MockMempoolMockRecorder) CheckTx(tx, callback interface{}) *gomock.Cal
 }
 
 // CheckTxWithInfo mocks base method
-func (m *MockMempool) CheckTxWithInfo(tx types0.Tx, callback func(*types.Response), txInfo mempool.TxInfo) error {
+func (m *MockMempool) CheckTxWithInfo(tx types1.Tx, callback func(*types0.Response), txInfo mempool.TxInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CheckTxWithInfo", tx, callback, txInfo)
 	ret0, _ := ret[0].(error)
@@ -64,10 +65,10 @@ func (mr *MockMempoolMockRecorder) CheckTxWithInfo(tx, callback, txInfo interfac
 }
 
 // ReapMaxBytesMaxGas mocks base method
-func (m *MockMempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types0.Txs {
+func (m *MockMempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types1.Txs {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReapMaxBytesMaxGas", maxBytes, maxGas)
-	ret0, _ := ret[0].(types0.Txs)
+	ret0, _ := ret[0].(types1.Txs)
 	return ret0
 }
 
@@ -78,10 +79,10 @@ func (mr *MockMempoolMockRecorder) ReapMaxBytesMaxGas(maxBytes, maxGas interface
 }
 
 // ReapMaxTxs mocks base method
-func (m *MockMempool) ReapMaxTxs(max int) types0.Txs {
+func (m *MockMempool) ReapMaxTxs(max int) types1.Txs {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ReapMaxTxs", max)
-	ret0, _ := ret[0].(types0.Txs)
+	ret0, _ := ret[0].(types1.Txs)
 	return ret0
 }
 
@@ -116,7 +117,7 @@ func (mr *MockMempoolMockRecorder) Unlock() *gomock.Call {
 }
 
 // Update mocks base method
-func (m *MockMempool) Update(blockHeight int64, blockTxs types0.Txs, deliverTxResponses []*types.ResponseDeliverTx, newPreFn mempool.PreCheckFunc, newPostFn mempool.PostCheckFunc) error {
+func (m *MockMempool) Update(blockHeight int64, blockTxs types1.Txs, deliverTxResponses []*types0.ResponseDeliverTx, newPreFn mempool.PreCheckFunc, newPostFn mempool.PostCheckFunc) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Update", blockHeight, blockTxs, deliverTxResponses, newPreFn, newPostFn)
 	ret0, _ := ret[0].(error)
@@ -231,4 +232,18 @@ func (m *MockMempool) CloseWAL() {
 func (mr *MockMempoolMockRecorder) CloseWAL() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseWAL", reflect.TypeOf((*MockMempool)(nil).CloseWAL))
+}
+
+// Add mocks base method
+func (m *MockMempool) Add(tx types.BaseTx) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Add", tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Add indicates an expected call of Add
+func (mr *MockMempoolMockRecorder) Add(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockMempool)(nil).Add), tx)
 }

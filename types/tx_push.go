@@ -11,31 +11,40 @@ import (
 type TxPush struct {
 	*TxCommon `json:"-" mapstructure:"-"`
 	*TxType   `json:"-" msgpack:"-"`
-	PushNote  *PushNote `json:"push" mapstructure:"push"`
+	PushNote  *PushNote `json:"pushNote" mapstructure:"pushNote"`
+	PushOKs   []*PushOK `json:"endorsements" mapstructure:"endorsements"`
+}
+
+// NewBareTxPush returns an instance of TxPush with zero values
+func NewBareTxPush() *TxPush {
+	return &TxPush{
+		TxCommon: NewBareTxCommon(),
+		TxType:   &TxType{Type: TxTypePush},
+		PushNote: &PushNote{},
+		PushOKs:  []*PushOK{},
+	}
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxPush) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(
 		tx.Type,
-		tx.Nonce,
-		tx.Fee,
-		tx.Sig,
-		tx.Timestamp,
 		tx.SenderPubKey,
-		tx.PushNote)
+		tx.Timestamp,
+		tx.PushNote,
+		tx.PushOKs,
+		tx.Sig)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (tx *TxPush) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return dec.DecodeMulti(
 		&tx.Type,
-		&tx.Nonce,
-		&tx.Fee,
-		&tx.Sig,
-		&tx.Timestamp,
 		&tx.SenderPubKey,
-		&tx.PushNote)
+		&tx.Timestamp,
+		&tx.PushNote,
+		&tx.PushOKs,
+		&tx.Sig)
 }
 
 // Bytes returns the serialized transaction
@@ -71,12 +80,12 @@ func (tx *TxPush) GetID() string {
 func (tx *TxPush) GetEcoSize() int64 {
 	fee := tx.Fee
 	tx.Fee = ""
-	
+
 	bz := tx.Bytes()
 	size := uint64(len(bz))
 	pushNoteEcoSize := tx.PushNote.GetEcoSize()
 	diff := size - pushNoteEcoSize
-	
+
 	tx.Fee = fee
 	return int64(size - diff)
 }

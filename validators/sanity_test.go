@@ -746,4 +746,121 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 	})
+
+	FDescribe(".CheckTxPush", func() {
+		var tx *types.TxPush
+
+		BeforeEach(func() {
+			tx = types.NewBareTxPush()
+			tx.Timestamp = time.Now().Unix()
+		})
+
+		When("it has invalid fields, it should return error when", func() {
+			It("has invalid type", func() {
+				tx.Type = -10
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
+			})
+
+			It("has no push note", func() {
+				tx.PushNote = nil
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:pushNote, error:push note is required"))
+			})
+
+			It("has low endorsement (not up to quorum)", func() {
+				params.PushOKQuorumSize = 1
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:endorsements, error:not enough endorsements included"))
+			})
+
+			It("has no timestamp", func() {
+				params.PushOKQuorumSize = 1
+				tx.Timestamp = 0
+				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:timestamp, error:timestamp is required"))
+			})
+
+			It("has no sender public key", func() {
+				params.PushOKQuorumSize = 1
+				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
+			})
+
+			It("has no signature", func() {
+				params.PushOKQuorumSize = 1
+				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
+				tx.SenderPubKey = key.PubKey().Base58()
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
+			})
+
+			It("has invalid signature", func() {
+				params.PushOKQuorumSize = 1
+				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
+				tx.SenderPubKey = key.PubKey().Base58()
+				tx.Sig = util.RandBytes(5)
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
+			})
+
+			It("has a PushOK with a push note id that is different from the PushTx.PushNoteID", func() {
+				params.PushOKQuorumSize = 1
+				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
+				tx.SenderPubKey = key.PubKey().Base58()
+				sig, _ := key.PrivKey().Sign(tx.Bytes())
+				tx.Sig = sig
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:endorsements.pushNoteID, error:value does not match push tx note id"))
+			})
+
+			It("has a PushOK with an invalid signature", func() {
+				params.PushOKQuorumSize = 1
+				tx.PushNote = &types.PushNote{RepoName: "repo1"}
+				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
+					PushNoteID:   tx.PushNote.ID(),
+					SenderPubKey: util.BytesToHash(key.PubKey().MustBytes()),
+					Sig:          util.BytesToSig([]byte("invalid sig")),
+				})
+				tx.SenderPubKey = key.PubKey().Base58()
+				sig, _ := key.PrivKey().Sign(tx.Bytes())
+				tx.Sig = sig
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:endorsements.sig, error:signature is invalid"))
+			})
+		})
+
+		When("no error", func() {
+			It("should return no error", func() {
+				params.PushOKQuorumSize = 1
+				tx.PushNote = &types.PushNote{RepoName: "repo1"}
+
+				pok := &types.PushOK{
+					PushNoteID:   tx.PushNote.ID(),
+					SenderPubKey: util.BytesToHash(key.PubKey().MustBytes()),
+				}
+				sig, _ := key.PrivKey().Sign(pok.Bytes())
+				pok.Sig = util.BytesToSig(sig)
+
+				tx.PushOKs = append(tx.PushOKs, pok)
+				tx.SenderPubKey = key.PubKey().Base58()
+				sig, _ = key.PrivKey().Sign(tx.Bytes())
+				tx.Sig = sig
+
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 })

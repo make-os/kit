@@ -3,6 +3,8 @@ package validators
 import (
 	"fmt"
 
+	"github.com/makeos/mosdef/crypto"
+
 	v "github.com/go-ozzo/ozzo-validation"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
@@ -37,24 +39,26 @@ func checkType(tx *types.TxType, expected int, index int) error {
 
 func checkCommon(tx types.BaseTx, index int) error {
 
-	if err := v.Validate(tx.GetNonce(),
-		v.Required.Error(feI(index, "nonce", "nonce is required").Error())); err != nil {
-		return err
-	}
+	if !tx.Is(types.TxTypePush) {
+		if err := v.Validate(tx.GetNonce(),
+			v.Required.Error(feI(index, "nonce", "nonce is required").Error())); err != nil {
+			return err
+		}
 
-	if err := v.Validate(tx.GetFee(),
-		v.Required.Error(feI(index, "fee", "fee is required").Error()),
-		v.By(validValueRule("fee", index)),
-	); err != nil {
-		return err
-	}
+		if err := v.Validate(tx.GetFee(),
+			v.Required.Error(feI(index, "fee", "fee is required").Error()),
+			v.By(validValueRule("fee", index)),
+		); err != nil {
+			return err
+		}
 
-	// Fee must be at least equal to the base fee
-	txSize := decimal.NewFromFloat(float64(tx.GetEcoSize()))
-	baseFee := params.FeePerByte.Mul(txSize)
-	if tx.GetFee().Decimal().LessThan(baseFee) {
-		return types.FieldErrorWithIndex(index, "fee",
-			fmt.Sprintf("fee cannot be lower than the base price of %s", baseFee.StringFixed(4)))
+		// Fee must be at least equal to the base fee
+		txSize := decimal.NewFromFloat(float64(tx.GetEcoSize()))
+		baseFee := params.FeePerByte.Mul(txSize)
+		if tx.GetFee().Decimal().LessThan(baseFee) {
+			return types.FieldErrorWithIndex(index, "fee",
+				fmt.Sprintf("fee cannot be lower than the base price of %s", baseFee.StringFixed(4)))
+		}
 	}
 
 	if err := v.Validate(tx.GetTimestamp(),
@@ -257,6 +261,49 @@ func CheckTxSetDelegateCommission(tx *types.TxSetDelegateCommission, index int) 
 
 	if err := checkCommon(tx, index); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// CheckTxPush performs sanity checks  on TxPush
+func CheckTxPush(tx *types.TxPush, index int) error {
+
+	if err := checkType(tx.TxType, types.TxTypePush, index); err != nil {
+		return err
+	}
+
+	if err := v.Validate(tx.PushNote,
+		v.Required.Error(feI(index, "pushNote", "push note is required").Error()),
+	); err != nil {
+		return err
+	}
+
+	if len(tx.PushOKs) < params.PushOKQuorumSize {
+		return feI(index, "endorsements", "not enough endorsements included")
+	}
+
+	if err := checkCommon(tx, index); err != nil {
+		return err
+	}
+
+	for _, pushOK := range tx.PushOKs {
+		if !pushOK.PushNoteID.Equal(tx.PushNote.ID()) {
+			return feI(index, "endorsements.pushNoteID", "value does not match push tx note id")
+		}
+
+		spk, err := crypto.PubKeyFromBytes(pushOK.SenderPubKey.Bytes())
+		if err != nil {
+			return feI(index, "endorsements.senderPubKey", "public key is not valid")
+		}
+
+		ok, err := spk.Verify(pushOK.BytesNoSig(), pushOK.Sig.Bytes())
+		if err != nil || !ok {
+			if !ok {
+				return feI(index, "endorsements.sig", "signature is invalid")
+			}
+			return feI(index, "endorsements.sig", "failed to verify signature")
+		}
 	}
 
 	return nil

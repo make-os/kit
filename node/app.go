@@ -346,9 +346,8 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 		return err
 	}
 
-	// Get next validators; We made use of the
-	// secret seed to randomize the op
-	tickets, err := a.ticketMgr.SelectRandom(curHeight-1, secret, params.MaxValidatorsPerEpoch)
+	// Get next validators; We made use of thesecret seed to randomize the op
+	tickets, err := a.ticketMgr.SelectRandomValidatorTickets(curHeight-1, secret, params.MaxValidatorsPerEpoch)
 	if err != nil {
 		return err
 	}
@@ -402,8 +401,8 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 	// Set the new validators
 	resp.ValidatorUpdates = newValUpdates
 
-	// Cache the current validators; it will be persisted in a future blocks.
-	// Note: Tendermint validator updates kicks in after H+2 block.
+	// Cache the current validators; it will be persisted in a future block.
+	// Note: Tendermint validator updates kicks in after H+2 blocks.
 	a.latestUnsavedValidators = newValidators
 	a.heightToSaveNewValidators = curHeight + 1
 

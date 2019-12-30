@@ -52,9 +52,9 @@ type TicketManager interface {
 	// addDelegated: When true, delegated tickets are added.
 	GetActiveTicketsByProposer(proposer string, ticketType int, addDelegated bool) ([]*Ticket, error)
 
-	// SelectRandom selects random live tickets up to the specified limit.
+	// SelectRandomValidatorTickets selects random live tickets up to the specified limit.
 	// The provided see is used to seed the PRNG that is used to select tickets.
-	SelectRandom(height int64, seed []byte, limit int) ([]*Ticket, error)
+	SelectRandomValidatorTickets(height int64, seed []byte, limit int) ([]*Ticket, error)
 
 	// Query finds and returns tickets that match the given query
 	Query(qf func(t *Ticket) bool, queryOpt ...interface{}) []*Ticket
@@ -72,6 +72,28 @@ type TicketManager interface {
 	// value in desc. order, height asc order and index asc order
 	GetOrderedLiveValidatorTickets(height int64, limit int) []*Ticket
 
+	// GetTopStorers returns top active storer tickets.
+	GetTopStorers(limit int) (PubKeyValues, error)
+
 	// Stop stops the ticket manager
 	Stop() error
+}
+
+// PubKeyValue stores a public key and a numerical value
+type PubKeyValue struct {
+	PubKey string
+	Value  string
+}
+
+// PubKeyValues is a collection of PubKeyValue
+type PubKeyValues []*PubKeyValue
+
+// Has checks if an entry matching a public key exists
+func (v *PubKeyValues) Has(pubKey string) bool {
+	for _, val := range *v {
+		if val.PubKey == pubKey {
+			return true
+		}
+	}
+	return false
 }

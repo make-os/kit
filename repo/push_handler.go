@@ -150,12 +150,13 @@ func (h *PushHandler) HandleUpdate() error {
 	}
 
 	// Broadcast the push note
-	h.rMgr.BroadcastPushNote(pushNote)
+	h.rMgr.BroadcastPushObjects(pushNote)
 
 	return nil
 }
 
-func (h *PushHandler) createPushNote(pkID string,
+func (h *PushHandler) createPushNote(
+	pkID string,
 	refsTxLine map[string]*util.TxLine) (*types.PushNote, error) {
 
 	var err error

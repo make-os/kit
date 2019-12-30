@@ -9,4 +9,7 @@ import (
 // added to a future block.
 type Mempool interface {
 	mempool.Mempool
+	
+	// Add attempts to add a transaction to the pool
+	Add(tx BaseTx) error 
 }

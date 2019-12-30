@@ -202,4 +202,55 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
+	Describe(".cachePushOkSender", func() {
+		It("should add to cache", func() {
+			Expect(repoMgr.pushOKSenders.Len()).To(Equal(0))
+			repoMgr.cachePushOkSender("sender", "txID")
+			Expect(repoMgr.pushOKSenders.Len()).To(Equal(1))
+		})
+	})
+
+	Describe(".isPushOKSender", func() {
+		It("should return true if sender + txID is cached", func() {
+			repoMgr.cachePushOkSender("sender", "txID")
+			Expect(repoMgr.pushOKSenders.Len()).To(Equal(1))
+			isSender := repoMgr.isPushOKSender("sender", "txID")
+			Expect(isSender).To(BeTrue())
+		})
+
+		It("should return false if sender + txID is not cached", func() {
+			isSender := repoMgr.isPushOKSender("sender", "txID")
+			Expect(isSender).To(BeFalse())
+		})
+	})
+
+	Describe(".addPushNoteEndorsement", func() {
+		When("1 PushOK for id=abc is added", func() {
+			BeforeEach(func() {
+				pushOK := &types.PushOK{Sig: util.BytesToSig(util.RandBytes(5))}
+				repoMgr.addPushNoteEndorsement("abc", pushOK)
+			})
+
+			Specify("that id=abc has 1 PushOK", func() {
+				Expect(repoMgr.pushNoteEndorsements.Len()).To(Equal(1))
+				pushOKList := repoMgr.pushNoteEndorsements.Get("abc")
+				Expect(pushOKList).To(HaveLen(1))
+			})
+		})
+
+		When("2 PushOKs for id=abc are added", func() {
+			BeforeEach(func() {
+				pushOK := &types.PushOK{Sig: util.BytesToSig(util.RandBytes(5))}
+				pushOK2 := &types.PushOK{Sig: util.BytesToSig(util.RandBytes(5))}
+				repoMgr.addPushNoteEndorsement("abc", pushOK)
+				repoMgr.addPushNoteEndorsement("abc", pushOK2)
+			})
+
+			Specify("that id=abc has 2 PushOK", func() {
+				Expect(repoMgr.pushNoteEndorsements.Len()).To(Equal(1))
+				pushOKList := repoMgr.pushNoteEndorsements.Get("abc")
+				Expect(pushOKList).To(HaveLen(2))
+			})
+		})
+	})
 })
