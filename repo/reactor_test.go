@@ -160,9 +160,9 @@ var _ = Describe("Reactor", func() {
 				err = mgr.MaybeCreatePushTx(pushNoteID)
 			})
 
-			It("should return err='not enough PushOKs to satisfy quorum size'", func() {
+			It("should return err='Not enough PushOKs to satisfy quorum size'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("not enough PushOKs to satisfy quorum size"))
+				Expect(err.Error()).To(Equal("Not enough PushOKs to satisfy quorum size"))
 			})
 		})
 

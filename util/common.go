@@ -98,6 +98,7 @@ func ObjectToBytes(s interface{}) []byte {
 		Encode(s); err != nil {
 		panic(err)
 	}
+
 	return buf.Bytes()
 }
 

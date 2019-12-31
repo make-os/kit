@@ -481,6 +481,33 @@ var _ = Describe("PushPool", func() {
 			})
 		})
 	})
+
+	Describe(".Len", func() {
+		var err error
+
+		When("pool has a tx", func() {
+			BeforeEach(func() {
+				pool = NewPushPool(2, mockKeeper, mockDHT)
+				pool.noteChecker = txCheckNoIssue
+				err = pool.Add(tx)
+				Expect(err).To(BeNil())
+			})
+
+			It("should return 1", func() {
+				Expect(pool.Len()).To(Equal(1))
+			})
+		})
+
+		When("pool has no tx", func() {
+			BeforeEach(func() {
+				pool = NewPushPool(2, mockKeeper, mockDHT)
+			})
+
+			It("should return 0", func() {
+				Expect(pool.Len()).To(Equal(0))
+			})
+		})
+	})
 })
 
 var _ = Describe("refNonceIndex", func() {

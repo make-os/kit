@@ -11,8 +11,8 @@ func BareGPGPubKey() *GPGPubKey {
 
 // GPGPubKey represents a GPG public key
 type GPGPubKey struct {
-	PubKey  string      `json:"pubKey"`
-	Address util.String `json:"address"`
+	PubKey  string      `json:"pubKey" msgpack:"pubKey"`
+	Address util.String `json:"address" msgpack:"address"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

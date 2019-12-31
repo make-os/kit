@@ -292,6 +292,13 @@ func (p *PushPool) remove(pushNotes ...*types.PushNote) {
 	p.container = finalTxs.([]*containerItem)
 }
 
+// Remove removes a push note
+func (p *PushPool) Remove(pushNote *types.PushNote) {
+	p.gmx.Lock()
+	defer p.gmx.Unlock()
+	p.remove(pushNote)
+}
+
 // Get finds and returns a push note
 func (p *PushPool) Get(noteID string) *types.PushNote {
 	res := p.index.get(noteID)
@@ -327,4 +334,11 @@ func (p *PushPool) removeOld() {
 		return true
 	})
 	p.container = finalTxs.([]*containerItem)
+}
+
+// Len returns the number of push notes in the pool
+func (p *PushPool) Len() int {
+	p.gmx.RLock()
+	defer p.gmx.RUnlock()
+	return len(p.container)
 }

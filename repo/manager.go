@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/makeos/mosdef/mempool"
 	"github.com/makeos/mosdef/util/cache"
 
 	"github.com/makeos/mosdef/config"
@@ -166,13 +165,6 @@ func (m *Manager) addPushNoteEndorsement(pnID string, pok *types.PushOK) {
 	}
 	pokList.(map[string]*types.PushOK)[pok.ID().String()] = pok
 	m.pushNoteEndorsements.Add(pnID, pokList)
-}
-
-func (m *Manager) subscribe() {
-	for evt := range m.cfg.G().Bus.On(mempool.EvtMempoolTxAdded) {
-		_ = evt
-		// pp.Println("MESSAGE RECEIVED", evt.Args)
-	}
 }
 
 // Start starts the server that serves the repos.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"sort"
 	"time"
 
 	"github.com/makeos/mosdef/params"
@@ -296,7 +297,7 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 	// Ensure there are enough PushOKs
 	pushOKIndex := notePushOKs.(map[string]*types.PushOK)
 	if len(pushOKIndex) < params.PushOKQuorumSize {
-		return fmt.Errorf("not enough PushOKs to satisfy quorum size")
+		return fmt.Errorf("Not enough PushOKs to satisfy quorum size")
 	}
 
 	// Get the push note from the push pool
@@ -309,17 +310,25 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 	for _, v := range pushOKIndex {
 		pushOKs = append(pushOKs, v)
 	}
+
 	pushTx := types.NewBareTxPush()
 	pushTx.PushNote = note
 	pushTx.PushOKs = pushOKs
-	pushTx.Timestamp = time.Now().Unix()
-	pushTx.SenderPubKey = m.nodeKey.PubKey().Base58()
-	pushTx.Sig, _ = pushTx.Sign(m.nodeKey.PrivKey().Base58())
+
+	// Sort PushOKs to promote determinism with other nodes that are going to
+	// construct their own PushTx (we need the final ID to be same network-wide)
+	sort.Slice(pushTx.PushOKs, func(i, j int) bool {
+		pnI := pushTx.PushOKs[i]
+		pnJ := pushTx.PushOKs[j]
+		return pnI.SenderPubKey.Big().Cmp(pnJ.SenderPubKey.Big()) == -1
+	})
 
 	// Add push to mempool
 	if err := m.GetMempool().Add(pushTx); err != nil {
 		return errors.Wrap(err, "failed to add push tx to mempool")
 	}
+
+	pushTx.PushNote.TargetRepo = nil
 
 	return nil
 }

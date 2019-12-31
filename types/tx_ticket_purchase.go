@@ -9,9 +9,9 @@ import (
 // TxTicketPurchase implements BaseTx, it describes a transaction that purchases
 // a ticket from the signer or delegates to another address.
 type TxTicketPurchase struct {
-	*TxType   `json:"-" msgpack:"-"`
-	*TxCommon `json:"-" mapstructure:"-"`
-	*TxValue  `json:"-" mapstructure:"-"`
+	*TxType   `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxCommon `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxValue  `json:"-" msgpack:"-" mapstructure:"-"`
 	Delegate  string `json:"delegate" msgpack:"delegate"`
 }
 

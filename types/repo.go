@@ -247,6 +247,12 @@ type PushPool interface {
 
 	// Get finds and returns a push note
 	Get(noteID string) *PushNote
+
+	// Len returns the number of items in the pool
+	Len() int
+
+	// Remove removes a push note
+	Remove(pushNote *PushNote)
 }
 
 // RepoPushNote represents a repository push request

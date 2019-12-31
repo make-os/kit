@@ -65,7 +65,7 @@ func (m *Module) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 
 	sugs = append(sugs, NewTxModule(vm, nodeSrv, m.logic).Configure()...)
 	sugs = append(sugs, NewChainModule(vm, nodeSrv, m.logic).Configure()...)
-	sugs = append(sugs, NewPoolModule(vm, m.mempoolReactor).Configure()...)
+	sugs = append(sugs, NewPoolModule(vm, m.mempoolReactor, m.repoMgr.GetPushPool()).Configure()...)
 	sugs = append(sugs, NewAccountModule(m.cfg, vm, m.acctmgr, nodeSrv, m.logic).Configure()...)
 	sugs = append(sugs, NewGPGModule(m.cfg, vm, nodeSrv, m.logic).Configure()...)
 	sugs = append(sugs, NewUtilModule(vm).Configure()...)

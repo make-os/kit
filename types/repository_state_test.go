@@ -13,7 +13,7 @@ var _ = Describe("Repository", func() {
 		BeforeEach(func() {
 			r = BareRepository()
 			r.CreatorAddress = "some_address"
-			r.References = map[string]*Reference{
+			r.References = map[string]interface{}{
 				"refs/heads/master": &Reference{
 					Nonce: 20,
 				},
@@ -27,9 +27,9 @@ var _ = Describe("Repository", func() {
 
 		Describe(".NewRepositoryFromBytes", func() {
 			It("should return object", func() {
-				r, err := NewRepositoryFromBytes(expectedBz)
+				res, err := NewRepositoryFromBytes(expectedBz)
 				Expect(err).To(BeNil())
-				Expect(r).To(Equal(r))
+				Expect(res).To(Equal(r))
 			})
 
 			Context("with malformed byte slice", func() {
@@ -55,7 +55,7 @@ var _ = Describe("Repository", func() {
 
 		It("should return false when at least one field is set", func() {
 			r := BareRepository()
-			r.References = map[string]*Reference{"refs/heads/master": &Reference{}}
+			r.References = map[string]interface{}{"refs/heads/master": &Reference{}}
 			Expect(r.IsNil()).To(BeFalse())
 		})
 	})
@@ -63,7 +63,7 @@ var _ = Describe("Repository", func() {
 	Describe("References", func() {
 		Describe(".Get", func() {
 			It("should return bare reference when not found", func() {
-				refs := References(map[string]*Reference{
+				refs := References(map[string]interface{}{
 					"refs/heads/master": &Reference{Nonce: 10},
 				})
 				Expect(refs.Get("refs/heads/dev")).To(Equal(BareReference()))
@@ -71,7 +71,7 @@ var _ = Describe("Repository", func() {
 
 			It("should return ref when found", func() {
 				ref := &Reference{Nonce: 10}
-				refs := References(map[string]*Reference{
+				refs := References(map[string]interface{}{
 					"refs/heads/dev": ref,
 				})
 				Expect(refs.Get("refs/heads/dev")).To(Equal(ref))
@@ -82,7 +82,7 @@ var _ = Describe("Repository", func() {
 			When("reference does not exist", func() {
 				It("should return false", func() {
 					ref := &Reference{Nonce: 10}
-					refs := References(map[string]*Reference{"refs/heads/dev": ref})
+					refs := References(map[string]interface{}{"refs/heads/dev": ref})
 					Expect(refs.Has("refs/heads/master")).To(BeFalse())
 				})
 			})
@@ -90,7 +90,7 @@ var _ = Describe("Repository", func() {
 			When("reference exist", func() {
 				It("should return true", func() {
 					ref := &Reference{Nonce: 10}
-					refs := References(map[string]*Reference{"refs/heads/dev": ref})
+					refs := References(map[string]interface{}{"refs/heads/dev": ref})
 					Expect(refs.Has("refs/heads/dev")).To(BeTrue())
 				})
 			})

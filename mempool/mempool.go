@@ -22,9 +22,10 @@ import (
 
 // Mempool related events
 const (
-	EvtMempoolTxAdded    = "mempool_tx_added"
-	EvtMempoolTxRemoved  = "mempool_tx_removed"
-	EvtMempoolTxRejected = "mempool_tx_rejected"
+	EvtMempoolTxAdded     = "mempool_tx_added"
+	EvtMempoolTxRemoved   = "mempool_tx_removed"
+	EvtMempoolTxRejected  = "mempool_tx_rejected"
+	EvtMempoolTxCommitted = "mempool_tx_committed"
 )
 
 // Option sets an optional parameter on the mempool.
@@ -177,14 +178,14 @@ func (mp *Mempool) addTx(bs []byte, res *abci.Response) {
 
 		err := mp.pool.Put(tx)
 		if err != nil {
-			mp.cfg.G().Bus.Emit(EvtMempoolTxRejected, []interface{}{tx, err})
+			mp.cfg.G().Bus.Emit(EvtMempoolTxRejected, err, tx)
 			r.CheckTx.Code = t.ErrCodeTxPoolReject
 			r.CheckTx.Log = err.Error()
 			return
 		}
 
-		mp.log.Info("Added a new transaction to the pool", "Hash", tx.GetHash())
-		mp.cfg.G().Bus.Emit(EvtMempoolTxAdded, []interface{}{nil, tx})
+		mp.log.Info("Added a new transaction to the pool", "Hash", tx.GetHash(), "PoolSize", mp.Size())
+		mp.cfg.G().Bus.Emit(EvtMempoolTxAdded, nil, tx)
 		mp.notifyTxsAvailable()
 	}
 }
@@ -305,10 +306,14 @@ func (mp *Mempool) Update(blockHeight int64, txs types.Txs,
 	mp.notifiedTxsAvailable = false
 
 	// Remove the transactions
-	for _, txBs := range txs {
+	for i, txBs := range txs {
 		tx, _ := t.DecodeTx(txBs)
 		mp.pool.Remove(tx)
-		mp.cfg.G().Bus.Emit(EvtMempoolTxRemoved, []interface{}{nil, tx})
+		mp.cfg.G().Bus.Emit(EvtMempoolTxRemoved, nil, tx)
+
+		if deliverTxResponses[i].GetCode() == 0 {
+			mp.cfg.G().Bus.Emit(EvtMempoolTxCommitted, nil, tx)
+		}
 	}
 
 	// Notify that there are transactions still in the pool

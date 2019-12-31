@@ -40,26 +40,24 @@ func checkType(tx *types.TxType, expected int, index int) error {
 
 func checkCommon(tx types.BaseTx, index int) error {
 
-	if !tx.Is(types.TxTypePush) {
-		if err := v.Validate(tx.GetNonce(),
-			v.Required.Error(feI(index, "nonce", "nonce is required").Error())); err != nil {
-			return err
-		}
+	if err := v.Validate(tx.GetNonce(),
+		v.Required.Error(feI(index, "nonce", "nonce is required").Error())); err != nil {
+		return err
+	}
 
-		if err := v.Validate(tx.GetFee(),
-			v.Required.Error(feI(index, "fee", "fee is required").Error()),
-			v.By(validValueRule("fee", index)),
-		); err != nil {
-			return err
-		}
+	if err := v.Validate(tx.GetFee(),
+		v.Required.Error(feI(index, "fee", "fee is required").Error()),
+		v.By(validValueRule("fee", index)),
+	); err != nil {
+		return err
+	}
 
-		// Fee must be at least equal to the base fee
-		txSize := decimal.NewFromFloat(float64(tx.GetEcoSize()))
-		baseFee := params.FeePerByte.Mul(txSize)
-		if tx.GetFee().Decimal().LessThan(baseFee) {
-			return types.FieldErrorWithIndex(index, "fee",
-				fmt.Sprintf("fee cannot be lower than the base price of %s", baseFee.StringFixed(4)))
-		}
+	// Fee must be at least equal to the base fee
+	txSize := decimal.NewFromFloat(float64(tx.GetEcoSize()))
+	baseFee := params.FeePerByte.Mul(txSize)
+	if tx.GetFee().Decimal().LessThan(baseFee) {
+		return types.FieldErrorWithIndex(index, "fee",
+			fmt.Sprintf("fee cannot be lower than the base price of %s", baseFee.StringFixed(4)))
 	}
 
 	if err := v.Validate(tx.GetTimestamp(),
@@ -286,10 +284,6 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 
 	if len(tx.PushOKs) < params.PushOKQuorumSize {
 		return feI(index, "endorsements", "not enough endorsements included")
-	}
-
-	if err := checkCommon(tx, index); err != nil {
-		return err
 	}
 
 	for _, pushOK := range tx.PushOKs {

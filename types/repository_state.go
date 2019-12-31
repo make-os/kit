@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/makeos/mosdef/util"
+	"github.com/mitchellh/mapstructure"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -12,11 +13,15 @@ func BareReference() *Reference {
 
 // Reference represents a git reference
 type Reference struct {
-	Nonce uint64 `json:"nonce" msgpack:"nonce"`
+	Nonce uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce"`
 }
 
 // References represents a collection of references
-type References map[string]*Reference
+// Note: we are using map[string]interface{} instead of map[string]*Reference
+// because we want to take advantage of msgpack map sorting which only works on the
+// former.
+// CONTRACT: interface{} is always *Reference
+type References map[string]interface{}
 
 // Get a reference by name, returns empty reference if not found.
 func (r *References) Get(name string) *Reference {
@@ -24,7 +29,7 @@ func (r *References) Get(name string) *Reference {
 	if ref == nil {
 		return BareReference()
 	}
-	return ref
+	return ref.(*Reference)
 }
 
 // Has checks whether a reference exist
@@ -34,7 +39,9 @@ func (r *References) Has(name string) bool {
 
 // BareRepository returns an empty repository object
 func BareRepository() *Repository {
-	return &Repository{}
+	return &Repository{
+		References: make(map[string]interface{}),
+	}
 }
 
 // Repository represents a git repository
@@ -55,7 +62,14 @@ func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&r.CreatorAddress, &r.References)
+	err := dec.DecodeMulti(&r.CreatorAddress, &r.References)
+	if err != nil {
+		return err
+	}
+	if r.References == nil {
+		r.References = make(map[string]interface{})
+	}
+	return nil
 }
 
 // Bytes return the bytes equivalent of the account
@@ -65,9 +79,17 @@ func (r *Repository) Bytes() []byte {
 
 // NewRepositoryFromBytes decodes bz to Repository
 func NewRepositoryFromBytes(bz []byte) (*Repository, error) {
-	var repo Repository
-	if err := util.BytesToObject(bz, &repo); err != nil {
+
+	var repo = BareRepository()
+	if err := util.BytesToObject(bz, repo); err != nil {
 		return nil, err
 	}
-	return &repo, nil
+
+	for k, v := range repo.References {
+		var ref Reference
+		mapstructure.Decode(v, &ref)
+		repo.References[k] = &ref
+	}
+
+	return repo, nil
 }

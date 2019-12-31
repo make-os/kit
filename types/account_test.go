@@ -12,11 +12,11 @@ var _ = Describe("Account", func() {
 	var acctBs []byte
 
 	BeforeEach(func() {
-		stakes = AccountStakes(map[string]*StakeInfo{"s1": &StakeInfo{Value: util.String("10")}})
+		stakes = AccountStakes(map[string]interface{}{"s1": &StakeInfo{Value: util.String("10")}})
 		acct = &Account{Balance: util.String("10"), Nonce: 2, Stakes: stakes}
 		acctBs = []uint8{
 			0xa2, 0x31, 0x30, 0xcf, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x81, 0xa2, 0x73, 0x31,
-			0x82, 0xa5, 0x56, 0x61, 0x6c, 0x75, 0x65, 0xa2, 0x31, 0x30, 0xac, 0x55, 0x6e, 0x62, 0x6f, 0x6e,
+			0x82, 0xa5, 0x76, 0x61, 0x6c, 0x75, 0x65, 0xa2, 0x31, 0x30, 0xac, 0x75, 0x6e, 0x62, 0x6f, 0x6e,
 			0x64, 0x48, 0x65, 0x69, 0x67, 0x68, 0x74, 0xcf, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0xcb, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		}
@@ -53,7 +53,7 @@ var _ = Describe("Account", func() {
 	Describe(".GetSpendableBalance", func() {
 		When("account has a stake entry of value=10 and unbond height=1", func() {
 			BeforeEach(func() {
-				acct.Stakes = AccountStakes(map[string]*StakeInfo{"s1": &StakeInfo{
+				acct.Stakes = AccountStakes(map[string]interface{}{"s1": &StakeInfo{
 					Value:        util.String("10"),
 					UnbondHeight: 1,
 				}})
@@ -66,7 +66,7 @@ var _ = Describe("Account", func() {
 
 		When("account has a stake entry of value=10 and unbond height=100", func() {
 			BeforeEach(func() {
-				acct.Stakes = AccountStakes(map[string]*StakeInfo{"s1": &StakeInfo{
+				acct.Stakes = AccountStakes(map[string]interface{}{"s1": &StakeInfo{
 					Value:        util.String("10"),
 					UnbondHeight: 100,
 				}})
@@ -94,7 +94,7 @@ var _ = Describe("Account", func() {
 			var stake *StakeInfo
 			BeforeEach(func() {
 				stake = &StakeInfo{Value: util.String("10"), UnbondHeight: 1000}
-				stakes = AccountStakes(map[string]*StakeInfo{"s1": stake})
+				stakes = AccountStakes(map[string]interface{}{"s1": stake})
 				acct = &Account{Balance: util.String("10"), Nonce: 2, Stakes: stakes}
 			})
 
@@ -111,7 +111,7 @@ var _ = Describe("Account", func() {
 			var stake *StakeInfo
 			BeforeEach(func() {
 				stake = &StakeInfo{Value: util.String("10"), UnbondHeight: 0}
-				stakes = AccountStakes(map[string]*StakeInfo{"s1": stake})
+				stakes = AccountStakes(map[string]interface{}{"s1": stake})
 				acct = &Account{Balance: util.String("10"), Nonce: 2, Stakes: stakes}
 			})
 
@@ -126,7 +126,7 @@ var _ = Describe("Account", func() {
 			var stake *StakeInfo
 			BeforeEach(func() {
 				stake = &StakeInfo{Value: util.String("10"), UnbondHeight: 1000}
-				stakes = AccountStakes(map[string]*StakeInfo{"s1": stake})
+				stakes = AccountStakes(map[string]interface{}{"s1": stake})
 				acct = &Account{Balance: util.String("10"), Nonce: 2, Stakes: stakes}
 			})
 
@@ -144,7 +144,7 @@ var _ = Describe("Account", func() {
 var _ = Describe("AccountStakes", func() {
 	Describe(".Add", func() {
 		It("should add two stake balances", func() {
-			stakes := AccountStakes(map[string]*StakeInfo{})
+			stakes := AccountStakes(map[string]interface{}{})
 			stakes.Add(StakeTypeValidator, util.String("10"), 0)
 			stakes.Add(StakeTypeValidator, util.String("13"), 0)
 			Expect(len(stakes)).To(Equal(2))
@@ -153,13 +153,13 @@ var _ = Describe("AccountStakes", func() {
 
 	Describe(".Has", func() {
 		It("should return true when stake exist", func() {
-			stakes := AccountStakes(map[string]*StakeInfo{})
+			stakes := AccountStakes(map[string]interface{}{})
 			key := stakes.Add(StakeTypeValidator, util.String("10"), 1)
 			Expect(stakes.Has(key)).To(BeTrue())
 		})
 
 		It("should return false when stake does not exist", func() {
-			stakes := AccountStakes(map[string]*StakeInfo{})
+			stakes := AccountStakes(map[string]interface{}{})
 			stakes.Add(StakeTypeValidator, util.String("10"), 1)
 			Expect(stakes.Has("s2")).To(BeFalse())
 		})
@@ -168,7 +168,7 @@ var _ = Describe("AccountStakes", func() {
 	Describe(".TotalStaked", func() {
 		When("current chain height is 100 and stake unbond height is below 100", func() {
 			It("should return total stakes of 0 since the stake is unbonded", func() {
-				stakes := AccountStakes(map[string]*StakeInfo{})
+				stakes := AccountStakes(map[string]interface{}{})
 				stakes.Add(StakeTypeValidator, util.String("10"), 20)
 				totalStaked := stakes.TotalStaked(100)
 				Expect(totalStaked).To(Equal(util.String("0")))
@@ -177,7 +177,7 @@ var _ = Describe("AccountStakes", func() {
 
 		When("current chain height is anything and stake unbond height is 0", func() {
 			It("should return total stakes of 10 since the stake is forever bonded", func() {
-				stakes := AccountStakes(map[string]*StakeInfo{})
+				stakes := AccountStakes(map[string]interface{}{})
 				stakes.Add(StakeTypeValidator, util.String("10"), 0)
 				totalStaked := stakes.TotalStaked(100)
 				Expect(totalStaked).To(Equal(util.String("10")))
@@ -186,7 +186,7 @@ var _ = Describe("AccountStakes", func() {
 
 		When("current chain height is 100 and stake unbond height is above 100", func() {
 			It("should return total stakes of 0 since the stake is unbonded", func() {
-				stakes := AccountStakes(map[string]*StakeInfo{})
+				stakes := AccountStakes(map[string]interface{}{})
 				stakes.Add(StakeTypeValidator, util.String("10"), 100)
 				totalStaked := stakes.TotalStaked(100)
 				Expect(totalStaked).To(Equal(util.String("0")))
@@ -195,7 +195,7 @@ var _ = Describe("AccountStakes", func() {
 
 		When("current chain height is 100 and stake unbond height is above 101", func() {
 			It("should return total stakes of 10 since the stake is bonded", func() {
-				stakes := AccountStakes(map[string]*StakeInfo{})
+				stakes := AccountStakes(map[string]interface{}{})
 				stakes.Add(StakeTypeValidator, util.String("10"), 101)
 				totalStaked := stakes.TotalStaked(100)
 				Expect(totalStaked).To(Equal(util.String("10")))
@@ -205,12 +205,12 @@ var _ = Describe("AccountStakes", func() {
 
 	Describe(".Get", func() {
 		It("should return zero ('0') when stake is not found", func() {
-			stakes := AccountStakes(map[string]*StakeInfo{})
+			stakes := AccountStakes(map[string]interface{}{})
 			Expect(stakes.Get("unknown")).To(Equal(&StakeInfo{Value: util.String("0")}))
 		})
 
 		It("should return expected value when stake is found", func() {
-			stakes := AccountStakes(map[string]*StakeInfo{})
+			stakes := AccountStakes(map[string]interface{}{})
 			key := stakes.Add(StakeTypeValidator, util.String("10"), 0)
 			Expect(stakes.Get(key).Value).To(Equal(util.String("10")))
 		})
@@ -219,7 +219,7 @@ var _ = Describe("AccountStakes", func() {
 	Describe(".Remove", func() {
 		Context("with existing entry of value=10 and key=v0 and unbondHeight=0", func() {
 			It("should remove entry with stakeType=v, value=10, unbondHeight=0", func() {
-				stakes := AccountStakes(map[string]*StakeInfo{})
+				stakes := AccountStakes(map[string]interface{}{})
 				key := stakes.Add("v", util.String("10"), 0)
 				Expect(key).To(Equal("v0"))
 				Expect(stakes).To(HaveLen(1))
@@ -230,7 +230,7 @@ var _ = Describe("AccountStakes", func() {
 
 		Context("with existing entry of value=10 and key=v0 and unbondHeight=1", func() {
 			It("should not remove entry with stakeType=v, value=10, unbondHeight=0", func() {
-				stakes := AccountStakes(map[string]*StakeInfo{})
+				stakes := AccountStakes(map[string]interface{}{})
 				key := stakes.Add("v", util.String("10"), 1)
 				Expect(key).To(Equal("v0"))
 				Expect(stakes).To(HaveLen(1))
@@ -241,7 +241,7 @@ var _ = Describe("AccountStakes", func() {
 
 		Context("with existing entry of value=10.5 and key=v0 and unbondHeight=0", func() {
 			It("should not remove entry with stakeType=v, value=10, unbondHeight=0", func() {
-				stakes := AccountStakes(map[string]*StakeInfo{})
+				stakes := AccountStakes(map[string]interface{}{})
 				key := stakes.Add("v", util.String("10.5"), 0)
 				Expect(key).To(Equal("v0"))
 				Expect(stakes).To(HaveLen(1))
@@ -252,7 +252,7 @@ var _ = Describe("AccountStakes", func() {
 
 		Context("with existing entry of value=10 and key=s0 and unbondHeight=0", func() {
 			It("should not remove entry with stakeType=v, value=10, unbondHeight=0", func() {
-				stakes := AccountStakes(map[string]*StakeInfo{})
+				stakes := AccountStakes(map[string]interface{}{})
 				key := stakes.Add("s", util.String("10"), 0)
 				Expect(key).To(Equal("s0"))
 				Expect(stakes).To(HaveLen(1))
@@ -264,7 +264,7 @@ var _ = Describe("AccountStakes", func() {
 		Context("with 2 existing entry of value=10 and key=v0 and unbondHeight=0 | value=10 and key=v1 and unbondHeight=0", func() {
 			var stakes AccountStakes
 			BeforeEach(func() {
-				stakes = AccountStakes(map[string]*StakeInfo{})
+				stakes = AccountStakes(map[string]interface{}{})
 				key := stakes.Add("v", util.String("10"), 0)
 				Expect(key).To(Equal("v0"))
 				key2 := stakes.Add("v", util.String("10"), 0)
@@ -283,14 +283,14 @@ var _ = Describe("AccountStakes", func() {
 	Describe(".UpdateUnbondHeight", func() {
 		Context("with existing entry of value=10 and key=v0 and unbondHeight=0", func() {
 			It("should find entry with stakeType=v, value=10, unbondHeight=0 and unbondHeight=10", func() {
-				stakes := AccountStakes(map[string]*StakeInfo{})
+				stakes := AccountStakes(map[string]interface{}{})
 				key := stakes.Add("v", util.String("10"), 0)
 				Expect(key).To(Equal("v0"))
 				Expect(stakes).To(HaveLen(1))
 				key2 := stakes.UpdateUnbondHeight("v", util.String("10"), 0, 10)
 				Expect(key).To(Equal(key2))
 				stake := stakes[key2]
-				Expect(stake.UnbondHeight).To(Equal(uint64(10)))
+				Expect(stake.(*StakeInfo).UnbondHeight).To(Equal(uint64(10)))
 			})
 		})
 	})

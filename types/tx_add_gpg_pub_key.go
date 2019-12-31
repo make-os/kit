@@ -9,8 +9,8 @@ import (
 // TxAddGPGPubKey implements BaseTx, it describes a transaction that registers a
 // gpg key to the transaction signer
 type TxAddGPGPubKey struct {
-	*TxCommon `json:"-" mapstructure:"-"`
-	*TxType   `json:"-" msgpack:"-"`
+	*TxCommon `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxType   `json:"-" msgpack:"-" mapstructure:"-"`
 	PublicKey string `json:"pubKey" msgpack:"pubKey"`
 }
 

@@ -9,8 +9,8 @@ import (
 // TxEpochSecret implements BaseTx, it describes a transaction that contains
 // random secrets used for validator selection.
 type TxEpochSecret struct {
-	*TxType        `json:"-" mapstructure:"-"`
-	*TxCommon      `json:"-" mapstructure:"-"`
+	*TxType        `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxCommon      `json:"-" msgpack:"-" mapstructure:"-"`
 	Secret         []byte `json:"secret,omitempty" msgpack:"secret,omitempty"`
 	PreviousSecret []byte `json:"previousSecret,omitempty" msgpack:"previousSecret,omitempty"`
 	SecretRound    uint64 `json:"secretRound,omitempty" msgpack:"secretRound,omitempty"`
@@ -29,12 +29,12 @@ func NewBareTxEpochSecret() *TxEpochSecret {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxEpochSecret) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(tx.Type,tx.Secret, tx.PreviousSecret, tx.SecretRound)
+	return enc.EncodeMulti(tx.Type, tx.Secret, tx.PreviousSecret, tx.SecretRound)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (tx *TxEpochSecret) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&tx.Type,&tx.Secret, &tx.PreviousSecret, &tx.SecretRound)
+	return dec.DecodeMulti(&tx.Type, &tx.Secret, &tx.PreviousSecret, &tx.SecretRound)
 }
 
 // Bytes returns the serialized transaction

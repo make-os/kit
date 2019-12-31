@@ -13,13 +13,14 @@ import (
 
 // PoolModule provides access to the transaction pool
 type PoolModule struct {
-	vm      *otto.Otto
-	reactor *mempool.Reactor
+	vm       *otto.Otto
+	reactor  *mempool.Reactor
+	pushPool types.PushPool
 }
 
 // NewPoolModule creates an instance of PoolModule
-func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor) *PoolModule {
-	return &PoolModule{vm: vm, reactor: reactor}
+func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor, pushPool types.PushPool) *PoolModule {
+	return &PoolModule{vm: vm, reactor: reactor, pushPool: pushPool}
 }
 
 func (m *PoolModule) globals() []*types.JSModuleFunc {
@@ -32,12 +33,17 @@ func (m *PoolModule) funcs() []*types.JSModuleFunc {
 		&types.JSModuleFunc{
 			Name:        "getSize",
 			Value:       m.getSize,
-			Description: "Get the current size of the pool",
+			Description: "Get the current size of the mempool",
 		},
 		&types.JSModuleFunc{
 			Name:        "getTop",
 			Value:       m.getTop,
-			Description: "Get top transactions from the pool",
+			Description: "Get top transactions from the mempool",
+		},
+		&types.JSModuleFunc{
+			Name:        "getPushPoolSize",
+			Value:       m.getPushPoolSize,
+			Description: "Get the current size of the push pool",
 		},
 	}
 }
@@ -80,4 +86,9 @@ func (m *PoolModule) getTop(n int) interface{} {
 		res = append(res, util.EncodeForJS(tx.ToMap()))
 	}
 	return res
+}
+
+// getPushPoolSize returns the size of the push pool
+func (m *PoolModule) getPushPoolSize() interface{} {
+	return m.pushPool.Len()
 }

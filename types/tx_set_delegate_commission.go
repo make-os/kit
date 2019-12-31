@@ -9,8 +9,8 @@ import (
 // TxSetDelegateCommission implements BaseTx, it describes a transaction that
 // sets the signers delegate commission rate.
 type TxSetDelegateCommission struct {
-	*TxType    `json:"-" msgpack:"-"`
-	*TxCommon  `json:"-" mapstructure:"-"`
+	*TxType    `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxCommon  `json:"-" msgpack:"-" mapstructure:"-"`
 	Commission util.String `json:"commission" msgpack:"commission"`
 }
 

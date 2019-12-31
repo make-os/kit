@@ -747,7 +747,7 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	FDescribe(".CheckTxPush", func() {
+	Describe(".CheckTxPush", func() {
 		var tx *types.TxPush
 
 		BeforeEach(func() {
@@ -787,42 +787,6 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:endorsements, error:not enough endorsements included"))
-			})
-
-			It("has no timestamp", func() {
-				params.PushOKQuorumSize = 1
-				tx.Timestamp = 0
-				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
-				err := validators.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, error:timestamp is required"))
-			})
-
-			It("has no sender public key", func() {
-				params.PushOKQuorumSize = 1
-				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
-				err := validators.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
-			})
-
-			It("has no signature", func() {
-				params.PushOKQuorumSize = 1
-				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
-				tx.SenderPubKey = key.PubKey().Base58()
-				err := validators.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
-			})
-
-			It("has invalid signature", func() {
-				params.PushOKQuorumSize = 1
-				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
-				tx.SenderPubKey = key.PubKey().Base58()
-				tx.Sig = util.RandBytes(5)
-				err := validators.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
 			})
 
 			It("has a PushOK with a push note id that is different from the PushTx.PushNoteID", func() {

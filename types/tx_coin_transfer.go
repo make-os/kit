@@ -9,10 +9,10 @@ import (
 // TxCoinTransfer implements BaseTx, it describes a transaction that transfers
 // the native coin from one account to another.
 type TxCoinTransfer struct {
-	*TxType      `json:"-" msgpack:"-"`
-	*TxCommon    `json:"-" mapstructure:"-"`
-	*TxRecipient `json:"-" mapstructure:"-"`
-	*TxValue     `json:"-" mapstructure:"-"`
+	*TxType      `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxCommon    `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxRecipient `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxValue     `json:"-" msgpack:"-" mapstructure:"-"`
 }
 
 // NewBareTxCoinTransfer returns an instance of TxCoinTransfer with zero values

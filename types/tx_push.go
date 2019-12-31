@@ -95,6 +95,26 @@ func (tx *TxPush) GetSize() int64 {
 	return int64(len(tx.Bytes()))
 }
 
+// GetTimestamp return the transaction creation unix timestamp.
+// Because TxPush is a wrapper transaction, we use the push note timestamp
+func (tx *TxPush) GetTimestamp() int64 {
+	return tx.PushNote.Timestamp
+}
+
+// GetNonce returns the transaction nonce.
+// Because TxPush is a wrapper transaction, we use the Account nonce of the pusher
+// which is found in anyone of the pushed reference
+func (tx *TxPush) GetNonce() uint64 {
+	return tx.PushNote.References[0].AccountNonce
+}
+
+// GetFrom returns the address of the transaction sender
+// Because TxPush is a wrapper transaction, we use the pusher's public key ID
+// Panics if sender's public key is invalid.
+func (tx *TxPush) GetFrom() util.String {
+	return util.String(tx.PushNote.PusherKeyID)
+}
+
 // Sign signs the transaction
 func (tx *TxPush) Sign(privKey string) ([]byte, error) {
 	return SignTransaction(tx, privKey)

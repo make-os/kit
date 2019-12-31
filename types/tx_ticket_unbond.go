@@ -9,8 +9,8 @@ import (
 // TxTicketUnbond implements BaseTx, it describes a transaction that unbonds a
 // staked coin owned by the signer
 type TxTicketUnbond struct {
-	*TxType    `json:"-" msgpack:"-"`
-	*TxCommon  `json:"-" mapstructure:"-"`
+	*TxType    `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxCommon  `json:"-" msgpack:"-" mapstructure:"-"`
 	TicketHash string `json:"hash" msgpack:"hash"`
 }
 
