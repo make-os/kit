@@ -37,6 +37,11 @@ func (m *RepoModule) funcs() []*types.JSModuleFunc {
 			Description: "Create a git repository on the network",
 		},
 		&types.JSModuleFunc{
+			Name:        "get",
+			Value:       m.get,
+			Description: "Find and return a repository",
+		},
+		&types.JSModuleFunc{
 			Name:        "prune",
 			Value:       m.prune,
 			Description: "Delete all dangling and unreachable loose objects from a repository",
@@ -138,4 +143,19 @@ func (m *RepoModule) prune(name string, force bool) {
 		return
 	}
 	m.repoMgr.GetPruner().Schedule(name)
+}
+
+// get finds and returns a repository
+// name: The name of the repository
+// height: Optional max block height to limit the search to.
+func (m *RepoModule) get(name string, height ...int) interface{} {
+	var targetHeight int64
+	if len(height) > 0 {
+		targetHeight = int64(height[0])
+	}
+	repo := m.keepers.RepoKeeper().GetRepo(name, targetHeight)
+	if repo.IsNil() {
+		return otto.NullValue()
+	}
+	return repo
 }
