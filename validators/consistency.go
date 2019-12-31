@@ -6,6 +6,7 @@ import (
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/params"
+	"github.com/makeos/mosdef/repo"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
@@ -248,9 +249,14 @@ func CheckTxPushConsistency(
 			return err
 		}
 		if !storers.Has(spk.Base58()) {
-			return feI(index, "endorsements.senderPubKey", "sender public key does "+
-				"not belong to an active storer")
+			return feI(index, "endorsements.senderPubKey",
+				"sender public key does not belong to an active storer")
 		}
+	}
+
+	// Check push note
+	if err := repo.CheckPushNoteConsistency(tx.PushNote, logic); err != nil {
+		return err
 	}
 
 	return nil

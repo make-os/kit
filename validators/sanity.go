@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/repo"
 
 	v "github.com/go-ozzo/ozzo-validation"
 	"github.com/makeos/mosdef/params"
@@ -276,6 +277,10 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 	if err := v.Validate(tx.PushNote,
 		v.Required.Error(feI(index, "pushNote", "push note is required").Error()),
 	); err != nil {
+		return err
+	}
+
+	if err := repo.CheckPushNoteSyntax(tx.PushNote); err != nil {
 		return err
 	}
 

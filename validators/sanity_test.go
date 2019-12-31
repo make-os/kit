@@ -753,6 +753,11 @@ var _ = Describe("TxValidator", func() {
 		BeforeEach(func() {
 			tx = types.NewBareTxPush()
 			tx.Timestamp = time.Now().Unix()
+			tx.PushNote.RepoName = "repo1"
+			tx.PushNote.PusherKeyID = util.RandString(42)
+			tx.PushNote.Timestamp = time.Now().Unix()
+			tx.PushNote.NodePubKey = key.PubKey().Base58()
+			tx.PushNote.NodeSig = key.PrivKey().MustSign(tx.PushNote.Bytes())
 		})
 
 		When("it has invalid fields, it should return error when", func() {
@@ -768,6 +773,13 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:pushNote, error:push note is required"))
+			})
+
+			It("has an invalid push note (with no repo name)", func() {
+				tx.PushNote.RepoName = ""
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:repoName, error:repo name is required"))
 			})
 
 			It("has low endorsement (not up to quorum)", func() {
@@ -826,7 +838,6 @@ var _ = Describe("TxValidator", func() {
 
 			It("has a PushOK with an invalid signature", func() {
 				params.PushOKQuorumSize = 1
-				tx.PushNote = &types.PushNote{RepoName: "repo1"}
 				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
 					PushNoteID:   tx.PushNote.ID(),
 					SenderPubKey: util.BytesToHash(key.PubKey().MustBytes()),
@@ -844,7 +855,6 @@ var _ = Describe("TxValidator", func() {
 		When("no error", func() {
 			It("should return no error", func() {
 				params.PushOKQuorumSize = 1
-				tx.PushNote = &types.PushNote{RepoName: "repo1"}
 
 				pok := &types.PushOK{
 					PushNoteID:   tx.PushNote.ID(),
