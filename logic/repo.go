@@ -29,7 +29,7 @@ func (t *Transaction) execRepoCreate(
 
 	// Get the sender account and balance
 	acctKeeper := t.logic.AccountKeeper()
-	senderAcct := acctKeeper.GetAccount(spk.Addr(), int64(chainHeight))
+	senderAcct := acctKeeper.GetAccount(spk.Addr(), chainHeight)
 	senderBal := senderAcct.Balance.Decimal()
 
 	// Deduct the fee from the sender's account

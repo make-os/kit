@@ -32,7 +32,7 @@ func (t *Transaction) execCoinTransfer(
 
 	// Get sender account and balance
 	sender := spk.Addr()
-	senderAcct := acctKeeper.GetAccount(sender, int64(chainHeight))
+	senderAcct := acctKeeper.GetAccount(sender, chainHeight)
 	senderBal := senderAcct.Balance.Decimal()
 
 	// Deduct the spend amount from the sender's account and increment nonce
@@ -48,7 +48,7 @@ func (t *Transaction) execCoinTransfer(
 	// otherwise use the sender account as recipient account
 	var recipientAcct = senderAcct
 	if !sender.Equal(recipientAddr) {
-		recipientAcct = acctKeeper.GetAccount(recipientAddr, int64(chainHeight))
+		recipientAcct = acctKeeper.GetAccount(recipientAddr, chainHeight)
 	}
 
 	// Add the transaction value to the recipient balance
@@ -84,7 +84,7 @@ func (t *Transaction) CanExecCoinTransfer(
 	// Get sender and recipient accounts
 	acctKeeper := t.logic.AccountKeeper()
 	sender := senderPubKey.Addr()
-	senderAcct := acctKeeper.GetAccount(sender, int64(chainHeight))
+	senderAcct := acctKeeper.GetAccount(sender, chainHeight)
 
 	// Ensure the transaction nonce is the next expected nonce
 	expectedNonce := senderAcct.Nonce + 1

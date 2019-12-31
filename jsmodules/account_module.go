@@ -186,7 +186,7 @@ func (m *AccountModule) getNonce(address string) string {
 }
 
 // getAccount returns the account of the given address
-func (m *AccountModule) getAccount(address string, height ...int64) interface{} {
+func (m *AccountModule) getAccount(address string, height ...uint64) interface{} {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
 	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
 		panic(types.ErrAccountUnknown)
@@ -195,7 +195,7 @@ func (m *AccountModule) getAccount(address string, height ...int64) interface{} 
 }
 
 // getSpendableBalance returns the spendable balance of an account
-func (m *AccountModule) getSpendableBalance(address string, height ...int64) interface{} {
+func (m *AccountModule) getSpendableBalance(address string, height ...uint64) interface{} {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
 	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
 		panic(types.ErrAccountUnknown)
@@ -210,7 +210,7 @@ func (m *AccountModule) getSpendableBalance(address string, height ...int64) int
 }
 
 // getStakedBalance returns the total staked coins of an account
-func (m *AccountModule) getStakedBalance(address string, height ...int64) interface{} {
+func (m *AccountModule) getStakedBalance(address string, height ...uint64) interface{} {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
 	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
 		panic(types.ErrAccountUnknown)

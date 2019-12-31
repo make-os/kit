@@ -148,10 +148,10 @@ func (m *RepoModule) prune(name string, force bool) {
 // get finds and returns a repository
 // name: The name of the repository
 // height: Optional max block height to limit the search to.
-func (m *RepoModule) get(name string, height ...int) interface{} {
-	var targetHeight int64
+func (m *RepoModule) get(name string, height ...uint64) interface{} {
+	var targetHeight uint64
 	if len(height) > 0 {
-		targetHeight = int64(height[0])
+		targetHeight = uint64(height[0])
 	}
 	repo := m.keepers.RepoKeeper().GetRepo(name, targetHeight)
 	if repo.IsNil() {

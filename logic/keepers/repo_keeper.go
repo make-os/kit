@@ -24,10 +24,10 @@ func NewRepoKeeper(state *tree.SafeTree) *RepoKeeper {
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Repository if no repo is found.
-func (a *RepoKeeper) GetRepo(name string, blockNum ...int64) *types.Repository {
+func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *types.Repository {
 
 	// Get version is provided
-	var version int64
+	var version uint64
 	if len(blockNum) > 0 && blockNum[0] > 0 {
 		version = blockNum[0]
 	}
@@ -37,7 +37,7 @@ func (a *RepoKeeper) GetRepo(name string, blockNum ...int64) *types.Repository {
 	key := MakeRepoKey(name)
 	var bs []byte
 	if version != 0 {
-		_, bs = a.state.GetVersioned(key, version)
+		_, bs = a.state.GetVersioned(key, int64(version))
 	} else {
 		_, bs = a.state.Get(key)
 	}

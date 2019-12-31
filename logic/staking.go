@@ -27,7 +27,7 @@ func (t *Transaction) execUnbond(
 	// Get sender account
 	acctKeeper := t.logic.AccountKeeper()
 	spk, _ := crypto.PubKeyFromBase58(senderPubKey)
-	senderAcct := acctKeeper.GetAccount(spk.Addr(), int64(chainHeight))
+	senderAcct := acctKeeper.GetAccount(spk.Addr(), chainHeight)
 	senderBal := senderAcct.Balance.Decimal()
 
 	// Get the ticket
@@ -124,7 +124,7 @@ func (t *Transaction) addStake(
 
 	// Get sender accounts
 	sender := spk.Addr()
-	senderAcct := acctKeeper.GetAccount(sender, int64(chainHeight))
+	senderAcct := acctKeeper.GetAccount(sender, chainHeight)
 
 	// Deduct the transaction fee and increment nonce
 	senderBal := senderAcct.Balance.Decimal()

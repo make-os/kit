@@ -59,14 +59,13 @@ func (t *Transaction) Exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.execCoinTransfer(spk, o.To, o.Value, o.Fee, chainHeight)
 
 	case *types.TxTicketPurchase:
-		switch o.GetType() {
-		case types.TxTypeValidatorTicket:
+		if o.Is(types.TxTypeValidatorTicket) {
 			return t.execValidatorStake(spk, o.Value, o.Fee, chainHeight)
-		case types.TxTypeStorerTicket:
-			return t.execStorerStake(spk, o.Value, o.Fee, chainHeight)
-		default:
-			return fmt.Errorf("unknown transaction type")
 		}
+		if o.Is(types.TxTypeStorerTicket) {
+			return t.execStorerStake(spk, o.Value, o.Fee, chainHeight)
+		}
+		return fmt.Errorf("unknown transaction type")
 
 	case *types.TxSetDelegateCommission:
 		return t.execSetDelegatorCommission(spk, o.Commission, o.Fee, chainHeight)
@@ -79,6 +78,14 @@ func (t *Transaction) Exec(tx types.BaseTx, chainHeight uint64) error {
 
 	case *types.TxAddGPGPubKey:
 		return t.execAddGPGKey(o.PublicKey, spk, o.Fee, chainHeight)
+
+	case *types.TxPush:
+		return t.execPush(
+			o.PushNote.RepoName,
+			o.PushNote.References,
+			o.PushNote.TotalFee(),
+			o.PushNote.PusherKeyID,
+			chainHeight)
 
 	case *types.TxEpochSecret:
 		return nil

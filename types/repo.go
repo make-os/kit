@@ -533,7 +533,7 @@ func (pt *PushNote) GetAccountNonce() uint64 {
 	return pt.References[0].AccountNonce
 }
 
-// TotalFee returns the sum of reference update fees
+// TotalFee returns the sum of all reference update fees
 func (pt *PushNote) TotalFee() util.String {
 	sum := decimal.NewFromFloat(0)
 	for _, r := range pt.References {

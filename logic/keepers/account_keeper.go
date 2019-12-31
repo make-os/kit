@@ -25,10 +25,10 @@ func NewAccountKeeper(state *tree.SafeTree) *AccountKeeper {
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Account if no account is found.
-func (a *AccountKeeper) GetAccount(address util.String, blockNum ...int64) *types.Account {
+func (a *AccountKeeper) GetAccount(address util.String, blockNum ...uint64) *types.Account {
 
 	// Get version is provided
-	var version int64
+	var version uint64
 	if len(blockNum) > 0 && blockNum[0] > 0 {
 		version = blockNum[0]
 	}
@@ -38,7 +38,7 @@ func (a *AccountKeeper) GetAccount(address util.String, blockNum ...int64) *type
 	key := MakeAccountKey(address.String())
 	var bs []byte
 	if version != 0 {
-		_, bs = a.state.GetVersioned(key, version)
+		_, bs = a.state.GetVersioned(key, int64(version))
 	} else {
 		_, bs = a.state.Get(key)
 	}

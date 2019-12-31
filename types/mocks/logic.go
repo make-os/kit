@@ -246,7 +246,7 @@ func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
 }
 
 // GetAccount mocks base method
-func (m *MockAccountKeeper) GetAccount(address util.String, blockNum ...int64) *types.Account {
+func (m *MockAccountKeeper) GetAccount(address util.String, blockNum ...uint64) *types.Account {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockNum {
@@ -300,7 +300,7 @@ func (m *MockRepoKeeper) EXPECT() *MockRepoKeeperMockRecorder {
 }
 
 // GetRepo mocks base method
-func (m *MockRepoKeeper) GetRepo(name string, blockNum ...int64) *types.Repository {
+func (m *MockRepoKeeper) GetRepo(name string, blockNum ...uint64) *types.Repository {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{name}
 	for _, a := range blockNum {
@@ -368,7 +368,7 @@ func (mr *MockGPGPubKeyKeeperMockRecorder) Update(pkID, upd interface{}) *gomock
 }
 
 // GetGPGPubKey mocks base method
-func (m *MockGPGPubKeyKeeper) GetGPGPubKey(pkID string, blockNum ...int64) *types.GPGPubKey {
+func (m *MockGPGPubKeyKeeper) GetGPGPubKey(pkID string, blockNum ...uint64) *types.GPGPubKey {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{pkID}
 	for _, a := range blockNum {

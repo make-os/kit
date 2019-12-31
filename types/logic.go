@@ -89,7 +89,7 @@ type AccountKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
-	GetAccount(address util.String, blockNum ...int64) *Account
+	GetAccount(address util.String, blockNum ...uint64) *Account
 
 	// Update sets a new object at the given address.
 	//
@@ -108,7 +108,7 @@ type RepoKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Repository if no repo is found.
-	GetRepo(name string, blockNum ...int64) *Repository
+	GetRepo(name string, blockNum ...uint64) *Repository
 
 	// Update sets a new object at the given address.
 	//
@@ -135,7 +135,7 @@ type GPGPubKeyKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
-	GetGPGPubKey(pkID string, blockNum ...int64) *GPGPubKey
+	GetGPGPubKey(pkID string, blockNum ...uint64) *GPGPubKey
 
 	// GetPubKeyIDs returns all public keys associated with the given address
 	//
