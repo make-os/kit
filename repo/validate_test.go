@@ -577,9 +577,9 @@ var _ = Describe("Validation", func() {
 			for _, c := range cases {
 				_c := c
 				if _c[1] != nil {
-					Expect(checkPushNoteSyntax(_c[0].(*types.PushNote))).To(Equal(_c[1]))
+					Expect(CheckPushNoteSyntax(_c[0].(*types.PushNote))).To(Equal(_c[1]))
 				} else {
-					Expect(checkPushNoteSyntax(_c[0].(*types.PushNote))).To(BeNil())
+					Expect(CheckPushNoteSyntax(_c[0].(*types.PushNote))).To(BeNil())
 				}
 			}
 		})
@@ -676,6 +676,28 @@ var _ = Describe("Validation", func() {
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' does not exist locally"))
+			})
+		})
+
+		When("old hash of reference is non-zero and nil repo passed", func() {
+			BeforeEach(func() {
+				refName := "refs/heads/master"
+				refs := []*types.PushedReference{
+					{Name: refName, OldHash: oldHash},
+				}
+				repository := &types.Repository{
+					References: types.References(map[string]*types.Reference{
+						refName: &types.Reference{Nonce: 0},
+					}),
+				}
+
+				gpgKey := &types.GPGPubKey{}
+				err = checkPushedReference(nil, refs, repository, gpgKey, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).ToNot(Equal("index:0, field:references, error:reference 'refs/heads/master' does not exist locally"))
 			})
 		})
 
@@ -862,7 +884,7 @@ var _ = Describe("Validation", func() {
 				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(types.BareRepository())
 				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
-				err = checkPushNoteConsistency(tx, mockKeepers)
+				err = CheckPushNoteConsistency(tx, mockKeepers)
 			})
 
 			It("should return err", func() {
@@ -880,7 +902,7 @@ var _ = Describe("Validation", func() {
 				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
 				mockGPGKeeper.EXPECT().GetGPGPubKey(tx.PusherKeyID).Return(types.BareGPGPubKey())
 				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
-				err = checkPushNoteConsistency(tx, mockKeepers)
+				err = CheckPushNoteConsistency(tx, mockKeepers)
 			})
 
 			It("should return err", func() {

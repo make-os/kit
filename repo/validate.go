@@ -267,8 +267,8 @@ func checkCommit(
 	return txLine, nil
 }
 
-// checkPushNoteSyntax performs syntactic checks on the fields of a push transaction
-func checkPushNoteSyntax(tx *types.PushNote) error {
+// CheckPushNoteSyntax performs syntactic checks on the fields of a push transaction
+func CheckPushNoteSyntax(tx *types.PushNote) error {
 
 	if tx.RepoName == "" {
 		return types.FieldError("repoName", "repo name is required")
@@ -368,10 +368,10 @@ func checkPushedReference(
 			return types.FieldErrorWithIndex(i, "references", msg)
 		}
 
-		// 2 If old hash is non-zero, we need to ensure the current hash of the
-		// local version of the reference is the same as the old hash,
+		// 2. If target repo is set and old hash is non-zero, we need to ensure
+		// the current hash of the local version of the reference is the same as the old hash,
 		// otherwise the pushed reference will not be compatible.
-		if !oldHashIsZero {
+		if targetRepo != nil && !oldHashIsZero {
 			localRef, err := targetRepo.Reference(plumbing.ReferenceName(rName), false)
 			if err != nil {
 				msg := fmts("reference '%s' does not exist locally", rName)
@@ -413,9 +413,10 @@ func checkPushedReference(
 	return nil
 }
 
-// checkPushNoteConsistency performs consistency checks against the state of the
-// repository as seen by the node
-func checkPushNoteConsistency(tx *types.PushNote, keepers types.Keepers) error {
+// CheckPushNoteConsistency performs consistency checks against the state of the
+// repository as seen by the node. If the target repo object is not set in tx,
+// local reference hash comparision is not performed.
+func CheckPushNoteConsistency(tx *types.PushNote, keepers types.Keepers) error {
 
 	// 1. Ensure the repository exist
 	repo := keepers.RepoKeeper().GetRepo(tx.GetRepoName())
@@ -431,7 +432,7 @@ func checkPushNoteConsistency(tx *types.PushNote, keepers types.Keepers) error {
 		return types.FieldError("pusherKeyId", msg)
 	}
 
-	// 2. Check each references against the state version
+	// 3. Check each references against the state version
 	if err := checkPushedReference(
 		tx.GetTargetRepo(),
 		tx.GetPushedReferences(),
@@ -447,11 +448,11 @@ func checkPushNoteConsistency(tx *types.PushNote, keepers types.Keepers) error {
 // checkPushNote performs validation checks on a push transaction
 func checkPushNote(tx types.RepoPushNote, keepers types.Keepers, dht types.DHT) error {
 
-	if err := checkPushNoteSyntax(tx.(*types.PushNote)); err != nil {
+	if err := CheckPushNoteSyntax(tx.(*types.PushNote)); err != nil {
 		return err
 	}
 
-	if err := checkPushNoteConsistency(tx.(*types.PushNote), keepers); err != nil {
+	if err := CheckPushNoteConsistency(tx.(*types.PushNote), keepers); err != nil {
 		return err
 	}
 
