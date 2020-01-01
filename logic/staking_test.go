@@ -128,7 +128,7 @@ var _ = Describe("Staking", func() {
 					acct := logic.AccountKeeper().GetAccount(sender.Addr())
 					Expect(acct.Stakes).To(HaveLen(1))
 					Expect(acct.Stakes.TotalStaked(1)).To(Equal(util.String("10")))
-					Expect(acct.Stakes[types.StakeTypeStorer+"0"].UnbondHeight).To(Equal(uint64(0)))
+					Expect(acct.Stakes[types.StakeTypeStorer+"0"].(*types.StakeInfo).UnbondHeight).To(Equal(uint64(0)))
 				})
 			})
 		})

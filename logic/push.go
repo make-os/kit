@@ -31,7 +31,7 @@ func (t *Transaction) execPush(
 	// Add the references to the repo and update their nonce
 	for _, ref := range references {
 		curRef := repo.References.Get(ref.Name)
-		curRef.Nonce = ref.Nonce
+		curRef.Nonce = curRef.Nonce + 1
 		repo.References[ref.Name] = curRef
 	}
 
