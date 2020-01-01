@@ -141,7 +141,7 @@ func (r *PushReader) Read() error {
 // getObjects returns a list of objects in the packfile
 func (r *PushReader) getObjects(scanner *packfile.Scanner) (objs []*packObject, err error) {
 	objObserver := &objectObserver{}
-	packfileParser, err := packfile.NewParser(scanner, objObserver)
+	packfileParser, err := packfile.NewParserWithStorage(scanner, r.repo.GetStorer(), objObserver)
 	if err != nil {
 		return nil, err
 	}

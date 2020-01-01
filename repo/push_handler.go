@@ -21,6 +21,7 @@ type PushHandler struct {
 	oldState   types.BareRepoState
 	log        logger.Logger
 	pushReader *PushReader
+	pushNoteID string
 }
 
 // newPushHandler returns an instance of PushHandler
@@ -136,6 +137,8 @@ func (h *PushHandler) HandleUpdate() error {
 	if err != nil {
 		return err
 	}
+
+	h.pushNoteID = pushNote.ID().String()
 
 	// Add the push transaction to the push pool. If an error is returned
 	// schedule the repository for pruning
