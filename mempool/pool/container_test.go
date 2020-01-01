@@ -54,7 +54,7 @@ var _ = Describe("TxContainer", func() {
 				Expect(q.container).To(HaveLen(1))
 
 				err = q.add(tx2)
-				Expect(err).To(Equal(ErrFailedReplaceByFeeRate))
+				Expect(err).To(Equal(ErrFailedReplaceByFee))
 			})
 		})
 	})

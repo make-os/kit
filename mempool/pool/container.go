@@ -21,10 +21,10 @@ var (
 	// that is in the pool.
 	ErrTxAlreadyAdded = fmt.Errorf("exact transaction already in the pool")
 
-	// ErrFailedReplaceByFeeRate means an attempt to replace by fee failed due to the replacement
-	// tx having a lower/equal fee rate to the current
-	ErrFailedReplaceByFeeRate = fmt.Errorf("failed to replace transaction at same nonce due to " +
-		"low/equal fee rate. Fee rate must be higher to replace the existing transaction")
+	// ErrFailedReplaceByFee means an attempt to replace by fee failed due to the replacement
+	// tx having a lower/equal fee to the current
+	ErrFailedReplaceByFee = fmt.Errorf("failed to replace transaction at same nonce due to " +
+		"low/equal fee. Fee must be higher to replace the existing transaction")
 )
 
 // containerItem represents the a container item.
@@ -43,8 +43,8 @@ func newItem(tx types.BaseTx) *containerItem {
 // nonceInfo stores information about a transaction
 // that is associated with a specific nonce
 type nonceInfo struct {
-	TxHash  util.Hash
-	FeeRate util.String
+	TxHash util.Hash
+	Fee    util.String
 }
 
 // nonceCollection maps nonces with transaction information
@@ -192,45 +192,45 @@ func (q *TxContainer) add(tx types.BaseTx) error {
 		return ErrContainerFull
 	}
 
-	item := newItem(tx)
+	q.gmx.Lock()
 
-	// Calculate the transaction's fee rate
-	// formula: tx fee / size
+	// Calculate the transaction's fee rate (tx fee / size)
+	item := newItem(tx)
 	txSizeDec := decimal.NewFromBigInt(new(big.Int).SetInt64(tx.GetEcoSize()), 0)
 	item.FeeRate = util.String(tx.GetFee().Decimal().Div(txSizeDec).String())
 
-	q.gmx.Lock()
-
-	sender := tx.GetFrom()
-
 	// Get the sender's nonce info. If not found create a new one
+	sender := tx.GetFrom()
 	senderNonceInfo, ok := q.senderNonceIndex[sender]
 	if !ok {
 		senderNonceInfo = defaultNonceCollection()
 	}
 
-	// If there is no existing transaction with a matching nonce,
-	// add this tx nonce to the collection and proceed to adding
-	// the transaction to the container
-	if !senderNonceInfo.has(tx.GetNonce()) {
-		senderNonceInfo.add(tx.GetNonce(), &nonceInfo{TxHash: tx.GetHash(), FeeRate: item.FeeRate})
-	} else {
-		// However, reject a transaction if their is already a matching
-		// nonce from same sender that has an equal or higher fee rate.
-		// CONTRACT: To replace-by-fee, the new transaction must have a higher fee rate.
-		ni := senderNonceInfo.get(tx.GetNonce())
-		if ni.FeeRate.Decimal().
-			GreaterThanOrEqual(item.FeeRate.Decimal()) {
-			q.gmx.Unlock()
-			return ErrFailedReplaceByFeeRate
-		}
+	var ni *nonceInfo
 
-		// At the point, the new transaction has a higher fee rate, therefore we
-		// need to remove the existing transaction and replace with the new one
-		// and also add also replace the nonce information
-		q.removeByHash(ni.TxHash)
-		senderNonceInfo.add(tx.GetNonce(), &nonceInfo{TxHash: tx.GetHash(), FeeRate: item.FeeRate})
+	// If no existing transaction with a matching nonce, add this tx nonce to
+	// the nonce index and proceed to include the transaction
+	if !senderNonceInfo.has(tx.GetNonce()) {
+		senderNonceInfo.add(tx.GetNonce(), &nonceInfo{TxHash: tx.GetHash(), Fee: item.Tx.GetFee()})
+		goto add
 	}
+
+	// However, reject a transaction if their is already a matching
+	// nonce from same sender that has an equal or higher fee.
+	// CONTRACT: To replace-by-fee, the new transaction must have a higher fee.
+	ni = senderNonceInfo.get(tx.GetNonce())
+	if ni.Fee.Decimal().GreaterThanOrEqual(item.Tx.GetFee().Decimal()) {
+		q.gmx.Unlock()
+		return ErrFailedReplaceByFee
+	}
+
+	// At the point, the new transaction has a higher fee rate, therefore we
+	// need to remove the existing transaction and replace with the new one
+	// and also add also replace the nonce information
+	q.removeByHash(ni.TxHash)
+	senderNonceInfo.add(tx.GetNonce(), &nonceInfo{TxHash: tx.GetHash(), Fee: item.Tx.GetFee()})
+
+add:
 
 	q.senderNonceIndex[sender] = senderNonceInfo
 	q.container = append(q.container, item)
