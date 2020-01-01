@@ -68,12 +68,12 @@ func (tx *TxPush) ComputeHash() util.Hash {
 
 // GetHash returns the hash of the transaction
 func (tx *TxPush) GetHash() util.Hash {
-	return tx.ComputeHash()
+	return tx.PushNote.ID()
 }
 
 // GetID returns the id of the transaction (also the hash)
 func (tx *TxPush) GetID() string {
-	return tx.ComputeHash().HexStr()
+	return tx.PushNote.ID().String()
 }
 
 // GetEcoSize returns the size of the transaction for use in economic calculations
