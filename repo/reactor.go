@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"io"
 	"os/exec"
 	"sort"
 	"time"
@@ -329,6 +330,60 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 	}
 
 	pushTx.PushNote.TargetRepo = nil
+
+	return nil
+}
+
+// onCommittedTxPush handles committed push transactions.
+func (m *Manager) onCommittedTxPush(tx *types.TxPush) error {
+
+	repoPath := m.getRepoPath(tx.PushNote.GetRepoName())
+
+	// Get the repository
+	repo, err := getRepo(repoPath)
+	if err != nil {
+		return err
+	}
+
+	// Create a reference update request packfile from the push note
+	packfile, err := makeReferenceUpdateRequest(repo, tx.PushNote)
+	if err != nil {
+		return errors.Wrap(err, "failed to create packfile")
+	}
+
+	// Create the git-receive-pack command
+	args := []string{"receive-pack", "--stateless-rpc", repoPath}
+	cmd := exec.Command(m.gitBinPath, args...)
+	cmd.Dir = repoPath
+
+	// Get the command's stdin pipe
+	in, err := cmd.StdinPipe()
+	if err != nil {
+		return errors.Wrap(err, "failed to get stdin pipe")
+	}
+	defer in.Close()
+
+	// Get the command's stdout pipe
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return errors.Wrap(err, "failed to get stdout pipe")
+	}
+	defer stdout.Close()
+
+	// start the command
+	err = cmd.Start()
+	if err != nil {
+		return errors.Wrap(err, "failed to start git-receive-pack command")
+	}
+
+	io.Copy(in, packfile)
+
+	if err := cmd.Wait(); err != nil {
+		return fmt.Errorf("git exec failed")
+	}
+
+	m.Log().Debug("Committed pushed tx to repository permanently",
+		"Repo", tx.PushNote.RepoName)
 
 	return nil
 }
