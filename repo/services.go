@@ -163,6 +163,8 @@ func serveService(s *serviceParams) error {
 		return errors.Wrap(err, "HandleUpdate err")
 	}
 
+	pktEnc.Encode(sidebandProgress(fmt.Sprintf("Transaction ID: %s", s.pushHandler.pushNoteID)))
+
 	// Write output from git to the http response
 	for scn.Scan() {
 		pktEnc.Encode(scn.Bytes())

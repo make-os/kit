@@ -166,3 +166,7 @@ func getIdxFile(s *serviceParams) error {
 func sidebandErr(msg string) []byte {
 	return sideband.ErrorMessage.WithPayload([]byte(color.RedString(msg)))
 }
+
+func sidebandProgress(msg string) []byte {
+	return sideband.ProgressMessage.WithPayload([]byte(color.GreenString(msg)))
+}
