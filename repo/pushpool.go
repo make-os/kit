@@ -198,7 +198,7 @@ func (p *PushPool) Add(note types.RepoPushNote, noValidation ...bool) error {
 	item.FeeRate = util.String(note.TotalFee().Decimal().Div(billableTxSize).String())
 
 	// Check if references of the push notes are valid
-	// or can replace existing transaction
+	// or can replace an existing transaction
 	var replaceable = make(map[string]*types.PushNote)
 	var totalReplaceableFee = decimal.NewFromFloat(0)
 	for _, ref := range note.(*types.PushNote).References {
@@ -209,10 +209,9 @@ func (p *PushPool) Add(note types.RepoPushNote, noValidation ...bool) error {
 		}
 
 		// When the existing reference has a higher nonce, reject note
-		// TODO: Should we support a cache system to hold this note and later
-		// retry it?
+		// TODO: Should we support a cache system to hold this note and later retry it?
 		if existingRefNonce < ref.Nonce {
-			return fmt.Errorf("rejected because an identical reference with a lesser " +
+			return fmt.Errorf("rejected because an identical reference with a lower " +
 				"nonce has been staged")
 		}
 
@@ -312,9 +311,6 @@ func (p *PushPool) Get(noteID string) *types.PushNote {
 func (p *PushPool) validate(note types.RepoPushNote) error {
 	return p.noteChecker(note, p.keepers, p.dht)
 }
-
-// sort sorts the pool
-func (p *PushPool) sort() {}
 
 // RepoHasPushNote returns true if the given repo has a transaction in the pool
 func (p *PushPool) RepoHasPushNote(repo string) bool {

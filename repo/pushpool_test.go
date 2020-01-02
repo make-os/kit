@@ -180,7 +180,7 @@ var _ = Describe("PushPool", func() {
 			})
 
 			It("should return err", func() {
-				Expect(err.Error()).To(Equal("rejected because an identical reference with a lesser nonce has been staged"))
+				Expect(err.Error()).To(Equal("rejected because an identical reference with a lower nonce has been staged"))
 			})
 		})
 
@@ -355,7 +355,7 @@ var _ = Describe("PushPool", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("replace-by-fee on multiple transactions not allowed due to inferior fee."))
+				Expect(err.Error()).To(Equal("replace-by-fee on multiple push notes not allowed due to inferior fee."))
 			})
 		})
 
