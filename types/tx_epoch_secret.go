@@ -29,12 +29,24 @@ func NewBareTxEpochSecret() *TxEpochSecret {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxEpochSecret) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(tx.Type, tx.Secret, tx.PreviousSecret, tx.SecretRound)
+	return enc.EncodeMulti(
+		tx.Type,
+		tx.Secret,
+		tx.PreviousSecret,
+		tx.SecretRound,
+		tx.SenderPubKey,
+		tx.Sig)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (tx *TxEpochSecret) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&tx.Type, &tx.Secret, &tx.PreviousSecret, &tx.SecretRound)
+	return dec.DecodeMulti(
+		&tx.Type,
+		&tx.Secret,
+		&tx.PreviousSecret,
+		&tx.SecretRound,
+		&tx.SenderPubKey,
+		&tx.Sig)
 }
 
 // Bytes returns the serialized transaction
@@ -44,7 +56,11 @@ func (tx *TxEpochSecret) Bytes() []byte {
 
 // GetBytesNoSig returns the serialized the transaction excluding the signature
 func (tx *TxEpochSecret) GetBytesNoSig() []byte {
-	panic("not implemented")
+	sig := tx.Sig
+	tx.Sig = nil
+	bz := tx.Bytes()
+	tx.Sig = sig
+	return bz
 }
 
 // ComputeHash computes the hash of the transaction
@@ -74,7 +90,7 @@ func (tx *TxEpochSecret) GetSize() int64 {
 
 // Sign signs the transaction
 func (tx *TxEpochSecret) Sign(privKey string) ([]byte, error) {
-	panic("not implemented")
+	return SignTransaction(tx, privKey)
 }
 
 // ToMap returns a map equivalent of the transaction

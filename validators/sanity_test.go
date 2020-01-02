@@ -517,12 +517,56 @@ var _ = Describe("TxValidator", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:secretRound, error:secret round is required"))
 			})
+
+			It("has no public key", func() {
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				tx.SecretRound = 1
+				err := validators.CheckTxEpochSecret(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
+			})
+
+			It("has invalid public key", func() {
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				tx.SecretRound = 1
+				tx.SenderPubKey = "invalid"
+				err := validators.CheckTxEpochSecret(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is not valid"))
+			})
+
+			It("has no signature", func() {
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				tx.SecretRound = 1
+				tx.SenderPubKey = key.PubKey().Base58()
+				err := validators.CheckTxEpochSecret(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
+			})
+
+			It("has invalid signature", func() {
+				tx.Secret = util.RandBytes(64)
+				tx.PreviousSecret = util.RandBytes(64)
+				tx.SecretRound = 1
+				tx.SenderPubKey = key.PubKey().Base58()
+				tx.Sig = []byte("invalid")
+				err := validators.CheckTxEpochSecret(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
+			})
 		})
+
 		When("it has no error", func() {
 			It("should return no error", func() {
 				tx.Secret = util.RandBytes(64)
 				tx.PreviousSecret = util.RandBytes(64)
 				tx.SecretRound = 1
+				tx.SenderPubKey = key.PubKey().Base58()
+				sig, _ := tx.Sign(key.PrivKey().Base58())
+				tx.Sig = sig
 				err := validators.CheckTxEpochSecret(tx, -1)
 				Expect(err).To(BeNil())
 			})

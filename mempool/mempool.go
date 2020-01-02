@@ -227,6 +227,19 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 		if err != nil {
 			mp.log.Fatal(err.Error())
 		} else if epochSecretTx != nil {
+
+			// Sign the epoch secret
+			key, err := mp.cfg.G().PrivVal.GetKey()
+			if err != nil {
+				panic(err)
+			}
+			epochSecretTx.SetSenderPubKey(key.PubKey().Base58())
+			sig, err := epochSecretTx.Sign(key.PrivKey().Base58())
+			if err != nil {
+				panic(err)
+			}
+			epochSecretTx.SetSignature(sig)
+
 			txBs := epochSecretTx.Bytes()
 			txs = append(txs, txBs)
 			totalBytes += int64(len(txBs))

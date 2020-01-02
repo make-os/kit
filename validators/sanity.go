@@ -40,6 +40,12 @@ func checkType(tx *types.TxType, expected int, index int) error {
 
 func checkCommon(tx types.BaseTx, index int) error {
 
+	var baseFee, txSize decimal.Decimal
+
+	if tx.Is(types.TxTypeEpochSecret) {
+		goto pub_sig_check
+	}
+
 	if err := v.Validate(tx.GetNonce(),
 		v.Required.Error(feI(index, "nonce", "nonce is required").Error())); err != nil {
 		return err
@@ -53,8 +59,8 @@ func checkCommon(tx types.BaseTx, index int) error {
 	}
 
 	// Fee must be at least equal to the base fee
-	txSize := decimal.NewFromFloat(float64(tx.GetEcoSize()))
-	baseFee := params.FeePerByte.Mul(txSize)
+	txSize = decimal.NewFromFloat(float64(tx.GetEcoSize()))
+	baseFee = params.FeePerByte.Mul(txSize)
 	if tx.GetFee().Decimal().LessThan(baseFee) {
 		return types.FieldErrorWithIndex(index, "fee",
 			fmt.Sprintf("fee cannot be lower than the base price of %s", baseFee.StringFixed(4)))
@@ -66,6 +72,8 @@ func checkCommon(tx types.BaseTx, index int) error {
 	); err != nil {
 		return err
 	}
+
+pub_sig_check:
 
 	if err := v.Validate(tx.GetSenderPubKey(),
 		v.Required.Error(feI(index, "senderPubKey", "sender public key is required").Error()),
@@ -209,6 +217,10 @@ func CheckTxEpochSecret(tx *types.TxEpochSecret, index int) error {
 	if err := v.Validate(tx.SecretRound,
 		v.Required.Error(feI(index, "secretRound", "secret round is required").Error()),
 	); err != nil {
+		return err
+	}
+
+	if err := checkCommon(tx, index); err != nil {
 		return err
 	}
 
