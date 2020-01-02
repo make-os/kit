@@ -346,6 +346,8 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 			m[k] = ToHex(_v[:])
 		case Bytes32:
 			m[k] = _v.HexStr()
+		case Bytes64:
+			m[k] = _v.HexStr()
 		case int8, []byte:
 			m[k] = fmt.Sprintf("0x%x", _v)
 		case *big.Int, int, int64, uint64:

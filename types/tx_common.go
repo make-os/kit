@@ -73,8 +73,8 @@ type BaseTx interface {
 	GetType() int                        // Returns the type of the transaction
 	GetSignature() []byte                // Returns the transaction signature
 	SetSignature(s []byte)               // Sets the transaction signature
-	GetSenderPubKey() string             // Returns the transaction sender public key
-	SetSenderPubKey(pk string)           // Set the transaction sender public key
+	GetSenderPubKey() util.Bytes32       // Returns the transaction sender public key
+	SetSenderPubKey(pk []byte)           // Set the transaction sender public key
 	GetTimestamp() int64                 // Return the transaction creation unix timestamp
 	SetTimestamp(t int64)                // Set the transaction creation unix timestamp
 	GetNonce() uint64                    // Returns the transaction nonce
@@ -168,19 +168,19 @@ func (tx *TxCommon) SetTimestamp(t int64) {
 }
 
 // GetSenderPubKey returns the transaction sender public key
-func (tx *TxCommon) GetSenderPubKey() string {
+func (tx *TxCommon) GetSenderPubKey() util.Bytes32 {
 	return tx.SenderPubKey
 }
 
 // SetSenderPubKey set the transaction sender public key
-func (tx *TxCommon) SetSenderPubKey(pk string) {
-	tx.SenderPubKey = pk
+func (tx *TxCommon) SetSenderPubKey(pk []byte) {
+	tx.SenderPubKey = util.BytesToBytes32(pk)
 }
 
 // GetFrom returns the address of the transaction sender
 // Panics if sender's public key is invalid
 func (tx *TxCommon) GetFrom() util.String {
-	pk, err := crypto.PubKeyFromBase58(tx.SenderPubKey)
+	pk, err := crypto.PubKeyFromBytes(tx.SenderPubKey.Bytes())
 	if err != nil {
 		panic(err)
 	}
@@ -264,7 +264,7 @@ func NewBaseTx(txType int,
 		tx := NewBareTxCoinTransfer()
 		tx.Nonce = nonce
 		tx.To = to
-		tx.SetSenderPubKey(senderKey.PubKey().Base58())
+		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
 		tx.Value = value
 		tx.Fee = fee
 		tx.Timestamp = timestamp
@@ -273,7 +273,7 @@ func NewBaseTx(txType int,
 	case TxTypeValidatorTicket:
 		tx := NewBareTxTicketPurchase(TxTypeValidatorTicket)
 		tx.Nonce = nonce
-		tx.SetSenderPubKey(senderKey.PubKey().Base58())
+		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
 		tx.Value = value
 		tx.Fee = fee
 		tx.Timestamp = timestamp
@@ -282,7 +282,7 @@ func NewBaseTx(txType int,
 	case TxTypeStorerTicket:
 		tx := NewBareTxTicketPurchase(TxTypeStorerTicket)
 		tx.Nonce = nonce
-		tx.SetSenderPubKey(senderKey.PubKey().Base58())
+		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
 		tx.Value = value
 		tx.Fee = fee
 		tx.Timestamp = timestamp
@@ -291,7 +291,7 @@ func NewBaseTx(txType int,
 	case TxTypeSetDelegatorCommission:
 		tx := NewBareTxSetDelegateCommission()
 		tx.Nonce = nonce
-		tx.SetSenderPubKey(senderKey.PubKey().Base58())
+		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
 		tx.Fee = fee
 		tx.Timestamp = timestamp
 		baseTx = tx
@@ -299,7 +299,7 @@ func NewBaseTx(txType int,
 	case TxTypeUnbondStorerTicket:
 		tx := NewBareTxTicketUnbond(TxTypeUnbondStorerTicket)
 		tx.Nonce = nonce
-		tx.SetSenderPubKey(senderKey.PubKey().Base58())
+		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
 		tx.Fee = fee
 		tx.Timestamp = timestamp
 		baseTx = tx
@@ -307,7 +307,7 @@ func NewBaseTx(txType int,
 	case TxTypeRepoCreate:
 		tx := NewBareTxRepoCreate()
 		tx.Nonce = nonce
-		tx.SetSenderPubKey(senderKey.PubKey().Base58())
+		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
 		tx.Value = value
 		tx.Fee = fee
 		tx.Timestamp = timestamp
@@ -316,7 +316,7 @@ func NewBaseTx(txType int,
 	case TxTypeAddGPGPubKey:
 		tx := NewBareTxAddGPGPubKey()
 		tx.Nonce = nonce
-		tx.SetSenderPubKey(senderKey.PubKey().Base58())
+		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
 		tx.Fee = fee
 		tx.Timestamp = timestamp
 		baseTx = tx

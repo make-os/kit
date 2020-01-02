@@ -55,7 +55,7 @@ var _ = Describe("Repo", func() {
 	Describe(".execRepoCreate", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
-		var spk string
+		var spk util.Bytes32
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
@@ -67,7 +67,7 @@ var _ = Describe("Repo", func() {
 
 		When("successful", func() {
 			BeforeEach(func() {
-				spk = sender.PubKey().Base58()
+				spk = sender.PubKey().MustBytes32()
 				err = txLogic.execRepoCreate(spk, "repo", "1.5", 0)
 				Expect(err).To(BeNil())
 			})

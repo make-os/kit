@@ -332,7 +332,7 @@ var _ = Describe("Common", func() {
 		}
 
 		type test3 struct {
-			Sig Hash
+			Sig Bytes32
 		}
 
 		type test4 struct {

@@ -76,7 +76,7 @@ var _ = Describe("Staking", func() {
 				})
 
 				Specify("that when another stake entry value=10, unbondHeight=100 is added with fee=1 then spendable balance = 89", func() {
-					senderPubKey := sender.PubKey().Base58()
+					senderPubKey := sender.PubKey().MustBytes32()
 					err := txLogic.addStake(types.TxTypeValidatorTicket, senderPubKey, util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 					acct := logic.AccountKeeper().GetAccount(sender.Addr())
@@ -99,7 +99,7 @@ var _ = Describe("Staking", func() {
 				})
 
 				Specify("that when another stake entry value=10, unbondHeight=100 is added with fee=1 then spendable balance = 39", func() {
-					senderPubKey := sender.PubKey().Base58()
+					senderPubKey := sender.PubKey().MustBytes32()
 					err := txLogic.addStake(types.TxTypeValidatorTicket, senderPubKey, util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 					acct := logic.AccountKeeper().GetAccount(sender.Addr())
@@ -111,7 +111,7 @@ var _ = Describe("Staking", func() {
 
 		Context("types.TxTypeStorerTicket", func() {
 			Context("add a stake with value=10", func() {
-				var senderPubKey string
+				var senderPubKey util.Bytes32
 
 				BeforeEach(func() {
 					acct := &types.Account{Balance: util.String("100"), Stakes: types.BareAccountStakes()}
@@ -119,7 +119,7 @@ var _ = Describe("Staking", func() {
 					Expect(acct.GetBalance()).To(Equal(util.String("100")))
 					Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("100")))
 
-					senderPubKey = sender.PubKey().Base58()
+					senderPubKey = sender.PubKey().MustBytes32()
 					err := txLogic.addStake(types.TxTypeStorerTicket, senderPubKey, util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 				})
@@ -137,7 +137,7 @@ var _ = Describe("Staking", func() {
 	Describe(".execUnbond", func() {
 
 		When("ticket is unknown", func() {
-			var senderPubKey string
+			var senderPubKey util.Bytes32
 			var err error
 
 			BeforeEach(func() {
@@ -149,7 +149,7 @@ var _ = Describe("Staking", func() {
 				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), uint64(0)).Return(acct)
 				mockLogic.TicketManager.EXPECT().GetByHash(gomock.Any()).Return(nil)
 
-				senderPubKey = sender.PubKey().Base58()
+				senderPubKey = sender.PubKey().MustBytes32()
 				err = txLogic.execUnbond([]byte("ticket_id"), senderPubKey, util.String(1), 0)
 				Expect(err).ToNot(BeNil())
 			})
@@ -160,7 +160,7 @@ var _ = Describe("Staking", func() {
 		})
 
 		When("storer stake=100, unbondHeight=0, balance=1000 and fee=1", func() {
-			var senderPubKey string
+			var senderPubKey util.Bytes32
 			var err error
 			var acct *types.Account
 
@@ -180,7 +180,7 @@ var _ = Describe("Staking", func() {
 
 				mockLogic.AccountKeeper.EXPECT().Update(sender.Addr(), acct)
 
-				senderPubKey = sender.PubKey().Base58()
+				senderPubKey = sender.PubKey().MustBytes32()
 				err = txLogic.execUnbond([]byte(returnTicket.Hash), senderPubKey, util.String("1"), 1)
 				Expect(err).To(BeNil())
 			})

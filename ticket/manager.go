@@ -43,16 +43,16 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 		Index:          txIndex,
 		Value:          t.Value,
 		Hash:           t.GetHash().HexStr(),
-		ProposerPubKey: t.GetSenderPubKey(),
+		ProposerPubKey: crypto.MustBase58FromPubKeyBytes(t.GetSenderPubKey().Bytes()),
 	}
 
 	// By default the proposer is the creator of the transaction.
 	// However, if the transaction `delegate` field is set, the sender
 	// is delegating the ticket to the public key set in `delegate`
-	if t.Delegate != "" {
+	if !t.Delegate.IsEmpty() {
 
 		// Set the given delegate as the proposer
-		ticket.ProposerPubKey = t.Delegate
+		ticket.ProposerPubKey = crypto.MustBase58FromPubKeyBytes(t.Delegate.Bytes())
 
 		// Set the sender address as the delegator
 		ticket.Delegator = t.GetFrom().String()

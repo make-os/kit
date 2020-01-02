@@ -233,7 +233,7 @@ func (a *App) preExecChecks(tx types.BaseTx) *abcitypes.ResponseDeliverTx {
 		// Invalidate the epoch secret tx if it was not signed by the proposer
 		// of the block in which it is contained.
 		// TODO: Slash proposer for violating this rule.
-		senderPubKey, err := crypto.TMPubKeyFromBase58PubKey(tx.GetSenderPubKey())
+		senderPubKey, err := crypto.TMPubKeyFromBytesPubKey(tx.GetSenderPubKey().Bytes())
 		if err != nil {
 			panic(err) // this should never happen
 		} else if senderPubKey.Address().String() != a.wBlock.ProposerAddress {

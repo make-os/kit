@@ -24,7 +24,7 @@ func CheckTxCoinTransferConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	pubKey, _ := crypto.PubKeyFromBase58(tx.GetSenderPubKey())
+	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
@@ -45,8 +45,9 @@ func CheckTxTicketPurchaseConsistency(
 	}
 
 	// When delegate is set, the delegate must have an active, non-delegated ticket
-	if tx.Delegate != "" {
-		r, err := logic.GetTicketManager().GetActiveTicketsByProposer(tx.Delegate, tx.Type, false)
+	if !tx.Delegate.IsEmpty() {
+		proposer := crypto.MustBase58FromPubKeyBytes(tx.Delegate.Bytes())
+		r, err := logic.GetTicketManager().GetActiveTicketsByProposer(proposer, tx.Type, false)
 		if err != nil {
 			return errors.Wrap(err, "failed to get active delegate tickets")
 		} else if len(r) == 0 {
@@ -64,7 +65,7 @@ func CheckTxTicketPurchaseConsistency(
 		}
 	}
 
-	pubKey, _ := crypto.PubKeyFromBase58(tx.GetSenderPubKey())
+	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
@@ -94,7 +95,7 @@ func CheckTxUnbondTicketConsistency(
 	// For delegated ticket, compare the delegator address with the sender address
 	authErr := feI(index, "hash", "sender not authorized to unbond this ticket")
 	if ticket.Delegator == "" {
-		if tx.SenderPubKey != ticket.ProposerPubKey {
+		if crypto.MustBase58FromPubKeyBytes(tx.SenderPubKey.Bytes()) != ticket.ProposerPubKey {
 			return authErr
 		}
 	} else if ticket.Delegator != tx.GetFrom().String() {
@@ -109,7 +110,7 @@ func CheckTxUnbondTicketConsistency(
 		return feI(index, "hash", "ticket has already decayed")
 	}
 
-	pubKey, _ := crypto.PubKeyFromBase58(tx.GetSenderPubKey())
+	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
@@ -135,7 +136,7 @@ func CheckTxRepoCreateConsistency(
 		return feI(index, "name", msg)
 	}
 
-	pubKey, _ := crypto.PubKeyFromBase58(tx.GetSenderPubKey())
+	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
@@ -186,7 +187,7 @@ func CheckTxSetDelegateCommissionConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	pubKey, _ := crypto.PubKeyFromBase58(tx.GetSenderPubKey())
+	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
@@ -222,7 +223,7 @@ func CheckTxAddGPGPubKeyConsistency(
 		return feI(index, "pubKey", "gpg public key already registered")
 	}
 
-	pubKey, _ := crypto.PubKeyFromBase58(tx.GetSenderPubKey())
+	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err

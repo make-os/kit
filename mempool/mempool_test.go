@@ -190,7 +190,7 @@ var _ = Describe("Mempool", func() {
 			Specify("that the tx is signed", func() {
 				dTx, _ := types.DecodeTx(res[0])
 				Expect(dTx.GetSenderPubKey()).ToNot(BeEmpty())
-				pk, _ := crypto.PubKeyFromBase58(dTx.GetSenderPubKey())
+				pk, _ := crypto.PubKeyFromBytes(dTx.GetSenderPubKey().Bytes())
 				valid, err := pk.Verify(dTx.GetBytesNoSig(), dTx.GetSignature())
 				Expect(err).To(BeNil())
 				Expect(valid).To(BeTrue())

@@ -126,7 +126,7 @@ var _ = Describe("Reactor", func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id")).Times(2)
 				pushOK := &types.PushOK{
 					PushNoteID:   util.StrToBytes32("pushID"),
-					Sig:          util.BytesToSig(util.RandBytes(5)),
+					Sig:          util.BytesToBytes64(util.RandBytes(5)),
 					SenderPubKey: util.BytesToBytes32(util.RandBytes(5)),
 				}
 				err = mgr.onPushOK(mockPeer, pushOK.Bytes())
@@ -156,7 +156,7 @@ var _ = Describe("Reactor", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
 				params.PushOKQuorumSize = 2
-				mgr.addPushNoteEndorsement(pushNoteID, &types.PushOK{Sig: util.BytesToSig(util.RandBytes(5))})
+				mgr.addPushNoteEndorsement(pushNoteID, &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = mgr.MaybeCreatePushTx(pushNoteID)
 			})
 
@@ -170,7 +170,7 @@ var _ = Describe("Reactor", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
 				params.PushOKQuorumSize = 1
-				mgr.addPushNoteEndorsement(pushNoteID, &types.PushOK{Sig: util.BytesToSig(util.RandBytes(5))})
+				mgr.addPushNoteEndorsement(pushNoteID, &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = mgr.MaybeCreatePushTx(pushNoteID)
 			})
 
@@ -188,7 +188,7 @@ var _ = Describe("Reactor", func() {
 				Expect(err).To(BeNil())
 
 				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&types.TxPush{})).Return(fmt.Errorf("error"))
-				mgr.addPushNoteEndorsement(pushNote.ID().String(), &types.PushOK{Sig: util.BytesToSig(util.RandBytes(5))})
+				mgr.addPushNoteEndorsement(pushNote.ID().String(), &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
 			})
 

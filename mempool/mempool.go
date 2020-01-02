@@ -233,7 +233,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 			if err != nil {
 				panic(err)
 			}
-			epochSecretTx.SetSenderPubKey(key.PubKey().Base58())
+			epochSecretTx.SetSenderPubKey(key.PubKey().MustBytes())
 			sig, err := epochSecretTx.Sign(key.PrivKey().Base58())
 			if err != nil {
 				panic(err)

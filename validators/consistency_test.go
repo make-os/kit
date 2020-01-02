@@ -82,7 +82,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxCoinTransfer()
 				tx.Value = "10.2"
-				tx.SenderPubKey = key.PubKey().Base58()
+				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
@@ -112,16 +112,18 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		When("delegate is set", func() {
+			var delegate = crypto.NewKeyFromIntSeed(1)
+
 			When("unable to get active ticket of delegate", func() {
 				BeforeEach(func() {
 					tx := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 					tx.Value = "10.2"
-					tx.SenderPubKey = key.PubKey().Base58()
-					tx.Delegate = "delegate_pub_key"
+					tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+					tx.Delegate = delegate.PubKey().MustBytes32()
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetActiveTicketsByProposer(tx.Delegate, tx.Type, false).
+					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().Base58(), tx.Type, false).
 						Return(nil, fmt.Errorf("error"))
 
 					err = validators.CheckTxTicketPurchaseConsistency(tx, -1, mockLogic)
@@ -137,12 +139,12 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					tx := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 					tx.Value = "10.2"
-					tx.SenderPubKey = key.PubKey().Base58()
-					tx.Delegate = "delegate_pub_key"
+					tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+					tx.Delegate = delegate.PubKey().MustBytes32()
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetActiveTicketsByProposer(tx.Delegate, tx.Type, false).
+					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().Base58(), tx.Type, false).
 						Return([]*types.Ticket{}, nil)
 
 					err = validators.CheckTxTicketPurchaseConsistency(tx, -1, mockLogic)
@@ -158,12 +160,12 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					tx := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 					tx.Value = "10.2"
-					tx.SenderPubKey = key.PubKey().Base58()
-					tx.Delegate = "delegate_pub_key"
+					tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+					tx.Delegate = delegate.PubKey().MustBytes32()
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetActiveTicketsByProposer(tx.Delegate, tx.Type, false).
+					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().Base58(), tx.Type, false).
 						Return([]*types.Ticket{&types.Ticket{}}, nil)
 					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(10.4)
 
@@ -180,12 +182,12 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					tx := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 					tx.Value = "10.5"
-					tx.SenderPubKey = key.PubKey().Base58()
-					tx.Delegate = "delegate_pub_key"
+					tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+					tx.Delegate = delegate.PubKey().MustBytes32()
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetActiveTicketsByProposer(tx.Delegate, tx.Type, false).
+					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().Base58(), tx.Type, false).
 						Return([]*types.Ticket{&types.Ticket{}}, nil)
 					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(10.4)
 					mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
@@ -240,7 +242,7 @@ var _ = Describe("TxValidator", func() {
 					key2 := crypto.NewKeyFromIntSeed(2)
 					tx := types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
 					tx.TicketHash = "ticket_hash"
-					tx.SetSenderPubKey(key2.PubKey().Base58())
+					tx.SetSenderPubKey(key2.PubKey().MustBytes())
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -263,7 +265,7 @@ var _ = Describe("TxValidator", func() {
 					key2 := crypto.NewKeyFromIntSeed(2)
 					tx := types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
 					tx.TicketHash = "ticket_hash"
-					tx.SetSenderPubKey(key2.PubKey().Base58())
+					tx.SetSenderPubKey(key2.PubKey().MustBytes())
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -287,7 +289,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
 				tx.TicketHash = "ticket_hash"
-				tx.SetSenderPubKey(key.PubKey().Base58())
+				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				bi := &types.BlockInfo{Height: 50}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -310,7 +312,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
 				tx.TicketHash = "ticket_hash"
-				tx.SetSenderPubKey(key.PubKey().Base58())
+				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				bi := &types.BlockInfo{Height: 101}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -333,7 +335,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
 				tx.TicketHash = "ticket_hash"
-				tx.SetSenderPubKey(key.PubKey().Base58())
+				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				bi := &types.BlockInfo{Height: 101}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -393,7 +395,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxRepoCreate()
 				tx.Name = "repo1"
-				tx.SetSenderPubKey(key.PubKey().Base58())
+				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -491,7 +493,7 @@ var _ = Describe("TxValidator", func() {
 		When("coin transfer dry-run fails", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxSetDelegateCommission()
-				tx.SetSenderPubKey(key.PubKey().Base58())
+				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -526,7 +528,7 @@ var _ = Describe("TxValidator", func() {
 		When("gpg public key is less than 2048 bits", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxAddGPGPubKey()
-				tx.SetSenderPubKey(key.PubKey().Base58())
+				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				var bz []byte
 				bz, err = ioutil.ReadFile("./testdata/gpgkey1024.pub")
@@ -548,7 +550,7 @@ var _ = Describe("TxValidator", func() {
 		When("gpg public key has already been registered", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxAddGPGPubKey()
-				tx.SetSenderPubKey(key.PubKey().Base58())
+				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				var bz []byte
 				bz, err = ioutil.ReadFile("./testdata/gpgkey.pub")
@@ -574,7 +576,7 @@ var _ = Describe("TxValidator", func() {
 		When("coin transfer dry-run fails", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxAddGPGPubKey()
-				tx.SetSenderPubKey(key.PubKey().Base58())
+				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				var bz []byte
 				bz, err = ioutil.ReadFile("./testdata/gpgkey.pub")

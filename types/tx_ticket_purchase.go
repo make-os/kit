@@ -12,7 +12,7 @@ type TxTicketPurchase struct {
 	*TxType   `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxCommon `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxValue  `json:"-" msgpack:"-" mapstructure:"-"`
-	Delegate  string `json:"delegate" msgpack:"delegate"`
+	Delegate  util.Bytes32 `json:"delegate" msgpack:"delegate"`
 }
 
 // NewBareTxTicketPurchase returns an instance of TxTicketPurchase with zero values
@@ -21,7 +21,7 @@ func NewBareTxTicketPurchase(ticketType int) *TxTicketPurchase {
 		TxType:   &TxType{Type: ticketType},
 		TxCommon: NewBareTxCommon(),
 		TxValue:  &TxValue{Value: "0"},
-		Delegate: "",
+		Delegate: util.EmptyBytes32,
 	}
 }
 

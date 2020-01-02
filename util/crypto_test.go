@@ -79,9 +79,9 @@ var _ = Describe("Crypto", func() {
 		})
 	})
 
-	Describe("#Hash", func() {
+	Describe("#Bytes32", func() {
 
-		var hash Hash
+		var hash Bytes32
 		var bs []byte
 
 		BeforeEach(func() {

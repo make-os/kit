@@ -21,7 +21,7 @@ var validAddrRule = func(err error) func(interface{}) error {
 
 var isDerivedFromPublicKeyRule = func(tx types.BaseTx, err error) func(interface{}) error {
 	return func(val interface{}) error {
-		pk, _ := crypto.PubKeyFromBase58(tx.GetSenderPubKey())
+		pk, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 		if !pk.Addr().Equal(val.(util.String)) {
 			return err
 		}
@@ -31,7 +31,29 @@ var isDerivedFromPublicKeyRule = func(tx types.BaseTx, err error) func(interface
 
 var validPubKeyRule = func(err error) func(interface{}) error {
 	return func(val interface{}) error {
-		if _, _err := crypto.PubKeyFromBase58(val.(string)); _err != nil {
+		pk := val.(util.Bytes32)
+		if pk.Equal(util.EmptyBytes32) {
+			return err
+		}
+		if _, _err := crypto.PubKeyFromBytes(pk.Bytes()); _err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
+var isEmptyByte32 = func(err error) func(interface{}) error {
+	return func(val interface{}) error {
+		if val.(util.Bytes32).Equal(util.EmptyBytes32) {
+			return err
+		}
+		return nil
+	}
+}
+
+var isEmptyByte64 = func(err error) func(interface{}) error {
+	return func(val interface{}) error {
+		if val.(util.Bytes64).Equal(util.EmptyBytes64) {
 			return err
 		}
 		return nil

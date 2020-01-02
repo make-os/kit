@@ -227,7 +227,7 @@ var _ = Describe("Manager", func() {
 	Describe(".addPushNoteEndorsement", func() {
 		When("1 PushOK for id=abc is added", func() {
 			BeforeEach(func() {
-				pushOK := &types.PushOK{Sig: util.BytesToSig(util.RandBytes(5))}
+				pushOK := &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
 				repoMgr.addPushNoteEndorsement("abc", pushOK)
 			})
 
@@ -240,8 +240,8 @@ var _ = Describe("Manager", func() {
 
 		When("2 PushOKs for id=abc are added", func() {
 			BeforeEach(func() {
-				pushOK := &types.PushOK{Sig: util.BytesToSig(util.RandBytes(5))}
-				pushOK2 := &types.PushOK{Sig: util.BytesToSig(util.RandBytes(5))}
+				pushOK := &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushOK2 := &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
 				repoMgr.addPushNoteEndorsement("abc", pushOK)
 				repoMgr.addPushNoteEndorsement("abc", pushOK2)
 			})

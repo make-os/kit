@@ -73,7 +73,7 @@ var _ = Describe("GPG", func() {
 
 			BeforeEach(func() {
 				gpgPubKey = string(getTestFile("gpgpubkey.pub"))
-				senderPubKey := sender.PubKey().Base58()
+				senderPubKey := sender.PubKey().MustBytes32()
 				err = txLogic.execAddGPGKey(gpgPubKey, senderPubKey, "1.5", 0)
 				Expect(err).To(BeNil())
 			})

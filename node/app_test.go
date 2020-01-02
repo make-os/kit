@@ -606,7 +606,7 @@ var _ = Describe("App", func() {
 				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).SecretRound = 18
-				tx.SetSenderPubKey(sender.PubKey().Base58())
+				tx.SetSenderPubKey(sender.PubKey().MustBytes())
 
 				params.NumBlocksPerEpoch = 5
 				app.wBlock.Height = 5
@@ -630,13 +630,13 @@ var _ = Describe("App", func() {
 				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).SecretRound = 18
-				tx.SetSenderPubKey(sender.PubKey().Base58())
+				tx.SetSenderPubKey(sender.PubKey().MustBytes())
 
 				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
 
-				tmPubKey, _ := crypto.TMPubKeyFromBase58PubKey(sender.PubKey().Base58())
+				tmPubKey, _ := crypto.TMPubKeyFromBytesPubKey(sender.PubKey().MustBytes())
 
 				params.NumBlocksPerEpoch = 5
 				app.wBlock.ProposerAddress = tmPubKey.Address().String()
@@ -672,11 +672,11 @@ var _ = Describe("App", func() {
 				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).SecretRound = 18
-				tx.SetSenderPubKey(sender.PubKey().Base58())
+				tx.SetSenderPubKey(sender.PubKey().MustBytes())
 			})
 
 			BeforeEach(func() {
-				tmPubKey, _ := crypto.TMPubKeyFromBase58PubKey(sender.PubKey().Base58())
+				tmPubKey, _ := crypto.TMPubKeyFromBytesPubKey(sender.PubKey().MustBytes())
 
 				params.NumBlocksPerEpoch = 5
 				app.wBlock.Height = 5
@@ -718,11 +718,11 @@ var _ = Describe("App", func() {
 				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).SecretRound = 18
-				tx.SetSenderPubKey(sender.PubKey().Base58())
+				tx.SetSenderPubKey(sender.PubKey().MustBytes())
 			})
 
 			BeforeEach(func() {
-				tmPubKey, _ := crypto.TMPubKeyFromBase58PubKey(sender.PubKey().Base58())
+				tmPubKey, _ := crypto.TMPubKeyFromBytesPubKey(sender.PubKey().MustBytes())
 
 				params.NumBlocksPerEpoch = 5
 				app.wBlock.Height = 5

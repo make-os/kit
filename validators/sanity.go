@@ -76,7 +76,7 @@ func checkCommon(tx types.BaseTx, index int) error {
 pub_sig_check:
 
 	if err := v.Validate(tx.GetSenderPubKey(),
-		v.Required.Error(feI(index, "senderPubKey", "sender public key is required").Error()),
+		v.By(isEmptyByte32(feI(index, "senderPubKey", "sender public key is required"))),
 		v.By(validPubKeyRule(feI(index, "senderPubKey", "sender public key is not valid"))),
 	); err != nil {
 		return err
@@ -134,7 +134,7 @@ func CheckTxTicketPurchase(tx *types.TxTicketPurchase, index int) error {
 		}
 	}
 
-	if tx.Delegate != "" {
+	if !tx.Delegate.IsEmpty() {
 		if err := v.Validate(tx.Delegate,
 			v.By(validPubKeyRule(feI(index, "delegate", "requires a valid public key"))),
 		); err != nil {

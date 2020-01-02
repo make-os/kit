@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
@@ -139,15 +140,22 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 		tx.Value = util.String(value.(string))
 	}
 
+	delegate := ""
 	if to, ok := params["delegate"]; ok {
 		defer castPanic("delegate")
-		tx.Delegate = to.(string)
+		delegate = to.(string)
 	}
 
 	if timestamp, ok := params["timestamp"]; ok {
 		defer castPanic("timestamp")
 		tx.Timestamp = timestamp.(int64)
 	}
+
+	pubKey, err := crypto.PubKeyFromBase58(delegate)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to decode 'delegate' to public key"))
+	}
+	tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
 
 	setCommonTxFields(tx, m.service, options...)
 
@@ -194,15 +202,22 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 		tx.Value = util.String(value.(string))
 	}
 
+	delegate := ""
 	if to, ok := params["delegate"]; ok {
 		defer castPanic("delegate")
-		tx.Delegate = to.(string)
+		delegate = to.(string)
 	}
 
 	if timestamp, ok := params["timestamp"]; ok {
 		defer castPanic("timestamp")
 		tx.Timestamp = timestamp.(int64)
 	}
+
+	pubKey, err := crypto.PubKeyFromBase58(delegate)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to decode 'delegate' to public key"))
+	}
+	tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
 
 	setCommonTxFields(tx, m.service, options...)
 

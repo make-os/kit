@@ -115,7 +115,7 @@ func setCommonTxFields(tx types.BaseTx, service types.Service, options ...interf
 
 	// Set tx public key
 	pk, _ := crypto.PrivKeyFromBase58(key)
-	tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(pk).PubKey().Base58())
+	tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(pk).PubKey().MustBytes())
 
 	// Set timestamp if not already set
 	if tx.GetTimestamp() == 0 {

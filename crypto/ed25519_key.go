@@ -132,6 +132,18 @@ func (p *PubKey) MustBytes() []byte {
 	return bz
 }
 
+// MustBytes32 is like Bytes but panics on error
+func (p *PubKey) MustBytes32() util.Bytes32 {
+	if p.pubKey == nil {
+		panic(fmt.Errorf("public key is nil"))
+	}
+	bz, err := p.pubKey.(*crypto.Ed25519PublicKey).Raw()
+	if err != nil {
+		panic(err)
+	}
+	return util.BytesToBytes32(bz)
+}
+
 // Hex returns the public key in hex encoding
 func (p *PubKey) Hex() string {
 	bs, _ := p.Bytes()
@@ -173,6 +185,15 @@ func (p *PrivKey) Bytes() ([]byte, error) {
 		return nil, fmt.Errorf("private key is nil")
 	}
 	return p.privKey.(*crypto.Ed25519PrivateKey).Raw()
+}
+
+// Bytes64 is like Bytes but returns util.Bytes64
+func (p *PrivKey) Bytes64() (util.Bytes64, error) {
+	bz, err := p.Bytes()
+	if err != nil {
+		return util.EmptyBytes64, nil
+	}
+	return util.BytesToBytes64(bz), nil
 }
 
 // Marshal encodes the private key using protocol buffer
@@ -344,6 +365,30 @@ func PubKeyFromBytes(pk []byte) (*PubKey, error) {
 	}, nil
 }
 
+// MustPubKeyFromBytes is like PubKeyFromBytes, except it panics if pk is invalid
+func MustPubKeyFromBytes(pk []byte) *PubKey {
+	pubKey, err := crypto.UnmarshalEd25519PublicKey(pk)
+	if err != nil {
+		panic(err)
+	}
+
+	return &PubKey{
+		pubKey: pubKey,
+	}
+}
+
+// MustBase58FromPubKeyBytes takes a raw public key bytes and returns its base58
+// encoded version. It panics if pk is invalid
+func MustBase58FromPubKeyBytes(pk []byte) string {
+	pubKey, err := crypto.UnmarshalEd25519PublicKey(pk)
+	if err != nil {
+		panic(err)
+	}
+
+	wrapped := PubKey{pubKey: pubKey}
+	return wrapped.Base58()
+}
+
 // PrivKeyFromBase58 decodes a base58 encoded private key
 func PrivKeyFromBase58(pk string) (*PrivKey, error) {
 
@@ -379,13 +424,28 @@ func PrivKeyFromTMPrivateKey(tmSk ed25519.PrivKeyEd25519) (*PrivKey, error) {
 	return PrivKeyFromBytes(tmSk)
 }
 
-// TMPubKeyFromBase58PubKey encodes a base58 encoded 2d25519 public key to
+// TMPubKeyFromBase58PubKey encodes a base58 encoded ed25519 public key to
 // tendermint's ed25519.PubKeyEd25519
 func TMPubKeyFromBase58PubKey(b58PubKey string) (ed25519.PubKeyEd25519, error) {
 
 	var pubKeySized = [ed25519.PubKeyEd25519Size]byte{}
 
 	pubKey, err := PubKeyFromBase58(b58PubKey)
+	if err != nil {
+		return pubKeySized, err
+	}
+	rawPubKey, _ := pubKey.Bytes()
+	copy(pubKeySized[:], rawPubKey)
+
+	return pubKeySized, nil
+}
+
+// TMPubKeyFromBytesPubKey is like TMPubKeyFromBase58PubKey but takes a byte slice
+func TMPubKeyFromBytesPubKey(bzPubKey []byte) (ed25519.PubKeyEd25519, error) {
+
+	var pubKeySized = [ed25519.PubKeyEd25519Size]byte{}
+
+	pubKey, err := PubKeyFromBytes(bzPubKey)
 	if err != nil {
 		return pubKeySized, err
 	}

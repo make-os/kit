@@ -106,7 +106,7 @@ var _ = Describe("Transfers", func() {
 
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
-					senderPubKey := sender.PubKey().Base58()
+					senderPubKey := sender.PubKey().MustBytes32()
 					err := txLogic.execCoinTransfer(senderPubKey, recipientKey.Addr(), util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 				})
@@ -135,7 +135,7 @@ var _ = Describe("Transfers", func() {
 
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
-					senderPubKey := sender.PubKey().Base58()
+					senderPubKey := sender.PubKey().MustBytes32()
 					err := txLogic.execCoinTransfer(senderPubKey, sender.Addr(), util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 				})

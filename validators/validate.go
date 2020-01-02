@@ -105,7 +105,7 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic types.Logic) error 
 //
 // CONTRACT: Sender public key must be validated by the caller.
 func checkSignature(tx types.BaseTx, index int) (errs []error) {
-	pubKey, _ := crypto.PubKeyFromBase58(tx.GetSenderPubKey())
+	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	valid, err := pubKey.Verify(tx.GetBytesNoSig(), tx.GetSignature())
 	if err != nil {
 		errs = append(errs, feI(index, "sig", err.Error()))

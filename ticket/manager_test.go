@@ -176,7 +176,7 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				txn := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 				txn.Value = util.String("35")
-				txn.SenderPubKey = delegator.PubKey().Base58()
+				txn.SenderPubKey = util.BytesToBytes32(delegator.PubKey().MustBytes())
 				txn.Delegate = proposer.PubKey().Base58()
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
@@ -215,7 +215,7 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				txn := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 				txn.Value = util.String("35")
-				txn.SenderPubKey = delegator.PubKey().Base58()
+				txn.SenderPubKey = util.BytesToBytes32(delegator.PubKey().MustBytes())
 				txn.Delegate = proposer.PubKey().Base58()
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
@@ -237,7 +237,7 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				txn := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 				txn.Value = util.String("35")
-				txn.SenderPubKey = "pub_key"
+				txn.SenderPubKey = util.StrToBytes32("pub_key")
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
@@ -264,7 +264,7 @@ var _ = Describe("Manager", func() {
 				params.MaxTicketActiveDur = 40
 				txn := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 				txn.Value = util.String("35")
-				txn.SenderPubKey = "pub_key"
+				txn.SenderPubKey = util.StrToBytes32("pub_key")
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())

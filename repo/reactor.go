@@ -227,7 +227,7 @@ func (m *Manager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
 	pok := &types.PushOK{}
 	pok.PushNoteID = pushNote.ID()
 	pok.SenderPubKey = util.BytesToBytes32(m.privValidatorKey.PubKey().MustBytes())
-	pok.Sig = util.BytesToSig(m.privValidatorKey.PrivKey().MustSign(pok.Bytes()))
+	pok.Sig = util.BytesToBytes64(m.privValidatorKey.PrivKey().MustSign(pok.Bytes()))
 	m.broadcastPushOK(pok)
 
 	// Cache the PushOK object as an endorsement of the PushNote so can use it
