@@ -81,10 +81,10 @@ type BaseTx interface {
 	SetNonce(nonce uint64)               // Set the transaction nonce
 	GetFee() util.String                 // Returns the transaction fee
 	GetFrom() util.String                // Returns the address of the transaction sender
-	GetHash() util.Bytes32                  // Returns the hash of the transaction
+	GetHash() util.Bytes32               // Returns the hash of the transaction
 	GetBytesNoSig() []byte               // Returns the serialized the tx excluding the signature
 	Bytes() []byte                       // Returns the serialized transaction
-	ComputeHash() util.Bytes32              // Computes the hash of the transaction
+	ComputeHash() util.Bytes32           // Computes the hash of the transaction
 	GetID() string                       // Returns the id of the transaction (also the hash)
 	Sign(privKey string) ([]byte, error) // Signs the transaction
 	GetEcoSize() int64                   // Returns the size of the tx for use in proto economics
@@ -114,11 +114,11 @@ func (tx *TxType) Is(txType int) bool {
 // TxCommon implements some of BaseTx, it includes some common fields and methods
 type TxCommon struct {
 	*TxMeta      `json:"-" msgpack:"-" mapstructure:"-"`
-	Nonce        uint64      `json:"nonce" msgpack:"nonce"`
-	Fee          util.String `json:"fee" msgpack:"fee"`
-	Sig          []byte      `json:"sig" msgpack:"sig"`
-	Timestamp    int64       `json:"timestamp" msgpack:"timestamp"`
-	SenderPubKey string      `json:"senderPubKey" msgpack:"senderPubKey"`
+	Nonce        uint64       `json:"nonce" msgpack:"nonce"`
+	Fee          util.String  `json:"fee" msgpack:"fee"`
+	Sig          []byte       `json:"sig" msgpack:"sig"`
+	Timestamp    int64        `json:"timestamp" msgpack:"timestamp"`
+	SenderPubKey util.Bytes32 `json:"senderPubKey" msgpack:"senderPubKey"`
 }
 
 // NewBareTxCommon returns an instance of TxCommon with zero values
@@ -128,7 +128,7 @@ func NewBareTxCommon() *TxCommon {
 		Nonce:        0,
 		Fee:          "0",
 		Timestamp:    0,
-		SenderPubKey: "",
+		SenderPubKey: util.EmptyBytes32,
 	}
 }
 

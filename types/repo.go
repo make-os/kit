@@ -510,13 +510,13 @@ func (pt *PushNote) Len() uint64 {
 
 // ID returns the hash of the push note
 func (pt *PushNote) ID() util.Bytes32 {
-	return util.BytesToHash(util.Blake2b256(pt.Bytes()))
+	return util.BytesToBytes32(util.Blake2b256(pt.Bytes()))
 }
 
 // BytesAndID returns the serialized version of the tx and the id
 func (pt *PushNote) BytesAndID() ([]byte, util.Bytes32) {
 	bz := pt.Bytes()
-	return bz, util.BytesToHash(util.Blake2b256(bz))
+	return bz, util.BytesToBytes32(util.Blake2b256(bz))
 }
 
 // TxSize is the size of the transaction
@@ -567,7 +567,7 @@ func (po *PushOK) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 // ID returns the hash of the object
 func (po *PushOK) ID() util.Bytes32 {
-	return util.BytesToHash(util.Blake2b256(po.Bytes()))
+	return util.BytesToBytes32(util.Blake2b256(po.Bytes()))
 }
 
 // Bytes returns a serialized version of the object
@@ -578,7 +578,7 @@ func (po *PushOK) Bytes() []byte {
 // BytesNoSig returns the serialized version of
 func (po *PushOK) BytesNoSig() []byte {
 	sig := po.Sig
-	po.Sig = util.EmptySig
+	po.Sig = util.EmptyBytes64
 	msg := po.Bytes()
 	po.Sig = sig
 	return msg
@@ -587,7 +587,7 @@ func (po *PushOK) BytesNoSig() []byte {
 // BytesAndID returns the serialized version of the tx and the id
 func (po *PushOK) BytesAndID() ([]byte, util.Bytes32) {
 	bz := po.Bytes()
-	return bz, util.BytesToHash(util.Blake2b256(bz))
+	return bz, util.BytesToBytes32(util.Blake2b256(bz))
 }
 
 // RepoPushOK represents a push endorsement

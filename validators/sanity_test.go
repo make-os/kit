@@ -848,7 +848,7 @@ var _ = Describe("TxValidator", func() {
 				params.PushOKQuorumSize = 1
 				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
 					PushNoteID:   tx.PushNote.ID(),
-					SenderPubKey: util.BytesToHash(key.PubKey().MustBytes()),
+					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
 					Sig:          util.BytesToSig([]byte("invalid sig")),
 				})
 				tx.SenderPubKey = key.PubKey().Base58()
@@ -866,7 +866,7 @@ var _ = Describe("TxValidator", func() {
 
 				pok := &types.PushOK{
 					PushNoteID:   tx.PushNote.ID(),
-					SenderPubKey: util.BytesToHash(key.PubKey().MustBytes()),
+					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
 				}
 				sig, _ := key.PrivKey().Sign(pok.Bytes())
 				pok.Sig = util.BytesToSig(sig)

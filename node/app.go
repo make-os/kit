@@ -95,7 +95,7 @@ func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitCh
 	}
 
 	a.log.Info("Initialization state has been loaded",
-		"GenesisHash", util.BytesToHash(stateTree.WorkingHash()).HexStr(),
+		"GenesisHash", util.BytesToBytes32(stateTree.WorkingHash()).HexStr(),
 		"StateVersion", stateTree.Version())
 
 	return abcitypes.ResponseInitChain{}

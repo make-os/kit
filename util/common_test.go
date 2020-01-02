@@ -376,7 +376,7 @@ var _ = Describe("Common", func() {
 			}))
 
 			t4 := test3{
-				Sig: StrToHash("fred"),
+				Sig: StrToBytes32("fred"),
 			}
 			result = EncodeForJS(t4)
 			Expect(result).To(Equal(map[string]interface{}{"Sig": "0x6672656400000000000000000000000000000000000000000000000000000000"}))

@@ -67,7 +67,7 @@ func (tx *TxRepoCreate) GetBytesNoSig() []byte {
 
 // ComputeHash computes the hash of the transaction
 func (tx *TxRepoCreate) ComputeHash() util.Bytes32 {
-	return util.BytesToHash(util.Blake2b256(tx.Bytes()))
+	return util.BytesToBytes32(util.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction

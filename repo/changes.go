@@ -104,7 +104,7 @@ func (oc *ObjCol) Bytes() []byte {
 
 // Hash returns 32-bytes blake2b hash of the collection
 func (oc *ObjCol) Hash() util.Bytes32 {
-	return util.BytesToHash(util.Blake2b256(oc.Bytes()))
+	return util.BytesToBytes32(util.Blake2b256(oc.Bytes()))
 }
 
 func emptyChangeResult() *types.ChangeResult {
@@ -229,7 +229,7 @@ func (s *State) Hash() util.Bytes32 {
 	bz := util.ObjectToBytes([]interface{}{
 		s.References.Bytes(),
 	})
-	return util.BytesToHash(util.Blake2b256(bz))
+	return util.BytesToBytes32(util.Blake2b256(bz))
 }
 
 // GetChanges summarizes the changes between State s and y.

@@ -446,7 +446,7 @@ var _ = Describe("ObjCol", func() {
 		It("should return hash", func() {
 			hash := col.Hash()
 			Expect(hash).To(HaveLen(32))
-			Expect(hash).To(Equal(util.BytesToHash([]byte{100, 185, 179, 176, 214, 78, 213, 195,
+			Expect(hash).To(Equal(util.BytesToBytes32([]byte{100, 185, 179, 176, 214, 78, 213, 195,
 				180, 8, 68, 146, 117, 8, 171, 67, 82, 186, 38, 50, 150, 182, 22, 198, 127, 82,
 				135, 70, 137, 36, 28, 33})))
 		})

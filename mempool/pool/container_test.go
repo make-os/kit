@@ -431,7 +431,7 @@ var _ = Describe("NonceCollection", func() {
 		Context("when nonce is part of the collection", func() {
 			nc := nonceCollection{
 				nonces: map[uint64]*nonceInfo{
-					1: &nonceInfo{TxHash: util.StrToHash("")},
+					1: &nonceInfo{TxHash: util.StrToBytes32("")},
 				},
 			}
 
@@ -453,7 +453,7 @@ var _ = Describe("NonceCollection", func() {
 	})
 
 	Describe(".get", func() {
-		nonce := &nonceInfo{TxHash: util.StrToHash("abc")}
+		nonce := &nonceInfo{TxHash: util.StrToBytes32("abc")}
 		BeforeEach(func() {
 			nc.add(1, nonce)
 			Expect(nc.nonces).To(HaveLen(1))

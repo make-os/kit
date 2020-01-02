@@ -613,8 +613,8 @@ var _ = Describe("TxValidator", func() {
 
 				tx := types.NewBareTxPush()
 				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
-					PushNoteID:   util.StrToHash("pn1"),
-					SenderPubKey: util.BytesToHash(key2.PubKey().MustBytes()),
+					PushNoteID:   util.StrToBytes32("pn1"),
+					SenderPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
 				})
 
 				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
@@ -636,8 +636,8 @@ var _ = Describe("TxValidator", func() {
 
 				tx := types.NewBareTxPush()
 				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
-					PushNoteID:   util.StrToHash("pn1"),
-					SenderPubKey: util.BytesToHash(key2.PubKey().MustBytes()),
+					PushNoteID:   util.StrToBytes32("pn1"),
+					SenderPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
 				})
 
 				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)

@@ -58,7 +58,7 @@ func (tm *TMRPC) SendTx(tx []byte) (util.Bytes32, error) {
 		return hash, errors.Wrap(err, "failed to decode broadcast response")
 	}
 
-	return util.BytesToHash(hashBytes), nil
+	return util.BytesToBytes32(hashBytes), nil
 }
 
 // GetBlock returns the block at the given height

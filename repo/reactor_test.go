@@ -125,9 +125,9 @@ var _ = Describe("Reactor", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id")).Times(2)
 				pushOK := &types.PushOK{
-					PushNoteID:   util.StrToHash("pushID"),
+					PushNoteID:   util.StrToBytes32("pushID"),
 					Sig:          util.BytesToSig(util.RandBytes(5)),
-					SenderPubKey: util.BytesToHash(util.RandBytes(5)),
+					SenderPubKey: util.BytesToBytes32(util.RandBytes(5)),
 				}
 				err = mgr.onPushOK(mockPeer, pushOK.Bytes())
 			})

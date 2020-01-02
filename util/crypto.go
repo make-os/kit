@@ -25,16 +25,16 @@ const (
 	Length64 = 64
 )
 
-// Bytes32 represents a hash value
+// Bytes32 represents a 32-bytes value
 type Bytes32 [Length32]byte
 
-// EmptyHash is an empty Hash
-var EmptyHash = Bytes32([Length32]byte{})
+// EmptyBytes32 is an empty Bytes32
+var EmptyBytes32 = Bytes32([Length32]byte{})
 
-// Bytes gets the byte representation of the underlying hash.
+// Bytes returns a slice of bytes
 func (h Bytes32) Bytes() []byte { return h[:] }
 
-// Big converts a hash to a big integer.
+// Big returns the bytes as big integer
 func (h Bytes32) Big() *big.Int { return new(big.Int).SetBytes(h[:]) }
 
 // Equal checks equality between h and o
@@ -42,12 +42,12 @@ func (h Bytes32) Equal(o Bytes32) bool { return bytes.Equal(h.Bytes(), o.Bytes()
 
 func (h Bytes32) String() string { return h.HexStr() }
 
-// HexStr returns the hex string version of the hash beginning with 0x
+// HexStr encodes the bytes to hex, prefixed with 0x
 func (h Bytes32) HexStr() string {
 	return ToHex(h[:])
 }
 
-// Hex is like HexStr but returns bytes
+// Hex encodes the bytes to hex
 func (h Bytes32) Hex() []byte {
 	dst := make([]byte, hex.EncodedLen(len(h)))
 	hex.Encode(dst, h[:])
@@ -64,95 +64,85 @@ func (h Bytes32) SS() string {
 	return s
 }
 
-// IsEmpty checks whether the hash is empty (having zero values)
+// IsEmpty checks whether the object is empty (having zero values)
 func (h Bytes32) IsEmpty() bool {
-	return h == EmptyHash
+	return h == EmptyBytes32
 }
 
-// HexToHash creates an Hash from hex string
-func HexToHash(hex string) (Bytes32, error) {
+// HexToBytes32 creates an hex value to Bytes32
+func HexToBytes32(hex string) (Bytes32, error) {
 	bs, err := FromHex(hex)
 	if err != nil {
-		return EmptyHash, err
+		return EmptyBytes32, err
 	}
-	return BytesToHash(bs), nil
+	return BytesToBytes32(bs), nil
 }
 
-// BytesToHash copies b to a Hash
-func BytesToHash(b []byte) Bytes32 {
+// BytesToBytes32 copies b to a Bytes32
+func BytesToBytes32(b []byte) Bytes32 {
 	var h Bytes32
 	copy(h[:], b)
 	return h
 }
 
-// StrToHash converts a string to a Hash
-func StrToHash(s string) Bytes32 {
-	return BytesToHash([]byte(s))
+// StrToBytes32 converts a string to a Bytes32
+func StrToBytes32(s string) Bytes32 {
+	return BytesToBytes32([]byte(s))
 }
 
-// Bytes64 represents a 64 bytes value
+// Bytes64 represents a 32-bytes value
 type Bytes64 [Length64]byte
 
-// EmptySig is an empty Hash
-var EmptySig = Bytes64([Length64]byte{})
+// EmptyBytes64 is an empty Bytes64
+var EmptyBytes64 = Bytes64([Length64]byte{})
 
-// Bytes gets the byte representation of the underlying hash.
-func (s Bytes64) Bytes() []byte { return s[:] }
+// Bytes returns a slice of bytes
+func (h Bytes64) Bytes() []byte { return h[:] }
 
-// Big converts a hash to a big integer.
-func (s Bytes64) Big() *big.Int { return new(big.Int).SetBytes(s[:]) }
+// Big returns the bytes as big integer
+func (h Bytes64) Big() *big.Int { return new(big.Int).SetBytes(h[:]) }
 
 // Equal checks equality between h and o
-func (s Bytes64) Equal(o Bytes64) bool { return bytes.Equal(s.Bytes(), o.Bytes()) }
+func (h Bytes64) Equal(o Bytes64) bool { return bytes.Equal(h.Bytes(), o.Bytes()) }
 
-func (s Bytes64) String() string { return s.HexStr() }
+func (h Bytes64) String() string { return h.HexStr() }
 
-// HexStr returns the hex string version of the hash beginning with 0x
-func (s Bytes64) HexStr() string {
-	return ToHex(s[:])
+// HexStr encodes the bytes to hex, prefixed with 0x
+func (h Bytes64) HexStr() string {
+	return ToHex(h[:])
 }
 
-// Hex is like HexStr but returns bytes
-func (s Bytes64) Hex() []byte {
-	dst := make([]byte, hex.EncodedLen(len(s)))
-	hex.Encode(dst, s[:])
+// Hex encodes the bytes to hex
+func (h Bytes64) Hex() []byte {
+	dst := make([]byte, hex.EncodedLen(len(h)))
+	hex.Encode(dst, h[:])
 	return dst
 }
 
-// SS returns a short version of HexStr with the middle
-// characters truncated when length is at least 32
-func (s Bytes64) SS() string {
-	hexStr := s.HexStr()
-	if len(s) >= 32 {
-		return fmt.Sprintf("%s...%s", string(hexStr)[0:10], string(hexStr)[len(hexStr)-10:])
-	}
-	return hexStr
+// IsEmpty checks whether the object is empty (having zero values)
+func (h Bytes64) IsEmpty() bool {
+	return h == EmptyBytes64
 }
 
-// IsEmpty checks whether the hash is empty (having zero values)
-func (s Bytes64) IsEmpty() bool {
-	return s == EmptySig
-}
-
-// HexToSig creates a Sig from hex string
-func HexToSig(hex string) (Bytes64, error) {
+// HexToBytes64 creates an hex value to Bytes64
+func HexToBytes64(hex string) (Bytes64, error) {
 	bs, err := FromHex(hex)
 	if err != nil {
-		return EmptySig, err
+		return EmptyBytes64, err
 	}
-	return BytesToSig(bs), nil
+	return BytesToBytes64(bs), nil
 }
 
-// BytesToSig copies b to a Sig
-func BytesToSig(b []byte) Bytes64 {
-	var s Bytes64
-	copy(s[:], b)
-	return s
+// BytesToBytes64 copies b to a Bytes64
+func BytesToBytes64(b []byte) Bytes64 {
+	var h Bytes64
+	copy(h[:], b)
+	return h
 }
 
-// StrToSig converts a string to a Hash
-func StrToSig(s string) Bytes64 {
-	return BytesToSig([]byte(s))
+// StrToBytes64 converts a string to a Bytes64
+func StrToBytes64(s string) Bytes64 {
+	return BytesToBytes64([]byte(s))
 }
 
 // GenerateKeyPair generates private and public keys
