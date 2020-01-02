@@ -43,7 +43,7 @@ func newItem(tx types.BaseTx) *containerItem {
 // nonceInfo stores information about a transaction
 // that is associated with a specific nonce
 type nonceInfo struct {
-	TxHash util.Hash
+	TxHash util.Bytes32
 	Fee    util.String
 }
 
@@ -368,9 +368,9 @@ func (q *TxContainer) remove(txs ...types.BaseTx) {
 
 // removeByHash removes transactions by hash
 // Note: Not thread-safe
-func (q *TxContainer) removeByHash(txsHash ...util.Hash) {
+func (q *TxContainer) removeByHash(txsHash ...util.Bytes32) {
 	finalTxs := funk.Filter(q.container, func(o *containerItem) bool {
-		if funk.Find(txsHash, func(hash util.Hash) bool {
+		if funk.Find(txsHash, func(hash util.Bytes32) bool {
 			return o.Tx.GetHash().Equal(hash)
 		}) != nil {
 			delete(q.hashIndex, o.Tx.GetHash().HexStr())

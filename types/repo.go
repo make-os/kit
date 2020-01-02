@@ -272,7 +272,7 @@ type RepoPushNote interface {
 	Len() uint64
 
 	// ID returns the hash of the push note
-	ID() util.Hash
+	ID() util.Bytes32
 
 	// TxSize is the size of the transaction
 	TxSize() uint
@@ -299,7 +299,7 @@ type RepoPushNote interface {
 	GetPushedObjects() (objs []string)
 
 	// BytesAndID returns the serialized version of the tx and the id
-	BytesAndID() ([]byte, util.Hash)
+	BytesAndID() ([]byte, util.Bytes32)
 }
 
 // Pruner provides repository pruning functionality
@@ -403,7 +403,7 @@ type BareRepoState interface {
 	// IsEmpty checks whether the state is empty
 	IsEmpty() bool
 	// Hash returns the 32-bytes hash of the state
-	Hash() util.Hash
+	Hash() util.Bytes32
 	// GetChanges summarizes the changes between State s and y.
 	GetChanges(y BareRepoState) *Changes
 }
@@ -430,7 +430,7 @@ type Items interface {
 	ForEach(func(i Item) bool)
 	Len() int64
 	Bytes() []byte
-	Hash() util.Hash
+	Hash() util.Bytes32
 }
 
 // PushNote implements types.PushNote
@@ -509,12 +509,12 @@ func (pt *PushNote) Len() uint64 {
 }
 
 // ID returns the hash of the push note
-func (pt *PushNote) ID() util.Hash {
+func (pt *PushNote) ID() util.Bytes32 {
 	return util.BytesToHash(util.Blake2b256(pt.Bytes()))
 }
 
 // BytesAndID returns the serialized version of the tx and the id
-func (pt *PushNote) BytesAndID() ([]byte, util.Hash) {
+func (pt *PushNote) BytesAndID() ([]byte, util.Bytes32) {
 	bz := pt.Bytes()
 	return bz, util.BytesToHash(util.Blake2b256(bz))
 }
@@ -550,9 +550,9 @@ func (pt *PushNote) TotalFee() util.String {
 
 // PushOK is used to endorse a push note
 type PushOK struct {
-	PushNoteID   util.Hash `json:"pushNoteID" mapstructure:"pushNoteID"`
-	SenderPubKey util.Hash `json:"senderPubKey" mapstructure:"senderPubKey"`
-	Sig          util.Sig  `json:"sig" mapstructure:"sig"`
+	PushNoteID   util.Bytes32 `json:"pushNoteID" mapstructure:"pushNoteID"`
+	SenderPubKey util.Bytes32 `json:"senderPubKey" mapstructure:"senderPubKey"`
+	Sig          util.Bytes64 `json:"sig" mapstructure:"sig"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -566,7 +566,7 @@ func (po *PushOK) DecodeMsgpack(dec *msgpack.Decoder) error {
 }
 
 // ID returns the hash of the object
-func (po *PushOK) ID() util.Hash {
+func (po *PushOK) ID() util.Bytes32 {
 	return util.BytesToHash(util.Blake2b256(po.Bytes()))
 }
 
@@ -585,7 +585,7 @@ func (po *PushOK) BytesNoSig() []byte {
 }
 
 // BytesAndID returns the serialized version of the tx and the id
-func (po *PushOK) BytesAndID() ([]byte, util.Hash) {
+func (po *PushOK) BytesAndID() ([]byte, util.Bytes32) {
 	bz := po.Bytes()
 	return bz, util.BytesToHash(util.Blake2b256(bz))
 }
@@ -593,9 +593,9 @@ func (po *PushOK) BytesAndID() ([]byte, util.Hash) {
 // RepoPushOK represents a push endorsement
 type RepoPushOK interface {
 	// ID returns the hash of the object
-	ID() util.Hash
+	ID() util.Bytes32
 	// Bytes returns a serialized version of the object
 	Bytes() []byte
 	// BytesAndID returns the serialized version of the tx and the id
-	BytesAndID() ([]byte, util.Hash)
+	BytesAndID() ([]byte, util.Bytes32)
 }

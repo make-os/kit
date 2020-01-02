@@ -329,7 +329,7 @@ var _ = Describe("App", func() {
 
 		When("tx is valid", func() {
 			var res abcitypes.ResponseCheckTx
-			var expectedHash util.Hash
+			var expectedHash util.Bytes32
 			BeforeEach(func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil

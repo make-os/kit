@@ -62,12 +62,12 @@ func (tx *TxPush) GetBytesNoSig() []byte {
 }
 
 // ComputeHash computes the hash of the transaction
-func (tx *TxPush) ComputeHash() util.Hash {
+func (tx *TxPush) ComputeHash() util.Bytes32 {
 	return util.BytesToHash(util.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction
-func (tx *TxPush) GetHash() util.Hash {
+func (tx *TxPush) GetHash() util.Bytes32 {
 	return tx.PushNote.ID()
 }
 

@@ -19,35 +19,36 @@ import (
 	crypto "github.com/libp2p/go-libp2p-crypto"
 )
 
+// Fixed bytes array lengths
 const (
-	// HashLength is the standard size of hash values
-	HashLength = 32
+	Length32 = 32
+	Length64 = 64
 )
 
-// Hash represents a hash value
-type Hash [HashLength]byte
+// Bytes32 represents a hash value
+type Bytes32 [Length32]byte
 
 // EmptyHash is an empty Hash
-var EmptyHash = Hash([HashLength]byte{})
+var EmptyHash = Bytes32([Length32]byte{})
 
 // Bytes gets the byte representation of the underlying hash.
-func (h Hash) Bytes() []byte { return h[:] }
+func (h Bytes32) Bytes() []byte { return h[:] }
 
 // Big converts a hash to a big integer.
-func (h Hash) Big() *big.Int { return new(big.Int).SetBytes(h[:]) }
+func (h Bytes32) Big() *big.Int { return new(big.Int).SetBytes(h[:]) }
 
 // Equal checks equality between h and o
-func (h Hash) Equal(o Hash) bool { return bytes.Equal(h.Bytes(), o.Bytes()) }
+func (h Bytes32) Equal(o Bytes32) bool { return bytes.Equal(h.Bytes(), o.Bytes()) }
 
-func (h Hash) String() string { return h.HexStr() }
+func (h Bytes32) String() string { return h.HexStr() }
 
 // HexStr returns the hex string version of the hash beginning with 0x
-func (h Hash) HexStr() string {
+func (h Bytes32) HexStr() string {
 	return ToHex(h[:])
 }
 
 // Hex is like HexStr but returns bytes
-func (h Hash) Hex() []byte {
+func (h Bytes32) Hex() []byte {
 	dst := make([]byte, hex.EncodedLen(len(h)))
 	hex.Encode(dst, h[:])
 	return dst
@@ -55,7 +56,7 @@ func (h Hash) Hex() []byte {
 
 // SS returns a short version of HexStr with the middle
 // characters truncated when length is at least 32
-func (h Hash) SS() string {
+func (h Bytes32) SS() string {
 	s := h.HexStr()
 	if len(s) >= 32 {
 		return fmt.Sprintf("%s...%s", string(s)[0:10], string(s)[len(s)-10:])
@@ -64,12 +65,12 @@ func (h Hash) SS() string {
 }
 
 // IsEmpty checks whether the hash is empty (having zero values)
-func (h Hash) IsEmpty() bool {
+func (h Bytes32) IsEmpty() bool {
 	return h == EmptyHash
 }
 
 // HexToHash creates an Hash from hex string
-func HexToHash(hex string) (Hash, error) {
+func HexToHash(hex string) (Bytes32, error) {
 	bs, err := FromHex(hex)
 	if err != nil {
 		return EmptyHash, err
@@ -78,46 +79,41 @@ func HexToHash(hex string) (Hash, error) {
 }
 
 // BytesToHash copies b to a Hash
-func BytesToHash(b []byte) Hash {
-	var h Hash
+func BytesToHash(b []byte) Bytes32 {
+	var h Bytes32
 	copy(h[:], b)
 	return h
 }
 
 // StrToHash converts a string to a Hash
-func StrToHash(s string) Hash {
+func StrToHash(s string) Bytes32 {
 	return BytesToHash([]byte(s))
 }
 
-const (
-	// SigLength is the standard size of hash values
-	SigLength = 64
-)
-
-// Sig represents a hash value
-type Sig [SigLength]byte
+// Bytes64 represents a 64 bytes value
+type Bytes64 [Length64]byte
 
 // EmptySig is an empty Hash
-var EmptySig = Sig([SigLength]byte{})
+var EmptySig = Bytes64([Length64]byte{})
 
 // Bytes gets the byte representation of the underlying hash.
-func (s Sig) Bytes() []byte { return s[:] }
+func (s Bytes64) Bytes() []byte { return s[:] }
 
 // Big converts a hash to a big integer.
-func (s Sig) Big() *big.Int { return new(big.Int).SetBytes(s[:]) }
+func (s Bytes64) Big() *big.Int { return new(big.Int).SetBytes(s[:]) }
 
 // Equal checks equality between h and o
-func (s Sig) Equal(o Sig) bool { return bytes.Equal(s.Bytes(), o.Bytes()) }
+func (s Bytes64) Equal(o Bytes64) bool { return bytes.Equal(s.Bytes(), o.Bytes()) }
 
-func (s Sig) String() string { return s.HexStr() }
+func (s Bytes64) String() string { return s.HexStr() }
 
 // HexStr returns the hex string version of the hash beginning with 0x
-func (s Sig) HexStr() string {
+func (s Bytes64) HexStr() string {
 	return ToHex(s[:])
 }
 
 // Hex is like HexStr but returns bytes
-func (s Sig) Hex() []byte {
+func (s Bytes64) Hex() []byte {
 	dst := make([]byte, hex.EncodedLen(len(s)))
 	hex.Encode(dst, s[:])
 	return dst
@@ -125,7 +121,7 @@ func (s Sig) Hex() []byte {
 
 // SS returns a short version of HexStr with the middle
 // characters truncated when length is at least 32
-func (s Sig) SS() string {
+func (s Bytes64) SS() string {
 	hexStr := s.HexStr()
 	if len(s) >= 32 {
 		return fmt.Sprintf("%s...%s", string(hexStr)[0:10], string(hexStr)[len(hexStr)-10:])
@@ -134,12 +130,12 @@ func (s Sig) SS() string {
 }
 
 // IsEmpty checks whether the hash is empty (having zero values)
-func (s Sig) IsEmpty() bool {
+func (s Bytes64) IsEmpty() bool {
 	return s == EmptySig
 }
 
 // HexToSig creates a Sig from hex string
-func HexToSig(hex string) (Sig, error) {
+func HexToSig(hex string) (Bytes64, error) {
 	bs, err := FromHex(hex)
 	if err != nil {
 		return EmptySig, err
@@ -148,14 +144,14 @@ func HexToSig(hex string) (Sig, error) {
 }
 
 // BytesToSig copies b to a Sig
-func BytesToSig(b []byte) Sig {
-	var s Sig
+func BytesToSig(b []byte) Bytes64 {
+	var s Bytes64
 	copy(s[:], b)
 	return s
 }
 
 // StrToSig converts a string to a Hash
-func StrToSig(s string) Sig {
+func StrToSig(s string) Bytes64 {
 	return BytesToSig([]byte(s))
 }
 

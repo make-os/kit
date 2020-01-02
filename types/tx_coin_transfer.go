@@ -66,12 +66,12 @@ func (tx *TxCoinTransfer) GetBytesNoSig() []byte {
 }
 
 // ComputeHash computes the hash of the transaction
-func (tx *TxCoinTransfer) ComputeHash() util.Hash {
+func (tx *TxCoinTransfer) ComputeHash() util.Bytes32 {
 	return util.BytesToHash(util.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction
-func (tx *TxCoinTransfer) GetHash() util.Hash {
+func (tx *TxCoinTransfer) GetHash() util.Bytes32 {
 	return tx.ComputeHash()
 }
 

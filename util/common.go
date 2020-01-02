@@ -344,7 +344,7 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 		switch _v := v.(type) {
 		case BlockNonce:
 			m[k] = ToHex(_v[:])
-		case Hash:
+		case Bytes32:
 			m[k] = _v.HexStr()
 		case int8, []byte:
 			m[k] = fmt.Sprintf("0x%x", _v)

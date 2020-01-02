@@ -103,7 +103,7 @@ func (oc *ObjCol) Bytes() []byte {
 }
 
 // Hash returns 32-bytes blake2b hash of the collection
-func (oc *ObjCol) Hash() util.Hash {
+func (oc *ObjCol) Hash() util.Bytes32 {
 	return util.BytesToHash(util.Blake2b256(oc.Bytes()))
 }
 
@@ -225,7 +225,7 @@ func (s *State) IsEmpty() bool {
 }
 
 // Hash returns the 32-bytes hash of the state
-func (s *State) Hash() util.Hash {
+func (s *State) Hash() util.Bytes32 {
 	bz := util.ObjectToBytes([]interface{}{
 		s.References.Bytes(),
 	})

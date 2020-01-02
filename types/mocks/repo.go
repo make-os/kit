@@ -1190,10 +1190,10 @@ func (mr *MockRepoPushNoteMockRecorder) Len() *gomock.Call {
 }
 
 // ID mocks base method
-func (m *MockRepoPushNote) ID() util.Hash {
+func (m *MockRepoPushNote) ID() util.Bytes32 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ID")
-	ret0, _ := ret[0].(util.Hash)
+	ret0, _ := ret[0].(util.Bytes32)
 	return ret0
 }
 
@@ -1316,11 +1316,11 @@ func (mr *MockRepoPushNoteMockRecorder) GetPushedObjects() *gomock.Call {
 }
 
 // BytesAndID mocks base method
-func (m *MockRepoPushNote) BytesAndID() ([]byte, util.Hash) {
+func (m *MockRepoPushNote) BytesAndID() ([]byte, util.Bytes32) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BytesAndID")
 	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(util.Hash)
+	ret1, _ := ret[1].(util.Bytes32)
 	return ret0, ret1
 }
 
@@ -1455,10 +1455,10 @@ func (mr *MockBareRepoStateMockRecorder) IsEmpty() *gomock.Call {
 }
 
 // Hash mocks base method
-func (m *MockBareRepoState) Hash() util.Hash {
+func (m *MockBareRepoState) Hash() util.Bytes32 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Hash")
-	ret0, _ := ret[0].(util.Hash)
+	ret0, _ := ret[0].(util.Bytes32)
 	return ret0
 }
 
@@ -1667,10 +1667,10 @@ func (mr *MockItemsMockRecorder) Bytes() *gomock.Call {
 }
 
 // Hash mocks base method
-func (m *MockItems) Hash() util.Hash {
+func (m *MockItems) Hash() util.Bytes32 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Hash")
-	ret0, _ := ret[0].(util.Hash)
+	ret0, _ := ret[0].(util.Bytes32)
 	return ret0
 }
 
@@ -1704,10 +1704,10 @@ func (m *MockRepoPushOK) EXPECT() *MockRepoPushOKMockRecorder {
 }
 
 // ID mocks base method
-func (m *MockRepoPushOK) ID() util.Hash {
+func (m *MockRepoPushOK) ID() util.Bytes32 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ID")
-	ret0, _ := ret[0].(util.Hash)
+	ret0, _ := ret[0].(util.Bytes32)
 	return ret0
 }
 
@@ -1732,11 +1732,11 @@ func (mr *MockRepoPushOKMockRecorder) Bytes() *gomock.Call {
 }
 
 // BytesAndID mocks base method
-func (m *MockRepoPushOK) BytesAndID() ([]byte, util.Hash) {
+func (m *MockRepoPushOK) BytesAndID() ([]byte, util.Bytes32) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BytesAndID")
 	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(util.Hash)
+	ret1, _ := ret[1].(util.Bytes32)
 	return ret0, ret1
 }
 

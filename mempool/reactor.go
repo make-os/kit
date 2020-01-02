@@ -128,10 +128,10 @@ func (r *Reactor) GetTop(n int) []t.BaseTx {
 }
 
 // AddTx adds a transaction to the tx pool and broadcasts it.
-func (r *Reactor) AddTx(tx t.BaseTx) (hash util.Hash, err error) {
+func (r *Reactor) AddTx(tx t.BaseTx) (hash util.Bytes32, err error) {
 	err = r.mempool.Add(tx)
 	if err != nil {
-		return util.Hash{}, err
+		return util.Bytes32{}, err
 	}
 
 	r.broadcastTx(tx)

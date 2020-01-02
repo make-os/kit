@@ -81,10 +81,10 @@ type BaseTx interface {
 	SetNonce(nonce uint64)               // Set the transaction nonce
 	GetFee() util.String                 // Returns the transaction fee
 	GetFrom() util.String                // Returns the address of the transaction sender
-	GetHash() util.Hash                  // Returns the hash of the transaction
+	GetHash() util.Bytes32                  // Returns the hash of the transaction
 	GetBytesNoSig() []byte               // Returns the serialized the tx excluding the signature
 	Bytes() []byte                       // Returns the serialized transaction
-	ComputeHash() util.Hash              // Computes the hash of the transaction
+	ComputeHash() util.Bytes32              // Computes the hash of the transaction
 	GetID() string                       // Returns the id of the transaction (also the hash)
 	Sign(privKey string) ([]byte, error) // Signs the transaction
 	GetEcoSize() int64                   // Returns the size of the tx for use in proto economics

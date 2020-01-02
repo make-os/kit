@@ -27,9 +27,9 @@ func New(address string) *TMRPC {
 
 // SendTx broadcasts a transaction and returns the transaction
 // hash after it must have been validated using CheckTx.
-func (tm *TMRPC) SendTx(tx []byte) (util.Hash, error) {
+func (tm *TMRPC) SendTx(tx []byte) (util.Bytes32, error) {
 
-	var hash util.Hash
+	var hash util.Bytes32
 	var resData map[string]interface{}
 
 	// Hex encode the tx and broadcast

@@ -62,12 +62,12 @@ func (tx *TxAddGPGPubKey) GetBytesNoSig() []byte {
 }
 
 // ComputeHash computes the hash of the transaction
-func (tx *TxAddGPGPubKey) ComputeHash() util.Hash {
+func (tx *TxAddGPGPubKey) ComputeHash() util.Bytes32 {
 	return util.BytesToHash(util.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction
-func (tx *TxAddGPGPubKey) GetHash() util.Hash {
+func (tx *TxAddGPGPubKey) GetHash() util.Bytes32 {
 	return tx.ComputeHash()
 }
 
