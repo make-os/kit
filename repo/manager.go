@@ -66,7 +66,7 @@ type Manager struct {
 	pushPool             types.PushPool        // The transaction pool for push transactions
 	mempool              types.Mempool         // The general transaction pool for block-bound transaction
 	logic                types.Logic           // logic is the application logic provider
-	nodeKey              *crypto.Key           // the node's private key for signing transactions
+	privValidatorKey     *crypto.Key           // the node's private validator key for signing transactions
 	pgpPubKeyGetter      types.PGPPubKeyGetter // finds and returns PGP public key
 	dht                  types.DHT             // The dht service
 	pruner               types.Pruner          // The repo runner
@@ -102,7 +102,7 @@ func NewManager(
 		repoDBCache:          dbCache,
 		pushPool:             NewPushPool(params.PushPoolCap, logic, dht),
 		logic:                logic,
-		nodeKey:              key,
+		privValidatorKey:     key,
 		dht:                  dht,
 		mempool:              mempool,
 		pushNoteSenders:      cache.NewActiveCache(params.PushObjectsSendersCacheSize),
@@ -191,9 +191,9 @@ func (m *Manager) GetLogic() types.Logic {
 	return m.logic
 }
 
-// GetNodeKey implements RepositoryManager
-func (m *Manager) GetNodeKey() *crypto.Key {
-	return m.nodeKey
+// GetPrivateValidatorKey implements RepositoryManager
+func (m *Manager) GetPrivateValidatorKey() *crypto.Key {
+	return m.privValidatorKey
 }
 
 // GetPruner returns the repo pruner

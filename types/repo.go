@@ -175,8 +175,8 @@ type RepoManager interface {
 	// GetLogic returns the application logic provider
 	GetLogic() Logic
 
-	// GetNodeKey returns the node's private key
-	GetNodeKey() *crypto.Key
+	// GetPrivateValidatorKey returns the node's private key
+	GetPrivateValidatorKey() *crypto.Key
 
 	// Start starts the server
 	Start() error

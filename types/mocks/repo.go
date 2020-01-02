@@ -793,18 +793,18 @@ func (mr *MockRepoManagerMockRecorder) GetLogic() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogic", reflect.TypeOf((*MockRepoManager)(nil).GetLogic))
 }
 
-// GetNodeKey mocks base method
-func (m *MockRepoManager) GetNodeKey() *crypto.Key {
+// GetPrivateValidatorKey mocks base method
+func (m *MockRepoManager) GetPrivateValidatorKey() *crypto.Key {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNodeKey")
+	ret := m.ctrl.Call(m, "GetPrivateValidatorKey")
 	ret0, _ := ret[0].(*crypto.Key)
 	return ret0
 }
 
-// GetNodeKey indicates an expected call of GetNodeKey
-func (mr *MockRepoManagerMockRecorder) GetNodeKey() *gomock.Call {
+// GetPrivateValidatorKey indicates an expected call of GetPrivateValidatorKey
+func (mr *MockRepoManagerMockRecorder) GetPrivateValidatorKey() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNodeKey", reflect.TypeOf((*MockRepoManager)(nil).GetNodeKey))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrivateValidatorKey", reflect.TypeOf((*MockRepoManager)(nil).GetPrivateValidatorKey))
 }
 
 // Start mocks base method

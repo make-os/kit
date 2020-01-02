@@ -240,9 +240,7 @@ func (a *App) postExecChecks(
 	tx types.BaseTx,
 	resp abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
 
-	txType := tx.GetType()
-
-	if txType == types.TxTypeEpochSecret {
+	if tx.Is(types.TxTypeEpochSecret) {
 
 		// Cache the epoch secret tx for use in the COMMIT stage
 		a.epochSecretTx = tx
@@ -274,6 +272,7 @@ func (a *App) postExecChecks(
 
 	// Cache tasks derived from transactions;
 	// They will be processed in the COMMIT stage.
+	txType := tx.GetType()
 	if resp.Code == 0 {
 		switch txType {
 		case types.TxTypeValidatorTicket:
@@ -456,7 +455,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		}
 	} else {
 		// Ok, so no epoch secret tx in this block. We need
-		// to ensure this block is not the last block of this epoch.
+		// to ensure this block is not the last block of the current epoch.
 		// If it is, we need to TODO: Slash the proposer for not adding a secret.
 		if isEndOfEpoch(bi.Height) {
 

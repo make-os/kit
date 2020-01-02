@@ -169,7 +169,7 @@ func (h *PushHandler) createPushNote(
 		PusherKeyID: pkID,
 		Timestamp:   time.Now().Unix(),
 		References:  types.PushedReferences([]*types.PushedReference{}),
-		NodePubKey:  h.rMgr.GetNodeKey().PubKey().Base58(),
+		NodePubKey:  h.rMgr.GetPrivateValidatorKey().PubKey().Base58(),
 	}
 
 	// Get the total size of the pushed objects
@@ -191,7 +191,7 @@ func (h *PushHandler) createPushNote(
 	}
 
 	// Sign the push transaction
-	pushNote.NodeSig, err = h.rMgr.GetNodeKey().PrivKey().Sign(pushNote.Bytes())
+	pushNote.NodeSig, err = h.rMgr.GetPrivateValidatorKey().PrivKey().Sign(pushNote.Bytes())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to sign push note")
 	}

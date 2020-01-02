@@ -109,7 +109,7 @@ func (m *Manager) GetTopStorers(limit int) (types.PubKeyValues, error) {
 		proposerValueIdx[ticket.ProposerPubKey] = val
 	}
 
-	// Convert value index to a slice for deterministic sorting
+	// Convert value index to a slice for sorting
 	var proposerValSlice = [][]string{}
 	for k, v := range proposerValueIdx {
 		proposerValSlice = append(proposerValSlice, []string{k, v.String()})

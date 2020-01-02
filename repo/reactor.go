@@ -218,7 +218,7 @@ func (m *Manager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
 	}
 
 	// Exit with nil if node is not among the top storers
-	if !topStorers.Has(m.nodeKey.PubKey().Base58()) {
+	if !topStorers.Has(m.privValidatorKey.PubKey().Base58()) {
 		return nil
 	}
 
@@ -226,8 +226,8 @@ func (m *Manager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
 	// sign and broadcast a PushOK
 	pok := &types.PushOK{}
 	pok.PushNoteID = pushNote.ID()
-	pok.SenderPubKey = util.BytesToHash(m.nodeKey.PubKey().MustBytes())
-	pok.Sig = util.BytesToSig(m.nodeKey.PrivKey().MustSign(pok.Bytes()))
+	pok.SenderPubKey = util.BytesToHash(m.privValidatorKey.PubKey().MustBytes())
+	pok.Sig = util.BytesToSig(m.privValidatorKey.PrivKey().MustSign(pok.Bytes()))
 	m.broadcastPushOK(pok)
 
 	// Cache the PushOK object as an endorsement of the PushNote so can use it
