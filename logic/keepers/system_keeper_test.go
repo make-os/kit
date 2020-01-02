@@ -25,6 +25,7 @@ var _ = Describe("SystemKeeper", func() {
 	var ctrl *gomock.Controller
 
 	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		appDB, _ = testutil.GetDB(cfg)
@@ -32,15 +33,8 @@ var _ = Describe("SystemKeeper", func() {
 		sysKeeper = NewSystemKeeper(dbTx)
 	})
 
-	BeforeEach(func() {
-		ctrl = gomock.NewController(GinkgoT())
-	})
-
 	AfterEach(func() {
 		ctrl.Finish()
-	})
-
-	AfterEach(func() {
 		Expect(appDB.Close()).To(BeNil())
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())

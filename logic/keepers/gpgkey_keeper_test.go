@@ -1,6 +1,8 @@
 package keepers
 
 import (
+	"os"
+
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/storage/tree"
@@ -25,6 +27,12 @@ var _ = Describe("Account", func() {
 		dbTx := appDB.NewTx(true, true)
 		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
 		gpgKeeper = NewGPGPubKeyKeeper(state, dbTx)
+	})
+
+	AfterEach(func() {
+		Expect(appDB.Close()).To(BeNil())
+		err = os.RemoveAll(cfg.DataDir())
+		Expect(err).To(BeNil())
 	})
 
 	Describe(".Update", func() {

@@ -183,7 +183,6 @@ func (m *ChainModule) getValidators(height interface{}) interface{} {
 
 		pubKey, _ := crypto.PubKeyFromBytes(hexBz)
 		vList = append(vList, map[string]interface{}{
-			"power":     valInfo.Power,
 			"ticketID":  valInfo.TicketID,
 			"publicKey": pubKey.Base58(),
 			"address":   pubKey.Addr(),

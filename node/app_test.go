@@ -232,7 +232,7 @@ var _ = Describe("App", func() {
 				pubKeyBz, _ := existingValKey.PubKey().Bytes()
 				pubKeyHex := types.HexBytes(pubKeyBz)
 				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[string]*types.Validator{
-					pubKeyHex.String(): &types.Validator{Power: 1},
+					pubKeyHex.String(): &types.Validator{TicketID: "ticket1"},
 				}, nil)
 
 				app.logic = mockLogic.AtomicLogic

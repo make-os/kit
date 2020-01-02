@@ -27,7 +27,6 @@ type BlockInfo struct {
 // Validator represents a validator
 type Validator struct {
 	PubKey   HexBytes `json:"publicKey,omitempty" mapstructure:"publicKey"`
-	Power    int64    `json:"power" mapstructure:"power"`
 	TicketID string   `json:"ticketID" mapstructure:"ticketID"`
 }
 

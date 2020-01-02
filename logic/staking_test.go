@@ -146,7 +146,7 @@ var _ = Describe("Staking", func() {
 
 				txLogic.logic = mockLogic.Logic
 
-				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), int64(0)).Return(acct)
+				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), uint64(0)).Return(acct)
 				mockLogic.TicketManager.EXPECT().GetByHash(gomock.Any()).Return(nil)
 
 				senderPubKey = sender.PubKey().Base58()
@@ -173,7 +173,7 @@ var _ = Describe("Staking", func() {
 				acct.Balance = util.String("1000")
 				acct.Stakes.Add(types.StakeTypeStorer, "100", 0)
 
-				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), int64(1)).Return(acct)
+				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), uint64(1)).Return(acct)
 
 				returnTicket := &types.Ticket{Hash: "ticket_id", Value: "100"}
 				mockLogic.TicketManager.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)

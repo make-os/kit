@@ -372,7 +372,6 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 		})
 		newValidators = append(newValidators, &types.Validator{
 			PubKey:   pkBz,
-			Power:    1,
 			TicketID: ticket.Hash,
 		})
 		pkHex := types.HexBytes(pkBz)
