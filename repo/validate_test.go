@@ -583,6 +583,29 @@ var _ = Describe("Validation", func() {
 				}
 			}
 		})
+
+		When("references have varying account nonce", func() {
+			note := &types.PushNote{
+				RepoName:    "repo",
+				PusherKeyID: strings.Repeat("x", 42),
+				Timestamp:   time.Now().Unix(),
+				NodePubKey:  key.PubKey().Base58(),
+				References: []*types.PushedReference{
+					{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1, Fee: "1"},
+					{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 2, Fee: "1"},
+				},
+			}
+
+			BeforeEach(func() {
+				note.NodeSig, _ = key.PrivKey().Sign(note.Bytes())
+				err = CheckPushNoteSyntax(note)
+			})
+
+			It("should return ", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("index:1, field:references.accountNonce, error:varying account nonce in a push note not allowed"))
+			})
+		})
 	})
 
 	Describe(".checkPushedReference", func() {
@@ -601,7 +624,7 @@ var _ = Describe("Validation", func() {
 					{Name: "refs/heads/master", OldHash: oldHash},
 				}
 				repository := &types.Repository{
-					References: types.References(map[string]*types.Reference{}),
+					References: types.References(map[string]interface{}{}),
 				}
 				gpgKey := &types.GPGPubKey{}
 				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
@@ -619,7 +642,7 @@ var _ = Describe("Validation", func() {
 					{Name: "refs/heads/master", OldHash: strings.Repeat("0", 40)},
 				}
 				repository := &types.Repository{
-					References: types.References(map[string]*types.Reference{}),
+					References: types.References(map[string]interface{}{}),
 				}
 				gpgKey := &types.GPGPubKey{}
 				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
@@ -638,7 +661,7 @@ var _ = Describe("Validation", func() {
 					{Name: refName, OldHash: oldHash},
 				}
 				repository := &types.Repository{
-					References: types.References(map[string]*types.Reference{
+					References: types.References(map[string]interface{}{
 						refName: &types.Reference{Nonce: 0},
 					}),
 				}
@@ -662,7 +685,7 @@ var _ = Describe("Validation", func() {
 					{Name: refName, OldHash: oldHash},
 				}
 				repository := &types.Repository{
-					References: types.References(map[string]*types.Reference{
+					References: types.References(map[string]interface{}{
 						refName: &types.Reference{Nonce: 0},
 					}),
 				}
@@ -686,7 +709,7 @@ var _ = Describe("Validation", func() {
 					{Name: refName, OldHash: oldHash},
 				}
 				repository := &types.Repository{
-					References: types.References(map[string]*types.Reference{
+					References: types.References(map[string]interface{}{
 						refName: &types.Reference{Nonce: 0},
 					}),
 				}
@@ -708,7 +731,7 @@ var _ = Describe("Validation", func() {
 					{Name: refName, OldHash: oldHash},
 				}
 				repository := &types.Repository{
-					References: types.References(map[string]*types.Reference{
+					References: types.References(map[string]interface{}{
 						refName: &types.Reference{Nonce: 0},
 					}),
 				}
@@ -737,7 +760,7 @@ var _ = Describe("Validation", func() {
 					},
 				}
 				repository := &types.Repository{
-					References: types.References(map[string]*types.Reference{
+					References: types.References(map[string]interface{}{
 						refName: &types.Reference{Nonce: 0},
 					}),
 				}
@@ -771,7 +794,7 @@ var _ = Describe("Validation", func() {
 				}
 
 				repository := &types.Repository{
-					References: types.References(map[string]*types.Reference{
+					References: types.References(map[string]interface{}{
 						refName: &types.Reference{Nonce: 0},
 					}),
 				}
@@ -806,7 +829,7 @@ var _ = Describe("Validation", func() {
 				}
 
 				repository := &types.Repository{
-					References: types.References(map[string]*types.Reference{
+					References: types.References(map[string]interface{}{
 						refName: &types.Reference{Nonce: 0},
 					}),
 				}
@@ -847,7 +870,7 @@ var _ = Describe("Validation", func() {
 				}
 
 				repository := &types.Repository{
-					References: types.References(map[string]*types.Reference{
+					References: types.References(map[string]interface{}{
 						refName: &types.Reference{Nonce: 0},
 					}),
 				}

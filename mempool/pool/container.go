@@ -311,7 +311,7 @@ func (q *TxContainer) Sort() {
 	defer q.gmx.Unlock()
 	sort.Slice(q.container, func(i, j int) bool {
 
-		// When transaction i & j belongs to same sender
+		// When transaction i & j belong to same sender
 		// Sort by nonce in ascending order when the nonces are not the same.
 		// When they are the same, we sort by the highest fee rate
 		if q.container[i].Tx.GetFrom() == q.container[j].Tx.GetFrom() {

@@ -275,6 +275,7 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 	}
 
 	fe := types.FieldErrorWithIndex
+	refsAcctNonce := uint64(0)
 	for i, ref := range tx.References {
 		if ref.Name == "" {
 			return fe(i, "references.name", "name is required")
@@ -297,6 +298,9 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 		if ref.AccountNonce == 0 {
 			return fe(i, "references.accountNonce", "account nonce must be greater than zero")
 		}
+		if refsAcctNonce != 0 && ref.AccountNonce != refsAcctNonce {
+			return fe(i, "references.accountNonce", "varying account nonce in a push note not allowed")
+		}
 		if ref.Fee == "" || !gv.IsFloat(ref.Fee.String()) {
 			return fe(i, "references.fee", "fee must be numeric")
 		}
@@ -305,6 +309,7 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 				return fe(i, fmt.Sprintf("references.objects.%d", j), "object hash is not valid")
 			}
 		}
+		refsAcctNonce = ref.AccountNonce
 	}
 
 	if tx.PusherKeyID == "" {
