@@ -8,6 +8,7 @@ import (
 	"github.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 var _ = Describe("Key", func() {
@@ -405,6 +406,29 @@ var _ = Describe("Key", func() {
 				"kPG58VcJNmpDK82BwuX8LAoqZuBCdaoXbxHPM99k8HFvqueW")
 			Expect(err).To(BeNil())
 			Expect(pk).ToNot(BeNil())
+		})
+	})
+
+	Describe(".PrivKeyFromTMPrivateKey", func() {
+		It("should encode tendermint's private key to PrivKey", func() {
+			sk := ed25519.GenPrivKey()
+			nativeSk, err := PrivKeyFromTMPrivateKey(sk)
+			Expect(err).To(BeNil())
+			Expect(nativeSk).ToNot(BeNil())
+		})
+	})
+
+	Describe(".TMPubKeyFromBase58PubKey", func() {
+		It("should decode base58 public key to tendermint's ed25519.PubKey", func() {
+			sk := ed25519.GenPrivKey()
+			nativeSk, err := PrivKeyFromTMPrivateKey(sk)
+			Expect(err).To(BeNil())
+
+			pubBase58 := NewKeyFromPrivKey(nativeSk).PubKey().Base58()
+			tmPubKey, err := TMPubKeyFromBase58PubKey(pubBase58)
+			Expect(err).To(BeNil())
+
+			Expect(tmPubKey).To(Equal(sk.PubKey()))
 		})
 	})
 })

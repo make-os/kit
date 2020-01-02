@@ -554,8 +554,8 @@ var _ = Describe("App", func() {
 				res = app.DeliverTx(req)
 			})
 
-			It("should return code=ErrCodeTxTypeUnexpected and err='failed to execute tx: epoch secret not expected'", func() {
-				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxTypeUnexpected)))
+			It("should return code=ErrCodeEpochSecretNotExpected and err='failed to execute tx: epoch secret not expected'", func() {
+				Expect(res.Code).To(Equal(uint32(types.ErrCodeEpochSecretNotExpected)))
 				Expect(res.Log).To(Equal("failed to execute tx: epoch secret not expected"))
 			})
 		})
@@ -585,13 +585,13 @@ var _ = Describe("App", func() {
 				res = app.DeliverTx(req)
 			})
 
-			It("should return code=ErrCodeMaxValTxTypeReached and err='failed to execute tx: epoch secret capacity reached'", func() {
-				Expect(res.Code).To(Equal(uint32(types.ErrCodeMaxTxTypeReached)))
+			It("should return code=ErrCodeEpochSecretExcess and err='failed to execute tx: epoch secret capacity reached'", func() {
+				Expect(res.Code).To(Equal(uint32(types.ErrCodeEpochSecretExcess)))
 				Expect(res.Log).To(Equal("failed to execute tx: epoch secret capacity reached"))
 			})
 		})
 
-		When("tx type TxTypeEpochSecret is successfully executed", func() {
+		When("tx type TxTypeEpochSecret was not signed by the block proposer", func() {
 			var res abcitypes.ResponseDeliverTx
 			var tx types.BaseTx
 
@@ -606,10 +606,40 @@ var _ = Describe("App", func() {
 				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).SecretRound = 18
+				tx.SetSenderPubKey(sender.PubKey().Base58())
+
+				params.NumBlocksPerEpoch = 5
+				app.wBlock.Height = 5
+				app.wBlock.ProposerAddress = "some_address"
+				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
+				res = app.DeliverTx(req)
 			})
 
+			It("should return code=ErrCodeEpochSecretUnexpectedSigner and err='failed to execute tx: epoch secret was not signed by block proposer'", func() {
+				Expect(res.Code).To(Equal(uint32(types.ErrCodeEpochSecretUnexpectedSigner)))
+				Expect(res.Log).To(Equal("failed to execute tx: epoch secret was not signed by block proposer"))
+			})
+		})
+
+		When("tx type TxTypeEpochSecret is successfully executed", func() {
+			var res abcitypes.ResponseDeliverTx
+			var tx types.BaseTx
+
 			BeforeEach(func() {
+				tx = types.NewBareTxEpochSecret()
+				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
+				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
+				tx.(*types.TxEpochSecret).SecretRound = 18
+				tx.SetSenderPubKey(sender.PubKey().Base58())
+
+				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
+					return nil
+				}
+
+				tmPubKey, _ := crypto.TMPubKeyFromBase58PubKey(sender.PubKey().Base58())
+
 				params.NumBlocksPerEpoch = 5
+				app.wBlock.ProposerAddress = tmPubKey.Address().String()
 				app.wBlock.Height = 5
 
 				mockLogic.Tx.EXPECT().PrepareExec(gomock.Any(), gomock.Any()).Return(abcitypes.ResponseDeliverTx{
@@ -627,7 +657,7 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("tx type TxTypeEpochSecret but it is stale", func() {
+		When("tx type is TxTypeEpochSecret but it is stale", func() {
 			var res abcitypes.ResponseDeliverTx
 			var tx types.BaseTx
 
@@ -642,11 +672,15 @@ var _ = Describe("App", func() {
 				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).SecretRound = 18
+				tx.SetSenderPubKey(sender.PubKey().Base58())
 			})
 
 			BeforeEach(func() {
+				tmPubKey, _ := crypto.TMPubKeyFromBase58PubKey(sender.PubKey().Base58())
+
 				params.NumBlocksPerEpoch = 5
 				app.wBlock.Height = 5
+				app.wBlock.ProposerAddress = tmPubKey.Address().String()
 
 				mockLogic.Tx.EXPECT().PrepareExec(gomock.Any(), gomock.Any()).Return(abcitypes.ResponseDeliverTx{
 					Code: types.ErrCodeTxInvalidValue,
@@ -684,11 +718,15 @@ var _ = Describe("App", func() {
 				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
 				tx.(*types.TxEpochSecret).SecretRound = 18
+				tx.SetSenderPubKey(sender.PubKey().Base58())
 			})
 
 			BeforeEach(func() {
+				tmPubKey, _ := crypto.TMPubKeyFromBase58PubKey(sender.PubKey().Base58())
+
 				params.NumBlocksPerEpoch = 5
 				app.wBlock.Height = 5
+				app.wBlock.ProposerAddress = tmPubKey.Address().String()
 
 				mockLogic.Tx.EXPECT().PrepareExec(gomock.Any(), gomock.Any()).Return(abcitypes.ResponseDeliverTx{
 					Code: types.ErrCodeTxInvalidValue,

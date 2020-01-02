@@ -210,12 +210,13 @@ func (a *App) preExecChecks(tx types.BaseTx) *abcitypes.ResponseDeliverTx {
 	}
 
 	if txType == types.TxTypeEpochSecret {
+
 		// Invalidate the epoch secret tx if the current block is not the
 		// last block in the current epoch.
 		// TODO: Slash the proposer for violating this rule.
 		if (a.wBlock.Height)%int64(params.NumBlocksPerEpoch) != 0 {
 			return &abcitypes.ResponseDeliverTx{
-				Code: types.ErrCodeTxTypeUnexpected,
+				Code: types.ErrCodeEpochSecretNotExpected,
 				Log:  "failed to execute tx: epoch secret not expected",
 			}
 		}
@@ -224,8 +225,21 @@ func (a *App) preExecChecks(tx types.BaseTx) *abcitypes.ResponseDeliverTx {
 		// TODO: Slash proposer for violating this rule.
 		if a.epochSecretTx != nil {
 			return &abcitypes.ResponseDeliverTx{
-				Code: types.ErrCodeMaxTxTypeReached,
+				Code: types.ErrCodeEpochSecretExcess,
 				Log:  "failed to execute tx: epoch secret capacity reached",
+			}
+		}
+
+		// Invalidate the epoch secret tx if it was not signed by the proposer
+		// of the block in which it is contained.
+		// TODO: Slash proposer for violating this rule.
+		senderPubKey, err := crypto.TMPubKeyFromBase58PubKey(tx.GetSenderPubKey())
+		if err != nil {
+			panic(err) // this should never happen
+		} else if senderPubKey.Address().String() != a.wBlock.ProposerAddress {
+			return &abcitypes.ResponseDeliverTx{
+				Code: types.ErrCodeEpochSecretUnexpectedSigner,
+				Log:  "failed to execute tx: epoch secret was not signed by block proposer",
 			}
 		}
 	}
@@ -258,7 +272,7 @@ func (a *App) postExecChecks(
 		}
 
 		// Here, the proposer proposed an epoch secret tx whose round was
-		// produced at a time earlier that the expected time a new drand
+		// produced at a time earlier that the expected time a new drand secret
 		// will be produced. We respond by invalidating the tx object so
 		// that the COMMIT phase can flag it. Also, TODO: Slash the proposer for doing this.
 		if resp.Code != 0 && types.IsEarlySecretRoundErr(fmt.Errorf(resp.Log)) {
@@ -273,24 +287,20 @@ func (a *App) postExecChecks(
 	// Cache tasks derived from transactions;
 	// They will be processed in the COMMIT stage.
 	txType := tx.GetType()
-	if resp.Code == 0 {
-		switch txType {
-		case types.TxTypeValidatorTicket:
-			a.validatorTickets = append(a.validatorTickets, &ticketInfo{Tx: tx, index: a.txIndex})
-		case types.TxTypeStorerTicket:
-			a.storerTickets = append(a.storerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
-		case types.TxTypeUnbondStorerTicket:
-			a.unbondStorerRequests = append(a.unbondStorerRequests, string(tx.(*types.TxTicketUnbond).TicketHash))
-		case types.TxTypeRepoCreate:
-			a.newRepos = append(a.newRepos, tx.(*types.TxRepoCreate).Name)
-		}
+	switch txType {
+	case types.TxTypeValidatorTicket:
+		a.validatorTickets = append(a.validatorTickets, &ticketInfo{Tx: tx, index: a.txIndex})
+	case types.TxTypeStorerTicket:
+		a.storerTickets = append(a.storerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
+	case types.TxTypeUnbondStorerTicket:
+		a.unbondStorerRequests = append(a.unbondStorerRequests, string(tx.(*types.TxTicketUnbond).TicketHash))
+	case types.TxTypeRepoCreate:
+		a.newRepos = append(a.newRepos, tx.(*types.TxRepoCreate).Name)
 	}
 
 	// Add the successfully processed tx to the un-indexed tx cache.
 	// They will be committed in the COMMIT phase
-	if resp.Code == 0 {
-		a.unIndexedTxs = append(a.unIndexedTxs, tx)
-	}
+	a.unIndexedTxs = append(a.unIndexedTxs, tx)
 
 	return &resp
 }

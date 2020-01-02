@@ -9,6 +9,7 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/crypto"
 	pb "github.com/libp2p/go-libp2p-core/crypto/pb"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/ellcrys/go-ethereum/crypto/sha3"
@@ -371,4 +372,25 @@ func PrivKeyFromBytes(bz [64]byte) (*PrivKey, error) {
 	return &PrivKey{
 		privKey: privKey,
 	}, nil
+}
+
+// PrivKeyFromTMPrivateKey encodes a tendermint private key to PrivKey
+func PrivKeyFromTMPrivateKey(tmSk ed25519.PrivKeyEd25519) (*PrivKey, error) {
+	return PrivKeyFromBytes(tmSk)
+}
+
+// TMPubKeyFromBase58PubKey encodes a base58 encoded 2d25519 public key to
+// tendermint's ed25519.PubKeyEd25519
+func TMPubKeyFromBase58PubKey(b58PubKey string) (ed25519.PubKeyEd25519, error) {
+
+	var pubKeySized = [ed25519.PubKeyEd25519Size]byte{}
+
+	pubKey, err := PubKeyFromBase58(b58PubKey)
+	if err != nil {
+		return pubKeySized, err
+	}
+	rawPubKey, _ := pubKey.Bytes()
+	copy(pubKeySized[:], rawPubKey)
+
+	return pubKeySized, nil
 }
