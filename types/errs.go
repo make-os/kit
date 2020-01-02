@@ -90,7 +90,7 @@ const (
 	ErrCodeTxInvalidValue              = 5
 	ErrCodeEpochSecretUnexpectedSigner = 6
 	ErrCodeEpochSecretNotExpected      = 7
-	ErrCodeEpochSecretExcess           = 7
+	ErrCodeEpochSecretExcess           = 8
 )
 
 // Network errors
