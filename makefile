@@ -34,3 +34,14 @@ release-linux:
 	 git checkout ${b} && \
 	 dep ensure -v && \
 	 env GOVERSION=$(GOVERSION) goreleaser release --snapshot --rm-dist -f ".goreleaser.linux.yml"
+
+genmocks:
+	cd types && \
+	mockgen -source=logic.go -destination=mocks/logic.go -package mocks && \
+	mockgen -source=dht.go -destination=mocks/dht.go -package mocks && \
+	mockgen -source=repo.go -destination=mocks/repo.go -package mocks && \
+	mockgen -source=tm.go -destination=mocks/tm.go -package mocks && \
+	mockgen -source=jsonrpc.go -destination=mocks/jsonrpc.go -package mocks && \
+	mockgen -source=mempool.go -destination=mocks/mempool.go -package mocks && \
+	mockgen -source=ticket.go -destination=mocks/ticket.go -package mocks && \
+	mockgen -source=tree.go -destination=mocks/tree.go -package mocks

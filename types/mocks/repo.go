@@ -1070,6 +1070,46 @@ func (mr *MockPushPoolMockRecorder) RepoHasPushNote(repo interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepoHasPushNote", reflect.TypeOf((*MockPushPool)(nil).RepoHasPushNote), repo)
 }
 
+// Get mocks base method
+func (m *MockPushPool) Get(noteID string) *types.PushNote {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", noteID)
+	ret0, _ := ret[0].(*types.PushNote)
+	return ret0
+}
+
+// Get indicates an expected call of Get
+func (mr *MockPushPoolMockRecorder) Get(noteID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPushPool)(nil).Get), noteID)
+}
+
+// Len mocks base method
+func (m *MockPushPool) Len() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Len")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// Len indicates an expected call of Len
+func (mr *MockPushPoolMockRecorder) Len() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockPushPool)(nil).Len))
+}
+
+// Remove mocks base method
+func (m *MockPushPool) Remove(pushNote *types.PushNote) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Remove", pushNote)
+}
+
+// Remove indicates an expected call of Remove
+func (mr *MockPushPoolMockRecorder) Remove(pushNote interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockPushPool)(nil).Remove), pushNote)
+}
+
 // MockRepoPushNote is a mock of RepoPushNote interface
 type MockRepoPushNote struct {
 	ctrl     *gomock.Controller
