@@ -747,37 +747,6 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("new hash of reference is not included in the object's list", func() {
-			BeforeEach(func() {
-				refName := "refs/heads/master"
-				refs := []*types.PushedReference{
-					{
-						Name:    refName,
-						OldHash: oldHash,
-						NewHash: util.RandString(40),
-						Objects: []string{},
-					},
-				}
-				repository := &types.Repository{
-					References: types.References(map[string]interface{}{
-						refName: &types.Reference{Nonce: 0},
-					}),
-				}
-
-				mockRepo.EXPECT().
-					Reference(plumbing.ReferenceName(refName), false).
-					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
-				gpgKey := &types.GPGPubKey{}
-
-				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' new hash not included in the list of objects"))
-			})
-		})
-
 		When("pushed reference nonce is unexpected", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	gv "github.com/asaskevich/govalidator"
-	"github.com/thoas/go-funk"
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/params"
@@ -384,13 +383,7 @@ func checkPushedReference(
 			}
 		}
 
-		// 3. New hash must be included in the list of objects for this reference
-		if !funk.ContainsString(ref.Objects, ref.NewHash) {
-			msg := fmts("reference '%s' new hash not included in the list of objects", rName)
-			return types.FieldErrorWithIndex(i, "references", msg)
-		}
-
-		// 4. We need to check that the nonce is the expected next nonce of the
+		// 3. We need to check that the nonce is the expected next nonce of the
 		// reference, otherwise we return an error.
 		refInfo := repo.References.Get(rName)
 		nextNonce := refInfo.Nonce + 1
@@ -399,7 +392,7 @@ func checkPushedReference(
 			return types.FieldErrorWithIndex(i, "references", msg)
 		}
 
-		// 5. We need to ensure that the pusher's account nonce is the expected
+		// 4. We need to ensure that the pusher's account nonce is the expected
 		// next nonce, otherwise we return an error.
 		pusherAccount := keepers.AccountKeeper().GetAccount(gpgKey.Address)
 		nextNonce = pusherAccount.Nonce + 1
