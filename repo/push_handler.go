@@ -166,10 +166,10 @@ func (h *PushHandler) createPushNote(
 	var pushNote = &types.PushNote{
 		TargetRepo:  h.repo,
 		RepoName:    h.repo.GetName(),
-		PusherKeyID: pkID,
+		PusherKeyID: util.MustFromHex(pkID),
 		Timestamp:   time.Now().Unix(),
 		References:  types.PushedReferences([]*types.PushedReference{}),
-		NodePubKey:  h.rMgr.GetPrivateValidatorKey().PubKey().Base58(),
+		NodePubKey:  h.rMgr.GetPrivateValidatorKey().PubKey().MustBytes32(),
 	}
 
 	// Get the total size of the pushed objects

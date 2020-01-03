@@ -287,7 +287,11 @@ type RepoPushNote interface {
 	GetPushedReferences() PushedReferences
 
 	// GetPusherKeyID returns the pusher gpg key ID
-	GetPusherKeyID() string
+	GetPusherKeyID() []byte
+
+	// GetPusherKeyIDString is like GetPusherKeyID but returns hex string, prefixed
+	// with 0x
+	GetPusherKeyIDString() string
 
 	// GetTargetRepo returns the target repository
 	GetTargetRepo() BareRepo
@@ -438,11 +442,11 @@ type PushNote struct {
 	TargetRepo  BareRepo         `json:"-" msgpack:"-" mapstructure:"-"`
 	RepoName    string           `json:"repoName" msgpack:"repoName"`       // The name of the repo
 	References  PushedReferences `json:"references" msgpack:"references"`   // A list of references pushed
-	PusherKeyID string           `json:"pusherKeyId" msgpack:"pusherKeyId"` // The PGP key of the pusher
+	PusherKeyID []byte           `json:"pusherKeyId" msgpack:"pusherKeyId"` // The PGP key of the pusher
 	Size        uint64           `json:"size" msgpack:"size"`               // Total size of all objects pushed
 	Timestamp   int64            `json:"timestamp" msgpack:"timestamp"`     // Unix timestamp
 	NodeSig     []byte           `json:"nodeSig" msgpack:"nodeSig"`         // The signature of the node that created the PushNote
-	NodePubKey  string           `json:"nodePubKey" msgpack:"nodePubKey"`   // The public key of the push note signer
+	NodePubKey  util.Bytes32     `json:"nodePubKey" msgpack:"nodePubKey"`   // The public key of the push note signer
 }
 
 // GetTargetRepo returns the target repository
@@ -451,8 +455,14 @@ func (pt *PushNote) GetTargetRepo() BareRepo {
 }
 
 // GetPusherKeyID returns the pusher gpg key ID
-func (pt *PushNote) GetPusherKeyID() string {
+func (pt *PushNote) GetPusherKeyID() []byte {
 	return pt.PusherKeyID
+}
+
+// GetPusherKeyIDString is like GetPusherKeyID but returns hex string, prefixed
+// with 0x
+func (pt *PushNote) GetPusherKeyIDString() string {
+	return util.ToHex(pt.PusherKeyID)
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -470,6 +480,15 @@ func (pt *PushNote) DecodeMsgpack(dec *msgpack.Decoder) error {
 // Bytes returns a serialized version of the object
 func (pt *PushNote) Bytes() []byte {
 	return util.ObjectToBytes(pt)
+}
+
+// BytesNoSig returns a serialized version of the object without the signature
+func (pt *PushNote) BytesNoSig() []byte {
+	sig := pt.NodeSig
+	pt.NodeSig = nil
+	bz := pt.Bytes()
+	pt.NodeSig = sig
+	return bz
 }
 
 // GetPushedObjects returns all objects from all pushed references

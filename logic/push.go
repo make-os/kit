@@ -18,7 +18,7 @@ func (t *Transaction) execPush(
 	repoName string,
 	references types.PushedReferences,
 	fee util.String,
-	pusherKeyID string,
+	pusherKeyID []byte,
 	chainHeight uint64) error {
 
 	// Get repository
@@ -26,7 +26,7 @@ func (t *Transaction) execPush(
 	repo := repoKeeper.GetRepo(repoName, chainHeight)
 
 	// Get the GPG public key of the pusher
-	gpgPK := t.logic.GPGPubKeyKeeper().GetGPGPubKey(pusherKeyID, chainHeight)
+	gpgPK := t.logic.GPGPubKeyKeeper().GetGPGPubKey(util.ToHex(pusherKeyID), chainHeight)
 
 	// Add the references to the repo and update their nonce
 	for _, ref := range references {

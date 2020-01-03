@@ -8,6 +8,7 @@ import (
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/types/mocks"
+	"github.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -29,6 +30,8 @@ var _ = Describe("PushPool", func() {
 	var ctrl *gomock.Controller
 	var mockKeeper *mocks.MockKeepers
 	var mockDHT *mocks.MockDHT
+	var pkID = util.ToHex([]byte("pk_id"))
+	var pkID2 = util.ToHex([]byte("pk_id_2"))
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -43,13 +46,13 @@ var _ = Describe("PushPool", func() {
 
 	BeforeEach(func() {
 		tx = &types.PushNote{
-			RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+			RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 			References: []*types.PushedReference{
 				{Name: "refs/heads/master", Nonce: 1, Fee: "0.2", AccountNonce: 2},
 			},
 		}
 		tx2 = &types.PushNote{
-			RepoName: "repo2", NodeSig: []byte("sig_2"), PusherKeyID: "pk_id_2",
+			RepoName: "repo2", NodeSig: []byte("sig_2"), PusherKeyID: util.MustFromHex(pkID2),
 			References: []*types.PushedReference{
 				{Name: "refs/heads/master", Nonce: 1, Fee: "0.2", AccountNonce: 2},
 			},
@@ -142,7 +145,7 @@ var _ = Describe("PushPool", func() {
 				Expect(err).To(BeNil())
 
 				tx2 := &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.2", AccountNonce: 2},
@@ -168,7 +171,7 @@ var _ = Describe("PushPool", func() {
 				Expect(err).To(BeNil())
 
 				tx2 = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 2, Fee: "0.01", AccountNonce: 2},
@@ -193,7 +196,7 @@ var _ = Describe("PushPool", func() {
 				Expect(err).To(BeNil())
 
 				tx2 = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
@@ -217,7 +220,7 @@ var _ = Describe("PushPool", func() {
 				Expect(err).To(BeNil())
 
 				tx2 := &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
@@ -243,7 +246,7 @@ var _ = Describe("PushPool", func() {
 				Expect(err).To(BeNil())
 
 				tx2 = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.5", AccountNonce: 2}},
@@ -270,7 +273,7 @@ var _ = Describe("PushPool", func() {
 			var txX, txY, txZ *types.PushNote
 			BeforeEach(func() {
 				txY = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
@@ -278,7 +281,7 @@ var _ = Describe("PushPool", func() {
 				}
 
 				txZ = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/update", Nonce: 1, Fee: "0.01", AccountNonce: 2},
@@ -286,7 +289,7 @@ var _ = Describe("PushPool", func() {
 				}
 
 				txX = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.02", AccountNonce: 2},
@@ -321,7 +324,7 @@ var _ = Describe("PushPool", func() {
 			var txX, txY, txZ *types.PushNote
 			BeforeEach(func() {
 				txY = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.4", AccountNonce: 2},
@@ -329,7 +332,7 @@ var _ = Describe("PushPool", func() {
 				}
 
 				txZ = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/update", Nonce: 1, Fee: "0.4", AccountNonce: 2},
@@ -337,7 +340,7 @@ var _ = Describe("PushPool", func() {
 				}
 
 				txX = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.4", AccountNonce: 2},
@@ -363,7 +366,7 @@ var _ = Describe("PushPool", func() {
 			var txX *types.PushNote
 			BeforeEach(func() {
 				txX = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
@@ -384,7 +387,7 @@ var _ = Describe("PushPool", func() {
 			var txX *types.PushNote
 			BeforeEach(func() {
 				txX = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: "pk_id",
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
 					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
@@ -569,6 +572,8 @@ var _ = Describe("refNonceIndex", func() {
 })
 
 var _ = Describe("repoNotesIndex", func() {
+	var pkID = util.ToHex([]byte("pk_id"))
+
 	Describe(".add", func() {
 		var idx repoNotesIndex
 		BeforeEach(func() {
@@ -619,7 +624,7 @@ var _ = Describe("repoNotesIndex", func() {
 		When("repo has 1 txA and txA is removed", func() {
 			var txA *types.PushNote
 			BeforeEach(func() {
-				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 100000000}
+				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID), Timestamp: 100000000}
 				idx = repoNotesIndex(map[string][]*containerItem{})
 				idx.add("repo1", &containerItem{Note: txA})
 				Expect(idx["repo1"]).To(HaveLen(1))
@@ -634,8 +639,8 @@ var _ = Describe("repoNotesIndex", func() {
 		When("repo has 2 txs (txA and TxB) and txA is removed", func() {
 			var txA, txB *types.PushNote
 			BeforeEach(func() {
-				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 100000000}
-				txB = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: "pk_id", Timestamp: 200000000}
+				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID), Timestamp: 100000000}
+				txB = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID), Timestamp: 200000000}
 				idx = repoNotesIndex(map[string][]*containerItem{})
 				idx.add("repo1", &containerItem{Note: txA})
 				idx.add("repo1", &containerItem{Note: txB})

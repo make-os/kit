@@ -312,10 +312,10 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 		refsAcctNonce = ref.AccountNonce
 	}
 
-	if tx.PusherKeyID == "" {
+	if len(tx.PusherKeyID) == 0 {
 		return types.FieldError("pusherKeyId", "pusher gpg key id is required")
 	}
-	if len(tx.PusherKeyID) != 42 {
+	if len(tx.PusherKeyID) != 20 {
 		return types.FieldError("pusherKeyId", "pusher gpg key is not valid")
 	}
 
@@ -326,11 +326,11 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 		return types.FieldError("timestamp", "timestamp is too old")
 	}
 
-	if tx.NodePubKey == "" {
+	if tx.NodePubKey.IsEmpty() {
 		return types.FieldError("nodePubKey", "push node public key is required")
 	}
 
-	pk, err := crypto.PubKeyFromBase58(tx.NodePubKey)
+	pk, err := crypto.PubKeyFromBytes(tx.NodePubKey.Bytes())
 	if err != nil {
 		return types.FieldError("nodePubKey", "push node public key is not valid")
 	}
@@ -339,12 +339,7 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 		return types.FieldError("nodeSig", "push node signature is required")
 	}
 
-	nodeSig := tx.NodeSig
-	tx.NodeSig = nil
-	defer func() {
-		tx.NodeSig = nodeSig
-	}()
-	if ok, err := pk.Verify(tx.Bytes(), nodeSig); err != nil || !ok {
+	if ok, err := pk.Verify(tx.BytesNoSig(), tx.NodeSig); err != nil || !ok {
 		return types.FieldError("nodeSig", "failed to verify signature with public key")
 	}
 
@@ -431,7 +426,7 @@ func CheckPushNoteConsistency(tx *types.PushNote, keepers types.Keepers) error {
 	}
 
 	// 2. Get gpg key of the pusher
-	gpgKey := keepers.GPGPubKeyKeeper().GetGPGPubKey(tx.PusherKeyID)
+	gpgKey := keepers.GPGPubKeyKeeper().GetGPGPubKey(util.ToHex(tx.PusherKeyID))
 	if gpgKey.IsNil() {
 		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", tx.PusherKeyID)
 		return types.FieldError("pusherKeyId", msg)

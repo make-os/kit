@@ -1260,10 +1260,10 @@ func (mr *MockRepoPushNoteMockRecorder) GetPushedReferences() *gomock.Call {
 }
 
 // GetPusherKeyID mocks base method
-func (m *MockRepoPushNote) GetPusherKeyID() string {
+func (m *MockRepoPushNote) GetPusherKeyID() []byte {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPusherKeyID")
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].([]byte)
 	return ret0
 }
 
@@ -1271,6 +1271,20 @@ func (m *MockRepoPushNote) GetPusherKeyID() string {
 func (mr *MockRepoPushNoteMockRecorder) GetPusherKeyID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPusherKeyID", reflect.TypeOf((*MockRepoPushNote)(nil).GetPusherKeyID))
+}
+
+// GetPusherKeyIDString mocks base method
+func (m *MockRepoPushNote) GetPusherKeyIDString() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPusherKeyIDString")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetPusherKeyIDString indicates an expected call of GetPusherKeyIDString
+func (mr *MockRepoPushNoteMockRecorder) GetPusherKeyIDString() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPusherKeyIDString", reflect.TypeOf((*MockRepoPushNote)(nil).GetPusherKeyIDString))
 }
 
 // GetTargetRepo mocks base method

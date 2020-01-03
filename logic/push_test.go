@@ -57,7 +57,7 @@ var _ = Describe("Push", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var repo = "repo1"
 		var creator = crypto.NewKeyFromIntSeed(2)
-		var pkID = "pkID"
+		var pkID = util.ToHex([]byte("pkID"))
 
 		When("reference has nonce = 1", func() {
 			BeforeEach(func() {
@@ -82,7 +82,7 @@ var _ = Describe("Push", func() {
 				refs := []*types.PushedReference{
 					&types.PushedReference{Name: "refs/heads/master"},
 				}
-				err = txLogic.execPush(repo, refs, "1", pkID, 0)
+				err = txLogic.execPush(repo, refs, "1", util.MustFromHex(pkID), 0)
 				Expect(err).To(BeNil())
 			})
 

@@ -40,10 +40,11 @@ var _ = Describe("PushNote", func() {
 	})
 
 	BeforeEach(func() {
+		var pkID = []byte("pk_id")
 		pushNote = &types.PushNote{
 			RepoName:    "repo",
 			NodeSig:     []byte("node_signer_sig"),
-			PusherKeyID: "pk_id",
+			PusherKeyID: pkID,
 			References: []*types.PushedReference{
 				{
 					Nonce:        1,
@@ -98,7 +99,7 @@ var _ = Describe("PushNote", func() {
 
 	Describe(".Len", func() {
 		It("should return expected length", func() {
-			Expect(pushNote.Len()).To(Equal(uint64(121)))
+			Expect(pushNote.Len()).To(Equal(uint64(155)))
 		})
 	})
 
