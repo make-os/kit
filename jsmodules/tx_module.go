@@ -214,5 +214,6 @@ func (m *TxModule) get(hash string) interface{} {
 	if err != nil {
 		panic(err)
 	}
-	return tx
+
+	return util.EncodeForJS(tx)
 }
