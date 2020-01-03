@@ -725,9 +725,9 @@ var _ = Describe("TxValidator", func() {
 			tx = types.NewBareTxPush()
 			tx.Timestamp = time.Now().Unix()
 			tx.PushNote.RepoName = "repo1"
-			tx.PushNote.PusherKeyID = util.RandString(42)
+			tx.PushNote.PusherKeyID = util.RandBytes(20)
 			tx.PushNote.Timestamp = time.Now().Unix()
-			tx.PushNote.NodePubKey = key.PubKey().Base58()
+			tx.PushNote.NodePubKey = key.PubKey().MustBytes32()
 			tx.PushNote.NodeSig = key.PrivKey().MustSign(tx.PushNote.Bytes())
 		})
 
@@ -784,6 +784,34 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:endorsements.sig, error:signature is invalid"))
+			})
+
+			It("has multiple PushOKs from same sender", func() {
+				params.PushOKQuorumSize = 1
+
+				pushOK1 := &types.PushOK{
+					PushNoteID:   tx.PushNote.ID(),
+					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+				}
+				sig, _ := key.PrivKey().Sign(pushOK1.Bytes())
+				pushOK1.Sig = util.BytesToBytes64(sig)
+				tx.PushOKs = append(tx.PushOKs, pushOK1)
+
+				pushOK2 := &types.PushOK{
+					PushNoteID:   tx.PushNote.ID(),
+					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+				}
+				sig, _ = key.PrivKey().Sign(pushOK2.Bytes())
+				pushOK2.Sig = util.BytesToBytes64(sig)
+				tx.PushOKs = append(tx.PushOKs, pushOK2)
+
+				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				sig, _ = key.PrivKey().Sign(tx.Bytes())
+				tx.Sig = sig
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, error:multiple " +
+					"endorsement by a single sender not permitted"))
 			})
 		})
 

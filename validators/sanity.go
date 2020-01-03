@@ -298,7 +298,14 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 		return feI(index, "endorsements", "not enough endorsements included")
 	}
 
+	pushOKSenders := map[string]struct{}{}
 	for _, pushOK := range tx.PushOKs {
+
+		if _, ok := pushOKSenders[pushOK.SenderPubKey.HexStr()]; ok {
+			return feI(index, "endorsements.senderPubKey", "multiple endorsement by a "+
+				"single sender not permitted")
+		}
+
 		if !pushOK.PushNoteID.Equal(tx.PushNote.ID()) {
 			return feI(index, "endorsements.pushNoteID", "value does not match push tx note id")
 		}
@@ -315,6 +322,8 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 			}
 			return feI(index, "endorsements.sig", "failed to verify signature")
 		}
+
+		pushOKSenders[pushOK.SenderPubKey.HexStr()] = struct{}{}
 	}
 
 	return nil
