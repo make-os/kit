@@ -13,7 +13,7 @@ import (
 	tmdb "github.com/tendermint/tm-db"
 )
 
-var _ = Describe("Account", func() {
+var _ = Describe("GPGKeeper", func() {
 	var state *tree.SafeTree
 	var appDB storage.Engine
 	var cfg *config.AppConfig

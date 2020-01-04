@@ -87,6 +87,16 @@ func (t *Transaction) Exec(tx types.BaseTx, chainHeight uint64) error {
 			o.PushNote.PusherKeyID,
 			chainHeight)
 
+	case *types.TxNamespaceAcquire:
+		return t.execAcquireNamespace(
+			spk,
+			o.Name,
+			o.Value,
+			o.Fee,
+			o.TransferToRepo,
+			o.TransferToAccount,
+			chainHeight)
+
 	case *types.TxEpochSecret:
 		return nil
 

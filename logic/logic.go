@@ -49,6 +49,9 @@ type Logic struct {
 	// repoKeeper provides functionalities for managing repository data
 	repoKeeper *keepers.RepoKeeper
 
+	// nsKeeper provides functionalities for managing namespace data
+	nsKeeper *keepers.NamespaceKeeper
+
 	// validatorKeeper provides functionalities for managing validator data
 	validatorKeeper *keepers.ValidatorKeeper
 
@@ -107,6 +110,7 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 	l.validatorKeeper = keepers.NewValidatorKeeper(dbTx)
 	l.repoKeeper = keepers.NewRepoKeeper(tree)
 	l.gpgPubKeyKeeper = keepers.NewGPGPubKeyKeeper(tree, dbTx)
+	l.nsKeeper = keepers.NewNamespaceKeeper(tree)
 
 	// Create a drand instance
 	l.drand = rand.NewDRand(cfg.G().Interrupt)
@@ -201,6 +205,11 @@ func (l *Logic) StateTree() types.Tree {
 // SysKeeper returns the system keeper
 func (l *Logic) SysKeeper() types.SystemKeeper {
 	return l.systemKeeper
+}
+
+// NamespaceKeeper returns the namespace keeper
+func (l *Logic) NamespaceKeeper() types.NamespaceKeeper {
+	return l.nsKeeper
 }
 
 // TxKeeper returns the transaction keeper

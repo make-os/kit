@@ -117,6 +117,25 @@ type RepoKeeper interface {
 	Update(name string, upd *Repository)
 }
 
+// NamespaceKeeper describes an interface for accessing namespace data
+type NamespaceKeeper interface {
+	// GetNamespace finds a namespace by name.
+	//
+	// ARGS:
+	// name: The name of the namespace to find.
+	// blockNum: The target block to query (Optional. Default: latest)
+	//
+	// CONTRACT: It returns an empty Namespace if no matching namespace is found.
+	GetNamespace(name string, blockNum ...uint64) *Namespace
+
+	// Update sets a new object at the given name.
+	//
+	// ARGS:
+	// name: The name of the namespace to update
+	// udp: The updated namespace object to replace the existing object.
+	Update(name string, upd *Namespace)
+}
+
 // GPGPubKeyKeeper describes an interface for accessing gpg public key data
 type GPGPubKeyKeeper interface {
 
@@ -224,6 +243,9 @@ type Keepers interface {
 
 	// GetTicketManager returns the ticket manager
 	GetTicketManager() TicketManager
+
+	// NamespaceKeeper returns the namespace keeper
+	NamespaceKeeper() NamespaceKeeper
 }
 
 // LogicCommon describes a common functionalities for

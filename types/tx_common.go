@@ -9,35 +9,18 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
+// All Transaction type
 var (
-	// TxTypeCoinTransfer represents a tx that moves coin between accounts
-	TxTypeCoinTransfer = 0x0
-
-	// TxTypeValidatorTicket represents a transaction purchases validator ticket
-	TxTypeValidatorTicket = 0x01
-
-	// TxTypeEpochSecret represents a transaction containing 64 bytes secret
-	// for selecting the next epoch block validators.
-	TxTypeEpochSecret = 0x02
-
-	// TxTypeSetDelegatorCommission sets the delegator commission
-	TxTypeSetDelegatorCommission = 0x03
-
-	// TxTypeStorerTicket represents a transaction to acquire an storer ticket.
-	TxTypeStorerTicket = 0x04
-
-	// TxTypeUnbondStorerTicket represents a transaction to unbond storer stake
-	TxTypeUnbondStorerTicket = 0x05
-
-	// TxTypeRepoCreate represents a transaction to create a repository
-	TxTypeRepoCreate = 0x06
-
-	// TxTypeAddGPGPubKey represents a transaction to add a GPG public key to an
-	// account
-	TxTypeAddGPGPubKey = 0x07
-
-	// TxTypePush represents a transaction that describes a git push operation
-	TxTypePush = 0x08
+	TxTypeCoinTransfer           = 0x0  // For native coin transfer
+	TxTypeValidatorTicket        = 0x01 // For validator ticket purchase
+	TxTypeEpochSecret            = 0x02 // For providing an epoch secret transaction
+	TxTypeSetDelegatorCommission = 0x03 // For setting delegator commission
+	TxTypeStorerTicket           = 0x04 // For purchasing storer ticket
+	TxTypeUnbondStorerTicket     = 0x05 // For unbonding storer ticket
+	TxTypeRepoCreate             = 0x06 // For creating a repository
+	TxTypeAddGPGPubKey           = 0x07 // For adding a GPG public key
+	TxTypePush                   = 0x08 // For pushing updates to a repository
+	TxTypeNSAcquire              = 0x09 // For namespace purchase
 )
 
 // Transaction meta keys
@@ -243,6 +226,8 @@ func DecodeTx(txBz []byte) (BaseTx, error) {
 		tx = NewBareTxEpochSecret()
 	case TxTypePush:
 		tx = NewBareTxPush()
+	case TxTypeNSAcquire:
+		tx = NewBareTxNamespaceAcquire()
 	default:
 		return nil, fmt.Errorf("unsupported tx type")
 	}

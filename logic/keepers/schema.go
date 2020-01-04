@@ -12,8 +12,10 @@ const (
 	TagGPGPubKey = "g"
 	// TagAddressGPGPkID is the prefix for indexing address -> gpg pkID mapping
 	TagAddressGPGPkID = "ag"
-	// TagRepo is the prefix for account data
+	// TagRepo is the prefix for repository data
 	TagRepo = "r"
+	// TagNS is the prefix for namespace data
+	TagNS = "ns"
 	// TagBlockInfo is the prefix for last block data
 	TagBlockInfo = "b"
 	// TagNetMaturity is the prefix for account data
@@ -26,7 +28,7 @@ const (
 	TagTx = "t"
 )
 
-// MakeAccountKey creates a key for accessing/store an account
+// MakeAccountKey creates a key for accessing an account
 func MakeAccountKey(address string) []byte {
 	return storage.MakePrefix([]byte(TagAccount), []byte(address))
 }
@@ -47,9 +49,14 @@ func MakeQueryPkIDs(address string) []byte {
 	return storage.MakePrefix([]byte(TagAddressGPGPkID), []byte(address))
 }
 
-// MakeRepoKey creates a key for accessing/store a repository object
+// MakeRepoKey creates a key for accessing a repository object
 func MakeRepoKey(name string) []byte {
 	return storage.MakePrefix([]byte(TagRepo), []byte(name))
+}
+
+// MakeNamespaceKey creates a key for accessing a namespace
+func MakeNamespaceKey(name string) []byte {
+	return storage.MakePrefix([]byte(TagNS), []byte(name))
 }
 
 // MakeKeyBlockInfo creates a key for accessing/storing committed block data.

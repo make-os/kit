@@ -144,6 +144,165 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
+	Describe(".CheckTxNSPurchase", func() {
+		var tx *types.TxNamespaceAcquire
+		BeforeEach(func() {
+			params.CostOfNamespace = decimal.NewFromFloat(5)
+			tx = types.NewBareTxNamespaceAcquire()
+			tx.Fee = "1"
+			tx.Name = "namespace"
+			tx.Value = util.String(params.CostOfNamespace.String())
+			tx.Nonce = 1
+		})
+
+		When("it has invalid fields, it should return error when", func() {
+			It("has invalid type", func() {
+				tx.Type = -10
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
+			})
+
+			It("has invalid value", func() {
+				tx.Value = "invalid"
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:value, error:invalid number; must be numeric"))
+			})
+
+			It("has no name", func() {
+				tx.Name = ""
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:name, error:requires a unique name"))
+			})
+
+			It("has an invalid name", func() {
+				tx.Name = "invalid&"
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+			})
+
+			It("has transfer repo and account fields set", func() {
+				tx.TransferToRepo = "repo"
+				tx.TransferToAccount = "account"
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:, error:can only transfer ownership to either an account or a repo"))
+			})
+
+			It("has invalid transfer account", func() {
+				tx.TransferToAccount = "account"
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:transferToAccount, error:address is not valid"))
+			})
+
+			It("has value not equal to namespace price", func() {
+				tx.Value = "1"
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:value, error:invalid value; has 1, want 5"))
+			})
+
+			It("has domain target with invalid format", func() {
+				tx.Value = "5"
+				tx.Domains["domain"] = "invalid:format"
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:domains, error:domains.domain target format is invalid"))
+			})
+
+			It("has domain target with unknown target type", func() {
+				tx.Value = "5"
+				tx.Domains["domain"] = "unknown_type/name"
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:domains, error:domains.domain has unknown target type"))
+			})
+
+			It("has domain target with account target type that has an invalid address", func() {
+				tx.Value = "5"
+				tx.Domains["domain"] = "a/invalid_addr"
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:domains, error:domains.domain has invalid address"))
+			})
+
+			It("has invalid fee", func() {
+				tx.Nonce = 1
+				tx.Fee = "invalid"
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:fee, error:invalid number; must be numeric"))
+			})
+
+			It("has low fee", func() {
+				tx.Nonce = 1
+				tx.Fee = "0"
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("field:fee, error:fee cannot be lower than the base price"))
+			})
+
+			It("has no nonce", func() {
+				tx.Nonce = 0
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:nonce, error:nonce is required"))
+			})
+
+			It("has no timestamp", func() {
+				tx.Nonce = 1
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:timestamp, error:timestamp is required"))
+			})
+
+			It("has no public key", func() {
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
+			})
+
+			It("has no signature", func() {
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
+			})
+
+			It("has invalid signature", func() {
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.Sig = []byte("invalid")
+				err := validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
+			})
+		})
+
+		When("it has no error", func() {
+			It("should return no error", func() {
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.Domains["domain"] = "r/repo1"
+				sig, err := tx.Sign(key.PrivKey().Base58())
+				Expect(err).To(BeNil())
+				tx.Sig = sig
+				err = validators.CheckTxNSPurchase(tx, -1)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
+
 	Describe(".CheckTxTicketPurchase", func() {
 		var tx *types.TxTicketPurchase
 		BeforeEach(func() {
@@ -357,6 +516,15 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:name, error:requires a unique name"))
+			})
+
+			It("has invalid name", func() {
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				tx.Name = "org&name#"
+				err := validators.CheckTxRepoCreate(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 			})
 
 			It("has no nonce", func() {

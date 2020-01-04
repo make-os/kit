@@ -65,6 +65,8 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxAddGPGPubKey(o, index)
 	case *types.TxPush:
 		return CheckTxPush(o, index)
+	case *types.TxNamespaceAcquire:
+		return CheckTxNSPurchase(o, index)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}
@@ -92,6 +94,8 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic types.Logic) error 
 		return CheckTxAddGPGPubKeyConsistency(o, index, logic)
 	case *types.TxPush:
 		return CheckTxPushConsistency(o, index, logic)
+	case *types.TxNamespaceAcquire:
+		return CheckTxNSAcquireConsistency(o, index, logic)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}

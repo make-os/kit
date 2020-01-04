@@ -330,6 +330,60 @@ func (mr *MockRepoKeeperMockRecorder) Update(name, upd interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRepoKeeper)(nil).Update), name, upd)
 }
 
+// MockNamespaceKeeper is a mock of NamespaceKeeper interface
+type MockNamespaceKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockNamespaceKeeperMockRecorder
+}
+
+// MockNamespaceKeeperMockRecorder is the mock recorder for MockNamespaceKeeper
+type MockNamespaceKeeperMockRecorder struct {
+	mock *MockNamespaceKeeper
+}
+
+// NewMockNamespaceKeeper creates a new mock instance
+func NewMockNamespaceKeeper(ctrl *gomock.Controller) *MockNamespaceKeeper {
+	mock := &MockNamespaceKeeper{ctrl: ctrl}
+	mock.recorder = &MockNamespaceKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockNamespaceKeeper) EXPECT() *MockNamespaceKeeperMockRecorder {
+	return m.recorder
+}
+
+// GetNamespace mocks base method
+func (m *MockNamespaceKeeper) GetNamespace(name string, blockNum ...uint64) *types.Namespace {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{name}
+	for _, a := range blockNum {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetNamespace", varargs...)
+	ret0, _ := ret[0].(*types.Namespace)
+	return ret0
+}
+
+// GetNamespace indicates an expected call of GetNamespace
+func (mr *MockNamespaceKeeperMockRecorder) GetNamespace(name interface{}, blockNum ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{name}, blockNum...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockNamespaceKeeper)(nil).GetNamespace), varargs...)
+}
+
+// Update mocks base method
+func (m *MockNamespaceKeeper) Update(name string, upd *types.Namespace) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Update", name, upd)
+}
+
+// Update indicates an expected call of Update
+func (mr *MockNamespaceKeeperMockRecorder) Update(name, upd interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockNamespaceKeeper)(nil).Update), name, upd)
+}
+
 // MockGPGPubKeyKeeper is a mock of GPGPubKeyKeeper interface
 type MockGPGPubKeyKeeper struct {
 	ctrl     *gomock.Controller
@@ -519,6 +573,20 @@ func (m *MockAtomicLogic) GetTicketManager() types.TicketManager {
 func (mr *MockAtomicLogicMockRecorder) GetTicketManager() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTicketManager", reflect.TypeOf((*MockAtomicLogic)(nil).GetTicketManager))
+}
+
+// NamespaceKeeper mocks base method
+func (m *MockAtomicLogic) NamespaceKeeper() types.NamespaceKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NamespaceKeeper")
+	ret0, _ := ret[0].(types.NamespaceKeeper)
+	return ret0
+}
+
+// NamespaceKeeper indicates an expected call of NamespaceKeeper
+func (mr *MockAtomicLogicMockRecorder) NamespaceKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NamespaceKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).NamespaceKeeper))
 }
 
 // Tx mocks base method
@@ -818,6 +886,20 @@ func (mr *MockLogicMockRecorder) GetTicketManager() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTicketManager", reflect.TypeOf((*MockLogic)(nil).GetTicketManager))
 }
 
+// NamespaceKeeper mocks base method
+func (m *MockLogic) NamespaceKeeper() types.NamespaceKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NamespaceKeeper")
+	ret0, _ := ret[0].(types.NamespaceKeeper)
+	return ret0
+}
+
+// NamespaceKeeper indicates an expected call of NamespaceKeeper
+func (mr *MockLogicMockRecorder) NamespaceKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NamespaceKeeper", reflect.TypeOf((*MockLogic)(nil).NamespaceKeeper))
+}
+
 // Tx mocks base method
 func (m *MockLogic) Tx() types.TxLogic {
 	m.ctrl.T.Helper()
@@ -1073,6 +1155,20 @@ func (m *MockKeepers) GetTicketManager() types.TicketManager {
 func (mr *MockKeepersMockRecorder) GetTicketManager() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTicketManager", reflect.TypeOf((*MockKeepers)(nil).GetTicketManager))
+}
+
+// NamespaceKeeper mocks base method
+func (m *MockKeepers) NamespaceKeeper() types.NamespaceKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NamespaceKeeper")
+	ret0, _ := ret[0].(types.NamespaceKeeper)
+	return ret0
+}
+
+// NamespaceKeeper indicates an expected call of NamespaceKeeper
+func (mr *MockKeepersMockRecorder) NamespaceKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NamespaceKeeper", reflect.TypeOf((*MockKeepers)(nil).NamespaceKeeper))
 }
 
 // MockLogicCommon is a mock of LogicCommon interface

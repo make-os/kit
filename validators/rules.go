@@ -12,8 +12,17 @@ import (
 
 var validAddrRule = func(err error) func(interface{}) error {
 	return func(val interface{}) error {
-		if _err := crypto.IsValidAddr(val.(util.String).String()); _err != nil {
-			return err
+		switch v := val.(type) {
+		case util.String:
+			if _err := crypto.IsValidAddr(v.String()); _err != nil {
+				return err
+			}
+		case string:
+			if _err := crypto.IsValidAddr(v); _err != nil {
+				return err
+			}
+		default:
+			panic("unknown type")
 		}
 		return nil
 	}
@@ -82,7 +91,7 @@ var validValueRule = func(field string, index int) func(interface{}) error {
 	}
 }
 
-var validRepoNameRule = func(field string, index int) func(interface{}) error {
+var validObjectNameRule = func(field string, index int) func(interface{}) error {
 	return func(val interface{}) error {
 		name := val.(string)
 		if !govalidator.Matches(name, "^[a-zA-Z0-9_-]+$") {

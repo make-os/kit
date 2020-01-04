@@ -2,15 +2,19 @@ package validators
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/repo"
+	"github.com/thoas/go-funk"
 
 	v "github.com/go-ozzo/ozzo-validation"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
 	"github.com/shopspring/decimal"
 )
+
+var domainTargetFormat = "[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+"
 
 func checkRecipient(tx *types.TxRecipient, index int) error {
 	if err := v.Validate(tx.To,
@@ -182,6 +186,7 @@ func CheckTxRepoCreate(tx *types.TxRepoCreate, index int) error {
 
 	if err := v.Validate(tx.Name,
 		v.Required.Error(feI(index, "name", "requires a unique name").Error()),
+		v.By(validObjectNameRule("name", index)),
 	); err != nil {
 		return err
 	}
@@ -277,7 +282,7 @@ func CheckTxSetDelegateCommission(tx *types.TxSetDelegateCommission, index int) 
 	return nil
 }
 
-// CheckTxPush performs sanity checks  on TxPush
+// CheckTxPush performs sanity checks on TxPush
 func CheckTxPush(tx *types.TxPush, index int) error {
 
 	if err := checkType(tx.TxType, types.TxTypePush, index); err != nil {
@@ -324,6 +329,63 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 		}
 
 		pushOKSenders[pushOK.SenderPubKey.HexStr()] = struct{}{}
+	}
+
+	return nil
+}
+
+// CheckTxNSPurchase performs sanity checks on TxNamespaceAcquire
+func CheckTxNSPurchase(tx *types.TxNamespaceAcquire, index int) error {
+
+	if err := checkType(tx.TxType, types.TxTypeNSAcquire, index); err != nil {
+		return err
+	}
+
+	if err := checkValue(tx.TxValue, index); err != nil {
+		return err
+	}
+
+	if err := v.Validate(tx.Name,
+		v.Required.Error(feI(index, "name", "requires a unique name").Error()),
+		v.By(validObjectNameRule("name", index)),
+	); err != nil {
+		return err
+	}
+
+	if tx.TransferToRepo != "" && tx.TransferToAccount != "" {
+		return feI(index, "", "can only transfer ownership to either an account or a repo")
+	}
+
+	if tx.TransferToAccount != "" {
+		if err := v.Validate(tx.TransferToAccount,
+			v.By(validAddrRule(feI(index, "transferToAccount", "address is not valid"))),
+		); err != nil {
+			return err
+		}
+	}
+
+	if !tx.Value.Decimal().Equal(params.CostOfNamespace) {
+		return feI(index, "value", fmt.Sprintf("invalid value; has %s, want %s",
+			tx.Value, params.CostOfNamespace.String()))
+	}
+
+	if len(tx.Domains) > 0 {
+		validTargetTypes := []string{"r/", "a/"}
+		for i, target := range tx.Domains {
+			if !regexp.MustCompile(domainTargetFormat).MatchString(target) {
+				return feI(index, "domains", fmt.Sprintf("domains.%s target format is invalid", i))
+			}
+			if !funk.ContainsString(validTargetTypes, target[:2]) {
+				return feI(index, "domains", fmt.Sprintf("domains.%s has unknown target type", i))
+			}
+			if target[:2] == "a/" && crypto.IsValidAddr(target[2:]) != nil {
+				return feI(index, "domains", fmt.Sprintf("domains.%s has invalid address", i))
+			}
+		}
+	}
+
+	if err := checkCommon(tx, index); err != nil {
+		return err
 	}
 
 	return nil

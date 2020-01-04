@@ -14,7 +14,7 @@ import (
 // publicKey: The gpg public key
 // senderPubKey: The account public key of the sender.
 // fee: The fee paid by the sender
-// chainHeight: The next chain height
+// chainHeight: The chain height to limit query to
 //
 // CONTRACT:
 // - Sender's public key must be valid public key

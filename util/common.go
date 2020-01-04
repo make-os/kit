@@ -525,3 +525,10 @@ func ParseExtArgs(extArgs map[string]string) (extsArgs map[string]map[string]str
 	}
 	return
 }
+
+// StructToJSON converts struct to map
+func StructToJSON(s interface{}) map[string]interface{} {
+	st := structs.New(s)
+	st.TagName = "json"
+	return st.Map()
+}

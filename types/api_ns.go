@@ -8,6 +8,7 @@ const (
 	NamespaceCoin      = "coin"
 	NamespacePool      = "pool"
 	NamespaceRepo      = "repo"
+	NamespaceNS        = "ns"
 	NamespaceAccount   = "account"
 	NamespaceGPG       = "gpg"
 	NamespaceExtension = "ext"

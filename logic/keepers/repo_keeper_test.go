@@ -9,7 +9,7 @@ import (
 	tmdb "github.com/tendermint/tm-db"
 )
 
-var _ = Describe("Account", func() {
+var _ = Describe("RepoKeeper", func() {
 	var state *tree.SafeTree
 	var rk *RepoKeeper
 
@@ -20,7 +20,7 @@ var _ = Describe("Account", func() {
 
 	Describe(".GetRepo", func() {
 		When("repository does not exist", func() {
-			It("should return a bare account", func() {
+			It("should return a bare repository", func() {
 				repo := rk.GetRepo("unknown", 0)
 				Expect(repo).To(Equal(types.BareRepository()))
 			})
@@ -45,7 +45,7 @@ var _ = Describe("Account", func() {
 	})
 
 	Describe(".Update", func() {
-		It("should update balance", func() {
+		It("should update repo object", func() {
 			key := "repo1"
 			repo := rk.GetRepo(key)
 			Expect(repo.CreatorAddress).To(Equal(util.String("")))

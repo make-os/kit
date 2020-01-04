@@ -3,6 +3,7 @@ package params
 import (
 	"time"
 
+	"github.com/makeos/mosdef/util"
 	"github.com/shopspring/decimal"
 )
 
@@ -106,4 +107,21 @@ var (
 
 	// NumTopStorersLimit is maximum the number of top storers
 	NumTopStorersLimit = 21
+
+	// CostOfNamespace is the amount of native coin required to obtain a
+	// repo namespace
+	CostOfNamespace = decimal.NewFromFloat(1)
+
+	// MaxNamespaceRevealDur is the number of blocks within which a namespace
+	// must be revealed
+	MaxNamespaceRevealDur = 10
+
+	// NamespaceTTL is the number of blocks of a namespace life span
+	NamespaceTTL = 10
+
+	// NamespaceGraceDur is the number of blocks before a namespace expires
+	NamespaceGraceDur = 10
+
+	// TreasuryAddress is the address where treasury-bound payments are deposited
+	TreasuryAddress = util.String("e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx")
 )

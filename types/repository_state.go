@@ -48,6 +48,7 @@ func BareRepository() *Repository {
 type Repository struct {
 	CreatorAddress util.String `json:"creatorAddress" msgpack:"creatorAddress"`
 	References     References  `json:"references" msgpack:"references"`
+	Address        string      `json:"address" msgpack:"address"`
 }
 
 // IsNil returns true if the repo fields are set to their nil value

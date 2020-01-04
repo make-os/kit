@@ -38,6 +38,7 @@ var _ = Describe("TxValidator", func() {
 	var mocRepoKeeper *mocks.MockRepoKeeper
 	var mockDrand *randmocks.MockDRander
 	var mockGPGPubKeyKeeper *mocks.MockGPGPubKeyKeeper
+	var mockNSKeeper *mocks.MockNamespaceKeeper
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -54,6 +55,7 @@ var _ = Describe("TxValidator", func() {
 		mocRepoKeeper = mockObjects.RepoKeeper
 		mockDrand = mockObjects.Drand
 		mockGPGPubKeyKeeper = mockObjects.GPGPubKeyKeeper
+		mockNSKeeper = mockObjects.NamespaceKeeper
 	})
 
 	AfterEach(func() {
@@ -602,6 +604,69 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("error"))
 			})
 		})
+	})
+
+	FDescribe(".CheckTxNSAcquireConsistency", func() {
+
+		When("unable to get last block information", func() {
+			BeforeEach(func() {
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
+				tx := types.NewBareTxNamespaceAcquire()
+				err = validators.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to fetch current block info: error"))
+			})
+		})
+
+		When("target namespace exist and not expired", func() {
+			BeforeEach(func() {
+				name := "name1"
+				tx := types.NewBareTxNamespaceAcquire()
+				tx.Name = name
+
+				bi := &types.BlockInfo{Height: 9}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+
+				mockNSKeeper.EXPECT().GetNamespace(tx.Name).Return(&types.Namespace{
+					GraceEndAt: 10,
+				})
+				err = validators.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err='field:name, error:chosen name is not currently available'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:name, error:chosen name is not currently available"))
+			})
+		})
+
+		When("balance sufficiency dry-run fails", func() {
+			BeforeEach(func() {
+				tx := types.NewBareTxNamespaceAcquire()
+				tx.Value = "10.2"
+				tx.Name = "name1"
+				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+
+				bi := &types.BlockInfo{Height: 10}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+
+				mockNSKeeper.EXPECT().GetNamespace(tx.Name).Return(&types.Namespace{
+					GraceEndAt: 9,
+				})
+
+				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
+				err = validators.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("error"))
+			})
+		})
+
 	})
 
 	Describe(".CheckTxPushConsistency", func() {

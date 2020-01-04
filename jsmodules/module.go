@@ -71,6 +71,7 @@ func (m *Module) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	sugs = append(sugs, NewUtilModule(vm).Configure()...)
 	sugs = append(sugs, NewTicketModule(vm, nodeSrv, m.ticketmgr).Configure()...)
 	sugs = append(sugs, NewRepoModule(vm, nodeSrv, m.repoMgr, m.logic).Configure()...)
+	sugs = append(sugs, NewNSModule(vm, nodeSrv, m.repoMgr, m.logic).Configure()...)
 	sugs = append(sugs, NewDHTModule(m.cfg, vm, m.dht).Configure()...)
 	sugs = append(sugs, m.extMgr.SetVM(vm).Configure()...)
 	sugs = append(sugs, NewRPCModule(m.cfg, vm, m.rpcServer).Configure()...)

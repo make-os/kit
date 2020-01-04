@@ -262,3 +262,28 @@ func CheckTxPushConsistency(
 
 	return nil
 }
+
+// CheckTxNSAcquireConsistency performs consistency checks on TxNamespaceAcquire
+func CheckTxNSAcquireConsistency(
+	tx *types.TxNamespaceAcquire,
+	index int,
+	logic types.Logic) error {
+
+	bi, err := logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch current block info")
+	}
+
+	ns := logic.NamespaceKeeper().GetNamespace(tx.Name)
+	if !ns.IsNil() && ns.GraceEndAt > uint64(bi.Height) {
+		return feI(index, "name", "chosen name is not currently available")
+	}
+
+	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, tx.Value, tx.Fee,
+		tx.GetNonce(), uint64(bi.Height)); err != nil {
+		return err
+	}
+
+	return nil
+}

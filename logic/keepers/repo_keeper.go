@@ -56,10 +56,10 @@ func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *types.Repository 
 	return repo
 }
 
-// Update sets a new object at the given address.
+// Update sets a new object at the given name.
 //
 // ARGS:
-// address: The address of the repository to update
+// name: The name of the repository to update
 // udp: The updated repository object to replace the existing object.
 func (a *RepoKeeper) Update(name string, upd *types.Repository) {
 	a.state.Set(MakeRepoKey(name), upd.Bytes())

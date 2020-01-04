@@ -9,7 +9,7 @@ import (
 //
 // ARGS:
 // fee: The fee paid by the sender
-// chainHeight: The next chain height
+// chainHeight: The chain height to limit query to
 //
 // CONTRACT (caller must have met the following expectations):
 // - Repo must exist

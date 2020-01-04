@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	prettyjson "github.com/ncodes/go-prettyjson"
@@ -50,6 +51,11 @@ func (m *UtilModule) globals() []*types.JSModuleFunc {
 			Value:       m.readTextFile,
 			Description: "Read a text file",
 		},
+		&types.JSModuleFunc{
+			Name:        "treasuryAddress",
+			Value:       m.treasuryAddress(),
+			Description: "Get the treasury address",
+		},
 	}
 }
 
@@ -80,6 +86,11 @@ func (m *UtilModule) funcs() []*types.JSModuleFunc {
 			Name:        "readTextFile",
 			Value:       m.readTextFile,
 			Description: "Read a text file",
+		},
+		&types.JSModuleFunc{
+			Name:        "treasuryAddress",
+			Value:       m.treasuryAddress(),
+			Description: "Get the treasury address",
 		},
 	}
 }
@@ -175,4 +186,8 @@ func (m *UtilModule) readFile(filename string) interface{} {
 func (m *UtilModule) readTextFile(filename string) string {
 	bz := m.readFile(filename)
 	return string(bz.([]byte))
+}
+
+func (m *UtilModule) treasuryAddress() string {
+	return params.TreasuryAddress.String()
 }
