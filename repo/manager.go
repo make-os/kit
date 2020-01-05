@@ -247,17 +247,40 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 
 	// De-construct the URL to get the repo name and operation
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	repoName := pathParts[0]
-	fullRepoDir := m.getRepoPath(repoName)
-	op := pathParts[1]
+	namespace := pathParts[0]
+	repoName := pathParts[1]
+
+	// Resolve the namespace if the given namespace is not the default
+	if namespace != "r" {
+
+		// Get the namespace, return 404 if not found
+		ns := m.logic.NamespaceKeeper().GetNamespace(util.Sha1Hex([]byte(namespace)))
+		if ns.IsNil() {
+			w.WriteHeader(http.StatusNotFound)
+			m.log.Debug("Unknown repository", "Name", repoName, "StatusCode", http.StatusNotFound,
+				"StatusText", http.StatusText(http.StatusNotFound))
+			return
+		}
+
+		// Get the target. If the target is not set or the target is not
+		// prefixed with r/, return 404
+		target := ns.Domains.Get(repoName)
+		if target == "" || target[:2] != "r/" {
+			w.WriteHeader(http.StatusNotFound)
+			m.log.Debug("Unknown repository", "Name", repoName, "StatusCode", http.StatusNotFound,
+				"StatusText", http.StatusText(http.StatusNotFound))
+			return
+		}
+
+		repoName = target[2:]
+	}
 
 	// Check if the repository exist
+	fullRepoDir := m.getRepoPath(repoName)
 	repoState := m.logic.RepoKeeper().GetRepo(repoName)
 	if repoState.IsNil() {
 		w.WriteHeader(http.StatusNotFound)
-		m.log.Debug("Unknown repository",
-			"Name", repoName,
-			"StatusCode", http.StatusNotFound,
+		m.log.Debug("Unknown repository", "Name", repoName, "StatusCode", http.StatusNotFound,
 			"StatusText", http.StatusText(http.StatusNotFound))
 		return
 	}
@@ -289,7 +312,6 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 			state: repoState,
 		},
 		repoDir:    fullRepoDir,
-		op:         op,
 		srvName:    getService(r),
 		gitBinPath: m.gitBinPath,
 	}

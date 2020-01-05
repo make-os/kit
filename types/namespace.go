@@ -18,6 +18,11 @@ type Namespace struct {
 // usually unreadable name
 type NamespaceDomains map[string]string
 
+// Get the target of a domain
+func (nd *NamespaceDomains) Get(domain string) string {
+	return (*nd)[domain]
+}
+
 // BareNamespace returns an empty namespace object
 func BareNamespace() *Namespace {
 	return &Namespace{
