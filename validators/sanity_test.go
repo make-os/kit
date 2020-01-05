@@ -44,7 +44,7 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		When("it has invalid fields, it should return error when", func() {
-			It("has invalid type", func() {
+			It("should return error='type is invalid'", func() {
 				tx.Type = -10
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -156,7 +156,7 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		When("it has invalid fields, it should return error when", func() {
-			It("has invalid type", func() {
+			It("should return error='type is invalid'", func() {
 				tx.Type = -10
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -311,7 +311,7 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		When("it has invalid fields, it should return error when", func() {
-			It("has invalid type", func() {
+			It("should return error='type is invalid'", func() {
 				tx.Type = -10
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -407,7 +407,7 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		When("it has invalid fields, it should return error when", func() {
-			It("has invalid type", func() {
+			It("should return error='type is invalid'", func() {
 				tx.Type = -10
 				err := validators.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -495,7 +495,7 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		When("it has invalid fields, it should return error when", func() {
-			It("has invalid type", func() {
+			It("should return error='type is invalid'", func() {
 				tx.Type = -10
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -598,7 +598,7 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		When("it has invalid fields, it should return error when", func() {
-			It("has invalid type", func() {
+			It("should return error='type is invalid'", func() {
 				tx.Type = -10
 				err := validators.CheckTxEpochSecret(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -699,7 +699,7 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		When("it has invalid fields, it should return error when", func() {
-			It("has invalid type", func() {
+			It("should return error='type is invalid'", func() {
 				tx.Type = -10
 				err := validators.CheckTxAddGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -793,7 +793,7 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		When("it has invalid fields, it should return error when", func() {
-			It("has invalid type", func() {
+			It("should return error='type is invalid'", func() {
 				tx.Type = -10
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -886,6 +886,50 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
+	FDescribe(".CheckTxNamespaceDomainUpdate", func() {
+		var tx *types.TxNamespaceDomainUpdate
+
+		BeforeEach(func() {
+			tx = types.NewBareTxNamespaceDomainUpdate()
+			tx.Fee = "1"
+		})
+
+		When("it has invalid fields, it should return error when", func() {
+			It("should return error='type is invalid'", func() {
+				tx.Type = -10
+				err := validators.CheckTxNamespaceDomainUpdate(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
+			})
+		})
+
+		When("name is not set", func() {
+			It("should return err", func() {
+				err := validators.CheckTxNamespaceDomainUpdate(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:name, error:requires a name"))
+			})
+		})
+
+		When("name is not valid", func() {
+			It("should return err", func() {
+				tx.Name = "&name"
+				err := validators.CheckTxNamespaceDomainUpdate(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+			})
+		})
+
+		When("name is too short", func() {
+			It("should return err", func() {
+				tx.Name = "ab"
+				err := validators.CheckTxNamespaceDomainUpdate(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:name, error:name is too short. Must be at least 3 characters long"))
+			})
+		})
+	})
+
 	Describe(".CheckTxPush", func() {
 		var tx *types.TxPush
 
@@ -900,7 +944,7 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		When("it has invalid fields, it should return error when", func() {
-			It("has invalid type", func() {
+			It("should return error='type is invalid'", func() {
 				tx.Type = -10
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())

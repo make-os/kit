@@ -399,7 +399,7 @@ func CheckTxNamespaceDomainUpdate(tx *types.TxNamespaceDomainUpdate, index int) 
 	}
 
 	if err := v.Validate(tx.Name,
-		v.Required.Error(feI(index, "name", "requires a unique name").Error()),
+		v.Required.Error(feI(index, "name", "requires a name").Error()),
 		v.By(validObjectNameRule("name", index)),
 	); err != nil {
 		return err

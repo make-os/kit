@@ -100,6 +100,9 @@ var validObjectNameRule = func(field string, index int) func(interface{}) error 
 		} else if len(name) > 128 {
 			msg := "name is too long. Maximum character length is 128"
 			return types.FieldErrorWithIndex(index, field, msg)
+		} else if len(name) <= 2 {
+			msg := "name is too short. Must be at least 3 characters long"
+			return types.FieldErrorWithIndex(index, field, msg)
 		}
 		return nil
 	}
