@@ -606,7 +606,7 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	FDescribe(".CheckTxNSAcquireConsistency", func() {
+	Describe(".CheckTxNSAcquireConsistency", func() {
 
 		When("unable to get last block information", func() {
 			BeforeEach(func() {
@@ -666,7 +666,72 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("error"))
 			})
 		})
+	})
 
+	Describe(".CheckTxNamespaceDomainUpdateConsistency", func() {
+		When("unable to get last block information", func() {
+			BeforeEach(func() {
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
+				tx := types.NewBareTxNamespaceDomainUpdate()
+				err = validators.CheckTxNamespaceDomainUpdateConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to fetch current block info: error"))
+			})
+		})
+
+		When("sender not owner of target namespace", func() {
+			BeforeEach(func() {
+				name := "name1"
+				tx := types.NewBareTxNamespaceDomainUpdate()
+				tx.Name = name
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+
+				bi := &types.BlockInfo{Height: 1}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+
+				key2 := crypto.NewKeyFromIntSeed(2)
+				mockNSKeeper.EXPECT().GetNamespace(tx.Name).Return(&types.Namespace{
+					GraceEndAt: 10,
+					Owner:      key2.Addr().String(),
+				})
+
+				err = validators.CheckTxNamespaceDomainUpdateConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err='field:senderPubKey, error:sender not permitted to perform this operation'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender not permitted to perform this operation"))
+			})
+		})
+
+		When("balance sufficiency dry-run fails", func() {
+			BeforeEach(func() {
+				name := "name1"
+				tx := types.NewBareTxNamespaceDomainUpdate()
+				tx.Name = name
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+
+				bi := &types.BlockInfo{Height: 10}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+
+				mockNSKeeper.EXPECT().GetNamespace(tx.Name).Return(&types.Namespace{
+					GraceEndAt: 9,
+					Owner:      key.Addr().String(),
+				})
+
+				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(), util.String("0"), tx.Fee,
+					tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
+				err = validators.CheckTxNamespaceDomainUpdateConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("error"))
+			})
+		})
 	})
 
 	Describe(".CheckTxPushConsistency", func() {

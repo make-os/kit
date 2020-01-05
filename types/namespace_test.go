@@ -35,7 +35,7 @@ var _ = Describe("Namespace", func() {
 			ns.Owner = "owner"
 			ns.ExpiresAt = 20
 			ns.GraceEndAt = 15
-			ns.Targets = map[string]string{"name": "target"}
+			ns.Domains = map[string]string{"name": "target"}
 			bz := ns.Bytes()
 			ns2, err := NewNamespaceFromBytes(bz)
 			Expect(err).To(BeNil())
@@ -48,7 +48,7 @@ var _ = Describe("Namespace", func() {
 				ns.Owner = "owner"
 				ns.ExpiresAt = 20
 				ns.GraceEndAt = 15
-				ns.Targets = nil
+				ns.Domains = nil
 				bz := ns.Bytes()
 				ns2, err := NewNamespaceFromBytes(bz)
 				Expect(err).To(BeNil())

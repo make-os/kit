@@ -21,6 +21,7 @@ var (
 	TxTypeAddGPGPubKey           = 0x07 // For adding a GPG public key
 	TxTypePush                   = 0x08 // For pushing updates to a repository
 	TxTypeNSAcquire              = 0x09 // For namespace purchase
+	TxTypeNSDomainUpdate         = 0x10 // For setting namespace domains
 )
 
 // Transaction meta keys
@@ -228,6 +229,8 @@ func DecodeTx(txBz []byte) (BaseTx, error) {
 		tx = NewBareTxPush()
 	case TxTypeNSAcquire:
 		tx = NewBareTxNamespaceAcquire()
+	case TxTypeNSDomainUpdate:
+		tx = NewBareTxNamespaceDomainUpdate()
 	default:
 		return nil, fmt.Errorf("unsupported tx type")
 	}

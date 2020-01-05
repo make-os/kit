@@ -80,22 +80,19 @@ func (t *Transaction) Exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.execAddGPGKey(o.PublicKey, spk, o.Fee, chainHeight)
 
 	case *types.TxPush:
-		return t.execPush(
-			o.PushNote.RepoName,
-			o.PushNote.References,
+		return t.execPush(o.PushNote.RepoName, o.PushNote.References,
 			o.PushNote.TotalFee(),
 			o.PushNote.PusherKeyID,
 			chainHeight)
 
 	case *types.TxNamespaceAcquire:
-		return t.execAcquireNamespace(
-			spk,
-			o.Name,
-			o.Value,
-			o.Fee,
-			o.TransferToRepo,
+		return t.execAcquireNamespace(spk, o.Name, o.Value, o.Fee, o.TransferToRepo,
 			o.TransferToAccount,
+			o.Domains,
 			chainHeight)
+
+	case *types.TxNamespaceDomainUpdate:
+		return t.execUpdateNamespaceDomains(spk, o.Name, o.Fee, o.Domains, chainHeight)
 
 	case *types.TxEpochSecret:
 		return nil

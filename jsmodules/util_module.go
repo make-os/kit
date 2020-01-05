@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
@@ -56,6 +57,11 @@ func (m *UtilModule) globals() []*types.JSModuleFunc {
 			Value:       m.treasuryAddress(),
 			Description: "Get the treasury address",
 		},
+		&types.JSModuleFunc{
+			Name:        "genKey",
+			Value:       m.genKey,
+			Description: "Generate an Ed25519 key",
+		},
 	}
 }
 
@@ -91,6 +97,11 @@ func (m *UtilModule) funcs() []*types.JSModuleFunc {
 			Name:        "treasuryAddress",
 			Value:       m.treasuryAddress(),
 			Description: "Get the treasury address",
+		},
+		&types.JSModuleFunc{
+			Name:        "genKey",
+			Value:       m.genKey,
+			Description: "Generate an Ed25519 key",
 		},
 	}
 }
@@ -190,4 +201,24 @@ func (m *UtilModule) readTextFile(filename string) string {
 
 func (m *UtilModule) treasuryAddress() string {
 	return params.TreasuryAddress.String()
+}
+
+// genKey generates an Ed25519 key.
+// seed: Specify an optional seed
+func (m *UtilModule) genKey(seed ...int64) interface{} {
+	var s int64
+	if len(seed) > 0 {
+		s = seed[0]
+	}
+
+	key, err := crypto.NewKey(&s)
+	if err != nil {
+		panic(err)
+	}
+
+	res := map[string]interface{}{}
+	res["publicKey"] = key.PubKey().Base58()
+	res["privateKey"] = key.PrivKey().Base58()
+	res["address"] = key.Addr().String()
+	return res
 }

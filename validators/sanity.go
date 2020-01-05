@@ -334,8 +334,8 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 	return nil
 }
 
-// CheckTxNSPurchase performs sanity checks on TxNamespaceAcquire
-func CheckTxNSPurchase(tx *types.TxNamespaceAcquire, index int) error {
+// CheckTxNSAcquire performs sanity checks on TxNamespaceAcquire
+func CheckTxNSAcquire(tx *types.TxNamespaceAcquire, index int) error {
 
 	if err := checkType(tx.TxType, types.TxTypeNSAcquire, index); err != nil {
 		return err
@@ -372,6 +372,45 @@ func CheckTxNSPurchase(tx *types.TxNamespaceAcquire, index int) error {
 	if len(tx.Domains) > 0 {
 		validTargetTypes := []string{"r/", "a/"}
 		for i, target := range tx.Domains {
+			if !regexp.MustCompile(domainTargetFormat).MatchString(target) {
+				return feI(index, "domains", fmt.Sprintf("domains.%s target format is invalid", i))
+			}
+			if !funk.ContainsString(validTargetTypes, target[:2]) {
+				return feI(index, "domains", fmt.Sprintf("domains.%s has unknown target type", i))
+			}
+			if target[:2] == "a/" && crypto.IsValidAddr(target[2:]) != nil {
+				return feI(index, "domains", fmt.Sprintf("domains.%s has invalid address", i))
+			}
+		}
+	}
+
+	if err := checkCommon(tx, index); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CheckTxNamespaceDomainUpdate performs sanity checks on TxNamespaceDomainUpdate
+func CheckTxNamespaceDomainUpdate(tx *types.TxNamespaceDomainUpdate, index int) error {
+
+	if err := checkType(tx.TxType, types.TxTypeNSDomainUpdate, index); err != nil {
+		return err
+	}
+
+	if err := v.Validate(tx.Name,
+		v.Required.Error(feI(index, "name", "requires a unique name").Error()),
+		v.By(validObjectNameRule("name", index)),
+	); err != nil {
+		return err
+	}
+
+	if len(tx.Domains) > 0 {
+		validTargetTypes := []string{"r/", "a/"}
+		for i, target := range tx.Domains {
+			if target == "" {
+				continue
+			}
 			if !regexp.MustCompile(domainTargetFormat).MatchString(target) {
 				return feI(index, "domains", fmt.Sprintf("domains.%s target format is invalid", i))
 			}

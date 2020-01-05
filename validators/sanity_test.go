@@ -144,7 +144,7 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	Describe(".CheckTxNSPurchase", func() {
+	Describe(".CheckTxNSAcquire", func() {
 		var tx *types.TxNamespaceAcquire
 		BeforeEach(func() {
 			params.CostOfNamespace = decimal.NewFromFloat(5)
@@ -158,28 +158,28 @@ var _ = Describe("TxValidator", func() {
 		When("it has invalid fields, it should return error when", func() {
 			It("has invalid type", func() {
 				tx.Type = -10
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
 			})
 
 			It("has invalid value", func() {
 				tx.Value = "invalid"
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, error:invalid number; must be numeric"))
 			})
 
 			It("has no name", func() {
 				tx.Name = ""
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:name, error:requires a unique name"))
 			})
 
 			It("has an invalid name", func() {
 				tx.Name = "invalid&"
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 			})
@@ -187,21 +187,21 @@ var _ = Describe("TxValidator", func() {
 			It("has transfer repo and account fields set", func() {
 				tx.TransferToRepo = "repo"
 				tx.TransferToAccount = "account"
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:, error:can only transfer ownership to either an account or a repo"))
 			})
 
 			It("has invalid transfer account", func() {
 				tx.TransferToAccount = "account"
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:transferToAccount, error:address is not valid"))
 			})
 
 			It("has value not equal to namespace price", func() {
 				tx.Value = "1"
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, error:invalid value; has 1, want 5"))
 			})
@@ -209,7 +209,7 @@ var _ = Describe("TxValidator", func() {
 			It("has domain target with invalid format", func() {
 				tx.Value = "5"
 				tx.Domains["domain"] = "invalid:format"
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:domains, error:domains.domain target format is invalid"))
 			})
@@ -217,7 +217,7 @@ var _ = Describe("TxValidator", func() {
 			It("has domain target with unknown target type", func() {
 				tx.Value = "5"
 				tx.Domains["domain"] = "unknown_type/name"
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:domains, error:domains.domain has unknown target type"))
 			})
@@ -225,7 +225,7 @@ var _ = Describe("TxValidator", func() {
 			It("has domain target with account target type that has an invalid address", func() {
 				tx.Value = "5"
 				tx.Domains["domain"] = "a/invalid_addr"
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:domains, error:domains.domain has invalid address"))
 			})
@@ -233,7 +233,7 @@ var _ = Describe("TxValidator", func() {
 			It("has invalid fee", func() {
 				tx.Nonce = 1
 				tx.Fee = "invalid"
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:fee, error:invalid number; must be numeric"))
 			})
@@ -241,21 +241,21 @@ var _ = Describe("TxValidator", func() {
 			It("has low fee", func() {
 				tx.Nonce = 1
 				tx.Fee = "0"
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("field:fee, error:fee cannot be lower than the base price"))
 			})
 
 			It("has no nonce", func() {
 				tx.Nonce = 0
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, error:nonce is required"))
 			})
 
 			It("has no timestamp", func() {
 				tx.Nonce = 1
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:timestamp, error:timestamp is required"))
 			})
@@ -263,7 +263,7 @@ var _ = Describe("TxValidator", func() {
 			It("has no public key", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
 			})
@@ -272,7 +272,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
 				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
 			})
@@ -282,7 +282,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Timestamp = time.Now().Unix()
 				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
 				tx.Sig = []byte("invalid")
-				err := validators.CheckTxNSPurchase(tx, -1)
+				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
 			})
@@ -297,7 +297,7 @@ var _ = Describe("TxValidator", func() {
 				sig, err := tx.Sign(key.PrivKey().Base58())
 				Expect(err).To(BeNil())
 				tx.Sig = sig
-				err = validators.CheckTxNSPurchase(tx, -1)
+				err = validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).To(BeNil())
 			})
 		})

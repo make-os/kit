@@ -41,6 +41,11 @@ func (m *NamespaceModule) funcs() []*types.JSModuleFunc {
 			Value:       m.lookup,
 			Description: "Lookup a namespace",
 		},
+		&types.JSModuleFunc{
+			Name:        "updateDomain",
+			Value:       m.updateDomain,
+			Description: "Update one or more domains for a namespace",
+		},
 	}
 }
 
@@ -88,8 +93,8 @@ func (m *NamespaceModule) lookup(name string, height ...uint64) interface{} {
 	if ns.IsNil() {
 		return otto.NullValue()
 	}
-	ns.Name = name
 	nsMap := util.StructToJSON(ns)
+	nsMap["name"] = name
 	nsMap["expired"] = false
 	nsMap["expiring"] = false
 
@@ -118,9 +123,12 @@ func (m *NamespaceModule) lookup(name string, height ...uint64) interface{} {
 //		toAccount: string
 //		toRepo: string
 //		timestamp: number
+//		domains: {[key:string]: string}
 // }
 // options: key
-func (m *NamespaceModule) register(params map[string]interface{}, options ...interface{}) interface{} {
+func (m *NamespaceModule) register(
+	params map[string]interface{},
+	options ...interface{}) interface{} {
 	var err error
 
 	// Decode parameters into a transaction object
@@ -155,6 +163,68 @@ func (m *NamespaceModule) register(params map[string]interface{}, options ...int
 	if trToRepo, ok := params["toRepo"]; ok {
 		defer castPanic("toRepo")
 		tx.TransferToRepo = trToRepo.(string)
+	}
+
+	if timestamp, ok := params["timestamp"]; ok {
+		defer castPanic("timestamp")
+		tx.Timestamp = timestamp.(int64)
+	}
+
+	if domains, ok := params["domains"]; ok {
+		defer castPanic("domains")
+		domains := domains.(map[string]interface{})
+		for k, v := range domains {
+			tx.Domains[k] = v.(string)
+		}
+	}
+
+	// Hash the name
+	tx.Name = util.Sha1Hex([]byte(tx.Name))
+
+	setCommonTxFields(tx, m.service, options...)
+
+	// Process the transaction
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
+	}
+
+	return util.EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
+}
+
+// updateDomain updates one or more domains of a namespace
+// params {
+// 		nonce: number,
+//		fee: string,
+//		name: string
+//		timestamp: number
+//		domains: {[key:string]: string}
+// }
+// options: key
+func (m *NamespaceModule) updateDomain(
+	params map[string]interface{},
+	options ...interface{}) interface{} {
+	var err error
+
+	// Decode parameters into a transaction object
+	var tx = types.NewBareTxNamespaceDomainUpdate()
+	mapstructure.Decode(params, tx)
+
+	if nonce, ok := params["nonce"]; ok {
+		defer castPanic("nonce")
+		tx.Nonce = uint64(nonce.(int64))
+	}
+
+	if fee, ok := params["fee"]; ok {
+		defer castPanic("fee")
+		tx.Fee = util.String(fee.(string))
+	}
+
+	if namespace, ok := params["name"]; ok {
+		defer castPanic("name")
+		tx.Name = namespace.(string)
 	}
 
 	if timestamp, ok := params["timestamp"]; ok {

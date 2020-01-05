@@ -287,3 +287,35 @@ func CheckTxNSAcquireConsistency(
 
 	return nil
 }
+
+// CheckTxNamespaceDomainUpdateConsistency performs consistency
+// checks on TxNamespaceDomainUpdate
+func CheckTxNamespaceDomainUpdateConsistency(
+	tx *types.TxNamespaceDomainUpdate,
+	index int,
+	logic types.Logic) error {
+
+	bi, err := logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch current block info")
+	}
+
+	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+
+	// Ensure the sender of the transaction is the owner of the namespace
+	ns := logic.NamespaceKeeper().GetNamespace(tx.Name)
+	if ns.IsNil() {
+		return feI(index, "name", "namespace not found")
+	}
+
+	if ns.Owner != pubKey.Addr().String() {
+		return feI(index, "senderPubKey", "sender not permitted to perform this operation")
+	}
+
+	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
+		tx.GetNonce(), uint64(bi.Height)); err != nil {
+		return err
+	}
+
+	return nil
+}
