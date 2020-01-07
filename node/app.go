@@ -284,8 +284,7 @@ func (a *App) postExecChecks(
 		}
 	}
 
-	// Cache tasks derived from transactions;
-	// They will be processed in the COMMIT stage.
+	// Cache tasks derived from transactions; They will be processed in the COMMIT stage.
 	txType := tx.GetType()
 	switch txType {
 	case types.TxTypeValidatorTicket:
@@ -301,6 +300,9 @@ func (a *App) postExecChecks(
 	// Add the successfully processed tx to the un-indexed tx cache.
 	// They will be committed in the COMMIT phase
 	a.unIndexedTxs = append(a.unIndexedTxs, tx)
+
+	// Emit event
+	a.cfg.G().Bus.Emit(types.EvtABCIDeliveredValidTx, nil, tx)
 
 	return &resp
 }
@@ -323,6 +325,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 
 	// Perform validation
 	if err = a.validateTx(tx, -1, a.logic); err != nil {
+		a.log.Debug("DeliverTX: failed to process transaction", "Err", err)
 		return abcitypes.ResponseDeliverTx{
 			Code: types.ErrCodeTxFailedValidation,
 			Log:  err.Error(),

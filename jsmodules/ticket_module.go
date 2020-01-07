@@ -151,11 +151,13 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 		tx.Timestamp = timestamp.(int64)
 	}
 
-	pubKey, err := crypto.PubKeyFromBase58(delegate)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to decode 'delegate' to public key"))
+	if delegate != "" {
+		pubKey, err := crypto.PubKeyFromBase58(delegate)
+		if err != nil {
+			panic(errors.Wrap(err, "failed to decode 'delegate' to public key"))
+		}
+		tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
 	}
-	tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
 
 	setCommonTxFields(tx, m.service, options...)
 
@@ -213,11 +215,13 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 		tx.Timestamp = timestamp.(int64)
 	}
 
-	pubKey, err := crypto.PubKeyFromBase58(delegate)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to decode 'delegate' to public key"))
+	if delegate != "" {
+		pubKey, err := crypto.PubKeyFromBase58(delegate)
+		if err != nil {
+			panic(errors.Wrap(err, "failed to decode 'delegate' to public key"))
+		}
+		tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
 	}
-	tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
 
 	setCommonTxFields(tx, m.service, options...)
 

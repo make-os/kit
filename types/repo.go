@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/storage/tree"
 	"github.com/makeos/mosdef/util"
 	"github.com/makeos/mosdef/util/logger"
 	"github.com/shopspring/decimal"
@@ -95,6 +96,12 @@ type BareRepo interface {
 
 	// CreateBlob creates a blob object
 	CreateBlob(content string) (string, error)
+
+	// UpdateTree updates the state tree
+	UpdateTree(updater func(tree *tree.SafeTree) error) ([]byte, int64, error)
+
+	// TreeRoot returns the state root of the repository
+	TreeRoot() (util.Bytes32, error)
 
 	// AddEntryToNote adds a note
 	AddEntryToNote(notename, objectHash, note string, env ...string) error
@@ -570,18 +577,19 @@ func (pt *PushNote) TotalFee() util.String {
 // PushOK is used to endorse a push note
 type PushOK struct {
 	PushNoteID   util.Bytes32 `json:"pushNoteID" mapstructure:"pushNoteID"`
+	RepoHash     util.Bytes32 `json:"repoHash" mapstructure:"repoHash"`
 	SenderPubKey util.Bytes32 `json:"senderPubKey" mapstructure:"senderPubKey"`
 	Sig          util.Bytes64 `json:"sig" mapstructure:"sig"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (po *PushOK) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(po.PushNoteID, po.SenderPubKey, po.Sig)
+	return enc.EncodeMulti(po.PushNoteID, po.RepoHash, po.SenderPubKey, po.Sig)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (po *PushOK) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&po.PushNoteID, &po.SenderPubKey, &po.Sig)
+	return dec.DecodeMulti(&po.PushNoteID, &po.RepoHash, &po.SenderPubKey, &po.Sig)
 }
 
 // ID returns the hash of the object

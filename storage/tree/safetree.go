@@ -23,6 +23,11 @@ func NewSafeTree(db tmdb.DB, cacheSize int) *SafeTree {
 	}
 }
 
+// Raw returns the underlying tree
+func (s *SafeTree) Raw() interface{} {
+	return s.state
+}
+
 // Version returns the version of the tree.
 func (s *SafeTree) Version() int64 {
 	s.RLock()

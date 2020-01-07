@@ -13,6 +13,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	"github.com/makeos/mosdef/config"
+	"github.com/makeos/mosdef/storage/tree"
 	"github.com/makeos/mosdef/testutil"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
@@ -304,6 +305,30 @@ var _ = Describe("Gitops", func() {
 			It("should have 3 history hashes", func() {
 				Expect(history).To(HaveLen(3))
 			})
+		})
+	})
+
+	Describe(".UpdateTree", func() {
+		BeforeEach(func() {
+			tr, closer, err := getRepoTree(repo.Path())
+			Expect(err).To(BeNil())
+			Expect(tr.Version()).To(Equal(int64(0)))
+			closer()
+		})
+
+		It("should update repo tree", func() {
+			hash, version, err := repo.UpdateTree(func(tr *tree.SafeTree) error {
+				tr.Set([]byte("key"), []byte("value"))
+				return nil
+			})
+			Expect(err).To(BeNil())
+			Expect(version).To(Equal(int64(1)))
+			Expect(hash).To(HaveLen(32))
+
+			tr, closer, err := getRepoTree(repo.Path())
+			Expect(err).To(BeNil())
+			defer closer()
+			Expect(tr.Version()).To(Equal(int64(1)))
 		})
 	})
 })

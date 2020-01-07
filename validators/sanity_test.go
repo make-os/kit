@@ -23,6 +23,7 @@ var _ = Describe("TxValidator", func() {
 	var err error
 	var cfg *config.AppConfig
 	var key = crypto.NewKeyFromIntSeed(1)
+	var key2 = crypto.NewKeyFromIntSeed(2)
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -886,7 +887,7 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	FDescribe(".CheckTxNamespaceDomainUpdate", func() {
+	Describe(".CheckTxNamespaceDomainUpdate", func() {
 		var tx *types.TxNamespaceDomainUpdate
 
 		BeforeEach(func() {
@@ -1024,6 +1025,36 @@ var _ = Describe("TxValidator", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, error:multiple " +
 					"endorsement by a single sender not permitted"))
+			})
+
+			It("has PushOKs with different repo hash", func() {
+				params.PushOKQuorumSize = 1
+
+				pushOK1 := &types.PushOK{
+					PushNoteID:   tx.PushNote.ID(),
+					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+					RepoHash:     util.StrToBytes32("repo_hash"),
+				}
+				sig, _ := key.PrivKey().Sign(pushOK1.Bytes())
+				pushOK1.Sig = util.BytesToBytes64(sig)
+				tx.PushOKs = append(tx.PushOKs, pushOK1)
+
+				pushOK2 := &types.PushOK{
+					PushNoteID:   tx.PushNote.ID(),
+					SenderPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
+					RepoHash:     util.StrToBytes32("repo_hash_2"),
+				}
+				sig, _ = key2.PrivKey().Sign(pushOK2.Bytes())
+				pushOK2.Sig = util.BytesToBytes64(sig)
+				tx.PushOKs = append(tx.PushOKs, pushOK2)
+
+				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				sig, _ = key.PrivKey().Sign(tx.Bytes())
+				tx.Sig = sig
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:endorsements.repoHash, error:varied repository hash; " +
+					"push endorsements can't have different repository hash"))
 			})
 		})
 

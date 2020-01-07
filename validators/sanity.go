@@ -6,6 +6,7 @@ import (
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/repo"
+	"github.com/makeos/mosdef/util"
 	"github.com/thoas/go-funk"
 
 	v "github.com/go-ozzo/ozzo-validation"
@@ -304,13 +305,21 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 	}
 
 	pushOKSenders := map[string]struct{}{}
+	pushOKRepoHash := util.EmptyBytes32
 	for _, pushOK := range tx.PushOKs {
 
-		if _, ok := pushOKSenders[pushOK.SenderPubKey.HexStr()]; ok {
-			return feI(index, "endorsements.senderPubKey", "multiple endorsement by a "+
-				"single sender not permitted")
+		// Ensure PushOKs have same sender
+		_, hasSender := pushOKSenders[pushOK.SenderPubKey.HexStr()]
+		if !hasSender {
+			pushOKSenders[pushOK.SenderPubKey.HexStr()] = struct{}{}
+		} else {
+			if _, ok := pushOKSenders[pushOK.SenderPubKey.HexStr()]; ok {
+				return feI(index, "endorsements.senderPubKey", "multiple endorsement by a "+
+					"single sender not permitted")
+			}
 		}
 
+		// Ensure push note id and the target pushOK push note id match
 		if !pushOK.PushNoteID.Equal(tx.PushNote.ID()) {
 			return feI(index, "endorsements.pushNoteID", "value does not match push tx note id")
 		}
@@ -328,7 +337,15 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 			return feI(index, "endorsements.sig", "failed to verify signature")
 		}
 
-		pushOKSenders[pushOK.SenderPubKey.HexStr()] = struct{}{}
+		// Ensure repository hash consistency
+		if pushOKRepoHash.IsEmpty() {
+			pushOKRepoHash = pushOK.RepoHash
+		} else {
+			if !pushOK.RepoHash.Equal(pushOKRepoHash) {
+				return feI(index, "endorsements.repoHash", "varied repository hash; push "+
+					"endorsements can't have different repository hash")
+			}
+		}
 	}
 
 	return nil

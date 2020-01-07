@@ -69,7 +69,6 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		git:   repo,
 		ops:   NewGitOps(m.gitBinPath, repoPath),
 		path:  repoPath,
-		db:    NewDBOps(m.repoDBCache, repoName),
 		state: repoState,
 	}
 
@@ -228,6 +227,17 @@ func (m *Manager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
 	pok.PushNoteID = pushNote.ID()
 	pok.SenderPubKey = util.BytesToBytes32(m.privValidatorKey.PubKey().MustBytes())
 	pok.Sig = util.BytesToBytes64(m.privValidatorKey.PrivKey().MustSign(pok.Bytes()))
+
+	// Get the repo state hash
+	repo, err := getRepo(m.getRepoPath(pushNote.GetRepoName()))
+	if err != nil {
+		return err
+	}
+	pok.RepoHash, err = repo.TreeRoot()
+	if err != nil {
+		return errors.Wrap(err, "failed to get repo tree hash")
+	}
+
 	m.broadcastPushOK(pok)
 
 	// Cache the PushOK object as an endorsement of the PushNote so can use it

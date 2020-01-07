@@ -3,6 +3,7 @@ package repo
 import (
 	"github.com/makeos/mosdef/mempool"
 	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/util"
 )
 
 func removePushNote(pushPool types.PushPool, args []interface{}) {
@@ -48,6 +49,31 @@ func (m *Manager) subscribe() {
 				if err := m.onCommittedTxPush(tx.(*types.TxPush)); err != nil {
 					m.Log().Error("failed to process committed push transaction", "Err", err)
 				}
+			}
+		}
+	}()
+
+	// On EvtABCIDeliveredValidTx: Update repo state tree
+	go func() {
+		for evt := range m.cfg.G().Bus.On(types.EvtABCIDeliveredValidTx) {
+			if err := checkEvtArgs(evt.Args); err != nil {
+				return
+			}
+
+			switch tx := evt.Args[1].(type) {
+				
+			case *types.TxPush:
+				hash, v, err := updateRepoTree(tx, m.getRepoPath(tx.PushNote.RepoName))
+				if err != nil {
+					m.Log().Error("Error updating repo tree",
+						"RepoName", tx.PushNote.RepoName,
+						"Err", err)
+					continue
+				}
+				m.Log().Info("Repo tree state has changed",
+					"RepoName", tx.PushNote.RepoName,
+					"TreeHash", util.ToHex(hash),
+					"Version", v)
 			}
 		}
 	}()

@@ -11,6 +11,9 @@ import (
 	"strings"
 	"time"
 
+	s "github.com/makeos/mosdef/storage"
+	"github.com/makeos/mosdef/storage/tree"
+
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/storage"
 
@@ -32,11 +35,55 @@ import (
 // Repo represents a git repository
 type Repo struct {
 	git   *git.Repository
-	db    DBOperations
 	path  string
 	name  string
 	ops   *GitOps
 	state *types.Repository
+}
+
+func getRepoTree(path string) (*tree.SafeTree, func() error, error) {
+	db := s.NewBadger()
+	if err := db.Init(filepath.Join(path, "state.db")); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to open state db")
+	}
+
+	tr := tree.NewSafeTree(s.NewTMDBAdapter(db), 5000)
+	if _, err := tr.Load(); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to load tree")
+	}
+
+	return tr, db.Close, nil
+}
+
+// UpdateTree updates the state tree
+func (r *Repo) UpdateTree(updater func(tree *tree.SafeTree) error) ([]byte, int64, error) {
+	tr, closer, err := getRepoTree(r.Path())
+	if err != nil {
+		return nil, 0, err
+	}
+	defer closer()
+
+	if err := updater(tr); err != nil {
+		return nil, 0, err
+	}
+
+	newHash, v, err := tr.SaveVersion()
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "failed to save new repo tree updates")
+	}
+
+	return newHash, v, nil
+}
+
+// TreeRoot returns the state root of the repository
+func (r *Repo) TreeRoot() (util.Bytes32, error) {
+	tr, closer, err := getRepoTree(r.Path())
+	if _, err = tr.Load(); err != nil {
+		return util.EmptyBytes32, err
+	}
+	defer closer()
+
+	return util.BytesToBytes32(tr.Hash()), nil
 }
 
 // State returns the repository's network state
@@ -660,4 +707,28 @@ func getObjectsSize(repo types.BareRepo, objects []string) (uint64, error) {
 		size += objSize
 	}
 	return uint64(size), nil
+}
+
+// updateRepoTree takes a push transaction for updating a repository's state tree.
+func updateRepoTree(tx *types.TxPush, repoPath string) ([]byte, int64, error) {
+
+	repo, err := getRepo(repoPath)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	hash, v, err := repo.UpdateTree(func(tree *tree.SafeTree) error {
+		for _, ref := range tx.PushNote.References {
+			tree.Set([]byte(ref.Name), bytes.Join([][]byte{
+				util.MustFromHex(ref.OldHash),
+				util.MustFromHex(ref.NewHash),
+				util.ObjectToBytes(ref.Objects)}, nil))
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return hash, v, nil
 }

@@ -18,7 +18,6 @@ import (
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/makeos/mosdef/util/logger"
-	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
 	"gopkg.in/src-d/go-git.v4"
 )
@@ -30,7 +29,7 @@ const (
 	PushOKReactorChannel = byte(0x33)
 )
 
-// Git services
+// Constants
 const (
 	ServiceReceivePack = "receive-pack"
 	ServiceUploadPack  = "upload-pack"
@@ -62,7 +61,6 @@ type Manager struct {
 	rootDir              string                // the root directory where all repos are stored
 	addr                 string                // addr is the listening address for the http server
 	gitBinPath           string                // gitBinPath is the path of the git executable
-	repoDBCache          *DBCache              // stores database handles of repositories
 	pushPool             types.PushPool        // The transaction pool for push transactions
 	mempool              types.Mempool         // The general transaction pool for block-bound transaction
 	logic                types.Logic           // logic is the application logic provider
@@ -86,11 +84,6 @@ func NewManager(
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 
-	dbCache, err := NewDBCache(1000, cfg.GetRepoRoot(), 5*time.Minute)
-	if err != nil {
-		panic(errors.Wrap(err, "failed create repo db cache"))
-	}
-
 	key, _ := cfg.G().PrivVal.GetKey()
 	mgr := &Manager{
 		cfg:                  cfg,
@@ -99,7 +92,6 @@ func NewManager(
 		rootDir:              cfg.GetRepoRoot(),
 		gitBinPath:           cfg.Node.GitBinPath,
 		wg:                   wg,
-		repoDBCache:          dbCache,
 		pushPool:             NewPushPool(params.PushPoolCap, logic, dht),
 		logic:                logic,
 		privValidatorKey:     key,
@@ -249,6 +241,7 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 	namespace := pathParts[0]
 	repoName := pathParts[1]
+	op := pathParts[2]
 
 	// Resolve the namespace if the given namespace is not the default
 	if namespace != "r" {
@@ -301,14 +294,14 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	srvParams := &serviceParams{
-		w: w,
-		r: r,
+		w:  w,
+		r:  r,
+		op: op,
 		repo: &Repo{
 			name:  repoName,
 			git:   repo,
 			ops:   NewGitOps(m.gitBinPath, fullRepoDir),
 			path:  fullRepoDir,
-			db:    NewDBOps(m.repoDBCache, repoName),
 			state: repoState,
 		},
 		repoDir:    fullRepoDir,
@@ -404,9 +397,6 @@ func (m *Manager) Shutdown(ctx context.Context) {
 	m.log.Info("Shutting down")
 	if m.srv != nil {
 		m.srv.Shutdown(ctx)
-	}
-	if m.repoDBCache != nil {
-		m.repoDBCache.Clear()
 	}
 	m.pruner.Stop()
 }
