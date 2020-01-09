@@ -86,9 +86,6 @@ var (
 	// PushPoolItemTTL is the maximum life time of an item in the push pool
 	PushPoolItemTTL = 24 * 3 * time.Hour
 
-	// MaxPushNoteAge is the duration afterwhich a push transaction is considered old.
-	MaxPushNoteAge = 30 * time.Minute
-
 	// UnfinalizedObjectsCacheSize is the max size for unfinalized objects cache
 	UnfinalizedObjectsCacheSize = 10000
 

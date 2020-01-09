@@ -553,7 +553,6 @@ var _ = Describe("Validation", func() {
 			{&types.PushNote{}, fmt.Errorf("field:repoName, error:repo name is required")},
 			{&types.PushNote{RepoName: "repo"}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key id is required")},
 			{&types.PushNote{RepoName: "repo", PusherKeyID: []byte("xyz")}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key is not valid")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20)}, fmt.Errorf("field:timestamp, error:timestamp is too old")},
 			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, fmt.Errorf("field:nodePubKey, error:push node public key is required")},
 			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().MustBytes32()}, fmt.Errorf("field:nodeSig, error:push node signature is required")},
 			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid")}, fmt.Errorf("field:nodeSig, error:failed to verify signature with public key")},
@@ -610,7 +609,7 @@ var _ = Describe("Validation", func() {
 	Describe(".checkPushedReference", func() {
 		var mockKeepers *mocks.MockKeepers
 		var mockRepo *mocks.MockBareRepo
-		var oldHash = fmt.Sprintf("%x", util.Sha1(util.RandBytes(16)))
+		var oldHash = fmt.Sprintf("%x", util.Hash20(util.RandBytes(16)))
 
 		BeforeEach(func() {
 			mockKeepers = mocks.NewMockKeepers(ctrl)

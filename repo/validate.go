@@ -10,7 +10,6 @@ import (
 	gv "github.com/asaskevich/govalidator"
 
 	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 
@@ -320,9 +319,6 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 
 	if tx.Timestamp > time.Now().Unix() {
 		return types.FieldError("timestamp", "timestamp cannot be a future time")
-	} else if time.Now().Sub(time.Unix(tx.Timestamp, 0)).Seconds() >
-		params.MaxPushNoteAge.Seconds() {
-		return types.FieldError("timestamp", "timestamp is too old")
 	}
 
 	if tx.NodePubKey.IsEmpty() {
