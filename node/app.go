@@ -301,9 +301,6 @@ func (a *App) postExecChecks(
 	// They will be committed in the COMMIT phase
 	a.unIndexedTxs = append(a.unIndexedTxs, tx)
 
-	// Emit event
-	a.cfg.G().Bus.Emit(types.EvtABCIDeliveredValidTx, nil, tx)
-
 	return &resp
 }
 
@@ -521,6 +518,11 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	if err := a.logic.Commit(); err != nil {
 		a.commitPanic(errors.Wrap(err, "failed to commit"))
 	}
+
+	// Emit events about the committed transactions
+	committedTxs := make([]types.BaseTx, len(a.unIndexedTxs))
+	copy(committedTxs, a.unIndexedTxs)
+	a.cfg.G().Bus.Emit(types.EvtABCICommittedTx, nil, committedTxs)
 
 	return abcitypes.ResponseCommit{
 		Data: bi.AppHash,

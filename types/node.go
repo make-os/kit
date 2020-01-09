@@ -1,1 +1,11 @@
 package types
+
+import (
+	"github.com/tendermint/tendermint/types"
+)
+
+// BlockGetter describes a structure for getting blocks
+type BlockGetter interface {
+	// GetBlock returns a tendermint block with the given height.
+	GetBlock(height int64) *types.Block
+}

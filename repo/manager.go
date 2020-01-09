@@ -68,9 +68,11 @@ type Manager struct {
 	pgpPubKeyGetter      types.PGPPubKeyGetter // finds and returns PGP public key
 	dht                  types.DHT             // The dht service
 	pruner               types.Pruner          // The repo runner
-	pushNoteSenders      *cache.Cache
-	pushOKSenders        *cache.Cache
-	pushNoteEndorsements *cache.Cache
+	blockGetter          types.BlockGetter     // Provides access to blocks
+	pushNoteSenders      *cache.Cache          // Store senders of push notes
+	pushOKSenders        *cache.Cache          // Stores senders of PushOK messages
+	pushNoteEndorsements *cache.Cache          // Store PushOK
+	syncher              *Syncher              // Repo object synchronizer
 }
 
 // NewManager creates an instance of Manager
@@ -79,7 +81,8 @@ func NewManager(
 	addr string,
 	logic types.Logic,
 	dht types.DHT,
-	mempool types.Mempool) *Manager {
+	mempool types.Mempool,
+	blockGetter types.BlockGetter) *Manager {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -97,6 +100,7 @@ func NewManager(
 		privValidatorKey:     key,
 		dht:                  dht,
 		mempool:              mempool,
+		blockGetter:          blockGetter,
 		pushNoteSenders:      cache.NewActiveCache(params.PushObjectsSendersCacheSize),
 		pushOKSenders:        cache.NewActiveCache(params.PushObjectsSendersCacheSize),
 		pushNoteEndorsements: cache.NewActiveCache(params.PushNotesEndorsementsCacheSize),
@@ -106,6 +110,15 @@ func NewManager(
 	mgr.BaseReactor = *p2p.NewBaseReactor("Reactor", mgr)
 	mgr.pruner = newPruner(mgr, mgr.rootDir)
 	go mgr.pruner.Start()
+
+	mgr.syncher = newSyncher(
+		blockGetter,
+		mgr,
+		mgr,
+		logic,
+		dht,
+		mgr.log.Module("repo-sync"))
+	go mgr.syncher.Start()
 
 	return mgr
 }
@@ -125,26 +138,26 @@ func (m *Manager) defaultGPGPubKeyGetter(pkID string) (string, error) {
 
 // cachePushNoteSender caches a push note sender
 func (m *Manager) cachePushNoteSender(senderID string, pushNoteID string) {
-	key := util.Sha1Hex([]byte(senderID + pushNoteID))
+	key := util.Hash20Hex([]byte(senderID + pushNoteID))
 	m.pushNoteSenders.AddWithExp(key, struct{}{}, time.Now().Add(10*time.Minute))
 }
 
 // cachePushOkSender caches a push OK sender
 func (m *Manager) cachePushOkSender(senderID string, pushOkID string) {
-	key := util.Sha1Hex([]byte(senderID + pushOkID))
+	key := util.Hash20Hex([]byte(senderID + pushOkID))
 	m.pushOKSenders.AddWithExp(key, struct{}{}, time.Now().Add(60*time.Minute))
 }
 
 // isPushNoteSender checks whether a push note was sent by the given sender ID
 func (m *Manager) isPushNoteSender(senderID string, txID string) bool {
-	key := util.Sha1Hex([]byte(senderID + txID))
+	key := util.Hash20Hex([]byte(senderID + txID))
 	v := m.pushNoteSenders.Get(key)
 	return v == struct{}{}
 }
 
 // isPushOKSender checks whether a "push OK" was sent by the given sender ID
 func (m *Manager) isPushOKSender(senderID string, txID string) bool {
-	key := util.Sha1Hex([]byte(senderID + txID))
+	key := util.Hash20Hex([]byte(senderID + txID))
 	v := m.pushOKSenders.Get(key)
 	return v == struct{}{}
 }
@@ -247,7 +260,7 @@ func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
 	if namespace != "r" {
 
 		// Get the namespace, return 404 if not found
-		ns := m.logic.NamespaceKeeper().GetNamespace(util.Sha1Hex([]byte(namespace)))
+		ns := m.logic.NamespaceKeeper().GetNamespace(util.Hash20Hex([]byte(namespace)))
 		if ns.IsNil() {
 			w.WriteHeader(http.StatusNotFound)
 			m.log.Debug("Unknown repository", "Name", repoName, "StatusCode", http.StatusNotFound,
@@ -392,6 +405,11 @@ func (m *Manager) FindObject(key []byte) ([]byte, error) {
 	return bz, nil
 }
 
+// GetRepo returns a repo handle
+func (m *Manager) GetRepo(name string) (types.BareRepo, error) {
+	return getRepoWithGitOpt(m.gitBinPath, m.getRepoPath(name))
+}
+
 // Shutdown shuts down the server
 func (m *Manager) Shutdown(ctx context.Context) {
 	m.log.Info("Shutting down")
@@ -406,5 +424,6 @@ func (m *Manager) Stop() error {
 	m.BaseReactor.Stop()
 	m.Shutdown(context.Background())
 	m.log.Info("Shutdown")
+	m.syncher.Stop()
 	return nil
 }

@@ -178,13 +178,13 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 	c.netDataDir = path.Join(dataDir, viper.GetString("net.version"))
 	c.accountDir = path.Join(c.DataDir(), AccountDirName)
 	c.consoleHistoryPath = path.Join(c.DataDir(), ".console_history")
-	c.repoDir = path.Join(c.NetDataDir(), "repos")
+	c.repoDir = path.Join(c.NetDataDir(), "data", "repos")
 	c.extensionDir = path.Join(c.DataDir(), "extensions")
 	os.MkdirAll(c.extensionDir, 0700)
 
 	os.MkdirAll(c.NetDataDir(), 0700)
 	os.MkdirAll(path.Join(c.NetDataDir(), "data"), 0700)
-	os.MkdirAll(path.Join(c.NetDataDir(), "repos"), 0700)
+	os.MkdirAll(path.Join(c.NetDataDir(), "data", "repos"), 0700)
 	os.MkdirAll(path.Join(c.NetDataDir(), "config"), 0700)
 
 	// Create logger with file rotation enabled

@@ -18,6 +18,8 @@ const (
 	TagNS = "ns"
 	// TagBlockInfo is the prefix for last block data
 	TagBlockInfo = "b"
+	// TagLastRepoSyncherHeight is the prefix for repository sync height
+	TagLastRepoSyncherHeight = "rh"
 	// TagNetMaturity is the prefix for account data
 	TagNetMaturity = "m"
 	// TagHighestDrandRound is the prefix for highest drand round
@@ -62,6 +64,12 @@ func MakeNamespaceKey(name string) []byte {
 // MakeKeyBlockInfo creates a key for accessing/storing committed block data.
 func MakeKeyBlockInfo(height int64) []byte {
 	return storage.MakeKey(util.EncodeNumber(uint64(height)), []byte(TagBlockInfo))
+}
+
+// MakeKeyRepoSyncherHeight creates a key for accessing last height synch-ed by
+// the repo syncher
+func MakeKeyRepoSyncherHeight() []byte {
+	return storage.MakePrefix([]byte(TagLastRepoSyncherHeight))
 }
 
 // MakeQueryKeyBlockInfo creates a key for querying committed block data

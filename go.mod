@@ -16,7 +16,6 @@ require (
 	github.com/Workiva/go-datastructures v1.0.50
 	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a
 	github.com/bitfield/script v0.14.0
-	github.com/btcsuite/btcd v0.20.1-beta // indirect
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/c-bata/go-prompt v0.2.3
 	github.com/dedis/drand v0.5.0
@@ -39,8 +38,7 @@ require (
 	github.com/howeyc/gopass v0.0.0-20190910152052-7cb4b85ec19c // indirect
 	github.com/imdario/mergo v0.3.8
 	github.com/imroc/req v0.2.4
-	github.com/ipfs/go-cid v0.0.3
-	github.com/ipfs/go-datastore v0.3.1 // indirect
+	github.com/ipfs/go-cid v0.0.4
 	github.com/ipfs/go-ds-badger v0.2.0
 	github.com/ipfs/go-log v1.0.0 // indirect
 	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
@@ -49,12 +47,10 @@ require (
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/lestrrat-go/file-rotatelogs v2.2.0+incompatible
 	github.com/lestrrat-go/strftime v0.0.0-20190725011945-5c849dd2c51d // indirect
-	github.com/libp2p/go-flow-metrics v0.0.3 // indirect
-	github.com/libp2p/go-libp2p v0.4.2
-	github.com/libp2p/go-libp2p-core v0.2.5
+	github.com/libp2p/go-libp2p v0.5.0
+	github.com/libp2p/go-libp2p-core v0.3.0
 	github.com/libp2p/go-libp2p-crypto v0.1.0
-	github.com/libp2p/go-libp2p-discovery v0.2.0 // indirect
-	github.com/libp2p/go-libp2p-kad-dht v0.3.1
+	github.com/libp2p/go-libp2p-kad-dht v0.5.0
 	github.com/libp2p/go-libp2p-peer v0.2.0
 	github.com/libp2p/go-yamux v1.2.4 // indirect
 	github.com/mattn/go-colorable v0.1.4 // indirect
@@ -63,8 +59,7 @@ require (
 	github.com/mattn/go-tty v0.0.0-20190424173100-523744f04859 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.1.2
-	github.com/mr-tron/base58 v1.1.3 // indirect
-	github.com/multiformats/go-multiaddr v0.1.2
+	github.com/multiformats/go-multiaddr v0.2.0
 	github.com/multiformats/go-multihash v0.0.10
 	github.com/ncodes/go-prettyjson v0.0.0-20180528130907-d229c224a219
 	github.com/ncodes/pubsub v1.0.2
@@ -95,7 +90,6 @@ require (
 	github.com/thoas/go-funk v0.4.0
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	go.dedis.ch/kyber/v3 v3.0.3-0.20190501101437-0324e4ea86f1
-	go.opencensus.io v0.22.2 // indirect
 	go.uber.org/atomic v1.5.1 // indirect
 	go.uber.org/multierr v1.4.0 // indirect
 	go.uber.org/zap v1.13.0 // indirect

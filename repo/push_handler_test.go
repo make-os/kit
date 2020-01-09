@@ -35,6 +35,7 @@ var _ = Describe("PushHandler", func() {
 	var gpgKeyID, gpgKeyID2 string
 	var repoName string
 	var mockMempool *mocks.MockMempool
+	var mockBlockGetter *mocks.MockBlockGetter
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -53,7 +54,8 @@ var _ = Describe("PushHandler", func() {
 		mockLogic = mocks.NewMockLogic(ctrl)
 		mockDHT := mocks.NewMockDHT(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
-		mgr = NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool)
+		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
+		mgr = NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 
 		mockMgr = mocks.NewMockRepoManager(ctrl)
 

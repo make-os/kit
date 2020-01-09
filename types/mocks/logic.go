@@ -170,6 +170,35 @@ func (mr *MockSystemKeeperMockRecorder) GetSecrets(from, limit, skip interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecrets", reflect.TypeOf((*MockSystemKeeper)(nil).GetSecrets), from, limit, skip)
 }
 
+// SetLastObjectSyncedBlock mocks base method
+func (m *MockSystemKeeper) SetLastObjectSyncedBlock(height uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetLastObjectSyncedBlock", height)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetLastObjectSyncedBlock indicates an expected call of SetLastObjectSyncedBlock
+func (mr *MockSystemKeeperMockRecorder) SetLastObjectSyncedBlock(height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastObjectSyncedBlock", reflect.TypeOf((*MockSystemKeeper)(nil).SetLastObjectSyncedBlock), height)
+}
+
+// GetLastRepoSyncherHeight mocks base method
+func (m *MockSystemKeeper) GetLastRepoSyncherHeight() (uint64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastRepoSyncherHeight")
+	ret0, _ := ret[0].(uint64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLastRepoSyncherHeight indicates an expected call of GetLastRepoSyncherHeight
+func (mr *MockSystemKeeperMockRecorder) GetLastRepoSyncherHeight() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastRepoSyncherHeight", reflect.TypeOf((*MockSystemKeeper)(nil).GetLastRepoSyncherHeight))
+}
+
 // MockTxKeeper is a mock of TxKeeper interface
 type MockTxKeeper struct {
 	ctrl     *gomock.Controller
@@ -491,6 +520,20 @@ func (mr *MockAtomicLogicMockRecorder) SysKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).SysKeeper))
 }
 
+// ManagedSysKeeper mocks base method
+func (m *MockAtomicLogic) ManagedSysKeeper() types.SystemKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ManagedSysKeeper")
+	ret0, _ := ret[0].(types.SystemKeeper)
+	return ret0
+}
+
+// ManagedSysKeeper indicates an expected call of ManagedSysKeeper
+func (mr *MockAtomicLogicMockRecorder) ManagedSysKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ManagedSysKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).ManagedSysKeeper))
+}
+
 // AccountKeeper mocks base method
 func (m *MockAtomicLogic) AccountKeeper() types.AccountKeeper {
 	m.ctrl.T.Helper()
@@ -802,6 +845,20 @@ func (mr *MockLogicMockRecorder) SysKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockLogic)(nil).SysKeeper))
 }
 
+// ManagedSysKeeper mocks base method
+func (m *MockLogic) ManagedSysKeeper() types.SystemKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ManagedSysKeeper")
+	ret0, _ := ret[0].(types.SystemKeeper)
+	return ret0
+}
+
+// ManagedSysKeeper indicates an expected call of ManagedSysKeeper
+func (mr *MockLogicMockRecorder) ManagedSysKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ManagedSysKeeper", reflect.TypeOf((*MockLogic)(nil).ManagedSysKeeper))
+}
+
 // AccountKeeper mocks base method
 func (m *MockLogic) AccountKeeper() types.AccountKeeper {
 	m.ctrl.T.Helper()
@@ -1071,6 +1128,20 @@ func (m *MockKeepers) SysKeeper() types.SystemKeeper {
 func (mr *MockKeepersMockRecorder) SysKeeper() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SysKeeper", reflect.TypeOf((*MockKeepers)(nil).SysKeeper))
+}
+
+// ManagedSysKeeper mocks base method
+func (m *MockKeepers) ManagedSysKeeper() types.SystemKeeper {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ManagedSysKeeper")
+	ret0, _ := ret[0].(types.SystemKeeper)
+	return ret0
+}
+
+// ManagedSysKeeper indicates an expected call of ManagedSysKeeper
+func (mr *MockKeepersMockRecorder) ManagedSysKeeper() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ManagedSysKeeper", reflect.TypeOf((*MockKeepers)(nil).ManagedSysKeeper))
 }
 
 // AccountKeeper mocks base method

@@ -3,7 +3,6 @@ package repo
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
@@ -22,9 +21,6 @@ import (
 var _ = Describe("Reactor", func() {
 	var err error
 	var cfg *config.AppConfig
-	var path string
-	var repo types.BareRepo
-	var mockMgr *mocks.MockRepoManager
 	var mgr *Manager
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
@@ -32,6 +28,7 @@ var _ = Describe("Reactor", func() {
 	var mockMempool *mocks.MockMempool
 	var mockPeer *mocks.MockPeer
 	var mockRepoKeeper *mocks.MockRepoKeeper
+	var mockBlockGetter *mocks.MockBlockGetter
 	var key = crypto.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
@@ -41,23 +38,17 @@ var _ = Describe("Reactor", func() {
 		ctrl = gomock.NewController(GinkgoT())
 
 		repoName = util.RandString(5)
-		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
-		Expect(err).To(BeNil())
 
 		mockObjects := testutil.MockLogic(ctrl)
 		mockLogic = mockObjects.Logic
 		mockRepoKeeper = mockObjects.RepoKeeper
 		mockDHT := mocks.NewMockDHT(ctrl)
+		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
-		mgr = NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool)
+		mgr = NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 
-		mockMgr = mocks.NewMockRepoManager(ctrl)
 		mockPeer = mocks.NewMockPeer(ctrl)
-		_ = repo
-		_ = mgr
-		_ = mockMgr
 	})
 
 	AfterEach(func() {

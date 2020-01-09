@@ -29,6 +29,7 @@ var _ = Describe("Manager", func() {
 	var mockLogic *testutil.MockObjects
 	var mockDHT *mocks.MockDHT
 	var mockMempool *mocks.MockMempool
+	var mockBlockGetter *mocks.MockBlockGetter
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -39,7 +40,9 @@ var _ = Describe("Manager", func() {
 		mockLogic = testutil.MockLogic(ctrl)
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
-		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic, mockDHT, mockMempool)
+		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
+		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic,
+			mockDHT, mockMempool, mockBlockGetter)
 	})
 
 	BeforeEach(func() {

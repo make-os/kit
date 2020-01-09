@@ -6,7 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha1"
+	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -194,16 +194,16 @@ func Blake2b256(v []byte) []byte {
 	return hash.Sum(nil)
 }
 
-// Sha1 returns sha1 hash of v
-func Sha1(v []byte) []byte {
-	h := sha1.New()
+// Hash20 returns 20 bytes hash derived from truncating sha512 output of v
+func Hash20(v []byte) []byte {
+	h := sha512.New()
 	h.Write(v)
-	return h.Sum(nil)
+	return h.Sum(nil)[:20]
 }
 
-// Sha1Hex returns sha1 in hex format
-func Sha1Hex(v []byte) string {
-	return fmt.Sprintf("%x", Sha1(v))
+// Hash20Hex is like Hash20 but returns hex output
+func Hash20Hex(v []byte) string {
+	return fmt.Sprintf("%x", Hash20(v))
 }
 
 // RIPEMD160 returns RIPEMD160 (20 bytes) hash of v

@@ -226,7 +226,6 @@ func (m *Manager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
 	pok := &types.PushOK{}
 	pok.PushNoteID = pushNote.ID()
 	pok.SenderPubKey = util.BytesToBytes32(m.privValidatorKey.PubKey().MustBytes())
-	pok.Sig = util.BytesToBytes64(m.privValidatorKey.PrivKey().MustSign(pok.Bytes()))
 
 	// Get the repo state hash
 	repo, err := getRepo(m.getRepoPath(pushNote.GetRepoName()))
@@ -237,6 +236,8 @@ func (m *Manager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get repo tree hash")
 	}
+
+	pok.Sig = util.BytesToBytes64(m.privValidatorKey.PrivKey().MustSign(pok.Bytes()))
 
 	m.broadcastPushOK(pok)
 
@@ -344,8 +345,9 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 	return nil
 }
 
-// onCommittedTxPush handles committed push transactions.
-func (m *Manager) onCommittedTxPush(tx *types.TxPush) error {
+// mergeTxPush takes a push transaction and attempts to merge it into the
+// target repository
+func (m *Manager) mergeTxPush(tx *types.TxPush) error {
 
 	repoPath := m.getRepoPath(tx.PushNote.GetRepoName())
 
@@ -394,6 +396,30 @@ func (m *Manager) onCommittedTxPush(tx *types.TxPush) error {
 
 	m.Log().Debug("Committed pushed tx to repository permanently",
 		"Repo", tx.PushNote.RepoName)
+
+	return nil
+}
+
+// MergeTxPushToRepo attempts to merge a push transaction to a repository and
+// also update the repository's state tree.
+func (m *Manager) MergeTxPushToRepo(tx *types.TxPush) error {
+
+	// Attempt to merge the push transaction to repo
+	if err := m.mergeTxPush(tx); err != nil {
+		m.Log().Error("failed to process push transaction", "Err", err)
+		return nil
+	}
+
+	// Update the repository tree
+	hash, v, err := updateRepoTree(tx, m.getRepoPath(tx.PushNote.RepoName))
+	if err != nil {
+		m.Log().Error("Error updating repo tree",
+			"RepoName", tx.PushNote.RepoName, "Err", err)
+		return err
+	}
+
+	m.Log().Info("Repo tree updated", "RepoName", tx.PushNote.RepoName,
+		"TreeHash", util.ToHex(hash), "Version", v)
 
 	return nil
 }

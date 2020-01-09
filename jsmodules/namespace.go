@@ -89,7 +89,7 @@ func (m *NamespaceModule) lookup(name string, height ...uint64) interface{} {
 		targetHeight = uint64(height[0])
 	}
 
-	ns := m.keepers.NamespaceKeeper().GetNamespace(util.Sha1Hex([]byte(name)), targetHeight)
+	ns := m.keepers.NamespaceKeeper().GetNamespace(util.Hash20Hex([]byte(name)), targetHeight)
 	if ns.IsNil() {
 		return otto.NullValue()
 	}
@@ -179,7 +179,7 @@ func (m *NamespaceModule) register(
 	}
 
 	// Hash the name
-	tx.Name = util.Sha1Hex([]byte(tx.Name))
+	tx.Name = util.Hash20Hex([]byte(tx.Name))
 
 	setCommonTxFields(tx, m.service, options...)
 
@@ -241,7 +241,7 @@ func (m *NamespaceModule) updateDomain(
 	}
 
 	// Hash the name
-	tx.Name = util.Sha1Hex([]byte(tx.Name))
+	tx.Name = util.Hash20Hex([]byte(tx.Name))
 
 	setCommonTxFields(tx, m.service, options...)
 

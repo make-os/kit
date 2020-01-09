@@ -429,4 +429,35 @@ var _ = Describe("SystemKeeper", func() {
 			})
 		})
 	})
+
+	Describe(".SetLastObjectSyncedBlock", func() {
+		var height = uint64(100)
+		BeforeEach(func() {
+			err = sysKeeper.SetLastObjectSyncedBlock(height)
+			Expect(err).To(BeNil())
+		})
+
+		It("should set the key and value", func() {
+			key := MakeKeyRepoSyncherHeight()
+			rec, err := appDB.Get(key)
+			Expect(err).To(BeNil())
+			var res uint64
+			rec.Scan(&res)
+			Expect(res).To(Equal(height))
+		})
+	})
+
+	Describe(".SetLastObjectSyncedBlock", func() {
+		var height = uint64(100)
+		BeforeEach(func() {
+			err = sysKeeper.SetLastObjectSyncedBlock(height)
+			Expect(err).To(BeNil())
+		})
+
+		It("should return expected height", func() {
+			result, err := sysKeeper.GetLastRepoSyncherHeight()
+			Expect(err).To(BeNil())
+			Expect(height).To(Equal(result))
+		})
+	})
 })

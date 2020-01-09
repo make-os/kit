@@ -192,7 +192,7 @@ func (n *Node) Start() error {
 	mempR := cusMemp.MempoolReactor.(*mempool.Reactor)
 
 	// Create repository manager and pass it to logic
-	repoMgr := repo.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht, memp)
+	repoMgr := repo.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht, memp, n)
 	n.repoMgr = repoMgr
 	n.logic.SetRepoManager(repoMgr)
 
@@ -322,6 +322,11 @@ func (n *Node) initJSModuleAndExtension() {
 		}
 		extMgr.Run(name, args)
 	}
+}
+
+// GetBlock returns a tendermint block with the given height.
+func (n *Node) GetBlock(height int64) *tmtypes.Block {
+	return n.tm.BlockStore().LoadBlock(height)
 }
 
 // GetDB returns the database instance

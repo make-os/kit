@@ -743,6 +743,35 @@ func (mr *MockRepoManagerMockRecorder) GetMempool() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMempool", reflect.TypeOf((*MockRepoManager)(nil).GetMempool))
 }
 
+// GetRepo mocks base method
+func (m *MockRepoManager) GetRepo(name string) (types.BareRepo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRepo", name)
+	ret0, _ := ret[0].(types.BareRepo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRepo indicates an expected call of GetRepo
+func (mr *MockRepoManagerMockRecorder) GetRepo(name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockRepoManager)(nil).GetRepo), name)
+}
+
+// MergeTxPushToRepo mocks base method
+func (m *MockRepoManager) MergeTxPushToRepo(tx *types.TxPush) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MergeTxPushToRepo", tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MergeTxPushToRepo indicates an expected call of MergeTxPushToRepo
+func (mr *MockRepoManagerMockRecorder) MergeTxPushToRepo(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeTxPushToRepo", reflect.TypeOf((*MockRepoManager)(nil).MergeTxPushToRepo), tx)
+}
+
 // Log mocks base method
 func (m *MockRepoManager) Log() logger.Logger {
 	m.ctrl.T.Helper()
@@ -969,6 +998,81 @@ func (m *MockRepoManager) Stop() error {
 func (mr *MockRepoManagerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockRepoManager)(nil).Stop))
+}
+
+// MockRepoGetter is a mock of RepoGetter interface
+type MockRepoGetter struct {
+	ctrl     *gomock.Controller
+	recorder *MockRepoGetterMockRecorder
+}
+
+// MockRepoGetterMockRecorder is the mock recorder for MockRepoGetter
+type MockRepoGetterMockRecorder struct {
+	mock *MockRepoGetter
+}
+
+// NewMockRepoGetter creates a new mock instance
+func NewMockRepoGetter(ctrl *gomock.Controller) *MockRepoGetter {
+	mock := &MockRepoGetter{ctrl: ctrl}
+	mock.recorder = &MockRepoGetterMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockRepoGetter) EXPECT() *MockRepoGetterMockRecorder {
+	return m.recorder
+}
+
+// GetRepo mocks base method
+func (m *MockRepoGetter) GetRepo(name string) (types.BareRepo, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRepo", name)
+	ret0, _ := ret[0].(types.BareRepo)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRepo indicates an expected call of GetRepo
+func (mr *MockRepoGetterMockRecorder) GetRepo(name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockRepoGetter)(nil).GetRepo), name)
+}
+
+// MockTxPushMerger is a mock of TxPushMerger interface
+type MockTxPushMerger struct {
+	ctrl     *gomock.Controller
+	recorder *MockTxPushMergerMockRecorder
+}
+
+// MockTxPushMergerMockRecorder is the mock recorder for MockTxPushMerger
+type MockTxPushMergerMockRecorder struct {
+	mock *MockTxPushMerger
+}
+
+// NewMockTxPushMerger creates a new mock instance
+func NewMockTxPushMerger(ctrl *gomock.Controller) *MockTxPushMerger {
+	mock := &MockTxPushMerger{ctrl: ctrl}
+	mock.recorder = &MockTxPushMergerMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockTxPushMerger) EXPECT() *MockTxPushMergerMockRecorder {
+	return m.recorder
+}
+
+// MergeTxPushToRepo mocks base method
+func (m *MockTxPushMerger) MergeTxPushToRepo(tx *types.TxPush) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MergeTxPushToRepo", tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MergeTxPushToRepo indicates an expected call of MergeTxPushToRepo
+func (mr *MockTxPushMergerMockRecorder) MergeTxPushToRepo(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeTxPushToRepo", reflect.TypeOf((*MockTxPushMerger)(nil).MergeTxPushToRepo), tx)
 }
 
 // MockUnfinalizedObjectCache is a mock of UnfinalizedObjectCache interface

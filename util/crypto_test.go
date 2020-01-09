@@ -143,7 +143,12 @@ var _ = Describe("Crypto", func() {
 				Expect(hash.IsEmpty()).To(BeTrue())
 			})
 		})
-
 	})
 
+	Describe(".Hash20", func() {
+		It("should return 20 bytes", func() {
+			res := Hash20([]byte("data"))
+			Expect(res).To(HaveLen(20))
+		})
+	})
 })

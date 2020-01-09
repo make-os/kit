@@ -180,3 +180,27 @@ func (s *SystemKeeper) GetSecrets(from, limit, skip int64) ([][]byte, error) {
 	}
 	return secrets, nil
 }
+
+// SetLastObjectSyncedBlock sets the last block that was processed by the repo
+// object synchronizer
+func (s *SystemKeeper) SetLastObjectSyncedBlock(height uint64) error {
+	data := util.ObjectToBytes(height)
+	record := storage.NewFromKeyValue(MakeKeyRepoSyncherHeight(), data)
+	return s.db.Put(record)
+}
+
+// GetLastRepoSyncherHeight returns the last block that was processed by the
+// repo object synchronizer
+func (s *SystemKeeper) GetLastRepoSyncherHeight() (uint64, error) {
+	record, err := s.db.Get(MakeKeyRepoSyncherHeight())
+	if err != nil {
+		if err == storage.ErrRecordNotFound {
+			return 0, nil
+		}
+		return 0, err
+	}
+
+	var height uint64
+	record.Scan(&height)
+	return height, nil
+}

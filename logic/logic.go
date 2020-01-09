@@ -121,6 +121,11 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 	return l
 }
 
+// ManagedSysKeeper returns a SystemKeeper initialized with a managed database
+func (l *Logic) ManagedSysKeeper() types.SystemKeeper {
+	return keepers.NewSystemKeeper(l._db.NewTx(true, true))
+}
+
 // SetRepoManager sets the repository manager
 func (l *Logic) SetRepoManager(m types.RepoManager) {
 	l.repoMgr = m

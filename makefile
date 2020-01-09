@@ -44,4 +44,5 @@ genmocks:
 	mockgen -source=jsonrpc.go -destination=mocks/jsonrpc.go -package mocks && \
 	mockgen -source=mempool.go -destination=mocks/mempool.go -package mocks && \
 	mockgen -source=ticket.go -destination=mocks/ticket.go -package mocks && \
-	mockgen -source=tree.go -destination=mocks/tree.go -package mocks
+	mockgen -source=tree.go -destination=mocks/tree.go -package mocks && \
+	mockgen -source=node.go -destination=mocks/node.go -package mocks

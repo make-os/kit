@@ -114,6 +114,7 @@ type MockObjects struct {
 	RepoManager     *mocks.MockRepoManager
 	GPGPubKeyKeeper *mocks.MockGPGPubKeyKeeper
 	NamespaceKeeper *mocks.MockNamespaceKeeper
+	BlockGetter     *mocks.MockBlockGetter
 }
 
 // MockLogic returns logic package mocks
@@ -137,6 +138,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.RepoManager = mocks.NewMockRepoManager(ctrl)
 	mo.GPGPubKeyKeeper = mocks.NewMockGPGPubKeyKeeper(ctrl)
 	mo.NamespaceKeeper = mocks.NewMockNamespaceKeeper(ctrl)
+	mo.BlockGetter = mocks.NewMockBlockGetter(ctrl)
 
 	mo.Logic.EXPECT().Sys().Return(mo.Sys).MinTimes(0)
 	mo.Logic.EXPECT().Tx().Return(mo.Tx).MinTimes(0)

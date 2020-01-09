@@ -163,6 +163,8 @@ type PoolGetter interface {
 // RepoManager provides functionality for manipulating repositories.
 type RepoManager interface {
 	PoolGetter
+	RepoGetter
+	TxPushMerger
 
 	// Log returns the logger
 	Log() logger.Logger
@@ -214,6 +216,20 @@ type RepoManager interface {
 
 	// Stop implements Reactor
 	Stop() error
+}
+
+// RepoGetter describes an interface for getting a local repository
+type RepoGetter interface {
+
+	// GetRepo returns a repo handle
+	GetRepo(name string) (BareRepo, error)
+}
+
+// TxPushMerger describes an interface for merging push transaction to a repository
+type TxPushMerger interface {
+	// MergeTxPushToRepo attempts to merge a push transaction to a repository and
+	// also update the repository's state tree.
+	MergeTxPushToRepo(tx *TxPush) error
 }
 
 // UnfinalizedObjectCache keeps track of unfinalized repository objects
