@@ -121,7 +121,7 @@ var _ = Describe("Syncher", func() {
 				mockBlockGetter.EXPECT().GetBlock(int64(1)).Return(block)
 				mockBlockGetter.EXPECT().GetBlock(int64(2)).Return(block)
 				mockBlockGetter.EXPECT().GetBlock(int64(3)).Return(nil)
-				mockSysKeeper.EXPECT().SetLastObjectSyncedBlock(uint64(2)).Return(nil)
+				mockSysKeeper.EXPECT().SetLastRepoObjectsSyncHeight(uint64(2)).Return(nil)
 				mockLogic.EXPECT().ManagedSysKeeper().Return(mockSysKeeper)
 
 				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, cfg.G().Log)

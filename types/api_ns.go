@@ -3,7 +3,7 @@ package types
 // Namespace for JS Module and RPC methods
 const (
 	NamespaceRPC       = "rpc"
-	NamespaceChain     = "chain"
+	NamespaceNode      = "node"
 	NamespaceTx        = "tx"
 	NamespaceCoin      = "coin"
 	NamespacePool      = "pool"

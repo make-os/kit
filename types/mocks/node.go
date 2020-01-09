@@ -46,3 +46,17 @@ func (mr *MockBlockGetterMockRecorder) GetBlock(height interface{}) *gomock.Call
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlock", reflect.TypeOf((*MockBlockGetter)(nil).GetBlock), height)
 }
+
+// GetChainHeight mocks base method
+func (m *MockBlockGetter) GetChainHeight() int64 {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChainHeight")
+	ret0, _ := ret[0].(int64)
+	return ret0
+}
+
+// GetChainHeight indicates an expected call of GetChainHeight
+func (mr *MockBlockGetterMockRecorder) GetChainHeight() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChainHeight", reflect.TypeOf((*MockBlockGetter)(nil).GetChainHeight))
+}

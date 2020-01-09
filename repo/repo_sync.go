@@ -50,8 +50,7 @@ func (s *Syncher) Start() {
 	s.log.Info("Repo object synchronizer has started")
 	s.tick = time.NewTicker(1 * time.Second)
 	for range s.tick.C {
-
-		lh, err := s.keepers.ManagedSysKeeper().GetLastRepoSyncherHeight()
+		lh, err := s.keepers.ManagedSysKeeper().GetLastRepoObjectsSyncHeight()
 		if err != nil {
 			panic(err)
 		}
@@ -72,6 +71,17 @@ func (s *Syncher) setSyncStatus(status bool) {
 	s.gmx.Lock()
 	s.isSyncing = status
 	s.gmx.Unlock()
+}
+
+// IsSynced checks whether the syncher has processed all blocks up to the
+// height block on the chain
+func (s *Syncher) IsSynced() bool {
+	lastSyncedHeight, err := s.keepers.ManagedSysKeeper().
+		GetLastRepoObjectsSyncHeight()
+	if err != nil {
+		panic(err)
+	}
+	return int64(lastSyncedHeight) == s.blockGetter.GetChainHeight()
 }
 
 func (s *Syncher) start() error {
@@ -119,7 +129,7 @@ func (s *Syncher) start() error {
 
 	if s.lastHeight < startHeight && startHeight > 1 {
 		if err := s.keepers.ManagedSysKeeper().
-			SetLastObjectSyncedBlock(startHeight); err != nil {
+			SetLastRepoObjectsSyncHeight(startHeight); err != nil {
 			return err
 		}
 	}

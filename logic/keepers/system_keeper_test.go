@@ -430,10 +430,10 @@ var _ = Describe("SystemKeeper", func() {
 		})
 	})
 
-	Describe(".SetLastObjectSyncedBlock", func() {
+	Describe(".SetLastRepoObjectsSyncHeight", func() {
 		var height = uint64(100)
 		BeforeEach(func() {
-			err = sysKeeper.SetLastObjectSyncedBlock(height)
+			err = sysKeeper.SetLastRepoObjectsSyncHeight(height)
 			Expect(err).To(BeNil())
 		})
 
@@ -447,15 +447,15 @@ var _ = Describe("SystemKeeper", func() {
 		})
 	})
 
-	Describe(".SetLastObjectSyncedBlock", func() {
+	Describe(".SetLastRepoObjectsSyncHeight", func() {
 		var height = uint64(100)
 		BeforeEach(func() {
-			err = sysKeeper.SetLastObjectSyncedBlock(height)
+			err = sysKeeper.SetLastRepoObjectsSyncHeight(height)
 			Expect(err).To(BeNil())
 		})
 
 		It("should return expected height", func() {
-			result, err := sysKeeper.GetLastRepoSyncherHeight()
+			result, err := sysKeeper.GetLastRepoObjectsSyncHeight()
 			Expect(err).To(BeNil())
 			Expect(height).To(Equal(result))
 		})

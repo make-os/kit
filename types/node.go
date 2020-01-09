@@ -8,4 +8,7 @@ import (
 type BlockGetter interface {
 	// GetBlock returns a tendermint block with the given height.
 	GetBlock(height int64) *types.Block
+
+	// GetChainHeight returns the current chain height
+	GetChainHeight() int64
 }

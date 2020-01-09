@@ -109,7 +109,6 @@ func NewManager(
 	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
 	mgr.BaseReactor = *p2p.NewBaseReactor("Reactor", mgr)
 	mgr.pruner = newPruner(mgr, mgr.rootDir)
-	go mgr.pruner.Start()
 
 	mgr.syncher = newSyncher(
 		blockGetter,
@@ -118,7 +117,6 @@ func NewManager(
 		logic,
 		dht,
 		mgr.log.Module("repo-sync"))
-	go mgr.syncher.Start()
 
 	return mgr
 }
@@ -187,6 +185,8 @@ func (m *Manager) Start() error {
 	}()
 
 	go m.subscribe()
+	go m.syncher.Start()
+	go m.pruner.Start()
 
 	return nil
 }

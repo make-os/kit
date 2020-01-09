@@ -67,13 +67,13 @@ type SystemKeeper interface {
 	// no secret are ignored.
 	GetSecrets(from, limit, skip int64) ([][]byte, error)
 
-	// SetLastObjectSyncedBlock sets the last block that was processed by the repo
+	// SetLastRepoObjectsSyncHeight sets the last block that was processed by the repo
 	// object synchronizer
-	SetLastObjectSyncedBlock(height uint64) error
+	SetLastRepoObjectsSyncHeight(height uint64) error
 
-	// GetLastRepoSyncherHeight returns the last block that was processed by the
+	// GetLastRepoObjectsSyncHeight returns the last block that was processed by the
 	// repo object synchronizer
-	GetLastRepoSyncherHeight() (uint64, error)
+	GetLastRepoObjectsSyncHeight() (uint64, error)
 }
 
 // TxKeeper describes an interface for managing transaction data

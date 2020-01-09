@@ -170,33 +170,33 @@ func (mr *MockSystemKeeperMockRecorder) GetSecrets(from, limit, skip interface{}
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecrets", reflect.TypeOf((*MockSystemKeeper)(nil).GetSecrets), from, limit, skip)
 }
 
-// SetLastObjectSyncedBlock mocks base method
-func (m *MockSystemKeeper) SetLastObjectSyncedBlock(height uint64) error {
+// SetLastRepoObjectsSyncHeight mocks base method
+func (m *MockSystemKeeper) SetLastRepoObjectsSyncHeight(height uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetLastObjectSyncedBlock", height)
+	ret := m.ctrl.Call(m, "SetLastRepoObjectsSyncHeight", height)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetLastObjectSyncedBlock indicates an expected call of SetLastObjectSyncedBlock
-func (mr *MockSystemKeeperMockRecorder) SetLastObjectSyncedBlock(height interface{}) *gomock.Call {
+// SetLastRepoObjectsSyncHeight indicates an expected call of SetLastRepoObjectsSyncHeight
+func (mr *MockSystemKeeperMockRecorder) SetLastRepoObjectsSyncHeight(height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastObjectSyncedBlock", reflect.TypeOf((*MockSystemKeeper)(nil).SetLastObjectSyncedBlock), height)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLastRepoObjectsSyncHeight", reflect.TypeOf((*MockSystemKeeper)(nil).SetLastRepoObjectsSyncHeight), height)
 }
 
-// GetLastRepoSyncherHeight mocks base method
-func (m *MockSystemKeeper) GetLastRepoSyncherHeight() (uint64, error) {
+// GetLastRepoObjectsSyncHeight mocks base method
+func (m *MockSystemKeeper) GetLastRepoObjectsSyncHeight() (uint64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLastRepoSyncherHeight")
+	ret := m.ctrl.Call(m, "GetLastRepoObjectsSyncHeight")
 	ret0, _ := ret[0].(uint64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetLastRepoSyncherHeight indicates an expected call of GetLastRepoSyncherHeight
-func (mr *MockSystemKeeperMockRecorder) GetLastRepoSyncherHeight() *gomock.Call {
+// GetLastRepoObjectsSyncHeight indicates an expected call of GetLastRepoObjectsSyncHeight
+func (mr *MockSystemKeeperMockRecorder) GetLastRepoObjectsSyncHeight() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastRepoSyncherHeight", reflect.TypeOf((*MockSystemKeeper)(nil).GetLastRepoSyncherHeight))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastRepoObjectsSyncHeight", reflect.TypeOf((*MockSystemKeeper)(nil).GetLastRepoObjectsSyncHeight))
 }
 
 // MockTxKeeper is a mock of TxKeeper interface

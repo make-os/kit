@@ -8,6 +8,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/k0kubun/pp"
 	"github.com/makeos/mosdef/params"
 
 	"github.com/makeos/mosdef/crypto"
@@ -406,6 +407,7 @@ func (m *Manager) MergeTxPushToRepo(tx *types.TxPush) error {
 
 	// Attempt to merge the push transaction to repo
 	if err := m.mergeTxPush(tx); err != nil {
+		pp.Println("ERRRR", m.syncher.Syncing())
 		m.Log().Error("failed to process push transaction", "Err", err)
 		return nil
 	}

@@ -50,7 +50,7 @@ func (m *Manager) subscribe() {
 			for _, baseTx := range txs {
 
 				tx, ok := baseTx.(*types.TxPush)
-				if !ok || m.syncher.Syncing() {
+				if !ok || !m.syncher.IsSynced() {
 					continue
 				}
 

@@ -329,6 +329,11 @@ func (n *Node) GetBlock(height int64) *tmtypes.Block {
 	return n.tm.BlockStore().LoadBlock(height)
 }
 
+// GetChainHeight returns the current chain height
+func (n *Node) GetChainHeight() int64 {
+	return n.tm.BlockStore().Height()
+}
+
 // GetDB returns the database instance
 func (n *Node) GetDB() storage.Engine {
 	return n.db
