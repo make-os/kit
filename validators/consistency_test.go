@@ -742,7 +742,6 @@ var _ = Describe("TxValidator", func() {
 					&types.PubKeyValue{PubKey: key.PubKey().Base58()},
 				}
 
-				mockRepoKeeper.EXPECT().GetRepo(gomock.Any()).Return(types.BareRepository())
 				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
 
 				tx := types.NewBareTxPush()
@@ -774,42 +773,5 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("reference in a PushOK has a PrevHash value that does not match the current hash of the reference in the Repository state", func() {
-			BeforeEach(func() {
-				params.NumTopStorersLimit = 10
-				storers := []*types.PubKeyValue{
-					&types.PubKeyValue{PubKey: key.PubKey().Base58()},
-				}
-
-				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
-
-				repo := types.BareRepository()
-				repo.References = map[string]interface{}{
-					"refs/heads/master": &types.Reference{
-						Hash: util.BytesToBytes32(util.RandBytes(32)),
-					},
-				}
-				mockRepoKeeper.EXPECT().GetRepo(gomock.Any()).Return(repo)
-
-				tx := types.NewBareTxPush()
-				tx.PushNote.References = []*types.PushedReference{
-					{Name: "refs/heads/master"},
-				}
-				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
-					PushNoteID:   util.StrToBytes32("pn1"),
-					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-					ReferencesHash: []*types.ReferenceHash{
-						{PrevHash: util.BytesToBytes32(util.RandBytes(32))},
-					},
-				})
-
-				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:endorsements.refsHash[0], error:wrong previous hash for reference (refs/heads/master)"))
-			})
-		})
 	})
 })

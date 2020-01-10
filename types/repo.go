@@ -592,8 +592,7 @@ func (pt *PushNote) TotalFee() util.String {
 
 // ReferenceHash describes the current and previous state hash of a reference
 type ReferenceHash struct {
-	Hash     util.Bytes32 `json:"hash" msgpack:"hash" mapstructure:"hash"`
-	PrevHash util.Bytes32 `json:"prevHash" msgpack:"prevHash" mapstructure:"prevHash"`
+	Hash util.Bytes32 `json:"hash" msgpack:"hash" mapstructure:"hash"`
 }
 
 // ReferenceHashes is a collection of ReferenceHash

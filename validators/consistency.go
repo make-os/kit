@@ -243,7 +243,6 @@ func CheckTxPushConsistency(
 		return errors.Wrap(err, "failed to get top storers")
 	}
 
-	repoObj := logic.RepoKeeper().GetRepo(tx.PushNote.GetRepoName())
 	for _, pok := range tx.PushOKs {
 
 		// Ensure that the signers of the PushOK are part of the storers
@@ -254,15 +253,6 @@ func CheckTxPushConsistency(
 		if !storers.Has(spk.Base58()) {
 			return feI(index, "endorsements.senderPubKey",
 				"sender public key does not belong to an active storer")
-		}
-
-		// Ensure all references have valid previous hash
-		for i, ref := range pok.ReferencesHash {
-			pushedRef := tx.PushNote.References[i]
-			if !repoObj.References.Get(pushedRef.Name).Hash.Equal(ref.PrevHash) {
-				msg := fmt.Sprintf("wrong previous hash for reference (%s)", pushedRef.Name)
-				return feI(index, fmt.Sprintf("endorsements.refsHash[%d]", i), msg)
-			}
 		}
 	}
 

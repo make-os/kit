@@ -252,16 +252,14 @@ func (m *Manager) createPushOK(pushNote types.RepoPushNote) (*types.PushOK, erro
 		return nil, err
 	}
 
-	repoObj := m.logic.RepoKeeper().GetRepo(pushNote.GetRepoName())
-
 	// Set the state hash for every reference
 	for _, pushedRef := range pushNote.GetPushedReferences() {
 		refHash := &types.ReferenceHash{}
 		refHash.Hash, err = repo.TreeRoot(pushedRef.Name)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("failed to get reference (%s) state hash", pushedRef.Name))
+			return nil, errors.Wrap(err, fmt.Sprintf("failed to get reference (%s) state hash",
+				pushedRef.Name))
 		}
-		refHash.PrevHash = repoObj.References.Get(pushedRef.Name).Hash
 		pok.ReferencesHash = append(pok.ReferencesHash, refHash)
 	}
 
