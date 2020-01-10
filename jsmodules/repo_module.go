@@ -128,7 +128,7 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
-	return util.EncodeForJS(map[string]interface{}{
+	return EncodeForJS(map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -157,5 +157,5 @@ func (m *RepoModule) get(name string, height ...uint64) interface{} {
 	if repo.IsNil() {
 		return otto.NullValue()
 	}
-	return repo
+	return EncodeForJS(repo)
 }

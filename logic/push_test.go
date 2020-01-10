@@ -82,7 +82,13 @@ var _ = Describe("Push", func() {
 				refs := []*types.PushedReference{
 					&types.PushedReference{Name: "refs/heads/master"},
 				}
-				err = txLogic.execPush(repo, refs, "1", util.MustFromHex(pkID), 0)
+
+				pushOK := []*types.PushOK{
+					{ReferencesHash: []*types.ReferenceHash{
+						{Hash: util.BytesToBytes32(util.RandBytes(32))},
+					}},
+				}
+				err = txLogic.execPush(repo, refs, pushOK, "1", util.MustFromHex(pkID), 0)
 				Expect(err).To(BeNil())
 			})
 

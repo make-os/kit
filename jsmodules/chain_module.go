@@ -118,7 +118,7 @@ func (m *ChainModule) getCurrentHeight() interface{} {
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get current block height"))
 	}
-	return util.EncodeForJS(map[string]interface{}{
+	return EncodeForJS(map[string]interface{}{
 		"height": fmt.Sprintf("%d", res),
 	})
 }

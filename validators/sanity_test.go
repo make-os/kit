@@ -1027,13 +1027,15 @@ var _ = Describe("TxValidator", func() {
 					"endorsement by a single sender not permitted"))
 			})
 
-			It("has PushOKs with different repo hash", func() {
+			It("has PushOKs with different references hash set", func() {
 				params.PushOKQuorumSize = 1
 
 				pushOK1 := &types.PushOK{
 					PushNoteID:   tx.PushNote.ID(),
 					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-					RepoHash:     util.StrToBytes32("repo_hash"),
+					ReferencesHash: []*types.ReferenceHash{
+						{Hash: util.BytesToBytes32(util.RandBytes(32))},
+					},
 				}
 				sig, _ := key.PrivKey().Sign(pushOK1.Bytes())
 				pushOK1.Sig = util.BytesToBytes64(sig)
@@ -1042,7 +1044,9 @@ var _ = Describe("TxValidator", func() {
 				pushOK2 := &types.PushOK{
 					PushNoteID:   tx.PushNote.ID(),
 					SenderPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
-					RepoHash:     util.StrToBytes32("repo_hash_2"),
+					ReferencesHash: []*types.ReferenceHash{
+						{Hash: util.BytesToBytes32(util.RandBytes(32))},
+					},
 				}
 				sig, _ = key2.PrivKey().Sign(pushOK2.Bytes())
 				pushOK2.Sig = util.BytesToBytes64(sig)
@@ -1053,8 +1057,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:endorsements.repoHash, error:varied repository hash; " +
-					"push endorsements can't have different repository hash"))
+				Expect(err.Error()).To(Equal("field:endorsements.refsHash, error:varied references hash; push endorsements can't have unmatched hashes for references"))
 			})
 		})
 

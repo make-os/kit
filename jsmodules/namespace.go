@@ -189,7 +189,7 @@ func (m *NamespaceModule) register(
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
-	return util.EncodeForJS(map[string]interface{}{
+	return EncodeForJS(map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -251,7 +251,7 @@ func (m *NamespaceModule) updateDomain(
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
-	return util.EncodeForJS(map[string]interface{}{
+	return EncodeForJS(map[string]interface{}{
 		"hash": hash,
 	})
 }

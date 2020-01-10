@@ -98,10 +98,10 @@ type BareRepo interface {
 	CreateBlob(content string) (string, error)
 
 	// UpdateTree updates the state tree
-	UpdateTree(updater func(tree *tree.SafeTree) error) ([]byte, int64, error)
+	UpdateTree(ref string, updater func(tree *tree.SafeTree) error) ([]byte, int64, error)
 
 	// TreeRoot returns the state root of the repository
-	TreeRoot() (util.Bytes32, error)
+	TreeRoot(ref string) (util.Bytes32, error)
 
 	// AddEntryToNote adds a note
 	AddEntryToNote(notename, objectHash, note string, env ...string) error
@@ -590,22 +590,37 @@ func (pt *PushNote) TotalFee() util.String {
 	return util.String(sum.String())
 }
 
+// ReferenceHash describes the current and previous state hash of a reference
+type ReferenceHash struct {
+	Hash     util.Bytes32 `json:"hash" msgpack:"hash" mapstructure:"hash"`
+	PrevHash util.Bytes32 `json:"prevHash" msgpack:"prevHash" mapstructure:"prevHash"`
+}
+
+// ReferenceHashes is a collection of ReferenceHash
+type ReferenceHashes []*ReferenceHash
+
+// ID returns the id of the collection
+func (r *ReferenceHashes) ID() util.Bytes32 {
+	bz := util.ObjectToBytes(r)
+	return util.BytesToBytes32(util.Blake2b256(bz))
+}
+
 // PushOK is used to endorse a push note
 type PushOK struct {
-	PushNoteID   util.Bytes32 `json:"pushNoteID" mapstructure:"pushNoteID"`
-	RepoHash     util.Bytes32 `json:"repoHash" mapstructure:"repoHash"`
-	SenderPubKey util.Bytes32 `json:"senderPubKey" mapstructure:"senderPubKey"`
-	Sig          util.Bytes64 `json:"sig" mapstructure:"sig"`
+	PushNoteID     util.Bytes32    `json:"pushNoteID" msgpack:"pushNoteID" mapstructure:"pushNoteID"`
+	ReferencesHash ReferenceHashes `json:"refsHash" msgpack:"refsHash" mapstructure:"refsHash"`
+	SenderPubKey   util.Bytes32    `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
+	Sig            util.Bytes64    `json:"sig" msgpack:"sig" mapstructure:"sig"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (po *PushOK) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(po.PushNoteID, po.RepoHash, po.SenderPubKey, po.Sig)
+	return enc.EncodeMulti(po.PushNoteID, po.ReferencesHash, po.SenderPubKey, po.Sig)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (po *PushOK) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&po.PushNoteID, &po.RepoHash, &po.SenderPubKey, &po.Sig)
+	return dec.DecodeMulti(&po.PushNoteID, &po.ReferencesHash, &po.SenderPubKey, &po.Sig)
 }
 
 // ID returns the hash of the object

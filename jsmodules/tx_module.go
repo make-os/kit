@@ -192,7 +192,7 @@ func (m *TxModule) sendTx(params map[string]interface{}, options ...interface{})
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
-	return util.EncodeForJS(map[string]interface{}{
+	return EncodeForJS(map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -215,5 +215,5 @@ func (m *TxModule) get(hash string) interface{} {
 		panic(err)
 	}
 
-	return util.EncodeForJS(tx)
+	return EncodeForJS(tx)
 }

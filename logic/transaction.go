@@ -80,7 +80,9 @@ func (t *Transaction) Exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.execAddGPGKey(o.PublicKey, spk, o.Fee, chainHeight)
 
 	case *types.TxPush:
-		return t.execPush(o.PushNote.RepoName, o.PushNote.References,
+		return t.execPush(o.PushNote.RepoName,
+			o.PushNote.References,
+			o.PushOKs,
 			o.PushNote.TotalFee(),
 			o.PushNote.PusherKeyID,
 			chainHeight)

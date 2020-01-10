@@ -76,14 +76,14 @@ func (m *PoolModule) Configure() []prompt.Suggest {
 
 // getSize returns the size of the pool
 func (m *PoolModule) getSize() interface{} {
-	return util.EncodeForJS(m.reactor.GetPoolSize())
+	return EncodeForJS(m.reactor.GetPoolSize())
 }
 
 // getTop returns all the transactions in the pool
 func (m *PoolModule) getTop(n int) interface{} {
 	var res = []interface{}{}
 	for _, tx := range m.reactor.GetTop(n) {
-		res = append(res, util.EncodeForJS(tx.ToMap()))
+		res = append(res, EncodeForJS(tx.ToMap()))
 	}
 	return res
 }

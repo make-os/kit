@@ -134,7 +134,7 @@ var _ = Describe("Syncher", func() {
 		})
 	})
 
-	FDescribe(".syncTx", func() {
+	Describe(".syncTx", func() {
 		var syncher *Syncher
 		var err error
 

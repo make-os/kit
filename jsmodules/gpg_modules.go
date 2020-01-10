@@ -130,7 +130,7 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
-	return util.EncodeForJS(map[string]interface{}{
+	return EncodeForJS(map[string]interface{}{
 		"hash": hash,
 	})
 }

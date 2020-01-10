@@ -191,7 +191,7 @@ func (m *AccountModule) getAccount(address string, height ...uint64) interface{}
 	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
 		panic(types.ErrAccountUnknown)
 	}
-	return util.EncodeForJS(account)
+	return EncodeForJS(account)
 }
 
 // getSpendableBalance returns the spendable balance of an account
@@ -285,7 +285,7 @@ func (m *AccountModule) setCommission(params map[string]interface{},
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
-	return util.EncodeForJS(map[string]interface{}{
+	return EncodeForJS(map[string]interface{}{
 		"hash": hash,
 	})
 }

@@ -13,7 +13,8 @@ func BareReference() *Reference {
 
 // Reference represents a git reference
 type Reference struct {
-	Nonce uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce"`
+	Nonce uint64       `json:"nonce" mapstructure:"nonce" msgpack:"nonce"`
+	Hash  util.Bytes32 `json:"hash" mapstructure:"hash" msgpack:"hash"`
 }
 
 // References represents a collection of references
@@ -48,7 +49,6 @@ func BareRepository() *Repository {
 type Repository struct {
 	CreatorAddress util.String `json:"creatorAddress" msgpack:"creatorAddress"`
 	References     References  `json:"references" msgpack:"references"`
-	Address        string      `json:"address" msgpack:"address"`
 }
 
 // IsNil returns true if the repo fields are set to their nil value

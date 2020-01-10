@@ -35,7 +35,7 @@ var _ = Describe("TxValidator", func() {
 	var mockTxLogic *mocks.MockTxLogic
 	var mockTickMgr *mocks.MockTicketManager
 	var mockSysLogic *mocks.MockSysLogic
-	var mocRepoKeeper *mocks.MockRepoKeeper
+	var mockRepoKeeper *mocks.MockRepoKeeper
 	var mockDrand *randmocks.MockDRander
 	var mockGPGPubKeyKeeper *mocks.MockGPGPubKeyKeeper
 	var mockNSKeeper *mocks.MockNamespaceKeeper
@@ -52,7 +52,7 @@ var _ = Describe("TxValidator", func() {
 		mockTxLogic = mockObjects.Tx
 		mockTickMgr = mockObjects.TicketManager
 		mockSysLogic = mockObjects.Sys
-		mocRepoKeeper = mockObjects.RepoKeeper
+		mockRepoKeeper = mockObjects.RepoKeeper
 		mockDrand = mockObjects.Drand
 		mockGPGPubKeyKeeper = mockObjects.GPGPubKeyKeeper
 		mockNSKeeper = mockObjects.NamespaceKeeper
@@ -382,7 +382,7 @@ var _ = Describe("TxValidator", func() {
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				repo := &types.Repository{CreatorAddress: key.Addr()}
-				mocRepoKeeper.EXPECT().GetRepo(tx.Name).Return(repo)
+				mockRepoKeeper.EXPECT().GetRepo(tx.Name).Return(repo)
 
 				err = validators.CheckTxRepoCreateConsistency(tx, -1, mockLogic)
 			})
@@ -402,7 +402,7 @@ var _ = Describe("TxValidator", func() {
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				repo := &types.Repository{}
-				mocRepoKeeper.EXPECT().GetRepo(tx.Name).Return(repo)
+				mockRepoKeeper.EXPECT().GetRepo(tx.Name).Return(repo)
 
 				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
 					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
@@ -741,29 +741,8 @@ var _ = Describe("TxValidator", func() {
 				storers := []*types.PubKeyValue{
 					&types.PubKeyValue{PubKey: key.PubKey().Base58()},
 				}
-				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
 
-				tx := types.NewBareTxPush()
-				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
-					PushNoteID:   util.StrToBytes32("pn1"),
-					SenderPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
-				})
-
-				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, error:sender public key does not belong to an active storer"))
-			})
-		})
-
-		When("a PushOK signer is not among the top storers", func() {
-			BeforeEach(func() {
-				params.NumTopStorersLimit = 10
-				storers := []*types.PubKeyValue{
-					&types.PubKeyValue{PubKey: key.PubKey().Base58()},
-				}
+				mockRepoKeeper.EXPECT().GetRepo(gomock.Any()).Return(types.BareRepository())
 				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
 
 				tx := types.NewBareTxPush()
@@ -792,6 +771,44 @@ var _ = Describe("TxValidator", func() {
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to get top storers: error"))
+			})
+		})
+
+		When("reference in a PushOK has a PrevHash value that does not match the current hash of the reference in the Repository state", func() {
+			BeforeEach(func() {
+				params.NumTopStorersLimit = 10
+				storers := []*types.PubKeyValue{
+					&types.PubKeyValue{PubKey: key.PubKey().Base58()},
+				}
+
+				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
+
+				repo := types.BareRepository()
+				repo.References = map[string]interface{}{
+					"refs/heads/master": &types.Reference{
+						Hash: util.BytesToBytes32(util.RandBytes(32)),
+					},
+				}
+				mockRepoKeeper.EXPECT().GetRepo(gomock.Any()).Return(repo)
+
+				tx := types.NewBareTxPush()
+				tx.PushNote.References = []*types.PushedReference{
+					{Name: "refs/heads/master"},
+				}
+				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
+					PushNoteID:   util.StrToBytes32("pn1"),
+					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+					ReferencesHash: []*types.ReferenceHash{
+						{PrevHash: util.BytesToBytes32(util.RandBytes(32))},
+					},
+				})
+
+				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:endorsements.refsHash[0], error:wrong previous hash for reference (refs/heads/master)"))
 			})
 		})
 	})

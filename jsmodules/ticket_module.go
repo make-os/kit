@@ -167,7 +167,7 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
-	return util.EncodeForJS(map[string]interface{}{
+	return EncodeForJS(map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -231,7 +231,7 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
-	return util.EncodeForJS(map[string]interface{}{
+	return EncodeForJS(map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -314,7 +314,7 @@ func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
-	return util.EncodeForJS(map[string]interface{}{
+	return EncodeForJS(map[string]interface{}{
 		"hash": hash,
 	})
 }

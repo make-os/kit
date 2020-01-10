@@ -8,7 +8,11 @@ import (
 // execPush executes a push transaction
 //
 // ARGS:
+// repoName: The name of the target repo
+// references: The pushed references
+// endorsements: The endorsements by storers
 // fee: The fee paid by the sender
+// pusherKeyID: The id of the pusher
 // chainHeight: The chain height to limit query to
 //
 // CONTRACT (caller must have met the following expectations):
@@ -17,6 +21,7 @@ import (
 func (t *Transaction) execPush(
 	repoName string,
 	references types.PushedReferences,
+	endorsements []*types.PushOK,
 	fee util.String,
 	pusherKeyID []byte,
 	chainHeight uint64) error {
@@ -29,9 +34,10 @@ func (t *Transaction) execPush(
 	gpgPK := t.logic.GPGPubKeyKeeper().GetGPGPubKey(util.ToHex(pusherKeyID), chainHeight)
 
 	// Add the references to the repo and update their nonce
-	for _, ref := range references {
+	for i, ref := range references {
 		curRef := repo.References.Get(ref.Name)
 		curRef.Nonce = curRef.Nonce + 1
+		curRef.Hash = endorsements[0].ReferencesHash[i].Hash
 		repo.References[ref.Name] = curRef
 	}
 

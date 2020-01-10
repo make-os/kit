@@ -8,7 +8,6 @@ import (
 	"sort"
 	"time"
 
-	"github.com/k0kubun/pp"
 	"github.com/makeos/mosdef/params"
 
 	"github.com/makeos/mosdef/crypto"
@@ -222,24 +221,11 @@ func (m *Manager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
 		return nil
 	}
 
-	// At this point, the node is a top storer, so we create,
-	// sign and broadcast a PushOK
-	pok := &types.PushOK{}
-	pok.PushNoteID = pushNote.ID()
-	pok.SenderPubKey = util.BytesToBytes32(m.privValidatorKey.PubKey().MustBytes())
-
-	// Get the repo state hash
-	repo, err := getRepo(m.getRepoPath(pushNote.GetRepoName()))
+	// At this point, the node is a top storer, so we create, sign and broadcast a PushOK
+	pok, err := m.createPushOK(pushNote)
 	if err != nil {
 		return err
 	}
-	pok.RepoHash, err = repo.TreeRoot()
-	if err != nil {
-		return errors.Wrap(err, "failed to get repo tree hash")
-	}
-
-	pok.Sig = util.BytesToBytes64(m.privValidatorKey.PrivKey().MustSign(pok.Bytes()))
-
 	m.broadcastPushOK(pok)
 
 	// Cache the PushOK object as an endorsement of the PushNote so can use it
@@ -252,6 +238,37 @@ func (m *Manager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
 	}
 
 	return nil
+}
+
+// createPushOK creates a PushOK for a push note
+func (m *Manager) createPushOK(pushNote types.RepoPushNote) (*types.PushOK, error) {
+
+	pok := &types.PushOK{}
+	pok.PushNoteID = pushNote.ID()
+	pok.SenderPubKey = util.BytesToBytes32(m.privValidatorKey.PubKey().MustBytes())
+
+	repo, err := getRepo(m.getRepoPath(pushNote.GetRepoName()))
+	if err != nil {
+		return nil, err
+	}
+
+	repoObj := m.logic.RepoKeeper().GetRepo(pushNote.GetRepoName())
+
+	// Set the state hash for every reference
+	for _, pushedRef := range pushNote.GetPushedReferences() {
+		refHash := &types.ReferenceHash{}
+		refHash.Hash, err = repo.TreeRoot(pushedRef.Name)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("failed to get reference (%s) state hash", pushedRef.Name))
+		}
+		refHash.PrevHash = repoObj.References.Get(pushedRef.Name).Hash
+		pok.ReferencesHash = append(pok.ReferencesHash, refHash)
+	}
+
+	// Sign the endorsement
+	pok.Sig = util.BytesToBytes64(m.privValidatorKey.PrivKey().MustSign(pok.Bytes()))
+
+	return pok, nil
 }
 
 // broadcastPushNote broadcast push transaction to peers.
@@ -407,21 +424,23 @@ func (m *Manager) MergeTxPushToRepo(tx *types.TxPush) error {
 
 	// Attempt to merge the push transaction to repo
 	if err := m.mergeTxPush(tx); err != nil {
-		pp.Println("ERRRR", m.syncher.Syncing())
 		m.Log().Error("failed to process push transaction", "Err", err)
 		return nil
 	}
 
-	// Update the repository tree
-	hash, v, err := updateRepoTree(tx, m.getRepoPath(tx.PushNote.RepoName))
+	// Update the repository's reference tree(s)
+	refHashes, err := updateReferencesTree(tx.PushNote.References,
+		m.getRepoPath(tx.PushNote.RepoName))
 	if err != nil {
 		m.Log().Error("Error updating repo tree",
 			"RepoName", tx.PushNote.RepoName, "Err", err)
 		return err
 	}
 
-	m.Log().Info("Repo tree updated", "RepoName", tx.PushNote.RepoName,
-		"TreeHash", util.ToHex(hash), "Version", v)
+	for ref, hash := range refHashes {
+		m.Log().Info("Reference state updated", "RepoName", tx.PushNote.RepoName,
+			"Ref", ref, "StateHash", hash)
+	}
 
 	return nil
 }

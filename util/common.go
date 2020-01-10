@@ -315,55 +315,6 @@ func (n BlockNonce) MarshalText() string {
 	return ToHex(n[:])
 }
 
-// EncodeForJS takes a struct and converts
-// selected types to values that are compatible in the
-// JS environment. It returns a map and will panic
-// if obj is not a map/struct.
-// Set fieldToIgnore to ignore matching fields
-func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
-
-	if obj == nil {
-		return obj
-	}
-
-	var m map[string]interface{}
-
-	// if not struct, we assume it is a map
-	if structs.IsStruct(obj) {
-		s := structs.New(obj)
-		s.TagName = "json"
-		m = s.Map()
-	} else {
-		m = obj.(map[string]interface{})
-	}
-
-	for k, v := range m {
-		if funk.InStrings(fieldToIgnore, k) {
-			continue
-		}
-		switch _v := v.(type) {
-		case BlockNonce:
-			m[k] = ToHex(_v[:])
-		case Bytes32:
-			m[k] = _v.HexStr()
-		case Bytes64:
-			m[k] = _v.HexStr()
-		case int8, []byte:
-			m[k] = fmt.Sprintf("0x%x", _v)
-		case *big.Int, int, int64, uint64:
-			m[k] = fmt.Sprintf("%d", _v)
-		case map[string]interface{}:
-			m[k] = EncodeForJS(_v)
-		case []interface{}:
-			for i, item := range _v {
-				_v[i] = EncodeForJS(item)
-			}
-		}
-	}
-
-	return m
-}
-
 // PrintCLIError prints an error message formatted for the command line
 func PrintCLIError(msg string, args ...interface{}) {
 	fmt.Println(color.RedString("Error:"), fmt.Sprintf(msg, args...))
@@ -531,4 +482,20 @@ func StructToJSON(s interface{}) map[string]interface{} {
 	st := structs.New(s)
 	st.TagName = "json"
 	return st.Map()
+}
+
+// CopyMap copies src map to dst
+func CopyMap(src, dst map[string]interface{}) {
+	for k, v := range src {
+		dst[k] = v
+	}
+}
+
+// CloneMap copies src map to a new map
+func CloneMap(src map[string]interface{}) (dst map[string]interface{}) {
+	dst = make(map[string]interface{})
+	for k, v := range src {
+		dst[k] = v
+	}
+	return
 }

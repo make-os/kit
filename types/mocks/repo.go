@@ -401,9 +401,9 @@ func (mr *MockBareRepoMockRecorder) CreateBlob(content interface{}) *gomock.Call
 }
 
 // UpdateTree mocks base method
-func (m *MockBareRepo) UpdateTree(updater func(*tree.SafeTree) error) ([]byte, int64, error) {
+func (m *MockBareRepo) UpdateTree(ref string, updater func(*tree.SafeTree) error) ([]byte, int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateTree", updater)
+	ret := m.ctrl.Call(m, "UpdateTree", ref, updater)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(int64)
 	ret2, _ := ret[2].(error)
@@ -411,24 +411,24 @@ func (m *MockBareRepo) UpdateTree(updater func(*tree.SafeTree) error) ([]byte, i
 }
 
 // UpdateTree indicates an expected call of UpdateTree
-func (mr *MockBareRepoMockRecorder) UpdateTree(updater interface{}) *gomock.Call {
+func (mr *MockBareRepoMockRecorder) UpdateTree(ref, updater interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTree", reflect.TypeOf((*MockBareRepo)(nil).UpdateTree), updater)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTree", reflect.TypeOf((*MockBareRepo)(nil).UpdateTree), ref, updater)
 }
 
 // TreeRoot mocks base method
-func (m *MockBareRepo) TreeRoot() (util.Bytes32, error) {
+func (m *MockBareRepo) TreeRoot(ref string) (util.Bytes32, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TreeRoot")
+	ret := m.ctrl.Call(m, "TreeRoot", ref)
 	ret0, _ := ret[0].(util.Bytes32)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // TreeRoot indicates an expected call of TreeRoot
-func (mr *MockBareRepoMockRecorder) TreeRoot() *gomock.Call {
+func (mr *MockBareRepoMockRecorder) TreeRoot(ref interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TreeRoot", reflect.TypeOf((*MockBareRepo)(nil).TreeRoot))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TreeRoot", reflect.TypeOf((*MockBareRepo)(nil).TreeRoot), ref)
 }
 
 // AddEntryToNote mocks base method

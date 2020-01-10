@@ -19,7 +19,7 @@ import (
 	"github.com/makeos/mosdef/util"
 )
 
-var _ = Describe("Gitops", func() {
+var _ = Describe("Repo", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path, dotGitPath string
@@ -310,14 +310,14 @@ var _ = Describe("Gitops", func() {
 
 	Describe(".UpdateTree", func() {
 		BeforeEach(func() {
-			tr, closer, err := getRepoTree(repo.Path())
+			tr, closer, err := getReferenceTree(repo.Path(), "refs/heads/master")
 			Expect(err).To(BeNil())
 			Expect(tr.Version()).To(Equal(int64(0)))
 			closer()
 		})
 
 		It("should update repo tree", func() {
-			hash, version, err := repo.UpdateTree(func(tr *tree.SafeTree) error {
+			hash, version, err := repo.UpdateTree("refs/heads/master", func(tr *tree.SafeTree) error {
 				tr.Set([]byte("key"), []byte("value"))
 				return nil
 			})
@@ -325,7 +325,7 @@ var _ = Describe("Gitops", func() {
 			Expect(version).To(Equal(int64(1)))
 			Expect(hash).To(HaveLen(32))
 
-			tr, closer, err := getRepoTree(repo.Path())
+			tr, closer, err := getReferenceTree(repo.Path(), "refs/heads/master")
 			Expect(err).To(BeNil())
 			defer closer()
 			Expect(tr.Version()).To(Equal(int64(1)))

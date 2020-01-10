@@ -305,7 +305,7 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 	}
 
 	pushOKSenders := map[string]struct{}{}
-	pushOKRepoHash := util.EmptyBytes32
+	pushOKRefHashesID := util.EmptyBytes32
 	for _, pushOK := range tx.PushOKs {
 
 		// Ensure PushOKs have same sender
@@ -337,13 +337,13 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 			return feI(index, "endorsements.sig", "failed to verify signature")
 		}
 
-		// Ensure repository hash consistency
-		if pushOKRepoHash.IsEmpty() {
-			pushOKRepoHash = pushOK.RepoHash
+		// Ensure the references hashes are all the same
+		if pushOKRefHashesID.IsEmpty() {
+			pushOKRefHashesID = pushOK.ReferencesHash.ID()
 		} else {
-			if !pushOK.RepoHash.Equal(pushOKRepoHash) {
-				return feI(index, "endorsements.repoHash", "varied repository hash; push "+
-					"endorsements can't have different repository hash")
+			if !pushOK.ReferencesHash.ID().Equal(pushOKRefHashesID) {
+				return feI(index, "endorsements.refsHash", "varied references hash; push "+
+					"endorsements can't have unmatched hashes for references")
 			}
 		}
 	}
