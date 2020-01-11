@@ -34,6 +34,9 @@ type NodeConfig struct {
 
 	// ExtensionsArgs constains arguments for extensions
 	ExtensionsArgs map[string]string `json:"extsargs" mapstructure:"extsargs"`
+
+	// Validator indicates whether to run the node in validator capacity
+	Validator bool `json:"validator" mapstructure:"validator"`
 }
 
 // VersionInfo describes the clients
@@ -194,6 +197,11 @@ func (c *AppConfig) GetDBRootDir() string {
 // GetRepoRoot returns the repo root directory
 func (c *AppConfig) GetRepoRoot() string {
 	return c.repoDir
+}
+
+// IsValidatorNode checks if the node is a validator node
+func (c *AppConfig) IsValidatorNode() bool {
+	return c.Node.Validator
 }
 
 // GetExtensionDir returns the extension directory

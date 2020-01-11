@@ -227,9 +227,9 @@ type RepoGetter interface {
 
 // TxPushMerger describes an interface for merging push transaction to a repository
 type TxPushMerger interface {
-	// MergeTxPushToRepo attempts to merge a push transaction to a repository and
+	// UpdateRepoWithTxPush attempts to merge a push transaction to a repository and
 	// also update the repository's state tree.
-	MergeTxPushToRepo(tx *TxPush) error
+	UpdateRepoWithTxPush(tx *TxPush) error
 }
 
 // UnfinalizedObjectCache keeps track of unfinalized repository objects

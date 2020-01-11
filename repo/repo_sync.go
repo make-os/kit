@@ -14,16 +14,17 @@ import (
 // Syncher scans blocks and downloads objects referenced in push
 // transactions into their respective repositories.
 type Syncher struct {
-	gmx          *sync.Mutex
-	keepers      types.Keepers
-	log          logger.Logger
-	tick         *time.Ticker
-	dht          types.DHT
-	blockGetter  types.BlockGetter
-	txPushMerger types.TxPushMerger
-	repoGetter   types.RepoGetter
-	isSyncing    bool
-	lastHeight   uint64
+	gmx             *sync.Mutex
+	keepers         types.Keepers
+	log             logger.Logger
+	tick            *time.Ticker
+	dht             types.DHT
+	blockGetter     types.BlockGetter
+	txPushMerger    types.TxPushMerger
+	repoGetter      types.RepoGetter
+	isValidatorMode bool
+	isSyncing       bool
+	lastHeight      uint64
 }
 
 // newSyncher creates an instance of Syncher
@@ -33,15 +34,17 @@ func newSyncher(
 	txPushMerger types.TxPushMerger,
 	keepers types.Keepers,
 	dht types.DHT,
+	isValidatorMode bool,
 	log logger.Logger) *Syncher {
 	return &Syncher{
-		gmx:          &sync.Mutex{},
-		log:          log,
-		keepers:      keepers,
-		txPushMerger: txPushMerger,
-		dht:          dht,
-		blockGetter:  blockGetter,
-		repoGetter:   repoGetter,
+		gmx:             &sync.Mutex{},
+		log:             log,
+		keepers:         keepers,
+		txPushMerger:    txPushMerger,
+		dht:             dht,
+		blockGetter:     blockGetter,
+		repoGetter:      repoGetter,
+		isValidatorMode: isValidatorMode,
 	}
 }
 
@@ -144,6 +147,11 @@ func (s *Syncher) syncTx(tx *types.TxPush) error {
 		return errors.Wrap(err, "unable to find repo locally")
 	}
 
+	// Do not download pushed objects in validator mode
+	if s.isValidatorMode {
+		goto update
+	}
+
 	// Download pushed objects
 	for _, objHash := range tx.PushNote.GetPushedObjects() {
 		if repo.ObjectExist(objHash) {
@@ -182,8 +190,9 @@ func (s *Syncher) syncTx(tx *types.TxPush) error {
 			"RepoName", repoName)
 	}
 
+update:
 	// Attempt to merge the push transaction to the target repo
-	if err = s.txPushMerger.MergeTxPushToRepo(tx); err != nil {
+	if err = s.txPushMerger.UpdateRepoWithTxPush(tx); err != nil {
 		return err
 	}
 

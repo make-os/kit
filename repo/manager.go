@@ -71,7 +71,7 @@ type Manager struct {
 	blockGetter          types.BlockGetter     // Provides access to blocks
 	pushNoteSenders      *cache.Cache          // Store senders of push notes
 	pushOKSenders        *cache.Cache          // Stores senders of PushOK messages
-	pushNoteEndorsements *cache.Cache          // Store PushOK
+	pushNoteEndorsements *cache.Cache          // Store PushOKs
 	syncher              *Syncher              // Repo object synchronizer
 }
 
@@ -116,6 +116,7 @@ func NewManager(
 		mgr,
 		logic,
 		dht,
+		cfg.IsValidatorNode(),
 		mgr.log.Module("repo-sync"))
 
 	return mgr
@@ -175,14 +176,16 @@ func (m *Manager) addPushNoteEndorsement(pnID string, pok *types.PushOK) {
 func (m *Manager) Start() error {
 	s := http.NewServeMux()
 	s.HandleFunc("/", m.handler)
-	m.log.Info("Server has started", "Address", m.addr)
 
-	m.srv = &http.Server{Addr: m.addr, Handler: s}
-
-	go func() {
-		m.srv.ListenAndServe()
-		m.wg.Done()
-	}()
+	// Only start server in non-validator node
+	if !m.cfg.IsValidatorNode() {
+		m.log.Info("Server has started", "Address", m.addr)
+		m.srv = &http.Server{Addr: m.addr, Handler: s}
+		go func() {
+			m.srv.ListenAndServe()
+			m.wg.Done()
+		}()
+	}
 
 	go m.subscribe()
 	go m.syncher.Start()

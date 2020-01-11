@@ -36,13 +36,18 @@ func (m *Manager) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 // onPushNote is the handler for incoming PushNote messages
 func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 
+	// Exit if the node is in validator mode
+	if m.cfg.IsValidatorNode() {
+		return nil
+	}
+
 	// Attempt to decode message to PushNote
 	var pn types.PushNote
 	if err := util.BytesToObject(msgBytes, &pn); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
 
-	m.log.Debug("Received push transaction from peer",
+	m.log.Debug("Received push notification from peer",
 		"PeerID", peer.ID(), "TxID", pn.ID().String())
 
 	repoName := pn.GetRepoName()
@@ -76,8 +81,10 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 
 	// Validate the push note.
 	// Downloads the git objects, performs sanity and consistency checks on the
-	// push note. Does not check if the push note can extend the repository without issue
-	if err := checkPushNote(&pn, m.logic, m.dht); err != nil {
+	// push note. Does not check if the push note can extend the repository
+	// without issue.
+	// NOTE: If in validator mode, only sanity check is performed.
+	if err := checkPushNote(&pn, m.dht, m.logic); err != nil {
 		return errors.Wrap(err, "failed push note validation")
 	}
 
@@ -165,6 +172,11 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 
 // onPushOK is the handler for incoming PushOK messages
 func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
+
+	// Return if in validator mode.
+	if m.cfg.IsValidatorNode() {
+		return nil
+	}
 
 	// Attempt to decode message to PushOK
 	var pok types.PushOK
@@ -416,14 +428,17 @@ func (m *Manager) mergeTxPush(tx *types.TxPush) error {
 	return nil
 }
 
-// MergeTxPushToRepo attempts to merge a push transaction to a repository and
+// UpdateRepoWithTxPush attempts to merge a push transaction to a repository and
 // also update the repository's state tree.
-func (m *Manager) MergeTxPushToRepo(tx *types.TxPush) error {
+func (m *Manager) UpdateRepoWithTxPush(tx *types.TxPush) error {
 
-	// Attempt to merge the push transaction to repo
-	if err := m.mergeTxPush(tx); err != nil {
-		m.Log().Error("failed to process push transaction", "Err", err)
-		return nil
+	// Merge the push transaction to the repo only if the node is not in
+	// validator mode.
+	if !m.cfg.IsValidatorNode() {
+		if err := m.mergeTxPush(tx); err != nil {
+			m.Log().Error("failed to process push transaction", "Err", err)
+			return nil
+		}
 	}
 
 	// Update the repository's reference tree(s)

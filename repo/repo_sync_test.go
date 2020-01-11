@@ -68,7 +68,7 @@ var _ = Describe("Syncher", func() {
 		Context("start block not found", func() {
 			BeforeEach(func() {
 				mockBlockGetter.EXPECT().GetBlock(int64(1)).Return(nil)
-				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, cfg.G().Log)
+				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, false, cfg.G().Log)
 				syncher.isSyncing = true
 				err = syncher.start()
 			})
@@ -84,7 +84,7 @@ var _ = Describe("Syncher", func() {
 				block := &tmtypes.Block{}
 				block.Txs = append(block.Txs, []byte("abcdef"))
 				mockBlockGetter.EXPECT().GetBlock(int64(1)).Return(block)
-				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, cfg.G().Log)
+				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, false, cfg.G().Log)
 				err = syncher.start()
 			})
 
@@ -103,7 +103,7 @@ var _ = Describe("Syncher", func() {
 				mockBlockGetter.EXPECT().GetBlock(int64(1)).Return(block)
 				mockBlockGetter.EXPECT().GetBlock(int64(2)).Return(nil)
 
-				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, cfg.G().Log)
+				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, false, cfg.G().Log)
 				err = syncher.start()
 			})
 
@@ -124,7 +124,7 @@ var _ = Describe("Syncher", func() {
 				mockSysKeeper.EXPECT().SetLastRepoObjectsSyncHeight(uint64(2)).Return(nil)
 				mockLogic.EXPECT().ManagedSysKeeper().Return(mockSysKeeper)
 
-				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, cfg.G().Log)
+				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, false, cfg.G().Log)
 				err = syncher.start()
 			})
 
@@ -143,7 +143,7 @@ var _ = Describe("Syncher", func() {
 				tx := types.NewBareTxPush()
 				tx.PushNote.RepoName = "unknown"
 				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(nil, fmt.Errorf("error"))
-				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, cfg.G().Log)
+				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, false, cfg.G().Log)
 				err = syncher.syncTx(tx)
 			})
 
@@ -166,10 +166,10 @@ var _ = Describe("Syncher", func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(true)
 
-				mockMgr.EXPECT().MergeTxPushToRepo(tx).Return(nil)
+				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
 
 				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
-				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, cfg.G().Log)
+				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, false, cfg.G().Log)
 				err = syncher.syncTx(tx)
 			})
 
@@ -191,10 +191,10 @@ var _ = Describe("Syncher", func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(true)
 
-				mockMgr.EXPECT().MergeTxPushToRepo(tx).Return(fmt.Errorf("error"))
+				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(fmt.Errorf("error"))
 
 				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
-				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, cfg.G().Log)
+				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, false, cfg.G().Log)
 				err = syncher.syncTx(tx)
 			})
 
@@ -220,7 +220,7 @@ var _ = Describe("Syncher", func() {
 				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
 
 				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
-				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, cfg.G().Log)
+				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, false, cfg.G().Log)
 				err = syncher.syncTx(tx)
 			})
 
@@ -248,7 +248,7 @@ var _ = Describe("Syncher", func() {
 				repo.EXPECT().WriteObjectToFile(obj, objBz).Return(fmt.Errorf("error"))
 
 				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
-				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, cfg.G().Log)
+				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, false, cfg.G().Log)
 				err = syncher.syncTx(tx)
 			})
 
@@ -277,10 +277,10 @@ var _ = Describe("Syncher", func() {
 
 				mockDHT.EXPECT().Annonce(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 
-				mockMgr.EXPECT().MergeTxPushToRepo(tx).Return(nil)
+				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
 
 				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
-				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, cfg.G().Log)
+				syncher = newSyncher(mockBlockGetter, mockMgr, mockMgr, mockLogic, mockDHT, false, cfg.G().Log)
 				err = syncher.syncTx(tx)
 			})
 

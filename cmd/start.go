@@ -76,6 +76,7 @@ func setStartFlags(cmds ...*cobra.Command) {
 		f.String("rpc.password", "", "Set the RPC password")
 		f.Bool("rpc.disableauth", false, "Disable RPC authentication")
 		f.Bool("rpc.authpubmethod", false, "Enable RPC authentication for non-private methods")
+		f.Bool("node.validator", false, "Run the node in validator mode")
 		f.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")
 		f.String("rpc.tmaddress", config.DefaultTMRPCAddress, "Set tendermint RPC listening address")
 		f.String("dht.address", config.DefaultDHTAddress, "Set the DHT listening address")
@@ -99,6 +100,7 @@ func setStartFlags(cmds ...*cobra.Command) {
 			viper.BindPFlag("repoman.address", cmd.Flags().Lookup("repoman.address"))
 			viper.BindPFlag("node.addpeer", cmd.Flags().Lookup("node.addpeer"))
 			viper.BindPFlag("node.exts", cmd.Flags().Lookup("node.exts"))
+			viper.BindPFlag("node.validator", cmd.Flags().Lookup("node.validator"))
 			viper.Set("node.extsargs", &extArgsMap)
 		}
 	}

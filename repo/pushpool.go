@@ -115,7 +115,7 @@ func newItem(note *types.PushNote) *containerItem {
 	return item
 }
 
-type pushPoolValidator func(note types.RepoPushNote, keepers types.Keepers, dht types.DHT) error
+type pushPoolValidator func(note types.RepoPushNote, dht types.DHT, logic types.Logic) error
 
 // PushPool implements types.PushPool.
 type PushPool struct {
@@ -126,13 +126,13 @@ type PushPool struct {
 	refIndex     containerIndex    // Helps keep track of note targeting references of a repository
 	refNonceIdx  refNonceIndex     // Helps keep track of the nonce of repo references
 	repoNotesIdx repoNotesIndex    // Helps keep track of repos and push notes target them
-	keepers      types.Keepers     // The application data keeper
+	logic        types.Logic       // The application logic manager
 	dht          types.DHT         // The application's DHT provider
 	noteChecker  pushPoolValidator // Function used to validate a transaction
 }
 
 // NewPushPool creates an instance of PushPool
-func NewPushPool(cap int, keepers types.Keepers, dht types.DHT) *PushPool {
+func NewPushPool(cap int, logic types.Logic, dht types.DHT) *PushPool {
 	pool := &PushPool{
 		gmx:          &sync.RWMutex{},
 		cap:          cap,
@@ -141,7 +141,7 @@ func NewPushPool(cap int, keepers types.Keepers, dht types.DHT) *PushPool {
 		refIndex:     containerIndex(map[string]*containerItem{}),
 		repoNotesIdx: repoNotesIndex(map[string][]*containerItem{}),
 		refNonceIdx:  refNonceIndex(map[string]uint64{}),
-		keepers:      keepers,
+		logic:        logic,
 		dht:          dht,
 		noteChecker:  checkPushNote,
 	}
@@ -309,7 +309,7 @@ func (p *PushPool) Get(noteID string) *types.PushNote {
 
 // validate validates a push transaction
 func (p *PushPool) validate(note types.RepoPushNote) error {
-	return p.noteChecker(note, p.keepers, p.dht)
+	return p.noteChecker(note, p.dht, p.logic)
 }
 
 // RepoHasPushNote returns true if the given repo has a transaction in the pool

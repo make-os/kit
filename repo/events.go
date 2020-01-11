@@ -57,7 +57,7 @@ func (m *Manager) subscribe() {
 		// 		}
 
 		// 		pp.Println("BY EVENT")
-		// 		if err := m.MergeTxPushToRepo(tx); err != nil {
+		// 		if err := m.UpdateRepoWithTxPush(tx); err != nil {
 		// 			continue
 		// 		}
 		// 	}

@@ -435,13 +435,14 @@ func CheckPushNoteConsistency(tx *types.PushNote, keepers types.Keepers) error {
 }
 
 // checkPushNote performs validation checks on a push transaction
-func checkPushNote(tx types.RepoPushNote, keepers types.Keepers, dht types.DHT) error {
+func checkPushNote(tx types.RepoPushNote, dht types.DHT,
+	logic types.Logic) error {
 
 	if err := CheckPushNoteSyntax(tx.(*types.PushNote)); err != nil {
 		return err
 	}
 
-	if err := CheckPushNoteConsistency(tx.(*types.PushNote), keepers); err != nil {
+	if err := CheckPushNoteConsistency(tx.(*types.PushNote), logic); err != nil {
 		return err
 	}
 
