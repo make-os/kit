@@ -247,7 +247,7 @@ func (m *Manager) createPushOK(pushNote types.RepoPushNote) (*types.PushOK, erro
 	pok.PushNoteID = pushNote.ID()
 	pok.SenderPubKey = util.BytesToBytes32(m.privValidatorKey.PubKey().MustBytes())
 
-	repo, err := getRepo(m.getRepoPath(pushNote.GetRepoName()))
+	repo, err := GetRepo(m.getRepoPath(pushNote.GetRepoName()))
 	if err != nil {
 		return nil, err
 	}
@@ -368,7 +368,7 @@ func (m *Manager) mergeTxPush(tx *types.TxPush) error {
 	repoPath := m.getRepoPath(tx.PushNote.GetRepoName())
 
 	// Get the repository
-	repo, err := getRepo(repoPath)
+	repo, err := GetRepo(repoPath)
 	if err != nil {
 		return err
 	}

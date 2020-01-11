@@ -392,7 +392,7 @@ func (m *Manager) FindObject(key []byte) ([]byte, error) {
 		return nil, fmt.Errorf("invalid object hash")
 	}
 
-	repo, err := getRepo(m.getRepoPath(repoName))
+	repo, err := GetRepo(m.getRepoPath(repoName))
 	if err != nil {
 		return nil, err
 	}

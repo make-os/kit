@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/crypto/rand"
 	"github.com/makeos/mosdef/storage"
@@ -225,6 +226,9 @@ type Logic interface {
 
 	// GetRepoManager returns the repository manager
 	GetRepoManager() RepoManager
+
+	// Cfg returns the application config
+	Cfg() *config.AppConfig
 }
 
 // Keepers describes modules for accessing the state and storage

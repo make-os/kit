@@ -236,11 +236,17 @@ func CheckTxAddGPGPubKeyConsistency(
 func CheckTxPushConsistency(
 	tx *types.TxPush,
 	index int,
-	logic types.Logic) error {
+	logic types.Logic,
+	repoGetter func(name string) (types.BareRepo, error)) error {
 
 	storers, err := logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
 	if err != nil {
 		return errors.Wrap(err, "failed to get top storers")
+	}
+
+	localRepo, err := repoGetter(tx.PushNote.GetRepoName())
+	if err != nil {
+		return errors.Wrap(err, "failed to get repo")
 	}
 
 	for _, pok := range tx.PushOKs {
@@ -253,6 +259,19 @@ func CheckTxPushConsistency(
 		if !storers.Has(spk.Base58()) {
 			return feI(index, "endorsements.senderPubKey",
 				"sender public key does not belong to an active storer")
+		}
+
+		// Ensure the references hash are valid
+		for i, refHash := range pok.ReferencesHash {
+			ref := tx.PushNote.References[i]
+			curRefHash, err := localRepo.TreeRoot(ref.Name)
+			if err != nil {
+				return errors.Wrapf(err, "failed to get reference (%s) tree root hash", ref.Name)
+			}
+			if !refHash.Hash.Equal(curRefHash) {
+				return feI(index, "endorsements.refsHash",
+					fmt.Sprintf("wrong tree hash for reference (%s)", ref.Name))
+			}
 		}
 	}
 

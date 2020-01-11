@@ -49,7 +49,7 @@ var _ = Describe("Manager", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = getRepo(path)
+		repo, err = GetRepo(path)
 		Expect(err).To(BeNil())
 	})
 

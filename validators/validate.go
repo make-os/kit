@@ -2,8 +2,10 @@ package validators
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/repo"
 	"github.com/makeos/mosdef/types"
 )
 
@@ -95,7 +97,9 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic types.Logic) error 
 	case *types.TxAddGPGPubKey:
 		return CheckTxAddGPGPubKeyConsistency(o, index, logic)
 	case *types.TxPush:
-		return CheckTxPushConsistency(o, index, logic)
+		return CheckTxPushConsistency(o, index, logic, func(name string) (types.BareRepo, error) {
+			return repo.GetRepo(filepath.Join(logic.Cfg().GetRepoRoot(), name))
+		})
 	case *types.TxNamespaceAcquire:
 		return CheckTxNSAcquireConsistency(o, index, logic)
 	case *types.TxNamespaceDomainUpdate:

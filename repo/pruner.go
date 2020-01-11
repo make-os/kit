@@ -61,7 +61,7 @@ func (p *Pruner) doPrune(repoName string, force bool) error {
 		return fmt.Errorf("refused because repo still has transactions in the push pool")
 	}
 
-	repo, err := getRepo(filepath.Join(p.reposDir, repoName))
+	repo, err := GetRepo(filepath.Join(p.reposDir, repoName))
 	if err != nil {
 		return err
 	}

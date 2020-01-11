@@ -343,7 +343,8 @@ func (r *Repo) Prune(olderThan time.Time) error {
 	})
 }
 
-func getRepo(path string) (types.BareRepo, error) {
+// GetRepo returns a repository
+func GetRepo(path string) (types.BareRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
@@ -717,7 +718,7 @@ func updateReferencesTree(
 	pushedRefs types.PushedReferences,
 	repoPath string) (map[string]util.Bytes32, error) {
 
-	repo, err := getRepo(repoPath)
+	repo, err := GetRepo(repoPath)
 	if err != nil {
 		return nil, err
 	}

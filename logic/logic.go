@@ -164,6 +164,11 @@ func (l *Logic) Commit() error {
 	return nil
 }
 
+// Cfg returns the application config
+func (l *Logic) Cfg() *config.AppConfig {
+	return l.cfg
+}
+
 // Discard the underlying transaction and renew it.
 // Also rollback any uncommitted tree modifications.
 func (l *Logic) Discard() {

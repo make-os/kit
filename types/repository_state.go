@@ -13,8 +13,7 @@ func BareReference() *Reference {
 
 // Reference represents a git reference
 type Reference struct {
-	Nonce uint64       `json:"nonce" mapstructure:"nonce" msgpack:"nonce"`
-	Hash  util.Bytes32 `json:"hash" mapstructure:"hash" msgpack:"hash"`
+	Nonce uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce"`
 }
 
 // References represents a collection of references

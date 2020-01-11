@@ -6,6 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	config "github.com/makeos/mosdef/config"
 	crypto "github.com/makeos/mosdef/crypto"
 	rand "github.com/makeos/mosdef/crypto/rand"
 	storage "github.com/makeos/mosdef/storage"
@@ -768,6 +769,20 @@ func (mr *MockAtomicLogicMockRecorder) GetRepoManager() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoManager", reflect.TypeOf((*MockAtomicLogic)(nil).GetRepoManager))
 }
 
+// Cfg mocks base method
+func (m *MockAtomicLogic) Cfg() *config.AppConfig {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Cfg")
+	ret0, _ := ret[0].(*config.AppConfig)
+	return ret0
+}
+
+// Cfg indicates an expected call of Cfg
+func (mr *MockAtomicLogicMockRecorder) Cfg() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockAtomicLogic)(nil).Cfg))
+}
+
 // GetDBTx mocks base method
 func (m *MockAtomicLogic) GetDBTx() storage.Tx {
 	m.ctrl.T.Helper()
@@ -1091,6 +1106,20 @@ func (m *MockLogic) GetRepoManager() types.RepoManager {
 func (mr *MockLogicMockRecorder) GetRepoManager() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoManager", reflect.TypeOf((*MockLogic)(nil).GetRepoManager))
+}
+
+// Cfg mocks base method
+func (m *MockLogic) Cfg() *config.AppConfig {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Cfg")
+	ret0, _ := ret[0].(*config.AppConfig)
+	return ret0
+}
+
+// Cfg indicates an expected call of Cfg
+func (mr *MockLogicMockRecorder) Cfg() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockLogic)(nil).Cfg))
 }
 
 // MockKeepers is a mock of Keepers interface
