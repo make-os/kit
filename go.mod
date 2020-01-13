@@ -17,7 +17,10 @@ require (
 	github.com/bitfield/script v0.14.0
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/c-bata/go-prompt v0.2.3
+	github.com/coniks-sys/coniks-go v0.0.0-20180722014011-11acf4819b71
 	github.com/dedis/drand v0.5.0
+	github.com/dghubble/go-twitter v0.0.0-20190719072343-39e5462e111f // indirect
+	github.com/dghubble/oauth1 v0.6.0 // indirect
 	github.com/dgraph-io/badger v1.6.0
 	github.com/dgryski/go-farm v0.0.0-20191112170834-c2139c5d712b // indirect
 	github.com/dustin/go-humanize v1.0.0
@@ -59,6 +62,7 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/multiformats/go-multiaddr v0.2.0
 	github.com/multiformats/go-multihash v0.0.10
+	github.com/ncodes/coniks-go v0.0.0-20180722014011-11acf4819b71
 	github.com/ncodes/go-prettyjson v0.0.0-20180528130907-d229c224a219
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
 	github.com/onsi/ginkgo v1.8.0
