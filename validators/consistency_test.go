@@ -125,7 +125,7 @@ var _ = Describe("TxValidator", func() {
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().Base58(), tx.Type, false).
+					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().MustBytes32(), tx.Type, false).
 						Return(nil, fmt.Errorf("error"))
 
 					err = validators.CheckTxTicketPurchaseConsistency(tx, -1, mockLogic)
@@ -146,7 +146,7 @@ var _ = Describe("TxValidator", func() {
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().Base58(), tx.Type, false).
+					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().MustBytes32(), tx.Type, false).
 						Return([]*types.Ticket{}, nil)
 
 					err = validators.CheckTxTicketPurchaseConsistency(tx, -1, mockLogic)
@@ -167,7 +167,7 @@ var _ = Describe("TxValidator", func() {
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().Base58(), tx.Type, false).
+					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().MustBytes32(), tx.Type, false).
 						Return([]*types.Ticket{&types.Ticket{}}, nil)
 					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(10.4)
 
@@ -189,7 +189,7 @@ var _ = Describe("TxValidator", func() {
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().Base58(), tx.Type, false).
+					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().MustBytes32(), tx.Type, false).
 						Return([]*types.Ticket{&types.Ticket{}}, nil)
 					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(10.4)
 					mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
@@ -223,7 +223,7 @@ var _ = Describe("TxValidator", func() {
 		When("target ticket does not exist", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
-				tx.TicketHash = "ticket_hash"
+				tx.TicketHash = util.StrToBytes32("ticket_hash")
 
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -243,12 +243,12 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					key2 := crypto.NewKeyFromIntSeed(2)
 					tx := types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
-					tx.TicketHash = "ticket_hash"
+					tx.TicketHash = util.StrToBytes32("ticket_hash")
 					tx.SetSenderPubKey(key2.PubKey().MustBytes())
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					ticket := &types.Ticket{ProposerPubKey: key.PubKey().Base58()}
+					ticket := &types.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}
 					mockTickMgr.EXPECT().GetByHash(tx.TicketHash).Return(ticket)
 
 					err = validators.CheckTxUnbondTicketConsistency(tx, -1, mockLogic)
@@ -266,13 +266,13 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					key2 := crypto.NewKeyFromIntSeed(2)
 					tx := types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
-					tx.TicketHash = "ticket_hash"
+					tx.TicketHash = util.StrToBytes32("ticket_hash")
 					tx.SetSenderPubKey(key2.PubKey().MustBytes())
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 					ticket := &types.Ticket{
-						ProposerPubKey: key.PubKey().Base58(),
+						ProposerPubKey: key.PubKey().MustBytes32(),
 						Delegator:      key.Addr().String(),
 					}
 					mockTickMgr.EXPECT().GetByHash(tx.TicketHash).Return(ticket)
@@ -290,13 +290,13 @@ var _ = Describe("TxValidator", func() {
 		When("ticket decay height is set and greater than current block height", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
-				tx.TicketHash = "ticket_hash"
+				tx.TicketHash = util.StrToBytes32("ticket_hash")
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				bi := &types.BlockInfo{Height: 50}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				ticket := &types.Ticket{
-					ProposerPubKey: key.PubKey().Base58(),
+					ProposerPubKey: key.PubKey().MustBytes32(),
 					DecayBy:        100,
 				}
 				mockTickMgr.EXPECT().GetByHash(tx.TicketHash).Return(ticket)
@@ -313,13 +313,13 @@ var _ = Describe("TxValidator", func() {
 		When("ticket decay height is set less than current block height", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
-				tx.TicketHash = "ticket_hash"
+				tx.TicketHash = util.StrToBytes32("ticket_hash")
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				bi := &types.BlockInfo{Height: 101}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				ticket := &types.Ticket{
-					ProposerPubKey: key.PubKey().Base58(),
+					ProposerPubKey: key.PubKey().MustBytes32(),
 					DecayBy:        100,
 				}
 				mockTickMgr.EXPECT().GetByHash(tx.TicketHash).Return(ticket)
@@ -336,13 +336,13 @@ var _ = Describe("TxValidator", func() {
 		When("coin transfer dry-run fails", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
-				tx.TicketHash = "ticket_hash"
+				tx.TicketHash = util.StrToBytes32("ticket_hash")
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				bi := &types.BlockInfo{Height: 101}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				ticket := &types.Ticket{
-					ProposerPubKey: key.PubKey().Base58(),
+					ProposerPubKey: key.PubKey().MustBytes32(),
 					DecayBy:        0,
 				}
 				mockTickMgr.EXPECT().GetByHash(tx.TicketHash).Return(ticket)
@@ -765,7 +765,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				params.NumTopStorersLimit = 10
 				storers := []*types.PubKeyValue{
-					&types.PubKeyValue{PubKey: key.PubKey().Base58()},
+					&types.PubKeyValue{PubKey: key.PubKey().MustBytes32()},
 				}
 
 				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
@@ -793,7 +793,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				params.NumTopStorersLimit = 10
 				storers := []*types.PubKeyValue{
-					&types.PubKeyValue{PubKey: key.PubKey().Base58()},
+					&types.PubKeyValue{PubKey: key.PubKey().MustBytes32()},
 				}
 
 				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
@@ -821,7 +821,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				params.NumTopStorersLimit = 10
 				storers := []*types.PubKeyValue{
-					&types.PubKeyValue{PubKey: key.PubKey().Base58()},
+					&types.PubKeyValue{PubKey: key.PubKey().MustBytes32()},
 				}
 
 				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
@@ -857,7 +857,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				params.NumTopStorersLimit = 10
 				storers := []*types.PubKeyValue{
-					&types.PubKeyValue{PubKey: key.PubKey().Base58()},
+					&types.PubKeyValue{PubKey: key.PubKey().MustBytes32()},
 				}
 
 				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)

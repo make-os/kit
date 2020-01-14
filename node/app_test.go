@@ -191,8 +191,8 @@ var _ = Describe("App", func() {
 		When("when no validator currently exists and two tickets are randomly selected", func() {
 			var key = crypto.NewKeyFromIntSeed(1)
 			var key2 = crypto.NewKeyFromIntSeed(1)
-			var t = &types.Ticket{ProposerPubKey: key.PubKey().Base58()}
-			var t2 = &types.Ticket{ProposerPubKey: key2.PubKey().Base58()}
+			var t = &types.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}
+			var t2 = &types.Ticket{ProposerPubKey: key2.PubKey().MustBytes32()}
 			var tickets = []*types.Ticket{t, t2}
 
 			BeforeEach(func() {
@@ -201,7 +201,7 @@ var _ = Describe("App", func() {
 					gomock.Any()).Return(tickets, nil)
 				app.ticketMgr = mockLogic.TicketManager
 				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
-				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[string]*types.Validator{}, nil)
+				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[util.Bytes32]*types.Validator{}, nil)
 				app.logic = mockLogic.AtomicLogic
 			})
 
@@ -216,7 +216,7 @@ var _ = Describe("App", func() {
 		When("when one validator currently exists and another different validator is selected", func() {
 			var existingValKey = crypto.NewKeyFromIntSeed(1)
 			var keyOfNewTicket = crypto.NewKeyFromIntSeed(2)
-			var newTicket = &types.Ticket{ProposerPubKey: keyOfNewTicket.PubKey().Base58(), Height: 100}
+			var newTicket = &types.Ticket{ProposerPubKey: keyOfNewTicket.PubKey().MustBytes32(), Height: 100}
 			var tickets = []*types.Ticket{newTicket}
 
 			BeforeEach(func() {
@@ -229,10 +229,9 @@ var _ = Describe("App", func() {
 				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
 
 				// Mock the return of the existing validator
-				pubKeyBz, _ := existingValKey.PubKey().Bytes()
-				pubKeyHex := types.HexBytes(pubKeyBz)
-				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[string]*types.Validator{
-					pubKeyHex.String(): &types.Validator{TicketID: "ticket1"},
+				pubKey := existingValKey.PubKey().MustBytes32()
+				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[util.Bytes32]*types.Validator{
+					pubKey: &types.Validator{PubKey: util.StrToBytes32("pub_key")},
 				}, nil)
 
 				app.logic = mockLogic.AtomicLogic
@@ -262,8 +261,8 @@ var _ = Describe("App", func() {
 		When("when error occurred when fetching current validators", func() {
 			var key = crypto.NewKeyFromIntSeed(1)
 			var key2 = crypto.NewKeyFromIntSeed(1)
-			var t = &types.Ticket{ProposerPubKey: key.PubKey().Base58()}
-			var t2 = &types.Ticket{ProposerPubKey: key2.PubKey().Base58()}
+			var t = &types.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}
+			var t2 = &types.Ticket{ProposerPubKey: key2.PubKey().MustBytes32()}
 			var tickets = []*types.Ticket{t, t2}
 
 			BeforeEach(func() {
@@ -521,7 +520,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				tx := types.NewBaseTx(types.TxTypeUnbondStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
-				tx.(*types.TxTicketUnbond).TicketHash = "tid"
+				tx.(*types.TxTicketUnbond).TicketHash = util.StrToBytes32("tid")
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.Tx.EXPECT().PrepareExec(req, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
@@ -529,7 +528,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should return cache the unbond storer ticket tx", func() {
-				Expect(app.unbondStorerRequests).To(HaveLen(1))
+				Expect(app.unbondStorerReqs).To(HaveLen(1))
 			})
 		})
 
@@ -868,8 +867,8 @@ var _ = Describe("App", func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("app_hash")).Times(1)
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 				app.heightToSaveNewValidators = 100
-				app.unbondStorerRequests = append(app.unbondStorerRequests, "ticket_hash")
-				mockLogic.TicketManager.EXPECT().UpdateDecayBy("ticket_hash", uint64(app.wBlock.Height))
+				app.unbondStorerReqs = append(app.unbondStorerReqs, util.StrToBytes32("ticket_hash"))
+				mockLogic.TicketManager.EXPECT().UpdateDecayBy(util.StrToBytes32("ticket_hash"), uint64(app.wBlock.Height))
 				mockLogic.AtomicLogic.EXPECT().Commit().Return(nil)
 				app.logic = mockLogic.AtomicLogic
 

@@ -6,16 +6,17 @@ import (
 
 // Ticket represents a validator ticket
 type Ticket struct {
-	Type           int         `gorm:"column:type" json:"type"`                     // The type of ticket
-	Hash           string      `gorm:"column:hash" json:"hash"`                     // Hash of the ticket purchase transaction
-	DecayBy        uint64      `gorm:"column:decayBy" json:"decayBy"`               // Block height when the ticket becomes decayed
-	MatureBy       uint64      `gorm:"column:matureBy" json:"matureBy"`             // Block height when the ticket enters maturity.
-	ProposerPubKey string      `gorm:"column:proposerPubKey" json:"proposerPubKey"` // The public key of the validator that owns the ticket.
-	Delegator      string      `gorm:"column:delegator" json:"delegator"`           // Delegator is the address of the original creator of the ticket
-	Height         uint64      `gorm:"column:height" json:"height"`                 // The block height where this ticket was seen.
-	Index          int         `gorm:"column:index" json:"index"`                   // The index of the ticket in the transactions list.
-	Value          util.String `gorm:"column:value" json:"value"`                   // The value paid for the ticket (as a child - then for the parent ticket)
-	CommissionRate float64     `gorm:"column:commissionRate" json:"commissionRate"` // The percentage of reward paid to the validator
+	Type           int          `json:"type"`           // The type of ticket
+	Hash           util.Bytes32 `json:"hash"`           // Hash of the ticket purchase transaction
+	DecayBy        uint64       `json:"decayBy"`        // Block height when the ticket becomes decayed
+	MatureBy       uint64       `json:"matureBy"`       // Block height when the ticket enters maturity.
+	ProposerPubKey util.Bytes32 `json:"proposerPubKey"` // The public key of the validator that owns the ticket.
+	VRFPubKey      util.Bytes32 `json:"vrfPubKey"`      // The VRF public key derived from the same private key of proposer
+	Delegator      string       `json:"delegator"`      // Delegator is the address of the original creator of the ticket
+	Height         uint64       `json:"height"`         // The block height where this ticket was seen.
+	Index          int          `json:"index"`          // The index of the ticket in the transactions list.
+	Value          util.String  `json:"value"`          // The value paid for the ticket (as a child - then for the parent ticket)
+	CommissionRate float64      `json:"commissionRate"` // The percentage of reward paid to the validator
 }
 
 // QueryOptions describe how a query should be executed.
@@ -35,11 +36,11 @@ type TicketManager interface {
 	Index(tx BaseTx, blockHeight uint64, txIndex int) error
 
 	// Remove deletes a ticket by its hash
-	Remove(hash string) error
+	Remove(hash util.Bytes32) error
 
 	// GetByProposer finds tickets belonging to the
 	// given proposer public key.
-	GetByProposer(ticketType int, proposerPubKey string,
+	GetByProposer(ticketType int, proposerPubKey util.Bytes32,
 		queryOpt ...interface{}) ([]*Ticket, error)
 
 	// CountActiveValidatorTickets returns the number of matured and non-decayed tickets.
@@ -50,7 +51,7 @@ type TicketManager interface {
 	// proposer: The public key of the proposer
 	// ticketType: Filter the search to a specific ticket type
 	// addDelegated: When true, delegated tickets are added.
-	GetActiveTicketsByProposer(proposer string, ticketType int, addDelegated bool) ([]*Ticket, error)
+	GetActiveTicketsByProposer(proposer util.Bytes32, ticketType int, addDelegated bool) ([]*Ticket, error)
 
 	// SelectRandomValidatorTickets selects random live tickets up to the specified limit.
 	// The provided see is used to seed the PRNG that is used to select tickets.
@@ -63,10 +64,10 @@ type TicketManager interface {
 	QueryOne(qf func(t *Ticket) bool) *Ticket
 
 	// GetByHash get a ticket by hash
-	GetByHash(hash string) *Ticket
+	GetByHash(hash util.Bytes32) *Ticket
 
 	// UpdateDecayBy updates the decay height of a ticket
-	UpdateDecayBy(hash string, newDecayHeight uint64) error
+	UpdateDecayBy(hash util.Bytes32, newDecayHeight uint64) error
 
 	// GetOrderedLiveValidatorTickets returns live tickets ordered by
 	// value in desc. order, height asc order and index asc order
@@ -81,15 +82,16 @@ type TicketManager interface {
 
 // PubKeyValue stores a public key and a numerical value
 type PubKeyValue struct {
-	PubKey string
-	Value  string
+	PubKey    util.Bytes32
+	VRFPubKey util.Bytes32
+	Value     string
 }
 
 // PubKeyValues is a collection of PubKeyValue
 type PubKeyValues []*PubKeyValue
 
 // Has checks if an entry matching a public key exists
-func (v *PubKeyValues) Has(pubKey string) bool {
+func (v *PubKeyValues) Has(pubKey util.Bytes32) bool {
 	for _, val := range *v {
 		if val.PubKey == pubKey {
 			return true

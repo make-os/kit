@@ -229,7 +229,7 @@ func (m *Manager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
 	}
 
 	// Exit with nil if node is not among the top storers
-	if !topStorers.Has(m.privValidatorKey.PubKey().Base58()) {
+	if !topStorers.Has(m.privValidatorKey.PubKey().MustBytes32()) {
 		return nil
 	}
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/crypto/vrf"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
@@ -159,6 +160,17 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 		tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
 	}
 
+	// Derive VRF public key from signing key
+	key := checkAndGetKey(options...)
+	pk, _ := crypto.PrivKeyFromBase58(key)
+	rawPK, _ := pk.Key().Raw()
+	vrfSK, err := vrf.GenerateKeyFromPrivateKey(rawPK)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to generate vrf key"))
+	}
+	vrfPubKey, _ := vrfSK.Public()
+	tx.VRFPubKey = util.BytesToBytes32(vrfPubKey)
+
 	setCommonTxFields(tx, m.service, options...)
 
 	// Process the transaction
@@ -251,12 +263,17 @@ func (m *TicketModule) findByProposer(
 		qopts.SortByHeight = -1
 	}
 
-	res, err := m.ticketmgr.GetByProposer(types.TxTypeValidatorTicket, proposerPubKey, qopts)
+	ppk, err := crypto.PubKeyFromBase58(proposerPubKey)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to decode proposer public key"))
+	}
+
+	res, err := m.ticketmgr.GetByProposer(types.TxTypeValidatorTicket, ppk.MustBytes32(), qopts)
 	if err != nil {
 		panic(err)
 	}
 
-	return res
+	return EncodeManyForJS(res)
 }
 
 // top returns most recent tickets up to the given limit
@@ -265,7 +282,7 @@ func (m *TicketModule) top(limit int) interface{} {
 		Limit:        limit,
 		SortByHeight: -1,
 	})
-	return res
+	return EncodeManyForJS(res)
 }
 
 // unbondStorerTicket initiates the release of stake associated with a storer
@@ -297,8 +314,12 @@ func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 	}
 
 	if ticketHash, ok := params["hash"]; ok {
-		defer castPanic("hash")
-		tx.TicketHash = ticketHash.(string)
+		defer castPanic("fee")
+		bz, err := util.FromHex(ticketHash.(string))
+		if err != nil {
+			panic(errors.Wrap(err, "failed to decode ticket hash from hex"))
+		}
+		tx.TicketHash = util.BytesToBytes32(bz)
 	}
 
 	if timestamp, ok := params["timestamp"]; ok {

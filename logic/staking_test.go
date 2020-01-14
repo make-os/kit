@@ -150,7 +150,7 @@ var _ = Describe("Staking", func() {
 				mockLogic.TicketManager.EXPECT().GetByHash(gomock.Any()).Return(nil)
 
 				senderPubKey = sender.PubKey().MustBytes32()
-				err = txLogic.execUnbond([]byte("ticket_id"), senderPubKey, util.String(1), 0)
+				err = txLogic.execUnbond(util.StrToBytes32("ticket_id"), senderPubKey, util.String(1), 0)
 				Expect(err).ToNot(BeNil())
 			})
 
@@ -175,13 +175,13 @@ var _ = Describe("Staking", func() {
 
 				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), uint64(1)).Return(acct)
 
-				returnTicket := &types.Ticket{Hash: "ticket_id", Value: "100"}
+				returnTicket := &types.Ticket{Hash: util.StrToBytes32("ticket_id"), Value: "100"}
 				mockLogic.TicketManager.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
 
 				mockLogic.AccountKeeper.EXPECT().Update(sender.Addr(), acct)
 
 				senderPubKey = sender.PubKey().MustBytes32()
-				err = txLogic.execUnbond([]byte(returnTicket.Hash), senderPubKey, util.String("1"), 1)
+				err = txLogic.execUnbond(returnTicket.Hash, senderPubKey, util.String("1"), 1)
 				Expect(err).To(BeNil())
 			})
 

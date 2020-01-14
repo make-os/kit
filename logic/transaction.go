@@ -71,7 +71,7 @@ func (t *Transaction) Exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.execSetDelegatorCommission(spk, o.Commission, o.Fee, chainHeight)
 
 	case *types.TxTicketUnbond:
-		return t.execUnbond([]byte(o.TicketHash), spk, o.Fee, chainHeight)
+		return t.execUnbond(o.TicketHash, spk, o.Fee, chainHeight)
 
 	case *types.TxRepoCreate:
 		return t.execRepoCreate(spk, o.Name, o.Fee, chainHeight)

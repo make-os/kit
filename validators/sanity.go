@@ -161,10 +161,8 @@ func CheckTxUnbondTicket(tx *types.TxTicketUnbond, index int) error {
 		return err
 	}
 
-	if err := v.Validate(tx.TicketHash,
-		v.Required.Error(feI(index, "ticket", "ticket id is required").Error()),
-	); err != nil {
-		return err
+	if tx.TicketHash.IsEmpty() {
+		return feI(index, "ticket", "ticket id is required")
 	}
 
 	if err := checkCommon(tx, index); err != nil {

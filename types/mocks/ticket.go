@@ -7,6 +7,7 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/makeos/mosdef/types"
+	util "github.com/makeos/mosdef/util"
 	reflect "reflect"
 )
 
@@ -48,7 +49,7 @@ func (mr *MockTicketManagerMockRecorder) Index(tx, blockHeight, txIndex interfac
 }
 
 // Remove mocks base method
-func (m *MockTicketManager) Remove(hash string) error {
+func (m *MockTicketManager) Remove(hash util.Bytes32) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Remove", hash)
 	ret0, _ := ret[0].(error)
@@ -62,7 +63,7 @@ func (mr *MockTicketManagerMockRecorder) Remove(hash interface{}) *gomock.Call {
 }
 
 // GetByProposer mocks base method
-func (m *MockTicketManager) GetByProposer(ticketType int, proposerPubKey string, queryOpt ...interface{}) ([]*types.Ticket, error) {
+func (m *MockTicketManager) GetByProposer(ticketType int, proposerPubKey util.Bytes32, queryOpt ...interface{}) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ticketType, proposerPubKey}
 	for _, a := range queryOpt {
@@ -97,7 +98,7 @@ func (mr *MockTicketManagerMockRecorder) CountActiveValidatorTickets() *gomock.C
 }
 
 // GetActiveTicketsByProposer mocks base method
-func (m *MockTicketManager) GetActiveTicketsByProposer(proposer string, ticketType int, addDelegated bool) ([]*types.Ticket, error) {
+func (m *MockTicketManager) GetActiveTicketsByProposer(proposer util.Bytes32, ticketType int, addDelegated bool) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetActiveTicketsByProposer", proposer, ticketType, addDelegated)
 	ret0, _ := ret[0].([]*types.Ticket)
@@ -160,7 +161,7 @@ func (mr *MockTicketManagerMockRecorder) QueryOne(qf interface{}) *gomock.Call {
 }
 
 // GetByHash mocks base method
-func (m *MockTicketManager) GetByHash(hash string) *types.Ticket {
+func (m *MockTicketManager) GetByHash(hash util.Bytes32) *types.Ticket {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByHash", hash)
 	ret0, _ := ret[0].(*types.Ticket)
@@ -174,7 +175,7 @@ func (mr *MockTicketManagerMockRecorder) GetByHash(hash interface{}) *gomock.Cal
 }
 
 // UpdateDecayBy mocks base method
-func (m *MockTicketManager) UpdateDecayBy(hash string, newDecayHeight uint64) error {
+func (m *MockTicketManager) UpdateDecayBy(hash util.Bytes32, newDecayHeight uint64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateDecayBy", hash, newDecayHeight)
 	ret0, _ := ret[0].(error)

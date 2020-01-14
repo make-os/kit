@@ -111,6 +111,7 @@ func checkAndGetKey(options ...interface{}) string {
 }
 
 func setCommonTxFields(tx types.BaseTx, service types.Service, options ...interface{}) {
+
 	key := checkAndGetKey(options...)
 
 	// Set tx public key

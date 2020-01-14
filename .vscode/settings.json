@@ -3,6 +3,7 @@
         "GNUPGHOME",
         "GPGAPI",
         "Renewer",
+        "Reqs",
         "Storers",
         "Unbond",
         "Unbonded",

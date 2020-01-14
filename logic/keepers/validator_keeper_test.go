@@ -24,7 +24,7 @@ var _ = Describe("SystemKeeper", func() {
 	var cfg *config.AppConfig
 	var valKeeper *ValidatorKeeper
 	var ctrl *gomock.Controller
-	var pubKey = types.HexBytes([]byte("pubkey"))
+	var pubKey = util.StrToBytes32("pubkey")
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -67,7 +67,9 @@ var _ = Describe("SystemKeeper", func() {
 
 		When("record exist", func() {
 			height := int64(1)
-			rec := map[string]*types.Validator{"pubkey": &types.Validator{TicketID: "ticket1"}}
+			rec := map[util.Bytes32]*types.Validator{util.StrToBytes32("pubkey"): &types.Validator{
+				PubKey: util.StrToBytes32("ticket1"),
+			}}
 			BeforeEach(func() {
 				key := MakeBlockValidatorsKey(height)
 				err := valKeeper.db.Put(storage.NewFromKeyValue(key, util.ObjectToBytes(rec)))
@@ -84,7 +86,7 @@ var _ = Describe("SystemKeeper", func() {
 
 	Describe(".GetByHeight", func() {
 		When("one validator is stored at height=1, search height = 1", func() {
-			rec := map[string]*types.Validator{"pubkey": &types.Validator{TicketID: "ticket1"}}
+			rec := map[util.Bytes32]*types.Validator{util.StrToBytes32("pubkey"): &types.Validator{PubKey: util.StrToBytes32("ticket1")}}
 			BeforeEach(func() {
 				key := MakeBlockValidatorsKey(1)
 				err := valKeeper.db.Put(storage.NewFromKeyValue(key, util.ObjectToBytes(rec)))
@@ -99,8 +101,8 @@ var _ = Describe("SystemKeeper", func() {
 		})
 
 		When("two two validators exist; valset1 at height 1, valset2 at height 2; argument height = 0", func() {
-			valset := map[string]*types.Validator{"pubkey": &types.Validator{TicketID: "ticket1"}}
-			valset2 := map[string]*types.Validator{"pubkey": &types.Validator{TicketID: "ticket2"}}
+			valset := map[util.Bytes32]*types.Validator{util.StrToBytes32("pubkey"): &types.Validator{PubKey: util.StrToBytes32("ticket1")}}
+			valset2 := map[util.Bytes32]*types.Validator{util.StrToBytes32("pubkey"): &types.Validator{PubKey: util.StrToBytes32("ticket2")}}
 			BeforeEach(func() {
 				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(1), util.ObjectToBytes(valset)))
 				Expect(err).To(BeNil())
@@ -116,8 +118,8 @@ var _ = Describe("SystemKeeper", func() {
 		})
 
 		When("two validators exist; valset1 at height 2, valset2 at height 4; argument height = 9; blocks per epoch = 2", func() {
-			valset := map[string]*types.Validator{"pubkey": &types.Validator{TicketID: "ticket1"}}
-			valset2 := map[string]*types.Validator{"pubkey": &types.Validator{TicketID: "ticket2"}}
+			valset := map[util.Bytes32]*types.Validator{util.StrToBytes32("pubkey"): &types.Validator{PubKey: util.StrToBytes32("ticket1")}}
+			valset2 := map[util.Bytes32]*types.Validator{util.StrToBytes32("pubkey"): &types.Validator{PubKey: util.StrToBytes32("ticket2")}}
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 2
 				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ObjectToBytes(valset)))
@@ -134,8 +136,8 @@ var _ = Describe("SystemKeeper", func() {
 		})
 
 		When("two validators exist; valset1 at height 2, valset2 at height 4; argument height = 10; blocks per epoch = 2", func() {
-			valset := map[string]*types.Validator{"pubkey": &types.Validator{TicketID: "ticket1"}}
-			valset2 := map[string]*types.Validator{"pubkey": &types.Validator{TicketID: "ticket2"}}
+			valset := map[util.Bytes32]*types.Validator{util.StrToBytes32("pubkey"): &types.Validator{PubKey: util.StrToBytes32("ticket1")}}
+			valset2 := map[util.Bytes32]*types.Validator{util.StrToBytes32("pubkey"): &types.Validator{PubKey: util.StrToBytes32("ticket2")}}
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 2
 				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ObjectToBytes(valset)))
@@ -156,7 +158,7 @@ var _ = Describe("SystemKeeper", func() {
 		var err error
 		When("no issues with database", func() {
 			BeforeEach(func() {
-				vals := []*types.Validator{&types.Validator{PubKey: pubKey, TicketID: "ticket1"}}
+				vals := []*types.Validator{&types.Validator{PubKey: pubKey}}
 				err = valKeeper.Index(1, vals)
 			})
 
@@ -179,7 +181,7 @@ var _ = Describe("SystemKeeper", func() {
 			})
 
 			BeforeEach(func() {
-				vals := []*types.Validator{&types.Validator{PubKey: pubKey, TicketID: "ticket1"}}
+				vals := []*types.Validator{&types.Validator{PubKey: pubKey}}
 				err = valKeeper.Index(1, vals)
 			})
 
@@ -187,7 +189,6 @@ var _ = Describe("SystemKeeper", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to index validators: error"))
 			})
-
 		})
 	})
 })

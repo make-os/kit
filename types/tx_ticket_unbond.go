@@ -11,7 +11,7 @@ import (
 type TxTicketUnbond struct {
 	*TxType    `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxCommon  `json:"-" msgpack:"-" mapstructure:"-"`
-	TicketHash string `json:"hash" msgpack:"hash"`
+	TicketHash util.Bytes32 `json:"hash" msgpack:"hash"`
 }
 
 // NewBareTxTicketUnbond returns an instance of TxTicketUnbond with zero values
@@ -19,7 +19,7 @@ func NewBareTxTicketUnbond(ticketType int) *TxTicketUnbond {
 	return &TxTicketUnbond{
 		TxType:     &TxType{Type: ticketType},
 		TxCommon:   NewBareTxCommon(),
-		TicketHash: "",
+		TicketHash: util.EmptyBytes32,
 	}
 }
 

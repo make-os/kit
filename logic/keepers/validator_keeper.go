@@ -33,7 +33,7 @@ get:
 	}
 
 	// Find the validator set attached to the the eve block.
-	res := make(map[string]*types.Validator)
+	res := make(map[util.Bytes32]*types.Validator)
 	key := MakeBlockValidatorsKey(epochEveBlockHeight)
 	rec, err := v.db.Get(key)
 	if err != nil {
@@ -68,7 +68,7 @@ func (v *ValidatorKeeper) GetByHeight(height int64) (types.BlockValidators, erro
 	}
 
 	var err error
-	res := make(map[string]*types.Validator)
+	res := make(map[util.Bytes32]*types.Validator)
 	key := MakeQueryKeyBlockValidators()
 	v.db.Iterate(key, false, func(rec *storage.Record) bool {
 		err = rec.Scan(&res)
@@ -86,10 +86,10 @@ func (v *ValidatorKeeper) GetByHeight(height int64) (types.BlockValidators, erro
 func (v *ValidatorKeeper) Index(height int64, validators []*types.Validator) error {
 
 	// Convert the slice of validators to a map structure
-	var data = make(map[string]*types.Validator)
+	var data = make(map[util.Bytes32]*types.Validator)
 	for _, v := range validators {
-		data[v.PubKey.String()] = v
-		v.PubKey = []byte{} // save space since key has this data
+		data[v.PubKey] = v
+		v.PubKey = util.EmptyBytes32 // save space since key has this data
 	}
 
 	key := MakeBlockValidatorsKey(height)

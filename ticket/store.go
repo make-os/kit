@@ -40,10 +40,10 @@ type Storer interface {
 	Add(tickets ...*types.Ticket) error
 
 	// GetByHash queries a ticket by its hash
-	GetByHash(hash string) *types.Ticket
+	GetByHash(hash util.Bytes32) *types.Ticket
 
 	// RemoveByHash deletes a ticket by its hash
-	RemoveByHash(hash string) error
+	RemoveByHash(hash util.Bytes32) error
 
 	// QueryOne iterates over the tickets and returns the first ticket
 	// for which the predicate returns true.
@@ -65,7 +65,7 @@ type Storer interface {
 // Store implements Storer
 type Store struct {
 	db       storage.Tx // The DB transaction
-	fromHead bool              // If true, the iterator iterates from the tail
+	fromHead bool       // If true, the iterator iterates from the tail
 }
 
 // NewStore creates an instance of Store
@@ -87,7 +87,7 @@ func getQueryOptions(queryOptions ...interface{}) types.QueryOptions {
 // Add adds one or more tickets to the store
 func (s *Store) Add(tickets ...*types.Ticket) error {
 	for _, ticket := range tickets {
-		key := MakeKey([]byte(ticket.Hash), ticket.Height, ticket.Index)
+		key := MakeKey(ticket.Hash.Bytes(), ticket.Height, ticket.Index)
 		rec := storage.NewRecord(key, util.ObjectToBytes(ticket))
 		if err := s.db.Put(rec); err != nil {
 			return err
@@ -97,9 +97,9 @@ func (s *Store) Add(tickets ...*types.Ticket) error {
 }
 
 // GetByHash queries a ticket by its hash
-func (s *Store) GetByHash(hash string) *types.Ticket {
+func (s *Store) GetByHash(hash util.Bytes32) *types.Ticket {
 	var t *types.Ticket
-	s.db.Iterate(MakeHashKey([]byte(hash)), false, func(r *storage.Record) bool {
+	s.db.Iterate(MakeHashKey(hash.Bytes()), false, func(r *storage.Record) bool {
 		r.Scan(&t)
 		return true
 	})
@@ -107,12 +107,12 @@ func (s *Store) GetByHash(hash string) *types.Ticket {
 }
 
 // RemoveByHash deletes a ticket by its hash
-func (s *Store) RemoveByHash(hash string) error {
+func (s *Store) RemoveByHash(hash util.Bytes32) error {
 	t := s.GetByHash(hash)
 	if t == nil {
 		return nil
 	}
-	return s.db.Del(MakeKey([]byte(hash), t.Height, t.Index))
+	return s.db.Del(MakeKey(hash.Bytes(), t.Height, t.Index))
 }
 
 // QueryOne iterates over the tickets and returns the first ticket
@@ -199,8 +199,21 @@ func (s *Store) UpdateOne(upd types.Ticket, queryPredicate func(*types.Ticket) b
 	if target == nil {
 		return
 	}
+
+	if upd.Hash.IsEmpty() {
+		upd.Hash = target.Hash
+	}
+
+	if upd.ProposerPubKey.IsEmpty() {
+		upd.ProposerPubKey = target.ProposerPubKey
+	}
+
+	if upd.VRFPubKey.IsEmpty() {
+		upd.VRFPubKey = target.VRFPubKey
+	}
+
 	mergo.Merge(&upd, target)
-	key := MakeKey([]byte(target.Hash), target.Height, target.Index)
+	key := MakeKey(target.Hash.Bytes(), target.Height, target.Index)
 	s.db.Del(key)
 	s.Add(&upd)
 }

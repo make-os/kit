@@ -10,7 +10,7 @@ import (
 )
 
 // BlockValidators contains validators of a block
-type BlockValidators map[string]*Validator
+type BlockValidators map[util.Bytes32]*Validator
 
 // BlockInfo describes information about a block
 type BlockInfo struct {
@@ -27,12 +27,12 @@ type BlockInfo struct {
 
 // Validator represents a validator
 type Validator struct {
-	PubKey   HexBytes `json:"publicKey,omitempty" mapstructure:"publicKey"`
-	TicketID string   `json:"ticketID" mapstructure:"ticketID"`
+	PubKey util.Bytes32 `json:"publicKey,omitempty" mapstructure:"publicKey"`
 }
 
 // SystemKeeper describes an interface for accessing system data
 type SystemKeeper interface {
+
 	// SaveBlockInfo saves a committed block information
 	SaveBlockInfo(info *BlockInfo) error
 

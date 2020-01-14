@@ -2,6 +2,7 @@ package logic
 
 import (
 	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/util"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -16,7 +17,7 @@ func (v *Validator) Index(height int64, valUpdates []abcitypes.ValidatorUpdate) 
 	var validators = []*types.Validator{}
 	for _, validator := range valUpdates {
 		validators = append(validators, &types.Validator{
-			PubKey: validator.PubKey.Data,
+			PubKey: util.BytesToBytes32(validator.PubKey.Data),
 		})
 	}
 	return v.logic.ValidatorKeeper().Index(height, validators)

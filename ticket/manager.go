@@ -42,8 +42,9 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 		Height:         blockHeight,
 		Index:          txIndex,
 		Value:          t.Value,
-		Hash:           t.GetHash().HexStr(),
-		ProposerPubKey: crypto.MustBase58FromPubKeyBytes(t.GetSenderPubKey().Bytes()),
+		Hash:           t.GetHash(),
+		ProposerPubKey: t.GetSenderPubKey(),
+		VRFPubKey:      t.VRFPubKey,
 	}
 
 	// By default the proposer is the creator of the transaction.
@@ -52,7 +53,7 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 	if !t.Delegate.IsEmpty() {
 
 		// Set the given delegate as the proposer
-		ticket.ProposerPubKey = crypto.MustBase58FromPubKeyBytes(t.Delegate.Bytes())
+		ticket.ProposerPubKey = t.Delegate
 
 		// Set the sender address as the delegator
 		ticket.Delegator = t.GetFrom().String()
@@ -60,7 +61,7 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 		// Since this is a delegated ticket, we need to get the proposer's
 		// commission rate from their account, write it to the ticket so that it
 		// is locked and immutable by a future commission rate update.
-		pk, _ := crypto.PubKeyFromBase58(ticket.ProposerPubKey)
+		pk := crypto.MustPubKeyFromBytes(ticket.ProposerPubKey.Bytes())
 		proposerAcct := m.logic.AccountKeeper().GetAccount(pk.Addr())
 		ticket.CommissionRate = proposerAcct.DelegatorCommission
 	}
@@ -100,13 +101,13 @@ func (m *Manager) GetTopStorers(limit int) (types.PubKeyValues, error) {
 	// delegated to it.
 	var proposerValueIdx = make(map[string]util.String)
 	for _, ticket := range activeTickets {
-		val, ok := proposerValueIdx[ticket.ProposerPubKey]
+		val, ok := proposerValueIdx[ticket.ProposerPubKey.HexStr()]
 		if !ok {
-			proposerValueIdx[ticket.ProposerPubKey] = ticket.Value
+			proposerValueIdx[ticket.ProposerPubKey.HexStr()] = ticket.Value
 			continue
 		}
 		val = util.String(val.Decimal().Add(ticket.Value.Decimal()).String())
-		proposerValueIdx[ticket.ProposerPubKey] = val
+		proposerValueIdx[ticket.ProposerPubKey.HexStr()] = val
 	}
 
 	// Convert value index to a slice for sorting
@@ -127,21 +128,22 @@ func (m *Manager) GetTopStorers(limit int) (types.PubKeyValues, error) {
 		if limit > 0 && len(res) == limit {
 			break
 		}
-		res = append(res, &types.PubKeyValue{PubKey: item[0], Value: item[1]})
+		pk, _ := util.FromHex(item[0])
+		res = append(res, &types.PubKeyValue{PubKey: util.BytesToBytes32(pk), Value: item[1]})
 	}
 
 	return res, nil
 }
 
 // Remove deletes a ticket by its hash
-func (m *Manager) Remove(hash string) error {
+func (m *Manager) Remove(hash util.Bytes32) error {
 	return m.s.RemoveByHash(hash)
 }
 
 // GetByProposer finds tickets belonging to the given proposer public key.
 func (m *Manager) GetByProposer(
 	ticketType int,
-	proposerPubKey string,
+	proposerPubKey util.Bytes32,
 	queryOpt ...interface{}) ([]*types.Ticket, error) {
 	res := m.s.Query(func(t *types.Ticket) bool {
 		return t.Type == ticketType && t.ProposerPubKey == proposerPubKey
@@ -172,7 +174,7 @@ func (m *Manager) CountActiveValidatorTickets() (int, error) {
 // ticketType: Filter the search to a specific ticket type
 // addDelegated: When true, delegated tickets are added.
 func (m *Manager) GetActiveTicketsByProposer(
-	proposer string,
+	proposer util.Bytes32,
 	ticketType int,
 	addDelegated bool) ([]*types.Ticket, error) {
 
@@ -204,7 +206,7 @@ func (m *Manager) QueryOne(qf func(t *types.Ticket) bool) *types.Ticket {
 }
 
 // UpdateDecayBy updates the decay height of a ticket
-func (m *Manager) UpdateDecayBy(hash string, newDecayHeight uint64) error {
+func (m *Manager) UpdateDecayBy(hash util.Bytes32, newDecayHeight uint64) error {
 	m.s.UpdateOne(types.Ticket{DecayBy: newDecayHeight},
 		func(t *types.Ticket) bool { return t.Hash == hash })
 	return nil
@@ -267,11 +269,11 @@ func (m *Manager) SelectRandomValidatorTickets(
 		tickets = append(tickets[:i], tickets[i+1:]...)
 
 		// If the candidate has already been selected, ignore
-		if _, ok := index[candidate.ProposerPubKey]; ok {
+		if _, ok := index[candidate.ProposerPubKey.HexStr()]; ok {
 			continue
 		}
 
-		index[candidate.ProposerPubKey] = struct{}{}
+		index[candidate.ProposerPubKey.HexStr()] = struct{}{}
 		selected = append(selected, candidate)
 	}
 
@@ -279,7 +281,7 @@ func (m *Manager) SelectRandomValidatorTickets(
 }
 
 // GetByHash get a ticket by hash
-func (m *Manager) GetByHash(hash string) *types.Ticket {
+func (m *Manager) GetByHash(hash util.Bytes32) *types.Ticket {
 	return m.QueryOne(func(t *types.Ticket) bool { return t.Hash == hash })
 }
 

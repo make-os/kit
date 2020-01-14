@@ -52,14 +52,14 @@ var _ = Describe("Manager", func() {
 
 	Describe(".GetByProposer", func() {
 		When("matching ticket exist", func() {
-			ticket := &types.Ticket{ProposerPubKey: "pub_key", Type: types.TxTypeValidatorTicket}
+			ticket := &types.Ticket{ProposerPubKey: util.StrToBytes32("pub_key"), Type: types.TxTypeValidatorTicket}
 			BeforeEach(func() {
 				err := mgr.s.Add(ticket)
 				Expect(err).To(BeNil())
 			})
 
 			It("should return 1 ticket", func() {
-				tickets, err := mgr.GetByProposer(types.TxTypeValidatorTicket, "pub_key")
+				tickets, err := mgr.GetByProposer(types.TxTypeValidatorTicket, util.StrToBytes32("pub_key"))
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(1))
 				Expect(tickets[0]).To(Equal(ticket))
@@ -67,14 +67,14 @@ var _ = Describe("Manager", func() {
 		})
 
 		When("matching ticket does not exist", func() {
-			ticket := &types.Ticket{ProposerPubKey: "pub_key", Type: types.TxTypeValidatorTicket}
+			ticket := &types.Ticket{ProposerPubKey: util.StrToBytes32("pub_key"), Type: types.TxTypeValidatorTicket}
 			BeforeEach(func() {
 				err := mgr.s.Add(ticket)
 				Expect(err).To(BeNil())
 			})
 
 			It("should return 0 ticket", func() {
-				tickets, err := mgr.GetByProposer(types.TxTypeCoinTransfer, "pub_key")
+				tickets, err := mgr.GetByProposer(types.TxTypeCoinTransfer, util.StrToBytes32("pub_key"))
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(0))
 			})
@@ -82,8 +82,8 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe(".CountActiveValidatorTickets", func() {
-		ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key", MatureBy: 100, DecayBy: 200}
-		ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key", MatureBy: 100, DecayBy: 150}
+		ticket := &types.Ticket{Hash: util.StrToBytes32("h1"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key"), MatureBy: 100, DecayBy: 200}
+		ticket2 := &types.Ticket{Hash: util.StrToBytes32("h2"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key"), MatureBy: 100, DecayBy: 150}
 
 		When("only one live ticket exist", func() {
 			BeforeEach(func() {
@@ -177,7 +177,7 @@ var _ = Describe("Manager", func() {
 				txn := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 				txn.Value = util.String("35")
 				txn.SenderPubKey = util.BytesToBytes32(delegator.PubKey().MustBytes())
-				txn.Delegate = proposer.PubKey().Base58()
+				txn.Delegate = proposer.PubKey().MustBytes32()
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
@@ -216,7 +216,7 @@ var _ = Describe("Manager", func() {
 				txn := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 				txn.Value = util.String("35")
 				txn.SenderPubKey = util.BytesToBytes32(delegator.PubKey().MustBytes())
-				txn.Delegate = proposer.PubKey().Base58()
+				txn.Delegate = proposer.PubKey().MustBytes32()
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
@@ -286,18 +286,18 @@ var _ = Describe("Manager", func() {
 			var tickets []*types.Ticket
 
 			BeforeEach(func() {
-				ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 3, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-				ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 3, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
-				ticket3 := &types.Ticket{Hash: "h3", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+				ticket := &types.Ticket{Hash: util.StrToBytes32("h1"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 3, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+				ticket2 := &types.Ticket{Hash: util.StrToBytes32("h2"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key2"), Height: 3, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+				ticket3 := &types.Ticket{Hash: util.StrToBytes32("h3"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
 				Expect(mgr.s.Add(ticket, ticket2, ticket3)).To(BeNil())
 				tickets = mgr.GetOrderedLiveValidatorTickets(11, 0)
 			})
 
 			Specify("that ticket order should be ", func() {
 				Expect(tickets).To(HaveLen(3))
-				Expect(tickets[0].Hash).To(Equal("h2"))
-				Expect(tickets[1].Hash).To(Equal("h1"))
-				Expect(tickets[2].Hash).To(Equal("h3"))
+				Expect(tickets[0].Hash).To(Equal(util.StrToBytes32("h2")))
+				Expect(tickets[1].Hash).To(Equal(util.StrToBytes32("h1")))
+				Expect(tickets[2].Hash).To(Equal(util.StrToBytes32("h3")))
 			})
 		})
 
@@ -305,18 +305,18 @@ var _ = Describe("Manager", func() {
 			var tickets []*types.Ticket
 
 			BeforeEach(func() {
-				ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-				ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 4, Index: 1, MatureBy: 10, DecayBy: 100, Value: "3"}
-				ticket3 := &types.Ticket{Hash: "h3", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+				ticket := &types.Ticket{Hash: util.StrToBytes32("h1"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+				ticket2 := &types.Ticket{Hash: util.StrToBytes32("h2"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key2"), Height: 4, Index: 1, MatureBy: 10, DecayBy: 100, Value: "3"}
+				ticket3 := &types.Ticket{Hash: util.StrToBytes32("h3"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
 				Expect(mgr.s.Add(ticket, ticket2, ticket3)).To(BeNil())
 				tickets = mgr.GetOrderedLiveValidatorTickets(11, 0)
 			})
 
 			Specify("that ticket order should be ", func() {
 				Expect(tickets).To(HaveLen(3))
-				Expect(tickets[0].Hash).To(Equal("h1"))
-				Expect(tickets[1].Hash).To(Equal("h2"))
-				Expect(tickets[2].Hash).To(Equal("h3"))
+				Expect(tickets[0].Hash).To(Equal(util.StrToBytes32("h1")))
+				Expect(tickets[1].Hash).To(Equal(util.StrToBytes32("h2")))
+				Expect(tickets[2].Hash).To(Equal(util.StrToBytes32("h3")))
 			})
 		})
 
@@ -324,18 +324,18 @@ var _ = Describe("Manager", func() {
 			var tickets []*types.Ticket
 
 			BeforeEach(func() {
-				ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-				ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "3"}
-				ticket3 := &types.Ticket{Hash: "h3", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+				ticket := &types.Ticket{Hash: util.StrToBytes32("h1"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+				ticket2 := &types.Ticket{Hash: util.StrToBytes32("h2"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key2"), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "3"}
+				ticket3 := &types.Ticket{Hash: util.StrToBytes32("h3"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
 				Expect(mgr.s.Add(ticket, ticket2, ticket3)).To(BeNil())
 				tickets = mgr.GetOrderedLiveValidatorTickets(11, 0)
 			})
 
 			Specify("that ticket order should be ", func() {
 				Expect(tickets).To(HaveLen(3))
-				Expect(tickets[0].Hash).To(Equal("h2"))
-				Expect(tickets[1].Hash).To(Equal("h1"))
-				Expect(tickets[2].Hash).To(Equal("h3"))
+				Expect(tickets[0].Hash).To(Equal(util.StrToBytes32("h2")))
+				Expect(tickets[1].Hash).To(Equal(util.StrToBytes32("h1")))
+				Expect(tickets[2].Hash).To(Equal(util.StrToBytes32("h3")))
 			})
 		})
 
@@ -343,9 +343,9 @@ var _ = Describe("Manager", func() {
 			var tickets []*types.Ticket
 
 			BeforeEach(func() {
-				ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-				ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "3"}
-				ticket3 := &types.Ticket{Hash: "h3", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+				ticket := &types.Ticket{Hash: util.StrToBytes32("h1"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+				ticket2 := &types.Ticket{Hash: util.StrToBytes32("h2"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key2"), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "3"}
+				ticket3 := &types.Ticket{Hash: util.StrToBytes32("h3"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
 				Expect(mgr.s.Add(ticket, ticket2, ticket3)).To(BeNil())
 				tickets = mgr.GetOrderedLiveValidatorTickets(11, 1)
 			})
@@ -358,7 +358,7 @@ var _ = Describe("Manager", func() {
 
 	Describe(".GetByHash", func() {
 		When("one ticket exist", func() {
-			ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+			ticket := &types.Ticket{Hash: util.StrToBytes32("h1"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
 			BeforeEach(func() {
 				err := mgr.s.Add(ticket)
 				Expect(err).To(BeNil())
@@ -373,7 +373,7 @@ var _ = Describe("Manager", func() {
 
 		When("no ticket exist", func() {
 			It("should find no ticket by hash", func() {
-				t := mgr.GetByHash("h1")
+				t := mgr.GetByHash(util.StrToBytes32("h1"))
 				Expect(t).To(BeNil())
 			})
 		})
@@ -381,9 +381,9 @@ var _ = Describe("Manager", func() {
 
 	Describe(".GetTopStorers", func() {
 		When("proposer (pub_key1) has 1 self-owned ticket (value=3) and 1 delegated ticket (value=1) and proposer (pub_key2) has 1 delegated ticket (value=10)", func() {
-			ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeStorerTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-			ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: "pub_key1", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
-			ticket3 := &types.Ticket{Hash: "h3", Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: "pub_key2", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "10"}
+			ticket := &types.Ticket{Hash: util.StrToBytes32("h1"), Type: types.TxTypeStorerTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+			ticket2 := &types.Ticket{Hash: util.StrToBytes32("h2"), Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+			ticket3 := &types.Ticket{Hash: util.StrToBytes32("h3"), Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: util.StrToBytes32("pub_key2"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "10"}
 
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 11}, nil)
@@ -396,12 +396,12 @@ var _ = Describe("Manager", func() {
 				res, err := mgr.GetTopStorers(0)
 				Expect(err).To(BeNil())
 				Expect(res).To(HaveLen(2))
-				Expect(res[0].PubKey).To(Equal("pub_key2"))
+				Expect(res[0].PubKey).To(Equal(util.StrToBytes32("pub_key2")))
 				Expect(res[0].Value).To(Equal("10"))
-				Expect(res[1].PubKey).To(Equal("pub_key1"))
+				Expect(res[1].PubKey).To(Equal(util.StrToBytes32("pub_key1")))
 				Expect(res[1].Value).To(Equal("4"))
-				Expect(res.Has("pub_key2")).To(BeTrue())
-				Expect(res.Has("pub_key1")).To(BeTrue())
+				Expect(res.Has(util.StrToBytes32("pub_key2"))).To(BeTrue())
+				Expect(res.Has(util.StrToBytes32("pub_key1"))).To(BeTrue())
 			})
 
 			When("limit is 1", func() {
@@ -409,9 +409,9 @@ var _ = Describe("Manager", func() {
 					res, err := mgr.GetTopStorers(1)
 					Expect(err).To(BeNil())
 					Expect(res).To(HaveLen(1))
-					Expect(res[0].PubKey).To(Equal("pub_key2"))
-					Expect(res.Has("pub_key2")).To(BeTrue())
-					Expect(res.Has("pub_key1")).To(BeFalse())
+					Expect(res[0].PubKey).To(Equal(util.StrToBytes32("pub_key2")))
+					Expect(res.Has(util.StrToBytes32("pub_key2"))).To(BeTrue())
+					Expect(res.Has(util.StrToBytes32("pub_key1"))).To(BeFalse())
 					Expect(res[0].Value).To(Equal("10"))
 				})
 			})
@@ -419,13 +419,13 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe(".GetActiveTicketsByProposer", func() {
-		ticket := &types.Ticket{Hash: "h1", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-		ticket2 := &types.Ticket{Hash: "h2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
-		ticket3 := &types.Ticket{Hash: "h3", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
-		ticket3_2 := &types.Ticket{Hash: "h3_2", Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
-		ticket3_3 := &types.Ticket{Hash: "h3_3", Type: types.TxTypeStorerTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
-		ticket3_4 := &types.Ticket{Hash: "h3_4", Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
-		ticket4 := &types.Ticket{Hash: "h3_4", Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: "pub_key4", Height: 1, Index: 1, MatureBy: 10, DecayBy: 0, Value: "1"}
+		ticket := &types.Ticket{Hash: util.StrToBytes32("h1"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+		ticket2 := &types.Ticket{Hash: util.StrToBytes32("h2"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key2"), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+		ticket3 := &types.Ticket{Hash: util.StrToBytes32("h3"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+		ticket3_2 := &types.Ticket{Hash: util.StrToBytes32("h3_2"), Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+		ticket3_3 := &types.Ticket{Hash: util.StrToBytes32("h3_3"), Type: types.TxTypeStorerTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+		ticket3_4 := &types.Ticket{Hash: util.StrToBytes32("h3_4"), Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+		ticket4 := &types.Ticket{Hash: util.StrToBytes32("h3_4"), Type: types.TxTypeStorerTicket, Delegator: "addr", ProposerPubKey: util.StrToBytes32("pub_key4"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 0, Value: "1"}
 
 		When("proposer='pub_key3', type=TxTypeValidatorTicket, addDelegated=false", func() {
 			BeforeEach(func() {
@@ -437,7 +437,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return 2 tickets", func() {
-				res, err := mgr.GetActiveTicketsByProposer("pub_key3", types.TxTypeValidatorTicket, false)
+				res, err := mgr.GetActiveTicketsByProposer(util.StrToBytes32("pub_key3"), types.TxTypeValidatorTicket, false)
 				Expect(err).To(BeNil())
 				Expect(res).To(HaveLen(2))
 			})
@@ -453,7 +453,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return 1 tickets", func() {
-				res, err := mgr.GetActiveTicketsByProposer("pub_key3", types.TxTypeStorerTicket, false)
+				res, err := mgr.GetActiveTicketsByProposer(util.StrToBytes32("pub_key3"), types.TxTypeStorerTicket, false)
 				Expect(err).To(BeNil())
 				Expect(res).To(HaveLen(1))
 			})
@@ -469,7 +469,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return 2 tickets", func() {
-				res, err := mgr.GetActiveTicketsByProposer("pub_key3", types.TxTypeStorerTicket, true)
+				res, err := mgr.GetActiveTicketsByProposer(util.StrToBytes32("pub_key3"), types.TxTypeStorerTicket, true)
 				Expect(err).To(BeNil())
 				Expect(res).To(HaveLen(2))
 			})
@@ -486,7 +486,7 @@ var _ = Describe("Manager", func() {
 				})
 
 				It("should return 2 tickets", func() {
-					res, err := mgr.GetActiveTicketsByProposer("pub_key4", types.TxTypeStorerTicket, true)
+					res, err := mgr.GetActiveTicketsByProposer(util.StrToBytes32("pub_key4"), types.TxTypeStorerTicket, true)
 					Expect(err).To(BeNil())
 					Expect(res).To(HaveLen(1))
 				})
@@ -496,9 +496,9 @@ var _ = Describe("Manager", func() {
 
 	Describe(".SelectRandomValidatorTickets", func() {
 
-		ticket := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-		ticket2 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key2", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
-		ticket3 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+		ticket := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+		ticket2 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key2"), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+		ticket3 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
 		BeforeEach(func() {
 			err := mgr.s.Add(ticket, ticket2, ticket3)
 			Expect(err).To(BeNil())
@@ -534,9 +534,9 @@ var _ = Describe("Manager", func() {
 		})
 
 		When("multiple tickets of same proposer public key are pre-selected (before random selection)", func() {
-			ticket := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
-			ticket2 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key1", Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
-			ticket3 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: "pub_key3", Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
+			ticket := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 2, MatureBy: 10, DecayBy: 100, Value: "3"}
+			ticket2 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key1"), Height: 2, Index: 1, MatureBy: 10, DecayBy: 100, Value: "4"}
+			ticket3 := &types.Ticket{Type: types.TxTypeValidatorTicket, ProposerPubKey: util.StrToBytes32("pub_key3"), Height: 1, Index: 1, MatureBy: 10, DecayBy: 100, Value: "1"}
 
 			BeforeEach(func() {
 				err := mgr.s.Add(ticket, ticket2, ticket3)
@@ -549,8 +549,8 @@ var _ = Describe("Manager", func() {
 					tickets, err := mgr.SelectRandomValidatorTickets(11, seed, 10)
 					Expect(err).To(BeNil())
 					Expect(tickets).To(HaveLen(2))
-					Expect(tickets[0].ProposerPubKey).To(Equal("pub_key1"))
-					Expect(tickets[1].ProposerPubKey).To(Equal("pub_key3"))
+					Expect(tickets[0].ProposerPubKey).To(Equal(util.StrToBytes32("pub_key1")))
+					Expect(tickets[1].ProposerPubKey).To(Equal(util.StrToBytes32("pub_key3")))
 				})
 			})
 		})

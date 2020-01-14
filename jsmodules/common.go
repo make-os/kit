@@ -3,6 +3,7 @@ package jsmodules
 import (
 	"fmt"
 	"math/big"
+	"reflect"
 	"strings"
 
 	"github.com/fatih/structs"
@@ -80,4 +81,21 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 	}
 
 	return m
+}
+
+// EncodeManyForJS is like EncodeForJS but accepts a slice of objects
+func EncodeManyForJS(objs interface{}, fieldToIgnore ...string) []interface{} {
+	var many []interface{}
+
+	t := reflect.TypeOf(objs)
+	if t.Kind() != reflect.Slice {
+		panic("not a slice")
+	}
+
+	s := reflect.ValueOf(objs)
+	for i := 0; i < s.Len(); i++ {
+		many = append(many, EncodeForJS(s.Index(i).Interface()))
+	}
+
+	return many
 }

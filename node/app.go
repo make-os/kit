@@ -43,7 +43,7 @@ type App struct {
 	txIndex                   int
 	validatorTickets          []*ticketInfo
 	storerTickets             []*ticketInfo
-	unbondStorerRequests      []string
+	unbondStorerReqs          []util.Bytes32
 	ticketMgr                 types.TicketManager
 	epochSecretTx             types.BaseTx
 	isCurrentBlockProposer    bool
@@ -292,7 +292,7 @@ func (a *App) postExecChecks(
 	case types.TxTypeStorerTicket:
 		a.storerTickets = append(a.storerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 	case types.TxTypeUnbondStorerTicket:
-		a.unbondStorerRequests = append(a.unbondStorerRequests, string(tx.(*types.TxTicketUnbond).TicketHash))
+		a.unbondStorerReqs = append(a.unbondStorerReqs, tx.(*types.TxTicketUnbond).TicketHash)
 	case types.TxTypeRepoCreate:
 		a.newRepos = append(a.newRepos, tx.(*types.TxRepoCreate).Name)
 	}
@@ -355,8 +355,9 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 		return err
 	}
 
-	// Get next validators; We made use of thesecret seed to randomize the op
-	tickets, err := a.ticketMgr.SelectRandomValidatorTickets(curHeight-1, secret, params.MaxValidatorsPerEpoch)
+	// Get next validators; We made use of the secret seed to randomize the op
+	tickets, err := a.ticketMgr.SelectRandomValidatorTickets(curHeight-1, secret,
+		params.MaxValidatorsPerEpoch)
 	if err != nil {
 		return err
 	}
@@ -373,18 +374,14 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 	var newValidators []*types.Validator          // for validator keeper
 	var vIndex = map[string]struct{}{}
 	for _, ticket := range tickets {
-		pubKey, _ := crypto.PubKeyFromBase58(ticket.ProposerPubKey)
-		pkBz := pubKey.MustBytes()
 		newValUpdates = append(newValUpdates, abcitypes.ValidatorUpdate{
-			PubKey: abcitypes.PubKey{Type: "ed25519", Data: pkBz},
+			PubKey: abcitypes.PubKey{Type: "ed25519", Data: ticket.ProposerPubKey.Bytes()},
 			Power:  1,
 		})
 		newValidators = append(newValidators, &types.Validator{
-			PubKey:   pkBz,
-			TicketID: ticket.Hash,
+			PubKey: ticket.ProposerPubKey,
 		})
-		pkHex := types.HexBytes(pkBz)
-		vIndex[pkHex.String()] = struct{}{}
+		vIndex[ticket.ProposerPubKey.HexStr()] = struct{}{}
 	}
 
 	// Get current validators
@@ -395,13 +392,12 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 
 	// Set the power of existing validators to zero if they are not
 	// part of the new list. It means they have been removed.
-	for pkHexStr := range curValidators {
-		pkHex := types.HexBytesFromHex(pkHexStr)
-		if _, ok := vIndex[pkHexStr]; ok {
+	for pubKey := range curValidators {
+		if _, ok := vIndex[pubKey.HexStr()]; ok {
 			continue
 		}
 		newValUpdates = append(newValUpdates, abcitypes.ValidatorUpdate{
-			PubKey: abcitypes.PubKey{Type: "ed25519", Data: pkHex},
+			PubKey: abcitypes.PubKey{Type: "ed25519", Data: pubKey.Bytes()},
 			Power:  0,
 		})
 	}
@@ -503,7 +499,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	}
 
 	// Set the decay height for each storer stake unbond request
-	for _, ticketHash := range a.unbondStorerRequests {
+	for _, ticketHash := range a.unbondStorerReqs {
 		a.logic.GetTicketManager().UpdateDecayBy(ticketHash, uint64(a.wBlock.Height))
 	}
 
@@ -539,7 +535,7 @@ func (a *App) commitPanic(err error) {
 func (a *App) reset() {
 	a.validatorTickets = []*ticketInfo{}
 	a.storerTickets = []*ticketInfo{}
-	a.unbondStorerRequests = []string{}
+	a.unbondStorerReqs = []util.Bytes32{}
 	a.txIndex = 0
 	a.epochSecretTx = nil
 	a.mature = false

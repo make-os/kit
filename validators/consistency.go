@@ -46,8 +46,7 @@ func CheckTxTicketPurchaseConsistency(
 
 	// When delegate is set, the delegate must have an active, non-delegated ticket
 	if !tx.Delegate.IsEmpty() {
-		proposer := crypto.MustBase58FromPubKeyBytes(tx.Delegate.Bytes())
-		r, err := logic.GetTicketManager().GetActiveTicketsByProposer(proposer, tx.Type, false)
+		r, err := logic.GetTicketManager().GetActiveTicketsByProposer(tx.Delegate, tx.Type, false)
 		if err != nil {
 			return errors.Wrap(err, "failed to get active delegate tickets")
 		} else if len(r) == 0 {
@@ -95,7 +94,7 @@ func CheckTxUnbondTicketConsistency(
 	// For delegated ticket, compare the delegator address with the sender address
 	authErr := feI(index, "hash", "sender not authorized to unbond this ticket")
 	if ticket.Delegator == "" {
-		if crypto.MustBase58FromPubKeyBytes(tx.SenderPubKey.Bytes()) != ticket.ProposerPubKey {
+		if tx.SenderPubKey != ticket.ProposerPubKey {
 			return authErr
 		}
 	} else if ticket.Delegator != tx.GetFrom().String() {
@@ -256,7 +255,7 @@ func CheckTxPushConsistency(
 		if err != nil {
 			return err
 		}
-		if !storers.Has(spk.Base58()) {
+		if !storers.Has(spk.MustBytes32()) {
 			return feI(index, "endorsements.senderPubKey",
 				"sender public key does not belong to an active storer")
 		}

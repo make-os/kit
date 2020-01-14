@@ -19,7 +19,7 @@ import (
 //
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) execUnbond(
-	ticketID []byte,
+	ticketID util.Bytes32,
 	senderPubKey util.Bytes32,
 	fee util.String,
 	chainHeight uint64) error {
@@ -31,7 +31,7 @@ func (t *Transaction) execUnbond(
 	senderBal := senderAcct.Balance.Decimal()
 
 	// Get the ticket
-	ticket := t.logic.GetTicketManager().GetByHash(string(ticketID))
+	ticket := t.logic.GetTicketManager().GetByHash(ticketID)
 	if ticket == nil {
 		return fmt.Errorf("ticket not found")
 	}

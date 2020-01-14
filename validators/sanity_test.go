@@ -403,7 +403,7 @@ var _ = Describe("TxValidator", func() {
 
 		BeforeEach(func() {
 			tx = types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
-			tx.TicketHash = "hash"
+			tx.TicketHash = util.StrToBytes32("hash")
 			tx.Fee = "1"
 		})
 
@@ -418,7 +418,7 @@ var _ = Describe("TxValidator", func() {
 			It("has no ticket hash", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.TicketHash = ""
+				tx.TicketHash = util.EmptyBytes32
 				err := validators.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:ticket, error:ticket id is required"))
