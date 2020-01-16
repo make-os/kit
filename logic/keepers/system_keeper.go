@@ -8,6 +8,7 @@ import (
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
+	"github.com/pkg/errors"
 )
 
 // ErrBlockInfoNotFound means the block info was not found
@@ -140,7 +141,14 @@ func (s *SystemKeeper) GetEpochSeeds(startHeight, limit int64) ([][]byte, error)
 			continue
 		}
 
-		if bi.EpochSeedOutput.IsEmpty() || bi.InvalidEpochSecret {
+		// If the seed block does not include a seed, we use the hash of the
+		// block before it
+		if bi.EpochSeedOutput.IsEmpty() {
+			beforeInfo, err := s.GetBlockInfo(seedHeight - 1)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get block before seed block")
+			}
+			seeds = append(seeds, beforeInfo.Hash)
 			next = next - skip
 			continue
 		}

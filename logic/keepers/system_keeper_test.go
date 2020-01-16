@@ -1,6 +1,7 @@
 package keepers
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
@@ -236,25 +237,6 @@ var _ = Describe("SystemKeeper", func() {
 			})
 		})
 
-		When("a block info is includes invalid secret", func() {
-			var err error
-			var res [][]byte
-			BeforeEach(func() {
-				rec := storage.NewRecord([]byte("key"), util.ObjectToBytes(types.BlockInfo{
-					InvalidEpochSecret: true,
-				}))
-				db := storagemocks.NewMockTx(ctrl)
-				db.EXPECT().Get(gomock.Any()).Return(rec, nil).AnyTimes()
-				sysKeeper.db = db
-				res, err = sysKeeper.GetEpochSeeds(10, 0)
-			})
-
-			It("should return nil err and empty result", func() {
-				Expect(err).To(BeNil())
-				Expect(res).To(BeEmpty())
-			})
-		})
-
 		When("a block info is includes no secret", func() {
 			var err error
 			var res [][]byte
@@ -324,6 +306,39 @@ var _ = Describe("SystemKeeper", func() {
 			})
 		})
 
+		FWhen("a block info does not include a secret at the starting height=9 where blocks per epoch = 3", func() {
+			var err error
+			var res [][]byte
+			var hash = util.RandBytes(32)
+			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 3
+				params.NumBlocksToEffectValChange = 1
+				seedBlock := storage.NewRecord([]byte("key"), util.ObjectToBytes(types.BlockInfo{
+					Height:          8,
+					EpochSeedOutput: util.EmptyBytes32,
+				}))
+
+				blockBeforeSeedBlock := storage.NewRecord([]byte("key2"), util.ObjectToBytes(types.BlockInfo{
+					Height: 7,
+					Hash:   hash,
+				}))
+
+				db := storagemocks.NewMockTx(ctrl)
+				db.EXPECT().Get(MakeKeyBlockInfo(8)).Return(seedBlock, nil).AnyTimes()
+				db.EXPECT().Get(MakeKeyBlockInfo(7)).Return(blockBeforeSeedBlock, nil).AnyTimes()
+				db.EXPECT().Get(MakeKeyBlockInfo(5)).Return(nil, ErrBlockInfoNotFound).AnyTimes()
+				db.EXPECT().Get(MakeKeyBlockInfo(2)).Return(nil, ErrBlockInfoNotFound).AnyTimes()
+				sysKeeper.db = db
+				res, err = sysKeeper.GetEpochSeeds(9, 0)
+			})
+
+			It("should return nil err and 1 result", func() {
+				Expect(err).To(BeNil())
+				Expect(res).ToNot(BeEmpty())
+				Expect(res).To(HaveLen(1))
+				Expect(bytes.Equal(res[0], hash)).To(BeTrue())
+			})
+		})
 	})
 
 	Describe(".SetLastRepoObjectsSyncHeight", func() {

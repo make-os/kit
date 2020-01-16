@@ -13,14 +13,13 @@ type BlockValidators map[util.Bytes32]*Validator
 
 // BlockInfo describes information about a block
 type BlockInfo struct {
-	AppHash            []byte       `json:"appHash"`
-	LastAppHash        []byte       `json:"lastAppHash"`
-	Hash               []byte       `json:"hash"`
-	Height             int64        `json:"height"`
-	ProposerAddress    []byte       `json:"proposerAddress"`
-	EpochSeedOutput    util.Bytes32 `json:"seedOutput"`
-	EpochSeedProof     []byte       `json:"seedProof"`
-	InvalidEpochSecret bool         `json:"invalidEpochSecret"`
+	AppHash         []byte       `json:"appHash"`
+	LastAppHash     []byte       `json:"lastAppHash"`
+	Hash            []byte       `json:"hash"`
+	Height          int64        `json:"height"`
+	ProposerAddress []byte       `json:"proposerAddress"`
+	EpochSeedOutput util.Bytes32 `json:"seedOutput"`
+	EpochSeedProof  []byte       `json:"seedProof"`
 }
 
 // Validator represents a validator
