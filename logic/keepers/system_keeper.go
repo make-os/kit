@@ -141,19 +141,36 @@ func (s *SystemKeeper) GetEpochSeeds(startHeight, limit int64) ([][]byte, error)
 			continue
 		}
 
+		beforeInfo, err := s.GetBlockInfo(seedHeight - 1)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to get block before seed block")
+		}
+
 		// If the seed block does not include a seed, we use the hash of the
-		// block before it
+		// block before it.
+		//
+		// Rationale: Prevents a proposer from being able to delibrately and easily chose
+		// to not add a seed expecting `GetEpochSeeds` to produce same seed set
+		// in subsequent run.
 		if bi.EpochSeedOutput.IsEmpty() {
-			beforeInfo, err := s.GetBlockInfo(seedHeight - 1)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to get block before seed block")
-			}
 			seeds = append(seeds, beforeInfo.Hash)
 			next = next - skip
 			continue
 		}
 
-		seeds = append(seeds, bi.EpochSeedOutput.Bytes())
+		// Mix the hash of the block before the seed block and the epoch seed
+		// and hash the mix to produce the final 32-bytes seed.
+		//
+		// Rationale: A block proposer can determine that they are the next to
+		// generate an epoch seed and use this information to precompute the
+		// seed which can be used to determine the next epoch's validators long
+		// before they are required to do so, by mixing the hash of the block
+		// before the seed block, we reduce the time available to precompute the
+		// seed and to act maliciously.
+		mixSeed := append(beforeInfo.Hash, bi.EpochSeedOutput.Bytes()...)
+		mixSeed = util.Blake2b256(mixSeed)
+
+		seeds = append(seeds, mixSeed)
 		if limit > 0 && int64(len(seeds)) == limit {
 			break
 		}

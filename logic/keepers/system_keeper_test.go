@@ -1,7 +1,6 @@
 package keepers
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 
@@ -237,138 +236,133 @@ var _ = Describe("SystemKeeper", func() {
 			})
 		})
 
-		When("a block info is includes no secret", func() {
+		When("seed block does not include a seed", func() {
 			var err error
 			var res [][]byte
+			hash7 := util.RandBytes(32)
+			hash2 := util.RandBytes(32)
+
 			BeforeEach(func() {
-				rec := storage.NewRecord([]byte("key"), util.ObjectToBytes(types.BlockInfo{}))
+				params.NumBlocksPerEpoch = 5
+				params.NumBlocksToEffectValChange = 2
+
 				db := storagemocks.NewMockTx(ctrl)
-				db.EXPECT().Get(gomock.Any()).Return(rec, nil).AnyTimes()
+				rec8 := storage.NewRecord(nil, util.ObjectToBytes(types.BlockInfo{}))
+				rec7 := storage.NewRecord(nil, util.ObjectToBytes(types.BlockInfo{Hash: hash7}))
+				db.EXPECT().Get(MakeKeyBlockInfo(8)).Return(rec8, nil)
+				db.EXPECT().Get(MakeKeyBlockInfo(7)).Return(rec7, nil)
+
+				rec3 := storage.NewRecord(nil, util.ObjectToBytes(types.BlockInfo{}))
+				rec2 := storage.NewRecord(nil, util.ObjectToBytes(types.BlockInfo{Hash: hash2}))
+				db.EXPECT().Get(MakeKeyBlockInfo(3)).Return(rec3, nil)
+				db.EXPECT().Get(MakeKeyBlockInfo(2)).Return(rec2, nil)
+
 				sysKeeper.db = db
 				res, err = sysKeeper.GetEpochSeeds(10, 0)
 			})
 
-			It("should return nil err and empty result", func() {
+			Specify("that the hash of the preceding block is returned", func() {
 				Expect(err).To(BeNil())
-				Expect(res).To(BeEmpty())
+				Expect(res).To(HaveLen(2))
+				Expect(res[0]).To(Equal(hash7))
+				Expect(res[1]).To(Equal(hash2))
+			})
+
+			When("seed bloc includes a secret", func() {
+				var err error
+				var res [][]byte
+				hash8Seed := util.BytesToBytes32(util.RandBytes(32))
+				hash7 := util.RandBytes(32)
+				hash3Seed := util.BytesToBytes32(util.RandBytes(32))
+				hash2 := util.RandBytes(32)
+
+				BeforeEach(func() {
+					db := storagemocks.NewMockTx(ctrl)
+
+					rec8 := storage.NewRecord(nil, util.ObjectToBytes(types.BlockInfo{EpochSeedOutput: hash8Seed}))
+					rec7 := storage.NewRecord(nil, util.ObjectToBytes(types.BlockInfo{Hash: hash7}))
+					db.EXPECT().Get(MakeKeyBlockInfo(8)).Return(rec8, nil).AnyTimes()
+					db.EXPECT().Get(MakeKeyBlockInfo(7)).Return(rec7, nil).AnyTimes()
+
+					rec3 := storage.NewRecord(nil, util.ObjectToBytes(types.BlockInfo{EpochSeedOutput: hash3Seed}))
+					rec2 := storage.NewRecord(nil, util.ObjectToBytes(types.BlockInfo{Hash: hash2}))
+					db.EXPECT().Get(MakeKeyBlockInfo(3)).Return(rec3, nil).AnyTimes()
+					db.EXPECT().Get(MakeKeyBlockInfo(2)).Return(rec2, nil).AnyTimes()
+
+					sysKeeper.db = db
+					res, err = sysKeeper.GetEpochSeeds(10, 0)
+				})
+
+				Specify("that the secrets are a mix of their preceding block hash and the seed", func() {
+					Expect(err).To(BeNil())
+					Expect(res).To(HaveLen(2))
+					Expect(res[0]).To(Equal(util.Blake2b256(append(hash7, hash8Seed.Bytes()...))))
+					Expect(res[1]).To(Equal(util.Blake2b256(append(hash2, hash3Seed.Bytes()...))))
+				})
+			})
+
+			When("limit is 1", func() {
+				var err error
+				var res [][]byte
+				hash8Seed := util.BytesToBytes32(util.RandBytes(32))
+				hash7 := util.RandBytes(32)
+				hash3Seed := util.BytesToBytes32(util.RandBytes(32))
+				hash2 := util.RandBytes(32)
+
+				BeforeEach(func() {
+					db := storagemocks.NewMockTx(ctrl)
+
+					rec8 := storage.NewRecord(nil, util.ObjectToBytes(types.BlockInfo{EpochSeedOutput: hash8Seed}))
+					rec7 := storage.NewRecord(nil, util.ObjectToBytes(types.BlockInfo{Hash: hash7}))
+					db.EXPECT().Get(MakeKeyBlockInfo(8)).Return(rec8, nil).AnyTimes()
+					db.EXPECT().Get(MakeKeyBlockInfo(7)).Return(rec7, nil).AnyTimes()
+
+					rec3 := storage.NewRecord(nil, util.ObjectToBytes(types.BlockInfo{EpochSeedOutput: hash3Seed}))
+					rec2 := storage.NewRecord(nil, util.ObjectToBytes(types.BlockInfo{Hash: hash2}))
+					db.EXPECT().Get(MakeKeyBlockInfo(3)).Return(rec3, nil).AnyTimes()
+					db.EXPECT().Get(MakeKeyBlockInfo(2)).Return(rec2, nil).AnyTimes()
+
+					sysKeeper.db = db
+					res, err = sysKeeper.GetEpochSeeds(10, 1)
+				})
+
+				Specify("that 1 secret is returned", func() {
+					Expect(err).To(BeNil())
+					Expect(res).To(HaveLen(1))
+					Expect(res[0]).To(Equal(util.Blake2b256(append(hash7, hash8Seed.Bytes()...))))
+				})
 			})
 		})
 
-		When("a block info includes a secret at the starting height=9 where blocks per epoch = 3", func() {
-			var err error
-			var res [][]byte
+		Describe(".SetLastRepoObjectsSyncHeight", func() {
+			var height = uint64(100)
 			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 3
-				params.NumBlocksToEffectValChange = 1
-				rec := storage.NewRecord([]byte("key"), util.ObjectToBytes(types.BlockInfo{
-					Height:          9,
-					EpochSeedOutput: util.BytesToBytes32(util.RandBytes(32)),
-				}))
-				db := storagemocks.NewMockTx(ctrl)
-				db.EXPECT().Get(MakeKeyBlockInfo(8)).Return(rec, nil).AnyTimes()
-				db.EXPECT().Get(MakeKeyBlockInfo(5)).Return(nil, ErrBlockInfoNotFound).AnyTimes()
-				db.EXPECT().Get(MakeKeyBlockInfo(2)).Return(nil, ErrBlockInfoNotFound).AnyTimes()
-				sysKeeper.db = db
-				res, err = sysKeeper.GetEpochSeeds(9, 0)
+				err = sysKeeper.SetLastRepoObjectsSyncHeight(height)
+				Expect(err).To(BeNil())
 			})
 
-			It("should return nil err and 1 result", func() {
+			It("should set the key and value", func() {
+				key := MakeKeyRepoSyncherHeight()
+				rec, err := appDB.Get(key)
 				Expect(err).To(BeNil())
-				Expect(res).ToNot(BeEmpty())
-				Expect(res).To(HaveLen(1))
+				var res uint64
+				rec.Scan(&res)
+				Expect(res).To(Equal(height))
 			})
 		})
 
-		When("a block info includes a secret at the starting heights=9,5 where blocks per epoch = 3 and limit = 1", func() {
-			var err error
-			var res [][]byte
+		Describe(".SetLastRepoObjectsSyncHeight", func() {
+			var height = uint64(100)
 			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 3
-				params.NumBlocksToEffectValChange = 1
-				rec := storage.NewRecord([]byte("key"), util.ObjectToBytes(types.BlockInfo{
-					EpochSeedOutput: util.BytesToBytes32(util.RandBytes(32)),
-				}))
-				rec2 := storage.NewRecord([]byte("key2"), util.ObjectToBytes(types.BlockInfo{
-					EpochSeedOutput: util.BytesToBytes32(util.RandBytes(32)),
-				}))
-				db := storagemocks.NewMockTx(ctrl)
-				db.EXPECT().Get(MakeKeyBlockInfo(8)).Return(rec, nil).AnyTimes()
-				db.EXPECT().Get(MakeKeyBlockInfo(5)).Return(rec2, nil).AnyTimes()
-				db.EXPECT().Get(MakeKeyBlockInfo(2)).Return(nil, ErrBlockInfoNotFound).AnyTimes()
-				sysKeeper.db = db
-				res, err = sysKeeper.GetEpochSeeds(9, 1)
-			})
-
-			It("should return nil err and 1 result", func() {
+				err = sysKeeper.SetLastRepoObjectsSyncHeight(height)
 				Expect(err).To(BeNil())
-				Expect(res).ToNot(BeEmpty())
-				Expect(res).To(HaveLen(1))
-			})
-		})
-
-		FWhen("a block info does not include a secret at the starting height=9 where blocks per epoch = 3", func() {
-			var err error
-			var res [][]byte
-			var hash = util.RandBytes(32)
-			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 3
-				params.NumBlocksToEffectValChange = 1
-				seedBlock := storage.NewRecord([]byte("key"), util.ObjectToBytes(types.BlockInfo{
-					Height:          8,
-					EpochSeedOutput: util.EmptyBytes32,
-				}))
-
-				blockBeforeSeedBlock := storage.NewRecord([]byte("key2"), util.ObjectToBytes(types.BlockInfo{
-					Height: 7,
-					Hash:   hash,
-				}))
-
-				db := storagemocks.NewMockTx(ctrl)
-				db.EXPECT().Get(MakeKeyBlockInfo(8)).Return(seedBlock, nil).AnyTimes()
-				db.EXPECT().Get(MakeKeyBlockInfo(7)).Return(blockBeforeSeedBlock, nil).AnyTimes()
-				db.EXPECT().Get(MakeKeyBlockInfo(5)).Return(nil, ErrBlockInfoNotFound).AnyTimes()
-				db.EXPECT().Get(MakeKeyBlockInfo(2)).Return(nil, ErrBlockInfoNotFound).AnyTimes()
-				sysKeeper.db = db
-				res, err = sysKeeper.GetEpochSeeds(9, 0)
 			})
 
-			It("should return nil err and 1 result", func() {
+			It("should return expected height", func() {
+				result, err := sysKeeper.GetLastRepoObjectsSyncHeight()
 				Expect(err).To(BeNil())
-				Expect(res).ToNot(BeEmpty())
-				Expect(res).To(HaveLen(1))
-				Expect(bytes.Equal(res[0], hash)).To(BeTrue())
+				Expect(height).To(Equal(result))
 			})
-		})
-	})
-
-	Describe(".SetLastRepoObjectsSyncHeight", func() {
-		var height = uint64(100)
-		BeforeEach(func() {
-			err = sysKeeper.SetLastRepoObjectsSyncHeight(height)
-			Expect(err).To(BeNil())
-		})
-
-		It("should set the key and value", func() {
-			key := MakeKeyRepoSyncherHeight()
-			rec, err := appDB.Get(key)
-			Expect(err).To(BeNil())
-			var res uint64
-			rec.Scan(&res)
-			Expect(res).To(Equal(height))
-		})
-	})
-
-	Describe(".SetLastRepoObjectsSyncHeight", func() {
-		var height = uint64(100)
-		BeforeEach(func() {
-			err = sysKeeper.SetLastRepoObjectsSyncHeight(height)
-			Expect(err).To(BeNil())
-		})
-
-		It("should return expected height", func() {
-			result, err := sysKeeper.GetLastRepoObjectsSyncHeight()
-			Expect(err).To(BeNil())
-			Expect(height).To(Equal(result))
 		})
 	})
 })
