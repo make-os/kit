@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 
-	randmocks "github.com/makeos/mosdef/crypto/rand/mocks"
 	"github.com/makeos/mosdef/params"
 
 	"github.com/golang/mock/gomock"
@@ -36,7 +35,6 @@ var _ = Describe("TxValidator", func() {
 	var mockTickMgr *mocks.MockTicketManager
 	var mockSysLogic *mocks.MockSysLogic
 	var mockRepoKeeper *mocks.MockRepoKeeper
-	var mockDrand *randmocks.MockDRander
 	var mockGPGPubKeyKeeper *mocks.MockGPGPubKeyKeeper
 	var mockNSKeeper *mocks.MockNamespaceKeeper
 
@@ -53,7 +51,6 @@ var _ = Describe("TxValidator", func() {
 		mockTickMgr = mockObjects.TicketManager
 		mockSysLogic = mockObjects.Sys
 		mockRepoKeeper = mockObjects.RepoKeeper
-		mockDrand = mockObjects.Drand
 		mockGPGPubKeyKeeper = mockObjects.GPGPubKeyKeeper
 		mockNSKeeper = mockObjects.NamespaceKeeper
 	})
@@ -413,67 +410,6 @@ var _ = Describe("TxValidator", func() {
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("error"))
-			})
-		})
-	})
-
-	Describe(".CheckTxEpochSecretConsistency", func() {
-		When("secret validation fail", func() {
-			BeforeEach(func() {
-				tx := types.NewBareTxEpochSecret()
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 1000
-
-				mockDrand.EXPECT().Verify(tx.Secret, tx.PreviousSecret,
-					tx.SecretRound).Return(fmt.Errorf("error"))
-
-				err = validators.CheckTxEpochSecretConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:secret, error:epoch secret is invalid"))
-			})
-		})
-
-		When("unable to get highest drand round", func() {
-			BeforeEach(func() {
-				tx := types.NewBareTxEpochSecret()
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 1000
-
-				mockDrand.EXPECT().Verify(tx.Secret, tx.PreviousSecret,
-					tx.SecretRound).Return(nil)
-				mockSysKeeper.EXPECT().GetHighestDrandRound().Return(uint64(0), fmt.Errorf("error"))
-
-				err = validators.CheckTxEpochSecretConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to get highest drand round: error"))
-			})
-		})
-
-		When("secret round is not greater than highest drand round", func() {
-			BeforeEach(func() {
-				tx := types.NewBareTxEpochSecret()
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 1000
-
-				mockDrand.EXPECT().Verify(tx.Secret, tx.PreviousSecret,
-					tx.SecretRound).Return(nil)
-				mockSysKeeper.EXPECT().GetHighestDrandRound().Return(uint64(1000), nil)
-
-				err = validators.CheckTxEpochSecretConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:secretRound, error:must be greater than the previous round"))
 			})
 		})
 	})

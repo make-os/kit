@@ -109,7 +109,7 @@ func (m *ChainModule) getBlock(height interface{}) interface{} {
 		panic(errors.Wrap(err, "failed to get block"))
 	}
 
-	return res
+	return EncodeForJS(res)
 }
 
 // getCurrentHeight returns the current block height
@@ -147,7 +147,7 @@ func (m *ChainModule) getBlockInfo(height interface{}) interface{} {
 		panic(errors.Wrap(err, "failed to get block info"))
 	}
 
-	return res
+	return EncodeForJS(res)
 }
 
 // getValidators returns the current validators
@@ -175,7 +175,7 @@ func (m *ChainModule) getValidators(height interface{}) interface{} {
 	}
 
 	var vList = []map[string]interface{}{}
-	for pubKey := range validators {
+	for pubKey, valInfo := range validators {
 
 		var pub32 ed25519.PubKeyEd25519
 		copy(pub32[:], pubKey.Bytes())
@@ -185,6 +185,7 @@ func (m *ChainModule) getValidators(height interface{}) interface{} {
 			"publicKey": pubKey.Base58(),
 			"address":   pubKey.Addr(),
 			"tmAddress": pub32.Address().String(),
+			"ticketId":  valInfo.TicketID.HexStr(),
 		})
 	}
 

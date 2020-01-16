@@ -8,9 +8,9 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/sha512"
+	"github.com/makeos/mosdef/crypto/vrf/ed25519/edwards25519"
 	"testing"
 
-	"github.com/coniks-sys/coniks-go/crypto/internal/ed25519/edwards25519"
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/ed25519"
 )

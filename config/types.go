@@ -48,8 +48,9 @@ type VersionInfo struct {
 	GoVersion    string `json:"goVersion" mapstructure:"goVersion"`
 }
 
-// GenAccount describes root account and its balance
-type GenAccount struct {
+// GenDataEntry describes a genesis file data entry
+type GenDataEntry struct {
+	Type    string `json:"type" mapstructure:"type"`
 	Address string `json:"address" mapstructure:"address"`
 	Balance string `json:"balance" mapstructure:"balance"`
 }
@@ -109,8 +110,8 @@ type AppConfig struct {
 	// Mempool holds mempool configurations
 	Mempool *MempoolConfig `json:"mempool" mapstructure:"mempool"`
 
-	// GenesisAccounts includes the initial/root accounts and their balances
-	GenesisAccounts []*GenAccount `json:"genaccounts" mapstructure:"genaccounts"`
+	// GenesisFileEntries includes the initial/root accounts and their balances
+	GenesisFileEntries []*GenDataEntry `json:"genaccounts" mapstructure:"genaccounts"`
 
 	// dataDir is where the node's config and network data is stored
 	dataDir string
@@ -146,16 +147,23 @@ type AppConfig struct {
 // EmptyAppConfig returns an empty Config Object
 func EmptyAppConfig() AppConfig {
 	return AppConfig{
-		Node:            &NodeConfig{},
-		Net:             &NetConfig{},
-		RPC:             &RPCConfig{},
-		DHT:             &DHTConfig{},
-		RepoMan:         &RepoManagerConfig{},
-		Mempool:         &MempoolConfig{},
-		GenesisAccounts: []*GenAccount{},
-		VersionInfo:     &VersionInfo{},
-		g:               &Globals{},
+		Node:               &NodeConfig{},
+		Net:                &NetConfig{},
+		RPC:                &RPCConfig{},
+		DHT:                &DHTConfig{},
+		RepoMan:            &RepoManagerConfig{},
+		Mempool:            &MempoolConfig{},
+		GenesisFileEntries: []*GenDataEntry{},
+		VersionInfo:        &VersionInfo{},
+		g:                  &Globals{},
 	}
+}
+
+// EmptyAppConfigWithGlobals is like EmptyAppConfig but sets the globals with g
+func EmptyAppConfigWithGlobals(g *Globals) AppConfig {
+	cfg := EmptyAppConfig()
+	cfg.g = g
+	return cfg
 }
 
 // GetConsoleHistoryPath returns the filepath where the console

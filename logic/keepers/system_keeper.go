@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
@@ -117,47 +118,20 @@ func (s *SystemKeeper) IsMarkedAsMature() (bool, error) {
 	return true, nil
 }
 
-// SetHighestDrandRound sets the highest drand round to r
-// only if r is greater than the current highest round.
-func (s *SystemKeeper) SetHighestDrandRound(r uint64) error {
-	hr, err := s.GetHighestDrandRound()
-	if err != nil {
-		return err
-	}
-	if hr > uint64(r) {
-		return nil
-	}
-	rec := storage.NewRecord(MakeHighestDrandRoundKey(), util.EncodeNumber(uint64(r)))
-	return s.db.Put(rec)
-}
+// GetEpochSeeds traverses the chain's history collecting seeds from every epoch until
+// the limit is reached or no more seeds are found.
+func (s *SystemKeeper) GetEpochSeeds(startHeight, limit int64) ([][]byte, error) {
 
-// GetHighestDrandRound returns the highest known drand round
-func (s *SystemKeeper) GetHighestDrandRound() (uint64, error) {
-	rec, err := s.db.Get(MakeHighestDrandRoundKey())
-	if err != nil {
-		if err == storage.ErrRecordNotFound {
-			return 0, nil
-		}
-		return 0, err
-	}
-	return util.DecodeNumber(rec.Value), nil
-}
+	// Determine the end of the epoch where startHeight falls in
+	var next = params.GetEndOfEpochOfHeight(startHeight)
 
-// GetSecrets fetch secrets from blocks starting from a given
-// height back to genesis block. The argument limit puts a
-// cap on the number of secrets to be collected. If limit is
-// set to 0 or negative number, no limit is applied.
-// The argument skip controls how many blocks are skipped.
-// Skip is 1 by default. Blocks with an invalid secret or
-// no secret are ignored.
-func (s *SystemKeeper) GetSecrets(from, limit, skip int64) ([][]byte, error) {
-	var secrets [][]byte
-	var next = from
-	if skip < 1 {
-		skip = 1
-	}
+	// Skip as much as NumBlocksPerEpoch to reach the next older epoch
+	skip := int64(params.NumBlocksPerEpoch)
+
+	var seeds [][]byte
 	for next > 0 {
-		bi, err := s.GetBlockInfo(next)
+		seedHeight := params.GetSeedHeightInEpochOfHeight(next)
+		bi, err := s.GetBlockInfo(seedHeight)
 		if err != nil {
 			if err != ErrBlockInfoNotFound {
 				return nil, err
@@ -166,19 +140,19 @@ func (s *SystemKeeper) GetSecrets(from, limit, skip int64) ([][]byte, error) {
 			continue
 		}
 
-		if len(bi.EpochSecret) == 0 || bi.InvalidEpochSecret {
+		if bi.EpochSeedOutput.IsEmpty() || bi.InvalidEpochSecret {
 			next = next - skip
 			continue
 		}
 
-		secrets = append(secrets, bi.EpochSecret)
-		if limit > 0 && int64(len(secrets)) == limit {
+		seeds = append(seeds, bi.EpochSeedOutput.Bytes())
+		if limit > 0 && int64(len(seeds)) == limit {
 			break
 		}
 
 		next = next - skip
 	}
-	return secrets, nil
+	return seeds, nil
 }
 
 // SetLastRepoObjectsSyncHeight sets the last block that was processed by the repo

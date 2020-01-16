@@ -144,33 +144,11 @@ func CheckTxRepoCreateConsistency(
 	return nil
 }
 
-// CheckTxEpochSecretConsistency performs consistency checks on TxEpochSecret
-func CheckTxEpochSecretConsistency(
-	tx *types.TxEpochSecret,
+// CheckTxEpochSeedConsistency performs consistency checks on TxEpochSeed
+func CheckTxEpochSeedConsistency(
+	tx *types.TxEpochSeed,
 	index int,
 	logic types.Logic) error {
-
-	err := logic.GetDRand().Verify(tx.Secret, tx.PreviousSecret, tx.SecretRound)
-	if err != nil {
-		return feI(index, "secret", "epoch secret is invalid")
-	}
-
-	// We need to ensure that the drand round is greater
-	// than the last known highest drand round.
-	highestDrandRound, err := logic.SysKeeper().GetHighestDrandRound()
-	if err != nil {
-		return errors.Wrap(err, "failed to get highest drand round")
-	} else if tx.SecretRound <= highestDrandRound {
-		return types.ErrStaleSecretRound(index)
-	}
-
-	// Ensure the tx secret round was not generated at
-	// an earlier period (before the epoch reaches its last block).
-	minsPerEpoch := (uint64(params.NumBlocksPerEpoch * params.BlockTime)) / 60
-	expectedRound := highestDrandRound + minsPerEpoch
-	if tx.SecretRound < expectedRound {
-		return types.ErrEarlySecretRound(index)
-	}
 
 	return nil
 }

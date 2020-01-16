@@ -9,7 +9,7 @@ import (
 
 var (
 	// BlockTime is the number of seconds between blocks
-	BlockTime = 5
+	BlockTime = 10
 
 	// MaxBlockSize is the max size of a block
 	MaxBlockSize = int64(1000000)
@@ -26,11 +26,11 @@ var (
 
 	// MinTicketMatDur is the number of blocks that must be created
 	// before a ticket is considered matured.
-	MinTicketMatDur = 10
+	MinTicketMatDur = 3
 
 	// MaxTicketActiveDur is the number of blocks before a matured
 	// ticket is considered spent or decayed.
-	MaxTicketActiveDur = 10
+	MaxTicketActiveDur = 100
 
 	// NumBlocksInThawPeriod is the number of blocks a decayed ticket will
 	// exist for before it can be unbonded
@@ -58,7 +58,11 @@ var (
 	MinBootstrapLiveTickets = 1
 
 	// NumBlocksPerEpoch is the number of blocks in an epoch
-	NumBlocksPerEpoch = 6
+	NumBlocksPerEpoch = 5
+
+	// NumBlocksToEffectValChange is the number of block tendermint uses to
+	// effect validation change.
+	NumBlocksToEffectValChange = 2
 
 	// MaxValidatorsPerEpoch is the maximum number validators per epoch
 	MaxValidatorsPerEpoch = 1

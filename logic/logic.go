@@ -2,7 +2,6 @@ package logic
 
 import (
 	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/crypto/rand"
 	"github.com/makeos/mosdef/logic/keepers"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/storage/tree"
@@ -63,14 +62,10 @@ type Logic struct {
 
 	// repoMgr provides access to the git repository manager
 	repoMgr types.RepoManager
-
-	// drand provides random number generation via DRand
-	drand rand.DRander
 }
 
 // New creates an instance of Logic
 // PANICS: If unable to load state tree
-// PANICS: when drand initialization fails
 func New(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *Logic {
 	dbTx := db.NewTx(true, true)
 	l := newLogicWithTx(dbTx, stateTreeDB.NewTx(true, true), cfg)
@@ -81,7 +76,6 @@ func New(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *
 // NewAtomic creates an instance of Logic that supports atomic operations across
 // all sub-logic providers and keepers.
 // PANICS: If unable to load state tree
-// PANICS: when drand initialization fails
 func NewAtomic(db storage.Engine, stateTreeDB storage.Engine, cfg *config.AppConfig) *Logic {
 	l := newLogicWithTx(db.NewTx(false, false), stateTreeDB.NewTx(true, true), cfg)
 	l._db = db
@@ -111,12 +105,6 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 	l.repoKeeper = keepers.NewRepoKeeper(tree)
 	l.gpgPubKeyKeeper = keepers.NewGPGPubKeyKeeper(tree, dbTx)
 	l.nsKeeper = keepers.NewNamespaceKeeper(tree)
-
-	// Create a drand instance
-	l.drand = rand.NewDRand(cfg.G().Interrupt)
-	if err := l.drand.Init(); err != nil {
-		panic(errors.Wrap(err, "failed to initialize drand"))
-	}
 
 	return l
 }
@@ -175,11 +163,6 @@ func (l *Logic) Discard() {
 	l.db.Discard()
 	l.stateTree.Rollback()
 	l.db.RenewTx()
-}
-
-// GetDRand returns a drand client
-func (l *Logic) GetDRand() rand.DRander {
-	return l.drand
 }
 
 // SetTicketManager sets the ticket manager
@@ -252,15 +235,16 @@ func (l *Logic) Validator() types.ValidatorLogic {
 	return l.validator
 }
 
-// WriteGenesisState creates initial state objects such as
-// genesis accounts and their balances.
+// WriteGenesisState creates initial state objects from the genesis file
 func (l *Logic) WriteGenesisState() error {
 
-	// Add all genesis accounts
-	for _, ga := range l.cfg.GenesisAccounts {
-		newAcct := types.BareAccount()
-		newAcct.Balance = util.String(ga.Balance)
-		l.accountKeeper.Update(util.String(ga.Address), newAcct)
+	// Add all genesis data entries to the state
+	for _, ga := range l.cfg.GenesisFileEntries {
+		if ga.Type == "account" {
+			newAcct := types.BareAccount()
+			newAcct.Balance = util.String(ga.Balance)
+			l.accountKeeper.Update(util.String(ga.Address), newAcct)
+		}
 	}
 
 	return nil

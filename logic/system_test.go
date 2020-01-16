@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/makeos/mosdef/crypto/rand"
+	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/logic/keepers"
 	"github.com/makeos/mosdef/testutil"
+	"github.com/makeos/mosdef/util"
 
 	"github.com/golang/mock/gomock"
 	"github.com/makeos/mosdef/types"
@@ -265,7 +266,44 @@ var _ = Describe("System", func() {
 		})
 	})
 
-	Describe(".GetCurretEpochSecretTx", func() {
+	Describe(".GetLastEpochSeed", func() {
+		When("current epoch is the first (1) epoch", func() {
+			It("should return the hash of the genesis file", func() {
+				params.NumBlocksPerEpoch = 5
+				seed, err := sysLogic.GetLastEpochSeed(3)
+				Expect(err).To(BeNil())
+				Expect(seed).To(Equal(config.GenesisFileHash()))
+			})
+		})
+
+		When("unable to get seed block height", func() {
+			It("should return err", func() {
+				params.NumBlocksPerEpoch = 5
+				seed, err := sysLogic.GetLastEpochSeed(7)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(Equal(keepers.ErrBlockInfoNotFound))
+				Expect(seed.IsEmpty()).To(BeTrue())
+			})
+		})
+
+		When("successful", func() {
+			BeforeEach(func() {
+				sysLogic.logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{
+					Height:          3,
+					EpochSeedOutput: util.BytesToBytes32(util.RandBytes(32)),
+				})
+			})
+
+			It("should return nil error and seed", func() {
+				params.NumBlocksPerEpoch = 5
+				seed, err := sysLogic.GetLastEpochSeed(7)
+				Expect(err).To(BeNil())
+				Expect(seed.IsEmpty()).To(BeFalse())
+			})
+		})
+	})
+
+	Describe(".MakeEpochSeedTx", func() {
 		When("getting last committed block fails", func() {
 			BeforeEach(func() {
 				params.NetMaturityHeight = 20
@@ -275,50 +313,50 @@ var _ = Describe("System", func() {
 			})
 
 			It("should return nil", func() {
-				stx, err := sysLogic.GetCurretEpochSecretTx()
+				stx, err := sysLogic.MakeEpochSeedTx()
 				Expect(err).To(BeNil())
 				Expect(stx).To(BeNil())
 			})
 		})
 
-		When("last committed block height is 8; params.NumBlocksPerEpoch = 10", func() {
+		When("the next block is not the start of epoch end stage", func() {
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 10
-				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 8}, nil)
+				params.NumBlocksToEffectValChange = 2
+				curBlockHeight := int64(6)
+				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: curBlockHeight}, nil)
 				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should return nil", func() {
-				stx, err := sysLogic.GetCurretEpochSecretTx()
+				stx, err := sysLogic.MakeEpochSeedTx()
 				Expect(err).To(BeNil())
 				Expect(stx).To(BeNil())
 			})
 		})
 
-		When("last committed block height is 9; params.NumBlocksPerEpoch = 10", func() {
-			expected := &rand.DrandRandData{
-				Previous: []byte("prev"),
-				Round:    1,
-				Randomness: &rand.DRandRandomness{
-					Gid:   21,
-					Point: []byte("secret"),
-				},
-			}
+		When("the next block is the start of epoch end stage", func() {
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 10
-				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 9}, nil)
-				mockLogic.Drand.EXPECT().Get(0).Return(expected)
+				params.NumBlocksToEffectValChange = 2
+				curBlockHeight := int64(7)
+				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: curBlockHeight}, nil)
+
+				wpv := crypto.GenerateWrappedPV(util.RandBytes(16))
+				g := &config.Globals{PrivVal: wpv}
+				cfg := config.EmptyAppConfigWithGlobals(g)
+				mockLogic.Logic.EXPECT().Cfg().Return(&cfg)
+
 				sysLogic.logic = mockLogic.Logic
 			})
 
-			It("should return nil", func() {
-				stx, err := sysLogic.GetCurretEpochSecretTx()
+			It("should return seed and no error", func() {
+				stx, err := sysLogic.MakeEpochSeedTx()
 				Expect(err).To(BeNil())
 				Expect(stx).ToNot(BeNil())
-				Expect(stx.GetType()).To(Equal(types.TxTypeEpochSecret))
-				Expect(stx.(*types.TxEpochSecret).Secret).To(Equal([]byte(expected.Randomness.Point)))
-				Expect(stx.(*types.TxEpochSecret).PreviousSecret).To(Equal([]byte(expected.Previous)))
-				Expect(stx.(*types.TxEpochSecret).SecretRound).To(Equal(expected.Round))
+				Expect(stx.GetType()).To(Equal(types.TxTypeEpochSeed))
+				Expect(stx.(*types.TxEpochSeed).Output).To(HaveLen(32))
+				Expect(stx.(*types.TxEpochSeed).Proof).To(HaveLen(96))
 			})
 		})
 	})
@@ -326,8 +364,7 @@ var _ = Describe("System", func() {
 	Describe(".MakeSecret", func() {
 		When("error is returned while trying to get secret", func() {
 			BeforeEach(func() {
-				mockLogic.SysKeeper.EXPECT().GetSecrets(gomock.Any(), gomock.Any(),
-					gomock.Any()).Return(nil, fmt.Errorf("error"))
+				mockLogic.SysKeeper.EXPECT().GetEpochSeeds(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
 				sysLogic.logic = mockLogic.Logic
 			})
 
@@ -340,23 +377,21 @@ var _ = Describe("System", func() {
 
 		When("no secret is found", func() {
 			BeforeEach(func() {
-				mockLogic.SysKeeper.EXPECT().GetSecrets(gomock.Any(), gomock.Any(),
-					gomock.Any()).Return(nil, nil)
+				mockLogic.SysKeeper.EXPECT().GetEpochSeeds(gomock.Any(), gomock.Any()).Return(nil, nil)
 				sysLogic.logic = mockLogic.Logic
 			})
 
 			It("should return err='...no secret found'", func() {
 				_, err := sysLogic.MakeSecret(1)
 				Expect(err).NotTo(BeNil())
-				Expect(err.Error()).To(ContainSubstring(ErrNoSecretFound.Error()))
+				Expect(err.Error()).To(ContainSubstring(ErrNoSeedFound.Error()))
 			})
 		})
 
 		When("two secrets (0x06, 0x04) exists", func() {
 			var secrets [][]byte = [][]byte{[]byte{0x06}, []byte{0x02}}
 			BeforeEach(func() {
-				mockLogic.SysKeeper.EXPECT().GetSecrets(gomock.Any(), gomock.Any(),
-					gomock.Any()).Return(secrets, nil)
+				mockLogic.SysKeeper.EXPECT().GetEpochSeeds(gomock.Any(), gomock.Any()).Return(secrets, nil)
 				sysLogic.logic = mockLogic.Logic
 			})
 

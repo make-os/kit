@@ -591,97 +591,48 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	Describe(".CheckTxEpochSecret", func() {
-		var tx *types.TxEpochSecret
+	Describe(".CheckTxEpochSeed", func() {
+		var tx *types.TxEpochSeed
 		BeforeEach(func() {
-			tx = types.NewBareTxEpochSecret()
-			tx.Fee = "1"
+			tx = types.NewBareTxEpochSeed()
 		})
 
 		When("it has invalid fields, it should return error when", func() {
 			It("should return error='type is invalid'", func() {
 				tx.Type = -10
-				err := validators.CheckTxEpochSecret(tx, -1)
+				err := validators.CheckTxEpochSeed(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
 			})
 
-			It("has no secret", func() {
-				err := validators.CheckTxEpochSecret(tx, -1)
+			It("has no vrf output", func() {
+				err := validators.CheckTxEpochSeed(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:secret, error:secret is required"))
+				Expect(err.Error()).To(Equal("field:output, error:output is required"))
 			})
 
-			It("has less than 64 bytes secret", func() {
-				tx.Secret = []byte("invalid length")
-				err := validators.CheckTxEpochSecret(tx, -1)
+			It("has no vrf proof", func() {
+				tx.Output = util.BytesToBytes32(util.RandBytes(32))
+				err := validators.CheckTxEpochSeed(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:secret, error:invalid length; expected 64 bytes"))
+				Expect(err.Error()).To(Equal("field:proof, error:proof is required"))
 			})
 
-			It("has no previous secret", func() {
-				tx.Secret = util.RandBytes(64)
-				err := validators.CheckTxEpochSecret(tx, -1)
+			It("has vrf proof length not equal to 96 bytes", func() {
+				tx.Output = util.BytesToBytes32(util.RandBytes(32))
+				tx.Proof = []byte("invalid_length")
+				err := validators.CheckTxEpochSeed(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:previousSecret, error:previous secret is required"))
+				Expect(err.Error()).To(Equal("field:proof, error:proof length is invalid"))
 			})
 
-			It("has less than 64 bytes previous secret", func() {
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = []byte("invalid length")
-				err := validators.CheckTxEpochSecret(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:previousSecret, error:invalid length; expected 64 bytes"))
-			})
-
-			It("has no secret round", func() {
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				err := validators.CheckTxEpochSecret(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:secretRound, error:secret round is required"))
-			})
-
-			It("has no public key", func() {
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 1
-				err := validators.CheckTxEpochSecret(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
-			})
-
-			It("has no signature", func() {
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 1
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
-				err := validators.CheckTxEpochSecret(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
-			})
-
-			It("has invalid signature", func() {
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 1
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
-				tx.Sig = []byte("invalid")
-				err := validators.CheckTxEpochSecret(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
-			})
 		})
 
 		When("it has no error", func() {
 			It("should return no error", func() {
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 1
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
-				sig, _ := tx.Sign(key.PrivKey().Base58())
-				tx.Sig = sig
-				err := validators.CheckTxEpochSecret(tx, -1)
+				tx.Output = util.BytesToBytes32(util.RandBytes(32))
+				tx.Proof = util.RandBytes(96)
+				err := validators.CheckTxEpochSeed(tx, -1)
 				Expect(err).To(BeNil())
 			})
 		})

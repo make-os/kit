@@ -21,20 +21,17 @@ func NewValidatorKeeper(db storage.Tx) *ValidatorKeeper {
 // GetByHeight gets a list of validators that produced a block.
 func (v *ValidatorKeeper) getByHeight(height int64) (types.BlockValidators, error) {
 
-	// Get the height of the block before the first block of the epoch this target
-	// block belongs to - This is known as the epoch eve block
-	// e.g [epoch 1: [eveBlock 9]] [epoch 2: [block 10]]
-	epochEveBlockHeight := height - (height % int64(params.NumBlocksPerEpoch))
+	// Get the height of the last block of the previous epoch
+	lastEpochEndBlockHeight := height - (height % int64(params.NumBlocksPerEpoch))
 
 get:
-	// The lowest eve block is 1 (genesis block)
-	if epochEveBlockHeight <= 0 {
-		epochEveBlockHeight = 1
+	if lastEpochEndBlockHeight <= 0 {
+		lastEpochEndBlockHeight = 1
 	}
 
-	// Find the validator set attached to the the eve block.
+	// Find the validator set attached to the height.
 	res := make(map[util.Bytes32]*types.Validator)
-	key := MakeBlockValidatorsKey(epochEveBlockHeight)
+	key := MakeBlockValidatorsKey(lastEpochEndBlockHeight)
 	rec, err := v.db.Get(key)
 	if err != nil {
 		if err != storage.ErrRecordNotFound {
@@ -42,13 +39,13 @@ get:
 		}
 	}
 
-	// At this point, the eve block has no validators.
-	// In this case, an older epoch validator must have produced it, therefore we
-	// need to find the most recent eve block with an associated validator set.
+	// At this point, the height has no validators.
+	// In this case, an older epoch validator set must have produced it, therefore we
+	// need to find the most recent epoch end block with an associated validator set.
 	if err == storage.ErrRecordNotFound {
-		nextEveBlock := epochEveBlockHeight - int64(params.NumBlocksPerEpoch)
+		nextEveBlock := lastEpochEndBlockHeight - int64(params.NumBlocksPerEpoch)
 		if nextEveBlock >= 0 {
-			epochEveBlockHeight = nextEveBlock
+			lastEpochEndBlockHeight = nextEveBlock
 			goto get
 		}
 		return res, nil
@@ -89,7 +86,7 @@ func (v *ValidatorKeeper) Index(height int64, validators []*types.Validator) err
 	var data = make(map[util.Bytes32]*types.Validator)
 	for _, v := range validators {
 		data[v.PubKey] = v
-		v.PubKey = util.EmptyBytes32 // save space since key has this data
+		v.PubKey = util.EmptyBytes32
 	}
 
 	key := MakeBlockValidatorsKey(height)

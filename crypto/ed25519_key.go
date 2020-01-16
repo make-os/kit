@@ -10,6 +10,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/crypto"
 	pb "github.com/libp2p/go-libp2p-core/crypto/pb"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/privval"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/ellcrys/go-ethereum/crypto/sha3"
@@ -185,6 +186,18 @@ func (p *PrivKey) Bytes() ([]byte, error) {
 		return nil, fmt.Errorf("private key is nil")
 	}
 	return p.privKey.(*crypto.Ed25519PrivateKey).Raw()
+}
+
+// MustBytes is like bytes but panics on error
+func (p *PrivKey) MustBytes() []byte {
+	if p.privKey == nil {
+		panic(fmt.Errorf("private key is nil"))
+	}
+	pk, err := p.privKey.(*crypto.Ed25519PrivateKey).Raw()
+	if err != nil {
+		panic(err)
+	}
+	return pk
 }
 
 // Bytes64 is like Bytes but returns util.Bytes64
@@ -453,4 +466,17 @@ func TMPubKeyFromBytesPubKey(bzPubKey []byte) (ed25519.PubKeyEd25519, error) {
 	copy(pubKeySized[:], rawPubKey)
 
 	return pubKeySized, nil
+}
+
+// GenerateWrappedPV generate a wrapped tendermint private validator key
+func GenerateWrappedPV(secret []byte) *WrappedPV {
+	privKey := ed25519.GenPrivKeyFromSecret(secret)
+	wpv := WrappedPV{FilePV: &privval.FilePV{
+		Key: privval.FilePVKey{
+			PubKey:  privKey.PubKey(),
+			PrivKey: privKey,
+			Address: privKey.PubKey().Address(),
+		},
+	}}
+	return &wpv
 }

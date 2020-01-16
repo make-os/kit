@@ -95,7 +95,7 @@ func (t *Transaction) Exec(tx types.BaseTx, chainHeight uint64) error {
 	case *types.TxNamespaceDomainUpdate:
 		return t.execUpdateNamespaceDomains(spk, o.Name, o.Fee, o.Domains, chainHeight)
 
-	case *types.TxEpochSecret:
+	case *types.TxEpochSeed:
 		return nil
 
 	default:

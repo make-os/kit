@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/makeos/mosdef/config"
+	"github.com/makeos/mosdef/crypto/vrf"
 	"github.com/makeos/mosdef/util"
 
 	"github.com/makeos/mosdef/logic/keepers"
@@ -15,8 +17,8 @@ import (
 	"github.com/makeos/mosdef/types"
 )
 
-// ErrNoSecretFound means no secret was found
-var ErrNoSecretFound = fmt.Errorf("no secret found")
+// ErrNoSeedFound means no secret was found
+var ErrNoSeedFound = fmt.Errorf("no secret found")
 
 // System implements types.TxLogic.
 // Provides functionalities for executing transactions
@@ -47,11 +49,9 @@ func (s *System) GetCurValidatorTicketPrice() float64 {
 	return p
 }
 
-// CheckSetNetMaturity checks whether the network
-// has reached a matured period. If it has not,
-// we return error. However, if it is just
-// met the maturity condition in this call, we
-// mark the network as mature
+// CheckSetNetMaturity checks whether the network has reached a matured period.
+// If it has not, we return error. However, if it just met the maturity
+// condition in this call, we mark the network as mature
 func (s *System) CheckSetNetMaturity() error {
 
 	// Check whether the network has already been flagged as matured.
@@ -121,53 +121,71 @@ func (s *System) GetEpoch(curBlockHeight uint64) (int, int) {
 	return int(math.Ceil(curEpoch)), int(math.Ceil(nextEpoch))
 }
 
-// GetCurretEpochSecretTx generates and returns a TxTypeEpochSecret
-// transaction only if the next block height is the last in the
-// current epoch.
-func (s *System) GetCurretEpochSecretTx() (types.BaseTx, error) {
+// GetLastEpochSeed get the seed of the last epoch
+func (s *System) GetLastEpochSeed(curBlockHeight int64) (util.Bytes32, error) {
+
+	// At epoch 1, there is not last epoch so we use the hash of the genesis
+	// data file as the seed.
+	curEpoch := params.GetEpochOfHeight(curBlockHeight)
+	if curEpoch == 1 {
+		return config.GenesisFileHash(), nil
+	}
+
+	// Get block height where the last epoch seed is stored
+	lastEpochSeedHeight := params.GetSeedHeightInEpochOfHeight(
+		params.GetEndOfParentEpochOfHeight(curBlockHeight))
+
+	lastSeedBlock, err := s.logic.SysKeeper().GetBlockInfo(lastEpochSeedHeight)
+	if err != nil {
+		return util.EmptyBytes32, err
+	}
+
+	return lastSeedBlock.EpochSeedOutput, nil
+}
+
+// MakeEpochSeedTx generates and returns a TxTypeEpochSeed transaction.
+// This function is used by the mempool only.
+func (s *System) MakeEpochSeedTx() (types.BaseTx, error) {
 
 	// Get last committed block information
 	bi, err := s.logic.SysKeeper().GetLastBlockInfo()
+	if err != nil { // Returning error will cause the mempool to panic at height 0
+		return nil, nil
+	}
+
+	// Determine if the next block is the first block in the end stage of the current epoch
+	if !params.IsStartOfEndOfEpochOfHeight(bi.Height + 1) {
+		return nil, nil
+	}
+
+	// Get the seed of the last epoch
+	lastEpochSeed, err := s.GetLastEpochSeed(bi.Height)
 	if err != nil {
-		return nil, nil
+		return nil, errors.Wrap(err, "failed to get last epoch seed")
 	}
 
-	// Simple calculation to determine if the next block is
-	// the last in the current epoch
-	if (bi.Height+1)%int64(params.NumBlocksPerEpoch) != 0 {
-		return nil, nil
-	}
+	pvk, _ := s.logic.Cfg().G().PrivVal.GetKey()
+	vrfKey, _ := vrf.GenerateKeyFromPrivateKey(pvk.PrivKey().MustBytes())
+	output, proof := vrfKey.Prove(lastEpochSeed.Bytes())
+	seedTx := types.NewBareTxEpochSeed()
+	seedTx.Output = util.BytesToBytes32(output)
+	seedTx.Proof = proof
 
-	// At the point, the next block is the last in the epoch,
-	// so we need to generate a 64 bytes random value wrapped
-	// in a TxTypeEpochSecret transaction
-	randVal := s.logic.GetDRand().Get(0)
-	if randVal == nil {
-		return nil, fmt.Errorf("failed to get random value from drand")
-	}
-
-	secretTx := types.NewBareTxEpochSecret()
-	secretTx.Timestamp = 0
-	secretTx.Secret = randVal.Randomness.Point
-	secretTx.PreviousSecret = randVal.Previous
-	secretTx.SecretRound = randVal.Round
-
-	return secretTx, nil
+	return seedTx, nil
 }
 
-// MakeSecret generates a 64 bytes secret for validator
-// selection by xor-ing the last 32 valid epoch secrets.
-// The most recent secrets will be selected starting from
-// the given height down to genesis.
-// It returns ErrNoSecretFound if no error was found
+// MakeSecret generates a 32 bytes secret for validator selection by xor-ing the
+// last 32 valid epoch seeds. The most recent epoch seeds will be selected
+// starting from the given height down to genesis.
+// It returns ErrNoSeedFound if no seed was found
 func (s *System) MakeSecret(height int64) ([]byte, error) {
-	secrets, err := s.logic.SysKeeper().GetSecrets(height, 32, int64(params.NumBlocksPerEpoch))
+	secrets, err := s.logic.SysKeeper().GetEpochSeeds(height, 32)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get secrets")
 	}
 
 	if len(secrets) == 0 {
-		return nil, ErrNoSecretFound
+		return nil, ErrNoSeedFound
 	}
 
 	final := secrets[0]

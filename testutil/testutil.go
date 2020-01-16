@@ -7,7 +7,6 @@ import (
 	"regexp"
 
 	"github.com/golang/mock/gomock"
-	drandmocks "github.com/makeos/mosdef/crypto/rand/mocks"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/types/mocks"
 	"github.com/makeos/mosdef/util/logger"
@@ -110,7 +109,6 @@ type MockObjects struct {
 	TxKeeper        *mocks.MockTxKeeper
 	TicketManager   *mocks.MockTicketManager
 	StateTree       *mocks.MockTree
-	Drand           *drandmocks.MockDRander
 	RepoManager     *mocks.MockRepoManager
 	GPGPubKeyKeeper *mocks.MockGPGPubKeyKeeper
 	NamespaceKeeper *mocks.MockNamespaceKeeper
@@ -134,7 +132,6 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.Logic.EXPECT().TxKeeper().Return(mo.TxKeeper).MinTimes(0)
 	mo.TicketManager = mocks.NewMockTicketManager(ctrl)
 	mo.StateTree = mocks.NewMockTree(ctrl)
-	mo.Drand = drandmocks.NewMockDRander(ctrl)
 	mo.RepoManager = mocks.NewMockRepoManager(ctrl)
 	mo.GPGPubKeyKeeper = mocks.NewMockGPGPubKeyKeeper(ctrl)
 	mo.NamespaceKeeper = mocks.NewMockNamespaceKeeper(ctrl)
@@ -149,7 +146,6 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.Logic.EXPECT().ValidatorKeeper().Return(mo.ValidatorKeeper).MinTimes(0)
 	mo.Logic.EXPECT().GetTicketManager().Return(mo.TicketManager).MinTimes(0)
 	mo.Logic.EXPECT().StateTree().Return(mo.StateTree).MinTimes(0)
-	mo.Logic.EXPECT().GetDRand().Return(mo.Drand).MinTimes(0)
 	mo.Logic.EXPECT().GetRepoManager().Return(mo.RepoManager).MinTimes(0)
 	mo.Logic.EXPECT().GPGPubKeyKeeper().Return(mo.GPGPubKeyKeeper).MinTimes(0)
 	mo.Logic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
@@ -163,7 +159,6 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.AtomicLogic.EXPECT().ValidatorKeeper().Return(mo.ValidatorKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().GetTicketManager().Return(mo.TicketManager).MinTimes(0)
 	mo.AtomicLogic.EXPECT().StateTree().Return(mo.StateTree).MinTimes(0)
-	mo.AtomicLogic.EXPECT().GetDRand().Return(mo.Drand).MinTimes(0)
 	mo.AtomicLogic.EXPECT().GetRepoManager().Return(mo.RepoManager).MinTimes(0)
 	mo.AtomicLogic.EXPECT().GPGPubKeyKeeper().Return(mo.GPGPubKeyKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)

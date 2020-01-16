@@ -3,7 +3,6 @@ package types
 import (
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/crypto/rand"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/util"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -14,20 +13,20 @@ type BlockValidators map[util.Bytes32]*Validator
 
 // BlockInfo describes information about a block
 type BlockInfo struct {
-	AppHash             []byte `json:"appHash"`
-	LastAppHash         []byte `json:"lastAppHash"`
-	Hash                []byte `json:"hash"`
-	Height              int64  `json:"height"`
-	ProposerAddress     string `json:"proposerAddress"`
-	EpochSecret         []byte `json:"epochSecret"`
-	EpochPreviousSecret []byte `json:"epochPreviousSecret"`
-	EpochRound          uint64 `json:"epochRound"`
-	InvalidEpochSecret  bool   `json:"invalidEpochSecret"`
+	AppHash            []byte       `json:"appHash"`
+	LastAppHash        []byte       `json:"lastAppHash"`
+	Hash               []byte       `json:"hash"`
+	Height             int64        `json:"height"`
+	ProposerAddress    []byte       `json:"proposerAddress"`
+	EpochSeedOutput    util.Bytes32 `json:"seedOutput"`
+	EpochSeedProof     []byte       `json:"seedProof"`
+	InvalidEpochSecret bool         `json:"invalidEpochSecret"`
 }
 
 // Validator represents a validator
 type Validator struct {
-	PubKey util.Bytes32 `json:"publicKey,omitempty" mapstructure:"publicKey"`
+	PubKey   util.Bytes32 `json:"publicKey,omitempty" mapstructure:"publicKey"`
+	TicketID util.Bytes32 `json:"ticketID,omitempty" mapstructure:"ticketID"`
 }
 
 // SystemKeeper describes an interface for accessing system data
@@ -51,22 +50,9 @@ type SystemKeeper interface {
 	// IsMarkedAsMature returns true if the network has been flagged as mature.
 	IsMarkedAsMature() (bool, error)
 
-	// SetHighestDrandRound sets the highest drand round to r
-	// only if r is greater than the current highest round.
-	SetHighestDrandRound(r uint64) error
-
-	// GetHighestDrandRound returns the highest drand round
-	// known to the application
-	GetHighestDrandRound() (uint64, error)
-
-	// GetSecrets fetch secrets from blocks starting from a given
-	// height back to genesis block. The argument limit puts a
-	// cap on the number of secrets to be collected. If limit is
-	// set to 0 or negative number, no limit is applied.
-	// The argument skip controls how many blocks are skipped.
-	// Skip is 1 by default. Blocks with an invalid secret or
-	// no secret are ignored.
-	GetSecrets(from, limit, skip int64) ([][]byte, error)
+	// GetEpochSeeds traverses the chain's history collecting seeds from every epoch until
+	// the limit is reached or no more seeds are found.
+	GetEpochSeeds(from, limit int64) ([][]byte, error)
 
 	// SetLastRepoObjectsSyncHeight sets the last block that was processed by the repo
 	// object synchronizer
@@ -218,9 +204,6 @@ type Logic interface {
 	// SetTicketManager sets the ticket manager
 	SetTicketManager(tm TicketManager)
 
-	// GetDRand returns a drand client
-	GetDRand() rand.DRander
-
 	// SetRepoManager sets the repository manager
 	SetRepoManager(m RepoManager)
 
@@ -329,14 +312,17 @@ type SysLogic interface {
 	// GetEpoch return the current and next epoch
 	GetEpoch(curBlockHeight uint64) (int, int)
 
-	// GetCurretEpochSecretTx returns an TxTypeEpochSecret transaction
+	// MakeEpochSeedTx returns an TxTypeEpochSeed transaction
 	// only if the next block is the last block in the current epoch.
-	GetCurretEpochSecretTx() (BaseTx, error)
+	MakeEpochSeedTx() (BaseTx, error)
+
+	// GetLastEpochSeed get the seed of the last epoch
+	GetLastEpochSeed(curBlockHeight int64) (util.Bytes32, error)
 
 	// MakeSecret generates a 64 bytes secret for validator
-	// selection by xoring the last 32 valid epoch secrets.
+	// selection by xoring the last 32 valid epoch seeds.
 	// The most recent secrets will be selected starting from
 	// the given height down to genesis.
-	// It returns ErrNoSecretFound if no error was found
+	// It returns ErrNoSeedFound if no error was found
 	MakeSecret(height int64) ([]byte, error)
 }

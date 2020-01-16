@@ -47,7 +47,7 @@ func checkCommon(tx types.BaseTx, index int) error {
 
 	var baseFee, txSize decimal.Decimal
 
-	if tx.Is(types.TxTypeEpochSecret) {
+	if tx.Is(types.TxTypeEpochSeed) {
 		goto pub_sig_check
 	}
 
@@ -197,35 +197,22 @@ func CheckTxRepoCreate(tx *types.TxRepoCreate, index int) error {
 	return nil
 }
 
-// CheckTxEpochSecret performs sanity checks on TxEpochSecret
-func CheckTxEpochSecret(tx *types.TxEpochSecret, index int) error {
+// CheckTxEpochSeed performs sanity checks on TxEpochSeed
+func CheckTxEpochSeed(tx *types.TxEpochSeed, index int) error {
 
-	if err := checkType(tx.TxType, types.TxTypeEpochSecret, index); err != nil {
+	if err := checkType(tx.TxType, types.TxTypeEpochSeed, index); err != nil {
 		return err
 	}
 
-	if err := v.Validate(tx.Secret,
-		v.Required.Error(feI(index, "secret", "secret is required").Error()),
-		v.By(validSecretRule("secret", index)),
-	); err != nil {
-		return err
+	if tx.Output.IsEmpty() {
+		return feI(index, "output", "output is required")
 	}
 
-	if err := v.Validate(tx.PreviousSecret,
-		v.Required.Error(feI(index, "previousSecret", "previous secret is required").Error()),
-		v.By(validSecretRule("previousSecret", index)),
-	); err != nil {
-		return err
-	}
-
-	if err := v.Validate(tx.SecretRound,
-		v.Required.Error(feI(index, "secretRound", "secret round is required").Error()),
-	); err != nil {
-		return err
-	}
-
-	if err := checkCommon(tx, index); err != nil {
-		return err
+	prooflen := len(tx.Proof)
+	if prooflen == 0 {
+		return feI(index, "proof", "proof is required")
+	} else if prooflen != 96 {
+		return feI(index, "proof", "proof length is invalid")
 	}
 
 	return nil

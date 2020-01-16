@@ -8,7 +8,6 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	config "github.com/makeos/mosdef/config"
 	crypto "github.com/makeos/mosdef/crypto"
-	rand "github.com/makeos/mosdef/crypto/rand"
 	storage "github.com/makeos/mosdef/storage"
 	types "github.com/makeos/mosdef/types"
 	util "github.com/makeos/mosdef/util"
@@ -127,48 +126,19 @@ func (mr *MockSystemKeeperMockRecorder) IsMarkedAsMature() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMarkedAsMature", reflect.TypeOf((*MockSystemKeeper)(nil).IsMarkedAsMature))
 }
 
-// SetHighestDrandRound mocks base method
-func (m *MockSystemKeeper) SetHighestDrandRound(r uint64) error {
+// GetEpochSeeds mocks base method
+func (m *MockSystemKeeper) GetEpochSeeds(from, limit int64) ([][]byte, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetHighestDrandRound", r)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetHighestDrandRound indicates an expected call of SetHighestDrandRound
-func (mr *MockSystemKeeperMockRecorder) SetHighestDrandRound(r interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHighestDrandRound", reflect.TypeOf((*MockSystemKeeper)(nil).SetHighestDrandRound), r)
-}
-
-// GetHighestDrandRound mocks base method
-func (m *MockSystemKeeper) GetHighestDrandRound() (uint64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHighestDrandRound")
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetHighestDrandRound indicates an expected call of GetHighestDrandRound
-func (mr *MockSystemKeeperMockRecorder) GetHighestDrandRound() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHighestDrandRound", reflect.TypeOf((*MockSystemKeeper)(nil).GetHighestDrandRound))
-}
-
-// GetSecrets mocks base method
-func (m *MockSystemKeeper) GetSecrets(from, limit, skip int64) ([][]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSecrets", from, limit, skip)
+	ret := m.ctrl.Call(m, "GetEpochSeeds", from, limit)
 	ret0, _ := ret[0].([][]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetSecrets indicates an expected call of GetSecrets
-func (mr *MockSystemKeeperMockRecorder) GetSecrets(from, limit, skip interface{}) *gomock.Call {
+// GetEpochSeeds indicates an expected call of GetEpochSeeds
+func (mr *MockSystemKeeperMockRecorder) GetEpochSeeds(from, limit interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecrets", reflect.TypeOf((*MockSystemKeeper)(nil).GetSecrets), from, limit, skip)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpochSeeds", reflect.TypeOf((*MockSystemKeeper)(nil).GetEpochSeeds), from, limit)
 }
 
 // SetLastRepoObjectsSyncHeight mocks base method
@@ -729,20 +699,6 @@ func (mr *MockAtomicLogicMockRecorder) SetTicketManager(tm interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTicketManager", reflect.TypeOf((*MockAtomicLogic)(nil).SetTicketManager), tm)
 }
 
-// GetDRand mocks base method
-func (m *MockAtomicLogic) GetDRand() rand.DRander {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDRand")
-	ret0, _ := ret[0].(rand.DRander)
-	return ret0
-}
-
-// GetDRand indicates an expected call of GetDRand
-func (mr *MockAtomicLogicMockRecorder) GetDRand() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDRand", reflect.TypeOf((*MockAtomicLogic)(nil).GetDRand))
-}
-
 // SetRepoManager mocks base method
 func (m_2 *MockAtomicLogic) SetRepoManager(m types.RepoManager) {
 	m_2.ctrl.T.Helper()
@@ -1066,20 +1022,6 @@ func (m *MockLogic) SetTicketManager(tm types.TicketManager) {
 func (mr *MockLogicMockRecorder) SetTicketManager(tm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTicketManager", reflect.TypeOf((*MockLogic)(nil).SetTicketManager), tm)
-}
-
-// GetDRand mocks base method
-func (m *MockLogic) GetDRand() rand.DRander {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetDRand")
-	ret0, _ := ret[0].(rand.DRander)
-	return ret0
-}
-
-// GetDRand indicates an expected call of GetDRand
-func (mr *MockLogicMockRecorder) GetDRand() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDRand", reflect.TypeOf((*MockLogic)(nil).GetDRand))
 }
 
 // SetRepoManager mocks base method
@@ -1514,19 +1456,34 @@ func (mr *MockSysLogicMockRecorder) GetEpoch(curBlockHeight interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpoch", reflect.TypeOf((*MockSysLogic)(nil).GetEpoch), curBlockHeight)
 }
 
-// GetCurretEpochSecretTx mocks base method
-func (m *MockSysLogic) GetCurretEpochSecretTx() (types.BaseTx, error) {
+// MakeEpochSeedTx mocks base method
+func (m *MockSysLogic) MakeEpochSeedTx() (types.BaseTx, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCurretEpochSecretTx")
+	ret := m.ctrl.Call(m, "MakeEpochSeedTx")
 	ret0, _ := ret[0].(types.BaseTx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetCurretEpochSecretTx indicates an expected call of GetCurretEpochSecretTx
-func (mr *MockSysLogicMockRecorder) GetCurretEpochSecretTx() *gomock.Call {
+// MakeEpochSeedTx indicates an expected call of MakeEpochSeedTx
+func (mr *MockSysLogicMockRecorder) MakeEpochSeedTx() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurretEpochSecretTx", reflect.TypeOf((*MockSysLogic)(nil).GetCurretEpochSecretTx))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeEpochSeedTx", reflect.TypeOf((*MockSysLogic)(nil).MakeEpochSeedTx))
+}
+
+// GetLastEpochSeed mocks base method
+func (m *MockSysLogic) GetLastEpochSeed(curBlockHeight int64) (util.Bytes32, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLastEpochSeed", curBlockHeight)
+	ret0, _ := ret[0].(util.Bytes32)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLastEpochSeed indicates an expected call of GetLastEpochSeed
+func (mr *MockSysLogicMockRecorder) GetLastEpochSeed(curBlockHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastEpochSeed", reflect.TypeOf((*MockSysLogic)(nil).GetLastEpochSeed), curBlockHeight)
 }
 
 // MakeSecret mocks base method

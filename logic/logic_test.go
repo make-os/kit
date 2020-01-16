@@ -35,26 +35,28 @@ var _ = Describe("Logic", func() {
 	})
 
 	Describe(".WriteGenesisState", func() {
-		var testGenAccts = []*config.GenAccount{
-			&config.GenAccount{Address: "addr1", Balance: "100"},
-			&config.GenAccount{Address: "addr2", Balance: "200"},
+		var testGenData = []*config.GenDataEntry{
+			&config.GenDataEntry{Type: "account", Address: "addr1", Balance: "100"},
+			&config.GenDataEntry{Type: "account", Address: "addr2", Balance: "200"},
 		}
 
 		BeforeEach(func() {
-			cfg.GenesisAccounts = testGenAccts
-			for _, a := range testGenAccts {
-				res := logic.AccountKeeper().GetAccount(util.String(a.Address))
-				Expect(res.Balance).To(Equal(util.String("0")))
-				Expect(res.Nonce).To(Equal(uint64(0)))
+			cfg.GenesisFileEntries = testGenData
+			for _, a := range testGenData {
+				if a.Type == "account" {
+					res := logic.AccountKeeper().GetAccount(util.String(a.Address))
+					Expect(res.Balance).To(Equal(util.String("0")))
+					Expect(res.Nonce).To(Equal(uint64(0)))
+				}
 			}
 		})
 
 		It("should successfully add genesis accounts", func() {
 			err := logic.WriteGenesisState()
 			Expect(err).To(BeNil())
-			addr1Res := logic.AccountKeeper().GetAccount(util.String(testGenAccts[0].Address))
+			addr1Res := logic.AccountKeeper().GetAccount(util.String(testGenData[0].Address))
 			Expect(addr1Res.Balance).To(Equal(util.String("100")))
-			addr2Res := logic.AccountKeeper().GetAccount(util.String(testGenAccts[1].Address))
+			addr2Res := logic.AccountKeeper().GetAccount(util.String(testGenData[1].Address))
 			Expect(addr2Res.Balance).To(Equal(util.String("200")))
 		})
 	})

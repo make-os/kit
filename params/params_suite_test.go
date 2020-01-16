@@ -1,4 +1,4 @@
-package rand
+package params_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestRand(t *testing.T) {
+func TestParams(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Rand Suite")
+	RunSpecs(t, "Params Suite")
 }

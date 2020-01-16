@@ -82,11 +82,6 @@ func MakeNetMaturityKey() []byte {
 	return storage.MakePrefix([]byte(TagNetMaturity))
 }
 
-// MakeHighestDrandRoundKey creates a key for storing the highest know drand round
-func MakeHighestDrandRoundKey() []byte {
-	return storage.MakePrefix([]byte(TagHighestDrandRound))
-}
-
 // MakeBlockValidatorsKey creates a key for storing validators of blocks
 func MakeBlockValidatorsKey(height int64) []byte {
 	return storage.MakeKey(util.EncodeNumber(uint64(height)), []byte(TagValidators))

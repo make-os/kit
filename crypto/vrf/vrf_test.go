@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/makeos/mosdef/util"
-	// "fmt"
 )
 
 func TestHonestComplete(t *testing.T) {

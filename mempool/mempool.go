@@ -49,7 +49,7 @@ type Mempool struct {
 	wal *auto.AutoFile
 
 	// epochSecretGetter is a callback that is used to fetch
-	// an epoch secret tx.
+	// an epoch seed tx.
 	epochSecretGetter func() (t.BaseTx, error)
 
 	log     logger.Logger
@@ -66,7 +66,7 @@ func NewMempool(cfg *config.AppConfig) *Mempool {
 }
 
 // SetEpochSecretGetter sets the callback function
-// that returns an epoch secret transaction
+// that returns an epoch seed transaction
 func (mp *Mempool) SetEpochSecretGetter(cb func() (t.BaseTx, error)) {
 	mp.epochSecretGetter = cb
 }
@@ -218,32 +218,17 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 	numValTicketTxReaped := 0
 	ignoredTx := []t.BaseTx{}
 
-	// Get an epoch secret and add it as the first reaped tx.
-	// Exit immediately when we are unable to obtain drand random value.
-	// This is necessary to prevent the validator from proposing an
-	// epoch end block that has no epoch secret.
+	// Get an epoch seed transaction and add it as the first reaped tx.
+	// Exit if an error occurs while doing this.
 	if mp.epochSecretGetter != nil {
 		epochSecretTx, err := mp.epochSecretGetter()
 		if err != nil {
 			mp.log.Fatal(err.Error())
 		} else if epochSecretTx != nil {
-
-			// Sign the epoch secret
-			key, err := mp.cfg.G().PrivVal.GetKey()
-			if err != nil {
-				panic(err)
-			}
-			epochSecretTx.SetSenderPubKey(key.PubKey().MustBytes())
-			sig, err := epochSecretTx.Sign(key.PrivKey().Base58())
-			if err != nil {
-				panic(err)
-			}
-			epochSecretTx.SetSignature(sig)
-
 			txBs := epochSecretTx.Bytes()
 			txs = append(txs, txBs)
 			totalBytes += int64(len(txBs))
-			mp.log.Debug("Fetched and appended next epoch secret to reaped txs")
+			mp.log.Debug("Appended next epoch seed to reaped txs")
 		}
 	}
 

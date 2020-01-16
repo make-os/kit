@@ -13,7 +13,7 @@ import (
 var (
 	TxTypeCoinTransfer           = 0x0  // For native coin transfer
 	TxTypeValidatorTicket        = 0x01 // For validator ticket purchase
-	TxTypeEpochSecret            = 0x02 // For providing an epoch secret transaction
+	TxTypeEpochSeed            = 0x02 // For providing an epoch seed transaction
 	TxTypeSetDelegatorCommission = 0x03 // For setting delegator commission
 	TxTypeStorerTicket           = 0x04 // For purchasing storer ticket
 	TxTypeUnbondStorerTicket     = 0x05 // For unbonding storer ticket
@@ -223,8 +223,8 @@ func DecodeTx(txBz []byte) (BaseTx, error) {
 		tx = NewBareTxRepoCreate()
 	case TxTypeAddGPGPubKey:
 		tx = NewBareTxAddGPGPubKey()
-	case TxTypeEpochSecret:
-		tx = NewBareTxEpochSecret()
+	case TxTypeEpochSeed:
+		tx = NewBareTxEpochSeed()
 	case TxTypePush:
 		tx = NewBareTxPush()
 	case TxTypeNSAcquire:

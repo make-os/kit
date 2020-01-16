@@ -89,8 +89,9 @@ const (
 	ErrCodeTxTypeUnexpected            = 4
 	ErrCodeTxInvalidValue              = 5
 	ErrCodeEpochSecretUnexpectedSigner = 6
-	ErrCodeEpochSecretNotExpected      = 7
+	ErrCodeEpochSeedNotExpected        = 7
 	ErrCodeEpochSecretExcess           = 8
+	ErrCodeTxFailedSeedVerification    = 9
 )
 
 // Network errors

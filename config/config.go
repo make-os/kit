@@ -55,27 +55,37 @@ var (
 	DefaultRepoManagerAddress = "127.0.0.1:9004"
 )
 
-// getGenesisAccounts returns the genesis/root accounts
-func getGenesisAccounts() []map[string]interface{} {
+// getGenesisData returns the genesis data
+func getGenesisData() []map[string]interface{} {
 	box := packr.NewBox("../data")
-	genesisData, err := box.FindString("genesis_account.json")
+	genesisData, err := box.FindString("genesis.json")
 	if err != nil {
 		panic(errors.Wrap(err, "failed to read genesis file"))
 	}
 
 	var data []map[string]interface{}
 	if err = json.Unmarshal([]byte(genesisData), &data); err != nil {
-		panic(errors.Wrap(err, "failed to decoded genesis account file"))
+		panic(errors.Wrap(err, "failed to decoded genesis file"))
 	}
 
 	return data
+}
+
+// GenesisFileHash returns the hash of the genesis file
+func GenesisFileHash() util.Bytes32 {
+	box := packr.NewBox("../data")
+	genesisData, err := box.Find("genesis.json")
+	if err != nil {
+		panic(errors.Wrap(err, "failed to read genesis file"))
+	}
+	return util.BytesToBytes32(util.Blake2b256(genesisData))
 }
 
 // setDefaultViperConfig sets default config values.
 // They are used when their values is not provided
 // in flag, env or config file.
 func setDefaultViperConfig(cmd *cobra.Command) {
-	viper.SetDefault("genaccounts", getGenesisAccounts())
+	viper.SetDefault("gendata", getGenesisData())
 	viper.SetDefault("mempool.size", 5000)
 	viper.SetDefault("mempool.cacheSize", 10000)
 	viper.SetDefault("mempool.maxTxSize", 1024*1024)       // 1MB

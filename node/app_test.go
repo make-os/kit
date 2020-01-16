@@ -7,6 +7,7 @@ import (
 	"github.com/tendermint/tendermint/privval"
 
 	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/crypto/vrf"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/util"
 
@@ -131,21 +132,24 @@ var _ = Describe("App", func() {
 	})
 
 	Describe(".updateValidators", func() {
+		BeforeEach(func() {
+			params.NumBlocksPerEpoch = 5
+		})
+
 		When("the provided height is not the block height preceding the last epoch", func() {
 			It("should return nil", func() {
-				Expect(app.updateValidators(4, nil)).To(BeNil())
+				Expect(app.updateValidators(3, nil)).To(BeNil())
 			})
 		})
 
 		When("an error occurred when making secret", func() {
 			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 5
 				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
 				app.logic = mockLogic.AtomicLogic
 			})
 
 			It("should return error", func() {
-				err := app.updateValidators(6, nil)
+				err := app.updateValidators(4, nil)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("bad error"))
 			})
@@ -153,7 +157,6 @@ var _ = Describe("App", func() {
 
 		When("an error occurred when selecting random validators", func() {
 			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 5
 				mockLogic.TicketManager.EXPECT().SelectRandomValidatorTickets(gomock.Any(), gomock.Any(),
 					gomock.Any()).Return(nil, fmt.Errorf("error selecting validators"))
 				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
@@ -162,7 +165,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should return error", func() {
-				err := app.updateValidators(6, nil)
+				err := app.updateValidators(4, nil)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("error selecting validators"))
 			})
@@ -182,7 +185,7 @@ var _ = Describe("App", func() {
 
 			It("should return nil and no validator updates in endblock response", func() {
 				var resp abcitypes.ResponseEndBlock
-				err := app.updateValidators(6, &resp)
+				err := app.updateValidators(4, &resp)
 				Expect(err).To(BeNil())
 				Expect(resp.ValidatorUpdates).To(BeEmpty())
 			})
@@ -207,7 +210,7 @@ var _ = Describe("App", func() {
 
 			It("should add the two validators to the response object", func() {
 				var resp abcitypes.ResponseEndBlock
-				err := app.updateValidators(6, &resp)
+				err := app.updateValidators(4, &resp)
 				Expect(err).To(BeNil())
 				Expect(resp.ValidatorUpdates).To(HaveLen(2))
 			})
@@ -239,7 +242,7 @@ var _ = Describe("App", func() {
 
 			It("should add existing validator but change power to zero (0)", func() {
 				var resp abcitypes.ResponseEndBlock
-				err := app.updateValidators(6, &resp)
+				err := app.updateValidators(4, &resp)
 				Expect(err).To(BeNil())
 				Expect(resp.ValidatorUpdates).To(HaveLen(2))
 				Expect(resp.ValidatorUpdates[1].Power).To(Equal(int64(0)))
@@ -249,7 +252,7 @@ var _ = Describe("App", func() {
 
 			It("should add new validator and set power to 1", func() {
 				var resp abcitypes.ResponseEndBlock
-				err := app.updateValidators(6, &resp)
+				err := app.updateValidators(4, &resp)
 				Expect(err).To(BeNil())
 				Expect(resp.ValidatorUpdates).To(HaveLen(2))
 				Expect(resp.ValidatorUpdates[0].Power).To(Equal(int64(1)))
@@ -277,7 +280,7 @@ var _ = Describe("App", func() {
 
 			It("should return error", func() {
 				var resp abcitypes.ResponseEndBlock
-				err := app.updateValidators(6, &resp)
+				err := app.updateValidators(4, &resp)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("bad error"))
 			})
@@ -532,7 +535,7 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("tx type is TxTypeEpochSecret and the current block "+
+		When("tx type is TxTypeEpochSeed and the current block "+
 			"is not last in the current epoch", func() {
 			var res abcitypes.ResponseDeliverTx
 
@@ -544,22 +547,21 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 5
-				app.wBlock.Height = 4
-				tx := types.NewBareTxEpochSecret()
-				tx.Secret = util.RandBytes(64)
-				tx.PreviousSecret = util.RandBytes(64)
-				tx.SecretRound = 18
+				app.curWorkingBlock.Height = 4
+				tx := types.NewBareTxEpochSeed()
+				tx.Output = util.BytesToBytes32(util.RandBytes(32))
+				tx.Proof = util.RandBytes(96)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				res = app.DeliverTx(req)
 			})
 
-			It("should return code=ErrCodeEpochSecretNotExpected and err='failed to execute tx: epoch secret not expected'", func() {
-				Expect(res.Code).To(Equal(uint32(types.ErrCodeEpochSecretNotExpected)))
-				Expect(res.Log).To(Equal("failed to execute tx: epoch secret not expected"))
+			It("should return code=ErrCodeEpochSeedNotExpected and err='failed to execute tx: epoch seed not expected'", func() {
+				Expect(res.Code).To(Equal(uint32(types.ErrCodeEpochSeedNotExpected)))
+				Expect(res.Log).To(Equal("failed to execute tx: epoch seed not expected"))
 			})
 		})
 
-		When("tx type TxTypeEpochSecret has been seen/cached", func() {
+		When("tx type TxTypeEpochSeed has been seen/cached", func() {
 			var res abcitypes.ResponseDeliverTx
 			var tx types.BaseTx
 
@@ -570,27 +572,27 @@ var _ = Describe("App", func() {
 			})
 
 			BeforeEach(func() {
-				tx = types.NewBareTxEpochSecret()
-				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
-				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
-				tx.(*types.TxEpochSecret).SecretRound = 18
+				tx = types.NewBareTxEpochSeed()
+				tx.(*types.TxEpochSeed).Output = util.BytesToBytes32(util.RandBytes(32))
+				tx.(*types.TxEpochSeed).Proof = util.RandBytes(96)
 			})
 
 			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 5
-				app.wBlock.Height = 5
-				app.epochSecretTx = tx
+				params.NumBlocksToEffectValChange = 2
+				params.NumBlocksPerEpoch = 7
+				app.curWorkingBlock.Height = 5
+				app.epochSeedTx = tx
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				res = app.DeliverTx(req)
 			})
 
-			It("should return code=ErrCodeEpochSecretExcess and err='failed to execute tx: epoch secret capacity reached'", func() {
+			It("should return code=ErrCodeEpochSecretExcess and err='failed to execute tx: epoch seed capacity reached'", func() {
 				Expect(res.Code).To(Equal(uint32(types.ErrCodeEpochSecretExcess)))
-				Expect(res.Log).To(Equal("failed to execute tx: epoch secret capacity reached"))
+				Expect(res.Log).To(Equal("failed to execute tx: epoch seed capacity reached"))
 			})
 		})
 
-		When("tx type TxTypeEpochSecret was not signed by the block proposer", func() {
+		When("tx type TxTypeEpochSeed fail proof verification", func() {
 			var res abcitypes.ResponseDeliverTx
 			var tx types.BaseTx
 
@@ -598,52 +600,70 @@ var _ = Describe("App", func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
-			})
 
-			BeforeEach(func() {
-				tx = types.NewBareTxEpochSecret()
-				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
-				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
-				tx.(*types.TxEpochSecret).SecretRound = 18
-				tx.SetSenderPubKey(sender.PubKey().MustBytes())
+				tx = types.NewBareTxEpochSeed()
+				tx.(*types.TxEpochSeed).Output = util.BytesToBytes32(util.RandBytes(32))
+				tx.(*types.TxEpochSeed).Proof = util.RandBytes(96)
 
-				params.NumBlocksPerEpoch = 5
-				app.wBlock.Height = 5
-				app.wBlock.ProposerAddress = "some_address"
+				params.NumBlocksToEffectValChange = 2
+				params.NumBlocksPerEpoch = 7
+				app.curWorkingBlock.Height = 5
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				res = app.DeliverTx(req)
 			})
 
-			It("should return code=ErrCodeEpochSecretUnexpectedSigner and err='failed to execute tx: epoch secret was not signed by block proposer'", func() {
-				Expect(res.Code).To(Equal(uint32(types.ErrCodeEpochSecretUnexpectedSigner)))
-				Expect(res.Log).To(Equal("failed to execute tx: epoch secret was not signed by block proposer"))
+			It("should return code=ErrCodeTxFailedSeedVerification and err='failed to execute epoch seed tx: ticket not found'", func() {
+				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxFailedSeedVerification)))
+				Expect(res.Log).To(Equal("failed to execute epoch seed tx: ticket not found"))
 			})
 		})
 
-		When("tx type TxTypeEpochSecret is successfully executed", func() {
+		When("tx type TxTypeEpochSeed is successfully executed", func() {
 			var res abcitypes.ResponseDeliverTx
 			var tx types.BaseTx
 
 			BeforeEach(func() {
-				tx = types.NewBareTxEpochSecret()
-				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
-				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
-				tx.(*types.TxEpochSecret).SecretRound = 18
-				tx.SetSenderPubKey(sender.PubKey().MustBytes())
+				params.NumBlocksPerEpoch = 7
+				app.curWorkingBlock.Height = 5
+				tmPubKey, _ := crypto.TMPubKeyFromBytesPubKey(sender.PubKey().MustBytes())
+				app.curWorkingBlock.ProposerAddress = tmPubKey.Address().Bytes()
+
+				// generate keys, vrf seed and proof
+				seed := util.BytesToBytes32([]byte("seed"))
+				vrfKey, _ := vrf.GenerateKeyFromPrivateKey(sender.PrivKey().MustBytes())
+				vrf, proof := vrfKey.Prove(seed.Bytes())
+				pubKey := sender.PubKey().MustBytes32()
+				vrfPubKey, _ := vrfKey.Public()
+
+				// Create TxEpochSeed
+				tx = types.NewBareTxEpochSeed()
+				tx.(*types.TxEpochSeed).Output = util.BytesToBytes32(vrf)
+				tx.(*types.TxEpochSeed).Proof = proof
 
 				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
 
-				tmPubKey, _ := crypto.TMPubKeyFromBytesPubKey(sender.PubKey().MustBytes())
+				// Create mock ticket with vrf public key
+				ticketID := util.BytesToBytes32(util.RandBytes(32))
+				ticket := &types.Ticket{VRFPubKey: util.BytesToBytes32(vrfPubKey)}
+				mockLogic.TicketManager.EXPECT().GetByHash(ticketID).Return(ticket)
 
-				params.NumBlocksPerEpoch = 5
-				app.wBlock.ProposerAddress = tmPubKey.Address().String()
-				app.wBlock.Height = 5
+				// Set mock seed
+				mockLogic.Sys.EXPECT().GetLastEpochSeed(app.curWorkingBlock.Height-1).Return(seed, nil)
+
+				// Sample validators
+				mockValidators := types.BlockValidators(map[util.Bytes32]*types.Validator{
+					pubKey: &types.Validator{TicketID: ticketID},
+				})
+
+				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(app.curWorkingBlock.Height-1).Return(mockValidators, nil)
 
 				mockLogic.Tx.EXPECT().PrepareExec(gomock.Any(), gomock.Any()).Return(abcitypes.ResponseDeliverTx{
 					Code: uint32(0),
 				})
+
+				app.ticketMgr = mockLogic.TicketManager
 				app.logic = mockLogic.AtomicLogic
 
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
@@ -652,145 +672,132 @@ var _ = Describe("App", func() {
 
 			It("should return code=0 and epochSecretTx must be set as the processed tx", func() {
 				Expect(res.Code).To(BeZero())
-				Expect(app.epochSecretTx).To(Equal(tx))
+				Expect(app.epochSeedTx).To(Equal(tx))
 			})
 		})
 
-		When("tx type is TxTypeEpochSecret but it is stale", func() {
+		When("tx type TxTypeEpochSeed failed proof verification because seed could not be fetched", func() {
 			var res abcitypes.ResponseDeliverTx
 			var tx types.BaseTx
 
 			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 7
+				app.curWorkingBlock.Height = 5
+				tmPubKey, _ := crypto.TMPubKeyFromBytesPubKey(sender.PubKey().MustBytes())
+				app.curWorkingBlock.ProposerAddress = tmPubKey.Address().Bytes()
+
+				// generate keys, vrf seed and proof
+				seed := util.BytesToBytes32([]byte("seed"))
+				vrfKey, _ := vrf.GenerateKeyFromPrivateKey(sender.PrivKey().MustBytes())
+				vrf, proof := vrfKey.Prove(seed.Bytes())
+				pubKey := sender.PubKey().MustBytes32()
+				vrfPubKey, _ := vrfKey.Public()
+
+				// Create TxEpochSeed
+				tx = types.NewBareTxEpochSeed()
+				tx.(*types.TxEpochSeed).Output = util.BytesToBytes32(vrf)
+				tx.(*types.TxEpochSeed).Proof = proof
+
 				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
-			})
 
-			BeforeEach(func() {
-				tx = types.NewBareTxEpochSecret()
-				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
-				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
-				tx.(*types.TxEpochSecret).SecretRound = 18
-				tx.SetSenderPubKey(sender.PubKey().MustBytes())
-			})
+				// Create mock ticket with vrf public key
+				ticketID := util.BytesToBytes32(util.RandBytes(32))
+				ticket := &types.Ticket{VRFPubKey: util.BytesToBytes32(vrfPubKey)}
+				mockLogic.TicketManager.EXPECT().GetByHash(ticketID).Return(ticket)
 
-			BeforeEach(func() {
-				tmPubKey, _ := crypto.TMPubKeyFromBytesPubKey(sender.PubKey().MustBytes())
+				// Set mock seed
+				mockLogic.Sys.EXPECT().GetLastEpochSeed(app.curWorkingBlock.Height-1).Return(util.EmptyBytes32, fmt.Errorf("failed to get seed"))
 
-				params.NumBlocksPerEpoch = 5
-				app.wBlock.Height = 5
-				app.wBlock.ProposerAddress = tmPubKey.Address().String()
-
-				mockLogic.Tx.EXPECT().PrepareExec(gomock.Any(), gomock.Any()).Return(abcitypes.ResponseDeliverTx{
-					Code: types.ErrCodeTxInvalidValue,
-					Log:  types.ErrStaleSecretRound(1).Error(),
+				// Sample validators
+				mockValidators := types.BlockValidators(map[util.Bytes32]*types.Validator{
+					pubKey: &types.Validator{TicketID: ticketID},
 				})
+
+				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(app.curWorkingBlock.Height-1).Return(mockValidators, nil)
+
+				app.ticketMgr = mockLogic.TicketManager
 				app.logic = mockLogic.AtomicLogic
 
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				res = app.DeliverTx(req)
 			})
 
-			It("should return code=types.ErrCodeTxInvalidValue, err=ErrStaleSecretRound", func() {
-				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxInvalidValue)))
-				Expect(res.Log).To(ContainSubstring(types.ErrStaleSecretRound(1).Error()))
-			})
-
-			Specify("that the cached epoch tx has been invalidated", func() {
-				Expect(app.epochSecretTx.GetID()).To(Equal(tx.GetID()))
-				Expect(app.epochSecretTx.IsInvalidated()).To(BeTrue())
+			It("should return code=ErrCodeTxFailedSeedVerification", func() {
+				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxFailedSeedVerification)))
+				Expect(res.Log).To(Equal("failed to execute epoch seed tx: failed to get last epoch seed: failed to get seed"))
 			})
 		})
 
-		When("tx type TxTypeEpochSecret but it has an early, unexpected round", func() {
+		When("tx type TxTypeEpochSeed failed proof verification because proof is not valid", func() {
 			var res abcitypes.ResponseDeliverTx
 			var tx types.BaseTx
 
 			BeforeEach(func() {
+				params.NumBlocksPerEpoch = 7
+				app.curWorkingBlock.Height = 5
+				tmPubKey, _ := crypto.TMPubKeyFromBytesPubKey(sender.PubKey().MustBytes())
+				app.curWorkingBlock.ProposerAddress = tmPubKey.Address().Bytes()
+
+				// generate keys, vrf seed and proof
+				seed := util.BytesToBytes32([]byte("seed"))
+				vrfKey, _ := vrf.GenerateKeyFromPrivateKey(sender.PrivKey().MustBytes())
+				vrf, _ := vrfKey.Prove(seed.Bytes())
+				pubKey := sender.PubKey().MustBytes32()
+				vrfPubKey, _ := vrfKey.Public()
+
+				// Create TxEpochSeed
+				tx = types.NewBareTxEpochSeed()
+				tx.(*types.TxEpochSeed).Output = util.BytesToBytes32(vrf)
+				tx.(*types.TxEpochSeed).Proof = util.RandBytes(96) // invalid
+
 				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
 					return nil
 				}
-			})
 
-			BeforeEach(func() {
-				tx = types.NewBareTxEpochSecret()
-				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
-				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
-				tx.(*types.TxEpochSecret).SecretRound = 18
-				tx.SetSenderPubKey(sender.PubKey().MustBytes())
-			})
+				// Create mock ticket with vrf public key
+				ticketID := util.BytesToBytes32(util.RandBytes(32))
+				ticket := &types.Ticket{VRFPubKey: util.BytesToBytes32(vrfPubKey)}
+				mockLogic.TicketManager.EXPECT().GetByHash(ticketID).Return(ticket)
 
-			BeforeEach(func() {
-				tmPubKey, _ := crypto.TMPubKeyFromBytesPubKey(sender.PubKey().MustBytes())
+				// Set mock seed
+				mockLogic.Sys.EXPECT().GetLastEpochSeed(app.curWorkingBlock.Height-1).Return(seed, nil)
 
-				params.NumBlocksPerEpoch = 5
-				app.wBlock.Height = 5
-				app.wBlock.ProposerAddress = tmPubKey.Address().String()
-
-				mockLogic.Tx.EXPECT().PrepareExec(gomock.Any(), gomock.Any()).Return(abcitypes.ResponseDeliverTx{
-					Code: types.ErrCodeTxInvalidValue,
-					Log:  types.ErrEarlySecretRound(1).Error(),
+				// Sample validators
+				mockValidators := types.BlockValidators(map[util.Bytes32]*types.Validator{
+					pubKey: &types.Validator{TicketID: ticketID},
 				})
+
+				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(app.curWorkingBlock.Height-1).Return(mockValidators, nil)
+
+				app.ticketMgr = mockLogic.TicketManager
 				app.logic = mockLogic.AtomicLogic
 
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				res = app.DeliverTx(req)
 			})
 
-			It("should return code=types.ErrCodeTxInvalidValue, err=ErrEarlySecretRound", func() {
-				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxInvalidValue)))
-				Expect(res.Log).To(ContainSubstring(types.ErrEarlySecretRound(1).Error()))
-			})
-
-			Specify("that the cached epoch tx has been invalidated", func() {
-				Expect(app.epochSecretTx.GetID()).To(Equal(tx.GetID()))
-				Expect(app.epochSecretTx.IsInvalidated()).To(BeTrue())
+			It("should return code=ErrCodeTxFailedSeedVerification", func() {
+				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxFailedSeedVerification)))
+				Expect(res.Log).To(Equal("failed to execute epoch seed tx: failed to verify vrf proof"))
 			})
 		})
 	})
 
 	Describe(".Commit", func() {
 
-		When("epoch secret tx is set", func() {
-			var tx types.BaseTx
-
-			When("when unable to save epoch secret", func() {
-				BeforeEach(func() {
-					tx = types.NewBareTxEpochSecret()
-					tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
-					tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
-					tx.(*types.TxEpochSecret).SecretRound = 18
-					app.epochSecretTx = tx
-				})
-
-				BeforeEach(func() {
-					mockLogic.StateTree.EXPECT().WorkingHash().Return(nil)
-					mockLogic.SysKeeper.EXPECT().SetHighestDrandRound(gomock.Any()).Return(fmt.Errorf("error"))
-					mockLogic.AtomicLogic.EXPECT().Discard().Return()
-					app.logic = mockLogic.AtomicLogic
-				})
-
-				It("should panic", func() {
-					Expect(func() {
-						app.Commit()
-					}).To(Panic())
-				})
-			})
-		})
-
 		When("error occurred when saving latest block info", func() {
 			var tx types.BaseTx
 
 			BeforeEach(func() {
-				tx = types.NewBareTxEpochSecret()
-				tx.(*types.TxEpochSecret).Secret = util.RandBytes(64)
-				tx.(*types.TxEpochSecret).PreviousSecret = util.RandBytes(64)
-				tx.(*types.TxEpochSecret).SecretRound = 18
-				app.epochSecretTx = tx
+				tx = types.NewBareTxEpochSeed()
+				tx.(*types.TxEpochSeed).Output = util.BytesToBytes32(util.RandBytes(32))
+				tx.(*types.TxEpochSeed).Proof = util.RandBytes(96)
+				app.epochSeedTx = tx
 			})
 
 			BeforeEach(func() {
-				mockLogic.SysKeeper.EXPECT().SetHighestDrandRound(gomock.Any()).Return(nil)
 				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(fmt.Errorf("bad"))
 				mockLogic.AtomicLogic.EXPECT().Discard().Return()
@@ -809,7 +816,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
-				app.wBlock.Height = 10
+				app.curWorkingBlock.Height = 10
 				app.heightToSaveNewValidators = 10
 				mockLogic.ValidatorKeeper.EXPECT().Index(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 				mockLogic.AtomicLogic.EXPECT().Discard().Return()
@@ -868,7 +875,7 @@ var _ = Describe("App", func() {
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 				app.heightToSaveNewValidators = 100
 				app.unbondStorerReqs = append(app.unbondStorerReqs, util.StrToBytes32("ticket_hash"))
-				mockLogic.TicketManager.EXPECT().UpdateDecayBy(util.StrToBytes32("ticket_hash"), uint64(app.wBlock.Height))
+				mockLogic.TicketManager.EXPECT().UpdateDecayBy(util.StrToBytes32("ticket_hash"), uint64(app.curWorkingBlock.Height))
 				mockLogic.AtomicLogic.EXPECT().Commit().Return(nil)
 				app.logic = mockLogic.AtomicLogic
 

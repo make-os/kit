@@ -1,9 +1,10 @@
-package tree
+package tree_test
 
 import (
 	"os"
 
 	"github.com/makeos/mosdef/storage"
+	. "github.com/makeos/mosdef/storage/tree"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
