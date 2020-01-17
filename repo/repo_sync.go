@@ -182,7 +182,7 @@ func (s *Syncher) syncTx(tx *types.TxPush) error {
 
 		// Annonce ourselves as the newest provider of the object
 		if err := s.dht.Annonce(ctx, []byte(dhtKey)); err != nil {
-			s.log.Error("unable to announce git object", "Err", err)
+			s.log.Warn("unable to announce git object", "Err", err)
 			continue
 		}
 

@@ -205,7 +205,7 @@ func (h *PushHandler) announceObject(objHash string) error {
 	ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
 	defer c()
 	if err := h.rMgr.GetDHT().Annonce(ctx, []byte(dhtKey)); err != nil {
-		h.log.Error("unable to announce git object", "Err", err)
+		h.log.Warn("unable to announce git object", "Err", err)
 		return err
 	}
 	return nil

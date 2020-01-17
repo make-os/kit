@@ -156,7 +156,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
 		defer c()
 		if err := m.GetDHT().Annonce(ctx, []byte(dhtKey)); err != nil {
-			m.log.Error("unable to announce git object", "Err", err)
+			m.log.Warn("unable to announce git object", "Err", err)
 			continue
 		}
 	}
