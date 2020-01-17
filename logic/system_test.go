@@ -286,7 +286,7 @@ var _ = Describe("System", func() {
 			})
 		})
 
-		When("successful", func() {
+		When("unable to get preceding block of seed block", func() {
 			BeforeEach(func() {
 				sysLogic.logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{
 					Height:          3,
@@ -294,11 +294,70 @@ var _ = Describe("System", func() {
 				})
 			})
 
-			It("should return nil error and seed", func() {
+			It("should return err='..failed to get preceding block of seed block'", func() {
 				params.NumBlocksPerEpoch = 5
 				seed, err := sysLogic.GetLastEpochSeed(7)
-				Expect(err).To(BeNil())
-				Expect(seed.IsEmpty()).To(BeFalse())
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("failed to get preceding block of seed block"))
+				Expect(seed.IsEmpty()).To(BeTrue())
+			})
+		})
+
+		When("successful", func() {
+			seed := util.BytesToBytes32(util.RandBytes(32))
+			precedingBlockHash := util.RandBytes(32)
+
+			When("seed block and preceding block exist", func() {
+				BeforeEach(func() {
+					sysLogic.logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{
+						Height:          3,
+						EpochSeedOutput: seed,
+					})
+					sysLogic.logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{
+						Height: 2,
+						Hash:   precedingBlockHash,
+					})
+				})
+
+				It("should return nil error and seed", func() {
+					params.NumBlocksPerEpoch = 5
+					seed, err := sysLogic.GetLastEpochSeed(7)
+					Expect(err).To(BeNil())
+					Expect(seed.IsEmpty()).To(BeFalse())
+				})
+
+				Specify("that seed is the hash of precedingBlockHash + seed", func() {
+					epochSeed, err := sysLogic.GetLastEpochSeed(7)
+					Expect(err).To(BeNil())
+					mix := util.Blake2b256(append(precedingBlockHash, seed.Bytes()...))
+					Expect(epochSeed.Bytes()).To(Equal(mix))
+				})
+			})
+
+			When("seed block does not include a seed", func() {
+				BeforeEach(func() {
+					sysLogic.logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{
+						Height:          3,
+						EpochSeedOutput: util.EmptyBytes32,
+					})
+					sysLogic.logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{
+						Height: 2,
+						Hash:   precedingBlockHash,
+					})
+				})
+
+				It("should return nil error and seed", func() {
+					params.NumBlocksPerEpoch = 5
+					seed, err := sysLogic.GetLastEpochSeed(7)
+					Expect(err).To(BeNil())
+					Expect(seed.IsEmpty()).To(BeFalse())
+				})
+
+				Specify("that seed is the preceding block hash", func() {
+					epochSeed, err := sysLogic.GetLastEpochSeed(7)
+					Expect(err).To(BeNil())
+					Expect(epochSeed.Bytes()).To(Equal(precedingBlockHash))
+				})
 			})
 		})
 	})

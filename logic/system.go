@@ -134,13 +134,26 @@ func (s *System) GetLastEpochSeed(curBlockHeight int64) (util.Bytes32, error) {
 	// Get block height where the last epoch seed is stored
 	lastEpochSeedHeight := params.GetSeedHeightInEpochOfHeight(
 		params.GetEndOfParentEpochOfHeight(curBlockHeight))
-
 	lastSeedBlock, err := s.logic.SysKeeper().GetBlockInfo(lastEpochSeedHeight)
 	if err != nil {
 		return util.EmptyBytes32, err
 	}
 
-	return lastSeedBlock.EpochSeedOutput, nil
+	// Get the preceding block
+	blockBefore, err := s.logic.SysKeeper().GetBlockInfo(lastEpochSeedHeight - 1)
+	if err != nil {
+		return util.EmptyBytes32, errors.Wrap(err, "failed to get preceding block of seed block")
+	}
+
+	// If the last epoch has a seed, mix it with the preceding
+	// block hash and return a hash of the mix...
+	if !lastSeedBlock.EpochSeedOutput.IsEmpty() {
+		mix := append(blockBefore.Hash, lastSeedBlock.EpochSeedOutput.Bytes()...)
+		return util.BytesToBytes32(util.Blake2b256(mix)), nil
+	}
+
+	// ..otherwise, return only the preceding block hash
+	return util.BytesToBytes32(blockBefore.Hash), nil
 }
 
 // MakeEpochSeedTx generates and returns a TxTypeEpochSeed transaction.
