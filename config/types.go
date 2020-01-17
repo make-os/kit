@@ -110,8 +110,8 @@ type AppConfig struct {
 	// Mempool holds mempool configurations
 	Mempool *MempoolConfig `json:"mempool" mapstructure:"mempool"`
 
-	// GenesisFileEntries includes the initial/root accounts and their balances
-	GenesisFileEntries []*GenDataEntry `json:"genaccounts" mapstructure:"genaccounts"`
+	// GenesisFileEntries includes the initial state objects
+	GenesisFileEntries []*GenDataEntry `json:"gendata" mapstructure:"gendata"`
 
 	// dataDir is where the node's config and network data is stored
 	dataDir string

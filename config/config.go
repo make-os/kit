@@ -55,15 +55,15 @@ var (
 	DefaultRepoManagerAddress = "127.0.0.1:9004"
 )
 
-// getGenesisData returns the genesis data
-func getGenesisData() []map[string]interface{} {
+// GenesisData returns the genesis data
+func GenesisData() []*GenDataEntry {
 	box := packr.NewBox("../data")
 	genesisData, err := box.FindString("genesis.json")
 	if err != nil {
 		panic(errors.Wrap(err, "failed to read genesis file"))
 	}
 
-	var data []map[string]interface{}
+	var data []*GenDataEntry
 	if err = json.Unmarshal([]byte(genesisData), &data); err != nil {
 		panic(errors.Wrap(err, "failed to decoded genesis file"))
 	}
@@ -85,7 +85,6 @@ func GenesisFileHash() util.Bytes32 {
 // They are used when their values is not provided
 // in flag, env or config file.
 func setDefaultViperConfig(cmd *cobra.Command) {
-	viper.SetDefault("gendata", getGenesisData())
 	viper.SetDefault("mempool.size", 5000)
 	viper.SetDefault("mempool.cacheSize", 10000)
 	viper.SetDefault("mempool.maxTxSize", 1024*1024)       // 1MB

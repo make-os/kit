@@ -238,8 +238,13 @@ func (l *Logic) Validator() types.ValidatorLogic {
 // WriteGenesisState creates initial state objects from the genesis file
 func (l *Logic) WriteGenesisState() error {
 
+	genesisData := l.cfg.GenesisFileEntries
+	if len(genesisData) == 0 {
+		genesisData = config.GenesisData()
+	}
+
 	// Add all genesis data entries to the state
-	for _, ga := range l.cfg.GenesisFileEntries {
+	for _, ga := range genesisData {
 		if ga.Type == "account" {
 			newAcct := types.BareAccount()
 			newAcct.Balance = util.String(ga.Balance)
