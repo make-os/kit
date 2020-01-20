@@ -471,6 +471,8 @@ func execTxPush(m types.RepoManager, tx *types.TxPush) error {
 		return errors.Wrap(err, "unable to find repo locally")
 	}
 
+	defer m.GetPruner().Schedule(repoName)
+
 	// Do not download pushed objects in validator mode
 	cfg := m.Cfg()
 	if cfg.IsValidatorNode() {
