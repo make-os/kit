@@ -224,6 +224,11 @@ func (m *Manager) GetDHT() types.DHT {
 	return m.dht
 }
 
+// Cfg returns the application config
+func (m *Manager) Cfg() *config.AppConfig {
+	return m.cfg
+}
+
 // TODO: Authorization
 func (m *Manager) handleAuth(r *http.Request) error {
 	// username, password, _ := r.BasicAuth()

@@ -7,12 +7,13 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	config "github.com/makeos/mosdef/config"
 	crypto "github.com/makeos/mosdef/crypto"
 	tree "github.com/makeos/mosdef/storage/tree"
 	types "github.com/makeos/mosdef/types"
 	util "github.com/makeos/mosdef/util"
 	logger "github.com/makeos/mosdef/util/logger"
-	config "gopkg.in/src-d/go-git.v4/config"
+	config0 "gopkg.in/src-d/go-git.v4/config"
 	plumbing "gopkg.in/src-d/go-git.v4/plumbing"
 	object "gopkg.in/src-d/go-git.v4/plumbing/object"
 	storer "gopkg.in/src-d/go-git.v4/plumbing/storer"
@@ -285,10 +286,10 @@ func (mr *MockBareRepoMockRecorder) Tag(name interface{}) *gomock.Call {
 }
 
 // Config mocks base method
-func (m *MockBareRepo) Config() (*config.Config, error) {
+func (m *MockBareRepo) Config() (*config0.Config, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Config")
-	ret0, _ := ret[0].(*config.Config)
+	ret0, _ := ret[0].(*config0.Config)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -784,6 +785,20 @@ func (m *MockRepoManager) Log() logger.Logger {
 func (mr *MockRepoManagerMockRecorder) Log() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Log", reflect.TypeOf((*MockRepoManager)(nil).Log))
+}
+
+// Cfg mocks base method
+func (m *MockRepoManager) Cfg() *config.AppConfig {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Cfg")
+	ret0, _ := ret[0].(*config.AppConfig)
+	return ret0
+}
+
+// Cfg indicates an expected call of Cfg
+func (mr *MockRepoManagerMockRecorder) Cfg() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockRepoManager)(nil).Cfg))
 }
 
 // GetRepoState mocks base method

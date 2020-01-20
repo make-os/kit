@@ -34,33 +34,4 @@ func (m *Manager) subscribe() {
 			rmPushNoteFromPushPool(m.pushPool, evt.Args)
 		}
 	}()
-
-	// On EvtABCICommittedTx: Update repo state
-	// Commented because the repo object syncher does this job.
-	// Should be removed completely if satisfied with the object syncher
-	go func() {
-		// for evt := range m.cfg.G().Bus.On(types.EvtABCICommittedTx) {
-		// 	if err := checkEvtArgs(evt.Args); err != nil {
-		// 		return
-		// 	}
-
-		// 	txs, ok := evt.Args[1].([]types.BaseTx)
-		// 	if !ok {
-		// 		panic("expected []types.BaseTx")
-		// 	}
-
-		// 	for _, baseTx := range txs {
-
-		// 		tx, ok := baseTx.(*types.TxPush)
-		// 		if !ok || !m.syncher.IsSynced() {
-		// 			continue
-		// 		}
-
-		// 		pp.Println("BY EVENT")
-		// 		if err := m.UpdateRepoWithTxPush(tx); err != nil {
-		// 			continue
-		// 		}
-		// 	}
-		// }
-	}()
 }

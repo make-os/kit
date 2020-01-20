@@ -29,6 +29,8 @@ var _ = Describe("Reactor", func() {
 	var mockPeer *mocks.MockPeer
 	var mockRepoKeeper *mocks.MockRepoKeeper
 	var mockBlockGetter *mocks.MockBlockGetter
+	var mockDHT *mocks.MockDHT
+	var mockMgr *mocks.MockRepoManager
 	var key = crypto.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
@@ -42,8 +44,9 @@ var _ = Describe("Reactor", func() {
 
 		mockObjects := testutil.MockLogic(ctrl)
 		mockLogic = mockObjects.Logic
+		mockMgr = mockObjects.RepoManager
 		mockRepoKeeper = mockObjects.RepoKeeper
-		mockDHT := mocks.NewMockDHT(ctrl)
+		mockDHT = mocks.NewMockDHT(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mgr = NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
@@ -186,6 +189,191 @@ var _ = Describe("Reactor", func() {
 			It("should return err='failed to add push tx to mempool: error'", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to add push tx to mempool: error"))
+			})
+		})
+	})
+
+	Describe(".execTxPush", func() {
+		var err error
+
+		BeforeEach(func() {
+			mockMgr.EXPECT().Cfg().Return(cfg).AnyTimes()
+			mockMgr.EXPECT().GetDHT().Return(mockDHT).AnyTimes()
+			mockMgr.EXPECT().Log().Return(cfg.G().Log).AnyTimes()
+		})
+
+		When("target repo does not exist locally", func() {
+			BeforeEach(func() {
+				tx := types.NewBareTxPush()
+				tx.PushNote.RepoName = "unknown"
+				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(nil, fmt.Errorf("error"))
+				err = execTxPush(mockMgr, tx)
+			})
+
+			It("should return err='unable to find repo locally: error'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("unable to find repo locally: error"))
+			})
+		})
+
+		When("object existed locally", func() {
+			BeforeEach(func() {
+				tx := types.NewBareTxPush()
+				tx.PushNote.RepoName = "repo1"
+
+				obj := util.RandString(40)
+				tx.PushNote.References = types.PushedReferences([]*types.PushedReference{
+					&types.PushedReference{Objects: []string{obj}},
+				})
+
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().ObjectExist(obj).Return(true)
+				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
+				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+
+				err = execTxPush(mockMgr, tx)
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("tx merge operation fail", func() {
+			BeforeEach(func() {
+				tx := types.NewBareTxPush()
+				tx.PushNote.RepoName = "repo1"
+
+				obj := util.RandString(40)
+				tx.PushNote.References = types.PushedReferences([]*types.PushedReference{
+					&types.PushedReference{Objects: []string{obj}},
+				})
+
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().ObjectExist(obj).Return(true)
+				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(fmt.Errorf("error"))
+				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+
+				err = execTxPush(mockMgr, tx)
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("error"))
+			})
+		})
+
+		When("an object does not exist and dht download failed", func() {
+			BeforeEach(func() {
+				tx := types.NewBareTxPush()
+				tx.PushNote.RepoName = "repo1"
+
+				obj := util.RandString(40)
+				tx.PushNote.References = types.PushedReferences([]*types.PushedReference{
+					&types.PushedReference{Objects: []string{obj}},
+				})
+
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().ObjectExist(obj).Return(false)
+				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
+				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+
+				err = execTxPush(mockMgr, tx)
+			})
+
+			It("should return error='failed to fetch object...'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("failed to fetch object"))
+			})
+		})
+
+		When("downloaded object cannot be written to disk", func() {
+			BeforeEach(func() {
+				tx := types.NewBareTxPush()
+				tx.PushNote.RepoName = "repo1"
+
+				obj := util.RandString(40)
+				tx.PushNote.References = types.PushedReferences([]*types.PushedReference{
+					&types.PushedReference{Objects: []string{obj}},
+				})
+
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().ObjectExist(obj).Return(false)
+
+				objBz := util.RandBytes(10)
+				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(objBz, nil)
+				repo.EXPECT().WriteObjectToFile(obj, objBz).Return(fmt.Errorf("error"))
+				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+
+				err = execTxPush(mockMgr, tx)
+			})
+
+			It("should return error='failed to write fetched object...'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("failed to write fetched object"))
+			})
+		})
+
+		When("object download succeeded but object announcement fails", func() {
+			BeforeEach(func() {
+				tx := types.NewBareTxPush()
+				tx.PushNote.RepoName = "repo1"
+
+				obj := util.RandString(40)
+				tx.PushNote.References = types.PushedReferences([]*types.PushedReference{
+					&types.PushedReference{Objects: []string{obj}},
+				})
+
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().ObjectExist(obj).Return(false)
+
+				objBz := util.RandBytes(10)
+				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(objBz, nil)
+				repo.EXPECT().WriteObjectToFile(obj, objBz).Return(nil)
+
+				mockDHT.EXPECT().Annonce(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
+				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				err = execTxPush(mockMgr, tx)
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("object download succeeded but pushed reference has a delete directive", func() {
+			var repo *mocks.MockBareRepo
+			var obj string
+			var tx *types.TxPush
+			var objBytes []byte
+
+			BeforeEach(func() {
+				tx = types.NewBareTxPush()
+				tx.PushNote.RepoName = "repo1"
+
+				obj = util.RandString(40)
+				tx.PushNote.References = types.PushedReferences([]*types.PushedReference{
+					&types.PushedReference{Name: "ref1", Objects: []string{obj}, Delete: true},
+				})
+
+				repo = mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().ObjectExist(obj).Return(false)
+
+				objBytes = util.RandBytes(10)
+				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(objBytes, nil)
+
+				mockDHT.EXPECT().Annonce(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
+				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+			})
+
+			It("should delete the reference", func() {
+				repo.EXPECT().WriteObjectToFile(obj, objBytes).Return(nil)
+				repo.EXPECT().RefDelete("ref1").Return(nil)
+				repo.EXPECT().Path().Return("/path/to/repo")
+				err = execTxPush(mockMgr, tx)
+				Expect(err).To(BeNil())
 			})
 		})
 	})

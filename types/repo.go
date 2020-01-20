@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	cfg "github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/storage/tree"
 	"github.com/makeos/mosdef/util"
@@ -168,6 +169,9 @@ type RepoManager interface {
 
 	// Log returns the logger
 	Log() logger.Logger
+
+	// Cfg returns the application config
+	Cfg() *cfg.AppConfig
 
 	// GetRepoState returns the state of the repository at the given path
 	// options: Allows the caller to configure how and what state are gathered
