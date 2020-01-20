@@ -72,7 +72,6 @@ type Manager struct {
 	pushNoteSenders      *cache.Cache          // Store senders of push notes
 	pushOKSenders        *cache.Cache          // Stores senders of PushOK messages
 	pushNoteEndorsements *cache.Cache          // Store PushOKs
-	syncher              *Syncher              // Repo object synchronizer
 }
 
 // NewManager creates an instance of Manager
@@ -109,15 +108,6 @@ func NewManager(
 	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
 	mgr.BaseReactor = *p2p.NewBaseReactor("Reactor", mgr)
 	mgr.pruner = newPruner(mgr, mgr.rootDir)
-
-	mgr.syncher = newSyncher(
-		blockGetter,
-		mgr,
-		mgr,
-		logic,
-		dht,
-		cfg.IsValidatorNode(),
-		mgr.log.Module("repo-sync"))
 
 	return mgr
 }
@@ -432,6 +422,5 @@ func (m *Manager) Stop() error {
 	m.BaseReactor.Stop()
 	m.Shutdown(context.Background())
 	m.log.Info("Shutdown")
-	m.syncher.Stop()
 	return nil
 }
