@@ -8,26 +8,6 @@ import (
 )
 
 // DHTInfo represents information about a node's DHT service
-type DHTInfo struct {
-	ID      string
-	Address string
-	Port    string
-}
-
-// BareDHTInfo returns an empty DHTInfo instance
-func BareDHTInfo() *DHTInfo {
-	return &DHTInfo{}
-}
-
-// Bytes returns the serialized version
-func (o *DHTInfo) Bytes() []byte {
-	return util.ObjectToBytes(o)
-}
-
-// IsEmpty checks if the o is empty
-func (o *DHTInfo) IsEmpty() bool {
-	return o.Address == "" && o.Port == "" && o.ID == ""
-}
 
 // ObjectFinder describes an interface for finding objects
 type ObjectFinder interface {
@@ -55,6 +35,9 @@ type DHT interface {
 
 	// RegisterObjFinder registers a finder for an object type
 	RegisterObjFinder(objType string, finder ObjectFinder)
+
+	// Start starts the DHT
+	Start() error
 
 	// Peers returns a list of all peers
 	Peers() (peers []string)

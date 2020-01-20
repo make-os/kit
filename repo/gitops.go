@@ -138,12 +138,12 @@ func (g *GitOps) GetConfig(path string) string {
 	return strings.TrimSpace(string(out))
 }
 
-// UpdateRecentCommitMsg updates the recent commit message
-// msg: The commit message which is passed to the command's stdin.
-// signingKey: The signing key
+// MakeSignableCommit creates a commit that may be signed
+// msg: The commit message.
+// signingKey: The signing key (optional)
 // env: Optional environment variables to pass to the command.
-func (g *GitOps) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
-	args := []string{"commit", "--amend", "--quiet", "--allow-empty-message", "--file", "-"}
+func (g *GitOps) MakeSignableCommit(msg, signingKey string, env ...string) error {
+	args := []string{"commit", "--quiet", "--allow-empty", "--file", "-"}
 	if signingKey != "" {
 		args = append(args, "--gpg-sign="+signingKey)
 	}
@@ -153,7 +153,7 @@ func (g *GitOps) UpdateRecentCommitMsg(msg, signingKey string, env ...string) er
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), env...)
-	return errors.Wrap(cmd.Run(), "failed to update recent commit msg")
+	return errors.Wrap(cmd.Run(), "failed to commit")
 }
 
 // CreateTagWithMsg an annotated tag

@@ -13,8 +13,7 @@ const TxLinePrefix = "tx:"
 
 // TxLine errors
 var (
-	ErrTxLineNotFound  = fmt.Errorf("txline was not set")
-	ErrTxLineMalformed = fmt.Errorf("txline is malformed")
+	ErrTxLineNotFound = fmt.Errorf("txline was not set")
 )
 
 // RemoveTxLine removes all lines beginning with a 'Tx Line' prefix 'tx'.
@@ -37,10 +36,11 @@ func RemoveTxLine(msg string) string {
 // TxLine represents transaction information usually included in commits, notes
 // and tag objects
 type TxLine struct {
-	Fee       String
-	Nonce     uint64
-	PubKeyID  string
-	Signature string
+	Fee       String // Network fee to be paid for update to the target ref
+	Nonce     uint64 // Nonce of the account paying the network fee and signing the update.
+	PubKeyID  string // The GPG public key ID of the reference updater.
+	Signature string // The signature of the update (only used in note signing for now)
+	DeleteRef bool   // A directive to delete the current/pushed reference.
 }
 
 // GetNonceString returns the nonce as a string
@@ -54,17 +54,19 @@ func (tl *TxLine) String() string {
 }
 
 // MakeTxLine returns a well formatted txline string
-func MakeTxLine(txFee, txNonce, pkID string, sig []byte) string {
+func MakeTxLine(txFee, txNonce, pkID string, sig []byte, directives ...string) string {
 	str := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", txFee, txNonce, pkID)
+	for _, a := range directives {
+		str = str + fmt.Sprintf(", %s", a)
+	}
 	if sig != nil {
-		str = str + fmt.Sprintf(" sig=%s", ToHex(sig))
+		str = str + fmt.Sprintf(", sig=%s", ToHex(sig))
 	}
 	return str
 }
 
-// ParseTxLine parses the txline data in the message.
+// ParseTxLine finds, parses and returns the txline found in the given msg.
 // Returns ErrTxLineNotFound if no txline in the message
-// and
 func ParseTxLine(msg string) (*TxLine, error) {
 	lines := strings.Split(msg, "\n")
 	txline := ""
@@ -87,9 +89,6 @@ func ParseTxLine(msg string) (*TxLine, error) {
 	for _, kv := range kvData {
 		kv = strings.TrimRight(strings.TrimSpace(kv), ",")
 		kvParts := strings.Split(kv, "=")
-		if len(kvParts) != 2 {
-			return nil, ErrTxLineMalformed
-		}
 
 		if kvParts[0] == "fee" {
 			if !govalidator.IsFloat(kvParts[1]) {
@@ -128,6 +127,10 @@ func ParseTxLine(msg string) (*TxLine, error) {
 				return nil, fmt.Errorf("field:sig, msg: signature format is not valid")
 			}
 			txLine.Signature = decSig
+		}
+
+		if kvParts[0] == "deleteRef" {
+			txLine.DeleteRef = true
 		}
 	}
 

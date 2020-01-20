@@ -273,16 +273,10 @@ type ValidatorLogic interface {
 type TxLogic interface {
 	LogicCommon
 
-	// PrepareExec decodes the transaction from the abci request,
+	// ExecTx decodes the transaction from the abci request,
 	// performs final validation before executing the transaction.
 	// chainHeight: The height of the block chain
-	PrepareExec(req abcitypes.RequestDeliverTx, chainHeight uint64) abcitypes.ResponseDeliverTx
-
-	// Exec execute a transaction that modifies the state.
-	// It returns error if the transaction is unknown.
-	// tx: The transaction to be processed
-	// chainHeight: The height of the block chain
-	Exec(tx BaseTx, chainHeight uint64) error
+	ExecTx(tx BaseTx, chainHeight uint64) abcitypes.ResponseDeliverTx
 
 	// CanExecCoinTransfer checks whether the sender can transfer the value
 	// and fee of the transaction based on the current state of their

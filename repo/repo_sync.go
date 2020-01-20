@@ -141,6 +141,7 @@ func (s *Syncher) start() error {
 }
 
 func (s *Syncher) syncTx(tx *types.TxPush) error {
+
 	repoName := tx.PushNote.RepoName
 	repo, err := s.repoGetter.GetRepo(repoName)
 	if err != nil {
@@ -153,12 +154,10 @@ func (s *Syncher) syncTx(tx *types.TxPush) error {
 	}
 
 	// Download pushed objects
-	for _, objHash := range tx.PushNote.GetPushedObjects() {
+	for _, objHash := range tx.PushNote.GetPushedObjects(false) {
 		if repo.ObjectExist(objHash) {
 			continue
 		}
-
-		s.log.Debug("Finding object", "ObjHash", objHash)
 
 		// Fetch from the dht
 		dhtKey := MakeRepoObjectDHTKey(repoName, objHash)
@@ -194,6 +193,21 @@ update:
 	// Attempt to merge the push transaction to the target repo
 	if err = s.txPushMerger.UpdateRepoWithTxPush(tx); err != nil {
 		return err
+	}
+
+	// For any pushed reference that has a delete directive, remove the
+	// reference from the repo and also its tree.
+	for _, ref := range tx.PushNote.GetPushedReferences() {
+		if ref.Delete {
+			if !s.isValidatorMode {
+				if err = repo.RefDelete(ref.Name); err != nil {
+					return errors.Wrapf(err, "failed to delete reference (%s)", ref.Name)
+				}
+			}
+			if err := deleteReferenceTree(repo.Path(), ref.Name); err != nil {
+				return errors.Wrapf(err, "failed to delete reference (%s) tree", ref.Name)
+			}
+		}
 	}
 
 	return nil

@@ -187,6 +187,7 @@ func (h *PushHandler) createPushNote(
 			Fee:          refsTxLine[ref.name].Fee,
 			AccountNonce: refsTxLine[ref.name].Nonce,
 			Objects:      h.pushReader.objectsRefs.getObjectsOf(ref.name),
+			Delete:       refsTxLine[ref.name].DeleteRef,
 		})
 	}
 

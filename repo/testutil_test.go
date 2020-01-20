@@ -33,7 +33,7 @@ func execGitCommit(path, msg string) []byte {
 	return execGit(path, "commit", "-m", msg)
 }
 
-func execGitSignedCommit(path, msg, keyID string) []byte {
+func execGitMakeSignableCommit(path, msg, keyID string) []byte {
 	execGit(path, "add", ".")
 	return execGit(path, "commit", "-m", msg, "-S"+keyID)
 }
@@ -49,9 +49,9 @@ func appendDirAndCommitFile(path, targetDir, file, fileData, commitMsg string) {
 	execGitCommit(path, commitMsg)
 }
 
-func appendSignedCommit(path, file, fileData, commitMsg, keyID string) {
+func appendMakeSignableCommit(path, file, fileData, commitMsg, keyID string) {
 	appendToFile(path, file, fileData)
-	execGitSignedCommit(path, commitMsg, keyID)
+	execGitMakeSignableCommit(path, commitMsg, keyID)
 }
 
 func createCommitAndAnnotatedTag(path, file, fileData, commitMsg, tagName string) {
@@ -66,9 +66,9 @@ func createCommitAndSignedAnnotatedTag(path, file, fileData, commitMsg, tagName,
 	execGit(path, "tag", "-a", tagName, "-m", commitMsg, "-f", "-u"+keyID)
 }
 
-func createSignedCommitAndSignedAnnotatedTag(path, file, fileData, commitMsg, tagName, keyID string) {
+func createMakeSignableCommitAndSignedAnnotatedTag(path, file, fileData, commitMsg, tagName, keyID string) {
 	appendToFile(path, file, fileData)
-	execGitSignedCommit(path, commitMsg, keyID)
+	execGitMakeSignableCommit(path, commitMsg, keyID)
 	execGit(path, "tag", "-a", tagName, "-m", commitMsg, "-f", "-u"+keyID)
 }
 
@@ -78,9 +78,9 @@ func createCommitAndLightWeightTag(path, file, fileData, commitMsg, tagName stri
 	execGit(path, "tag", tagName, "-f")
 }
 
-func createSignedCommitAndLightWeightTag(path, file, fileData, commitMsg, tagName, keyID string) {
+func createMakeSignableCommitAndLightWeightTag(path, file, fileData, commitMsg, tagName, keyID string) {
 	appendToFile(path, file, fileData)
-	execGitSignedCommit(path, commitMsg, keyID)
+	execGitMakeSignableCommit(path, commitMsg, keyID)
 	execGit(path, "tag", tagName, "-f")
 }
 

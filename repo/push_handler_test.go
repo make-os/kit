@@ -150,7 +150,7 @@ var _ = Describe("PushHandler", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txLine := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				appendSignedCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
+				appendMakeSignableCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
 
 				newState := getRepoState(repo)
 				var packfile io.ReadSeeker
@@ -183,13 +183,13 @@ var _ = Describe("PushHandler", func() {
 					pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 					pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 					txLine := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-					appendSignedCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
+					appendMakeSignableCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
 
 					createCheckoutBranch(path, "branch2")
 					pkEntity, _ = crypto.PGPEntityFromPubKey(pubKey2)
 					pkID2 := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 					txLine = fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID2)
-					appendSignedCommit(path, "file.txt", "line 1", txLine, gpgKeyID2)
+					appendMakeSignableCommit(path, "file.txt", "line 1", txLine, gpgKeyID2)
 
 					newState := getRepoState(repo)
 					var packfile io.ReadSeeker

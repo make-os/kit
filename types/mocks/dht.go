@@ -158,6 +158,20 @@ func (mr *MockDHTMockRecorder) RegisterObjFinder(objType, finder interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterObjFinder", reflect.TypeOf((*MockDHT)(nil).RegisterObjFinder), objType, finder)
 }
 
+// Start mocks base method
+func (m *MockDHT) Start() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Start")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Start indicates an expected call of Start
+func (mr *MockDHTMockRecorder) Start() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockDHT)(nil).Start))
+}
+
 // Peers mocks base method
 func (m *MockDHT) Peers() []string {
 	m.ctrl.T.Helper()

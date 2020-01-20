@@ -173,10 +173,12 @@ func (n *Node) Start() error {
 	if err != nil {
 		return err
 	}
+	if err = n.dht.Start(); err != nil {
+		return err
+	}
 
 	// Register custom reactor channels
 	node.AddChannels([]byte{
-		dht.DHTReactorChannel,
 		repo.PushNoteReactorChannel,
 		repo.PushOKReactorChannel,
 	})
@@ -212,7 +214,6 @@ func (n *Node) Start() error {
 	}
 
 	// Add the custom reactors
-	tmNode.Switch().AddReactor("DHT", n.dht.(*dht.DHT))
 	tmNode.Switch().AddReactor("PushReactor", repoMgr)
 
 	// Pass the proxy app to the mempool

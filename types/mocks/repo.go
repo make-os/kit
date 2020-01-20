@@ -328,23 +328,23 @@ func (mr *MockBareRepoMockRecorder) GetRecentCommit() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecentCommit", reflect.TypeOf((*MockBareRepo)(nil).GetRecentCommit))
 }
 
-// UpdateRecentCommitMsg mocks base method
-func (m *MockBareRepo) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
+// MakeSignableCommit mocks base method
+func (m *MockBareRepo) MakeSignableCommit(msg, signingKey string, env ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{msg, signingKey}
 	for _, a := range env {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "UpdateRecentCommitMsg", varargs...)
+	ret := m.ctrl.Call(m, "MakeSignableCommit", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateRecentCommitMsg indicates an expected call of UpdateRecentCommitMsg
-func (mr *MockBareRepoMockRecorder) UpdateRecentCommitMsg(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
+// MakeSignableCommit indicates an expected call of MakeSignableCommit
+func (mr *MockBareRepoMockRecorder) MakeSignableCommit(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{msg, signingKey}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRecentCommitMsg", reflect.TypeOf((*MockBareRepo)(nil).UpdateRecentCommitMsg), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeSignableCommit", reflect.TypeOf((*MockBareRepo)(nil).MakeSignableCommit), varargs...)
 }
 
 // CreateTagWithMsg mocks base method
@@ -974,6 +974,20 @@ func (mr *MockRepoManagerMockRecorder) GetDHT() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDHT", reflect.TypeOf((*MockRepoManager)(nil).GetDHT))
 }
 
+// ExecTxPush mocks base method
+func (m *MockRepoManager) ExecTxPush(tx *types.TxPush) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExecTxPush", tx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ExecTxPush indicates an expected call of ExecTxPush
+func (mr *MockRepoManagerMockRecorder) ExecTxPush(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecTxPush", reflect.TypeOf((*MockRepoManager)(nil).ExecTxPush), tx)
+}
+
 // Shutdown mocks base method
 func (m *MockRepoManager) Shutdown(ctx context.Context) {
 	m.ctrl.T.Helper()
@@ -1452,17 +1466,17 @@ func (mr *MockRepoPushNoteMockRecorder) GetSize() *gomock.Call {
 }
 
 // GetPushedObjects mocks base method
-func (m *MockRepoPushNote) GetPushedObjects() []string {
+func (m *MockRepoPushNote) GetPushedObjects(ignoreDelRefs bool) []string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPushedObjects")
+	ret := m.ctrl.Call(m, "GetPushedObjects", ignoreDelRefs)
 	ret0, _ := ret[0].([]string)
 	return ret0
 }
 
 // GetPushedObjects indicates an expected call of GetPushedObjects
-func (mr *MockRepoPushNoteMockRecorder) GetPushedObjects() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) GetPushedObjects(ignoreDelRefs interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushedObjects", reflect.TypeOf((*MockRepoPushNote)(nil).GetPushedObjects))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushedObjects", reflect.TypeOf((*MockRepoPushNote)(nil).GetPushedObjects), ignoreDelRefs)
 }
 
 // BytesAndID mocks base method

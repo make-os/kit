@@ -3,8 +3,6 @@ package logic
 import (
 	"os"
 
-	abcitypes "github.com/tendermint/tendermint/abci/types"
-
 	"github.com/makeos/mosdef/crypto"
 
 	"github.com/makeos/mosdef/util"
@@ -49,49 +47,33 @@ var _ = Describe("Transaction", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".PrepareExec", func() {
-
-		Context("when tx bytes are not decodeable to types.Transaction", func() {
-			It("should return err='failed to decode transaction from hex to bytes'", func() {
-				req := abcitypes.RequestDeliverTx(abcitypes.RequestDeliverTx{
-					Tx: []byte([]byte("invalid_hex")),
-				})
-				resp := txLogic.PrepareExec(req, 1)
-				Expect(resp.Code).To(Equal(types.ErrCodeFailedDecode))
-				Expect(resp.Log).To(Equal("failed to decode transaction from bytes"))
-			})
-		})
+	Describe(".ExecTx", func() {
 
 		Context("when tx is invalid", func() {
 			It("should return err='tx failed validation...'", func() {
 				tx := types.NewBareTxCoinTransfer()
 				tx.Sig = []byte("sig")
-				req := abcitypes.RequestDeliverTx(abcitypes.RequestDeliverTx{
-					Tx: tx.Bytes(),
-				})
-				resp := txLogic.PrepareExec(req, 1)
+				resp := txLogic.ExecTx(tx, 1)
 				Expect(resp.Code).To(Equal(types.ErrCodeFailedDecode))
 				Expect(resp.Log).To(ContainSubstring("tx failed validation"))
 			})
 		})
-	})
 
-	Describe(".Exec", func() {
 		Context("with unknown transaction type", func() {
 			It("should return err", func() {
 				tx := &unknownTxType{TxCoinTransfer: types.NewBareTxCoinTransfer()}
-				err := logic.Tx().Exec(tx, 1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("unknown transaction type"))
+				resp := logic.Tx().ExecTx(tx, 1)
+				Expect(resp.GetCode()).ToNot(BeZero())
+				Expect(resp.GetLog()).To(Equal("tx failed validation: field:type, error:unsupported transaction type"))
 			})
 		})
 
 		Context("with unknown ticket purchase tx type", func() {
 			It("should return err", func() {
 				tx := types.NewBareTxTicketPurchase(1000)
-				err := logic.Tx().Exec(tx, 1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("unknown transaction type"))
+				resp := logic.Tx().ExecTx(tx, 1)
+				Expect(resp.GetCode()).ToNot(BeZero())
+				Expect(resp.Log).To(Equal("tx failed validation: field:type, error:type is invalid"))
 			})
 		})
 	})

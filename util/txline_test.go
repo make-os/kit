@@ -36,38 +36,28 @@ var _ = Describe("TxLine", func() {
 			})
 		})
 
-		When("txline is malformed", func() {
-			It("should return ErrTxLineMalformed", func() {
-				str := "This is a line\nThis is another line\ntx: fee10"
-				_, err := ParseTxLine(str)
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(ErrTxLineMalformed))
-			})
-
-			It("should return ErrTxLineMalformed", func() {
-				str := "This is a line\nThis is another line\ntx:fee=10 - "
-				_, err := ParseTxLine(str)
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(ErrTxLineMalformed))
-			})
-
-			It("should return ErrTxLineMalformed", func() {
-				str := "This is a line\nThis is another line\ntx: fee=10/nonce=2 "
-				_, err := ParseTxLine(str)
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(ErrTxLineMalformed))
-			})
-		})
-
 		When("message has a valid txline", func() {
+			It("should return no error", func() {
+				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, deleteRef"
+				txline, err := ParseTxLine(str)
+				Expect(err).To(BeNil())
+				Expect(*txline).To(Equal(TxLine{
+					Fee:       String("10"),
+					Nonce:     2,
+					PubKeyID:  "0x9aed9dbda362c75e9feaa07241aac207d5ef4e00",
+					DeleteRef: true,
+				}))
+			})
+
 			It("should return no error", func() {
 				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00"
 				txline, err := ParseTxLine(str)
 				Expect(err).To(BeNil())
 				Expect(*txline).To(Equal(TxLine{
-					Fee:      String("10"),
-					Nonce:    2,
-					PubKeyID: "0x9aed9dbda362c75e9feaa07241aac207d5ef4e00",
+					Fee:       String("10"),
+					Nonce:     2,
+					PubKeyID:  "0x9aed9dbda362c75e9feaa07241aac207d5ef4e00",
+					DeleteRef: false,
 				}))
 			})
 		})
@@ -134,17 +124,24 @@ var _ = Describe("TxLine", func() {
 	})
 
 	Describe(".MakeTxLine", func() {
-		When("when signature is nil", func() {
+		When("signature is nil", func() {
 			It("should return expected string", func() {
 				txLine := MakeTxLine("1", "1", "pkID", nil)
 				Expect(txLine).To(Equal("tx: fee=1, nonce=1, pkId=pkID"))
 			})
 		})
 
-		When("when signature is set", func() {
+		When("signature is set", func() {
 			It("should return expected string", func() {
 				txLine := MakeTxLine("1", "1", "pkID", []byte("abc"))
-				Expect(txLine).To(Equal("tx: fee=1, nonce=1, pkId=pkID sig=0x616263"))
+				Expect(txLine).To(Equal("tx: fee=1, nonce=1, pkId=pkID, sig=0x616263"))
+			})
+		})
+
+		When("actions are set", func() {
+			It("should return expected string", func() {
+				txLine := MakeTxLine("1", "1", "pkID", []byte("abc"), "removeRef", "checkRef")
+				Expect(txLine).To(Equal("tx: fee=1, nonce=1, pkId=pkID, removeRef, checkRef, sig=0x616263"))
 			})
 		})
 	})
@@ -157,7 +154,7 @@ var _ = Describe("TxLine", func() {
 				PubKeyID:  "0x9aed9dbda362c75e9feaa07241aac207d5ef4e00",
 				Signature: "abc",
 			}
-			expected := `tx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00 sig=0x616263`
+			expected := `tx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, sig=0x616263`
 			Expect(txLine.String()).To(Equal(expected))
 		})
 	})

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	s "github.com/makeos/mosdef/storage"
@@ -34,11 +35,12 @@ import (
 
 // Repo represents a git repository
 type Repo struct {
-	git   *git.Repository
-	path  string
-	name  string
-	ops   *GitOps
-	state *types.Repository
+	git      *git.Repository
+	path     string
+	name     string
+	ops      *GitOps
+	state    *types.Repository
+	refLocks map[string]*sync.Mutex
 }
 
 func getReferenceTree(path, ref string) (*tree.SafeTree, func() error, error) {
@@ -53,12 +55,23 @@ func getReferenceTree(path, ref string) (*tree.SafeTree, func() error, error) {
 		return nil, nil, errors.Wrap(err, "failed to load tree")
 	}
 
-	return tr, db.Close, nil
+	return tr, func() error {
+		err := db.Close()
+		time.Sleep(1 * time.Second)
+		return err
+	}, nil
+}
+
+func deleteReferenceTree(path, ref string) error {
+	normRef := strings.ReplaceAll(ref, "/", "-")
+	treePath := filepath.Join(path, fmt.Sprintf("tree-%s.db", normRef))
+	return os.RemoveAll(treePath)
 }
 
 // UpdateTree updates the state tree
 func (r *Repo) UpdateTree(ref string,
 	updater func(tree *tree.SafeTree) error) ([]byte, int64, error) {
+
 	tr, closer, err := getReferenceTree(r.Path(), ref)
 	if err != nil {
 		return nil, 0, err
@@ -195,12 +208,12 @@ func (r *Repo) GetRecentCommit() (string, error) {
 	return r.ops.GetRecentCommit()
 }
 
-// UpdateRecentCommitMsg updates the recent commit message.
-// msg: The commit message which is passed to the command's stdin.
+// MakeSignableCommit sign and commit staged changes
+// msg: The commit message.
 // signingKey: The signing key
 // env: Optional environment variables to pass to the command.
-func (r *Repo) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
-	return r.ops.UpdateRecentCommitMsg(msg, signingKey, env...)
+func (r *Repo) MakeSignableCommit(msg, signingKey string, env ...string) error {
+	return r.ops.MakeSignableCommit(msg, signingKey, env...)
 }
 
 // CreateTagWithMsg an annotated tag.
@@ -411,6 +424,7 @@ func SignCommitCmd(
 	txFee,
 	txNonce,
 	signingKey string,
+	deleteRefAction bool,
 	rpcClient *client.RPCClient) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
@@ -425,18 +439,6 @@ func SignCommitCmd(
 	if signingKey == "" {
 		return errors.New("signing key was not set or provided")
 	}
-
-	// Get recent commit hash of the current branch
-	hash, err := repo.GetRecentCommit()
-	if err != nil {
-		if err == ErrNoCommits {
-			return errors.New("no commits have been created yet")
-		}
-		return err
-	}
-
-	commit, _ := repo.CommitObject(plumbing.NewHash(hash))
-	msg := util.RemoveTxLine(commit.Message)
 
 	// Get the public key of the signing key
 	pkEntity, err := crypto.GetGPGPublicKey(signingKey, repo.GetConfig("gpg.program"), "")
@@ -455,12 +457,12 @@ func SignCommitCmd(
 		}
 	}
 
-	// Construct the tx line and append to the current message
-	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil)
-	msg += "\n\n" + txLine
-
-	// Update the recent commit message
-	if err = repo.UpdateRecentCommitMsg(msg, signingKey); err != nil {
+	directives := []string{}
+	if deleteRefAction {
+		directives = append(directives, "deleteRef")
+	}
+	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil, directives...)
+	if err := repo.MakeSignableCommit(string(txLine), signingKey); err != nil {
 		return err
 	}
 
@@ -477,6 +479,7 @@ func SignTagCmd(
 	txFee,
 	txNonce,
 	signingKey string,
+	deleteRefAction bool,
 	rpcClient *client.RPCClient) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
@@ -527,8 +530,13 @@ func SignTagCmd(
 		}
 	}
 
+	directives := []string{}
+	if deleteRefAction {
+		directives = append(directives, "deleteRef")
+	}
+
 	// Construct the tx line and append to the current message
-	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil)
+	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil, directives...)
 	msg += "\n\n" + txLine
 
 	// Create the tag
@@ -548,6 +556,7 @@ func SignNoteCmd(
 	txNonce,
 	signingKey,
 	note string,
+	deleteRefAction bool,
 	rpcClient *client.RPCClient) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
@@ -636,8 +645,13 @@ func SignNoteCmd(
 		return errors.Wrap(err, "failed to sign transaction parameters")
 	}
 
+	directives := []string{}
+	if deleteRefAction {
+		directives = append(directives, "deleteRef")
+	}
+
 	// Construct the tx line
-	txLine := util.MakeTxLine(txFee, txNonce, pkID, sig)
+	txLine := util.MakeTxLine(txFee, txNonce, pkID, sig, directives...)
 
 	// Create a blob with 0 byte content which be the subject of our note.
 	blobHash, err := repo.CreateBlob("")

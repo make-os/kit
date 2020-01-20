@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/ipfs/go-cid"
 	badger "github.com/ipfs/go-ds-badger"
+	"github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multihash"
-
-	lru "github.com/hashicorp/golang-lru"
-	ma "github.com/multiformats/go-multiaddr"
 
 	libp2p "github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -27,29 +26,21 @@ import (
 	"github.com/makeos/mosdef/util"
 	"github.com/makeos/mosdef/util/logger"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/p2p"
 )
 
 // Errors
 var (
-	ErrObjNotFound        = fmt.Errorf("object not found")
-	ErrInvalidObjIDFormat = fmt.Errorf("invalid object id format")
+	ErrObjNotFound = fmt.Errorf("object not found")
 )
-
-// DHTReactorChannel is the channel id for the reactor
-const DHTReactorChannel = byte(0x31)
 
 // DHT provides distributed hash table functionalities
 // specifically required for storing and
 type DHT struct {
-	p2p.BaseReactor
-	cfg            *config.AppConfig
-	host           host.Host
-	dht            *dht.IpfsDHT
-	log            logger.Logger
-	connectedPeers *lru.Cache
-	objectFinders  map[string]types.ObjectFinder
-	receiveErr     error // holds Receive() error (for testing)
+	cfg           *config.AppConfig
+	host          host.Host
+	dht           *dht.IpfsDHT
+	log           logger.Logger
+	objectFinders map[string]types.ObjectFinder
 }
 
 // New creates a new DHT service
@@ -84,7 +75,8 @@ func New(
 	}
 
 	log := cfg.G().Log.Module("dht")
-	log.Info("DHT service has started", "Address", h.Addrs()[0].String())
+	fullAddr := fmt.Sprintf("%s/p2p/%s", h.Addrs()[0].String(), h.ID().Pretty())
+	log.Info("DHT service has started", "Address", fullAddr)
 
 	dht := &DHT{
 		host:          h,
@@ -96,102 +88,57 @@ func New(
 
 	h.SetStreamHandler("/fetch/1", dht.handleFetch)
 
-	dht.BaseReactor = *p2p.NewBaseReactor("Reactor", dht)
-	dht.connectedPeers, err = lru.New(100)
-
 	return dht, err
+}
+
+// join attempts to connect to peers from the list of bootstrap peers
+func (dht *DHT) join() error {
+
+	addrs := strings.Split(dht.cfg.DHT.BootstrapPeers, ",")
+	if len(addrs) == 0 {
+		return fmt.Errorf("no bootstrap peers to connect to")
+	}
+
+	connected := false
+	for _, addr := range addrs {
+		maddr, err := multiaddr.NewMultiaddr(addr)
+		if err != nil {
+			return errors.Wrap(err, "invalid dht bootstrap address")
+		}
+
+		info, err := peer.AddrInfoFromP2pAddr(maddr)
+		if err != nil {
+			return errors.Wrap(err, "invalid dht bootstrap address")
+		}
+
+		dht.host.Peerstore().AddAddrs(info.ID, info.Addrs, peerstore.PermanentAddrTTL)
+		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cn()
+		if err := dht.host.Connect(ctx, *info); err != nil {
+			continue
+		}
+
+		connected = true
+		break
+	}
+
+	if !connected {
+		dht.log.Error("Could not connect to any bootstrap peers", "KnownAddrs", len(addrs))
+		return fmt.Errorf("could not connect to peers")
+	}
+
+	return nil
+}
+
+// Start starts the DHT
+func (dht *DHT) Start() error {
+	dht.join()
+	return nil
 }
 
 // RegisterObjFinder registers a finder to handle module-targetted find operations
 func (dht *DHT) RegisterObjFinder(module string, finder types.ObjectFinder) {
 	dht.objectFinders[module] = finder
-}
-
-// connect connects the host to a remote dht peer using the given DHT info
-func (dht *DHT) connect(peerInfo *types.DHTInfo, p p2p.Peer) error {
-	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
-	defer cn()
-
-	var err error
-	addrInfo := peer.AddrInfo{}
-	addr, _ := ma.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%s", peerInfo.Address, peerInfo.Port))
-	addrInfo.Addrs = append(addrInfo.Addrs, addr)
-	addrInfo.ID, err = peer.IDB58Decode(peerInfo.ID)
-	if err != nil {
-		return errors.Wrap(err, "bad peer id")
-	}
-
-	if err := dht.host.Connect(ctx, addrInfo); err != nil {
-		dht.log.Error("failed to connect to peer", "Err", err.Error())
-		return errors.Wrap(err, "failed to connect")
-	}
-
-	// Add to the connected peers index the tendermint ID of the remote peer
-	// corresponding to it DHT host ID
-	dht.connectedPeers.Add(p.ID(), addrInfo.ID)
-
-	// Update the dht routing table
-	dht.dht.Update(ctx, addrInfo.ID)
-
-	dht.log.Info("Connected to peer", "PeerID", addrInfo.ID)
-
-	return nil
-}
-
-// AddPeer implements Reactor. It is called when a new peer connects to the
-// switch. We respond by requesting the peer to send its dht info
-func (dht *DHT) AddPeer(peer p2p.Peer) {
-	dht.requestDHTInfo(peer)
-}
-
-// RemovePeer implements Reactor. It is called when a peer disconnects from the
-// switch. We respond by checking if the peer is dht node we are connected to
-// and then disconnect from it
-func (dht *DHT) RemovePeer(tmPeer p2p.Peer, reason interface{}) {
-
-	dhtPeerID, ok := dht.connectedPeers.Peek(tmPeer.ID())
-	if !ok {
-		return
-	}
-
-	// Close the connections with the dht node
-	for _, con := range dht.host.Network().ConnsToPeer(dhtPeerID.(peer.ID)) {
-		con.Close()
-	}
-
-	dht.verifyConnections(context.Background())
-}
-
-// isConnected checks whether a peer is connected to the host
-func (dht *DHT) isConnected(p p2p.Peer) bool {
-	return dht.connectedPeers.Contains(p.ID())
-}
-
-// verifyConnections verifies the connectedness of peers in the connected cache
-// and remove peers that are no longer connected to the host.
-func (dht *DHT) verifyConnections(ctx context.Context) {
-	for _, peerID := range dht.connectedPeers.Keys() {
-		remoteDHTHostID, ok := dht.connectedPeers.Peek(peerID)
-		if !ok {
-			continue
-		}
-		found := false
-		for _, con := range dht.host.Network().Conns() {
-			if con.RemotePeer() == remoteDHTHostID.(peer.ID) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			dht.connectedPeers.Remove(peerID)
-			dht.dht.Update(ctx, remoteDHTHostID.(peer.ID))
-		}
-	}
-}
-
-// OnStart implements p2p.BaseReactor.
-func (dht *DHT) OnStart() error {
-	return nil
 }
 
 // Peers returns a list of all peers
@@ -200,64 +147,6 @@ func (dht *DHT) Peers() (peers []string) {
 		peers = append(peers, p.String())
 	}
 	return
-}
-
-func (dht *DHT) requestDHTInfo(p p2p.Peer) error {
-
-	// Do nothing if peer is already connected
-	if dht.isConnected(p) {
-		return nil
-	}
-
-	if p.Send(DHTReactorChannel, types.BareDHTInfo().Bytes()) {
-		dht.log.Debug("Requested DHTInfo information from peer", "PeerID", p.ID())
-		return nil
-	}
-
-	return fmt.Errorf("failed to send request")
-}
-
-// GetChannels implements Reactor.
-func (dht *DHT) GetChannels() []*p2p.ChannelDescriptor {
-	return []*p2p.ChannelDescriptor{
-		{ID: DHTReactorChannel, Priority: 5},
-	}
-}
-
-// Receive implements Reactor
-func (dht *DHT) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
-
-	var dhtInfo types.DHTInfo
-	if err := util.BytesToObject(msgBytes, &dhtInfo); err != nil {
-		dht.receiveErr = errors.Wrap(err, "failed to decode message")
-		dht.log.Error("failed to decoded message to types.DHTInfo")
-		return
-	}
-
-	// If info is empty, then this a request for our own DHT info
-	if dhtInfo.IsEmpty() {
-		host, port, err := net.SplitHostPort(dht.cfg.DHT.Address)
-		if err != nil {
-			dht.receiveErr = errors.Wrap(err, "failed to parse local peer dht address")
-			dht.log.Error("failed parse dht address")
-			return
-		}
-
-		info := types.DHTInfo{
-			ID:      dht.host.ID().String(),
-			Address: host,
-			Port:    port,
-		}
-		if peer.Send(DHTReactorChannel, info.Bytes()) {
-			dht.log.Debug("Sent DHT information to peer", "PeerID", peer.ID())
-		}
-
-		dht.receiveErr = fmt.Errorf("failed to send DHT Info")
-		return
-	}
-
-	// At this point, a peer has sent us their info, so we should connect to it
-	dht.connect(&dhtInfo, peer)
 }
 
 // Store adds a value corresponding to the given key
@@ -340,6 +229,10 @@ func (dht *DHT) fetchValue(
 		return nil, err
 	}
 
+	if len(val) == 0 {
+		return nil, ErrObjNotFound
+	}
+
 	return val, nil
 }
 
@@ -410,8 +303,8 @@ func (dht *DHT) handleFetch(s network.Stream) {
 
 	objBz, err := finder.FindObject(query.ObjectKey)
 	if err != nil {
-		dht.log.Error("failed finder execution", "Err", err.Error())
-		return
+		dht.log.Error("failed to find requested object", "Err", err.Error(),
+			"ObjectKey", string(query.ObjectKey))
 	}
 
 	if _, err := s.Write(objBz); err != nil {

@@ -188,7 +188,7 @@ func (m *Manager) Start() error {
 	}
 
 	go m.subscribe()
-	go m.syncher.Start()
+	// go m.syncher.Start()
 	go m.pruner.Start()
 
 	return nil

@@ -151,7 +151,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Announce the objects of the push note to the dht
-	for _, hash := range pn.GetPushedObjects() {
+	for _, hash := range pn.GetPushedObjects(false) {
 		dhtKey := MakeRepoObjectDHTKey(repoName, hash)
 		ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
 		defer c()
@@ -445,14 +445,87 @@ func (m *Manager) UpdateRepoWithTxPush(tx *types.TxPush) error {
 	refHashes, err := updateReferencesTree(tx.PushNote.References,
 		m.getRepoPath(tx.PushNote.RepoName))
 	if err != nil {
-		m.Log().Error("Error updating repo tree",
-			"RepoName", tx.PushNote.RepoName, "Err", err)
+		m.Log().Error("Error updating repo tree", "RepoName", tx.PushNote.RepoName, "Err", err)
 		return err
 	}
 
 	for ref, hash := range refHashes {
 		m.Log().Info("Reference state updated", "RepoName", tx.PushNote.RepoName,
 			"Ref", ref, "StateHash", hash)
+	}
+
+	return nil
+}
+
+// ExecTxPush executes a push transaction
+func (m *Manager) ExecTxPush(tx *types.TxPush) error {
+
+	repoName := tx.PushNote.RepoName
+	repo, err := m.GetRepo(repoName)
+	if err != nil {
+		return errors.Wrap(err, "unable to find repo locally")
+	}
+
+	// Do not download pushed objects in validator mode
+	if m.cfg.IsValidatorNode() {
+		goto update
+	}
+
+	// Download pushed objects
+	for _, objHash := range tx.PushNote.GetPushedObjects(false) {
+		if repo.ObjectExist(objHash) {
+			continue
+		}
+
+		// Fetch from the dht
+		dhtKey := MakeRepoObjectDHTKey(repoName, objHash)
+		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
+		defer cn()
+		objValue, err := m.dht.GetObject(ctx, &types.DHTObjectQuery{
+			Module:    RepoObjectModule,
+			ObjectKey: []byte(dhtKey),
+		})
+		if err != nil {
+			msg := fmt.Sprintf("failed to fetch object '%s'", objHash)
+			return errors.Wrap(err, msg)
+		}
+
+		// Write fetched object to the repo
+		if err = repo.WriteObjectToFile(objHash, objValue); err != nil {
+			msg := fmt.Sprintf("failed to write fetched object '%s' to disk",
+				objHash)
+			return errors.Wrap(err, msg)
+		}
+
+		// Annonce ourselves as the newest provider of the object
+		if err := m.dht.Annonce(ctx, []byte(dhtKey)); err != nil {
+			m.log.Warn("unable to announce git object", "Err", err)
+			continue
+		}
+
+		m.log.Debug("Fetched object for repo", "ObjHash", objHash,
+			"RepoName", repoName)
+	}
+
+update:
+	// Attempt to merge the push transaction to the target repo
+	if err = m.UpdateRepoWithTxPush(tx); err != nil {
+		return err
+	}
+
+	// For any pushed reference that has a delete directive, remove the
+	// reference from the repo and also its tree.
+	for _, ref := range tx.PushNote.GetPushedReferences() {
+		if ref.Delete {
+			if !m.cfg.IsValidatorNode() {
+				if err = repo.RefDelete(ref.Name); err != nil {
+					return errors.Wrapf(err, "failed to delete reference (%s)", ref.Name)
+				}
+			}
+			if err := deleteReferenceTree(repo.Path(), ref.Name); err != nil {
+				return errors.Wrapf(err, "failed to delete reference (%s) tree", ref.Name)
+			}
+		}
 	}
 
 	return nil

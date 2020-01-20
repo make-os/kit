@@ -484,7 +484,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				tx := types.NewBaseTx(types.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				mockLogic.Tx.EXPECT().PrepareExec(req, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
+				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
 				app.DeliverTx(req)
 			})
@@ -504,7 +504,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				tx := types.NewBaseTx(types.TxTypeStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				mockLogic.Tx.EXPECT().PrepareExec(req, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
+				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
 				Expect(app.DeliverTx(req).Code).To(Equal(uint32(0)))
 			})
@@ -525,7 +525,7 @@ var _ = Describe("App", func() {
 				tx := types.NewBaseTx(types.TxTypeUnbondStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				tx.(*types.TxTicketUnbond).TicketHash = util.StrToBytes32("tid")
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				mockLogic.Tx.EXPECT().PrepareExec(req, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
+				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
 				Expect(app.DeliverTx(req).Code).To(Equal(uint32(0)))
 			})
@@ -659,7 +659,7 @@ var _ = Describe("App", func() {
 
 				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(app.curWorkingBlock.Height-1).Return(mockValidators, nil)
 
-				mockLogic.Tx.EXPECT().PrepareExec(gomock.Any(), gomock.Any()).Return(abcitypes.ResponseDeliverTx{
+				mockLogic.Tx.EXPECT().ExecTx(gomock.Any(), gomock.Any()).Return(abcitypes.ResponseDeliverTx{
 					Code: uint32(0),
 				})
 

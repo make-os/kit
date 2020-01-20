@@ -454,13 +454,15 @@ func checkPushNote(tx types.RepoPushNote, dht types.DHT,
 	return nil
 }
 
+
+
 // fetchAndCheckReferenceObjects attempts to fetch and store new objects
 // introduced by the pushed references. After fetching it performs checks
 // on the objects
 func fetchAndCheckReferenceObjects(tx types.RepoPushNote, dht types.DHT) error {
 	objectsSize := int64(0)
 
-	for _, objHash := range tx.GetPushedObjects() {
+	for _, objHash := range tx.GetPushedObjects(false) {
 
 	getSize:
 		// Attempt to get the object's size. If we find it, it means the object

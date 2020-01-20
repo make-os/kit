@@ -98,19 +98,19 @@ var _ = Describe("PushNote", func() {
 	})
 
 	Describe(".Len", func() {
-		It("should return expected length", func() {
-			Expect(pushNote.Len()).To(Equal(uint64(155)))
+		It("should not return zero", func() {
+			Expect(pushNote.Len()).ToNot(Equal(0))
 		})
 	})
 
 	Describe(".TxSize", func() {
-		It("should be non-zero", func() {
+		It("should not return zero", func() {
 			Expect(pushNote.TxSize()).ToNot(Equal(0))
 		})
 	})
 
 	Describe(".OverallSize", func() {
-		It("should be non-zero", func() {
+		It("should not return zero", func() {
 			Expect(pushNote.BillableSize()).ToNot(Equal(0))
 		})
 	})

@@ -1348,32 +1348,18 @@ func (m *MockTxLogic) EXPECT() *MockTxLogicMockRecorder {
 	return m.recorder
 }
 
-// PrepareExec mocks base method
-func (m *MockTxLogic) PrepareExec(req types0.RequestDeliverTx, chainHeight uint64) types0.ResponseDeliverTx {
+// ExecTx mocks base method
+func (m *MockTxLogic) ExecTx(tx types.BaseTx, chainHeight uint64) types0.ResponseDeliverTx {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PrepareExec", req, chainHeight)
+	ret := m.ctrl.Call(m, "ExecTx", tx, chainHeight)
 	ret0, _ := ret[0].(types0.ResponseDeliverTx)
 	return ret0
 }
 
-// PrepareExec indicates an expected call of PrepareExec
-func (mr *MockTxLogicMockRecorder) PrepareExec(req, chainHeight interface{}) *gomock.Call {
+// ExecTx indicates an expected call of ExecTx
+func (mr *MockTxLogicMockRecorder) ExecTx(tx, chainHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrepareExec", reflect.TypeOf((*MockTxLogic)(nil).PrepareExec), req, chainHeight)
-}
-
-// Exec mocks base method
-func (m *MockTxLogic) Exec(tx types.BaseTx, chainHeight uint64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Exec", tx, chainHeight)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Exec indicates an expected call of Exec
-func (mr *MockTxLogicMockRecorder) Exec(tx, chainHeight interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exec", reflect.TypeOf((*MockTxLogic)(nil).Exec), tx, chainHeight)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecTx", reflect.TypeOf((*MockTxLogic)(nil).ExecTx), tx, chainHeight)
 }
 
 // CanExecCoinTransfer mocks base method

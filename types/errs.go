@@ -84,7 +84,7 @@ var (
 // Transaction processing errors
 const (
 	ErrCodeFailedDecode                = uint32(1)
-	ErrCodeExecFailure                 = 2
+	ErrCodeExecFailure                 = uint32(2)
 	ErrCodeMaxTxTypeReached            = 3
 	ErrCodeTxTypeUnexpected            = 4
 	ErrCodeTxInvalidValue              = 5

@@ -175,7 +175,7 @@ var _ = Describe("Validation", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txLine := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				appendSignedCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
+				appendMakeSignableCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
@@ -295,7 +295,7 @@ var _ = Describe("Validation", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txLine := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				createSignedCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txLine, "v1", gpgKeyID)
+				createMakeSignableCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txLine, "v1", gpgKeyID)
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
@@ -330,19 +330,6 @@ var _ = Describe("Validation", func() {
 			It("should return err='unacceptable note. it does not have a signed transaction object'", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("unacceptable note. it does not have a signed transaction object"))
-			})
-		})
-
-		When("a notes tx blob has invalid tx line", func() {
-			BeforeEach(func() {
-				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx:invalid")
-				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
-			})
-
-			It("should return err='note (refs/notes/note1): txline is malformed'", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("note (refs/notes/note1): txline is malformed"))
 			})
 		})
 
@@ -489,7 +476,7 @@ var _ = Describe("Validation", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txLine := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				appendSignedCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
+				appendMakeSignableCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 
@@ -510,7 +497,7 @@ var _ = Describe("Validation", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txLine := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				createSignedCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txLine, "v1", gpgKeyID)
+				createMakeSignableCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txLine, "v1", gpgKeyID)
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 
@@ -530,7 +517,7 @@ var _ = Describe("Validation", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txLine := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				createSignedCommitAndLightWeightTag(path, "file.txt", "first file", txLine, "v1", gpgKeyID)
+				createMakeSignableCommitAndLightWeightTag(path, "file.txt", "first file", txLine, "v1", gpgKeyID)
 				tagRef, _ := repo.Tag("v1")
 
 				change := &types.ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tagRef.Target().String()}}

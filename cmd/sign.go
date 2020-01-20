@@ -72,6 +72,7 @@ var signCommitCmd = &cobra.Command{
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
 		sk, _ := cmd.Flags().GetString("signingKey")
+		delete, _ := cmd.Flags().GetBool("delete")
 
 		var client *client.RPCClient
 		var err error
@@ -83,7 +84,7 @@ var signCommitCmd = &cobra.Command{
 		}
 
 		if err := repo.SignCommitCmd(cfg.Node.GitBinPath, fee,
-			nonce, sk, client); err != nil {
+			nonce, sk, delete, client); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -97,6 +98,7 @@ var signTagCmd = &cobra.Command{
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
 		sk, _ := cmd.Flags().GetString("signingKey")
+		delete, _ := cmd.Flags().GetBool("delete")
 
 		var client *client.RPCClient
 		var err error
@@ -109,7 +111,7 @@ var signTagCmd = &cobra.Command{
 
 		args = cmd.Flags().Args()
 		if err := repo.SignTagCmd(args, cfg.Node.GitBinPath, fee,
-			nonce, sk, client); err != nil {
+			nonce, sk, delete, client); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -123,6 +125,7 @@ var signNoteCmd = &cobra.Command{
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
 		sk, _ := cmd.Flags().GetString("signingKey")
+		delete, _ := cmd.Flags().GetBool("delete")
 
 		var client *client.RPCClient
 		var err error
@@ -143,6 +146,7 @@ var signNoteCmd = &cobra.Command{
 			nonce,
 			sk,
 			args[0],
+			delete,
 			client); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -155,12 +159,13 @@ func initCommit() {
 	signCmd.AddCommand(signCommitCmd)
 	signCmd.AddCommand(signNoteCmd)
 
-	signCmd.PersistentFlags().StringP("fee", "f", "0", "Set the transaction fee")
-	signCmd.PersistentFlags().StringP("nonce", "n", "0", "Set the transaction nonce")
-	signCmd.PersistentFlags().StringP("signingKey", "s", "", "Set the GPG signing key ID")
-	signCmd.PersistentFlags().String("rpc.user", "", "Set the RPC username")
-	signCmd.PersistentFlags().String("rpc.password", "", "Set the RPC password")
-	signCmd.PersistentFlags().String("rpc.address", config.DefaultRPCAddress,
-		"Set the RPC listening address")
-	signCmd.PersistentFlags().String("rpc.https", "", "Force the client to use https:// protocol")
+	pf := signCmd.PersistentFlags()
+	pf.StringP("fee", "f", "0", "Set the transaction fee")
+	pf.StringP("nonce", "n", "0", "Set the transaction nonce")
+	pf.StringP("signingKey", "s", "", "Set the GPG signing key ID")
+	pf.String("rpc.user", "", "Set the RPC username")
+	pf.String("rpc.password", "", "Set the RPC password")
+	pf.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")
+	pf.String("rpc.https", "", "Force the client to use https:// protocol")
+	pf.BoolP("delete", "d", false, "Add an action to delete the target reference")
 }

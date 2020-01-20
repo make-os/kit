@@ -235,31 +235,28 @@ var _ = Describe("Gitops", func() {
 		})
 	})
 
-	Describe(".UpdateRecentCommitMsg", func() {
+	Describe(".MakeSignableCommit", func() {
 		var gpgUserID string
 
 		BeforeEach(func() {
-			appendCommit(path, "file.txt", "some text", "commit msg")
-			msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
-			Expect(strings.TrimSpace(msg)).To(Equal("commit msg"))
 			gpgUserID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
 		})
 
 		When("signingKey is not set", func() {
-			It("should update recent commit to `an updated msg`", func() {
-				err := gitOps.UpdateRecentCommitMsg("an updated msg", "", "GNUPGHOME="+cfg.DataDir())
+			It("should update recent commit to `new commit msg`", func() {
+				err := gitOps.MakeSignableCommit("new commit msg", "", "GNUPGHOME="+cfg.DataDir())
 				Expect(err).To(BeNil())
 				msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
-				Expect(strings.TrimSpace(msg)).To(Equal("an updated msg"))
+				Expect(strings.TrimSpace(msg)).To(Equal("new commit msg"))
 			})
 		})
 
 		When("signingKey is set", func() {
-			It("should update recent commit to `an updated msg` and sign the commit", func() {
-				err := gitOps.UpdateRecentCommitMsg("an updated msg", gpgUserID, "GNUPGHOME="+cfg.DataDir())
+			It("should update recent commit to `new commit msg` and sign the commit", func() {
+				err := gitOps.MakeSignableCommit("new commit msg", gpgUserID, "GNUPGHOME="+cfg.DataDir())
 				Expect(err).To(BeNil())
 				msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
-				Expect(strings.TrimSpace(msg)).To(Equal("an updated msg"))
+				Expect(strings.TrimSpace(msg)).To(Equal("new commit msg"))
 				msg, _ = script.ExecInDir(`git --no-pager log --oneline -1 --show-signature`, path).String()
 				Expect(msg).To(ContainSubstring("gpg: Signature"))
 			})

@@ -23,8 +23,8 @@ type NodeConfig struct {
 	// ListeningAddr is the node's listening address
 	ListeningAddr string `json:"address" mapstructure:"address"`
 
-	// Peers is a comma separated list of persistent peers to connect to.
-	Peers string `json:"addpeer" mapstructure:"addpeer"`
+	// PersistentPeers is a comma separated list of persistent peers to connect to.
+	PersistentPeers string `json:"addpeer" mapstructure:"addpeer"`
 
 	// GitBinPath is the path to the git executable
 	GitBinPath string `json:"gitbin" mapstructure:"gitbin"`
@@ -73,7 +73,9 @@ type RPCConfig struct {
 
 // DHTConfig describes DHT config parameters
 type DHTConfig struct {
-	Address string `json:"address" mapstructure:"address"`
+	On             bool   `json:"on" mapstructure:"on"`
+	Address        string `json:"address" mapstructure:"address"`
+	BootstrapPeers string `json:"addpeer" mapstructure:"addpeer"`
 }
 
 // RepoManagerConfig describes repository manager config parameters

@@ -104,7 +104,7 @@ var (
 
 	// PushOKQuorumSize is the minimum number of PushOKs a push note requires
 	// for approval
-	PushOKQuorumSize = 2
+	PushOKQuorumSize = 1
 
 	// NumTopStorersLimit is maximum the number of top storers
 	NumTopStorersLimit = 21

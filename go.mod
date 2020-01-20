@@ -6,7 +6,7 @@ replace (
 	github.com/bitfield/script => github.com/ncodes/script v0.14.1-0.20191105145315-f4455694bf0d
 	github.com/go-critic/go-critic v0.0.0-20181204210945-ee9bf5809ead => github.com/go-critic/go-critic v0.3.5-0.20190526074819-1df300866540
 	github.com/golangci/golangci-lint => github.com/golangci/golangci-lint v1.18.0
-	github.com/tendermint/tendermint => github.com/ncodes/tendermint v0.32.7-0.20200109182323-48d44423c11a
+	github.com/tendermint/tendermint => github.com/ncodes/tendermint v0.32.7-0.20200119162731-39690ff2d37e
 )
 
 require (
@@ -64,6 +64,7 @@ require (
 	github.com/multiformats/go-multihash v0.0.10
 	github.com/ncodes/coniks-go v0.0.0-20180722014011-11acf4819b71
 	github.com/ncodes/go-prettyjson v0.0.0-20180528130907-d229c224a219
+	github.com/nikkolasg/hexjson v0.0.0-20181101101858-78e39397e00c
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0

@@ -537,6 +537,10 @@ github.com/ncodes/tendermint v0.32.6 h1:X6mrzlR4iDpE3VmSrfNIZKMcMtS0QOlaFSuvG1sw
 github.com/ncodes/tendermint v0.32.6/go.mod h1:5u59huzaEE8ekEcKNU5POnE5h8k25g5N1GeuWr1shBI=
 github.com/ncodes/tendermint v0.32.7-0.20200109182323-48d44423c11a h1:PHrTjYq5t63WpvXs4f0AyMsD0XhVvUL8MziDLVv0CFA=
 github.com/ncodes/tendermint v0.32.7-0.20200109182323-48d44423c11a/go.mod h1:yF4dWGdt9eJL3jNva6bVbbYSJ+q0rIlqOTX7R6NW7IM=
+github.com/ncodes/tendermint v0.32.7-0.20200119115702-4c0ca06fc3da h1:/djoHcvs2DvjG2IrqOnhVKtlEFVP5XtXhsrJzu81NRI=
+github.com/ncodes/tendermint v0.32.7-0.20200119115702-4c0ca06fc3da/go.mod h1:yF4dWGdt9eJL3jNva6bVbbYSJ+q0rIlqOTX7R6NW7IM=
+github.com/ncodes/tendermint v0.32.7-0.20200119162731-39690ff2d37e h1:jRAzSleG0NzTeXk4fd7GsHSJG5lDzDkJkFO0etaZmEM=
+github.com/ncodes/tendermint v0.32.7-0.20200119162731-39690ff2d37e/go.mod h1:yF4dWGdt9eJL3jNva6bVbbYSJ+q0rIlqOTX7R6NW7IM=
 github.com/nikkolasg/hexjson v0.0.0-20181101101858-78e39397e00c h1:5bFTChQxSKNwy8ALwOebjekYExl9HTT9urdawqC95tA=
 github.com/nikkolasg/hexjson v0.0.0-20181101101858-78e39397e00c/go.mod h1:7qN3Y0BvzRUf4LofcoJplQL10lsFDb4PYlePTVwrP28=
 github.com/nikkolasg/slog v0.0.0-20170921200349-3c8d441d7a1e h1:07zdEcJ4Fble5uWsqKpjW19699kQWRLXP+RZh1a6ZRg=

@@ -230,7 +230,7 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 	// Use some of the native config to override tendermint's config
 	tmcfg.P2P.ListenAddress = c.Node.ListeningAddr
 	tmcfg.P2P.AddrBookStrict = !devMode
-	tmcfg.P2P.PersistentPeers = c.Node.Peers
+	tmcfg.P2P.PersistentPeers = c.Node.PersistentPeers
 	tmcfg.RPC.ListenAddress = "tcp://" + c.RPC.TMRPCAddress
 
 	if c.DHT.Address != "" && c.DHT.Address[:1] == ":" {

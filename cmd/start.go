@@ -82,6 +82,8 @@ func setStartFlags(cmds ...*cobra.Command) {
 		f.String("dht.address", config.DefaultDHTAddress, "Set the DHT listening address")
 		f.String("repoman.address", config.DefaultRepoManagerAddress, "Set the repository manager listening address")
 		f.String("node.addpeer", "", "Connect to one or more persistent node")
+		f.Bool("dht.on", true, "Run the DHT service and join the network")
+		f.String("dht.addpeer", "", "Add bootstrap peers for joining the DHT network")
 		f.StringSlice("node.exts", []string{}, "Specify an extension to run on startup")
 		extArgsMap := map[string]string{}
 		f.StringToStringVar(&extArgsMap, "node.extsargs", map[string]string{}, "Specify arguments for extensions")
@@ -101,6 +103,8 @@ func setStartFlags(cmds ...*cobra.Command) {
 			viper.BindPFlag("node.addpeer", cmd.Flags().Lookup("node.addpeer"))
 			viper.BindPFlag("node.exts", cmd.Flags().Lookup("node.exts"))
 			viper.BindPFlag("node.validator", cmd.Flags().Lookup("node.validator"))
+			viper.BindPFlag("dht.on", cmd.Flags().Lookup("dht.on"))
+			viper.BindPFlag("dht.addpeer", cmd.Flags().Lookup("dht.addpeer"))
 			viper.Set("node.extsargs", &extArgsMap)
 		}
 	}

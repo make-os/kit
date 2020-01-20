@@ -78,11 +78,11 @@ type BareRepo interface {
 	// Returns ErrNoCommits if no commits exist
 	GetRecentCommit() (string, error)
 
-	// UpdateRecentCommitMsg updates the recent commit message.
-	// msg: The commit message which is passed to the command's stdin.
+	// MakeSignableCommit sign and commit staged changes
+	// msg: The commit message.
 	// signingKey: The signing key
 	// env: Optional environment variables to pass to the command.
-	UpdateRecentCommitMsg(msg, signingKey string, env ...string) error
+	MakeSignableCommit(msg, signingKey string, env ...string) error
 
 	// CreateTagWithMsg an annotated tag.
 	// args: `git tag` options (NOTE: -a and --file=- are added by default)
@@ -211,6 +211,10 @@ type RepoManager interface {
 	// GetDHT returns the dht service
 	GetDHT() DHT
 
+	// ExecTxPush applies a push transaction to the local repository.
+	// If the node is a validator, only the target reference trees are updated.
+	ExecTxPush(tx *TxPush) error
+
 	// Shutdown shuts down the server
 	Shutdown(ctx context.Context)
 
@@ -322,8 +326,10 @@ type RepoPushNote interface {
 	// GetSize returns the total pushed objects size
 	GetSize() uint64
 
-	// GetPushedObjects returns all objects from all pushed references
-	GetPushedObjects() (objs []string)
+	// GetPushedObjects returns all objects from all pushed references without a
+	// delete directive.
+	// ignoreDelRefs cause deleted references' objects to not be include in the result
+	GetPushedObjects(ignoreDelRefs bool) (objs []string)
 
 	// BytesAndID returns the serialized version of the tx and the id
 	BytesAndID() ([]byte, util.Bytes32)
@@ -356,18 +362,19 @@ type PushedReference struct {
 	AccountNonce uint64      `json:"accountNonce" msgpack:"accountNonce"` // The pusher's account nonce
 	Fee          util.String `json:"fee" msgpack:"fee"`                   // The fee the pusher is willing to pay to validators
 	Objects      []string    `json:"objects" msgpack:"objects"`           // A list of objects pushed to the reference
+	Delete       bool        `json:"delete" msgpack:"delete"`             // Delete indicates that the reference should be deleted from the repo
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(pr.Name, pr.OldHash, pr.NewHash,
-		pr.Nonce, pr.AccountNonce, pr.Fee, pr.Objects)
+		pr.Nonce, pr.AccountNonce, pr.Fee, pr.Objects, pr.Delete)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return dec.DecodeMulti(&pr.Name, &pr.OldHash, &pr.NewHash,
-		&pr.Nonce, &pr.AccountNonce, &pr.Fee, &pr.Objects)
+		&pr.Nonce, &pr.AccountNonce, &pr.Fee, &pr.Objects, &pr.Delete)
 }
 
 // PushedReferences represents a collection of pushed references
@@ -514,9 +521,14 @@ func (pt *PushNote) BytesNoSig() []byte {
 	return bz
 }
 
-// GetPushedObjects returns all objects from all pushed references
-func (pt *PushNote) GetPushedObjects() (objs []string) {
+// GetPushedObjects returns all objects from all pushed references without a
+// delete directive.
+// ignoreDelRefs cause deleted references' objects to not be include in the result
+func (pt *PushNote) GetPushedObjects(ignoreDelRefs bool) (objs []string) {
 	for _, ref := range pt.GetPushedReferences() {
+		if ignoreDelRefs && ref.Delete {
+			continue
+		}
 		objs = append(objs, ref.Objects...)
 	}
 	return

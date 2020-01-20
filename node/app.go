@@ -3,6 +3,7 @@ package node
 import (
 	"bytes"
 	"fmt"
+	"github.com/tendermint/tendermint/state"
 
 	"github.com/fatih/color"
 	"github.com/makeos/mosdef/config"
@@ -69,7 +70,7 @@ func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitCh
 	stateTree := a.logic.StateTree()
 
 	a.log.Info("Initializing for the first time")
-	a.log.Info("Creating the chain and populating initial state...")
+	a.log.Info("Creating the chain and generaring initial state")
 
 	// Write genesis state as long as the state tree is empty
 	if stateTree.WorkingHash() == nil {
@@ -154,7 +155,6 @@ func (a *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 
 // BeginBlock indicates the beginning of a new block.
 func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
-
 	curHeight := req.GetHeader().Height
 	a.curWorkingBlock.Height = req.GetHeader().Height
 	a.curWorkingBlock.Hash = req.GetHash()
@@ -165,7 +165,7 @@ func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBegi
 		a.isCurrentBlockProposer = true
 	}
 
-	a.log.Info(color.YellowString("🔨 Processing a new block"),
+	a.log.Info(color.YellowString("Processing a new block"),
 		"Height", req.Header.Height, "IsProposer", a.isCurrentBlockProposer)
 
 	// If the network is still immature, return immediately.
@@ -324,7 +324,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 
 	// Perform validation
 	if err = a.validateTx(tx, -1, a.logic); err != nil {
-		a.log.Debug("DeliverTX: failed to process transaction", "Err", err)
+		a.log.Debug("DeliverTX: tx failed validation", "Err", err)
 		return *respDeliverTx(types.ErrCodeTxFailedValidation, err.Error())
 	}
 
@@ -334,7 +334,15 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	}
 
 	// Execute the transaction (does not commit the state changes yet)
-	resp := a.logic.Tx().PrepareExec(req, uint64(a.curWorkingBlock.Height-1))
+	resp := a.logic.Tx().ExecTx(tx, uint64(a.curWorkingBlock.Height-1))
+
+	// If the transaction returns an ErrCodeReExecBlock code, discard current
+	// uncommitted state updates and return immediately because the current
+	// block will be re-applied
+	if resp.Code == state.ErrCodeReExecBlock {
+		a.logic.Discard()
+		return resp
+	}
 
 	// Perform post-execution checks
 	return *a.postExecChecks(tx, resp)
