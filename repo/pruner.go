@@ -44,10 +44,13 @@ func (p *Pruner) Schedule(repoName string) {
 // Prune prunes a repository only if it has no incoming transactions in both the transaction
 // and push pool. If force is set to true, the repo will be pruned regardless of
 // the existence of transactions in the pools.
+// TODO: Requires smarter implementation that does not delete objects already
+// referenced in a previous block.
 func (p *Pruner) Prune(repoName string, force bool) error {
-	p.gmx.Lock()
-	defer p.gmx.Unlock()
-	return p.doPrune(repoName, force)
+	// p.gmx.Lock()
+	// defer p.gmx.Unlock()
+	// return p.doPrune(repoName, force)
+	return nil
 }
 
 // Prune prunes a repository only if it has no transactions in the transaction
