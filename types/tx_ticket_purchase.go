@@ -14,6 +14,7 @@ type TxTicketPurchase struct {
 	*TxValue  `json:"-" msgpack:"-" mapstructure:"-"`
 	Delegate  util.Bytes32 `json:"delegate" msgpack:"delegate"`
 	VRFPubKey util.Bytes32 `json:"vrfPubKey" msgpack:"vrfPubKey"`
+	BLSPubKey []byte       `json:"blsPubKey" msgpack:"blsPubKey"`
 }
 
 // NewBareTxTicketPurchase returns an instance of TxTicketPurchase with zero values
@@ -24,6 +25,7 @@ func NewBareTxTicketPurchase(ticketType int) *TxTicketPurchase {
 		TxValue:   &TxValue{Value: "0"},
 		Delegate:  util.EmptyBytes32,
 		VRFPubKey: util.EmptyBytes32,
+		BLSPubKey: []byte{},
 	}
 }
 
@@ -37,8 +39,9 @@ func (tx *TxTicketPurchase) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.Timestamp,
 		tx.SenderPubKey,
 		tx.Value,
-		tx.Delegate,
-		tx.VRFPubKey)
+		tx.Delegate.Bytes(),
+		tx.VRFPubKey.Bytes(),
+		tx.BLSPubKey)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -52,7 +55,8 @@ func (tx *TxTicketPurchase) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.SenderPubKey,
 		&tx.Value,
 		&tx.Delegate,
-		&tx.VRFPubKey)
+		&tx.VRFPubKey,
+		&tx.BLSPubKey)
 }
 
 // Bytes returns the serialized transaction

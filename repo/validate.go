@@ -10,6 +10,8 @@ import (
 	gv "github.com/asaskevich/govalidator"
 
 	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/crypto/bls"
+	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 
@@ -17,6 +19,8 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
+
+var feI = types.FieldErrorWithIndex
 
 // validateChange validates a change to a repository
 // repo: The target repository
@@ -454,7 +458,64 @@ func checkPushNote(tx types.RepoPushNote, dht types.DHT,
 	return nil
 }
 
+// CheckPushOK performs sanity checks on the given PushOK object
+func CheckPushOK(pushOK *types.PushOK, index int) error {
 
+	// Push note id must be set
+	if pushOK.PushNoteID.IsEmpty() {
+		return feI(index, "endorsements.pushNoteID", "push note id is required")
+	}
+
+	// Sender public key must be set
+	if pushOK.SenderPubKey.IsEmpty() {
+		return feI(index, "endorsements.senderPubKey", "sender public key is required")
+	}
+
+	return nil
+}
+
+// CheckPushOKConsistency performs consistency checks on the given PushOK object
+// against the current state of the network.
+// EXPECT: Sanity check to have been performed using CheckPushOK
+func CheckPushOKConsistency(pushOK *types.PushOK, logic types.Logic, index int) error {
+
+	storers, err := logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
+	if err != nil {
+		return errors.Wrap(err, "failed to get top storers")
+	}
+
+	// Check if the sender is one of the top storers.
+	// Ensure that the signers of the PushOK are part of the storers
+	spk, _ := crypto.PubKeyFromBytes(pushOK.SenderPubKey.Bytes())
+	signerSelectedTicket := storers.Get(spk.MustBytes32())
+	if signerSelectedTicket == nil {
+		return feI(index, "endorsements.senderPubKey",
+			"sender public key does not belong to an active storer")
+	}
+
+	// Ensure the signature can be verified using the selected ticket's BLS
+	// public key.
+	blsPubKey, err := bls.BytesToPublicKey(signerSelectedTicket.Ticket.BLSPubKey)
+	if err != nil {
+		return errors.Wrap(err, "failed to decode bls public key of selected ticket")
+	}
+	if err = blsPubKey.Verify(pushOK.Sig.Bytes(), pushOK.BytesNoSig()); err != nil {
+		return feI(index, "endorsements.sig", "signature could not be verified")
+	}
+
+	return nil
+}
+
+// checkPushOK performs sanity and state consistency checks on the given PushOK object
+func checkPushOK(pushOK *types.PushOK, logic types.Logic, index int) error {
+	if err := CheckPushOK(pushOK, index); err != nil {
+		return err
+	}
+	if err := CheckPushOKConsistency(pushOK, logic, index); err != nil {
+		return err
+	}
+	return nil
+}
 
 // fetchAndCheckReferenceObjects attempts to fetch and store new objects
 // introduced by the pushed references. After fetching it performs checks

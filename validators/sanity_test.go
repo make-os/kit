@@ -309,6 +309,7 @@ var _ = Describe("TxValidator", func() {
 		BeforeEach(func() {
 			tx = types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 			tx.Fee = "1"
+			tx.VRFPubKey = util.BytesToBytes32(util.RandBytes(32))
 		})
 
 		When("it has invalid fields, it should return error when", func() {
@@ -336,6 +337,7 @@ var _ = Describe("TxValidator", func() {
 			})
 
 			It("has no nonce", func() {
+				// tx.BLSPubKey = util.RandBytes(128)
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, error:nonce is required"))
@@ -381,6 +383,38 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
+			})
+
+			It("has type of TxTypeValidatorTicket and VRF public key is unset", func() {
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				tx.VRFPubKey = util.EmptyBytes32
+				err := validators.CheckTxTicketPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:vrfPubKey, error:VRF public key is required"))
+			})
+
+			It("has type of TxTypeStorerTicket and BLS public key is unset", func() {
+				params.MinStorerStake = decimal.NewFromFloat(5)
+				tx.Value = "10"
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				tx.Type = types.TxTypeStorerTicket
+				err := validators.CheckTxTicketPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:blsPubKey, error:BLS public key is required"))
+			})
+
+			It("has type of TxTypeStorerTicket and BLS public key has invalid length", func() {
+				params.MinStorerStake = decimal.NewFromFloat(5)
+				tx.Value = "10"
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				tx.Type = types.TxTypeStorerTicket
+				tx.BLSPubKey = util.RandBytes(32)
+				err := validators.CheckTxTicketPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:blsPubKey, error:BLS public key length is invalid"))
 			})
 		})
 
@@ -924,7 +958,7 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:endorsements, error:not enough endorsements included"))
 			})
 
-			It("has a PushOK with a push note id that is different from the PushTx.PushNoteID", func() {
+			It("has a no push note id", func() {
 				params.PushOKQuorumSize = 1
 				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
 				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
@@ -932,22 +966,35 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:endorsements.pushNoteID, error:value does not match push tx note id"))
+				Expect(err.Error()).To(Equal("index:0, field:endorsements.pushNoteID, error:push note id is required"))
 			})
 
-			It("has a PushOK with an invalid signature", func() {
+			It("has a PushOK with no sender public key", func() {
 				params.PushOKQuorumSize = 1
 				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
-					PushNoteID:   tx.PushNote.ID(),
-					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-					Sig:          util.BytesToBytes64([]byte("invalid sig")),
+					PushNoteID:   util.StrToBytes32("id"),
+					SenderPubKey: util.EmptyBytes32,
 				})
 				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
 				sig, _ := key.PrivKey().Sign(tx.Bytes())
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:endorsements.sig, error:signature is invalid"))
+				Expect(err.Error()).To(Equal("index:0, field:endorsements.senderPubKey, error:sender public key is required"))
+			})
+
+			It("has a PushOK with a push note id that is different from the PushTx.PushNoteID", func() {
+				params.PushOKQuorumSize = 1
+				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
+					PushNoteID:   util.StrToBytes32("id"),
+					SenderPubKey: key.PubKey().MustBytes32(),
+				})
+				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				sig, _ := key.PrivKey().Sign(tx.Bytes())
+				tx.Sig = sig
+				err := validators.CheckTxPush(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("index:0, field:endorsements.pushNoteID, error:push note id and push endorsement id must match"))
 			})
 
 			It("has multiple PushOKs from same sender", func() {
@@ -974,8 +1021,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, error:multiple " +
-					"endorsement by a single sender not permitted"))
+				Expect(err.Error()).To(Equal("index:1, field:endorsements.senderPubKey, error:multiple endorsement by a single sender not permitted"))
 			})
 
 			It("has PushOKs with different references hash set", func() {
@@ -1008,7 +1054,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:endorsements.refsHash, error:varied references hash; push endorsements can't have unmatched hashes for references"))
+				Expect(err.Error()).To(Equal("index:1, field:endorsements.refsHash, error:references of all endorsements must match"))
 			})
 		})
 

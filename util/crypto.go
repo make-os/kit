@@ -32,10 +32,15 @@ type Bytes32 [Length32]byte
 var EmptyBytes32 = Bytes32([Length32]byte{})
 
 // Bytes returns a slice of bytes
-func (h Bytes32) Bytes() []byte { return h[:] }
+func (h Bytes32) Bytes() []byte {
+	if h.IsEmpty() {
+		return []byte{}
+	}
+	return h[:]
+}
 
 // Big returns the bytes as big integer
-func (h Bytes32) Big() *big.Int { return new(big.Int).SetBytes(h[:]) }
+func (h Bytes32) Big() *big.Int { return new(big.Int).SetBytes(h.Bytes()) }
 
 // Equal checks equality between h and o
 func (h Bytes32) Equal(o Bytes32) bool { return bytes.Equal(h.Bytes(), o.Bytes()) }
@@ -44,13 +49,13 @@ func (h Bytes32) String() string { return h.HexStr() }
 
 // HexStr encodes the bytes to hex, prefixed with 0x
 func (h Bytes32) HexStr() string {
-	return ToHex(h[:])
+	return ToHex(h.Bytes())
 }
 
 // Hex encodes the bytes to hex
 func (h Bytes32) Hex() []byte {
 	dst := make([]byte, hex.EncodedLen(len(h)))
-	hex.Encode(dst, h[:])
+	hex.Encode(dst, h.Bytes())
 	return dst
 }
 
@@ -97,10 +102,15 @@ type Bytes64 [Length64]byte
 var EmptyBytes64 = Bytes64([Length64]byte{})
 
 // Bytes returns a slice of bytes
-func (h Bytes64) Bytes() []byte { return h[:] }
+func (h Bytes64) Bytes() []byte {
+	if h.IsEmpty() {
+		return []byte{}
+	}
+	return h[:]
+}
 
 // Big returns the bytes as big integer
-func (h Bytes64) Big() *big.Int { return new(big.Int).SetBytes(h[:]) }
+func (h Bytes64) Big() *big.Int { return new(big.Int).SetBytes(h.Bytes()) }
 
 // Equal checks equality between h and o
 func (h Bytes64) Equal(o Bytes64) bool { return bytes.Equal(h.Bytes(), o.Bytes()) }
@@ -109,13 +119,13 @@ func (h Bytes64) String() string { return h.HexStr() }
 
 // HexStr encodes the bytes to hex, prefixed with 0x
 func (h Bytes64) HexStr() string {
-	return ToHex(h[:])
+	return ToHex(h.Bytes())
 }
 
 // Hex encodes the bytes to hex
 func (h Bytes64) Hex() []byte {
 	dst := make([]byte, hex.EncodedLen(len(h)))
-	hex.Encode(dst, h[:])
+	hex.Encode(dst, h.Bytes())
 	return dst
 }
 

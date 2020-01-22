@@ -7,7 +7,6 @@ import (
 
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/util"
-	"github.com/shopspring/decimal"
 
 	"github.com/makeos/mosdef/crypto"
 
@@ -45,6 +44,7 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 		Hash:           t.GetHash(),
 		ProposerPubKey: t.GetSenderPubKey(),
 		VRFPubKey:      t.VRFPubKey,
+		BLSPubKey:      t.BLSPubKey,
 	}
 
 	// By default the proposer is the creator of the transaction.
@@ -81,8 +81,9 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 	return nil
 }
 
-// GetTopStorers returns top active storer tickets.
-func (m *Manager) GetTopStorers(limit int) (types.PubKeyValues, error) {
+// GetTopStorers gets storer tickets with the most total delegated
+// value up to the given limit.
+func (m *Manager) GetTopStorers(limit int) (types.SelectedTickets, error) {
 
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -98,41 +99,38 @@ func (m *Manager) GetTopStorers(limit int) (types.PubKeyValues, error) {
 	})
 
 	// Create an index that maps a proposers to the sum of value of tickets
-	// delegated to it.
-	var proposerValueIdx = make(map[string]util.String)
+	// delegated to it. If a proposer already exist in the index, its value is
+	// added to the total value of the existing ticket in the index.
+	// While doing this, collect the selected tickets.
+	var proposerIdx = make(map[string]*types.SelectedTicket)
+	var selectedTickets []*types.SelectedTicket
 	for _, ticket := range activeTickets {
-		val, ok := proposerValueIdx[ticket.ProposerPubKey.HexStr()]
+		existingTicket, ok := proposerIdx[ticket.ProposerPubKey.HexStr()]
 		if !ok {
-			proposerValueIdx[ticket.ProposerPubKey.HexStr()] = ticket.Value
+			proposerIdx[ticket.ProposerPubKey.HexStr()] = &types.SelectedTicket{
+				Ticket:     ticket,
+				TotalValue: ticket.Value,
+			}
+			selectedTickets = append(selectedTickets, proposerIdx[ticket.ProposerPubKey.HexStr()])
 			continue
 		}
-		val = util.String(val.Decimal().Add(ticket.Value.Decimal()).String())
-		proposerValueIdx[ticket.ProposerPubKey.HexStr()] = val
+		updatedVal := existingTicket.TotalValue.Decimal().Add(ticket.Value.Decimal()).String()
+		proposerIdx[ticket.ProposerPubKey.HexStr()].TotalValue = util.String(updatedVal)
 	}
 
-	// Convert value index to a slice for sorting
-	var proposerValSlice = [][]string{}
-	for k, v := range proposerValueIdx {
-		proposerValSlice = append(proposerValSlice, []string{k, v.String()})
-	}
-
-	sort.Slice(proposerValSlice, func(i, j int) bool {
-		itemI, itemJ := proposerValSlice[i], proposerValSlice[j]
-		valI, _ := decimal.NewFromString(itemI[1])
-		valJ, _ := decimal.NewFromString(itemJ[1])
+	// Sort the selected tickets by total delegated value
+	sort.Slice(selectedTickets, func(i, j int) bool {
+		itemI, itemJ := selectedTickets[i], selectedTickets[j]
+		valI := itemI.TotalValue.Decimal()
+		valJ := itemJ.TotalValue.Decimal()
 		return valI.GreaterThan(valJ)
 	})
 
-	res := []*types.PubKeyValue{}
-	for _, item := range proposerValSlice {
-		if limit > 0 && len(res) == limit {
-			break
-		}
-		pk, _ := util.FromHex(item[0])
-		res = append(res, &types.PubKeyValue{PubKey: util.BytesToBytes32(pk), Value: item[1]})
+	if limit > 0 && len(selectedTickets) >= limit {
+		return selectedTickets[:limit], nil
 	}
 
-	return res, nil
+	return selectedTickets, nil
 }
 
 // Remove deletes a ticket by its hash

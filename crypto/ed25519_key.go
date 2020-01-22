@@ -15,6 +15,8 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/ellcrys/go-ethereum/crypto/sha3"
 	"github.com/gogo/protobuf/proto"
+	"github.com/makeos/mosdef/crypto/bls"
+	"github.com/makeos/mosdef/crypto/vrf"
 	"github.com/makeos/mosdef/util"
 	"golang.org/x/crypto/ripemd160"
 
@@ -36,16 +38,6 @@ var PrivateKeyVersion byte = 94
 type Key struct {
 	privKey *PrivKey
 	Meta    map[string]interface{}
-}
-
-// PubKey represents a public key
-type PubKey struct {
-	pubKey crypto.PubKey
-}
-
-// PrivKey represents a private key
-type PrivKey struct {
-	privKey crypto.PrivKey
 }
 
 // NewKey creates a new Ed25519 key
@@ -108,76 +100,14 @@ func (k *Key) PubKey() *PubKey {
 	}
 }
 
+// PrivKey represents a private key
+type PrivKey struct {
+	privKey crypto.PrivKey
+}
+
 // PrivKey returns the private key
 func (k *Key) PrivKey() *PrivKey {
 	return k.privKey
-}
-
-// Bytes returns the byte equivalent of the public key
-func (p *PubKey) Bytes() ([]byte, error) {
-	if p.pubKey == nil {
-		return nil, fmt.Errorf("public key is nil")
-	}
-	return p.pubKey.(*crypto.Ed25519PublicKey).Raw()
-}
-
-// MustBytes is like Bytes but panics on error
-func (p *PubKey) MustBytes() []byte {
-	if p.pubKey == nil {
-		panic(fmt.Errorf("public key is nil"))
-	}
-	bz, err := p.pubKey.(*crypto.Ed25519PublicKey).Raw()
-	if err != nil {
-		panic(err)
-	}
-	return bz
-}
-
-// MustBytes32 is like Bytes but panics on error
-func (p *PubKey) MustBytes32() util.Bytes32 {
-	if p.pubKey == nil {
-		panic(fmt.Errorf("public key is nil"))
-	}
-	bz, err := p.pubKey.(*crypto.Ed25519PublicKey).Raw()
-	if err != nil {
-		panic(err)
-	}
-	return util.BytesToBytes32(bz)
-}
-
-// Hex returns the public key in hex encoding
-func (p *PubKey) Hex() string {
-	bs, _ := p.Bytes()
-	return hex.EncodeToString(bs)
-}
-
-// Base58 returns the public key in base58 encoding
-func (p *PubKey) Base58() string {
-	bs, _ := p.Bytes()
-	return base58.CheckEncode(bs, PublicKeyVersion)
-}
-
-// Verify verifies a signature
-func (p *PubKey) Verify(data, sig []byte) (bool, error) {
-	return p.pubKey.Verify(data, sig)
-}
-
-// Addr computes an address from the public key
-func (p *PubKey) Addr() util.String {
-	pk, _ := p.Bytes()
-
-	// Step 1: sha3 hash public key
-	pubSha256 := sha3.Sum256(pk)
-
-	// Step 2: RIPEMD160 hash the sha3 output
-	r := ripemd160.New()
-	r.Write(pubSha256[:])
-	addr := r.Sum(nil)
-
-	// Step 3: Base58 checksum step2 output
-	var addr20 [20]byte
-	copy(addr20[:], addr[:])
-	return RIPEMD160ToAddr(addr20)
 }
 
 // Bytes returns the byte equivalent of the public key
@@ -246,6 +176,93 @@ func (p *PrivKey) MustSign(data []byte) []byte {
 // Key returns the wrapped crypto.PrivKey
 func (p *PrivKey) Key() crypto.PrivKey {
 	return p.privKey
+}
+
+// BLSKey derives a BLS key  using the PrivKey as seed.
+// It uses the first 32 bytes of the private key to seed the BLS key generator.
+func (p *PrivKey) BLSKey() *bls.PrivateKey {
+	raw := p.MustBytes()
+	blsSk, _ := bls.NewKeyFromSeed(raw)
+	return blsSk
+}
+
+// VRFKey derives a VRF key using the PrivKey as seed.
+func (p *PrivKey) VRFKey() vrf.PrivateKey {
+	raw := p.MustBytes()
+	vrfSK, _ := vrf.GenerateKeyFromPrivateKey(raw)
+	return vrfSK
+}
+
+// PubKey represents a public key
+type PubKey struct {
+	pubKey crypto.PubKey
+}
+
+// Bytes returns the byte equivalent of the public key
+func (p *PubKey) Bytes() ([]byte, error) {
+	if p.pubKey == nil {
+		return nil, fmt.Errorf("public key is nil")
+	}
+	return p.pubKey.(*crypto.Ed25519PublicKey).Raw()
+}
+
+// MustBytes is like Bytes but panics on error
+func (p *PubKey) MustBytes() []byte {
+	if p.pubKey == nil {
+		panic(fmt.Errorf("public key is nil"))
+	}
+	bz, err := p.pubKey.(*crypto.Ed25519PublicKey).Raw()
+	if err != nil {
+		panic(err)
+	}
+	return bz
+}
+
+// MustBytes32 is like Bytes but panics on error
+func (p *PubKey) MustBytes32() util.Bytes32 {
+	if p.pubKey == nil {
+		panic(fmt.Errorf("public key is nil"))
+	}
+	bz, err := p.pubKey.(*crypto.Ed25519PublicKey).Raw()
+	if err != nil {
+		panic(err)
+	}
+	return util.BytesToBytes32(bz)
+}
+
+// Hex returns the public key in hex encoding
+func (p *PubKey) Hex() string {
+	bs, _ := p.Bytes()
+	return hex.EncodeToString(bs)
+}
+
+// Base58 returns the public key in base58 encoding
+func (p *PubKey) Base58() string {
+	bs, _ := p.Bytes()
+	return base58.CheckEncode(bs, PublicKeyVersion)
+}
+
+// Verify verifies a signature
+func (p *PubKey) Verify(data, sig []byte) (bool, error) {
+	return p.pubKey.Verify(data, sig)
+}
+
+// Addr computes an address from the public key
+func (p *PubKey) Addr() util.String {
+	pk, _ := p.Bytes()
+
+	// Step 1: sha3 hash public key
+	pubSha256 := sha3.Sum256(pk)
+
+	// Step 2: RIPEMD160 hash the sha3 output
+	r := ripemd160.New()
+	r.Write(pubSha256[:])
+	addr := r.Sum(nil)
+
+	// Step 3: Base58 checksum step2 output
+	var addr20 [20]byte
+	copy(addr20[:], addr[:])
+	return RIPEMD160ToAddr(addr20)
 }
 
 // IsValidAddr checks whether an address is valid

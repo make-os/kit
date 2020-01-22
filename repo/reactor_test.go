@@ -114,23 +114,6 @@ var _ = Describe("Reactor", func() {
 				Expect(err.Error()).To(ContainSubstring("failed to decoded message"))
 			})
 		})
-
-		When("unable to verify PushOK signature", func() {
-			BeforeEach(func() {
-				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id")).Times(2)
-				pushOK := &types.PushOK{
-					PushNoteID:   util.StrToBytes32("pushID"),
-					Sig:          util.BytesToBytes64(util.RandBytes(5)),
-					SenderPubKey: util.BytesToBytes32(util.RandBytes(5)),
-				}
-				err = mgr.onPushOK(mockPeer, pushOK.Bytes())
-			})
-
-			It("should return err=push ok signature failed verification...", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("push ok signature failed verification: invalid signature"))
-			})
-		})
 	})
 
 	Describe(".MaybeCreatePushTx", func() {

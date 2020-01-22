@@ -12,6 +12,7 @@ type Ticket struct {
 	MatureBy       uint64       `json:"matureBy"`       // Block height when the ticket enters maturity.
 	ProposerPubKey util.Bytes32 `json:"proposerPubKey"` // The public key of the validator that owns the ticket.
 	VRFPubKey      util.Bytes32 `json:"vrfPubKey"`      // The VRF public key derived from the same private key of proposer
+	BLSPubKey      []byte       `json:"blsPubKey"`      // The BLS public key derived from the same private key of proposer
 	Delegator      string       `json:"delegator"`      // Delegator is the address of the original creator of the ticket
 	Height         uint64       `json:"height"`         // The block height where this ticket was seen.
 	Index          int          `json:"index"`          // The index of the ticket in the transactions list.
@@ -74,28 +75,37 @@ type TicketManager interface {
 	GetOrderedLiveValidatorTickets(height int64, limit int) []*Ticket
 
 	// GetTopStorers returns top active storer tickets.
-	GetTopStorers(limit int) (PubKeyValues, error)
+	GetTopStorers(limit int) (SelectedTickets, error)
 
 	// Stop stops the ticket manager
 	Stop() error
 }
 
-// PubKeyValue stores a public key and a numerical value
-type PubKeyValue struct {
-	PubKey    util.Bytes32
-	VRFPubKey util.Bytes32
-	Value     string
+// SelectedTicket represents data of a selected ticket
+type SelectedTicket struct {
+	Ticket     *Ticket     // The selected ticket
+	TotalValue util.String // Sum of ticket.Value and all delegated ticket value
 }
 
-// PubKeyValues is a collection of PubKeyValue
-type PubKeyValues []*PubKeyValue
+// SelectedTickets is a collection of SelectedTicket
+type SelectedTickets []*SelectedTicket
 
 // Has checks if an entry matching a public key exists
-func (v *PubKeyValues) Has(pubKey util.Bytes32) bool {
-	for _, val := range *v {
-		if val.PubKey == pubKey {
+func (v *SelectedTickets) Has(proposerPubKey util.Bytes32) bool {
+	for _, t := range *v {
+		if t.Ticket.ProposerPubKey.Equal(proposerPubKey) {
 			return true
 		}
 	}
 	return false
+}
+
+// Get finds a ticket by proposer public key
+func (v *SelectedTickets) Get(proposerPubKey util.Bytes32) *SelectedTicket {
+	for _, t := range *v {
+		if t.Ticket.ProposerPubKey.Equal(proposerPubKey) {
+			return t
+		}
+	}
+	return nil
 }

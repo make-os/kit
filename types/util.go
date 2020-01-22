@@ -1,7 +1,6 @@
 package types
 
 import (
-	"encoding/hex"
 	"fmt"
 	"strings"
 )
@@ -46,22 +45,4 @@ var ErrEarlySecretRound = func(index int) error {
 // IsEarlySecretRoundErr checks whether an error is a ErrEarlySecretRound error
 func IsEarlySecretRoundErr(err error) bool {
 	return strings.Index(err.Error(), "error:round was generated too early") != -1
-}
-
-// HexBytes contains bytes that are encodeable to hex
-type HexBytes []byte
-
-// String returns hex string
-func (h *HexBytes) String() string {
-	return hex.EncodeToString(*h)
-}
-
-// HexBytesFromHex returns HexBytes from hex string.
-// Panics if hexStr could not be decoded to hex
-func HexBytesFromHex(hexStr string) HexBytes {
-	bz, err := hex.DecodeString(hexStr)
-	if err != nil {
-		panic(err)
-	}
-	return HexBytes(bz)
 }

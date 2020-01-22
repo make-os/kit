@@ -35,27 +35,4 @@ var _ = Describe("Util", func() {
 			Expect(res).To(BeTrue())
 		})
 	})
-
-	Describe("HexBytes", func() {
-		Describe(".String", func() {
-			It("should return expected hex=616263 for byte=[0x61, 0x62, 0x63]", func() {
-				bz := []byte("abc")
-				hexBz := HexBytes(bz)
-				Expect(hexBz.String()).To(Equal("616263"))
-			})
-		})
-
-		Describe(".HexBytesFromHex", func() {
-			It("should return byte=[0x61, 0x62, 0x63] for hex=616263", func() {
-				hexBz := HexBytesFromHex("616263")
-				Expect(hexBz).To(Equal(HexBytes([]byte{0x61, 0x62, 0x63})))
-			})
-
-			It("should panic if hex string is invalid", func() {
-				Expect(func() {
-					HexBytesFromHex("6&&^63")
-				}).To(Panic())
-			})
-		})
-	})
 })

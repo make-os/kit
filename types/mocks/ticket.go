@@ -203,10 +203,10 @@ func (mr *MockTicketManagerMockRecorder) GetOrderedLiveValidatorTickets(height, 
 }
 
 // GetTopStorers mocks base method
-func (m *MockTicketManager) GetTopStorers(limit int) (types.PubKeyValues, error) {
+func (m *MockTicketManager) GetTopStorers(limit int) (types.SelectedTickets, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTopStorers", limit)
-	ret0, _ := ret[0].(types.PubKeyValues)
+	ret0, _ := ret[0].(types.SelectedTickets)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

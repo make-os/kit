@@ -133,7 +133,7 @@ func CheckTxTicketPurchase(tx *types.TxTicketPurchase, index int) error {
 		return err
 	}
 
-	if tx.GetType() == types.TxTypeStorerTicket {
+	if tx.Is(types.TxTypeStorerTicket) {
 		if tx.Value.Decimal().LessThan(params.MinStorerStake) {
 			return feI(index, "value", fmt.Sprintf("value is lower than minimum storer stake"))
 		}
@@ -144,6 +144,21 @@ func CheckTxTicketPurchase(tx *types.TxTicketPurchase, index int) error {
 			v.By(validPubKeyRule(feI(index, "delegate", "requires a valid public key"))),
 		); err != nil {
 			return err
+		}
+	}
+
+	if tx.Is(types.TxTypeValidatorTicket) {
+		if tx.VRFPubKey.IsEmpty() {
+			return feI(index, "vrfPubKey", "VRF public key is required")
+		}
+	}
+
+	if tx.Is(types.TxTypeStorerTicket) {
+		if len(tx.BLSPubKey) == 0 {
+			return feI(index, "blsPubKey", "BLS public key is required")
+		}
+		if len(tx.BLSPubKey) != 128 {
+			return feI(index, "blsPubKey", "BLS public key length is invalid")
 		}
 	}
 
@@ -289,47 +304,41 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 		return feI(index, "endorsements", "not enough endorsements included")
 	}
 
-	pushOKSenders := map[string]struct{}{}
+	senders := map[string]struct{}{}
 	pushOKRefHashesID := util.EmptyBytes32
-	for _, pushOK := range tx.PushOKs {
+	for index, pushOK := range tx.PushOKs {
 
-		// Ensure PushOKs have same sender
-		_, hasSender := pushOKSenders[pushOK.SenderPubKey.HexStr()]
-		if !hasSender {
-			pushOKSenders[pushOK.SenderPubKey.HexStr()] = struct{}{}
-		} else {
-			if _, ok := pushOKSenders[pushOK.SenderPubKey.HexStr()]; ok {
-				return feI(index, "endorsements.senderPubKey", "multiple endorsement by a "+
-					"single sender not permitted")
-			}
+		if err := repo.CheckPushOK(pushOK, index); err != nil {
+			return err
 		}
 
 		// Ensure push note id and the target pushOK push note id match
 		if !pushOK.PushNoteID.Equal(tx.PushNote.ID()) {
-			return feI(index, "endorsements.pushNoteID", "value does not match push tx note id")
+			msg := "push note id and push endorsement id must match"
+			return feI(index, "endorsements.pushNoteID", msg)
 		}
 
-		spk, err := crypto.PubKeyFromBytes(pushOK.SenderPubKey.Bytes())
+		// Make sure we haven't seen a PushOK from this sender before
+		_, ok := senders[pushOK.SenderPubKey.HexStr()]
+		if !ok {
+			senders[pushOK.SenderPubKey.HexStr()] = struct{}{}
+		} else {
+			msg := "multiple endorsement by a single sender not permitted"
+			return feI(index, "endorsements.senderPubKey", msg)
+		}
+
+		_, err := crypto.PubKeyFromBytes(pushOK.SenderPubKey.Bytes())
 		if err != nil {
 			return feI(index, "endorsements.senderPubKey", "public key is not valid")
-		}
-
-		ok, err := spk.Verify(pushOK.BytesNoSig(), pushOK.Sig.Bytes())
-		if err != nil || !ok {
-			if !ok {
-				return feI(index, "endorsements.sig", "signature is invalid")
-			}
-			return feI(index, "endorsements.sig", "failed to verify signature")
 		}
 
 		// Ensure the references hashes are all the same
 		if pushOKRefHashesID.IsEmpty() {
 			pushOKRefHashesID = pushOK.ReferencesHash.ID()
-		} else {
-			if !pushOK.ReferencesHash.ID().Equal(pushOKRefHashesID) {
-				return feI(index, "endorsements.refsHash", "varied references hash; push "+
-					"endorsements can't have unmatched hashes for references")
-			}
+		}
+		if !pushOK.ReferencesHash.ID().Equal(pushOKRefHashesID) {
+			msg := "references of all endorsements must match"
+			return feI(index, "endorsements.refsHash", msg)
 		}
 	}
 

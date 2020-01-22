@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/repo"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
@@ -209,36 +208,27 @@ func CheckTxAddGPGPubKeyConsistency(
 	return nil
 }
 
-// CheckTxPushConsistency performs consistency checks on TxPush
+// CheckTxPushConsistency performs consistency checks on TxPush.
+// EXPECTS: sanity check using CheckTxPush to have been performed.
 func CheckTxPushConsistency(
 	tx *types.TxPush,
 	index int,
 	logic types.Logic,
 	repoGetter func(name string) (types.BareRepo, error)) error {
 
-	storers, err := logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
-	if err != nil {
-		return errors.Wrap(err, "failed to get top storers")
-	}
-
 	localRepo, err := repoGetter(tx.PushNote.GetRepoName())
 	if err != nil {
 		return errors.Wrap(err, "failed to get repo")
 	}
 
-	for _, pok := range tx.PushOKs {
+	for index, pok := range tx.PushOKs {
 
-		// Ensure that the signers of the PushOK are part of the storers
-		spk, err := crypto.PubKeyFromBytes(pok.SenderPubKey.Bytes())
-		if err != nil {
+		// Perform consistency checks
+		if err := repo.CheckPushOKConsistency(pok, logic, index); err != nil {
 			return err
 		}
-		if !storers.Has(spk.MustBytes32()) {
-			return feI(index, "endorsements.senderPubKey",
-				"sender public key does not belong to an active storer")
-		}
 
-		// Ensure the references hash are valid
+		// Ensure the references hash match local history
 		for i, refHash := range pok.ReferencesHash {
 			ref := tx.PushNote.References[i]
 			curRefHash, err := localRepo.TreeRoot(ref.Name)
@@ -246,8 +236,8 @@ func CheckTxPushConsistency(
 				return errors.Wrapf(err, "failed to get reference (%s) tree root hash", ref.Name)
 			}
 			if !refHash.Hash.Equal(curRefHash) {
-				return feI(index, "endorsements.refsHash",
-					fmt.Sprintf("wrong tree hash for reference (%s)", ref.Name))
+				msg := fmt.Sprintf("wrong tree hash for reference (%s)", ref.Name)
+				return feI(index, "endorsements.refsHash", msg)
 			}
 		}
 	}

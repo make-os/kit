@@ -10,8 +10,6 @@ import (
 
 	"github.com/makeos/mosdef/params"
 
-	"github.com/makeos/mosdef/crypto"
-
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
@@ -178,34 +176,29 @@ func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
 		return nil
 	}
 
-	// Attempt to decode message to PushOK
+	// Attempt to decode message to PushOK object
 	var pok types.PushOK
 	if err := util.BytesToObject(msgBytes, &pok); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
 
-	m.log.Debug("Received push OK from peer", "PeerID", peer.ID(), "TxID", pok.ID().String())
-
-	m.cachePushOkSender(string(peer.ID()), pok.ID().String())
-
-	// Verify the signature
-	spk, err := crypto.PubKeyFromBytes(pok.SenderPubKey.Bytes())
-	if err != nil {
-		return errors.Wrap(err, "push ok sender public key is invalid")
+	// Validate the PushOK object
+	pokID := pok.ID().String()
+	if err := checkPushOK(&pok, m.logic, -1); err != nil {
+		m.log.Debug("Received an invalid push endorsement", "TxID", pokID, "Err", err)
+		return err
 	}
-	ok, err := spk.Verify(pok.BytesNoSig(), pok.Sig.Bytes())
-	if err != nil || !ok {
-		if err == nil {
-			err = fmt.Errorf("invalid signature")
-		}
-		return errors.Wrap(err, "push ok signature failed verification")
-	}
+
+	m.log.Debug("Received a valid push endorsement", "PeerID", peer.ID(), "TxID", pokID)
+
+	// Cache the sender so we don't broadcast same PushOK to it later
+	m.cachePushOkSender(string(peer.ID()), pokID)
 
 	// cache the PushOK object as an endorsement of the PushNote
 	m.addPushNoteEndorsement(pok.PushNoteID.HexStr(), &pok)
 
-	// Attempt to create a PushTx and send to the transaction pool
-	if err = m.MaybeCreatePushTx(pok.PushNoteID.HexStr()); err != nil {
+	// Attempt to create an send a PushTx to the transaction pool
+	if err := m.MaybeCreatePushTx(pok.PushNoteID.HexStr()); err != nil {
 		m.Log().Debug(err.Error())
 	}
 
@@ -275,8 +268,9 @@ func (m *Manager) createPushOK(pushNote types.RepoPushNote) (*types.PushOK, erro
 		pok.ReferencesHash = append(pok.ReferencesHash, refHash)
 	}
 
-	// Sign the endorsement
-	pok.Sig = util.BytesToBytes64(m.privValidatorKey.PrivKey().MustSign(pok.Bytes()))
+	// Sign the endorsement using our BLS key
+	blsSig, _ := m.privValidatorKey.PrivKey().BLSKey().Sign(pok.Bytes())
+	pok.Sig = util.BytesToBytes64(blsSig)
 
 	return pok, nil
 }

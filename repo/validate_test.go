@@ -37,6 +37,8 @@ var _ = Describe("Validation", func() {
 	var privKey *openpgp.Entity
 	var privKey2 *openpgp.Entity
 	var ctrl *gomock.Controller
+	var mockLogic *mocks.MockLogic
+	var mockTickMgr *mocks.MockTicketManager
 
 	var gpgPubKeyGetter = func(pkId string) (string, error) {
 		return pubKey, nil
@@ -53,19 +55,22 @@ var _ = Describe("Validation", func() {
 	}
 
 	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-
-		ctrl = gomock.NewController(GinkgoT())
-
 		cfg.Node.GitBinPath = "/usr/bin/git"
+
 		gpgKeyID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
 		gpgKeyID2 := testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
 		pubKey, err = crypto.GetGPGPublicKeyStr(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
 		privKey, err = crypto.GetGPGPrivateKey(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
 		privKey2, err = crypto.GetGPGPrivateKey(gpgKeyID2, testutil.GPGProgramPath, cfg.DataDir())
 		Expect(err).To(BeNil())
+
 		GitEnv = append(GitEnv, "GNUPGHOME="+cfg.DataDir())
+		mockObjs := testutil.MockLogic(ctrl)
+		mockLogic = mockObjs.Logic
+		mockTickMgr = mockObjs.TicketManager
 	})
 
 	BeforeEach(func() {
@@ -526,6 +531,103 @@ var _ = Describe("Validation", func() {
 
 			It("should return nil", func() {
 				Expect(err).To(BeNil())
+			})
+		})
+	})
+
+	Describe(".CheckPushOK", func() {
+		It("should return error when push note id is not set", func() {
+			err := CheckPushOK(&types.PushOK{}, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:endorsements.pushNoteID, error:push note id is required"))
+		})
+
+		It("should return error when public key is not valid", func() {
+			err := CheckPushOK(&types.PushOK{
+				PushNoteID:   util.StrToBytes32("id"),
+				SenderPubKey: util.EmptyBytes32,
+			}, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, error:sender public key is required"))
+		})
+	})
+
+	Describe(".CheckPushOKConsistency", func() {
+		When("unable to fetch top storers", func() {
+			BeforeEach(func() {
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return(nil, fmt.Errorf("error"))
+				err = CheckPushOKConsistency(&types.PushOK{
+					PushNoteID:   util.StrToBytes32("id"),
+					SenderPubKey: util.EmptyBytes32,
+				}, mockLogic, -1)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to get top storers: error"))
+			})
+		})
+
+		When("sender is not a storer", func() {
+			BeforeEach(func() {
+				key := crypto.NewKeyFromIntSeed(1)
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{}, nil)
+				err = CheckPushOKConsistency(&types.PushOK{
+					PushNoteID:   util.StrToBytes32("id"),
+					SenderPubKey: key.PubKey().MustBytes32(),
+				}, mockLogic, -1)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, error:sender public key does not belong to an active storer"))
+			})
+		})
+
+		When("unable to decode storer's BLS public key", func() {
+			BeforeEach(func() {
+				key := crypto.NewKeyFromIntSeed(1)
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{
+					&types.SelectedTicket{
+						Ticket: &types.Ticket{
+							ProposerPubKey: key.PubKey().MustBytes32(),
+							BLSPubKey:      util.RandBytes(128),
+						},
+					},
+				}, nil)
+				err = CheckPushOKConsistency(&types.PushOK{
+					PushNoteID:   util.StrToBytes32("id"),
+					SenderPubKey: key.PubKey().MustBytes32(),
+				}, mockLogic, -1)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("failed to decode bls public key of selected ticket"))
+			})
+		})
+
+		When("unable to verify signature", func() {
+			BeforeEach(func() {
+				key := crypto.NewKeyFromIntSeed(1)
+				key2 := crypto.NewKeyFromIntSeed(2)
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{
+					&types.SelectedTicket{
+						Ticket: &types.Ticket{
+							ProposerPubKey: key.PubKey().MustBytes32(),
+							BLSPubKey:      key2.PrivKey().BLSKey().Public().Bytes(),
+						},
+					},
+				}, nil)
+				err = CheckPushOKConsistency(&types.PushOK{
+					PushNoteID:   util.StrToBytes32("id"),
+					SenderPubKey: key.PubKey().MustBytes32(),
+				}, mockLogic, -1)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("field:endorsements.sig, error:signature could not be verified"))
 			})
 		})
 	})

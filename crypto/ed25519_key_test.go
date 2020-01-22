@@ -207,6 +207,24 @@ var _ = Describe("Key", func() {
 		})
 	})
 
+	Describe("Priv.BLSKey", func() {
+		Specify("that same key seed should return same bls key always", func() {
+			k1 := NewKeyFromIntSeed(1)
+			k2 := NewKeyFromIntSeed(1)
+			bls1 := k1.PrivKey().BLSKey()
+			bls2 := k2.PrivKey().BLSKey()
+			Expect(bls1.Bytes()).To(Equal(bls2.Bytes()))
+		})
+	})
+
+	Describe("Priv.VRFKey", func() {
+		Specify("that a 64 bytes slice is returned", func() {
+			k1 := NewKeyFromIntSeed(1)
+			vrfKey := k1.PrivKey().VRFKey()
+			Expect(vrfKey).To(HaveLen(64))
+		})
+	})
+
 	Describe("Pub.Verify", func() {
 
 		It("should return false when signature is incorrect", func() {

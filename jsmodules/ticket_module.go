@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/k0kubun/pp"
 	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/crypto/vrf"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
@@ -163,11 +163,7 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 	// Derive VRF public key from signing key
 	key := checkAndGetKey(options...)
 	pk, _ := crypto.PrivKeyFromBase58(key)
-	rawPK, _ := pk.Key().Raw()
-	vrfSK, err := vrf.GenerateKeyFromPrivateKey(rawPK)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to generate vrf key"))
-	}
+	vrfSK := pk.VRFKey()
 	vrfPubKey, _ := vrfSK.Public()
 	tx.VRFPubKey = util.BytesToBytes32(vrfPubKey)
 
@@ -235,7 +231,15 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 		tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
 	}
 
+	// Derive BLS public key
+	key := checkAndGetKey(options...)
+	pk, _ := crypto.PrivKeyFromBase58(key)
+	blsKey := pk.BLSKey()
+	tx.BLSPubKey = blsKey.Public().Bytes()
+
 	setCommonTxFields(tx, m.service, options...)
+
+	pp.Println(tx.GetSize())
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
