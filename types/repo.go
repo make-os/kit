@@ -9,7 +9,6 @@ import (
 	"github.com/makeos/mosdef/storage/tree"
 	"github.com/makeos/mosdef/util"
 	"github.com/makeos/mosdef/util/logger"
-	"github.com/shopspring/decimal"
 	"github.com/vmihailenco/msgpack"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -311,8 +310,8 @@ type RepoPushNote interface {
 	// BillableSize is the size of the transaction + pushed objects
 	BillableSize() uint64
 
-	// TotalFee returns the sum of reference update fees
-	TotalFee() util.String
+	// Fee returns the sum of reference update fees
+	GetFee() util.String
 
 	// GetPushedReferences returns the pushed references
 	GetPushedReferences() PushedReferences
@@ -359,26 +358,24 @@ type Pruner interface {
 
 // PushedReference represents a reference that was pushed by git client
 type PushedReference struct {
-	Name         string      `json:"name" msgpack:"name"`                 // The full name of the reference
-	OldHash      string      `json:"oldHash" msgpack:"oldHash"`           // The hash of the reference before the push
-	NewHash      string      `json:"newHash" msgpack:"newHash"`           // The hash of the reference after the push
-	Nonce        uint64      `json:"nonce" msgpack:"nonce"`               // The next repo nonce of the reference
-	AccountNonce uint64      `json:"accountNonce" msgpack:"accountNonce"` // The pusher's account nonce
-	Fee          util.String `json:"fee" msgpack:"fee"`                   // The fee the pusher is willing to pay to validators
-	Objects      []string    `json:"objects" msgpack:"objects"`           // A list of objects pushed to the reference
-	Delete       bool        `json:"delete" msgpack:"delete"`             // Delete indicates that the reference should be deleted from the repo
+	Name    string   `json:"name" msgpack:"name"`       // The full name of the reference
+	OldHash string   `json:"oldHash" msgpack:"oldHash"` // The hash of the reference before the push
+	NewHash string   `json:"newHash" msgpack:"newHash"` // The hash of the reference after the push
+	Nonce   uint64   `json:"nonce" msgpack:"nonce"`     // The next repo nonce of the reference
+	Objects []string `json:"objects" msgpack:"objects"` // A list of objects pushed to the reference
+	Delete  bool     `json:"delete" msgpack:"delete"`   // Delete indicates that the reference should be deleted from the repo
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(pr.Name, pr.OldHash, pr.NewHash,
-		pr.Nonce, pr.AccountNonce, pr.Fee, pr.Objects, pr.Delete)
+		pr.Nonce, pr.Objects, pr.Delete)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return dec.DecodeMulti(&pr.Name, &pr.OldHash, &pr.NewHash,
-		&pr.Nonce, &pr.AccountNonce, &pr.Fee, &pr.Objects, &pr.Delete)
+		&pr.Nonce, &pr.Objects, &pr.Delete)
 }
 
 // PushedReferences represents a collection of pushed references
@@ -473,14 +470,17 @@ type Items interface {
 
 // PushNote implements types.PushNote
 type PushNote struct {
-	TargetRepo  BareRepo         `json:"-" msgpack:"-" mapstructure:"-"`
-	RepoName    string           `json:"repoName" msgpack:"repoName"`       // The name of the repo
-	References  PushedReferences `json:"references" msgpack:"references"`   // A list of references pushed
-	PusherKeyID []byte           `json:"pusherKeyId" msgpack:"pusherKeyId"` // The PGP key of the pusher
-	Size        uint64           `json:"size" msgpack:"size"`               // Total size of all objects pushed
-	Timestamp   int64            `json:"timestamp" msgpack:"timestamp"`     // Unix timestamp
-	NodeSig     []byte           `json:"nodeSig" msgpack:"nodeSig"`         // The signature of the node that created the PushNote
-	NodePubKey  util.Bytes32     `json:"nodePubKey" msgpack:"nodePubKey"`   // The public key of the push note signer
+	TargetRepo    BareRepo         `json:"-" msgpack:"-" mapstructure:"-"`
+	RepoName      string           `json:"repoName" msgpack:"repoName"`         // The name of the repo
+	References    PushedReferences `json:"references" msgpack:"references"`     // A list of references pushed
+	PusherKeyID   []byte           `json:"pusherKeyId" msgpack:"pusherKeyId"`   // The PGP key of the pusher
+	PusherAddress util.String      `json:"pusherAddr" msgpack:"pusherAddr"`     // The Address of the pusher
+	Size          uint64           `json:"size" msgpack:"size"`                 // Total size of all objects pushed
+	Timestamp     int64            `json:"timestamp" msgpack:"timestamp"`       // Unix timestamp
+	AccountNonce  uint64           `json:"accountNonce" msgpack:"accountNonce"` // Next nonce of the pusher's account
+	Fee           util.String      `json:"fee" msgpack:"fee"`                   // Total fees to pay for the pushed references
+	NodeSig       []byte           `json:"nodeSig" msgpack:"nodeSig"`           // The signature of the node that created the PushNote
+	NodePubKey    util.Bytes32     `json:"nodePubKey" msgpack:"nodePubKey"`     // The public key of the push note signer
 }
 
 // GetTargetRepo returns the target repository
@@ -501,14 +501,32 @@ func (pt *PushNote) GetPusherKeyIDString() string {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (pt *PushNote) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(pt.RepoName, pt.References, pt.PusherKeyID,
-		pt.Size, pt.Timestamp, pt.NodeSig, pt.NodePubKey)
+	return enc.EncodeMulti(
+		pt.RepoName,
+		pt.References,
+		pt.PusherKeyID,
+		pt.PusherAddress,
+		pt.Size,
+		pt.Timestamp,
+		pt.AccountNonce,
+		pt.Fee,
+		pt.NodeSig,
+		pt.NodePubKey)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (pt *PushNote) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&pt.RepoName, &pt.References, &pt.PusherKeyID,
-		&pt.Size, &pt.Timestamp, &pt.NodeSig, &pt.NodePubKey)
+	return dec.DecodeMulti(
+		&pt.RepoName,
+		&pt.References,
+		&pt.PusherKeyID,
+		&pt.PusherAddress,
+		&pt.Size,
+		&pt.Timestamp,
+		&pt.AccountNonce,
+		&pt.Fee,
+		&pt.NodeSig,
+		&pt.NodePubKey)
 }
 
 // Bytes returns a serialized version of the object
@@ -539,16 +557,14 @@ func (pt *PushNote) GetPushedObjects(ignoreDelRefs bool) (objs []string) {
 }
 
 // GetEcoSize returns a size of the push note used for economics calculation.
-// Here, the size of the fee fields in the references are subtracted from the
-// size of the serialized push note. This ensures change in fees do not affect
-// the final size used for base fee calculations.
+// Here, we calculate the economic size to be the size of the transaction minus
+// the size of the fee.
 func (pt *PushNote) GetEcoSize() uint64 {
-	var feeFieldsLen = 0
-	for _, r := range pt.References {
-		feeFieldsLen += len(util.ObjectToBytes(r.Fee))
-	}
-
-	return pt.Len() - uint64(feeFieldsLen)
+	fee := pt.Fee
+	pt.Fee = ""
+	size := len(pt.Bytes())
+	pt.Fee = fee
+	return uint64(size)
 }
 
 // GetRepoName returns the name of the repo receiving the push
@@ -592,18 +608,12 @@ func (pt *PushNote) GetSize() uint64 {
 	return pt.Size
 }
 
-// GetAccountNonce returns the account nonce of the first reference
-func (pt *PushNote) GetAccountNonce() uint64 {
-	return pt.References[0].AccountNonce
-}
-
-// TotalFee returns the sum of all reference update fees
-func (pt *PushNote) TotalFee() util.String {
-	sum := decimal.NewFromFloat(0)
-	for _, r := range pt.References {
-		sum = sum.Add(r.Fee.Decimal())
+// GetFee returns the push fee
+func (pt *PushNote) GetFee() util.String {
+	if pt.Fee.Empty() {
+		return util.ZeroString
 	}
-	return util.String(sum.String())
+	return pt.Fee
 }
 
 // ReferenceHash describes the current and previous state hash of a reference
@@ -657,10 +667,35 @@ func (po *PushOK) BytesNoSig() []byte {
 	return msg
 }
 
+// BytesNoSigAndSenderPubKey returns the serialized version of
+func (po *PushOK) BytesNoSigAndSenderPubKey() []byte {
+	sig, spk := po.Sig, po.SenderPubKey
+	po.Sig = util.EmptyBytes64
+	po.SenderPubKey = util.EmptyBytes32
+	msg := po.Bytes()
+	po.Sig, po.SenderPubKey = sig, spk
+	return msg
+}
+
 // BytesAndID returns the serialized version of the tx and the id
 func (po *PushOK) BytesAndID() ([]byte, util.Bytes32) {
 	bz := po.Bytes()
 	return bz, util.BytesToBytes32(util.Blake2b256(bz))
+}
+
+// Clone clones the object
+func (po *PushOK) Clone() *PushOK {
+	cp := &PushOK{}
+	cp.PushNoteID = po.PushNoteID
+	cp.SenderPubKey = util.BytesToBytes32(po.SenderPubKey.Bytes())
+	cp.Sig = util.BytesToBytes64(po.Sig.Bytes())
+	cp.ReferencesHash = []*ReferenceHash{}
+	for _, rh := range po.ReferencesHash {
+		cpRefHash := &ReferenceHash{}
+		cpRefHash.Hash = util.BytesToBytes32(rh.Hash.Bytes())
+		cp.ReferencesHash = append(cp.ReferencesHash, cpRefHash)
+	}
+	return cp
 }
 
 // RepoPushOK represents a push endorsement

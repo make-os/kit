@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/k0kubun/pp"
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
@@ -238,8 +237,6 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 	tx.BLSPubKey = blsKey.Public().Bytes()
 
 	setCommonTxFields(tx, m.service, options...)
-
-	pp.Println(tx.GetSize())
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)

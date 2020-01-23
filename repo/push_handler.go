@@ -162,32 +162,44 @@ func (h *PushHandler) createPushNote(
 	pkID string,
 	refsTxLine map[string]*util.TxLine) (*types.PushNote, error) {
 
-	var err error
 	var pushNote = &types.PushNote{
-		TargetRepo:  h.repo,
-		RepoName:    h.repo.GetName(),
-		PusherKeyID: util.MustFromHex(pkID),
-		Timestamp:   time.Now().Unix(),
-		References:  types.PushedReferences([]*types.PushedReference{}),
-		NodePubKey:  h.rMgr.GetPrivateValidatorKey().PubKey().MustBytes32(),
+		TargetRepo:    h.repo,
+		RepoName:      h.repo.GetName(),
+		PusherKeyID:   util.MustFromHex(pkID),
+		PusherAddress: h.rMgr.GetLogic().GPGPubKeyKeeper().GetGPGPubKey(pkID).Address,
+		Timestamp:     time.Now().Unix(),
+		References:    types.PushedReferences([]*types.PushedReference{}),
+		NodePubKey:    h.rMgr.GetPrivateValidatorKey().PubKey().MustBytes32(),
+		Fee:           util.ZeroString,
 	}
 
 	// Get the total size of the pushed objects
+	var err error
 	pushNote.Size, err = getObjectsSize(h.repo, funk.Keys(h.pushReader.objectsRefs).([]string))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get pushed objects size")
 	}
 
+	accountNonce := uint64(0)
 	for _, ref := range h.pushReader.references {
+
+		if accountNonce == 0 {
+			accountNonce = refsTxLine[ref.name].Nonce
+			pushNote.AccountNonce = accountNonce
+		} else if accountNonce != refsTxLine[ref.name].Nonce {
+			return nil, fmt.Errorf("varying account nonce in references txline are not allowed")
+		}
+
+		accountNonce = refsTxLine[ref.name].Nonce
+		fee := pushNote.Fee.Decimal().Add(refsTxLine[ref.name].Fee.Decimal()).String()
+		pushNote.Fee = util.String(fee)
 		pushNote.References = append(pushNote.References, &types.PushedReference{
-			Name:         ref.name,
-			OldHash:      ref.oldHash,
-			NewHash:      ref.newHash,
-			Nonce:        h.repo.State().References.Get(ref.name).Nonce + 1,
-			Fee:          refsTxLine[ref.name].Fee,
-			AccountNonce: refsTxLine[ref.name].Nonce,
-			Objects:      h.pushReader.objectsRefs.getObjectsOf(ref.name),
-			Delete:       refsTxLine[ref.name].DeleteRef,
+			Name:    ref.name,
+			OldHash: ref.oldHash,
+			NewHash: ref.newHash,
+			Nonce:   h.repo.State().References.Get(ref.name).Nonce + 1,
+			Objects: h.pushReader.objectsRefs.getObjectsOf(ref.name),
+			Delete:  refsTxLine[ref.name].DeleteRef,
 		})
 	}
 

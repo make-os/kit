@@ -9,10 +9,11 @@ import (
 // TxPush implements BaseTx, it describes a transaction that creates a
 // repository for the signer
 type TxPush struct {
-	*TxCommon `json:"-" mapstructure:"-"`
-	*TxType   `json:"-" msgpack:"-"`
-	PushNote  *PushNote `json:"pushNote" mapstructure:"pushNote"`
-	PushOKs   []*PushOK `json:"endorsements" mapstructure:"endorsements"`
+	*TxCommon     `json:"-" mapstructure:"-"`
+	*TxType       `json:"-" msgpack:"-"`
+	PushNote      *PushNote `json:"pushNote" mapstructure:"pushNote"`
+	PushOKs       []*PushOK `json:"endorsements" mapstructure:"endorsements"`
+	AggPushOKsSig []byte    `json:"aggEndorsersPubKey" mapstructure:"aggEndorsersPubKey"`
 }
 
 // NewBareTxPush returns an instance of TxPush with zero values
@@ -33,7 +34,8 @@ func (tx *TxPush) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.Timestamp,
 		tx.PushNote,
 		tx.PushOKs,
-		tx.Sig)
+		tx.Sig,
+		tx.AggPushOKsSig)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -44,7 +46,8 @@ func (tx *TxPush) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.Timestamp,
 		&tx.PushNote,
 		&tx.PushOKs,
-		&tx.Sig)
+		&tx.Sig,
+		&tx.AggPushOKsSig)
 }
 
 // Bytes returns the serialized transaction
@@ -105,14 +108,13 @@ func (tx *TxPush) GetTimestamp() int64 {
 // Because TxPush is a wrapper transaction, we use the Account nonce of the pusher
 // which is found in anyone of the pushed reference
 func (tx *TxPush) GetNonce() uint64 {
-	return tx.PushNote.References[0].AccountNonce
+	return tx.PushNote.AccountNonce
 }
 
 // GetFrom returns the address of the transaction sender
-// Because TxPush is a wrapper transaction, we use the pusher's public key ID
-// Panics if sender's public key is invalid.
+// Because TxPush is a wrapper transaction, we use the pusher's address.
 func (tx *TxPush) GetFrom() util.String {
-	return util.String(tx.PushNote.PusherKeyID)
+	return tx.PushNote.PusherAddress
 }
 
 // Sign signs the transaction

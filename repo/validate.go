@@ -277,7 +277,6 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 	}
 
 	fe := types.FieldErrorWithIndex
-	refsAcctNonce := uint64(0)
 	for i, ref := range tx.References {
 		if ref.Name == "" {
 			return fe(i, "references.name", "name is required")
@@ -297,21 +296,11 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 		if ref.Nonce == 0 {
 			return fe(i, "references.nonce", "reference nonce must be greater than zero")
 		}
-		if ref.AccountNonce == 0 {
-			return fe(i, "references.accountNonce", "account nonce must be greater than zero")
-		}
-		if refsAcctNonce != 0 && ref.AccountNonce != refsAcctNonce {
-			return fe(i, "references.accountNonce", "varying account nonce in a push note not allowed")
-		}
-		if ref.Fee == "" || !gv.IsFloat(ref.Fee.String()) {
-			return fe(i, "references.fee", "fee must be numeric")
-		}
 		for j, obj := range ref.Objects {
 			if len(obj) != 40 {
 				return fe(i, fmt.Sprintf("references.objects.%d", j), "object hash is not valid")
 			}
 		}
-		refsAcctNonce = ref.AccountNonce
 	}
 
 	if len(tx.PusherKeyID) == 0 {
@@ -321,8 +310,22 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 		return types.FieldError("pusherKeyId", "pusher gpg key is not valid")
 	}
 
+	if tx.Timestamp == 0 {
+		return types.FieldError("timestamp", "timestamp is required")
+	}
 	if tx.Timestamp > time.Now().Unix() {
 		return types.FieldError("timestamp", "timestamp cannot be a future time")
+	}
+
+	if tx.AccountNonce == 0 {
+		return types.FieldError("accountNonce", "account nonce must be greater than zero")
+	}
+
+	if tx.Fee == "" {
+		return types.FieldError("fee", "fee is required")
+	}
+	if !gv.IsFloat(tx.Fee.String()) {
+		return types.FieldError("fee", "fee must be numeric")
 	}
 
 	if tx.NodePubKey.IsEmpty() {
@@ -339,7 +342,7 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 	}
 
 	if ok, err := pk.Verify(tx.BytesNoSig(), tx.NodeSig); err != nil || !ok {
-		return types.FieldError("nodeSig", "failed to verify signature with public key")
+		return types.FieldError("nodeSig", "failed to verify signature")
 	}
 
 	return nil
@@ -350,7 +353,6 @@ func checkPushedReference(
 	targetRepo types.BareRepo,
 	pRefs types.PushedReferences,
 	repo *types.Repository,
-	gpgKey *types.GPGPubKey,
 	keepers types.Keepers) error {
 	for i, ref := range pRefs {
 
@@ -391,16 +393,6 @@ func checkPushedReference(
 			msg := fmts("reference '%s' has nonce '%d', expecting '%d'", rName, rNonce, nextNonce)
 			return types.FieldErrorWithIndex(i, "references", msg)
 		}
-
-		// 4. We need to ensure that the pusher's account nonce is the expected
-		// next nonce, otherwise we return an error.
-		pusherAccount := keepers.AccountKeeper().GetAccount(gpgKey.Address)
-		nextNonce = pusherAccount.Nonce + 1
-		if nextNonce != ref.AccountNonce {
-			msg := fmts("reference '%s' has account nonce '%d', expecting '%d'", rName,
-				ref.AccountNonce, nextNonce)
-			return types.FieldErrorWithIndex(i, "references", msg)
-		}
 	}
 
 	return nil
@@ -411,26 +403,41 @@ func checkPushedReference(
 // local reference hash comparision is not performed.
 func CheckPushNoteConsistency(tx *types.PushNote, keepers types.Keepers) error {
 
-	// 1. Ensure the repository exist
+	// Ensure the repository exist
 	repo := keepers.RepoKeeper().GetRepo(tx.GetRepoName())
 	if repo.IsNil() {
 		msg := fmt.Sprintf("repository named '%s' is unknown", tx.GetRepoName())
 		return types.FieldError("repoName", msg)
 	}
 
-	// 2. Get gpg key of the pusher
+	// Get gpg key of the pusher
 	gpgKey := keepers.GPGPubKeyKeeper().GetGPGPubKey(util.ToHex(tx.PusherKeyID))
 	if gpgKey.IsNil() {
 		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", tx.PusherKeyID)
 		return types.FieldError("pusherKeyId", msg)
 	}
 
-	// 3. Check each references against the state version
+	// Ensure the gpg key linked address matches the pusher address
+	if gpgKey.Address != tx.PusherAddress {
+		return types.FieldError("pusherAddr", "gpg key is not associated with the pusher address")
+	}
+
+	// Ensure next pusher account nonce matches the pushed note's account nonce
+	pusherAcct := keepers.AccountKeeper().GetAccount(tx.PusherAddress)
+	if pusherAcct.IsNil() {
+		return types.FieldError("pusherAddr", "pusher account not found")
+	}
+	nextNonce := pusherAcct.Nonce + 1
+	if tx.AccountNonce != nextNonce {
+		msg := fmt.Sprintf("wrong account nonce '%d', expecting '%d'", tx.AccountNonce, nextNonce)
+		return types.FieldError("pusherAddr", msg)
+	}
+
+	// Check each references against the state version
 	if err := checkPushedReference(
 		tx.GetTargetRepo(),
 		tx.GetPushedReferences(),
 		repo,
-		gpgKey,
 		keepers); err != nil {
 		return err
 	}
@@ -474,36 +481,42 @@ func CheckPushOK(pushOK *types.PushOK, index int) error {
 	return nil
 }
 
-// CheckPushOKConsistency performs consistency checks on the given PushOK object
+// CheckPushOKConsistencyUsingStorer performs consistency checks on the given PushOK object
 // against the current state of the network.
 // EXPECT: Sanity check to have been performed using CheckPushOK
-func CheckPushOKConsistency(pushOK *types.PushOK, logic types.Logic, index int) error {
-
-	storers, err := logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
-	if err != nil {
-		return errors.Wrap(err, "failed to get top storers")
-	}
+func CheckPushOKConsistencyUsingStorer(storers types.SelectedTickets, pushOK *types.PushOK, logic types.Logic, noSigCheck bool, index int) error {
 
 	// Check if the sender is one of the top storers.
 	// Ensure that the signers of the PushOK are part of the storers
-	spk, _ := crypto.PubKeyFromBytes(pushOK.SenderPubKey.Bytes())
-	signerSelectedTicket := storers.Get(spk.MustBytes32())
+	signerSelectedTicket := storers.Get(pushOK.SenderPubKey)
 	if signerSelectedTicket == nil {
 		return feI(index, "endorsements.senderPubKey",
 			"sender public key does not belong to an active storer")
 	}
 
-	// Ensure the signature can be verified using the selected ticket's BLS
-	// public key.
-	blsPubKey, err := bls.BytesToPublicKey(signerSelectedTicket.Ticket.BLSPubKey)
-	if err != nil {
-		return errors.Wrap(err, "failed to decode bls public key of selected ticket")
-	}
-	if err = blsPubKey.Verify(pushOK.Sig.Bytes(), pushOK.BytesNoSig()); err != nil {
-		return feI(index, "endorsements.sig", "signature could not be verified")
+	// Ensure the signature can be verified using the BLS public key of the selected ticket
+	if !noSigCheck {
+		blsPubKey, err := bls.BytesToPublicKey(signerSelectedTicket.Ticket.BLSPubKey)
+		if err != nil {
+			return errors.Wrap(err, "failed to decode bls public key of endorser")
+		}
+		if err = blsPubKey.Verify(pushOK.Sig.Bytes(), pushOK.BytesNoSigAndSenderPubKey()); err != nil {
+			return feI(index, "endorsements.sig", "signature could not be verified")
+		}
 	}
 
 	return nil
+}
+
+// CheckPushOKConsistency performs consistency checks on the given PushOK object
+// against the current state of the network.
+// EXPECT: Sanity check to have been performed using CheckPushOK
+func CheckPushOKConsistency(pushOK *types.PushOK, logic types.Logic, noSigCheck bool, index int) error {
+	storers, err := logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
+	if err != nil {
+		return errors.Wrap(err, "failed to get top storers")
+	}
+	return CheckPushOKConsistencyUsingStorer(storers, pushOK, logic, noSigCheck, index)
 }
 
 // checkPushOK performs sanity and state consistency checks on the given PushOK object
@@ -511,7 +524,7 @@ func checkPushOK(pushOK *types.PushOK, logic types.Logic, index int) error {
 	if err := CheckPushOK(pushOK, index); err != nil {
 		return err
 	}
-	if err := CheckPushOKConsistency(pushOK, logic, index); err != nil {
+	if err := CheckPushOKConsistency(pushOK, logic, false, index); err != nil {
 		return err
 	}
 	return nil

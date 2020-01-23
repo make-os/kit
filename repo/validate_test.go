@@ -559,7 +559,7 @@ var _ = Describe("Validation", func() {
 				err = CheckPushOKConsistency(&types.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: util.EmptyBytes32,
-				}, mockLogic, -1)
+				}, mockLogic, false, -1)
 			})
 
 			It("should return err", func() {
@@ -575,7 +575,7 @@ var _ = Describe("Validation", func() {
 				err = CheckPushOKConsistency(&types.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: key.PubKey().MustBytes32(),
-				}, mockLogic, -1)
+				}, mockLogic, false, -1)
 			})
 
 			It("should return err", func() {
@@ -598,12 +598,12 @@ var _ = Describe("Validation", func() {
 				err = CheckPushOKConsistency(&types.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: key.PubKey().MustBytes32(),
-				}, mockLogic, -1)
+				}, mockLogic, false, -1)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("failed to decode bls public key of selected ticket"))
+				Expect(err.Error()).To(ContainSubstring("failed to decode bls public key of endorser"))
 			})
 		})
 
@@ -622,12 +622,35 @@ var _ = Describe("Validation", func() {
 				err = CheckPushOKConsistency(&types.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: key.PubKey().MustBytes32(),
-				}, mockLogic, -1)
+				}, mockLogic, false, -1)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("field:endorsements.sig, error:signature could not be verified"))
+			})
+		})
+
+		When("noSigCheck is true", func() {
+			BeforeEach(func() {
+				key := crypto.NewKeyFromIntSeed(1)
+				key2 := crypto.NewKeyFromIntSeed(2)
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{
+					&types.SelectedTicket{
+						Ticket: &types.Ticket{
+							ProposerPubKey: key.PubKey().MustBytes32(),
+							BLSPubKey:      key2.PrivKey().BLSKey().Public().Bytes(),
+						},
+					},
+				}, nil)
+				err = CheckPushOKConsistency(&types.PushOK{
+					PushNoteID:   util.StrToBytes32("id"),
+					SenderPubKey: key.PubKey().MustBytes32(),
+				}, mockLogic, true, -1)
+			})
+
+			It("should not check signature", func() {
+				Expect(err).To(BeNil())
 			})
 		})
 	})
@@ -642,22 +665,35 @@ var _ = Describe("Validation", func() {
 			{&types.PushNote{}, fmt.Errorf("field:repoName, error:repo name is required")},
 			{&types.PushNote{RepoName: "repo"}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key id is required")},
 			{&types.PushNote{RepoName: "repo", PusherKeyID: []byte("xyz")}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key is not valid")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, fmt.Errorf("field:nodePubKey, error:push node public key is required")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().MustBytes32()}, fmt.Errorf("field:nodeSig, error:push node signature is required")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid")}, fmt.Errorf("field:nodeSig, error:failed to verify signature with public key")},
-			{okTx, nil},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 0}, fmt.Errorf("field:timestamp, error:timestamp is required")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 2000000000}, fmt.Errorf("field:timestamp, error:timestamp cannot be a future time")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, fmt.Errorf("field:accountNonce, error:account nonce must be greater than zero")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: ""}, fmt.Errorf("field:fee, error:fee is required")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "one"}, fmt.Errorf("field:fee, error:fee must be numeric")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1"}, fmt.Errorf("field:nodePubKey, error:push node public key is required")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32()}, fmt.Errorf("field:nodeSig, error:push node signature is required")},
+			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid signature")}, fmt.Errorf("field:nodeSig, error:failed to verify signature")},
 			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
-				{},
+				&types.PushedReference{},
 			}}, fmt.Errorf("index:0, field:references.name, error:name is required")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref"}}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is required")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: "abc"}}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is not valid")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40)}}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is required")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: "abc"}}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is not valid")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40)}}}, fmt.Errorf("index:0, field:references.nonce, error:reference nonce must be greater than zero")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1}}}, fmt.Errorf("index:0, field:references.accountNonce, error:account nonce must be greater than zero")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1}}}, fmt.Errorf("index:0, field:references.fee, error:fee must be numeric")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1, Fee: "0a"}}}, fmt.Errorf("index:0, field:references.fee, error:fee must be numeric")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1, Fee: "1", Objects: []string{"abc"}}}}, fmt.Errorf("index:0, field:references.objects.0, error:object hash is not valid")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
+				&types.PushedReference{Name: "ref1"},
+			}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is required")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
+				&types.PushedReference{Name: "ref1", OldHash: "invalid"},
+			}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is not valid")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
+				&types.PushedReference{Name: "ref1", OldHash: util.RandString(40)},
+			}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is required")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
+				&types.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: "invalid"},
+			}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is not valid")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
+				&types.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40)},
+			}}, fmt.Errorf("index:0, field:references.nonce, error:reference nonce must be greater than zero")},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
+				&types.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Objects: []string{"invalid object"}},
+			}}, fmt.Errorf("index:0, field:references.objects.0, error:object hash is not valid")},
 		}
 
 		It("should check cases", func() {
@@ -669,29 +705,6 @@ var _ = Describe("Validation", func() {
 					Expect(CheckPushNoteSyntax(_c[0].(*types.PushNote))).To(BeNil())
 				}
 			}
-		})
-
-		When("references have varying account nonce", func() {
-			note := &types.PushNote{
-				RepoName:    "repo",
-				PusherKeyID: util.RandBytes(20),
-				Timestamp:   time.Now().Unix(),
-				NodePubKey:  key.PubKey().MustBytes32(),
-				References: []*types.PushedReference{
-					{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 1, Fee: "1"},
-					{Name: "ref", OldHash: strings.Repeat("x", 40), NewHash: strings.Repeat("x", 40), Nonce: 1, AccountNonce: 2, Fee: "1"},
-				},
-			}
-
-			BeforeEach(func() {
-				note.NodeSig, _ = key.PrivKey().Sign(note.Bytes())
-				err = CheckPushNoteSyntax(note)
-			})
-
-			It("should return ", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:1, field:references.accountNonce, error:varying account nonce in a push note not allowed"))
-			})
 		})
 	})
 
@@ -713,8 +726,7 @@ var _ = Describe("Validation", func() {
 				repository := &types.Repository{
 					References: types.References(map[string]interface{}{}),
 				}
-				gpgKey := &types.GPGPubKey{}
-				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
+				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
 			})
 
 			It("should return err", func() {
@@ -731,8 +743,7 @@ var _ = Describe("Validation", func() {
 				repository := &types.Repository{
 					References: types.References(map[string]interface{}{}),
 				}
-				gpgKey := &types.GPGPubKey{}
-				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
+				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
 			})
 
 			It("should not return error about unknown reference", func() {
@@ -754,9 +765,8 @@ var _ = Describe("Validation", func() {
 				}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
 					Return(plumbing.NewReferenceFromStrings("", util.RandString(40)), nil)
-				gpgKey := &types.GPGPubKey{}
 
-				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
+				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
 			})
 
 			It("should return err", func() {
@@ -778,9 +788,8 @@ var _ = Describe("Validation", func() {
 				}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
 					Return(nil, plumbing.ErrReferenceNotFound)
-				gpgKey := &types.GPGPubKey{}
 
-				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
+				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
 			})
 
 			It("should return err", func() {
@@ -801,8 +810,7 @@ var _ = Describe("Validation", func() {
 					}),
 				}
 
-				gpgKey := &types.GPGPubKey{}
-				err = checkPushedReference(nil, refs, repository, gpgKey, mockKeepers)
+				err = checkPushedReference(nil, refs, repository, mockKeepers)
 			})
 
 			It("should return err", func() {
@@ -824,9 +832,8 @@ var _ = Describe("Validation", func() {
 				}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
 					Return(plumbing.NewReferenceFromStrings("", util.RandString(40)), nil)
-				gpgKey := &types.GPGPubKey{}
 
-				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
+				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
 			})
 
 			It("should return err", func() {
@@ -859,54 +866,12 @@ var _ = Describe("Validation", func() {
 					Reference(plumbing.ReferenceName(refName), false).
 					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
 
-				gpgKey := &types.GPGPubKey{}
-				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
+				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' has nonce '2', expecting '1'"))
-			})
-		})
-
-		When("pusher account nonce is unexpected", func() {
-			BeforeEach(func() {
-				refName := "refs/heads/master"
-				newHash := util.RandString(40)
-				refs := []*types.PushedReference{
-					{
-						Name:         refName,
-						OldHash:      oldHash,
-						NewHash:      newHash,
-						Objects:      []string{newHash},
-						Nonce:        1,
-						AccountNonce: 12,
-					},
-				}
-
-				repository := &types.Repository{
-					References: types.References(map[string]interface{}{
-						refName: &types.Reference{Nonce: 0},
-					}),
-				}
-
-				mockRepo.EXPECT().
-					Reference(plumbing.ReferenceName(refName), false).
-					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
-
-				gpgKey := &types.GPGPubKey{Address: "pusher_address"}
-				accountKeeper := mocks.NewMockAccountKeeper(ctrl)
-				accountKeeper.EXPECT().GetAccount(gpgKey.Address).Return(&types.Account{
-					Nonce: 10,
-				})
-				mockKeepers.EXPECT().AccountKeeper().Return(accountKeeper)
-
-				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' has account nonce '12', expecting '11'"))
 			})
 		})
 
@@ -916,12 +881,11 @@ var _ = Describe("Validation", func() {
 				newHash := util.RandString(40)
 				refs := []*types.PushedReference{
 					{
-						Name:         refName,
-						OldHash:      oldHash,
-						NewHash:      newHash,
-						Objects:      []string{newHash},
-						Nonce:        1,
-						AccountNonce: 11,
+						Name:    refName,
+						OldHash: oldHash,
+						NewHash: newHash,
+						Objects: []string{newHash},
+						Nonce:   1,
 					},
 				}
 
@@ -935,14 +899,7 @@ var _ = Describe("Validation", func() {
 					Reference(plumbing.ReferenceName(refName), false).
 					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
 
-				gpgKey := &types.GPGPubKey{Address: "pusher_address"}
-				accountKeeper := mocks.NewMockAccountKeeper(ctrl)
-				accountKeeper.EXPECT().GetAccount(gpgKey.Address).Return(&types.Account{
-					Nonce: 10,
-				})
-				mockKeepers.EXPECT().AccountKeeper().Return(accountKeeper)
-
-				err = checkPushedReference(mockRepo, refs, repository, gpgKey, mockKeepers)
+				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
 			})
 
 			It("should return err", func() {
@@ -951,7 +908,7 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
-	Describe(".checkPushNoteConsistency", func() {
+	Describe(".CheckPushNoteConsistency", func() {
 		var mockKeepers *mocks.MockKeepers
 		BeforeEach(func() {
 			mockKeepers = mocks.NewMockKeepers(ctrl)
@@ -987,6 +944,94 @@ var _ = Describe("Validation", func() {
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(MatchRegexp("field:pusherKeyId, error:pusher's public key id '.*' is unknown"))
+			})
+		})
+
+		When("gpg owner address not the same as the pusher address", func() {
+			BeforeEach(func() {
+				tx := &types.PushNote{
+					RepoName:      "repo1",
+					PusherKeyID:   util.RandBytes(20),
+					PusherAddress: "address1",
+				}
+				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{CreatorAddress: "addr1"})
+				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
+				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
+
+				gpgKey := types.BareGPGPubKey()
+				gpgKey.Address = util.String("address2")
+				mockGPGKeeper.EXPECT().GetGPGPubKey(util.ToHex(tx.PusherKeyID)).Return(gpgKey)
+				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
+				err = CheckPushNoteConsistency(tx, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:pusherAddr, error:gpg key is not associated with the pusher address"))
+			})
+		})
+
+		When("unable to find pusher account", func() {
+			BeforeEach(func() {
+				tx := &types.PushNote{
+					RepoName:      "repo1",
+					PusherKeyID:   util.RandBytes(20),
+					PusherAddress: "address1",
+				}
+				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{CreatorAddress: "addr1"})
+				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
+				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
+
+				gpgKey := types.BareGPGPubKey()
+				gpgKey.Address = util.String("address1")
+				mockGPGKeeper.EXPECT().GetGPGPubKey(util.ToHex(tx.PusherKeyID)).Return(gpgKey)
+				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
+
+				mockAcctKeeper := mocks.NewMockAccountKeeper(ctrl)
+				mockAcctKeeper.EXPECT().GetAccount(tx.PusherAddress).Return(types.BareAccount())
+				mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
+
+				err = CheckPushNoteConsistency(tx, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:pusherAddr, error:pusher account not found"))
+			})
+		})
+
+		When("push note account nonce not correct", func() {
+			BeforeEach(func() {
+				tx := &types.PushNote{
+					RepoName:      "repo1",
+					PusherKeyID:   util.RandBytes(20),
+					PusherAddress: "address1",
+					AccountNonce:  3,
+				}
+				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{CreatorAddress: "addr1"})
+				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
+				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
+
+				gpgKey := types.BareGPGPubKey()
+				gpgKey.Address = util.String("address1")
+				mockGPGKeeper.EXPECT().GetGPGPubKey(util.ToHex(tx.PusherKeyID)).Return(gpgKey)
+				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
+
+				mockAcctKeeper := mocks.NewMockAccountKeeper(ctrl)
+				acct := types.BareAccount()
+				acct.Nonce = 1
+				mockAcctKeeper.EXPECT().GetAccount(tx.PusherAddress).Return(acct)
+				mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
+
+				err = CheckPushNoteConsistency(tx, mockKeepers)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:pusherAddr, error:wrong account nonce '3', expecting '2'"))
 			})
 		})
 	})

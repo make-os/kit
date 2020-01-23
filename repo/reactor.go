@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"sort"
 	"time"
 
+	"github.com/makeos/mosdef/crypto/bls"
 	"github.com/makeos/mosdef/params"
+	"github.com/thoas/go-funk"
 
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
@@ -185,11 +186,11 @@ func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
 	// Validate the PushOK object
 	pokID := pok.ID().String()
 	if err := checkPushOK(&pok, m.logic, -1); err != nil {
-		m.log.Debug("Received an invalid push endorsement", "TxID", pokID, "Err", err)
+		m.log.Debug("Received an invalid push endorsement", "ID", pokID, "Err", err)
 		return err
 	}
 
-	m.log.Debug("Received a valid push endorsement", "PeerID", peer.ID(), "TxID", pokID)
+	m.log.Debug("Received a valid push endorsement", "PeerID", peer.ID(), "ID", pokID)
 
 	// Cache the sender so we don't broadcast same PushOK to it later
 	m.cachePushOkSender(string(peer.ID()), pokID)
@@ -269,7 +270,7 @@ func (m *Manager) createPushOK(pushNote types.RepoPushNote) (*types.PushOK, erro
 	}
 
 	// Sign the endorsement using our BLS key
-	blsSig, _ := m.privValidatorKey.PrivKey().BLSKey().Sign(pok.Bytes())
+	blsSig, _ := m.privValidatorKey.PrivKey().BLSKey().Sign(pok.BytesNoSigAndSenderPubKey())
 	pok.Sig = util.BytesToBytes64(blsSig)
 
 	return pok, nil
@@ -297,7 +298,7 @@ func (m *Manager) broadcastPushOK(pushOk types.RepoPushOK) {
 			continue
 		}
 		if peer.Send(PushOKReactorChannel, bz) {
-			m.log.Debug("Sent push OK to peer", "PeerID", peer.ID(), "TxID", id)
+			m.log.Debug("Sent push endorsement to peer", "PeerID", peer.ID(), "TxID", id)
 		}
 	}
 }
@@ -329,9 +330,9 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 	}
 
 	// Ensure there are enough PushOKs
-	pushOKIndex := notePushOKs.(map[string]*types.PushOK)
-	if len(pushOKIndex) < params.PushOKQuorumSize {
-		return fmt.Errorf("Not enough PushOKs to satisfy quorum size")
+	pushOKIdx := notePushOKs.(map[string]*types.PushOK)
+	if len(pushOKIdx) < params.PushOKQuorumSize {
+		return fmt.Errorf("Not enough push endorsements to satisfy quorum size")
 	}
 
 	// Get the push note from the push pool
@@ -340,22 +341,43 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 		return fmt.Errorf("push note not found in pool")
 	}
 
-	pushOKs := []*types.PushOK{}
-	for _, v := range pushOKIndex {
-		pushOKs = append(pushOKs, v)
+	storers, err := m.logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
+	if err != nil {
+		return errors.Wrap(err, "failed to get top storers")
+	}
+
+	// Collect the BLS public keys of all PushOK senders.
+	// We need them for the construction of BLS aggregated signature.
+	pushOKs := funk.Values(pushOKIdx).([]*types.PushOK)
+	pokPubKeys := []*bls.PublicKey{}
+	pokSigs := [][]byte{}
+	for i, pok := range pushOKs {
+		selTicket := storers.Get(pok.SenderPubKey)
+		if selTicket == nil {
+			return fmt.Errorf("endorsement[%d]: ticket not found in top storers list", i)
+		}
+
+		pk, err := bls.BytesToPublicKey(selTicket.Ticket.BLSPubKey)
+		if err != nil {
+			return errors.Wrapf(err, "endorsement[%d]: bls public key is invalid", i)
+		}
+
+		pokPubKeys = append(pokPubKeys, pk)
+		pokSigs = append(pokSigs, pok.Sig.Bytes())
+		pushOKs[i] = pok.Clone()
+		pushOKs[i].Sig = util.EmptyBytes64
 	}
 
 	pushTx := types.NewBareTxPush()
 	pushTx.PushNote = note
 	pushTx.PushOKs = pushOKs
 
-	// Sort PushOKs to promote determinism with other nodes that are going to
-	// construct their own PushTx (we need the final ID to be same network-wide)
-	sort.Slice(pushTx.PushOKs, func(i, j int) bool {
-		pnI := pushTx.PushOKs[i]
-		pnJ := pushTx.PushOKs[j]
-		return pnI.SenderPubKey.Big().Cmp(pnJ.SenderPubKey.Big()) == -1
-	})
+	// Generate aggregated BLS signature
+	aggSig, err := bls.AggregateSignatures(pokPubKeys, pokSigs)
+	if err != nil {
+		return errors.Wrap(err, "unable to create aggregated signature")
+	}
+	pushTx.AggPushOKsSig = aggSig
 
 	// Add push to mempool
 	if err := m.GetMempool().Add(pushTx); err != nil {

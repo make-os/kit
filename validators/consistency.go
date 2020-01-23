@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/crypto/bls"
+	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/repo"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
@@ -221,12 +223,31 @@ func CheckTxPushConsistency(
 		return errors.Wrap(err, "failed to get repo")
 	}
 
+	storers, err := logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
+	if err != nil {
+		return errors.Wrap(err, "failed to get top storers")
+	}
+
+	pokPubKeys := []*bls.PublicKey{}
 	for index, pok := range tx.PushOKs {
 
-		// Perform consistency checks
-		if err := repo.CheckPushOKConsistency(pok, logic, index); err != nil {
+		// Perform consistency checks but don't check the signature as we don't
+		// care about that when dealing with a TxPush object, instead we care
+		// about checking the aggregated BLS signature
+		if err := repo.CheckPushOKConsistencyUsingStorer(storers, pok, logic, true, index); err != nil {
 			return err
 		}
+
+		// Get the BLS public key of the PushOK signer
+		signerTicket := storers.Get(pok.SenderPubKey)
+		if signerTicket == nil {
+			return fmt.Errorf("push endorser not part of the top storers")
+		}
+		blsPubKey, err := bls.BytesToPublicKey(signerTicket.Ticket.BLSPubKey)
+		if err != nil {
+			return errors.Wrap(err, "failed to decode bls public key of endorser")
+		}
+		pokPubKeys = append(pokPubKeys, blsPubKey)
 
 		// Ensure the references hash match local history
 		for i, refHash := range pok.ReferencesHash {
@@ -240,6 +261,14 @@ func CheckTxPushConsistency(
 				return feI(index, "endorsements.refsHash", msg)
 			}
 		}
+	}
+
+	// Generate an aggregated public key and use it to check
+	// the endorsers aggregated signature
+	aggPubKey, _ := bls.AggregatePublicKeys(pokPubKeys)
+	err = aggPubKey.Verify(tx.AggPushOKsSig, tx.PushOKs[0].BytesNoSigAndSenderPubKey())
+	if err != nil {
+		return errors.Wrap(err, "could not verify aggregated endorsers' signature")
 	}
 
 	// Check push note

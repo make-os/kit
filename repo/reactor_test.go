@@ -31,6 +31,7 @@ var _ = Describe("Reactor", func() {
 	var mockBlockGetter *mocks.MockBlockGetter
 	var mockDHT *mocks.MockDHT
 	var mockMgr *mocks.MockRepoManager
+	var mockTickMgr *mocks.MockTicketManager
 	var key = crypto.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
@@ -49,6 +50,7 @@ var _ = Describe("Reactor", func() {
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
+		mockTickMgr = mockObjects.TicketManager
 		mgr = NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 
 		mockPeer = mocks.NewMockPeer(ctrl)
@@ -137,9 +139,9 @@ var _ = Describe("Reactor", func() {
 				err = mgr.MaybeCreatePushTx(pushNoteID)
 			})
 
-			It("should return err='Not enough PushOKs to satisfy quorum size'", func() {
+			It("should return err='Not enough push endorsements to satisfy quorum size'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("Not enough PushOKs to satisfy quorum size"))
+				Expect(err.Error()).To(Equal("Not enough push endorsements to satisfy quorum size"))
 			})
 		})
 
@@ -157,21 +159,135 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("unable to add generated push tx to mempool", func() {
+		When("unable to get top storers", func() {
 			BeforeEach(func() {
 				params.PushOKQuorumSize = 1
 				var pushNote = &types.PushNote{RepoName: "repo1"}
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&types.TxPush{})).Return(fmt.Errorf("error"))
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return(nil, fmt.Errorf("error"))
 				mgr.addPushNoteEndorsement(pushNote.ID().String(), &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
 			})
 
-			It("should return err='failed to add push tx to mempool: error'", func() {
+			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to add push tx to mempool: error"))
+				Expect(err.Error()).To(Equal("failed to get top storers: error"))
+			})
+		})
+
+		When("unable to get ticket of push endorsement sender", func() {
+			BeforeEach(func() {
+				params.PushOKQuorumSize = 1
+				var pushNote = &types.PushNote{RepoName: "repo1"}
+				err = mgr.pushPool.Add(pushNote, true)
+				Expect(err).To(BeNil())
+
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{}, nil)
+				pok := &types.PushOK{
+					Sig:          util.BytesToBytes64(util.RandBytes(5)),
+					SenderPubKey: util.BytesToBytes32(util.RandBytes(32)),
+				}
+				mgr.addPushNoteEndorsement(pushNote.ID().String(), pok)
+				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("endorsement[0]: ticket not found in top storers list"))
+			})
+		})
+
+		When("a push endorsement has invalid bls public key", func() {
+			BeforeEach(func() {
+				params.PushOKQuorumSize = 1
+				var pushNote = &types.PushNote{RepoName: "repo1"}
+				err = mgr.pushPool.Add(pushNote, true)
+				Expect(err).To(BeNil())
+
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{
+					&types.SelectedTicket{
+						Ticket: &types.Ticket{
+							ProposerPubKey: key.PubKey().MustBytes32(),
+							BLSPubKey:      []byte("invalid bls public key"),
+						},
+					},
+				}, nil)
+				pok := &types.PushOK{
+					SenderPubKey: key.PubKey().MustBytes32(),
+				}
+
+				mgr.addPushNoteEndorsement(pushNote.ID().String(), pok)
+				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("endorsement[0]: bls public key is invalid: bn256.G2: not enough data"))
+			})
+		})
+
+		When("endorsement signature is invalid", func() {
+			BeforeEach(func() {
+				params.PushOKQuorumSize = 1
+				var pushNote = &types.PushNote{RepoName: "repo1"}
+				err = mgr.pushPool.Add(pushNote, true)
+				Expect(err).To(BeNil())
+
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{
+					&types.SelectedTicket{
+						Ticket: &types.Ticket{
+							ProposerPubKey: key.PubKey().MustBytes32(),
+							BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
+						},
+					},
+				}, nil)
+				pok := &types.PushOK{
+					SenderPubKey: key.PubKey().MustBytes32(),
+				}
+				pok.Sig = util.BytesToBytes64(util.RandBytes(64))
+
+				mgr.addPushNoteEndorsement(pushNote.ID().String(), pok)
+				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("unable to create aggregated signature"))
+			})
+		})
+
+		When("push note is ok", func() {
+			BeforeEach(func() {
+				params.PushOKQuorumSize = 1
+				var pushNote = &types.PushNote{RepoName: "repo1"}
+				err = mgr.pushPool.Add(pushNote, true)
+				Expect(err).To(BeNil())
+
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{
+					&types.SelectedTicket{
+						Ticket: &types.Ticket{
+							ProposerPubKey: key.PubKey().MustBytes32(),
+							BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
+						},
+					},
+				}, nil)
+				pok := &types.PushOK{
+					SenderPubKey: key.PubKey().MustBytes32(),
+				}
+				var pokSig []byte
+				pokSig, err = key.PrivKey().BLSKey().Sign(pok.BytesNoSigAndSenderPubKey())
+				Expect(err).To(BeNil())
+				pok.Sig = util.BytesToBytes64(pokSig)
+
+				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&types.TxPush{})).Return(nil)
+				mgr.addPushNoteEndorsement(pushNote.ID().String(), pok)
+				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
 			})
 		})
 	})
@@ -183,6 +299,10 @@ var _ = Describe("Reactor", func() {
 			mockMgr.EXPECT().Cfg().Return(cfg).AnyTimes()
 			mockMgr.EXPECT().GetDHT().Return(mockDHT).AnyTimes()
 			mockMgr.EXPECT().Log().Return(cfg.G().Log).AnyTimes()
+
+			mockPruner := mocks.NewMockPruner(ctrl)
+			mockPruner.EXPECT().Schedule(gomock.Any()).AnyTimes()
+			mockMgr.EXPECT().GetPruner().Return(mockPruner).AnyTimes()
 		})
 
 		When("target repo does not exist locally", func() {

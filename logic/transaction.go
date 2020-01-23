@@ -82,7 +82,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 
 	case *types.TxPush:
 		pn := o.PushNote
-		err := t.execPush(pn.RepoName, pn.References, pn.TotalFee(), pn.PusherKeyID, chainHeight)
+		err := t.execPush(pn.RepoName, pn.References, pn.GetFee(), pn.PusherKeyID, chainHeight)
 		if err != nil {
 			return err
 		}

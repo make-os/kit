@@ -46,15 +46,23 @@ var _ = Describe("PushPool", func() {
 
 	BeforeEach(func() {
 		tx = &types.PushNote{
-			RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
+			RepoName:     "repo",
+			NodeSig:      []byte("sig"),
+			PusherKeyID:  util.MustFromHex(pkID),
+			Fee:          "0.2",
+			AccountNonce: 2,
 			References: []*types.PushedReference{
-				{Name: "refs/heads/master", Nonce: 1, Fee: "0.2", AccountNonce: 2},
+				{Name: "refs/heads/master", Nonce: 1},
 			},
 		}
 		tx2 = &types.PushNote{
-			RepoName: "repo2", NodeSig: []byte("sig_2"), PusherKeyID: util.MustFromHex(pkID2),
+			RepoName:     "repo2",
+			NodeSig:      []byte("sig_2"),
+			PusherKeyID:  util.MustFromHex(pkID2),
+			Fee:          "0.2",
+			AccountNonce: 2,
 			References: []*types.PushedReference{
-				{Name: "refs/heads/master", Nonce: 1, Fee: "0.2", AccountNonce: 2},
+				{Name: "refs/heads/master", Nonce: 1},
 			},
 		}
 	})
@@ -145,10 +153,14 @@ var _ = Describe("PushPool", func() {
 				Expect(err).To(BeNil())
 
 				tx2 := &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
-					Timestamp: 100000000,
+					RepoName:     "repo",
+					NodeSig:      []byte("sig"),
+					PusherKeyID:  util.MustFromHex(pkID),
+					Timestamp:    100000000,
+					Fee:          "0.2",
+					AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Fee: "0.2", AccountNonce: 2},
+						{Name: "refs/heads/master", Nonce: 1},
 					},
 				}
 
@@ -171,10 +183,13 @@ var _ = Describe("PushPool", func() {
 				Expect(err).To(BeNil())
 
 				tx2 = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
-					Timestamp: 100000000,
+					RepoName:    "repo",
+					NodeSig:     []byte("sig"),
+					PusherKeyID: util.MustFromHex(pkID),
+					Timestamp:   100000000,
+					Fee:         "0.01", AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 2, Fee: "0.01", AccountNonce: 2},
+						{Name: "refs/heads/master", Nonce: 2},
 					},
 				}
 				pool.refIndex = containerIndex(map[string]*containerItem{})
@@ -196,10 +211,13 @@ var _ = Describe("PushPool", func() {
 				Expect(err).To(BeNil())
 
 				tx2 = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
-					Timestamp: 100000000,
+					RepoName:    "repo",
+					NodeSig:     []byte("sig"),
+					PusherKeyID: util.MustFromHex(pkID),
+					Timestamp:   100000000,
+					Fee:         "0.01", AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
+						{Name: "refs/heads/master", Nonce: 1},
 					},
 				}
 				pool.refIndex = containerIndex(map[string]*containerItem{})
@@ -220,10 +238,13 @@ var _ = Describe("PushPool", func() {
 				Expect(err).To(BeNil())
 
 				tx2 := &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
-					Timestamp: 100000000,
+					RepoName:    "repo",
+					NodeSig:     []byte("sig"),
+					PusherKeyID: util.MustFromHex(pkID),
+					Timestamp:   100000000,
+					Fee:         "0.01", AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
+						{Name: "refs/heads/master", Nonce: 1},
 					},
 				}
 
@@ -246,10 +267,13 @@ var _ = Describe("PushPool", func() {
 				Expect(err).To(BeNil())
 
 				tx2 = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
-					Timestamp: 100000000,
+					RepoName:    "repo",
+					NodeSig:     []byte("sig"),
+					PusherKeyID: util.MustFromHex(pkID),
+					Timestamp:   100000000,
+					Fee:         "0.5", AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Fee: "0.5", AccountNonce: 2}},
+						{Name: "refs/heads/master", Nonce: 1}},
 				}
 
 				err = pool.Add(tx2)
@@ -273,27 +297,37 @@ var _ = Describe("PushPool", func() {
 			var txX, txY, txZ *types.PushNote
 			BeforeEach(func() {
 				txY = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
-					Timestamp: 100000000,
+					RepoName:     "repo",
+					NodeSig:      []byte("sig"),
+					PusherKeyID:  util.MustFromHex(pkID),
+					Timestamp:    100000000,
+					Fee:          "0.01",
+					AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
+						{Name: "refs/heads/master", Nonce: 1},
 					},
 				}
 
 				txZ = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
-					Timestamp: 100000000,
+					RepoName:    "repo",
+					NodeSig:     []byte("sig"),
+					PusherKeyID: util.MustFromHex(pkID),
+					Timestamp:   100000000,
+					Fee:         "0.01", AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/update", Nonce: 1, Fee: "0.01", AccountNonce: 2},
+						{Name: "refs/heads/update", Nonce: 1},
 					},
 				}
 
 				txX = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
-					Timestamp: 100000000,
+					RepoName:    "repo",
+					NodeSig:     []byte("sig"),
+					PusherKeyID: util.MustFromHex(pkID),
+					Timestamp:   100000000,
+					Fee:         "0.03", AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Fee: "0.02", AccountNonce: 2},
-						{Name: "refs/heads/update", Nonce: 1, Fee: "0.01", AccountNonce: 2},
+						{Name: "refs/heads/master", Nonce: 1},
+						{Name: "refs/heads/update", Nonce: 1},
 					},
 				}
 
@@ -324,27 +358,37 @@ var _ = Describe("PushPool", func() {
 			var txX, txY, txZ *types.PushNote
 			BeforeEach(func() {
 				txY = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
-					Timestamp: 100000000,
+					RepoName:    "repo",
+					NodeSig:     []byte("sig"),
+					PusherKeyID: util.MustFromHex(pkID),
+					Timestamp:   100000000,
+					Fee:         "0.4", AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Fee: "0.4", AccountNonce: 2},
+						{Name: "refs/heads/master", Nonce: 1},
 					},
 				}
 
 				txZ = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
-					Timestamp: 100000000,
+					RepoName:     "repo",
+					NodeSig:      []byte("sig"),
+					PusherKeyID:  util.MustFromHex(pkID),
+					Timestamp:    100000000,
+					Fee:          "0.4",
+					AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/update", Nonce: 1, Fee: "0.4", AccountNonce: 2},
+						{Name: "refs/heads/update", Nonce: 1},
 					},
 				}
 
 				txX = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
-					Timestamp: 100000000,
+					RepoName:    "repo",
+					NodeSig:     []byte("sig"),
+					PusherKeyID: util.MustFromHex(pkID),
+					Timestamp:   100000000,
+					Fee:         "0.7", AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Fee: "0.4", AccountNonce: 2},
-						{Name: "refs/heads/update", Nonce: 1, Fee: "0.3", AccountNonce: 2},
+						{Name: "refs/heads/master", Nonce: 1},
+						{Name: "refs/heads/update", Nonce: 1},
 					},
 				}
 
@@ -368,8 +412,9 @@ var _ = Describe("PushPool", func() {
 				txX = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
+					Fee:       "0.01", AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
+						{Name: "refs/heads/master", Nonce: 1},
 					},
 				}
 
@@ -389,8 +434,9 @@ var _ = Describe("PushPool", func() {
 				txX = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustFromHex(pkID),
 					Timestamp: 100000000,
+					Fee:       "0.01", AccountNonce: 2,
 					References: []*types.PushedReference{
-						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01", AccountNonce: 2},
+						{Name: "refs/heads/master", Nonce: 1},
 					},
 				}
 

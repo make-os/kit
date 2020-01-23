@@ -925,6 +925,8 @@ var _ = Describe("TxValidator", func() {
 			tx.PushNote.RepoName = "repo1"
 			tx.PushNote.PusherKeyID = util.RandBytes(20)
 			tx.PushNote.Timestamp = time.Now().Unix()
+			tx.PushNote.AccountNonce = 1
+			tx.PushNote.Fee = "1"
 			tx.PushNote.NodePubKey = key.PubKey().MustBytes32()
 			tx.PushNote.NodeSig = key.PrivKey().MustSign(tx.PushNote.Bytes())
 		})

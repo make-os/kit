@@ -109,3 +109,25 @@ func (v *SelectedTickets) Get(proposerPubKey util.Bytes32) *SelectedTicket {
 	}
 	return nil
 }
+
+// GetWithIndex finds a ticket by proposer public key and also returns its index
+// in the list.
+func (v *SelectedTickets) GetWithIndex(proposerPubKey util.Bytes32) (*SelectedTicket, int) {
+	for i, t := range *v {
+		if t.Ticket.ProposerPubKey.Equal(proposerPubKey) {
+			return t, i
+		}
+	}
+	return nil, -1
+}
+
+// IndexOf returns the index of the ticket associated with the given proposer
+// public key. It returns -1 if not ticket was found.
+func (v *SelectedTickets) IndexOf(proposerPubKey util.Bytes32) int {
+	for i, t := range *v {
+		if t.Ticket.ProposerPubKey.Equal(proposerPubKey) {
+			return i
+		}
+	}
+	return -1
+}

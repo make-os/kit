@@ -1396,18 +1396,18 @@ func (mr *MockRepoPushNoteMockRecorder) BillableSize() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BillableSize", reflect.TypeOf((*MockRepoPushNote)(nil).BillableSize))
 }
 
-// TotalFee mocks base method
-func (m *MockRepoPushNote) TotalFee() util.String {
+// GetFee mocks base method
+func (m *MockRepoPushNote) GetFee() util.String {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TotalFee")
+	ret := m.ctrl.Call(m, "GetFee")
 	ret0, _ := ret[0].(util.String)
 	return ret0
 }
 
-// TotalFee indicates an expected call of TotalFee
-func (mr *MockRepoPushNoteMockRecorder) TotalFee() *gomock.Call {
+// GetFee indicates an expected call of GetFee
+func (mr *MockRepoPushNoteMockRecorder) GetFee() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TotalFee", reflect.TypeOf((*MockRepoPushNote)(nil).TotalFee))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFee", reflect.TypeOf((*MockRepoPushNote)(nil).GetFee))
 }
 
 // GetPushedReferences mocks base method

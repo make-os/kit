@@ -781,46 +781,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("failed to decode bls public key of selected ticket"))
-			})
-		})
-
-		When("a PushOK has invalid BLS signature", func() {
-			BeforeEach(func() {
-				params.NumTopStorersLimit = 10
-				storers := []*types.SelectedTicket{
-					&types.SelectedTicket{Ticket: &types.Ticket{
-						ProposerPubKey: key.PubKey().MustBytes32(),
-						BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
-					}},
-				}
-
-				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
-
-				tx := types.NewBareTxPush()
-				tx.PushNote.References = append(tx.PushNote.References, &types.PushedReference{
-					Name: "refs/heads/master",
-				})
-
-				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
-					PushNoteID:   util.StrToBytes32("pn1"),
-					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-					ReferencesHash: []*types.ReferenceHash{
-						{Hash: util.BytesToBytes32(util.RandBytes(32))},
-					},
-					Sig: util.StrToBytes64("invalid"),
-				})
-
-				repoGetter := func(name string) (types.BareRepo, error) {
-					return mocks.NewMockBareRepo(ctrl), nil
-				}
-
-				err = validators.CheckTxPushConsistency(tx, -1, mockLogic, repoGetter)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("field:endorsements.sig, error:signature could not be verified"))
+				Expect(err.Error()).To(ContainSubstring("failed to decode bls public key of endorser"))
 			})
 		})
 
@@ -907,6 +868,42 @@ var _ = Describe("TxValidator", func() {
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("index:0, field:endorsements.refsHash, error:wrong tree hash for reference (refs/heads/master)"))
+			})
+		})
+
+		When("aggregated signature is invalid", func() {
+			BeforeEach(func() {
+				params.NumTopStorersLimit = 10
+				storers := []*types.SelectedTicket{
+					&types.SelectedTicket{Ticket: &types.Ticket{
+						ProposerPubKey: key.PubKey().MustBytes32(),
+						BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
+					}},
+				}
+
+				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
+
+				tx := types.NewBareTxPush()
+
+				pok := &types.PushOK{
+					PushNoteID:     util.StrToBytes32("pn1"),
+					SenderPubKey:   util.BytesToBytes32(key.PubKey().MustBytes()),
+					ReferencesHash: []*types.ReferenceHash{},
+				}
+				pok.Sig = util.BytesToBytes64(util.RandBytes(64))
+				tx.PushOKs = append(tx.PushOKs, pok)
+
+				mockBareRepo := mocks.NewMockBareRepo(ctrl)
+				repoGetter := func(name string) (types.BareRepo, error) {
+					return mockBareRepo, nil
+				}
+
+				err = validators.CheckTxPushConsistency(tx, -1, mockLogic, repoGetter)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("could not verify aggregated endorsers' signature"))
 			})
 		})
 

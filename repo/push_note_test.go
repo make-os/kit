@@ -42,17 +42,17 @@ var _ = Describe("PushNote", func() {
 	BeforeEach(func() {
 		var pkID = []byte("pk_id")
 		pushNote = &types.PushNote{
-			RepoName:    "repo",
-			NodeSig:     []byte("node_signer_sig"),
-			PusherKeyID: pkID,
+			RepoName:     "repo",
+			NodeSig:      []byte("node_signer_sig"),
+			PusherKeyID:  pkID,
+			Fee:          "0.2",
+			AccountNonce: 2,
 			References: []*types.PushedReference{
 				{
-					Nonce:        1,
-					NewHash:      "new_object_hash",
-					Name:         "refs/heads/master",
-					OldHash:      "old_object_hash",
-					Fee:          "0.2",
-					AccountNonce: 2,
+					Nonce:   1,
+					NewHash: "new_object_hash",
+					Name:    "refs/heads/master",
+					OldHash: "old_object_hash",
 				},
 			},
 		}
@@ -70,30 +70,29 @@ var _ = Describe("PushNote", func() {
 		})
 	})
 
-	Describe(".TotalFee", func() {
+	Describe(".Fee", func() {
 		It("should return expected total fee", func() {
-			Expect(pushNote.TotalFee()).To(Equal(util.String("0.2")))
+			Expect(pushNote.GetFee()).To(Equal(util.String("0.2")))
 		})
 
 		It("should return expected total fee", func() {
 			pushNote.References = append(pushNote.References, &types.PushedReference{
-				Nonce:        1,
-				NewHash:      "new_object_hash",
-				Name:         "refs/heads/master",
-				OldHash:      "old_object_hash",
-				Fee:          "0.2",
-				AccountNonce: 2,
+				Nonce:   1,
+				NewHash: "new_object_hash",
+				Name:    "refs/heads/master",
+				OldHash: "old_object_hash",
 			})
-			Expect(pushNote.TotalFee()).To(Equal(util.String("0.4")))
+			Expect(pushNote.GetFee()).To(Equal(util.String("0.2")))
 		})
 	})
 
 	Describe(".GetEcoSize", func() {
-		It("should return expected length without the fee fields", func() {
-			lenFee := len(util.ObjectToBytes(pushNote.References[0].Fee))
-			lenWithFee := pushNote.Len()
-			expected := lenWithFee - uint64(lenFee)
-			Expect(pushNote.GetEcoSize()).To(Equal(expected))
+		It("should return expected length without the fee field", func() {
+			fee := pushNote.Fee
+			pushNote.Fee = ""
+			size := len(pushNote.Bytes())
+			pushNote.Fee = fee
+			Expect(pushNote.GetEcoSize()).To(Equal(uint64(size)))
 		})
 	})
 

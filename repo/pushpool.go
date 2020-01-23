@@ -195,7 +195,7 @@ func (p *PushPool) Add(note types.RepoPushNote, noValidation ...bool) error {
 
 	// Calculate and set fee rate
 	billableTxSize := decimal.NewFromFloat(float64(note.BillableSize()))
-	item.FeeRate = util.String(note.TotalFee().Decimal().Div(billableTxSize).String())
+	item.FeeRate = util.String(note.GetFee().Decimal().Div(billableTxSize).String())
 
 	// Check if references of the push notes are valid
 	// or can replace an existing transaction
@@ -220,7 +220,7 @@ func (p *PushPool) Add(note types.RepoPushNote, noValidation ...bool) error {
 			panic(fmt.Errorf("unexpectedly failed to find existing reference note"))
 		}
 
-		if existingItem.Note.TotalFee().Decimal().GreaterThanOrEqual(note.TotalFee().Decimal()) {
+		if existingItem.Note.GetFee().Decimal().GreaterThanOrEqual(note.GetFee().Decimal()) {
 			msg := fmt.Sprintf("replace-by-fee on staged reference (ref:%s, repo:%s) "+
 				"not allowed due to inferior fee.", ref.Name, note.(*types.PushNote).RepoName)
 			return fmt.Errorf(msg)
@@ -229,14 +229,14 @@ func (p *PushPool) Add(note types.RepoPushNote, noValidation ...bool) error {
 		pushNoteID := existingItem.Note.ID().String()
 		if _, ok := replaceable[pushNoteID]; !ok {
 			replaceable[pushNoteID] = existingItem.Note
-			totalReplaceableFee = totalReplaceableFee.Add(existingItem.Note.TotalFee().Decimal())
+			totalReplaceableFee = totalReplaceableFee.Add(existingItem.Note.GetFee().Decimal())
 		}
 	}
 
 	// Here we need to remove the replaceable push notes. But we will only do so
 	// if the total fee of these push notes is lower than that of note
 	if len(replaceable) > 0 {
-		if totalReplaceableFee.GreaterThanOrEqual(item.Note.TotalFee().Decimal()) {
+		if totalReplaceableFee.GreaterThanOrEqual(item.Note.GetFee().Decimal()) {
 			msg := fmt.Sprintf("replace-by-fee on multiple push notes not " +
 				"allowed due to inferior fee.")
 			return fmt.Errorf(msg)

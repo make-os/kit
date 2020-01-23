@@ -26,7 +26,7 @@ func (a *AccountAPI) getNonce(params interface{}) *jsonrpc.Response {
 	}
 
 	account := a.logic.AccountKeeper().GetAccount(util.String(address))
-	if account.IsEmpty() {
+	if account.IsNil() {
 		return jsonrpc.Error(types.ErrCodeAccountNotFound, "account not found", nil)
 	}
 

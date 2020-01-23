@@ -27,8 +27,8 @@ type Account struct {
 	DelegatorCommission float64       `json:"delegatorCommission" msgpack:"delegatorCommission"`
 }
 
-// IsEmpty checks whether an account is empty/unset
-func (a *Account) IsEmpty() bool {
+// IsNil checks whether an account is empty/unset
+func (a *Account) IsNil() bool {
 	return a.Balance.Empty() || a.Balance.Equal("0") &&
 		a.Nonce == uint64(0) &&
 		len(a.Stakes) == 0 &&

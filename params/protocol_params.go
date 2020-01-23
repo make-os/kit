@@ -9,7 +9,7 @@ import (
 
 var (
 	// BlockTime is the number of seconds between blocks
-	BlockTime = 10
+	BlockTime = 15
 
 	// MaxBlockSize is the max size of a block
 	MaxBlockSize = int64(1000000)
@@ -104,7 +104,7 @@ var (
 
 	// PushOKQuorumSize is the minimum number of PushOKs a push note requires
 	// for approval
-	PushOKQuorumSize = 1
+	PushOKQuorumSize = 2
 
 	// NumTopStorersLimit is maximum the number of top storers
 	NumTopStorersLimit = 21

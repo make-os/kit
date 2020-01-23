@@ -21,10 +21,10 @@ var _ = Describe("Account", func() {
 		}
 	})
 
-	Describe(".IsEmpty", func() {
+	Describe(".IsNil", func() {
 		It("should return true for bare account", func() {
 			acct := BareAccount()
-			Expect(acct.IsEmpty()).To(BeTrue())
+			Expect(acct.IsNil()).To(BeTrue())
 		})
 	})
 
