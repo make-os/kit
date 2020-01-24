@@ -134,12 +134,18 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Handle transaction validation and revert pre-commit changes
-	if _, _, err := pushHandler.HandleValidateAndRevert(); err != nil {
+	refsTxLine, _, err := pushHandler.HandleValidateAndRevert()
+	if err != nil {
 		return errors.Wrap(err, "HandleValidateAndRevert error")
 	}
 
 	if err := cmd.Wait(); err != nil {
 		return errors.Wrap(err, "failed to process packfile derived from push note")
+	}
+
+	// Verify that push note is consistent with the txlines
+	if err := checkPushNoteAgainstTxLines(&pn, refsTxLine); err != nil {
+		return errors.Wrapf(err, "push note and txline conflict")
 	}
 
 	// At this point, the transaction has passed all validation and

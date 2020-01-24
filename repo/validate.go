@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -8,6 +9,8 @@ import (
 	"time"
 
 	gv "github.com/asaskevich/govalidator"
+	"github.com/shopspring/decimal"
+	"github.com/thoas/go-funk"
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/crypto/bls"
@@ -267,6 +270,43 @@ func checkCommit(
 	}
 
 	return txLine, nil
+}
+
+// checkPushNoteAgainstTxLines checks compares the value of fields in the push
+// note against the values of same fields in the txlines.
+func checkPushNoteAgainstTxLines(pn *types.PushNote, txLines map[string]*util.TxLine) error {
+
+	// Push note pusher public key must match txline key
+	txLinesObjs := funk.Values(txLines).([]*util.TxLine)
+	if !bytes.Equal(pn.PusherKeyID, util.MustFromHex(txLinesObjs[0].PubKeyID)) {
+		return fmt.Errorf("push note pusher public key id does not match " +
+			"txlines pusher public key id")
+	}
+
+	totalFees := decimal.Zero
+	for _, txline := range txLines {
+		totalFees = totalFees.Add(txline.Fee.Decimal())
+	}
+
+	// Push note total fee must matches the total fees computed from all txlines
+	if !pn.GetFee().Decimal().Equal(totalFees) {
+		return fmt.Errorf("push note fees does not match total txlines fees")
+	}
+
+	// Check pushed references for consistency with their txline
+	for _, ref := range pn.GetPushedReferences() {
+		txline, ok := txLines[ref.Name]
+		if !ok {
+			return fmt.Errorf("push note has unexpected pushed reference (%s)", ref.Name)
+		}
+
+		if txline.DeleteRef != ref.Delete {
+			return fmt.Errorf("pushed reference (%s) has an "+
+				"unexpected delete directive value", ref.Name)
+		}
+	}
+
+	return nil
 }
 
 // CheckPushNoteSyntax performs syntactic checks on the fields of a push transaction

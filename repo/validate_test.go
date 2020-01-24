@@ -1159,4 +1159,65 @@ var _ = Describe("Validation", func() {
 			})
 		})
 	})
+
+	Describe(".checkPushNoteAgainstTxLines", func() {
+		When("pusher key in push note is different from txlines pusher key", func() {
+			BeforeEach(func() {
+				pn := &types.PushNote{PusherKeyID: util.RandBytes(20)}
+				txLines := map[string]*util.TxLine{
+					"refs/heads/master": &util.TxLine{PubKeyID: util.ToHex(util.RandBytes(20))},
+				}
+				err = checkPushNoteAgainstTxLines(pn, txLines)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("push note pusher public key id does not match txlines pusher public key id"))
+			})
+		})
+
+		When("fee do not match", func() {
+			BeforeEach(func() {
+				pkID := util.RandBytes(20)
+				pn := &types.PushNote{PusherKeyID: pkID, Fee: "9"}
+				txLines := map[string]*util.TxLine{
+					"refs/heads/master": &util.TxLine{
+						PubKeyID: util.ToHex(pkID),
+						Fee:      "10",
+					},
+				}
+				err = checkPushNoteAgainstTxLines(pn, txLines)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("push note fees does not match total txlines fees"))
+			})
+		})
+
+		When("push note has unexpected pushed reference", func() {
+			BeforeEach(func() {
+				pkID := util.RandBytes(20)
+				pn := &types.PushNote{
+					PusherKeyID: pkID,
+					Fee:         "10",
+					References: []*types.PushedReference{
+						{Name: "refs/heads/dev"},
+					},
+				}
+				txLines := map[string]*util.TxLine{
+					"refs/heads/master": &util.TxLine{
+						PubKeyID: util.ToHex(pkID),
+						Fee:      "10",
+					},
+				}
+				err = checkPushNoteAgainstTxLines(pn, txLines)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("push note has unexpected pushed reference (refs/heads/dev)"))
+			})
+		})
+	})
 })
