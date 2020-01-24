@@ -81,11 +81,7 @@ func (tx *TxNamespaceDomainUpdate) GetID() string {
 
 // GetEcoSize returns the size of the transaction for use in protocol economics
 func (tx *TxNamespaceDomainUpdate) GetEcoSize() int64 {
-	fee := tx.Fee
-	tx.Fee = ""
-	bz := tx.Bytes()
-	tx.Fee = fee
-	return int64(len(bz))
+	return tx.GetSize()
 }
 
 // GetSize returns the size of the tx object (excluding nothing)

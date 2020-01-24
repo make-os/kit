@@ -30,11 +30,8 @@ func NewBareTxPush() *TxPush {
 func (tx *TxPush) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(
 		tx.Type,
-		tx.SenderPubKey,
-		tx.Timestamp,
 		tx.PushNote,
 		tx.PushOKs,
-		tx.Sig,
 		tx.AggPushOKsSig)
 }
 
@@ -42,11 +39,8 @@ func (tx *TxPush) EncodeMsgpack(enc *msgpack.Encoder) error {
 func (tx *TxPush) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return dec.DecodeMulti(
 		&tx.Type,
-		&tx.SenderPubKey,
-		&tx.Timestamp,
 		&tx.PushNote,
 		&tx.PushOKs,
-		&tx.Sig,
 		&tx.AggPushOKsSig)
 }
 
@@ -81,16 +75,9 @@ func (tx *TxPush) GetID() string {
 
 // GetEcoSize returns the size of the transaction for use in economic calculations
 func (tx *TxPush) GetEcoSize() int64 {
-	fee := tx.Fee
-	tx.Fee = ""
-
-	bz := tx.Bytes()
-	size := uint64(len(bz))
-	pushNoteEcoSize := tx.PushNote.GetEcoSize()
-	diff := size - pushNoteEcoSize
-
-	tx.Fee = fee
-	return int64(size - diff)
+	size := tx.GetSize()
+	pushedObjSize := tx.PushNote.Size
+	return int64(uint64(size) + pushedObjSize)
 }
 
 // GetSize returns the size of the tx object (excluding nothing)

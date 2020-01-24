@@ -557,13 +557,8 @@ func (pt *PushNote) GetPushedObjects(ignoreDelRefs bool) (objs []string) {
 }
 
 // GetEcoSize returns a size of the push note used for economics calculation.
-// Here, we calculate the economic size to be the size of the transaction minus
-// the size of the fee.
 func (pt *PushNote) GetEcoSize() uint64 {
-	fee := pt.Fee
-	pt.Fee = ""
 	size := len(pt.Bytes())
-	pt.Fee = fee
 	return uint64(size)
 }
 
