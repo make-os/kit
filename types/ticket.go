@@ -11,7 +11,6 @@ type Ticket struct {
 	DecayBy        uint64       `json:"decayBy"`        // Block height when the ticket becomes decayed
 	MatureBy       uint64       `json:"matureBy"`       // Block height when the ticket enters maturity.
 	ProposerPubKey util.Bytes32 `json:"proposerPubKey"` // The public key of the validator that owns the ticket.
-	VRFPubKey      util.Bytes32 `json:"vrfPubKey"`      // The VRF public key derived from the same private key of proposer
 	BLSPubKey      []byte       `json:"blsPubKey"`      // The BLS public key derived from the same private key of proposer
 	Delegator      string       `json:"delegator"`      // Delegator is the address of the original creator of the ticket
 	Height         uint64       `json:"height"`         // The block height where this ticket was seen.
@@ -54,10 +53,6 @@ type TicketManager interface {
 	// addDelegated: When true, delegated tickets are added.
 	GetActiveTicketsByProposer(proposer util.Bytes32, ticketType int, addDelegated bool) ([]*Ticket, error)
 
-	// SelectRandomValidatorTickets selects random live tickets up to the specified limit.
-	// The provided see is used to seed the PRNG that is used to select tickets.
-	SelectRandomValidatorTickets(height int64, seed []byte, limit int) ([]*Ticket, error)
-
 	// Query finds and returns tickets that match the given query
 	Query(qf func(t *Ticket) bool, queryOpt ...interface{}) []*Ticket
 
@@ -70,12 +65,11 @@ type TicketManager interface {
 	// UpdateDecayBy updates the decay height of a ticket
 	UpdateDecayBy(hash util.Bytes32, newDecayHeight uint64) error
 
-	// GetOrderedLiveValidatorTickets returns live tickets ordered by
-	// value in desc. order, height asc order and index asc order
-	GetOrderedLiveValidatorTickets(height int64, limit int) []*Ticket
-
-	// GetTopStorers returns top active storer tickets.
+	// GetTopStorers gets storer tickets with the most total delegated value.
 	GetTopStorers(limit int) (SelectedTickets, error)
+
+	// GetTopValidators gets validator tickets with the most total delegated value.
+	GetTopValidators(limit int) (SelectedTickets, error)
 
 	// Stop stops the ticket manager
 	Stop() error

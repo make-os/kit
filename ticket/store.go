@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"sort"
 
-	"github.com/imdario/mergo"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
@@ -200,20 +199,15 @@ func (s *Store) UpdateOne(upd types.Ticket, queryPredicate func(*types.Ticket) b
 		return
 	}
 
-	if upd.Hash.IsEmpty() {
-		upd.Hash = target.Hash
+	if upd.DecayBy != 0 {
+		target.DecayBy = upd.DecayBy
 	}
 
-	if upd.ProposerPubKey.IsEmpty() {
-		upd.ProposerPubKey = target.ProposerPubKey
+	if upd.MatureBy != 0 {
+		target.MatureBy = upd.MatureBy
 	}
 
-	if upd.VRFPubKey.IsEmpty() {
-		upd.VRFPubKey = target.VRFPubKey
-	}
-
-	mergo.Merge(&upd, target)
 	key := MakeKey(target.Hash.Bytes(), target.Height, target.Index)
 	s.db.Del(key)
-	s.Add(&upd)
+	s.Add(target)
 }

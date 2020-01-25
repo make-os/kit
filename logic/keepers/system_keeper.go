@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
-	"github.com/pkg/errors"
 )
 
 // ErrBlockInfoNotFound means the block info was not found
@@ -117,67 +115,6 @@ func (s *SystemKeeper) IsMarkedAsMature() (bool, error) {
 		return false, err
 	}
 	return true, nil
-}
-
-// GetEpochSeeds traverses the chain's history collecting seeds from every epoch until
-// the limit is reached or no more seeds are found.
-func (s *SystemKeeper) GetEpochSeeds(startHeight, limit int64) ([][]byte, error) {
-
-	// Determine the end of the epoch where startHeight falls in
-	var next = params.GetEndOfEpochOfHeight(startHeight)
-
-	// Skip as much as NumBlocksPerEpoch to reach the next older epoch
-	skip := int64(params.NumBlocksPerEpoch)
-
-	var seeds [][]byte
-	for next > 0 {
-		seedHeight := params.GetSeedHeightInEpochOfHeight(next)
-		bi, err := s.GetBlockInfo(seedHeight)
-		if err != nil {
-			if err != ErrBlockInfoNotFound {
-				return nil, err
-			}
-			next = next - skip
-			continue
-		}
-
-		beforeInfo, err := s.GetBlockInfo(seedHeight - 1)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to get block before seed block")
-		}
-
-		// If the seed block does not include a seed, we use the hash of the
-		// block before it.
-		//
-		// Rationale: Prevents a proposer from being able to delibrately and easily chose
-		// to not add a seed expecting `GetEpochSeeds` to produce same seed set
-		// in subsequent run.
-		if bi.EpochSeedOutput.IsEmpty() {
-			seeds = append(seeds, beforeInfo.Hash)
-			next = next - skip
-			continue
-		}
-
-		// Mix the hash of the block before the seed block and the epoch seed
-		// and hash the mix to produce the final 32-bytes seed.
-		//
-		// Rationale: A block proposer can determine that they are the next to
-		// generate an epoch seed and use this information to precompute the
-		// seed which can be used to determine the next epoch's validators long
-		// before they are required to do so, by mixing the hash of the block
-		// before the seed block, we reduce the time available to precompute the
-		// seed and to act maliciously.
-		mixSeed := append(beforeInfo.Hash, bi.EpochSeedOutput.Bytes()...)
-		mixSeed = util.Blake2b256(mixSeed)
-
-		seeds = append(seeds, mixSeed)
-		if limit > 0 && int64(len(seeds)) == limit {
-			break
-		}
-
-		next = next - skip
-	}
-	return seeds, nil
 }
 
 // SetLastRepoObjectsSyncHeight sets the last block that was processed by the repo

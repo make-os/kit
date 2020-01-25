@@ -126,21 +126,6 @@ func (mr *MockSystemKeeperMockRecorder) IsMarkedAsMature() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMarkedAsMature", reflect.TypeOf((*MockSystemKeeper)(nil).IsMarkedAsMature))
 }
 
-// GetEpochSeeds mocks base method
-func (m *MockSystemKeeper) GetEpochSeeds(from, limit int64) ([][]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEpochSeeds", from, limit)
-	ret0, _ := ret[0].([][]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetEpochSeeds indicates an expected call of GetEpochSeeds
-func (mr *MockSystemKeeperMockRecorder) GetEpochSeeds(from, limit interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpochSeeds", reflect.TypeOf((*MockSystemKeeper)(nil).GetEpochSeeds), from, limit)
-}
-
 // SetLastRepoObjectsSyncHeight mocks base method
 func (m *MockSystemKeeper) SetLastRepoObjectsSyncHeight(height uint64) error {
 	m.ctrl.T.Helper()
@@ -1425,64 +1410,4 @@ func (m *MockSysLogic) CheckSetNetMaturity() error {
 func (mr *MockSysLogicMockRecorder) CheckSetNetMaturity() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckSetNetMaturity", reflect.TypeOf((*MockSysLogic)(nil).CheckSetNetMaturity))
-}
-
-// GetEpoch mocks base method
-func (m *MockSysLogic) GetEpoch(curBlockHeight uint64) (int, int) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEpoch", curBlockHeight)
-	ret0, _ := ret[0].(int)
-	ret1, _ := ret[1].(int)
-	return ret0, ret1
-}
-
-// GetEpoch indicates an expected call of GetEpoch
-func (mr *MockSysLogicMockRecorder) GetEpoch(curBlockHeight interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEpoch", reflect.TypeOf((*MockSysLogic)(nil).GetEpoch), curBlockHeight)
-}
-
-// MakeEpochSeedTx mocks base method
-func (m *MockSysLogic) MakeEpochSeedTx() (types.BaseTx, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MakeEpochSeedTx")
-	ret0, _ := ret[0].(types.BaseTx)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// MakeEpochSeedTx indicates an expected call of MakeEpochSeedTx
-func (mr *MockSysLogicMockRecorder) MakeEpochSeedTx() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeEpochSeedTx", reflect.TypeOf((*MockSysLogic)(nil).MakeEpochSeedTx))
-}
-
-// GetLastEpochSeed mocks base method
-func (m *MockSysLogic) GetLastEpochSeed(curBlockHeight int64) (util.Bytes32, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLastEpochSeed", curBlockHeight)
-	ret0, _ := ret[0].(util.Bytes32)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetLastEpochSeed indicates an expected call of GetLastEpochSeed
-func (mr *MockSysLogicMockRecorder) GetLastEpochSeed(curBlockHeight interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastEpochSeed", reflect.TypeOf((*MockSysLogic)(nil).GetLastEpochSeed), curBlockHeight)
-}
-
-// MakeSecret mocks base method
-func (m *MockSysLogic) MakeSecret(height int64) ([]byte, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MakeSecret", height)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// MakeSecret indicates an expected call of MakeSecret
-func (mr *MockSysLogicMockRecorder) MakeSecret(height interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeSecret", reflect.TypeOf((*MockSysLogic)(nil).MakeSecret), height)
 }

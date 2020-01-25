@@ -171,42 +171,5 @@ var _ = Describe("Mempool", func() {
 			})
 		})
 
-		Context("epochSecretGetter is set and returns a tx", func() {
-			var tx = types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
-			var res tmtypes.Txs
-			BeforeEach(func() {
-				Expect(mempool.Size()).To(Equal(0))
-				mempool.SetEpochSecretGetter(func() (types.BaseTx, error) {
-					return tx, nil
-				})
-				res = mempool.ReapMaxBytesMaxGas(1000, 0)
-			})
-
-			It("should return 1 tx", func() {
-				Expect(res).ToNot(BeEmpty())
-				Expect(res).To(HaveLen(1))
-			})
-
-			Specify("that the tx is signed", func() {
-				dTx, _ := types.DecodeTx(res[0])
-				Expect(dTx.GetSenderPubKey()).ToNot(BeEmpty())
-				pk, _ := crypto.PubKeyFromBytes(dTx.GetSenderPubKey().Bytes())
-				valid, err := pk.Verify(dTx.GetBytesNoSig(), dTx.GetSignature())
-				Expect(err).To(BeNil())
-				Expect(valid).To(BeTrue())
-			})
-
-			When("maxBytes is set to 185 (max size per tx)", func() {
-				var tx2 = types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "20", "0.1", time.Now().Unix())
-				It("should return one tx; the tx return by epochSecretGetter", func() {
-					mempool.pool.Put(tx2)
-					res := mempool.ReapMaxBytesMaxGas(185, 0)
-					Expect(res).ToNot(BeEmpty())
-					Expect(res).To(HaveLen(1))
-					actual, _ := types.DecodeTx(res[0])
-					Expect(tx).To(Equal(actual))
-				})
-			})
-		})
 	})
 })

@@ -7,7 +7,6 @@ import (
 	"github.com/tendermint/tendermint/privval"
 
 	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/crypto/vrf"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/util"
 
@@ -142,10 +141,11 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("an error occurred when making secret", func() {
+		When("an error occurred when fetching top validators", func() {
 			BeforeEach(func() {
-				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
-				app.logic = mockLogic.AtomicLogic
+				mockTicketMgr := mockLogic.TicketManager
+				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
+				app.ticketMgr = mockTicketMgr
 			})
 
 			It("should return error", func() {
@@ -155,32 +155,13 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("an error occurred when selecting random validators", func() {
-			BeforeEach(func() {
-				mockLogic.TicketManager.EXPECT().SelectRandomValidatorTickets(gomock.Any(), gomock.Any(),
-					gomock.Any()).Return(nil, fmt.Errorf("error selecting validators"))
-				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
-				app.logic = mockLogic.AtomicLogic
-				app.ticketMgr = mockLogic.TicketManager
-			})
-
-			It("should return error", func() {
-				err := app.updateValidators(4, nil)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("error selecting validators"))
-			})
-		})
-
-		When("when no tickets are randomly selected", func() {
-			var tickets = []*types.Ticket{}
+		When("when no tickets were selected", func() {
 
 			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 5
-				mockLogic.TicketManager.EXPECT().SelectRandomValidatorTickets(gomock.Any(), gomock.Any(),
-					gomock.Any()).Return(tickets, nil)
-				app.ticketMgr = mockLogic.TicketManager
-				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
-				app.logic = mockLogic.AtomicLogic
+				mockTicketMgr := mockLogic.TicketManager
+				selected := []*types.SelectedTicket{}
+				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(selected, nil)
+				app.ticketMgr = mockTicketMgr
 			})
 
 			It("should return nil and no validator updates in endblock response", func() {
@@ -194,16 +175,16 @@ var _ = Describe("App", func() {
 		When("when no validator currently exists and two tickets are randomly selected", func() {
 			var key = crypto.NewKeyFromIntSeed(1)
 			var key2 = crypto.NewKeyFromIntSeed(1)
-			var t = &types.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}
-			var t2 = &types.Ticket{ProposerPubKey: key2.PubKey().MustBytes32()}
-			var tickets = []*types.Ticket{t, t2}
 
 			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 5
-				mockLogic.TicketManager.EXPECT().SelectRandomValidatorTickets(gomock.Any(), gomock.Any(),
-					gomock.Any()).Return(tickets, nil)
-				app.ticketMgr = mockLogic.TicketManager
-				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
+				mockTicketMgr := mockLogic.TicketManager
+				selected := []*types.SelectedTicket{
+					{Ticket: &types.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}},
+					{Ticket: &types.Ticket{ProposerPubKey: key2.PubKey().MustBytes32()}},
+				}
+				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(selected, nil)
+				app.ticketMgr = mockTicketMgr
+
 				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[util.Bytes32]*types.Validator{}, nil)
 				app.logic = mockLogic.AtomicLogic
 			})
@@ -219,17 +200,14 @@ var _ = Describe("App", func() {
 		When("when one validator currently exists and another different validator is selected", func() {
 			var existingValKey = crypto.NewKeyFromIntSeed(1)
 			var keyOfNewTicket = crypto.NewKeyFromIntSeed(2)
-			var newTicket = &types.Ticket{ProposerPubKey: keyOfNewTicket.PubKey().MustBytes32(), Height: 100}
-			var tickets = []*types.Ticket{newTicket}
 
 			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 5
-
-				// Mock the return of the tickets
-				mockLogic.TicketManager.EXPECT().SelectRandomValidatorTickets(gomock.Any(), gomock.Any(), gomock.Any()).Return(tickets, nil)
-				app.ticketMgr = mockLogic.TicketManager
-
-				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
+				mockTicketMgr := mockLogic.TicketManager
+				selected := []*types.SelectedTicket{
+					{Ticket: &types.Ticket{ProposerPubKey: keyOfNewTicket.PubKey().MustBytes32()}},
+				}
+				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(selected, nil)
+				app.ticketMgr = mockTicketMgr
 
 				// Mock the return of the existing validator
 				pubKey := existingValKey.PubKey().MustBytes32()
@@ -263,17 +241,15 @@ var _ = Describe("App", func() {
 
 		When("when error occurred when fetching current validators", func() {
 			var key = crypto.NewKeyFromIntSeed(1)
-			var key2 = crypto.NewKeyFromIntSeed(1)
-			var t = &types.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}
-			var t2 = &types.Ticket{ProposerPubKey: key2.PubKey().MustBytes32()}
-			var tickets = []*types.Ticket{t, t2}
 
 			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 5
-				mockLogic.TicketManager.EXPECT().SelectRandomValidatorTickets(gomock.Any(), gomock.Any(),
-					gomock.Any()).Return(tickets, nil)
-				app.ticketMgr = mockLogic.TicketManager
-				mockLogic.Sys.EXPECT().MakeSecret(gomock.Any()).Return(nil, nil)
+				mockTicketMgr := mockLogic.TicketManager
+				selected := []*types.SelectedTicket{
+					{Ticket: &types.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}},
+				}
+				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(selected, nil)
+				app.ticketMgr = mockTicketMgr
+
 				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
 				app.logic = mockLogic.AtomicLogic
 			})
@@ -534,282 +510,9 @@ var _ = Describe("App", func() {
 				Expect(app.unbondStorerReqs).To(HaveLen(1))
 			})
 		})
-
-		When("tx type is TxTypeEpochSeed and the current block "+
-			"is not last in the current epoch", func() {
-			var res abcitypes.ResponseDeliverTx
-
-			BeforeEach(func() {
-				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
-					return nil
-				}
-			})
-
-			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 5
-				app.curWorkingBlock.Height = 4
-				tx := types.NewBareTxEpochSeed()
-				tx.Output = util.BytesToBytes32(util.RandBytes(32))
-				tx.Proof = util.RandBytes(96)
-				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				res = app.DeliverTx(req)
-			})
-
-			It("should return code=ErrCodeEpochSeedNotExpected and err='failed to execute tx: epoch seed not expected'", func() {
-				Expect(res.Code).To(Equal(uint32(types.ErrCodeEpochSeedNotExpected)))
-				Expect(res.Log).To(Equal("failed to execute tx: epoch seed not expected"))
-			})
-		})
-
-		When("tx type TxTypeEpochSeed has been seen/cached", func() {
-			var res abcitypes.ResponseDeliverTx
-			var tx types.BaseTx
-
-			BeforeEach(func() {
-				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
-					return nil
-				}
-			})
-
-			BeforeEach(func() {
-				tx = types.NewBareTxEpochSeed()
-				tx.(*types.TxEpochSeed).Output = util.BytesToBytes32(util.RandBytes(32))
-				tx.(*types.TxEpochSeed).Proof = util.RandBytes(96)
-			})
-
-			BeforeEach(func() {
-				params.NumBlocksToEffectValChange = 2
-				params.NumBlocksPerEpoch = 7
-				app.curWorkingBlock.Height = 5
-				app.epochSeedTx = tx
-				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				res = app.DeliverTx(req)
-			})
-
-			It("should return code=ErrCodeEpochSecretExcess and err='failed to execute tx: epoch seed capacity reached'", func() {
-				Expect(res.Code).To(Equal(uint32(types.ErrCodeEpochSecretExcess)))
-				Expect(res.Log).To(Equal("failed to execute tx: epoch seed capacity reached"))
-			})
-		})
-
-		When("tx type TxTypeEpochSeed fail proof verification", func() {
-			var res abcitypes.ResponseDeliverTx
-			var tx types.BaseTx
-
-			BeforeEach(func() {
-				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
-					return nil
-				}
-
-				tx = types.NewBareTxEpochSeed()
-				tx.(*types.TxEpochSeed).Output = util.BytesToBytes32(util.RandBytes(32))
-				tx.(*types.TxEpochSeed).Proof = util.RandBytes(96)
-
-				params.NumBlocksToEffectValChange = 2
-				params.NumBlocksPerEpoch = 7
-				app.curWorkingBlock.Height = 5
-				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				res = app.DeliverTx(req)
-			})
-
-			It("should return code=ErrCodeTxFailedSeedVerification and err='failed to execute epoch seed tx: ticket not found'", func() {
-				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxFailedSeedVerification)))
-				Expect(res.Log).To(Equal("failed to execute epoch seed tx: ticket not found"))
-			})
-		})
-
-		When("tx type TxTypeEpochSeed is successfully executed", func() {
-			var res abcitypes.ResponseDeliverTx
-			var tx types.BaseTx
-
-			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 7
-				app.curWorkingBlock.Height = 5
-				tmPubKey, _ := crypto.TMPubKeyFromBytesPubKey(sender.PubKey().MustBytes())
-				app.curWorkingBlock.ProposerAddress = tmPubKey.Address().Bytes()
-
-				// generate keys, vrf seed and proof
-				seed := util.BytesToBytes32([]byte("seed"))
-				vrfKey, _ := vrf.GenerateKeyFromPrivateKey(sender.PrivKey().MustBytes())
-				vrf, proof := vrfKey.Prove(seed.Bytes())
-				pubKey := sender.PubKey().MustBytes32()
-				vrfPubKey, _ := vrfKey.Public()
-
-				// Create TxEpochSeed
-				tx = types.NewBareTxEpochSeed()
-				tx.(*types.TxEpochSeed).Output = util.BytesToBytes32(vrf)
-				tx.(*types.TxEpochSeed).Proof = proof
-
-				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
-					return nil
-				}
-
-				// Create mock ticket with vrf public key
-				ticketID := util.BytesToBytes32(util.RandBytes(32))
-				ticket := &types.Ticket{VRFPubKey: util.BytesToBytes32(vrfPubKey)}
-				mockLogic.TicketManager.EXPECT().GetByHash(ticketID).Return(ticket)
-
-				// Set mock seed
-				mockLogic.Sys.EXPECT().GetLastEpochSeed(app.curWorkingBlock.Height-1).Return(seed, nil)
-
-				// Sample validators
-				mockValidators := types.BlockValidators(map[util.Bytes32]*types.Validator{
-					pubKey: &types.Validator{TicketID: ticketID},
-				})
-
-				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(app.curWorkingBlock.Height-1).Return(mockValidators, nil)
-
-				mockLogic.Tx.EXPECT().ExecTx(gomock.Any(), gomock.Any()).Return(abcitypes.ResponseDeliverTx{
-					Code: uint32(0),
-				})
-
-				app.ticketMgr = mockLogic.TicketManager
-				app.logic = mockLogic.AtomicLogic
-
-				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				res = app.DeliverTx(req)
-			})
-
-			It("should return code=0 and epochSecretTx must be set as the processed tx", func() {
-				Expect(res.Code).To(BeZero())
-				Expect(app.epochSeedTx).To(Equal(tx))
-			})
-		})
-
-		When("tx type TxTypeEpochSeed failed proof verification because seed could not be fetched", func() {
-			var res abcitypes.ResponseDeliverTx
-			var tx types.BaseTx
-
-			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 7
-				app.curWorkingBlock.Height = 5
-				tmPubKey, _ := crypto.TMPubKeyFromBytesPubKey(sender.PubKey().MustBytes())
-				app.curWorkingBlock.ProposerAddress = tmPubKey.Address().Bytes()
-
-				// generate keys, vrf seed and proof
-				seed := util.BytesToBytes32([]byte("seed"))
-				vrfKey, _ := vrf.GenerateKeyFromPrivateKey(sender.PrivKey().MustBytes())
-				vrf, proof := vrfKey.Prove(seed.Bytes())
-				pubKey := sender.PubKey().MustBytes32()
-				vrfPubKey, _ := vrfKey.Public()
-
-				// Create TxEpochSeed
-				tx = types.NewBareTxEpochSeed()
-				tx.(*types.TxEpochSeed).Output = util.BytesToBytes32(vrf)
-				tx.(*types.TxEpochSeed).Proof = proof
-
-				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
-					return nil
-				}
-
-				// Create mock ticket with vrf public key
-				ticketID := util.BytesToBytes32(util.RandBytes(32))
-				ticket := &types.Ticket{VRFPubKey: util.BytesToBytes32(vrfPubKey)}
-				mockLogic.TicketManager.EXPECT().GetByHash(ticketID).Return(ticket)
-
-				// Set mock seed
-				mockLogic.Sys.EXPECT().GetLastEpochSeed(app.curWorkingBlock.Height-1).Return(util.EmptyBytes32, fmt.Errorf("failed to get seed"))
-
-				// Sample validators
-				mockValidators := types.BlockValidators(map[util.Bytes32]*types.Validator{
-					pubKey: &types.Validator{TicketID: ticketID},
-				})
-
-				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(app.curWorkingBlock.Height-1).Return(mockValidators, nil)
-
-				app.ticketMgr = mockLogic.TicketManager
-				app.logic = mockLogic.AtomicLogic
-
-				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				res = app.DeliverTx(req)
-			})
-
-			It("should return code=ErrCodeTxFailedSeedVerification", func() {
-				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxFailedSeedVerification)))
-				Expect(res.Log).To(Equal("failed to execute epoch seed tx: failed to get last epoch seed: failed to get seed"))
-			})
-		})
-
-		When("tx type TxTypeEpochSeed failed proof verification because proof is not valid", func() {
-			var res abcitypes.ResponseDeliverTx
-			var tx types.BaseTx
-
-			BeforeEach(func() {
-				params.NumBlocksPerEpoch = 7
-				app.curWorkingBlock.Height = 5
-				tmPubKey, _ := crypto.TMPubKeyFromBytesPubKey(sender.PubKey().MustBytes())
-				app.curWorkingBlock.ProposerAddress = tmPubKey.Address().Bytes()
-
-				// generate keys, vrf seed and proof
-				seed := util.BytesToBytes32([]byte("seed"))
-				vrfKey, _ := vrf.GenerateKeyFromPrivateKey(sender.PrivKey().MustBytes())
-				vrf, _ := vrfKey.Prove(seed.Bytes())
-				pubKey := sender.PubKey().MustBytes32()
-				vrfPubKey, _ := vrfKey.Public()
-
-				// Create TxEpochSeed
-				tx = types.NewBareTxEpochSeed()
-				tx.(*types.TxEpochSeed).Output = util.BytesToBytes32(vrf)
-				tx.(*types.TxEpochSeed).Proof = util.RandBytes(96) // invalid
-
-				app.validateTx = func(tx types.BaseTx, i int, logic types.Logic) error {
-					return nil
-				}
-
-				// Create mock ticket with vrf public key
-				ticketID := util.BytesToBytes32(util.RandBytes(32))
-				ticket := &types.Ticket{VRFPubKey: util.BytesToBytes32(vrfPubKey)}
-				mockLogic.TicketManager.EXPECT().GetByHash(ticketID).Return(ticket)
-
-				// Set mock seed
-				mockLogic.Sys.EXPECT().GetLastEpochSeed(app.curWorkingBlock.Height-1).Return(seed, nil)
-
-				// Sample validators
-				mockValidators := types.BlockValidators(map[util.Bytes32]*types.Validator{
-					pubKey: &types.Validator{TicketID: ticketID},
-				})
-
-				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(app.curWorkingBlock.Height-1).Return(mockValidators, nil)
-
-				app.ticketMgr = mockLogic.TicketManager
-				app.logic = mockLogic.AtomicLogic
-
-				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				res = app.DeliverTx(req)
-			})
-
-			It("should return code=ErrCodeTxFailedSeedVerification", func() {
-				Expect(res.Code).To(Equal(uint32(types.ErrCodeTxFailedSeedVerification)))
-				Expect(res.Log).To(Equal("failed to execute epoch seed tx: failed to verify vrf proof"))
-			})
-		})
 	})
 
 	Describe(".Commit", func() {
-
-		When("error occurred when saving latest block info", func() {
-			var tx types.BaseTx
-
-			BeforeEach(func() {
-				tx = types.NewBareTxEpochSeed()
-				tx.(*types.TxEpochSeed).Output = util.BytesToBytes32(util.RandBytes(32))
-				tx.(*types.TxEpochSeed).Proof = util.RandBytes(96)
-				app.epochSeedTx = tx
-			})
-
-			BeforeEach(func() {
-				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
-				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(fmt.Errorf("bad"))
-				mockLogic.AtomicLogic.EXPECT().Discard().Return()
-				app.logic = mockLogic.AtomicLogic
-			})
-
-			It("should panic", func() {
-				Expect(func() {
-					app.Commit()
-				}).To(Panic())
-			})
-		})
 
 		When("error occurred when saving validators", func() {
 

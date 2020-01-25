@@ -13,7 +13,6 @@ type TxTicketPurchase struct {
 	*TxCommon `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxValue  `json:"-" msgpack:"-" mapstructure:"-"`
 	Delegate  util.Bytes32 `json:"delegate" msgpack:"delegate"`
-	VRFPubKey util.Bytes32 `json:"vrfPubKey" msgpack:"vrfPubKey"`
 	BLSPubKey []byte       `json:"blsPubKey" msgpack:"blsPubKey"`
 }
 
@@ -24,7 +23,6 @@ func NewBareTxTicketPurchase(ticketType int) *TxTicketPurchase {
 		TxCommon:  NewBareTxCommon(),
 		TxValue:   &TxValue{Value: "0"},
 		Delegate:  util.EmptyBytes32,
-		VRFPubKey: util.EmptyBytes32,
 		BLSPubKey: []byte{},
 	}
 }
@@ -40,7 +38,6 @@ func (tx *TxTicketPurchase) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.SenderPubKey,
 		tx.Value,
 		tx.Delegate.Bytes(),
-		tx.VRFPubKey.Bytes(),
 		tx.BLSPubKey)
 }
 
@@ -55,7 +52,6 @@ func (tx *TxTicketPurchase) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.SenderPubKey,
 		&tx.Value,
 		&tx.Delegate,
-		&tx.VRFPubKey,
 		&tx.BLSPubKey)
 }
 

@@ -13,13 +13,12 @@ type BlockValidators map[util.Bytes32]*Validator
 
 // BlockInfo describes information about a block
 type BlockInfo struct {
-	AppHash         []byte       `json:"appHash"`
-	LastAppHash     []byte       `json:"lastAppHash"`
-	Hash            []byte       `json:"hash"`
-	Height          int64        `json:"height"`
-	ProposerAddress []byte       `json:"proposerAddress"`
-	EpochSeedOutput util.Bytes32 `json:"seedOutput"`
-	EpochSeedProof  []byte       `json:"seedProof"`
+	AppHash         []byte `json:"appHash"`
+	LastAppHash     []byte `json:"lastAppHash"`
+	Hash            []byte `json:"hash"`
+	Height          int64  `json:"height"`
+	ProposerAddress []byte `json:"proposerAddress"`
+	Time            int64
 }
 
 // Validator represents a validator
@@ -48,10 +47,6 @@ type SystemKeeper interface {
 
 	// IsMarkedAsMature returns true if the network has been flagged as mature.
 	IsMarkedAsMature() (bool, error)
-
-	// GetEpochSeeds traverses the chain's history collecting seeds from every epoch until
-	// the limit is reached or no more seeds are found.
-	GetEpochSeeds(from, limit int64) ([][]byte, error)
 
 	// SetLastRepoObjectsSyncHeight sets the last block that was processed by the repo
 	// object synchronizer
@@ -301,21 +296,4 @@ type SysLogic interface {
 	// met the maturity condition in this call, we
 	// mark the network as mature
 	CheckSetNetMaturity() error
-
-	// GetEpoch return the current and next epoch
-	GetEpoch(curBlockHeight uint64) (int, int)
-
-	// MakeEpochSeedTx returns an TxTypeEpochSeed transaction
-	// only if the next block is the last block in the current epoch.
-	MakeEpochSeedTx() (BaseTx, error)
-
-	// GetLastEpochSeed get the seed of the last epoch
-	GetLastEpochSeed(curBlockHeight int64) (util.Bytes32, error)
-
-	// MakeSecret generates a 64 bytes secret for validator
-	// selection by xoring the last 32 valid epoch seeds.
-	// The most recent secrets will be selected starting from
-	// the given height down to genesis.
-	// It returns ErrNoSeedFound if no error was found
-	MakeSecret(height int64) ([]byte, error)
 }

@@ -625,53 +625,6 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	Describe(".CheckTxEpochSeed", func() {
-		var tx *types.TxEpochSeed
-		BeforeEach(func() {
-			tx = types.NewBareTxEpochSeed()
-		})
-
-		When("it has invalid fields, it should return error when", func() {
-			It("should return error='type is invalid'", func() {
-				tx.Type = -10
-				err := validators.CheckTxEpochSeed(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
-			})
-
-			It("has no vrf output", func() {
-				err := validators.CheckTxEpochSeed(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:output, error:output is required"))
-			})
-
-			It("has no vrf proof", func() {
-				tx.Output = util.BytesToBytes32(util.RandBytes(32))
-				err := validators.CheckTxEpochSeed(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:proof, error:proof is required"))
-			})
-
-			It("has vrf proof length not equal to 96 bytes", func() {
-				tx.Output = util.BytesToBytes32(util.RandBytes(32))
-				tx.Proof = []byte("invalid_length")
-				err := validators.CheckTxEpochSeed(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:proof, error:proof length is invalid"))
-			})
-
-		})
-
-		When("it has no error", func() {
-			It("should return no error", func() {
-				tx.Output = util.BytesToBytes32(util.RandBytes(32))
-				tx.Proof = util.RandBytes(96)
-				err := validators.CheckTxEpochSeed(tx, -1)
-				Expect(err).To(BeNil())
-			})
-		})
-	})
-
 	Describe(".CheckTxAddGPGPubKey", func() {
 		var tx *types.TxAddGPGPubKey
 		var gpgKey []byte

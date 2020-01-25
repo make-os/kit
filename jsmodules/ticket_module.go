@@ -159,13 +159,6 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 		tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
 	}
 
-	// Derive VRF public key from signing key
-	key := checkAndGetKey(options...)
-	pk, _ := crypto.PrivKeyFromBase58(key)
-	vrfSK := pk.VRFKey()
-	vrfPubKey, _ := vrfSK.Public()
-	tx.VRFPubKey = util.BytesToBytes32(vrfPubKey)
-
 	setCommonTxFields(tx, m.service, options...)
 
 	// Process the transaction

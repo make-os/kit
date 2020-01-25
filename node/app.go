@@ -3,11 +3,11 @@ package node
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/tendermint/tendermint/state"
 
 	"github.com/fatih/color"
 	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/crypto/vrf"
 	"github.com/makeos/mosdef/logic/keepers"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/storage"
@@ -17,7 +17,6 @@ import (
 	"github.com/makeos/mosdef/validators"
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 type ticketInfo struct {
@@ -38,7 +37,6 @@ type App struct {
 	storerTickets             []*ticketInfo
 	unbondStorerReqs          []util.Bytes32
 	ticketMgr                 types.TicketManager
-	epochSeedTx               types.BaseTx
 	isCurrentBlockProposer    bool
 	mature                    bool
 	unsavedValidators         []*types.Validator
@@ -160,6 +158,7 @@ func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBegi
 	a.curWorkingBlock.Hash = req.GetHash()
 	a.curWorkingBlock.LastAppHash = req.GetHeader().AppHash
 	a.curWorkingBlock.ProposerAddress = req.GetHeader().ProposerAddress
+	a.curWorkingBlock.Time = req.GetHeader().Time.Unix()
 
 	if bytes.Equal(a.cfg.G().PrivVal.GetAddress().Bytes(), a.curWorkingBlock.ProposerAddress) {
 		a.isCurrentBlockProposer = true
@@ -204,30 +203,6 @@ func (a *App) preExecChecks(tx types.BaseTx) *abcitypes.ResponseDeliverTx {
 			"failed to execute tx: validator ticket capacity reached")
 	}
 
-	if tx.Is(types.TxTypeEpochSeed) {
-
-		// Invalidate the epoch seed tx if the current block is not the first
-		// block in the current epoch's end phase.
-		// TODO: Slash the proposer for violating this rule.
-		if !params.IsStartOfEndOfEpochOfHeight(a.curWorkingBlock.Height) {
-			return respDeliverTx(types.ErrCodeEpochSeedNotExpected,
-				"failed to execute tx: epoch seed not expected")
-		}
-
-		// Invalidate the epoch seed tx if we have already seen one in this block.
-		// TODO: Slash proposer for violating this rule.
-		if a.epochSeedTx != nil {
-			return respDeliverTx(types.ErrCodeEpochSecretExcess,
-				"failed to execute tx: epoch seed capacity reached")
-		}
-
-		// Perform seed verification
-		if err := a.verifyBlockProposerSeedTx(tx.(*types.TxEpochSeed)); err != nil {
-			return respDeliverTx(types.ErrCodeTxFailedSeedVerification,
-				errors.Wrap(err, "failed to execute epoch seed tx").Error())
-		}
-	}
-
 	return nil
 }
 
@@ -238,8 +213,6 @@ func (a *App) postExecChecks(
 
 	txType := tx.GetType()
 	switch txType {
-	case types.TxTypeEpochSeed:
-		a.epochSeedTx = tx
 
 	case types.TxTypeValidatorTicket:
 		a.validatorTickets = append(a.validatorTickets, &ticketInfo{Tx: tx, index: a.txIndex})
@@ -259,54 +232,6 @@ func (a *App) postExecChecks(
 	a.unIndexedTxs = append(a.unIndexedTxs, tx)
 
 	return &resp
-}
-
-// verifyBlockProposerSeedTx verifies an epoch seed transaction that was found
-// the current working block. It attempts to find the proposer's VRF public key
-// and uses it to check the vrf output and proof.
-func (a *App) verifyBlockProposerSeedTx(seedTx *types.TxEpochSeed) error {
-
-	// Get the validators of the current epoch
-	validators, err := a.logic.ValidatorKeeper().GetByHeight(a.curWorkingBlock.Height - 1)
-	if err != nil {
-		return errors.Wrap(err, "failed to get current validators")
-	}
-
-	// Since the current block proposer is a member of the current epoch
-	// validators, find her ticket so we can learn about her VRF public key
-	var ticket *types.Ticket
-	for pubKey, valInfo := range validators {
-
-		var pub32 ed25519.PubKeyEd25519
-		copy(pub32[:], pubKey.Bytes())
-		if !bytes.Equal(pub32.Address().Bytes(), a.curWorkingBlock.ProposerAddress) {
-			continue
-		}
-
-		ticket = a.ticketMgr.GetByHash(valInfo.TicketID)
-		if ticket == nil {
-			return errors.Wrap(err, "failed to find an active ticket")
-		}
-
-		break
-	}
-
-	if ticket == nil {
-		return fmt.Errorf("ticket not found")
-	}
-
-	// At this point, we have found the ticket. Use the VRF public key to it to
-	// verify the VRF proof
-	vrfPubKey := vrf.PublicKey(ticket.VRFPubKey.Bytes())
-	lastEpochSeed, err := a.logic.Sys().GetLastEpochSeed(a.curWorkingBlock.Height - 1)
-	if err != nil {
-		return errors.Wrap(err, "failed to get last epoch seed")
-	}
-	if !vrfPubKey.Verify(lastEpochSeed.Bytes(), seedTx.Output.Bytes(), seedTx.Proof) {
-		return fmt.Errorf("failed to verify vrf proof")
-	}
-
-	return nil
 }
 
 // DeliverTx processes transactions included in a proposed block.
@@ -358,40 +283,33 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 
 	a.log.Info("Preparing to update validators", "Height", curHeight)
 
-	// Get secret computed from past epoch
-	secret, err := a.logic.Sys().MakeSecret(curHeight - 1)
-	if err != nil {
-		return err
-	}
-
-	// Get next set of validators randomly
-	tickets, err := a.ticketMgr.SelectRandomValidatorTickets(curHeight-1, secret,
-		params.MaxValidatorsPerEpoch)
+	// Get next set of validators
+	selected, err := a.ticketMgr.GetTopValidators(params.MaxValidatorsPerEpoch)
 	if err != nil {
 		return err
 	}
 
 	// Do not update validators if no tickets were selected
-	if len(tickets) == 0 {
+	if len(selected) == 0 {
 		a.log.Warn("Refused to update current validators since no tickets were selected")
 		return nil
 	}
 
-	// Create a new validator list. Keep an index of validators
-	// public key for fast query
+	// Create a new validator list.
+	// Keep an index of validators public key for faster query.
 	var newValUpdates []abcitypes.ValidatorUpdate // for tendermint
 	var newValidators []*types.Validator          // for validator keeper
 	var vIndex = map[string]struct{}{}
-	for _, ticket := range tickets {
+	for _, st := range selected {
 		newValUpdates = append(newValUpdates, abcitypes.ValidatorUpdate{
-			PubKey: abcitypes.PubKey{Type: "ed25519", Data: ticket.ProposerPubKey.Bytes()},
+			PubKey: abcitypes.PubKey{Type: "ed25519", Data: st.Ticket.ProposerPubKey.Bytes()},
 			Power:  1,
 		})
 		newValidators = append(newValidators, &types.Validator{
-			PubKey:   ticket.ProposerPubKey,
-			TicketID: ticket.Hash,
+			PubKey:   st.Ticket.ProposerPubKey,
+			TicketID: st.Ticket.Hash,
 		})
-		vIndex[ticket.ProposerPubKey.HexStr()] = struct{}{}
+		vIndex[st.Ticket.ProposerPubKey.HexStr()] = struct{}{}
 	}
 
 	// Get current validators
@@ -452,20 +370,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		LastAppHash:     a.curWorkingBlock.LastAppHash,
 		ProposerAddress: a.curWorkingBlock.ProposerAddress,
 		AppHash:         a.logic.StateTree().WorkingHash(),
-	}
-
-	// If we found an epoch seed in this block, store the seed information in
-	// the block information object
-	if seedTx := a.epochSeedTx; seedTx != nil {
-		bi.EpochSeedOutput = seedTx.(*types.TxEpochSeed).Output
-		bi.EpochSeedProof = seedTx.(*types.TxEpochSeed).Proof
-	} else {
-		// Ok, so no epoch seed tx in this block. If the block is the first
-		// block in the current epoch end phase. We need to
-		// TODO: Slash the proposer for not adding a secret.
-		if params.IsStartOfEndOfEpochOfHeight(bi.Height) {
-
-		}
+		Time:            a.curWorkingBlock.Time,
 	}
 
 	// Save the block information
@@ -538,7 +443,6 @@ func (a *App) reset() {
 	a.storerTickets = []*ticketInfo{}
 	a.unbondStorerReqs = []util.Bytes32{}
 	a.txIndex = 0
-	a.epochSeedTx = nil
 	a.mature = false
 	a.isCurrentBlockProposer = false
 	a.unIndexedTxs = []types.BaseTx{}

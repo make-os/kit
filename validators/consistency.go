@@ -145,15 +145,6 @@ func CheckTxRepoCreateConsistency(
 	return nil
 }
 
-// CheckTxEpochSeedConsistency performs consistency checks on TxEpochSeed
-func CheckTxEpochSeedConsistency(
-	tx *types.TxEpochSeed,
-	index int,
-	logic types.Logic) error {
-
-	return nil
-}
-
 // CheckTxSetDelegateCommissionConsistency performs consistency checks on TxSetDelegateCommission
 func CheckTxSetDelegateCommissionConsistency(
 	tx *types.TxSetDelegateCommission,

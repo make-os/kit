@@ -61,8 +61,6 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxUnbondTicket(o, index)
 	case *types.TxRepoCreate:
 		return CheckTxRepoCreate(o, index)
-	case *types.TxEpochSeed:
-		return CheckTxEpochSeed(o, index)
 	case *types.TxAddGPGPubKey:
 		return CheckTxAddGPGPubKey(o, index)
 	case *types.TxPush:
@@ -92,8 +90,6 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic types.Logic) error 
 		return CheckTxUnbondTicketConsistency(o, index, logic)
 	case *types.TxRepoCreate:
 		return CheckTxRepoCreateConsistency(o, index, logic)
-	case *types.TxEpochSeed:
-		return CheckTxEpochSeedConsistency(o, index, logic)
 	case *types.TxAddGPGPubKey:
 		return CheckTxAddGPGPubKeyConsistency(o, index, logic)
 	case *types.TxPush:

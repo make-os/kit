@@ -1,8 +1,6 @@
 package ticket
 
 import (
-	"math/big"
-	"math/rand"
 	"sort"
 
 	"github.com/makeos/mosdef/storage"
@@ -43,7 +41,6 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 		Value:          t.Value,
 		Hash:           t.GetHash(),
 		ProposerPubKey: t.GetSenderPubKey(),
-		VRFPubKey:      t.VRFPubKey,
 		BLSPubKey:      t.BLSPubKey,
 	}
 
@@ -81,9 +78,18 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 	return nil
 }
 
-// GetTopStorers gets storer tickets with the most total delegated
-// value up to the given limit.
+// GetTopStorers gets storer tickets with the most total delegated value.
 func (m *Manager) GetTopStorers(limit int) (types.SelectedTickets, error) {
+	return m.getTopTickets(types.TxTypeStorerTicket, limit)
+}
+
+// GetTopValidators gets validator tickets with the most total delegated value.
+func (m *Manager) GetTopValidators(limit int) (types.SelectedTickets, error) {
+	return m.getTopTickets(types.TxTypeValidatorTicket, limit)
+}
+
+// getTopTickets finds tickets with the most delegated value
+func (m *Manager) getTopTickets(ticketType, limit int) (types.SelectedTickets, error) {
 
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -93,7 +99,7 @@ func (m *Manager) GetTopStorers(limit int) (types.SelectedTickets, error) {
 
 	// Get active storer tickets
 	activeTickets := m.s.Query(func(t *types.Ticket) bool {
-		return t.Type == types.TxTypeStorerTicket &&
+		return t.Type == ticketType &&
 			t.MatureBy <= uint64(bi.Height) &&
 			(t.DecayBy > uint64(bi.Height) || t.DecayBy == 0)
 	})
@@ -208,74 +214,6 @@ func (m *Manager) UpdateDecayBy(hash util.Bytes32, newDecayHeight uint64) error 
 	m.s.UpdateOne(types.Ticket{DecayBy: newDecayHeight},
 		func(t *types.Ticket) bool { return t.Hash == hash })
 	return nil
-}
-
-// GetOrderedLiveValidatorTickets returns live tickets ordered by
-// value in desc. order, height asc order and index asc order
-func (m *Manager) GetOrderedLiveValidatorTickets(height int64, limit int) []*types.Ticket {
-
-	// Get matured, non-decayed tickets
-	tickets := m.s.Query(func(t *types.Ticket) bool {
-		return t.Type == types.TxTypeValidatorTicket &&
-			t.MatureBy <= uint64(height) &&
-			t.DecayBy > uint64(height)
-	}, types.QueryOptions{Limit: limit})
-
-	sort.Slice(tickets, func(i, j int) bool {
-		iVal := tickets[i].Value.Decimal()
-		jVal := tickets[j].Value.Decimal()
-		if iVal.GreaterThan(jVal) {
-			return true
-		} else if iVal.LessThan(jVal) {
-			return false
-		}
-
-		if tickets[i].Height < tickets[j].Height {
-			return true
-		} else if tickets[i].Height > tickets[j].Height {
-			return false
-		}
-
-		return tickets[i].Index < tickets[j].Index
-	})
-
-	return tickets
-}
-
-// SelectRandomValidatorTickets selects random live validators tickets up to the
-// specified limit. The provided seed is used to seed the PRNG.
-func (m *Manager) SelectRandomValidatorTickets(
-	height int64,
-	seed []byte,
-	limit int) ([]*types.Ticket, error) {
-
-	tickets := m.GetOrderedLiveValidatorTickets(height, params.ValidatorTicketPoolSize)
-
-	// Create a RNG sourced with the seed
-	seedInt := new(big.Int).SetBytes(seed)
-	r := rand.New(rand.NewSource(seedInt.Int64()))
-
-	// Select random tickets up to the given limit.
-	// Note: Only 1 slot per public key.
-	index := make(map[string]struct{})
-	selected := []*types.Ticket{}
-	for len(index) < limit && len(tickets) > 0 {
-
-		// Select a candidate ticket and remove it from the list
-		i := r.Intn(len(tickets))
-		candidate := tickets[i]
-		tickets = append(tickets[:i], tickets[i+1:]...)
-
-		// If the candidate has already been selected, ignore
-		if _, ok := index[candidate.ProposerPubKey.HexStr()]; ok {
-			continue
-		}
-
-		index[candidate.ProposerPubKey.HexStr()] = struct{}{}
-		selected = append(selected, candidate)
-	}
-
-	return selected, nil
 }
 
 // GetByHash get a ticket by hash

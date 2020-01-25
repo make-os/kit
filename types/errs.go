@@ -83,15 +83,11 @@ var (
 
 // Transaction processing errors
 const (
-	ErrCodeFailedDecode                = uint32(1)
-	ErrCodeExecFailure                 = uint32(2)
-	ErrCodeMaxTxTypeReached            = 3
-	ErrCodeTxTypeUnexpected            = 4
-	ErrCodeTxInvalidValue              = 5
-	ErrCodeEpochSecretUnexpectedSigner = 6
-	ErrCodeEpochSeedNotExpected        = 7
-	ErrCodeEpochSecretExcess           = 8
-	ErrCodeTxFailedSeedVerification    = 9
+	ErrCodeFailedDecode     = uint32(1)
+	ErrCodeExecFailure      = uint32(2)
+	ErrCodeMaxTxTypeReached = 3
+	ErrCodeTxTypeUnexpected = 4
+	ErrCodeTxInvalidValue   = 5
 )
 
 // Network errors

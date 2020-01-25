@@ -47,10 +47,6 @@ func checkCommon(tx types.BaseTx, index int) error {
 
 	var baseFee, txSize decimal.Decimal
 
-	if tx.Is(types.TxTypeEpochSeed) {
-		goto pub_sig_check
-	}
-
 	if err := v.Validate(tx.GetNonce(),
 		v.Required.Error(feI(index, "nonce", "nonce is required").Error())); err != nil {
 		return err
@@ -77,8 +73,6 @@ func checkCommon(tx types.BaseTx, index int) error {
 	); err != nil {
 		return err
 	}
-
-pub_sig_check:
 
 	if err := v.Validate(tx.GetSenderPubKey(),
 		v.By(isEmptyByte32(feI(index, "senderPubKey", "sender public key is required"))),
@@ -147,12 +141,6 @@ func CheckTxTicketPurchase(tx *types.TxTicketPurchase, index int) error {
 		}
 	}
 
-	if tx.Is(types.TxTypeValidatorTicket) {
-		if tx.VRFPubKey.IsEmpty() {
-			return feI(index, "vrfPubKey", "VRF public key is required")
-		}
-	}
-
 	if tx.Is(types.TxTypeStorerTicket) {
 		if len(tx.BLSPubKey) == 0 {
 			return feI(index, "blsPubKey", "BLS public key is required")
@@ -207,27 +195,6 @@ func CheckTxRepoCreate(tx *types.TxRepoCreate, index int) error {
 
 	if err := checkCommon(tx, index); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-// CheckTxEpochSeed performs sanity checks on TxEpochSeed
-func CheckTxEpochSeed(tx *types.TxEpochSeed, index int) error {
-
-	if err := checkType(tx.TxType, types.TxTypeEpochSeed, index); err != nil {
-		return err
-	}
-
-	if tx.Output.IsEmpty() {
-		return feI(index, "output", "output is required")
-	}
-
-	prooflen := len(tx.Proof)
-	if prooflen == 0 {
-		return feI(index, "proof", "proof is required")
-	} else if prooflen != 96 {
-		return feI(index, "proof", "proof length is invalid")
 	}
 
 	return nil

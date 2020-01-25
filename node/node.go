@@ -190,7 +190,6 @@ func (n *Node) Start() error {
 	// Create custom mempool and set the epoch seed generator function
 	cusMemp := createCustomMempool(n.cfg, n.log)
 	memp := cusMemp.Mempool.(*mempool.Mempool)
-	memp.SetEpochSecretGetter(n.logic.Sys().MakeEpochSeedTx)
 	mempR := cusMemp.MempoolReactor.(*mempool.Reactor)
 
 	// Create repository manager and pass it to logic
