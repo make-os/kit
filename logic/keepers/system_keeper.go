@@ -86,37 +86,6 @@ func (s *SystemKeeper) GetBlockInfo(height int64) (*types.BlockInfo, error) {
 	return &blockInfo, nil
 }
 
-// MarkAsMatured sets the network maturity flag to true.
-// The arg maturityHeight is the height maturity was attained.
-func (s *SystemKeeper) MarkAsMatured(maturityHeight uint64) error {
-	return s.db.Put(storage.
-		NewFromKeyValue(MakeNetMaturityKey(), util.EncodeNumber(maturityHeight)))
-}
-
-// GetNetMaturityHeight returns the height at which network maturity was attained
-func (s *SystemKeeper) GetNetMaturityHeight() (uint64, error) {
-	rec, err := s.db.Get(MakeNetMaturityKey())
-	if err != nil {
-		if err == storage.ErrRecordNotFound {
-			return 0, types.ErrImmatureNetwork
-		}
-		return 0, err
-	}
-	return util.DecodeNumber(rec.Value), nil
-}
-
-// IsMarkedAsMature checks whether there is a net maturity key.
-func (s *SystemKeeper) IsMarkedAsMature() (bool, error) {
-	_, err := s.db.Get(MakeNetMaturityKey())
-	if err != nil {
-		if err == storage.ErrRecordNotFound {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
-}
-
 // SetLastRepoObjectsSyncHeight sets the last block that was processed by the repo
 // object synchronizer
 func (s *SystemKeeper) SetLastRepoObjectsSyncHeight(height uint64) error {

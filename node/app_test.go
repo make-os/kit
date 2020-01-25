@@ -358,39 +358,6 @@ var _ = Describe("App", func() {
 				Expect(app.isCurrentBlockProposer).To(BeTrue())
 			})
 		})
-
-		When("network is not mature", func() {
-			BeforeEach(func() {
-				pv := crypto.WrappedPV{FilePV: genFilePV([]byte("xyz"))}
-				cfg.G().PrivVal = &pv
-
-				mockLogic.Sys.EXPECT().CheckSetNetMaturity().Return(fmt.Errorf("not mature"))
-				app.logic = mockLogic.AtomicLogic
-				app.BeginBlock(abcitypes.RequestBeginBlock{})
-			})
-
-			It("should set `mature` to false", func() {
-				Expect(app.mature).To(BeFalse())
-			})
-		})
-
-		When("network is not mature", func() {
-			BeforeEach(func() {
-				pv := crypto.WrappedPV{FilePV: genFilePV([]byte("xyz"))}
-				cfg.G().PrivVal = &pv
-
-				req := abcitypes.RequestBeginBlock{}
-				req.Header.ProposerAddress = pv.GetAddress().Bytes()
-
-				mockLogic.Sys.EXPECT().CheckSetNetMaturity().Return(nil)
-				app.logic = mockLogic.AtomicLogic
-				app.BeginBlock(req)
-			})
-
-			It("should set `isCurrentBlockProposer` to true", func() {
-				Expect(app.mature).To(BeTrue())
-			})
-		})
 	})
 
 	Describe(".DeliverTx", func() {

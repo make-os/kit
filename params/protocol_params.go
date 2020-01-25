@@ -49,14 +49,6 @@ var (
 	// ticket transaction a block can include.
 	MaxValTicketsPerBlock = 1
 
-	// NetMaturityHeight is the block height when the network is considered
-	// ready for more responsibilities and advanced operations.
-	NetMaturityHeight = int64(10)
-
-	// MinBootstrapLiveTickets is the minimum number of live tickets
-	// required at bootstrap before the network is considered matured.
-	MinBootstrapLiveTickets = 1
-
 	// NumBlocksPerEpoch is the number of blocks in an epoch
 	NumBlocksPerEpoch = 5
 

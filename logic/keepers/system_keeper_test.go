@@ -8,7 +8,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/storage"
@@ -131,66 +130,6 @@ var _ = Describe("SystemKeeper", func() {
 				info, err := sysKeeper.GetBlockInfo(1)
 				Expect(err).To(BeNil())
 				Expect(info).To(BeEquivalentTo(info1))
-			})
-		})
-	})
-
-	Describe(".MarkAsMatured", func() {
-		It("should successfully add net maturity mark", func() {
-			err := sysKeeper.MarkAsMatured(100)
-			Expect(err).To(BeNil())
-			r, err := sysKeeper.db.Get(MakeNetMaturityKey())
-			Expect(err).To(BeNil())
-			Expect(r.Value).To(Equal(util.EncodeNumber(100)))
-		})
-	})
-
-	Describe(".IsMarkedAsMature", func() {
-		When("maturity height has been set/marked", func() {
-			BeforeEach(func() {
-				r, err := sysKeeper.db.Get(MakeNetMaturityKey())
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(storage.ErrRecordNotFound))
-				Expect(r).To(BeNil())
-				err = sysKeeper.MarkAsMatured(89)
-				Expect(err).To(BeNil())
-			})
-
-			It("should return true if maturity mark is set", func() {
-				isMarked, err := sysKeeper.IsMarkedAsMature()
-				Expect(err).To(BeNil())
-				Expect(isMarked).To(BeTrue())
-			})
-		})
-
-		When("maturity height has not been set/marked", func() {
-			It("should return false", func() {
-				isMarked, err := sysKeeper.IsMarkedAsMature()
-				Expect(err).To(BeNil())
-				Expect(isMarked).To(BeFalse())
-			})
-		})
-	})
-
-	Describe(".GetNetMaturityHeight", func() {
-		When("when matured height is set to 8900", func() {
-			BeforeEach(func() {
-				err = sysKeeper.MarkAsMatured(8900)
-				Expect(err).To(BeNil())
-			})
-
-			It("should return expected height=8900", func() {
-				h, err := sysKeeper.GetNetMaturityHeight()
-				Expect(err).To(BeNil())
-				Expect(h).To(Equal(uint64(8900)))
-			})
-		})
-
-		When("when matured height is not set", func() {
-			It("should return err=types.ErrImmatureNetwork", func() {
-				_, err := sysKeeper.GetNetMaturityHeight()
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(types.ErrImmatureNetwork))
 			})
 		})
 	})

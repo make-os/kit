@@ -39,15 +39,6 @@ type SystemKeeper interface {
 	// GetBlockInfo returns block information at a given height
 	GetBlockInfo(height int64) (*BlockInfo, error)
 
-	// MarkAsMatured sets the network maturity flag to true
-	MarkAsMatured(maturityHeight uint64) error
-
-	// GetNetMaturityHeight returns the height at which network maturity was attained
-	GetNetMaturityHeight() (uint64, error)
-
-	// IsMarkedAsMature returns true if the network has been flagged as mature.
-	IsMarkedAsMature() (bool, error)
-
 	// SetLastRepoObjectsSyncHeight sets the last block that was processed by the repo
 	// object synchronizer
 	SetLastRepoObjectsSyncHeight(height uint64) error
@@ -289,11 +280,4 @@ type SysLogic interface {
 	// GetCurValidatorTicketPrice returns the current
 	// price for a validator ticket
 	GetCurValidatorTicketPrice() float64
-
-	// CheckSetNetMaturity checks whether the network
-	// has reached a matured period. If it has not,
-	// we return error. However, if it is just
-	// met the maturity condition in this call, we
-	// mark the network as mature
-	CheckSetNetMaturity() error
 }

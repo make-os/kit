@@ -38,7 +38,6 @@ type App struct {
 	unbondStorerReqs          []util.Bytes32
 	ticketMgr                 types.TicketManager
 	isCurrentBlockProposer    bool
-	mature                    bool
 	unsavedValidators         []*types.Validator
 	heightToSaveNewValidators int64
 	unIndexedTxs              []types.BaseTx
@@ -153,7 +152,6 @@ func (a *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 
 // BeginBlock indicates the beginning of a new block.
 func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
-	curHeight := req.GetHeader().Height
 	a.curWorkingBlock.Height = req.GetHeader().Height
 	a.curWorkingBlock.Hash = req.GetHash()
 	a.curWorkingBlock.LastAppHash = req.GetHeader().AppHash
@@ -166,18 +164,6 @@ func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBegi
 
 	a.log.Info(color.YellowString("Processing a new block"),
 		"Height", req.Header.Height, "IsProposer", a.isCurrentBlockProposer)
-
-	// If the network is still immature, return immediately.
-	// The network is matured if it has reached a specific block height
-	// and has accumulated a specific number of active tickets.
-	if err := a.logic.Sys().CheckSetNetMaturity(); err != nil {
-		a.log.Debug("The network has not reached maturity", "Reason", err, "Height", curHeight)
-		a.mature = false
-		return abcitypes.ResponseBeginBlock{}
-	}
-
-	// At this point, the network is mature
-	a.mature = true
 
 	return abcitypes.ResponseBeginBlock{}
 }
@@ -348,11 +334,9 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 func (a *App) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
 	resp := abcitypes.ResponseEndBlock{}
 
-	// Update validators only if network is mature
-	if a.mature {
-		if err := a.updateValidators(req.Height, &resp); err != nil {
-			panic(errors.Wrap(err, "failed to update validators"))
-		}
+	// Update validators
+	if err := a.updateValidators(req.Height, &resp); err != nil {
+		panic(errors.Wrap(err, "failed to update validators"))
 	}
 
 	return resp
@@ -443,7 +427,6 @@ func (a *App) reset() {
 	a.storerTickets = []*ticketInfo{}
 	a.unbondStorerReqs = []util.Bytes32{}
 	a.txIndex = 0
-	a.mature = false
 	a.isCurrentBlockProposer = false
 	a.unIndexedTxs = []types.BaseTx{}
 	a.newRepos = []string{}

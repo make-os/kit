@@ -82,50 +82,6 @@ func (mr *MockSystemKeeperMockRecorder) GetBlockInfo(height interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBlockInfo", reflect.TypeOf((*MockSystemKeeper)(nil).GetBlockInfo), height)
 }
 
-// MarkAsMatured mocks base method
-func (m *MockSystemKeeper) MarkAsMatured(maturityHeight uint64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MarkAsMatured", maturityHeight)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// MarkAsMatured indicates an expected call of MarkAsMatured
-func (mr *MockSystemKeeperMockRecorder) MarkAsMatured(maturityHeight interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkAsMatured", reflect.TypeOf((*MockSystemKeeper)(nil).MarkAsMatured), maturityHeight)
-}
-
-// GetNetMaturityHeight mocks base method
-func (m *MockSystemKeeper) GetNetMaturityHeight() (uint64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNetMaturityHeight")
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetNetMaturityHeight indicates an expected call of GetNetMaturityHeight
-func (mr *MockSystemKeeperMockRecorder) GetNetMaturityHeight() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetMaturityHeight", reflect.TypeOf((*MockSystemKeeper)(nil).GetNetMaturityHeight))
-}
-
-// IsMarkedAsMature mocks base method
-func (m *MockSystemKeeper) IsMarkedAsMature() (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsMarkedAsMature")
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// IsMarkedAsMature indicates an expected call of IsMarkedAsMature
-func (mr *MockSystemKeeperMockRecorder) IsMarkedAsMature() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMarkedAsMature", reflect.TypeOf((*MockSystemKeeper)(nil).IsMarkedAsMature))
-}
-
 // SetLastRepoObjectsSyncHeight mocks base method
 func (m *MockSystemKeeper) SetLastRepoObjectsSyncHeight(height uint64) error {
 	m.ctrl.T.Helper()
@@ -1396,18 +1352,4 @@ func (m *MockSysLogic) GetCurValidatorTicketPrice() float64 {
 func (mr *MockSysLogicMockRecorder) GetCurValidatorTicketPrice() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurValidatorTicketPrice", reflect.TypeOf((*MockSysLogic)(nil).GetCurValidatorTicketPrice))
-}
-
-// CheckSetNetMaturity mocks base method
-func (m *MockSysLogic) CheckSetNetMaturity() error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CheckSetNetMaturity")
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CheckSetNetMaturity indicates an expected call of CheckSetNetMaturity
-func (mr *MockSysLogicMockRecorder) CheckSetNetMaturity() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CheckSetNetMaturity", reflect.TypeOf((*MockSysLogic)(nil).CheckSetNetMaturity))
 }
