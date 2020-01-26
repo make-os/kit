@@ -12,7 +12,7 @@ var _ = Describe("Repository", func() {
 
 		BeforeEach(func() {
 			r = BareRepository()
-			r.CreatorAddress = "some_address"
+			r.AddOwner("owner_addr", &RepoOwner{Creator: true})
 			r.References = map[string]interface{}{
 				"refs/heads/master": &Reference{
 					Nonce: 20,
@@ -49,7 +49,7 @@ var _ = Describe("Repository", func() {
 
 		It("should return false when at least one field is set", func() {
 			r := BareRepository()
-			r.CreatorAddress = "address"
+			r.AddOwner("owner_addr", &RepoOwner{Creator: true})
 			Expect(r.IsNil()).To(BeFalse())
 		})
 

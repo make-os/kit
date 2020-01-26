@@ -12,6 +12,8 @@ import (
 // ARGS:
 // creatorPubKey: The public key of the creator
 // name: The name of the repository
+// fee: The fee to be paid by the sender.
+// chainHeight: The height of the block chain
 //
 // CONTRACT: Creator's public key must be valid
 func (t *Transaction) execRepoCreate(
@@ -24,7 +26,7 @@ func (t *Transaction) execRepoCreate(
 
 	// Create the repo object
 	newRepo := types.BareRepository()
-	newRepo.CreatorAddress = spk.Addr()
+	newRepo.AddOwner(spk.Addr().String(), &types.RepoOwner{Creator: true})
 	t.logic.RepoKeeper().Update(name, newRepo)
 
 	// Get the sender account and balance

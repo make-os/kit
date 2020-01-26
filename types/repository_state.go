@@ -41,35 +41,46 @@ func (r *References) Has(name string) bool {
 func BareRepository() *Repository {
 	return &Repository{
 		References: make(map[string]interface{}),
+		Owners:     make(map[string]interface{}),
 	}
 }
 
-// Repository represents a git repository
+// RepoOwner describes an owner of a repository
+type RepoOwner struct {
+	Creator bool `json:"creator" mapstructure:"creator" msgpack:"creator"`
+}
+
+// RepoOwners represents an index of owners of a repository.
+// Note: we are using map[string]interface{} instead of map[string]*RepoOwner
+// because we want to take advantage of msgpack map sorting which only works on the
+// former.
+// CONTRACT: interface{} is always *RepoOwner
+type RepoOwners map[string]interface{}
+
+// Repository represents a git repository.
 type Repository struct {
-	CreatorAddress util.String `json:"creatorAddress" msgpack:"creatorAddress"`
-	References     References  `json:"references" msgpack:"references"`
+	References References `json:"references" msgpack:"references"`
+	Owners     RepoOwners `json:"owners" msgpack:"owners"`
+}
+
+// AddOwner adds an owner
+func (r *Repository) AddOwner(ownerPubKey string, owner *RepoOwner) {
+	r.Owners[ownerPubKey] = owner
 }
 
 // IsNil returns true if the repo fields are set to their nil value
 func (r *Repository) IsNil() bool {
-	return r.CreatorAddress.Empty() && len(r.References) == 0
+	return len(r.References) == 0 && len(r.Owners) == 0
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(r.CreatorAddress, r.References)
+	return enc.EncodeMulti(r.References, r.Owners)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
-	err := dec.DecodeMulti(&r.CreatorAddress, &r.References)
-	if err != nil {
-		return err
-	}
-	if r.References == nil {
-		r.References = make(map[string]interface{})
-	}
-	return nil
+	return dec.DecodeMulti(&r.References, &r.Owners)
 }
 
 // Bytes return the bytes equivalent of the account
@@ -89,6 +100,12 @@ func NewRepositoryFromBytes(bz []byte) (*Repository, error) {
 		var ref Reference
 		mapstructure.Decode(v, &ref)
 		repo.References[k] = &ref
+	}
+
+	for k, v := range repo.Owners {
+		var owner RepoOwner
+		mapstructure.Decode(v, &owner)
+		repo.AddOwner(k, &owner)
 	}
 
 	return repo, nil
