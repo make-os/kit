@@ -37,7 +37,7 @@ func (tx *TxPush) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (tx *TxPush) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(
+	return tx.DecodeMulti(dec,
 		&tx.Type,
 		&tx.PushNote,
 		&tx.PushOKs,

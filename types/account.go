@@ -21,6 +21,7 @@ func BareAccount() *Account {
 // Account represents a user's identity and includes
 // balance and other information.
 type Account struct {
+	util.DecoderHelper
 	Balance             util.String   `json:"balance" msgpack:"balance"`
 	Nonce               uint64        `json:"nonce" msgpack:"nonce"`
 	Stakes              AccountStakes `json:"stakes" msgpack:"stakes"`
@@ -55,7 +56,7 @@ func (a *Account) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (a *Account) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&a.Balance, &a.Nonce, &a.Stakes, &a.DelegatorCommission)
+	return a.DecodeMulti(dec, &a.Balance, &a.Nonce, &a.Stakes, &a.DelegatorCommission)
 }
 
 // Bytes return the serialized equivalent of the account

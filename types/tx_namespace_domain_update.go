@@ -39,7 +39,7 @@ func (tx *TxNamespaceDomainUpdate) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (tx *TxNamespaceDomainUpdate) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(
+	return tx.DecodeMulti(dec,
 		&tx.Type,
 		&tx.Nonce,
 		&tx.Fee,

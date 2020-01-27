@@ -98,6 +98,7 @@ func (tx *TxType) Is(txType int) bool {
 
 // TxCommon implements some of BaseTx, it includes some common fields and methods
 type TxCommon struct {
+	util.DecoderHelper
 	*TxMeta      `json:"-" msgpack:"-" mapstructure:"-"`
 	Nonce        uint64       `json:"nonce" msgpack:"nonce"`
 	Fee          util.String  `json:"fee" msgpack:"fee"`

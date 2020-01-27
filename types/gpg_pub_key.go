@@ -11,6 +11,7 @@ func BareGPGPubKey() *GPGPubKey {
 
 // GPGPubKey represents a GPG public key
 type GPGPubKey struct {
+	util.DecoderHelper
 	PubKey  string      `json:"pubKey" msgpack:"pubKey"`
 	Address util.String `json:"address" msgpack:"address"`
 }
@@ -22,7 +23,7 @@ func (g *GPGPubKey) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (g *GPGPubKey) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&g.PubKey, &g.Address)
+	return g.DecodeMulti(dec, &g.PubKey, &g.Address)
 }
 
 // Bytes return the serialized equivalent

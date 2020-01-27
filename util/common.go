@@ -502,3 +502,17 @@ func CloneMap(src map[string]interface{}) (dst map[string]interface{}) {
 	}
 	return
 }
+
+// DecoderHelper for msgpack
+type DecoderHelper struct{}
+
+// DecodeMulti wraps msgpack.Decoder and ignore EOF error
+func (h DecoderHelper) DecodeMulti(dec *msgpack.Decoder, v ...interface{}) error {
+	err := dec.DecodeMulti(v...)
+	if err != nil {
+		if err.Error() != "EOF" {
+			return err
+		}
+	}
+	return nil
+}

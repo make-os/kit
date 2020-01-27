@@ -378,7 +378,8 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-				repo := &types.Repository{}
+				repo := types.BareRepository()
+				repo.AddOwner("some_address", &types.RepoOwner{})
 				mockRepoKeeper.EXPECT().GetRepo(tx.Name).Return(repo)
 
 				err = validators.CheckTxRepoCreateConsistency(tx, -1, mockLogic)
@@ -398,7 +399,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-				repo := &types.Repository{}
+				repo := types.BareRepository()
 				mockRepoKeeper.EXPECT().GetRepo(tx.Name).Return(repo)
 
 				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),

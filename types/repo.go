@@ -358,6 +358,7 @@ type Pruner interface {
 
 // PushedReference represents a reference that was pushed by git client
 type PushedReference struct {
+	util.DecoderHelper
 	Name    string   `json:"name" msgpack:"name"`       // The full name of the reference
 	OldHash string   `json:"oldHash" msgpack:"oldHash"` // The hash of the reference before the push
 	NewHash string   `json:"newHash" msgpack:"newHash"` // The hash of the reference after the push
@@ -374,7 +375,7 @@ func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&pr.Name, &pr.OldHash, &pr.NewHash,
+	return pr.DecodeMulti(dec, &pr.Name, &pr.OldHash, &pr.NewHash,
 		&pr.Nonce, &pr.Objects, &pr.Delete)
 }
 
@@ -470,6 +471,7 @@ type Items interface {
 
 // PushNote implements types.PushNote
 type PushNote struct {
+	util.DecoderHelper
 	TargetRepo    BareRepo         `json:"-" msgpack:"-" mapstructure:"-"`
 	RepoName      string           `json:"repoName" msgpack:"repoName"`         // The name of the repo
 	References    PushedReferences `json:"references" msgpack:"references"`     // A list of references pushed
@@ -516,7 +518,7 @@ func (pt *PushNote) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (pt *PushNote) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(
+	return pt.DecodeMulti(dec,
 		&pt.RepoName,
 		&pt.References,
 		&pt.PusherKeyID,
@@ -627,6 +629,7 @@ func (r *ReferenceHashes) ID() util.Bytes32 {
 
 // PushOK is used to endorse a push note
 type PushOK struct {
+	util.DecoderHelper
 	PushNoteID     util.Bytes32    `json:"pushNoteID" msgpack:"pushNoteID" mapstructure:"pushNoteID"`
 	ReferencesHash ReferenceHashes `json:"refsHash" msgpack:"refsHash" mapstructure:"refsHash"`
 	SenderPubKey   util.Bytes32    `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
@@ -640,7 +643,7 @@ func (po *PushOK) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (po *PushOK) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&po.PushNoteID, &po.ReferencesHash, &po.SenderPubKey, &po.Sig)
+	return po.DecodeMulti(dec, &po.PushNoteID, &po.ReferencesHash, &po.SenderPubKey, &po.Sig)
 }
 
 // ID returns the hash of the object

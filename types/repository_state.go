@@ -77,6 +77,11 @@ type RepoConfig struct {
 	Governace *RepoConfigGovernance `json:"gov" mapstructure:"gov" msgpack:"gov"`
 }
 
+// IsNil checks if the object's field all have zero value
+func (c *RepoConfig) IsNil() bool {
+	return *c.Governace == RepoConfigGovernance{}
+}
+
 // DefaultRepoConfig returns sane defaults for repository configurations
 func DefaultRepoConfig() *RepoConfig {
 	return &RepoConfig{
@@ -111,6 +116,7 @@ func BareRepository() *Repository {
 
 // Repository represents a git repository.
 type Repository struct {
+	util.DecoderHelper
 	References References    `json:"references" msgpack:"references" mapstructure:"references"`
 	Owners     RepoOwners    `json:"owners" msgpack:"owners" mapstructure:"owners"`
 	Proposals  RepoProposals `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
@@ -124,7 +130,10 @@ func (r *Repository) AddOwner(ownerAddress string, owner *RepoOwner) {
 
 // IsNil returns true if the repo fields are set to their nil value
 func (r *Repository) IsNil() bool {
-	return len(r.References) == 0 && len(r.Owners) == 0
+	return len(r.References) == 0 &&
+		len(r.Owners) == 0 &&
+		len(r.Proposals) == 0 &&
+		r.Config.IsNil()
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -138,7 +147,7 @@ func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(
+	return r.DecodeMulti(dec,
 		&r.References,
 		&r.Owners,
 		&r.Proposals,
