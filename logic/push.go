@@ -50,7 +50,7 @@ func (t *Transaction) execPush(
 	pusherAcct.Nonce = pusherAcct.Nonce + 1
 
 	// Clean up unbonded stakes and update sender account
-	pusherAcct.CleanUnbonded(chainHeight)
+	pusherAcct.Clean(chainHeight)
 	acctKeeper.Update(gpgPK.Address, pusherAcct)
 
 	// Update the repo

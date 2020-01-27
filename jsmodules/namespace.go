@@ -134,16 +134,7 @@ func (m *NamespaceModule) register(
 	// Decode parameters into a transaction object
 	var tx = types.NewBareTxNamespaceAcquire()
 	mapstructure.Decode(params, tx)
-
-	if nonce, ok := params["nonce"]; ok {
-		defer castPanic("nonce")
-		tx.Nonce = uint64(nonce.(int64))
-	}
-
-	if fee, ok := params["fee"]; ok {
-		defer castPanic("fee")
-		tx.Fee = util.String(fee.(string))
-	}
+	decodeCommon(tx, params)
 
 	if value, ok := params["value"]; ok {
 		defer castPanic("value")
@@ -165,11 +156,6 @@ func (m *NamespaceModule) register(
 		tx.TransferToRepo = trToRepo.(string)
 	}
 
-	if timestamp, ok := params["timestamp"]; ok {
-		defer castPanic("timestamp")
-		tx.Timestamp = timestamp.(int64)
-	}
-
 	if domains, ok := params["domains"]; ok {
 		defer castPanic("domains")
 		domains := domains.(map[string]interface{})
@@ -181,7 +167,7 @@ func (m *NamespaceModule) register(
 	// Hash the name
 	tx.Name = util.Hash20Hex([]byte(tx.Name))
 
-	setCommonTxFields(tx, m.service, options...)
+	finalizeTx(tx, m.service, options...)
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
@@ -211,25 +197,11 @@ func (m *NamespaceModule) updateDomain(
 	// Decode parameters into a transaction object
 	var tx = types.NewBareTxNamespaceDomainUpdate()
 	mapstructure.Decode(params, tx)
-
-	if nonce, ok := params["nonce"]; ok {
-		defer castPanic("nonce")
-		tx.Nonce = uint64(nonce.(int64))
-	}
-
-	if fee, ok := params["fee"]; ok {
-		defer castPanic("fee")
-		tx.Fee = util.String(fee.(string))
-	}
+	decodeCommon(tx, params)
 
 	if namespace, ok := params["name"]; ok {
 		defer castPanic("name")
 		tx.Name = namespace.(string)
-	}
-
-	if timestamp, ok := params["timestamp"]; ok {
-		defer castPanic("timestamp")
-		tx.Timestamp = timestamp.(int64)
 	}
 
 	if domains, ok := params["domains"]; ok {
@@ -243,7 +215,7 @@ func (m *NamespaceModule) updateDomain(
 	// Hash the name
 	tx.Name = util.Hash20Hex([]byte(tx.Name))
 
-	setCommonTxFields(tx, m.service, options...)
+	finalizeTx(tx, m.service, options...)
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)

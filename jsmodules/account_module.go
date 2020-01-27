@@ -256,28 +256,14 @@ func (m *AccountModule) setCommission(params map[string]interface{},
 	// Decode parameters into a transaction object
 	var tx = types.NewBareTxSetDelegateCommission()
 	mapstructure.Decode(params, tx)
-
-	if nonce, ok := params["nonce"]; ok {
-		defer castPanic("nonce")
-		tx.Nonce = uint64(nonce.(int64))
-	}
-
-	if fee, ok := params["fee"]; ok {
-		defer castPanic("fee")
-		tx.Fee = util.String(fee.(string))
-	}
+	decodeCommon(tx, params)
 
 	if commission, ok := params["commission"]; ok {
 		defer castPanic("commission")
 		tx.Commission = util.String(commission.(string))
 	}
 
-	if timestamp, ok := params["timestamp"]; ok {
-		defer castPanic("timestamp")
-		tx.Timestamp = timestamp.(int64)
-	}
-
-	setCommonTxFields(tx, m.service, options...)
+	finalizeTx(tx, m.service, options...)
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)

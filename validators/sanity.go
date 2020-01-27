@@ -407,3 +407,31 @@ func CheckTxNamespaceDomainUpdate(tx *types.TxNamespaceDomainUpdate, index int) 
 
 	return nil
 }
+
+// CheckTxRepoProposalUpsertOwner performs sanity checks on TxTxRepoProposalUpsertOwner
+func CheckTxRepoProposalUpsertOwner(tx *types.TxRepoProposalUpsertOwner, index int) error {
+
+	if err := checkType(tx.TxType, types.TxTypeRepoProposalUpsertOwner, index); err != nil {
+		return err
+	}
+
+	if err := v.Validate(tx.RepoName,
+		v.Required.Error(feI(index, "name", "repo name is required").Error()),
+		v.By(validObjectNameRule("name", index)),
+	); err != nil {
+		return err
+	}
+
+	if err := v.Validate(tx.Address,
+		v.Required.Error(feI(index, "address", "owner address is required").Error()),
+		v.By(validAddrRule(feI(index, "address", "owner address is not valid"))),
+	); err != nil {
+		return err
+	}
+
+	if err := checkCommon(tx, index); err != nil {
+		return err
+	}
+
+	return nil
+}

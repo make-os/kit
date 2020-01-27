@@ -378,7 +378,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-				repo := &types.Repository{CreatorAddress: key.Addr()}
+				repo := &types.Repository{}
 				mockRepoKeeper.EXPECT().GetRepo(tx.Name).Return(repo)
 
 				err = validators.CheckTxRepoCreateConsistency(tx, -1, mockLogic)

@@ -63,10 +63,10 @@ func (a *Account) Bytes() []byte {
 	return util.ObjectToBytes(a)
 }
 
-// CleanUnbonded removes unbonded stakes.
+// Clean removes unbonded stakes.
 // Ignores stakes with unbond height set to 0.
 // curHeight: The current blockchain height
-func (a *Account) CleanUnbonded(curHeight uint64) {
+func (a *Account) Clean(curHeight uint64) {
 	for name, stake := range a.Stakes {
 		if stake.(*StakeInfo).UnbondHeight != 0 && stake.(*StakeInfo).UnbondHeight <= curHeight {
 			delete(a.Stakes, name)

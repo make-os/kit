@@ -5,14 +5,15 @@ import (
 	"math/big"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/fatih/structs"
+	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
+	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 )
-
-// type castPanick
 
 func castPanic(field string) {
 	if err := recover(); err != nil {
@@ -24,6 +25,75 @@ func castPanic(field string) {
 		}
 		panic(err)
 	}
+}
+
+// Decode common fields like nonce, fee, timestamp into tx
+func decodeCommon(tx types.BaseTx, params map[string]interface{}) {
+	if nonce, ok := params["nonce"]; ok {
+		defer castPanic("nonce")
+		tx.SetNonce(uint64(nonce.(int64)))
+	}
+
+	if fee, ok := params["fee"]; ok {
+		defer castPanic("fee")
+		tx.SetFee(util.String(fee.(string)))
+	}
+
+	if timestamp, ok := params["timestamp"]; ok {
+		defer castPanic("timestamp")
+		tx.SetTimestamp(timestamp.(int64))
+	}
+}
+
+// finalizeTx sets the public key, timestamp and signs the transaction.
+func finalizeTx(tx types.BaseTx, service types.Service, options ...interface{}) {
+
+	key := checkAndGetKey(options...)
+
+	// Set tx public key
+	pk, _ := crypto.PrivKeyFromBase58(key)
+	tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(pk).PubKey().MustBytes())
+
+	// Set timestamp if not already set
+	if tx.GetTimestamp() == 0 {
+		tx.SetTimestamp(time.Now().Unix())
+	}
+
+	// Set nonce if nonce is not provided
+	if tx.GetNonce() == 0 {
+		nonce, err := service.GetNonce(tx.GetFrom())
+		if err != nil {
+			panic(errors.Wrap(err, "failed to get sender's nonce"))
+		}
+		tx.SetNonce(nonce + 1)
+	}
+
+	// Sign the tx
+	sig, err := tx.Sign(key)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to sign transaction"))
+	}
+	tx.SetSignature(sig)
+}
+
+func checkAndGetKey(options ...interface{}) string {
+	// - Expect options[0] to be the private key (base58 encoded)
+	// - options[0] must be a string
+	// - options[0] must be a valid key
+	var key string
+	var ok bool
+	if len(options) > 0 {
+		key, ok = options[0].(string)
+		if !ok {
+			panic(types.ErrArgDecode("string", 1))
+		} else if err := crypto.IsValidPrivKey(key); err != nil {
+			panic(errors.Wrap(err, types.ErrInvalidPrivKey.Error()))
+		}
+	} else {
+		panic(fmt.Errorf("key is required"))
+	}
+
+	return key
 }
 
 // EncodeForJS takes a struct and converts

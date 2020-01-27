@@ -69,6 +69,8 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxNSAcquire(o, index)
 	case *types.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdate(o, index)
+	case *types.TxRepoProposalUpsertOwner:
+		return CheckTxRepoProposalUpsertOwner(o, index)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}
@@ -100,6 +102,8 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic types.Logic) error 
 		return CheckTxNSAcquireConsistency(o, index, logic)
 	case *types.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdateConsistency(o, index, logic)
+	case *types.TxRepoProposalUpsertOwner:
+		return CheckTxRepoProposalUpsertOwnerConsistency(o, index, logic)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}

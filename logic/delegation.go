@@ -38,7 +38,7 @@ func (t *Transaction) execSetDelegatorCommission(
 	senderAcct.Nonce = senderAcct.Nonce + 1
 
 	// Update the sender account
-	senderAcct.CleanUnbonded(chainHeight)
+	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(sender, senderAcct)
 
 	return nil

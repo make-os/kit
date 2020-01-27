@@ -56,7 +56,6 @@ var _ = Describe("Push", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var repo = "repo1"
-		var creator = crypto.NewKeyFromIntSeed(2)
 		var pkID = util.ToHex([]byte("pkID"))
 
 		When("reference has nonce = 1", func() {
@@ -73,7 +72,6 @@ var _ = Describe("Push", func() {
 				})
 
 				logic.RepoKeeper().Update(repo, &types.Repository{
-					CreatorAddress: creator.Addr(),
 					References: map[string]interface{}{
 						"refs/heads/master": &types.Reference{Nonce: 1},
 					},

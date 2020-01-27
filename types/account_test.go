@@ -88,7 +88,7 @@ var _ = Describe("Account", func() {
 		})
 	})
 
-	Describe(".CleanUnbonded", func() {
+	Describe(".Clean", func() {
 		When("account's unbond height is 1000", func() {
 			var stake *StakeInfo
 			BeforeEach(func() {
@@ -99,7 +99,7 @@ var _ = Describe("Account", func() {
 
 			When("unbondHeight arg is 500", func() {
 				It("should not remove the stake entry", func() {
-					acct.CleanUnbonded(500)
+					acct.Clean(500)
 					Expect(acct.Stakes).To(HaveLen(1))
 					Expect(acct.Stakes.Get("s1")).To(Equal(stake))
 				})
@@ -115,7 +115,7 @@ var _ = Describe("Account", func() {
 			})
 
 			It("should not remove the stake entry", func() {
-				acct.CleanUnbonded(500)
+				acct.Clean(500)
 				Expect(acct.Stakes).To(HaveLen(1))
 				Expect(acct.Stakes.Get("s1")).To(Equal(stake))
 			})
@@ -131,7 +131,7 @@ var _ = Describe("Account", func() {
 
 			When("unbondHeight arg is 1000", func() {
 				It("should remove the stake entry", func() {
-					acct.CleanUnbonded(1000)
+					acct.Clean(1000)
 					Expect(acct.Stakes).To(HaveLen(0))
 					Expect(acct.Stakes.Get("s1")).To(Equal(BareStakeInfo()))
 				})

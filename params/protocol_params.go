@@ -118,3 +118,16 @@ var (
 	// TreasuryAddress is the address where treasury-bound payments are deposited
 	TreasuryAddress = util.String("e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx")
 )
+
+const (
+	// RepoProposalDur is the number of blocks a repo proposal can remain active
+	RepoProposalDur = 20
+	// RepoProposalQuorum is the minimum quorum percentage for "Yes/No" votes
+	RepoProposalQuorum = float64(75)
+	// RepoProposalThreshold is the minimum percentage threshold required to consider a
+	// proposal valid
+	RepoProposalThreshold = float64(10)
+	// RepoProposalVetoQuorum is the minimum percentage required for veto
+	// members to overturn a "Yes" quorum
+	RepoProposalVetoQuorum = float64(33)
+)

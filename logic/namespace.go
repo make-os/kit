@@ -57,14 +57,14 @@ func (t *Transaction) execAcquireNamespace(
 
 	// Increment sender nonce, clean up and update
 	senderAcct.Nonce = senderAcct.Nonce + 1
-	senderAcct.CleanUnbonded(chainHeight)
+	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(spkObj.Addr(), senderAcct)
 
 	// Send the value to the treasury
 	treasuryAcct := acctKeeper.GetAccount(params.TreasuryAddress, chainHeight)
 	treasuryBal := treasuryAcct.Balance.Decimal()
 	treasuryAcct.Balance = util.String(treasuryBal.Add(value.Decimal()).String())
-	treasuryAcct.CleanUnbonded(chainHeight)
+	treasuryAcct.Clean(chainHeight)
 	acctKeeper.Update(params.TreasuryAddress, treasuryAcct)
 
 	// Update the namespace
@@ -126,7 +126,7 @@ func (t *Transaction) execUpdateNamespaceDomains(
 
 	// Increment sender nonce, clean up and update
 	senderAcct.Nonce = senderAcct.Nonce + 1
-	senderAcct.CleanUnbonded(chainHeight)
+	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(spkObj.Addr(), senderAcct)
 
 	return nil

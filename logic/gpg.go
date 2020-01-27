@@ -11,8 +11,8 @@ import (
 // execAddGPGKey associates a GPG key to an account
 //
 // ARGS:
-// publicKey: The gpg public key
 // senderPubKey: The account public key of the sender.
+// publicKey: The gpg public key
 // fee: The fee paid by the sender
 // chainHeight: The chain height to limit query to
 //
@@ -20,8 +20,8 @@ import (
 // - Sender's public key must be valid public key
 // - The gpg public key must be valid
 func (t *Transaction) execAddGPGKey(
-	gpgPublicKey string,
 	senderPubKey util.Bytes32,
+	gpgPublicKey string,
 	fee util.String,
 	chainHeight uint64) error {
 
@@ -52,7 +52,7 @@ func (t *Transaction) execAddGPGKey(
 	senderAcct.Nonce = senderAcct.Nonce + 1
 
 	// Update the sender account
-	senderAcct.CleanUnbonded(chainHeight)
+	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(sender, senderAcct)
 
 	return nil

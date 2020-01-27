@@ -72,13 +72,16 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.execSetDelegatorCommission(spk, o.Commission, o.Fee, chainHeight)
 
 	case *types.TxTicketUnbond:
-		return t.execUnbond(o.TicketHash, spk, o.Fee, chainHeight)
+		return t.execUnbond(spk, o.TicketHash, o.Fee, chainHeight)
 
 	case *types.TxRepoCreate:
 		return t.execRepoCreate(spk, o.Name, o.Fee, chainHeight)
 
+	case *types.TxRepoProposalUpsertOwner:
+		return t.execRepoUpsertOwner(spk, o.GetID(), o.RepoName, o.Address, o.Fee, chainHeight)
+
 	case *types.TxAddGPGPubKey:
-		return t.execAddGPGKey(o.PublicKey, spk, o.Fee, chainHeight)
+		return t.execAddGPGKey(spk, o.PublicKey, o.Fee, chainHeight)
 
 	case *types.TxPush:
 		pn := o.PushNote

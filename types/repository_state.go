@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/vmihailenco/msgpack"
@@ -37,17 +38,10 @@ func (r *References) Has(name string) bool {
 	return (*r)[name] != nil
 }
 
-// BareRepository returns an empty repository object
-func BareRepository() *Repository {
-	return &Repository{
-		References: make(map[string]interface{}),
-		Owners:     make(map[string]interface{}),
-	}
-}
-
 // RepoOwner describes an owner of a repository
 type RepoOwner struct {
-	Creator bool `json:"creator" mapstructure:"creator" msgpack:"creator"`
+	Creator  bool   `json:"creator" mapstructure:"creator" msgpack:"creator"`
+	JoinedAt uint64 `json:"joinedAt" mapstructure:"joinedAt" msgpack:"joinedAt"`
 }
 
 // RepoOwners represents an index of owners of a repository.
@@ -57,15 +51,75 @@ type RepoOwner struct {
 // CONTRACT: interface{} is always *RepoOwner
 type RepoOwners map[string]interface{}
 
+// Has returns true of address exist
+func (r RepoOwners) Has(address string) bool {
+	return r[address] != nil
+}
+
+// Get return a repo owner associated with the given address
+func (r RepoOwners) Get(address string) *RepoOwner {
+	return r[address].(*RepoOwner)
+}
+
+// RepoConfigGovernance contains governance settings for a repository
+type RepoConfigGovernance struct {
+	ProposalProposee                  ProposeeType        `json:"proposalProposee" mapstructure:"proposalProposee" msgpack:"proposalProposee"`
+	ProposalProposeeExistBeforeHeight uint64              `json:"proposalProposeeExistBeforeHeight" mapstructure:"proposalProposeeExistBeforeHeight" msgpack:"proposalProposeeExistBeforeHeight"`
+	ProposalDur                       uint64              `json:"proposalDuration" mapstructure:"proposalDuration" msgpack:"proposalDuration"`
+	ProposalTallyMethod               ProposalTallyMethod `json:"proposalTallyMethod" mapstructure:"proposalTallyMethod" msgpack:"proposalTallyMethod"`
+	ProposalQuorum                    float64             `json:"proposalQuorum" mapstructure:"proposalQuorum" msgpack:"proposalQuorum"`
+	ProposalThreshold                 float64             `json:"proposalThreshold" mapstructure:"proposalThreshold" msgpack:"proposalThreshold"`
+	ProposalVetoQuorum                float64             `json:"proposalVetoQuorum" mapstructure:"proposalVetoQuorum" msgpack:"proposalVetoQuorum"`
+}
+
+// RepoConfig contains repo-specific configuration settings
+type RepoConfig struct {
+	Governace *RepoConfigGovernance `json:"gov" mapstructure:"gov" msgpack:"gov"`
+}
+
+// DefaultRepoConfig returns sane defaults for repository configurations
+func DefaultRepoConfig() *RepoConfig {
+	return &RepoConfig{
+		Governace: &RepoConfigGovernance{
+			ProposalProposee:                  ProposeeOwner,
+			ProposalProposeeExistBeforeHeight: 0,
+			ProposalDur:                       params.RepoProposalDur,
+			ProposalTallyMethod:               ProposalTallyMethodOneVote,
+			ProposalQuorum:                    params.RepoProposalQuorum,
+			ProposalThreshold:                 params.RepoProposalThreshold,
+			ProposalVetoQuorum:                params.RepoProposalVetoQuorum,
+		},
+	}
+}
+
+// BareRepoConfig returns empty repository configurations
+func BareRepoConfig() *RepoConfig {
+	return &RepoConfig{
+		Governace: &RepoConfigGovernance{},
+	}
+}
+
+// BareRepository returns an empty repository object
+func BareRepository() *Repository {
+	return &Repository{
+		References: make(map[string]interface{}),
+		Owners:     make(map[string]interface{}),
+		Proposals:  make(map[string]interface{}),
+		Config:     BareRepoConfig(),
+	}
+}
+
 // Repository represents a git repository.
 type Repository struct {
-	References References `json:"references" msgpack:"references"`
-	Owners     RepoOwners `json:"owners" msgpack:"owners"`
+	References References    `json:"references" msgpack:"references" mapstructure:"references"`
+	Owners     RepoOwners    `json:"owners" msgpack:"owners" mapstructure:"owners"`
+	Proposals  RepoProposals `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
+	Config     *RepoConfig   `json:"config" msgpack:"config" mapstructure:"config"`
 }
 
 // AddOwner adds an owner
-func (r *Repository) AddOwner(ownerPubKey string, owner *RepoOwner) {
-	r.Owners[ownerPubKey] = owner
+func (r *Repository) AddOwner(ownerAddress string, owner *RepoOwner) {
+	r.Owners[ownerAddress] = owner
 }
 
 // IsNil returns true if the repo fields are set to their nil value
@@ -75,12 +129,20 @@ func (r *Repository) IsNil() bool {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(r.References, r.Owners)
+	return enc.EncodeMulti(
+		r.References,
+		r.Owners,
+		r.Proposals,
+		r.Config)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return dec.DecodeMulti(&r.References, &r.Owners)
+	return dec.DecodeMulti(
+		&r.References,
+		&r.Owners,
+		&r.Proposals,
+		&r.Config)
 }
 
 // Bytes return the bytes equivalent of the account

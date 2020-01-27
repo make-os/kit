@@ -16,7 +16,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Repo", func() {
+var _ = FDescribe("Repo", func() {
 	var appDB, stateTreeDB storage.Engine
 	var err error
 	var cfg *config.AppConfig
@@ -75,7 +75,7 @@ var _ = Describe("Repo", func() {
 			Specify("that the repo was added to the tree", func() {
 				repo := txLogic.logic.RepoKeeper().GetRepo("repo")
 				Expect(repo.IsNil()).To(BeFalse())
-				Expect(repo.CreatorAddress).To(Equal(sender.Addr()))
+				Expect(repo.Owners).To(HaveKey(sender.Addr().String()))
 			})
 
 			Specify("that fee is deducted from sender account", func() {
@@ -86,6 +86,91 @@ var _ = Describe("Repo", func() {
 			Specify("that sender account nonce increased", func() {
 				acct := logic.AccountKeeper().GetAccount(sender.Addr())
 				Expect(acct.Nonce).To(Equal(uint64(1)))
+			})
+		})
+	})
+
+	Describe(".execRepoUpsertOwner", func() {
+		var err error
+		var sender = crypto.NewKeyFromIntSeed(1)
+		var key2 = crypto.NewKeyFromIntSeed(2)
+		var spk util.Bytes32
+
+		BeforeEach(func() {
+			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				Balance:             util.String("10"),
+				Stakes:              types.BareAccountStakes(),
+				DelegatorCommission: 10,
+			})
+
+		})
+
+		When("sender is the only owner", func() {
+			txID := util.ToHex(util.RandBytes(32))
+			repoName := "repo"
+			address := "owner_address"
+
+			BeforeEach(func() {
+				repoUpd := types.BareRepository()
+				repoUpd.Config = types.DefaultRepoConfig()
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoUpsertOwner(spk, txID, repoName, address, "1.5", 0)
+				Expect(err).To(BeNil())
+			})
+
+			It("should add the new proposal to the repo", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+			})
+
+			Specify("that the proposal is finalized and self accepted", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get(txID).IsFinalized()).To(BeTrue())
+				Expect(repo.Proposals.Get(txID).IsSelfAccepted()).To(BeTrue())
+			})
+
+			Specify("that fee was deducted", func() {
+				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				Expect(acct.Balance.String()).To(Equal("8.5"))
+			})
+		})
+
+		When("sender is not the only owner", func() {
+			txID := util.ToHex(util.RandBytes(32))
+			repoName := "repo"
+			address := "owner_address"
+
+			BeforeEach(func() {
+				repoUpd := types.BareRepository()
+				repoUpd.Config = types.DefaultRepoConfig()
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				repoUpd.AddOwner(key2.Addr().String(), &types.RepoOwner{})
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoUpsertOwner(spk, txID, repoName, address, "1.5", 0)
+				Expect(err).To(BeNil())
+			})
+
+			It("should add the new proposal to the repo", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+			})
+
+			Specify("that the proposal is not finalized or self accepted", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get(txID).IsFinalized()).To(BeFalse())
+				Expect(repo.Proposals.Get(txID).IsSelfAccepted()).To(BeFalse())
+			})
+
+			Specify("that fee was deducted", func() {
+				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				Expect(acct.Balance.String()).To(Equal("8.5"))
 			})
 		})
 	})

@@ -326,3 +326,18 @@ func CheckTxNamespaceDomainUpdateConsistency(
 
 	return nil
 }
+
+// CheckTxRepoProposalUpsertOwnerConsistency performs consistency
+// checks on CheckTxRepoProposalUpsertOwner
+func CheckTxRepoProposalUpsertOwnerConsistency(
+	tx *types.TxRepoProposalUpsertOwner,
+	index int,
+	logic types.Logic) error {
+
+	repo := logic.RepoKeeper().GetRepo(tx.RepoName)
+	if repo.IsNil() {
+		return feI(index, "name", "repo not found")
+	}
+
+	return nil
+}

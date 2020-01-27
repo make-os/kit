@@ -11,16 +11,17 @@ import (
 
 // All Transaction type
 var (
-	TxTypeCoinTransfer           = 0x0  // For native coin transfer
-	TxTypeValidatorTicket        = 0x01 // For validator ticket purchase
-	TxTypeSetDelegatorCommission = 0x02 // For setting delegator commission
-	TxTypeStorerTicket           = 0x03 // For purchasing storer ticket
-	TxTypeUnbondStorerTicket     = 0x04 // For unbonding storer ticket
-	TxTypeRepoCreate             = 0x05 // For creating a repository
-	TxTypeAddGPGPubKey           = 0x06 // For adding a GPG public key
-	TxTypePush                   = 0x07 // For pushing updates to a repository
-	TxTypeNSAcquire              = 0x08 // For namespace purchase
-	TxTypeNSDomainUpdate         = 0x09 // For setting namespace domains
+	TxTypeCoinTransfer            = 0x0  // For native coin transfer
+	TxTypeValidatorTicket         = 0x01 // For validator ticket purchase
+	TxTypeSetDelegatorCommission  = 0x02 // For setting delegator commission
+	TxTypeStorerTicket            = 0x03 // For purchasing storer ticket
+	TxTypeUnbondStorerTicket      = 0x04 // For unbonding storer ticket
+	TxTypeRepoCreate              = 0x05 // For creating a repository
+	TxTypeAddGPGPubKey            = 0x06 // For adding a GPG public key
+	TxTypePush                    = 0x07 // For pushing updates to a repository
+	TxTypeNSAcquire               = 0x08 // For namespace purchase
+	TxTypeNSDomainUpdate          = 0x09 // For setting namespace domains
+	TxTypeRepoProposalUpsertOwner = 0x10 // Proposal to add repo owner
 )
 
 // Transaction meta keys
@@ -62,6 +63,7 @@ type BaseTx interface {
 	SetTimestamp(t int64)                // Set the transaction creation unix timestamp
 	GetNonce() uint64                    // Returns the transaction nonce
 	SetNonce(nonce uint64)               // Set the transaction nonce
+	SetFee(fee util.String)              // Set the fee
 	GetFee() util.String                 // Returns the transaction fee
 	GetFrom() util.String                // Returns the address of the transaction sender
 	GetHash() util.Bytes32               // Returns the hash of the transaction
@@ -118,6 +120,11 @@ func NewBareTxCommon() *TxCommon {
 // GetFee returns the transaction nonce
 func (tx *TxCommon) GetFee() util.String {
 	return tx.Fee
+}
+
+// SetFee returns the transaction nonce
+func (tx *TxCommon) SetFee(fee util.String) {
+	tx.Fee = fee
 }
 
 // GetNonce returns the transaction nonce
@@ -228,6 +235,8 @@ func DecodeTx(txBz []byte) (BaseTx, error) {
 		tx = NewBareTxNamespaceAcquire()
 	case TxTypeNSDomainUpdate:
 		tx = NewBareTxNamespaceDomainUpdate()
+	case TxTypeRepoProposalUpsertOwner:
+		tx = NewBareRepoProposalAddOwner()
 	default:
 		return nil, fmt.Errorf("unsupported tx type")
 	}

@@ -124,16 +124,7 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 	// Decode parameters into a transaction object
 	var tx = types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 	mapstructure.Decode(params, tx)
-
-	if nonce, ok := params["nonce"]; ok {
-		defer castPanic("nonce")
-		tx.Nonce = uint64(nonce.(int64))
-	}
-
-	if fee, ok := params["fee"]; ok {
-		defer castPanic("fee")
-		tx.Fee = util.String(fee.(string))
-	}
+	decodeCommon(tx, params)
 
 	if value, ok := params["value"]; ok {
 		defer castPanic("value")
@@ -146,11 +137,6 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 		delegate = to.(string)
 	}
 
-	if timestamp, ok := params["timestamp"]; ok {
-		defer castPanic("timestamp")
-		tx.Timestamp = timestamp.(int64)
-	}
-
 	if delegate != "" {
 		pubKey, err := crypto.PubKeyFromBase58(delegate)
 		if err != nil {
@@ -159,7 +145,7 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 		tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
 	}
 
-	setCommonTxFields(tx, m.service, options...)
+	finalizeTx(tx, m.service, options...)
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
@@ -188,16 +174,7 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 	// Decode parameters into a transaction object
 	var tx = types.NewBareTxTicketPurchase(types.TxTypeStorerTicket)
 	mapstructure.Decode(params, tx)
-
-	if nonce, ok := params["nonce"]; ok {
-		defer castPanic("nonce")
-		tx.Nonce = uint64(nonce.(int64))
-	}
-
-	if fee, ok := params["fee"]; ok {
-		defer castPanic("fee")
-		tx.Fee = util.String(fee.(string))
-	}
+	decodeCommon(tx, params)
 
 	if value, ok := params["value"]; ok {
 		defer castPanic("value")
@@ -208,11 +185,6 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 	if to, ok := params["delegate"]; ok {
 		defer castPanic("delegate")
 		delegate = to.(string)
-	}
-
-	if timestamp, ok := params["timestamp"]; ok {
-		defer castPanic("timestamp")
-		tx.Timestamp = timestamp.(int64)
 	}
 
 	if delegate != "" {
@@ -229,7 +201,7 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 	blsKey := pk.BLSKey()
 	tx.BLSPubKey = blsKey.Public().Bytes()
 
-	setCommonTxFields(tx, m.service, options...)
+	finalizeTx(tx, m.service, options...)
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
@@ -296,16 +268,7 @@ func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 	// Decode parameters into a transaction object
 	var tx = types.NewBareTxTicketUnbond(types.TxTypeUnbondStorerTicket)
 	mapstructure.Decode(params, tx)
-
-	if nonce, ok := params["nonce"]; ok {
-		defer castPanic("nonce")
-		tx.Nonce = uint64(nonce.(int64))
-	}
-
-	if fee, ok := params["fee"]; ok {
-		defer castPanic("fee")
-		tx.Fee = util.String(fee.(string))
-	}
+	decodeCommon(tx, params)
 
 	if ticketHash, ok := params["hash"]; ok {
 		defer castPanic("fee")
@@ -316,12 +279,7 @@ func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 		tx.TicketHash = util.BytesToBytes32(bz)
 	}
 
-	if timestamp, ok := params["timestamp"]; ok {
-		defer castPanic("timestamp")
-		tx.Timestamp = timestamp.(int64)
-	}
-
-	setCommonTxFields(tx, m.service, options...)
+	finalizeTx(tx, m.service, options...)
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)

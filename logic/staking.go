@@ -12,15 +12,15 @@ import (
 // execUnbond sets an unbond height on a target stake
 //
 // ARG:
-// ticketID: The target ticket ID
 // senderPubKey: The public key of the tx sender.
+// ticketID: The target ticket ID
 // fee: The fee to be paid by the sender.
 // chainHeight: The height of the block chain
 //
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) execUnbond(
-	ticketID util.Bytes32,
 	senderPubKey util.Bytes32,
+	ticketID util.Bytes32,
 	fee util.String,
 	chainHeight uint64) error {
 
@@ -48,7 +48,7 @@ func (t *Transaction) execUnbond(
 	senderAcct.Nonce = senderAcct.Nonce + 1
 
 	// Update the sender account
-	senderAcct.CleanUnbonded(chainHeight)
+	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(spk.Addr(), senderAcct)
 
 	return nil
@@ -149,7 +149,7 @@ func (t *Transaction) addStake(
 	}
 
 	// Update the sender account
-	senderAcct.CleanUnbonded(chainHeight)
+	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(sender, senderAcct)
 
 	return nil

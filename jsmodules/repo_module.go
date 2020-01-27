@@ -46,6 +46,11 @@ func (m *RepoModule) funcs() []*types.JSModuleFunc {
 			Value:       m.prune,
 			Description: "Delete all dangling and unreachable loose objects from a repository",
 		},
+		&types.JSModuleFunc{
+			Name:        "upsertOwner",
+			Value:       m.upsertOwner,
+			Description: "Add an owner or update existing owner information",
+		},
 	}
 }
 
@@ -94,16 +99,7 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 	// Decode parameters into a transaction object
 	var tx = types.NewBareTxRepoCreate()
 	mapstructure.Decode(params, tx)
-
-	if nonce, ok := params["nonce"]; ok {
-		defer castPanic("nonce")
-		tx.Nonce = uint64(nonce.(int64))
-	}
-
-	if fee, ok := params["fee"]; ok {
-		defer castPanic("fee")
-		tx.Fee = util.String(fee.(string))
-	}
+	decodeCommon(tx, params)
 
 	if value, ok := params["value"]; ok {
 		defer castPanic("value")
@@ -115,12 +111,47 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 		tx.Name = repoName.(string)
 	}
 
-	if timestamp, ok := params["timestamp"]; ok {
-		defer castPanic("timestamp")
-		tx.Timestamp = timestamp.(int64)
+	finalizeTx(tx, m.service, options...)
+
+	// Process the transaction
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
 	}
 
-	setCommonTxFields(tx, m.service, options...)
+	return EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
+}
+
+// create sends a TxTypeRepoCreate transaction to create a git repository
+// params {
+// 		nonce: number,
+//		fee: string,
+//		name: string
+// 		address: string
+//		timestamp: number
+// }
+// options: key
+func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...interface{}) interface{} {
+	var err error
+
+	// Decode parameters into a transaction object
+	var tx = types.NewBareRepoProposalAddOwner()
+	mapstructure.Decode(params, tx)
+	decodeCommon(tx, params)
+
+	if repoName, ok := params["name"]; ok {
+		defer castPanic("name")
+		tx.RepoName = repoName.(string)
+	}
+
+	if ownerAddr, ok := params["address"]; ok {
+		defer castPanic("address")
+		tx.Address = ownerAddr.(string)
+	}
+
+	finalizeTx(tx, m.service, options...)
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)

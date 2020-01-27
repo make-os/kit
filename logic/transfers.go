@@ -41,7 +41,7 @@ func (t *Transaction) execCoinTransfer(
 	senderAcct.Nonce = senderAcct.Nonce + 1
 
 	// Clean up unbonded stakes and update sender account
-	senderAcct.CleanUnbonded(chainHeight)
+	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(sender, senderAcct)
 
 	// Get recipient account only if recipient and sender are different,
@@ -56,7 +56,7 @@ func (t *Transaction) execCoinTransfer(
 	recipientAcct.Balance = util.String(recipientBal.Add(value.Decimal()).String())
 
 	// Clean up unbonded stakes and update recipient account
-	recipientAcct.CleanUnbonded(chainHeight)
+	recipientAcct.Clean(chainHeight)
 	acctKeeper.Update(recipientAddr, recipientAcct)
 
 	return nil

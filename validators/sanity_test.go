@@ -309,7 +309,6 @@ var _ = Describe("TxValidator", func() {
 		BeforeEach(func() {
 			tx = types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 			tx.Fee = "1"
-			tx.VRFPubKey = util.BytesToBytes32(util.RandBytes(32))
 		})
 
 		When("it has invalid fields, it should return error when", func() {
@@ -383,15 +382,6 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
-			})
-
-			It("has type of TxTypeValidatorTicket and VRF public key is unset", func() {
-				tx.Nonce = 1
-				tx.Timestamp = time.Now().Unix()
-				tx.VRFPubKey = util.EmptyBytes32
-				err := validators.CheckTxTicketPurchase(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:vrfPubKey, error:VRF public key is required"))
 			})
 
 			It("has type of TxTypeStorerTicket and BLS public key is unset", func() {
@@ -1032,6 +1022,43 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).To(BeNil())
 			})
+		})
+	})
+
+	Describe(".CheckTxRepoProposalUpsertOwner", func() {
+		var tx *types.TxRepoProposalUpsertOwner
+
+		BeforeEach(func() {
+			tx = types.NewBareRepoProposalAddOwner()
+			tx.Timestamp = time.Now().Unix()
+		})
+
+		It("should return error when repo name is not provided", func() {
+			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:name, error:repo name is required"))
+		})
+
+		It("should return error when repo name is not valid", func() {
+			tx.RepoName = "*&^"
+			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+		})
+
+		It("should return error when target address is not provided", func() {
+			tx.RepoName = "repo1"
+			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:address, error:owner address is required"))
+		})
+
+		It("should return error when target address is not valid", func() {
+			tx.RepoName = "repo1"
+			tx.Address = "invalid_addr"
+			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:address, error:owner address is not valid"))
 		})
 	})
 })

@@ -24,7 +24,6 @@ var _ = Describe("System", func() {
 	var logic *Logic
 	var sysLogic *System
 	var ctrl *gomock.Controller
-	var mockLogic *testutil.MockObjects
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -38,7 +37,6 @@ var _ = Describe("System", func() {
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockLogic = testutil.MockLogic(ctrl)
 	})
 
 	AfterEach(func() {
