@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"fmt"
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
@@ -123,7 +124,8 @@ func (t *Transaction) execRepoUpsertOwner(
 	}
 
 	// Add the proposal to the repo (strip 0x from tx ID)
-	repo.Proposals.Add(txID[2:], proposal)
+	proposalID := fmt.Sprintf("%d", len(repo.Proposals)+1)
+	repo.Proposals.Add(proposalID, proposal)
 
 	// Attempt to apply the proposal action
 	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)

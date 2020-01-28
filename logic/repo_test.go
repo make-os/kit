@@ -16,7 +16,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = FDescribe("Repo", func() {
+var _ = Describe("Repo", func() {
 	var appDB, stateTreeDB storage.Engine
 	var err error
 	var cfg *config.AppConfig
@@ -129,8 +129,8 @@ var _ = FDescribe("Repo", func() {
 			Specify("that the proposal is finalized and self accepted", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
-				Expect(repo.Proposals.Get(txID).IsFinalized()).To(BeTrue())
-				Expect(repo.Proposals.Get(txID).IsSelfAccepted()).To(BeTrue())
+				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
+				Expect(repo.Proposals.Get("1").IsSelfAccepted()).To(BeTrue())
 			})
 
 			Specify("that fee was deducted", func() {
@@ -164,8 +164,8 @@ var _ = FDescribe("Repo", func() {
 			Specify("that the proposal is not finalized or self accepted", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
-				Expect(repo.Proposals.Get(txID).IsFinalized()).To(BeFalse())
-				Expect(repo.Proposals.Get(txID).IsSelfAccepted()).To(BeFalse())
+				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeFalse())
+				Expect(repo.Proposals.Get("1").IsSelfAccepted()).To(BeFalse())
 			})
 
 			Specify("that fee was deducted", func() {
