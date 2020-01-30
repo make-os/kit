@@ -99,13 +99,13 @@ func (tx *TxType) Is(txType int) bool {
 
 // TxCommon implements some of BaseTx, it includes some common fields and methods
 type TxCommon struct {
-	util.DecoderHelper
-	*TxMeta      `json:"-" msgpack:"-" mapstructure:"-"`
-	Nonce        uint64       `json:"nonce" msgpack:"nonce"`
-	Fee          util.String  `json:"fee" msgpack:"fee"`
-	Sig          []byte       `json:"sig" msgpack:"sig"`
-	Timestamp    int64        `json:"timestamp" msgpack:"timestamp"`
-	SenderPubKey util.Bytes32 `json:"senderPubKey" msgpack:"senderPubKey"`
+	util.DecoderHelper `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxMeta            `json:"-" msgpack:"-" mapstructure:"-"`
+	Nonce              uint64       `json:"nonce" msgpack:"nonce"`
+	Fee                util.String  `json:"fee" msgpack:"fee"`
+	Sig                []byte       `json:"sig" msgpack:"sig"`
+	Timestamp          int64        `json:"timestamp" msgpack:"timestamp"`
+	SenderPubKey       util.Bytes32 `json:"senderPubKey" msgpack:"senderPubKey"`
 }
 
 // NewBareTxCommon returns an instance of TxCommon with zero values

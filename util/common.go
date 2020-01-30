@@ -83,6 +83,13 @@ func (s String) Decimal() decimal.Decimal {
 	return StrToDec(s.String())
 }
 
+// Float returns the float equivalent of the numeric value
+func (s String) Float() float64 {
+	dec := s.Decimal()
+	valF, _ := dec.Float64()
+	return valF
+}
+
 // IsDecimal checks whether the string
 // can be converted to decimal
 func (s String) IsDecimal() bool {

@@ -110,7 +110,7 @@ func DefaultRepoConfig() *RepoConfig {
 			ProposalProposee:                  ProposeeOwner,
 			ProposalProposeeExistBeforeHeight: 0,
 			ProposalDur:                       params.RepoProposalDur,
-			ProposalTallyMethod:               ProposalTallyMethodOneVote,
+			ProposalTallyMethod:               ProposalTallyMethodCoinWeighted,
 			ProposalQuorum:                    params.RepoProposalQuorum,
 			ProposalThreshold:                 params.RepoProposalThreshold,
 			ProposalVetoQuorum:                params.RepoProposalVetoQuorum,
@@ -137,11 +137,11 @@ func BareRepository() *Repository {
 
 // Repository represents a git repository.
 type Repository struct {
-	util.DecoderHelper
-	References References    `json:"references" msgpack:"references" mapstructure:"references"`
-	Owners     RepoOwners    `json:"owners" msgpack:"owners" mapstructure:"owners"`
-	Proposals  RepoProposals `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
-	Config     *RepoConfig   `json:"config" msgpack:"config" mapstructure:"config"`
+	util.DecoderHelper `json:"-" msgpack:"-" mapstructure:"-"`
+	References         References    `json:"references" msgpack:"references" mapstructure:"references"`
+	Owners             RepoOwners    `json:"owners" msgpack:"owners" mapstructure:"owners"`
+	Proposals          RepoProposals `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
+	Config             *RepoConfig   `json:"config" msgpack:"config" mapstructure:"config"`
 }
 
 // AddOwner adds an owner

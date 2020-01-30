@@ -17,8 +17,8 @@ type ProposalTallyMethod int
 
 // ProposalTallyMethod types
 const (
-	ProposalTallyMethodOneVote = iota + 1
-	ProposalTallyMethodTokenWeighted
+	ProposalTallyMethodIdentity = iota + 1
+	ProposalTallyMethodCoinWeighted
 )
 
 // ProposalAction represents proposal action types

@@ -90,6 +90,72 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
+	FDescribe(".execRepoProposalVote", func() {
+		var err error
+		var sender = crypto.NewKeyFromIntSeed(1)
+		var spk util.Bytes32
+
+		BeforeEach(func() {
+			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				Balance:             util.String("10"),
+				Stakes:              types.BareAccountStakes(),
+				DelegatorCommission: 10,
+			})
+		})
+
+		When("proposal tally method is ProposalTallyMethodIdentity", func() {
+			var propID = "proposer_id"
+			var repoName = "repo"
+
+			BeforeEach(func() {
+				repoUpd := types.BareRepository()
+				repoUpd.Config = types.DefaultRepoConfig()
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				proposal := &types.RepoProposal{
+					TallyMethod: types.ProposalTallyMethodIdentity,
+					Yes:         1,
+				}
+				repoUpd.Proposals.Add(propID, proposal)
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+				Expect(err).To(BeNil())
+			})
+
+			It("should increment proposal.Yes by 1", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(2)))
+			})
+		})
+
+		When("proposal tally method is ProposalTallyMethodCoinWeighted", func() {
+			var propID = "proposer_id"
+			var repoName = "repo"
+
+			BeforeEach(func() {
+				repoUpd := types.BareRepository()
+				repoUpd.Config = types.DefaultRepoConfig()
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				proposal := &types.RepoProposal{
+					TallyMethod: types.ProposalTallyMethodCoinWeighted,
+					Yes:         1,
+				}
+				repoUpd.Proposals.Add(propID, proposal)
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+				Expect(err).To(BeNil())
+			})
+
+			It("should increment proposal.Yes by 10", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(11)))
+			})
+		})
+	})
+
 	Describe(".execRepoUpsertOwner", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)

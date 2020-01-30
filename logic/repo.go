@@ -183,25 +183,38 @@ func (t *Transaction) execRepoProposalVote(
 	fee util.String,
 	chainHeight uint64) error {
 
+	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
+
 	// Get the proposal
 	repoKeeper := t.logic.RepoKeeper()
 	repo := repoKeeper.GetRepo(repoName)
 	proposal := repo.Proposals.Get(proposalID)
 
-	// Increment the accepted if yes == true
+	increments := float64(0)
+
+	// For identity based votes, use increment of 1
+	if proposal.TallyMethod == types.ProposalTallyMethodIdentity {
+		increments = 1
+	}
+
+	// For coin-weighted votes, use the value of the voter's account spendable balance
+	if proposal.TallyMethod == types.ProposalTallyMethodCoinWeighted {
+		senderAcct := t.logic.AccountKeeper().GetAccount(spk.Addr())
+		increments = senderAcct.GetSpendableBalance(chainHeight).Float()
+	}
+
 	if vote == types.ProposalVoteYes {
-		proposal.Yes++
+		proposal.Yes += increments
 	} else if vote == types.ProposalVoteNo {
-		proposal.No++
+		proposal.No += increments
 	} else if vote == types.ProposalVoteNoWithVeto {
-		proposal.NoWithVeto++
+		proposal.NoWithVeto += increments
 	}
 
 	// Update the repo
 	repoKeeper.Update(repoName, repo)
 
 	// Deduct fee from sender
-	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	t.deductFee(spk, fee, chainHeight)
 
 	return nil

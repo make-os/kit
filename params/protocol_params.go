@@ -127,7 +127,7 @@ const (
 	RepoProposalQuorum = float64(10)
 	// RepoProposalThreshold is the minimum percentage required to consider a
 	// proposal accepted ("YES" voted)
-	RepoProposalThreshold = float64(75)
+	RepoProposalThreshold = float64(51)
 	// RepoProposalVetoQuorum is the minimum percentage required for veto
 	// members to overturn a "Yes" quorum
 	RepoProposalVetoQuorum = float64(33)
