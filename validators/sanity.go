@@ -3,7 +3,9 @@ package validators
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/repo"
 	"github.com/makeos/mosdef/util"
@@ -408,7 +410,7 @@ func CheckTxNamespaceDomainUpdate(tx *types.TxNamespaceDomainUpdate, index int) 
 	return nil
 }
 
-// CheckTxRepoProposalUpsertOwner performs sanity checks on TxTxRepoProposalUpsertOwner
+// CheckTxRepoProposalUpsertOwner performs sanity checks on TxRepoProposalUpsertOwner
 func CheckTxRepoProposalUpsertOwner(tx *types.TxRepoProposalUpsertOwner, index int) error {
 
 	if err := checkType(tx.TxType, types.TxTypeRepoProposalUpsertOwner, index); err != nil {
@@ -422,11 +424,55 @@ func CheckTxRepoProposalUpsertOwner(tx *types.TxRepoProposalUpsertOwner, index i
 		return err
 	}
 
-	if err := v.Validate(tx.Address,
-		v.Required.Error(feI(index, "address", "owner address is required").Error()),
-		v.By(validAddrRule(feI(index, "address", "owner address is not valid"))),
+	if len(tx.Addresses) == 0 {
+		return feI(index, "addresses", "at least one address is required")
+	}
+
+	addresses := strings.Split(tx.Addresses, ",")
+	if len(addresses) > 10 {
+		return feI(index, "addresses", "only a maximum of 10 addresses are allowed")
+	}
+
+	for i, addr := range addresses {
+		field := fmt.Sprintf("addresses[%d]", i)
+		if err := v.Validate(addr,
+			v.By(validAddrRule(feI(index, field, "address is not valid"))),
+		); err != nil {
+			return err
+		}
+	}
+
+	if err := checkCommon(tx, index); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CheckTxRepoProposalVote performs sanity checks on TxRepoProposalVote
+func CheckTxRepoProposalVote(tx *types.TxRepoProposalVote, index int) error {
+
+	if err := checkType(tx.TxType, types.TxTypeRepoProposalVote, index); err != nil {
+		return err
+	}
+
+	if err := v.Validate(tx.RepoName,
+		v.Required.Error(feI(index, "name", "repo name is required").Error()),
+		v.By(validObjectNameRule("name", index)),
 	); err != nil {
 		return err
+	}
+
+	if tx.ProposalID == "" {
+		return feI(index, "id", "proposal id is required")
+	} else if !govalidator.IsNumeric(tx.ProposalID) {
+		return feI(index, "id", "proposal id is not valid")
+	}
+
+	// Vote cannot be less than -1 or greater than 1.
+	// 0 = No, 1 = Yes, -1 = NoWithVeto
+	if tx.Vote < -1 || tx.Vote > 1 {
+		return feI(index, "vote", "vote choice is unknown")
 	}
 
 	if err := checkCommon(tx, index); err != nil {

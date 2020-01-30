@@ -41,6 +41,7 @@ type App struct {
 	unsavedValidators         []*types.Validator
 	heightToSaveNewValidators int64
 	unIndexedTxs              []types.BaseTx
+	unIndexedRepoPropVotes    []*types.TxRepoProposalVote
 	newRepos                  []string
 }
 
@@ -192,32 +193,41 @@ func (a *App) preExecChecks(tx types.BaseTx) *abcitypes.ResponseDeliverTx {
 	return nil
 }
 
-// postExecChecks performs some checks that reacts to the result from executing a transaction.
+// postExecChecks performs some checks that reacts to the
+// result from executing a transaction.
 func (a *App) postExecChecks(
 	tx types.BaseTx,
-	resp abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
+	resp *abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
 
-	txType := tx.GetType()
-	switch txType {
+	// Return immediately if not an OK response
+	if !resp.IsOK() {
+		return resp
+	}
 
-	case types.TxTypeValidatorTicket:
-		a.validatorTickets = append(a.validatorTickets, &ticketInfo{Tx: tx, index: a.txIndex})
+	switch o := tx.(type) {
 
-	case types.TxTypeStorerTicket:
-		a.storerTickets = append(a.storerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
+	case *types.TxTicketPurchase:
+		if o.Is(types.TxTypeValidatorTicket) {
+			a.validatorTickets = append(a.validatorTickets, &ticketInfo{Tx: tx, index: a.txIndex})
+		} else {
+			a.storerTickets = append(a.storerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
+		}
 
-	case types.TxTypeUnbondStorerTicket:
-		a.unbondStorerReqs = append(a.unbondStorerReqs, tx.(*types.TxTicketUnbond).TicketHash)
+	case *types.TxTicketUnbond:
+		a.unbondStorerReqs = append(a.unbondStorerReqs, o.TicketHash)
 
-	case types.TxTypeRepoCreate:
-		a.newRepos = append(a.newRepos, tx.(*types.TxRepoCreate).Name)
+	case *types.TxRepoCreate:
+		a.newRepos = append(a.newRepos, o.Name)
+
+	case *types.TxRepoProposalVote:
+		a.unIndexedRepoPropVotes = append(a.unIndexedRepoPropVotes, o)
 	}
 
 	// Add the successfully processed tx to the un-indexed tx cache.
 	// They will be committed in the COMMIT phase
 	a.unIndexedTxs = append(a.unIndexedTxs, tx)
 
-	return &resp
+	return resp
 }
 
 // DeliverTx processes transactions included in a proposed block.
@@ -256,7 +266,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	}
 
 	// Perform post-execution checks
-	return *a.postExecChecks(tx, resp)
+	return *a.postExecChecks(tx, &resp)
 }
 
 // updateValidators updates the validators of the chain.
@@ -330,13 +340,19 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 	return nil
 }
 
-// EndBlock indicates the end of a block
+// EndBlock indicates the end of a block.
+// Note: Any error from operations in here should panic to stop the block from
+// being committed.
 func (a *App) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock {
 	resp := abcitypes.ResponseEndBlock{}
 
 	// Update validators
 	if err := a.updateValidators(req.Height, &resp); err != nil {
 		panic(errors.Wrap(err, "failed to update validators"))
+	}
+
+	if err := a.logic.OnEndBlock(a.curWorkingBlock); err != nil {
+		panic(errors.Wrap(err, "logic.OnEndBlock"))
 	}
 
 	return resp
@@ -388,6 +404,14 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		}
 	}
 
+	// Index proposal votes
+	for _, v := range a.unIndexedRepoPropVotes {
+		if err := a.logic.RepoKeeper().IndexProposalVote(v.RepoName, v.ProposalID,
+			v.GetFrom().String(), v.Vote); err != nil {
+			a.commitPanic(errors.Wrap(err, "failed to index repository proposal vote"))
+		}
+	}
+
 	// Set the decay height for each storer stake unbond request
 	for _, ticketHash := range a.unbondStorerReqs {
 		a.logic.GetTicketManager().UpdateDecayBy(ticketHash, uint64(a.curWorkingBlock.Height))
@@ -429,6 +453,7 @@ func (a *App) reset() {
 	a.txIndex = 0
 	a.isCurrentBlockProposer = false
 	a.unIndexedTxs = []types.BaseTx{}
+	a.unIndexedRepoPropVotes = []*types.TxRepoProposalVote{}
 	a.newRepos = []string{}
 
 	// Only reset heightToSaveNewValidators if the current height is

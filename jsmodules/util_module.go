@@ -206,12 +206,13 @@ func (m *UtilModule) treasuryAddress() string {
 // genKey generates an Ed25519 key.
 // seed: Specify an optional seed
 func (m *UtilModule) genKey(seed ...int64) interface{} {
-	var s int64
+
+	var s *int64 = nil
 	if len(seed) > 0 {
-		s = seed[0]
+		s = &seed[0]
 	}
 
-	key, err := crypto.NewKey(&s)
+	key, err := crypto.NewKey(s)
 	if err != nil {
 		panic(err)
 	}

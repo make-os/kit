@@ -78,7 +78,10 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.execRepoCreate(spk, o.Name, o.Fee, chainHeight)
 
 	case *types.TxRepoProposalUpsertOwner:
-		return t.execRepoUpsertOwner(spk, o.GetID(), o.RepoName, o.Address, o.Fee, chainHeight)
+		return t.execRepoUpsertOwner(spk, o.RepoName, o.Addresses, o.Veto, o.Fee, chainHeight)
+
+	case *types.TxRepoProposalVote:
+		return t.execRepoProposalVote(spk, o.RepoName, o.ProposalID, o.Vote, o.Fee, chainHeight)
 
 	case *types.TxAddGPGPubKey:
 		return t.execAddGPGKey(spk, o.PublicKey, o.Fee, chainHeight)

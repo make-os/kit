@@ -14,6 +14,10 @@ const (
 	TagAddressGPGPkID = "ag"
 	// TagRepo is the prefix for repository data
 	TagRepo = "r"
+	// TagRepoPropVote is the prefix for repository proposal vote
+	TagRepoPropVote = "rpv"
+	// TagRepoPropEndIndex is the prefix for repo end height index
+	TagRepoPropEndIndex = "rei"
 	// TagNS is the prefix for namespace data
 	TagNS = "ns"
 	// TagBlockInfo is the prefix for last block data
@@ -22,8 +26,6 @@ const (
 	TagLastRepoSyncherHeight = "rh"
 	// TagNetMaturity is the prefix for account data
 	TagNetMaturity = "m"
-	// TagHighestDrandRound is the prefix for highest drand round
-	TagHighestDrandRound = "dr"
 	// TagValidators is the prefix for block validators
 	TagValidators = "v"
 	// TagTx is the prefix for storing/accessing transactions
@@ -54,6 +56,25 @@ func MakeQueryPkIDs(address string) []byte {
 // MakeRepoKey creates a key for accessing a repository object
 func MakeRepoKey(name string) []byte {
 	return storage.MakePrefix([]byte(TagRepo), []byte(name))
+}
+
+// MakeRepoProposalVoteKey creates a key as flag for a repo proposal vote
+func MakeRepoProposalVoteKey(repoName, proposalID, voterAddr string) []byte {
+	return storage.MakePrefix([]byte(TagRepoPropVote), []byte(repoName),
+		[]byte(proposalID), []byte(voterAddr))
+}
+
+// MakeRepoProposalEndIndexKey creates a key that makes a repo proposal to its
+// end height
+func MakeRepoProposalEndIndexKey(repoName, proposalID string, endHeight uint64) []byte {
+	return storage.MakePrefix([]byte(TagRepoPropEndIndex), util.EncodeNumber(endHeight),
+		[]byte(repoName), []byte(proposalID))
+}
+
+// MakeQueryKeyRepoProposalAtEndHeight creates a key for finding repo proposals
+// ending at the given height
+func MakeQueryKeyRepoProposalAtEndHeight(endHeight uint64) []byte {
+	return storage.MakePrefix([]byte(TagRepoPropEndIndex), util.EncodeNumber(endHeight))
 }
 
 // MakeNamespaceKey creates a key for accessing a namespace

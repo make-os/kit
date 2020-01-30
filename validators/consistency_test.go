@@ -909,4 +909,170 @@ var _ = Describe("TxValidator", func() {
 		})
 
 	})
+
+	Describe(".CheckTxRepoProposalUpsertOwnerConsistency", func() {
+		When("repo is unknown", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalUpsertOwner()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				repo := types.BareRepository()
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:name, error:repo not found"))
+			})
+		})
+	})
+
+	Describe(".CheckTxRepoProposalVoteConsistency", func() {
+		When("repo is unknown", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalVote()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				repo := types.BareRepository()
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				err = validators.CheckTxRepoProposalVoteConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:name, error:repo not found"))
+			})
+		})
+
+		When("repo does not include the proposal", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalVote()
+				tx.RepoName = "repo1"
+				tx.ProposalID = "proposal_xyz"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				err = validators.CheckTxRepoProposalVoteConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:id, error:proposal not found"))
+			})
+		})
+
+		When("the proposal has been finalized/concluded", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalVote()
+				tx.RepoName = "repo1"
+				tx.ProposalID = "proposal1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{Outcome: 1})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				err = validators.CheckTxRepoProposalVoteConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:id, error:proposal voting period has ended"))
+			})
+		})
+
+		When("unable to get indexed proposal vote", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalVote()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.ProposalID = "proposal1"
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+
+				mockRepoKeeper.EXPECT().GetProposalVote(tx.RepoName, tx.ProposalID,
+					key.Addr().String()).Return(0, false, fmt.Errorf("error"))
+				err = validators.CheckTxRepoProposalVoteConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to check proposal vote: error"))
+			})
+		})
+
+		When("sender already voted on the proposal", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalVote()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.ProposalID = "proposal1"
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+
+				mockRepoKeeper.EXPECT().GetProposalVote(tx.RepoName, tx.ProposalID,
+					key.Addr().String()).Return(0, true, nil)
+				err = validators.CheckTxRepoProposalVoteConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:id, error:vote already cast for the target proposal"))
+			})
+		})
+
+		When("sender is not an owner of a repo whose proposal is targetted at repo owners", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalVote()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.ProposalID = "proposal1"
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{
+					Proposee: types.ProposeeOwner,
+				})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+
+				err = validators.CheckTxRepoProposalVoteConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender is not one of the repo owners"))
+			})
+		})
+
+		When("sender is an owner of a repo whose proposal is targetted at repo owners", func() {
+			When("sender has no veto right but votes NoWithVeto", func() {
+				BeforeEach(func() {
+					tx := types.NewBareRepoProposalVote()
+					tx.RepoName = "repo1"
+					tx.SenderPubKey = key.PubKey().MustBytes32()
+					tx.ProposalID = "proposal1"
+					tx.Vote = types.ProposalVoteNoWithVeto
+
+					repo := types.BareRepository()
+					repo.AddOwner(key.Addr().String(), &types.RepoOwner{})
+					repo.Proposals.Add("proposal1", &types.RepoProposal{
+						Proposee: types.ProposeeOwner,
+					})
+					mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+
+					err = validators.CheckTxRepoProposalVoteConsistency(tx, -1, mockLogic)
+				})
+
+				It("should return err", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("field:senderPubKey, error:sender cannot vote 'no with veto' because they have no veto right"))
+				})
+			})
+		})
+	})
 })

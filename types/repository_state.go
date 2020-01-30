@@ -42,6 +42,7 @@ func (r *References) Has(name string) bool {
 type RepoOwner struct {
 	Creator  bool   `json:"creator" mapstructure:"creator" msgpack:"creator"`
 	JoinedAt uint64 `json:"joinedAt" mapstructure:"joinedAt" msgpack:"joinedAt"`
+	Veto     bool   `json:"veto" mapstructure:"veto" msgpack:"veto"`
 }
 
 // RepoOwners represents an index of owners of a repository.
@@ -58,7 +59,27 @@ func (r RepoOwners) Has(address string) bool {
 
 // Get return a repo owner associated with the given address
 func (r RepoOwners) Get(address string) *RepoOwner {
-	return r[address].(*RepoOwner)
+	ro, ok := r[address]
+	if !ok {
+		return nil
+	}
+	switch v := ro.(type) {
+	case *RepoOwner:
+		return v
+	case map[string]interface{}:
+		var ro RepoOwner
+		mapstructure.Decode(v, &ro)
+		r[address] = &ro
+		return &ro
+	}
+	return nil
+}
+
+// ForEach iterates through the collection passing each item to the iter callback
+func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
+	for key := range r {
+		iter(r.Get(key), key)
+	}
 }
 
 // RepoConfigGovernance contains governance settings for a repository

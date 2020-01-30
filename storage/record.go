@@ -78,8 +78,7 @@ func NewFromKeyValue(key []byte, value []byte) *Record {
 	parts := bytes.SplitN(key, []byte(KeyPrefixSeparator), 2)
 
 	// If there are more than 2 parts, it is an invalid key.
-	// If there are only two parts, then the 0 index is the prefix
-	// while the 1 index is the key.
+	// If there are only two parts, then the 0 index is the prefix while 1 is the key.
 	// It there are only one part, the 0 part is considered the key.
 	partsLen := len(parts)
 	if partsLen > 2 {

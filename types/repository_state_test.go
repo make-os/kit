@@ -96,4 +96,49 @@ var _ = Describe("Repository", func() {
 			})
 		})
 	})
+
+	Describe("RepoOwners", func() {
+		var v RepoOwners
+
+		BeforeEach(func() {
+			v = RepoOwners(map[string]interface{}{
+				"abc": &RepoOwner{JoinedAt: 100},
+				"xyz": map[string]interface{}{
+					"joinAt": 200,
+				},
+			})
+		})
+
+		Describe(".Get", func() {
+			It("should return nil when key is not found", func() {
+				Expect(v.Get("aaa")).To(BeNil())
+			})
+
+			It("should return RepoOwner when key is found", func() {
+				Expect(v.Get("abc")).ToNot(BeNil())
+				Expect(v.Get("abc")).To(BeAssignableToTypeOf(&RepoOwner{}))
+				Expect(v.Get("xyz")).To(BeAssignableToTypeOf(&RepoOwner{}))
+			})
+		})
+
+		Describe(".Has", func() {
+			It("should return false when key is not found", func() {
+				Expect(v.Has("aaa")).To(BeFalse())
+			})
+
+			It("should return true when key is found", func() {
+				Expect(v.Has("xyz")).To(BeTrue())
+			})
+		})
+
+		Describe(".ForEach", func() {
+			It("should pass all values", func() {
+				var owners = []string{}
+				v.ForEach(func(o *RepoOwner, addr string) {
+					owners = append(owners, addr)
+				})
+				Expect(owners).To(Equal([]string{"abc", "xyz"}))
+			})
+		})
+	})
 })

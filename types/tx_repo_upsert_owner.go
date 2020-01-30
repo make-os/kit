@@ -12,16 +12,18 @@ type TxRepoProposalUpsertOwner struct {
 	*TxCommon `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxType   `json:"-" msgpack:"-" mapstructure:"-"`
 	RepoName  string `json:"name" msgpack:"name"`
-	Address   string `json:"address" msgpack:"address"`
+	Addresses string `json:"addresses" msgpack:"addresses"`
+	Veto      bool   `json:"veto" msgpack:"veto"`
 }
 
-// NewBareRepoProposalAddOwner returns an instance of TxRepoProposalUpsertOwner with zero values
-func NewBareRepoProposalAddOwner() *TxRepoProposalUpsertOwner {
+// NewBareRepoProposalUpsertOwner returns an instance of TxRepoProposalUpsertOwner with zero values
+func NewBareRepoProposalUpsertOwner() *TxRepoProposalUpsertOwner {
 	return &TxRepoProposalUpsertOwner{
-		TxCommon: NewBareTxCommon(),
-		TxType:   &TxType{Type: TxTypeRepoProposalUpsertOwner},
-		RepoName: "",
-		Address:  "",
+		TxCommon:  NewBareTxCommon(),
+		TxType:    &TxType{Type: TxTypeRepoProposalUpsertOwner},
+		RepoName:  "",
+		Addresses: "",
+		Veto:      false,
 	}
 }
 
@@ -35,7 +37,8 @@ func (tx *TxRepoProposalUpsertOwner) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.Timestamp,
 		tx.SenderPubKey,
 		tx.RepoName,
-		tx.Address)
+		tx.Addresses,
+		tx.Veto)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -48,7 +51,8 @@ func (tx *TxRepoProposalUpsertOwner) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.Timestamp,
 		&tx.SenderPubKey,
 		&tx.RepoName,
-		&tx.Address)
+		&tx.Addresses,
+		&tx.Veto)
 }
 
 // Bytes returns the serialized transaction

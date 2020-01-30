@@ -102,7 +102,7 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 	l.txKeeper = keepers.NewTxKeeper(dbTx)
 	l.accountKeeper = keepers.NewAccountKeeper(tree)
 	l.validatorKeeper = keepers.NewValidatorKeeper(dbTx)
-	l.repoKeeper = keepers.NewRepoKeeper(tree)
+	l.repoKeeper = keepers.NewRepoKeeper(tree, dbTx)
 	l.gpgPubKeyKeeper = keepers.NewGPGPubKeyKeeper(tree, dbTx)
 	l.nsKeeper = keepers.NewNamespaceKeeper(tree)
 
@@ -245,11 +245,23 @@ func (l *Logic) WriteGenesisState() error {
 
 	// Add all genesis data entries to the state
 	for _, ga := range genesisData {
-		if ga.Type == "account" {
+		if ga.Type == config.GenDataTypeAccount {
 			newAcct := types.BareAccount()
 			newAcct.Balance = util.String(ga.Balance)
 			l.accountKeeper.Update(util.String(ga.Address), newAcct)
 		}
+	}
+
+	return nil
+}
+
+// OnEndBlock is called within the ABCI EndBlock method;
+// Do things that need to happen after each block transactions are processed;
+// Note: The ABCI will panic if an error is returned.
+func (l *Logic) OnEndBlock(block *types.BlockInfo) error {
+
+	if err := maybeApplyEndedProposals(l, uint64(block.Height)); err != nil {
+		return err
 	}
 
 	return nil

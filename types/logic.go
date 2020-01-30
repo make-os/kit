@@ -95,6 +95,38 @@ type RepoKeeper interface {
 	// address: The address of the repository to update
 	// udp: The updated repository object to replace the existing object.
 	Update(name string, upd *Repository)
+
+	// IndexProposalVote indexes a proposal vote.
+	//
+	// ARGS:
+	// name: The name of the repository
+	// propID: The target proposal
+	// voterAddr: The address of the voter
+	// vote: Indicates the vote choice
+	IndexProposalVote(name, propID, voterAddr string, vote int) error
+
+	// GetProposalVote returns the vote choice of the
+	// given voter for the given proposal
+	//
+	// ARGS:
+	// name: The name of the repository
+	// propID: The target proposal
+	// voterAddr: The address of the voter
+	GetProposalVote(name, propID, voterAddr string) (vote int, found bool, err error)
+
+	// IndexProposalEnd indexes a proposal by its end height so it can be
+	// tracked and finalized at the given height
+	IndexProposalEnd(name, propID string, endHeight uint64) error
+
+	// GetProposalsEndingAt finds repo proposals ending at the given height
+	GetProposalsEndingAt(height uint64) []*EndingProposals
+}
+
+// EndingProposals describes a proposal ending height
+type EndingProposals struct {
+	RepoName   string
+	ProposalID string
+	EndHeight  uint64
 }
 
 // NamespaceKeeper describes an interface for accessing namespace data
@@ -197,6 +229,10 @@ type Logic interface {
 
 	// Cfg returns the application config
 	Cfg() *config.AppConfig
+
+	// OnEndBlock is called within the ABCI EndBlock method;
+	// Do things that need to happen after each block transactions are processed.
+	OnEndBlock(block *BlockInfo) error
 }
 
 // Keepers describes modules for accessing the state and storage

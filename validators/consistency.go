@@ -341,3 +341,53 @@ func CheckTxRepoProposalUpsertOwnerConsistency(
 
 	return nil
 }
+
+// CheckTxRepoProposalVoteConsistency performs consistency checks on CheckTxRepoProposalVote
+func CheckTxRepoProposalVoteConsistency(
+	tx *types.TxRepoProposalVote,
+	index int,
+	logic types.Logic) error {
+
+	// The repo must exist
+	repo := logic.RepoKeeper().GetRepo(tx.RepoName)
+	if repo.IsNil() {
+		return feI(index, "name", "repo not found")
+	}
+
+	// The proposal must exist
+	proposal := repo.Proposals.Get(tx.ProposalID)
+	if proposal == nil {
+		return feI(index, "id", "proposal not found")
+	}
+
+	// Ensure repo has not been finalized
+	if proposal.IsFinalized() {
+		return feI(index, "id", "proposal voting period has ended")
+	}
+
+	// If the proposal is targetted at repo owners, then
+	// the sender mus be an owner
+	senderOwner := repo.Owners.Get(tx.GetFrom().String())
+	if proposal.Proposee == types.ProposeeOwner && senderOwner == nil {
+		return feI(index, "senderPubKey", "sender is not one of the repo owners")
+	}
+
+	// If the proposal is targetted at repo owners and
+	// the vote is a NoWithVeto, then the sender must have veto rights.
+	if proposal.Proposee == types.ProposeeOwner &&
+		tx.Vote == types.ProposalVoteNoWithVeto && !senderOwner.Veto {
+		return feI(index, "senderPubKey", "sender cannot vote 'no with veto' because "+
+			"they have no veto right")
+	}
+
+	// Ensure the sender had not previously voted
+	_, voted, err := logic.RepoKeeper().
+		GetProposalVote(tx.RepoName, tx.ProposalID, tx.GetFrom().String())
+	if err != nil {
+		return errors.Wrap(err, "failed to check proposal vote")
+	} else if voted {
+		return feI(index, "id", "vote already cast for the target proposal")
+	}
+
+	return nil
+}

@@ -29,11 +29,18 @@ const (
 	ProposalActionAddOwner ProposalAction = iota + 1
 )
 
+// Proposal vote choices
+const (
+	ProposalVoteYes        = 1
+	ProposalVoteNo         = 0
+	ProposalVoteNoWithVeto = -1
+)
+
 // Proposal describes a repository proposal
 type Proposal interface {
 	GetCreator() string
 	GetProposeeType() ProposeeType
-	GetProposeeAge() uint64
+	GetProposeeMaxJoinHeight() uint64
 	GetEndAt() uint64
 	GetQuorum() float64
 	GetTallyMethod() ProposalTallyMethod
@@ -43,28 +50,40 @@ type Proposal interface {
 	GetVetoQuorum() float64
 	GetAccepted() float64
 	GetRejected() float64
+	GetRejectedWithVeto() float64
 	IsFinalized() bool
-	SetFinalized(v bool)
-	IsSelfAccepted() bool
-	SetSelfAccepted(v bool)
+	SetOutcome(v ProposalOutcome)
 }
+
+// ProposalOutcome describes a proposal outcome
+type ProposalOutcome int
+
+// Proposal outcomes
+const (
+	ProposalOutcomeAccepted ProposalOutcome = iota + 1
+	ProposalOutcomeRejected
+	ProposalOutcomeRejectedWithVeto
+	ProposalOutcomeQuorumNotMet
+	ProposalOutcomeThresholdNotMet
+	ProposalOutcomeTie
+)
 
 // RepoProposal represents a repository proposal
 type RepoProposal struct {
-	Action       ProposalAction         `json:"action" mapstructure:"action" msgpack:"action"`                         // The action type.
-	ActionData   map[string]interface{} `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`             // The data to use to perform the action.
-	Creator      string                 `json:"creator" mapstructure:"creator" msgpack:"creator"`                      // The creator is the address of the proposal creator.
-	Proposee     ProposeeType           `json:"proposee" mapstructure:"proposee" msgpack:"proposee"`                   // The set of participants allowed to vote on the proposal.
-	ProposeeAge  uint64                 `json:"proposeeBefore" mapstructure:"proposeeBefore" msgpack:"proposeeBefore"` // Used to allow proposee that are active before a specific height.
-	EndAt        uint64                 `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                            // Used to close the proposal after the given height.
-	TallyMethod  ProposalTallyMethod    `json:"tallyMethod" mapstructure:"tallyMethod" msgpack:"tallyMethod"`          // Tally method describes how the votes are counted.
-	Quorum       float64                `json:"quorum" mapstructure:"quorum" msgpack:"quorum"`                         // Quorum describes what the majority is.
-	Threshold    float64                `json:"threshold" mapstructure:"threshold" msgpack:"threshold"`                // Thresholds describes the minimum "Yes" quorum required to consider a proposal valid.
-	VetoQuorum   float64                `json:"vetoQuorum" mapstructure:"vetoQuorum" msgpack:"vetoQuorum"`             // Veto quorum describes the quorum among veto-powered proposees required to stop a proposal.
-	Accepted     float64                `json:"accepted" mapstructure:"accepted" msgpack:"accepted"`                   // Count of "Yes" votes
-	Rejected     float64                `json:"rejected" mapstructure:"rejected" msgpack:"rejected"`                   // Count of "No" votes
-	Finalized    bool                   `json:"finalized" mapstructure:"finalized" msgpack:"finalized"`
-	SelfAccepted bool                   `json:"selfAccepted" mapstructure:"selfAccepted" msgpack:"selfAccepted"` // Indicates that the proposal was immediately accepted by a sole repo owner who is also the proposal creator
+	Action                ProposalAction         `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
+	ActionData            map[string]interface{} `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
+	Creator               string                 `json:"creator" mapstructure:"creator" msgpack:"creator"`                                           // The creator is the address of the proposal creator.
+	Proposee              ProposeeType           `json:"proposee" mapstructure:"proposee" msgpack:"proposee"`                                        // The set of participants allowed to vote on the proposal.
+	ProposeeMaxJoinHeight uint64                 `json:"proposeeMaxJoinHeight" mapstructure:"proposeeMaxJoinHeight" msgpack:"proposeeMaxJoinHeight"` // Used to allow proposee that are active before a specific height.
+	EndAt                 uint64                 `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                                                 // Used to close the proposal after the given height.
+	TallyMethod           ProposalTallyMethod    `json:"tallyMethod" mapstructure:"tallyMethod" msgpack:"tallyMethod"`                               // Tally method describes how the votes are counted.
+	Quorum                float64                `json:"quorum" mapstructure:"quorum" msgpack:"quorum"`                                              // Quorum describes what the majority is.
+	Threshold             float64                `json:"threshold" mapstructure:"threshold" msgpack:"threshold"`                                     // Thresholds describes the minimum "Yes" quorum required to consider a proposal valid.
+	VetoQuorum            float64                `json:"vetoQuorum" mapstructure:"vetoQuorum" msgpack:"vetoQuorum"`                                  // Veto quorum describes the quorum among veto-powered proposees required to stop a proposal.
+	Yes                   float64                `json:"yes" mapstructure:"yes" msgpack:"yes"`                                                       // Count of "Yes" votes
+	No                    float64                `json:"no" mapstructure:"no" msgpack:"no"`                                                          // Count of "No" votes
+	NoWithVeto            float64                `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes
+	Outcome               ProposalOutcome        `json:"outcome" mapstructure:"outcome" msgpack:"outcome"`
 }
 
 // GetCreator implements Proposal
@@ -74,22 +93,12 @@ func (p *RepoProposal) GetCreator() string {
 
 // IsFinalized implements Proposal
 func (p *RepoProposal) IsFinalized() bool {
-	return p.Finalized
+	return p.Outcome > 0
 }
 
-// SetFinalized implements Proposal
-func (p *RepoProposal) SetFinalized(v bool) {
-	p.Finalized = v
-}
-
-// IsSelfAccepted implements Proposal
-func (p *RepoProposal) IsSelfAccepted() bool {
-	return p.SelfAccepted
-}
-
-// SetSelfAccepted implements Proposal
-func (p *RepoProposal) SetSelfAccepted(v bool) {
-	p.SelfAccepted = v
+// SetOutcome implements Proposal
+func (p *RepoProposal) SetOutcome(v ProposalOutcome) {
+	p.Outcome = v
 }
 
 // GetProposeeType implements Proposal
@@ -97,9 +106,9 @@ func (p *RepoProposal) GetProposeeType() ProposeeType {
 	return p.Proposee
 }
 
-// GetProposeeAge implements Proposal
-func (p *RepoProposal) GetProposeeAge() uint64 {
-	return p.ProposeeAge
+// GetProposeeMaxJoinHeight implements Proposal
+func (p *RepoProposal) GetProposeeMaxJoinHeight() uint64 {
+	return p.ProposeeMaxJoinHeight
 }
 
 // GetEndAt implements Proposal
@@ -139,12 +148,17 @@ func (p *RepoProposal) GetVetoQuorum() float64 {
 
 // GetAccepted implements Proposal
 func (p *RepoProposal) GetAccepted() float64 {
-	return p.Accepted
+	return p.Yes
 }
 
 // GetRejected implements Proposal
 func (p *RepoProposal) GetRejected() float64 {
-	return p.Rejected
+	return p.No
+}
+
+// GetRejectedWithVeto implements Proposal
+func (p *RepoProposal) GetRejectedWithVeto() float64 {
+	return p.NoWithVeto
 }
 
 // RepoProposals represents an index of proposals for a repo.
@@ -159,12 +173,18 @@ func (p *RepoProposals) Add(id string, rp *RepoProposal) {
 	(*p)[id] = rp
 }
 
+// Has checks whether a repo with the given id exists
+func (p *RepoProposals) Has(id string) bool {
+	return (*p)[id] != nil
+}
+
 // Get returns the proposal corresponding to the given id
 func (p *RepoProposals) Get(id string) *RepoProposal {
 	switch val := (*p)[id].(type) {
 	case map[string]interface{}:
 		var proposal RepoProposal
 		mapstructure.Decode(val, &proposal)
+		p.Add(id, &proposal)
 		return &proposal
 	case *RepoProposal:
 		return val

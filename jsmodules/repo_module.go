@@ -49,7 +49,12 @@ func (m *RepoModule) funcs() []*types.JSModuleFunc {
 		&types.JSModuleFunc{
 			Name:        "upsertOwner",
 			Value:       m.upsertOwner,
-			Description: "Add an owner or update existing owner information",
+			Description: "Create a proposal to add or update a repository owner",
+		},
+		&types.JSModuleFunc{
+			Name:        "vote",
+			Value:       m.voteOnProposal,
+			Description: "Vote for or against a proposal",
 		},
 	}
 }
@@ -124,7 +129,7 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 	})
 }
 
-// create sends a TxTypeRepoCreate transaction to create a git repository
+// upsertOwner creates a proposal to add or update a repository owner
 // params {
 // 		nonce: number,
 //		fee: string,
@@ -137,7 +142,7 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx = types.NewBareRepoProposalAddOwner()
+	var tx = types.NewBareRepoProposalUpsertOwner()
 	mapstructure.Decode(params, tx)
 	decodeCommon(tx, params)
 
@@ -146,9 +151,66 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 		tx.RepoName = repoName.(string)
 	}
 
-	if ownerAddr, ok := params["address"]; ok {
-		defer castPanic("address")
-		tx.Address = ownerAddr.(string)
+	if ownerAddrs, ok := params["addresses"]; ok {
+		defer castPanic("addresses")
+		tx.Addresses = ownerAddrs.(string)
+	}
+
+	if veto, ok := params["veto"]; ok {
+		defer castPanic("veto")
+		tx.Veto = veto.(bool)
+	}
+
+	finalizeTx(tx, m.service, options...)
+
+	// Process the transaction
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
+	}
+
+	return EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
+}
+
+// voteOnProposal sends a TxTypeRepoCreate transaction to create a git repository
+// params {
+// 		nonce: number,
+//		fee: string,
+//		name: string
+// 		id: string
+//		yes: bool
+//		timestamp: number
+// }
+// options: key
+func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...interface{}) interface{} {
+	var err error
+
+	// Decode parameters into a transaction object
+	var tx = types.NewBareRepoProposalVote()
+	mapstructure.Decode(params, tx)
+	decodeCommon(tx, params)
+
+	if repoName, ok := params["name"]; ok {
+		defer castPanic("name")
+		tx.RepoName = repoName.(string)
+	}
+
+	if id, ok := params["id"]; ok {
+		defer castPanic("id")
+		tx.ProposalID = id.(string)
+	}
+
+	if vote, ok := params["vote"]; ok {
+		switch v := vote.(type) {
+		case int64:
+			tx.Vote = int(v)
+		case float64:
+			tx.Vote = int(v)
+		default:
+			panic("unexpected type for 'vote'")
+		}
 	}
 
 	finalizeTx(tx, m.service, options...)

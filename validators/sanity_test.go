@@ -3,6 +3,7 @@ package validators_test
 import (
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/makeos/mosdef/params"
@@ -1029,7 +1030,7 @@ var _ = Describe("TxValidator", func() {
 		var tx *types.TxRepoProposalUpsertOwner
 
 		BeforeEach(func() {
-			tx = types.NewBareRepoProposalAddOwner()
+			tx = types.NewBareRepoProposalUpsertOwner()
 			tx.Timestamp = time.Now().Unix()
 		})
 
@@ -1050,15 +1051,80 @@ var _ = Describe("TxValidator", func() {
 			tx.RepoName = "repo1"
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:address, error:owner address is required"))
+			Expect(err).To(MatchError("field:addresses, error:at least one address is required"))
+		})
+
+		It("should return error when target addresses exceed maximum", func() {
+			tx.RepoName = "repo1"
+			addresses := strings.TrimRight(strings.Repeat("addr1,", 11), ",")
+			tx.Addresses = addresses
+			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:addresses, error:only a maximum of 10 addresses are allowed"))
 		})
 
 		It("should return error when target address is not valid", func() {
 			tx.RepoName = "repo1"
-			tx.Address = "invalid_addr"
+			tx.Addresses = "invalid_addr"
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:address, error:owner address is not valid"))
+			Expect(err).To(MatchError("field:addresses[0], error:address is not valid"))
+		})
+	})
+
+	Describe(".CheckTxRepoProposalVote", func() {
+		var tx *types.TxRepoProposalVote
+
+		BeforeEach(func() {
+			tx = types.NewBareRepoProposalVote()
+			tx.Timestamp = time.Now().Unix()
+		})
+
+		It("should return error when repo name is not provided", func() {
+			err := validators.CheckTxRepoProposalVote(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:name, error:repo name is required"))
+		})
+
+		It("should return error when repo name is not valid", func() {
+			tx.RepoName = "*&^"
+			err := validators.CheckTxRepoProposalVote(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+		})
+
+		It("should return error when proposal id is not provided", func() {
+			tx.RepoName = "repo1"
+			err := validators.CheckTxRepoProposalVote(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id is required"))
+		})
+
+		It("should return error when proposal id is not numerical", func() {
+			tx.RepoName = "repo1"
+			tx.ProposalID = "abc"
+			err := validators.CheckTxRepoProposalVote(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
+		})
+
+		It("should return error when vote choice is not between -1 and 1 (inclusive)", func() {
+			tx.RepoName = "repo1"
+			tx.ProposalID = "1"
+			tx.Vote = 2
+			err := validators.CheckTxRepoProposalVote(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:vote, error:vote choice is unknown"))
+
+			tx.Vote = -2
+			err = validators.CheckTxRepoProposalVote(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:vote, error:vote choice is unknown"))
+
+			tx.Vote = -1
+			err = validators.CheckTxRepoProposalVote(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).ToNot(MatchError("field:vote, error:vote choice is unknown"))
 		})
 	})
 })

@@ -121,12 +121,13 @@ var (
 
 const (
 	// RepoProposalDur is the number of blocks a repo proposal can remain active
-	RepoProposalDur = 20
-	// RepoProposalQuorum is the minimum quorum percentage for "Yes/No" votes
-	RepoProposalQuorum = float64(75)
-	// RepoProposalThreshold is the minimum percentage threshold required to consider a
-	// proposal valid
-	RepoProposalThreshold = float64(10)
+	RepoProposalDur = 10
+	// RepoProposalQuorum is the minimum percentage of voters required to
+	// consider a proposal valid.
+	RepoProposalQuorum = float64(10)
+	// RepoProposalThreshold is the minimum percentage required to consider a
+	// proposal accepted ("YES" voted)
+	RepoProposalThreshold = float64(75)
 	// RepoProposalVetoQuorum is the minimum percentage required for veto
 	// members to overturn a "Yes" quorum
 	RepoProposalVetoQuorum = float64(33)

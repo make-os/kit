@@ -48,6 +48,11 @@ type VersionInfo struct {
 	GoVersion    string `json:"goVersion" mapstructure:"goVersion"`
 }
 
+// Genesis data type
+const (
+	GenDataTypeAccount = "account"
+)
+
 // GenDataEntry describes a genesis file data entry
 type GenDataEntry struct {
 	Type    string `json:"type" mapstructure:"type"`

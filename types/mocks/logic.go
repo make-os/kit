@@ -271,6 +271,64 @@ func (mr *MockRepoKeeperMockRecorder) Update(name, upd interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockRepoKeeper)(nil).Update), name, upd)
 }
 
+// IndexProposalVote mocks base method
+func (m *MockRepoKeeper) IndexProposalVote(name, propID, voterAddr string, vote int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IndexProposalVote", name, propID, voterAddr, vote)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IndexProposalVote indicates an expected call of IndexProposalVote
+func (mr *MockRepoKeeperMockRecorder) IndexProposalVote(name, propID, voterAddr, vote interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexProposalVote", reflect.TypeOf((*MockRepoKeeper)(nil).IndexProposalVote), name, propID, voterAddr, vote)
+}
+
+// GetProposalVote mocks base method
+func (m *MockRepoKeeper) GetProposalVote(name, propID, voterAddr string) (int, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProposalVote", name, propID, voterAddr)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// GetProposalVote indicates an expected call of GetProposalVote
+func (mr *MockRepoKeeperMockRecorder) GetProposalVote(name, propID, voterAddr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposalVote", reflect.TypeOf((*MockRepoKeeper)(nil).GetProposalVote), name, propID, voterAddr)
+}
+
+// IndexProposalEnd mocks base method
+func (m *MockRepoKeeper) IndexProposalEnd(name, propID string, endHeight uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IndexProposalEnd", name, propID, endHeight)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IndexProposalEnd indicates an expected call of IndexProposalEnd
+func (mr *MockRepoKeeperMockRecorder) IndexProposalEnd(name, propID, endHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexProposalEnd", reflect.TypeOf((*MockRepoKeeper)(nil).IndexProposalEnd), name, propID, endHeight)
+}
+
+// GetProposalsEndingAt mocks base method
+func (m *MockRepoKeeper) GetProposalsEndingAt(height uint64) []*types.EndingProposals {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetProposalsEndingAt", height)
+	ret0, _ := ret[0].([]*types.EndingProposals)
+	return ret0
+}
+
+// GetProposalsEndingAt indicates an expected call of GetProposalsEndingAt
+func (mr *MockRepoKeeperMockRecorder) GetProposalsEndingAt(height interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposalsEndingAt", reflect.TypeOf((*MockRepoKeeper)(nil).GetProposalsEndingAt), height)
+}
+
 // MockNamespaceKeeper is a mock of NamespaceKeeper interface
 type MockNamespaceKeeper struct {
 	ctrl     *gomock.Controller
@@ -680,6 +738,20 @@ func (mr *MockAtomicLogicMockRecorder) Cfg() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockAtomicLogic)(nil).Cfg))
 }
 
+// OnEndBlock mocks base method
+func (m *MockAtomicLogic) OnEndBlock(block *types.BlockInfo) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OnEndBlock", block)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OnEndBlock indicates an expected call of OnEndBlock
+func (mr *MockAtomicLogicMockRecorder) OnEndBlock(block interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEndBlock", reflect.TypeOf((*MockAtomicLogic)(nil).OnEndBlock), block)
+}
+
 // GetDBTx mocks base method
 func (m *MockAtomicLogic) GetDBTx() storage.Tx {
 	m.ctrl.T.Helper()
@@ -1003,6 +1075,20 @@ func (m *MockLogic) Cfg() *config.AppConfig {
 func (mr *MockLogicMockRecorder) Cfg() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockLogic)(nil).Cfg))
+}
+
+// OnEndBlock mocks base method
+func (m *MockLogic) OnEndBlock(block *types.BlockInfo) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OnEndBlock", block)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OnEndBlock indicates an expected call of OnEndBlock
+func (mr *MockLogicMockRecorder) OnEndBlock(block interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnEndBlock", reflect.TypeOf((*MockLogic)(nil).OnEndBlock), block)
 }
 
 // MockKeepers is a mock of Keepers interface

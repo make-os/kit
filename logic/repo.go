@@ -2,6 +2,8 @@ package logic
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
@@ -41,28 +43,6 @@ func (t *Transaction) execRepoCreate(
 	return nil
 }
 
-// applyAddOwnerProposal adds the address described in the proposal as a repo owner.
-func applyAddOwnerProposal(
-	proposal types.Proposal,
-	repo *types.Repository,
-	chainHeight uint64) error {
-
-	targetAddr := proposal.GetActionData()["address"].(string)
-
-	// Add new repo owner if not target address isn't already an owner
-	if !repo.Owners.Has(targetAddr) {
-		repo.AddOwner(targetAddr, &types.RepoOwner{
-			Creator:  false,
-			JoinedAt: chainHeight + 1,
-		})
-		return nil
-	}
-
-	// ..Update specific fields if set
-
-	return nil
-}
-
 // deductFee deducts the given fee from the account corresponding to the sender
 // public key; It also increments the senders account nonce by 1.
 func (t *Transaction) deductFee(spk *crypto.PubKey, fee util.String, chainHeight uint64) {
@@ -83,22 +63,53 @@ func (t *Transaction) deductFee(spk *crypto.PubKey, fee util.String, chainHeight
 	acctKeeper.Update(spk.Addr(), senderAcct)
 }
 
-// execRepoUpsertOwner processes a TxTypeRepoCreate transaction, which creates a git
-// repository.
+// applyProposalAddOwner adds the address described in the proposal as a repo owner.
+func applyProposalAddOwner(
+	proposal types.Proposal,
+	repo *types.Repository,
+	chainHeight uint64) error {
+
+	// Get the action data
+	targetAddrs := proposal.GetActionData()["addresses"].(string)
+	veto := proposal.GetActionData()["veto"].(bool)
+
+	// Add new repo owner if the target address isn't already an existing owner
+	for _, address := range strings.Split(targetAddrs, ",") {
+
+		existingOwner := repo.Owners.Get(address)
+		if existingOwner == nil {
+			repo.AddOwner(address, &types.RepoOwner{
+				Creator:  false,
+				JoinedAt: chainHeight + 1,
+				Veto:     veto,
+			})
+			continue
+		}
+
+		// Since the address exist as an owner, update fields have changed.
+		if veto != existingOwner.Veto {
+			existingOwner.Veto = veto
+		}
+	}
+
+	return nil
+}
+
+// execRepoUpsertOwner adds or update a repository owner
 //
 // ARGS:
 // senderPubKey: The public key of the transaction sender.
 // repoName: The name of the target repository.
-// ownerAddress: The address of the owner.
+// addresses: The addresses of the owners.
 // fee: The fee to be paid by the sender.
 // chainHeight: The height of the block chain
 //
 // CONTRACT: Sender's public key must be valid
 func (t *Transaction) execRepoUpsertOwner(
 	senderPubKey util.Bytes32,
-	txID string,
 	repoName string,
-	ownerAddress string,
+	addresses string,
+	veto bool,
 	fee util.String,
 	chainHeight uint64) error {
 
@@ -109,21 +120,22 @@ func (t *Transaction) execRepoUpsertOwner(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := &types.RepoProposal{
-		Action:      types.ProposalActionAddOwner,
-		Creator:     spk.Addr().String(),
-		Proposee:    repo.Config.Governace.ProposalProposee,
-		ProposeeAge: repo.Config.Governace.ProposalProposeeExistBeforeHeight,
-		EndAt:       repo.Config.Governace.ProposalDur + chainHeight + 1,
-		TallyMethod: repo.Config.Governace.ProposalTallyMethod,
-		Quorum:      repo.Config.Governace.ProposalQuorum,
-		Threshold:   repo.Config.Governace.ProposalThreshold,
-		VetoQuorum:  repo.Config.Governace.ProposalVetoQuorum,
+		Action:                types.ProposalActionAddOwner,
+		Creator:               spk.Addr().String(),
+		Proposee:              repo.Config.Governace.ProposalProposee,
+		ProposeeMaxJoinHeight: repo.Config.Governace.ProposalProposeeExistBeforeHeight,
+		EndAt:                 repo.Config.Governace.ProposalDur + chainHeight + 1,
+		TallyMethod:           repo.Config.Governace.ProposalTallyMethod,
+		Quorum:                repo.Config.Governace.ProposalQuorum,
+		Threshold:             repo.Config.Governace.ProposalThreshold,
+		VetoQuorum:            repo.Config.Governace.ProposalVetoQuorum,
 		ActionData: map[string]interface{}{
-			"address": ownerAddress,
+			"addresses": addresses,
+			"veto":      veto,
 		},
 	}
 
-	// Add the proposal to the repo (strip 0x from tx ID)
+	// Add the proposal to the repo
 	proposalID := fmt.Sprintf("%d", len(repo.Proposals)+1)
 	repo.Proposals.Add(proposalID, proposal)
 
@@ -132,14 +144,64 @@ func (t *Transaction) execRepoUpsertOwner(
 	if err != nil {
 		return errors.Wrap(err, "failed to apply proposal")
 	} else if applied {
-		proposal.SetFinalized(true)
-		proposal.SetSelfAccepted(true)
+		proposal.Yes++
+		goto update
+	}
+
+	// Index the proposal against its end height so it can be tracked
+	// and finalized at that height.
+	if err = repoKeeper.IndexProposalEnd(repoName, proposalID, proposal.EndAt); err != nil {
+		return errors.Wrap(err, "failed to index proposal against end height")
+	}
+
+update:
+	// Update the repo
+	repoKeeper.Update(repoName, repo)
+
+	// Deduct fee from sender
+	t.deductFee(spk, fee, chainHeight)
+
+	return nil
+}
+
+// execRepoProposalVote processes votes on a repository proposal
+//
+// ARGS:
+// senderPubKey: The public key of the transaction sender.
+// repoName: The name of the target repository.
+// proposalID: The identity of the proposal
+// vote: Indicates the vote choice
+// fee: The fee to be paid by the sender.
+// chainHeight: The height of the block chain
+//
+// CONTRACT: Sender's public key must be valid
+func (t *Transaction) execRepoProposalVote(
+	senderPubKey util.Bytes32,
+	repoName string,
+	proposalID string,
+	vote int,
+	fee util.String,
+	chainHeight uint64) error {
+
+	// Get the proposal
+	repoKeeper := t.logic.RepoKeeper()
+	repo := repoKeeper.GetRepo(repoName)
+	proposal := repo.Proposals.Get(proposalID)
+
+	// Increment the accepted if yes == true
+	if vote == types.ProposalVoteYes {
+		proposal.Yes++
+	} else if vote == types.ProposalVoteNo {
+		proposal.No++
+	} else if vote == types.ProposalVoteNoWithVeto {
+		proposal.NoWithVeto++
 	}
 
 	// Update the repo
 	repoKeeper.Update(repoName, repo)
 
 	// Deduct fee from sender
+	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	t.deductFee(spk, fee, chainHeight)
 
 	return nil

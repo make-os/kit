@@ -102,11 +102,9 @@ var _ = Describe("Repo", func() {
 				Stakes:              types.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
-
 		})
 
 		When("sender is the only owner", func() {
-			txID := util.ToHex(util.RandBytes(32))
 			repoName := "repo"
 			address := "owner_address"
 
@@ -117,7 +115,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, txID, repoName, address, "1.5", 0)
+				err = txLogic.execRepoUpsertOwner(spk, repoName, address, false, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -130,7 +128,52 @@ var _ = Describe("Repo", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
-				Expect(repo.Proposals.Get("1").IsSelfAccepted()).To(BeTrue())
+				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(1)))
+				Expect(repo.Proposals.Get("1").Outcome).To(Equal(types.ProposalOutcomeAccepted))
+			})
+
+			Specify("that new owner was added", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Owners).To(HaveLen(2))
+			})
+
+			Specify("that fee was deducted", func() {
+				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				Expect(acct.Balance.String()).To(Equal("8.5"))
+			})
+		})
+
+		When("sender is the only owner and there are multiple addresses", func() {
+			repoName := "repo"
+			addresses := "owner_address,owner_address2"
+
+			BeforeEach(func() {
+				repoUpd := types.BareRepository()
+				repoUpd.Config = types.DefaultRepoConfig()
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoUpsertOwner(spk, repoName, addresses, false, "1.5", 0)
+				Expect(err).To(BeNil())
+			})
+
+			It("should add the new proposal to the repo", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+			})
+
+			Specify("that the proposal is finalized and self accepted", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
+				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(1)))
+				Expect(repo.Proposals.Get("1").Outcome).To(Equal(types.ProposalOutcomeAccepted))
+			})
+
+			Specify("that three owners were added", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Owners).To(HaveLen(3))
 			})
 
 			Specify("that fee was deducted", func() {
@@ -140,19 +183,20 @@ var _ = Describe("Repo", func() {
 		})
 
 		When("sender is not the only owner", func() {
-			txID := util.ToHex(util.RandBytes(32))
 			repoName := "repo"
 			address := "owner_address"
+			var repoUpd *types.Repository
+			var curHeight = uint64(0)
 
 			BeforeEach(func() {
-				repoUpd := types.BareRepository()
+				repoUpd = types.BareRepository()
 				repoUpd.Config = types.DefaultRepoConfig()
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				repoUpd.AddOwner(key2.Addr().String(), &types.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, txID, repoName, address, "1.5", 0)
+				err = txLogic.execRepoUpsertOwner(spk, repoName, address, false, "1.5", curHeight)
 				Expect(err).To(BeNil())
 			})
 
@@ -165,12 +209,17 @@ var _ = Describe("Repo", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeFalse())
-				Expect(repo.Proposals.Get("1").IsSelfAccepted()).To(BeFalse())
+				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(0)))
 			})
 
 			Specify("that fee was deducted", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				acct := logic.AccountKeeper().GetAccount(sender.Addr(), curHeight)
 				Expect(acct.Balance.String()).To(Equal("8.5"))
+			})
+
+			Specify("that the proposal was indexed against its end height", func() {
+				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governace.ProposalDur + curHeight + 1)
+				Expect(res).To(HaveLen(1))
 			})
 		})
 	})
