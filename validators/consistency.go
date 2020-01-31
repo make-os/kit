@@ -47,7 +47,7 @@ func CheckTxTicketPurchaseConsistency(
 
 	// When delegate is set, the delegate must have an active, non-delegated ticket
 	if !tx.Delegate.IsEmpty() {
-		r, err := logic.GetTicketManager().GetActiveTicketsByProposer(tx.Delegate, tx.Type, false)
+		r, err := logic.GetTicketManager().GetNonDelegatedTickets(tx.Delegate, tx.Type)
 		if err != nil {
 			return errors.Wrap(err, "failed to get active delegate tickets")
 		} else if len(r) == 0 {

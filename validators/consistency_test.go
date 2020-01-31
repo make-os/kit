@@ -122,7 +122,7 @@ var _ = Describe("TxValidator", func() {
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().MustBytes32(), tx.Type, false).
+					mockTickMgr.EXPECT().GetNonDelegatedTickets(delegate.PubKey().MustBytes32(), tx.Type).
 						Return(nil, fmt.Errorf("error"))
 
 					err = validators.CheckTxTicketPurchaseConsistency(tx, -1, mockLogic)
@@ -143,7 +143,7 @@ var _ = Describe("TxValidator", func() {
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().MustBytes32(), tx.Type, false).
+					mockTickMgr.EXPECT().GetNonDelegatedTickets(delegate.PubKey().MustBytes32(), tx.Type).
 						Return([]*types.Ticket{}, nil)
 
 					err = validators.CheckTxTicketPurchaseConsistency(tx, -1, mockLogic)
@@ -164,7 +164,7 @@ var _ = Describe("TxValidator", func() {
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().MustBytes32(), tx.Type, false).
+					mockTickMgr.EXPECT().GetNonDelegatedTickets(delegate.PubKey().MustBytes32(), tx.Type).
 						Return([]*types.Ticket{&types.Ticket{}}, nil)
 					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(10.4)
 
@@ -186,7 +186,7 @@ var _ = Describe("TxValidator", func() {
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetActiveTicketsByProposer(delegate.PubKey().MustBytes32(), tx.Type, false).
+					mockTickMgr.EXPECT().GetNonDelegatedTickets(delegate.PubKey().MustBytes32(), tx.Type, false).
 						Return([]*types.Ticket{&types.Ticket{}}, nil)
 					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(10.4)
 					mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),

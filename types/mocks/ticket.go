@@ -97,19 +97,19 @@ func (mr *MockTicketManagerMockRecorder) CountActiveValidatorTickets() *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountActiveValidatorTickets", reflect.TypeOf((*MockTicketManager)(nil).CountActiveValidatorTickets))
 }
 
-// GetActiveTicketsByProposer mocks base method
-func (m *MockTicketManager) GetActiveTicketsByProposer(proposer util.Bytes32, ticketType int, addDelegated bool) ([]*types.Ticket, error) {
+// GetNonDelegatedTickets mocks base method
+func (m *MockTicketManager) GetNonDelegatedTickets(pubKey util.Bytes32, ticketType int) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetActiveTicketsByProposer", proposer, ticketType, addDelegated)
+	ret := m.ctrl.Call(m, "GetNonDelegatedTickets", pubKey, ticketType)
 	ret0, _ := ret[0].([]*types.Ticket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetActiveTicketsByProposer indicates an expected call of GetActiveTicketsByProposer
-func (mr *MockTicketManagerMockRecorder) GetActiveTicketsByProposer(proposer, ticketType, addDelegated interface{}) *gomock.Call {
+// GetNonDelegatedTickets indicates an expected call of GetNonDelegatedTickets
+func (mr *MockTicketManagerMockRecorder) GetNonDelegatedTickets(pubKey, ticketType interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetActiveTicketsByProposer", reflect.TypeOf((*MockTicketManager)(nil).GetActiveTicketsByProposer), proposer, ticketType, addDelegated)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNonDelegatedTickets", reflect.TypeOf((*MockTicketManager)(nil).GetNonDelegatedTickets), pubKey, ticketType)
 }
 
 // Query mocks base method

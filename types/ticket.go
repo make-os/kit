@@ -46,12 +46,12 @@ type TicketManager interface {
 	// CountActiveValidatorTickets returns the number of matured and non-decayed tickets.
 	CountActiveValidatorTickets() (int, error)
 
-	// GetActiveTicketsByProposer returns all active tickets associated to a
-	// proposer
-	// proposer: The public key of the proposer
+	// GetNonDelegatedTickets returns all non-delegated, active tickets
+	// belonging to the given public key
+	//
+	// pubKey: The public key of the pubKey
 	// ticketType: Filter the search to a specific ticket type
-	// addDelegated: When true, delegated tickets are added.
-	GetActiveTicketsByProposer(proposer util.Bytes32, ticketType int, addDelegated bool) ([]*Ticket, error)
+	GetNonDelegatedTickets(pubKey util.Bytes32, ticketType int) ([]*Ticket, error)
 
 	// Query finds and returns tickets that match the given query
 	Query(qf func(t *Ticket) bool, queryOpt ...interface{}) []*Ticket
@@ -70,6 +70,27 @@ type TicketManager interface {
 
 	// GetTopValidators gets validator tickets with the most total delegated value.
 	GetTopValidators(limit int) (SelectedTickets, error)
+
+	// ValueOfNonDelegatedTickets returns the sum of value of all
+	// non-delegated, non-decayed tickets which has the given public
+	// key as the proposer; Includes both validator and storer tickets.
+	//
+	// pubKey: The public key of the proposer
+	ValueOfNonDelegatedTickets(pubKey util.Bytes32) (float64, error)
+
+	// ValueOfDelegatedTickets returns the sum of value of all
+	// delegated, non-decayed tickets which has the given public
+	// key as the proposer; Includes both validator and storer tickets.
+	//
+	// pubKey: The public key of the proposer
+	ValueOfDelegatedTickets(pubKey util.Bytes32) (float64, error)
+
+	// ValueOfTickets returns the sum of value of all non-decayed
+	// tickets where the given public key is the proposer or delegator;
+	// Includes both validator and storer tickets.
+	//
+	// pubKey: The public key of the proposer
+	ValueOfTickets(pubKey util.Bytes32) (float64, error)
 
 	// Stop stops the ticket manager
 	Stop() error

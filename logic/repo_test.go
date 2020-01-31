@@ -90,7 +90,7 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
-	FDescribe(".execRepoProposalVote", func() {
+	Describe(".execRepoProposalVote", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var spk util.Bytes32

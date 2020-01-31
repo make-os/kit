@@ -110,7 +110,7 @@ func DefaultRepoConfig() *RepoConfig {
 			ProposalProposee:                  ProposeeOwner,
 			ProposalProposeeExistBeforeHeight: 0,
 			ProposalDur:                       params.RepoProposalDur,
-			ProposalTallyMethod:               ProposalTallyMethodCoinWeighted,
+			ProposalTallyMethod:               ProposalTallyMethodIdentity,
 			ProposalQuorum:                    params.RepoProposalQuorum,
 			ProposalThreshold:                 params.RepoProposalThreshold,
 			ProposalVetoQuorum:                params.RepoProposalVetoQuorum,

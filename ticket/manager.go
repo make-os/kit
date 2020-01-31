@@ -5,6 +5,7 @@ import (
 
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/util"
+	"github.com/shopspring/decimal"
 
 	"github.com/makeos/mosdef/crypto"
 
@@ -173,14 +174,14 @@ func (m *Manager) CountActiveValidatorTickets() (int, error) {
 	return count, nil
 }
 
-// GetActiveTicketsByProposer returns all active tickets associated with a proposer
-// proposer: The public key of the proposer
+// GetNonDelegatedTickets returns all non-delegated,
+// non-decayed tickets belonging to the given public key.
+//
+// pubKey: The public key of the proposer
 // ticketType: Filter the search to a specific ticket type
-// addDelegated: When true, delegated tickets are added.
-func (m *Manager) GetActiveTicketsByProposer(
-	proposer util.Bytes32,
-	ticketType int,
-	addDelegated bool) ([]*types.Ticket, error) {
+func (m *Manager) GetNonDelegatedTickets(
+	pubKey util.Bytes32,
+	ticketType int) ([]*types.Ticket, error) {
 
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -192,11 +193,101 @@ func (m *Manager) GetActiveTicketsByProposer(
 		return t.Type == ticketType &&
 			t.MatureBy <= uint64(bi.Height) &&
 			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) &&
-			t.ProposerPubKey == proposer &&
-			(t.Delegator == "" || t.Delegator != "" && addDelegated)
+			t.ProposerPubKey == pubKey &&
+			t.Delegator == ""
 	})
 
 	return result, nil
+}
+
+// ValueOfNonDelegatedTickets returns the sum of value of all
+// non-delegated, non-decayed tickets which has the given public
+// key as the proposer; Includes both validator and storer tickets.
+//
+// pubKey: The public key of the proposer
+func (m *Manager) ValueOfNonDelegatedTickets(pubKey util.Bytes32) (float64, error) {
+	// Get the last committed block
+	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return 0, err
+	}
+
+	result := m.s.Query(func(t *types.Ticket) bool {
+		return t.MatureBy <= uint64(bi.Height) &&
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) &&
+			t.ProposerPubKey == pubKey &&
+			t.Delegator == ""
+	})
+
+	var sum = decimal.Zero
+	for _, res := range result {
+		sum = sum.Add(res.Value.Decimal())
+	}
+
+	sumF, _ := sum.Float64()
+	return sumF, nil
+}
+
+// ValueOfDelegatedTickets returns the sum of value of all
+// delegated, non-decayed tickets which has the given public
+// key as the proposer; Includes both validator and storer tickets.
+//
+// pubKey: The public key of the proposer
+func (m *Manager) ValueOfDelegatedTickets(pubKey util.Bytes32) (float64, error) {
+	// Get the last committed block
+	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return 0, err
+	}
+
+	result := m.s.Query(func(t *types.Ticket) bool {
+		return t.MatureBy <= uint64(bi.Height) &&
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) &&
+			t.ProposerPubKey == pubKey &&
+			t.Delegator != ""
+	})
+
+	var sum = decimal.Zero
+	for _, res := range result {
+		sum = sum.Add(res.Value.Decimal())
+	}
+
+	sumF, _ := sum.Float64()
+	return sumF, nil
+}
+
+// ValueOfTickets returns the sum of value of all non-decayed
+// tickets where the given public key is the proposer or delegator;
+// Includes both validator and storer tickets.
+//
+// pubKey: The public key of the proposer
+func (m *Manager) ValueOfTickets(pubKey util.Bytes32) (float64, error) {
+
+	// Get the last committed block
+	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return 0, err
+	}
+
+	pk, err := crypto.PubKeyFromBytes(pubKey.Bytes())
+	if err != nil {
+		return 0, err
+	}
+
+	result := m.s.Query(func(t *types.Ticket) bool {
+		return t.MatureBy <= uint64(bi.Height) && // is mature
+			(t.DecayBy > uint64(bi.Height) ||
+				(t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) && // not decayed
+			t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String() // is delegated or not
+	})
+
+	var sum = decimal.Zero
+	for _, res := range result {
+		sum = sum.Add(res.Value.Decimal())
+	}
+
+	sumF, _ := sum.Float64()
+	return sumF, nil
 }
 
 // Query finds and returns tickets that match the given query
