@@ -119,6 +119,7 @@ var (
 	TreasuryAddress = util.String("e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx")
 )
 
+// Repo config
 const (
 	// RepoProposalDur is the number of blocks a repo proposal can remain active
 	RepoProposalDur = 10

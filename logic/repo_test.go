@@ -7,6 +7,7 @@ import (
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/types/mocks"
 	"github.com/makeos/mosdef/util"
 
 	"github.com/makeos/mosdef/config"
@@ -23,13 +24,18 @@ var _ = Describe("Repo", func() {
 	var logic *Logic
 	var txLogic *Transaction
 	var ctrl *gomock.Controller
+	var mockTickMgr *mocks.MockTicketManager
+	var sender = crypto.NewKeyFromIntSeed(1)
+	var key2 = crypto.NewKeyFromIntSeed(2)
 
 	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		appDB, stateTreeDB = testutil.GetDB(cfg)
 		logic = New(appDB, stateTreeDB, cfg)
 		txLogic = &Transaction{logic: logic}
+		mockTickMgr = mocks.NewMockTicketManager(ctrl)
 	})
 
 	BeforeEach(func() {
@@ -92,7 +98,6 @@ var _ = Describe("Repo", func() {
 
 	Describe(".execRepoProposalVote", func() {
 		var err error
-		var sender = crypto.NewKeyFromIntSeed(1)
 		var spk util.Bytes32
 
 		BeforeEach(func() {
@@ -152,6 +157,296 @@ var _ = Describe("Repo", func() {
 			It("should increment proposal.Yes by 10", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(11)))
+			})
+		})
+
+		When("proposal tally method is ProposalTallyMethodNetStakeOfProposer and the voter's non-delegated ticket value=100", func() {
+			var propID = "proposer_id"
+			var repoName = "repo"
+
+			BeforeEach(func() {
+				repoUpd := types.BareRepository()
+				repoUpd.Config = types.DefaultRepoConfig()
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				proposal := &types.RepoProposal{
+					TallyMethod: types.ProposalTallyMethodNetStakeOfProposer,
+					Yes:         0,
+				}
+				repoUpd.Proposals.Add(propID, proposal)
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				mockTickMgr.EXPECT().ValueOfNonDelegatedTickets(sender.PubKey().
+					MustBytes32()).Return(float64(100), nil)
+				txLogic.logic.SetTicketManager(mockTickMgr)
+
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+				Expect(err).To(BeNil())
+			})
+
+			It("should increment proposal.Yes by 100", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(100)))
+			})
+		})
+
+		When("proposal tally method is ProposalTallyMethodNetStakeOfDelegators and the voter's non-delegated ticket value=100", func() {
+			var propID = "proposer_id"
+			var repoName = "repo"
+
+			BeforeEach(func() {
+				repoUpd := types.BareRepository()
+				repoUpd.Config = types.DefaultRepoConfig()
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				proposal := &types.RepoProposal{
+					TallyMethod: types.ProposalTallyMethodNetStakeOfDelegators,
+					Yes:         0,
+				}
+				repoUpd.Proposals.Add(propID, proposal)
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				mockTickMgr.EXPECT().ValueOfDelegatedTickets(sender.PubKey().
+					MustBytes32()).Return(float64(100), nil)
+				txLogic.logic.SetTicketManager(mockTickMgr)
+
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+				Expect(err).To(BeNil())
+			})
+
+			It("should increment proposal.Yes by 100", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(100)))
+			})
+		})
+
+		FWhen("proposal tally method is ProposalTallyMethodNetStake", func() {
+			var propID = "proposer_id"
+			var repoName = "repo"
+
+			When("ticketA and ticketB are not delegated, with value 10, 20 respectively", func() {
+				BeforeEach(func() {
+					repoUpd := types.BareRepository()
+					repoUpd.Config = types.DefaultRepoConfig()
+					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+					proposal := &types.RepoProposal{
+						TallyMethod: types.ProposalTallyMethodNetStake,
+						Yes:         0,
+					}
+					repoUpd.Proposals.Add(propID, proposal)
+					logic.RepoKeeper().Update(repoName, repoUpd)
+
+					ticketA := &types.Ticket{Value: "10"}
+					ticketB := &types.Ticket{Value: "20"}
+					tickets := []*types.Ticket{ticketA, ticketB}
+
+					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+						MustBytes32()).Return(tickets, nil)
+					txLogic.logic.SetTicketManager(mockTickMgr)
+
+					spk = sender.PubKey().MustBytes32()
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+					Expect(err).To(BeNil())
+				})
+
+				It("should increment proposal.Yes by 30", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(30)))
+				})
+			})
+
+			When("ticketA and ticketB exist, with value 10, 20 respectively. voter is delegator and proposer of ticketB", func() {
+				BeforeEach(func() {
+					repoUpd := types.BareRepository()
+					repoUpd.Config = types.DefaultRepoConfig()
+					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+					proposal := &types.RepoProposal{
+						TallyMethod: types.ProposalTallyMethodNetStake,
+						Yes:         0,
+					}
+					repoUpd.Proposals.Add(propID, proposal)
+					logic.RepoKeeper().Update(repoName, repoUpd)
+
+					ticketA := &types.Ticket{Value: "10"}
+					ticketB := &types.Ticket{
+						Value:          "20",
+						ProposerPubKey: sender.PubKey().MustBytes32(),
+						Delegator:      sender.Addr().String(),
+					}
+					tickets := []*types.Ticket{ticketA, ticketB}
+
+					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+						MustBytes32()).Return(tickets, nil)
+					txLogic.logic.SetTicketManager(mockTickMgr)
+
+					spk = sender.PubKey().MustBytes32()
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+					Expect(err).To(BeNil())
+				})
+
+				It("should increment proposal.Yes by 30", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(30)))
+				})
+			})
+
+			When("ticketA and ticketB exist, with value 10, 20 respectively. voter is "+
+				"proposer of ticketB but someone else is delegator and they have not "+
+				"voted on the proposal", func() {
+				BeforeEach(func() {
+					repoUpd := types.BareRepository()
+					repoUpd.Config = types.DefaultRepoConfig()
+					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+					proposal := &types.RepoProposal{
+						TallyMethod: types.ProposalTallyMethodNetStake,
+						Yes:         0,
+					}
+					repoUpd.Proposals.Add(propID, proposal)
+					logic.RepoKeeper().Update(repoName, repoUpd)
+
+					ticketA := &types.Ticket{Value: "10"}
+					ticketB := &types.Ticket{
+						Value:          "20",
+						ProposerPubKey: sender.PubKey().MustBytes32(),
+						Delegator:      key2.Addr().String(),
+					}
+					tickets := []*types.Ticket{ticketA, ticketB}
+
+					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+						MustBytes32()).Return(tickets, nil)
+					txLogic.logic.SetTicketManager(mockTickMgr)
+
+					spk = sender.PubKey().MustBytes32()
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+					Expect(err).To(BeNil())
+				})
+
+				It("should increment proposal.Yes by 30", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(30)))
+				})
+			})
+
+			When("ticketA and ticketB exist, with value 10, 20 respectively. voter is "+
+				"proposer of ticketB but someone else is delegator and they have "+
+				"voted on the proposal", func() {
+				BeforeEach(func() {
+					repoUpd := types.BareRepository()
+					repoUpd.Config = types.DefaultRepoConfig()
+					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+					proposal := &types.RepoProposal{
+						TallyMethod: types.ProposalTallyMethodNetStake,
+						Yes:         0,
+					}
+					repoUpd.Proposals.Add(propID, proposal)
+					logic.RepoKeeper().Update(repoName, repoUpd)
+
+					ticketA := &types.Ticket{Value: "10"}
+					ticketB := &types.Ticket{
+						Value:          "20",
+						ProposerPubKey: sender.PubKey().MustBytes32(),
+						Delegator:      key2.Addr().String(),
+					}
+					tickets := []*types.Ticket{ticketA, ticketB}
+
+					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+						MustBytes32()).Return(tickets, nil)
+					txLogic.logic.SetTicketManager(mockTickMgr)
+
+					logic.RepoKeeper().IndexProposalVote(repoName, propID,
+						key2.Addr().String(), types.ProposalVoteYes)
+
+					spk = sender.PubKey().MustBytes32()
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+					Expect(err).To(BeNil())
+				})
+
+				It("should increment proposal.Yes by 10", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(10)))
+				})
+			})
+
+			When("ticketA and ticketB exist, with value 10, 20 respectively. voter is "+
+				"delegator of ticketB but someone else is proposer and they have not "+
+				"voted on the proposal", func() {
+				BeforeEach(func() {
+					repoUpd := types.BareRepository()
+					repoUpd.Config = types.DefaultRepoConfig()
+					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+					proposal := &types.RepoProposal{
+						TallyMethod: types.ProposalTallyMethodNetStake,
+						Yes:         0,
+					}
+					repoUpd.Proposals.Add(propID, proposal)
+					logic.RepoKeeper().Update(repoName, repoUpd)
+
+					ticketA := &types.Ticket{Value: "10"}
+					ticketB := &types.Ticket{
+						Value:          "20",
+						ProposerPubKey: key2.PubKey().MustBytes32(),
+						Delegator:      sender.Addr().String(),
+					}
+					tickets := []*types.Ticket{ticketA, ticketB}
+
+					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+						MustBytes32()).Return(tickets, nil)
+					txLogic.logic.SetTicketManager(mockTickMgr)
+
+					spk = sender.PubKey().MustBytes32()
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+					Expect(err).To(BeNil())
+				})
+
+				It("should increment proposal.Yes by 30", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(30)))
+				})
+			})
+
+			When("ticketA and ticketB exist, with value 10, 20 respectively. voter is "+
+				"delegator of ticketB but someone else is proposer and they have "+
+				"voted 'Yes' on the proposal", func() {
+				BeforeEach(func() {
+					repoUpd := types.BareRepository()
+					repoUpd.Config = types.DefaultRepoConfig()
+					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+					proposal := &types.RepoProposal{
+						TallyMethod: types.ProposalTallyMethodNetStake,
+						Yes:         100,
+					}
+					repoUpd.Proposals.Add(propID, proposal)
+					logic.RepoKeeper().Update(repoName, repoUpd)
+
+					ticketA := &types.Ticket{Value: "10"}
+					ticketB := &types.Ticket{
+						Value:          "20",
+						ProposerPubKey: key2.PubKey().MustBytes32(),
+						Delegator:      sender.Addr().String(),
+					}
+					tickets := []*types.Ticket{ticketA, ticketB}
+
+					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+						MustBytes32()).Return(tickets, nil)
+					txLogic.logic.SetTicketManager(mockTickMgr)
+
+					logic.RepoKeeper().IndexProposalVote(repoName, propID,
+						key2.Addr().String(), types.ProposalVoteYes)
+
+					spk = sender.PubKey().MustBytes32()
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteNo, "1.5", 10)
+					Expect(err).To(BeNil())
+				})
+
+				It("should increment proposal.No by 30", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.Proposals.Get(propID).No).To(Equal(float64(30)))
+				})
+
+				Specify("that proposal.Yes is now 80", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(80)))
+				})
 			})
 		})
 	})

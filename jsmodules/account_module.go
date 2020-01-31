@@ -56,6 +56,11 @@ func (m *AccountModule) namespacedFuncs() []*types.JSModuleFunc {
 			Description: "Get the private key of an account (supports interactive mode)",
 		},
 		&types.JSModuleFunc{
+			Name:        "getPublicKey",
+			Value:       m.getPublicKey,
+			Description: "Get the public key of an account (supports interactive mode)",
+		},
+		&types.JSModuleFunc{
 			Name:        "getNonce",
 			Value:       m.getNonce,
 			Description: "Get the nonce of an account",
@@ -140,8 +145,8 @@ func (m *AccountModule) listAccounts() []string {
 	return resp
 }
 
-// getKey returns the private key of a given key.
-// The passphrase argument is used to unlock the address.
+// getKey returns the private key of an account.
+// The passphrase argument is used to unlock the account.
 // If passphrase is not set, an interactive prompt will be started
 // to collect the passphrase without revealing it in the terminal.
 func (m *AccountModule) getKey(address string, passphrase ...string) string {
@@ -174,6 +179,42 @@ func (m *AccountModule) getKey(address string, passphrase ...string) string {
 	}
 
 	return acct.GetKey().PrivKey().Base58()
+}
+
+// getPublicKey returns the public key of an account.
+// The passphrase argument is used to unlock the account.
+// If passphrase is not set, an interactive prompt will be started
+// to collect the passphrase without revealing it in the terminal.
+func (m *AccountModule) getPublicKey(address string, passphrase ...string) string {
+
+	var pass string
+
+	if address == "undefined" {
+		panic(fmt.Errorf("address is required"))
+	}
+
+	// Find the address
+	acct, err := m.acctMgr.GetByAddress(address)
+	if err != nil {
+		panic(err)
+	}
+
+	// If passphrase is not set, start interactive mode
+	if len(passphrase) == 0 {
+		pass, err = m.acctMgr.AskForPasswordOnce()
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		pass = passphrase[0]
+	}
+
+	// Decrypt the account using the passphrase
+	if err := acct.Decrypt(pass); err != nil {
+		panic(errors.Wrap(err, "failed to unlock account with the provided passphrase"))
+	}
+
+	return acct.GetKey().PubKey().Base58()
 }
 
 // getNonce returns the current nonce of an account

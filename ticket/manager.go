@@ -156,6 +156,30 @@ func (m *Manager) GetByProposer(
 	return res, nil
 }
 
+// GetNonDecayedTickets finds tickets where the given proposer
+// public key is the proposer or the delegator.
+func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32) ([]*types.Ticket, error) {
+
+	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	pk, err := crypto.PubKeyFromBytes(pubKey.Bytes())
+	if err != nil {
+		return nil, err
+	}
+
+	result := m.s.Query(func(t *types.Ticket) bool {
+		return t.MatureBy <= uint64(bi.Height) && // is mature
+			(t.DecayBy > uint64(bi.Height) ||
+				(t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) && // not decayed
+			t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String() // is delegator or not
+	})
+
+	return result, nil
+}
+
 // CountActiveValidatorTickets returns the number of matured and non-decayed tickets.
 func (m *Manager) CountActiveValidatorTickets() (int, error) {
 

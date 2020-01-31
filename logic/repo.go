@@ -8,6 +8,7 @@ import (
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 // execRepoCreate processes a TxTypeRepoCreate transaction, which creates a git
@@ -183,6 +184,7 @@ func (t *Transaction) execRepoProposalVote(
 	fee util.String,
 	chainHeight uint64) error {
 
+	var err error
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 
 	// Get the proposal
@@ -201,6 +203,100 @@ func (t *Transaction) execRepoProposalVote(
 	if proposal.TallyMethod == types.ProposalTallyMethodCoinWeighted {
 		senderAcct := t.logic.AccountKeeper().GetAccount(spk.Addr())
 		increments = senderAcct.GetSpendableBalance(chainHeight).Float()
+	}
+
+	// For network staked-weighted votes, use the total value of coins directly
+	// staked by the voter as their vote power
+	if proposal.TallyMethod == types.ProposalTallyMethodNetStakeOfProposer {
+		increments, err = t.logic.GetTicketManager().ValueOfNonDelegatedTickets(senderPubKey)
+		if err != nil {
+			return errors.Wrap(err, "failed to get value of non-delegated tickets of sender")
+		}
+	}
+
+	// For network staked-weighted votes, use the total value of coins delegated
+	// to the voter as their vote power
+	if proposal.TallyMethod == types.ProposalTallyMethodNetStakeOfDelegators {
+		increments, err = t.logic.GetTicketManager().ValueOfDelegatedTickets(senderPubKey)
+		if err != nil {
+			return errors.Wrap(err, "failed to get value of delegated tickets of sender")
+		}
+	}
+
+	// For network staked-weighted votes, use the total value of coins delegated
+	// to the voter as their vote power
+	if proposal.TallyMethod == types.ProposalTallyMethodNetStake {
+
+		tickets, err := t.logic.GetTicketManager().GetNonDecayedTickets(senderPubKey)
+		if err != nil {
+			return errors.Wrap(err, "failed to get non-decayed tickets assigned to sender")
+		}
+
+		// Calculate the sum of value of all tickets.
+		// For delegated tickets, check whether the delegator already voted. If
+		// yes, do not count their ticket.
+		sumValue := decimal.Zero
+		for _, ticket := range tickets {
+
+			proposerPK := ticket.ProposerPubKey
+
+			// Count the ticket if it is not delegated or the delegator is also the voter
+			if ticket.Delegator == "" || (ticket.Delegator == spk.Addr().String() &&
+				proposerPK.Equal(senderPubKey)) {
+				sumValue = sumValue.Add(ticket.Value.Decimal())
+				continue
+			}
+
+			// For tickets not delegated by the voter, determine whether the
+			// delegator has used their ticket to vote on this same proposal.
+			// If yes, we will not count it.
+			if ticket.Delegator != spk.Addr().String() {
+				_, voted, err := repoKeeper.GetProposalVote(repoName, proposalID, ticket.Delegator)
+				if err != nil {
+					return errors.Wrap(err, "failed to check ticket's delegator vote status")
+				}
+				if !voted {
+					sumValue = sumValue.Add(ticket.Value.Decimal())
+					continue
+				}
+			}
+
+			// For tickets delegated by the voter to a different user,
+			// determine if ticket proposer has voted in this same proposal.
+			// If yes, deduct the vote and apply to the delegator's choice vote option
+			if ticket.Delegator == spk.Addr().String() {
+				proposerAddr := crypto.MustPubKeyFromBytes(proposerPK.Bytes()).Addr().String()
+				vote, voted, err := repoKeeper.GetProposalVote(repoName, proposalID, proposerAddr)
+				if err != nil {
+					return errors.Wrap(err, "failed to check ticket's proposer vote status")
+				}
+				if !voted {
+					sumValue = sumValue.Add(ticket.Value.Decimal())
+					continue
+				}
+
+				switch vote {
+				case types.ProposalVoteYes:
+					newYes := decimal.NewFromFloat(proposal.Yes)
+					newYes = newYes.Sub(ticket.Value.Decimal())
+					proposal.Yes, _ = newYes.Float64()
+
+				case types.ProposalVoteNo:
+					newNo := decimal.NewFromFloat(proposal.No)
+					newNo = newNo.Sub(ticket.Value.Decimal())
+					proposal.Yes, _ = newNo.Float64()
+
+				case types.ProposalVoteNoWithVeto:
+					newNoWithVeto := decimal.NewFromFloat(proposal.NoWithVeto)
+					newNoWithVeto = newNoWithVeto.Sub(ticket.Value.Decimal())
+					proposal.NoWithVeto, _ = newNoWithVeto.Float64()
+				}
+
+				sumValue = sumValue.Add(ticket.Value.Decimal())
+			}
+		}
+
+		increments, _ = sumValue.Float64()
 	}
 
 	if vote == types.ProposalVoteYes {

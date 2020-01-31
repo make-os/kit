@@ -19,6 +19,9 @@ type ProposalTallyMethod int
 const (
 	ProposalTallyMethodIdentity = iota + 1
 	ProposalTallyMethodCoinWeighted
+	ProposalTallyMethodNetStake
+	ProposalTallyMethodNetStakeOfProposer
+	ProposalTallyMethodNetStakeOfDelegators
 )
 
 // ProposalAction represents proposal action types

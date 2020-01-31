@@ -92,6 +92,10 @@ type TicketManager interface {
 	// pubKey: The public key of the proposer
 	ValueOfTickets(pubKey util.Bytes32) (float64, error)
 
+	// GetNonDecayedTickets finds tickets where the given proposer
+	// public key is the proposer or the delegator.
+	GetNonDecayedTickets(pubKey util.Bytes32) ([]*Ticket, error)
+
 	// Stop stops the ticket manager
 	Stop() error
 }
