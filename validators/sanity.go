@@ -470,8 +470,8 @@ func CheckTxRepoProposalVote(tx *types.TxRepoProposalVote, index int) error {
 	}
 
 	// Vote cannot be less than -1 or greater than 1.
-	// 0 = No, 1 = Yes, -1 = NoWithVeto
-	if tx.Vote < -1 || tx.Vote > 1 {
+	// 0 = No, 1 = Yes, -1 = NoWithVeto, -2 = Abstain
+	if tx.Vote < -2 || tx.Vote > 1 {
 		return feI(index, "vote", "vote choice is unknown")
 	}
 

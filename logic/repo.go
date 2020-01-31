@@ -290,6 +290,11 @@ func (t *Transaction) execRepoProposalVote(
 					newNoWithVeto := decimal.NewFromFloat(proposal.NoWithVeto)
 					newNoWithVeto = newNoWithVeto.Sub(ticket.Value.Decimal())
 					proposal.NoWithVeto, _ = newNoWithVeto.Float64()
+
+				case types.ProposalVoteAbstain:
+					newAbstain := decimal.NewFromFloat(proposal.Abstain)
+					newAbstain = newAbstain.Sub(ticket.Value.Decimal())
+					proposal.Abstain, _ = newAbstain.Float64()
 				}
 
 				sumValue = sumValue.Add(ticket.Value.Decimal())
@@ -305,6 +310,8 @@ func (t *Transaction) execRepoProposalVote(
 		proposal.No += increments
 	} else if vote == types.ProposalVoteNoWithVeto {
 		proposal.NoWithVeto += increments
+	} else if vote == types.ProposalVoteAbstain {
+		proposal.Abstain += increments
 	}
 
 	// Update the repo

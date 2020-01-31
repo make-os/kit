@@ -37,6 +37,7 @@ const (
 	ProposalVoteYes        = 1
 	ProposalVoteNo         = 0
 	ProposalVoteNoWithVeto = -1
+	ProposalVoteAbstain    = -2
 )
 
 // Proposal describes a repository proposal
@@ -86,6 +87,7 @@ type RepoProposal struct {
 	Yes                   float64                `json:"yes" mapstructure:"yes" msgpack:"yes"`                                                       // Count of "Yes" votes
 	No                    float64                `json:"no" mapstructure:"no" msgpack:"no"`                                                          // Count of "No" votes
 	NoWithVeto            float64                `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes
+	Abstain               float64                `json:"abstain" mapstructure:"abstain" msgpack:"abstain"`                                           // Count of "No" votes
 	Outcome               ProposalOutcome        `json:"outcome" mapstructure:"outcome" msgpack:"outcome"`
 }
 
