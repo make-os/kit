@@ -121,19 +121,22 @@ func (t *Transaction) execRepoUpsertOwner(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := &types.RepoProposal{
-		Action:                types.ProposalActionAddOwner,
-		Creator:               spk.Addr().String(),
-		Proposee:              repo.Config.Governace.ProposalProposee,
-		ProposeeMaxJoinHeight: repo.Config.Governace.ProposalProposeeExistBeforeHeight,
-		EndAt:                 repo.Config.Governace.ProposalDur + chainHeight + 1,
-		TallyMethod:           repo.Config.Governace.ProposalTallyMethod,
-		Quorum:                repo.Config.Governace.ProposalQuorum,
-		Threshold:             repo.Config.Governace.ProposalThreshold,
-		VetoQuorum:            repo.Config.Governace.ProposalVetoQuorum,
+		Action:      types.ProposalActionAddOwner,
+		Creator:     spk.Addr().String(),
+		Proposee:    repo.Config.Governace.ProposalProposee,
+		EndAt:       repo.Config.Governace.ProposalDur + chainHeight + 1,
+		TallyMethod: repo.Config.Governace.ProposalTallyMethod,
+		Quorum:      repo.Config.Governace.ProposalQuorum,
+		Threshold:   repo.Config.Governace.ProposalThreshold,
+		VetoQuorum:  repo.Config.Governace.ProposalVetoQuorum,
 		ActionData: map[string]interface{}{
 			"addresses": addresses,
 			"veto":      veto,
 		},
+	}
+
+	if repo.Config.Governace.ProposalProposeeLimitToCurHeight {
+		proposal.ProposeeMaxJoinHeight = chainHeight + 1
 	}
 
 	// Add the proposal to the repo
@@ -194,13 +197,18 @@ func (t *Transaction) execRepoProposalVote(
 
 	increments := float64(0)
 
-	// For identity based votes, use increment of 1
-	if proposal.TallyMethod == types.ProposalTallyMethodIdentity {
+	// When proposees are the owners, and tally method is ProposalTallyOneVote
+	// each proposee will have 1 voting power.
+	if proposal.Proposee == types.ProposeeOwner &&
+		proposal.TallyMethod == types.ProposalTallyOneVote {
 		increments = 1
 	}
 
-	// For coin-weighted votes, use the value of the voter's account spendable balance
-	if proposal.TallyMethod == types.ProposalTallyMethodCoinWeighted {
+	// When proposees are the owners, and tally method is ProposalTallyMethodCoinWeighted
+	// each proposee will use the value of the voter's account spendable balance
+	// as their voting power.
+	if proposal.Proposee == types.ProposeeOwner &&
+		proposal.TallyMethod == types.ProposalTallyMethodCoinWeighted {
 		senderAcct := t.logic.AccountKeeper().GetAccount(spk.Addr())
 		increments = senderAcct.GetSpendableBalance(chainHeight).Float()
 	}
@@ -208,7 +216,8 @@ func (t *Transaction) execRepoProposalVote(
 	// For network staked-weighted votes, use the total value of coins directly
 	// staked by the voter as their vote power
 	if proposal.TallyMethod == types.ProposalTallyMethodNetStakeOfProposer {
-		increments, err = t.logic.GetTicketManager().ValueOfNonDelegatedTickets(senderPubKey)
+		increments, err = t.logic.GetTicketManager().
+			ValueOfNonDelegatedTickets(senderPubKey, proposal.ProposeeMaxJoinHeight)
 		if err != nil {
 			return errors.Wrap(err, "failed to get value of non-delegated tickets of sender")
 		}
@@ -217,7 +226,8 @@ func (t *Transaction) execRepoProposalVote(
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
 	if proposal.TallyMethod == types.ProposalTallyMethodNetStakeOfDelegators {
-		increments, err = t.logic.GetTicketManager().ValueOfDelegatedTickets(senderPubKey)
+		increments, err = t.logic.GetTicketManager().
+			ValueOfDelegatedTickets(senderPubKey, proposal.ProposeeMaxJoinHeight)
 		if err != nil {
 			return errors.Wrap(err, "failed to get value of delegated tickets of sender")
 		}
@@ -227,7 +237,8 @@ func (t *Transaction) execRepoProposalVote(
 	// to the voter as their vote power
 	if proposal.TallyMethod == types.ProposalTallyMethodNetStake {
 
-		tickets, err := t.logic.GetTicketManager().GetNonDecayedTickets(senderPubKey)
+		tickets, err := t.logic.GetTicketManager().
+			GetNonDecayedTickets(senderPubKey, proposal.ProposeeMaxJoinHeight)
 		if err != nil {
 			return errors.Wrap(err, "failed to get non-decayed tickets assigned to sender")
 		}

@@ -156,13 +156,19 @@ func (m *Manager) GetByProposer(
 	return res, nil
 }
 
-// GetNonDecayedTickets finds tickets where the given proposer
-// public key is the proposer or the delegator.
-func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32) ([]*types.Ticket, error) {
+// GetNonDecayedTickets finds non-decayed tickets that have the given proposer
+// public key as the proposer or the delegator;
+// If maturityHeight is non-zero, then only tickets that reached maturity before
+// or on the given height are selected. Otherwise, the current chain height is used.
+func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*types.Ticket, error) {
 
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
 		return nil, err
+	}
+
+	if maturityHeight <= 0 {
+		maturityHeight = uint64(bi.Height)
 	}
 
 	pk, err := crypto.PubKeyFromBytes(pubKey.Bytes())
@@ -171,10 +177,10 @@ func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32) ([]*types.Ticket, er
 	}
 
 	result := m.s.Query(func(t *types.Ticket) bool {
-		return t.MatureBy <= uint64(bi.Height) && // is mature
+		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
 				(t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) && // not decayed
-			t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String() // is delegator or not
+			(t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String()) // is delegator or not
 	})
 
 	return result, nil
@@ -229,15 +235,24 @@ func (m *Manager) GetNonDelegatedTickets(
 // key as the proposer; Includes both validator and storer tickets.
 //
 // pubKey: The public key of the proposer
-func (m *Manager) ValueOfNonDelegatedTickets(pubKey util.Bytes32) (float64, error) {
+// maturityHeight: if set to non-zero, only tickets that reached maturity before
+// or on the given height are selected. Otherwise, the current chain height is used.
+func (m *Manager) ValueOfNonDelegatedTickets(
+	pubKey util.Bytes32,
+	maturityHeight uint64) (float64, error) {
+
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
 		return 0, err
 	}
 
+	if maturityHeight <= 0 {
+		maturityHeight = uint64(bi.Height)
+	}
+
 	result := m.s.Query(func(t *types.Ticket) bool {
-		return t.MatureBy <= uint64(bi.Height) &&
+		return t.MatureBy <= maturityHeight &&
 			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator == ""
@@ -257,15 +272,24 @@ func (m *Manager) ValueOfNonDelegatedTickets(pubKey util.Bytes32) (float64, erro
 // key as the proposer; Includes both validator and storer tickets.
 //
 // pubKey: The public key of the proposer
-func (m *Manager) ValueOfDelegatedTickets(pubKey util.Bytes32) (float64, error) {
+// maturityHeight: if set to non-zero, only tickets that reached maturity before
+// or on the given height are selected. Otherwise, the current chain height is used.
+func (m *Manager) ValueOfDelegatedTickets(
+	pubKey util.Bytes32,
+	maturityHeight uint64) (float64, error) {
+
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
 		return 0, err
 	}
 
+	if maturityHeight <= 0 {
+		maturityHeight = uint64(bi.Height)
+	}
+
 	result := m.s.Query(func(t *types.Ticket) bool {
-		return t.MatureBy <= uint64(bi.Height) &&
+		return t.MatureBy <= maturityHeight &&
 			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator != ""
@@ -285,12 +309,20 @@ func (m *Manager) ValueOfDelegatedTickets(pubKey util.Bytes32) (float64, error) 
 // Includes both validator and storer tickets.
 //
 // pubKey: The public key of the proposer
-func (m *Manager) ValueOfTickets(pubKey util.Bytes32) (float64, error) {
+// maturityHeight: if set to non-zero, only tickets that reached maturity before
+// or on the given height are selected. Otherwise, the current chain height is used.
+func (m *Manager) ValueOfTickets(
+	pubKey util.Bytes32,
+	maturityHeight uint64) (float64, error) {
 
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
 		return 0, err
+	}
+
+	if maturityHeight <= 0 {
+		maturityHeight = uint64(bi.Height)
 	}
 
 	pk, err := crypto.PubKeyFromBytes(pubKey.Bytes())
@@ -299,10 +331,42 @@ func (m *Manager) ValueOfTickets(pubKey util.Bytes32) (float64, error) {
 	}
 
 	result := m.s.Query(func(t *types.Ticket) bool {
-		return t.MatureBy <= uint64(bi.Height) && // is mature
+		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
 				(t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) && // not decayed
-			t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String() // is delegated or not
+			(t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String()) // is delegated or not
+	})
+
+	var sum = decimal.Zero
+	for _, res := range result {
+		sum = sum.Add(res.Value.Decimal())
+	}
+
+	sumF, _ := sum.Float64()
+	return sumF, nil
+}
+
+// ValueOfAllTickets returns the sum of value of all non-decayed
+// tickets; Includes both validator and storer tickets.
+//
+// maturityHeight: if set to non-zero, only tickets that reached maturity before
+// or on the given height are selected. Otherwise, the current chain height is used.
+func (m *Manager) ValueOfAllTickets(maturityHeight uint64) (float64, error) {
+
+	// Get the last committed block
+	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return 0, err
+	}
+
+	if maturityHeight <= 0 {
+		maturityHeight = uint64(bi.Height)
+	}
+
+	result := m.s.Query(func(t *types.Ticket) bool {
+		return t.MatureBy <= maturityHeight && // is mature
+			(t.DecayBy > uint64(bi.Height) ||
+				(t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) // not decayed
 	})
 
 	var sum = decimal.Zero

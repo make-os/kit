@@ -7,6 +7,7 @@ import (
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/types/mocks"
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/storage"
@@ -72,7 +73,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal.Quorum = 40
 					proposal.Yes = 2
 					proposal.No = 1
-					res := determineProposalOutcome(proposal, repo, 100)
+					res := determineProposalOutcome(logic, proposal, repo, 100)
 					Expect(res).To(Equal(types.ProposalOutcomeQuorumNotMet))
 				})
 			})
@@ -82,7 +83,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal.Quorum = 40
 					proposal.Yes = 2
 					proposal.No = 2
-					res := determineProposalOutcome(proposal, repo, 100)
+					res := determineProposalOutcome(logic, proposal, repo, 100)
 					Expect(res).To(Equal(types.ProposalOutcomeTie))
 				})
 			})
@@ -106,7 +107,7 @@ var _ = Describe("ProposalHandler", func() {
 						proposal.Quorum = 40
 						proposal.Yes = 1
 						proposal.No = 1
-						out := determineProposalOutcome(proposal, repo, 100)
+						out := determineProposalOutcome(logic, proposal, repo, 100)
 						Expect(out).To(Equal(types.ProposalOutcomeQuorumNotMet))
 					})
 				})
@@ -117,7 +118,7 @@ var _ = Describe("ProposalHandler", func() {
 						proposal.Threshold = 51
 						proposal.Yes = 2
 						proposal.No = 1
-						out := determineProposalOutcome(proposal, repo, 100)
+						out := determineProposalOutcome(logic, proposal, repo, 100)
 						Expect(out).To(Equal(types.ProposalOutcomeAccepted))
 					})
 				})
@@ -176,125 +177,150 @@ var _ = Describe("ProposalHandler", func() {
 		})
 	})
 
-	Describe(".getProposalOutcomeForOwnersOnly", func() {
-		When("quorum is not reached", func() {
+	Describe(".getProposalOutcome", func() {
+		When("proposee type is ProposeeNetStakeholders", func() {
 			var proposal *types.RepoProposal
 
 			BeforeEach(func() {
 				proposal = &types.RepoProposal{}
-				proposal.Proposee = types.ProposeeOwner
+				proposal.Proposee = types.ProposeeNetStakeholders
 				proposal.Creator = key.Addr().String()
 				proposal.Quorum = 40
-				proposal.Yes = 1
-				proposal.No = 1
-				proposal.NoWithVeto = 1
+				proposal.Yes = 100
+				proposal.No = 100
+				proposal.NoWithVeto = 50
+
+				mockTickMgr := mocks.NewMockTicketManager(ctrl)
+				mockTickMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(1000), nil)
+				logic.SetTicketManager(mockTickMgr)
 			})
 
 			It("should return outcome=ProposalOutcomeQuorumNotMet", func() {
-				out := getProposalOutcomeForOwnersOnly(proposal, repo)
+				out := getProposalOutcome(logic.GetTicketManager(), proposal, repo)
 				Expect(out).To(Equal(types.ProposalOutcomeQuorumNotMet))
 			})
 		})
 
-		When("NoWithVeto quorum is reached", func() {
-			var proposal *types.RepoProposal
+		When("proposee type is ProposeeOwner", func() {
+			When("quorum is not reached", func() {
+				var proposal *types.RepoProposal
 
-			BeforeEach(func() {
-				proposal = &types.RepoProposal{}
-				proposal.Proposee = types.ProposeeOwner
-				proposal.Creator = key.Addr().String()
-				proposal.Quorum = 40
-				proposal.VetoQuorum = 10
-				proposal.Yes = 5
-				proposal.No = 4
-				proposal.NoWithVeto = 1
+				BeforeEach(func() {
+					proposal = &types.RepoProposal{}
+					proposal.Proposee = types.ProposeeOwner
+					proposal.Creator = key.Addr().String()
+					proposal.Quorum = 40
+					proposal.Yes = 1
+					proposal.No = 1
+					proposal.NoWithVeto = 1
+				})
+
+				It("should return outcome=ProposalOutcomeQuorumNotMet", func() {
+					out := getProposalOutcome(logic.GetTicketManager(), proposal, repo)
+					Expect(out).To(Equal(types.ProposalOutcomeQuorumNotMet))
+				})
 			})
 
-			It("should return outcome=ProposalOutcomeRejectedWithVeto", func() {
-				out := getProposalOutcomeForOwnersOnly(proposal, repo)
-				Expect(out).To(Equal(types.ProposalOutcomeRejectedWithVeto))
-			})
-		})
+			When("NoWithVeto quorum is reached", func() {
+				var proposal *types.RepoProposal
 
-		When("NoWithVeto quorum is unset but there is at least 1 NoWithVeto vote", func() {
-			var proposal *types.RepoProposal
+				BeforeEach(func() {
+					proposal = &types.RepoProposal{}
+					proposal.Proposee = types.ProposeeOwner
+					proposal.Creator = key.Addr().String()
+					proposal.Quorum = 40
+					proposal.VetoQuorum = 10
+					proposal.Yes = 5
+					proposal.No = 4
+					proposal.NoWithVeto = 1
+				})
 
-			BeforeEach(func() {
-				proposal = &types.RepoProposal{}
-				proposal.Proposee = types.ProposeeOwner
-				proposal.Creator = key.Addr().String()
-				proposal.Quorum = 40
-				proposal.VetoQuorum = 0
-				proposal.Yes = 5
-				proposal.No = 4
-				proposal.NoWithVeto = 1
-			})
-
-			It("should return outcome=ProposalOutcomeRejectedWithVeto", func() {
-				out := getProposalOutcomeForOwnersOnly(proposal, repo)
-				Expect(out).To(Equal(types.ProposalOutcomeRejectedWithVeto))
-			})
-		})
-
-		When("Yes threshold is reached", func() {
-			var proposal *types.RepoProposal
-
-			BeforeEach(func() {
-				proposal = &types.RepoProposal{}
-				proposal.Proposee = types.ProposeeOwner
-				proposal.Creator = key.Addr().String()
-				proposal.Quorum = 40
-				proposal.VetoQuorum = 10
-				proposal.Threshold = 51
-				proposal.Yes = 6
-				proposal.No = 4
-				proposal.NoWithVeto = 0
+				It("should return outcome=ProposalOutcomeRejectedWithVeto", func() {
+					out := getProposalOutcome(logic.GetTicketManager(), proposal, repo)
+					Expect(out).To(Equal(types.ProposalOutcomeRejectedWithVeto))
+				})
 			})
 
-			It("should return outcome=ProposalOutcomeRejectedWithVeto", func() {
-				out := getProposalOutcomeForOwnersOnly(proposal, repo)
-				Expect(out).To(Equal(types.ProposalOutcomeAccepted))
-			})
-		})
+			When("NoWithVeto quorum is unset but there is at least 1 NoWithVeto vote", func() {
+				var proposal *types.RepoProposal
 
-		When("No threshold is reached", func() {
-			var proposal *types.RepoProposal
-			BeforeEach(func() {
-				proposal = &types.RepoProposal{}
-				proposal.Proposee = types.ProposeeOwner
-				proposal.Creator = key.Addr().String()
-				proposal.Quorum = 40
-				proposal.VetoQuorum = 10
-				proposal.Threshold = 51
-				proposal.Yes = 4
-				proposal.No = 6
-				proposal.NoWithVeto = 0
-			})
+				BeforeEach(func() {
+					proposal = &types.RepoProposal{}
+					proposal.Proposee = types.ProposeeOwner
+					proposal.Creator = key.Addr().String()
+					proposal.Quorum = 40
+					proposal.VetoQuorum = 0
+					proposal.Yes = 5
+					proposal.No = 4
+					proposal.NoWithVeto = 1
+				})
 
-			It("should return outcome=ProposalOutcomeRejectedWithVeto", func() {
-				out := getProposalOutcomeForOwnersOnly(proposal, repo)
-				Expect(out).To(Equal(types.ProposalOutcomeRejected))
-			})
-		})
-
-		When("some either Yes or No votes reached the threshold", func() {
-			var proposal *types.RepoProposal
-
-			BeforeEach(func() {
-				proposal = &types.RepoProposal{}
-				proposal.Proposee = types.ProposeeOwner
-				proposal.Creator = key.Addr().String()
-				proposal.Quorum = 40
-				proposal.VetoQuorum = 10
-				proposal.Threshold = 51
-				proposal.Yes = 4
-				proposal.No = 4
-				proposal.NoWithVeto = 0
+				It("should return outcome=ProposalOutcomeRejectedWithVeto", func() {
+					out := getProposalOutcome(logic.GetTicketManager(), proposal, repo)
+					Expect(out).To(Equal(types.ProposalOutcomeRejectedWithVeto))
+				})
 			})
 
-			It("should return outcome=ProposalOutcomeTie", func() {
-				out := getProposalOutcomeForOwnersOnly(proposal, repo)
-				Expect(out).To(Equal(types.ProposalOutcomeTie))
+			When("Yes threshold is reached", func() {
+				var proposal *types.RepoProposal
+
+				BeforeEach(func() {
+					proposal = &types.RepoProposal{}
+					proposal.Proposee = types.ProposeeOwner
+					proposal.Creator = key.Addr().String()
+					proposal.Quorum = 40
+					proposal.VetoQuorum = 10
+					proposal.Threshold = 51
+					proposal.Yes = 6
+					proposal.No = 4
+					proposal.NoWithVeto = 0
+				})
+
+				It("should return outcome=ProposalOutcomeRejectedWithVeto", func() {
+					out := getProposalOutcome(logic.GetTicketManager(), proposal, repo)
+					Expect(out).To(Equal(types.ProposalOutcomeAccepted))
+				})
+			})
+
+			When("No threshold is reached", func() {
+				var proposal *types.RepoProposal
+				BeforeEach(func() {
+					proposal = &types.RepoProposal{}
+					proposal.Proposee = types.ProposeeOwner
+					proposal.Creator = key.Addr().String()
+					proposal.Quorum = 40
+					proposal.VetoQuorum = 10
+					proposal.Threshold = 51
+					proposal.Yes = 4
+					proposal.No = 6
+					proposal.NoWithVeto = 0
+				})
+
+				It("should return outcome=ProposalOutcomeRejectedWithVeto", func() {
+					out := getProposalOutcome(logic.GetTicketManager(), proposal, repo)
+					Expect(out).To(Equal(types.ProposalOutcomeRejected))
+				})
+			})
+
+			When("some either Yes or No votes reached the threshold", func() {
+				var proposal *types.RepoProposal
+
+				BeforeEach(func() {
+					proposal = &types.RepoProposal{}
+					proposal.Proposee = types.ProposeeOwner
+					proposal.Creator = key.Addr().String()
+					proposal.Quorum = 40
+					proposal.VetoQuorum = 10
+					proposal.Threshold = 51
+					proposal.Yes = 4
+					proposal.No = 4
+					proposal.NoWithVeto = 0
+				})
+
+				It("should return outcome=ProposalOutcomeTie", func() {
+					out := getProposalOutcome(logic.GetTicketManager(), proposal, repo)
+					Expect(out).To(Equal(types.ProposalOutcomeTie))
+				})
 			})
 		})
 	})

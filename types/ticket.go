@@ -76,25 +76,42 @@ type TicketManager interface {
 	// key as the proposer; Includes both validator and storer tickets.
 	//
 	// pubKey: The public key of the proposer
-	ValueOfNonDelegatedTickets(pubKey util.Bytes32) (float64, error)
+	// maturityHeight: if set to non-zero, only tickets that reached maturity before
+	// or on the given height are selected. Otherwise, the current chain height is used.
+	ValueOfNonDelegatedTickets(pubKey util.Bytes32, maturityHeight uint64) (float64, error)
 
 	// ValueOfDelegatedTickets returns the sum of value of all
 	// delegated, non-decayed tickets which has the given public
 	// key as the proposer; Includes both validator and storer tickets.
 	//
 	// pubKey: The public key of the proposer
-	ValueOfDelegatedTickets(pubKey util.Bytes32) (float64, error)
+	// maturityHeight: if set to non-zero, only tickets that reached maturity before
+	// or on the given height are selected. Otherwise, the current chain height is used.
+	ValueOfDelegatedTickets(pubKey util.Bytes32, maturityHeight uint64) (float64, error)
 
 	// ValueOfTickets returns the sum of value of all non-decayed
 	// tickets where the given public key is the proposer or delegator;
 	// Includes both validator and storer tickets.
 	//
 	// pubKey: The public key of the proposer
-	ValueOfTickets(pubKey util.Bytes32) (float64, error)
+	// maturityHeight: if set to non-zero, only tickets that reached maturity before
+	// or on the given height are selected. Otherwise, the current chain height is used.
+	ValueOfTickets(pubKey util.Bytes32, maturityHeight uint64) (float64, error)
 
-	// GetNonDecayedTickets finds tickets where the given proposer
-	// public key is the proposer or the delegator.
-	GetNonDecayedTickets(pubKey util.Bytes32) ([]*Ticket, error)
+	// ValueOfAllTickets returns the sum of value of all non-decayed
+	// tickets; Includes both validator and storer tickets.
+	//
+	// maturityHeight: if set to non-zero, only tickets that reached maturity before
+	// or on the given height are selected. Otherwise, the current chain height is used.
+	ValueOfAllTickets(maturityHeight uint64) (float64, error)
+
+	// GetNonDecayedTickets finds non-decayed tickets that have the given proposer
+	// public key as the proposer or the delegator;
+	//
+	// pubKey: The public key of the proposer
+	// maturityHeight: if set to non-zero, only tickets that reached maturity before
+	// or on the given height are selected. Otherwise, the current chain height is used.
+	GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*Ticket, error)
 
 	// Stop stops the ticket manager
 	Stop() error

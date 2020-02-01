@@ -204,63 +204,78 @@ func (mr *MockTicketManagerMockRecorder) GetTopValidators(limit interface{}) *go
 }
 
 // ValueOfNonDelegatedTickets mocks base method
-func (m *MockTicketManager) ValueOfNonDelegatedTickets(pubKey util.Bytes32) (float64, error) {
+func (m *MockTicketManager) ValueOfNonDelegatedTickets(pubKey util.Bytes32, maturityHeight uint64) (float64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValueOfNonDelegatedTickets", pubKey)
+	ret := m.ctrl.Call(m, "ValueOfNonDelegatedTickets", pubKey, maturityHeight)
 	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ValueOfNonDelegatedTickets indicates an expected call of ValueOfNonDelegatedTickets
-func (mr *MockTicketManagerMockRecorder) ValueOfNonDelegatedTickets(pubKey interface{}) *gomock.Call {
+func (mr *MockTicketManagerMockRecorder) ValueOfNonDelegatedTickets(pubKey, maturityHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValueOfNonDelegatedTickets", reflect.TypeOf((*MockTicketManager)(nil).ValueOfNonDelegatedTickets), pubKey)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValueOfNonDelegatedTickets", reflect.TypeOf((*MockTicketManager)(nil).ValueOfNonDelegatedTickets), pubKey, maturityHeight)
 }
 
 // ValueOfDelegatedTickets mocks base method
-func (m *MockTicketManager) ValueOfDelegatedTickets(pubKey util.Bytes32) (float64, error) {
+func (m *MockTicketManager) ValueOfDelegatedTickets(pubKey util.Bytes32, maturityHeight uint64) (float64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValueOfDelegatedTickets", pubKey)
+	ret := m.ctrl.Call(m, "ValueOfDelegatedTickets", pubKey, maturityHeight)
 	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ValueOfDelegatedTickets indicates an expected call of ValueOfDelegatedTickets
-func (mr *MockTicketManagerMockRecorder) ValueOfDelegatedTickets(pubKey interface{}) *gomock.Call {
+func (mr *MockTicketManagerMockRecorder) ValueOfDelegatedTickets(pubKey, maturityHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValueOfDelegatedTickets", reflect.TypeOf((*MockTicketManager)(nil).ValueOfDelegatedTickets), pubKey)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValueOfDelegatedTickets", reflect.TypeOf((*MockTicketManager)(nil).ValueOfDelegatedTickets), pubKey, maturityHeight)
 }
 
 // ValueOfTickets mocks base method
-func (m *MockTicketManager) ValueOfTickets(pubKey util.Bytes32) (float64, error) {
+func (m *MockTicketManager) ValueOfTickets(pubKey util.Bytes32, maturityHeight uint64) (float64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ValueOfTickets", pubKey)
+	ret := m.ctrl.Call(m, "ValueOfTickets", pubKey, maturityHeight)
 	ret0, _ := ret[0].(float64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ValueOfTickets indicates an expected call of ValueOfTickets
-func (mr *MockTicketManagerMockRecorder) ValueOfTickets(pubKey interface{}) *gomock.Call {
+func (mr *MockTicketManagerMockRecorder) ValueOfTickets(pubKey, maturityHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValueOfTickets", reflect.TypeOf((*MockTicketManager)(nil).ValueOfTickets), pubKey)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValueOfTickets", reflect.TypeOf((*MockTicketManager)(nil).ValueOfTickets), pubKey, maturityHeight)
+}
+
+// ValueOfAllTickets mocks base method
+func (m *MockTicketManager) ValueOfAllTickets(maturityHeight uint64) (float64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ValueOfAllTickets", maturityHeight)
+	ret0, _ := ret[0].(float64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ValueOfAllTickets indicates an expected call of ValueOfAllTickets
+func (mr *MockTicketManagerMockRecorder) ValueOfAllTickets(maturityHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ValueOfAllTickets", reflect.TypeOf((*MockTicketManager)(nil).ValueOfAllTickets), maturityHeight)
 }
 
 // GetNonDecayedTickets mocks base method
-func (m *MockTicketManager) GetNonDecayedTickets(pubKey util.Bytes32) ([]*types.Ticket, error) {
+func (m *MockTicketManager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNonDecayedTickets", pubKey)
+	ret := m.ctrl.Call(m, "GetNonDecayedTickets", pubKey, maturityHeight)
 	ret0, _ := ret[0].([]*types.Ticket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetNonDecayedTickets indicates an expected call of GetNonDecayedTickets
-func (mr *MockTicketManagerMockRecorder) GetNonDecayedTickets(pubKey interface{}) *gomock.Call {
+func (mr *MockTicketManagerMockRecorder) GetNonDecayedTickets(pubKey, maturityHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNonDecayedTickets", reflect.TypeOf((*MockTicketManager)(nil).GetNonDecayedTickets), pubKey)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNonDecayedTickets", reflect.TypeOf((*MockTicketManager)(nil).GetNonDecayedTickets), pubKey, maturityHeight)
 }
 
 // Stop mocks base method

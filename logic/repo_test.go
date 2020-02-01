@@ -108,7 +108,7 @@ var _ = Describe("Repo", func() {
 			})
 		})
 
-		When("proposal tally method is ProposalTallyMethodIdentity", func() {
+		When("proposal tally method is ProposalTallyOneVote", func() {
 			var propID = "proposer_id"
 			var repoName = "repo"
 
@@ -117,7 +117,8 @@ var _ = Describe("Repo", func() {
 				repoUpd.Config = types.DefaultRepoConfig()
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				proposal := &types.RepoProposal{
-					TallyMethod: types.ProposalTallyMethodIdentity,
+					Proposee:    types.ProposeeOwner,
+					TallyMethod: types.ProposalTallyOneVote,
 					Yes:         1,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -143,6 +144,7 @@ var _ = Describe("Repo", func() {
 				repoUpd.Config = types.DefaultRepoConfig()
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				proposal := &types.RepoProposal{
+					Proposee:    types.ProposeeOwner,
 					TallyMethod: types.ProposalTallyMethodCoinWeighted,
 					Yes:         1,
 				}
@@ -176,7 +178,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				mockTickMgr.EXPECT().ValueOfNonDelegatedTickets(sender.PubKey().
-					MustBytes32()).Return(float64(100), nil)
+					MustBytes32(), uint64(0)).Return(float64(100), nil)
 				txLogic.logic.SetTicketManager(mockTickMgr)
 
 				spk = sender.PubKey().MustBytes32()
@@ -206,7 +208,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				mockTickMgr.EXPECT().ValueOfDelegatedTickets(sender.PubKey().
-					MustBytes32()).Return(float64(100), nil)
+					MustBytes32(), uint64(0)).Return(float64(100), nil)
 				txLogic.logic.SetTicketManager(mockTickMgr)
 
 				spk = sender.PubKey().MustBytes32()
@@ -220,7 +222,7 @@ var _ = Describe("Repo", func() {
 			})
 		})
 
-		FWhen("proposal tally method is ProposalTallyMethodNetStake", func() {
+		When("proposal tally method is ProposalTallyMethodNetStake", func() {
 			var propID = "proposer_id"
 			var repoName = "repo"
 
@@ -241,7 +243,7 @@ var _ = Describe("Repo", func() {
 					tickets := []*types.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
-						MustBytes32()).Return(tickets, nil)
+						MustBytes32(), uint64(0)).Return(tickets, nil)
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
@@ -276,7 +278,7 @@ var _ = Describe("Repo", func() {
 					tickets := []*types.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
-						MustBytes32()).Return(tickets, nil)
+						MustBytes32(), uint64(0)).Return(tickets, nil)
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
@@ -313,7 +315,7 @@ var _ = Describe("Repo", func() {
 					tickets := []*types.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
-						MustBytes32()).Return(tickets, nil)
+						MustBytes32(), uint64(0)).Return(tickets, nil)
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
@@ -350,7 +352,7 @@ var _ = Describe("Repo", func() {
 					tickets := []*types.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
-						MustBytes32()).Return(tickets, nil)
+						MustBytes32(), uint64(0)).Return(tickets, nil)
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					logic.RepoKeeper().IndexProposalVote(repoName, propID,
@@ -390,7 +392,7 @@ var _ = Describe("Repo", func() {
 					tickets := []*types.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
-						MustBytes32()).Return(tickets, nil)
+						MustBytes32(), uint64(0)).Return(tickets, nil)
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
@@ -427,7 +429,7 @@ var _ = Describe("Repo", func() {
 					tickets := []*types.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
-						MustBytes32()).Return(tickets, nil)
+						MustBytes32(), uint64(0)).Return(tickets, nil)
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					logic.RepoKeeper().IndexProposalVote(repoName, propID,
@@ -456,6 +458,7 @@ var _ = Describe("Repo", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var key2 = crypto.NewKeyFromIntSeed(2)
 		var spk util.Bytes32
+		var repoUpd *types.Repository
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
@@ -463,6 +466,9 @@ var _ = Describe("Repo", func() {
 				Stakes:              types.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
+			repoUpd = types.BareRepository()
+			repoUpd.Config = types.DefaultRepoConfig()
+			repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
 		})
 
 		When("sender is the only owner", func() {
@@ -470,8 +476,6 @@ var _ = Describe("Repo", func() {
 			address := "owner_address"
 
 			BeforeEach(func() {
-				repoUpd := types.BareRepository()
-				repoUpd.Config = types.DefaultRepoConfig()
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
@@ -490,7 +494,6 @@ var _ = Describe("Repo", func() {
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
 				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(1)))
-				Expect(repo.Proposals.Get("1").Outcome).To(Equal(types.ProposalOutcomeAccepted))
 			})
 
 			Specify("that new owner was added", func() {
@@ -509,8 +512,6 @@ var _ = Describe("Repo", func() {
 			addresses := "owner_address,owner_address2"
 
 			BeforeEach(func() {
-				repoUpd := types.BareRepository()
-				repoUpd.Config = types.DefaultRepoConfig()
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
@@ -546,12 +547,9 @@ var _ = Describe("Repo", func() {
 		When("sender is not the only owner", func() {
 			repoName := "repo"
 			address := "owner_address"
-			var repoUpd *types.Repository
 			var curHeight = uint64(0)
 
 			BeforeEach(func() {
-				repoUpd = types.BareRepository()
-				repoUpd.Config = types.DefaultRepoConfig()
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				repoUpd.AddOwner(key2.Addr().String(), &types.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)

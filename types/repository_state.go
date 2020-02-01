@@ -84,13 +84,13 @@ func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
 
 // RepoConfigGovernance contains governance settings for a repository
 type RepoConfigGovernance struct {
-	ProposalProposee                  ProposeeType        `json:"proposalProposee" mapstructure:"proposalProposee" msgpack:"proposalProposee"`
-	ProposalProposeeExistBeforeHeight uint64              `json:"proposalProposeeExistBeforeHeight" mapstructure:"proposalProposeeExistBeforeHeight" msgpack:"proposalProposeeExistBeforeHeight"`
-	ProposalDur                       uint64              `json:"proposalDuration" mapstructure:"proposalDuration" msgpack:"proposalDuration"`
-	ProposalTallyMethod               ProposalTallyMethod `json:"proposalTallyMethod" mapstructure:"proposalTallyMethod" msgpack:"proposalTallyMethod"`
-	ProposalQuorum                    float64             `json:"proposalQuorum" mapstructure:"proposalQuorum" msgpack:"proposalQuorum"`
-	ProposalThreshold                 float64             `json:"proposalThreshold" mapstructure:"proposalThreshold" msgpack:"proposalThreshold"`
-	ProposalVetoQuorum                float64             `json:"proposalVetoQuorum" mapstructure:"proposalVetoQuorum" msgpack:"proposalVetoQuorum"`
+	ProposalProposee                 ProposeeType        `json:"proposalProposee" mapstructure:"proposalProposee" msgpack:"proposalProposee"`
+	ProposalProposeeLimitToCurHeight bool                `json:"proposalProposeeLimitToCurHeight" mapstructure:"proposalProposeeLimitToCurHeight" msgpack:"proposalProposeeLimitToCurHeight"`
+	ProposalDur                      uint64              `json:"proposalDuration" mapstructure:"proposalDuration" msgpack:"proposalDuration"`
+	ProposalTallyMethod              ProposalTallyMethod `json:"proposalTallyMethod" mapstructure:"proposalTallyMethod" msgpack:"proposalTallyMethod"`
+	ProposalQuorum                   float64             `json:"proposalQuorum" mapstructure:"proposalQuorum" msgpack:"proposalQuorum"`
+	ProposalThreshold                float64             `json:"proposalThreshold" mapstructure:"proposalThreshold" msgpack:"proposalThreshold"`
+	ProposalVetoQuorum               float64             `json:"proposalVetoQuorum" mapstructure:"proposalVetoQuorum" msgpack:"proposalVetoQuorum"`
 }
 
 // RepoConfig contains repo-specific configuration settings
@@ -107,13 +107,13 @@ func (c *RepoConfig) IsNil() bool {
 func DefaultRepoConfig() *RepoConfig {
 	return &RepoConfig{
 		Governace: &RepoConfigGovernance{
-			ProposalProposee:                  ProposeeOwner,
-			ProposalProposeeExistBeforeHeight: 0,
-			ProposalDur:                       params.RepoProposalDur,
-			ProposalTallyMethod:               ProposalTallyMethodNetStake,
-			ProposalQuorum:                    params.RepoProposalQuorum,
-			ProposalThreshold:                 params.RepoProposalThreshold,
-			ProposalVetoQuorum:                params.RepoProposalVetoQuorum,
+			ProposalProposee:                 ProposeeNetStakeholders,
+			ProposalProposeeLimitToCurHeight: false,
+			ProposalDur:                      params.RepoProposalDur,
+			ProposalTallyMethod:              ProposalTallyMethodNetStake,
+			ProposalQuorum:                   params.RepoProposalQuorum,
+			ProposalThreshold:                params.RepoProposalThreshold,
+			ProposalVetoQuorum:               params.RepoProposalVetoQuorum,
 		},
 	}
 }

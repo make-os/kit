@@ -7,29 +7,48 @@ import (
 	"github.com/makeos/mosdef/types"
 )
 
-// getProposalOutcomeForOwnersOnly returns the current outcome of a proposal
-// whose voters are only the owners of the repository; If the proposal requires
-// a proposee max join height, only owners existing before the proposee max join height
-func getProposalOutcomeForOwnersOnly(
+// getProposalOutcome returns the current outcome of a proposal
+// whose voters are only network stakeholders; If the proposal requires
+// a proposee max join height, only stakeholders whose tickets became mature
+// before the proposee max join height
+func getProposalOutcome(
+	tickmgr types.TicketManager,
 	prop types.Proposal,
 	repo *types.Repository) types.ProposalOutcome {
 
-	nParticipants := float64(len(repo.Owners))
+	var err error
+	totalPower := float64(64)
 
-	// If there is a max proposee max join height, eligible owners are those who joined on
-	// or before the proposee max join height block height.
-	if prop.GetProposeeMaxJoinHeight() > 0 {
-		nParticipants = 0
-		repo.Owners.ForEach(func(o *types.RepoOwner, addr string) {
-			if o.JoinedAt <= prop.GetProposeeMaxJoinHeight() {
-				nParticipants++
-			}
-		})
+	// When proposee are the owners of the repo, the power is the total
+	// number of owners of the repository - one vote to one owner.
+	if prop.GetProposeeType() == types.ProposeeOwner {
+
+		totalPower = float64(len(repo.Owners))
+
+		// If there is a max proposee max join height, eligible owners are
+		// those who joined on or before the proposee max join height block height.
+		if prop.GetProposeeMaxJoinHeight() > 0 {
+			totalPower = 0
+			repo.Owners.ForEach(func(o *types.RepoOwner, addr string) {
+				if o.JoinedAt <= prop.GetProposeeMaxJoinHeight() {
+					totalPower++
+				}
+			})
+		}
+	}
+
+	// When proposees are network stakeholders, the total power is the total
+	// value of tickets eligible for participation
+	if prop.GetProposeeType() == types.ProposeeNetStakeholders {
+		totalPower, err = tickmgr.ValueOfAllTickets(prop.GetProposeeMaxJoinHeight())
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	// Calculate total votes received, quorum and threshold.
 	totalVotesReceived := prop.GetAccepted() + prop.GetRejected() + prop.GetRejectedWithVeto()
-	quorum := math.Round(nParticipants * (prop.GetQuorum() / 100))
+	quorum := math.Round(totalPower * (prop.GetQuorum() / 100))
 	threshold := math.Round(totalVotesReceived * (prop.GetThreshold() / 100))
 	vetoQuorum := math.Round(totalVotesReceived * (prop.GetVetoQuorum() / 100))
 
@@ -67,20 +86,11 @@ func getProposalOutcomeForOwnersOnly(
 
 // determineProposalOutcome determines the outcome of the proposal votes
 func determineProposalOutcome(
+	keepers types.Keepers,
 	proposal types.Proposal,
 	repo *types.Repository,
 	chainHeight uint64) types.ProposalOutcome {
-
-	isOwnersOnlyProposal := proposal.GetProposeeType() == types.ProposeeOwner
-
-	// At this point, the proposal is ready for tallying.
-	// We need to determine the vote outcome and allow the proposal action to
-	// be applied if its a "YES" outcome.
-	if isOwnersOnlyProposal {
-		return getProposalOutcomeForOwnersOnly(proposal, repo)
-	}
-
-	return 0
+	return getProposalOutcome(keepers.GetTicketManager(), proposal, repo)
 }
 
 // maybeApplyProposal attempts to apply the action of a proposal
@@ -112,7 +122,7 @@ func maybeApplyProposal(
 
 	// Here, the proposal has come to its end. We need to determine if the
 	// outcome was an acceptance, if not we return false.
-	outcome = determineProposalOutcome(proposal, repo, chainHeight)
+	outcome = determineProposalOutcome(keepers, proposal, repo, chainHeight)
 	proposal.SetOutcome(outcome)
 	if outcome != types.ProposalOutcomeAccepted {
 		return false, nil
