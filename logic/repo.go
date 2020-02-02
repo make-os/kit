@@ -31,11 +31,16 @@ func (t *Transaction) execRepoCreate(
 
 	// Create the repo object
 	newRepo := types.BareRepository()
-	newRepo.Config = types.DefaultRepoConfig()
-	newRepo.AddOwner(spk.Addr().String(), &types.RepoOwner{
-		Creator:  true,
-		JoinedAt: chainHeight + 1,
-	})
+	newRepo.Config = types.DefaultRepoConfig
+
+	// Add sender as owner only if proposee type is ProposeeOwner
+	if newRepo.Config.Governace.ProposalProposee == types.ProposeeOwner {
+		newRepo.AddOwner(spk.Addr().String(), &types.RepoOwner{
+			Creator:  true,
+			JoinedAt: chainHeight + 1,
+		})
+	}
+
 	t.logic.RepoKeeper().Update(name, newRepo)
 
 	// Deduct fee from sender

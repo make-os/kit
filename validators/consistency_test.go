@@ -1023,7 +1023,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:id, error:vote already cast for the target proposal"))
+				Expect(err.Error()).To(Equal("field:id, error:vote already cast on the target proposal"))
 			})
 		})
 

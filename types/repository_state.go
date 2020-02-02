@@ -103,14 +103,19 @@ func (c *RepoConfig) IsNil() bool {
 	return *c.Governace == RepoConfigGovernance{}
 }
 
-// DefaultRepoConfig returns sane defaults for repository configurations
-func DefaultRepoConfig() *RepoConfig {
+var (
+	// DefaultRepoConfig is a sane default for repository configurations
+	DefaultRepoConfig = MakeDefaultRepoConfig()
+)
+
+// MakeDefaultRepoConfig returns sane defaults for repository configurations
+func MakeDefaultRepoConfig() *RepoConfig {
 	return &RepoConfig{
 		Governace: &RepoConfigGovernance{
 			ProposalProposee:                 ProposeeNetStakeholders,
 			ProposalProposeeLimitToCurHeight: false,
 			ProposalDur:                      params.RepoProposalDur,
-			ProposalTallyMethod:              ProposalTallyMethodNetStake,
+			ProposalTallyMethod:              ProposalTallyOneVote,
 			ProposalQuorum:                   params.RepoProposalQuorum,
 			ProposalThreshold:                params.RepoProposalThreshold,
 			ProposalVetoQuorum:               params.RepoProposalVetoQuorum,

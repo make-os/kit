@@ -386,7 +386,7 @@ func CheckTxRepoProposalVoteConsistency(
 	if err != nil {
 		return errors.Wrap(err, "failed to check proposal vote")
 	} else if voted {
-		return feI(index, "id", "vote already cast for the target proposal")
+		return feI(index, "id", "vote already cast on the target proposal")
 	}
 
 	return nil

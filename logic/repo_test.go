@@ -47,6 +47,7 @@ var _ = Describe("Repo", func() {
 	})
 
 	BeforeEach(func() {
+		types.DefaultRepoConfig = types.MakeDefaultRepoConfig()
 		err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
@@ -73,6 +74,7 @@ var _ = Describe("Repo", func() {
 
 		When("successful", func() {
 			BeforeEach(func() {
+				types.DefaultRepoConfig.Governace.ProposalProposee = types.ProposeeOwner
 				spk = sender.PubKey().MustBytes32()
 				err = txLogic.execRepoCreate(spk, "repo", "1.5", 0)
 				Expect(err).To(BeNil())
@@ -92,6 +94,20 @@ var _ = Describe("Repo", func() {
 			Specify("that sender account nonce increased", func() {
 				acct := logic.AccountKeeper().GetAccount(sender.Addr())
 				Expect(acct.Nonce).To(Equal(uint64(1)))
+			})
+
+			When("proposee is not ProposalOwner", func() {
+				BeforeEach(func() {
+					types.DefaultRepoConfig.Governace.ProposalProposee = types.ProposeeNetStakeholders
+					spk = sender.PubKey().MustBytes32()
+					err = txLogic.execRepoCreate(spk, "repo", "1.5", 0)
+					Expect(err).To(BeNil())
+				})
+
+				It("should not add the sender as an owner", func() {
+					repo := txLogic.logic.RepoKeeper().GetRepo("repo")
+					Expect(repo.Owners).To(BeEmpty())
+				})
 			})
 		})
 	})
@@ -114,7 +130,7 @@ var _ = Describe("Repo", func() {
 
 			BeforeEach(func() {
 				repoUpd := types.BareRepository()
-				repoUpd.Config = types.DefaultRepoConfig()
+				repoUpd.Config = types.DefaultRepoConfig
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				proposal := &types.RepoProposal{
 					Proposee:    types.ProposeeOwner,
@@ -141,7 +157,7 @@ var _ = Describe("Repo", func() {
 
 			BeforeEach(func() {
 				repoUpd := types.BareRepository()
-				repoUpd.Config = types.DefaultRepoConfig()
+				repoUpd.Config = types.DefaultRepoConfig
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				proposal := &types.RepoProposal{
 					Proposee:    types.ProposeeOwner,
@@ -168,7 +184,7 @@ var _ = Describe("Repo", func() {
 
 			BeforeEach(func() {
 				repoUpd := types.BareRepository()
-				repoUpd.Config = types.DefaultRepoConfig()
+				repoUpd.Config = types.DefaultRepoConfig
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				proposal := &types.RepoProposal{
 					TallyMethod: types.ProposalTallyMethodNetStakeOfProposer,
@@ -198,7 +214,7 @@ var _ = Describe("Repo", func() {
 
 			BeforeEach(func() {
 				repoUpd := types.BareRepository()
-				repoUpd.Config = types.DefaultRepoConfig()
+				repoUpd.Config = types.DefaultRepoConfig
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				proposal := &types.RepoProposal{
 					TallyMethod: types.ProposalTallyMethodNetStakeOfDelegators,
@@ -229,7 +245,7 @@ var _ = Describe("Repo", func() {
 			When("ticketA and ticketB are not delegated, with value 10, 20 respectively", func() {
 				BeforeEach(func() {
 					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig()
+					repoUpd.Config = types.DefaultRepoConfig
 					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 					proposal := &types.RepoProposal{
 						TallyMethod: types.ProposalTallyMethodNetStake,
@@ -260,7 +276,7 @@ var _ = Describe("Repo", func() {
 			When("ticketA and ticketB exist, with value 10, 20 respectively. voter is delegator and proposer of ticketB", func() {
 				BeforeEach(func() {
 					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig()
+					repoUpd.Config = types.DefaultRepoConfig
 					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 					proposal := &types.RepoProposal{
 						TallyMethod: types.ProposalTallyMethodNetStake,
@@ -297,7 +313,7 @@ var _ = Describe("Repo", func() {
 				"voted on the proposal", func() {
 				BeforeEach(func() {
 					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig()
+					repoUpd.Config = types.DefaultRepoConfig
 					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 					proposal := &types.RepoProposal{
 						TallyMethod: types.ProposalTallyMethodNetStake,
@@ -334,7 +350,7 @@ var _ = Describe("Repo", func() {
 				"voted on the proposal", func() {
 				BeforeEach(func() {
 					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig()
+					repoUpd.Config = types.DefaultRepoConfig
 					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 					proposal := &types.RepoProposal{
 						TallyMethod: types.ProposalTallyMethodNetStake,
@@ -374,7 +390,7 @@ var _ = Describe("Repo", func() {
 				"voted on the proposal", func() {
 				BeforeEach(func() {
 					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig()
+					repoUpd.Config = types.DefaultRepoConfig
 					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 					proposal := &types.RepoProposal{
 						TallyMethod: types.ProposalTallyMethodNetStake,
@@ -411,7 +427,7 @@ var _ = Describe("Repo", func() {
 				"voted 'Yes' on the proposal", func() {
 				BeforeEach(func() {
 					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig()
+					repoUpd.Config = types.DefaultRepoConfig
 					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 					proposal := &types.RepoProposal{
 						TallyMethod: types.ProposalTallyMethodNetStake,
@@ -467,7 +483,7 @@ var _ = Describe("Repo", func() {
 				DelegatorCommission: 10,
 			})
 			repoUpd = types.BareRepository()
-			repoUpd.Config = types.DefaultRepoConfig()
+			repoUpd.Config = types.DefaultRepoConfig
 			repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
 		})
 
