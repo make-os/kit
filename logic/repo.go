@@ -4,11 +4,19 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/imdario/mergo"
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+)
+
+const (
+	actionDataAddresses = "addresses"
+	actionDataVeto      = "veto"
+	actionDataConfig    = "config"
 )
 
 // execRepoCreate processes a TxTypeRepoCreate transaction, which creates a git
@@ -81,8 +89,8 @@ func applyProposalAddOwner(
 	chainHeight uint64) error {
 
 	// Get the action data
-	targetAddrs := proposal.GetActionData()["addresses"].(string)
-	veto := proposal.GetActionData()["veto"].(bool)
+	targetAddrs := proposal.GetActionData()[actionDataAddresses].(string)
+	veto := proposal.GetActionData()[actionDataVeto].(bool)
 
 	// Add new repo owner if the target address isn't already an existing owner
 	for _, address := range strings.Split(targetAddrs, ",") {
@@ -102,6 +110,21 @@ func applyProposalAddOwner(
 			existingOwner.Veto = veto
 		}
 	}
+
+	return nil
+}
+
+// applyProposalRepoUpdate updates a repo with data in the proposal.
+func applyProposalRepoUpdate(
+	proposal types.Proposal,
+	repo *types.Repository,
+	chainHeight uint64) error {
+
+	configUpd := proposal.GetActionData()[actionDataConfig].(map[string]interface{})
+	var config types.RepoConfig
+	mapstructure.Decode(configUpd, &config)
+
+	mergo.MergeWithOverwrite(repo.Config, &config)
 
 	return nil
 }
@@ -140,8 +163,78 @@ func (t *Transaction) execRepoUpsertOwner(
 		Threshold:   repo.Config.Governace.ProposalThreshold,
 		VetoQuorum:  repo.Config.Governace.ProposalVetoQuorum,
 		ActionData: map[string]interface{}{
-			"addresses": addresses,
-			"veto":      veto,
+			actionDataAddresses: addresses,
+			actionDataVeto:      veto,
+		},
+	}
+
+	if repo.Config.Governace.ProposalProposeeLimitToCurHeight {
+		proposal.ProposeeMaxJoinHeight = chainHeight + 1
+	}
+
+	// Add the proposal to the repo
+	proposalID := fmt.Sprintf("%d", len(repo.Proposals)+1)
+	repo.Proposals.Add(proposalID, proposal)
+
+	// Attempt to apply the proposal action
+	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)
+	if err != nil {
+		return errors.Wrap(err, "failed to apply proposal")
+	} else if applied {
+		proposal.Yes++
+		goto update
+	}
+
+	// Index the proposal against its end height so it can be tracked
+	// and finalized at that height.
+	if err = repoKeeper.IndexProposalEnd(repoName, proposalID, proposal.EndAt); err != nil {
+		return errors.Wrap(err, "failed to index proposal against end height")
+	}
+
+update:
+	// Update the repo
+	repoKeeper.Update(repoName, repo)
+
+	// Deduct fee from sender
+	t.deductFee(spk, fee, chainHeight)
+
+	return nil
+}
+
+// execRepoProposalUpdate creates a proposal to update a repository.
+//
+// ARGS:
+// senderPubKey: The public key of the transaction sender.
+// repoName: The name of the target repository.
+// config: Updated repo configuration
+// fee: The fee to be paid by the sender.
+// chainHeight: The height of the block chain
+//
+// CONTRACT: Sender's public key must be valid
+func (t *Transaction) execRepoProposalUpdate(
+	senderPubKey util.Bytes32,
+	repoName string,
+	config map[string]interface{},
+	fee util.String,
+	chainHeight uint64) error {
+
+	// Get the repo
+	repoKeeper := t.logic.RepoKeeper()
+	repo := repoKeeper.GetRepo(repoName)
+
+	// Create a proposal
+	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
+	proposal := &types.RepoProposal{
+		Action:      types.ProposalActionRepoUpdate,
+		Creator:     spk.Addr().String(),
+		Proposee:    repo.Config.Governace.ProposalProposee,
+		EndAt:       repo.Config.Governace.ProposalDur + chainHeight + 1,
+		TallyMethod: repo.Config.Governace.ProposalTallyMethod,
+		Quorum:      repo.Config.Governace.ProposalQuorum,
+		Threshold:   repo.Config.Governace.ProposalThreshold,
+		VetoQuorum:  repo.Config.Governace.ProposalVetoQuorum,
+		ActionData: map[string]interface{}{
+			actionDataConfig: config,
 		},
 	}
 
@@ -207,10 +300,10 @@ func (t *Transaction) execRepoProposalVote(
 
 	increments := float64(0)
 
-	// When proposees are the owners, and tally method is ProposalTallyOneVote
+	// When proposees are the owners, and tally method is ProposalTallyMethodIdentity
 	// each proposee will have 1 voting power.
 	if proposal.Proposee == types.ProposeeOwner &&
-		proposal.TallyMethod == types.ProposalTallyOneVote {
+		proposal.TallyMethod == types.ProposalTallyMethodIdentity {
 		increments = 1
 	}
 

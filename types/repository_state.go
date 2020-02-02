@@ -115,7 +115,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			ProposalProposee:                 ProposeeNetStakeholders,
 			ProposalProposeeLimitToCurHeight: false,
 			ProposalDur:                      params.RepoProposalDur,
-			ProposalTallyMethod:              ProposalTallyOneVote,
+			ProposalTallyMethod:              ProposalTallyMethodIdentity,
 			ProposalQuorum:                   params.RepoProposalQuorum,
 			ProposalThreshold:                params.RepoProposalThreshold,
 			ProposalVetoQuorum:               params.RepoProposalVetoQuorum,

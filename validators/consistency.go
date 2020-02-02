@@ -366,7 +366,7 @@ func CheckTxRepoProposalVoteConsistency(
 	}
 
 	// If the proposal is targetted at repo owners, then
-	// the sender mus be an owner
+	// the sender must be an owner
 	senderOwner := repo.Owners.Get(tx.GetFrom().String())
 	if proposal.Proposee == types.ProposeeOwner && senderOwner == nil {
 		return feI(index, "senderPubKey", "sender is not one of the repo owners")
@@ -387,6 +387,27 @@ func CheckTxRepoProposalVoteConsistency(
 		return errors.Wrap(err, "failed to check proposal vote")
 	} else if voted {
 		return feI(index, "id", "vote already cast on the target proposal")
+	}
+
+	return nil
+}
+
+// CheckTxRepoProposalUpdateConsistency performs consistency checks on CheckTxRepoProposalUpdate
+func CheckTxRepoProposalUpdateConsistency(
+	tx *types.TxRepoProposalUpdate,
+	index int,
+	logic types.Logic) error {
+
+	// The repo must exist
+	repo := logic.RepoKeeper().GetRepo(tx.RepoName)
+	if repo.IsNil() {
+		return feI(index, "name", "repo not found")
+	}
+
+	// If the repo is owned by some owners, ensure the sender is one of the owners
+	senderOwner := repo.Owners.Get(tx.GetFrom().String())
+	if repo.Config.Governace.ProposalProposee == types.ProposeeOwner && senderOwner == nil {
+		return feI(index, "senderPubKey", "sender is not one of the repo owners")
 	}
 
 	return nil

@@ -1127,4 +1127,26 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).ToNot(MatchError("field:vote, error:vote choice is unknown"))
 		})
 	})
+
+	Describe(".CheckTxRepoProposalUpdate", func() {
+		var tx *types.TxRepoProposalUpdate
+
+		BeforeEach(func() {
+			tx = types.NewBareRepoProposalUpdate()
+			tx.Timestamp = time.Now().Unix()
+		})
+
+		It("should return error when repo name is not provided", func() {
+			err := validators.CheckTxRepoProposalUpdate(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:name, error:repo name is required"))
+		})
+
+		It("should return error when repo name is not valid", func() {
+			tx.RepoName = "*&^"
+			err := validators.CheckTxRepoProposalUpdate(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+		})
+	})
 })

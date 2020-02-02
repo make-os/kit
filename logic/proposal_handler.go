@@ -132,6 +132,8 @@ apply:
 	switch proposal.GetAction() {
 	case types.ProposalActionAddOwner:
 		return true, applyProposalAddOwner(proposal, repo, chainHeight)
+	case types.ProposalActionRepoUpdate:
+		return true, applyProposalRepoUpdate(proposal, repo, chainHeight)
 	}
 
 	return false, fmt.Errorf("unsupported proposal action")

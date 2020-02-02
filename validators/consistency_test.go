@@ -186,7 +186,7 @@ var _ = Describe("TxValidator", func() {
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetNonDelegatedTickets(delegate.PubKey().MustBytes32(), tx.Type, false).
+					mockTickMgr.EXPECT().GetNonDelegatedTickets(delegate.PubKey().MustBytes32(), tx.Type).
 						Return([]*types.Ticket{&types.Ticket{}}, nil)
 					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(10.4)
 					mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
@@ -1072,6 +1072,43 @@ var _ = Describe("TxValidator", func() {
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("field:senderPubKey, error:sender cannot vote 'no with veto' because they have no veto right"))
 				})
+			})
+		})
+	})
+
+	Describe(".CheckTxRepoProposalUpdateConsistency", func() {
+		When("repo is unknown", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalUpdate()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				repo := types.BareRepository()
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				err = validators.CheckTxRepoProposalUpdateConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:name, error:repo not found"))
+			})
+		})
+
+		When("sender is not an owner of a ProposeeOwned repo", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalUpdate()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				repo := types.BareRepository()
+				repo.Config = types.DefaultRepoConfig
+				repo.Config.Governace.ProposalProposee = types.ProposeeOwner
+				repo.Proposals.Add("proposal1", &types.RepoProposal{})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				err = validators.CheckTxRepoProposalUpdateConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:senderPubKey, error:sender is not one of the repo owners"))
 			})
 		})
 	})

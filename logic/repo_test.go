@@ -145,7 +145,7 @@ var _ = Describe("Repo", func() {
 			})
 		})
 
-		When("proposal tally method is ProposalTallyOneVote", func() {
+		When("proposal tally method is ProposalTallyMethodIdentity", func() {
 			var propID = "proposer_id"
 			var repoName = "repo"
 
@@ -155,7 +155,7 @@ var _ = Describe("Repo", func() {
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				proposal := &types.RepoProposal{
 					Proposee:    types.ProposeeOwner,
-					TallyMethod: types.ProposalTallyOneVote,
+					TallyMethod: types.ProposalTallyMethodIdentity,
 					Yes:         1,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -616,6 +616,147 @@ var _ = Describe("Repo", func() {
 			Specify("that the proposal was indexed against its end height", func() {
 				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governace.ProposalDur + curHeight + 1)
 				Expect(res).To(HaveLen(1))
+			})
+		})
+	})
+
+	Describe(".execRepoProposalUpdate", func() {
+		var err error
+		var sender = crypto.NewKeyFromIntSeed(1)
+		var spk util.Bytes32
+		var key2 = crypto.NewKeyFromIntSeed(2)
+		var repoUpd *types.Repository
+
+		BeforeEach(func() {
+			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				Balance:             util.String("10"),
+				Stakes:              types.BareAccountStakes(),
+				DelegatorCommission: 10,
+			})
+			repoUpd = types.BareRepository()
+			repoUpd.Config = types.DefaultRepoConfig
+			repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
+		})
+
+		When("sender is the only owner", func() {
+			repoName := "repo"
+
+			BeforeEach(func() {
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				spk = sender.PubKey().MustBytes32()
+				config := map[string]interface{}{
+					"gov": map[string]interface{}{
+						"propDuration": 1000,
+					},
+				}
+				err = txLogic.execRepoProposalUpdate(spk, repoName, config, "1.5", 0)
+				Expect(err).To(BeNil())
+			})
+
+			It("should add the new proposal to the repo", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+			})
+
+			Specify("that the proposal is finalized and self accepted", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
+				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(1)))
+			})
+
+			Specify("that config is updated", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Config).ToNot(Equal(repoUpd.Config))
+				Expect(repo.Config.Governace.ProposalDur).To(Equal(uint64(1000)))
+			})
+
+			Specify("that fee was deducted", func() {
+				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				Expect(acct.Balance.String()).To(Equal("8.5"))
+			})
+		})
+
+		When("sender is not the only owner", func() {
+			repoName := "repo"
+			var curHeight = uint64(0)
+
+			BeforeEach(func() {
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				repoUpd.AddOwner(key2.Addr().String(), &types.RepoOwner{})
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				spk = sender.PubKey().MustBytes32()
+				config := map[string]interface{}{
+					"gov": map[string]interface{}{
+						"propDuration": 1000,
+					},
+				}
+
+				err = txLogic.execRepoProposalUpdate(spk, repoName, config, "1.5", curHeight)
+				Expect(err).To(BeNil())
+			})
+
+			It("should add the new proposal to the repo", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+			})
+
+			Specify("that the proposal is not finalized or self accepted", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeFalse())
+				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(0)))
+			})
+
+			Specify("that fee was deducted", func() {
+				acct := logic.AccountKeeper().GetAccount(sender.Addr(), curHeight)
+				Expect(acct.Balance.String()).To(Equal("8.5"))
+			})
+
+			Specify("that the proposal was indexed against its end height", func() {
+				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governace.ProposalDur + curHeight + 1)
+				Expect(res).To(HaveLen(1))
+			})
+		})
+	})
+
+	Describe(".applyProposalRepoUpdate", func() {
+		var err error
+		var repo *types.Repository
+
+		BeforeEach(func() {
+			repo = types.BareRepository()
+			repo.Config = types.DefaultRepoConfig
+		})
+
+		When("update config object is empty", func() {
+			It("should not change the config", func() {
+				proposal := &types.RepoProposal{ActionData: map[string]interface{}{
+					actionDataConfig: map[string]interface{}{},
+				}}
+				err = applyProposalRepoUpdate(proposal, repo, 0)
+				Expect(err).To(BeNil())
+				Expect(repo.Config).To(Equal(types.DefaultRepoConfig))
+			})
+		})
+
+		When("update config object is not empty", func() {
+			It("should change the config", func() {
+				proposal := &types.RepoProposal{ActionData: map[string]interface{}{
+					actionDataConfig: map[string]interface{}{
+						"gov": map[string]interface{}{
+							"propQuorum":   120,
+							"propDuration": 100,
+						},
+					},
+				}}
+				err = applyProposalRepoUpdate(proposal, repo, 0)
+				Expect(err).To(BeNil())
+				Expect(repo.Config.Governace.ProposalQuorum).To(Equal(float64(120)))
+				Expect(repo.Config.Governace.ProposalDur).To(Equal(uint64(100)))
 			})
 		})
 	})

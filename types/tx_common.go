@@ -23,6 +23,7 @@ var (
 	TxTypeNSDomainUpdate          = 0x09 // For setting namespace domains
 	TxTypeRepoProposalUpsertOwner = 0x10 // For creating a proposal to add repo owner
 	TxTypeRepoProposalVote        = 0x11 // For voting on a repo proposal
+	TxTypeRepoProposalUpdate      = 0x12 // For creating a repo update proposal
 )
 
 // Transaction meta keys
@@ -241,6 +242,8 @@ func DecodeTx(txBz []byte) (BaseTx, error) {
 		tx = NewBareRepoProposalUpsertOwner()
 	case TxTypeRepoProposalVote:
 		tx = NewBareRepoProposalVote()
+	case TxTypeRepoProposalUpdate:
+		tx = NewBareRepoProposalUpdate()
 	default:
 		return nil, fmt.Errorf("unsupported tx type")
 	}

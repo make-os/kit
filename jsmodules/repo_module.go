@@ -42,6 +42,11 @@ func (m *RepoModule) funcs() []*types.JSModuleFunc {
 			Description: "Find and return a repository",
 		},
 		&types.JSModuleFunc{
+			Name:        "update",
+			Value:       m.update,
+			Description: "Update a repository",
+		},
+		&types.JSModuleFunc{
 			Name:        "prune",
 			Value:       m.prune,
 			Description: "Delete all dangling and unreachable loose objects from a repository",
@@ -256,4 +261,44 @@ func (m *RepoModule) get(name string, height ...uint64) interface{} {
 		return otto.NullValue()
 	}
 	return EncodeForJS(repo)
+}
+
+// update sends a TxTypeRepoProposalUpdate transaction to update a repository
+// params {
+// 		nonce: number,
+//		fee: string,
+//		name: string,
+//		config: {[key:string]: any}
+//		timestamp: number
+// }
+// options: key
+func (m *RepoModule) update(params map[string]interface{}, options ...interface{}) interface{} {
+	var err error
+
+	// Decode parameters into a transaction object
+	var tx = types.NewBareRepoProposalUpdate()
+	mapstructure.Decode(params, tx)
+	decodeCommon(tx, params)
+
+	if repoName, ok := params["name"]; ok {
+		defer castPanic("name")
+		tx.RepoName = repoName.(string)
+	}
+
+	if config, ok := params["config"]; ok {
+		defer castPanic("config")
+		tx.Config = config.(map[string]interface{})
+	}
+
+	finalizeTx(tx, m.service, options...)
+
+	// Process the transaction
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
+	}
+
+	return EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
 }

@@ -17,7 +17,7 @@ type ProposalTallyMethod int
 
 // ProposalTallyMethod types
 const (
-	ProposalTallyOneVote = iota + 1
+	ProposalTallyMethodIdentity = iota + 1
 	ProposalTallyMethodCoinWeighted
 	ProposalTallyMethodNetStake
 	ProposalTallyMethodNetStakeOfProposer
@@ -30,6 +30,7 @@ type ProposalAction int
 // Proposal actions
 const (
 	ProposalActionAddOwner ProposalAction = iota + 1
+	ProposalActionRepoUpdate
 )
 
 // Proposal vote choices
