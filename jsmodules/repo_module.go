@@ -116,6 +116,11 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 		tx.Name = repoName.(string)
 	}
 
+	if config, ok := params["config"]; ok {
+		defer castPanic("config")
+		tx.Config = config.(map[string]interface{})
+	}
+
 	finalizeTx(tx, m.service, options...)
 
 	// Process the transaction

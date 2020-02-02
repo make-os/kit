@@ -84,13 +84,13 @@ func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
 
 // RepoConfigGovernance contains governance settings for a repository
 type RepoConfigGovernance struct {
-	ProposalProposee                 ProposeeType        `json:"proposalProposee" mapstructure:"proposalProposee" msgpack:"proposalProposee"`
-	ProposalProposeeLimitToCurHeight bool                `json:"proposalProposeeLimitToCurHeight" mapstructure:"proposalProposeeLimitToCurHeight" msgpack:"proposalProposeeLimitToCurHeight"`
-	ProposalDur                      uint64              `json:"proposalDuration" mapstructure:"proposalDuration" msgpack:"proposalDuration"`
-	ProposalTallyMethod              ProposalTallyMethod `json:"proposalTallyMethod" mapstructure:"proposalTallyMethod" msgpack:"proposalTallyMethod"`
-	ProposalQuorum                   float64             `json:"proposalQuorum" mapstructure:"proposalQuorum" msgpack:"proposalQuorum"`
-	ProposalThreshold                float64             `json:"proposalThreshold" mapstructure:"proposalThreshold" msgpack:"proposalThreshold"`
-	ProposalVetoQuorum               float64             `json:"proposalVetoQuorum" mapstructure:"proposalVetoQuorum" msgpack:"proposalVetoQuorum"`
+	ProposalProposee                 ProposeeType        `json:"propProposee" mapstructure:"propProposee" msgpack:"propProposee"`
+	ProposalProposeeLimitToCurHeight bool                `json:"propProposeeLimitToCurHeight" mapstructure:"propProposeeLimitToCurHeight" msgpack:"propProposeeLimitToCurHeight"`
+	ProposalDur                      uint64              `json:"propDuration" mapstructure:"propDuration" msgpack:"propDuration"`
+	ProposalTallyMethod              ProposalTallyMethod `json:"propTallyMethod" mapstructure:"propTallyMethod" msgpack:"propTallyMethod"`
+	ProposalQuorum                   float64             `json:"propQuorum" mapstructure:"propQuorum" msgpack:"propQuorum"`
+	ProposalThreshold                float64             `json:"propThreshold" mapstructure:"propThreshold" msgpack:"propThreshold"`
+	ProposalVetoQuorum               float64             `json:"propVetoQuorum" mapstructure:"propVetoQuorum" msgpack:"propVetoQuorum"`
 }
 
 // RepoConfig contains repo-specific configuration settings
@@ -100,7 +100,7 @@ type RepoConfig struct {
 
 // IsNil checks if the object's field all have zero value
 func (c *RepoConfig) IsNil() bool {
-	return *c.Governace == RepoConfigGovernance{}
+	return c.Governace == nil || *c.Governace == RepoConfigGovernance{}
 }
 
 var (

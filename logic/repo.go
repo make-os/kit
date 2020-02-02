@@ -24,14 +24,19 @@ import (
 func (t *Transaction) execRepoCreate(
 	creatorPubKey util.Bytes32,
 	name string,
+	config *types.RepoConfig,
 	fee util.String,
 	chainHeight uint64) error {
 
 	spk, _ := crypto.PubKeyFromBytes(creatorPubKey.Bytes())
 
-	// Create the repo object
+	// Create the repo object; Set the config to default if
+	// the passed config is unset.
 	newRepo := types.BareRepository()
-	newRepo.Config = types.DefaultRepoConfig
+	newRepo.Config = config
+	if config.IsNil() {
+		newRepo.Config = types.DefaultRepoConfig
+	}
 
 	// Add sender as owner only if proposee type is ProposeeOwner
 	if newRepo.Config.Governace.ProposalProposee == types.ProposeeOwner {

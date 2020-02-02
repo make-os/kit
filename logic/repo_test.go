@@ -63,6 +63,7 @@ var _ = Describe("Repo", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var spk util.Bytes32
+		repoCfg := &types.RepoConfig{}
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
@@ -76,7 +77,7 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				types.DefaultRepoConfig.Governace.ProposalProposee = types.ProposeeOwner
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoCreate(spk, "repo", "1.5", 0)
+				err = txLogic.execRepoCreate(spk, "repo", repoCfg, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -84,6 +85,11 @@ var _ = Describe("Repo", func() {
 				repo := txLogic.logic.RepoKeeper().GetRepo("repo")
 				Expect(repo.IsNil()).To(BeFalse())
 				Expect(repo.Owners).To(HaveKey(sender.Addr().String()))
+			})
+
+			Specify("that repo config is the default", func() {
+				repo := txLogic.logic.RepoKeeper().GetRepo("repo")
+				Expect(repo.Config).To(Equal(types.DefaultRepoConfig))
 			})
 
 			Specify("that fee is deducted from sender account", func() {
@@ -100,13 +106,28 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					types.DefaultRepoConfig.Governace.ProposalProposee = types.ProposeeNetStakeholders
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoCreate(spk, "repo", "1.5", 0)
+					err = txLogic.execRepoCreate(spk, "repo", repoCfg, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
 				It("should not add the sender as an owner", func() {
 					repo := txLogic.logic.RepoKeeper().GetRepo("repo")
 					Expect(repo.Owners).To(BeEmpty())
+				})
+			})
+
+			When("non-nil repo config is provided", func() {
+				repoCfg2 := &types.RepoConfig{Governace: &types.RepoConfigGovernance{ProposalDur: 1000}}
+				BeforeEach(func() {
+					spk = sender.PubKey().MustBytes32()
+					err = txLogic.execRepoCreate(spk, "repo", repoCfg2, "1.5", 0)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that repo config is not the default", func() {
+					repo := txLogic.logic.RepoKeeper().GetRepo("repo")
+					Expect(repo.Config).ToNot(Equal(types.DefaultRepoConfig))
+					Expect(repo.Config).To(Equal(repoCfg2))
 				})
 			})
 		})

@@ -3,6 +3,7 @@ package logic
 import (
 	"fmt"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/tendermint/tendermint/state"
 
 	"github.com/makeos/mosdef/dht"
@@ -75,7 +76,9 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.execUnbond(spk, o.TicketHash, o.Fee, chainHeight)
 
 	case *types.TxRepoCreate:
-		return t.execRepoCreate(spk, o.Name, o.Fee, chainHeight)
+		var repoCfg types.RepoConfig
+		mapstructure.Decode(o.Config, &repoCfg)
+		return t.execRepoCreate(spk, o.Name, &repoCfg, o.Fee, chainHeight)
 
 	case *types.TxRepoProposalUpsertOwner:
 		return t.execRepoUpsertOwner(spk, o.RepoName, o.Addresses, o.Veto, o.Fee, chainHeight)
