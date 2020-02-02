@@ -123,7 +123,10 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 
 	if config, ok := params["config"]; ok {
 		defer castPanic("config")
-		tx.Config = config.(map[string]interface{})
+		cfg := config.(map[string]interface{})
+		var repoCfg types.RepoConfig
+		mapstructure.Decode(cfg, &repoCfg)
+		tx.Config = &repoCfg
 	}
 
 	finalizeTx(tx, m.service, options...)
@@ -287,7 +290,10 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 
 	if config, ok := params["config"]; ok {
 		defer castPanic("config")
-		tx.Config = config.(map[string]interface{})
+		cfg := config.(map[string]interface{})
+		var repoCfg types.RepoConfig
+		mapstructure.Decode(cfg, &repoCfg)
+		tx.Config = &repoCfg
 	}
 
 	finalizeTx(tx, m.service, options...)

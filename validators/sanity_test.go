@@ -1108,7 +1108,7 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
 		})
 
-		It("should return error when vote choice is not between -1 and 1 (inclusive)", func() {
+		It("should return error when vote choice is not between -2 and 1 (inclusive)", func() {
 			tx.RepoName = "repo1"
 			tx.ProposalID = "1"
 			tx.Vote = 2
@@ -1116,7 +1116,7 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:vote, error:vote choice is unknown"))
 
-			tx.Vote = -2
+			tx.Vote = -3
 			err = validators.CheckTxRepoProposalVote(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:vote, error:vote choice is unknown"))

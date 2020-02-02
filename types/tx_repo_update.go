@@ -11,8 +11,8 @@ import (
 type TxRepoProposalUpdate struct {
 	*TxCommon `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxType   `json:"-" msgpack:"-" mapstructure:"-"`
-	RepoName  string                 `json:"name" msgpack:"name"`
-	Config    map[string]interface{} `json:"config" msgpack:"config"`
+	RepoName  string      `json:"name" msgpack:"name"`
+	Config    *RepoConfig `json:"config" msgpack:"config"`
 }
 
 // NewBareRepoProposalUpdate returns an instance of TxRepoProposalUpdate with zero values
@@ -21,7 +21,7 @@ func NewBareRepoProposalUpdate() *TxRepoProposalUpdate {
 		TxCommon: NewBareTxCommon(),
 		TxType:   &TxType{Type: TxTypeRepoProposalUpdate},
 		RepoName: "",
-		Config:   make(map[string]interface{}),
+		Config:   BareRepoConfig(),
 	}
 }
 

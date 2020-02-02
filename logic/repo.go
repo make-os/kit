@@ -41,10 +41,8 @@ func (t *Transaction) execRepoCreate(
 	// Create the repo object; Set the config to default if
 	// the passed config is unset.
 	newRepo := types.BareRepository()
-	newRepo.Config = config
-	if config.IsNil() {
-		newRepo.Config = types.DefaultRepoConfig
-	}
+	newRepo.Config = types.MakeDefaultRepoConfig()
+	mergo.MergeWithOverwrite(newRepo.Config, config)
 
 	// Add sender as owner only if proposee type is ProposeeOwner
 	if newRepo.Config.Governace.ProposalProposee == types.ProposeeOwner {
@@ -120,9 +118,13 @@ func applyProposalRepoUpdate(
 	repo *types.Repository,
 	chainHeight uint64) error {
 
-	configUpd := proposal.GetActionData()[actionDataConfig].(map[string]interface{})
+	configSerialized := proposal.GetActionData()[actionDataConfig].([]byte)
+	var configMap map[string]interface{}
+	if err := util.BytesToObject(configSerialized, &configMap); err != nil {
+		return errors.Wrap(err, "failed to deserialize config action data")
+	}
 	var config types.RepoConfig
-	mapstructure.Decode(configUpd, &config)
+	mapstructure.Decode(configMap, &config)
 
 	mergo.MergeWithOverwrite(repo.Config, &config)
 
@@ -214,7 +216,7 @@ update:
 func (t *Transaction) execRepoProposalUpdate(
 	senderPubKey util.Bytes32,
 	repoName string,
-	config map[string]interface{},
+	config *types.RepoConfig,
 	fee util.String,
 	chainHeight uint64) error {
 
@@ -234,7 +236,7 @@ func (t *Transaction) execRepoProposalUpdate(
 		Threshold:   repo.Config.Governace.ProposalThreshold,
 		VetoQuorum:  repo.Config.Governace.ProposalVetoQuorum,
 		ActionData: map[string]interface{}{
-			actionDataConfig: config,
+			actionDataConfig: util.ObjectToBytes(config),
 		},
 	}
 
