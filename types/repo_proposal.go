@@ -7,9 +7,9 @@ type ProposeeType int
 
 // Proposee types
 const (
-	ProposeeOwner ProposeeType = iota + 1
-	ProposeeNetStakeholders
-	ProposeeAll
+	ProposeeOwner                       ProposeeType = iota + 1 // Proposals will allow only owners to vote
+	ProposeeNetStakeholders                                     // Proposals will allow network stakeholders to vote
+	ProposeeNetStakeholdersAndVetoOwner                         // Proposals will allow stakeholders and veto owners to vote
 )
 
 // ProposalTallyMethod represents a type for repo proposal counting method
@@ -17,7 +17,7 @@ type ProposalTallyMethod int
 
 // ProposalTallyMethod types
 const (
-	ProposalTallyMethodIdentity = iota + 1
+	ProposalTallyMethodIdentity ProposalTallyMethod = iota + 1
 	ProposalTallyMethodCoinWeighted
 	ProposalTallyMethodNetStake
 	ProposalTallyMethodNetStakeOfProposer
@@ -53,9 +53,11 @@ type Proposal interface {
 	GetActionData() map[string]interface{}
 	GetThreshold() float64
 	GetVetoQuorum() float64
+	GetVetoOwnersQuorum() float64
 	GetAccepted() float64
 	GetRejected() float64
 	GetRejectedWithVeto() float64
+	GetRejectedWithVetoByOwners() float64
 	IsFinalized() bool
 	SetOutcome(v ProposalOutcome)
 }
@@ -68,6 +70,7 @@ const (
 	ProposalOutcomeAccepted ProposalOutcome = iota + 1
 	ProposalOutcomeRejected
 	ProposalOutcomeRejectedWithVeto
+	ProposalOutcomeRejectedWithVetoByOwners
 	ProposalOutcomeQuorumNotMet
 	ProposalOutcomeThresholdNotMet
 	ProposalOutcomeTie
@@ -85,11 +88,13 @@ type RepoProposal struct {
 	Quorum                float64                `json:"quorum" mapstructure:"quorum" msgpack:"quorum"`                                              // Quorum describes what the majority is.
 	Threshold             float64                `json:"threshold" mapstructure:"threshold" msgpack:"threshold"`                                     // Thresholds describes the minimum "Yes" quorum required to consider a proposal valid.
 	VetoQuorum            float64                `json:"vetoQuorum" mapstructure:"vetoQuorum" msgpack:"vetoQuorum"`                                  // Veto quorum describes the quorum among veto-powered proposees required to stop a proposal.
+	VetoOwnersQuorum      float64                `json:"vetoOwnersQuorum" mapstructure:"vetoOwnersQuorum" msgpack:"vetoOwnersQuorum"`                // Veto quorum describes the quorum among veto-powered proposees required to stop a proposal.
 	Yes                   float64                `json:"yes" mapstructure:"yes" msgpack:"yes"`                                                       // Count of "Yes" votes
 	No                    float64                `json:"no" mapstructure:"no" msgpack:"no"`                                                          // Count of "No" votes
-	NoWithVeto            float64                `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes
-	Abstain               float64                `json:"abstain" mapstructure:"abstain" msgpack:"abstain"`                                           // Count of "No" votes
-	Outcome               ProposalOutcome        `json:"outcome" mapstructure:"outcome" msgpack:"outcome"`
+	NoWithVeto            float64                `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes from owners/stakeholders veto power
+	NoWithVetoByOwners    float64                `json:"noWithVetoByOwners" mapstructure:"noWithVetoByOwners" msgpack:"noWithVetoOwners"`            // Count of "No" votes specifically from owners veto power
+	Abstain               float64                `json:"abstain" mapstructure:"abstain" msgpack:"abstain"`                                           // Count of explicit "abstain" votes
+	Outcome               ProposalOutcome        `json:"outcome" mapstructure:"outcome" msgpack:"outcome"`                                           // The outcome of the proposal vote.
 }
 
 // GetCreator implements Proposal
@@ -152,6 +157,11 @@ func (p *RepoProposal) GetVetoQuorum() float64 {
 	return p.VetoQuorum
 }
 
+// GetVetoOwnersQuorum implements Proposal
+func (p *RepoProposal) GetVetoOwnersQuorum() float64 {
+	return p.VetoOwnersQuorum
+}
+
 // GetAccepted implements Proposal
 func (p *RepoProposal) GetAccepted() float64 {
 	return p.Yes
@@ -165,6 +175,11 @@ func (p *RepoProposal) GetRejected() float64 {
 // GetRejectedWithVeto implements Proposal
 func (p *RepoProposal) GetRejectedWithVeto() float64 {
 	return p.NoWithVeto
+}
+
+// GetRejectedWithVetoByOwners implements Proposal
+func (p *RepoProposal) GetRejectedWithVetoByOwners() float64 {
+	return p.NoWithVetoByOwners
 }
 
 // RepoProposals represents an index of proposals for a repo.

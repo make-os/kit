@@ -115,21 +115,21 @@ func (m *Manager) getTopTickets(ticketType, limit int) (types.SelectedTickets, e
 		existingTicket, ok := proposerIdx[ticket.ProposerPubKey.HexStr()]
 		if !ok {
 			proposerIdx[ticket.ProposerPubKey.HexStr()] = &types.SelectedTicket{
-				Ticket:     ticket,
-				TotalValue: ticket.Value,
+				Ticket: ticket,
+				Power:  ticket.Value,
 			}
 			selectedTickets = append(selectedTickets, proposerIdx[ticket.ProposerPubKey.HexStr()])
 			continue
 		}
-		updatedVal := existingTicket.TotalValue.Decimal().Add(ticket.Value.Decimal()).String()
-		proposerIdx[ticket.ProposerPubKey.HexStr()].TotalValue = util.String(updatedVal)
+		updatedVal := existingTicket.Power.Decimal().Add(ticket.Value.Decimal()).String()
+		proposerIdx[ticket.ProposerPubKey.HexStr()].Power = util.String(updatedVal)
 	}
 
 	// Sort the selected tickets by total delegated value
 	sort.Slice(selectedTickets, func(i, j int) bool {
 		itemI, itemJ := selectedTickets[i], selectedTickets[j]
-		valI := itemI.TotalValue.Decimal()
-		valJ := itemJ.TotalValue.Decimal()
+		valI := itemI.Power.Decimal()
+		valJ := itemJ.Power.Decimal()
 		return valI.GreaterThan(valJ)
 	})
 
@@ -150,9 +150,34 @@ func (m *Manager) GetByProposer(
 	ticketType int,
 	proposerPubKey util.Bytes32,
 	queryOpt ...interface{}) ([]*types.Ticket, error) {
+
+	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	qo := getQueryOptions(queryOpt...)
+
 	res := m.s.Query(func(t *types.Ticket) bool {
-		return t.Type == ticketType && t.ProposerPubKey == proposerPubKey
+		ok := true
+		if t.Type != ticketType || t.ProposerPubKey != proposerPubKey {
+			ok = false
+		}
+		if ok && qo.ImmatureOnly && t.MatureBy <= uint64(bi.Height) { // reject mature
+			ok = false
+		}
+		if ok && qo.MatureOnly && t.MatureBy > uint64(bi.Height) { // reject immature
+			ok = false
+		}
+		if ok && qo.DecayedOnly && t.DecayBy > uint64(bi.Height) {
+			ok = false
+		}
+		if ok && qo.NonDecayedOnly && t.DecayBy <= uint64(bi.Height) {
+			ok = false
+		}
+		return ok
 	}, queryOpt...)
+
 	return res, nil
 }
 

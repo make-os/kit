@@ -588,6 +588,24 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
+		When("veto quorum is negative", func() {
+			It("should return error", func() {
+				repoCfg := &types.RepoConfig{
+					Governace: &types.RepoConfigGovernance{
+						ProposalProposee:         types.ProposeeOwner,
+						ProposalTallyMethod:      types.ProposalTallyMethodNetStake,
+						ProposalQuorum:           1,
+						ProposalThreshold:        1,
+						ProposalVetoQuorum:       1,
+						ProposalVetoOwnersQuorum: -1,
+					},
+				}
+				err := validators.CheckRepoConfig(repoCfg, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:config.gov.propVetoOwnersQuorum, error:must be a non-negative number"))
+			})
+		})
+
 		When("proposee is not ProposeeOwner and tally method is CoinWeighted", func() {
 			It("should return error", func() {
 				repoCfg := &types.RepoConfig{

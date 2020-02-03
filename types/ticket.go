@@ -21,8 +21,12 @@ type Ticket struct {
 
 // QueryOptions describe how a query should be executed.
 type QueryOptions struct {
-	Limit        int `json:"limit" mapstructure:"limit"`
-	SortByHeight int `json:"sortByHeight" mapstructure:"sortByHeight"`
+	Limit          int  `json:"limit" mapstructure:"limit"`
+	SortByHeight   int  `json:"sortByHeight" mapstructure:"sortByHeight"`
+	ImmatureOnly   bool `json:"immature" mapstructure:"immature"`
+	MatureOnly     bool `json:"mature" mapstructure:"mature"`
+	DecayedOnly    bool `json:"decayed" mapstructure:"decayed"`
+	NonDecayedOnly bool `json:"nonDecayed" mapstructure:"nonDecayed"`
 }
 
 // EmptyQueryOptions is an empty instance of QueryOptions
@@ -119,8 +123,8 @@ type TicketManager interface {
 
 // SelectedTicket represents data of a selected ticket
 type SelectedTicket struct {
-	Ticket     *Ticket     // The selected ticket
-	TotalValue util.String // Sum of ticket.Value and all delegated ticket value
+	Ticket *Ticket     `json:"ticket" mapstructure:"ticket"` // The selected ticket
+	Power  util.String `json:"power" mapstructure:"power"`   // Sum of ticket.Value and all delegated ticket value
 }
 
 // SelectedTickets is a collection of SelectedTicket

@@ -127,6 +127,8 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 			m[k] = fmt.Sprintf("0x%x", o)
 		case *big.Int, int, int64, uint64:
 			m[k] = fmt.Sprintf("%d", o)
+		case float64:
+			m[k] = fmt.Sprintf("%f", o)
 		case map[string]interface{}:
 			m[k] = EncodeForJS(o)
 		case []interface{}:

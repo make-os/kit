@@ -91,6 +91,7 @@ type RepoConfigGovernance struct {
 	ProposalQuorum                   float64             `json:"propQuorum" mapstructure:"propQuorum" msgpack:"propQuorum"`
 	ProposalThreshold                float64             `json:"propThreshold" mapstructure:"propThreshold" msgpack:"propThreshold"`
 	ProposalVetoQuorum               float64             `json:"propVetoQuorum" mapstructure:"propVetoQuorum" msgpack:"propVetoQuorum"`
+	ProposalVetoOwnersQuorum         float64             `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum" msgpack:"propVetoOwnersQuorum"`
 }
 
 // RepoConfig contains repo-specific configuration settings
@@ -119,6 +120,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			ProposalQuorum:                   params.RepoProposalQuorum,
 			ProposalThreshold:                params.RepoProposalThreshold,
 			ProposalVetoQuorum:               params.RepoProposalVetoQuorum,
+			ProposalVetoOwnersQuorum:         params.RepoProposalVetoOwnersQuorum,
 		},
 	}
 }

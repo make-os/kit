@@ -17,59 +17,65 @@ func getProposalOutcome(
 	repo *types.Repository) types.ProposalOutcome {
 
 	var err error
-	totalPower := float64(64)
+	totalPower := float64(0)
 
-	// When proposee are the owners of the repo, the power is the total
+	// When proposees are only the owners of the repo, the power is the total
 	// number of owners of the repository - one vote to one owner.
+	// However, If there is a max proposee join height, eligible owners are
+	// those who joined on or before the proposee max join height.
 	if prop.GetProposeeType() == types.ProposeeOwner {
-
-		totalPower = float64(len(repo.Owners))
-
-		// If there is a max proposee max join height, eligible owners are
-		// those who joined on or before the proposee max join height block height.
-		if prop.GetProposeeMaxJoinHeight() > 0 {
-			totalPower = 0
-			repo.Owners.ForEach(func(o *types.RepoOwner, addr string) {
-				if o.JoinedAt <= prop.GetProposeeMaxJoinHeight() {
-					totalPower++
-				}
-			})
-		}
+		maxJoinHeight := prop.GetProposeeMaxJoinHeight()
+		repo.Owners.ForEach(func(o *types.RepoOwner, addr string) {
+			if maxJoinHeight > 0 && maxJoinHeight < o.JoinedAt {
+				return
+			}
+			totalPower++
+		})
 	}
 
-	// When proposees are network stakeholders, the total power is the total
-	// value of tickets eligible for participation
-	if prop.GetProposeeType() == types.ProposeeNetStakeholders {
+	// When proposees include only network stakeholders, the total power is the total
+	// value of mature and active tickets on the network.
+	if prop.GetProposeeType() == types.ProposeeNetStakeholders ||
+		prop.GetProposeeType() == types.ProposeeNetStakeholdersAndVetoOwner {
 		totalPower, err = tickmgr.ValueOfAllTickets(prop.GetProposeeMaxJoinHeight())
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	// Calculate total votes received, quorum and threshold.
-	totalVotesReceived := prop.GetAccepted() + prop.GetRejected() + prop.GetRejectedWithVeto()
+	nAcceptedVotes := prop.GetAccepted()
+	nRejectedVotes := prop.GetRejected()
+	nRejectedWithVetoVotes := prop.GetRejectedWithVeto()
+	nRejectedWithVetoVotesByOwners := prop.GetRejectedWithVetoByOwners()
+	numOwners := float64(len(repo.Owners))
+	totalVotesReceived := nAcceptedVotes + nRejectedVotes + nRejectedWithVetoVotes
 	quorum := math.Round(totalPower * (prop.GetQuorum() / 100))
 	threshold := math.Round(totalVotesReceived * (prop.GetThreshold() / 100))
 	vetoQuorum := math.Round(totalVotesReceived * (prop.GetVetoQuorum() / 100))
+	vetoOwnerQuorum := math.Round(numOwners * (prop.GetVetoOwnersQuorum() / 100))
 
-	// Check if quorum is satisfied
+	// Check if general vote quorum is satisfied.
+	// Ensures that a certain number of general vote population participated.
 	if totalVotesReceived < quorum {
 		return types.ProposalOutcomeQuorumNotMet
 	}
 
-	// Check if the "NoWithVeto" votes reached the veto quorum
-	// Only checked if veto quorum is set above zero
-	if vetoQuorum > 0 && vetoQuorum <= prop.GetRejectedWithVeto() {
+	// Check if the "NoWithVeto" votes reached the general veto quorum.
+	if nRejectedWithVetoVotes > 0 && nRejectedWithVetoVotes >= vetoQuorum {
 		return types.ProposalOutcomeRejectedWithVeto
 	}
 
-	// When veto quorum is unset and there is at least 1 NoWithVeto vote
-	if vetoQuorum == 0 && prop.GetRejectedWithVeto() > 0 {
-		return types.ProposalOutcomeRejectedWithVeto
+	// When proposee are stakeholders and veto owners, the veto owners win
+	// the vote iff the "NoWithVetoByOwners" reached the special veto owner quorum.
+	if prop.GetProposeeType() == types.ProposeeNetStakeholdersAndVetoOwner {
+		if nRejectedWithVetoVotesByOwners > 0 &&
+			nRejectedWithVetoVotesByOwners >= vetoOwnerQuorum {
+			return types.ProposalOutcomeRejectedWithVetoByOwners
+		}
 	}
 
-	accepted := prop.GetAccepted() >= threshold
-	rejected := prop.GetRejected() >= threshold
+	accepted := nAcceptedVotes >= threshold
+	rejected := nRejectedVotes >= threshold
 
 	// Check if the "Yes" votes reached the threshold
 	if accepted && !rejected {

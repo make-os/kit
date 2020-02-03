@@ -183,16 +183,18 @@ func CheckRepoConfig(cfg *types.RepoConfig, index int) error {
 	isNotOwnerProposee := govCfg.ProposalProposee != types.ProposeeOwner
 
 	// Ensure the proposee type is known
-	allowedProposeeChoices := []types.ProposeeType{
+	allowedProposeeChoices := []types.ProposeeType{0,
 		types.ProposeeOwner,
 		types.ProposeeNetStakeholders,
-		types.ProposeeAll}
+		types.ProposeeNetStakeholdersAndVetoOwner}
 	if !funk.Contains(allowedProposeeChoices, cfg.Governace.ProposalProposee) {
 		return feI(index, "config.gov.propProposee", fmt.Sprintf("unknown value"))
 	}
 
+	sf := fmt.Sprintf
+
 	// Ensure the proposee tally method is known
-	allowedTallyMethod := []types.ProposalTallyMethod{
+	allowedTallyMethod := []types.ProposalTallyMethod{0,
 		types.ProposalTallyMethodIdentity,
 		types.ProposalTallyMethodCoinWeighted,
 		types.ProposalTallyMethodNetStakeOfProposer,
@@ -200,19 +202,23 @@ func CheckRepoConfig(cfg *types.RepoConfig, index int) error {
 		types.ProposalTallyMethodNetStake,
 	}
 	if !funk.Contains(allowedTallyMethod, cfg.Governace.ProposalTallyMethod) {
-		return feI(index, "config.gov.propTallyMethod", fmt.Sprintf("unknown value"))
+		return feI(index, "config.gov.propTallyMethod", sf("unknown value"))
 	}
 
 	if cfg.Governace.ProposalQuorum < 0 {
-		return feI(index, "config.gov.propQuorum", fmt.Sprintf("must be a non-negative number"))
+		return feI(index, "config.gov.propQuorum", sf("must be a non-negative number"))
 	}
 
 	if cfg.Governace.ProposalThreshold < 0 {
-		return feI(index, "config.gov.propThreshold", fmt.Sprintf("must be a non-negative number"))
+		return feI(index, "config.gov.propThreshold", sf("must be a non-negative number"))
 	}
 
 	if cfg.Governace.ProposalVetoQuorum < 0 {
-		return feI(index, "config.gov.propVetoQuorum", fmt.Sprintf("must be a non-negative number"))
+		return feI(index, "config.gov.propVetoQuorum", sf("must be a non-negative number"))
+	}
+
+	if cfg.Governace.ProposalVetoOwnersQuorum < 0 {
+		return feI(index, "config.gov.propVetoOwnersQuorum", sf("must be a non-negative number"))
 	}
 
 	// When proposee is ProposeeOwner, tally method cannot be CoinWeighted or Identity

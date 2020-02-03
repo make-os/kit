@@ -44,10 +44,14 @@ func (t *Transaction) execRepoCreate(
 	newRepo.Config = types.MakeDefaultRepoConfig()
 	mergo.MergeWithOverwrite(newRepo.Config, config)
 
+	proposee := newRepo.Config.Governace.ProposalProposee
+
 	// Add sender as owner only if proposee type is ProposeeOwner
-	if newRepo.Config.Governace.ProposalProposee == types.ProposeeOwner {
+	// Add sender as a veto owner if proposee type is ProposeeNetStakeholdersAndVetoOwner
+	if proposee == types.ProposeeOwner || proposee == types.ProposeeNetStakeholdersAndVetoOwner {
 		newRepo.AddOwner(spk.Addr().String(), &types.RepoOwner{
 			Creator:  true,
+			Veto:     proposee == types.ProposeeNetStakeholdersAndVetoOwner,
 			JoinedAt: chainHeight + 1,
 		})
 	}
@@ -298,31 +302,31 @@ func (t *Transaction) execRepoProposalVote(
 	// Get the proposal
 	repoKeeper := t.logic.RepoKeeper()
 	repo := repoKeeper.GetRepo(repoName)
-	proposal := repo.Proposals.Get(proposalID)
+	prop := repo.Proposals.Get(proposalID)
 
 	increments := float64(0)
 
 	// When proposees are the owners, and tally method is ProposalTallyMethodIdentity
 	// each proposee will have 1 voting power.
-	if proposal.Proposee == types.ProposeeOwner &&
-		proposal.TallyMethod == types.ProposalTallyMethodIdentity {
+	if prop.Proposee == types.ProposeeOwner &&
+		prop.TallyMethod == types.ProposalTallyMethodIdentity {
 		increments = 1
 	}
 
 	// When proposees are the owners, and tally method is ProposalTallyMethodCoinWeighted
 	// each proposee will use the value of the voter's account spendable balance
 	// as their voting power.
-	if proposal.Proposee == types.ProposeeOwner &&
-		proposal.TallyMethod == types.ProposalTallyMethodCoinWeighted {
+	if prop.Proposee == types.ProposeeOwner &&
+		prop.TallyMethod == types.ProposalTallyMethodCoinWeighted {
 		senderAcct := t.logic.AccountKeeper().GetAccount(spk.Addr())
 		increments = senderAcct.GetSpendableBalance(chainHeight).Float()
 	}
 
 	// For network staked-weighted votes, use the total value of coins directly
 	// staked by the voter as their vote power
-	if proposal.TallyMethod == types.ProposalTallyMethodNetStakeOfProposer {
+	if prop.TallyMethod == types.ProposalTallyMethodNetStakeOfProposer {
 		increments, err = t.logic.GetTicketManager().
-			ValueOfNonDelegatedTickets(senderPubKey, proposal.ProposeeMaxJoinHeight)
+			ValueOfNonDelegatedTickets(senderPubKey, prop.ProposeeMaxJoinHeight)
 		if err != nil {
 			return errors.Wrap(err, "failed to get value of non-delegated tickets of sender")
 		}
@@ -330,9 +334,9 @@ func (t *Transaction) execRepoProposalVote(
 
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
-	if proposal.TallyMethod == types.ProposalTallyMethodNetStakeOfDelegators {
+	if prop.TallyMethod == types.ProposalTallyMethodNetStakeOfDelegators {
 		increments, err = t.logic.GetTicketManager().
-			ValueOfDelegatedTickets(senderPubKey, proposal.ProposeeMaxJoinHeight)
+			ValueOfDelegatedTickets(senderPubKey, prop.ProposeeMaxJoinHeight)
 		if err != nil {
 			return errors.Wrap(err, "failed to get value of delegated tickets of sender")
 		}
@@ -340,10 +344,10 @@ func (t *Transaction) execRepoProposalVote(
 
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
-	if proposal.TallyMethod == types.ProposalTallyMethodNetStake {
+	if prop.TallyMethod == types.ProposalTallyMethodNetStake {
 
 		tickets, err := t.logic.GetTicketManager().
-			GetNonDecayedTickets(senderPubKey, proposal.ProposeeMaxJoinHeight)
+			GetNonDecayedTickets(senderPubKey, prop.ProposeeMaxJoinHeight)
 		if err != nil {
 			return errors.Wrap(err, "failed to get non-decayed tickets assigned to sender")
 		}
@@ -393,24 +397,24 @@ func (t *Transaction) execRepoProposalVote(
 
 				switch vote {
 				case types.ProposalVoteYes:
-					newYes := decimal.NewFromFloat(proposal.Yes)
+					newYes := decimal.NewFromFloat(prop.Yes)
 					newYes = newYes.Sub(ticket.Value.Decimal())
-					proposal.Yes, _ = newYes.Float64()
+					prop.Yes, _ = newYes.Float64()
 
 				case types.ProposalVoteNo:
-					newNo := decimal.NewFromFloat(proposal.No)
+					newNo := decimal.NewFromFloat(prop.No)
 					newNo = newNo.Sub(ticket.Value.Decimal())
-					proposal.Yes, _ = newNo.Float64()
+					prop.Yes, _ = newNo.Float64()
 
 				case types.ProposalVoteNoWithVeto:
-					newNoWithVeto := decimal.NewFromFloat(proposal.NoWithVeto)
+					newNoWithVeto := decimal.NewFromFloat(prop.NoWithVeto)
 					newNoWithVeto = newNoWithVeto.Sub(ticket.Value.Decimal())
-					proposal.NoWithVeto, _ = newNoWithVeto.Float64()
+					prop.NoWithVeto, _ = newNoWithVeto.Float64()
 
 				case types.ProposalVoteAbstain:
-					newAbstain := decimal.NewFromFloat(proposal.Abstain)
+					newAbstain := decimal.NewFromFloat(prop.Abstain)
 					newAbstain = newAbstain.Sub(ticket.Value.Decimal())
-					proposal.Abstain, _ = newAbstain.Float64()
+					prop.Abstain, _ = newAbstain.Float64()
 				}
 
 				sumValue = sumValue.Add(ticket.Value.Decimal())
@@ -421,13 +425,22 @@ func (t *Transaction) execRepoProposalVote(
 	}
 
 	if vote == types.ProposalVoteYes {
-		proposal.Yes += increments
+		prop.Yes += increments
 	} else if vote == types.ProposalVoteNo {
-		proposal.No += increments
-	} else if vote == types.ProposalVoteNoWithVeto {
-		proposal.NoWithVeto += increments
+		prop.No += increments
 	} else if vote == types.ProposalVoteAbstain {
-		proposal.Abstain += increments
+		prop.Abstain += increments
+	} else if vote == types.ProposalVoteNoWithVeto {
+		prop.NoWithVeto += increments
+
+		// Also, if the proposee type for the proposal is stakeholders and veto
+		// owners and voter is an owner, increment NoWithVetoByOwners by 1
+		voterAsOwner := repo.Owners.Get(spk.Addr().String())
+		isStakeholderAndVetoOwnerProposee := prop.Proposee ==
+			types.ProposeeNetStakeholdersAndVetoOwner
+		if isStakeholderAndVetoOwnerProposee && voterAsOwner != nil && voterAsOwner.Veto {
+			prop.NoWithVetoByOwners = 1
+		}
 	}
 
 	// Update the repo

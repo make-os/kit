@@ -51,10 +51,12 @@ var _ = Describe("Manager", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".GetByProposer", func() {
-		When("matching ticket exist", func() {
+	FDescribe(".GetByProposer", func() {
+		When("ticket of matching type exist", func() {
 			ticket := &types.Ticket{ProposerPubKey: util.StrToBytes32("pub_key"), Type: types.TxTypeValidatorTicket}
 			BeforeEach(func() {
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+				mgr.logic = mockLogic
 				err := mgr.s.Add(ticket)
 				Expect(err).To(BeNil())
 			})
@@ -67,19 +69,193 @@ var _ = Describe("Manager", func() {
 			})
 		})
 
-		When("matching ticket does not exist", func() {
+		When("matching unable to find ticket with matching type", func() {
 			ticket := &types.Ticket{ProposerPubKey: util.StrToBytes32("pub_key"), Type: types.TxTypeValidatorTicket}
 			BeforeEach(func() {
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+				mgr.logic = mockLogic
 				err := mgr.s.Add(ticket)
 				Expect(err).To(BeNil())
 			})
 
 			It("should return 0 ticket", func() {
-				tickets, err := mgr.GetByProposer(types.TxTypeCoinTransfer, util.StrToBytes32("pub_key"))
+				tickets, err := mgr.GetByProposer(1000, util.StrToBytes32("pub_key"))
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(0))
 			})
 		})
+
+		When("with query options", func() {
+			ticket := &types.Ticket{
+				ProposerPubKey: util.StrToBytes32("pub_key"),
+				Hash:           util.BytesToBytes32(util.RandBytes(32)),
+				Type:           types.TxTypeValidatorTicket,
+				MatureBy:       50,
+				DecayBy:        1000,
+			}
+			ticketB := &types.Ticket{
+				ProposerPubKey: util.StrToBytes32("pub_key"),
+				Hash:           util.BytesToBytes32(util.RandBytes(32)),
+				Type:           types.TxTypeValidatorTicket,
+				MatureBy:       101,
+				DecayBy:        1000,
+			}
+			ticketC := &types.Ticket{
+				ProposerPubKey: util.StrToBytes32("pub_key"),
+				Hash:           util.BytesToBytes32(util.RandBytes(32)),
+				Type:           types.TxTypeValidatorTicket,
+				MatureBy:       50,
+				DecayBy:        1000,
+			}
+			ticketD := &types.Ticket{
+				ProposerPubKey: util.StrToBytes32("pub_key"),
+				Hash:           util.BytesToBytes32(util.RandBytes(32)),
+				Type:           types.TxTypeValidatorTicket,
+				MatureBy:       101,
+				DecayBy:        10,
+			}
+
+			When("immature=true", func() {
+				BeforeEach(func() {
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 100}, nil)
+					mgr.logic = mockLogic
+					err := mgr.s.Add(ticket, ticketB)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that only immature tickets are returned", func() {
+					tickets, err := mgr.GetByProposer(types.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), types.QueryOptions{
+						ImmatureOnly: true,
+					})
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(1))
+					Expect(tickets[0]).To(Equal(ticketB))
+				})
+			})
+
+			When("immature=false", func() {
+				BeforeEach(func() {
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 100}, nil)
+					mgr.logic = mockLogic
+					err := mgr.s.Add(ticket, ticketB)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that mature and immature tickets are returned", func() {
+					tickets, err := mgr.GetByProposer(types.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), types.QueryOptions{
+						ImmatureOnly: false,
+					})
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(2))
+				})
+			})
+
+			When("mature=true", func() {
+				BeforeEach(func() {
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 100}, nil)
+					mgr.logic = mockLogic
+					err := mgr.s.Add(ticket, ticketB)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that only mature tickets are returned", func() {
+					tickets, err := mgr.GetByProposer(types.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), types.QueryOptions{
+						MatureOnly: true,
+					})
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(1))
+					Expect(tickets[0]).To(Equal(ticket))
+				})
+			})
+
+			When("mature=false", func() {
+				BeforeEach(func() {
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 100}, nil)
+					mgr.logic = mockLogic
+					err := mgr.s.Add(ticket, ticketB)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that mature and immature tickets are returned", func() {
+					tickets, err := mgr.GetByProposer(types.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), types.QueryOptions{
+						MatureOnly: false,
+					})
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(2))
+				})
+			})
+
+			When("decayed=true", func() {
+				BeforeEach(func() {
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 100}, nil)
+					mgr.logic = mockLogic
+					err := mgr.s.Add(ticketC, ticketD)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that only decayed tickets are returned", func() {
+					tickets, err := mgr.GetByProposer(types.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), types.QueryOptions{
+						DecayedOnly: true,
+					})
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(1))
+					Expect(tickets[0]).To(Equal(ticketD))
+				})
+			})
+
+			When("decayed=false", func() {
+				BeforeEach(func() {
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 100}, nil)
+					mgr.logic = mockLogic
+					err := mgr.s.Add(ticketC, ticketD)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that decayed and non-decayed tickets are returned", func() {
+					tickets, err := mgr.GetByProposer(types.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), types.QueryOptions{
+						DecayedOnly: false,
+					})
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(2))
+				})
+			})
+
+			When("nonDecayed=true", func() {
+				BeforeEach(func() {
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 100}, nil)
+					mgr.logic = mockLogic
+					err := mgr.s.Add(ticketC, ticketD)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that only non-decayed tickets are returned", func() {
+					tickets, err := mgr.GetByProposer(types.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), types.QueryOptions{
+						NonDecayedOnly: true,
+					})
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(1))
+					Expect(tickets[0]).To(Equal(ticketC))
+				})
+			})
+
+			When("nonDecayed=false", func() {
+				BeforeEach(func() {
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 100}, nil)
+					mgr.logic = mockLogic
+					err := mgr.s.Add(ticketC, ticketD)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that decayed and non-decayed tickets are returned", func() {
+					tickets, err := mgr.GetByProposer(types.TxTypeValidatorTicket, util.StrToBytes32("pub_key"), types.QueryOptions{
+						NonDecayedOnly: false,
+					})
+					Expect(err).To(BeNil())
+					Expect(tickets).To(HaveLen(2))
+				})
+			})
+		})
+
 	})
 
 	Describe(".CountActiveValidatorTickets", func() {
@@ -323,9 +499,9 @@ var _ = Describe("Manager", func() {
 				Expect(err).To(BeNil())
 				Expect(res).To(HaveLen(2))
 				Expect(res[0].Ticket.ProposerPubKey).To(Equal(util.StrToBytes32("pub_key2")))
-				Expect(res[0].TotalValue.String()).To(Equal("10"))
+				Expect(res[0].Power.String()).To(Equal("10"))
 				Expect(res[1].Ticket.ProposerPubKey).To(Equal(util.StrToBytes32("pub_key1")))
-				Expect(res[1].TotalValue.String()).To(Equal("4"))
+				Expect(res[1].Power.String()).To(Equal("4"))
 				Expect(res.Has(util.StrToBytes32("pub_key2"))).To(BeTrue())
 				Expect(res.Has(util.StrToBytes32("pub_key1"))).To(BeTrue())
 			})
@@ -338,7 +514,7 @@ var _ = Describe("Manager", func() {
 					Expect(res[0].Ticket.ProposerPubKey).To(Equal(util.StrToBytes32("pub_key2")))
 					Expect(res.Has(util.StrToBytes32("pub_key2"))).To(BeTrue())
 					Expect(res.Has(util.StrToBytes32("pub_key1"))).To(BeFalse())
-					Expect(res[0].TotalValue.String()).To(Equal("10"))
+					Expect(res[0].Power.String()).To(Equal("10"))
 				})
 			})
 		})

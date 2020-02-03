@@ -241,6 +241,32 @@ var _ = Describe("ProposalHandler", func() {
 				})
 			})
 
+			When("NoWithVetoByOwners quorum is reached", func() {
+				var proposal *types.RepoProposal
+
+				BeforeEach(func() {
+					proposal = &types.RepoProposal{}
+					proposal.Proposee = types.ProposeeNetStakeholdersAndVetoOwner
+					proposal.Creator = key.Addr().String()
+					proposal.Quorum = 40
+					proposal.VetoQuorum = 10
+					proposal.Yes = 700
+					proposal.No = 4
+					proposal.NoWithVeto = 1
+					proposal.VetoOwnersQuorum = 40
+					proposal.NoWithVetoByOwners = 5
+
+					mockTickMgr := mocks.NewMockTicketManager(ctrl)
+					mockTickMgr.EXPECT().ValueOfAllTickets(uint64(0)).Return(float64(1000), nil)
+					logic.SetTicketManager(mockTickMgr)
+				})
+
+				It("should return outcome=ProposalOutcomeRejectedWithVetoByOwners", func() {
+					out := getProposalOutcome(logic.GetTicketManager(), proposal, repo)
+					Expect(out).To(Equal(types.ProposalOutcomeRejectedWithVetoByOwners))
+				})
+			})
+
 			When("NoWithVeto quorum is unset but there is at least 1 NoWithVeto vote", func() {
 				var proposal *types.RepoProposal
 

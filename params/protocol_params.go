@@ -132,4 +132,8 @@ const (
 	// RepoProposalVetoQuorum is the minimum percentage required for veto
 	// members to overturn a "Yes" quorum
 	RepoProposalVetoQuorum = float64(33)
+	// RepoProposalVetoOwnersQuorum is the minimum percentage required for veto
+	// members to overturn a "Yes" quorum in a proposal where stakeholder and
+	// owners are eligible to vote
+	RepoProposalVetoOwnersQuorum = float64(0)
 )

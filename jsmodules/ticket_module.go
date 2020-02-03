@@ -10,6 +10,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
+	"github.com/shopspring/decimal"
 )
 
 // TicketModule provides access to various utility functions
@@ -46,14 +47,34 @@ func (m *TicketModule) funcs() []*types.JSModuleFunc {
 			Description: "Buy a validator ticket",
 		},
 		&types.JSModuleFunc{
-			Name:        "findByProposer",
-			Value:       m.findByProposer,
-			Description: "Get tickets associated to a given public key",
+			Name:        "listValidatorTicketsOfProposer",
+			Value:       m.listValidatorTicketsOfProposer,
+			Description: "List validator tickets where given public key is the proposer",
 		},
 		&types.JSModuleFunc{
-			Name:        "top",
-			Value:       m.top,
-			Description: "Get most recent tickets up to the given limit",
+			Name:        "listStorerTicketsOfProposer",
+			Value:       m.listStorerTicketsOfProposer,
+			Description: "List storer tickets where given public key is the proposer",
+		},
+		&types.JSModuleFunc{
+			Name:        "listRecent",
+			Value:       m.listRecent,
+			Description: "List most recent tickets up to the given limit",
+		},
+		&types.JSModuleFunc{
+			Name:        "stats",
+			Value:       m.ticketStats,
+			Description: "Get ticket stats of network and a public key",
+		},
+		&types.JSModuleFunc{
+			Name:        "listTopValidators",
+			Value:       m.listTopValidators,
+			Description: "List tickets of top network validators up to the given limit",
+		},
+		&types.JSModuleFunc{
+			Name:        "listTopStorers",
+			Value:       m.listTopStorers,
+			Description: "List tickets of top network storers up to the given limit",
 		},
 	}
 }
@@ -214,8 +235,49 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 	})
 }
 
-// findByProposer finds tickets owned by a given public key
-func (m *TicketModule) findByProposer(
+// listValidatorTicketsOfProposer finds validator tickets where the given public
+// key is the proposer; By default it will filter out decayed tickets. Use query
+// option to override this behaviour
+func (m *TicketModule) listValidatorTicketsOfProposer(
+	proposerPubKey string,
+	queryOpts ...map[string]interface{}) interface{} {
+
+	var qopts types.QueryOptions
+
+	// Prepare query options
+	if len(queryOpts) > 0 {
+		qoMap := queryOpts[0]
+
+		// If the user didn't set 'decay' and 'nonDecayed' filters, we set the
+		// default of `nonDecayed` tp true to return only non-decayed tickets
+		if qoMap["nonDecayed"] == nil && qoMap["decayed"] == nil {
+			qopts.NonDecayedOnly = true
+		}
+
+		mapstructure.Decode(qoMap, &qopts)
+	}
+
+	// If no sort by height directive, sort by height in descending order
+	if qopts.SortByHeight == 0 {
+		qopts.SortByHeight = -1
+	}
+
+	pk, err := crypto.PubKeyFromBase58(proposerPubKey)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to decode proposer public key"))
+	}
+
+	res, err := m.ticketmgr.GetByProposer(types.TxTypeValidatorTicket, pk.MustBytes32(), qopts)
+	if err != nil {
+		panic(err)
+	}
+
+	return EncodeManyForJS(res)
+}
+
+// listStorerTicketsOfProposer finds storer tickets where the given public
+// key is the proposer
+func (m *TicketModule) listStorerTicketsOfProposer(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) interface{} {
 
@@ -229,12 +291,12 @@ func (m *TicketModule) findByProposer(
 		qopts.SortByHeight = -1
 	}
 
-	ppk, err := crypto.PubKeyFromBase58(proposerPubKey)
+	pk, err := crypto.PubKeyFromBase58(proposerPubKey)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to decode proposer public key"))
 	}
 
-	res, err := m.ticketmgr.GetByProposer(types.TxTypeValidatorTicket, ppk.MustBytes32(), qopts)
+	res, err := m.ticketmgr.GetByProposer(types.TxTypeStorerTicket, pk.MustBytes32(), qopts)
 	if err != nil {
 		panic(err)
 	}
@@ -242,10 +304,78 @@ func (m *TicketModule) findByProposer(
 	return EncodeManyForJS(res)
 }
 
-// top returns most recent tickets up to the given limit
-func (m *TicketModule) top(limit int) interface{} {
+// listTopValidators returns top n validators
+func (m *TicketModule) listTopValidators(limit ...int) interface{} {
+	n := 0
+	if len(limit) > 0 {
+		n = limit[0]
+	}
+	tickets, err := m.ticketmgr.GetTopValidators(n)
+	if err != nil {
+		panic(err)
+	}
+	return EncodeManyForJS(tickets)
+}
+
+// listTopStorers returns top n storers
+func (m *TicketModule) listTopStorers(limit ...int) interface{} {
+	n := 0
+	if len(limit) > 0 {
+		n = limit[0]
+	}
+	tickets, err := m.ticketmgr.GetTopStorers(n)
+	if err != nil {
+		panic(err)
+	}
+	return EncodeManyForJS(tickets)
+}
+
+// ticketStats returns ticket statistics of the network; If proposerPubKey is
+// provided, the proposer's personalized ticket stats are included.
+func (m *TicketModule) ticketStats(proposerPubKey ...string) interface{} {
+
+	valNonDel, valDel := float64(0), float64(0)
+	res := make(map[string]interface{})
+
+	if len(proposerPubKey) > 0 {
+		pk, err := crypto.PubKeyFromBase58(proposerPubKey[0])
+		if err != nil {
+			panic(errors.Wrap(err, "failed to decode proposer public key"))
+		}
+
+		valNonDel, err = m.ticketmgr.ValueOfNonDelegatedTickets(pk.MustBytes32(), 0)
+		if err != nil {
+			panic(err)
+		}
+
+		valDel, err = m.ticketmgr.ValueOfDelegatedTickets(pk.MustBytes32(), 0)
+		if err != nil {
+			panic(err)
+		}
+
+		res["valueOfNonDelegated"] = valNonDel
+		res["valueOfDelegated"] = valDel
+		res["publicKeyPower"] = decimal.NewFromFloat(valNonDel).
+			Add(decimal.NewFromFloat(valDel)).String()
+	}
+
+	valAll, err := m.ticketmgr.ValueOfAllTickets(0)
+	if err != nil {
+		panic(err)
+	}
+	res["valueOfAll"] = valAll
+
+	return EncodeForJS(res)
+}
+
+// listRecent returns most recent tickets up to the given limit
+func (m *TicketModule) listRecent(limit ...int) interface{} {
+	n := 0
+	if len(limit) > 0 {
+		n = limit[0]
+	}
 	res := m.ticketmgr.Query(func(t *types.Ticket) bool { return true }, types.QueryOptions{
-		Limit:        limit,
+		Limit:        n,
 		SortByHeight: -1,
 	})
 	return EncodeManyForJS(res)
