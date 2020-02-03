@@ -1,10 +1,12 @@
 package types
 
 import (
+	"github.com/fatih/structs"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/vmihailenco/msgpack"
+	"reflect"
 )
 
 // BareReference returns an empty reference object
@@ -97,6 +99,29 @@ type RepoConfigGovernance struct {
 // RepoConfig contains repo-specific configuration settings
 type RepoConfig struct {
 	Governace *RepoConfigGovernance `json:"gov" mapstructure:"gov" msgpack:"gov"`
+}
+
+// Merge merges non-zero fields of o into c
+func (c *RepoConfig) Merge(o *RepoConfig) {
+	if c.Governace == nil || o == nil || o.Governace == nil {
+		return
+	}
+
+	var merger func(base, target *structs.Struct)
+	merger = func(base, target *structs.Struct) {
+		for _, baseField := range base.Fields() {
+			if targetField := target.Field(baseField.Name()); !targetField.IsZero() ||
+				targetField.Kind() == reflect.Bool {
+				if structs.IsStruct(targetField.Value()) && structs.IsStruct(baseField.Value()) {
+					merger(structs.New(baseField.Value()), structs.New(targetField.Value()))
+					continue
+				}
+				baseField.Set(targetField.Value())
+			}
+		}
+	}
+
+	merger(structs.New(c), structs.New(o))
 }
 
 // IsNil checks if the object's field all have zero value

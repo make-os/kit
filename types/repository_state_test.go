@@ -141,4 +141,86 @@ var _ = Describe("Repository", func() {
 			})
 		})
 	})
+
+	Describe("RepoConfig.Merge", func() {
+		When("other object is nil", func() {
+			It("should change nothing", func() {
+				o := &RepoConfig{Governace: &RepoConfigGovernance{ProposalProposee: 1}}
+				o.Merge(nil)
+				Expect(int(o.Governace.ProposalProposee)).To(Equal(1))
+
+				o = &RepoConfig{Governace: &RepoConfigGovernance{ProposalProposee: 1}}
+				o.Merge(&RepoConfig{})
+				Expect(int(o.Governace.ProposalProposee)).To(Equal(1))
+			})
+		})
+
+		When("other object is not nil", func() {
+			It("should change base fields to values of non-zero, non-equal fields", func() {
+				o := &RepoConfig{
+					Governace: &RepoConfigGovernance{
+						ProposalProposee:                 1,
+						ProposalDur:                      2,
+						ProposalTallyMethod:              4,
+						ProposalThreshold:                10,
+						ProposalQuorum:                   40,
+						ProposalProposeeLimitToCurHeight: true,
+						ProposalVetoQuorum:               10,
+						ProposalVetoOwnersQuorum:         3,
+					},
+				}
+
+				o2 := &RepoConfig{
+					Governace: &RepoConfigGovernance{
+						ProposalProposee:                 3,
+						ProposalDur:                      5,
+						ProposalTallyMethod:              6,
+						ProposalThreshold:                11,
+						ProposalQuorum:                   42,
+						ProposalProposeeLimitToCurHeight: false,
+						ProposalVetoQuorum:               11,
+						ProposalVetoOwnersQuorum:         33,
+					},
+				}
+
+				o.Merge(o2)
+				Expect(o).To(Equal(o2))
+			})
+		})
+
+		When("other object is not nil but some values are zero", func() {
+			It("should change base fields to values of non-zero, non-equal fields", func() {
+				o := &RepoConfig{
+					Governace: &RepoConfigGovernance{
+						ProposalProposee:                 1,
+						ProposalDur:                      2,
+						ProposalTallyMethod:              4,
+						ProposalThreshold:                10,
+						ProposalQuorum:                   40,
+						ProposalProposeeLimitToCurHeight: true,
+						ProposalVetoQuorum:               10,
+						ProposalVetoOwnersQuorum:         3,
+					},
+				}
+
+				o2 := &RepoConfig{
+					Governace: &RepoConfigGovernance{
+						ProposalProposee:                 3,
+						ProposalDur:                      5,
+						ProposalTallyMethod:              6,
+						ProposalThreshold:                0,
+						ProposalQuorum:                   42,
+						ProposalProposeeLimitToCurHeight: false,
+						ProposalVetoQuorum:               0,
+						ProposalVetoOwnersQuorum:         33,
+					},
+				}
+
+				o.Merge(o2)
+				Expect(o).ToNot(Equal(o2))
+				Expect(o.Governace.ProposalThreshold).ToNot(BeZero())
+				Expect(o.Governace.ProposalVetoQuorum).ToNot(BeZero())
+			})
+		})
+	})
 })

@@ -51,7 +51,7 @@ var _ = Describe("Manager", func() {
 		Expect(err).To(BeNil())
 	})
 
-	FDescribe(".GetByProposer", func() {
+	Describe(".GetByProposer", func() {
 		When("ticket of matching type exist", func() {
 			ticket := &types.Ticket{ProposerPubKey: util.StrToBytes32("pub_key"), Type: types.TxTypeValidatorTicket}
 			BeforeEach(func() {

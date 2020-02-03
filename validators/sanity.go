@@ -179,8 +179,14 @@ func CheckTxUnbondTicket(tx *types.TxTicketUnbond, index int) error {
 
 // CheckRepoConfig validates a repo configuration object
 func CheckRepoConfig(cfg *types.RepoConfig, index int) error {
-	govCfg := cfg.Governace
-	isNotOwnerProposee := govCfg.ProposalProposee != types.ProposeeOwner
+
+	// Overwrite the default config with the user's config.
+	// This is what happens during actual tx execution.
+	// We mimic this operation to get the true version of
+	// the config and validate it
+	actual := types.MakeDefaultRepoConfig()
+	actual.Merge(cfg)
+	govCfg := actual.Governace
 
 	// Ensure the proposee type is known
 	allowedProposeeChoices := []types.ProposeeType{0,
@@ -201,27 +207,28 @@ func CheckRepoConfig(cfg *types.RepoConfig, index int) error {
 		types.ProposalTallyMethodNetStakeOfDelegators,
 		types.ProposalTallyMethodNetStake,
 	}
-	if !funk.Contains(allowedTallyMethod, cfg.Governace.ProposalTallyMethod) {
+	if !funk.Contains(allowedTallyMethod, govCfg.ProposalTallyMethod) {
 		return feI(index, "config.gov.propTallyMethod", sf("unknown value"))
 	}
 
-	if cfg.Governace.ProposalQuorum < 0 {
+	if govCfg.ProposalQuorum < 0 {
 		return feI(index, "config.gov.propQuorum", sf("must be a non-negative number"))
 	}
 
-	if cfg.Governace.ProposalThreshold < 0 {
+	if govCfg.ProposalThreshold < 0 {
 		return feI(index, "config.gov.propThreshold", sf("must be a non-negative number"))
 	}
 
-	if cfg.Governace.ProposalVetoQuorum < 0 {
+	if govCfg.ProposalVetoQuorum < 0 {
 		return feI(index, "config.gov.propVetoQuorum", sf("must be a non-negative number"))
 	}
 
-	if cfg.Governace.ProposalVetoOwnersQuorum < 0 {
+	if govCfg.ProposalVetoOwnersQuorum < 0 {
 		return feI(index, "config.gov.propVetoOwnersQuorum", sf("must be a non-negative number"))
 	}
 
 	// When proposee is ProposeeOwner, tally method cannot be CoinWeighted or Identity
+	isNotOwnerProposee := govCfg.ProposalProposee != types.ProposeeOwner
 	if isNotOwnerProposee &&
 		(govCfg.ProposalTallyMethod == types.ProposalTallyMethodCoinWeighted ||
 			govCfg.ProposalTallyMethod == types.ProposalTallyMethodIdentity) {

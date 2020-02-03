@@ -42,7 +42,7 @@ func (t *Transaction) execRepoCreate(
 	// the passed config is unset.
 	newRepo := types.BareRepository()
 	newRepo.Config = types.MakeDefaultRepoConfig()
-	mergo.MergeWithOverwrite(newRepo.Config, config)
+	newRepo.Config.Merge(config)
 
 	proposee := newRepo.Config.Governace.ProposalProposee
 
