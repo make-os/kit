@@ -512,6 +512,113 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
+	Describe(".CheckRepoConfig", func() {
+		When("proposee type is unknown", func() {
+			It("should return error", func() {
+				repoCfg := &types.RepoConfig{
+					Governace: &types.RepoConfigGovernance{
+						ProposalProposee: 1000,
+					},
+				}
+				err := validators.CheckRepoConfig(repoCfg, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:config.gov.propProposee, error:unknown value"))
+			})
+		})
+
+		When("tally method is unknown", func() {
+			It("should return error", func() {
+				repoCfg := &types.RepoConfig{
+					Governace: &types.RepoConfigGovernance{
+						ProposalProposee:    types.ProposeeOwner,
+						ProposalTallyMethod: 1000,
+					},
+				}
+				err := validators.CheckRepoConfig(repoCfg, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:config.gov.propTallyMethod, error:unknown value"))
+			})
+		})
+
+		When("quorum is negative", func() {
+			It("should return error", func() {
+				repoCfg := &types.RepoConfig{
+					Governace: &types.RepoConfigGovernance{
+						ProposalProposee:    types.ProposeeOwner,
+						ProposalTallyMethod: types.ProposalTallyMethodNetStake,
+						ProposalQuorum:      -1,
+					},
+				}
+				err := validators.CheckRepoConfig(repoCfg, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:config.gov.propQuorum, error:must be a non-negative number"))
+			})
+		})
+
+		When("threshold is negative", func() {
+			It("should return error", func() {
+				repoCfg := &types.RepoConfig{
+					Governace: &types.RepoConfigGovernance{
+						ProposalProposee:    types.ProposeeOwner,
+						ProposalTallyMethod: types.ProposalTallyMethodNetStake,
+						ProposalQuorum:      1,
+						ProposalThreshold:   -1,
+					},
+				}
+				err := validators.CheckRepoConfig(repoCfg, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:config.gov.propThreshold, error:must be a non-negative number"))
+			})
+		})
+
+		When("veto quorum is negative", func() {
+			It("should return error", func() {
+				repoCfg := &types.RepoConfig{
+					Governace: &types.RepoConfigGovernance{
+						ProposalProposee:    types.ProposeeOwner,
+						ProposalTallyMethod: types.ProposalTallyMethodNetStake,
+						ProposalQuorum:      1,
+						ProposalThreshold:   1,
+						ProposalVetoQuorum:  -1,
+					},
+				}
+				err := validators.CheckRepoConfig(repoCfg, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:config.gov.propVetoQuorum, error:must be a non-negative number"))
+			})
+		})
+
+		When("proposee is not ProposeeOwner and tally method is CoinWeighted", func() {
+			It("should return error", func() {
+				repoCfg := &types.RepoConfig{
+					Governace: &types.RepoConfigGovernance{
+						ProposalProposee:    types.ProposeeNetStakeholders,
+						ProposalTallyMethod: types.ProposalTallyMethodCoinWeighted,
+					},
+				}
+				err := validators.CheckRepoConfig(repoCfg, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:config, error:when proposee method " +
+					"is 'ProposeeOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
+			})
+		})
+
+		When("proposee is not ProposeeOwner and tally method is Identity", func() {
+			It("should return error", func() {
+				repoCfg := &types.RepoConfig{
+					Governace: &types.RepoConfigGovernance{
+						ProposalProposee:    types.ProposeeNetStakeholders,
+						ProposalTallyMethod: types.ProposalTallyMethodIdentity,
+					},
+				}
+				err := validators.CheckRepoConfig(repoCfg, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:config, error:when proposee method " +
+					"is 'ProposeeOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
+			})
+		})
+	})
+
 	Describe(".CheckTxRepoCreate", func() {
 		var tx *types.TxRepoCreate
 		BeforeEach(func() {

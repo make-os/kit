@@ -177,6 +177,55 @@ func CheckTxUnbondTicket(tx *types.TxTicketUnbond, index int) error {
 	return nil
 }
 
+// CheckRepoConfig validates a repo configuration object
+func CheckRepoConfig(cfg *types.RepoConfig, index int) error {
+	govCfg := cfg.Governace
+	isNotOwnerProposee := govCfg.ProposalProposee != types.ProposeeOwner
+
+	// Ensure the proposee type is known
+	allowedProposeeChoices := []types.ProposeeType{
+		types.ProposeeOwner,
+		types.ProposeeNetStakeholders,
+		types.ProposeeAll}
+	if !funk.Contains(allowedProposeeChoices, cfg.Governace.ProposalProposee) {
+		return feI(index, "config.gov.propProposee", fmt.Sprintf("unknown value"))
+	}
+
+	// Ensure the proposee tally method is known
+	allowedTallyMethod := []types.ProposalTallyMethod{
+		types.ProposalTallyMethodIdentity,
+		types.ProposalTallyMethodCoinWeighted,
+		types.ProposalTallyMethodNetStakeOfProposer,
+		types.ProposalTallyMethodNetStakeOfDelegators,
+		types.ProposalTallyMethodNetStake,
+	}
+	if !funk.Contains(allowedTallyMethod, cfg.Governace.ProposalTallyMethod) {
+		return feI(index, "config.gov.propTallyMethod", fmt.Sprintf("unknown value"))
+	}
+
+	if cfg.Governace.ProposalQuorum < 0 {
+		return feI(index, "config.gov.propQuorum", fmt.Sprintf("must be a non-negative number"))
+	}
+
+	if cfg.Governace.ProposalThreshold < 0 {
+		return feI(index, "config.gov.propThreshold", fmt.Sprintf("must be a non-negative number"))
+	}
+
+	if cfg.Governace.ProposalVetoQuorum < 0 {
+		return feI(index, "config.gov.propVetoQuorum", fmt.Sprintf("must be a non-negative number"))
+	}
+
+	// When proposee is ProposeeOwner, tally method cannot be CoinWeighted or Identity
+	if isNotOwnerProposee &&
+		(govCfg.ProposalTallyMethod == types.ProposalTallyMethodCoinWeighted ||
+			govCfg.ProposalTallyMethod == types.ProposalTallyMethodIdentity) {
+		return feI(index, "config", "when proposee method is 'ProposeeOwner', tally methods "+
+			"'CoinWeighted' and 'Identity' are not allowed")
+	}
+
+	return nil
+}
+
 // CheckTxRepoCreate performs sanity checks on TxRepoCreate
 func CheckTxRepoCreate(tx *types.TxRepoCreate, index int) error {
 
@@ -192,6 +241,10 @@ func CheckTxRepoCreate(tx *types.TxRepoCreate, index int) error {
 		v.Required.Error(feI(index, "name", "requires a unique name").Error()),
 		v.By(validObjectNameRule("name", index)),
 	); err != nil {
+		return err
+	}
+
+	if err := CheckRepoConfig(tx.Config, index); err != nil {
 		return err
 	}
 
@@ -493,6 +546,10 @@ func CheckTxRepoProposalUpdate(tx *types.TxRepoProposalUpdate, index int) error 
 		v.Required.Error(feI(index, "name", "repo name is required").Error()),
 		v.By(validObjectNameRule("name", index)),
 	); err != nil {
+		return err
+	}
+
+	if err := CheckRepoConfig(tx.Config, index); err != nil {
 		return err
 	}
 
