@@ -138,7 +138,7 @@ var (
 func MakeDefaultRepoConfig() *RepoConfig {
 	return &RepoConfig{
 		Governace: &RepoConfigGovernance{
-			ProposalProposee:                 ProposeeNetStakeholders,
+			ProposalProposee:                 ProposeeOwner,
 			ProposalProposeeLimitToCurHeight: false,
 			ProposalDur:                      params.RepoProposalDur,
 			ProposalTallyMethod:              ProposalTallyMethodIdentity,
@@ -160,6 +160,7 @@ func BareRepoConfig() *RepoConfig {
 // BareRepository returns an empty repository object
 func BareRepository() *Repository {
 	return &Repository{
+		Balance:    "0",
 		References: make(map[string]interface{}),
 		Owners:     make(map[string]interface{}),
 		Proposals:  make(map[string]interface{}),
@@ -170,6 +171,7 @@ func BareRepository() *Repository {
 // Repository represents a git repository.
 type Repository struct {
 	util.DecoderHelper `json:"-" msgpack:"-" mapstructure:"-"`
+	Balance            util.String   `json:"balance" msgpack:"balance" mapstructure:"balance"`
 	References         References    `json:"references" msgpack:"references" mapstructure:"references"`
 	Owners             RepoOwners    `json:"owners" msgpack:"owners" mapstructure:"owners"`
 	Proposals          RepoProposals `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
@@ -183,7 +185,8 @@ func (r *Repository) AddOwner(ownerAddress string, owner *RepoOwner) {
 
 // IsNil returns true if the repo fields are set to their nil value
 func (r *Repository) IsNil() bool {
-	return len(r.References) == 0 &&
+	return r.Balance.Empty() || r.Balance.Equal("0") &&
+		len(r.References) == 0 &&
 		len(r.Owners) == 0 &&
 		len(r.Proposals) == 0 &&
 		r.Config.IsNil()
@@ -192,6 +195,7 @@ func (r *Repository) IsNil() bool {
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(
+		r.Balance,
 		r.References,
 		r.Owners,
 		r.Proposals,
@@ -201,6 +205,7 @@ func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return r.DecodeMulti(dec,
+		&r.Balance,
 		&r.References,
 		&r.Owners,
 		&r.Proposals,

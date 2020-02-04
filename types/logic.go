@@ -132,7 +132,6 @@ type EndingProposals struct {
 // NamespaceKeeper describes an interface for accessing namespace data
 type NamespaceKeeper interface {
 	// GetNamespace finds a namespace by name.
-	//
 	// ARGS:
 	// name: The name of the namespace to find.
 	// blockNum: The target block to query (Optional. Default: latest)
@@ -140,8 +139,13 @@ type NamespaceKeeper interface {
 	// CONTRACT: It returns an empty Namespace if no matching namespace is found.
 	GetNamespace(name string, blockNum ...uint64) *Namespace
 
+	// GetTarget looks up the target of a full namespace path
+	// ARGS:
+	// path: The path to look up.
+	// blockNum: The target block to query (Optional. Default: latest)
+	GetTarget(path string, blockNum ...uint64) (string, error)
+
 	// Update sets a new object at the given name.
-	//
 	// ARGS:
 	// name: The name of the namespace to update
 	// udp: The updated namespace object to replace the existing object.

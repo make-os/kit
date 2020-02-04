@@ -1,7 +1,9 @@
 package keepers
 
 import (
+	"fmt"
 	"github.com/makeos/mosdef/storage/tree"
+	"github.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 
 	"github.com/makeos/mosdef/types"
@@ -18,7 +20,6 @@ func NewNamespaceKeeper(state *tree.SafeTree) *NamespaceKeeper {
 }
 
 // GetNamespace finds a namespace by name.
-//
 // ARGS:
 // name: The name of the namespace to find.
 // blockNum: The target block to query (Optional. Default: latest)
@@ -56,8 +57,38 @@ func (a *NamespaceKeeper) GetNamespace(name string, blockNum ...uint64) *types.N
 	return ns
 }
 
+// GetTarget looks up the target of a full namespace path
+// ARGS:
+// path: The path to look up.
+// blockNum: The target block to query (Optional. Default: latest)
+func (a *NamespaceKeeper) GetTarget(path string, blockNum ...uint64) (string, error) {
+
+	// Get version is provided
+	var version uint64
+	if len(blockNum) > 0 && blockNum[0] > 0 {
+		version = blockNum[0]
+	}
+
+	namespace, domain, err := util.SplitNamespaceDomain(path)
+	if err != nil {
+		return "", err
+	}
+
+	actualName := util.Hash20Hex([]byte(namespace))
+	ns := a.GetNamespace(actualName, version)
+	if ns.IsNil() {
+		return "", fmt.Errorf("namespace not found")
+	}
+
+	target := ns.Domains.Get(domain)
+	if target == "" {
+		return "", fmt.Errorf("domain not found")
+	}
+
+	return target, nil
+}
+
 // Update sets a new object at the given name.
-//
 // ARGS:
 // name: The name of the namespace to update
 // udp: The updated namespace object to replace the existing object.

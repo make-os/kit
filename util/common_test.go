@@ -438,4 +438,23 @@ var _ = Describe("Common", func() {
 			Expect(common).To(Equal(map[string]string{"size": "100"}))
 		})
 	})
+
+	Describe(".SplitNamespaceDomain", func() {
+		When("address format is not valid", func() {
+			It("should return error", func() {
+				_, _, err := SplitNamespaceDomain("/some/kind/of/path")
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("invalid address format"))
+			})
+		})
+
+		When("address format is valid", func() {
+			It("should return no error, namespace and domain", func() {
+				ns, domain, err := SplitNamespaceDomain("coinfiddle/payment")
+				Expect(err).To(BeNil())
+				Expect(ns).To(Equal("coinfiddle"))
+				Expect(domain).To(Equal("payment"))
+			})
+		})
+	})
 })

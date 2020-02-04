@@ -371,6 +371,26 @@ func (mr *MockNamespaceKeeperMockRecorder) GetNamespace(name interface{}, blockN
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockNamespaceKeeper)(nil).GetNamespace), varargs...)
 }
 
+// GetTarget mocks base method
+func (m *MockNamespaceKeeper) GetTarget(path string, blockNum ...uint64) (string, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{path}
+	for _, a := range blockNum {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetTarget", varargs...)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTarget indicates an expected call of GetTarget
+func (mr *MockNamespaceKeeperMockRecorder) GetTarget(path interface{}, blockNum ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{path}, blockNum...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTarget", reflect.TypeOf((*MockNamespaceKeeper)(nil).GetTarget), varargs...)
+}
+
 // Update mocks base method
 func (m *MockNamespaceKeeper) Update(name string, upd *types.Namespace) {
 	m.ctrl.T.Helper()

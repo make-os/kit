@@ -42,6 +42,11 @@ func (m *NamespaceModule) funcs() []*types.JSModuleFunc {
 			Description: "Lookup a namespace",
 		},
 		&types.JSModuleFunc{
+			Name:        "getTarget",
+			Value:       m.getTarget,
+			Description: "Lookup the target of a full namespace path",
+		},
+		&types.JSModuleFunc{
 			Name:        "updateDomain",
 			Value:       m.updateDomain,
 			Description: "Update one or more domains for a namespace",
@@ -112,6 +117,24 @@ func (m *NamespaceModule) lookup(name string, height ...uint64) interface{} {
 	}
 
 	return nsMap
+}
+
+// getTarget looks up the target of a full namespace path
+// path: The path to look up.
+// height: Optional max block height to limit the search to.
+func (m *NamespaceModule) getTarget(path string, height ...uint64) interface{} {
+
+	var targetHeight uint64
+	if len(height) > 0 {
+		targetHeight = uint64(height[0])
+	}
+
+	target, err := m.keepers.NamespaceKeeper().GetTarget(path, targetHeight)
+	if err != nil {
+		panic(err)
+	}
+
+	return target
 }
 
 // register sends a TxTypeNSAcquire transaction to buy a namespace

@@ -11,10 +11,10 @@ type TxNamespaceAcquire struct {
 	*TxType           `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxCommon         `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxValue          `json:"-" msgpack:"-" mapstructure:"-"`
-	Name              string            `json:"name" msgpack:"name"`
-	TransferToRepo    string            `json:"transferToRepo" msgpack:"transferToRepo"`
-	TransferToAccount string            `json:"transferToAccount" msgpack:"transferToAccount"`
-	Domains           map[string]string `json:"domains" msgpack:"domains"`
+	Name              string            `json:"name" msgpack:"name"`                           // The name of the namespace
+	TransferToRepo    string            `json:"transferToRepo" msgpack:"transferToRepo"`       // Name of repo that will own the name.
+	TransferToAccount string            `json:"transferToAccount" msgpack:"transferToAccount"` // Name of the account that will own the name.
+	Domains           map[string]string `json:"domains" msgpack:"domains"`                     // Dictionary of namespace domains and their target
 }
 
 // NewBareTxNamespaceAcquire returns an instance of TxNamespaceAcquire with zero values

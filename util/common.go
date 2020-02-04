@@ -523,3 +523,12 @@ func (h DecoderHelper) DecodeMulti(dec *msgpack.Decoder, v ...interface{}) error
 	}
 	return nil
 }
+
+// SplitNamespaceDomain splits a full namespace address into namespace and domain
+func SplitNamespaceDomain(name string) (ns string, domain string, err error) {
+	parts := strings.Split(name, "/")
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("invalid address format")
+	}
+	return parts[0], parts[1], nil
+}

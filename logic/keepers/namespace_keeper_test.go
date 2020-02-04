@@ -3,6 +3,7 @@ package keepers
 import (
 	"github.com/makeos/mosdef/storage/tree"
 	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
@@ -25,7 +26,7 @@ var _ = Describe("NamespaceKeeper", func() {
 			})
 		})
 
-		When("repository exists", func() {
+		When("namespace exists", func() {
 			var testNS = types.BareNamespace()
 
 			BeforeEach(func() {
@@ -54,6 +55,63 @@ var _ = Describe("NamespaceKeeper", func() {
 
 			ns2 := nsKp.GetNamespace(key)
 			Expect(ns2).To(Equal(ns))
+		})
+	})
+
+	FDescribe(".GetTarget", func() {
+		When("path is not valid", func() {
+			It("should return err", func() {
+				_, err := nsKp.GetTarget("an/invalid/path", 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("invalid address format"))
+			})
+		})
+
+		When("namespace does not exist", func() {
+			It("should return err", func() {
+				_, err := nsKp.GetTarget("unknown_namespace/domain", 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("namespace not found"))
+			})
+		})
+
+		When("domain not found", func() {
+			var testNS = types.BareNamespace()
+
+			BeforeEach(func() {
+				testNS.Owner = "creator_addr"
+
+				nsKey := MakeNamespaceKey(util.Hash20Hex([]byte("ns1")))
+				state.Set(nsKey, testNS.Bytes())
+				_, _, err := state.SaveVersion()
+				Expect(err).To(BeNil())
+			})
+
+			It("should return err", func() {
+				_, err := nsKp.GetTarget("ns1/domain", 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("domain not found"))
+			})
+		})
+
+		When("domain exist", func() {
+			var testNS = types.BareNamespace()
+
+			BeforeEach(func() {
+				testNS.Owner = "creator_addr"
+				testNS.Domains["domain"] = "target1"
+
+				nsKey := MakeNamespaceKey(util.Hash20Hex([]byte("ns1")))
+				state.Set(nsKey, testNS.Bytes())
+				_, _, err := state.SaveVersion()
+				Expect(err).To(BeNil())
+			})
+
+			It("should return err", func() {
+				target, err := nsKp.GetTarget("ns1/domain", 0)
+				Expect(err).To(BeNil())
+				Expect(target).To(Equal("target1"))
+			})
 		})
 	})
 })

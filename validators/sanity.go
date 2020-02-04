@@ -232,7 +232,7 @@ func CheckRepoConfig(cfg *types.RepoConfig, index int) error {
 	if isNotOwnerProposee &&
 		(govCfg.ProposalTallyMethod == types.ProposalTallyMethodCoinWeighted ||
 			govCfg.ProposalTallyMethod == types.ProposalTallyMethodIdentity) {
-		return feI(index, "config", "when proposee method is 'ProposeeOwner', tally methods "+
+		return feI(index, "config", "when proposee type is not 'ProposeeOwner', tally methods "+
 			"'CoinWeighted' and 'Identity' are not allowed")
 	}
 
@@ -416,11 +416,11 @@ func CheckTxNSAcquire(tx *types.TxNamespaceAcquire, index int) error {
 	}
 
 	if len(tx.Domains) > 0 {
-		validTargetTypes := []string{"r/", "a/"}
 		for i, target := range tx.Domains {
 			if !regexp.MustCompile(domainTargetFormat).MatchString(target) {
 				return feI(index, "domains", fmt.Sprintf("domains.%s target format is invalid", i))
 			}
+			validTargetTypes := []string{"r/", "a/"}
 			if !funk.ContainsString(validTargetTypes, target[:2]) {
 				return feI(index, "domains", fmt.Sprintf("domains.%s has unknown target type", i))
 			}

@@ -138,7 +138,8 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 	}
 
 	return EncodeForJS(map[string]interface{}{
-		"hash": hash,
+		"hash":    hash,
+		"address": fmt.Sprintf("r/%s", tx.Name),
 	})
 }
 
