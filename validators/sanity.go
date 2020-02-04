@@ -17,9 +17,19 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-var domainTargetFormat = "[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+"
+var domainTargetFormat = "^[ar]{1}/[a-zA-Z0-9_-]+$" // e.g r/abc-xyz
+var domainNameFormat = "^[a-zA-Z0-9_-]+$"           // e.g r/abc-xyz
+
+// func isRepoFullAddr(addr string) bool {
+// 	re := regexp.MustCompile("r/[a-b]")
+// }
 
 func checkRecipient(tx *types.TxRecipient, index int) error {
+
+	// A full repo address
+	// if tx.To[:2] == "r/" {
+	// 	if tx.To[2:]
+	// }
 	if err := v.Validate(tx.To,
 		v.Required.Error(feI(index, "to", "recipient address is required").Error()),
 		v.By(validAddrRule(feI(index, "to", "recipient address is not valid"))),
@@ -380,6 +390,23 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 	return nil
 }
 
+// CheckNamespaceDomains checks namespace domains and targets
+func CheckNamespaceDomains(domains map[string]string, index int) error {
+	for domain, target := range domains {
+		if !regexp.MustCompile(domainNameFormat).MatchString(domain) {
+			return feI(index, "domains", fmt.Sprintf("domains.%s: name is invalid", domain))
+		}
+		if !regexp.MustCompile(domainTargetFormat).MatchString(target) {
+			return feI(index, "domains", fmt.Sprintf("domains.%s: target is invalid", domain))
+		}
+		if target[:2] == "a/" && crypto.IsValidAddr(target[2:]) != nil {
+			return feI(index, "domains", fmt.Sprintf("domains.%s: target is not a valid address",
+				domain))
+		}
+	}
+	return nil
+}
+
 // CheckTxNSAcquire performs sanity checks on TxNamespaceAcquire
 func CheckTxNSAcquire(tx *types.TxNamespaceAcquire, index int) error {
 
@@ -416,17 +443,8 @@ func CheckTxNSAcquire(tx *types.TxNamespaceAcquire, index int) error {
 	}
 
 	if len(tx.Domains) > 0 {
-		for i, target := range tx.Domains {
-			if !regexp.MustCompile(domainTargetFormat).MatchString(target) {
-				return feI(index, "domains", fmt.Sprintf("domains.%s target format is invalid", i))
-			}
-			validTargetTypes := []string{"r/", "a/"}
-			if !funk.ContainsString(validTargetTypes, target[:2]) {
-				return feI(index, "domains", fmt.Sprintf("domains.%s has unknown target type", i))
-			}
-			if target[:2] == "a/" && crypto.IsValidAddr(target[2:]) != nil {
-				return feI(index, "domains", fmt.Sprintf("domains.%s has invalid address", i))
-			}
+		if err := CheckNamespaceDomains(tx.Domains, index); err != nil {
+			return err
 		}
 	}
 
@@ -452,20 +470,8 @@ func CheckTxNamespaceDomainUpdate(tx *types.TxNamespaceDomainUpdate, index int) 
 	}
 
 	if len(tx.Domains) > 0 {
-		validTargetTypes := []string{"r/", "a/"}
-		for i, target := range tx.Domains {
-			if target == "" {
-				continue
-			}
-			if !regexp.MustCompile(domainTargetFormat).MatchString(target) {
-				return feI(index, "domains", fmt.Sprintf("domains.%s target format is invalid", i))
-			}
-			if !funk.ContainsString(validTargetTypes, target[:2]) {
-				return feI(index, "domains", fmt.Sprintf("domains.%s has unknown target type", i))
-			}
-			if target[:2] == "a/" && crypto.IsValidAddr(target[2:]) != nil {
-				return feI(index, "domains", fmt.Sprintf("domains.%s has invalid address", i))
-			}
+		if err := CheckNamespaceDomains(tx.Domains, index); err != nil {
+			return err
 		}
 	}
 

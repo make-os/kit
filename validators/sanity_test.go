@@ -305,6 +305,35 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
+	Describe(".checkNamespaceDomains", func() {
+		When("map include a domain that is not valid", func() {
+			It("should return err", func() {
+				domains := map[string]string{"goo&": "abc"}
+				err := validators.CheckNamespaceDomains(domains, 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("index:0, field:domains, error:domains.goo&: name is invalid"))
+			})
+		})
+
+		When("map include a domain with a target whose name is not valid", func() {
+			It("should return err", func() {
+				domains := map[string]string{"google": "xyz"}
+				err := validators.CheckNamespaceDomains(domains, 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("index:0, field:domains, error:domains.google: target is invalid"))
+			})
+		})
+
+		When("map include a domain with an address target that has an invalid address", func() {
+			It("should return err", func() {
+				domains := map[string]string{"google": "a/xyz"}
+				err := validators.CheckNamespaceDomains(domains, 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("index:0, field:domains, error:domains.google: target is not a valid address"))
+			})
+		})
+	})
+
 	Describe(".CheckTxTicketPurchase", func() {
 		var tx *types.TxTicketPurchase
 		BeforeEach(func() {
