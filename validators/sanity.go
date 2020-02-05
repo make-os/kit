@@ -34,7 +34,7 @@ func CheckRecipient(tx *types.TxRecipient, index int) error {
 	}
 
 	if recipient.IsPrefixed() {
-		if recipient.IsPrefixedAccountAddress() {
+		if recipient.IsPrefixedUserAddress() {
 			goto bad
 		}
 		return nil

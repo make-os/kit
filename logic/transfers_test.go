@@ -147,5 +147,130 @@ var _ = Describe("Transfers", func() {
 				})
 			})
 		})
+
+		When("recipient address is a namespaced URI with a user account target", func() {
+			ns := "namespace"
+			var senderNamespaceURI = util.String(ns + "/domain")
+
+			BeforeEach(func() {
+				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+					Balance: util.String("100"),
+					Stakes:  types.BareAccountStakes(),
+				})
+
+				logic.NamespaceKeeper().Update(util.Hash20Hex([]byte(ns)), &types.Namespace{
+					Domains: map[string]string{
+						"domain": "a/" + sender.Addr().String(),
+					},
+				})
+			})
+
+			Context("sender creates a tx with value=10, fee=1", func() {
+				BeforeEach(func() {
+					senderPubKey := sender.PubKey().MustBytes32()
+					err := txLogic.execCoinTransfer(senderPubKey, senderNamespaceURI, util.String("10"), util.String("1"), 0)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that sender balance is equal to 99 and nonce=1", func() {
+					senderAcct := logic.AccountKeeper().GetAccount(sender.Addr())
+					Expect(senderAcct.Balance).To(Equal(util.String("99")))
+					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+				})
+			})
+		})
+
+		When("recipient address is a prefixed user account address", func() {
+			BeforeEach(func() {
+				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+					Balance: util.String("100"),
+					Stakes:  types.BareAccountStakes(),
+				})
+			})
+
+			Context("sender creates a tx with value=10, fee=1", func() {
+				BeforeEach(func() {
+					recipient := "a/" + sender.Addr()
+					senderPubKey := sender.PubKey().MustBytes32()
+					err := txLogic.execCoinTransfer(senderPubKey, recipient, util.String("10"), util.String("1"), 0)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that sender balance is equal to 99 and nonce=1", func() {
+					senderAcct := logic.AccountKeeper().GetAccount(sender.Addr())
+					Expect(senderAcct.Balance).To(Equal(util.String("99")))
+					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+				})
+			})
+		})
+
+		When("recipient address is a namespaced URI with a repo account target", func() {
+			ns := "namespace"
+			var senderNamespaceURI = util.String(ns + "/domain")
+			var repoName = "repo1"
+
+			BeforeEach(func() {
+				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+					Balance: util.String("100"),
+					Stakes:  types.BareAccountStakes(),
+				})
+
+				logic.NamespaceKeeper().Update(util.Hash20Hex([]byte(ns)), &types.Namespace{
+					Domains: map[string]string{
+						"domain": "r/" + repoName,
+					},
+				})
+			})
+
+			Context("sender creates a tx with value=10, fee=1", func() {
+				BeforeEach(func() {
+					senderPubKey := sender.PubKey().MustBytes32()
+					err := txLogic.execCoinTransfer(senderPubKey, senderNamespaceURI, util.String("10"), util.String("1"), 0)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that sender balance is equal to 89 and nonce=1", func() {
+					senderAcct := logic.AccountKeeper().GetAccount(sender.Addr())
+					Expect(senderAcct.Balance).To(Equal(util.String("89")))
+					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+				})
+
+				Specify("that the repo has a balance=10", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.GetBalance()).To(Equal(util.String("10")))
+				})
+			})
+		})
+
+		When("recipient address is a prefixed user account address", func() {
+			BeforeEach(func() {
+				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+					Balance: util.String("100"),
+					Stakes:  types.BareAccountStakes(),
+				})
+			})
+
+			Context("sender creates a tx with value=10, fee=1", func() {
+				var repoName = "repo1"
+
+				BeforeEach(func() {
+					recipient := util.String("r/" + repoName)
+					senderPubKey := sender.PubKey().MustBytes32()
+					err := txLogic.execCoinTransfer(senderPubKey, recipient, util.String("10"), util.String("1"), 0)
+					Expect(err).To(BeNil())
+				})
+
+				Specify("that sender balance is equal to 89 and nonce=1", func() {
+					senderAcct := logic.AccountKeeper().GetAccount(sender.Addr())
+					Expect(senderAcct.Balance).To(Equal(util.String("89")))
+					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+				})
+
+				Specify("that the repo has a balance=10", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.GetBalance()).To(Equal(util.String("10")))
+				})
+			})
+		})
 	})
 })

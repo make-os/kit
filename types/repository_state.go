@@ -1,12 +1,13 @@
 package types
 
 import (
+	"reflect"
+
 	"github.com/fatih/structs"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/vmihailenco/msgpack"
-	"reflect"
 )
 
 // BareReference returns an empty reference object
@@ -177,6 +178,19 @@ type Repository struct {
 	Proposals          RepoProposals `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
 	Config             *RepoConfig   `json:"config" msgpack:"config" mapstructure:"config"`
 }
+
+// GetBalance implements types.BalanceAccount
+func (r *Repository) GetBalance() util.String {
+	return r.Balance
+}
+
+// SetBalance implements types.BalanceAccount
+func (r *Repository) SetBalance(bal string) {
+	r.Balance = util.String(bal)
+}
+
+// Clean implements types.BalanceAccount
+func (r *Repository) Clean(chainHeight uint64) {}
 
 // AddOwner adds an owner
 func (r *Repository) AddOwner(ownerAddress string, owner *RepoOwner) {

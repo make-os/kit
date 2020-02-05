@@ -2,8 +2,9 @@ package types
 
 import (
 	"fmt"
-	"github.com/mitchellh/mapstructure"
 	"strings"
+
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/makeos/mosdef/util"
 	"github.com/vmihailenco/msgpack"
@@ -28,17 +29,22 @@ type Account struct {
 	DelegatorCommission float64       `json:"delegatorCommission" msgpack:"delegatorCommission"`
 }
 
+// GetBalance implements types.BalanceAccount
+func (a *Account) GetBalance() util.String {
+	return a.Balance
+}
+
+// SetBalance implements types.BalanceAccount
+func (a *Account) SetBalance(bal string) {
+	a.Balance = util.String(bal)
+}
+
 // IsNil checks whether an account is empty/unset
 func (a *Account) IsNil() bool {
 	return a.Balance.Empty() || a.Balance.Equal("0") &&
 		a.Nonce == uint64(0) &&
 		len(a.Stakes) == 0 &&
 		a.DelegatorCommission == float64(0)
-}
-
-// GetBalance returns the account balance
-func (a *Account) GetBalance() util.String {
-	return a.Balance
 }
 
 // GetSpendableBalance returns the spendable balance of the account.
@@ -64,7 +70,8 @@ func (a *Account) Bytes() []byte {
 	return util.ObjectToBytes(a)
 }
 
-// Clean removes unbonded stakes.
+// Clean implements types.BalanceAccount; it removes old, unused data stored in
+// the account such as unbonded stakes.
 // Ignores stakes with unbond height set to 0.
 // curHeight: The current blockchain height
 func (a *Account) Clean(curHeight uint64) {

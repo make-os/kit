@@ -80,7 +80,6 @@ var _ = Describe("NamespaceKeeper", func() {
 
 			BeforeEach(func() {
 				testNS.Owner = "creator_addr"
-
 				nsKey := MakeNamespaceKey(util.Hash20Hex([]byte("ns1")))
 				state.Set(nsKey, testNS.Bytes())
 				_, _, err := state.SaveVersion()

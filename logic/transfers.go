@@ -14,7 +14,7 @@ import (
 //
 // ARGS:
 // senderPubKey: The sender's public key
-// recipientAddr: The recipient address
+// recipientAddr: The recipient address (can be base58, namespaced URI or prefixed address)
 // value: The value of the transaction
 // fee: The transaction fee
 // chainHeight: The current chain height.
@@ -27,37 +27,77 @@ func (t *Transaction) execCoinTransfer(
 	fee util.String,
 	chainHeight uint64) error {
 
-	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
+	var recvAcct types.BalanceAccount
+	recvAddr := recipientAddr.Address()
 	acctKeeper := t.logic.AccountKeeper()
+	repoKeeper := t.logic.RepoKeeper()
 
-	// Get sender account and balance
+	// Check if the recipient address is a namespace URI. If so,
+	// we need to resolve it to the target address which is expected
+	// to be a prefixed address.
+	if recvAddr.IsNamespaceURI() {
+		target, err := t.logic.NamespaceKeeper().GetTarget(recvAddr.String(), chainHeight)
+		if err != nil {
+			return err
+		}
+		recvAddr = util.Address(target)
+	}
+
+	// Check if recipient address is a prefixed address (e.g r/repo or a/repo).
+	// If so, we need to get the balance account object corresponding
+	// to the actual resource name.
+	if recvAddr.IsPrefixed() {
+		resourceName := util.GetPrefixedAddressValue(recvAddr.String())
+		recipientAddr = util.String(resourceName)
+		if util.IsPrefixedAddressRepo(recvAddr.String()) {
+			recvAcct = repoKeeper.GetRepo(resourceName)
+		} else {
+			recvAcct = acctKeeper.GetAccount(util.String(resourceName), chainHeight)
+		}
+	}
+
+	// Check if the recipient address is a base58 encoded address.
+	// If so, get the account object corresponding to the address.
+	if recvAddr.IsBase58Address() {
+		recvAcct = acctKeeper.GetAccount(recipientAddr, chainHeight)
+	}
+
+	// Get the sender account and balance
+	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	sender := spk.Addr()
 	senderAcct := acctKeeper.GetAccount(sender, chainHeight)
 	senderBal := senderAcct.Balance.Decimal()
 
-	// Deduct the spend amount from the sender's account and increment nonce
+	// When the sender is also the recipient, use sender
+	// account as recipient account
+	if sender.Equal(recipientAddr) {
+		recvAcct = senderAcct
+	}
+
+	// Calculate the spend amount and deduct the spend amount from
+	// the sender's account, then increment sender's nonce
 	spendAmt := value.Decimal().Add(fee.Decimal())
 	senderAcct.Balance = util.String(senderBal.Sub(spendAmt).String())
 	senderAcct.Nonce = senderAcct.Nonce + 1
 
-	// Clean up unbonded stakes and update sender account
+	// Clean up and update the sender account
 	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(sender, senderAcct)
 
-	// Get recipient account only if recipient and sender are different,
-	// otherwise use the sender account as recipient account
-	var recipientAcct = senderAcct
-	if !sender.Equal(recipientAddr) {
-		recipientAcct = acctKeeper.GetAccount(recipientAddr, chainHeight)
-	}
-
 	// Add the transaction value to the recipient balance
-	recipientBal := recipientAcct.Balance.Decimal()
-	recipientAcct.Balance = util.String(recipientBal.Add(value.Decimal()).String())
+	recipientBal := recvAcct.GetBalance().Decimal()
+	recvAcct.SetBalance(recipientBal.Add(value.Decimal()).String())
 
-	// Clean up unbonded stakes and update recipient account
-	recipientAcct.Clean(chainHeight)
-	acctKeeper.Update(recipientAddr, recipientAcct)
+	// Clean up the recipient object
+	recvAcct.Clean(chainHeight)
+
+	// Save the new state of the object
+	switch o := recvAcct.(type) {
+	case *types.Account:
+		acctKeeper.Update(recipientAddr, o)
+	case *types.Repository:
+		repoKeeper.Update(recipientAddr.String(), o)
+	}
 
 	return nil
 }

@@ -59,6 +59,13 @@ type TxKeeper interface {
 	GetTx(hash []byte) (BaseTx, error)
 }
 
+// BalanceAccount represents an account that maintains a balance
+type BalanceAccount interface {
+	GetBalance() util.String
+	SetBalance(bal string)
+	Clean(chainHeight uint64)
+}
+
 // AccountKeeper describes an interface for accessing account data
 type AccountKeeper interface {
 	// GetAccount returns an account by address.

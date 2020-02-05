@@ -1,7 +1,6 @@
 package util
 
 import (
-	"github.com/makeos/mosdef/params"
 	"bufio"
 	"bytes"
 	"encoding/binary"
@@ -14,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/makeos/mosdef/params"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/robertkrimen/otto"
