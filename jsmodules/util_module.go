@@ -200,7 +200,7 @@ func (m *UtilModule) readTextFile(filename string) string {
 }
 
 func (m *UtilModule) treasuryAddress() string {
-	return params.TreasuryAddress.String()
+	return params.TreasuryAddress
 }
 
 // genKey generates an Ed25519 key.

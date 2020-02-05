@@ -25,12 +25,12 @@ func CheckTxCoinTransferConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	recipient := tx.To.String()
+	recipient := tx.To.Address()
 
 check:
 	// If recipient address is a prefixed, repo address, ensure repo exist
-	if isPrefixedAddr(recipient) && recipient[:2] == "r/" {
-		repo := logic.RepoKeeper().GetRepo(recipient[2:], uint64(bi.Height))
+	if recipient.IsPrefixedRepoAddress() {
+		repo := logic.RepoKeeper().GetRepo(recipient.String()[2:], uint64(bi.Height))
 		if repo.IsNil() {
 			return feI(index, "to", "recipient repo not found")
 		}
@@ -38,12 +38,13 @@ check:
 
 	// If the recipient address is a namespace uri, get the target and if the
 	// target is a repository address, check that the repo exist.
-	if isNamespacedAddr(recipient) {
-		prefixedTarget, err := logic.NamespaceKeeper().GetTarget(recipient, uint64(bi.Height))
+	if recipient.IsNamespaceURI() {
+		prefixedTarget, err := logic.NamespaceKeeper().
+			GetTarget(recipient.String(), uint64(bi.Height))
 		if err != nil {
 			return feI(index, "to", err.Error())
 		}
-		recipient = prefixedTarget
+		recipient = util.Address(prefixedTarget)
 		goto check
 	}
 

@@ -87,7 +87,7 @@ var _ = Describe("Namespace", func() {
 			})
 
 			Specify("that value is paid to the treasury address", func() {
-				acct := logic.AccountKeeper().GetAccount(params.TreasuryAddress)
+				acct := logic.AccountKeeper().GetAccount(util.String(params.TreasuryAddress))
 				Expect(acct.Balance).To(Equal(util.String("1")))
 			})
 		})

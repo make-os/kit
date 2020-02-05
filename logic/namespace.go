@@ -61,11 +61,11 @@ func (t *Transaction) execAcquireNamespace(
 	acctKeeper.Update(spkObj.Addr(), senderAcct)
 
 	// Send the value to the treasury
-	treasuryAcct := acctKeeper.GetAccount(params.TreasuryAddress, chainHeight)
+	treasuryAcct := acctKeeper.GetAccount(util.String(params.TreasuryAddress), chainHeight)
 	treasuryBal := treasuryAcct.Balance.Decimal()
 	treasuryAcct.Balance = util.String(treasuryBal.Add(value.Decimal()).String())
 	treasuryAcct.Clean(chainHeight)
-	acctKeeper.Update(params.TreasuryAddress, treasuryAcct)
+	acctKeeper.Update(util.String(params.TreasuryAddress), treasuryAcct)
 
 	// Update the namespace
 	t.logic.NamespaceKeeper().Update(name, ns)

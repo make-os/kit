@@ -5,6 +5,7 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -277,7 +278,7 @@ var _ = Describe("Key", func() {
 		})
 
 		It("should return err.Error(invalid version)", func() {
-			invalidAddress := base58.CheckEncode([]byte{2, 3, 5}, AddressVersion)
+			invalidAddress := base58.CheckEncode([]byte{2, 3, 5}, params.AddressVersion)
 			err := IsValidAddr(invalidAddress)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("invalid address size"))

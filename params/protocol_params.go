@@ -3,8 +3,18 @@ package params
 import (
 	"time"
 
-	"github.com/makeos/mosdef/util"
 	"github.com/shopspring/decimal"
+)
+
+const (
+	// AddressVersion is the base58 encode version adopted
+	AddressVersion byte = 92
+
+	// PublicKeyVersion is the base58 encode version adopted for public keys
+	PublicKeyVersion byte = 93
+
+	// PrivateKeyVersion is the base58 encode version adopted for private keys
+	PrivateKeyVersion byte = 94
 )
 
 var (
@@ -116,7 +126,7 @@ var (
 	NamespaceGraceDur = 10
 
 	// TreasuryAddress is the address where treasury-bound payments are deposited
-	TreasuryAddress = util.String("e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx")
+	TreasuryAddress = "e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx"
 )
 
 // Repo config

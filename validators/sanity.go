@@ -17,42 +17,30 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-var prefixedIdentifierRegexp = "^[ar]{1}/[a-zA-Z0-9_-]+$" // e.g r/abc-xyz
-var nsDomainNameRegexp = "^[a-zA-Z0-9_-]+$"               // e.g r/abc-xyz
-var nsRegexp = "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$"          // e.g r/abc-xyz
-
-func isPrefixedAddr(addr string) bool {
-	return regexp.MustCompile(prefixedIdentifierRegexp).MatchString(addr)
-}
-
-func isNamespacedAddr(addr string) bool {
-	return regexp.MustCompile(nsRegexp).MatchString(addr)
-}
-
 // CheckRecipient validates the recipient address
 func CheckRecipient(tx *types.TxRecipient, index int) error {
 
-	recipient := tx.To.String()
+	recipient := tx.To.Address()
 
 	if tx.To.Empty() {
 		return feI(index, "to", "recipient address is required")
 	}
 
-	if strings.Index(recipient, "/") == -1 {
-		if crypto.IsValidAddr(recipient) != nil {
+	if strings.Index(recipient.String(), "/") == -1 {
+		if crypto.IsValidAddr(recipient.String()) != nil {
 			goto bad
 		}
 		return nil
 	}
 
-	if isPrefixedAddr(recipient) {
-		if recipient[:2] == "a/" {
+	if recipient.IsPrefixed() {
+		if recipient.IsPrefixedAccountAddress() {
 			goto bad
 		}
 		return nil
 	}
 
-	if isNamespacedAddr(recipient) {
+	if recipient.IsNamespaceURI() {
 		return nil
 	}
 
@@ -414,10 +402,10 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 // CheckNamespaceDomains checks namespace domains and targets
 func CheckNamespaceDomains(domains map[string]string, index int) error {
 	for domain, target := range domains {
-		if !regexp.MustCompile(nsDomainNameRegexp).MatchString(domain) {
+		if !regexp.MustCompile(util.AddressNamespaceDomainNameRegexp).MatchString(domain) {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: name is invalid", domain))
 		}
-		if !isPrefixedAddr(target) {
+		if !util.IsPrefixedAddr(target) {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: target is invalid", domain))
 		}
 		if target[:2] == "a/" && crypto.IsValidAddr(target[2:]) != nil {

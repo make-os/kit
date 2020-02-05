@@ -17,20 +17,12 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/makeos/mosdef/crypto/bls"
 	"github.com/makeos/mosdef/crypto/vrf"
+	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/util"
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 )
-
-// AddressVersion is the base58 encode version adopted
-var AddressVersion byte = 92
-
-// PublicKeyVersion is the base58 encode version adopted for public keys
-var PublicKeyVersion byte = 93
-
-// PrivateKeyVersion is the base58 encode version adopted for private keys
-var PrivateKeyVersion byte = 94
 
 // Key includes a wrapped Ed25519 private key and
 // convenient methods to get the corresponding public
@@ -156,7 +148,7 @@ func (p *PrivKey) Marshal() ([]byte, error) {
 // Base58 returns the public key in base58 encoding
 func (p *PrivKey) Base58() string {
 	bs, _ := p.Bytes()
-	return base58.CheckEncode(bs, PrivateKeyVersion)
+	return base58.CheckEncode(bs, params.PrivateKeyVersion)
 }
 
 // Sign signs a message
@@ -239,7 +231,7 @@ func (p *PubKey) Hex() string {
 // Base58 returns the public key in base58 encoding
 func (p *PubKey) Base58() string {
 	bs, _ := p.Bytes()
-	return base58.CheckEncode(bs, PublicKeyVersion)
+	return base58.CheckEncode(bs, params.PublicKeyVersion)
 }
 
 // Verify verifies a signature
@@ -280,7 +272,7 @@ func IsValidAddr(addr string) error {
 		return fmt.Errorf("invalid address size")
 	}
 
-	if v != AddressVersion {
+	if v != params.AddressVersion {
 		return fmt.Errorf("invalid version")
 	}
 
@@ -289,7 +281,7 @@ func IsValidAddr(addr string) error {
 
 // RIPEMD160ToAddr returns a 20 byte slice to an address
 func RIPEMD160ToAddr(hash [20]byte) util.String {
-	return util.String(base58.CheckEncode(hash[:], AddressVersion))
+	return util.String(base58.CheckEncode(hash[:], params.AddressVersion))
 }
 
 // DecodeAddr validates an address, decodes it and returns
@@ -339,7 +331,7 @@ func IsValidPubKey(pubKey string) error {
 		return err
 	}
 
-	if v != PublicKeyVersion {
+	if v != params.PublicKeyVersion {
 		return fmt.Errorf("invalid version")
 	}
 
@@ -358,7 +350,7 @@ func IsValidPrivKey(privKey string) error {
 		return err
 	}
 
-	if v != PrivateKeyVersion {
+	if v != params.PrivateKeyVersion {
 		return fmt.Errorf("invalid version")
 	}
 

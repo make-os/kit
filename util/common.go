@@ -1,6 +1,7 @@
 package util
 
 import (
+	"github.com/makeos/mosdef/params"
 	"bufio"
 	"bytes"
 	"encoding/binary"
@@ -14,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/robertkrimen/otto"
 
 	"github.com/thoas/go-funk"
@@ -52,6 +54,11 @@ type String string
 // Bytes returns the bytes equivalent of the string
 func (s String) Bytes() []byte {
 	return []byte(s)
+}
+
+// Address converts the String to an Address
+func (s String) Address() Address {
+	return Address(s)
 }
 
 // Equal check whether s and o are the same
@@ -531,4 +538,26 @@ func SplitNamespaceDomain(name string) (ns string, domain string, err error) {
 		return "", "", fmt.Errorf("invalid address format")
 	}
 	return parts[0], parts[1], nil
+}
+
+// IsValidAddr checks whether an address is valid
+func IsValidAddr(addr string) error {
+	if addr == "" {
+		return fmt.Errorf("empty address")
+	}
+
+	result, v, err := base58.CheckDecode(addr)
+	if err != nil {
+		return err
+	}
+
+	if len(result) != 20 {
+		return fmt.Errorf("invalid address size")
+	}
+
+	if v != params.AddressVersion {
+		return fmt.Errorf("invalid version")
+	}
+
+	return nil
 }

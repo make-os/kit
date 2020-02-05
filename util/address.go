@@ -1,25 +1,25 @@
-package types
+package util
 
 import (
-	"github.com/makeos/mosdef/crypto"
 	"regexp"
 )
 
 // Address constants
 const (
-	AddressPrefixRepo                = "r/"
-	AddressPrefixAddress             = "a/"
-	AddressPrefixedIdentifierRegexp  = "^[ar]{1}/[a-zA-Z0-9_-]+$"        // e.g r/abc-xyz
+	addressPrefixRepo                = "r/"
+	addressPrefixAddress             = "a/"
+	addressPrefixedIdentifierRegexp  = "^[ar]{1}/[a-zA-Z0-9_-]+$"        // e.g r/abc-xyz
 	AddressNamespaceDomainNameRegexp = "^[a-zA-Z0-9_-]+$"                // e.g r/abc-xyz
-	AddressNamespaceRegexp           = "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$" // e.g r/abc-xyz
+	addressNamespaceRegexp           = "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$" // e.g r/abc-xyz
 )
 
-func isPrefixedAddr(addr string) bool {
-	return regexp.MustCompile(AddressPrefixedIdentifierRegexp).MatchString(addr)
+// IsPrefixedAddr checks whether the given string matches a prefixed address
+func IsPrefixedAddr(addr string) bool {
+	return regexp.MustCompile(addressPrefixedIdentifierRegexp).MatchString(addr)
 }
 
 func isNamespacedAddr(addr string) bool {
-	return regexp.MustCompile(AddressNamespaceRegexp).MatchString(addr)
+	return regexp.MustCompile(addressNamespaceRegexp).MatchString(addr)
 }
 
 // Address represents an identifier for a resource
@@ -42,7 +42,7 @@ func (a *Address) IsNamespaceURI() bool {
 // IsPrefixed checks whether the address is prefixed with a/ or /r which
 // indicates a repo and account address respectively
 func (a *Address) IsPrefixed() bool {
-	return isPrefixedAddr(string(*a))
+	return IsPrefixedAddr(string(*a))
 }
 
 // IsPrefixedRepoAddress checks if the address is prefixed by `r/` which is used to
@@ -51,7 +51,7 @@ func (a *Address) IsPrefixedRepoAddress() bool {
 	if !a.IsPrefixed() {
 		return false
 	}
-	return string(*a)[:2] == AddressPrefixRepo
+	return string(*a)[:2] == addressPrefixRepo
 }
 
 // IsPrefixedAccountAddress checks if the address is prefixed by `a/` which is used to
@@ -60,11 +60,11 @@ func (a *Address) IsPrefixedAccountAddress() bool {
 	if !a.IsPrefixed() {
 		return false
 	}
-	return string(*a)[:2] == AddressPrefixAddress
+	return string(*a)[:2] == addressPrefixAddress
 }
 
 // IsBase58Address checks if the address is prefixed by `a/` which is used to
 // identity an account address
 func (a *Address) IsBase58Address() bool {
-	return crypto.IsValidAddr(string(*a)) == nil
+	return IsValidAddr(string(*a)) == nil
 }
