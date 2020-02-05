@@ -8,9 +8,9 @@ import (
 const (
 	addressPrefixRepo                = "r/"
 	addressPrefixAddress             = "a/"
-	addressPrefixedIdentifierRegexp  = "^[ar]{1}/[a-zA-Z0-9_-]+$"        // e.g r/abc-xyz
-	AddressNamespaceDomainNameRegexp = "^[a-zA-Z0-9_-]+$"                // e.g r/abc-xyz
-	addressNamespaceRegexp           = "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$" // e.g r/abc-xyz
+	addressPrefixedIdentifierRegexp  = "^[ar]{1}/[a-zA-Z0-9_-]+$"           // e.g r/abc-xyz
+	AddressNamespaceDomainNameRegexp = "^[a-zA-Z0-9_-]+$"                   // e.g r/abc-xyz
+	addressNamespaceRegexp           = "^[a-zA-Z0-9_-]{2,}/[a-zA-Z0-9_-]+$" // e.g r/abc-xyz
 )
 
 // IsPrefixedAddr checks whether the given string matches a prefixed address
