@@ -37,6 +37,64 @@ var _ = Describe("TxValidator", func() {
 		Expect(err).To(BeNil())
 	})
 
+	Describe(".CheckRecipient", func() {
+		When("recipient address is not set", func() {
+			It("should return err", func() {
+				tx := types.NewBareTxCoinTransfer()
+				err := validators.CheckRecipient(tx.TxRecipient, 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("index:0, field:to, error:recipient address is required"))
+			})
+		})
+
+		When("recipient address is an invalid base58 encoded address", func() {
+			It("should return err", func() {
+				tx := types.NewBareTxCoinTransfer()
+				tx.To = "abcdef"
+				err := validators.CheckRecipient(tx.TxRecipient, 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("index:0, field:to, error:recipient address is not valid"))
+			})
+		})
+
+		When("recipient address is not base58 encoded but a namespaced address", func() {
+			It("should return no error", func() {
+				tx := types.NewBareTxCoinTransfer()
+				tx.To = "namespace/domain"
+				err := validators.CheckRecipient(tx.TxRecipient, 0)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("recipient address is not base58 encoded but a prefixed address", func() {
+			It("should return no error", func() {
+				tx := types.NewBareTxCoinTransfer()
+				tx.To = "r/domain"
+				err := validators.CheckRecipient(tx.TxRecipient, 0)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("recipient address is not base58 encoded but a prefixed account address", func() {
+			It("should return err", func() {
+				tx := types.NewBareTxCoinTransfer()
+				tx.To = "a/abcdef"
+				err := validators.CheckRecipient(tx.TxRecipient, 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("index:0, field:to, error:recipient address is not valid"))
+			})
+		})
+
+		When("recipient address is a base58 encoded address that is valid", func() {
+			It("should return no error", func() {
+				tx := types.NewBareTxCoinTransfer()
+				tx.To = key.Addr()
+				err := validators.CheckRecipient(tx.TxRecipient, 0)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
+
 	Describe(".CheckTxCoinTransfer", func() {
 		var tx *types.TxCoinTransfer
 		BeforeEach(func() {
@@ -213,7 +271,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Domains["domain"] = "invalid:format"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:domains, error:domains.domain target format is invalid"))
+				Expect(err.Error()).To(Equal("field:domains, error:domains.domain: target is invalid"))
 			})
 
 			It("has domain target with unknown target type", func() {
@@ -221,7 +279,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Domains["domain"] = "unknown_type/name"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:domains, error:domains.domain has unknown target type"))
+				Expect(err.Error()).To(Equal("field:domains, error:domains.domain: target is invalid"))
 			})
 
 			It("has domain target with account target type that has an invalid address", func() {
@@ -229,7 +287,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Domains["domain"] = "a/invalid_addr"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:domains, error:domains.domain has invalid address"))
+				Expect(err.Error()).To(Equal("field:domains, error:domains.domain: target is not a valid address"))
 			})
 
 			It("has invalid fee", func() {
@@ -645,8 +703,8 @@ var _ = Describe("TxValidator", func() {
 				}
 				err := validators.CheckRepoConfig(repoCfg, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config, error:when proposee method " +
-					"is 'ProposeeOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
+				Expect(err.Error()).To(Equal("field:config, error:when proposee type " +
+					"is not 'ProposeeOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
 			})
 		})
 
@@ -660,8 +718,8 @@ var _ = Describe("TxValidator", func() {
 				}
 				err := validators.CheckRepoConfig(repoCfg, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config, error:when proposee method " +
-					"is 'ProposeeOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
+				Expect(err.Error()).To(Equal("field:config, error:when proposee type " +
+					"is not 'ProposeeOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
 			})
 		})
 	})

@@ -25,6 +25,28 @@ func CheckTxCoinTransferConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
+	recipient := tx.To.String()
+
+check:
+	// If recipient address is a prefixed, repo address, ensure repo exist
+	if isPrefixedAddr(recipient) && recipient[:2] == "r/" {
+		repo := logic.RepoKeeper().GetRepo(recipient[2:], uint64(bi.Height))
+		if repo.IsNil() {
+			return feI(index, "to", "recipient repo not found")
+		}
+	}
+
+	// If the recipient address is a namespace uri, get the target and if the
+	// target is a repository address, check that the repo exist.
+	if isNamespacedAddr(recipient) {
+		prefixedTarget, err := logic.NamespaceKeeper().GetTarget(recipient, uint64(bi.Height))
+		if err != nil {
+			return feI(index, "to", err.Error())
+		}
+		recipient = prefixedTarget
+		goto check
+	}
+
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {

@@ -77,6 +77,60 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
+		When("recipient address is a repo address of which the repo does not exist", func() {
+			BeforeEach(func() {
+				bi := &types.BlockInfo{Height: 1}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+				tx := types.NewBareTxCoinTransfer()
+				tx.To = "r/repo"
+				mockRepoKeeper.EXPECT().GetRepo("repo", uint64(1)).Return(types.BareRepository())
+				err = validators.CheckTxCoinTransferConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:to, error:recipient repo not found"))
+			})
+		})
+
+		When("recipient address is a namespaced address of which the target is a repo address "+
+			"pointing to repo that does not exist", func() {
+			BeforeEach(func() {
+				bi := &types.BlockInfo{Height: 1}
+				tx := types.NewBareTxCoinTransfer()
+				tx.To = "namespace/cool-repo"
+
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+				mockNSKeeper.EXPECT().GetTarget(tx.To.String(), uint64(1)).Return("r/repo", nil)
+				mockRepoKeeper.EXPECT().GetRepo("repo", uint64(1)).Return(types.BareRepository())
+
+				err = validators.CheckTxCoinTransferConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:to, error:recipient repo not found"))
+			})
+		})
+
+		When("recipient address is a namespaced address of which the namespace could not be found", func() {
+			BeforeEach(func() {
+				bi := &types.BlockInfo{Height: 1}
+				tx := types.NewBareTxCoinTransfer()
+				tx.To = "namespace/cool-repo"
+
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+				mockNSKeeper.EXPECT().GetTarget(tx.To.String(), uint64(1)).Return("", fmt.Errorf("error"))
+
+				err = validators.CheckTxCoinTransferConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:to, error:error"))
+			})
+		})
+
 		When("coin transfer dry-run fails", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxCoinTransfer()

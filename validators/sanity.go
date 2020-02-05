@@ -17,26 +17,47 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-var domainTargetFormat = "^[ar]{1}/[a-zA-Z0-9_-]+$" // e.g r/abc-xyz
-var domainNameFormat = "^[a-zA-Z0-9_-]+$"           // e.g r/abc-xyz
+var prefixedIdentifierRegexp = "^[ar]{1}/[a-zA-Z0-9_-]+$" // e.g r/abc-xyz
+var nsDomainNameRegexp = "^[a-zA-Z0-9_-]+$"               // e.g r/abc-xyz
+var nsRegexp = "^[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+$"          // e.g r/abc-xyz
 
-// func isRepoFullAddr(addr string) bool {
-// 	re := regexp.MustCompile("r/[a-b]")
-// }
+func isPrefixedAddr(addr string) bool {
+	return regexp.MustCompile(prefixedIdentifierRegexp).MatchString(addr)
+}
 
-func checkRecipient(tx *types.TxRecipient, index int) error {
+func isNamespacedAddr(addr string) bool {
+	return regexp.MustCompile(nsRegexp).MatchString(addr)
+}
 
-	// A full repo address
-	// if tx.To[:2] == "r/" {
-	// 	if tx.To[2:]
-	// }
-	if err := v.Validate(tx.To,
-		v.Required.Error(feI(index, "to", "recipient address is required").Error()),
-		v.By(validAddrRule(feI(index, "to", "recipient address is not valid"))),
-	); err != nil {
-		return err
+// CheckRecipient validates the recipient address
+func CheckRecipient(tx *types.TxRecipient, index int) error {
+
+	recipient := tx.To.String()
+
+	if tx.To.Empty() {
+		return feI(index, "to", "recipient address is required")
 	}
-	return nil
+
+	if strings.Index(recipient, "/") == -1 {
+		if crypto.IsValidAddr(recipient) != nil {
+			goto bad
+		}
+		return nil
+	}
+
+	if isPrefixedAddr(recipient) {
+		if recipient[:2] == "a/" {
+			goto bad
+		}
+		return nil
+	}
+
+	if isNamespacedAddr(recipient) {
+		return nil
+	}
+
+bad:
+	return feI(index, "to", "recipient address is not valid")
 }
 
 func checkValue(tx *types.TxValue, index int) error {
@@ -113,7 +134,7 @@ func CheckTxCoinTransfer(tx *types.TxCoinTransfer, index int) error {
 		return err
 	}
 
-	if err := checkRecipient(tx.TxRecipient, index); err != nil {
+	if err := CheckRecipient(tx.TxRecipient, index); err != nil {
 		return err
 	}
 
@@ -393,10 +414,10 @@ func CheckTxPush(tx *types.TxPush, index int) error {
 // CheckNamespaceDomains checks namespace domains and targets
 func CheckNamespaceDomains(domains map[string]string, index int) error {
 	for domain, target := range domains {
-		if !regexp.MustCompile(domainNameFormat).MatchString(domain) {
+		if !regexp.MustCompile(nsDomainNameRegexp).MatchString(domain) {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: name is invalid", domain))
 		}
-		if !regexp.MustCompile(domainTargetFormat).MatchString(target) {
+		if !isPrefixedAddr(target) {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: target is invalid", domain))
 		}
 		if target[:2] == "a/" && crypto.IsValidAddr(target[2:]) != nil {

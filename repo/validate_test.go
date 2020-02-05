@@ -933,7 +933,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				tx := &types.PushNote{RepoName: "repo1", PusherKeyID: util.RandBytes(20)}
 				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{CreatorAddress: "addr1"})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
 				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
 				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
 				mockGPGKeeper.EXPECT().GetGPGPubKey(util.ToHex(tx.PusherKeyID)).Return(types.BareGPGPubKey())
@@ -955,7 +955,7 @@ var _ = Describe("Validation", func() {
 					PusherAddress: "address1",
 				}
 				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{CreatorAddress: "addr1"})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
 				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
 				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
 
@@ -980,7 +980,7 @@ var _ = Describe("Validation", func() {
 					PusherAddress: "address1",
 				}
 				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{CreatorAddress: "addr1"})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
 				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
 				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
 
@@ -1011,7 +1011,7 @@ var _ = Describe("Validation", func() {
 					AccountNonce:  3,
 				}
 				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{CreatorAddress: "addr1"})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
 				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
 				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
 

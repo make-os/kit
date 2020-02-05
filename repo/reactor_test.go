@@ -92,7 +92,7 @@ var _ = Describe("Reactor", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				mockRepoKeeper.EXPECT().GetRepo("unknown").Return(&types.Repository{
-					CreatorAddress: key.Addr(),
+					Balance: "10",
 				})
 				pn := &types.PushNote{RepoName: "unknown"}
 				err = mgr.onPushNote(mockPeer, pn.Bytes())

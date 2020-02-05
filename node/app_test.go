@@ -349,7 +349,6 @@ var _ = Describe("App", func() {
 				req := abcitypes.RequestBeginBlock{}
 				req.Header.ProposerAddress = pv.GetAddress().Bytes()
 
-				mockLogic.Sys.EXPECT().CheckSetNetMaturity().Return(nil)
 				app.logic = mockLogic.AtomicLogic
 				app.BeginBlock(req)
 			})
