@@ -161,14 +161,15 @@ func (t *Transaction) execRepoUpsertOwner(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := &types.RepoProposal{
-		Action:      types.ProposalActionAddOwner,
-		Creator:     spk.Addr().String(),
-		Proposee:    repo.Config.Governace.ProposalProposee,
-		EndAt:       repo.Config.Governace.ProposalDur + chainHeight + 1,
-		TallyMethod: repo.Config.Governace.ProposalTallyMethod,
-		Quorum:      repo.Config.Governace.ProposalQuorum,
-		Threshold:   repo.Config.Governace.ProposalThreshold,
-		VetoQuorum:  repo.Config.Governace.ProposalVetoQuorum,
+		Action:            types.ProposalActionAddOwner,
+		Creator:           spk.Addr().String(),
+		Proposee:          repo.Config.Governace.ProposalProposee,
+		EndAt:             repo.Config.Governace.ProposalDur + chainHeight + 1,
+		TallyMethod:       repo.Config.Governace.ProposalTallyMethod,
+		Quorum:            repo.Config.Governace.ProposalQuorum,
+		Threshold:         repo.Config.Governace.ProposalThreshold,
+		VetoQuorum:        repo.Config.Governace.ProposalVetoQuorum,
+		ProposalFeeRefund: repo.Config.Governace.ProposalFeeRefund,
 		Fees: map[string]string{
 			spk.Addr().String(): proposalFee.String(),
 		},

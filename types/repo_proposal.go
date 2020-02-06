@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/mitchellh/mapstructure"
+	"github.com/shopspring/decimal"
 )
 
 // ProposeeType represents a type of repo proposal proposee
@@ -28,6 +29,16 @@ const (
 
 // ProposalFees contains address and fees paid by proposal creators
 type ProposalFees map[string]string
+
+// Total returns the total fees
+func (pf ProposalFees) Total() decimal.Decimal {
+	sum := decimal.Zero
+	for _, fee := range pf {
+		feeD, _ := decimal.NewFromString(fee)
+		sum = sum.Add(feeD)
+	}
+	return sum
+}
 
 // ProposalAction represents proposal action types
 type ProposalAction int
@@ -63,6 +74,8 @@ type Proposal interface {
 	GetRejected() float64
 	GetRejectedWithVeto() float64
 	GetRejectedWithVetoByOwners() float64
+	GetFees() ProposalFees
+	IsFeeRefundable() bool
 	IsFinalized() bool
 	SetOutcome(v ProposalOutcome)
 }
@@ -99,7 +112,8 @@ type RepoProposal struct {
 	NoWithVeto            float64                `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes from owners/stakeholders veto power
 	NoWithVetoByOwners    float64                `json:"noWithVetoByOwners" mapstructure:"noWithVetoByOwners" msgpack:"noWithVetoByOwners"`          // Count of "No" votes specifically from owners veto power
 	Abstain               float64                `json:"abstain" mapstructure:"abstain" msgpack:"abstain"`                                           // Count of explicit "abstain" votes
-	Fees                  ProposalFees           `json:"fees" mapstructure:"fees" msgpack:"fees"`                                                    // Count of explicit "abstain" votes
+	Fees                  ProposalFees           `json:"fee" mapstructure:"fee" msgpack:"fee"`                                                       // Count of explicit "abstain" votes
+	ProposalFeeRefund     bool                   `json:"propFeeRefund" mapstructure:"propFeeRefund" msgpack:"propFeeRefund"`                         // Count of explicit "abstain" votes
 	Outcome               ProposalOutcome        `json:"outcome" mapstructure:"outcome" msgpack:"outcome"`                                           // The outcome of the proposal vote.
 }
 
@@ -131,6 +145,16 @@ func (p *RepoProposal) GetProposeeMaxJoinHeight() uint64 {
 // GetEndAt implements Proposal
 func (p *RepoProposal) GetEndAt() uint64 {
 	return p.EndAt
+}
+
+// GetFees implements Proposal
+func (p *RepoProposal) GetFees() ProposalFees {
+	return p.Fees
+}
+
+// IsFeeRefundable implements Proposal
+func (p *RepoProposal) IsFeeRefundable() bool {
+	return p.ProposalFeeRefund
 }
 
 // GetQuorum implements Proposal

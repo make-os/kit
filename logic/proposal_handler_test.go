@@ -8,6 +8,7 @@ import (
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/types/mocks"
+	"github.com/makeos/mosdef/util"
 
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/storage"
@@ -173,6 +174,85 @@ var _ = Describe("ProposalHandler", func() {
 				applied, err := maybeApplyProposal(logic, proposal, repo, 0)
 				Expect(err).To(BeNil())
 				Expect(applied).To(BeFalse())
+			})
+		})
+
+		Context("check if proposal fees were shared", func() {
+			When("proposal fee is non-refundable", func() {
+				var proposal *types.RepoProposal
+				var repo *types.Repository
+				var helmRepo = "helm-repo"
+
+				BeforeEach(func() {
+					err := logic.SysKeeper().SetHelmRepo(helmRepo)
+					Expect(err).To(BeNil())
+
+					proposal = &types.RepoProposal{}
+					proposal.Proposee = types.ProposeeOwner
+					proposal.Creator = key.Addr().String()
+					proposal.Action = types.ProposalActionAddOwner
+					proposal.Fees = map[string]string{
+						"addr":  "100",
+						"addr2": "50",
+					}
+					proposal.ActionData = map[string]interface{}{
+						"addresses": "addr",
+						"veto":      false,
+					}
+					repo = types.BareRepository()
+					repo.AddOwner(key.Addr().String(), &types.RepoOwner{})
+					applied, err := maybeApplyProposal(logic, proposal, repo, 0)
+					Expect(err).To(BeNil())
+					Expect(applied).To(BeTrue())
+				})
+
+				Specify("that the proposal's repo has balance=90", func() {
+					Expect(repo.Balance).To(Equal(util.String("90")))
+				})
+
+				Specify("that the helm repo has balance=60", func() {
+					repo := logic.RepoKeeper().GetRepo(helmRepo)
+					Expect(repo.Balance).To(Equal(util.String("60")))
+				})
+			})
+
+			When("proposal fee is refundable", func() {
+				var proposal *types.RepoProposal
+				var repo *types.Repository
+				var helmRepo = "helm-repo"
+
+				BeforeEach(func() {
+					err := logic.SysKeeper().SetHelmRepo(helmRepo)
+					Expect(err).To(BeNil())
+
+					proposal = &types.RepoProposal{}
+					proposal.Proposee = types.ProposeeOwner
+					proposal.Creator = key.Addr().String()
+					proposal.Action = types.ProposalActionAddOwner
+					proposal.ProposalFeeRefund = true
+					proposal.Fees = map[string]string{
+						"addr":  "100",
+						"addr2": "50",
+					}
+					proposal.ActionData = map[string]interface{}{
+						"addresses": "addr",
+						"veto":      false,
+					}
+					repo = types.BareRepository()
+					repo.AddOwner(key.Addr().String(), &types.RepoOwner{})
+					applied, err := maybeApplyProposal(logic, proposal, repo, 0)
+					Expect(err).To(BeNil())
+					Expect(applied).To(BeTrue())
+				})
+
+				Specify("that the proposal's repo has balance=0", func() {
+					Expect(repo.Balance).To(Equal(util.String("0")))
+				})
+
+				Specify("that the helm repo has balance=0", func() {
+					repo := logic.RepoKeeper().GetRepo(helmRepo)
+					Expect(repo.Balance).To(Equal(util.String("0")))
+				})
 			})
 		})
 	})

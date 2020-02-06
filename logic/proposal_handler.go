@@ -5,6 +5,7 @@ import (
 	"math"
 
 	"github.com/makeos/mosdef/types"
+	"github.com/shopspring/decimal"
 )
 
 // getProposalOutcome returns the current outcome of a proposal
@@ -106,6 +107,8 @@ func maybeApplyProposal(
 	repo *types.Repository,
 	chainHeight uint64) (bool, error) {
 
+	var err error
+
 	if proposal.IsFinalized() {
 		return false, nil
 	}
@@ -137,12 +140,32 @@ func maybeApplyProposal(
 apply:
 	switch proposal.GetAction() {
 	case types.ProposalActionAddOwner:
-		return true, applyProposalAddOwner(proposal, repo, chainHeight)
+		err = applyProposalAddOwner(proposal, repo, chainHeight)
 	case types.ProposalActionRepoUpdate:
-		return true, applyProposalRepoUpdate(proposal, repo, chainHeight)
+		err = applyProposalRepoUpdate(proposal, repo, chainHeight)
+	default:
+		err = fmt.Errorf("unsupported proposal action")
 	}
 
-	return false, fmt.Errorf("unsupported proposal action")
+	if err != nil {
+		return false, err
+	}
+
+	// Share the proposal fee at a 40/60 ratio between the helm repo
+	// and the proposal's repo respectively only if proposal fee is
+	// non-refundable
+	if !proposal.IsFeeRefundable() {
+		totalFees := proposal.GetFees().Total()
+		helmRepoName, _ := keepers.SysKeeper().GetHelmRepo()
+		helmRepo := keepers.RepoKeeper().GetRepo(helmRepoName)
+		helmCut := decimal.NewFromFloat(0.4).Mul(totalFees)
+		helmRepo.SetBalance(helmRepo.Balance.Decimal().Add(helmCut).String())
+		repoCut := decimal.NewFromFloat(0.6).Mul(totalFees)
+		repo.SetBalance(repo.Balance.Decimal().Add(repoCut).String())
+		keepers.RepoKeeper().Update(helmRepoName, helmRepo)
+	}
+
+	return true, nil
 }
 
 // maybeApplyEndedProposals finds and applies proposals that will
