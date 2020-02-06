@@ -675,7 +675,7 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("veto quorum is negative", func() {
+		When("veto owners quorum is negative", func() {
 			It("should return error", func() {
 				repoCfg := &types.RepoConfig{
 					Governace: &types.RepoConfigGovernance{
@@ -690,6 +690,27 @@ var _ = Describe("TxValidator", func() {
 				err := validators.CheckRepoConfig(repoCfg, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:config.gov.propVetoOwnersQuorum, error:must be a non-negative number"))
+			})
+		})
+
+		When("proposal fee is below network minimum", func() {
+			It("should return error", func() {
+				params.MinProposalFee = float64(400)
+				repoCfg := &types.RepoConfig{
+					Governace: &types.RepoConfigGovernance{
+						ProposalProposee:         types.ProposeeOwner,
+						ProposalTallyMethod:      types.ProposalTallyMethodNetStake,
+						ProposalQuorum:           1,
+						ProposalThreshold:        1,
+						ProposalVetoQuorum:       1,
+						ProposalVetoOwnersQuorum: 1,
+						ProposalFee:              1,
+					},
+				}
+				err := validators.CheckRepoConfig(repoCfg, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:config.gov.propFee, error:cannot be lower " +
+					"than network minimum"))
 			})
 		})
 
@@ -1242,8 +1263,10 @@ var _ = Describe("TxValidator", func() {
 		var tx *types.TxRepoProposalUpsertOwner
 
 		BeforeEach(func() {
+			params.MinProposalFee = 10
 			tx = types.NewBareRepoProposalUpsertOwner()
 			tx.Timestamp = time.Now().Unix()
+			tx.Value = "11"
 		})
 
 		It("should return error when repo name is not provided", func() {
@@ -1257,6 +1280,23 @@ var _ = Describe("TxValidator", func() {
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+		})
+
+		It("should return error when value is not provided", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = ""
+			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:value, error:value is required"))
+		})
+
+		It("should return error when value below minimum network proposal fee", func() {
+			params.MinProposalFee = 100
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:value, error:proposal creation fee cannot be less than network minimum"))
 		})
 
 		It("should return error when target address is not provided", func() {
@@ -1284,7 +1324,7 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	Describe(".CheckTxRepoProposalVote", func() {
+	Describe(".CheckTxVote", func() {
 		var tx *types.TxRepoProposalVote
 
 		BeforeEach(func() {
@@ -1293,21 +1333,21 @@ var _ = Describe("TxValidator", func() {
 		})
 
 		It("should return error when repo name is not provided", func() {
-			err := validators.CheckTxRepoProposalVote(tx, -1)
+			err := validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:name, error:repo name is required"))
 		})
 
 		It("should return error when repo name is not valid", func() {
 			tx.RepoName = "*&^"
-			err := validators.CheckTxRepoProposalVote(tx, -1)
+			err := validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 		})
 
 		It("should return error when proposal id is not provided", func() {
 			tx.RepoName = "repo1"
-			err := validators.CheckTxRepoProposalVote(tx, -1)
+			err := validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, error:proposal id is required"))
 		})
@@ -1315,7 +1355,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when proposal id is not numerical", func() {
 			tx.RepoName = "repo1"
 			tx.ProposalID = "abc"
-			err := validators.CheckTxRepoProposalVote(tx, -1)
+			err := validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
 		})
@@ -1324,17 +1364,17 @@ var _ = Describe("TxValidator", func() {
 			tx.RepoName = "repo1"
 			tx.ProposalID = "1"
 			tx.Vote = 2
-			err := validators.CheckTxRepoProposalVote(tx, -1)
+			err := validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:vote, error:vote choice is unknown"))
 
 			tx.Vote = -3
-			err = validators.CheckTxRepoProposalVote(tx, -1)
+			err = validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:vote, error:vote choice is unknown"))
 
 			tx.Vote = -1
-			err = validators.CheckTxRepoProposalVote(tx, -1)
+			err = validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).ToNot(MatchError("field:vote, error:vote choice is unknown"))
 		})
@@ -1359,6 +1399,23 @@ var _ = Describe("TxValidator", func() {
 			err := validators.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+		})
+
+		It("should return error when value is not provided", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = ""
+			err := validators.CheckTxRepoProposalUpdate(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:value, error:value is required"))
+		})
+
+		It("should return error when value below minimum network proposal fee", func() {
+			params.MinProposalFee = 100
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			err := validators.CheckTxRepoProposalUpdate(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:value, error:proposal creation fee cannot be less than network minimum"))
 		})
 	})
 })

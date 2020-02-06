@@ -57,41 +57,95 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 
 	switch o := tx.(type) {
 	case *types.TxCoinTransfer:
-		return t.execCoinTransfer(spk, o.To, o.Value, o.Fee, chainHeight)
+		return t.execCoinTransfer(
+			spk,
+			o.To,
+			o.Value,
+			o.Fee,
+			chainHeight)
 
 	case *types.TxTicketPurchase:
 		if o.Is(types.TxTypeValidatorTicket) {
-			return t.execValidatorStake(spk, o.Value, o.Fee, chainHeight)
+			return t.execValidatorStake(
+				spk,
+				o.Value,
+				o.Fee,
+				chainHeight)
 		}
 		if o.Is(types.TxTypeStorerTicket) {
-			return t.execStorerStake(spk, o.Value, o.Fee, chainHeight)
+			return t.execStorerStake(
+				spk,
+				o.Value,
+				o.Fee,
+				chainHeight)
 		}
 		return fmt.Errorf("unknown transaction type")
 
 	case *types.TxSetDelegateCommission:
-		return t.execSetDelegatorCommission(spk, o.Commission, o.Fee, chainHeight)
+		return t.execSetDelegatorCommission(
+			spk,
+			o.Commission,
+			o.Fee,
+			chainHeight)
 
 	case *types.TxTicketUnbond:
-		return t.execUnbond(spk, o.TicketHash, o.Fee, chainHeight)
+		return t.execUnbond(
+			spk,
+			o.TicketHash,
+			o.Fee,
+			chainHeight)
 
 	case *types.TxRepoCreate:
-		return t.execRepoCreate(spk, o.Name, o.Config, o.Fee, chainHeight)
+		return t.execRepoCreate(
+			spk,
+			o.Name,
+			o.Config,
+			o.Fee,
+			chainHeight)
 
 	case *types.TxRepoProposalUpsertOwner:
-		return t.execRepoUpsertOwner(spk, o.RepoName, o.Addresses, o.Veto, o.Fee, chainHeight)
+		return t.execRepoUpsertOwner(
+			spk,
+			o.RepoName,
+			o.Addresses,
+			o.Veto,
+			o.Value,
+			o.Fee,
+			chainHeight)
 
 	case *types.TxRepoProposalVote:
-		return t.execRepoProposalVote(spk, o.RepoName, o.ProposalID, o.Vote, o.Fee, chainHeight)
+		return t.execRepoProposalVote(
+			spk,
+			o.RepoName,
+			o.ProposalID,
+			o.Vote,
+			o.Fee,
+			chainHeight)
 
 	case *types.TxRepoProposalUpdate:
-		return t.execRepoProposalUpdate(spk, o.RepoName, o.Config, o.Fee, chainHeight)
+		return t.execRepoProposalUpdate(
+			spk,
+			o.RepoName,
+			o.Config,
+			o.Value,
+			o.Fee,
+			chainHeight)
 
 	case *types.TxAddGPGPubKey:
-		return t.execAddGPGKey(spk, o.PublicKey, o.Fee, chainHeight)
+		return t.execAddGPGKey(
+			spk,
+			o.PublicKey,
+			o.Fee,
+			chainHeight)
 
 	case *types.TxPush:
 		pn := o.PushNote
-		err := t.execPush(pn.RepoName, pn.References, pn.GetFee(), pn.PusherKeyID, chainHeight)
+		err := t.execPush(
+			pn.RepoName,
+			pn.References,
+			pn.GetFee(),
+			pn.PusherKeyID,
+			chainHeight)
 		if err != nil {
 			return err
 		}
@@ -99,13 +153,23 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.logic.GetRepoManager().ExecTxPush(o)
 
 	case *types.TxNamespaceAcquire:
-		return t.execAcquireNamespace(spk, o.Name, o.Value, o.Fee, o.TransferToRepo,
+		return t.execAcquireNamespace(
+			spk,
+			o.Name,
+			o.Value,
+			o.Fee,
+			o.TransferToRepo,
 			o.TransferToAccount,
 			o.Domains,
 			chainHeight)
 
 	case *types.TxNamespaceDomainUpdate:
-		return t.execUpdateNamespaceDomains(spk, o.Name, o.Fee, o.Domains, chainHeight)
+		return t.execUpdateNamespaceDomains(
+			spk,
+			o.Name,
+			o.Fee,
+			o.Domains,
+			chainHeight)
 
 	default:
 		return fmt.Errorf("unknown transaction type")

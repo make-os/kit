@@ -519,13 +519,14 @@ var _ = Describe("Repo", func() {
 		When("sender is the only owner", func() {
 			repoName := "repo"
 			address := "owner_address"
+			proposalFee := util.String("1")
 
 			BeforeEach(func() {
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, repoName, address, false, "1.5", 0)
+				err = txLogic.execRepoUpsertOwner(spk, repoName, address, false, proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -546,22 +547,30 @@ var _ = Describe("Repo", func() {
 				Expect(repo.Owners).To(HaveLen(2))
 			})
 
-			Specify("that fee was deducted", func() {
+			Specify("that network fee + proposal fee was deducted", func() {
 				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
-				Expect(acct.Balance.String()).To(Equal("8.5"))
+				Expect(acct.Balance.String()).To(Equal("7.5"))
+			})
+
+			Specify("that the fee by the sender is registered on the proposal", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
+				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
 			})
 		})
 
 		When("sender is the only owner and there are multiple addresses", func() {
 			repoName := "repo"
 			addresses := "owner_address,owner_address2"
+			proposalFee := util.String("1")
 
 			BeforeEach(func() {
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, repoName, addresses, false, "1.5", 0)
+				err = txLogic.execRepoUpsertOwner(spk, repoName, addresses, false, proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -583,16 +592,24 @@ var _ = Describe("Repo", func() {
 				Expect(repo.Owners).To(HaveLen(3))
 			})
 
-			Specify("that fee was deducted", func() {
+			Specify("that network fee + proposal fee was deducted", func() {
 				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
-				Expect(acct.Balance.String()).To(Equal("8.5"))
+				Expect(acct.Balance.String()).To(Equal("7.5"))
+			})
+
+			Specify("that the fee by the sender is registered on the proposal", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
+				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
 			})
 		})
 
 		When("sender is not the only owner", func() {
 			repoName := "repo"
 			address := "owner_address"
-			var curHeight = uint64(0)
+			curHeight := uint64(0)
+			proposalFee := util.String("1")
 
 			BeforeEach(func() {
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
@@ -600,7 +617,8 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, repoName, address, false, "1.5", curHeight)
+				err = txLogic.execRepoUpsertOwner(spk, repoName, address, false,
+					proposalFee, "1.5", curHeight)
 				Expect(err).To(BeNil())
 			})
 
@@ -616,9 +634,16 @@ var _ = Describe("Repo", func() {
 				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(0)))
 			})
 
-			Specify("that fee was deducted", func() {
+			Specify("that network fee + proposal fee was deducted", func() {
 				acct := logic.AccountKeeper().GetAccount(sender.Addr(), curHeight)
-				Expect(acct.Balance.String()).To(Equal("8.5"))
+				Expect(acct.Balance.String()).To(Equal("7.5"))
+			})
+
+			Specify("that the fee by the sender is registered on the proposal", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
+				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
@@ -648,6 +673,7 @@ var _ = Describe("Repo", func() {
 
 		When("sender is the only owner", func() {
 			repoName := "repo"
+			proposalFee := util.String("1")
 
 			BeforeEach(func() {
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
@@ -657,7 +683,8 @@ var _ = Describe("Repo", func() {
 				config := &types.RepoConfig{
 					Governace: &types.RepoConfigGovernance{ProposalDur: 1000},
 				}
-				err = txLogic.execRepoProposalUpdate(spk, repoName, config, "1.5", 0)
+				err = txLogic.execRepoProposalUpdate(spk, repoName, config,
+					proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -679,15 +706,23 @@ var _ = Describe("Repo", func() {
 				Expect(repo.Config.Governace.ProposalDur).To(Equal(uint64(1000)))
 			})
 
-			Specify("that fee was deducted", func() {
+			Specify("that network fee + proposal fee was deducted", func() {
 				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
-				Expect(acct.Balance.String()).To(Equal("8.5"))
+				Expect(acct.Balance.String()).To(Equal("7.5"))
+			})
+
+			Specify("that the fee by the sender is registered on the proposal", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
+				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
 			})
 		})
 
 		When("sender is not the only owner", func() {
 			repoName := "repo"
-			var curHeight = uint64(0)
+			curHeight := uint64(0)
+			proposalFee := util.String("1")
 
 			BeforeEach(func() {
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
@@ -699,7 +734,7 @@ var _ = Describe("Repo", func() {
 					Governace: &types.RepoConfigGovernance{ProposalDur: 1000},
 				}
 
-				err = txLogic.execRepoProposalUpdate(spk, repoName, config, "1.5", curHeight)
+				err = txLogic.execRepoProposalUpdate(spk, repoName, config, proposalFee, "1.5", curHeight)
 				Expect(err).To(BeNil())
 			})
 
@@ -715,9 +750,16 @@ var _ = Describe("Repo", func() {
 				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(0)))
 			})
 
-			Specify("that fee was deducted", func() {
+			Specify("that network fee + proposal fee was deducted", func() {
 				acct := logic.AccountKeeper().GetAccount(sender.Addr(), curHeight)
-				Expect(acct.Balance.String()).To(Equal("8.5"))
+				Expect(acct.Balance.String()).To(Equal("7.5"))
+			})
+
+			Specify("that the fee by the sender is registered on the proposal", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
+				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {

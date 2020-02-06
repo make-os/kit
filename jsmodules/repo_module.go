@@ -170,6 +170,11 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 		tx.Addresses = ownerAddrs.(string)
 	}
 
+	if value, ok := params["value"]; ok {
+		defer castPanic("value")
+		tx.Value = util.String(value.(string))
+	}
+
 	if veto, ok := params["veto"]; ok {
 		defer castPanic("veto")
 		tx.Veto = veto.(bool)
@@ -287,6 +292,11 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 	if repoName, ok := params["name"]; ok {
 		defer castPanic("name")
 		tx.RepoName = repoName.(string)
+	}
+
+	if value, ok := params["value"]; ok {
+		defer castPanic("value")
+		tx.Value = util.String(value.(string))
 	}
 
 	if config, ok := params["config"]; ok {

@@ -350,6 +350,45 @@ func CheckTxNamespaceDomainUpdateConsistency(
 	return nil
 }
 
+// checkProposalCommonConsistency includes common consistency checks for
+// proposal transactions.
+func checkProposalCommonConsistency(
+	txType int,
+	txProposal *types.TxProposalCommon,
+	txCommon *types.TxCommon,
+	index int,
+	logic types.Logic) (*types.Repository, error) {
+
+	bi, err := logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to fetch current block info")
+	}
+
+	repo := logic.RepoKeeper().GetRepo(txProposal.RepoName, uint64(bi.Height))
+	if repo.IsNil() {
+		return nil, feI(index, "name", "repo not found")
+	}
+
+	if txProposal.Value.Decimal().
+		LessThan(decimal.NewFromFloat(repo.Config.Governace.ProposalFee)) {
+		return nil, feI(index, "value", "proposal fee cannot be less than repo minimum")
+	}
+
+	// If the repo is owned by some owners, ensure the sender is one of the owners
+	senderOwner := repo.Owners.Get(txCommon.GetFrom().String())
+	if repo.Config.Governace.ProposalProposee == types.ProposeeOwner && senderOwner == nil {
+		return nil, feI(index, "senderPubKey", "sender is not one of the repo owners")
+	}
+
+	pubKey, _ := crypto.PubKeyFromBytes(txCommon.GetSenderPubKey().Bytes())
+	if err := logic.Tx().CanExecCoinTransfer(txType, pubKey, txProposal.Value, txCommon.Fee,
+		txCommon.GetNonce(), uint64(bi.Height)); err != nil {
+		return nil, err
+	}
+
+	return repo, nil
+}
+
 // CheckTxRepoProposalUpsertOwnerConsistency performs consistency
 // checks on CheckTxRepoProposalUpsertOwner
 func CheckTxRepoProposalUpsertOwnerConsistency(
@@ -357,16 +396,21 @@ func CheckTxRepoProposalUpsertOwnerConsistency(
 	index int,
 	logic types.Logic) error {
 
-	repo := logic.RepoKeeper().GetRepo(tx.RepoName)
-	if repo.IsNil() {
-		return feI(index, "name", "repo not found")
+	_, err := checkProposalCommonConsistency(
+		tx.Type,
+		tx.TxProposalCommon,
+		tx.TxCommon,
+		index,
+		logic)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-// CheckTxRepoProposalVoteConsistency performs consistency checks on CheckTxRepoProposalVote
-func CheckTxRepoProposalVoteConsistency(
+// CheckTxVoteConsistency performs consistency checks on CheckTxVote
+func CheckTxVoteConsistency(
 	tx *types.TxRepoProposalVote,
 	index int,
 	logic types.Logic) error {
@@ -421,16 +465,14 @@ func CheckTxRepoProposalUpdateConsistency(
 	index int,
 	logic types.Logic) error {
 
-	// The repo must exist
-	repo := logic.RepoKeeper().GetRepo(tx.RepoName)
-	if repo.IsNil() {
-		return feI(index, "name", "repo not found")
-	}
-
-	// If the repo is owned by some owners, ensure the sender is one of the owners
-	senderOwner := repo.Owners.Get(tx.GetFrom().String())
-	if repo.Config.Governace.ProposalProposee == types.ProposeeOwner && senderOwner == nil {
-		return feI(index, "senderPubKey", "sender is not one of the repo owners")
+	_, err := checkProposalCommonConsistency(
+		tx.Type,
+		tx.TxProposalCommon,
+		tx.TxCommon,
+		index,
+		logic)
+	if err != nil {
+		return err
 	}
 
 	return nil

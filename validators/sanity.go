@@ -212,7 +212,7 @@ func CheckRepoConfig(cfg *types.RepoConfig, index int) error {
 		types.ProposeeOwner,
 		types.ProposeeNetStakeholders,
 		types.ProposeeNetStakeholdersAndVetoOwner}
-	if !funk.Contains(allowedProposeeChoices, cfg.Governace.ProposalProposee) {
+	if !funk.Contains(allowedProposeeChoices, govCfg.ProposalProposee) {
 		return feI(index, "config.gov.propProposee", fmt.Sprintf("unknown value"))
 	}
 
@@ -244,6 +244,10 @@ func CheckRepoConfig(cfg *types.RepoConfig, index int) error {
 
 	if govCfg.ProposalVetoOwnersQuorum < 0 {
 		return feI(index, "config.gov.propVetoOwnersQuorum", sf("must be a non-negative number"))
+	}
+
+	if govCfg.ProposalFee < params.MinProposalFee {
+		return feI(index, "config.gov.propFee", sf("cannot be lower than network minimum"))
 	}
 
 	// When proposee is ProposeeOwner, tally method cannot be CoinWeighted or Identity
@@ -505,6 +509,14 @@ func CheckTxRepoProposalUpsertOwner(tx *types.TxRepoProposalUpsertOwner, index i
 		return err
 	}
 
+	if err := checkValue(&types.TxValue{Value: tx.Value}, index); err != nil {
+		return err
+	} else if tx.Value.Decimal().
+		LessThan(decimal.NewFromFloat(params.MinProposalFee)) {
+		return feI(index, "value", "proposal creation fee cannot be "+
+			"less than network minimum")
+	}
+
 	if len(tx.Addresses) == 0 {
 		return feI(index, "addresses", "at least one address is required")
 	}
@@ -530,8 +542,8 @@ func CheckTxRepoProposalUpsertOwner(tx *types.TxRepoProposalUpsertOwner, index i
 	return nil
 }
 
-// CheckTxRepoProposalVote performs sanity checks on TxRepoProposalVote
-func CheckTxRepoProposalVote(tx *types.TxRepoProposalVote, index int) error {
+// CheckTxVote performs sanity checks on TxRepoProposalVote
+func CheckTxVote(tx *types.TxRepoProposalVote, index int) error {
 
 	if err := checkType(tx.TxType, types.TxTypeRepoProposalVote, index); err != nil {
 		return err
@@ -575,6 +587,14 @@ func CheckTxRepoProposalUpdate(tx *types.TxRepoProposalUpdate, index int) error 
 		v.By(validObjectNameRule("name", index)),
 	); err != nil {
 		return err
+	}
+
+	if err := checkValue(&types.TxValue{Value: tx.Value}, index); err != nil {
+		return err
+	} else if tx.Value.Decimal().
+		LessThan(decimal.NewFromFloat(params.MinProposalFee)) {
+		return feI(index, "value", "proposal creation fee cannot be "+
+			"less than network minimum")
 	}
 
 	if err := CheckRepoConfig(tx.Config, index); err != nil {

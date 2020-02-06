@@ -59,14 +59,14 @@ func (t *Transaction) execRepoCreate(
 	t.logic.RepoKeeper().Update(name, newRepo)
 
 	// Deduct fee from sender
-	t.deductFee(spk, fee, chainHeight)
+	t.deductFee(spk, fee.Decimal(), chainHeight)
 
 	return nil
 }
 
 // deductFee deducts the given fee from the account corresponding to the sender
 // public key; It also increments the senders account nonce by 1.
-func (t *Transaction) deductFee(spk *crypto.PubKey, fee util.String, chainHeight uint64) {
+func (t *Transaction) deductFee(spk *crypto.PubKey, fee decimal.Decimal, chainHeight uint64) {
 
 	// Get the sender account and balance
 	acctKeeper := t.logic.AccountKeeper()
@@ -74,7 +74,7 @@ func (t *Transaction) deductFee(spk *crypto.PubKey, fee util.String, chainHeight
 	senderBal := senderAcct.Balance.Decimal()
 
 	// Deduct the fee from the sender's account
-	senderAcct.Balance = util.String(senderBal.Sub(fee.Decimal()).String())
+	senderAcct.Balance = util.String(senderBal.Sub(fee).String())
 
 	// Increment nonce
 	senderAcct.Nonce = senderAcct.Nonce + 1
@@ -150,6 +150,7 @@ func (t *Transaction) execRepoUpsertOwner(
 	repoName string,
 	addresses string,
 	veto bool,
+	proposalFee util.String,
 	fee util.String,
 	chainHeight uint64) error {
 
@@ -168,6 +169,9 @@ func (t *Transaction) execRepoUpsertOwner(
 		Quorum:      repo.Config.Governace.ProposalQuorum,
 		Threshold:   repo.Config.Governace.ProposalThreshold,
 		VetoQuorum:  repo.Config.Governace.ProposalVetoQuorum,
+		Fees: map[string]string{
+			spk.Addr().String(): proposalFee.String(),
+		},
 		ActionData: map[string]interface{}{
 			actionDataAddresses: addresses,
 			actionDataVeto:      veto,
@@ -201,8 +205,9 @@ update:
 	// Update the repo
 	repoKeeper.Update(repoName, repo)
 
-	// Deduct fee from sender
-	t.deductFee(spk, fee, chainHeight)
+	// Deduct fee + proposal fee from sender
+	totalFee := fee.Decimal().Add(proposalFee.Decimal())
+	t.deductFee(spk, totalFee, chainHeight)
 
 	return nil
 }
@@ -221,6 +226,7 @@ func (t *Transaction) execRepoProposalUpdate(
 	senderPubKey util.Bytes32,
 	repoName string,
 	config *types.RepoConfig,
+	proposalFee util.String,
 	fee util.String,
 	chainHeight uint64) error {
 
@@ -239,6 +245,9 @@ func (t *Transaction) execRepoProposalUpdate(
 		Quorum:      repo.Config.Governace.ProposalQuorum,
 		Threshold:   repo.Config.Governace.ProposalThreshold,
 		VetoQuorum:  repo.Config.Governace.ProposalVetoQuorum,
+		Fees: map[string]string{
+			spk.Addr().String(): proposalFee.String(),
+		},
 		ActionData: map[string]interface{}{
 			actionDataConfig: util.ObjectToBytes(config),
 		},
@@ -272,7 +281,8 @@ update:
 	repoKeeper.Update(repoName, repo)
 
 	// Deduct fee from sender
-	t.deductFee(spk, fee, chainHeight)
+	totalFee := fee.Decimal().Add(proposalFee.Decimal())
+	t.deductFee(spk, totalFee, chainHeight)
 
 	return nil
 }
@@ -447,7 +457,7 @@ func (t *Transaction) execRepoProposalVote(
 	repoKeeper.Update(repoName, repo)
 
 	// Deduct fee from sender
-	t.deductFee(spk, fee, chainHeight)
+	t.deductFee(spk, fee.Decimal(), chainHeight)
 
 	return nil
 }

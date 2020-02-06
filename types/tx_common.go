@@ -206,6 +206,12 @@ type TxValue struct {
 	Value util.String `json:"value" msgpack:"value"`
 }
 
+// TxProposalCommon describes proposal fields
+type TxProposalCommon struct {
+	RepoName string      `json:"name" msgpack:"name"`
+	Value    util.String `json:"value" msgpack:"value"`
+}
+
 // DecodeTx takes a potential tx byte size and returns the transaction object
 // for the given type
 func DecodeTx(txBz []byte) (BaseTx, error) {

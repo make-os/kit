@@ -1,6 +1,8 @@
 package types
 
-import "github.com/mitchellh/mapstructure"
+import (
+	"github.com/mitchellh/mapstructure"
+)
 
 // ProposeeType represents a type of repo proposal proposee
 type ProposeeType int
@@ -23,6 +25,9 @@ const (
 	ProposalTallyMethodNetStakeOfProposer
 	ProposalTallyMethodNetStakeOfDelegators
 )
+
+// ProposalFees contains address and fees paid by proposal creators
+type ProposalFees map[string]string
 
 // ProposalAction represents proposal action types
 type ProposalAction int
@@ -92,8 +97,9 @@ type RepoProposal struct {
 	Yes                   float64                `json:"yes" mapstructure:"yes" msgpack:"yes"`                                                       // Count of "Yes" votes
 	No                    float64                `json:"no" mapstructure:"no" msgpack:"no"`                                                          // Count of "No" votes
 	NoWithVeto            float64                `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes from owners/stakeholders veto power
-	NoWithVetoByOwners    float64                `json:"noWithVetoByOwners" mapstructure:"noWithVetoByOwners" msgpack:"noWithVetoByOwners"`            // Count of "No" votes specifically from owners veto power
+	NoWithVetoByOwners    float64                `json:"noWithVetoByOwners" mapstructure:"noWithVetoByOwners" msgpack:"noWithVetoByOwners"`          // Count of "No" votes specifically from owners veto power
 	Abstain               float64                `json:"abstain" mapstructure:"abstain" msgpack:"abstain"`                                           // Count of explicit "abstain" votes
+	Fees                  ProposalFees           `json:"fees" mapstructure:"fees" msgpack:"fees"`                                                    // Count of explicit "abstain" votes
 	Outcome               ProposalOutcome        `json:"outcome" mapstructure:"outcome" msgpack:"outcome"`                                           // The outcome of the proposal vote.
 }
 

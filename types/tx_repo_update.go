@@ -9,19 +9,19 @@ import (
 // TxRepoProposalUpdate implements BaseTx, it describes a repository proposal
 // transaction for updating a repository
 type TxRepoProposalUpdate struct {
-	*TxCommon `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxType   `json:"-" msgpack:"-" mapstructure:"-"`
-	RepoName  string      `json:"name" msgpack:"name"`
-	Config    *RepoConfig `json:"config" msgpack:"config"`
+	*TxCommon         `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxType           `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxProposalCommon `json:"-" msgpack:"-" mapstructure:"-"`
+	Config            *RepoConfig `json:"config" msgpack:"config"`
 }
 
 // NewBareRepoProposalUpdate returns an instance of TxRepoProposalUpdate with zero values
 func NewBareRepoProposalUpdate() *TxRepoProposalUpdate {
 	return &TxRepoProposalUpdate{
-		TxCommon: NewBareTxCommon(),
-		TxType:   &TxType{Type: TxTypeRepoProposalUpdate},
-		RepoName: "",
-		Config:   BareRepoConfig(),
+		TxCommon:         NewBareTxCommon(),
+		TxType:           &TxType{Type: TxTypeRepoProposalUpdate},
+		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: ""},
+		Config:           BareRepoConfig(),
 	}
 }
 
@@ -30,6 +30,7 @@ func (tx *TxRepoProposalUpdate) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(
 		tx.Type,
 		tx.Nonce,
+		tx.Value,
 		tx.Fee,
 		tx.Sig,
 		tx.Timestamp,
@@ -43,6 +44,7 @@ func (tx *TxRepoProposalUpdate) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return tx.DecodeMulti(dec,
 		&tx.Type,
 		&tx.Nonce,
+		&tx.Value,
 		&tx.Fee,
 		&tx.Sig,
 		&tx.Timestamp,

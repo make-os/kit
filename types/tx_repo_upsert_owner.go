@@ -9,21 +9,21 @@ import (
 // TxRepoProposalUpsertOwner implements BaseTx, it describes a repository proposal
 // transaction for adding a new owner to a repository
 type TxRepoProposalUpsertOwner struct {
-	*TxCommon `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxType   `json:"-" msgpack:"-" mapstructure:"-"`
-	RepoName  string `json:"name" msgpack:"name"`
-	Addresses string `json:"addresses" msgpack:"addresses"`
-	Veto      bool   `json:"veto" msgpack:"veto"`
+	*TxCommon         `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxType           `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxProposalCommon `json:"-" msgpack:"-" mapstructure:"-"`
+	Addresses         string `json:"addresses" msgpack:"addresses"`
+	Veto              bool   `json:"veto" msgpack:"veto"`
 }
 
 // NewBareRepoProposalUpsertOwner returns an instance of TxRepoProposalUpsertOwner with zero values
 func NewBareRepoProposalUpsertOwner() *TxRepoProposalUpsertOwner {
 	return &TxRepoProposalUpsertOwner{
-		TxCommon:  NewBareTxCommon(),
-		TxType:    &TxType{Type: TxTypeRepoProposalUpsertOwner},
-		RepoName:  "",
-		Addresses: "",
-		Veto:      false,
+		TxCommon:         NewBareTxCommon(),
+		TxType:           &TxType{Type: TxTypeRepoProposalUpsertOwner},
+		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: ""},
+		Addresses:        "",
+		Veto:             false,
 	}
 }
 
@@ -32,6 +32,7 @@ func (tx *TxRepoProposalUpsertOwner) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(
 		tx.Type,
 		tx.Nonce,
+		tx.Value,
 		tx.Fee,
 		tx.Sig,
 		tx.Timestamp,
@@ -46,6 +47,7 @@ func (tx *TxRepoProposalUpsertOwner) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return tx.DecodeMulti(dec,
 		&tx.Type,
 		&tx.Nonce,
+		&tx.Value,
 		&tx.Fee,
 		&tx.Sig,
 		&tx.Timestamp,

@@ -130,9 +130,9 @@ var (
 )
 
 // Repo config
-const (
+var (
 	// RepoProposalDur is the number of blocks a repo proposal can remain active
-	RepoProposalDur = 10
+	RepoProposalDur = uint64(10)
 	// RepoProposalQuorum is the minimum percentage of voters required to
 	// consider a proposal valid.
 	RepoProposalQuorum = float64(10)
@@ -146,4 +146,8 @@ const (
 	// members to overturn a "Yes" quorum in a proposal where stakeholder and
 	// owners are eligible to vote
 	RepoProposalVetoOwnersQuorum = float64(0)
+	// MinProposalFee is the minimum fee to be paid for each new proposal
+	// NOTE: This should probably be set to zero, otherwise every proposal (even
+	// by owners) will require an additional fee.
+	MinProposalFee = float64(0)
 )

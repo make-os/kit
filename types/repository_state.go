@@ -87,6 +87,8 @@ func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
 
 // RepoConfigGovernance contains governance settings for a repository
 type RepoConfigGovernance struct {
+
+	// Proposal parameters
 	ProposalProposee                 ProposeeType        `json:"propProposee" mapstructure:"propProposee" msgpack:"propProposee"`
 	ProposalProposeeLimitToCurHeight bool                `json:"propProposeeLimitToCurHeight" mapstructure:"propProposeeLimitToCurHeight" msgpack:"propProposeeLimitToCurHeight"`
 	ProposalDur                      uint64              `json:"propDuration" mapstructure:"propDuration" msgpack:"propDuration"`
@@ -95,6 +97,7 @@ type RepoConfigGovernance struct {
 	ProposalThreshold                float64             `json:"propThreshold" mapstructure:"propThreshold" msgpack:"propThreshold"`
 	ProposalVetoQuorum               float64             `json:"propVetoQuorum" mapstructure:"propVetoQuorum" msgpack:"propVetoQuorum"`
 	ProposalVetoOwnersQuorum         float64             `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum" msgpack:"propVetoOwnersQuorum"`
+	ProposalFee                      float64             `json:"propFee" mapstructure:"propFee" msgpack:"propFee"`
 }
 
 // RepoConfig contains repo-specific configuration settings
@@ -147,6 +150,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			ProposalThreshold:                params.RepoProposalThreshold,
 			ProposalVetoQuorum:               params.RepoProposalVetoQuorum,
 			ProposalVetoOwnersQuorum:         params.RepoProposalVetoOwnersQuorum,
+			ProposalFee:                      params.MinProposalFee,
 		},
 	}
 }

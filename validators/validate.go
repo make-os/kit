@@ -72,7 +72,7 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 	case *types.TxRepoProposalUpsertOwner:
 		return CheckTxRepoProposalUpsertOwner(o, index)
 	case *types.TxRepoProposalVote:
-		return CheckTxRepoProposalVote(o, index)
+		return CheckTxVote(o, index)
 	case *types.TxRepoProposalUpdate:
 		return CheckTxRepoProposalUpdate(o, index)
 	default:
@@ -109,7 +109,7 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic types.Logic) error 
 	case *types.TxRepoProposalUpsertOwner:
 		return CheckTxRepoProposalUpsertOwnerConsistency(o, index, logic)
 	case *types.TxRepoProposalVote:
-		return CheckTxRepoProposalVoteConsistency(o, index, logic)
+		return CheckTxVoteConsistency(o, index, logic)
 	case *types.TxRepoProposalUpdate:
 		return CheckTxRepoProposalUpdateConsistency(o, index, logic)
 	default:
