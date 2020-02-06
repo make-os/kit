@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/spf13/viper"
 	"path/filepath"
+
+	"github.com/spf13/viper"
 )
 
 const (
@@ -51,13 +52,27 @@ type VersionInfo struct {
 // Genesis data type
 const (
 	GenDataTypeAccount = "account"
+	GenDataTypeRepo    = "repo"
 )
+
+// RepoOwner describes an owner of a repository
+type RepoOwner struct {
+	Creator  bool   `json:"creator" mapstructure:"creator" msgpack:"creator"`
+	JoinedAt uint64 `json:"joinedAt" mapstructure:"joinedAt" msgpack:"joinedAt"`
+	Veto     bool   `json:"veto" mapstructure:"veto" msgpack:"veto"`
+}
 
 // GenDataEntry describes a genesis file data entry
 type GenDataEntry struct {
 	Type    string `json:"type" mapstructure:"type"`
 	Address string `json:"address" mapstructure:"address"`
 	Balance string `json:"balance" mapstructure:"balance"`
+
+	// Type: Repo
+	Name   string                 `json:"name" mapstructure:"name"`
+	Helm   bool                   `json:"helm" mapstructure:"helm"`
+	Owners map[string]*RepoOwner  `json:"owners" mapstructure:"owners"`
+	Config map[string]interface{} `json:"config" mapstructure:"config"`
 }
 
 // NetConfig describes network configurations

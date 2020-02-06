@@ -46,6 +46,12 @@ type SystemKeeper interface {
 	// GetLastRepoObjectsSyncHeight returns the last block that was processed by the
 	// repo object synchronizer
 	GetLastRepoObjectsSyncHeight() (uint64, error)
+
+	// SetHelmRepo sets the governing repository of the network
+	SetHelmRepo(name string) error
+
+	// GetHelmRepo gets the governing repository of the network
+	GetHelmRepo() (string, error)
 }
 
 // TxKeeper describes an interface for managing transaction data

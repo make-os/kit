@@ -111,6 +111,35 @@ func (mr *MockSystemKeeperMockRecorder) GetLastRepoObjectsSyncHeight() *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLastRepoObjectsSyncHeight", reflect.TypeOf((*MockSystemKeeper)(nil).GetLastRepoObjectsSyncHeight))
 }
 
+// SetHelmRepo mocks base method
+func (m *MockSystemKeeper) SetHelmRepo(name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetHelmRepo", name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetHelmRepo indicates an expected call of SetHelmRepo
+func (mr *MockSystemKeeperMockRecorder) SetHelmRepo(name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHelmRepo", reflect.TypeOf((*MockSystemKeeper)(nil).SetHelmRepo), name)
+}
+
+// GetHelmRepo mocks base method
+func (m *MockSystemKeeper) GetHelmRepo() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHelmRepo")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetHelmRepo indicates an expected call of GetHelmRepo
+func (mr *MockSystemKeeperMockRecorder) GetHelmRepo() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHelmRepo", reflect.TypeOf((*MockSystemKeeper)(nil).GetHelmRepo))
+}
+
 // MockTxKeeper is a mock of TxKeeper interface
 type MockTxKeeper struct {
 	ctrl     *gomock.Controller
@@ -161,6 +190,67 @@ func (m *MockTxKeeper) GetTx(hash []byte) (types.BaseTx, error) {
 func (mr *MockTxKeeperMockRecorder) GetTx(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTx", reflect.TypeOf((*MockTxKeeper)(nil).GetTx), hash)
+}
+
+// MockBalanceAccount is a mock of BalanceAccount interface
+type MockBalanceAccount struct {
+	ctrl     *gomock.Controller
+	recorder *MockBalanceAccountMockRecorder
+}
+
+// MockBalanceAccountMockRecorder is the mock recorder for MockBalanceAccount
+type MockBalanceAccountMockRecorder struct {
+	mock *MockBalanceAccount
+}
+
+// NewMockBalanceAccount creates a new mock instance
+func NewMockBalanceAccount(ctrl *gomock.Controller) *MockBalanceAccount {
+	mock := &MockBalanceAccount{ctrl: ctrl}
+	mock.recorder = &MockBalanceAccountMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockBalanceAccount) EXPECT() *MockBalanceAccountMockRecorder {
+	return m.recorder
+}
+
+// GetBalance mocks base method
+func (m *MockBalanceAccount) GetBalance() util.String {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBalance")
+	ret0, _ := ret[0].(util.String)
+	return ret0
+}
+
+// GetBalance indicates an expected call of GetBalance
+func (mr *MockBalanceAccountMockRecorder) GetBalance() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalance", reflect.TypeOf((*MockBalanceAccount)(nil).GetBalance))
+}
+
+// SetBalance mocks base method
+func (m *MockBalanceAccount) SetBalance(bal string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetBalance", bal)
+}
+
+// SetBalance indicates an expected call of SetBalance
+func (mr *MockBalanceAccountMockRecorder) SetBalance(bal interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetBalance", reflect.TypeOf((*MockBalanceAccount)(nil).SetBalance), bal)
+}
+
+// Clean mocks base method
+func (m *MockBalanceAccount) Clean(chainHeight uint64) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Clean", chainHeight)
+}
+
+// Clean indicates an expected call of Clean
+func (mr *MockBalanceAccountMockRecorder) Clean(chainHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Clean", reflect.TypeOf((*MockBalanceAccount)(nil).Clean), chainHeight)
 }
 
 // MockAccountKeeper is a mock of AccountKeeper interface

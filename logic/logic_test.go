@@ -38,6 +38,13 @@ var _ = Describe("Logic", func() {
 		var testGenData = []*config.GenDataEntry{
 			&config.GenDataEntry{Type: "account", Address: "addr1", Balance: "100"},
 			&config.GenDataEntry{Type: "account", Address: "addr2", Balance: "200"},
+			&config.GenDataEntry{
+				Type: "repo",
+				Name: "my-repo",
+				Owners: map[string]*config.RepoOwner{
+					"addr": &config.RepoOwner{Creator: true, JoinedAt: 1, Veto: true},
+				},
+			},
 		}
 
 		BeforeEach(func() {
@@ -49,15 +56,23 @@ var _ = Describe("Logic", func() {
 					Expect(res.Nonce).To(Equal(uint64(0)))
 				}
 			}
+			err = logic.WriteGenesisState()
+			Expect(err).To(BeNil())
 		})
 
-		It("should successfully add genesis accounts", func() {
-			err := logic.WriteGenesisState()
-			Expect(err).To(BeNil())
+		It("should successfully add all accounts with expected balance", func() {
 			addr1Res := logic.AccountKeeper().GetAccount(util.String(testGenData[0].Address))
 			Expect(addr1Res.Balance).To(Equal(util.String("100")))
 			addr2Res := logic.AccountKeeper().GetAccount(util.String(testGenData[1].Address))
 			Expect(addr2Res.Balance).To(Equal(util.String("200")))
+		})
+
+		It("should successfully add all repos", func() {
+			repo := logic.RepoKeeper().GetRepo("my-repo")
+			Expect(repo.IsNil()).To(BeFalse())
+			helmRepo, err := logic.SysKeeper().GetHelmRepo()
+			Expect(err).To(BeNil())
+			Expect(helmRepo).NotTo(Equal("my-repo"))
 		})
 	})
 })

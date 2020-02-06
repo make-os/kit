@@ -58,7 +58,7 @@ var _ = Describe("NamespaceKeeper", func() {
 		})
 	})
 
-	FDescribe(".GetTarget", func() {
+	Describe(".GetTarget", func() {
 		When("path is not valid", func() {
 			It("should return err", func() {
 				_, err := nsKp.GetTarget("an/invalid/path", 0)

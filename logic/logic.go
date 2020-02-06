@@ -7,6 +7,7 @@ import (
 	"github.com/makeos/mosdef/storage/tree"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
+	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 )
 
@@ -245,10 +246,34 @@ func (l *Logic) WriteGenesisState() error {
 
 	// Add all genesis data entries to the state
 	for _, ga := range genesisData {
+
+		// Create account
 		if ga.Type == config.GenDataTypeAccount {
 			newAcct := types.BareAccount()
 			newAcct.Balance = util.String(ga.Balance)
 			l.accountKeeper.Update(util.String(ga.Address), newAcct)
+		}
+
+		// Create repository
+		if ga.Type == config.GenDataTypeRepo {
+			newRepo := types.BareRepository()
+			for address, owner := range ga.Owners {
+				newRepo.AddOwner(address, &types.RepoOwner{
+					Creator:  owner.Creator,
+					JoinedAt: owner.JoinedAt,
+					Veto:     owner.Veto,
+				})
+			}
+			newRepo.Config = types.MakeDefaultRepoConfig()
+			var repoCfg types.RepoConfig
+			mapstructure.Decode(ga.Config, &repoCfg)
+			newRepo.Config.Merge(&repoCfg)
+			l.RepoKeeper().Update(ga.Name, newRepo)
+			if ga.Helm {
+				if err := l.SysKeeper().SetHelmRepo(ga.Name); err != nil {
+					return errors.Wrap(err, "failed to set helm repo")
+				}
+			}
 		}
 	}
 

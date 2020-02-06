@@ -109,3 +109,22 @@ func (s *SystemKeeper) GetLastRepoObjectsSyncHeight() (uint64, error) {
 	record.Scan(&height)
 	return height, nil
 }
+
+// SetHelmRepo sets the governing repository of the network
+func (s *SystemKeeper) SetHelmRepo(name string) error {
+	data := []byte(name)
+	record := storage.NewFromKeyValue(MakeKeyHelmRepo(), data)
+	return s.db.Put(record)
+}
+
+// GetHelmRepo gets the governing repository of the network
+func (s *SystemKeeper) GetHelmRepo() (string, error) {
+	record, err := s.db.Get(MakeKeyHelmRepo())
+	if err != nil {
+		if err == storage.ErrRecordNotFound {
+			return "", nil
+		}
+		return "", err
+	}
+	return string(record.Value), nil
+}

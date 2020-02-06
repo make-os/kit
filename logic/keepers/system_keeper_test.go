@@ -133,4 +133,13 @@ var _ = Describe("SystemKeeper", func() {
 			})
 		})
 	})
+
+	Describe(".SetHelmRepo & GetHelmRepo", func() {
+		It("should set and get repo name", func() {
+			Expect(sysKeeper.SetHelmRepo("repo1")).To(BeNil())
+			repo, err := sysKeeper.GetHelmRepo()
+			Expect(err).To(BeNil())
+			Expect(repo).To(Equal("repo1"))
+		})
+	})
 })
