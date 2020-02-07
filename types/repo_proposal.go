@@ -99,22 +99,26 @@ type RepoProposal struct {
 	Action                ProposalAction         `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
 	ActionData            map[string]interface{} `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
 	Creator               string                 `json:"creator" mapstructure:"creator" msgpack:"creator"`                                           // The creator is the address of the proposal creator.
-	Proposee              ProposeeType           `json:"proposee" mapstructure:"proposee" msgpack:"proposee"`                                        // The set of participants allowed to vote on the proposal.
-	ProposeeMaxJoinHeight uint64                 `json:"proposeeMaxJoinHeight" mapstructure:"proposeeMaxJoinHeight" msgpack:"proposeeMaxJoinHeight"` // Used to allow proposee that are active before a specific height.
+	Height                uint64                 `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
+	Config                *RepoConfigGovernance  `json:"config" mapstructure:"config" msgpack:"-"`                                                   // The repo config to used to evaluate the proposal
 	EndAt                 uint64                 `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                                                 // Used to close the proposal after the given height.
-	TallyMethod           ProposalTallyMethod    `json:"tallyMethod" mapstructure:"tallyMethod" msgpack:"tallyMethod"`                               // Tally method describes how the votes are counted.
-	Quorum                float64                `json:"quorum" mapstructure:"quorum" msgpack:"quorum"`                                              // Quorum describes what the majority is.
-	Threshold             float64                `json:"threshold" mapstructure:"threshold" msgpack:"threshold"`                                     // Thresholds describes the minimum "Yes" quorum required to consider a proposal valid.
-	VetoQuorum            float64                `json:"vetoQuorum" mapstructure:"vetoQuorum" msgpack:"vetoQuorum"`                                  // Veto quorum describes the quorum among veto-powered proposees required to stop a proposal.
-	VetoOwnersQuorum      float64                `json:"vetoOwnersQuorum" mapstructure:"vetoOwnersQuorum" msgpack:"vetoOwnersQuorum"`                // Veto quorum describes the quorum among veto-powered proposees required to stop a proposal.
+	ProposeeMaxJoinHeight uint64                 `json:"proposeeMaxJoinHeight" mapstructure:"proposeeMaxJoinHeight" msgpack:"proposeeMaxJoinHeight"` // Used to allow proposee that are active before a specific height.
 	Yes                   float64                `json:"yes" mapstructure:"yes" msgpack:"yes"`                                                       // Count of "Yes" votes
 	No                    float64                `json:"no" mapstructure:"no" msgpack:"no"`                                                          // Count of "No" votes
 	NoWithVeto            float64                `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes from owners/stakeholders veto power
 	NoWithVetoByOwners    float64                `json:"noWithVetoByOwners" mapstructure:"noWithVetoByOwners" msgpack:"noWithVetoByOwners"`          // Count of "No" votes specifically from owners veto power
 	Abstain               float64                `json:"abstain" mapstructure:"abstain" msgpack:"abstain"`                                           // Count of explicit "abstain" votes
 	Fees                  ProposalFees           `json:"fee" mapstructure:"fee" msgpack:"fee"`                                                       // Count of explicit "abstain" votes
-	ProposalFeeRefund     bool                   `json:"propFeeRefund" mapstructure:"propFeeRefund" msgpack:"propFeeRefund"`                         // Count of explicit "abstain" votes
 	Outcome               ProposalOutcome        `json:"outcome" mapstructure:"outcome" msgpack:"outcome"`                                           // The outcome of the proposal vote.
+}
+
+// BareRepoProposal returns RepoProposal object with empty values
+func BareRepoProposal() *RepoProposal {
+	return &RepoProposal{
+		Config:     BareRepoConfig().Governace,
+		ActionData: make(map[string]interface{}),
+		Fees:       make(map[string]string),
+	}
 }
 
 // GetCreator implements Proposal
@@ -134,7 +138,7 @@ func (p *RepoProposal) SetOutcome(v ProposalOutcome) {
 
 // GetProposeeType implements Proposal
 func (p *RepoProposal) GetProposeeType() ProposeeType {
-	return p.Proposee
+	return p.Config.ProposalProposee
 }
 
 // GetProposeeMaxJoinHeight implements Proposal
@@ -154,17 +158,17 @@ func (p *RepoProposal) GetFees() ProposalFees {
 
 // IsFeeRefundable implements Proposal
 func (p *RepoProposal) IsFeeRefundable() bool {
-	return p.ProposalFeeRefund
+	return p.Config.ProposalFeeRefund
 }
 
 // GetQuorum implements Proposal
 func (p *RepoProposal) GetQuorum() float64 {
-	return p.Quorum
+	return p.Config.ProposalQuorum
 }
 
 // GetTallyMethod implements Proposal
 func (p *RepoProposal) GetTallyMethod() ProposalTallyMethod {
-	return p.TallyMethod
+	return p.Config.ProposalTallyMethod
 }
 
 // GetAction implements Proposal
@@ -179,17 +183,17 @@ func (p *RepoProposal) GetActionData() map[string]interface{} {
 
 // GetThreshold implements Proposal
 func (p *RepoProposal) GetThreshold() float64 {
-	return p.Threshold
+	return p.Config.ProposalThreshold
 }
 
 // GetVetoQuorum implements Proposal
 func (p *RepoProposal) GetVetoQuorum() float64 {
-	return p.VetoQuorum
+	return p.Config.ProposalVetoQuorum
 }
 
 // GetVetoOwnersQuorum implements Proposal
 func (p *RepoProposal) GetVetoOwnersQuorum() float64 {
-	return p.VetoOwnersQuorum
+	return p.Config.ProposalVetoOwnersQuorum
 }
 
 // GetAccepted implements Proposal
@@ -239,6 +243,26 @@ func (p *RepoProposals) Get(id string) *RepoProposal {
 		return &proposal
 	case *RepoProposal:
 		return val
+	}
+	return nil
+}
+
+// ForEach iterates through items, passing each to the callback function
+func (p *RepoProposals) ForEach(itr func(prop *RepoProposal, id string) error) error {
+	for id, prop := range *p {
+		switch val := prop.(type) {
+		case map[string]interface{}:
+			var proposal RepoProposal
+			mapstructure.Decode(val, &proposal)
+			p.Add(id, &proposal)
+			if err := itr(&proposal, id); err != nil {
+				return err
+			}
+		case *RepoProposal:
+			if err := itr(val, id); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }

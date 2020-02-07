@@ -24,12 +24,42 @@ func NewRepoKeeper(state *tree.SafeTree, db storage.Tx) *RepoKeeper {
 
 // GetRepo finds a repository by name.
 //
+// It will populate the proposals in the repo with their correct config
+// source from the version the repo that they where first appeared in.
+//
 // ARGS:
 // name: The name of the repository to find.
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Repository if no repo is found.
 func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *types.Repository {
+
+	repo := a.getRepoOnly(name, blockNum...)
+
+	// For each proposal in the repo, fetch their config from the version of the
+	// repo where they first appeared.
+	stateVersion := a.state.Version()
+	err := repo.Proposals.ForEach(func(prop *types.RepoProposal, id string) error {
+		if prop.Height == uint64(stateVersion) {
+			prop.Config = repo.Config.Governace
+			return nil
+		}
+		propParent := a.getRepoOnly(name, prop.Height)
+		if propParent.IsNil() {
+			return fmt.Errorf("failed to get repo version of proposal (%s)", id)
+		}
+		prop.Config = propParent.Config.Governace
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	return repo
+}
+
+// getRepoOnly fetches a repository by the given name
+func (a *RepoKeeper) getRepoOnly(name string, blockNum ...uint64) *types.Repository {
 
 	// Get version is provided
 	var version uint64

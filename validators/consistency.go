@@ -435,13 +435,13 @@ func CheckTxVoteConsistency(
 	// If the proposal is targetted at repo owners, then
 	// the sender must be an owner
 	senderOwner := repo.Owners.Get(tx.GetFrom().String())
-	if proposal.Proposee == types.ProposeeOwner && senderOwner == nil {
+	if proposal.GetProposeeType() == types.ProposeeOwner && senderOwner == nil {
 		return feI(index, "senderPubKey", "sender is not one of the repo owners")
 	}
 
 	// If the proposal is targetted at repo owners and
 	// the vote is a NoWithVeto, then the sender must have veto rights.
-	if proposal.Proposee == types.ProposeeOwner &&
+	if proposal.GetProposeeType() == types.ProposeeOwner &&
 		tx.Vote == types.ProposalVoteNoWithVeto && !senderOwner.Veto {
 		return feI(index, "senderPubKey", "sender cannot vote 'no with veto' because "+
 			"they have no veto right")

@@ -1131,7 +1131,9 @@ var _ = Describe("TxValidator", func() {
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
-				repo.Proposals.Add("proposal1", &types.RepoProposal{})
+				repo.Proposals.Add("proposal1", &types.RepoProposal{
+					Config: repo.Config.Governace,
+				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 
 				mockRepoKeeper.EXPECT().GetProposalVote(tx.RepoName, tx.ProposalID,
@@ -1153,7 +1155,9 @@ var _ = Describe("TxValidator", func() {
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
-				repo.Proposals.Add("proposal1", &types.RepoProposal{})
+				repo.Proposals.Add("proposal1", &types.RepoProposal{
+					Config: repo.Config.Governace,
+				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 
 				mockRepoKeeper.EXPECT().GetProposalVote(tx.RepoName, tx.ProposalID,
@@ -1175,8 +1179,9 @@ var _ = Describe("TxValidator", func() {
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
+				repo.Config.Governace.ProposalProposee = types.ProposeeOwner
 				repo.Proposals.Add("proposal1", &types.RepoProposal{
-					Proposee: types.ProposeeOwner,
+					Config: repo.Config.Governace,
 				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 
@@ -1200,8 +1205,9 @@ var _ = Describe("TxValidator", func() {
 
 					repo := types.BareRepository()
 					repo.AddOwner(key.Addr().String(), &types.RepoOwner{})
+					repo.Config.Governace.ProposalProposee = types.ProposeeOwner
 					repo.Proposals.Add("proposal1", &types.RepoProposal{
-						Proposee: types.ProposeeOwner,
+						Config: repo.Config.Governace,
 					})
 					mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 

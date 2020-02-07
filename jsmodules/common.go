@@ -125,7 +125,7 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 		switch o := v.(type) {
 		case int8, []byte:
 			m[k] = fmt.Sprintf("0x%x", o)
-		case *big.Int, int, int64, uint64:
+		case *big.Int, uint32, int64, uint64:
 			m[k] = fmt.Sprintf("%d", o)
 		case float64:
 			m[k] = fmt.Sprintf("%f", o)
@@ -144,11 +144,22 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 		case util.Bytes64:
 			m[k] = o.HexStr()
 
-		// map and struct types
-		case types.References:
-			m[k] = EncodeForJS(util.CloneMap(o))
-		case *types.Reference:
-			m[k] = EncodeForJS(structs.Map(o))
+		// map[string]structtype
+		default:
+			v := reflect.ValueOf(o)
+			kind := v.Kind()
+			if kind == reflect.Map {
+				newMap := make(map[string]interface{})
+				for _, key := range v.MapKeys() {
+					mapVal := v.MapIndex(key)
+					if structs.IsStruct(mapVal.Interface()) {
+						newMap[key.String()] = structs.Map(mapVal.Interface())
+					}
+				}
+				m[k] = EncodeForJS(util.CloneMap(newMap))
+			} else if kind == reflect.Struct {
+				m[k] = EncodeForJS(structs.Map(o))
+			}
 		}
 	}
 

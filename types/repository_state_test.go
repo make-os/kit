@@ -6,37 +6,75 @@ import (
 )
 
 var _ = Describe("Repository", func() {
-	Describe(".Bytes & .NewRepositoryFromBytes", func() {
+	Describe(".NewRepositoryFromBytes", func() {
 		var r *Repository
 		var expectedBz []byte
 
-		BeforeEach(func() {
-			r = BareRepository()
-			r.AddOwner("owner_addr", &RepoOwner{Creator: true})
-			r.References = map[string]interface{}{
-				"refs/heads/master": &Reference{
-					Nonce: 20,
-				},
-			}
-			expectedBz = r.Bytes()
+		Context("with malformed byte slice", func() {
+			It("should return err", func() {
+				_, err := NewRepositoryFromBytes([]byte{1, 2, 3})
+				Expect(err).ToNot(BeNil())
+			})
 		})
 
-		It("should return bytes", func() {
-			Expect(expectedBz).ToNot(BeEmpty())
-		})
+		Context("Decode References", func() {
+			BeforeEach(func() {
+				r = BareRepository()
+				r.References = map[string]interface{}{
+					"refs/heads/master": &Reference{
+						Nonce: 20,
+					},
+				}
+				expectedBz = r.Bytes()
+			})
 
-		Describe(".NewRepositoryFromBytes", func() {
+			It("should return bytes", func() {
+				Expect(expectedBz).ToNot(BeEmpty())
+			})
+
 			It("should return object", func() {
 				res, err := NewRepositoryFromBytes(expectedBz)
 				Expect(err).To(BeNil())
 				Expect(res).To(Equal(r))
 			})
 
-			Context("with malformed byte slice", func() {
-				It("should return err", func() {
-					_, err := NewRepositoryFromBytes([]byte{1, 2, 3})
-					Expect(err).ToNot(BeNil())
-				})
+		})
+
+		Context("Decode Proposals", func() {
+			BeforeEach(func() {
+				r = BareRepository()
+				r.Proposals = map[string]interface{}{"1": &RepoProposal{
+					Creator: "address1",
+				}}
+				expectedBz = r.Bytes()
+			})
+
+			It("should return bytes", func() {
+				Expect(expectedBz).ToNot(BeEmpty())
+			})
+
+			It("should return object", func() {
+				res, err := NewRepositoryFromBytes(expectedBz)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(r))
+			})
+		})
+
+		Context("Decode Owners", func() {
+			BeforeEach(func() {
+				r = BareRepository()
+				r.AddOwner("owner_addr", &RepoOwner{Creator: true})
+				expectedBz = r.Bytes()
+			})
+
+			It("should return bytes", func() {
+				Expect(expectedBz).ToNot(BeEmpty())
+			})
+
+			It("should return object", func() {
+				res, err := NewRepositoryFromBytes(expectedBz)
+				Expect(err).To(BeNil())
+				Expect(res).To(Equal(r))
 			})
 		})
 	})
@@ -137,7 +175,8 @@ var _ = Describe("Repository", func() {
 				v.ForEach(func(o *RepoOwner, addr string) {
 					owners = append(owners, addr)
 				})
-				Expect(owners).To(Equal([]string{"abc", "xyz"}))
+				Expect(owners).To(ContainElement("xyz"))
+				Expect(owners).To(ContainElement("abc"))
 			})
 		})
 	})

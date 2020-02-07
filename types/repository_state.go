@@ -256,5 +256,11 @@ func NewRepositoryFromBytes(bz []byte) (*Repository, error) {
 		repo.AddOwner(k, &owner)
 	}
 
+	for k, v := range repo.Proposals {
+		var prop RepoProposal
+		mapstructure.Decode(v, &prop)
+		repo.Proposals.Add(k, &prop)
+	}
+
 	return repo, nil
 }

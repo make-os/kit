@@ -64,14 +64,16 @@ var _ = Describe("ProposalHandler", func() {
 			var proposal *types.RepoProposal
 
 			BeforeEach(func() {
-				proposal = &types.RepoProposal{}
-				proposal.Proposee = types.ProposeeOwner
+				proposal = &types.RepoProposal{
+					Config: types.MakeDefaultRepoConfig().Governace,
+				}
+				proposal.Config.ProposalProposee = types.ProposeeOwner
 				proposal.Creator = key.Addr().String()
 			})
 
 			When("proposal quorum is 40% and total votes received is 3", func() {
 				It("should return ProposalOutcomeQuorumNotMet", func() {
-					proposal.Quorum = 40
+					proposal.Config.ProposalQuorum = 40
 					proposal.Yes = 2
 					proposal.No = 1
 					res := determineProposalOutcome(logic, proposal, repo, 100)
@@ -81,7 +83,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			When("proposal quorum is 40% and total votes received is 4", func() {
 				It("should return ProposalOutcomeTie", func() {
-					proposal.Quorum = 40
+					proposal.Config.ProposalQuorum = 40
 					proposal.Yes = 2
 					proposal.No = 2
 					res := determineProposalOutcome(logic, proposal, repo, 100)
@@ -95,8 +97,10 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *types.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &types.RepoProposal{}
-					proposal.Proposee = types.ProposeeOwner
+					proposal = &types.RepoProposal{
+						Config: types.MakeDefaultRepoConfig().Governace,
+					}
+					proposal.Config.ProposalProposee = types.ProposeeOwner
 					proposal.Creator = key.Addr().String()
 					proposal.ProposeeMaxJoinHeight = 100
 					repo.Owners.Get("addr3").JoinedAt = 200
@@ -105,7 +109,7 @@ var _ = Describe("ProposalHandler", func() {
 
 				When("proposal quorum is 40% and total votes received is 2", func() {
 					It("should return ProposalOutcomeQuorumNotMet", func() {
-						proposal.Quorum = 40
+						proposal.Config.ProposalQuorum = 40
 						proposal.Yes = 1
 						proposal.No = 1
 						out := determineProposalOutcome(logic, proposal, repo, 100)
@@ -115,8 +119,8 @@ var _ = Describe("ProposalHandler", func() {
 
 				When("proposal quorum is 40%, threshold is 51% and total votes received is 3", func() {
 					It("should return ProposalOutcomeAccepted", func() {
-						proposal.Quorum = 40
-						proposal.Threshold = 51
+						proposal.Config.ProposalQuorum = 40
+						proposal.Config.ProposalThreshold = 51
 						proposal.Yes = 2
 						proposal.No = 1
 						out := determineProposalOutcome(logic, proposal, repo, 100)
@@ -144,8 +148,10 @@ var _ = Describe("ProposalHandler", func() {
 			var repo *types.Repository
 
 			BeforeEach(func() {
-				proposal = &types.RepoProposal{}
-				proposal.Proposee = types.ProposeeOwner
+				proposal = &types.RepoProposal{
+					Config: types.MakeDefaultRepoConfig().Governace,
+				}
+				proposal.Config.ProposalProposee = types.ProposeeOwner
 				proposal.Creator = key.Addr().String()
 				proposal.Action = types.ProposalActionAddOwner
 				proposal.ActionData = map[string]interface{}{
@@ -166,8 +172,8 @@ var _ = Describe("ProposalHandler", func() {
 
 		When("proposal's end height is a future height", func() {
 			It("should return false", func() {
-				proposal := &types.RepoProposal{}
-				proposal.Proposee = types.ProposeeOwner
+				proposal := types.BareRepoProposal()
+				proposal.Config.ProposalProposee = types.ProposeeOwner
 				proposal.Creator = key.Addr().String()
 				proposal.EndAt = 100
 				repo := types.BareRepository()
@@ -187,8 +193,10 @@ var _ = Describe("ProposalHandler", func() {
 					err := logic.SysKeeper().SetHelmRepo(helmRepo)
 					Expect(err).To(BeNil())
 
-					proposal = &types.RepoProposal{}
-					proposal.Proposee = types.ProposeeOwner
+					proposal = &types.RepoProposal{
+						Config: types.MakeDefaultRepoConfig().Governace,
+					}
+					proposal.Config.ProposalProposee = types.ProposeeOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Action = types.ProposalActionAddOwner
 					proposal.Fees = map[string]string{
@@ -225,11 +233,13 @@ var _ = Describe("ProposalHandler", func() {
 					err := logic.SysKeeper().SetHelmRepo(helmRepo)
 					Expect(err).To(BeNil())
 
-					proposal = &types.RepoProposal{}
-					proposal.Proposee = types.ProposeeOwner
+					proposal = &types.RepoProposal{
+						Config: types.MakeDefaultRepoConfig().Governace,
+					}
+					proposal.Config.ProposalProposee = types.ProposeeOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Action = types.ProposalActionAddOwner
-					proposal.ProposalFeeRefund = true
+					proposal.Config.ProposalFeeRefund = true
 					proposal.Fees = map[string]string{
 						"addr":  "100",
 						"addr2": "50",
@@ -262,10 +272,12 @@ var _ = Describe("ProposalHandler", func() {
 			var proposal *types.RepoProposal
 
 			BeforeEach(func() {
-				proposal = &types.RepoProposal{}
-				proposal.Proposee = types.ProposeeNetStakeholders
+				proposal = &types.RepoProposal{
+					Config: types.MakeDefaultRepoConfig().Governace,
+				}
+				proposal.Config.ProposalProposee = types.ProposeeNetStakeholders
 				proposal.Creator = key.Addr().String()
-				proposal.Quorum = 40
+				proposal.Config.ProposalQuorum = 40
 				proposal.Yes = 100
 				proposal.No = 100
 				proposal.NoWithVeto = 50
@@ -286,10 +298,12 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *types.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &types.RepoProposal{}
-					proposal.Proposee = types.ProposeeOwner
+					proposal = &types.RepoProposal{
+						Config: types.MakeDefaultRepoConfig().Governace,
+					}
+					proposal.Config.ProposalProposee = types.ProposeeOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Quorum = 40
+					proposal.Config.ProposalQuorum = 40
 					proposal.Yes = 1
 					proposal.No = 1
 					proposal.NoWithVeto = 1
@@ -305,11 +319,13 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *types.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &types.RepoProposal{}
-					proposal.Proposee = types.ProposeeOwner
+					proposal = &types.RepoProposal{
+						Config: types.MakeDefaultRepoConfig().Governace,
+					}
+					proposal.Config.ProposalProposee = types.ProposeeOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Quorum = 40
-					proposal.VetoQuorum = 10
+					proposal.Config.ProposalQuorum = 40
+					proposal.Config.ProposalVetoQuorum = 10
 					proposal.Yes = 5
 					proposal.No = 4
 					proposal.NoWithVeto = 1
@@ -325,15 +341,17 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *types.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &types.RepoProposal{}
-					proposal.Proposee = types.ProposeeNetStakeholdersAndVetoOwner
+					proposal = &types.RepoProposal{
+						Config: types.MakeDefaultRepoConfig().Governace,
+					}
+					proposal.Config.ProposalProposee = types.ProposeeNetStakeholdersAndVetoOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Quorum = 40
-					proposal.VetoQuorum = 10
+					proposal.Config.ProposalQuorum = 40
+					proposal.Config.ProposalVetoQuorum = 10
 					proposal.Yes = 700
 					proposal.No = 4
 					proposal.NoWithVeto = 1
-					proposal.VetoOwnersQuorum = 40
+					proposal.Config.ProposalVetoOwnersQuorum = 40
 					proposal.NoWithVetoByOwners = 5
 
 					mockTickMgr := mocks.NewMockTicketManager(ctrl)
@@ -351,11 +369,13 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *types.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &types.RepoProposal{}
-					proposal.Proposee = types.ProposeeOwner
+					proposal = &types.RepoProposal{
+						Config: types.MakeDefaultRepoConfig().Governace,
+					}
+					proposal.Config.ProposalProposee = types.ProposeeOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Quorum = 40
-					proposal.VetoQuorum = 0
+					proposal.Config.ProposalQuorum = 40
+					proposal.Config.ProposalVetoQuorum = 0
 					proposal.Yes = 5
 					proposal.No = 4
 					proposal.NoWithVeto = 1
@@ -371,12 +391,14 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *types.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &types.RepoProposal{}
-					proposal.Proposee = types.ProposeeOwner
+					proposal = &types.RepoProposal{
+						Config: types.MakeDefaultRepoConfig().Governace,
+					}
+					proposal.Config.ProposalProposee = types.ProposeeOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Quorum = 40
-					proposal.VetoQuorum = 10
-					proposal.Threshold = 51
+					proposal.Config.ProposalQuorum = 40
+					proposal.Config.ProposalVetoQuorum = 10
+					proposal.Config.ProposalThreshold = 51
 					proposal.Yes = 6
 					proposal.No = 4
 					proposal.NoWithVeto = 0
@@ -391,12 +413,14 @@ var _ = Describe("ProposalHandler", func() {
 			When("No threshold is reached", func() {
 				var proposal *types.RepoProposal
 				BeforeEach(func() {
-					proposal = &types.RepoProposal{}
-					proposal.Proposee = types.ProposeeOwner
+					proposal = &types.RepoProposal{
+						Config: types.MakeDefaultRepoConfig().Governace,
+					}
+					proposal.Config.ProposalProposee = types.ProposeeOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Quorum = 40
-					proposal.VetoQuorum = 10
-					proposal.Threshold = 51
+					proposal.Config.ProposalQuorum = 40
+					proposal.Config.ProposalVetoQuorum = 10
+					proposal.Config.ProposalThreshold = 51
 					proposal.Yes = 4
 					proposal.No = 6
 					proposal.NoWithVeto = 0
@@ -412,12 +436,14 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *types.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &types.RepoProposal{}
-					proposal.Proposee = types.ProposeeOwner
+					proposal = &types.RepoProposal{
+						Config: types.MakeDefaultRepoConfig().Governace,
+					}
+					proposal.Config.ProposalProposee = types.ProposeeOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Quorum = 40
-					proposal.VetoQuorum = 10
-					proposal.Threshold = 51
+					proposal.Config.ProposalQuorum = 40
+					proposal.Config.ProposalVetoQuorum = 10
+					proposal.Config.ProposalThreshold = 51
 					proposal.Yes = 4
 					proposal.No = 4
 					proposal.NoWithVeto = 0

@@ -160,11 +160,12 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				repoUpd := types.BareRepository()
 				repoUpd.Config = types.DefaultRepoConfig
+				repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
+				repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodIdentity
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				proposal := &types.RepoProposal{
-					Proposee:    types.ProposeeOwner,
-					TallyMethod: types.ProposalTallyMethodIdentity,
-					Yes:         1,
+					Config: repoUpd.Config.Governace,
+					Yes:    1,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
@@ -187,11 +188,12 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				repoUpd := types.BareRepository()
 				repoUpd.Config = types.DefaultRepoConfig
+				repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
+				repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodCoinWeighted
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				proposal := &types.RepoProposal{
-					Proposee:    types.ProposeeOwner,
-					TallyMethod: types.ProposalTallyMethodCoinWeighted,
-					Yes:         1,
+					Config: repoUpd.Config.Governace,
+					Yes:    1,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
@@ -214,10 +216,11 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				repoUpd := types.BareRepository()
 				repoUpd.Config = types.DefaultRepoConfig
+				repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStakeOfProposer
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				proposal := &types.RepoProposal{
-					TallyMethod: types.ProposalTallyMethodNetStakeOfProposer,
-					Yes:         0,
+					Config: repoUpd.Config.Governace,
+					Yes:    0,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
@@ -227,7 +230,7 @@ var _ = Describe("Repo", func() {
 				txLogic.logic.SetTicketManager(mockTickMgr)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+				err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -244,10 +247,11 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				repoUpd := types.BareRepository()
 				repoUpd.Config = types.DefaultRepoConfig
+				repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStakeOfDelegators
 				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 				proposal := &types.RepoProposal{
-					TallyMethod: types.ProposalTallyMethodNetStakeOfDelegators,
-					Yes:         0,
+					Config: repoUpd.Config.Governace,
+					Yes:    0,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
@@ -257,7 +261,7 @@ var _ = Describe("Repo", func() {
 				txLogic.logic.SetTicketManager(mockTickMgr)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+				err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -275,10 +279,11 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := types.BareRepository()
 					repoUpd.Config = types.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 					proposal := &types.RepoProposal{
-						TallyMethod: types.ProposalTallyMethodNetStake,
-						Yes:         0,
+						Config: repoUpd.Config.Governace,
+						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
@@ -292,7 +297,7 @@ var _ = Describe("Repo", func() {
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -306,10 +311,11 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := types.BareRepository()
 					repoUpd.Config = types.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 					proposal := &types.RepoProposal{
-						TallyMethod: types.ProposalTallyMethodNetStake,
-						Yes:         0,
+						Config: repoUpd.Config.Governace,
+						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
@@ -327,7 +333,7 @@ var _ = Describe("Repo", func() {
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -343,10 +349,11 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := types.BareRepository()
 					repoUpd.Config = types.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 					proposal := &types.RepoProposal{
-						TallyMethod: types.ProposalTallyMethodNetStake,
-						Yes:         0,
+						Config: repoUpd.Config.Governace,
+						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
@@ -364,7 +371,7 @@ var _ = Describe("Repo", func() {
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -380,10 +387,11 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := types.BareRepository()
 					repoUpd.Config = types.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 					proposal := &types.RepoProposal{
-						TallyMethod: types.ProposalTallyMethodNetStake,
-						Yes:         0,
+						Config: repoUpd.Config.Governace,
+						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
@@ -404,7 +412,7 @@ var _ = Describe("Repo", func() {
 						key2.Addr().String(), types.ProposalVoteYes)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -420,10 +428,11 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := types.BareRepository()
 					repoUpd.Config = types.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 					proposal := &types.RepoProposal{
-						TallyMethod: types.ProposalTallyMethodNetStake,
-						Yes:         0,
+						Config: repoUpd.Config.Governace,
+						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
@@ -441,7 +450,7 @@ var _ = Describe("Repo", func() {
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 10)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -457,10 +466,10 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := types.BareRepository()
 					repoUpd.Config = types.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
 					proposal := &types.RepoProposal{
-						TallyMethod: types.ProposalTallyMethodNetStake,
-						Yes:         100,
+						Yes: 100,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
@@ -481,7 +490,7 @@ var _ = Describe("Repo", func() {
 						key2.Addr().String(), types.ProposalVoteYes)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteNo, "1.5", 10)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteNo, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 

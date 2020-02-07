@@ -47,8 +47,66 @@ var _ = Describe("RepoKeeper", func() {
 			})
 
 			It("should successfully return the expected repo object", func() {
-				acct := rk.GetRepo("repo1", 0)
-				Expect(acct).To(BeEquivalentTo(testRepo))
+				repo := rk.GetRepo("repo1", 0)
+				Expect(repo).To(BeEquivalentTo(testRepo))
+			})
+		})
+
+		When("repo has a proposal that was introduced at height/stateVersion=1", func() {
+			testRepo := types.BareRepository()
+			repoAtVersion1 := types.BareRepository()
+
+			BeforeEach(func() {
+				repoAtVersion1.Config.Governace.ProposalFee = 100000
+				state.Set(MakeRepoKey("repo1"), repoAtVersion1.Bytes())
+				_, _, err := state.SaveVersion()
+				Expect(err).To(BeNil())
+
+				testRepo.Proposals.Add("1", &types.RepoProposal{Height: 1})
+				testRepo.AddOwner("owner", &types.RepoOwner{})
+
+				repoKey := MakeRepoKey("repo1")
+				state.Set(repoKey, testRepo.Bytes())
+				_, _, err = state.SaveVersion()
+				Expect(err).To(BeNil())
+			})
+
+			It("should set proposal config to the config of the repo at height/stateVersion=1", func() {
+				repo := rk.GetRepo("repo1", 0)
+				Expect(repo).ToNot(BeEquivalentTo(testRepo))
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Config).To(Equal(repoAtVersion1.Config.Governace))
+			})
+		})
+
+		When("repo has a proposal with a config height that is the same as the current state version", func() {
+			repo := types.BareRepository()
+
+			BeforeEach(func() {
+				// Version 1
+				repo.Config.Governace.ProposalFee = 100000
+				state.Set(MakeRepoKey("repo1"), repo.Bytes())
+				state.SaveVersion()
+
+				// Version 2
+				repo.Config.Governace.ProposalFee = 200000
+				state.Set(MakeRepoKey("repo1"), repo.Bytes())
+				state.SaveVersion()
+
+				repo.Proposals.Add("1", &types.RepoProposal{Height: 3})
+				repo.AddOwner("owner", &types.RepoOwner{})
+
+				repoKey := MakeRepoKey("repo1")
+				state.Set(repoKey, repo.Bytes())
+
+				// Version 3
+				state.SaveVersion()
+			})
+
+			It("should set proposal config to the config of the repo at", func() {
+				repo := rk.GetRepo("repo1", 0)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Config).To(Equal(repo.Config.Governace))
 			})
 		})
 	})
