@@ -251,12 +251,15 @@ func LogAlert(format string, args ...interface{}) {
 	fmt.Println(color.RedString("[Alert] "+format, args...))
 }
 
-// StructToMap returns a map containing fields from the s.
-// Map fields are named after their json tags on the struct
-func StructToMap(s interface{}) map[string]interface{} {
-	_s := structs.New(s)
-	_s.TagName = "json"
-	return _s.Map()
+// StructToMap converts s to a map.
+// If tagName is not provided, 'json' tag is used as a default.
+func StructToMap(s interface{}, tagName ...string) map[string]interface{} {
+	st := structs.New(s)
+	st.TagName = "json"
+	if len(tagName) > 0 {
+		st.TagName = tagName[0]
+	}
+	return st.Map()
 }
 
 // GetPtrAddr takes a pointer and returns the address

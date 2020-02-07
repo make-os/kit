@@ -12,8 +12,8 @@ type TxRepoCreate struct {
 	*TxCommon `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxType   `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxValue  `json:"-" msgpack:"-" mapstructure:"-"`
-	Name      string      `json:"name" msgpack:"name"`
-	Config    *RepoConfig `json:"config" msgpack:"config"`
+	Name      string                 `json:"name" msgpack:"name"`
+	Config    map[string]interface{} `json:"config" msgpack:"config"`
 }
 
 // NewBareTxRepoCreate returns an instance of TxRepoCreate with zero values
@@ -23,7 +23,7 @@ func NewBareTxRepoCreate() *TxRepoCreate {
 		TxType:   &TxType{Type: TxTypeRepoCreate},
 		TxValue:  &TxValue{Value: "0"},
 		Name:     "",
-		Config:   BareRepoConfig(),
+		Config:   BareRepoConfig().ToMap(),
 	}
 }
 

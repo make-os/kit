@@ -15,6 +15,21 @@ const (
 	ProposeeNetStakeholdersAndVetoOwner                         // Proposals will allow stakeholders and veto owners to vote
 )
 
+// ProposalFeeRefundType describes the type of refund scheme supported
+type ProposalFeeRefundType int
+
+// Proposal fee refund types
+const (
+	ProposalFeeRefundNo ProposalFeeRefundType = iota
+	ProposalFeeRefundOnAccept
+	ProposalFeeRefundOnAcceptReject
+	ProposalFeeRefundOnAcceptAllReject
+	ProposalFeeRefundOnBelowThreshold
+	ProposalFeeRefundOnBelowThresholdAccept
+	ProposalFeeRefundOnBelowThresholdAcceptReject
+	ProposalFeeRefundOnBelowThresholdAcceptAllReject
+)
+
 // ProposalTallyMethod represents a type for repo proposal counting method
 type ProposalTallyMethod int
 
@@ -75,7 +90,7 @@ type Proposal interface {
 	GetRejectedWithVeto() float64
 	GetRejectedWithVetoByOwners() float64
 	GetFees() ProposalFees
-	IsFeeRefundable() bool
+	GetRefundType() ProposalFeeRefundType
 	IsFinalized() bool
 	SetOutcome(v ProposalOutcome)
 }
@@ -156,9 +171,9 @@ func (p *RepoProposal) GetFees() ProposalFees {
 	return p.Fees
 }
 
-// IsFeeRefundable implements Proposal
-func (p *RepoProposal) IsFeeRefundable() bool {
-	return p.Config.ProposalFeeRefund
+// GetRefundType implements Proposal
+func (p *RepoProposal) GetRefundType() ProposalFeeRefundType {
+	return p.Config.ProposalFeeRefundType
 }
 
 // GetQuorum implements Proposal

@@ -63,9 +63,10 @@ var _ = Describe("Repo", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var spk util.Bytes32
-		repoCfg := types.BareRepoConfig()
+		var repoCfg *types.RepoConfig
 
 		BeforeEach(func() {
+			repoCfg = types.MakeDefaultRepoConfig()
 			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
 				Balance:             util.String("10"),
 				Stakes:              types.BareAccountStakes(),
@@ -76,7 +77,7 @@ var _ = Describe("Repo", func() {
 		When("successful", func() {
 			BeforeEach(func() {
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoCreate(spk, "repo", repoCfg, "1.5", 0)
+				err = txLogic.execRepoCreate(spk, "repo", repoCfg.ToMap(), "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -99,7 +100,7 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoCfg.Governace.ProposalProposee = types.ProposeeOwner
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoCreate(spk, "repo", repoCfg, "1.5", 0)
+					err = txLogic.execRepoCreate(spk, "repo", repoCfg.ToMap(), "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -114,7 +115,7 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoCfg.Governace.ProposalProposee = types.ProposeeNetStakeholders
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoCreate(spk, "repo", repoCfg, "1.5", 0)
+					err = txLogic.execRepoCreate(spk, "repo", repoCfg.ToMap(), "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -128,7 +129,7 @@ var _ = Describe("Repo", func() {
 				repoCfg2 := &types.RepoConfig{Governace: &types.RepoConfigGovernance{ProposalDur: 1000}}
 				BeforeEach(func() {
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoCreate(spk, "repo", repoCfg2, "1.5", 0)
+					err = txLogic.execRepoCreate(spk, "repo", repoCfg2.ToMap(), "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -692,7 +693,7 @@ var _ = Describe("Repo", func() {
 				config := &types.RepoConfig{
 					Governace: &types.RepoConfigGovernance{ProposalDur: 1000},
 				}
-				err = txLogic.execRepoProposalUpdate(spk, repoName, config,
+				err = txLogic.execRepoProposalUpdate(spk, repoName, config.ToMap(),
 					proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
@@ -743,7 +744,7 @@ var _ = Describe("Repo", func() {
 					Governace: &types.RepoConfigGovernance{ProposalDur: 1000},
 				}
 
-				err = txLogic.execRepoProposalUpdate(spk, repoName, config, proposalFee, "1.5", curHeight)
+				err = txLogic.execRepoProposalUpdate(spk, repoName, config.ToMap(), proposalFee, "1.5", curHeight)
 				Expect(err).To(BeNil())
 			})
 
@@ -790,7 +791,7 @@ var _ = Describe("Repo", func() {
 		When("update config object is empty", func() {
 			It("should not change the config", func() {
 				proposal := &types.RepoProposal{ActionData: map[string]interface{}{
-					actionDataConfig: util.ObjectToBytes(&types.RepoConfig{}),
+					actionDataConfig: (&types.RepoConfig{}).ToMap(),
 				}}
 				err = applyProposalRepoUpdate(proposal, repo, 0)
 				Expect(err).To(BeNil())
@@ -801,12 +802,12 @@ var _ = Describe("Repo", func() {
 		When("update config object is not empty", func() {
 			It("should change the config", func() {
 				proposal := &types.RepoProposal{ActionData: map[string]interface{}{
-					actionDataConfig: util.ObjectToBytes(&types.RepoConfig{
+					actionDataConfig: (&types.RepoConfig{
 						Governace: &types.RepoConfigGovernance{
 							ProposalQuorum: 120,
 							ProposalDur:    100,
 						},
-					}),
+					}).ToMap(),
 				}}
 				err = applyProposalRepoUpdate(proposal, repo, 0)
 				Expect(err).To(BeNil())

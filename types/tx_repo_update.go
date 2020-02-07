@@ -12,7 +12,7 @@ type TxRepoProposalUpdate struct {
 	*TxCommon         `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxType           `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxProposalCommon `json:"-" msgpack:"-" mapstructure:"-"`
-	Config            *RepoConfig `json:"config" msgpack:"config"`
+	Config            map[string]interface{} `json:"config" msgpack:"config"`
 }
 
 // NewBareRepoProposalUpdate returns an instance of TxRepoProposalUpdate with zero values
@@ -21,7 +21,7 @@ func NewBareRepoProposalUpdate() *TxRepoProposalUpdate {
 		TxCommon:         NewBareTxCommon(),
 		TxType:           &TxType{Type: TxTypeRepoProposalUpdate},
 		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: ""},
-		Config:           BareRepoConfig(),
+		Config:           BareRepoConfig().ToMap(),
 	}
 }
 

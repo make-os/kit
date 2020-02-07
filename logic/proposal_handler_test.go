@@ -239,7 +239,6 @@ var _ = Describe("ProposalHandler", func() {
 					proposal.Config.ProposalProposee = types.ProposeeOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Action = types.ProposalActionAddOwner
-					proposal.Config.ProposalFeeRefund = true
 					proposal.Fees = map[string]string{
 						"addr":  "100",
 						"addr2": "50",
@@ -248,6 +247,8 @@ var _ = Describe("ProposalHandler", func() {
 						"addresses": "addr",
 						"veto":      false,
 					}
+					proposal.Config.ProposalFeeRefundType = types.ProposalFeeRefundOnAccept
+
 					repo = types.BareRepository()
 					repo.AddOwner(key.Addr().String(), &types.RepoOwner{})
 					applied, err := maybeApplyProposal(logic, proposal, repo, 0)
@@ -452,6 +453,289 @@ var _ = Describe("ProposalHandler", func() {
 				It("should return outcome=ProposalOutcomeTie", func() {
 					out := getProposalOutcome(logic.GetTicketManager(), proposal, repo)
 					Expect(out).To(Equal(types.ProposalOutcomeTie))
+				})
+			})
+		})
+	})
+
+	Describe(".maybeProcessProposalFee", func() {
+		var proposal *types.RepoProposal
+		var addr = util.String("addr1")
+		var addr2 = util.String("addr2")
+		var repo *types.Repository
+		var helmRepoName = "helm"
+
+		BeforeEach(func() {
+			logic.SysKeeper().SetHelmRepo(helmRepoName)
+		})
+
+		makeMaybeProcessProposalFeeTest := func(refundType types.ProposalFeeRefundType,
+			outcome types.ProposalOutcome) error {
+			repo = types.BareRepository()
+			proposal = types.BareRepoProposal()
+			proposal.Config.ProposalFeeRefundType = refundType
+			proposal.Fees[addr.String()] = "100"
+			proposal.Fees[addr2.String()] = "200"
+			proposal.Outcome = outcome
+			return maybeProcessProposalFee(proposal.Outcome, logic, proposal, repo)
+		}
+
+		When("proposal refund type is ProposalFeeRefundOnAccept", func() {
+			When("proposal outcome is 'accepted'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnAccept,
+						types.ProposalOutcomeAccepted,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+
+			When("proposal outcome is not 'accepted'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnAccept,
+						types.ProposalOutcomeRejected,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should not add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("0"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("0"))
+				})
+
+				It("should distribute fees to target repo and helm", func() {
+					Expect(repo.Balance.String()).To(Equal("180"))
+					helmRepo := logic.RepoKeeper().GetRepo(helmRepoName)
+					Expect(helmRepo.Balance.String()).To(Equal("120"))
+				})
+			})
+		})
+
+		When("proposal refund type is ProposalFeeRefundOnAcceptReject", func() {
+			When("proposal outcome is 'accepted'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnAcceptReject,
+						types.ProposalOutcomeAccepted,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+		})
+
+		When("proposal refund type is ProposalFeeRefundOnAcceptAllReject", func() {
+			When("proposal outcome is 'rejected with veto'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnAcceptAllReject,
+						types.ProposalOutcomeRejectedWithVeto,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+
+			When("proposal outcome is 'rejected with veto by owners'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnAcceptAllReject,
+						types.ProposalOutcomeRejectedWithVetoByOwners,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+		})
+
+		When("proposal refund type is ProposalFeeRefundOnBelowThreshold", func() {
+			When("proposal outcome is a 'tie'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnBelowThreshold,
+						types.ProposalOutcomeTie,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+		})
+
+		When("proposal refund type is ProposalFeeRefundOnBelowThresholdAccept", func() {
+			When("proposal outcome is a 'tie'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnBelowThresholdAccept,
+						types.ProposalOutcomeTie,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+
+			When("proposal outcome is 'accepted'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnBelowThresholdAccept,
+						types.ProposalOutcomeAccepted,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+		})
+
+		When("proposal refund type is ProposalFeeRefundOnBelowThresholdAcceptReject", func() {
+			When("proposal outcome is a 'tie'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnBelowThresholdAcceptReject,
+						types.ProposalOutcomeTie,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+
+			When("proposal outcome is 'accepted'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnBelowThresholdAcceptReject,
+						types.ProposalOutcomeAccepted,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+
+			When("proposal outcome is 'rejected'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnBelowThresholdAcceptReject,
+						types.ProposalOutcomeRejected,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+
+			When("proposal outcome is 'rejected with veto'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnBelowThresholdAcceptReject,
+						types.ProposalOutcomeRejectedWithVeto,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should not add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("0"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("0"))
+				})
+			})
+		})
+
+		When("proposal refund type is ProposalFeeRefundOnBelowThresholdAcceptAllReject", func() {
+			When("proposal outcome is a 'tie'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnBelowThresholdAcceptAllReject,
+						types.ProposalOutcomeTie,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+
+			When("proposal outcome is 'accepted'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnBelowThresholdAcceptAllReject,
+						types.ProposalOutcomeAccepted,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+
+			When("proposal outcome is 'rejected'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnBelowThresholdAcceptAllReject,
+						types.ProposalOutcomeRejectedWithVetoByOwners,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+				})
+			})
+
+			When("proposal outcome is 'rejected with veto'", func() {
+				BeforeEach(func() {
+					err = makeMaybeProcessProposalFeeTest(
+						types.ProposalFeeRefundOnBelowThresholdAcceptAllReject,
+						types.ProposalOutcomeRejectedWithVeto,
+					)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fees back to senders accounts", func() {
+					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 		})

@@ -30,6 +30,7 @@ var _ = Describe("TxValidator", func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		params.FeePerByte = decimal.NewFromFloat(0.001)
+		params.MinProposalFee = float64(0)
 	})
 
 	AfterEach(func() {
@@ -607,7 +608,7 @@ var _ = Describe("TxValidator", func() {
 						ProposalProposee: 1000,
 					},
 				}
-				err := validators.CheckRepoConfig(repoCfg, -1)
+				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:config.gov.propProposee, error:unknown value"))
 			})
@@ -621,7 +622,7 @@ var _ = Describe("TxValidator", func() {
 						ProposalTallyMethod: 1000,
 					},
 				}
-				err := validators.CheckRepoConfig(repoCfg, -1)
+				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:config.gov.propTallyMethod, error:unknown value"))
 			})
@@ -636,7 +637,7 @@ var _ = Describe("TxValidator", func() {
 						ProposalQuorum:      -1,
 					},
 				}
-				err := validators.CheckRepoConfig(repoCfg, -1)
+				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:config.gov.propQuorum, error:must be a non-negative number"))
 			})
@@ -652,7 +653,7 @@ var _ = Describe("TxValidator", func() {
 						ProposalThreshold:   -1,
 					},
 				}
-				err := validators.CheckRepoConfig(repoCfg, -1)
+				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:config.gov.propThreshold, error:must be a non-negative number"))
 			})
@@ -669,7 +670,7 @@ var _ = Describe("TxValidator", func() {
 						ProposalVetoQuorum:  -1,
 					},
 				}
-				err := validators.CheckRepoConfig(repoCfg, -1)
+				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:config.gov.propVetoQuorum, error:must be a non-negative number"))
 			})
@@ -687,7 +688,7 @@ var _ = Describe("TxValidator", func() {
 						ProposalVetoOwnersQuorum: -1,
 					},
 				}
-				err := validators.CheckRepoConfig(repoCfg, -1)
+				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:config.gov.propVetoOwnersQuorum, error:must be a non-negative number"))
 			})
@@ -707,7 +708,7 @@ var _ = Describe("TxValidator", func() {
 						ProposalFee:              1,
 					},
 				}
-				err := validators.CheckRepoConfig(repoCfg, -1)
+				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:config.gov.propFee, error:cannot be lower " +
 					"than network minimum"))
@@ -722,7 +723,7 @@ var _ = Describe("TxValidator", func() {
 						ProposalTallyMethod: types.ProposalTallyMethodCoinWeighted,
 					},
 				}
-				err := validators.CheckRepoConfig(repoCfg, -1)
+				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:config, error:when proposee type " +
 					"is not 'ProposeeOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
@@ -737,7 +738,7 @@ var _ = Describe("TxValidator", func() {
 						ProposalTallyMethod: types.ProposalTallyMethodIdentity,
 					},
 				}
-				err := validators.CheckRepoConfig(repoCfg, -1)
+				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:config, error:when proposee type " +
 					"is not 'ProposeeOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))

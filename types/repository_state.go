@@ -87,22 +87,36 @@ func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
 
 // RepoConfigGovernance contains governance settings for a repository
 type RepoConfigGovernance struct {
-	// Proposal parameters
-	ProposalProposee                 ProposeeType        `json:"propProposee" mapstructure:"propProposee" msgpack:"propProposee"`
-	ProposalProposeeLimitToCurHeight bool                `json:"propProposeeLimitToCurHeight" mapstructure:"propProposeeLimitToCurHeight" msgpack:"propProposeeLimitToCurHeight"`
-	ProposalDur                      uint64              `json:"propDuration" mapstructure:"propDuration" msgpack:"propDuration"`
-	ProposalTallyMethod              ProposalTallyMethod `json:"propTallyMethod" mapstructure:"propTallyMethod" msgpack:"propTallyMethod"`
-	ProposalQuorum                   float64             `json:"propQuorum" mapstructure:"propQuorum" msgpack:"propQuorum"`
-	ProposalThreshold                float64             `json:"propThreshold" mapstructure:"propThreshold" msgpack:"propThreshold"`
-	ProposalVetoQuorum               float64             `json:"propVetoQuorum" mapstructure:"propVetoQuorum" msgpack:"propVetoQuorum"`
-	ProposalVetoOwnersQuorum         float64             `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum" msgpack:"propVetoOwnersQuorum"`
-	ProposalFee                      float64             `json:"propFee" mapstructure:"propFee" msgpack:"propFee"`
-	ProposalFeeRefund                bool                `json:"propFeeRefund" mapstructure:"propFeeRefund" msgpack:"propFeeRefund"`
+	ProposalProposee                 ProposeeType          `json:"propProposee" mapstructure:"propProposee,omitempty" msgpack:"propProposee"`
+	ProposalProposeeLimitToCurHeight bool                  `json:"propProposeeLimitToCurHeight" mapstructure:"propProposeeLimitToCurHeight,omitempty" msgpack:"propProposeeLimitToCurHeight"`
+	ProposalDur                      uint64                `json:"propDuration" mapstructure:"propDuration,omitempty" msgpack:"propDuration"`
+	ProposalTallyMethod              ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod"`
+	ProposalQuorum                   float64               `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum"`
+	ProposalThreshold                float64               `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold"`
+	ProposalVetoQuorum               float64               `json:"propVetoQuorum" mapstructure:"propVetoQuorum,omitempty" msgpack:"propVetoQuorum"`
+	ProposalVetoOwnersQuorum         float64               `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum,omitempty" msgpack:"propVetoOwnersQuorum"`
+	ProposalFee                      float64               `json:"propFee" mapstructure:"propFee,omitempty" msgpack:"propFee"`
+	ProposalFeeRefundType            ProposalFeeRefundType `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType"`
 }
 
 // RepoConfig contains repo-specific configuration settings
 type RepoConfig struct {
 	Governace *RepoConfigGovernance `json:"gov" mapstructure:"gov" msgpack:"gov"`
+}
+
+// Clone clones c
+func (c *RepoConfig) Clone() *RepoConfig {
+	var clone RepoConfig
+	m := util.StructToMap(c)
+	mapstructure.Decode(m, &clone)
+	return &clone
+}
+
+// MergeMap merges map o into c
+func (c *RepoConfig) MergeMap(o map[string]interface{}) {
+	baseMap := util.StructToMap(c)
+	mapstructure.Decode(o, &baseMap)
+	mapstructure.Decode(baseMap, c)
 }
 
 // Merge merges non-zero fields of o into c
@@ -133,6 +147,11 @@ func (c *RepoConfig) IsNil() bool {
 	return c.Governace == nil || *c.Governace == RepoConfigGovernance{}
 }
 
+// ToMap converts the object to map
+func (c *RepoConfig) ToMap() map[string]interface{} {
+	return util.StructToMap(c, "mapstructure")
+}
+
 var (
 	// DefaultRepoConfig is a sane default for repository configurations
 	DefaultRepoConfig = MakeDefaultRepoConfig()
@@ -151,7 +170,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			ProposalVetoQuorum:               params.RepoProposalVetoQuorum,
 			ProposalVetoOwnersQuorum:         params.RepoProposalVetoOwnersQuorum,
 			ProposalFee:                      params.MinProposalFee,
-			ProposalFeeRefund:                false,
+			ProposalFeeRefundType:            0,
 		},
 	}
 }

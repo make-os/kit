@@ -197,14 +197,14 @@ func CheckTxUnbondTicket(tx *types.TxTicketUnbond, index int) error {
 }
 
 // CheckRepoConfig validates a repo configuration object
-func CheckRepoConfig(cfg *types.RepoConfig, index int) error {
+func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 
 	// Overwrite the default config with the user's config.
 	// This is what happens during actual tx execution.
 	// We mimic this operation to get the true version of
 	// the config and validate it
 	actual := types.MakeDefaultRepoConfig()
-	actual.Merge(cfg)
+	actual.MergeMap(cfg)
 	govCfg := actual.Governace
 
 	// Ensure the proposee type is known

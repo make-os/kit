@@ -5,7 +5,9 @@ import (
 	"math"
 
 	"github.com/makeos/mosdef/types"
+	"github.com/makeos/mosdef/util"
 	"github.com/shopspring/decimal"
+	"github.com/thoas/go-funk"
 )
 
 // getProposalOutcome returns the current outcome of a proposal
@@ -100,6 +102,109 @@ func determineProposalOutcome(
 	return getProposalOutcome(keepers.GetTicketManager(), proposal, repo)
 }
 
+// refundProposalFees refunds all fees back to their senders
+func refundProposalFees(keepers types.Keepers, proposal types.Proposal) error {
+	for senderAddr, fee := range proposal.GetFees() {
+		sender := util.String(senderAddr)
+		acct := keepers.AccountKeeper().GetAccount(sender)
+		acct.Balance = util.String(acct.Balance.Decimal().Add(util.String(fee).Decimal()).String())
+		keepers.AccountKeeper().Update(sender, acct)
+	}
+	return nil
+}
+
+// maybeProcessProposalFee determines and execute
+// proposal fee refund or distribution
+func maybeProcessProposalFee(
+	outcome types.ProposalOutcome,
+	keepers types.Keepers,
+	proposal types.Proposal,
+	repo *types.Repository) error {
+
+	switch proposal.GetRefundType() {
+	case types.ProposalFeeRefundNo:
+		goto dist
+	case types.ProposalFeeRefundOnAccept:
+		if outcome == types.ProposalOutcomeAccepted {
+			return refundProposalFees(keepers, proposal)
+		}
+
+	case types.ProposalFeeRefundOnAcceptReject:
+		expected := []types.ProposalOutcome{
+			types.ProposalOutcomeAccepted,
+			types.ProposalOutcomeRejected,
+		}
+		if funk.Contains(expected, outcome) {
+			return refundProposalFees(keepers, proposal)
+		}
+
+	case types.ProposalFeeRefundOnAcceptAllReject:
+		expected := []types.ProposalOutcome{
+			types.ProposalOutcomeAccepted,
+			types.ProposalOutcomeRejected,
+			types.ProposalOutcomeRejectedWithVeto,
+			types.ProposalOutcomeRejectedWithVetoByOwners,
+		}
+		if funk.Contains(expected, outcome) {
+			return refundProposalFees(keepers, proposal)
+		}
+
+	case types.ProposalFeeRefundOnBelowThreshold:
+		expected := []types.ProposalOutcome{
+			types.ProposalOutcomeTie,
+		}
+		if funk.Contains(expected, outcome) {
+			return refundProposalFees(keepers, proposal)
+		}
+
+	case types.ProposalFeeRefundOnBelowThresholdAccept:
+		expected := []types.ProposalOutcome{
+			types.ProposalOutcomeTie,
+			types.ProposalOutcomeAccepted,
+		}
+		if funk.Contains(expected, outcome) {
+			return refundProposalFees(keepers, proposal)
+		}
+
+	case types.ProposalFeeRefundOnBelowThresholdAcceptReject:
+		expected := []types.ProposalOutcome{
+			types.ProposalOutcomeTie,
+			types.ProposalOutcomeAccepted,
+			types.ProposalOutcomeRejected,
+		}
+		if funk.Contains(expected, outcome) {
+			return refundProposalFees(keepers, proposal)
+		}
+
+	case types.ProposalFeeRefundOnBelowThresholdAcceptAllReject:
+		expected := []types.ProposalOutcome{
+			types.ProposalOutcomeTie,
+			types.ProposalOutcomeAccepted,
+			types.ProposalOutcomeRejected,
+			types.ProposalOutcomeRejectedWithVeto,
+			types.ProposalOutcomeRejectedWithVetoByOwners,
+		}
+		if funk.Contains(expected, outcome) {
+			return refundProposalFees(keepers, proposal)
+		}
+
+	default:
+		return fmt.Errorf("unknown proposal refund type")
+	}
+
+dist: // Distribute to repo and helm accounts
+	totalFees := proposal.GetFees().Total()
+	helmRepoName, _ := keepers.SysKeeper().GetHelmRepo()
+	helmRepo := keepers.RepoKeeper().GetRepo(helmRepoName)
+	helmCut := decimal.NewFromFloat(0.4).Mul(totalFees)
+	helmRepo.SetBalance(helmRepo.Balance.Decimal().Add(helmCut).String())
+	repoCut := decimal.NewFromFloat(0.6).Mul(totalFees)
+	repo.SetBalance(repo.Balance.Decimal().Add(repoCut).String())
+	keepers.RepoKeeper().Update(helmRepoName, helmRepo)
+
+	return nil
+}
+
 // maybeApplyProposal attempts to apply the action of a proposal
 func maybeApplyProposal(
 	keepers types.Keepers,
@@ -120,7 +225,8 @@ func maybeApplyProposal(
 	// whom is also the creator of the proposal, instantly apply the proposal.
 	if isOwnersOnlyProposal && len(repo.Owners) == 1 &&
 		repo.Owners.Has(proposal.GetCreator()) {
-		proposal.SetOutcome(types.ProposalOutcomeAccepted)
+		outcome = types.ProposalOutcomeAccepted
+		proposal.SetOutcome(outcome)
 		goto apply
 	}
 
@@ -134,7 +240,8 @@ func maybeApplyProposal(
 	outcome = determineProposalOutcome(keepers, proposal, repo, chainHeight)
 	proposal.SetOutcome(outcome)
 	if outcome != types.ProposalOutcomeAccepted {
-		return false, nil
+		err := maybeProcessProposalFee(outcome, keepers, proposal, repo)
+		return false, err
 	}
 
 apply:
@@ -151,18 +258,8 @@ apply:
 		return false, err
 	}
 
-	// Share the proposal fee at a 40/60 ratio between the helm repo
-	// and the proposal's repo respectively only if proposal fee is
-	// non-refundable
-	if !proposal.IsFeeRefundable() {
-		totalFees := proposal.GetFees().Total()
-		helmRepoName, _ := keepers.SysKeeper().GetHelmRepo()
-		helmRepo := keepers.RepoKeeper().GetRepo(helmRepoName)
-		helmCut := decimal.NewFromFloat(0.4).Mul(totalFees)
-		helmRepo.SetBalance(helmRepo.Balance.Decimal().Add(helmCut).String())
-		repoCut := decimal.NewFromFloat(0.6).Mul(totalFees)
-		repo.SetBalance(repo.Balance.Decimal().Add(repoCut).String())
-		keepers.RepoKeeper().Update(helmRepoName, helmRepo)
+	if err := maybeProcessProposalFee(outcome, keepers, proposal, repo); err != nil {
+		return false, err
 	}
 
 	return true, nil

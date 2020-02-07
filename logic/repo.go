@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/imdario/mergo"
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
@@ -32,7 +30,7 @@ const (
 func (t *Transaction) execRepoCreate(
 	creatorPubKey util.Bytes32,
 	name string,
-	config *types.RepoConfig,
+	config map[string]interface{},
 	fee util.String,
 	chainHeight uint64) error {
 
@@ -42,7 +40,7 @@ func (t *Transaction) execRepoCreate(
 	// the passed config is unset.
 	newRepo := types.BareRepository()
 	newRepo.Config = types.MakeDefaultRepoConfig()
-	newRepo.Config.Merge(config)
+	newRepo.Config.MergeMap(config)
 
 	proposee := newRepo.Config.Governace.ProposalProposee
 
@@ -121,17 +119,8 @@ func applyProposalRepoUpdate(
 	proposal types.Proposal,
 	repo *types.Repository,
 	chainHeight uint64) error {
-
-	configSerialized := proposal.GetActionData()[actionDataConfig].([]byte)
-	var configMap map[string]interface{}
-	if err := util.BytesToObject(configSerialized, &configMap); err != nil {
-		return errors.Wrap(err, "failed to deserialize config action data")
-	}
-	var config types.RepoConfig
-	mapstructure.Decode(configMap, &config)
-
-	mergo.MergeWithOverwrite(repo.Config, &config)
-
+	cfgUpd := proposal.GetActionData()[actionDataConfig].(map[string]interface{})
+	repo.Config.MergeMap(cfgUpd)
 	return nil
 }
 
@@ -161,7 +150,7 @@ func (t *Transaction) execRepoUpsertOwner(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := &types.RepoProposal{
-		Config:  repo.Config.Governace,
+		Config:  repo.Config.Clone().Governace,
 		Action:  types.ProposalActionAddOwner,
 		Creator: spk.Addr().String(),
 		Height:  chainHeight,
@@ -179,6 +168,10 @@ func (t *Transaction) execRepoUpsertOwner(
 		proposal.ProposeeMaxJoinHeight = chainHeight + 1
 	}
 
+	// Deduct network fee + proposal fee from sender
+	totalFee := fee.Decimal().Add(proposalFee.Decimal())
+	t.deductFee(spk, totalFee, chainHeight)
+
 	// Add the proposal to the repo
 	proposalID := fmt.Sprintf("%d", len(repo.Proposals)+1)
 	repo.Proposals.Add(proposalID, proposal)
@@ -199,12 +192,7 @@ func (t *Transaction) execRepoUpsertOwner(
 	}
 
 update:
-	// Update the repo
 	repoKeeper.Update(repoName, repo)
-
-	// Deduct fee + proposal fee from sender
-	totalFee := fee.Decimal().Add(proposalFee.Decimal())
-	t.deductFee(spk, totalFee, chainHeight)
 
 	return nil
 }
@@ -222,7 +210,7 @@ update:
 func (t *Transaction) execRepoProposalUpdate(
 	senderPubKey util.Bytes32,
 	repoName string,
-	config *types.RepoConfig,
+	config map[string]interface{},
 	proposalFee util.String,
 	fee util.String,
 	chainHeight uint64) error {
@@ -234,7 +222,7 @@ func (t *Transaction) execRepoProposalUpdate(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := &types.RepoProposal{
-		Config:  repo.Config.Governace,
+		Config:  repo.Config.Clone().Governace,
 		Action:  types.ProposalActionRepoUpdate,
 		Creator: spk.Addr().String(),
 		Height:  chainHeight,
@@ -243,13 +231,17 @@ func (t *Transaction) execRepoProposalUpdate(
 			spk.Addr().String(): proposalFee.String(),
 		},
 		ActionData: map[string]interface{}{
-			actionDataConfig: util.ObjectToBytes(config),
+			actionDataConfig: config,
 		},
 	}
 
 	if repo.Config.Governace.ProposalProposeeLimitToCurHeight {
 		proposal.ProposeeMaxJoinHeight = chainHeight + 1
 	}
+
+	// Deduct network fee + proposal fee from sender
+	totalFee := fee.Decimal().Add(proposalFee.Decimal())
+	t.deductFee(spk, totalFee, chainHeight)
 
 	// Add the proposal to the repo
 	proposalID := fmt.Sprintf("%d", len(repo.Proposals)+1)
@@ -271,12 +263,7 @@ func (t *Transaction) execRepoProposalUpdate(
 	}
 
 update:
-	// Update the repo
 	repoKeeper.Update(repoName, repo)
-
-	// Deduct fee from sender
-	totalFee := fee.Decimal().Add(proposalFee.Decimal())
-	t.deductFee(spk, totalFee, chainHeight)
 
 	return nil
 }

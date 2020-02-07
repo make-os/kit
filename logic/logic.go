@@ -7,7 +7,6 @@ import (
 	"github.com/makeos/mosdef/storage/tree"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 )
 
@@ -265,9 +264,7 @@ func (l *Logic) WriteGenesisState() error {
 				})
 			}
 			newRepo.Config = types.MakeDefaultRepoConfig()
-			var repoCfg types.RepoConfig
-			mapstructure.Decode(ga.Config, &repoCfg)
-			newRepo.Config.Merge(&repoCfg)
+			newRepo.Config.MergeMap(ga.Config)
 			l.RepoKeeper().Update(ga.Name, newRepo)
 			if ga.Helm {
 				if err := l.SysKeeper().SetHelmRepo(ga.Name); err != nil {

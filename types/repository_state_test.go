@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -178,6 +180,46 @@ var _ = Describe("Repository", func() {
 				Expect(owners).To(ContainElement("xyz"))
 				Expect(owners).To(ContainElement("abc"))
 			})
+		})
+	})
+
+	Describe("RepoConfig.MergeMap", func() {
+		Context("merge all key/value in map", func() {
+			base := &RepoConfig{
+				Governace: &RepoConfigGovernance{
+					ProposalProposee:                 1,
+					ProposalProposeeLimitToCurHeight: true,
+				},
+			}
+
+			It("should update base object", func() {
+				base.MergeMap(map[string]interface{}{
+					"name": "some-name",
+					"gov": map[string]interface{}{
+						"propProposee":                 13,
+						"propProposeeLimitToCurHeight": false,
+					},
+				})
+				Expect(int(base.Governace.ProposalProposee)).To(Equal(13))
+				Expect(base.Governace.ProposalProposeeLimitToCurHeight).To(BeFalse())
+			})
+
+		})
+	})
+
+	Describe("RepoConfig.Clone", func() {
+		base := &RepoConfig{
+			Governace: &RepoConfigGovernance{
+				ProposalProposee:                 1,
+				ProposalProposeeLimitToCurHeight: true,
+			},
+		}
+
+		It("should clone into a different RepoConfig object", func() {
+			clone := base.Clone()
+			Expect(base).To(Equal(clone))
+			Expect(fmt.Sprintf("%p", base)).ToNot(Equal(fmt.Sprintf("%p", clone)))
+			Expect(fmt.Sprintf("%p", base.Governace)).ToNot(Equal(fmt.Sprintf("%p", clone.Governace)))
 		})
 	})
 
