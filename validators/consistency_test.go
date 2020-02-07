@@ -998,6 +998,28 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
+		When("repo proposal fee is zero but tx include a proposal fee", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalUpsertOwner()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.Value = "10"
+				repo := types.BareRepository()
+				repo.AddOwner("addr", &types.RepoOwner{})
+				repo.Config.Governace.ProposalFee = 0
+
+				bi := &types.BlockInfo{Height: 1}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
+				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:value, error:proposal fee is not required but was provided"))
+			})
+		})
+
 		When("proposal fee is less than repo minimum", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalUpsertOwner()

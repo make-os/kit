@@ -248,7 +248,8 @@ func CheckTxPushConsistency(
 		// Perform consistency checks but don't check the signature as we don't
 		// care about that when dealing with a TxPush object, instead we care
 		// about checking the aggregated BLS signature
-		if err := repo.CheckPushOKConsistencyUsingStorer(storers, pok, logic, true, index); err != nil {
+		if err := repo.CheckPushOKConsistencyUsingStorer(storers, pok,
+			logic, true, index); err != nil {
 			return err
 		}
 
@@ -369,8 +370,14 @@ func checkProposalCommonConsistency(
 		return nil, feI(index, "name", "repo not found")
 	}
 
-	if txProposal.Value.Decimal().
-		LessThan(decimal.NewFromFloat(repo.Config.Governace.ProposalFee)) {
+	repoPropFee := decimal.NewFromFloat(repo.Config.Governace.ProposalFee)
+	if repoPropFee.Equal(decimal.Zero) &&
+		!txProposal.Value.Decimal().Equal(decimal.Zero) {
+		return nil, feI(index, "value", "proposal fee is not required but was provided")
+	}
+
+	if repoPropFee.GreaterThan(decimal.Zero) &&
+		txProposal.Value.Decimal().LessThan(repoPropFee) {
 		return nil, feI(index, "value", "proposal fee cannot be less than repo minimum")
 	}
 
