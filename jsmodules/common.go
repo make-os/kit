@@ -107,12 +107,13 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 		return obj
 	}
 
-	var m map[string]interface{}
+	// var m map[string]interface{}
 
-	// If object is a struct, convert to map
+	var m map[string]interface{}
 	structs.DefaultTagName = "json"
 	if structs.IsStruct(obj) {
-		m = structs.Map(obj)
+		st := structs.New(obj)
+		m = st.Map()
 	} else {
 		m = obj.(map[string]interface{})
 	}
@@ -144,7 +145,8 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 		case util.Bytes64:
 			m[k] = o.HexStr()
 
-		// map[string]structtype
+		// custom wrapped map[string]struct
+		// custom wrapped map[string]string
 		default:
 			v := reflect.ValueOf(o)
 			kind := v.Kind()
@@ -154,9 +156,11 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 					mapVal := v.MapIndex(key)
 					if structs.IsStruct(mapVal.Interface()) {
 						newMap[key.String()] = structs.Map(mapVal.Interface())
+					} else if mapValStr, ok := mapVal.Interface().(string); ok {
+						newMap[key.String()] = mapValStr
 					}
 				}
-				m[k] = EncodeForJS(util.CloneMap(newMap))
+				m[k] = EncodeForJS(newMap)
 			} else if kind == reflect.Struct {
 				m[k] = EncodeForJS(structs.Map(o))
 			}

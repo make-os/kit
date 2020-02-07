@@ -108,7 +108,7 @@ type RepoProposal struct {
 	NoWithVeto            float64                `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes from owners/stakeholders veto power
 	NoWithVetoByOwners    float64                `json:"noWithVetoByOwners" mapstructure:"noWithVetoByOwners" msgpack:"noWithVetoByOwners"`          // Count of "No" votes specifically from owners veto power
 	Abstain               float64                `json:"abstain" mapstructure:"abstain" msgpack:"abstain"`                                           // Count of explicit "abstain" votes
-	Fees                  ProposalFees           `json:"fee" mapstructure:"fee" msgpack:"fee"`                                                       // Count of explicit "abstain" votes
+	Fees                  ProposalFees           `json:"fees" mapstructure:"fees" msgpack:"fees"`                                                    // Count of explicit "abstain" votes
 	Outcome               ProposalOutcome        `json:"outcome" mapstructure:"outcome" msgpack:"outcome"`                                           // The outcome of the proposal vote.
 }
 
