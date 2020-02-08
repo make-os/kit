@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
 	"github.com/shopspring/decimal"
@@ -196,9 +197,9 @@ dist: // Distribute to repo and helm accounts
 	totalFees := proposal.GetFees().Total()
 	helmRepoName, _ := keepers.SysKeeper().GetHelmRepo()
 	helmRepo := keepers.RepoKeeper().GetRepo(helmRepoName)
-	helmCut := decimal.NewFromFloat(0.4).Mul(totalFees)
+	helmCut := decimal.NewFromFloat(params.HelmProposalFeeSplit).Mul(totalFees)
 	helmRepo.SetBalance(helmRepo.Balance.Decimal().Add(helmCut).String())
-	repoCut := decimal.NewFromFloat(0.6).Mul(totalFees)
+	repoCut := decimal.NewFromFloat(params.TargetRepoProposalFeeSplit).Mul(totalFees)
 	repo.SetBalance(repo.Balance.Decimal().Add(repoCut).String())
 	keepers.RepoKeeper().Update(helmRepoName, helmRepo)
 

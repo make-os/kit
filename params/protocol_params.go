@@ -150,4 +150,10 @@ var (
 	// NOTE: This should probably be set to zero, otherwise every proposal (even
 	// by owners) will require an additional fee.
 	MinProposalFee = float64(0)
+	// HelmProposalFeeSplit is the percentage of proposal fee distributed to the
+	// helm repo
+	HelmProposalFeeSplit = 0.2
+	// TargetRepoProposalFeeSplit is the percentage of proposal fee distributed to the
+	// repo that received and resolved a proposal
+	TargetRepoProposalFeeSplit = 0.8
 )
