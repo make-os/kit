@@ -106,7 +106,7 @@ const (
 	ProposalOutcomeRejectedWithVetoByOwners
 	ProposalOutcomeQuorumNotMet
 	ProposalOutcomeThresholdNotMet
-	ProposalOutcomeTie
+	ProposalOutcomeBelowThreshold
 )
 
 // RepoProposal represents a repository proposal

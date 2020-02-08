@@ -82,12 +82,12 @@ var _ = Describe("ProposalHandler", func() {
 			})
 
 			When("proposal quorum is 40% and total votes received is 4", func() {
-				It("should return ProposalOutcomeTie", func() {
+				It("should return ProposalOutcomeBelowThreshold", func() {
 					proposal.Config.ProposalQuorum = 40
 					proposal.Yes = 2
 					proposal.No = 2
 					res := determineProposalOutcome(logic, proposal, repo, 100)
-					Expect(res).To(Equal(types.ProposalOutcomeTie))
+					Expect(res).To(Equal(types.ProposalOutcomeBelowThreshold))
 				})
 			})
 		})
@@ -450,9 +450,9 @@ var _ = Describe("ProposalHandler", func() {
 					proposal.NoWithVeto = 0
 				})
 
-				It("should return outcome=ProposalOutcomeTie", func() {
+				It("should return outcome=ProposalOutcomeBelowThreshold", func() {
 					out := getProposalOutcome(logic.GetTicketManager(), proposal, repo)
-					Expect(out).To(Equal(types.ProposalOutcomeTie))
+					Expect(out).To(Equal(types.ProposalOutcomeBelowThreshold))
 				})
 			})
 		})
@@ -572,7 +572,7 @@ var _ = Describe("ProposalHandler", func() {
 				BeforeEach(func() {
 					err = makeMaybeProcessProposalFeeTest(
 						types.ProposalFeeRefundOnBelowThreshold,
-						types.ProposalOutcomeTie,
+						types.ProposalOutcomeBelowThreshold,
 					)
 					Expect(err).To(BeNil())
 				})
@@ -589,7 +589,7 @@ var _ = Describe("ProposalHandler", func() {
 				BeforeEach(func() {
 					err = makeMaybeProcessProposalFeeTest(
 						types.ProposalFeeRefundOnBelowThresholdAccept,
-						types.ProposalOutcomeTie,
+						types.ProposalOutcomeBelowThreshold,
 					)
 					Expect(err).To(BeNil())
 				})
@@ -621,7 +621,7 @@ var _ = Describe("ProposalHandler", func() {
 				BeforeEach(func() {
 					err = makeMaybeProcessProposalFeeTest(
 						types.ProposalFeeRefundOnBelowThresholdAcceptReject,
-						types.ProposalOutcomeTie,
+						types.ProposalOutcomeBelowThreshold,
 					)
 					Expect(err).To(BeNil())
 				})
@@ -683,7 +683,7 @@ var _ = Describe("ProposalHandler", func() {
 				BeforeEach(func() {
 					err = makeMaybeProcessProposalFeeTest(
 						types.ProposalFeeRefundOnBelowThresholdAcceptAllReject,
-						types.ProposalOutcomeTie,
+						types.ProposalOutcomeBelowThreshold,
 					)
 					Expect(err).To(BeNil())
 				})

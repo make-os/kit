@@ -90,7 +90,7 @@ func getProposalOutcome(
 		return types.ProposalOutcomeRejected
 	}
 
-	return types.ProposalOutcomeTie
+	return types.ProposalOutcomeBelowThreshold
 }
 
 // determineProposalOutcome determines the outcome of the proposal votes
@@ -151,7 +151,7 @@ func maybeProcessProposalFee(
 
 	case types.ProposalFeeRefundOnBelowThreshold:
 		expected := []types.ProposalOutcome{
-			types.ProposalOutcomeTie,
+			types.ProposalOutcomeBelowThreshold,
 		}
 		if funk.Contains(expected, outcome) {
 			return refundProposalFees(keepers, proposal)
@@ -159,7 +159,7 @@ func maybeProcessProposalFee(
 
 	case types.ProposalFeeRefundOnBelowThresholdAccept:
 		expected := []types.ProposalOutcome{
-			types.ProposalOutcomeTie,
+			types.ProposalOutcomeBelowThreshold,
 			types.ProposalOutcomeAccepted,
 		}
 		if funk.Contains(expected, outcome) {
@@ -168,7 +168,7 @@ func maybeProcessProposalFee(
 
 	case types.ProposalFeeRefundOnBelowThresholdAcceptReject:
 		expected := []types.ProposalOutcome{
-			types.ProposalOutcomeTie,
+			types.ProposalOutcomeBelowThreshold,
 			types.ProposalOutcomeAccepted,
 			types.ProposalOutcomeRejected,
 		}
@@ -178,7 +178,7 @@ func maybeProcessProposalFee(
 
 	case types.ProposalFeeRefundOnBelowThresholdAcceptAllReject:
 		expected := []types.ProposalOutcome{
-			types.ProposalOutcomeTie,
+			types.ProposalOutcomeBelowThreshold,
 			types.ProposalOutcomeAccepted,
 			types.ProposalOutcomeRejected,
 			types.ProposalOutcomeRejectedWithVeto,
