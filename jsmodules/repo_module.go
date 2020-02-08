@@ -255,17 +255,37 @@ func (m *RepoModule) prune(name string, force bool) {
 }
 
 // get finds and returns a repository
+//
 // name: The name of the repository
-// height: Optional max block height to limit the search to.
-func (m *RepoModule) get(name string, height ...uint64) interface{} {
+// opts: Optional options
+// opts.height: Limit the query to a given block height
+// opts.noProps: Hide proposals.
+func (m *RepoModule) get(name string, opts ...map[string]interface{}) interface{} {
 	var targetHeight uint64
-	if len(height) > 0 {
-		targetHeight = uint64(height[0])
+	var noProposals bool
+
+	if len(opts) > 0 {
+		opt := opts[0]
+		if height, ok := opt["height"].(int64); ok {
+			targetHeight = uint64(height)
+		}
+		if noProps, ok := opt["noProps"].(bool); ok {
+			noProposals = noProps
+		}
 	}
-	repo := m.keepers.RepoKeeper().GetRepo(name, targetHeight)
+
+	var repo *types.Repository
+	if !noProposals {
+		repo = m.keepers.RepoKeeper().GetRepo(name, targetHeight)
+	} else {
+		repo = m.keepers.RepoKeeper().GetRepoOnly(name, targetHeight)
+		repo.Proposals = map[string]interface{}{}
+	}
+
 	if repo.IsNil() {
 		return otto.NullValue()
 	}
+
 	return EncodeForJS(repo)
 }
 

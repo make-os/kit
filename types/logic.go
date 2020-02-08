@@ -102,6 +102,10 @@ type RepoKeeper interface {
 	// CONTRACT: It returns an empty Repository if no repo is found.
 	GetRepo(name string, blockNum ...uint64) *Repository
 
+	// GetRepoOnly fetches a repository by the given name without making additional
+	// queries to populate the repo with associated objects.
+	GetRepoOnly(name string, blockNum ...uint64) *Repository
+
 	// Update sets a new object at the given address.
 	//
 	// ARGS:

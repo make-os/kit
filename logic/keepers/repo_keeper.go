@@ -34,7 +34,7 @@ func NewRepoKeeper(state *tree.SafeTree, db storage.Tx) *RepoKeeper {
 // CONTRACT: It returns an empty Repository if no repo is found.
 func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *types.Repository {
 
-	repo := a.getRepoOnly(name, blockNum...)
+	repo := a.GetRepoOnly(name, blockNum...)
 
 	// For each proposal in the repo, fetch their config from the version of the
 	// repo where they first appeared.
@@ -44,7 +44,7 @@ func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *types.Repository 
 			prop.Config = repo.Config.Governace
 			return nil
 		}
-		propParent := a.getRepoOnly(name, prop.Height)
+		propParent := a.GetRepoOnly(name, prop.Height)
 		if propParent.IsNil() {
 			return fmt.Errorf("failed to get repo version of proposal (%s)", id)
 		}
@@ -58,8 +58,15 @@ func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *types.Repository 
 	return repo
 }
 
-// getRepoOnly fetches a repository by the given name
-func (a *RepoKeeper) getRepoOnly(name string, blockNum ...uint64) *types.Repository {
+// GetRepoOnly fetches a repository by the given name without making additional
+// queries to populate the repo with associated objects.
+//
+// ARGS:
+// name: The name of the repository to find.
+// blockNum: The target block to query (Optional. Default: latest)
+//
+// CONTRACT: It returns an empty Repository if no repo is found.
+func (a *RepoKeeper) GetRepoOnly(name string, blockNum ...uint64) *types.Repository {
 
 	// Get version is provided
 	var version uint64
