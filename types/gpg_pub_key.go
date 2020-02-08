@@ -1,8 +1,9 @@
 package types
 
-import "github.com/vmihailenco/msgpack"
-
-import "github.com/makeos/mosdef/util"
+import (
+	"github.com/makeos/mosdef/util"
+	"github.com/vmihailenco/msgpack"
+)
 
 // BareGPGPubKey returns a GPGPubKey object with zero values
 func BareGPGPubKey() *GPGPubKey {
@@ -11,9 +12,9 @@ func BareGPGPubKey() *GPGPubKey {
 
 // GPGPubKey represents a GPG public key
 type GPGPubKey struct {
-	util.DecoderHelper
-	PubKey  string      `json:"pubKey" msgpack:"pubKey"`
-	Address util.String `json:"address" msgpack:"address"`
+	util.DecoderHelper `json:"-" msgpack:"-"`
+	PubKey             string      `json:"pubKey" msgpack:"pubKey"`
+	Address            util.String `json:"address" msgpack:"address"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

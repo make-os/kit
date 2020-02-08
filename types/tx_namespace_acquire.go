@@ -8,9 +8,9 @@ import (
 
 // TxNamespaceAcquire implements BaseTx, it describes a transaction for acquiring a namespace
 type TxNamespaceAcquire struct {
-	*TxType           `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxCommon         `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxValue          `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxCommon         `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxValue          `json:",flatten" msgpack:"-" mapstructure:"-"`
 	Name              string            `json:"name" msgpack:"name"`                           // The name of the namespace
 	TransferToRepo    string            `json:"transferToRepo" msgpack:"transferToRepo"`       // Name of repo that will own the name.
 	TransferToAccount string            `json:"transferToAccount" msgpack:"transferToAccount"` // Name of the account that will own the name.

@@ -92,23 +92,21 @@ func applyProposalAddOwner(
 	targetAddrs := proposal.GetActionData()[actionDataAddresses].(string)
 	veto := proposal.GetActionData()[actionDataVeto].(bool)
 
-	// Add new repo owner if the target address isn't already an existing owner
+	// Add new repo owner iif the target address does not
+	// already exist as an owner. If it exists, just update the fields.
 	for _, address := range strings.Split(targetAddrs, ",") {
 
 		existingOwner := repo.Owners.Get(address)
-		if existingOwner == nil {
-			repo.AddOwner(address, &types.RepoOwner{
-				Creator:  false,
-				JoinedAt: chainHeight + 1,
-				Veto:     veto,
-			})
+		if existingOwner != nil {
+			existingOwner.Veto = veto
 			continue
 		}
 
-		// Since the address exist as an owner, update fields have changed.
-		if veto != existingOwner.Veto {
-			existingOwner.Veto = veto
-		}
+		repo.AddOwner(address, &types.RepoOwner{
+			Creator:  false,
+			JoinedAt: chainHeight + 1,
+			Veto:     veto,
+		})
 	}
 
 	return nil

@@ -22,7 +22,7 @@ func BareAccount() *Account {
 // Account represents a user's identity and includes
 // balance and other information.
 type Account struct {
-	util.DecoderHelper
+	util.DecoderHelper  `json:"-" msgpack:"-"`
 	Balance             util.String   `json:"balance" msgpack:"balance"`
 	Nonce               uint64        `json:"nonce" msgpack:"nonce"`
 	Stakes              AccountStakes `json:"stakes" msgpack:"stakes"`

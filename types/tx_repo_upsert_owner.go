@@ -9,9 +9,9 @@ import (
 // TxRepoProposalUpsertOwner implements BaseTx, it describes a repository proposal
 // transaction for adding a new owner to a repository
 type TxRepoProposalUpsertOwner struct {
-	*TxCommon         `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxType           `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxProposalCommon `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxCommon         `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxProposalCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 	Addresses         string `json:"addresses" msgpack:"addresses"`
 	Veto              bool   `json:"veto" msgpack:"veto"`
 }

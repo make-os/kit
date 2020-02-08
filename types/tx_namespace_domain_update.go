@@ -8,8 +8,8 @@ import (
 
 // TxNamespaceDomainUpdate implements BaseTx, it describes a transaction for acquiring a namespace
 type TxNamespaceDomainUpdate struct {
-	*TxType   `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxCommon `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 	Name      string            `json:"name" msgpack:"name"`
 	Domains   map[string]string `json:"domains" msgpack:"domains"`
 }

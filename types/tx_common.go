@@ -11,40 +11,24 @@ import (
 
 // All Transaction type
 var (
-	TxTypeCoinTransfer            = 0x0  // For native coin transfer
-	TxTypeValidatorTicket         = 0x01 // For validator ticket purchase
-	TxTypeSetDelegatorCommission  = 0x02 // For setting delegator commission
-	TxTypeStorerTicket            = 0x03 // For purchasing storer ticket
-	TxTypeUnbondStorerTicket      = 0x04 // For unbonding storer ticket
-	TxTypeRepoCreate              = 0x05 // For creating a repository
-	TxTypeAddGPGPubKey            = 0x06 // For adding a GPG public key
-	TxTypePush                    = 0x07 // For pushing updates to a repository
-	TxTypeNSAcquire               = 0x08 // For namespace purchase
-	TxTypeNSDomainUpdate          = 0x09 // For setting namespace domains
-	TxTypeRepoProposalUpsertOwner = 0x10 // For creating a proposal to add repo owner
-	TxTypeRepoProposalVote        = 0x11 // For voting on a repo proposal
-	TxTypeRepoProposalUpdate      = 0x12 // For creating a repo update proposal
-)
-
-// Transaction meta keys
-var (
-	TxMetaKeyInvalidated = "invalidated"
+	TxTypeCoinTransfer            = 0  // For native coin transfer
+	TxTypeValidatorTicket         = 1  // For validator ticket purchase
+	TxTypeSetDelegatorCommission  = 2  // For setting delegator commission
+	TxTypeStorerTicket            = 3  // For purchasing storer ticket
+	TxTypeUnbondStorerTicket      = 4  // For unbonding storer ticket
+	TxTypeRepoCreate              = 5  // For creating a repository
+	TxTypeAddGPGPubKey            = 6  // For adding a GPG public key
+	TxTypePush                    = 7  // For pushing updates to a repository
+	TxTypeNSAcquire               = 8  // For namespace purchase
+	TxTypeNSDomainUpdate          = 9  // For setting namespace domains
+	TxTypeRepoProposalUpsertOwner = 10 // For creating a proposal to add repo owner
+	TxTypeRepoProposalVote        = 11 // For voting on a repo proposal
+	TxTypeRepoProposalUpdate      = 12 // For creating a repo update proposal
 )
 
 // TxMeta stores arbitrary, self-contained state information for a transaction
 type TxMeta struct {
 	meta map[string]interface{}
-}
-
-// IsInvalidated checks whether the transaction has been marked as invalid
-func (m *TxMeta) IsInvalidated() bool {
-	return m.meta != nil && m.meta[TxMetaKeyInvalidated] != nil
-}
-
-// Invalidate sets a TxMetaKeyInvalidated key in the tx map
-// indicating that the transaction has been invalidated.
-func (m *TxMeta) Invalidate() {
-	m.meta[TxMetaKeyInvalidated] = struct{}{}
 }
 
 // GetMeta returns the meta information of the transaction
@@ -78,8 +62,6 @@ type BaseTx interface {
 	GetSize() int64                      // Returns the size of the tx object (excluding nothing)
 	ToMap() map[string]interface{}       // Returns a map equivalent of the transaction
 	GetMeta() map[string]interface{}     // Returns the meta information of the transaction
-	IsInvalidated() bool                 // Checks if the tx has been invalidated by a process
-	Invalidate()                         // Invalidates the transaction
 	Is(txType int) bool                  // Checks if the tx is a given type
 }
 

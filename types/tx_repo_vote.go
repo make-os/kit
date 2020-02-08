@@ -9,11 +9,11 @@ import (
 // TxRepoProposalVote implements BaseTx, it describes a transaction for voting
 // on a repository proposal
 type TxRepoProposalVote struct {
-	*TxCommon  `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxType    `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxCommon  `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxType    `json:",flatten" msgpack:"-" mapstructure:"-"`
 	RepoName   string `json:"name" msgpack:"name"`
 	ProposalID string `json:"id" msgpack:"id"`
-	Vote       int    `json:"yes" msgpack:"yes"`
+	Vote       int    `json:"vote" msgpack:"vote"`
 }
 
 // NewBareRepoProposalVote returns an instance of TxRepoProposalVote with zero values

@@ -9,9 +9,9 @@ import (
 // TxRepoProposalUpdate implements BaseTx, it describes a repository proposal
 // transaction for updating a repository
 type TxRepoProposalUpdate struct {
-	*TxCommon         `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxType           `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxProposalCommon `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxCommon         `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxProposalCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 	Config            map[string]interface{} `json:"config" msgpack:"config"`
 }
 

@@ -9,8 +9,8 @@ import (
 // TxPush implements BaseTx, it describes a transaction that creates a
 // repository for the signer
 type TxPush struct {
-	*TxCommon     `json:"-" mapstructure:"-"`
-	*TxType       `json:"-" msgpack:"-"`
+	*TxCommon     `json:",flatten" mapstructure:"-"`
+	*TxType       `json:",flatten" msgpack:"-"`
 	PushNote      *PushNote `json:"pushNote" mapstructure:"pushNote"`
 	PushOKs       []*PushOK `json:"endorsements" mapstructure:"endorsements"`
 	AggPushOKsSig []byte    `json:"aggEndorsersPubKey" mapstructure:"aggEndorsersPubKey"`

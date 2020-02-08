@@ -9,9 +9,9 @@ import (
 // TxRepoCreate implements BaseTx, it describes a transaction that creates a
 // repository for the signer
 type TxRepoCreate struct {
-	*TxCommon `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxType   `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxValue  `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxValue  `json:",flatten" msgpack:"-" mapstructure:"-"`
 	Name      string                 `json:"name" msgpack:"name"`
 	Config    map[string]interface{} `json:"config" msgpack:"config"`
 }

@@ -358,7 +358,7 @@ type Pruner interface {
 
 // PushedReference represents a reference that was pushed by git client
 type PushedReference struct {
-	util.DecoderHelper `json:"-" msgpack:"-" mapstructure:"-"`
+	util.DecoderHelper `json:",flatten" msgpack:"-" mapstructure:"-"`
 	Name               string   `json:"name" msgpack:"name"`       // The full name of the reference
 	OldHash            string   `json:"oldHash" msgpack:"oldHash"` // The hash of the reference before the push
 	NewHash            string   `json:"newHash" msgpack:"newHash"` // The hash of the reference after the push
@@ -471,8 +471,8 @@ type Items interface {
 
 // PushNote implements types.PushNote
 type PushNote struct {
-	util.DecoderHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	TargetRepo         BareRepo         `json:"-" msgpack:"-" mapstructure:"-"`
+	util.DecoderHelper `json:",flatten" msgpack:"-" mapstructure:"-"`
+	TargetRepo         BareRepo         `json:",flatten" msgpack:"-" mapstructure:"-"`
 	RepoName           string           `json:"repoName" msgpack:"repoName"`         // The name of the repo
 	References         PushedReferences `json:"references" msgpack:"references"`     // A list of references pushed
 	PusherKeyID        []byte           `json:"pusherKeyId" msgpack:"pusherKeyId"`   // The PGP key of the pusher
@@ -629,7 +629,7 @@ func (r *ReferenceHashes) ID() util.Bytes32 {
 
 // PushOK is used to endorse a push note
 type PushOK struct {
-	util.DecoderHelper `json:"-" msgpack:"-" mapstructure:"-"`
+	util.DecoderHelper `json:",flatten" msgpack:"-" mapstructure:"-"`
 	PushNoteID         util.Bytes32    `json:"pushNoteID" msgpack:"pushNoteID" mapstructure:"pushNoteID"`
 	ReferencesHash     ReferenceHashes `json:"refsHash" msgpack:"refsHash" mapstructure:"refsHash"`
 	SenderPubKey       util.Bytes32    `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
