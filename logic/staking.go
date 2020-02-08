@@ -124,7 +124,7 @@ func (t *Transaction) addStake(
 
 	// Get sender accounts
 	sender := spk.Addr()
-	senderAcct := acctKeeper.GetAccount(sender, chainHeight)
+	senderAcct := acctKeeper.GetAccount(sender)
 
 	// Deduct the transaction fee and increment nonce
 	senderBal := senderAcct.Balance.Decimal()

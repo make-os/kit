@@ -36,7 +36,7 @@ func (t *Transaction) execCoinTransfer(
 	// we need to resolve it to the target address which is expected
 	// to be a prefixed address.
 	if recvAddr.IsNamespaceURI() {
-		target, err := t.logic.NamespaceKeeper().GetTarget(recvAddr.String(), chainHeight)
+		target, err := t.logic.NamespaceKeeper().GetTarget(recvAddr.String())
 		if err != nil {
 			return err
 		}
@@ -52,20 +52,20 @@ func (t *Transaction) execCoinTransfer(
 		if util.IsPrefixedAddressRepo(recvAddr.String()) {
 			recvAcct = repoKeeper.GetRepo(resourceName)
 		} else {
-			recvAcct = acctKeeper.GetAccount(util.String(resourceName), chainHeight)
+			recvAcct = acctKeeper.GetAccount(util.String(resourceName))
 		}
 	}
 
 	// Check if the recipient address is a base58 encoded address.
 	// If so, get the account object corresponding to the address.
 	if recvAddr.IsBase58Address() {
-		recvAcct = acctKeeper.GetAccount(recipientAddr, chainHeight)
+		recvAcct = acctKeeper.GetAccount(recipientAddr)
 	}
 
 	// Get the sender account and balance
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	sender := spk.Addr()
-	senderAcct := acctKeeper.GetAccount(sender, chainHeight)
+	senderAcct := acctKeeper.GetAccount(sender)
 	senderBal := senderAcct.Balance.Decimal()
 
 	// When the sender is also the recipient, use sender
@@ -124,7 +124,7 @@ func (t *Transaction) CanExecCoinTransfer(
 	// Get sender and recipient accounts
 	acctKeeper := t.logic.AccountKeeper()
 	sender := senderPubKey.Addr()
-	senderAcct := acctKeeper.GetAccount(sender, chainHeight)
+	senderAcct := acctKeeper.GetAccount(sender)
 
 	// Ensure the transaction nonce is the next expected nonce
 	expectedNonce := senderAcct.Nonce + 1

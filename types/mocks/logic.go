@@ -349,6 +349,25 @@ func (mr *MockRepoKeeperMockRecorder) GetRepo(name interface{}, blockNum ...inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockRepoKeeper)(nil).GetRepo), varargs...)
 }
 
+// GetRepoOnly mocks base method
+func (m *MockRepoKeeper) GetRepoOnly(name string, blockNum ...uint64) *types.Repository {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{name}
+	for _, a := range blockNum {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetRepoOnly", varargs...)
+	ret0, _ := ret[0].(*types.Repository)
+	return ret0
+}
+
+// GetRepoOnly indicates an expected call of GetRepoOnly
+func (mr *MockRepoKeeperMockRecorder) GetRepoOnly(name interface{}, blockNum ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{name}, blockNum...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoOnly", reflect.TypeOf((*MockRepoKeeper)(nil).GetRepoOnly), varargs...)
+}
+
 // Update mocks base method
 func (m *MockRepoKeeper) Update(name string, upd *types.Repository) {
 	m.ctrl.T.Helper()

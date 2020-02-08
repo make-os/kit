@@ -180,6 +180,35 @@ var _ = Describe("Repo", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(2)))
 			})
+
+			Context("with two votes; vote 1 = NoWithVeto, vote 2=Yes", func() {
+				BeforeEach(func() {
+					repoUpd := types.BareRepository()
+					repoUpd.Config = types.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodIdentity
+					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+					repoUpd.AddOwner(key2.Addr().String(), &types.RepoOwner{})
+					proposal := &types.RepoProposal{Config: repoUpd.Config.Governace}
+					repoUpd.Proposals.Add(propID, proposal)
+					logic.RepoKeeper().Update(repoName, repoUpd)
+
+					// Vote 1
+					spk = sender.PubKey().MustBytes32()
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteNoWithVeto, "1.5", 0)
+					Expect(err).To(BeNil())
+
+					// Vote 2
+					spk = key2.PubKey().MustBytes32()
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+					Expect(err).To(BeNil())
+				})
+
+				It("should increment proposal.Yes by 1 and proposal.NoWithVeto by 1", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.Proposals.Get(propID).NoWithVeto).To(Equal(float64(1)))
+					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(1)))
+				})
+			})
 		})
 
 		When("proposal tally method is ProposalTallyMethodCoinWeighted", func() {

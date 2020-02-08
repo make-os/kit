@@ -68,7 +68,7 @@ func (t *Transaction) deductFee(spk *crypto.PubKey, fee decimal.Decimal, chainHe
 
 	// Get the sender account and balance
 	acctKeeper := t.logic.AccountKeeper()
-	senderAcct := acctKeeper.GetAccount(spk.Addr(), chainHeight)
+	senderAcct := acctKeeper.GetAccount(spk.Addr())
 	senderBal := senderAcct.Balance.Decimal()
 
 	// Deduct the fee from the sender's account
@@ -143,7 +143,7 @@ func (t *Transaction) execRepoUpsertOwner(
 
 	// Get the repo
 	repoKeeper := t.logic.RepoKeeper()
-	repo := repoKeeper.GetRepo(repoName, chainHeight)
+	repo := repoKeeper.GetRepo(repoName)
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
@@ -215,7 +215,7 @@ func (t *Transaction) execRepoProposalUpdate(
 
 	// Get the repo
 	repoKeeper := t.logic.RepoKeeper()
-	repo := repoKeeper.GetRepo(repoName, chainHeight)
+	repo := repoKeeper.GetRepo(repoName)
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
@@ -290,7 +290,7 @@ func (t *Transaction) execRepoProposalVote(
 
 	// Get the repo
 	repoKeeper := t.logic.RepoKeeper()
-	repo := repoKeeper.GetRepo(repoName, chainHeight)
+	repo := repoKeeper.GetRepo(repoName)
 	prop := repo.Proposals.Get(proposalID)
 
 	increments := float64(0)

@@ -27,7 +27,7 @@ func (t *Transaction) execPush(
 
 	// Get repository
 	repoKeeper := t.logic.RepoKeeper()
-	repo := repoKeeper.GetRepo(repoName, chainHeight)
+	repo := repoKeeper.GetRepo(repoName)
 
 	// Get the GPG public key of the pusher
 	gpgPK := t.logic.GPGPubKeyKeeper().GetGPGPubKey(util.ToHex(pusherKeyID), chainHeight)
@@ -41,7 +41,7 @@ func (t *Transaction) execPush(
 
 	// Get the account of the pusher
 	acctKeeper := t.logic.AccountKeeper()
-	pusherAcct := acctKeeper.GetAccount(gpgPK.Address, chainHeight)
+	pusherAcct := acctKeeper.GetAccount(gpgPK.Address)
 
 	// Deduct the fee
 	pusherAcctBal := pusherAcct.Balance.Decimal()
