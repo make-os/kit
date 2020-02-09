@@ -717,6 +717,107 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
+	Describe(".execRepoProposalSendFee", func() {
+		var err error
+		var sender = crypto.NewKeyFromIntSeed(1)
+		var spk util.Bytes32
+		var key2 = crypto.NewKeyFromIntSeed(2)
+		var repoUpd *types.Repository
+
+		BeforeEach(func() {
+			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				Balance:             util.String("20"),
+				Stakes:              types.BareAccountStakes(),
+				DelegatorCommission: 0,
+			})
+			logic.AccountKeeper().Update(key2.Addr(), &types.Account{
+				Balance:             util.String("20"),
+				Stakes:              types.BareAccountStakes(),
+				DelegatorCommission: 0,
+			})
+			repoUpd = types.BareRepository()
+			repoUpd.Config = types.DefaultRepoConfig
+			repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
+		})
+
+		When("sender has not previously deposited", func() {
+			repoName := "repo"
+			proposalFee := util.String("10")
+
+			BeforeEach(func() {
+				repoUpd.Proposals.Add("1", &types.RepoProposal{
+					Fees: map[string]string{},
+				})
+				logic.RepoKeeper().Update(repoName, repoUpd)
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoProposalSendFee(spk, repoName, "1", proposalFee, "1.5", 0)
+				Expect(err).To(BeNil())
+			})
+
+			It("should add fee to proposal", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Fees.Get(sender.Addr().String())).To(Equal(proposalFee))
+			})
+
+			Specify("that network fee + proposal fee was deducted", func() {
+				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				Expect(acct.Balance.String()).To(Equal("8.5"))
+			})
+
+			When("sender already deposit", func() {
+				proposalFee := util.String("2")
+
+				BeforeEach(func() {
+					spk = sender.PubKey().MustBytes32()
+					err = txLogic.execRepoProposalSendFee(spk, repoName, "1", proposalFee, "1.5", 0)
+					Expect(err).To(BeNil())
+				})
+
+				It("should add fee to existing senders deposited proposal fee", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.Proposals).To(HaveLen(1))
+					Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
+					Expect(repo.Proposals.Get("1").Fees.Get(sender.Addr().String())).To(Equal(util.String("12")))
+				})
+
+				Specify("that network fee + proposal fee was deducted", func() {
+					acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+					Expect(acct.Balance.String()).To(Equal("5"))
+				})
+			})
+		})
+
+		When("two different senders deposit proposal fees", func() {
+			repoName := "repo"
+			proposalFee := util.String("10")
+
+			BeforeEach(func() {
+				repoUpd.Proposals.Add("1", &types.RepoProposal{
+					Fees: map[string]string{},
+				})
+				logic.RepoKeeper().Update(repoName, repoUpd)
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoProposalSendFee(spk, repoName, "1", proposalFee, "1.5", 0)
+				Expect(err).To(BeNil())
+
+				spk = key2.PubKey().MustBytes32()
+				err = txLogic.execRepoProposalSendFee(spk, repoName, "1", proposalFee, "1.5", 0)
+				Expect(err).To(BeNil())
+			})
+
+			Specify("that the proposal has 2 entries from both depositors", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(2))
+				Expect(repo.Proposals.Get("1").Fees.Get(sender.Addr().String())).To(Equal(proposalFee))
+				Expect(repo.Proposals.Get("1").Fees.Get(key2.Addr().String())).To(Equal(proposalFee))
+				Expect(repo.Proposals.Get("1").Fees.Total().String()).To(Equal("20"))
+			})
+		})
+	})
+
 	Describe(".execRepoProposalUpdate", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)

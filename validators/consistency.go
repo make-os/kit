@@ -438,7 +438,7 @@ func CheckTxVoteConsistency(
 
 	// Ensure repo has not been finalized
 	if proposal.IsFinalized() {
-		return feI(index, "id", "proposal voting period has ended")
+		return feI(index, "id", "proposal has concluded")
 	}
 
 	bi, err := logic.SysKeeper().GetLastBlockInfo()
@@ -473,6 +473,53 @@ func CheckTxVoteConsistency(
 		return errors.Wrap(err, "failed to check proposal vote")
 	} else if voted {
 		return feI(index, "id", "vote already cast on the target proposal")
+	}
+
+	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
+		tx.GetNonce(), uint64(bi.Height)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CheckTxRepoProposalSendFeeConsistency performs consistency checks on TxRepoProposalFeeSend
+func CheckTxRepoProposalSendFeeConsistency(
+	tx *types.TxRepoProposalFeeSend,
+	index int,
+	logic types.Logic) error {
+
+	// The repo must exist
+	repo := logic.RepoKeeper().GetRepo(tx.RepoName)
+	if repo.IsNil() {
+		return feI(index, "name", "repo not found")
+	}
+
+	// The proposal must exist
+	proposal := repo.Proposals.Get(tx.ProposalID)
+	if proposal == nil {
+		return feI(index, "id", "proposal not found")
+	}
+
+	// Ensure repo has not been finalized
+	if proposal.IsFinalized() {
+		return feI(index, "id", "proposal has concluded")
+	}
+
+	bi, err := logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch current block info")
+	}
+
+	// Ensure the proposal supports fee deposit
+	if proposal.FeeDepositEndAt == 0 {
+		return feI(index, "id", "fee deposit not enabled for the proposal")
+	}
+
+	// Ensure repo is within a fee deposit period
+	if proposal.FeeDepositEndAt < uint64(bi.Height+1) {
+		return feI(index, "id", "proposal fee deposit period has closed")
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())

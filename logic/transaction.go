@@ -122,6 +122,15 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
+	case *types.TxRepoProposalFeeSend:
+		return t.execRepoProposalSendFee(
+			spk,
+			o.RepoName,
+			o.ProposalID,
+			o.Value,
+			o.Fee,
+			chainHeight)
+
 	case *types.TxRepoProposalUpdate:
 		return t.execRepoProposalUpdate(
 			spk,

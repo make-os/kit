@@ -575,6 +575,37 @@ func CheckTxVote(tx *types.TxRepoProposalVote, index int) error {
 	return nil
 }
 
+// CheckTxRepoProposalSendFee performs sanity checks on TxRepoProposalFeeSend
+func CheckTxRepoProposalSendFee(tx *types.TxRepoProposalFeeSend, index int) error {
+
+	if err := checkType(tx.TxType, types.TxTypeRepoProposalFeeSend, index); err != nil {
+		return err
+	}
+
+	if err := v.Validate(tx.RepoName,
+		v.Required.Error(feI(index, "name", "repo name is required").Error()),
+		v.By(validObjectNameRule("name", index)),
+	); err != nil {
+		return err
+	}
+
+	if tx.ProposalID == "" {
+		return feI(index, "id", "proposal id is required")
+	} else if !govalidator.IsNumeric(tx.ProposalID) {
+		return feI(index, "id", "proposal id is not valid")
+	}
+
+	if err := checkValue(&types.TxValue{Value: tx.Value}, index); err != nil {
+		return err
+	}
+
+	if err := checkCommon(tx, index); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CheckTxRepoProposalUpdate performs sanity checks on TxRepoProposalUpdate
 func CheckTxRepoProposalUpdate(tx *types.TxRepoProposalUpdate, index int) error {
 

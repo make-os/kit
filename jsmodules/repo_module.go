@@ -61,6 +61,11 @@ func (m *RepoModule) funcs() []*types.JSModuleFunc {
 			Value:       m.voteOnProposal,
 			Description: "Vote for or against a proposal",
 		},
+		&types.JSModuleFunc{
+			Name:        "depositFee",
+			Value:       m.depositFee,
+			Description: "Add fees to a deposit-enabled repository proposal",
+		},
 	}
 }
 
@@ -294,6 +299,7 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) interface{
 // 		nonce: number,
 //		fee: string,
 //		name: string,
+//		value: string
 //		config: {[key:string]: any}
 //		timestamp: number
 // }
@@ -319,6 +325,52 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 	if config, ok := params["config"]; ok {
 		defer castPanic("config")
 		tx.Config = config.(map[string]interface{})
+	}
+
+	finalizeTx(tx, m.service, options...)
+
+	// Process the transaction
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
+	}
+
+	return EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
+}
+
+// depositFee sends a TxTypeRepoProposalFeeSend transaction to add fees to a
+// repo's proposal.
+// params {
+// 		nonce: number,
+//		fee: string,
+//		name: string,
+//		value: string
+//		timestamp: number
+// }
+// options: key
+func (m *RepoModule) depositFee(params map[string]interface{}, options ...interface{}) interface{} {
+	var err error
+
+	// Decode parameters into a transaction object
+	var tx = types.NewBareRepoProposalFeeSend()
+	mapstructure.Decode(params, tx)
+	decodeCommon(tx, params)
+
+	if repoName, ok := params["name"]; ok {
+		defer castPanic("name")
+		tx.RepoName = repoName.(string)
+	}
+
+	if value, ok := params["value"]; ok {
+		defer castPanic("value")
+		tx.Value = util.String(value.(string))
+	}
+
+	if id, ok := params["id"]; ok {
+		defer castPanic("id")
+		tx.ProposalID = id.(string)
 	}
 
 	finalizeTx(tx, m.service, options...)

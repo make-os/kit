@@ -284,6 +284,54 @@ update:
 	return nil
 }
 
+// execRepoProposalSendFee adds proposal fee
+//
+// ARGS:
+// senderPubKey: The public key of the transaction sender.
+// repoName: The name of the target repository.
+// proposalID: The identity of the proposal
+// proposalFee: The proposal fee
+// fee: The fee to be paid by the sender.
+// chainHeight: The height of the block chain
+//
+// CONTRACT: Sender's public key must be valid
+func (t *Transaction) execRepoProposalSendFee(
+	senderPubKey util.Bytes32,
+	repoName string,
+	proposalID string,
+	proposalFee util.String,
+	fee util.String,
+	chainHeight uint64) error {
+
+	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
+
+	// Get the repo and proposal
+	repoKeeper := t.logic.RepoKeeper()
+	repo := repoKeeper.GetRepo(repoName)
+	prop := repo.Proposals.Get(proposalID)
+
+	// Add proposal fee if set.
+	// If the sender already deposited, update their deposit.
+	if proposalFee != "0" {
+		addr := spk.Addr().String()
+		if !prop.Fees.Has(addr) {
+			prop.Fees.Add(addr, proposalFee.String())
+		} else {
+			existingFee := prop.Fees.Get(addr)
+			updFee := existingFee.Decimal().Add(proposalFee.Decimal())
+			prop.Fees.Add(addr, updFee.String())
+		}
+	}
+
+	// Deduct network fee + proposal fee from sender
+	totalFee := fee.Decimal().Add(proposalFee.Decimal())
+	t.deductFee(spk, totalFee, chainHeight)
+
+	repoKeeper.Update(repoName, repo)
+
+	return nil
+}
+
 // execRepoProposalVote processes votes on a repository proposal
 //
 // ARGS:

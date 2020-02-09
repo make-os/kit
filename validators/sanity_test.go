@@ -1381,6 +1381,52 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
+	Describe(".CheckTxRepoProposalSendFee", func() {
+		var tx *types.TxRepoProposalFeeSend
+
+		BeforeEach(func() {
+			tx = types.NewBareRepoProposalFeeSend()
+			tx.Timestamp = time.Now().Unix()
+		})
+
+		It("should return error when repo name is not provided", func() {
+			err := validators.CheckTxRepoProposalSendFee(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:name, error:repo name is required"))
+		})
+
+		It("should return error when repo name is not valid", func() {
+			tx.RepoName = "*&^"
+			err := validators.CheckTxRepoProposalSendFee(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+		})
+
+		It("should return error when proposal id is not provided", func() {
+			tx.RepoName = "repo1"
+			err := validators.CheckTxRepoProposalSendFee(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id is required"))
+		})
+
+		It("should return error when proposal id is not numerical", func() {
+			tx.RepoName = "repo1"
+			tx.ProposalID = "abc"
+			err := validators.CheckTxRepoProposalSendFee(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
+		})
+
+		It("should return error when value is not provided", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = ""
+			tx.ProposalID = "1"
+			err := validators.CheckTxRepoProposalSendFee(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:value, error:value is required"))
+		})
+	})
+
 	Describe(".CheckTxRepoProposalUpdate", func() {
 		var tx *types.TxRepoProposalUpdate
 

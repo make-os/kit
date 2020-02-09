@@ -1141,7 +1141,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:id, error:proposal voting period has ended"))
+				Expect(err).To(MatchError("field:id, error:proposal has concluded"))
 			})
 		})
 
@@ -1291,6 +1291,161 @@ var _ = Describe("TxValidator", func() {
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("field:senderPubKey, error:sender cannot vote 'no with veto' because they have no veto right"))
 				})
+			})
+		})
+	})
+
+	Describe(".CheckTxRepoProposalSendFeeConsistency", func() {
+		When("repo is unknown", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalFeeSend()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				repo := types.BareRepository()
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:name, error:repo not found"))
+			})
+		})
+
+		When("repo does not include the proposal", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalFeeSend()
+				tx.RepoName = "repo1"
+				tx.ProposalID = "proposal_xyz"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:id, error:proposal not found"))
+			})
+		})
+
+		When("the proposal has been finalized/concluded", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalFeeSend()
+				tx.RepoName = "repo1"
+				tx.ProposalID = "proposal1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{Outcome: 1})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:id, error:proposal has concluded"))
+			})
+		})
+
+		When("unable to get current block info", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalFeeSend()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.ProposalID = "proposal1"
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{
+					Config: repo.Config.Governace,
+				})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
+
+				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to fetch current block info: error"))
+			})
+		})
+
+		When("fee deposit is not enabled for a proposal", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalFeeSend()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.ProposalID = "proposal1"
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{
+					Config:          repo.Config.Governace,
+					FeeDepositEndAt: 0,
+				})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 50}, nil)
+
+				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:id, error:fee deposit not enabled for the proposal"))
+			})
+		})
+
+		When("a proposal is not in proposal fee deposit period", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalFeeSend()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.ProposalID = "proposal1"
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{
+					Config:          repo.Config.Governace,
+					FeeDepositEndAt: 100,
+				})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 100}, nil)
+
+				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:id, error:proposal fee deposit period has closed"))
+			})
+		})
+
+		When("failed value transfer dry-run", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalFeeSend()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.ProposalID = "proposal1"
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{
+					Config:          repo.Config.Governace,
+					FeeDepositEndAt: 100,
+				})
+
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				bi := &types.BlockInfo{Height: 10}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
+
+				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("error"))
 			})
 		})
 	})

@@ -11,7 +11,7 @@ import (
 
 // All Transaction type
 var (
-	TxTypeCoinTransfer            = 0  // For native coin transfer
+	TxTypeCoinTransfer            = 0  // For native coin transfer to/between accounts
 	TxTypeValidatorTicket         = 1  // For validator ticket purchase
 	TxTypeSetDelegatorCommission  = 2  // For setting delegator commission
 	TxTypeStorerTicket            = 3  // For purchasing storer ticket
@@ -24,6 +24,7 @@ var (
 	TxTypeRepoProposalUpsertOwner = 10 // For creating a proposal to add repo owner
 	TxTypeRepoProposalVote        = 11 // For voting on a repo proposal
 	TxTypeRepoProposalUpdate      = 12 // For creating a repo update proposal
+	TxTypeRepoProposalFeeSend     = 13 // For native coin transfer to repo as proposal fee
 )
 
 // TxMeta stores arbitrary, self-contained state information for a transaction
@@ -204,7 +205,6 @@ func DecodeTx(txBz []byte) (BaseTx, error) {
 	}
 
 	var tx interface{}
-
 	switch txType {
 	case TxTypeCoinTransfer:
 		tx = NewBareTxCoinTransfer()
@@ -232,6 +232,8 @@ func DecodeTx(txBz []byte) (BaseTx, error) {
 		tx = NewBareRepoProposalVote()
 	case TxTypeRepoProposalUpdate:
 		tx = NewBareRepoProposalUpdate()
+	case TxTypeRepoProposalFeeSend:
+		tx = NewBareRepoProposalFeeSend()
 	default:
 		return nil, fmt.Errorf("unsupported tx type")
 	}

@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
 )
@@ -48,6 +49,20 @@ type ProposalFees map[string]string
 // Add adds an entry
 func (pf ProposalFees) Add(address string, fee string) {
 	pf[address] = fee
+}
+
+// Has checks if an address exists
+func (pf ProposalFees) Has(address string) bool {
+	_, ok := pf[address]
+	return ok
+}
+
+// Get return the fee associated with an address
+func (pf ProposalFees) Get(address string) util.String {
+	if fee, ok := pf[address]; ok {
+		return util.String(fee)
+	}
+	return ""
 }
 
 // Total returns the total fees
