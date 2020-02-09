@@ -166,6 +166,11 @@ func (t *Transaction) execRepoUpsertOwner(
 		proposal.ProposeeMaxJoinHeight = chainHeight + 1
 	}
 
+	if repo.Config.Governace.ProposalFeeDepDur > 0 {
+		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governace.ProposalFeeDepDur
+		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governace.ProposalDur
+	}
+
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
 	t.deductFee(spk, totalFee, chainHeight)
@@ -235,6 +240,11 @@ func (t *Transaction) execRepoProposalUpdate(
 
 	if repo.Config.Governace.ProposalProposeeLimitToCurHeight {
 		proposal.ProposeeMaxJoinHeight = chainHeight + 1
+	}
+
+	if repo.Config.Governace.ProposalFeeDepDur > 0 {
+		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governace.ProposalFeeDepDur
+		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governace.ProposalDur
 	}
 
 	// Deduct network fee + proposal fee from sender

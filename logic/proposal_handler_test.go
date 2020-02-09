@@ -214,13 +214,13 @@ var _ = Describe("ProposalHandler", func() {
 					Expect(applied).To(BeTrue())
 				})
 
-				Specify("that the proposal's repo has balance=90", func() {
-					Expect(repo.Balance).To(Equal(util.String("90")))
+				Specify("that the proposal's repo has balance=120", func() {
+					Expect(repo.Balance).To(Equal(util.String("120")))
 				})
 
 				Specify("that the helm repo has balance=60", func() {
 					repo := logic.RepoKeeper().GetRepo(helmRepo)
-					Expect(repo.Balance).To(Equal(util.String("60")))
+					Expect(repo.Balance).To(Equal(util.String("30")))
 				})
 			})
 
@@ -511,9 +511,9 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should distribute fees to target repo and helm", func() {
-					Expect(repo.Balance.String()).To(Equal("180"))
+					Expect(repo.Balance.String()).To(Equal("240"))
 					helmRepo := logic.RepoKeeper().GetRepo(helmRepoName)
-					Expect(helmRepo.Balance.String()).To(Equal("120"))
+					Expect(helmRepo.Balance.String()).To(Equal("60"))
 				})
 			})
 		})

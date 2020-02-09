@@ -117,6 +117,7 @@ type RepoProposal struct {
 	Height                uint64                 `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
 	Config                *RepoConfigGovernance  `json:"config" mapstructure:"config" msgpack:"-"`                                                   // The repo config to used to evaluate the proposal
 	EndAt                 uint64                 `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                                                 // Used to close the proposal after the given height.
+	FeeDepositEndAt       uint64                 `json:"feeDepEndAt" mapstructure:"feeDepEndAt" msgpack:"feeDepEndAt"`                               // Used to close the proposal after the given height.
 	ProposeeMaxJoinHeight uint64                 `json:"proposeeMaxJoinHeight" mapstructure:"proposeeMaxJoinHeight" msgpack:"proposeeMaxJoinHeight"` // Used to allow proposee that are active before a specific height.
 	Yes                   float64                `json:"yes" mapstructure:"yes" msgpack:"yes"`                                                       // Count of "Yes" votes
 	No                    float64                `json:"no" mapstructure:"no" msgpack:"no"`                                                          // Count of "No" votes

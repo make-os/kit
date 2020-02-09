@@ -690,6 +690,31 @@ var _ = Describe("Repo", func() {
 				Expect(res).To(HaveLen(1))
 			})
 		})
+
+		When("repo config has proposal deposit fee duration set to a non-zero number", func() {
+			repoName := "repo"
+			proposalFee := util.String("1")
+			address := "owner_address"
+			currentHeight := uint64(200)
+
+			BeforeEach(func() {
+				repoUpd.Config.Governace.ProposalDur = 1000
+				repoUpd.Config.Governace.ProposalFeeDepDur = 100
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoUpsertOwner(spk, repoName, address, false, proposalFee, "1.5", currentHeight)
+				Expect(err).To(BeNil())
+			})
+
+			It("should add the new proposal with expected `endAt` and `feeDepEndAt` values", func() {
+				repo := logic.RepoKeeper().GetRepoOnly(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").FeeDepositEndAt).To(Equal(uint64(301)))
+				Expect(repo.Proposals.Get("1").EndAt).To(Equal(uint64(1301)))
+			})
+		})
 	})
 
 	Describe(".execRepoProposalUpdate", func() {
@@ -804,6 +829,37 @@ var _ = Describe("Repo", func() {
 			Specify("that the proposal was indexed against its end height", func() {
 				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governace.ProposalDur + curHeight + 1)
 				Expect(res).To(HaveLen(1))
+			})
+		})
+
+		When("repo config has proposal deposit fee duration set to a non-zero number", func() {
+			repoName := "repo"
+			proposalFee := util.String("1")
+			currentHeight := uint64(200)
+
+			BeforeEach(func() {
+				repoUpd.Config.Governace.ProposalDur = 1000
+				repoUpd.Config.Governace.ProposalFeeDepDur = 100
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				spk = sender.PubKey().MustBytes32()
+				config := &types.RepoConfig{
+					Governace: &types.RepoConfigGovernance{
+						ProposalDur: 2000,
+					},
+				}
+
+				err = txLogic.execRepoProposalUpdate(spk, repoName, config.ToMap(),
+					proposalFee, "1.5", currentHeight)
+				Expect(err).To(BeNil())
+			})
+
+			It("should add the new proposal with expected `endAt` and `feeDepEndAt` values", func() {
+				repo := logic.RepoKeeper().GetRepoOnly(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").FeeDepositEndAt).To(Equal(uint64(301)))
+				Expect(repo.Proposals.Get("1").EndAt).To(Equal(uint64(1301)))
 			})
 		})
 	})

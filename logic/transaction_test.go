@@ -87,6 +87,14 @@ var _ = Describe("Transaction", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, error:sender's spendable account balance is insufficient"))
 			})
+
+			When("value=0 and fee is non-zero", func() {
+				It("should not return err='sender's spendable account balance is insufficient' with field=fee", func() {
+					err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(), util.String("0"), util.String("10"), 1, 1)
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("field:fee, error:sender's spendable account balance is insufficient"))
+				})
+			})
 		})
 
 		Context("when nonce is invalid", func() {

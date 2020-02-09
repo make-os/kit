@@ -439,6 +439,16 @@ func CheckTxVoteConsistency(
 		return feI(index, "id", "proposal voting period has ended")
 	}
 
+	bi, err := logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch current block info")
+	}
+
+	// Ensure repo is not currently within a fee deposit period
+	if proposal.FeeDepositEndAt != 0 && proposal.FeeDepositEndAt >= uint64(bi.Height+1) {
+		return feI(index, "id", "proposal is currently in fee deposit period")
+	}
+
 	// If the proposal is targetted at repo owners, then
 	// the sender must be an owner
 	senderOwner := repo.Owners.Get(tx.GetFrom().String())
@@ -461,6 +471,12 @@ func CheckTxVoteConsistency(
 		return errors.Wrap(err, "failed to check proposal vote")
 	} else if voted {
 		return feI(index, "id", "vote already cast on the target proposal")
+	}
+
+	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
+		tx.GetNonce(), uint64(bi.Height)); err != nil {
+		return err
 	}
 
 	return nil

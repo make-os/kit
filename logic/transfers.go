@@ -126,10 +126,15 @@ func (t *Transaction) CanExecCoinTransfer(
 	sender := senderPubKey.Addr()
 	senderAcct := acctKeeper.GetAccount(sender)
 
+	field := "value"
+	if value == "0" && fee != "0" {
+		field = "fee"
+	}
+
 	// Ensure the transaction nonce is the next expected nonce
 	expectedNonce := senderAcct.Nonce + 1
 	if expectedNonce != nonce {
-		return types.FieldError("value", fmt.Sprintf("tx has invalid nonce (%d), expected (%d)",
+		return types.FieldError(field, fmt.Sprintf("tx has invalid nonce (%d), expected (%d)",
 			nonce, expectedNonce))
 	}
 
@@ -137,7 +142,7 @@ func (t *Transaction) CanExecCoinTransfer(
 	spendAmt := value.Decimal().Add(fee.Decimal())
 	senderBal := senderAcct.GetSpendableBalance(chainHeight).Decimal()
 	if !senderBal.GreaterThanOrEqual(spendAmt) {
-		return types.FieldError("value", fmt.Sprintf("sender's spendable account "+
+		return types.FieldError(field, fmt.Sprintf("sender's spendable account "+
 			"balance is insufficient"))
 	}
 

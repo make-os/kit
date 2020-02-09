@@ -90,6 +90,7 @@ type RepoConfigGovernance struct {
 	ProposalProposee                 ProposeeType          `json:"propProposee" mapstructure:"propProposee,omitempty" msgpack:"propProposee"`
 	ProposalProposeeLimitToCurHeight bool                  `json:"propProposeeLimitToCurHeight" mapstructure:"propProposeeLimitToCurHeight,omitempty" msgpack:"propProposeeLimitToCurHeight"`
 	ProposalDur                      uint64                `json:"propDuration" mapstructure:"propDuration,omitempty" msgpack:"propDuration"`
+	ProposalFeeDepDur                uint64                `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur"`
 	ProposalTallyMethod              ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod"`
 	ProposalQuorum                   float64               `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum"`
 	ProposalThreshold                float64               `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold"`
@@ -171,6 +172,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			ProposalVetoOwnersQuorum:         params.RepoProposalVetoOwnersQuorum,
 			ProposalFee:                      params.MinProposalFee,
 			ProposalFeeRefundType:            0,
+			ProposalFeeDepDur:                0,
 		},
 	}
 }

@@ -1145,6 +1145,53 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
+		When("unable to get current block info", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalVote()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.ProposalID = "proposal1"
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{
+					Config: repo.Config.Governace,
+				})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
+
+				err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to fetch current block info: error"))
+			})
+		})
+
+		When("a proposal is in proposal deposit fee period", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalVote()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.ProposalID = "proposal1"
+
+				repo := types.BareRepository()
+				repo.Proposals.Add("proposal1", &types.RepoProposal{
+					Config:          repo.Config.Governace,
+					FeeDepositEndAt: 100,
+				})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 50}, nil)
+
+				err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:id, error:proposal is currently in fee deposit period"))
+			})
+		})
+
 		When("unable to get indexed proposal vote", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalVote()
@@ -1157,6 +1204,7 @@ var _ = Describe("TxValidator", func() {
 					Config: repo.Config.Governace,
 				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 50}, nil)
 
 				mockRepoKeeper.EXPECT().GetProposalVote(tx.RepoName, tx.ProposalID,
 					key.Addr().String()).Return(0, false, fmt.Errorf("error"))
@@ -1181,6 +1229,7 @@ var _ = Describe("TxValidator", func() {
 					Config: repo.Config.Governace,
 				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 50}, nil)
 
 				mockRepoKeeper.EXPECT().GetProposalVote(tx.RepoName, tx.ProposalID,
 					key.Addr().String()).Return(0, true, nil)
@@ -1206,6 +1255,7 @@ var _ = Describe("TxValidator", func() {
 					Config: repo.Config.Governace,
 				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 50}, nil)
 
 				err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
 			})
@@ -1232,6 +1282,7 @@ var _ = Describe("TxValidator", func() {
 						Config: repo.Config.Governace,
 					})
 					mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 50}, nil)
 
 					err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
 				})
