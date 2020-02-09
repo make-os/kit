@@ -45,6 +45,11 @@ const (
 // ProposalFees contains address and fees paid by proposal creators
 type ProposalFees map[string]string
 
+// Add adds an entry
+func (pf ProposalFees) Add(address string, fee string) {
+	pf[address] = fee
+}
+
 // Total returns the total fees
 func (pf ProposalFees) Total() decimal.Decimal {
 	sum := decimal.Zero
@@ -93,6 +98,7 @@ type Proposal interface {
 	GetRefundType() ProposalFeeRefundType
 	IsFinalized() bool
 	SetOutcome(v ProposalOutcome)
+	IncrAccept()
 }
 
 // ProposalOutcome describes a proposal outcome
@@ -150,6 +156,11 @@ func (p *RepoProposal) IsFinalized() bool {
 // SetOutcome implements Proposal
 func (p *RepoProposal) SetOutcome(v ProposalOutcome) {
 	p.Outcome = v
+}
+
+// IncrAccept increments 'Yes' by 1
+func (p *RepoProposal) IncrAccept() {
+	p.Yes++
 }
 
 // GetProposeeType implements Proposal

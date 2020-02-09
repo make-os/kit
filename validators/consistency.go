@@ -376,9 +376,11 @@ func checkProposalCommonConsistency(
 		return nil, feI(index, "value", "proposal fee is not required but was provided")
 	}
 
-	if repoPropFee.GreaterThan(decimal.Zero) &&
-		txProposal.Value.Decimal().LessThan(repoPropFee) {
-		return nil, feI(index, "value", "proposal fee cannot be less than repo minimum")
+	if repo.Config.Governace.ProposalFeeDepDur == 0 {
+		if repoPropFee.GreaterThan(decimal.Zero) &&
+			txProposal.Value.Decimal().LessThan(repoPropFee) {
+			return nil, feI(index, "value", "proposal fee cannot be less than repo minimum")
+		}
 	}
 
 	// If the repo is owned by some owners, ensure the sender is one of the owners

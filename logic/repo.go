@@ -153,19 +153,25 @@ func (t *Transaction) execRepoUpsertOwner(
 		Creator: spk.Addr().String(),
 		Height:  chainHeight,
 		EndAt:   repo.Config.Governace.ProposalDur + chainHeight + 1,
-		Fees: map[string]string{
-			spk.Addr().String(): proposalFee.String(),
-		},
+		Fees:    map[string]string{},
 		ActionData: map[string]interface{}{
 			actionDataAddresses: addresses,
 			actionDataVeto:      veto,
 		},
 	}
 
+	// Add proposal fee if set
+	if proposalFee != "0" {
+		proposal.Fees.Add(spk.Addr().String(), proposalFee.String())
+	}
+
+	// Set the max. join height for voters.
 	if repo.Config.Governace.ProposalProposeeLimitToCurHeight {
 		proposal.ProposeeMaxJoinHeight = chainHeight + 1
 	}
 
+	// Set the fee deposit end height and also update the proposal end height to
+	// be after the fee deposit height
 	if repo.Config.Governace.ProposalFeeDepDur > 0 {
 		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governace.ProposalFeeDepDur
 		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governace.ProposalDur
@@ -184,7 +190,6 @@ func (t *Transaction) execRepoUpsertOwner(
 	if err != nil {
 		return errors.Wrap(err, "failed to apply proposal")
 	} else if applied {
-		proposal.Yes++
 		goto update
 	}
 
@@ -196,7 +201,6 @@ func (t *Transaction) execRepoUpsertOwner(
 
 update:
 	repoKeeper.Update(repoName, repo)
-
 	return nil
 }
 
@@ -230,18 +234,24 @@ func (t *Transaction) execRepoProposalUpdate(
 		Creator: spk.Addr().String(),
 		Height:  chainHeight,
 		EndAt:   repo.Config.Governace.ProposalDur + chainHeight + 1,
-		Fees: map[string]string{
-			spk.Addr().String(): proposalFee.String(),
-		},
+		Fees:    map[string]string{},
 		ActionData: map[string]interface{}{
 			actionDataConfig: config,
 		},
 	}
 
+	// Add proposal fee if set
+	if proposalFee != "0" {
+		proposal.Fees.Add(spk.Addr().String(), proposalFee.String())
+	}
+
+	// Set the max. join height for voters.
 	if repo.Config.Governace.ProposalProposeeLimitToCurHeight {
 		proposal.ProposeeMaxJoinHeight = chainHeight + 1
 	}
 
+	// Set the fee deposit end height and also update the proposal end height to
+	// be after the fee deposit height
 	if repo.Config.Governace.ProposalFeeDepDur > 0 {
 		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governace.ProposalFeeDepDur
 		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governace.ProposalDur
@@ -260,19 +270,17 @@ func (t *Transaction) execRepoProposalUpdate(
 	if err != nil {
 		return errors.Wrap(err, "failed to apply proposal")
 	} else if applied {
-		proposal.Yes++
 		goto update
 	}
 
-	// Index the proposal against its end height so it can be tracked
-	// and finalized at that height.
+	// Index the proposal against its end height so it
+	// can be tracked and finalized at that height.
 	if err = repoKeeper.IndexProposalEnd(repoName, proposalID, proposal.EndAt); err != nil {
 		return errors.Wrap(err, "failed to index proposal against end height")
 	}
 
 update:
 	repoKeeper.Update(repoName, repo)
-
 	return nil
 }
 

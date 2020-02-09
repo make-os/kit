@@ -228,6 +228,7 @@ func maybeApplyProposal(
 		repo.Owners.Has(proposal.GetCreator()) {
 		outcome = types.ProposalOutcomeAccepted
 		proposal.SetOutcome(outcome)
+		proposal.IncrAccept()
 		goto apply
 	}
 
