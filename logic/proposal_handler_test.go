@@ -143,6 +143,30 @@ var _ = Describe("ProposalHandler", func() {
 			})
 		})
 
+		When("proposal fee deposit is enabled but not enough fees where deposited", func() {
+			var proposal *types.RepoProposal
+			var repo *types.Repository
+
+			BeforeEach(func() {
+				govCfg := types.MakeDefaultRepoConfig().Governace
+				govCfg.ProposalFee = 1
+				proposal = &types.RepoProposal{
+					Config:          govCfg,
+					FeeDepositEndAt: 100,
+					Fees:            map[string]string{},
+				}
+				repo = types.BareRepository()
+				repo.AddOwner(key.Addr().String(), &types.RepoOwner{})
+			})
+
+			It("should return true and proposal outcome = ProposalOutcomeInsufficientDeposit", func() {
+				applied, err := maybeApplyProposal(logic, proposal, repo, 101)
+				Expect(err).To(BeNil())
+				Expect(applied).To(BeFalse())
+				Expect(proposal.Outcome).To(Equal(types.ProposalOutcomeInsufficientDeposit))
+			})
+		})
+
 		When("the proposal type is ProposeeOwner and the sender is the only owner of the repo and creator of the proposal", func() {
 			var proposal *types.RepoProposal
 			var repo *types.Repository

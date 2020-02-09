@@ -281,10 +281,8 @@ func (l *Logic) WriteGenesisState() error {
 // Do things that need to happen after each block transactions are processed;
 // Note: The ABCI will panic if an error is returned.
 func (l *Logic) OnEndBlock(block *types.BlockInfo) error {
-
 	if err := maybeApplyEndedProposals(l, uint64(block.Height)); err != nil {
 		return err
 	}
-
 	return nil
 }

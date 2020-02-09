@@ -1192,6 +1192,32 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
+		When("a proposal has fee deposit enabled but the total deposited fee is below the proposal minimum", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalVote()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.ProposalID = "proposal1"
+
+				repo := types.BareRepository()
+				repo.Config.Governace.ProposalFee = 200
+				repo.Proposals.Add("proposal1", &types.RepoProposal{
+					Config:          repo.Config.Governace,
+					FeeDepositEndAt: 100,
+					Fees:            map[string]string{},
+				})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 101}, nil)
+
+				err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:id, error:total deposited proposal fee is insufficient"))
+			})
+		})
+
 		When("unable to get indexed proposal vote", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalVote()

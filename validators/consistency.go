@@ -447,8 +447,14 @@ func CheckTxVoteConsistency(
 	}
 
 	// Ensure repo is not currently within a fee deposit period
-	if proposal.FeeDepositEndAt != 0 && proposal.FeeDepositEndAt >= uint64(bi.Height+1) {
+	if proposal.IsDepositPeriod(uint64(bi.Height + 1)) {
 		return feI(index, "id", "proposal is currently in fee deposit period")
+	}
+
+	// If the proposal has fee deposit period enabled, ensure the
+	// total proposal fee has been deposited
+	if proposal.IsFeeDepositEnabled() && !proposal.IsDepositedFeeOK() {
+		return feI(index, "id", "total deposited proposal fee is insufficient")
 	}
 
 	// If the proposal is targetted at repo owners, then
@@ -513,12 +519,12 @@ func CheckTxRepoProposalSendFeeConsistency(
 	}
 
 	// Ensure the proposal supports fee deposit
-	if proposal.FeeDepositEndAt == 0 {
+	if !proposal.IsFeeDepositEnabled() {
 		return feI(index, "id", "fee deposit not enabled for the proposal")
 	}
 
 	// Ensure repo is within a fee deposit period
-	if proposal.FeeDepositEndAt < uint64(bi.Height+1) {
+	if !proposal.IsDepositPeriod(uint64(bi.Height + 1)) {
 		return feI(index, "id", "proposal fee deposit period has closed")
 	}
 

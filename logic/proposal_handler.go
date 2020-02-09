@@ -213,17 +213,28 @@ func maybeApplyProposal(
 	repo *types.Repository,
 	chainHeight uint64) (bool, error) {
 
-	var err error
-
+	// When the proposal has already been finalized, do nothing.
 	if proposal.IsFinalized() {
 		return false, nil
 	}
 
+	// When the proposal has fee deposit enabled and the deposit period has
+	// passed, but not enough deposits where paid, there will be no votes as
+	// such we move return any existing deposits to their senders and set
+	// the outcome.
+	if proposal.IsFeeDepositEnabled() &&
+		!proposal.IsDepositPeriod(chainHeight+1) &&
+		!proposal.IsDepositedFeeOK() {
+		proposal.SetOutcome(types.ProposalOutcomeInsufficientDeposit)
+		return false, refundProposalFees(keepers, proposal)
+	}
+
+	var err error
 	var outcome types.ProposalOutcome
-	isOwnersOnlyProposal := proposal.GetProposeeType() == types.ProposeeOwner
 
 	// When allowed voters are only the repo owners and there is just one owner
 	// whom is also the creator of the proposal, instantly apply the proposal.
+	isOwnersOnlyProposal := proposal.GetProposeeType() == types.ProposeeOwner
 	if isOwnersOnlyProposal && len(repo.Owners) == 1 &&
 		repo.Owners.Has(proposal.GetCreator()) {
 		outcome = types.ProposalOutcomeAccepted

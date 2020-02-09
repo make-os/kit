@@ -114,6 +114,9 @@ type Proposal interface {
 	IsFinalized() bool
 	SetOutcome(v ProposalOutcome)
 	IncrAccept()
+	IsFeeDepositEnabled() bool
+	IsDepositedFeeOK() bool
+	IsDepositPeriod(curChainHeight uint64) bool
 }
 
 // ProposalOutcome describes a proposal outcome
@@ -128,6 +131,7 @@ const (
 	ProposalOutcomeQuorumNotMet
 	ProposalOutcomeThresholdNotMet
 	ProposalOutcomeBelowThreshold
+	ProposalOutcomeInsufficientDeposit
 )
 
 // RepoProposal represents a repository proposal
@@ -156,6 +160,23 @@ func BareRepoProposal() *RepoProposal {
 		ActionData: make(map[string]interface{}),
 		Fees:       make(map[string]string),
 	}
+}
+
+// IsDepositPeriod checks whether the proposal is in the deposit period
+func (p *RepoProposal) IsDepositPeriod(chainHeight uint64) bool {
+	return p.FeeDepositEndAt != 0 && p.FeeDepositEndAt >= uint64(chainHeight)
+}
+
+// IsFeeDepositEnabled checks whether fee deposit is enabled on the proposal
+func (p *RepoProposal) IsFeeDepositEnabled() bool {
+	return p.FeeDepositEndAt != 0
+}
+
+// IsDepositedFeeOK checks whether the fees deposited to the proposal
+// meets the minimum required deposit
+func (p *RepoProposal) IsDepositedFeeOK() bool {
+	propFee := decimal.NewFromFloat(p.Config.ProposalFee)
+	return p.Fees.Total().GreaterThanOrEqual(propFee)
 }
 
 // GetCreator implements Proposal
