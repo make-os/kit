@@ -41,6 +41,7 @@ type DHT struct {
 	dht           *dht.IpfsDHT
 	log           logger.Logger
 	objectFinders map[string]types.ObjectFinder
+	ticker        *time.Ticker
 }
 
 // New creates a new DHT service
@@ -91,10 +92,22 @@ func New(
 	return dht, err
 }
 
+// Addr returns the p2p multiaddr of the dht host
+func (dht *DHT) Addr() string {
+	return fmt.Sprintf("%s/p2p/%s", dht.host.Addrs()[0].String(), dht.host.ID().Pretty())
+}
+
+func (dht *DHT) getBootstrapPeers() []string {
+	if dht.cfg.DHT.BootstrapPeers == "" {
+		return []string{}
+	}
+	return strings.Split(dht.cfg.DHT.BootstrapPeers, ",")
+}
+
 // join attempts to connect to peers from the list of bootstrap peers
 func (dht *DHT) join() error {
 
-	addrs := strings.Split(dht.cfg.DHT.BootstrapPeers, ",")
+	addrs := dht.getBootstrapPeers()
 	if len(addrs) == 0 {
 		return fmt.Errorf("no bootstrap peers to connect to")
 	}
@@ -132,8 +145,19 @@ func (dht *DHT) join() error {
 
 // Start starts the DHT
 func (dht *DHT) Start() error {
-	dht.join()
+	go dht.attemptToJoinPeers()
 	return nil
+}
+
+// attemptToJoinPeers periodically attempts to connect the DHT to a peer
+// if no connection has been established.
+func (dht *DHT) attemptToJoinPeers() {
+	dht.ticker = time.NewTicker(5 * time.Second)
+	for range dht.ticker.C {
+		if len(dht.host.Network().Conns()) == 0 {
+			dht.join()
+		}
+	}
 }
 
 // RegisterObjFinder registers a finder to handle module-targetted find operations
@@ -159,7 +183,8 @@ func (dht *DHT) Lookup(ctx context.Context, key string) ([]byte, error) {
 	return dht.dht.GetValue(ctx, key)
 }
 
-// GetProviders finds peers capable of providing value for the given key
+// GetProviders finds peers that have announced their capability to
+// provide a value for the given key.
 func (dht *DHT) GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo, error) {
 	cid, err := cid.NewPrefixV1(cid.Raw, multihash.BLAKE2B_MAX).Sum(key)
 	if err != nil {
@@ -196,6 +221,9 @@ func (dht *DHT) Annonce(ctx context.Context, key []byte) error {
 
 // Close closes the host
 func (dht *DHT) Close() error {
+	if dht.ticker != nil {
+		dht.ticker.Stop()
+	}
 	if dht.host != nil {
 		return dht.host.Close()
 	}

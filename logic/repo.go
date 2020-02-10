@@ -128,6 +128,8 @@ func applyProposalRepoUpdate(
 // senderPubKey: The public key of the transaction sender.
 // repoName: The name of the target repository.
 // addresses: The addresses of the owners.
+// veto: whether to grant veto right
+// proposalFee: The proposal anti-spam fee
 // fee: The fee to be paid by the sender.
 // chainHeight: The height of the block chain
 //
@@ -290,7 +292,7 @@ update:
 // senderPubKey: The public key of the transaction sender.
 // repoName: The name of the target repository.
 // proposalID: The identity of the proposal
-// proposalFee: The proposal fee
+// proposalFee: The proposal anti-spam fee
 // fee: The fee to be paid by the sender.
 // chainHeight: The height of the block chain
 //

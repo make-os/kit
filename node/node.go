@@ -384,6 +384,10 @@ func (n *Node) GetService() types.Service {
 func (n *Node) Stop() {
 	n.log.Info("mosdef is stopping...")
 
+	if n.dht != nil {
+		n.dht.Close()
+	}
+
 	if n.tm != nil && n.tm.IsRunning() {
 		n.tm.Stop()
 	}

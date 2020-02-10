@@ -57,6 +57,7 @@ require (
 	github.com/libp2p/go-libp2p-crypto v0.1.0
 	github.com/libp2p/go-libp2p-kad-dht v0.5.0
 	github.com/libp2p/go-libp2p-peer v0.2.0
+	github.com/libp2p/go-libp2p-routing v0.1.0
 	github.com/libp2p/go-yamux v1.2.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect

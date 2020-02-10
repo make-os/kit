@@ -41,6 +41,9 @@ type DHT interface {
 
 	// Peers returns a list of all peers
 	Peers() (peers []string)
+
+	// Close closes the host
+	Close() error
 }
 
 // DHTObjectQuery describes a query for an object that is maintained by a module

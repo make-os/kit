@@ -1,342 +1,387 @@
 package dht
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"os"
-// 	"time"
+import (
+	"context"
+	"fmt"
+	"os"
+	"time"
 
-// 	"github.com/makeos/mosdef/types"
-// 	"github.com/makeos/mosdef/types/mocks"
-// 	"github.com/multiformats/go-multiaddr"
-// 	"github.com/tendermint/tendermint/p2p"
+	"github.com/golang/mock/gomock"
+	"github.com/libp2p/go-libp2p-core/peer"
+	routing "github.com/libp2p/go-libp2p-routing"
+	"github.com/phayes/freeport"
 
-// 	"github.com/golang/mock/gomock"
-// 	"github.com/libp2p/go-libp2p-core/peer"
-// 	"github.com/phayes/freeport"
+	"github.com/makeos/mosdef/config"
+	"github.com/makeos/mosdef/crypto"
+	"github.com/makeos/mosdef/testutil"
+	"github.com/makeos/mosdef/types"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+)
 
-// 	"github.com/makeos/mosdef/config"
-// 	"github.com/makeos/mosdef/crypto"
-// 	"github.com/makeos/mosdef/testutil"
-// 	. "github.com/onsi/ginkgo"
-// 	. "github.com/onsi/gomega"
-// )
+func randomAddr() string {
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("127.0.0.1:%d", port)
+}
 
-// func randomAddr() string {
-// 	port, err := freeport.GetFreePort()
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	return fmt.Sprintf("127.0.0.1:%d", port)
-// }
+func connect(node1, node2 *DHT) {
+	node2AddrInfo := peer.AddrInfo{ID: node2.host.ID(), Addrs: node2.host.Addrs()}
+	err := node1.host.Connect(context.Background(), node2AddrInfo)
+	if err != nil {
+		panic(err)
+	}
+}
 
-// func connect(node1, node2 *DHT) {
-// 	node2AddrInfo := peer.AddrInfo{ID: node2.host.ID(), Addrs: node2.host.Addrs()}
-// 	err := node1.host.Connect(context.Background(), node2AddrInfo)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// }
+type testObjectFinder struct {
+	value []byte
+	err   error
+}
 
-// var _ = Describe("App", func() {
-// 	var err error
-// 	var addr string
-// 	var cfg, cfg2 *config.AppConfig
-// 	var key = crypto.NewKeyFromIntSeed(1)
-// 	var ctrl *gomock.Controller
-// 	var key2 = crypto.NewKeyFromIntSeed(2)
+func (t *testObjectFinder) FindObject(key []byte) ([]byte, error) {
+	return t.value, t.err
+}
 
-// 	BeforeEach(func() {
-// 		ctrl = gomock.NewController(GinkgoT())
-// 		cfg, err = testutil.SetTestCfg()
-// 		Expect(err).To(BeNil())
-// 		cfg2, err = testutil.SetTestCfg()
-// 		Expect(err).To(BeNil())
-// 	})
+var _ = Describe("App", func() {
+	var err error
+	var addr string
+	var cfg, cfg2 *config.AppConfig
+	var key = crypto.NewKeyFromIntSeed(1)
+	var ctrl *gomock.Controller
+	var key2 = crypto.NewKeyFromIntSeed(2)
 
-// 	BeforeEach(func() {
-// 		port := freeport.GetPort()
-// 		addr = fmt.Sprintf("127.0.0.1:%d", port)
-// 	})
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		cfg, err = testutil.SetTestCfg()
+		Expect(err).To(BeNil())
+		cfg2, err = testutil.SetTestCfg()
+		Expect(err).To(BeNil())
+	})
 
-// 	AfterEach(func() {
-// 		ctrl.Finish()
-// 		err = os.RemoveAll(cfg.DataDir())
-// 		Expect(err).To(BeNil())
-// 		err = os.RemoveAll(cfg2.DataDir())
-// 		Expect(err).To(BeNil())
-// 	})
+	BeforeEach(func() {
+		port := freeport.GetPort()
+		addr = fmt.Sprintf("127.0.0.1:%d", port)
+	})
 
-// 	Describe(".New", func() {
+	AfterEach(func() {
+		ctrl.Finish()
+		err = os.RemoveAll(cfg.DataDir())
+		Expect(err).To(BeNil())
+		err = os.RemoveAll(cfg2.DataDir())
+		Expect(err).To(BeNil())
+	})
 
-// 		When("address format is not valid", func() {
-// 			It("should return err", func() {
-// 				_, err = New(context.Background(), cfg, key.PrivKey().Key(), "invalid")
-// 				Expect(err).ToNot(BeNil())
-// 				Expect(err.Error()).To(Equal("invalid address: address invalid: missing port in address"))
-// 			})
-// 		})
+	Describe(".New", func() {
+		When("address format is not valid", func() {
+			It("should return err", func() {
+				_, err = New(context.Background(), cfg, key.PrivKey().Key(), "invalid")
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("invalid address: address invalid: missing port in address"))
+			})
+		})
 
-// 		When("unable to create host", func() {
-// 			It("should return err", func() {
-// 				_, err = New(context.Background(), cfg, key.PrivKey().Key(), "0.1.1.1.0:999999")
-// 				Expect(err).ToNot(BeNil())
-// 				Expect(err.Error()).To(ContainSubstring("failed to create host"))
-// 			})
-// 		})
+		When("unable to create host", func() {
+			It("should return err", func() {
+				_, err = New(context.Background(), cfg, key.PrivKey().Key(), "0.1.1.1.0:999999")
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("failed to create host"))
+			})
+		})
 
-// 		When("no problem", func() {
-// 			It("should return nil", func() {
-// 				_, err = New(context.Background(), cfg, key.PrivKey().Key(), addr)
-// 				Expect(err).To(BeNil())
-// 			})
-// 		})
-// 	})
+		When("no problem", func() {
+			It("should return nil", func() {
+				_, err = New(context.Background(), cfg, key.PrivKey().Key(), addr)
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 
-// 	Describe(".Store & .Lookup", func() {
-// 		var node1, node2 *DHT
-// 		var err error
-// 		var remotePeerID = p2p.ID("xyz")
+	Describe(".join", func() {
+		var dht *DHT
 
-// 		BeforeEach(func() {
-// 			node1, err = New(context.Background(), cfg, key.PrivKey().Key(), randomAddr())
-// 			Expect(err).To(BeNil())
-// 			node2, err = New(context.Background(), cfg2, key2.PrivKey().Key(), randomAddr())
-// 			Expect(err).To(BeNil())
-// 			node2Port, _ := node2.host.Addrs()[0].ValueForProtocol(multiaddr.P_TCP)
-// 			remotePeerMock := mocks.NewMockPeer(ctrl)
-// 			remotePeerMock.EXPECT().ID().Return(remotePeerID).AnyTimes()
-// 			err = node1.connect(&types.DHTInfo{
-// 				ID:      node2.host.ID().String(),
-// 				Address: "127.0.0.1",
-// 				Port:    node2Port,
-// 			}, remotePeerMock)
-// 			Expect(err).To(BeNil())
-// 		})
+		BeforeEach(func() {
+			dht, err = New(context.Background(), cfg, key.PrivKey().Key(), addr)
+			Expect(err).To(BeNil())
+		})
 
-// 		Context("store and lookup on a single node", func() {
-// 			BeforeEach(func() {
-// 				err = node1.Store(context.Background(), "key1", []byte("value"))
-// 				Expect(err).To(BeNil())
-// 			})
+		When("no bootstrap address exist", func() {
+			It("should return error", func() {
+				err = dht.join()
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("no bootstrap peers to connect to"))
+			})
+		})
 
-// 			It("should return no error", func() {
-// 				bz, err := node1.Lookup(context.Background(), "key1")
-// 				Expect(err).To(BeNil())
-// 				Expect(bz).To(Equal([]byte("value")))
-// 			})
-// 		})
+		When("an address is not a valid P2p multi addr", func() {
+			It("should return error", func() {
+				cfg.DHT.BootstrapPeers = "invalid/addr"
+				err = dht.join()
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("invalid dht bootstrap address: failed to parse multiaddr"))
+			})
+		})
 
-// 		Context("store on node 1 and lookup on node 2", func() {
-// 			BeforeEach(func() {
-// 				err = node1.Store(context.Background(), "key1", []byte("value"))
-// 				Expect(err).To(BeNil())
-// 			})
+		When("an address exist and is valid but not reachable", func() {
+			It("should return error", func() {
+				addr := "/ip4/127.0.0.1/tcp/9003/p2p/12D3KooWFtwJ7hUhHGCSiJNNwANjfsrTzbTdBw9GdmLNZHwyMPcd"
+				cfg.DHT.BootstrapPeers = addr
+				err = dht.join()
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("could not connect to peers"))
+			})
+		})
 
-// 			It("should return expected value", func() {
-// 				bz, err := node2.Lookup(context.Background(), "key1")
-// 				Expect(err).To(BeNil())
-// 				Expect(bz).To(Equal([]byte("value")))
-// 			})
-// 		})
-// 	})
+		When("a reachable address exist", func() {
+			var peerDHT *DHT
 
-// 	Describe(".Announce & .GetProviders", func() {
-// 		var node1, node2 *DHT
-// 		var err error
-// 		var remotePeerID = p2p.ID("xyz")
+			BeforeEach(func() {
+				peerDHT, err = New(context.Background(), cfg2, key2.PrivKey().Key(), randomAddr())
+				Expect(err).To(BeNil())
+				cfg.DHT.BootstrapPeers = peerDHT.Addr()
+			})
 
-// 		BeforeEach(func() {
-// 			node1, err = New(context.Background(), cfg, key.PrivKey().Key(), randomAddr())
-// 			Expect(err).To(BeNil())
-// 			node2, err = New(context.Background(), cfg2, key2.PrivKey().Key(), randomAddr())
-// 			Expect(err).To(BeNil())
-// 			node2Port, _ := node2.host.Addrs()[0].ValueForProtocol(multiaddr.P_TCP)
-// 			remotePeerMock := mocks.NewMockPeer(ctrl)
-// 			remotePeerMock.EXPECT().ID().Return(remotePeerID).AnyTimes()
-// 			err = node1.connect(&types.DHTInfo{
-// 				ID:      node2.host.ID().String(),
-// 				Address: "127.0.0.1",
-// 				Port:    node2Port,
-// 			}, remotePeerMock)
-// 			Expect(err).To(BeNil())
-// 		})
+			It("should connect without error", func() {
+				err = dht.join()
+				Expect(err).To(BeNil())
+				Expect(dht.host.Network().Conns()).To(HaveLen(1))
+				Expect(peerDHT.host.Network().Conns()).To(HaveLen(1))
+				Expect(dht.host.Network().ConnsToPeer(peerDHT.dht.PeerID())).To(HaveLen(1))
+				Expect(peerDHT.host.Network().ConnsToPeer(dht.dht.PeerID())).To(HaveLen(1))
+			})
+		})
+	})
 
-// 		Context("announce and get providers on a single node", func() {
-// 			BeforeEach(func() {
-// 				err = node1.Annonce(context.Background(), []byte("key1"))
-// 				Expect(err).To(BeNil())
-// 			})
+	When(".Peers", func() {
+		var dht *DHT
 
-// 			It("should return 1 address", func() {
-// 				addrs, err := node1.GetProviders(context.Background(), []byte("key1"))
-// 				Expect(err).To(BeNil())
-// 				Expect(addrs).To(HaveLen(1))
-// 			})
-// 		})
+		BeforeEach(func() {
+			dht, err = New(context.Background(), cfg, key.PrivKey().Key(), addr)
+			Expect(err).To(BeNil())
+		})
 
-// 		Context("announce on node 1 and get providers on node 2", func() {
-// 			BeforeEach(func() {
-// 				err = node1.Annonce(context.Background(), []byte("key1"))
-// 				Expect(err).To(BeNil())
-// 			})
+		When("not connected to any peers", func() {
+			It("should return empty result", func() {
+				Expect(dht.Peers()).To(BeEmpty())
+			})
+		})
 
-// 			It("should return 1 address", func() {
-// 				addrs, err := node2.GetProviders(context.Background(), []byte("key1"))
-// 				Expect(err).To(BeNil())
-// 				Expect(addrs).To(HaveLen(1))
-// 			})
-// 		})
-// 	})
+		When("not connected to any peers", func() {
+			It("should return empty result", func() {
+				Expect(dht.Peers()).To(BeEmpty())
+			})
+		})
 
-// 	Describe(".GetObject", func() {
-// 		var node1, node2 *DHT
-// 		var err error
-// 		var remotePeerID = p2p.ID("xyz")
-// 		var objKey = []byte("object_key")
+		When("connected to a peer", func() {
+			var peerDHT *DHT
 
-// 		BeforeEach(func() {
-// 			node1, err = New(context.Background(), cfg, key.PrivKey().Key(), randomAddr())
-// 			Expect(err).To(BeNil())
-// 			node2, err = New(context.Background(), cfg2, key2.PrivKey().Key(), randomAddr())
-// 			Expect(err).To(BeNil())
-// 			node2Port, _ := node2.host.Addrs()[0].ValueForProtocol(multiaddr.P_TCP)
-// 			remotePeerMock := mocks.NewMockPeer(ctrl)
-// 			remotePeerMock.EXPECT().ID().Return(remotePeerID).AnyTimes()
-// 			err = node1.connect(&types.DHTInfo{
-// 				ID:      node2.host.ID().String(),
-// 				Address: "127.0.0.1",
-// 				Port:    node2Port,
-// 			}, remotePeerMock)
-// 			Expect(err).To(BeNil())
-// 		})
+			BeforeEach(func() {
+				peerDHT, err = New(context.Background(), cfg2, key2.PrivKey().Key(), randomAddr())
+				Expect(err).To(BeNil())
+				cfg.DHT.BootstrapPeers = peerDHT.Addr()
+				err = dht.join()
+				Expect(err).To(BeNil())
+				time.Sleep(10 * time.Millisecond)
+			})
 
-// 		When("no provider is found for the query key", func() {
-// 			BeforeEach(func() {
-// 				query := &types.DHTObjectQuery{Module: "files", ObjectKey: objKey}
-// 				_, err = node1.GetObject(context.Background(), query)
-// 			})
+			It("should return 1 peer", func() {
+				Expect(dht.Peers()).To(HaveLen(1))
+			})
+		})
+	})
 
-// 			It("should return error=object not found", func() {
-// 				Expect(err).ToNot(BeNil())
-// 				Expect(err.Error()).To(Equal("object not found"))
-// 			})
-// 		})
+	Describe(".RegisterObjFinder", func() {
+		var dht *DHT
 
-// 		When("provider is found but no registered finder for the query module", func() {
-// 			BeforeEach(func() {
-// 				node1.Annonce(context.Background(), objKey)
-// 				query := &types.DHTObjectQuery{Module: "files", ObjectKey: objKey}
-// 				_, err = node1.GetObject(context.Background(), query)
-// 			})
+		BeforeEach(func() {
+			dht, err = New(context.Background(), cfg, key.PrivKey().Key(), addr)
+			Expect(err).To(BeNil())
+		})
 
-// 			It("should return error=", func() {
-// 				Expect(err).ToNot(BeNil())
-// 				Expect(err.Error()).To(Equal("finder for module `files` not registered"))
-// 			})
-// 		})
+		It("should register a finder", func() {
+			dht.RegisterObjFinder("module_name", &testObjectFinder{})
+			Expect(dht.objectFinders).To(HaveKey("module_name"))
+		})
+	})
 
-// 		When("provider is found and query finder returns err", func() {
-// 			BeforeEach(func() {
-// 				mockFinder := mocks.NewMockObjectFinder(ctrl)
-// 				mockFinder.EXPECT().FindObject(objKey).Return(nil, fmt.Errorf("bad error"))
-// 				node1.RegisterObjFinder("files", mockFinder)
-// 				node1.Annonce(context.Background(), objKey)
-// 				query := &types.DHTObjectQuery{Module: "files", ObjectKey: objKey}
-// 				_, err = node1.GetObject(context.Background(), query)
-// 			})
+	Describe(".Store & .Lookup", func() {
+		var peerDHT *DHT
+		var dht *DHT
 
-// 			It("should return error=finder error: bad error", func() {
-// 				Expect(err).ToNot(BeNil())
-// 				Expect(err.Error()).To(Equal("finder error: bad error"))
-// 			})
-// 		})
+		BeforeEach(func() {
+			dht, err = New(context.Background(), cfg, key.PrivKey().Key(), addr)
+			Expect(err).To(BeNil())
+			peerDHT, err = New(context.Background(), cfg2, key2.PrivKey().Key(), randomAddr())
+			Expect(err).To(BeNil())
+			cfg.DHT.BootstrapPeers = peerDHT.Addr()
+			err = dht.join()
+			Expect(err).To(BeNil())
+			time.Sleep(10 * time.Millisecond)
+		})
 
-// 		When("provider is found and query finder returns nil reader", func() {
-// 			BeforeEach(func() {
-// 				mockFinder := mocks.NewMockObjectFinder(ctrl)
-// 				mockFinder.EXPECT().FindObject(objKey).Return(nil, nil)
-// 				node1.RegisterObjFinder("files", mockFinder)
-// 				node1.Annonce(context.Background(), objKey)
-// 				query := &types.DHTObjectQuery{Module: "files", ObjectKey: objKey}
-// 				_, err = node1.GetObject(context.Background(), query)
-// 			})
+		When("key is not found", func() {
+			It("should return nil", func() {
+				_, err := dht.Lookup(context.Background(), "key")
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(Equal(routing.ErrNotFound))
+			})
+		})
 
-// 			It("should return error=object not found", func() {
-// 				Expect(err).ToNot(BeNil())
-// 				Expect(err.Error()).To(Equal("object not found"))
-// 			})
-// 		})
+		When("key is found", func() {
+			It("should return its corresponding value", func() {
+				dht.Store(context.Background(), "key", []byte("value"))
+				val, err := dht.Lookup(context.Background(), "key")
+				Expect(err).To(BeNil())
+				Expect(val).To(Equal([]byte("value")))
+			})
+		})
 
-// 		When("provider is found and query finder returns a non-nil reader", func() {
-// 			var out []byte
-// 			var val = []byte("value")
+		Context("both peers lookup check", func() {
+			Specify("that connected peer can also lookup the key's value", func() {
+				dht.Store(context.Background(), "key", []byte("value"))
+				val, err := peerDHT.Lookup(context.Background(), "key")
+				Expect(err).To(BeNil())
+				Expect(val).To(Equal([]byte("value")))
+			})
+		})
+	})
 
-// 			BeforeEach(func() {
-// 				mockFinder := mocks.NewMockObjectFinder(ctrl)
-// 				mockFinder.EXPECT().FindObject(objKey).Return(val, nil)
-// 				node1.RegisterObjFinder("files", mockFinder)
-// 				node1.Annonce(context.Background(), objKey)
-// 				query := &types.DHTObjectQuery{Module: "files", ObjectKey: objKey}
-// 				out, err = node1.GetObject(context.Background(), query)
-// 			})
+	Describe(".Annonce and .GetProviders", func() {
+		var peerDHT *DHT
+		var dht *DHT
 
-// 			It("should return no err", func() {
-// 				Expect(err).To(BeNil())
-// 				Expect(string(out)).To(Equal(string(val)))
-// 			})
-// 		})
+		BeforeEach(func() {
+			dht, err = New(context.Background(), cfg, key.PrivKey().Key(), addr)
+			Expect(err).To(BeNil())
+			peerDHT, err = New(context.Background(), cfg2, key2.PrivKey().Key(), randomAddr())
+			Expect(err).To(BeNil())
+			cfg.DHT.BootstrapPeers = peerDHT.Addr()
+			err = dht.join()
+			Expect(err).To(BeNil())
+			time.Sleep(10 * time.Millisecond)
+		})
 
-// 		When("provider is not the calling node", func() {
-// 			var val = []byte("value")
-// 			var out []byte
+		When("a peer annonce a key", func() {
+			BeforeEach(func() {
+				err = dht.Annonce(context.Background(), []byte("key"))
+			})
 
-// 			BeforeEach(func() {
-// 				mockFinder := mocks.NewMockObjectFinder(ctrl)
-// 				mockFinder.EXPECT().FindObject(objKey).Return(val, nil)
-// 				node1.RegisterObjFinder("files", mockFinder)
-// 				node1.Annonce(context.Background(), objKey)
-// 				time.Sleep(5 * time.Millisecond)
-// 				query := &types.DHTObjectQuery{Module: "files", ObjectKey: objKey}
-// 				out, err = node2.GetObject(context.Background(), query)
-// 			})
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
 
-// 			It("should return no error", func() {
-// 				Expect(err).To(BeNil())
-// 			})
+			It("should be returned as a provider on all connected peers", func() {
+				addrs, err := dht.GetProviders(context.Background(), []byte("key"))
+				Expect(err).To(BeNil())
+				Expect(addrs).To(HaveLen(1))
+				Expect(addrs[0].ID.Pretty()).To(Equal(dht.host.ID().Pretty()))
+				Expect(addrs[0].Addrs).To(BeEmpty())
 
-// 			Specify("that expected output should match returned finder value", func() {
-// 				Expect(out).To(Equal(val))
-// 			})
-// 		})
-// 	})
+				addrs, err = peerDHT.GetProviders(context.Background(), []byte("key"))
+				Expect(err).To(BeNil())
+				Expect(addrs).To(HaveLen(1))
+				Expect(addrs[0].ID.Pretty()).To(Equal(dht.host.ID().Pretty()))
+				Expect(addrs[0].Addrs).To(HaveLen(1))
+				Expect(addrs[0].Addrs[0].String()).To(Equal(dht.host.Addrs()[0].String()))
+			})
+		})
+	})
 
-// 	Describe(".Peers", func() {
-// 		When("two nodes are connected", func() {
-// 			var node1, node2 *DHT
-// 			var err error
-// 			var remotePeerID = p2p.ID("xyz")
+	Describe(".GetObject", func() {
+		var peerDHT *DHT
+		var dht *DHT
 
-// 			BeforeEach(func() {
-// 				node1, err = New(context.Background(), cfg, key.PrivKey().Key(), randomAddr())
-// 				Expect(err).To(BeNil())
-// 				node2, err = New(context.Background(), cfg2, key2.PrivKey().Key(), randomAddr())
-// 				Expect(err).To(BeNil())
-// 				node2Port, _ := node2.host.Addrs()[0].ValueForProtocol(multiaddr.P_TCP)
-// 				remotePeerMock := mocks.NewMockPeer(ctrl)
-// 				remotePeerMock.EXPECT().ID().Return(remotePeerID).AnyTimes()
-// 				err = node1.connect(&types.DHTInfo{
-// 					ID:      node2.host.ID().String(),
-// 					Address: "127.0.0.1",
-// 					Port:    node2Port,
-// 				}, remotePeerMock)
-// 				Expect(err).To(BeNil())
-// 			})
+		BeforeEach(func() {
+			dht, err = New(context.Background(), cfg, key.PrivKey().Key(), addr)
+			Expect(err).To(BeNil())
+			peerDHT, err = New(context.Background(), cfg2, key2.PrivKey().Key(), randomAddr())
+			Expect(err).To(BeNil())
+			cfg.DHT.BootstrapPeers = peerDHT.Addr()
+			err = dht.join()
+			Expect(err).To(BeNil())
+			time.Sleep(10 * time.Millisecond)
+		})
 
-// 			It("should return one peer", func() {
-// 				Expect(node1.Peers()).To(HaveLen(1))
-// 				Expect(node2.Peers()).To(HaveLen(1))
-// 			})
-// 		})
-// 	})
-// })
+		When("no providers exist", func() {
+			It("should return err=ErrObjNotFound", func() {
+				_, err = dht.GetObject(context.Background(), &types.DHTObjectQuery{ObjectKey: []byte("key")})
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(Equal(ErrObjNotFound))
+			})
+		})
+
+		When("provider is the local address, but the target finder module was not registered", func() {
+			BeforeEach(func() {
+				err = dht.Annonce(context.Background(), []byte("key"))
+				Expect(err).To(BeNil())
+			})
+			It("should return err about unregistered module", func() {
+				_, err = dht.GetObject(context.Background(), &types.DHTObjectQuery{
+					Module:    "unknown",
+					ObjectKey: []byte("key"),
+				})
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("finder for module `unknown` not registered"))
+			})
+		})
+
+		When("provider is the local address, but the target finder module returns an error", func() {
+			BeforeEach(func() {
+				dht.RegisterObjFinder("my-finder", &testObjectFinder{err: fmt.Errorf("bad error")})
+				err = dht.Annonce(context.Background(), []byte("key"))
+				Expect(err).To(BeNil())
+			})
+			It("should return err the finder error", func() {
+				_, err = dht.GetObject(context.Background(), &types.DHTObjectQuery{
+					Module:    "my-finder",
+					ObjectKey: []byte("key"),
+				})
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("finder error: bad error"))
+			})
+		})
+
+		When("provider is the local address, but the target finder module returns no error and nil value", func() {
+			BeforeEach(func() {
+				dht.RegisterObjFinder("my-finder", &testObjectFinder{})
+				err = dht.Annonce(context.Background(), []byte("key"))
+				Expect(err).To(BeNil())
+			})
+			It("should return err=ErrObjNotFound", func() {
+				_, err = dht.GetObject(context.Background(), &types.DHTObjectQuery{
+					Module:    "my-finder",
+					ObjectKey: []byte("key"),
+				})
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(Equal(ErrObjNotFound))
+			})
+		})
+
+		When("provider is the local address and the target finder module returns a value and no error", func() {
+			BeforeEach(func() {
+				dht.RegisterObjFinder("my-finder", &testObjectFinder{value: []byte("value")})
+				err = dht.Annonce(context.Background(), []byte("key"))
+				Expect(err).To(BeNil())
+			})
+
+			It("should return value returned by the object finder", func() {
+				retVal, err := dht.GetObject(context.Background(), &types.DHTObjectQuery{
+					Module:    "my-finder",
+					ObjectKey: []byte("key"),
+				})
+				Expect(err).To(BeNil())
+				Expect(retVal).To(Equal([]byte("value")))
+			})
+
+			Specify("that non-local peers can also find the key and value", func() {
+				retVal, err := peerDHT.GetObject(context.Background(), &types.DHTObjectQuery{
+					Module:    "my-finder",
+					ObjectKey: []byte("key"),
+				})
+				Expect(err).To(BeNil())
+				Expect(retVal).To(Equal([]byte("value")))
+			})
+		})
+	})
+})
