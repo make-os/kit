@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -41,6 +42,7 @@ type TxLine struct {
 	PubKeyID  string // The GPG public key ID of the reference updater.
 	Signature string // The signature of the update (only used in note signing for now)
 	DeleteRef bool   // A directive to delete the current/pushed reference.
+	Merge     string // A directive to merge the given branch into the target branch
 }
 
 // GetNonceString returns the nonce as a string
@@ -131,6 +133,16 @@ func ParseTxLine(msg string) (*TxLine, error) {
 
 		if kvParts[0] == "deleteRef" {
 			txLine.DeleteRef = true
+		}
+
+		if kvParts[0] == "merge" {
+			if len(kvParts) == 1 || kvParts[1] == "" {
+				return nil, fmt.Errorf("target branch to merge is required")
+			}
+			if !regexp.MustCompile("^[a-zA-Z0-9_:-]+$").MatchString(kvParts[1]) {
+				return nil, fmt.Errorf("target branch format is not valid")
+			}
+			txLine.Merge = kvParts[1]
 		}
 	}
 

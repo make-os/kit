@@ -108,7 +108,7 @@ var _ = Describe("TxLine", func() {
 		})
 
 		When("txline has signature format", func() {
-			It("should return error", func() {
+			It("should not return error", func() {
 				sigHex := ToHex([]byte("abc"))
 				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00 sig=" + sigHex
 				txLine, err := ParseTxLine(str)
@@ -119,6 +119,33 @@ var _ = Describe("TxLine", func() {
 					PubKeyID:  "0x9aed9dbda362c75e9feaa07241aac207d5ef4e00",
 					Signature: "abc",
 				}))
+			})
+		})
+
+		When("txline contains a merge directive with no value", func() {
+			It("should return err about missing value", func() {
+				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, merge"
+				_, err := ParseTxLine(str)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("target branch to merge is required"))
+			})
+		})
+
+		When("txline contains a merge directive with invalid value format", func() {
+			It("should return err about missing value", func() {
+				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, merge=repo&:branch"
+				_, err := ParseTxLine(str)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("target branch format is not valid"))
+			})
+		})
+
+		When("txline contains a merge directive with valid value", func() {
+			It("should return no err and set the Merge field to the value", func() {
+				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, merge=repo:branch"
+				txline, err := ParseTxLine(str)
+				Expect(err).To(BeNil())
+				Expect(txline.Merge).To(Equal("repo:branch"))
 			})
 		})
 	})

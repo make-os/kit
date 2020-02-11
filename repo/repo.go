@@ -425,6 +425,7 @@ func SignCommitCmd(
 	txNonce,
 	signingKey string,
 	deleteRefAction bool,
+	mergePath string,
 	rpcClient *client.RPCClient) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
@@ -461,6 +462,10 @@ func SignCommitCmd(
 	if deleteRefAction {
 		directives = append(directives, "deleteRef")
 	}
+	if mergePath != "" {
+		directives = append(directives, fmt.Sprintf("merge=%s", mergePath))
+	}
+
 	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil, directives...)
 	if err := repo.MakeSignableCommit(string(txLine), signingKey); err != nil {
 		return err

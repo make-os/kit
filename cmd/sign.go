@@ -66,13 +66,14 @@ var signCmd = &cobra.Command{
 
 var signCommitCmd = &cobra.Command{
 	Use:   "commit",
-	Short: "Add transaction information and sign the last commit",
-	Long:  `Add transaction information and sign the last commit`,
+	Short: "Add transaction information to a new commit and signs it",
+	Long:  `Add transaction information to a new commit and signs it`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
 		sk, _ := cmd.Flags().GetString("signingKey")
 		delete, _ := cmd.Flags().GetBool("delete")
+		mergePath, _ := cmd.Flags().GetString("merge")
 
 		var client *client.RPCClient
 		var err error
@@ -84,7 +85,7 @@ var signCommitCmd = &cobra.Command{
 		}
 
 		if err := repo.SignCommitCmd(cfg.Node.GitBinPath, fee,
-			nonce, sk, delete, client); err != nil {
+			nonce, sk, delete, mergePath, client); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -168,4 +169,5 @@ func initCommit() {
 	pf.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")
 	pf.String("rpc.https", "", "Force the client to use https:// protocol")
 	pf.BoolP("delete", "d", false, "Add an action to delete the target reference")
+	pf.StringP("merge", "m", "", "Add an action to merge a given branch to the target branch")
 }
