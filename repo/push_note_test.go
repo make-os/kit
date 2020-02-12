@@ -86,16 +86,6 @@ var _ = Describe("PushNote", func() {
 		})
 	})
 
-	Describe(".GetEcoSize", func() {
-		It("should return expected length without the fee field", func() {
-			fee := pushNote.Fee
-			pushNote.Fee = ""
-			size := len(pushNote.Bytes())
-			pushNote.Fee = fee
-			Expect(pushNote.GetEcoSize()).To(Equal(uint64(size)))
-		})
-	})
-
 	Describe(".Len", func() {
 		It("should not return zero", func() {
 			Expect(pushNote.Len()).ToNot(Equal(0))

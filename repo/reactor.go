@@ -484,7 +484,8 @@ func (m *Manager) ExecTxPush(tx *types.TxPush) error {
 	return execTxPush(m, tx)
 }
 
-// execTxPush executes a push transaction
+// execTxPush executes a push transaction coming from a block that is currently
+// being processed.
 func execTxPush(m types.RepoManager, tx *types.TxPush) error {
 
 	repoName := tx.PushNote.RepoName

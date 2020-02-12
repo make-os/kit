@@ -6,6 +6,9 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	config "github.com/makeos/mosdef/config"
 	crypto "github.com/makeos/mosdef/crypto"
@@ -18,8 +21,6 @@ import (
 	object "gopkg.in/src-d/go-git.v4/plumbing/object"
 	storer "gopkg.in/src-d/go-git.v4/plumbing/storer"
 	storage "gopkg.in/src-d/go-git.v4/storage"
-	reflect "reflect"
-	time "time"
 )
 
 // MockBareRepo is a mock of BareRepo interface
@@ -238,6 +239,34 @@ func (m *MockBareRepo) CommitObject(h plumbing.Hash) (*object.Commit, error) {
 func (mr *MockBareRepoMockRecorder) CommitObject(h interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CommitObject", reflect.TypeOf((*MockBareRepo)(nil).CommitObject), h)
+}
+
+// MergeBranch mocks base method
+func (m *MockBareRepo) MergeBranch(base, target, targetRepoDir string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MergeBranch", base, target)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MergeBranch indicates an expected call of MergeBranch
+func (mr *MockBareRepoMockRecorder) MergeBranch(base, target interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeBranch", reflect.TypeOf((*MockBareRepo)(nil).MergeBranch), base, target)
+}
+
+// TryMergeBranch mocks base method
+func (m *MockBareRepo) TryMergeBranch(base, target, targetRepoDir string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TryMergeBranch", base, target)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TryMergeBranch indicates an expected call of TryMergeBranch
+func (mr *MockBareRepoMockRecorder) TryMergeBranch(base, target interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryMergeBranch", reflect.TypeOf((*MockBareRepo)(nil).TryMergeBranch), base, target)
 }
 
 // BlobObject mocks base method

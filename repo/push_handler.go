@@ -96,13 +96,9 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxLine, string
 	// When we have more than one pushed references, we need to ensure they both
 	// were signed using same public key id, if not, we return an error and also
 	// remove the pushed objects from the references and repository
-	var pkID string
+	var pkID = funk.Values(refsTxLine).([]*util.TxLine)[0].PubKeyID
 	if len(refsTxLine) > 1 {
 		for _, txLine := range refsTxLine {
-			if pkID == "" {
-				pkID = txLine.PubKeyID
-				continue
-			}
 			if pkID != txLine.PubKeyID {
 				errs = append(errs, fmt.Errorf("rejected because the pushed references "+
 					"were signed with multiple pgp keys"))
@@ -110,8 +106,6 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxLine, string
 				break
 			}
 		}
-	} else {
-		pkID = funk.Values(refsTxLine).([]*util.TxLine)[0].PubKeyID
 	}
 
 	if len(errs) != 0 {
@@ -193,14 +187,17 @@ func (h *PushHandler) createPushNote(
 		accountNonce = refsTxLine[ref.name].Nonce
 		fee := pushNote.Fee.Decimal().Add(refsTxLine[ref.name].Fee.Decimal()).String()
 		pushNote.Fee = util.String(fee)
-		pushNote.References = append(pushNote.References, &types.PushedReference{
+		pushedRef := &types.PushedReference{
 			Name:    ref.name,
 			OldHash: ref.oldHash,
 			NewHash: ref.newHash,
 			Nonce:   h.repo.State().References.Get(ref.name).Nonce + 1,
 			Objects: h.pushReader.objectsRefs.getObjectsOf(ref.name),
 			Delete:  refsTxLine[ref.name].DeleteRef,
-		})
+			Merge:   refsTxLine[ref.name].Merge,
+		}
+
+		pushNote.References = append(pushNote.References, pushedRef)
 	}
 
 	// Sign the push transaction
@@ -269,8 +266,7 @@ func (h *PushHandler) handleReference(ref string) (*util.TxLine, []error) {
 	}
 
 	// Now, we need to delete the pushed objects if an error has occurred.
-	// We are only able to delete the object if it is related to only the
-	// current ref. If it is not, we schedule the repository for pruning.
+	// We schedule the repository for pruning.
 	if len(errs) > 0 {
 		h.rMgr.GetPruner().Schedule(h.repo.GetName())
 	}

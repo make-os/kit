@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	s "github.com/makeos/mosdef/storage"
@@ -35,12 +34,11 @@ import (
 
 // Repo represents a git repository
 type Repo struct {
-	git      *git.Repository
-	path     string
-	name     string
-	ops      *GitOps
-	state    *types.Repository
-	refLocks map[string]*sync.Mutex
+	git   *git.Repository
+	path  string
+	name  string
+	ops   *GitOps
+	state *types.Repository
 }
 
 func getReferenceTree(path, ref string) (*tree.SafeTree, func() error, error) {
@@ -354,6 +352,16 @@ func (r *Repo) Prune(olderThan time.Time) error {
 			return r.DeleteObject(hash)
 		},
 	})
+}
+
+// MergeBranch merges target branch into base
+func (r *Repo) MergeBranch(base, target, targetRepoDir string) error {
+	return r.ops.MergeBranch(base, target, targetRepoDir)
+}
+
+// TryMergeBranch merges target branch into base and reverses it
+func (r *Repo) TryMergeBranch(base, target, targetRepoDir string) error {
+	return r.ops.TryMergeBranch(base, target, targetRepoDir)
 }
 
 // GetRepo returns a repository

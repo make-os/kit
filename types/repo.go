@@ -59,6 +59,12 @@ type BareRepo interface {
 	// CommitObject returns an unsorted ObjectIter with all the objects in the repository.
 	CommitObject(h plumbing.Hash) (*object.Commit, error)
 
+	// MergeBranch merges target branch into base
+	MergeBranch(base, target, targetRepoDir string) error
+
+	// TryMergeBranch merges target branch into base and reverses it
+	TryMergeBranch(base, target, targetRepoDir string) error
+
 	// BlobObject returns a Blob with the given hash.
 	BlobObject(h plumbing.Hash) (*object.Blob, error)
 
@@ -365,18 +371,31 @@ type PushedReference struct {
 	Nonce              uint64   `json:"nonce" msgpack:"nonce"`     // The next repo nonce of the reference
 	Objects            []string `json:"objects" msgpack:"objects"` // A list of objects pushed to the reference
 	Delete             bool     `json:"delete" msgpack:"delete"`   // Delete indicates that the reference should be deleted from the repo
+	Merge              string   `json:"merge" msgpack:"merge"`     // Describes a branch to merge into the reference
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(pr.Name, pr.OldHash, pr.NewHash,
-		pr.Nonce, pr.Objects, pr.Delete)
+	return enc.EncodeMulti(
+		pr.Name,
+		pr.OldHash,
+		pr.NewHash,
+		pr.Nonce,
+		pr.Objects,
+		pr.Delete,
+		pr.Merge)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return pr.DecodeMulti(dec, &pr.Name, &pr.OldHash, &pr.NewHash,
-		&pr.Nonce, &pr.Objects, &pr.Delete)
+	return pr.DecodeMulti(dec,
+		&pr.Name,
+		&pr.OldHash,
+		&pr.NewHash,
+		&pr.Nonce,
+		&pr.Objects,
+		&pr.Delete,
+		&pr.Merge)
 }
 
 // PushedReferences represents a collection of pushed references

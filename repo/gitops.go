@@ -272,3 +272,62 @@ func (g *GitOps) CreateBlob(content string) (string, error) {
 	}
 	return strings.TrimSpace(out.String()), nil
 }
+
+// MergeBranch merges target branch into base
+func (g *GitOps) MergeBranch(base, target, targetRepoDir string) error {
+
+	// Checkout base branch
+	_, err := execGitCmd(g.gitBinPath, g.path, "checkout", base)
+	if err != nil {
+		return errors.Wrap(err, "failed to checkout base branch")
+	}
+
+	// Merge target into base if target branch is not in another repo...
+	if targetRepoDir == "" {
+		_, err = execGitCmd(g.gitBinPath, g.path, "merge", target)
+		if err == nil {
+			return nil
+		}
+	} else {
+		// ...otherwise, pull from the repo
+		_, err = execGitCmd(g.gitBinPath, g.path, "pull", targetRepoDir, target)
+		if err == nil {
+			return nil
+		}
+	}
+
+	// Reset uncommitted merge history if merge failed
+	_, resetErr := execGitCmd(g.gitBinPath, g.path, "reset", "--merge")
+	if resetErr != nil {
+		return errors.Wrap(resetErr, "failed to reset uncommitted merge")
+	}
+
+	return errors.Wrap(err, "failed to merge")
+}
+
+// TryMergeBranch merges target branch into base and reverses it.
+func (g *GitOps) TryMergeBranch(base, target, targetRepoDir string) error {
+
+	// Checkout the base branch
+	_, err := execGitCmd(g.gitBinPath, g.path, "checkout", base)
+	if err != nil {
+		return errors.Wrap(err, "failed to checkout base branch")
+	}
+
+	// Merge target into base while disabling commit and fast-forward
+	if targetRepoDir == "" {
+		_, err = execGitCmd(g.gitBinPath, g.path, "merge", target, "--no-commit", "--no-ff")
+	} else {
+		// ...otherwise, pull from the repo
+		_, err = execGitCmd(g.gitBinPath, g.path, "pull", targetRepoDir,
+			target, "--no-commit", "--no-ff")
+	}
+
+	// Reset uncommitted merge history
+	_, resetErr := execGitCmd(g.gitBinPath, g.path, "reset", "--merge")
+	if resetErr != nil {
+		return errors.Wrap(resetErr, "failed to reset uncommitted merge")
+	}
+
+	return errors.Wrap(err, "failed to merge")
+}
