@@ -23,7 +23,7 @@ func NewBareTxRepoCreate() *TxRepoCreate {
 		TxType:   &TxType{Type: TxTypeRepoCreate},
 		TxValue:  &TxValue{Value: "0"},
 		Name:     "",
-		Config:   BareRepoConfig().ToMap(),
+		Config:   make(map[string]interface{}),
 	}
 }
 
