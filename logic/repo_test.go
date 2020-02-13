@@ -965,6 +965,110 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
+	Describe(".execRepoProposalMergeRequest", func() {
+		var err error
+		var sender = crypto.NewKeyFromIntSeed(1)
+		var spk util.Bytes32
+		// var key2 = crypto.NewKeyFromIntSeed(2)
+		var repoUpd *types.Repository
+
+		BeforeEach(func() {
+			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				Balance:             util.String("10"),
+				Stakes:              types.BareAccountStakes(),
+				DelegatorCommission: 10,
+			})
+			repoUpd = types.BareRepository()
+			repoUpd.Config = types.DefaultRepoConfig
+			repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
+		})
+
+		When("sender is the only owner", func() {
+			repoName := "repo"
+			proposalFee := util.String("1")
+
+			BeforeEach(func() {
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoProposalMergeRequest(spk, repoName,
+					"base", "baseHash", "target", "targetHash", proposalFee, "1.5", 0)
+				Expect(err).To(BeNil())
+			})
+
+			It("should add the new proposal to the repo", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+			})
+
+			Specify("that the proposal is finalized and self accepted", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
+				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(1)))
+			})
+
+			Specify("that network fee + proposal fee was deducted", func() {
+				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				Expect(acct.Balance.String()).To(Equal("7.5"))
+			})
+
+			Specify("that the fee by the sender is registered on the proposal", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
+				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
+			})
+		})
+
+		When("sender is not the only owner", func() {
+			repoName := "repo"
+			curHeight := uint64(0)
+			proposalFee := util.String("1")
+
+			BeforeEach(func() {
+				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				repoUpd.AddOwner(key2.Addr().String(), &types.RepoOwner{})
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoProposalMergeRequest(spk, repoName,
+					"base", "baseHash", "target", "targetHash", proposalFee, "1.5", 0)
+				Expect(err).To(BeNil())
+			})
+
+			It("should add the new proposal to the repo", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+			})
+
+			Specify("that the proposal is not finalized or self accepted", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeFalse())
+				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(0)))
+			})
+
+			Specify("that network fee + proposal fee was deducted", func() {
+				acct := logic.AccountKeeper().GetAccount(sender.Addr(), curHeight)
+				Expect(acct.Balance.String()).To(Equal("7.5"))
+			})
+
+			Specify("that the fee by the sender is registered on the proposal", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
+				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
+			})
+
+			Specify("that the proposal was indexed against its end height", func() {
+				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governace.ProposalDur + curHeight + 1)
+				Expect(res).To(HaveLen(1))
+			})
+		})
+	})
+
 	Describe(".applyProposalRepoUpdate", func() {
 		var err error
 		var repo *types.Repository

@@ -537,6 +537,26 @@ func CheckTxRepoProposalSendFeeConsistency(
 	return nil
 }
 
+// CheckTxRepoProposalMergeRequestConsistency performs consistency
+// checks on TxRepoProposalMergeRequest
+func CheckTxRepoProposalMergeRequestConsistency(
+	tx *types.TxRepoProposalMergeRequest,
+	index int,
+	logic types.Logic) error {
+
+	_, err := checkProposalCommonConsistency(
+		tx.Type,
+		tx.TxProposalCommon,
+		tx.TxCommon,
+		index,
+		logic)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CheckTxRepoProposalUpdateConsistency performs consistency checks on CheckTxRepoProposalUpdate
 func CheckTxRepoProposalUpdateConsistency(
 	tx *types.TxRepoProposalUpdate,

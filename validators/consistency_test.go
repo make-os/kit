@@ -1579,4 +1579,108 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 	})
+
+	Describe(".CheckTxRepoProposalMergeRequestConsistency", func() {
+
+		When("unable to get current block information", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalMergeRequest()
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
+				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to fetch current block info: error"))
+			})
+		})
+
+		When("repo is unknown", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalMergeRequest()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				repo := types.BareRepository()
+
+				bi := &types.BlockInfo{Height: 1}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
+				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:name, error:repo not found"))
+			})
+		})
+
+		When("proposal fee is less than repo minimum", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalMergeRequest()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.Value = "10"
+				repo := types.BareRepository()
+				repo.Config.Governace.ProposalFee = 100
+
+				bi := &types.BlockInfo{Height: 1}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
+				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:value, error:proposal fee cannot be less than repo minimum"))
+			})
+		})
+
+		When("sender is not one of the repo owners", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalMergeRequest()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.Value = "101"
+				repo := types.BareRepository()
+				repo.Config.Governace.ProposalFee = 100
+				repo.Config.Governace.ProposalProposee = types.ProposeeOwner
+
+				bi := &types.BlockInfo{Height: 1}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
+				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:senderPubKey, error:sender is not one of the repo owners"))
+			})
+		})
+
+		When("failed value transfer dry-run", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalMergeRequest()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.Value = "101"
+				repo := types.BareRepository()
+				repo.Config.Governace.ProposalFee = 100
+				repo.Config.Governace.ProposalProposee = types.ProposeeOwner
+				repo.Owners[key.Addr().String()] = &types.RepoOwner{}
+
+				bi := &types.BlockInfo{Height: 1}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
+				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
+
+				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("error"))
+			})
+		})
+	})
 })

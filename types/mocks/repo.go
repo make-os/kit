@@ -6,9 +6,6 @@ package mocks
 
 import (
 	context "context"
-	reflect "reflect"
-	time "time"
-
 	gomock "github.com/golang/mock/gomock"
 	config "github.com/makeos/mosdef/config"
 	crypto "github.com/makeos/mosdef/crypto"
@@ -21,6 +18,8 @@ import (
 	object "gopkg.in/src-d/go-git.v4/plumbing/object"
 	storer "gopkg.in/src-d/go-git.v4/plumbing/storer"
 	storage "gopkg.in/src-d/go-git.v4/storage"
+	reflect "reflect"
+	time "time"
 )
 
 // MockBareRepo is a mock of BareRepo interface
@@ -244,29 +243,29 @@ func (mr *MockBareRepoMockRecorder) CommitObject(h interface{}) *gomock.Call {
 // MergeBranch mocks base method
 func (m *MockBareRepo) MergeBranch(base, target, targetRepoDir string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MergeBranch", base, target)
+	ret := m.ctrl.Call(m, "MergeBranch", base, target, targetRepoDir)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // MergeBranch indicates an expected call of MergeBranch
-func (mr *MockBareRepoMockRecorder) MergeBranch(base, target interface{}) *gomock.Call {
+func (mr *MockBareRepoMockRecorder) MergeBranch(base, target, targetRepoDir interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeBranch", reflect.TypeOf((*MockBareRepo)(nil).MergeBranch), base, target)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeBranch", reflect.TypeOf((*MockBareRepo)(nil).MergeBranch), base, target, targetRepoDir)
 }
 
 // TryMergeBranch mocks base method
 func (m *MockBareRepo) TryMergeBranch(base, target, targetRepoDir string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TryMergeBranch", base, target)
+	ret := m.ctrl.Call(m, "TryMergeBranch", base, target, targetRepoDir)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // TryMergeBranch indicates an expected call of TryMergeBranch
-func (mr *MockBareRepoMockRecorder) TryMergeBranch(base, target interface{}) *gomock.Call {
+func (mr *MockBareRepoMockRecorder) TryMergeBranch(base, target, targetRepoDir interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryMergeBranch", reflect.TypeOf((*MockBareRepo)(nil).TryMergeBranch), base, target)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryMergeBranch", reflect.TypeOf((*MockBareRepo)(nil).TryMergeBranch), base, target, targetRepoDir)
 }
 
 // BlobObject mocks base method
@@ -850,26 +849,6 @@ func (mr *MockRepoManagerMockRecorder) GetRepoState(target interface{}, options 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoState", reflect.TypeOf((*MockRepoManager)(nil).GetRepoState), varargs...)
 }
 
-// Revert mocks base method
-func (m *MockRepoManager) Revert(target types.BareRepo, prevState types.BareRepoState, options ...types.KVOption) (*types.Changes, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{target, prevState}
-	for _, a := range options {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "Revert", varargs...)
-	ret0, _ := ret[0].(*types.Changes)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Revert indicates an expected call of Revert
-func (mr *MockRepoManagerMockRecorder) Revert(target, prevState interface{}, options ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{target, prevState}, options...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Revert", reflect.TypeOf((*MockRepoManager)(nil).Revert), varargs...)
-}
-
 // GetPGPPubKeyGetter mocks base method
 func (m *MockRepoManager) GetPGPPubKeyGetter() types.PGPPubKeyGetter {
 	m.ctrl.T.Helper()
@@ -988,6 +967,18 @@ func (m *MockRepoManager) SetPGPPubKeyGetter(pkGetter types.PGPPubKeyGetter) {
 func (mr *MockRepoManagerMockRecorder) SetPGPPubKeyGetter(pkGetter interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPGPPubKeyGetter", reflect.TypeOf((*MockRepoManager)(nil).SetPGPPubKeyGetter), pkGetter)
+}
+
+// SetModulesAgg mocks base method
+func (m *MockRepoManager) SetModulesAgg(agg types.ModulesAggregator) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetModulesAgg", agg)
+}
+
+// SetModulesAgg indicates an expected call of SetModulesAgg
+func (mr *MockRepoManagerMockRecorder) SetModulesAgg(agg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetModulesAgg", reflect.TypeOf((*MockRepoManager)(nil).SetModulesAgg), agg)
 }
 
 // GetPruner mocks base method

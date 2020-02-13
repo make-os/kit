@@ -263,6 +263,8 @@ apply:
 		err = applyProposalAddOwner(proposal, repo, chainHeight)
 	case types.ProposalActionRepoUpdate:
 		err = applyProposalRepoUpdate(proposal, repo, chainHeight)
+	case types.ProposalActionMergeRequest:
+		// Do nothing since there is no on-chain action
 	default:
 		err = fmt.Errorf("unsupported proposal action")
 	}

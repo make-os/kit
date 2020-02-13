@@ -82,6 +82,7 @@ type ProposalAction int
 const (
 	ProposalActionAddOwner ProposalAction = iota + 1
 	ProposalActionRepoUpdate
+	ProposalActionMergeRequest
 )
 
 // Proposal vote choices
@@ -136,6 +137,7 @@ const (
 
 // RepoProposal represents a repository proposal
 type RepoProposal struct {
+	ID                    string                 `json:"-" mapstructure:"-" msgpack:"-"`
 	Action                ProposalAction         `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
 	ActionData            map[string]interface{} `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
 	Creator               string                 `json:"creator" mapstructure:"creator" msgpack:"creator"`                                           // The creator is the address of the proposal creator.

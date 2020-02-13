@@ -1465,4 +1465,89 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).To(MatchError("field:value, error:proposal creation fee cannot be less than network minimum"))
 		})
 	})
+
+	Describe(".CheckTxRepoProposalMergeRequest", func() {
+		var tx *types.TxRepoProposalMergeRequest
+
+		BeforeEach(func() {
+			tx = types.NewBareRepoProposalMergeRequest()
+			tx.Timestamp = time.Now().Unix()
+		})
+
+		It("should return error when repo name is not provided", func() {
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:name, error:repo name is required"))
+		})
+
+		It("should return error when repo name is not valid", func() {
+			tx.RepoName = "*&^"
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:name, error:invalid characters in name. " +
+				"Only alphanumeric, _ and - characters are allowed"))
+		})
+
+		It("should return error when value is not provided", func() {
+			tx.RepoName = "repo1"
+			tx.Value = ""
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:value, error:value is required"))
+		})
+
+		It("should return error when base branch is not provided", func() {
+			tx.RepoName = "repo1"
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:base branch name is required"))
+		})
+
+		It("should return error when base branch hash is not provided", func() {
+			tx.RepoName = "repo1"
+			tx.BaseBranch = "branch_base"
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:base branch hash is required"))
+		})
+
+		It("should return error when base branch hash is not valid", func() {
+			tx.RepoName = "repo1"
+			tx.BaseBranch = "branch_base"
+			tx.BaseBranchHash = "invalid"
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:base branch hash is not valid"))
+		})
+
+		It("should return error when target branch is not provided", func() {
+			tx.RepoName = "repo1"
+			tx.BaseBranch = "branch_base"
+			tx.BaseBranchHash = util.RandString(40)
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:target branch name is required"))
+		})
+
+		It("should return error when target branch hash is not provided", func() {
+			tx.RepoName = "repo1"
+			tx.BaseBranch = "branch_base"
+			tx.BaseBranchHash = util.RandString(40)
+			tx.TargetBranch = "branch_base"
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:target branch hash is required"))
+		})
+
+		It("should return error when target branch hash is not valid", func() {
+			tx.RepoName = "repo1"
+			tx.BaseBranch = "branch_base"
+			tx.BaseBranchHash = util.RandString(40)
+			tx.TargetBranch = "branch_base"
+			tx.TargetBranchHash = "invalid"
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:target branch hash is not valid"))
+		})
+	})
 })

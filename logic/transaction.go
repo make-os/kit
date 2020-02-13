@@ -140,6 +140,18 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
+	case *types.TxRepoProposalMergeRequest:
+		return t.execRepoProposalMergeRequest(
+			spk,
+			o.RepoName,
+			o.BaseBranch,
+			o.BaseBranchHash,
+			o.TargetBranch,
+			o.TargetBranchHash,
+			o.Value,
+			o.Fee,
+			chainHeight)
+
 	case *types.TxAddGPGPubKey:
 		return t.execAddGPGKey(
 			spk,

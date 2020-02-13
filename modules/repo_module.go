@@ -66,6 +66,11 @@ func (m *RepoModule) funcs() []*types.ModulesAggregatorFunc {
 			Value:       m.depositFee,
 			Description: "Add fees to a deposit-enabled repository proposal",
 		},
+		&types.ModulesAggregatorFunc{
+			Name:        "createMergeRequest",
+			Value:       m.createMergeRequest,
+			Description: "Create a merge request proposal",
+		},
 	}
 }
 
@@ -371,6 +376,66 @@ func (m *RepoModule) depositFee(params map[string]interface{}, options ...interf
 	if id, ok := params["id"]; ok {
 		defer castPanic("id")
 		tx.ProposalID = id.(string)
+	}
+
+	finalizeTx(tx, m.service, options...)
+
+	// Process the transaction
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
+	}
+
+	return EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
+}
+
+// createMergeRequest creates a merge request proposal
+// params {
+// 		nonce: number,
+//		fee: string,
+//		name: string,
+//		base: string
+//		baseHash: string
+// 		target: string
+// 		targetHash: string
+//		timestamp: number
+// }
+// options: key
+func (m *RepoModule) createMergeRequest(
+	params map[string]interface{},
+	options ...interface{}) interface{} {
+	var err error
+
+	// Decode parameters into a transaction object
+	var tx = types.NewBareRepoProposalMergeRequest()
+	mapstructure.Decode(params, tx)
+	decodeCommon(tx, params)
+
+	if repoName, ok := params["name"]; ok {
+		defer castPanic("name")
+		tx.RepoName = repoName.(string)
+	}
+
+	if base, ok := params["base"]; ok {
+		defer castPanic("base")
+		tx.BaseBranch = base.(string)
+	}
+
+	if baseHash, ok := params["baseHash"]; ok {
+		defer castPanic("baseHash")
+		tx.BaseBranchHash = baseHash.(string)
+	}
+
+	if target, ok := params["target"]; ok {
+		defer castPanic("target")
+		tx.TargetBranch = target.(string)
+	}
+
+	if targetHash, ok := params["targetHash"]; ok {
+		defer castPanic("targetHash")
+		tx.TargetBranchHash = targetHash.(string)
 	}
 
 	finalizeTx(tx, m.service, options...)

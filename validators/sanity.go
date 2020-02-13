@@ -606,6 +606,55 @@ func CheckTxRepoProposalSendFee(tx *types.TxRepoProposalFeeSend, index int) erro
 	return nil
 }
 
+// CheckTxRepoProposalMergeRequest performs sanity checks on TxRepoProposalMergeRequest
+func CheckTxRepoProposalMergeRequest(tx *types.TxRepoProposalMergeRequest, index int) error {
+
+	if err := checkType(tx.TxType, types.TxTypeRepoProposalMergeRequest, index); err != nil {
+		return err
+	}
+
+	if err := v.Validate(tx.RepoName,
+		v.Required.Error(feI(index, "name", "repo name is required").Error()),
+		v.By(validObjectNameRule("name", index)),
+	); err != nil {
+		return err
+	}
+
+	if err := checkValue(&types.TxValue{Value: tx.Value}, index); err != nil {
+		return err
+	} else if tx.Value.Decimal().
+		LessThan(decimal.NewFromFloat(params.MinProposalFee)) {
+		return feI(index, "value", "proposal creation fee cannot be "+
+			"less than network minimum")
+	}
+
+	if tx.BaseBranch == "" {
+		return feI(index, "id", "base branch name is required")
+	}
+
+	if tx.BaseBranchHash == "" {
+		return feI(index, "id", "base branch hash is required")
+	} else if len(tx.BaseBranchHash) != 40 {
+		return feI(index, "id", "base branch hash is not valid")
+	}
+
+	if tx.TargetBranch == "" {
+		return feI(index, "id", "target branch name is required")
+	}
+
+	if tx.TargetBranchHash == "" {
+		return feI(index, "id", "target branch hash is required")
+	} else if len(tx.TargetBranchHash) != 40 {
+		return feI(index, "id", "target branch hash is not valid")
+	}
+
+	if err := checkCommon(tx, index); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // CheckTxRepoProposalUpdate performs sanity checks on TxRepoProposalUpdate
 func CheckTxRepoProposalUpdate(tx *types.TxRepoProposalUpdate, index int) error {
 

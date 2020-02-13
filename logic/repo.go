@@ -12,9 +12,10 @@ import (
 )
 
 const (
-	actionDataAddresses = "addresses"
-	actionDataVeto      = "veto"
-	actionDataConfig    = "config"
+	actionDataAddresses    = "addresses"
+	actionDataVeto         = "veto"
+	actionDataConfig       = "config"
+	actionDataMergeRequest = "merge-request"
 )
 
 // execRepoCreate processes a TxTypeRepoCreate transaction, which creates a git
@@ -149,43 +150,16 @@ func (t *Transaction) execRepoUpsertOwner(
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
-	proposal := &types.RepoProposal{
-		Config:  repo.Config.Clone().Governace,
-		Action:  types.ProposalActionAddOwner,
-		Creator: spk.Addr().String(),
-		Height:  chainHeight,
-		EndAt:   repo.Config.Governace.ProposalDur + chainHeight + 1,
-		Fees:    map[string]string{},
-		ActionData: map[string]interface{}{
-			actionDataAddresses: addresses,
-			actionDataVeto:      veto,
-		},
-	}
-
-	// Add proposal fee if set
-	if proposalFee != "0" {
-		proposal.Fees.Add(spk.Addr().String(), proposalFee.String())
-	}
-
-	// Set the max. join height for voters.
-	if repo.Config.Governace.ProposalProposeeLimitToCurHeight {
-		proposal.ProposeeMaxJoinHeight = chainHeight + 1
-	}
-
-	// Set the fee deposit end height and also update the proposal end height to
-	// be after the fee deposit height
-	if repo.Config.Governace.ProposalFeeDepDur > 0 {
-		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governace.ProposalFeeDepDur
-		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governace.ProposalDur
+	proposal := makeProposal(spk, repo, proposalFee, chainHeight)
+	proposal.Action = types.ProposalActionAddOwner
+	proposal.ActionData = map[string]interface{}{
+		actionDataAddresses: addresses,
+		actionDataVeto:      veto,
 	}
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
 	t.deductFee(spk, totalFee, chainHeight)
-
-	// Add the proposal to the repo
-	proposalID := fmt.Sprintf("%d", len(repo.Proposals)+1)
-	repo.Proposals.Add(proposalID, proposal)
 
 	// Attempt to apply the proposal action
 	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)
@@ -197,7 +171,7 @@ func (t *Transaction) execRepoUpsertOwner(
 
 	// Index the proposal against its end height so it can be tracked
 	// and finalized at that height.
-	if err = repoKeeper.IndexProposalEnd(repoName, proposalID, proposal.EndAt); err != nil {
+	if err = repoKeeper.IndexProposalEnd(repoName, proposal.ID, proposal.EndAt); err != nil {
 		return errors.Wrap(err, "failed to index proposal against end height")
 	}
 
@@ -212,6 +186,7 @@ update:
 // senderPubKey: The public key of the transaction sender.
 // repoName: The name of the target repository.
 // config: Updated repo configuration
+// proposalFee: The proposal fee
 // fee: The fee to be paid by the sender.
 // chainHeight: The height of the block chain
 //
@@ -230,42 +205,13 @@ func (t *Transaction) execRepoProposalUpdate(
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
-	proposal := &types.RepoProposal{
-		Config:  repo.Config.Clone().Governace,
-		Action:  types.ProposalActionRepoUpdate,
-		Creator: spk.Addr().String(),
-		Height:  chainHeight,
-		EndAt:   repo.Config.Governace.ProposalDur + chainHeight + 1,
-		Fees:    map[string]string{},
-		ActionData: map[string]interface{}{
-			actionDataConfig: config,
-		},
-	}
-
-	// Add proposal fee if set
-	if proposalFee != "0" {
-		proposal.Fees.Add(spk.Addr().String(), proposalFee.String())
-	}
-
-	// Set the max. join height for voters.
-	if repo.Config.Governace.ProposalProposeeLimitToCurHeight {
-		proposal.ProposeeMaxJoinHeight = chainHeight + 1
-	}
-
-	// Set the fee deposit end height and also update the proposal end height to
-	// be after the fee deposit height
-	if repo.Config.Governace.ProposalFeeDepDur > 0 {
-		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governace.ProposalFeeDepDur
-		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governace.ProposalDur
-	}
+	proposal := makeProposal(spk, repo, proposalFee, chainHeight)
+	proposal.Action = types.ProposalActionRepoUpdate
+	proposal.ActionData[actionDataConfig] = config
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
 	t.deductFee(spk, totalFee, chainHeight)
-
-	// Add the proposal to the repo
-	proposalID := fmt.Sprintf("%d", len(repo.Proposals)+1)
-	repo.Proposals.Add(proposalID, proposal)
 
 	// Attempt to apply the proposal action
 	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)
@@ -277,7 +223,7 @@ func (t *Transaction) execRepoProposalUpdate(
 
 	// Index the proposal against its end height so it
 	// can be tracked and finalized at that height.
-	if err = repoKeeper.IndexProposalEnd(repoName, proposalID, proposal.EndAt); err != nil {
+	if err = repoKeeper.IndexProposalEnd(repoName, proposal.ID, proposal.EndAt); err != nil {
 		return errors.Wrap(err, "failed to index proposal against end height")
 	}
 
@@ -331,6 +277,107 @@ func (t *Transaction) execRepoProposalSendFee(
 
 	repoKeeper.Update(repoName, repo)
 
+	return nil
+}
+
+func makeProposal(
+	spk *crypto.PubKey,
+	repo *types.Repository,
+	proposalFee util.String,
+	chainHeight uint64) *types.RepoProposal {
+
+	proposal := &types.RepoProposal{
+		Config:     repo.Config.Clone().Governace,
+		Creator:    spk.Addr().String(),
+		Height:     chainHeight,
+		EndAt:      repo.Config.Governace.ProposalDur + chainHeight + 1,
+		Fees:       map[string]string{},
+		ActionData: map[string]interface{}{},
+	}
+
+	// Add proposal fee if set
+	if proposalFee != "0" {
+		proposal.Fees.Add(spk.Addr().String(), proposalFee.String())
+	}
+
+	// Set the max. join height for voters.
+	if repo.Config.Governace.ProposalProposeeLimitToCurHeight {
+		proposal.ProposeeMaxJoinHeight = chainHeight + 1
+	}
+
+	// Set the fee deposit end height and also update the proposal end height to
+	// be after the fee deposit height
+	if repo.Config.Governace.ProposalFeeDepDur > 0 {
+		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governace.ProposalFeeDepDur
+		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governace.ProposalDur
+	}
+
+	// Add the proposal to the repo
+	proposal.ID = fmt.Sprintf("%d", len(repo.Proposals)+1)
+	repo.Proposals.Add(proposal.ID, proposal)
+
+	return proposal
+}
+
+// execRepoProposalMergeRequest creates a proposal to update a repository.
+//
+// ARGS:
+// senderPubKey: The public key of the transaction sender.
+// repoName: The name of the target repository.
+// baseBranch: The base branch
+// baseBranchHash: The base branch hash
+// targetBranch: The target branch
+// targetBranchHash: The target branch hash
+// fee: The fee to be paid by the sender.
+// chainHeight: The height of the block chain
+//
+// CONTRACT: Sender's public key must be valid
+func (t *Transaction) execRepoProposalMergeRequest(
+	senderPubKey util.Bytes32,
+	repoName,
+	baseBranch,
+	baseBranchHash,
+	targetBranch,
+	targetBranchHash string,
+	proposalFee,
+	fee util.String,
+	chainHeight uint64) error {
+
+	// Get the repo
+	repoKeeper := t.logic.RepoKeeper()
+	repo := repoKeeper.GetRepo(repoName)
+
+	// Create a proposal
+	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
+	proposal := makeProposal(spk, repo, proposalFee, chainHeight)
+	proposal.Action = types.ProposalActionMergeRequest
+	proposal.ActionData[actionDataMergeRequest] = map[string]string{
+		"base":       baseBranch,
+		"baseHash":   baseBranchHash,
+		"target":     targetBranch,
+		"targetHash": targetBranchHash,
+	}
+
+	// Deduct network fee + proposal fee from sender
+	totalFee := fee.Decimal().Add(proposalFee.Decimal())
+	t.deductFee(spk, totalFee, chainHeight)
+
+	// Attempt to apply the proposal action
+	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)
+	if err != nil {
+		return errors.Wrap(err, "failed to apply proposal")
+	} else if applied {
+		goto update
+	}
+
+	// Index the proposal against its end height so it can be tracked and
+	// finalized at that height.
+	if err = repoKeeper.IndexProposalEnd(repoName, proposal.ID, proposal.EndAt); err != nil {
+		return errors.Wrap(err, "failed to index proposal against end height")
+	}
+
+update:
+	repoKeeper.Update(repoName, repo)
 	return nil
 }
 

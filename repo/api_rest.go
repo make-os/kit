@@ -36,10 +36,16 @@ func (m *Manager) apiGetNonce(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nonce := m.modulesAgg.GetModules().(*modules.Modules).
+	nonce := m.modulesAgg.
+		GetModules().(*modules.Modules).
 		Account.GetNonce(body.Address)
 
 	util.WriteJSON(w, 200, map[string]interface{}{
 		"nonce": nonce,
 	})
+}
+
+// apiCreateMergeRequest creates a merge request proposal
+func (m *Manager) apiCreateMergeRequest(w http.ResponseWriter, r *http.Request) {
+
 }
