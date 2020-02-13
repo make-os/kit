@@ -15,10 +15,15 @@ import (
 	"github.com/thoas/go-funk"
 )
 
+func invalidFieldValueType(fieldName, want string, field interface{}) error {
+	return fmt.Errorf("field:%s, error:has invalid value type: %s want %s", fieldName,
+		reflect.ValueOf(field).Type().String(), want)
+}
+
 func castPanic(field string) {
 	if err := recover(); err != nil {
 		if strings.HasPrefix(err.(error).Error(), "interface conversion") {
-			msg := fmt.Sprintf("field '%s' has invalid value type: %s", field, err)
+			msg := fmt.Sprintf("field:%s, error:has invalid value type: %s", field, err)
 			msg = strings.ReplaceAll(msg, "interface conversion: interface {} is", "has")
 			msg = strings.ReplaceAll(msg, "not", "want")
 			panic(fmt.Errorf(msg))
@@ -31,7 +36,23 @@ func castPanic(field string) {
 func decodeCommon(tx types.BaseTx, params map[string]interface{}) {
 	if nonce, ok := params["nonce"]; ok {
 		defer castPanic("nonce")
-		tx.SetNonce(uint64(nonce.(int64)))
+		switch v := nonce.(type) {
+		case int64:
+			tx.SetNonce(uint64(v))
+		case float64:
+			tx.SetNonce(uint64(v))
+		default:
+			panic(invalidFieldValueType("nonce", "int", nonce))
+		}
+	}
+
+	if senderPubKey, ok := params["senderPubKey"]; ok {
+		defer castPanic("senderPubKey")
+		pk, err := crypto.PubKeyFromBase58(senderPubKey.(string))
+		if err != nil {
+			panic(types.FieldError("senderPubKey", "public key is not valid"))
+		}
+		tx.SetSenderPubKey(pk.MustBytes())
 	}
 
 	if fee, ok := params["fee"]; ok {
@@ -43,37 +64,55 @@ func decodeCommon(tx types.BaseTx, params map[string]interface{}) {
 		defer castPanic("timestamp")
 		tx.SetTimestamp(timestamp.(int64))
 	}
+
+	if sig, ok := params["sig"]; ok {
+		defer castPanic("sig")
+		sigBz, err := util.FromHex(sig.(string))
+		if err != nil {
+			panic(types.FieldError("sig", "unable to decode signature"))
+		}
+		tx.SetSignature(sigBz)
+	}
 }
 
 // finalizeTx sets the public key, timestamp and signs the transaction.
 func finalizeTx(tx types.BaseTx, service types.Service, options ...interface{}) {
-
-	key := checkAndGetKey(options...)
-
-	// Set tx public key
-	pk, _ := crypto.PrivKeyFromBase58(key)
-	tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(pk).PubKey().MustBytes())
 
 	// Set timestamp if not already set
 	if tx.GetTimestamp() == 0 {
 		tx.SetTimestamp(time.Now().Unix())
 	}
 
-	// Set nonce if nonce is not provided
-	if tx.GetNonce() == 0 {
-		nonce, err := service.GetNonce(tx.GetFrom())
-		if err != nil {
-			panic(errors.Wrap(err, "failed to get sender's nonce"))
-		}
-		tx.SetNonce(nonce + 1)
-	}
+	// Set public key and sign the transaction only when
+	// a key is provided.
+	if len(options) > 0 {
 
-	// Sign the tx
-	sig, err := tx.Sign(key)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to sign transaction"))
+		key := checkAndGetKey(options...)
+
+		// Set tx public key only if unset
+		if tx.GetSenderPubKey().IsEmpty() {
+			pk, _ := crypto.PrivKeyFromBase58(key)
+			tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(pk).PubKey().MustBytes())
+		}
+
+		// Set nonce if nonce is not provided
+		if tx.GetNonce() == 0 {
+			nonce, err := service.GetNonce(tx.GetFrom())
+			if err != nil {
+				panic(errors.Wrap(err, "failed to get sender's nonce"))
+			}
+			tx.SetNonce(nonce + 1)
+		}
+
+		// Sign the tx only if unsigned
+		if len(tx.GetSignature()) == 0 {
+			sig, err := tx.Sign(key)
+			if err != nil {
+				panic(errors.Wrap(err, "failed to sign transaction"))
+			}
+			tx.SetSignature(sig)
+		}
 	}
-	tx.SetSignature(sig)
 }
 
 func checkAndGetKey(options ...interface{}) string {

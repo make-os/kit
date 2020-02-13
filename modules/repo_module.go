@@ -68,7 +68,7 @@ func (m *RepoModule) funcs() []*types.ModulesAggregatorFunc {
 		},
 		&types.ModulesAggregatorFunc{
 			Name:        "createMergeRequest",
-			Value:       m.createMergeRequest,
+			Value:       m.CreateMergeRequest,
 			Description: "Create a merge request proposal",
 		},
 	}
@@ -391,7 +391,7 @@ func (m *RepoModule) depositFee(params map[string]interface{}, options ...interf
 	})
 }
 
-// createMergeRequest creates a merge request proposal
+// CreateMergeRequest creates a merge request proposal
 // params {
 // 		nonce: number,
 //		fee: string,
@@ -403,7 +403,7 @@ func (m *RepoModule) depositFee(params map[string]interface{}, options ...interf
 //		timestamp: number
 // }
 // options: key
-func (m *RepoModule) createMergeRequest(
+func (m *RepoModule) CreateMergeRequest(
 	params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error

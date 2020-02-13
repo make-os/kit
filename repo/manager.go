@@ -192,7 +192,8 @@ func (m *Manager) Start() error {
 
 func (m *Manager) registerHandlers(s *http.ServeMux) {
 	s.HandleFunc("/", m.gitRequestsHandler)
-	s.HandleFunc("/v1/get-nonce", recoverableHandler(m.apiGetNonce, m.log))
+	s.HandleFunc("/v1/get-nonce", restAPIHandler(m.apiGetNonce, m.log, "GET"))
+	s.HandleFunc("/v1/merge-request", restAPIHandler(m.apiCreateMergeRequest, m.log, "POST"))
 }
 
 // GetLogic returns the application logic provider
