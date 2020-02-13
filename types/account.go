@@ -10,6 +10,12 @@ import (
 	"github.com/vmihailenco/msgpack"
 )
 
+// Various names for staking categories
+const (
+	StakeTypeValidator = "v"
+	StakeTypeStorer    = "s"
+)
+
 // BareAccount returns an empty account
 func BareAccount() *Account {
 	return &Account{

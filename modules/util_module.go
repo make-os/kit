@@ -1,4 +1,4 @@
-package jsmodules
+package modules
 
 import (
 	"fmt"
@@ -25,39 +25,39 @@ func NewUtilModule(vm *otto.Otto) *UtilModule {
 	return &UtilModule{vm: vm}
 }
 
-func (m *UtilModule) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *UtilModule) globals() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "pp",
 			Value:       m.prettyPrint,
 			Description: "Pretty print an object",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "eval",
 			Value:       m.eval,
 			Description: "Execute javascript code represented as a string",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "evalFile",
 			Value:       m.evalFile,
 			Description: "Execute javascript code stored in a file",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "readFile",
 			Value:       m.readFile,
 			Description: "Read a file",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "readTextFile",
 			Value:       m.readTextFile,
 			Description: "Read a text file",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "treasuryAddress",
 			Value:       m.treasuryAddress(),
 			Description: "Get the treasury address",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "genKey",
 			Value:       m.genKey,
 			Description: "Generate an Ed25519 key",
@@ -66,39 +66,39 @@ func (m *UtilModule) globals() []*types.JSModuleFunc {
 }
 
 // funcs exposed by the module
-func (m *UtilModule) funcs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *UtilModule) funcs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "prettyPrint",
 			Value:       m.prettyPrint,
 			Description: "Pretty print an object",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "eval",
 			Value:       m.eval,
 			Description: "Execute javascript code represented as a string",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "evalFile",
 			Value:       m.evalFile,
 			Description: "Execute javascript code stored in a file",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "readFile",
 			Value:       m.readFile,
 			Description: "Read a file",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "readTextFile",
 			Value:       m.readTextFile,
 			Description: "Read a text file",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "treasuryAddress",
 			Value:       m.treasuryAddress(),
 			Description: "Get the treasury address",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "genKey",
 			Value:       m.genKey,
 			Description: "Generate an Ed25519 key",

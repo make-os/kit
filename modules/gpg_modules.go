@@ -1,4 +1,4 @@
-package jsmodules
+package modules
 
 import (
 	"fmt"
@@ -36,19 +36,19 @@ func NewGPGModule(
 	}
 }
 
-func (m *GPGModule) namespacedFuncs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *GPGModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "add",
 			Value:       m.addPK,
 			Description: "Add a GPG public key",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "find",
 			Value:       m.find,
 			Description: "Find a GPG public key by its key ID",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "ownedBy",
 			Value:       m.ownedBy,
 			Description: "Get all GPG public keys belonging to an address",
@@ -56,8 +56,8 @@ func (m *GPGModule) namespacedFuncs() []*types.JSModuleFunc {
 	}
 }
 
-func (m *GPGModule) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{}
+func (m *GPGModule) globals() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{}
 }
 
 // Configure configures the JS context and return

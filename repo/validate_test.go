@@ -1052,7 +1052,7 @@ var _ = Describe("Validation", func() {
 				mockDHT := mocks.NewMockDHT(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
-					Module:    RepoObjectModule,
+					Module:    types.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(nil, fmt.Errorf("object not found"))
 
@@ -1081,7 +1081,7 @@ var _ = Describe("Validation", func() {
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 				content := []byte("content")
 				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
-					Module:    RepoObjectModule,
+					Module:    types.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(content, nil)
 
@@ -1112,7 +1112,7 @@ var _ = Describe("Validation", func() {
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 				content := []byte("content")
 				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
-					Module:    RepoObjectModule,
+					Module:    types.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(content, nil)
 
@@ -1143,7 +1143,7 @@ var _ = Describe("Validation", func() {
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 				content := []byte("content")
 				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
-					Module:    RepoObjectModule,
+					Module:    types.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(content, nil)
 

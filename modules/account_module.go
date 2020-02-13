@@ -1,4 +1,4 @@
-package jsmodules
+package modules
 
 import (
 	"fmt"
@@ -43,49 +43,49 @@ func NewAccountModule(
 	}
 }
 
-func (m *AccountModule) namespacedFuncs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *AccountModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "listAccounts",
 			Value:       m.listAccounts,
 			Description: "Fetch all accounts that exist on this node",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getKey",
 			Value:       m.getKey,
 			Description: "Get the private key of an account (supports interactive mode)",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getPublicKey",
 			Value:       m.getPublicKey,
 			Description: "Get the public key of an account (supports interactive mode)",
 		},
-		&types.JSModuleFunc{
-			Name:        "getNonce",
-			Value:       m.getNonce,
+		&types.ModulesAggregatorFunc{
+			Name:        "GetNonce",
+			Value:       m.GetNonce,
 			Description: "Get the nonce of an account",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "get",
 			Value:       m.getAccount,
 			Description: "Get the account of a given address",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getBalance",
 			Value:       m.getSpendableBalance,
 			Description: "Get the spendable coin balance of an account",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getStakedBalance",
 			Value:       m.getStakedBalance,
 			Description: "Get the total staked coins of an account",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getPV",
 			Value:       m.getPrivateValidator,
 			Description: "Get the private validator information",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "setCommission",
 			Value:       m.setCommission,
 			Description: "Set the percentage of reward to share with a delegator",
@@ -93,9 +93,9 @@ func (m *AccountModule) namespacedFuncs() []*types.JSModuleFunc {
 	}
 }
 
-func (m *AccountModule) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *AccountModule) globals() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "accounts",
 			Value:       m.listAccounts(),
 			Description: "Get the list of accounts that exist on this node",
@@ -217,8 +217,8 @@ func (m *AccountModule) getPublicKey(address string, passphrase ...string) strin
 	return acct.GetKey().PubKey().Base58()
 }
 
-// getNonce returns the current nonce of an account
-func (m *AccountModule) getNonce(address string) string {
+// GetNonce returns the current nonce of an account
+func (m *AccountModule) GetNonce(address string) string {
 	nonce, err := m.service.GetNonce(util.String(address))
 	if err != nil {
 		panic(err)
@@ -236,7 +236,7 @@ func (m *AccountModule) getAccount(address string, height ...uint64) interface{}
 }
 
 // getSpendableBalance returns the spendable balance of an account
-func (m *AccountModule) getSpendableBalance(address string, height ...uint64) interface{} {
+func (m *AccountModule) getSpendableBalance(address string, height ...uint64) string {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
 	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
 		panic(types.ErrAccountUnknown)
@@ -251,7 +251,7 @@ func (m *AccountModule) getSpendableBalance(address string, height ...uint64) in
 }
 
 // getStakedBalance returns the total staked coins of an account
-func (m *AccountModule) getStakedBalance(address string, height ...uint64) interface{} {
+func (m *AccountModule) getStakedBalance(address string, height ...uint64) string {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
 	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
 		panic(types.ErrAccountUnknown)

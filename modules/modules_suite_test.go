@@ -1,4 +1,4 @@
-package jsmodules_test
+package modules_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestJsmodules(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Jsmodules Suite")
+	RunSpecs(t, "modules Suite")
 }

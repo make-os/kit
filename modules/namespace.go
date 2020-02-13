@@ -1,4 +1,4 @@
-package jsmodules
+package modules
 
 import (
 	"fmt"
@@ -29,24 +29,24 @@ func NewNSModule(
 }
 
 // funcs are functions accessible using the `ns` namespace
-func (m *NamespaceModule) funcs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *NamespaceModule) funcs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "register",
 			Value:       m.register,
 			Description: "Register a namespace",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "lookup",
 			Value:       m.lookup,
 			Description: "Lookup a namespace",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getTarget",
 			Value:       m.getTarget,
 			Description: "Lookup the target of a full namespace path",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "updateDomain",
 			Value:       m.updateDomain,
 			Description: "Update one or more domains for a namespace",
@@ -54,8 +54,8 @@ func (m *NamespaceModule) funcs() []*types.JSModuleFunc {
 	}
 }
 
-func (m *NamespaceModule) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{}
+func (m *NamespaceModule) globals() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{}
 }
 
 // Configure configures the JS context and return

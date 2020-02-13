@@ -1,4 +1,4 @@
-package jsmodules
+package modules
 
 import (
 	"fmt"
@@ -34,44 +34,44 @@ func NewTicketModule(
 	}
 }
 
-func (m *TicketModule) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{}
+func (m *TicketModule) globals() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{}
 }
 
 // funcs exposed by the module
-func (m *TicketModule) funcs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *TicketModule) funcs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "buy",
 			Value:       m.buy,
 			Description: "Buy a validator ticket",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "listValidatorTicketsOfProposer",
 			Value:       m.listValidatorTicketsOfProposer,
 			Description: "List validator tickets where given public key is the proposer",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "listStorerTicketsOfProposer",
 			Value:       m.listStorerTicketsOfProposer,
 			Description: "List storer tickets where given public key is the proposer",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "listRecent",
 			Value:       m.listRecent,
 			Description: "List most recent tickets up to the given limit",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "stats",
 			Value:       m.ticketStats,
 			Description: "Get ticket stats of network and a public key",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "listTopValidators",
 			Value:       m.listTopValidators,
 			Description: "List tickets of top network validators up to the given limit",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "listTopStorers",
 			Value:       m.listTopStorers,
 			Description: "List tickets of top network storers up to the given limit",
@@ -80,14 +80,14 @@ func (m *TicketModule) funcs() []*types.JSModuleFunc {
 }
 
 // storerFuncs are `storer` funcs exposed by the module
-func (m *TicketModule) storerFuncs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *TicketModule) storerFuncs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "buy",
 			Value:       m.storerBuy,
 			Description: "Buy an storer ticket",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "unbond",
 			Value:       m.unbondStorerTicket,
 			Description: "Unbond the stake associated with a storer ticket",

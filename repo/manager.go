@@ -33,7 +33,6 @@ const (
 const (
 	ServiceReceivePack = "receive-pack"
 	ServiceUploadPack  = "upload-pack"
-	RepoObjectModule   = "repo-object"
 )
 
 var services = [][]interface{}{
@@ -55,23 +54,24 @@ var services = [][]interface{}{
 type Manager struct {
 	p2p.BaseReactor
 	cfg                  *config.AppConfig
-	log                  logger.Logger         // log is the application logger
-	wg                   *sync.WaitGroup       // wait group for waiting for the manager
-	srv                  *http.Server          // the http server
-	rootDir              string                // the root directory where all repos are stored
-	addr                 string                // addr is the listening address for the http server
-	gitBinPath           string                // gitBinPath is the path of the git executable
-	pushPool             types.PushPool        // The transaction pool for push transactions
-	mempool              types.Mempool         // The general transaction pool for block-bound transaction
-	logic                types.Logic           // logic is the application logic provider
-	privValidatorKey     *crypto.Key           // the node's private validator key for signing transactions
-	pgpPubKeyGetter      types.PGPPubKeyGetter // finds and returns PGP public key
-	dht                  types.DHT             // The dht service
-	pruner               types.Pruner          // The repo runner
-	blockGetter          types.BlockGetter     // Provides access to blocks
-	pushNoteSenders      *cache.Cache          // Store senders of push notes
-	pushOKSenders        *cache.Cache          // Stores senders of PushOK messages
-	pushNoteEndorsements *cache.Cache          // Store PushOKs
+	log                  logger.Logger           // log is the application logger
+	wg                   *sync.WaitGroup         // wait group for waiting for the manager
+	srv                  *http.Server            // the http server
+	rootDir              string                  // the root directory where all repos are stored
+	addr                 string                  // addr is the listening address for the http server
+	gitBinPath           string                  // gitBinPath is the path of the git executable
+	pushPool             types.PushPool          // The transaction pool for push transactions
+	mempool              types.Mempool           // The general transaction pool for block-bound transaction
+	logic                types.Logic             // logic is the application logic provider
+	privValidatorKey     *crypto.Key             // the node's private validator key for signing transactions
+	pgpPubKeyGetter      types.PGPPubKeyGetter   // finds and returns PGP public key
+	dht                  types.DHT               // The dht service
+	pruner               types.Pruner            // The repo runner
+	blockGetter          types.BlockGetter       // Provides access to blocks
+	pushNoteSenders      *cache.Cache            // Store senders of push notes
+	pushOKSenders        *cache.Cache            // Stores senders of PushOK messages
+	pushNoteEndorsements *cache.Cache            // Store PushOKs
+	modulesAgg           types.ModulesAggregator // Modules aggregator
 }
 
 // NewManager creates an instance of Manager
@@ -115,6 +115,11 @@ func NewManager(
 // SetRootDir sets the directory where repositories are stored
 func (m *Manager) SetRootDir(dir string) {
 	m.rootDir = dir
+}
+
+// SetModulesAgg sets the modules aggregator
+func (m *Manager) SetModulesAgg(agg types.ModulesAggregator) {
+	m.modulesAgg = agg
 }
 
 func (m *Manager) defaultGPGPubKeyGetter(pkID string) (string, error) {
@@ -165,7 +170,9 @@ func (m *Manager) addPushNoteEndorsement(pnID string, pok *types.PushOK) {
 // Implements p2p.Reactor
 func (m *Manager) Start() error {
 	s := http.NewServeMux()
-	s.HandleFunc("/", m.handler)
+
+	// Register handlers
+	m.registerHandlers(s)
 
 	// Only start server in non-validator node
 	if !m.cfg.IsValidatorNode() {
@@ -178,10 +185,14 @@ func (m *Manager) Start() error {
 	}
 
 	go m.subscribe()
-	// go m.syncher.Start()
 	go m.pruner.Start()
 
 	return nil
+}
+
+func (m *Manager) registerHandlers(s *http.ServeMux) {
+	s.HandleFunc("/", m.gitRequestsHandler)
+	s.HandleFunc("/v1/get-nonce", recoverableHandler(m.apiGetNonce, m.log))
 }
 
 // GetLogic returns the application logic provider
@@ -233,8 +244,8 @@ func (m *Manager) getRepoPath(name string) string {
 	return filepath.Join(m.rootDir, name)
 }
 
-// handler handles incoming http request from a git client
-func (m *Manager) handler(w http.ResponseWriter, r *http.Request) {
+// gitRequestsHandler handles incoming http request from a git client
+func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
 	m.log.Debug("New request",
 		"Method", r.Method,
@@ -365,12 +376,6 @@ func (m *Manager) SetPGPPubKeyGetter(pkGetter types.PGPPubKeyGetter) {
 // GetRepoState implements RepositoryManager
 func (m *Manager) GetRepoState(repo types.BareRepo, options ...types.KVOption) (types.BareRepoState, error) {
 	return getRepoState(repo, options...), nil
-}
-
-// Revert implements RepositoryManager
-func (m *Manager) Revert(repo types.BareRepo, prevState types.BareRepoState,
-	options ...types.KVOption) (*types.Changes, error) {
-	return revert(repo, prevState, options...)
 }
 
 // Wait can be used by the caller to wait till the server terminates

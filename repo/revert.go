@@ -27,7 +27,7 @@ const (
 	ActionTypeNoteUpdate
 )
 
-// Revert reverts the repository from its current state to the previous state.
+// revert reverts the repository from its current state to the previous state.
 // options: Additional options. prefixOpt forces the operation to ignore
 // any reference that does not contain the provided prefix.
 func revert(repo types.BareRepo, prevState types.BareRepoState, options ...types.KVOption) (*types.Changes, error) {

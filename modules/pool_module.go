@@ -1,4 +1,4 @@
-package jsmodules
+package modules
 
 import (
 	"fmt"
@@ -23,24 +23,24 @@ func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor, pushPool types.PushP
 	return &PoolModule{vm: vm, reactor: reactor, pushPool: pushPool}
 }
 
-func (m *PoolModule) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{}
+func (m *PoolModule) globals() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{}
 }
 
 // funcs exposed by the module
-func (m *PoolModule) funcs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *PoolModule) funcs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getSize",
 			Value:       m.getSize,
 			Description: "Get the current size of the mempool",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getTop",
 			Value:       m.getTop,
 			Description: "Get top transactions from the mempool",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getPushPoolSize",
 			Value:       m.getPushPoolSize,
 			Description: "Get the current size of the push pool",

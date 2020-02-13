@@ -1,4 +1,4 @@
-package jsmodules
+package modules
 
 import (
 	"fmt"
@@ -29,39 +29,39 @@ func NewRepoModule(
 }
 
 // funcs are functions accessible using the `repo` namespace
-func (m *RepoModule) funcs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *RepoModule) funcs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "create",
 			Value:       m.create,
 			Description: "Create a git repository on the network",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "get",
 			Value:       m.get,
 			Description: "Find and return a repository",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "update",
 			Value:       m.update,
 			Description: "Update a repository",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "prune",
 			Value:       m.prune,
 			Description: "Delete all dangling and unreachable loose objects from a repository",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "upsertOwner",
 			Value:       m.upsertOwner,
 			Description: "Create a proposal to add or update a repository owner",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "vote",
 			Value:       m.voteOnProposal,
 			Description: "Vote for or against a proposal",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "depositFee",
 			Value:       m.depositFee,
 			Description: "Add fees to a deposit-enabled repository proposal",
@@ -69,8 +69,8 @@ func (m *RepoModule) funcs() []*types.JSModuleFunc {
 	}
 }
 
-func (m *RepoModule) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{}
+func (m *RepoModule) globals() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{}
 }
 
 // Configure configures the JS context and return

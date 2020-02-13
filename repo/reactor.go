@@ -513,7 +513,7 @@ func execTxPush(m types.RepoManager, tx *types.TxPush) error {
 		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cn()
 		objValue, err := m.GetDHT().GetObject(ctx, &types.DHTObjectQuery{
-			Module:    RepoObjectModule,
+			Module:    types.RepoObjectModule,
 			ObjectKey: []byte(dhtKey),
 		})
 		if err != nil {

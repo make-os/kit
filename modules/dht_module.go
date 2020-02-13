@@ -1,9 +1,8 @@
-package jsmodules
+package modules
 
 import (
 	"context"
 	"fmt"
-	"github.com/makeos/mosdef/repo"
 
 	"github.com/makeos/mosdef/config"
 
@@ -30,34 +29,34 @@ func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht types.DHT) *DHTModul
 	}
 }
 
-func (m *DHTModule) namespacedFuncs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *DHTModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "store",
 			Value:       m.store,
 			Description: "Add a value that correspond to a given key",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "lookup",
 			Value:       m.lookup,
 			Description: "Find a record that correspond to a given key",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "announce",
 			Value:       m.announce,
 			Description: "Inform the network that this node can provide value for a key",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getProviders",
 			Value:       m.getProviders,
 			Description: "Get providers for a given key",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getRepoObject",
 			Value:       m.getRepoObject,
 			Description: "Find and return a repo object",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getPeers",
 			Value:       m.getPeers,
 			Description: "Returns a list of all DHT peers",
@@ -65,8 +64,8 @@ func (m *DHTModule) namespacedFuncs() []*types.JSModuleFunc {
 	}
 }
 
-func (m *DHTModule) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{}
+func (m *DHTModule) globals() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{}
 }
 
 // Configure configures the JS context and return
@@ -140,7 +139,7 @@ func (m *DHTModule) getProviders(key string) (res []map[string]interface{}) {
 // getRepoObject finds a repository object from a provider
 func (m *DHTModule) getRepoObject(objURI string) []byte {
 	bz, err := m.dht.GetObject(context.Background(), &types.DHTObjectQuery{
-		Module:    repo.RepoObjectModule,
+		Module:    types.RepoObjectModule,
 		ObjectKey: []byte(objURI),
 	})
 	if err != nil {

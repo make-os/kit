@@ -6,23 +6,19 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-// Various names for staking categories
-const (
-	StakeTypeValidator = "v"
-	StakeTypeStorer    = "s"
-)
-
-// JSModuleFunc describes a JS module function
-type JSModuleFunc struct {
+// ModulesAggregatorFunc describes a JS module function
+type ModulesAggregatorFunc struct {
 	Name        string
 	Value       interface{}
 	Description string
 }
 
-// JSModule describes a mechanism for providing functionalities
-// accessible in the JS console environment.
-type JSModule interface {
+// ModulesAggregator describes a mechanism for aggregating, configuring and
+// accesssing modules that provide uniform functionalities in JS environment,
+// JSON-RPC APIs and REST APIs
+type ModulesAggregator interface {
 	ConfigureVM(vm *otto.Otto) []prompt.Suggest
+	GetModules() interface{}
 }
 
 // Service provides an interface for exposing functionalities.

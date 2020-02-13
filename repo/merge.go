@@ -13,6 +13,7 @@ import (
 // merge takes a base branch merges target branch into it.
 // target can be of the form '<remote-repo>:branch>' to represent a target
 // branch another repo.
+// TODO: Remove if not in use
 func merge(baseRepo types.BareRepo, base, target, reposDir string, uncommitted bool) error {
 
 	// Check if repo has the base branch

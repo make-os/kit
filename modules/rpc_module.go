@@ -1,4 +1,4 @@
-package jsmodules
+package modules
 
 import (
 	"fmt"
@@ -37,19 +37,19 @@ func NewRPCModule(
 	}
 }
 
-func (m *RPCModule) namespacedFuncs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *RPCModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "isRunning",
 			Value:       m.isRunning,
 			Description: "Checks whether the local RPC server is running",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "connect",
 			Value:       m.connect,
 			Description: "Connect to an RPC server",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "local",
 			Value:       m.local(),
 			Description: "Call methods of the local RPC server",
@@ -57,8 +57,8 @@ func (m *RPCModule) namespacedFuncs() []*types.JSModuleFunc {
 	}
 }
 
-func (m *RPCModule) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{}
+func (m *RPCModule) globals() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{}
 }
 
 // Configure configures the JS context and return

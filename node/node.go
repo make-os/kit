@@ -9,7 +9,7 @@ import (
 
 	"github.com/makeos/mosdef/rpc"
 
-	jsm "github.com/makeos/mosdef/jsmodules"
+	jsm "github.com/makeos/mosdef/modules"
 	"github.com/makeos/mosdef/util"
 	"github.com/thoas/go-funk"
 
@@ -68,7 +68,7 @@ type Node struct {
 	mempoolReactor *mempool.Reactor
 	ticketMgr      types.TicketManager
 	dht            types.DHT
-	jsModule       types.JSModule
+	modulesAgg     types.ModulesAggregator
 	rpcServer      *rpc.Server
 	repoMgr        types.RepoManager
 }
@@ -227,7 +227,7 @@ func (n *Node) Start() error {
 	n.service = services.New(n.tmrpc, n.logic, mempR)
 
 	// Register some object finder on the dht
-	n.dht.RegisterObjFinder(repo.RepoObjectModule, repoMgr)
+	n.dht.RegisterObjFinder(types.RepoObjectModule, repoMgr)
 
 	// Pass repo manager to logic manager
 	n.logic.SetRepoManager(repoMgr)
@@ -242,7 +242,10 @@ func (n *Node) Start() error {
 	n.startRPCServer()
 
 	// Initialize extension manager and start extensions
-	n.initJSModuleAndExtension()
+	n.initModulesAggregatorAndExtension()
+
+	// Pass the module aggregator to the repo manager
+	n.repoMgr.SetModulesAgg(n.modulesAgg)
 
 	return nil
 }
@@ -273,20 +276,20 @@ func (n *Node) startConsoleOnly() error {
 	n.addRPCAPIs()
 
 	// Initialize and start JS modules and extensions
-	n.initJSModuleAndExtension()
+	n.initModulesAggregatorAndExtension()
 
 	return nil
 }
 
-// initJSModuleAndExtension initializes  and starts the extension manager
-func (n *Node) initJSModuleAndExtension() {
+// initModulesAggregatorAndExtension initializes  and starts the extension manager
+func (n *Node) initModulesAggregatorAndExtension() {
 
 	// Create extension manager
 	vm := otto.New()
 	extMgr := extensions.NewManager(n.cfg, vm)
 
 	// Create the javascript module instance
-	n.jsModule = jsm.NewModule(
+	n.modulesAgg = jsm.NewModuleAggregator(
 		n.cfg,
 		accountmgr.New(n.cfg.AccountDir()),
 		n.service,
@@ -300,11 +303,11 @@ func (n *Node) initJSModuleAndExtension() {
 	)
 
 	// Set the js module to be the main module of the extension manager
-	extMgr.SetMainModule(n.jsModule)
+	extMgr.SetMainModule(n.modulesAgg)
 
 	// Configure the js module if we are not in console mode
 	if !n.ConsoleOn() {
-		n.jsModule.ConfigureVM(vm)
+		n.modulesAgg.ConfigureVM(vm)
 	}
 
 	// Parse the arguments and run extensions
@@ -344,9 +347,9 @@ func (n *Node) ConsoleOn() bool {
 	return os.Args[1] == "console"
 }
 
-// GetJSModule returns the javascript module instance
-func (n *Node) GetJSModule() types.JSModule {
-	return n.jsModule
+// GetModulesAggregator returns the javascript module instance
+func (n *Node) GetModulesAggregator() types.ModulesAggregator {
+	return n.modulesAgg
 }
 
 // GetTicketManager returns the ticket manager

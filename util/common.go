@@ -5,10 +5,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"math/big"
 	r "math/rand"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -564,4 +566,26 @@ func IsValidAddr(addr string) error {
 	}
 
 	return nil
+}
+
+// WriteJSON encodes respObj to json and writes it to w
+func WriteJSON(w http.ResponseWriter, statuscode int, respObj interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statuscode)
+	json.NewEncoder(w).Encode(respObj)
+}
+
+// RESTApiErrorMsg returns a message suitable for reporting REST API errors
+func RESTApiErrorMsg(msg, field string, code int) map[string]interface{} {
+	obj := make(map[string]interface{})
+	obj["msg"] = msg
+	if field != "" {
+		obj["field"] = field
+	}
+	if code != 0 {
+		obj["code"] = code
+	}
+	return map[string]interface{}{
+		"error": obj,
+	}
 }

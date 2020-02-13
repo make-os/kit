@@ -24,7 +24,7 @@ import (
 type Manager struct {
 	cfg        *config.AppConfig
 	vm         *otto.Otto
-	main       types.JSModule
+	main       types.ModulesAggregator
 	runningExt map[string]*ExtensionControl
 }
 
@@ -46,43 +46,43 @@ func (m *Manager) SetVM(vm *otto.Otto) *Manager {
 }
 
 // SetMainModule configures the main JS module
-func (m *Manager) SetMainModule(main types.JSModule) {
+func (m *Manager) SetMainModule(main types.ModulesAggregator) {
 	m.main = main
 }
 
-func (m *Manager) namespacedFuncs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *Manager) namespacedFuncs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "run",
 			Value:       m.Run,
 			Description: "Load and run an extension",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "load",
 			Value:       m.Load,
 			Description: "Load an extension",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "isInstalled",
 			Value:       m.Exist,
 			Description: "Check whether an extension is installed",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "installed",
 			Value:       m.Installed,
 			Description: "Fetch all installed extensions",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "running",
 			Value:       m.Running,
 			Description: "Fetch a list of running extensions",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "isRunning",
 			Value:       m.IsRunning,
 			Description: "Check whether an extension is currently running",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "stop",
 			Value:       m.Stop,
 			Description: "Stop a running extension",
@@ -90,11 +90,11 @@ func (m *Manager) namespacedFuncs() []*types.JSModuleFunc {
 	}
 }
 
-func (m *Manager) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{}
+func (m *Manager) globals() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{}
 }
 
-// Configure implements types.JSModule. It configures the JS
+// Configure implements types.ModulesAggregator. It configures the JS
 // context and return any number of console prompt suggestions
 func (m *Manager) Configure() []prompt.Suggest {
 	fMap := map[string]interface{}{}

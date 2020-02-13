@@ -13,7 +13,7 @@ import (
 	"github.com/makeos/mosdef/util"
 )
 
-var _ = FDescribe("Merge", func() {
+var _ = Describe("Merge", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string

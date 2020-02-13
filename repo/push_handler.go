@@ -194,7 +194,6 @@ func (h *PushHandler) createPushNote(
 			Nonce:   h.repo.State().References.Get(ref.name).Nonce + 1,
 			Objects: h.pushReader.objectsRefs.getObjectsOf(ref.name),
 			Delete:  refsTxLine[ref.name].DeleteRef,
-			Merge:   refsTxLine[ref.name].Merge,
 		}
 
 		pushNote.References = append(pushNote.References, pushedRef)
@@ -260,7 +259,7 @@ func (h *PushHandler) handleReference(ref string) (*util.TxLine, []error) {
 	// repository since we do not consider them final. Here we attempt to revert
 	// the repository to the old reference state. We passed the changes as an
 	// option so Revert doesn't recompute it
-	changes, err = h.rMgr.Revert(h.repo, oldRefState, matchOpt(ref), changesOpt(changes))
+	changes, err = revert(h.repo, oldRefState, matchOpt(ref), changesOpt(changes))
 	if err != nil {
 		errs = append(errs, errors.Wrap(err, "failed to revert to pre-push state"))
 	}

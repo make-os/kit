@@ -1,4 +1,4 @@
-package jsmodules
+package modules
 
 import (
 	"encoding/hex"
@@ -26,9 +26,9 @@ func NewTxModule(vm *otto.Otto, service types.Service, keepers types.Keepers) *T
 }
 
 // txCoinFuncs are functions accessible using the `tx.coin` namespace
-func (m *TxModule) txCoinFuncs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *TxModule) txCoinFuncs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "send",
 			Value:       m.sendTx,
 			Description: "Send coins to another account",
@@ -37,9 +37,9 @@ func (m *TxModule) txCoinFuncs() []*types.JSModuleFunc {
 }
 
 // funcs are functions accessible using the `tx` namespace
-func (m *TxModule) funcs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *TxModule) funcs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "get",
 			Value:       m.get,
 			Description: "Get a transactions by hash",
@@ -47,8 +47,8 @@ func (m *TxModule) funcs() []*types.JSModuleFunc {
 	}
 }
 
-func (m *TxModule) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{}
+func (m *TxModule) globals() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{}
 }
 
 // Configure configures the JS context and return

@@ -64,7 +64,7 @@ type Console struct {
 	onStopFunc func()
 
 	// jsModules to integrate with the console
-	jsModules []types.JSModule
+	jsModules []types.ModulesAggregator
 
 	// Versions
 	protocol uint64
@@ -160,8 +160,8 @@ func (c *Console) Prepare() error {
 	return nil
 }
 
-// AddJSModules adds javascript modules
-func (c *Console) AddJSModules(modules ...types.JSModule) {
+// AddModulesAggregators adds javascript modules
+func (c *Console) AddModulesAggregators(modules ...types.ModulesAggregator) {
 	c.jsModules = append(c.jsModules, modules...)
 }
 

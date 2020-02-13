@@ -1,4 +1,4 @@
-package jsmodules
+package modules
 
 import (
 	"fmt"
@@ -29,29 +29,29 @@ func NewChainModule(vm *otto.Otto, service types.Service, keepers types.Keepers)
 	return &ChainModule{vm: vm, service: service, keepers: keepers}
 }
 
-func (m *ChainModule) globals() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{}
+func (m *ChainModule) globals() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{}
 }
 
 // funcs exposed by the module
-func (m *ChainModule) funcs() []*types.JSModuleFunc {
-	return []*types.JSModuleFunc{
-		&types.JSModuleFunc{
+func (m *ChainModule) funcs() []*types.ModulesAggregatorFunc {
+	return []*types.ModulesAggregatorFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getBlock",
 			Value:       m.getBlock,
 			Description: "Send the native coin from an account to a destination account",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getCurrentHeight",
 			Value:       m.getCurrentHeight,
 			Description: "Get the current block height",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getBlockInfo",
 			Value:       m.getBlockInfo,
 			Description: "Get summary block information of a given height",
 		},
-		&types.JSModuleFunc{
+		&types.ModulesAggregatorFunc{
 			Name:        "getValidators",
 			Value:       m.getValidators,
 			Description: "Get validators at a given height",

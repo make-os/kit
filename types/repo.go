@@ -17,6 +17,11 @@ import (
 	"gopkg.in/src-d/go-git.v4/storage"
 )
 
+// Constants
+const (
+	RepoObjectModule = "repo-object"
+)
+
 // BareRepo represents a local git repository on disk
 type BareRepo interface {
 
@@ -182,10 +187,6 @@ type RepoManager interface {
 	// options: Allows the caller to configure how and what state are gathered
 	GetRepoState(target BareRepo, options ...KVOption) (BareRepoState, error)
 
-	// Revert reverts the repository from its current state to the previous state.
-	Revert(target BareRepo, prevState BareRepoState,
-		options ...KVOption) (*Changes, error)
-
 	// GetPGPPubKeyGetter returns the gpg getter function for finding GPG public
 	// keys by their ID
 	GetPGPPubKeyGetter() PGPPubKeyGetter
@@ -213,6 +214,9 @@ type RepoManager interface {
 
 	// SetPGPPubKeyGetter sets the PGP public key query function
 	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
+
+	// SetModulesAgg sets the modules aggregator
+	SetModulesAgg(agg ModulesAggregator)
 
 	// GetPruner returns the repo pruner
 	GetPruner() Pruner
@@ -371,7 +375,6 @@ type PushedReference struct {
 	Nonce              uint64   `json:"nonce" msgpack:"nonce"`     // The next repo nonce of the reference
 	Objects            []string `json:"objects" msgpack:"objects"` // A list of objects pushed to the reference
 	Delete             bool     `json:"delete" msgpack:"delete"`   // Delete indicates that the reference should be deleted from the repo
-	Merge              string   `json:"merge" msgpack:"merge"`     // Describes a branch to merge into the reference
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -382,8 +385,7 @@ func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
 		pr.NewHash,
 		pr.Nonce,
 		pr.Objects,
-		pr.Delete,
-		pr.Merge)
+		pr.Delete)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -394,8 +396,7 @@ func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&pr.NewHash,
 		&pr.Nonce,
 		&pr.Objects,
-		&pr.Delete,
-		&pr.Merge)
+		&pr.Delete)
 }
 
 // PushedReferences represents a collection of pushed references

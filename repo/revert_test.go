@@ -60,7 +60,7 @@ var _ = Describe("Revert", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".Revert (head references)", func() {
+	Describe(".revert (head references)", func() {
 		var prevState types.BareRepoState
 
 		When("a repo has 1 ref and 4 commits; revert the 4th commit", func() {
@@ -80,7 +80,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			Specify("that current state equal previous state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
@@ -102,7 +102,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			Specify("that current state equal previous state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
@@ -126,7 +126,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should return err='exec failed: hard reset failed'", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("exec failed: reference update failed"))
 			})
@@ -144,7 +144,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should return err=nil and only 1 reference should exist and current state equal previous state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				numRefs, _ := script.ExecInDir("git show-ref --heads", path).CountLines()
 				Expect(numRefs).To(Equal(1))
@@ -166,7 +166,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should return err=nil and only 2 references should exist and current state equal previous state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				numRefs, _ := script.ExecInDir("git show-ref --heads", path).CountLines()
 				Expect(numRefs).To(Equal(2))
@@ -194,7 +194,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should return err=nil and only 2 references should exist and current state equal previous state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				numRefs, _ := script.ExecInDir("git show-ref --heads", path).CountLines()
 				Expect(numRefs).To(Equal(4))
@@ -204,7 +204,7 @@ var _ = Describe("Revert", func() {
 		})
 	})
 
-	Describe(".Revert (annotated tags)", func() {
+	Describe(".revert (annotated tags)", func() {
 		var path string
 		var prevState types.BareRepoState
 
@@ -223,7 +223,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should remove the new tag and old state should equal current state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
@@ -241,7 +241,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should remove the new tags and old state should equal current state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
@@ -257,7 +257,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should update the reference value of the tag to the old value and old state should equal current state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
@@ -273,7 +273,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should update the reference value of the tag to the old value and old state should equal current state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
@@ -291,7 +291,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should update the reference value of the tags to their old value and old state should equal current state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
@@ -307,7 +307,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should reset the tag value to the old tag value and old state should equal current state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
@@ -315,7 +315,7 @@ var _ = Describe("Revert", func() {
 		})
 	})
 
-	Describe(".Revert (notes)", func() {
+	Describe(".revert (notes)", func() {
 		var path string
 		var prevState types.BareRepoState
 
@@ -334,7 +334,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should remove the new note reference and old state should equal current state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
@@ -350,7 +350,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should reset the note reference to the previous value and old state should equal current state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
@@ -366,7 +366,7 @@ var _ = Describe("Revert", func() {
 			})
 
 			It("should reset the note reference to the initial value and old state should equal current state", func() {
-				_, err := repoMgr.Revert(repo, prevState)
+				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
 				curState, _ := repoMgr.GetRepoState(repo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))

@@ -40,7 +40,7 @@ var consoleCmd = &cobra.Command{
 			})
 
 			// Add JS module
-			console.AddJSModules(n.GetJSModule())
+			console.AddModulesAggregators(n.GetModulesAggregator())
 
 			// Run the console
 			go func() {
