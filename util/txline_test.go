@@ -127,25 +127,25 @@ var _ = Describe("TxLine", func() {
 				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, merge"
 				_, err := ParseTxLine(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("target branch to merge is required"))
+				Expect(err).To(MatchError("merge proposal id is required"))
 			})
 		})
 
 		When("txline contains a merge directive with invalid value format", func() {
 			It("should return err about missing value", func() {
-				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, merge=repo&:branch"
+				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, merge=abc12"
 				_, err := ParseTxLine(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("target branch format is not valid"))
+				Expect(err).To(MatchError("merge proposal id format is not valid"))
 			})
 		})
 
 		When("txline contains a merge directive with valid value", func() {
 			It("should return no err and set the Merge field to the value", func() {
-				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, merge=repo:branch"
+				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, merge=122"
 				txline, err := ParseTxLine(str)
 				Expect(err).To(BeNil())
-				Expect(txline.Merge).To(Equal("repo:branch"))
+				Expect(txline.MergeProposalID).To(Equal("122"))
 			})
 		})
 	})

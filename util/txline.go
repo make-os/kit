@@ -37,12 +37,12 @@ func RemoveTxLine(msg string) string {
 // TxLine represents transaction information usually included in commits, notes
 // and tag objects
 type TxLine struct {
-	Fee       String // Network fee to be paid for update to the target ref
-	Nonce     uint64 // Nonce of the account paying the network fee and signing the update.
-	PubKeyID  string // The GPG public key ID of the reference updater.
-	Signature string // The signature of the update (only used in note signing for now)
-	DeleteRef bool   // A directive to delete the current/pushed reference.
-	Merge     string // A directive to merge the given branch into the target branch
+	Fee             String // Network fee to be paid for update to the target ref
+	Nonce           uint64 // Nonce of the account paying the network fee and signing the update.
+	PubKeyID        string // The GPG public key ID of the reference updater.
+	Signature       string // The signature of the update (only used in note signing for now)
+	DeleteRef       bool   // A directive to delete the current/pushed reference.
+	MergeProposalID string // A directive to handle a pushed branch based on the constraints defined in a merge proposal
 }
 
 // GetNonceString returns the nonce as a string
@@ -137,12 +137,12 @@ func ParseTxLine(msg string) (*TxLine, error) {
 
 		if kvParts[0] == "merge" {
 			if len(kvParts) == 1 || kvParts[1] == "" {
-				return nil, fmt.Errorf("target branch to merge is required")
+				return nil, fmt.Errorf("merge proposal id is required")
 			}
-			if !regexp.MustCompile("^[a-zA-Z0-9_:-]+$").MatchString(kvParts[1]) {
-				return nil, fmt.Errorf("target branch format is not valid")
+			if !regexp.MustCompile("^[0-9]+$").MatchString(kvParts[1]) {
+				return nil, fmt.Errorf("merge proposal id format is not valid")
 			}
-			txLine.Merge = kvParts[1]
+			txLine.MergeProposalID = kvParts[1]
 		}
 	}
 
