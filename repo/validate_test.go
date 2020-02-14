@@ -434,7 +434,7 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
-	FDescribe(".checkMergeCompliance", func() {
+	Describe(".checkMergeCompliance", func() {
 		When("pushed reference is not a branch", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)

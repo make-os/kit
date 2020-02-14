@@ -509,6 +509,14 @@ func CheckTxRepoProposalUpsertOwner(tx *types.TxRepoProposalUpsertOwner, index i
 		return err
 	}
 
+	if tx.ProposalID == "" {
+		return feI(index, "id", "proposal id is required")
+	} else if !govalidator.IsNumeric(tx.ProposalID) {
+		return feI(index, "id", "proposal id is not valid")
+	} else if len(tx.ProposalID) > 8 {
+		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
+	}
+
 	if err := checkValue(&types.TxValue{Value: tx.Value}, index); err != nil {
 		return err
 	} else if tx.Value.Decimal().
@@ -593,6 +601,8 @@ func CheckTxRepoProposalSendFee(tx *types.TxRepoProposalFeeSend, index int) erro
 		return feI(index, "id", "proposal id is required")
 	} else if !govalidator.IsNumeric(tx.ProposalID) {
 		return feI(index, "id", "proposal id is not valid")
+	} else if len(tx.ProposalID) > 8 {
+		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
 	}
 
 	if err := checkValue(&types.TxValue{Value: tx.Value}, index); err != nil {
@@ -620,6 +630,14 @@ func CheckTxRepoProposalMergeRequest(tx *types.TxRepoProposalMergeRequest, index
 		return err
 	}
 
+	if tx.ProposalID == "" {
+		return feI(index, "id", "proposal id is required")
+	} else if !govalidator.IsNumeric(tx.ProposalID) {
+		return feI(index, "id", "proposal id is not valid")
+	} else if len(tx.ProposalID) > 8 {
+		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
+	}
+
 	if err := checkValue(&types.TxValue{Value: tx.Value}, index); err != nil {
 		return err
 	} else if tx.Value.Decimal().
@@ -629,23 +647,23 @@ func CheckTxRepoProposalMergeRequest(tx *types.TxRepoProposalMergeRequest, index
 	}
 
 	if tx.BaseBranch == "" {
-		return feI(index, "id", "base branch name is required")
+		return feI(index, "base", "base branch name is required")
 	}
 
 	if tx.BaseBranchHash == "" {
-		return feI(index, "id", "base branch hash is required")
+		return feI(index, "baseHash", "base branch hash is required")
 	} else if len(tx.BaseBranchHash) != 40 {
-		return feI(index, "id", "base branch hash is not valid")
+		return feI(index, "baseHash", "base branch hash is not valid")
 	}
 
 	if tx.TargetBranch == "" {
-		return feI(index, "id", "target branch name is required")
+		return feI(index, "target", "target branch name is required")
 	}
 
 	if tx.TargetBranchHash == "" {
-		return feI(index, "id", "target branch hash is required")
+		return feI(index, "targetHash", "target branch hash is required")
 	} else if len(tx.TargetBranchHash) != 40 {
-		return feI(index, "id", "target branch hash is not valid")
+		return feI(index, "targetHash", "target branch hash is not valid")
 	}
 
 	if err := checkCommon(tx, index); err != nil {
@@ -667,6 +685,14 @@ func CheckTxRepoProposalUpdate(tx *types.TxRepoProposalUpdate, index int) error 
 		v.By(validObjectNameRule("name", index)),
 	); err != nil {
 		return err
+	}
+
+	if tx.ProposalID == "" {
+		return feI(index, "id", "proposal id is required")
+	} else if !govalidator.IsNumeric(tx.ProposalID) {
+		return feI(index, "id", "proposal id is not valid")
+	} else if len(tx.ProposalID) > 8 {
+		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
 	}
 
 	if err := checkValue(&types.TxValue{Value: tx.Value}, index); err != nil {

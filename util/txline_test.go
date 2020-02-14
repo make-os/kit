@@ -124,7 +124,7 @@ var _ = Describe("TxLine", func() {
 
 		When("txline contains a merge directive with no value", func() {
 			It("should return err about missing value", func() {
-				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, merge"
+				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, mergeId"
 				_, err := ParseTxLine(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("merge proposal id is required"))
@@ -133,16 +133,25 @@ var _ = Describe("TxLine", func() {
 
 		When("txline contains a merge directive with invalid value format", func() {
 			It("should return err about missing value", func() {
-				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, merge=abc12"
+				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, mergeId=abc12"
 				_, err := ParseTxLine(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("merge proposal id format is not valid"))
 			})
 		})
 
+		When("txline contains a merge directive with length greater than 16", func() {
+			It("should return err about missing value", func() {
+				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, mergeId=123456789"
+				_, err := ParseTxLine(str)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("merge id limit of 8 bytes exceeded"))
+			})
+		})
+
 		When("txline contains a merge directive with valid value", func() {
 			It("should return no err and set the Merge field to the value", func() {
-				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, merge=122"
+				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, mergeId=122"
 				txline, err := ParseTxLine(str)
 				Expect(err).To(BeNil())
 				Expect(txline.MergeProposalID).To(Equal("122"))

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	s "github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/storage/tree"
 
@@ -442,8 +443,14 @@ func SignCommitCmd(
 	signingKey string,
 	amendRecent,
 	deleteRefAction bool,
-	mergeId string,
+	mergeID string,
 	rpcClient *client.RPCClient) error {
+
+	if !govalidator.IsNumeric(mergeID) {
+		return fmt.Errorf("merge id must be numeric")
+	} else if len(mergeID) > 8 {
+		return fmt.Errorf("merge id limit of 8 bytes exceeded")
+	}
 
 	repo, err := getCurrentWDRepo(gitBinDir)
 	if err != nil {
@@ -480,8 +487,8 @@ func SignCommitCmd(
 	if deleteRefAction {
 		directives = append(directives, "deleteRef")
 	}
-	if mergeId != "" {
-		directives = append(directives, fmt.Sprintf("mergeId=%s", mergeId))
+	if mergeID != "" {
+		directives = append(directives, fmt.Sprintf("mergeID=%s", mergeID))
 	}
 
 	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil, directives...)

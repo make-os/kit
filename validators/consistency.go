@@ -370,6 +370,10 @@ func checkProposalCommonConsistency(
 		return nil, feI(index, "name", "repo not found")
 	}
 
+	if repo.Proposals.Get(txProposal.ProposalID) != nil {
+		return nil, feI(index, "id", "proposal id has been used, choose another")
+	}
+
 	repoPropFee := decimal.NewFromFloat(repo.Config.Governace.ProposalFee)
 	if repoPropFee.Equal(decimal.Zero) &&
 		!txProposal.Value.Decimal().Equal(decimal.Zero) {

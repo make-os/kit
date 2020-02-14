@@ -192,8 +192,9 @@ type TxValue struct {
 
 // TxProposalCommon describes proposal fields
 type TxProposalCommon struct {
-	RepoName string      `json:"name" msgpack:"name"`
-	Value    util.String `json:"value" msgpack:"value"`
+	RepoName   string      `json:"name" msgpack:"name"`
+	Value      util.String `json:"value" msgpack:"value"`
+	ProposalID string      `json:"id" msgpack:"id"`
 }
 
 // DecodeTx takes a potential tx byte size and returns the transaction object

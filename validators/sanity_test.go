@@ -1268,6 +1268,7 @@ var _ = Describe("TxValidator", func() {
 			tx = types.NewBareRepoProposalUpsertOwner()
 			tx.Timestamp = time.Now().Unix()
 			tx.Value = "11"
+			tx.ProposalID = "123"
 		})
 
 		It("should return error when repo name is not provided", func() {
@@ -1281,6 +1282,30 @@ var _ = Describe("TxValidator", func() {
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+		})
+
+		It("should return error when proposal id is unset", func() {
+			tx.RepoName = "good-repo"
+			tx.ProposalID = ""
+			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id is required"))
+		})
+
+		It("should return error when proposal id is not valid", func() {
+			tx.RepoName = "good-repo"
+			tx.ProposalID = "abc123"
+			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
+		})
+
+		It("should return error when proposal id length exceeds max", func() {
+			tx.RepoName = "good-repo"
+			tx.ProposalID = "123456789"
+			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id limit of 8 bytes exceeded"))
 		})
 
 		It("should return error when value is not provided", func() {
@@ -1417,6 +1442,14 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
 		})
 
+		It("should return error when proposal id exceeds max length", func() {
+			tx.RepoName = "repo1"
+			tx.ProposalID = "1234556789"
+			err := validators.CheckTxRepoProposalSendFee(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id limit of 8 bytes exceeded"))
+		})
+
 		It("should return error when value is not provided", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = ""
@@ -1433,6 +1466,7 @@ var _ = Describe("TxValidator", func() {
 		BeforeEach(func() {
 			tx = types.NewBareRepoProposalUpdate()
 			tx.Timestamp = time.Now().Unix()
+			tx.ProposalID = "123"
 		})
 
 		It("should return error when repo name is not provided", func() {
@@ -1446,6 +1480,30 @@ var _ = Describe("TxValidator", func() {
 			err := validators.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+		})
+
+		It("should return error when proposal id is unset", func() {
+			tx.RepoName = "good-repo"
+			tx.ProposalID = ""
+			err := validators.CheckTxRepoProposalUpdate(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id is required"))
+		})
+
+		It("should return error when proposal id is not valid", func() {
+			tx.RepoName = "good-repo"
+			tx.ProposalID = "abc123"
+			err := validators.CheckTxRepoProposalUpdate(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
+		})
+
+		It("should return error when proposal id length exceeds max", func() {
+			tx.RepoName = "good-repo"
+			tx.ProposalID = "123456789"
+			err := validators.CheckTxRepoProposalUpdate(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id limit of 8 bytes exceeded"))
 		})
 
 		It("should return error when value is not provided", func() {
@@ -1472,6 +1530,7 @@ var _ = Describe("TxValidator", func() {
 		BeforeEach(func() {
 			tx = types.NewBareRepoProposalMergeRequest()
 			tx.Timestamp = time.Now().Unix()
+			tx.ProposalID = "123"
 		})
 
 		It("should return error when repo name is not provided", func() {
@@ -1488,6 +1547,30 @@ var _ = Describe("TxValidator", func() {
 				"Only alphanumeric, _ and - characters are allowed"))
 		})
 
+		It("should return error when proposal id is unset", func() {
+			tx.RepoName = "good-repo"
+			tx.ProposalID = ""
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id is required"))
+		})
+
+		It("should return error when proposal id is not valid", func() {
+			tx.RepoName = "good-repo"
+			tx.ProposalID = "abc123"
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
+		})
+
+		It("should return error when proposal id length exceeds max", func() {
+			tx.RepoName = "good-repo"
+			tx.ProposalID = "123456789"
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, error:proposal id limit of 8 bytes exceeded"))
+		})
+
 		It("should return error when value is not provided", func() {
 			tx.RepoName = "repo1"
 			tx.Value = ""
@@ -1500,7 +1583,7 @@ var _ = Describe("TxValidator", func() {
 			tx.RepoName = "repo1"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:base branch name is required"))
+			Expect(err).To(MatchError("field:base, error:base branch name is required"))
 		})
 
 		It("should return error when base branch hash is not provided", func() {
@@ -1508,7 +1591,7 @@ var _ = Describe("TxValidator", func() {
 			tx.BaseBranch = "branch_base"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:base branch hash is required"))
+			Expect(err).To(MatchError("field:baseHash, error:base branch hash is required"))
 		})
 
 		It("should return error when base branch hash is not valid", func() {
@@ -1517,7 +1600,7 @@ var _ = Describe("TxValidator", func() {
 			tx.BaseBranchHash = "invalid"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:base branch hash is not valid"))
+			Expect(err).To(MatchError("field:baseHash, error:base branch hash is not valid"))
 		})
 
 		It("should return error when target branch is not provided", func() {
@@ -1526,7 +1609,7 @@ var _ = Describe("TxValidator", func() {
 			tx.BaseBranchHash = util.RandString(40)
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:target branch name is required"))
+			Expect(err).To(MatchError("field:target, error:target branch name is required"))
 		})
 
 		It("should return error when target branch hash is not provided", func() {
@@ -1536,7 +1619,7 @@ var _ = Describe("TxValidator", func() {
 			tx.TargetBranch = "branch_base"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:target branch hash is required"))
+			Expect(err).To(MatchError("field:targetHash, error:target branch hash is required"))
 		})
 
 		It("should return error when target branch hash is not valid", func() {
@@ -1547,7 +1630,7 @@ var _ = Describe("TxValidator", func() {
 			tx.TargetBranchHash = "invalid"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:target branch hash is not valid"))
+			Expect(err).To(MatchError("field:targetHash, error:target branch hash is not valid"))
 		})
 	})
 })

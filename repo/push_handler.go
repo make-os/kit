@@ -257,7 +257,7 @@ func (h *PushHandler) handleReference(ref string) (*util.TxLine, []error) {
 
 	// So, reference update is valid, next we need to ensure the updates
 	// is compliant with the target merge proposal, if a merge proposal id is specified
-	if txLine.MergeProposalID != "" {
+	if err == nil && txLine.MergeProposalID != "" {
 		if err := checkMergeCompliance(h.repo, change, oldRef,
 			txLine.MergeProposalID); err != nil {
 			errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))

@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/makeos/mosdef/crypto"
@@ -130,7 +129,8 @@ func applyProposalRepoUpdate(
 // CONTRACT: Sender's public key must be valid
 func (t *Transaction) execRepoUpsertOwner(
 	senderPubKey util.Bytes32,
-	repoName string,
+	repoName,
+	proposalID,
 	addresses string,
 	veto bool,
 	proposalFee util.String,
@@ -143,7 +143,7 @@ func (t *Transaction) execRepoUpsertOwner(
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
-	proposal := makeProposal(spk, repo, proposalFee, chainHeight)
+	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = types.ProposalActionAddOwner
 	proposal.ActionData = map[string]interface{}{
 		types.ProposalActionDataAddresses: addresses,
@@ -187,6 +187,7 @@ update:
 func (t *Transaction) execRepoProposalUpdate(
 	senderPubKey util.Bytes32,
 	repoName string,
+	proposalID string,
 	config map[string]interface{},
 	proposalFee util.String,
 	fee util.String,
@@ -198,7 +199,7 @@ func (t *Transaction) execRepoProposalUpdate(
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
-	proposal := makeProposal(spk, repo, proposalFee, chainHeight)
+	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = types.ProposalActionRepoUpdate
 	proposal.ActionData[types.ProposalActionDataConfig] = config
 
@@ -276,10 +277,12 @@ func (t *Transaction) execRepoProposalSendFee(
 func makeProposal(
 	spk *crypto.PubKey,
 	repo *types.Repository,
+	id string,
 	proposalFee util.String,
 	chainHeight uint64) *types.RepoProposal {
 
 	proposal := &types.RepoProposal{
+		ID:         id,
 		Config:     repo.Config.Clone().Governace,
 		Creator:    spk.Addr().String(),
 		Height:     chainHeight,
@@ -306,7 +309,6 @@ func makeProposal(
 	}
 
 	// Add the proposal to the repo
-	proposal.ID = fmt.Sprintf("%d", len(repo.Proposals)+1)
 	repo.Proposals.Add(proposal.ID, proposal)
 
 	return proposal
@@ -328,6 +330,7 @@ func makeProposal(
 func (t *Transaction) execRepoProposalMergeRequest(
 	senderPubKey util.Bytes32,
 	repoName,
+	proposalID,
 	baseBranch,
 	baseBranchHash,
 	targetBranch,
@@ -342,7 +345,7 @@ func (t *Transaction) execRepoProposalMergeRequest(
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
-	proposal := makeProposal(spk, repo, proposalFee, chainHeight)
+	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = types.ProposalActionMergeRequest
 	proposal.ActionData[types.ProposalActionDataMergeRequest] = map[string]string{
 		"base":       baseBranch,

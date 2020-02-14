@@ -172,6 +172,11 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 		tx.RepoName = repoName.(string)
 	}
 
+	if id, ok := params["id"]; ok {
+		defer castPanic("id")
+		tx.ProposalID = id.(string)
+	}
+
 	if ownerAddrs, ok := params["addresses"]; ok {
 		defer castPanic("addresses")
 		tx.Addresses = ownerAddrs.(string)
@@ -322,6 +327,11 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 		tx.RepoName = repoName.(string)
 	}
 
+	if id, ok := params["id"]; ok {
+		defer castPanic("id")
+		tx.ProposalID = id.(string)
+	}
+
 	if value, ok := params["value"]; ok {
 		defer castPanic("value")
 		tx.Value = util.String(value.(string))
@@ -416,6 +426,11 @@ func (m *RepoModule) CreateMergeRequest(
 	if repoName, ok := params["name"]; ok {
 		defer castPanic("name")
 		tx.RepoName = repoName.(string)
+	}
+
+	if id, ok := params["id"]; ok {
+		defer castPanic("id")
+		tx.ProposalID = id.(string)
 	}
 
 	if base, ok := params["base"]; ok {

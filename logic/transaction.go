@@ -107,6 +107,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.execRepoUpsertOwner(
 			spk,
 			o.RepoName,
+			o.ProposalID,
 			o.Addresses,
 			o.Veto,
 			o.Value,
@@ -135,6 +136,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.execRepoProposalUpdate(
 			spk,
 			o.RepoName,
+			o.ProposalID,
 			o.Config,
 			o.Value,
 			o.Fee,
@@ -144,6 +146,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.execRepoProposalMergeRequest(
 			spk,
 			o.RepoName,
+			o.ProposalID,
 			o.BaseBranch,
 			o.BaseBranchHash,
 			o.TargetBranch,

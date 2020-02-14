@@ -565,7 +565,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, repoName, address, false, proposalFee, "1.5", 0)
+				err = txLogic.execRepoUpsertOwner(spk, repoName, "1", address, false, proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -609,7 +609,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, repoName, addresses, false, proposalFee, "1.5", 0)
+				err = txLogic.execRepoUpsertOwner(spk, repoName, "1", addresses, false, proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -656,7 +656,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, repoName, address, false,
+				err = txLogic.execRepoUpsertOwner(spk, repoName, "1", address, false,
 					proposalFee, "1.5", curHeight)
 				Expect(err).To(BeNil())
 			})
@@ -704,7 +704,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, repoName, address, false, proposalFee, "1.5", currentHeight)
+				err = txLogic.execRepoUpsertOwner(spk, repoName, "1", address, false, proposalFee, "1.5", currentHeight)
 				Expect(err).To(BeNil())
 			})
 
@@ -848,7 +848,7 @@ var _ = Describe("Repo", func() {
 				config := &types.RepoConfig{
 					Governace: &types.RepoConfigGovernance{ProposalDur: 1000},
 				}
-				err = txLogic.execRepoProposalUpdate(spk, repoName, config.ToMap(),
+				err = txLogic.execRepoProposalUpdate(spk, repoName, "1", config.ToMap(),
 					proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
@@ -899,7 +899,7 @@ var _ = Describe("Repo", func() {
 					Governace: &types.RepoConfigGovernance{ProposalDur: 1000},
 				}
 
-				err = txLogic.execRepoProposalUpdate(spk, repoName, config.ToMap(), proposalFee, "1.5", curHeight)
+				err = txLogic.execRepoProposalUpdate(spk, repoName, "1", config.ToMap(), proposalFee, "1.5", curHeight)
 				Expect(err).To(BeNil())
 			})
 
@@ -951,7 +951,7 @@ var _ = Describe("Repo", func() {
 					},
 				}
 
-				err = txLogic.execRepoProposalUpdate(spk, repoName, config.ToMap(),
+				err = txLogic.execRepoProposalUpdate(spk, repoName, "1", config.ToMap(),
 					proposalFee, "1.5", currentHeight)
 				Expect(err).To(BeNil())
 			})
@@ -992,7 +992,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoProposalMergeRequest(spk, repoName,
+				err = txLogic.execRepoProposalMergeRequest(spk, repoName, "1",
 					"base", "baseHash", "target", "targetHash", proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
@@ -1033,7 +1033,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoProposalMergeRequest(spk, repoName,
+				err = txLogic.execRepoProposalMergeRequest(spk, repoName, "1",
 					"base", "baseHash", "target", "targetHash", proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
@@ -1081,7 +1081,7 @@ var _ = Describe("Repo", func() {
 		When("update config object is empty", func() {
 			It("should not change the config", func() {
 				proposal := &types.RepoProposal{ActionData: map[string]interface{}{
-					actionDataConfig: (&types.RepoConfig{}).ToMap(),
+					types.ProposalActionDataConfig: (&types.RepoConfig{}).ToMap(),
 				}}
 				err = applyProposalRepoUpdate(proposal, repo, 0)
 				Expect(err).To(BeNil())
@@ -1092,7 +1092,7 @@ var _ = Describe("Repo", func() {
 		When("update config object is not empty", func() {
 			It("should change the config", func() {
 				proposal := &types.RepoProposal{ActionData: map[string]interface{}{
-					actionDataConfig: (&types.RepoConfig{
+					types.ProposalActionDataConfig: (&types.RepoConfig{
 						Governace: &types.RepoConfigGovernance{
 							ProposalQuorum: 120,
 							ProposalDur:    100,

@@ -21,7 +21,7 @@ func NewBareRepoProposalUpsertOwner() *TxRepoProposalUpsertOwner {
 	return &TxRepoProposalUpsertOwner{
 		TxCommon:         NewBareTxCommon(),
 		TxType:           &TxType{Type: TxTypeRepoProposalUpsertOwner},
-		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: ""},
+		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: "", ProposalID: ""},
 		Addresses:        "",
 		Veto:             false,
 	}
@@ -38,6 +38,7 @@ func (tx *TxRepoProposalUpsertOwner) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.Timestamp,
 		tx.SenderPubKey,
 		tx.RepoName,
+		tx.ProposalID,
 		tx.Addresses,
 		tx.Veto)
 }
@@ -53,6 +54,7 @@ func (tx *TxRepoProposalUpsertOwner) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.Timestamp,
 		&tx.SenderPubKey,
 		&tx.RepoName,
+		&tx.ProposalID,
 		&tx.Addresses,
 		&tx.Veto)
 }

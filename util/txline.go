@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -139,8 +138,11 @@ func ParseTxLine(msg string) (*TxLine, error) {
 			if len(kvParts) == 1 || kvParts[1] == "" {
 				return nil, fmt.Errorf("merge proposal id is required")
 			}
-			if !regexp.MustCompile("^[0-9]+$").MatchString(kvParts[1]) {
+			if !govalidator.IsNumeric(kvParts[1]) {
 				return nil, fmt.Errorf("merge proposal id format is not valid")
+			}
+			if len(kvParts[1]) > 8 {
+				return nil, fmt.Errorf("merge id limit of 8 bytes exceeded")
 			}
 			txLine.MergeProposalID = kvParts[1]
 		}

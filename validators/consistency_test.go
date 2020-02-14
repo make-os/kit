@@ -998,6 +998,29 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
+		When("proposal id has been used", func() {
+			BeforeEach(func() {
+				tx := types.NewBareRepoProposalUpsertOwner()
+				tx.RepoName = "repo1"
+				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.Value = "10"
+				tx.ProposalID = "0001"
+				repo := types.BareRepository()
+				repo.AddOwner("addr", &types.RepoOwner{})
+				repo.Proposals.Add(tx.ProposalID, types.BareRepoProposal())
+
+				bi := &types.BlockInfo{Height: 1}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
+				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:id, error:proposal id has been used, choose another"))
+			})
+		})
+
 		When("repo proposal fee is zero but tx include a proposal fee", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalUpsertOwner()
