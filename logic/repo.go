@@ -11,13 +11,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-const (
-	actionDataAddresses    = "addresses"
-	actionDataVeto         = "veto"
-	actionDataConfig       = "config"
-	actionDataMergeRequest = "merge-request"
-)
-
 // execRepoCreate processes a TxTypeRepoCreate transaction, which creates a git
 // repository.
 //
@@ -90,8 +83,8 @@ func applyProposalAddOwner(
 	chainHeight uint64) error {
 
 	// Get the action data
-	targetAddrs := proposal.GetActionData()[actionDataAddresses].(string)
-	veto := proposal.GetActionData()[actionDataVeto].(bool)
+	targetAddrs := proposal.GetActionData()[types.ProposalActionDataAddresses].(string)
+	veto := proposal.GetActionData()[types.ProposalActionDataVeto].(bool)
 
 	// Add new repo owner iif the target address does not
 	// already exist as an owner. If it exists, just update the fields.
@@ -118,7 +111,7 @@ func applyProposalRepoUpdate(
 	proposal types.Proposal,
 	repo *types.Repository,
 	chainHeight uint64) error {
-	cfgUpd := proposal.GetActionData()[actionDataConfig].(map[string]interface{})
+	cfgUpd := proposal.GetActionData()[types.ProposalActionDataConfig].(map[string]interface{})
 	repo.Config.MergeMap(cfgUpd)
 	return nil
 }
@@ -153,8 +146,8 @@ func (t *Transaction) execRepoUpsertOwner(
 	proposal := makeProposal(spk, repo, proposalFee, chainHeight)
 	proposal.Action = types.ProposalActionAddOwner
 	proposal.ActionData = map[string]interface{}{
-		actionDataAddresses: addresses,
-		actionDataVeto:      veto,
+		types.ProposalActionDataAddresses: addresses,
+		types.ProposalActionDataVeto:      veto,
 	}
 
 	// Deduct network fee + proposal fee from sender
@@ -207,7 +200,7 @@ func (t *Transaction) execRepoProposalUpdate(
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalFee, chainHeight)
 	proposal.Action = types.ProposalActionRepoUpdate
-	proposal.ActionData[actionDataConfig] = config
+	proposal.ActionData[types.ProposalActionDataConfig] = config
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
@@ -351,7 +344,7 @@ func (t *Transaction) execRepoProposalMergeRequest(
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalFee, chainHeight)
 	proposal.Action = types.ProposalActionMergeRequest
-	proposal.ActionData[actionDataMergeRequest] = map[string]string{
+	proposal.ActionData[types.ProposalActionDataMergeRequest] = map[string]string{
 		"base":       baseBranch,
 		"baseHash":   baseBranchHash,
 		"target":     targetBranch,

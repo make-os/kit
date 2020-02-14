@@ -255,6 +255,15 @@ func (h *PushHandler) handleReference(ref string) (*util.TxLine, []error) {
 		errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
 	}
 
+	// So, reference update is valid, next we need to ensure the updates
+	// is compliant with the target merge proposal, if a merge proposal id is specified
+	if txLine.MergeProposalID != "" {
+		if err := checkMergeCompliance(h.repo, change, oldRef,
+			txLine.MergeProposalID); err != nil {
+			errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
+		}
+	}
+
 	// As with all push operations, we must revert the changes made to the
 	// repository since we do not consider them final. Here we attempt to revert
 	// the repository to the old reference state. We passed the changes as an

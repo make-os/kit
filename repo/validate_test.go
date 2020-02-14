@@ -434,6 +434,149 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
+	FDescribe(".checkMergeCompliance", func() {
+		When("pushed reference is not a branch", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				change := &types.ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
+				err = checkMergeCompliance(repo, change, oldRef, "0001")
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("merge compliance error: pushed reference must be a branch"))
+			})
+		})
+
+		When("target merge proposal does not exist", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().State().Return(types.BareRepository())
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
+				err = checkMergeCompliance(repo, change, oldRef, "0001")
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("merge compliance error: merge proposal (0001) not found"))
+			})
+		})
+
+		When("target merge proposal outcome is not 'accepted'", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				repoState := types.BareRepository()
+				repoState.Proposals.Add("0001", types.BareRepoProposal())
+				repo.EXPECT().State().Return(repoState)
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
+				err = checkMergeCompliance(repo, change, oldRef, "0001")
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("merge compliance error: merge proposal (0001) has not been accepted"))
+			})
+		})
+
+		When("target merge proposal's base name does not match the pushed reference name", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				repoState := types.BareRepository()
+				prop := types.BareRepoProposal()
+				prop.Outcome = types.ProposalOutcomeAccepted
+				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]string{
+					"base": "release",
+				}
+				repoState.Proposals.Add("0001", prop)
+				repo.EXPECT().State().Return(repoState)
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
+				err = checkMergeCompliance(repo, change, oldRef, "0001")
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("merge compliance error: pushed reference name and " +
+					"merge proposal base reference name must match"))
+			})
+		})
+
+		When("target merge proposal's base hash does not match the pushed reference current hash", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				repoState := types.BareRepository()
+				prop := types.BareRepoProposal()
+				prop.Outcome = types.ProposalOutcomeAccepted
+				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]string{
+					"base":     "master",
+					"baseHash": "my_base_master_hash",
+				}
+				repoState.Proposals.Add("0001", prop)
+				repo.EXPECT().State().Return(repoState)
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/master", Data: "current_master_hash"}
+				err = checkMergeCompliance(repo, change, oldRef, "0001")
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("merge compliance error: pushed reference current " +
+					"hash and merge proposal base hash must match"))
+			})
+		})
+
+		When("target merge proposal's target hash does not match the pushed reference new/updated hash", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				repoState := types.BareRepository()
+				prop := types.BareRepoProposal()
+				prop.Outcome = types.ProposalOutcomeAccepted
+				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]string{
+					"base":       "master",
+					"baseHash":   "current_master_hash",
+					"targetHash": "target_hash",
+				}
+				repoState.Proposals.Add("0001", prop)
+				repo.EXPECT().State().Return(repoState)
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "updated_hash"}}
+				oldRef := &Obj{Name: "refs/heads/master", Data: "current_master_hash"}
+				err = checkMergeCompliance(repo, change, oldRef, "0001")
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("merge compliance error: new base reference hash" +
+					" and merge proposal target hash must match"))
+			})
+		})
+
+		When("target merge proposal's target hash matches the pushed reference new/updated hash", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				repoState := types.BareRepository()
+				prop := types.BareRepoProposal()
+				prop.Outcome = types.ProposalOutcomeAccepted
+				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]string{
+					"base":       "master",
+					"baseHash":   "current_master_hash",
+					"targetHash": "updated_hash",
+				}
+				repoState.Proposals.Add("0001", prop)
+				repo.EXPECT().State().Return(repoState)
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "updated_hash"}}
+				oldRef := &Obj{Name: "refs/heads/master", Data: "current_master_hash"}
+				err = checkMergeCompliance(repo, change, oldRef, "0001")
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+		})
+	})
+
 	Describe(".validateChange", func() {
 		var err error
 

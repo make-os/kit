@@ -8,6 +8,14 @@ import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
+// Constants: Proposal actions
+const (
+	ProposalActionDataAddresses    = "addresses"
+	ProposalActionDataVeto         = "veto"
+	ProposalActionDataConfig       = "config"
+	ProposalActionDataMergeRequest = "merge-request"
+)
+
 // BlockValidators contains validators of a block
 type BlockValidators map[util.Bytes32]*Validator
 

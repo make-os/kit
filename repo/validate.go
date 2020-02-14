@@ -228,6 +228,60 @@ func checkAnnotatedTag(
 	return checkCommit(commit, true, repo, gpgPubKeyGetter)
 }
 
+// checkMergeCompliance checks whether push to a branch satisfied
+// an accepted merge proposal
+func checkMergeCompliance(
+	repo types.BareRepo,
+	change *types.ItemChange,
+	oldRef types.Item,
+	mergeProposalID string) error {
+
+	ref := plumbing.ReferenceName(change.Item.GetName())
+	if !ref.IsBranch() {
+		return fmt.Errorf("merge compliance error: pushed reference must be a branch")
+	}
+
+	// Get the proposal
+	prop := repo.State().Proposals.Get(mergeProposalID)
+	if prop == nil {
+		return fmt.Errorf("merge compliance error: "+
+			"merge proposal (%s) not found", mergeProposalID)
+	}
+
+	// Check whether the merge proposal has been accepted
+	if prop.Outcome != types.ProposalOutcomeAccepted {
+		return fmt.Errorf("merge compliance error: "+
+			"merge proposal (%s) has not been accepted", mergeProposalID)
+	}
+
+	actionKey := types.ProposalActionDataMergeRequest
+
+	// Ensure the proposal's base name matches the pushed reference
+	base := prop.ActionData[actionKey].(map[string]string)["base"]
+	if ref.Short() != base {
+		return fmt.Errorf("merge compliance error: pushed reference name and " +
+			"merge proposal base reference name must match")
+	}
+
+	// Ensure the proposals base branch hash matches the hash of the current
+	// reference before this current push/change.
+	baseHash := prop.ActionData[actionKey].(map[string]string)["baseHash"]
+	if baseHash != oldRef.GetData() {
+		return fmt.Errorf("merge compliance error: pushed reference current hash and " +
+			"merge proposal base hash must match")
+	}
+
+	// Ensure the proposal's target branch hash matches the hash of the current
+	// reference after this current push/change.
+	targetHash := prop.ActionData[actionKey].(map[string]string)["targetHash"]
+	if targetHash != change.Item.GetData() {
+		return fmt.Errorf("merge compliance error: new base reference hash and " +
+			"merge proposal target hash must match")
+	}
+
+	return nil
+}
+
 // checkCommit checks a commit txline and verifies its signature
 // commit: The target commit object
 // isReferenced: Whether the commit was referenced somewhere (e.g in a tag)
