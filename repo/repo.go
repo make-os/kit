@@ -249,6 +249,14 @@ func (r *Repo) GetName() string {
 	return r.name
 }
 
+// UpdateRecentCommitMsg updates the recent commit message.
+// msg: The commit message which is passed to the command's stdin.
+// signingKey: The signing key
+// env: Optional environment variables to pass to the command.
+func (r *Repo) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
+	return r.ops.UpdateRecentCommitMsg(msg, signingKey, env...)
+}
+
 // ObjectExist checks whether an object exist in the target repository
 func (r *Repo) ObjectExist(objHash string) bool {
 	_, err := r.Object(plumbing.AnyObject, plumbing.NewHash(objHash))
@@ -432,8 +440,9 @@ func SignCommitCmd(
 	txFee,
 	txNonce,
 	signingKey string,
+	amendRecent,
 	deleteRefAction bool,
-	mergePath string,
+	mergeId string,
 	rpcClient *client.RPCClient) error {
 
 	repo, err := getCurrentWDRepo(gitBinDir)
@@ -458,8 +467,9 @@ func SignCommitCmd(
 	// Get the public key network ID
 	pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
-	// If rpc client is provided, get nonce using the client
-	if rpcClient != nil {
+	// If nonce is not provided and rpc client is set,
+	// attempt to get nonce using the client
+	if txNonce == "" && rpcClient != nil {
 		txNonce, err = getNextNonceFromClient(pkID, rpcClient)
 		if err != nil {
 			return err
@@ -470,12 +480,37 @@ func SignCommitCmd(
 	if deleteRefAction {
 		directives = append(directives, "deleteRef")
 	}
-	if mergePath != "" {
-		directives = append(directives, fmt.Sprintf("mergeId=%s", mergePath))
+	if mergeId != "" {
+		directives = append(directives, fmt.Sprintf("mergeId=%s", mergeId))
 	}
 
 	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil, directives...)
-	if err := repo.MakeSignableCommit(string(txLine), signingKey); err != nil {
+
+	// Create a new commit if recent commit amendment is not required
+	if !amendRecent {
+		if err := repo.MakeSignableCommit(string(txLine), signingKey); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// Otherwise, amend the recent commit.
+	// Get recent commit hash of the current branch.
+	hash, err := repo.GetRecentCommit()
+	if err != nil {
+		if err == ErrNoCommits {
+			return errors.New("no commits have been created yet")
+		}
+		return err
+	}
+
+	// Remove any existing txline and append the new one
+	commit, _ := repo.CommitObject(plumbing.NewHash(hash))
+	msg := util.RemoveTxLine(commit.Message)
+	msg += "\n\n" + txLine
+
+	// Update the recent commit message
+	if err = repo.UpdateRecentCommitMsg(msg, signingKey); err != nil {
 		return err
 	}
 

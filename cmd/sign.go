@@ -59,9 +59,7 @@ var signCmd = &cobra.Command{
 	Use:   "sign",
 	Short: "Add transaction information and sign git commits, tags and notes",
 	Long:  `Add transaction information and sign git commits, tags and notes`,
-	Run: func(cmd *cobra.Command, args []string) {
-
-	},
+	Run:   func(cmd *cobra.Command, args []string) {},
 }
 
 var signCommitCmd = &cobra.Command{
@@ -73,7 +71,8 @@ var signCommitCmd = &cobra.Command{
 		nonce, _ := cmd.Flags().GetString("nonce")
 		sk, _ := cmd.Flags().GetString("signingKey")
 		delete, _ := cmd.Flags().GetBool("delete")
-		mergeID, _ := cmd.Flags().GetString("mergeId")
+		mergeID, _ := cmd.Flags().GetString("merge-id")
+		amend, _ := cmd.Flags().GetBool("amend")
 
 		var client *client.RPCClient
 		var err error
@@ -85,7 +84,7 @@ var signCommitCmd = &cobra.Command{
 		}
 
 		if err := repo.SignCommitCmd(cfg.Node.GitBinPath, fee,
-			nonce, sk, delete, mergeID, client); err != nil {
+			nonce, sk, amend, delete, mergeID, client); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -170,4 +169,5 @@ func initCommit() {
 	pf.String("rpc.https", "", "Force the client to use https:// protocol")
 	pf.BoolP("delete", "d", false, "Add a directive to delete the target reference")
 	signCommitCmd.Flags().StringP("merge-id", "m", "", "Provide a merge proposal ID for merge fulfilment")
+	signCommitCmd.Flags().BoolP("amend", "a", false, "Amend and sign the recent comment instead of a new one")
 }

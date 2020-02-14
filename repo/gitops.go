@@ -273,6 +273,25 @@ func (g *GitOps) CreateBlob(content string) (string, error) {
 	return strings.TrimSpace(out.String()), nil
 }
 
+// UpdateRecentCommitMsg updates the recent commit message
+// msg: The commit message which is passed to the command's stdin.
+// signingKey: The signing key
+// env: Optional environment variables to pass to the command.
+func (g *GitOps) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
+	args := []string{"commit", "--amend", "--quiet", "--allow-empty-message",
+		"--allow-empty", "--file", "-"}
+	if signingKey != "" {
+		args = append(args, "--gpg-sign="+signingKey)
+	}
+	cmd := exec.Command(g.gitBinPath, args...)
+	cmd.Dir = g.path
+	cmd.Stdin = strings.NewReader(msg)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(), env...)
+	return errors.Wrap(cmd.Run(), "failed to update recent commit msg")
+}
+
 // MergeBranch merges target branch into base
 func (g *GitOps) MergeBranch(base, target, targetRepoDir string) error {
 

@@ -429,6 +429,25 @@ func (mr *MockBareRepoMockRecorder) CreateBlob(content interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBlob", reflect.TypeOf((*MockBareRepo)(nil).CreateBlob), content)
 }
 
+// UpdateRecentCommitMsg mocks base method
+func (m *MockBareRepo) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{msg, signingKey}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateRecentCommitMsg", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateRecentCommitMsg indicates an expected call of UpdateRecentCommitMsg
+func (mr *MockBareRepoMockRecorder) UpdateRecentCommitMsg(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{msg, signingKey}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRecentCommitMsg", reflect.TypeOf((*MockBareRepo)(nil).UpdateRecentCommitMsg), varargs...)
+}
+
 // UpdateTree mocks base method
 func (m *MockBareRepo) UpdateTree(ref string, updater func(*tree.SafeTree) error) ([]byte, int64, error) {
 	m.ctrl.T.Helper()

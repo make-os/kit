@@ -108,6 +108,12 @@ type BareRepo interface {
 	// CreateBlob creates a blob object
 	CreateBlob(content string) (string, error)
 
+	// UpdateRecentCommitMsg updates the recent commit message.
+	// msg: The commit message which is passed to the command's stdin.
+	// signingKey: The signing key
+	// env: Optional environment variables to pass to the command.
+	UpdateRecentCommitMsg(msg, signingKey string, env ...string) error
+
 	// UpdateTree updates the state tree
 	UpdateTree(ref string, updater func(tree *tree.SafeTree) error) ([]byte, int64, error)
 
