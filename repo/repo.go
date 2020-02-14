@@ -471,7 +471,7 @@ func SignCommitCmd(
 		directives = append(directives, "deleteRef")
 	}
 	if mergePath != "" {
-		directives = append(directives, fmt.Sprintf("merge=%s", mergePath))
+		directives = append(directives, fmt.Sprintf("mergeId=%s", mergePath))
 	}
 
 	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil, directives...)

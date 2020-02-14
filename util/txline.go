@@ -135,7 +135,7 @@ func ParseTxLine(msg string) (*TxLine, error) {
 			txLine.DeleteRef = true
 		}
 
-		if kvParts[0] == "merge" {
+		if kvParts[0] == "mergeId" {
 			if len(kvParts) == 1 || kvParts[1] == "" {
 				return nil, fmt.Errorf("merge proposal id is required")
 			}

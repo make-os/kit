@@ -73,7 +73,7 @@ var signCommitCmd = &cobra.Command{
 		nonce, _ := cmd.Flags().GetString("nonce")
 		sk, _ := cmd.Flags().GetString("signingKey")
 		delete, _ := cmd.Flags().GetBool("delete")
-		mergePath, _ := cmd.Flags().GetString("merge")
+		mergeID, _ := cmd.Flags().GetString("mergeId")
 
 		var client *client.RPCClient
 		var err error
@@ -85,7 +85,7 @@ var signCommitCmd = &cobra.Command{
 		}
 
 		if err := repo.SignCommitCmd(cfg.Node.GitBinPath, fee,
-			nonce, sk, delete, mergePath, client); err != nil {
+			nonce, sk, delete, mergeID, client); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -163,11 +163,11 @@ func initCommit() {
 	pf := signCmd.PersistentFlags()
 	pf.StringP("fee", "f", "0", "Set the transaction fee")
 	pf.StringP("nonce", "n", "0", "Set the transaction nonce")
-	pf.StringP("signingKey", "s", "", "Set the GPG signing key ID")
+	pf.StringP("signing-key", "s", "", "Set the GPG signing key ID")
 	pf.String("rpc.user", "", "Set the RPC username")
 	pf.String("rpc.password", "", "Set the RPC password")
 	pf.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")
 	pf.String("rpc.https", "", "Force the client to use https:// protocol")
-	pf.BoolP("delete", "d", false, "Add an action to delete the target reference")
-	pf.StringP("merge", "m", "", "Add an action to merge a given branch to the target branch")
+	pf.BoolP("delete", "d", false, "Add a directive to delete the target reference")
+	signCommitCmd.Flags().StringP("merge-id", "m", "", "Provide a merge proposal ID for merge fulfilment")
 }
