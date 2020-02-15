@@ -46,8 +46,8 @@ var (
 	// exist for before it can be unbonded
 	NumBlocksInThawPeriod = 10
 
-	// InitialTicketPrice is the initial price of a ticket (window 0)
-	InitialTicketPrice = float64(10)
+	// MinValidatorsTicketPrice is the minimum price of a ticket
+	MinValidatorsTicketPrice = float64(100)
 
 	// NumBlocksPerPriceWindow is the number of blocks before price is increased
 	NumBlocksPerPriceWindow = 100

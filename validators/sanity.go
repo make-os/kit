@@ -57,6 +57,19 @@ func checkValue(tx *types.TxValue, index int) error {
 	return nil
 }
 
+func checkPositiveValue(tx *types.TxValue, index int) error {
+	if err := v.Validate(tx.Value,
+		v.Required.Error(feI(index, "value", "value is required").Error()),
+		v.By(validValueRule("value", index)),
+	); err != nil {
+		return err
+	}
+	if tx.Value.Decimal().LessThanOrEqual(decimal.Zero) {
+		return feI(index, "value", "value must be a positive number")
+	}
+	return nil
+}
+
 func checkType(tx *types.TxType, expected int, index int) error {
 	if tx.Type != expected {
 		return feI(index, "type", "type is invalid")
@@ -144,11 +157,12 @@ func CheckTxTicketPurchase(tx *types.TxTicketPurchase, index int) error {
 		return feI(index, "type", "type is invalid")
 	}
 
-	if err := checkValue(tx.TxValue, index); err != nil {
+	if err := checkPositiveValue(tx.TxValue, index); err != nil {
 		return err
 	}
 
-	if tx.Is(types.TxTypeStorerTicket) {
+	// Non-delegate storer ticket value must reach the minimum stake
+	if tx.Is(types.TxTypeStorerTicket) && tx.Delegate.IsEmpty() {
 		if tx.Value.Decimal().LessThan(params.MinStorerStake) {
 			return feI(index, "value", fmt.Sprintf("value is lower than minimum storer stake"))
 		}

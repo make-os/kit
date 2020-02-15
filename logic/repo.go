@@ -50,14 +50,14 @@ func (t *Transaction) execRepoCreate(
 	t.logic.RepoKeeper().Update(name, newRepo)
 
 	// Deduct fee from sender
-	t.deductFee(spk, fee.Decimal(), chainHeight)
+	t.deductValue(spk, fee.Decimal(), chainHeight)
 
 	return nil
 }
 
-// deductFee deducts the given fee from the account corresponding to the sender
+// deductValue deducts the given fee from the account corresponding to the sender
 // public key; It also increments the senders account nonce by 1.
-func (t *Transaction) deductFee(spk *crypto.PubKey, fee decimal.Decimal, chainHeight uint64) {
+func (t *Transaction) deductValue(spk *crypto.PubKey, fee decimal.Decimal, chainHeight uint64) {
 
 	// Get the sender account and balance
 	acctKeeper := t.logic.AccountKeeper()
@@ -152,7 +152,7 @@ func (t *Transaction) execRepoUpsertOwner(
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
-	t.deductFee(spk, totalFee, chainHeight)
+	t.deductValue(spk, totalFee, chainHeight)
 
 	// Attempt to apply the proposal action
 	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)
@@ -205,7 +205,7 @@ func (t *Transaction) execRepoProposalUpdate(
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
-	t.deductFee(spk, totalFee, chainHeight)
+	t.deductValue(spk, totalFee, chainHeight)
 
 	// Attempt to apply the proposal action
 	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)
@@ -267,7 +267,7 @@ func (t *Transaction) execRepoProposalSendFee(
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
-	t.deductFee(spk, totalFee, chainHeight)
+	t.deductValue(spk, totalFee, chainHeight)
 
 	repoKeeper.Update(repoName, repo)
 
@@ -356,7 +356,7 @@ func (t *Transaction) execRepoProposalMergeRequest(
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
-	t.deductFee(spk, totalFee, chainHeight)
+	t.deductValue(spk, totalFee, chainHeight)
 
 	// Attempt to apply the proposal action
 	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)
@@ -547,7 +547,7 @@ func (t *Transaction) execRepoProposalVote(
 	repoKeeper.Update(repoName, repo)
 
 	// Deduct fee from sender
-	t.deductFee(spk, fee.Decimal(), chainHeight)
+	t.deductValue(spk, fee.Decimal(), chainHeight)
 
 	return nil
 }

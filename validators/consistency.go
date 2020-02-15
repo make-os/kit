@@ -68,7 +68,8 @@ func CheckTxTicketPurchaseConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	// When delegate is set, the delegate must have an active, non-delegated ticket
+	// When delegate is set, the delegate must have an active,
+	// non-delegated ticket
 	if !tx.Delegate.IsEmpty() {
 		r, err := logic.GetTicketManager().GetNonDelegatedTickets(tx.Delegate, tx.Type)
 		if err != nil {
@@ -78,9 +79,9 @@ func CheckTxTicketPurchaseConsistency(
 		}
 	}
 
-	// For validator ticket transaction, the value must not be lesser than
-	// the current price per ticket
-	if tx.Type == types.TxTypeValidatorTicket {
+	// For non-delegated validator ticket transaction, the value
+	// must not be lesser than the current price per ticket
+	if tx.Type == types.TxTypeValidatorTicket && tx.Delegate.IsEmpty() {
 		curTicketPrice := logic.Sys().GetCurValidatorTicketPrice()
 		if tx.Value.Decimal().LessThan(decimal.NewFromFloat(curTicketPrice)) {
 			return feI(index, "value", fmt.Sprintf("value is lower than the"+

@@ -53,7 +53,7 @@ var _ = Describe("System", func() {
 	Describe(".GetCurValidatorTicketPrice", func() {
 		When("initial ticket price = 10, blocks per price window=100, percent increase=20, cur. height = 2", func() {
 			BeforeEach(func() {
-				params.InitialTicketPrice = 10
+				params.MinValidatorsTicketPrice = 10
 				params.NumBlocksPerPriceWindow = 100
 				params.PricePercentIncrease = 0.2
 				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{AppHash: []byte("stuff"), Height: 2})
@@ -68,7 +68,7 @@ var _ = Describe("System", func() {
 
 		When("initial ticket price = 10, blocks per price window=100, percent increase=20, cur. height = 200", func() {
 			BeforeEach(func() {
-				params.InitialTicketPrice = 10
+				params.MinValidatorsTicketPrice = 10
 				params.NumBlocksPerPriceWindow = 100
 				params.PricePercentIncrease = 0.2
 				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{AppHash: []byte("stuff"), Height: 200})
