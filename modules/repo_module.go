@@ -155,6 +155,7 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 // 		nonce: number,
 //		fee: string,
 //		name: string
+// 		id: string
 // 		address: string
 //		timestamp: number
 // }
@@ -309,6 +310,7 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) interface{
 // 		nonce: number,
 //		fee: string,
 //		name: string,
+// 		id: string
 //		value: string
 //		config: {[key:string]: any}
 //		timestamp: number
@@ -361,6 +363,7 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 // 		nonce: number,
 //		fee: string,
 //		name: string,
+// 		id: string
 //		value: string
 //		timestamp: number
 // }
@@ -406,6 +409,7 @@ func (m *RepoModule) depositFee(params map[string]interface{}, options ...interf
 // 		nonce: number,
 //		fee: string,
 //		name: string,
+// 		id: string
 //		base: string
 //		baseHash: string
 // 		target: string
