@@ -151,4 +151,13 @@ var _ = Describe("Crypto", func() {
 			Expect(res).To(HaveLen(20))
 		})
 	})
+
+	Describe(".RSAPubKeyID", func() {
+		It("should return gpg id", func() {
+			sk, err := rsa.GenerateKey(rand.Reader, 1024)
+			Expect(err).To(BeNil())
+			id := RSAPubKeyID(&sk.PublicKey)
+			Expect(id).To(HaveLen(42))
+		})
+	})
 })

@@ -6,7 +6,7 @@ import (
 )
 
 var _ = Describe("Address", func() {
-	var base58Addr = "e5D8cH2n7BFinmh9q7YNZW3rZvGdcXiWHv"
+	var bech32Addr = "e5D8cH2n7BFinmh9q7YNZW3rZvGdcXiWHv"
 
 	Describe(".GetPrefixedAddressValue", func() {
 		It("should return resource unique name without prefix", func() {
@@ -38,7 +38,7 @@ var _ = Describe("Address", func() {
 			Expect(IsPrefixedAddressUserAccount("a/invalid")).To(BeFalse())
 		})
 		It("should return true when address is a valid prefixed balance account address", func() {
-			Expect(IsPrefixedAddressUserAccount("a/" + base58Addr)).To(BeTrue())
+			Expect(IsPrefixedAddressUserAccount("a/" + bech32Addr)).To(BeTrue())
 		})
 	})
 
@@ -97,10 +97,10 @@ var _ = Describe("Address", func() {
 			})
 		})
 
-		Describe(".IsBase58Address", func() {
+		Describe(".IsBech32MakerAddress", func() {
 			It("should return true when address is a prefixed user Address and false when not", func() {
-				Expect(Address("r/abcdef").IsBase58Address()).To(BeFalse())
-				Expect(Address(base58Addr).IsBase58Address()).To(BeTrue())
+				Expect(Address("r/abcdef").IsBech32MakerAddress()).To(BeFalse())
+				Expect(Address(bech32Addr).IsBech32MakerAddress()).To(BeTrue())
 			})
 		})
 	})

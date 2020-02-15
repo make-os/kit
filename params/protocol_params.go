@@ -49,12 +49,6 @@ var (
 	// MinValidatorsTicketPrice is the minimum price of a ticket
 	MinValidatorsTicketPrice = float64(100)
 
-	// NumBlocksPerPriceWindow is the number of blocks before price is increased
-	NumBlocksPerPriceWindow = 100
-
-	// PricePercentIncrease is the percentage increase of ticket price
-	PricePercentIncrease = float64(0.2)
-
 	// MaxValTicketsPerBlock is the max number of validators
 	// ticket transaction a block can include.
 	MaxValTicketsPerBlock = 1

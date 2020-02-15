@@ -266,7 +266,7 @@ var _ = Describe("Key", func() {
 		It("should return err.Error(checksum error)", func() {
 			err := IsValidAddr("hh23887dhhw88su")
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("invalid index of 1"))
+			Expect(err.Error()).To(ContainSubstring("decoding bech32 failed"))
 		})
 
 		It("should return err.Error(invalid version)", func() {
@@ -331,7 +331,7 @@ var _ = Describe("Key", func() {
 			Expect(err.Error()).To(Equal("empty pub key"))
 		})
 
-		It("should return err.Error(invalid index of 1)", func() {
+		It("should return err.Error(decoding bech32 failed)", func() {
 			err := IsValidPubKey("hh23887dhhw88su")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("checksum error"))
@@ -350,7 +350,7 @@ var _ = Describe("Key", func() {
 	})
 
 	Describe(".FromBase58PubKey", func() {
-		It("should return err.Error(invalid index of 1)", func() {
+		It("should return err.Error(decoding bech32 failed)", func() {
 			_, err := PubKeyFromBase58("hh23887dhhw88su")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("checksum error"))

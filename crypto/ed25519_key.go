@@ -7,7 +7,7 @@ import (
 	"fmt"
 	mrand "math/rand"
 
-	"github.com/btcsuite/btcutil/bech32"
+	"github.com/tendermint/tendermint/libs/bech32"
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -256,18 +256,10 @@ func (p *PubKey) AddrRaw() []byte {
 
 // Addr returns the bech32 address
 func (p *PubKey) Addr() util.String {
-	raw20 := p.AddrRaw()
-
-	conv, err := bech32.ConvertBits(raw20, 8, 5, true)
+	encoded, err := bech32.ConvertAndEncode(AddrHRP, p.AddrRaw())
 	if err != nil {
 		panic(err)
 	}
-
-	encoded, err := bech32.Encode(AddrHRP, conv)
-	if err != nil {
-		panic(err)
-	}
-
 	return util.String(encoded)
 }
 
@@ -277,7 +269,7 @@ func IsValidAddr(addr string) error {
 		return fmt.Errorf("empty address")
 	}
 
-	_, _, err := bech32.Decode(addr)
+	_, _, err := bech32.DecodeAndConvert(addr)
 	if err != nil {
 		return err
 	}
@@ -300,19 +292,14 @@ func DecodeAddr(addr string) ([20]byte, error) {
 		return b, err
 	}
 
-	_, decoded, err := bech32.Decode(addr)
+	_, data, err := bech32.DecodeAndConvert(addr)
 	if err != nil {
 		return b, err
-	}
-
-	actual, err := bech32.ConvertBits(decoded, 5, 8, true)
-	if err != nil {
-		return b, err
-	} else if len(actual) != 20 {
+	} else if len(data) != 20 {
 		return b, fmt.Errorf("actual address size must be 20 bytes")
 	}
 
-	copy(b[:], actual)
+	copy(b[:], data)
 
 	return b, nil
 }

@@ -209,25 +209,22 @@ var _ = Describe("TxValidator", func() {
 				})
 			})
 
-			When("for validator ticket - ticket price is less than current ticket price", func() {
+			When("for non-delegated, validator ticket - ticket price is less than current ticket price", func() {
 				BeforeEach(func() {
 					tx := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
-					tx.Value = "10.2"
+					tx.Value = "1"
 					tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
-					tx.Delegate = delegate.PubKey().MustBytes32()
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetNonDelegatedTickets(delegate.PubKey().MustBytes32(), tx.Type).
-						Return([]*types.Ticket{&types.Ticket{}}, nil)
-					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(10.4)
+					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(10.0)
 
 					err = validators.CheckTxTicketPurchaseConsistency(tx, -1, mockLogic)
 				})
 
 				It("should return err", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("field:value, error:value is lower than the minimum ticket price (10.400000)"))
+					Expect(err.Error()).To(ContainSubstring("field:value, error:value is lower than the minimum ticket price"))
 				})
 			})
 
@@ -236,13 +233,10 @@ var _ = Describe("TxValidator", func() {
 					tx := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 					tx.Value = "10.5"
 					tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
-					tx.Delegate = delegate.PubKey().MustBytes32()
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					mockTickMgr.EXPECT().GetNonDelegatedTickets(delegate.PubKey().MustBytes32(), tx.Type).
-						Return([]*types.Ticket{&types.Ticket{}}, nil)
-					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(10.4)
+					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(10.0)
 					mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
 						tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 

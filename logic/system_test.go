@@ -54,8 +54,6 @@ var _ = Describe("System", func() {
 		When("initial ticket price = 10, blocks per price window=100, percent increase=20, cur. height = 2", func() {
 			BeforeEach(func() {
 				params.MinValidatorsTicketPrice = 10
-				params.NumBlocksPerPriceWindow = 100
-				params.PricePercentIncrease = 0.2
 				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{AppHash: []byte("stuff"), Height: 2})
 				Expect(err).To(BeNil())
 			})
@@ -63,21 +61,6 @@ var _ = Describe("System", func() {
 			It("should return price = 10", func() {
 				price := sysLogic.GetCurValidatorTicketPrice()
 				Expect(price).To(Equal(float64(10)))
-			})
-		})
-
-		When("initial ticket price = 10, blocks per price window=100, percent increase=20, cur. height = 200", func() {
-			BeforeEach(func() {
-				params.MinValidatorsTicketPrice = 10
-				params.NumBlocksPerPriceWindow = 100
-				params.PricePercentIncrease = 0.2
-				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{AppHash: []byte("stuff"), Height: 200})
-				Expect(err).To(BeNil())
-			})
-
-			It("should return price = 12", func() {
-				price := sysLogic.GetCurValidatorTicketPrice()
-				Expect(price).To(Equal(float64(12)))
 			})
 		})
 	})

@@ -398,6 +398,7 @@ var _ = Describe("TxValidator", func() {
 		BeforeEach(func() {
 			tx = types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 			tx.Fee = "1"
+			tx.Value = "1"
 		})
 
 		When("it has invalid fields, it should return error when", func() {
@@ -424,8 +425,14 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:value, error:value is lower than minimum storer stake"))
 			})
 
+			It("has negative or zero value", func() {
+				tx.Value = "0"
+				err := validators.CheckTxTicketPurchase(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:value, error:value must be a positive number"))
+			})
+
 			It("has no nonce", func() {
-				// tx.BLSPubKey = util.RandBytes(128)
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, error:nonce is required"))

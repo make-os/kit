@@ -17,6 +17,7 @@ import (
 	"golang.org/x/crypto/blake2b"
 
 	crypto "github.com/libp2p/go-libp2p-crypto"
+	"github.com/tendermint/tendermint/libs/bech32"
 )
 
 // Fixed bytes array lengths
@@ -223,9 +224,14 @@ func RIPEMD160(v []byte) []byte {
 	return h.Sum(nil)
 }
 
-// RSAPubKeyID is like RSAPubKeyIDRaw except it returns hex encoded version
+// RSAPubKeyID returns bech32 encoding of the key with HRP=gpg
 func RSAPubKeyID(pk *rsa.PublicKey) string {
-	return ToHex(RSAPubKeyIDRaw(pk))
+	hash20 := RSAPubKeyIDRaw(pk)
+	id, err := bech32.ConvertAndEncode("gpg", hash20)
+	if err != nil {
+		panic(err)
+	}
+	return id
 }
 
 // RSAPubKeyIDRaw returns a 20 bytes fingerprint of the public key
