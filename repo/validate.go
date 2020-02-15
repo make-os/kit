@@ -505,7 +505,7 @@ func CheckPushNoteConsistency(tx *types.PushNote, keepers types.Keepers) error {
 	}
 
 	// Get gpg key of the pusher
-	gpgKey := keepers.GPGPubKeyKeeper().GetGPGPubKey(util.ToHex(tx.PusherKeyID))
+	gpgKey := keepers.GPGPubKeyKeeper().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID))
 	if gpgKey.IsNil() {
 		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", tx.PusherKeyID)
 		return types.FieldError("pusherKeyId", msg)

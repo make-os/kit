@@ -110,7 +110,7 @@ func ParseTxLine(msg string) (*TxLine, error) {
 			if kvParts[1] == "" {
 				return nil, fmt.Errorf("field:pkId, msg: public key id is required")
 			}
-			if len(kvParts[1]) != 42 {
+			if len(kvParts[1]) != 42 || !IsValidRSAPubKey(kvParts[1]) {
 				return nil, fmt.Errorf("field:pkId, msg: public key id is invalid")
 			}
 			txLine.PubKeyID = kvParts[1]

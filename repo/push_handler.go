@@ -159,7 +159,7 @@ func (h *PushHandler) createPushNote(
 	var pushNote = &types.PushNote{
 		TargetRepo:    h.repo,
 		RepoName:      h.repo.GetName(),
-		PusherKeyID:   util.MustFromHex(pkID),
+		PusherKeyID:   util.MustDecodeRSAPubKeyID(pkID),
 		PusherAddress: h.rMgr.GetLogic().GPGPubKeyKeeper().GetGPGPubKey(pkID).Address,
 		Timestamp:     time.Now().Unix(),
 		References:    types.PushedReferences([]*types.PushedReference{}),

@@ -22,8 +22,9 @@ import (
 
 // Fixed bytes array lengths
 const (
-	Length32 = 32
-	Length64 = 64
+	Length32   = 32
+	Length64   = 64
+	GPGAddrHRP = "gpg"
 )
 
 // Bytes32 represents a 32-bytes value
@@ -227,7 +228,41 @@ func RIPEMD160(v []byte) []byte {
 // RSAPubKeyID returns bech32 encoding of the key with HRP=gpg
 func RSAPubKeyID(pk *rsa.PublicKey) string {
 	hash20 := RSAPubKeyIDRaw(pk)
-	id, err := bech32.ConvertAndEncode("gpg", hash20)
+	id, err := bech32.ConvertAndEncode(GPGAddrHRP, hash20)
+	if err != nil {
+		panic(err)
+	}
+	return id
+}
+
+// MustDecodeRSAPubKeyID decodes a
+func MustDecodeRSAPubKeyID(id string) []byte {
+	_, bz, err := bech32.DecodeAndConvert(id)
+	if err != nil {
+		panic(err)
+	}
+	return bz
+}
+
+// IsValidRSAPubKey checks whether the given id is a valid bech32 encoded string
+// used for representing an RSA public key
+func IsValidRSAPubKey(id string) bool {
+	hrp, bz, err := bech32.DecodeAndConvert(id)
+	if err != nil {
+		return false
+	}
+	if hrp != GPGAddrHRP {
+		return false
+	}
+	if len(bz) != 20 {
+		return false
+	}
+	return true
+}
+
+// MustToRSAPubKeyID takes a 20 bytes value and returns a bech32 address
+func MustToRSAPubKeyID(hash20 []byte) string {
+	id, err := bech32.ConvertAndEncode(GPGAddrHRP, hash20)
 	if err != nil {
 		panic(err)
 	}

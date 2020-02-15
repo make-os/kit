@@ -75,7 +75,7 @@ var _ = Describe("Crypto", func() {
 			Expect(err).To(BeNil())
 			out := RSAPubKeyID(key.Public().(*rsa.PublicKey))
 			Expect(len(out)).To(Equal(42))
-			Expect(out[:2]).To(Equal("0x"))
+			Expect(out[:3]).To(Equal(GPGAddrHRP))
 		})
 	})
 

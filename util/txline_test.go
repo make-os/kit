@@ -38,25 +38,25 @@ var _ = Describe("TxLine", func() {
 
 		When("message has a valid txline", func() {
 			It("should return no error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, deleteRef"
+				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, deleteRef"
 				txline, err := ParseTxLine(str)
 				Expect(err).To(BeNil())
 				Expect(*txline).To(Equal(TxLine{
 					Fee:       String("10"),
 					Nonce:     2,
-					PubKeyID:  "0x9aed9dbda362c75e9feaa07241aac207d5ef4e00",
+					PubKeyID:  "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd",
 					DeleteRef: true,
 				}))
 			})
 
 			It("should return no error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00"
+				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
 				txline, err := ParseTxLine(str)
 				Expect(err).To(BeNil())
 				Expect(*txline).To(Equal(TxLine{
 					Fee:       String("10"),
 					Nonce:     2,
-					PubKeyID:  "0x9aed9dbda362c75e9feaa07241aac207d5ef4e00",
+					PubKeyID:  "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd",
 					DeleteRef: false,
 				}))
 			})
@@ -64,7 +64,7 @@ var _ = Describe("TxLine", func() {
 
 		When("txline has invalid nonce value", func() {
 			It("should return error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2a, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00"
+				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2a, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
 				_, err := ParseTxLine(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, msg: nonce must be an unsigned integer"))
@@ -73,7 +73,7 @@ var _ = Describe("TxLine", func() {
 
 		When("txline has invalid fee value", func() {
 			It("should return error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=1a, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00"
+				str := "This is a line\nThis is another line\ntx: fee=1a, nonce=2, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
 				_, err := ParseTxLine(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:fee, msg: fee must be numeric"))
@@ -82,7 +82,7 @@ var _ = Describe("TxLine", func() {
 
 		When("txline has signature field but no value", func() {
 			It("should return error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00 sig="
+				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig="
 				_, err := ParseTxLine(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, msg: signature value is required"))
@@ -91,7 +91,7 @@ var _ = Describe("TxLine", func() {
 
 		When("txline has signature value that does not begin with 0x", func() {
 			It("should return error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00 sig=abc"
+				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=abc"
 				_, err := ParseTxLine(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, msg: signature format is not valid"))
@@ -100,7 +100,7 @@ var _ = Describe("TxLine", func() {
 
 		When("txline has signature value that is not a valid hex", func() {
 			It("should return error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00 sig=0xabc"
+				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0xabc"
 				_, err := ParseTxLine(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, msg: signature format is not valid"))
@@ -110,13 +110,13 @@ var _ = Describe("TxLine", func() {
 		When("txline has signature format", func() {
 			It("should not return error", func() {
 				sigHex := ToHex([]byte("abc"))
-				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00 sig=" + sigHex
+				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=" + sigHex
 				txLine, err := ParseTxLine(str)
 				Expect(err).To(BeNil())
 				Expect(txLine).To(Equal(&TxLine{
 					Fee:       "1",
 					Nonce:     0x0000000000000002,
-					PubKeyID:  "0x9aed9dbda362c75e9feaa07241aac207d5ef4e00",
+					PubKeyID:  "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd",
 					Signature: "abc",
 				}))
 			})
@@ -124,7 +124,7 @@ var _ = Describe("TxLine", func() {
 
 		When("txline contains a merge directive with no value", func() {
 			It("should return err about missing value", func() {
-				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, mergeId"
+				str := "tx: fee=0.2, nonce=14, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, mergeId"
 				_, err := ParseTxLine(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("merge proposal id is required"))
@@ -133,7 +133,7 @@ var _ = Describe("TxLine", func() {
 
 		When("txline contains a merge directive with invalid value format", func() {
 			It("should return err about missing value", func() {
-				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, mergeId=abc12"
+				str := "tx: fee=0.2, nonce=14, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, mergeId=abc12"
 				_, err := ParseTxLine(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("merge proposal id format is not valid"))
@@ -142,7 +142,7 @@ var _ = Describe("TxLine", func() {
 
 		When("txline contains a merge directive with length greater than 16", func() {
 			It("should return err about missing value", func() {
-				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, mergeId=123456789"
+				str := "tx: fee=0.2, nonce=14, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, mergeId=123456789"
 				_, err := ParseTxLine(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("merge id limit of 8 bytes exceeded"))
@@ -151,10 +151,28 @@ var _ = Describe("TxLine", func() {
 
 		When("txline contains a merge directive with valid value", func() {
 			It("should return no err and set the Merge field to the value", func() {
-				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, mergeId=122"
+				str := "tx: fee=0.2, nonce=14, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, mergeId=122"
 				txline, err := ParseTxLine(str)
 				Expect(err).To(BeNil())
 				Expect(txline.MergeProposalID).To(Equal("122"))
+			})
+		})
+
+		When("txline contains a pkId != 44 characters long", func() {
+			It("should return err about missing value", func() {
+				str := "tx: fee=0.2, nonce=14, pkId=0x9aed9d"
+				_, err := ParseTxLine(str)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:pkId, msg: public key id is invalid"))
+			})
+		})
+
+		When("txline contains a pkId does not begin with gpg", func() {
+			It("should return err about missing value", func() {
+				str := "tx: fee=0.2, nonce=14, pkId=xas1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
+				_, err := ParseTxLine(str)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:pkId, msg: public key id is invalid"))
 			})
 		})
 	})
@@ -187,10 +205,10 @@ var _ = Describe("TxLine", func() {
 			txLine := &TxLine{
 				Fee:       "1",
 				Nonce:     0x0000000000000002,
-				PubKeyID:  "0x9aed9dbda362c75e9feaa07241aac207d5ef4e00",
+				PubKeyID:  "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd",
 				Signature: "abc",
 			}
-			expected := `tx: fee=1, nonce=2, pkId=0x9aed9dbda362c75e9feaa07241aac207d5ef4e00, sig=0x616263`
+			expected := `tx: fee=1, nonce=2, pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, sig=0x616263`
 			Expect(txLine.String()).To(Equal(expected))
 		})
 	})

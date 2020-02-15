@@ -6,7 +6,7 @@ import (
 )
 
 var _ = Describe("Address", func() {
-	var bech32Addr = "e5D8cH2n7BFinmh9q7YNZW3rZvGdcXiWHv"
+	var bech32Addr = "maker1xshwn62y6074qdvqyldkevdqgnht9lh4jvs4lc"
 
 	Describe(".GetPrefixedAddressValue", func() {
 		It("should return resource unique name without prefix", func() {
