@@ -11,7 +11,7 @@ var _ = Describe("WrappedPV", func() {
 			wpv := GenerateWrappedPV([]byte("abc"))
 			key, err := wpv.GetKey()
 			Expect(err).To(BeNil())
-			Expect(key.Addr().String()).To(Equal("eCDUbWW9prPkFL1aMTvJSAmYicpxHUkB21"))
+			Expect(key.Addr().String()).To(Equal("maker1m4aaslnzmdp4k3g52tk6eh94ghr547exleegs7"))
 		})
 	})
 })

@@ -1,6 +1,8 @@
 package keepers
 
 import (
+	"os"
+
 	"github.com/makeos/mosdef/config"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/storage/tree"
@@ -24,6 +26,11 @@ var _ = Describe("RepoKeeper", func() {
 		appDB, _ = testutil.GetDB(cfg)
 		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
 		rk = NewRepoKeeper(state, appDB)
+	})
+
+	AfterEach(func() {
+		err = os.RemoveAll(cfg.DataDir())
+		Expect(err).To(BeNil())
 	})
 
 	Describe(".GetRepo", func() {

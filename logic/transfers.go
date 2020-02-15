@@ -56,9 +56,9 @@ func (t *Transaction) execCoinTransfer(
 		}
 	}
 
-	// Check if the recipient address is a base58 encoded address.
+	// Check if the recipient address is a bech32 address.
 	// If so, get the account object corresponding to the address.
-	if recvAddr.IsBase58Address() {
+	if recvAddr.IsBech32MakerAddress() {
 		recvAcct = acctKeeper.GetAccount(recipientAddr)
 	}
 

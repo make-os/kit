@@ -7,21 +7,27 @@ import (
 	"fmt"
 	mrand "math/rand"
 
+	"github.com/btcsuite/btcutil/bech32"
+	"golang.org/x/crypto/ripemd160"
+
 	"github.com/libp2p/go-libp2p-core/crypto"
 	pb "github.com/libp2p/go-libp2p-core/crypto/pb"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/privval"
 
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/ellcrys/go-ethereum/crypto/sha3"
 	"github.com/gogo/protobuf/proto"
 	"github.com/makeos/mosdef/crypto/bls"
 	"github.com/makeos/mosdef/crypto/vrf"
 	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/util"
-	"golang.org/x/crypto/ripemd160"
 
 	"github.com/libp2p/go-libp2p-core/peer"
+)
+
+// Constants
+const (
+	AddrHRP = "maker"
 )
 
 // Key includes a wrapped Ed25519 private key and
@@ -239,22 +245,30 @@ func (p *PubKey) Verify(data, sig []byte) (bool, error) {
 	return p.pubKey.Verify(data, sig)
 }
 
-// Addr computes an address from the public key
-func (p *PubKey) Addr() util.String {
+// AddrRaw returns the 20 bytes hash of the public key
+func (p *PubKey) AddrRaw() []byte {
 	pk, _ := p.Bytes()
-
-	// Step 1: sha3 hash public key
-	pubSha256 := sha3.Sum256(pk)
-
-	// Step 2: RIPEMD160 hash the sha3 output
 	r := ripemd160.New()
-	r.Write(pubSha256[:])
-	addr := r.Sum(nil)
+	r.Write(pk[:])
+	hash20 := r.Sum(nil)
+	return hash20
+}
 
-	// Step 3: Base58 checksum step2 output
-	var addr20 [20]byte
-	copy(addr20[:], addr[:])
-	return RIPEMD160ToAddr(addr20)
+// Addr returns the bech32 address
+func (p *PubKey) Addr() util.String {
+	raw20 := p.AddrRaw()
+
+	conv, err := bech32.ConvertBits(raw20, 8, 5, true)
+	if err != nil {
+		panic(err)
+	}
+
+	encoded, err := bech32.Encode(AddrHRP, conv)
+	if err != nil {
+		panic(err)
+	}
+
+	return util.String(encoded)
 }
 
 // IsValidAddr checks whether an address is valid
@@ -263,17 +277,9 @@ func IsValidAddr(addr string) error {
 		return fmt.Errorf("empty address")
 	}
 
-	result, v, err := base58.CheckDecode(addr)
+	_, _, err := bech32.Decode(addr)
 	if err != nil {
 		return err
-	}
-
-	if len(result) != 20 {
-		return fmt.Errorf("invalid address size")
-	}
-
-	if v != params.AddressVersion {
-		return fmt.Errorf("invalid version")
 	}
 
 	return nil
@@ -294,12 +300,19 @@ func DecodeAddr(addr string) ([20]byte, error) {
 		return b, err
 	}
 
-	result, _, err := base58.CheckDecode(addr)
+	_, decoded, err := bech32.Decode(addr)
 	if err != nil {
 		return b, err
 	}
 
-	copy(b[:], result)
+	actual, err := bech32.ConvertBits(decoded, 5, 8, true)
+	if err != nil {
+		return b, err
+	} else if len(actual) != 20 {
+		return b, fmt.Errorf("actual address size must be 20 bytes")
+	}
+
+	copy(b[:], actual)
 
 	return b, nil
 }

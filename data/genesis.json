@@ -1,7 +1,7 @@
 [
     {
         "type": "account",
-        "address": "e7uNvUkDvGeBoAEsdXH3AYawucDLxgQbTK",
+        "address": "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc",
         "balance": "1000000"
     },
     {
@@ -9,7 +9,7 @@
         "name": "makeos",
         "helm": true,
         "owners": {
-            "e7uNvUkDvGeBoAEsdXH3AYawucDLxgQbTK": {
+            "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc": {
                 "creator": true,
                 "joinedAt": 1,
                 "veto": true

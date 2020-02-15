@@ -54,7 +54,7 @@ func (am *AccountManager) ListCmd() error {
 
 	fmt.Println(fmt.Sprintf("\t%s%s%s%s%s",
 		color.HiBlackString("Address"),
-		strings.Repeat(" ", 32),
+		strings.Repeat(" ", 42),
 		color.HiBlackString("Date Created"),
 		strings.Repeat(" ", 10),
 		color.HiBlackString("Tag(s)")),

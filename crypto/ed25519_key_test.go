@@ -3,9 +3,7 @@ package crypto
 import (
 	"fmt"
 
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/makeos/mosdef/params"
 	"github.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -112,7 +110,7 @@ var _ = Describe("Key", func() {
 			a, err := NewKey(&seed)
 			Expect(err).To(BeNil())
 			addr := a.Addr()
-			Expect(addr).To(Equal(util.String("eLPbkwui7eymQFLo8GRa7jgTJrhrXS6a8c")))
+			Expect(addr).To(Equal(util.String("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")))
 		})
 	})
 
@@ -268,24 +266,16 @@ var _ = Describe("Key", func() {
 		It("should return err.Error(checksum error)", func() {
 			err := IsValidAddr("hh23887dhhw88su")
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("checksum error"))
+			Expect(err.Error()).To(Equal("invalid index of 1"))
 		})
 
 		It("should return err.Error(invalid version)", func() {
 			err := IsValidAddr("E1juuqo9XEfKhGHSwExMxGry54h4JzoRkr")
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("invalid version"))
-		})
-
-		It("should return err.Error(invalid version)", func() {
-			invalidAddress := base58.CheckEncode([]byte{2, 3, 5}, params.AddressVersion)
-			err := IsValidAddr(invalidAddress)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("invalid address size"))
 		})
 
 		It("should return nil", func() {
-			err := IsValidAddr("eDFPdimzRqfFKetEMSmsSLTLHCLSniZQwD")
+			err := IsValidAddr("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")
 			Expect(err).To(BeNil())
 		})
 	})
@@ -298,13 +288,11 @@ var _ = Describe("Key", func() {
 		})
 
 		It("should return 20 bytes address", func() {
-			addrBs, err := DecodeAddr("eDFPdimzRqfFKetEMSmsSLTLHCLSniZQwD")
+			key := NewKeyFromIntSeed(1)
+			addrBs, err := DecodeAddr("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")
 			Expect(err).To(BeNil())
 			Expect(addrBs).To(HaveLen(20))
-			Expect(addrBs).To(Equal([20]uint8{
-				0x7a, 0x58, 0x28, 0x74, 0x48, 0xab, 0x42, 0x94, 0x98, 0x5b, 0x71, 0x8e, 0x3d, 0x6b, 0xe6, 0xa7,
-				0x81, 0x82, 0x4e, 0xfc,
-			}))
+			Expect(addrBs[:]).To(Equal(key.PubKey().AddrRaw()))
 		})
 	})
 
@@ -343,7 +331,7 @@ var _ = Describe("Key", func() {
 			Expect(err.Error()).To(Equal("empty pub key"))
 		})
 
-		It("should return err.Error(checksum error)", func() {
+		It("should return err.Error(invalid index of 1)", func() {
 			err := IsValidPubKey("hh23887dhhw88su")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("checksum error"))
@@ -362,7 +350,7 @@ var _ = Describe("Key", func() {
 	})
 
 	Describe(".FromBase58PubKey", func() {
-		It("should return err.Error(checksum error)", func() {
+		It("should return err.Error(invalid index of 1)", func() {
 			_, err := PubKeyFromBase58("hh23887dhhw88su")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("checksum error"))

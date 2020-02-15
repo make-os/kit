@@ -77,8 +77,8 @@ func (a Address) IsPrefixedRepoAddress() bool {
 	return string(a)[:2] == addressPrefixRepo
 }
 
-// IsPrefixedUserAddress checks if the address is prefixed by `a/` which is used to
-// identity an account address
+// IsPrefixedUserAddress checks if the address is prefixed by
+// `a/` which is used to identity an account address
 func (a Address) IsPrefixedUserAddress() bool {
 	if !a.IsPrefixed() {
 		return false
@@ -86,8 +86,8 @@ func (a Address) IsPrefixedUserAddress() bool {
 	return string(a)[:2] == addressPrefixAddressUser
 }
 
-// IsBase58Address checks if the address is prefixed by `a/` which is used to
-// identity an account address
-func (a Address) IsBase58Address() bool {
+// IsBech32MakerAddress checks whether the address is a
+// bech32 address with the general HRP
+func (a Address) IsBech32MakerAddress() bool {
 	return IsValidAddr(string(a)) == nil
 }

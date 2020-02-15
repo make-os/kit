@@ -16,9 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/makeos/mosdef/params"
-
-	"github.com/btcsuite/btcutil/base58"
+	"github.com/btcsuite/btcutil/bech32"
 	"github.com/robertkrimen/otto"
 
 	"github.com/thoas/go-funk"
@@ -552,17 +550,9 @@ func IsValidAddr(addr string) error {
 		return fmt.Errorf("empty address")
 	}
 
-	result, v, err := base58.CheckDecode(addr)
+	_, _, err := bech32.Decode(addr)
 	if err != nil {
 		return err
-	}
-
-	if len(result) != 20 {
-		return fmt.Errorf("invalid address size")
-	}
-
-	if v != params.AddressVersion {
-		return fmt.Errorf("invalid version")
 	}
 
 	return nil
