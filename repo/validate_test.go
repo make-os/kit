@@ -39,6 +39,11 @@ var _ = Describe("Validation", func() {
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var mockTickMgr *mocks.MockTicketManager
+	var mockRepoKeeper *mocks.MockRepoKeeper
+	var mockGPGKeeper *mocks.MockGPGPubKeyKeeper
+	var mockAcctKeeper *mocks.MockAccountKeeper
+	var mockSysKeeper *mocks.MockSystemKeeper
+	var mockTxLogic *mocks.MockTxLogic
 
 	var gpgPubKeyGetter = func(pkId string) (string, error) {
 		return pubKey, nil
@@ -71,9 +76,12 @@ var _ = Describe("Validation", func() {
 		mockObjs := testutil.MockLogic(ctrl)
 		mockLogic = mockObjs.Logic
 		mockTickMgr = mockObjs.TicketManager
-	})
+		mockRepoKeeper = mockObjs.RepoKeeper
+		mockGPGKeeper = mockObjs.GPGPubKeyKeeper
+		mockAcctKeeper = mockObjs.AccountKeeper
+		mockSysKeeper = mockObjs.SysKeeper
+		mockTxLogic = mockObjs.Tx
 
-	BeforeEach(func() {
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
@@ -1052,18 +1060,12 @@ var _ = Describe("Validation", func() {
 	})
 
 	Describe(".CheckPushNoteConsistency", func() {
-		var mockKeepers *mocks.MockKeepers
-		BeforeEach(func() {
-			mockKeepers = mocks.NewMockKeepers(ctrl)
-		})
 
 		When("no repository with matching name exist", func() {
 			BeforeEach(func() {
 				tx := &types.PushNote{RepoName: "unknown"}
-				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(types.BareRepository())
-				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
-				err = CheckPushNoteConsistency(tx, mockKeepers)
+				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -1075,13 +1077,9 @@ var _ = Describe("Validation", func() {
 		When("pusher public key id is unknown", func() {
 			BeforeEach(func() {
 				tx := &types.PushNote{RepoName: "repo1", PusherKeyID: util.RandBytes(20)}
-				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
-				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
-				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
 				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID)).Return(types.BareGPGPubKey())
-				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
-				err = CheckPushNoteConsistency(tx, mockKeepers)
+				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -1097,16 +1095,12 @@ var _ = Describe("Validation", func() {
 					PusherKeyID:   util.RandBytes(20),
 					PusherAddress: "address1",
 				}
-				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
-				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
-				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
 
 				gpgKey := types.BareGPGPubKey()
 				gpgKey.Address = util.String("address2")
 				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID)).Return(gpgKey)
-				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
-				err = CheckPushNoteConsistency(tx, mockKeepers)
+				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -1122,21 +1116,15 @@ var _ = Describe("Validation", func() {
 					PusherKeyID:   util.RandBytes(20),
 					PusherAddress: "address1",
 				}
-				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
-				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
-				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
 
 				gpgKey := types.BareGPGPubKey()
 				gpgKey.Address = util.String("address1")
 				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID)).Return(gpgKey)
-				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
 
-				mockAcctKeeper := mocks.NewMockAccountKeeper(ctrl)
 				mockAcctKeeper.EXPECT().GetAccount(tx.PusherAddress).Return(types.BareAccount())
-				mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
 
-				err = CheckPushNoteConsistency(tx, mockKeepers)
+				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -1153,28 +1141,57 @@ var _ = Describe("Validation", func() {
 					PusherAddress: "address1",
 					AccountNonce:  3,
 				}
-				mockRepoKeeper := mocks.NewMockRepoKeeper(ctrl)
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
-				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
-				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
 
 				gpgKey := types.BareGPGPubKey()
 				gpgKey.Address = util.String("address1")
 				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID)).Return(gpgKey)
-				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
 
-				mockAcctKeeper := mocks.NewMockAccountKeeper(ctrl)
 				acct := types.BareAccount()
 				acct.Nonce = 1
 				mockAcctKeeper.EXPECT().GetAccount(tx.PusherAddress).Return(acct)
-				mockKeepers.EXPECT().AccountKeeper().Return(mockAcctKeeper)
 
-				err = CheckPushNoteConsistency(tx, mockKeepers)
+				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:pusherAddr, error:wrong account nonce '3', expecting '2'"))
+			})
+		})
+
+		When("pusher account balance not sufficient to pay fee", func() {
+			BeforeEach(func() {
+
+				tx := &types.PushNote{
+					RepoName:      "repo1",
+					PusherKeyID:   util.RandBytes(20),
+					PusherAddress: "address1",
+					AccountNonce:  2,
+					Fee:           "10",
+				}
+
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
+
+				gpgKey := types.BareGPGPubKey()
+				gpgKey.Address = util.String("address1")
+				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID)).Return(gpgKey)
+
+				acct := types.BareAccount()
+				acct.Nonce = 1
+				mockAcctKeeper.EXPECT().GetAccount(tx.PusherAddress).Return(acct)
+
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+				mockTxLogic.EXPECT().
+					CanExecCoinTransfer(tx.PusherAddress, util.String("0"), tx.Fee, uint64(2), uint64(1)).
+					Return(fmt.Errorf("insufficient"))
+
+				err = CheckPushNoteConsistency(tx, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("insufficient"))
 			})
 		})
 	})

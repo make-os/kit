@@ -108,23 +108,32 @@ func (t *Transaction) execCoinTransfer(
 // next/expected nonce value.
 //
 // ARGS:
-// txType: The transaction type
-// senderPubKey: The public key of the tx sender.
+// sender: The address of the sender or *crypto.PubKey of the sender
 // value: The value of the transaction
 // fee: The fee paid by the sender.
 // chainHeight: The height of the block chain
 func (t *Transaction) CanExecCoinTransfer(
-	txType int,
-	senderPubKey *crypto.PubKey,
+	sender interface{},
 	value,
 	fee util.String,
 	nonce,
 	chainHeight uint64) error {
 
+	senderAddr := ""
+	switch o := sender.(type) {
+	case *crypto.PubKey:
+		senderAddr = o.Addr().String()
+	case string:
+		senderAddr = o
+	case util.String:
+		senderAddr = o.String()
+	default:
+		panic("unsupported type")
+	}
+
 	// Get sender and recipient accounts
 	acctKeeper := t.logic.AccountKeeper()
-	sender := senderPubKey.Addr()
-	senderAcct := acctKeeper.GetAccount(sender)
+	senderAcct := acctKeeper.GetAccount(util.String(senderAddr))
 
 	field := "value"
 	if value == "0" && fee != "0" {

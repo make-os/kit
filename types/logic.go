@@ -2,7 +2,6 @@ package types
 
 import (
 	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/storage"
 	"github.com/makeos/mosdef/util"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -333,8 +332,13 @@ type TxLogic interface {
 	// and fee of the transaction based on the current state of their
 	// account. It also ensures that the transaction's nonce is the
 	// next/expected nonce value.
+	//
+	// ARGS:
+	// sender: The address of the sender or *crypto.PubKey of the sender
+	// value: The value of the transaction
+	// fee: The fee paid by the sender.
 	// chainHeight: The height of the block chain
-	CanExecCoinTransfer(txType int, senderPubKey *crypto.PubKey,
+	CanExecCoinTransfer(sender interface{},
 		value, fee util.String, nonce, chainHeight uint64) error
 }
 

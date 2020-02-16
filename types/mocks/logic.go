@@ -7,7 +7,6 @@ package mocks
 import (
 	gomock "github.com/golang/mock/gomock"
 	config "github.com/makeos/mosdef/config"
-	crypto "github.com/makeos/mosdef/crypto"
 	storage "github.com/makeos/mosdef/storage"
 	types "github.com/makeos/mosdef/types"
 	util "github.com/makeos/mosdef/util"
@@ -1519,17 +1518,17 @@ func (mr *MockTxLogicMockRecorder) ExecTx(tx, chainHeight interface{}) *gomock.C
 }
 
 // CanExecCoinTransfer mocks base method
-func (m *MockTxLogic) CanExecCoinTransfer(txType int, senderPubKey *crypto.PubKey, value, fee util.String, nonce, chainHeight uint64) error {
+func (m *MockTxLogic) CanExecCoinTransfer(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CanExecCoinTransfer", txType, senderPubKey, value, fee, nonce, chainHeight)
+	ret := m.ctrl.Call(m, "CanExecCoinTransfer", sender, value, fee, nonce, chainHeight)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CanExecCoinTransfer indicates an expected call of CanExecCoinTransfer
-func (mr *MockTxLogicMockRecorder) CanExecCoinTransfer(txType, senderPubKey, value, fee, nonce, chainHeight interface{}) *gomock.Call {
+func (mr *MockTxLogicMockRecorder) CanExecCoinTransfer(sender, value, fee, nonce, chainHeight interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanExecCoinTransfer", reflect.TypeOf((*MockTxLogic)(nil).CanExecCoinTransfer), txType, senderPubKey, value, fee, nonce, chainHeight)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanExecCoinTransfer", reflect.TypeOf((*MockTxLogic)(nil).CanExecCoinTransfer), sender, value, fee, nonce, chainHeight)
 }
 
 // MockSysLogic is a mock of SysLogic interface

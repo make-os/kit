@@ -83,14 +83,14 @@ var _ = Describe("Transaction", func() {
 
 		Context("when sender account has insufficient spendable balance", func() {
 			It("should not return err='sender's spendable account balance is insufficient'", func() {
-				err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(), util.String("100"), util.String("0"), 1, 1)
+				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 1, 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, error:sender's spendable account balance is insufficient"))
 			})
 
 			When("value=0 and fee is non-zero", func() {
 				It("should not return err='sender's spendable account balance is insufficient' with field=fee", func() {
-					err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(), util.String("0"), util.String("10"), 1, 1)
+					err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("0"), util.String("10"), 1, 1)
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("field:fee, error:sender's spendable account balance is insufficient"))
 				})
@@ -99,7 +99,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("when nonce is invalid", func() {
 			It("should return no error", func() {
-				err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(), util.String("100"), util.String("0"), 3, 1)
+				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 3, 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, error:tx has invalid nonce (3), expected (1)"))
 			})
@@ -114,7 +114,7 @@ var _ = Describe("Transaction", func() {
 			})
 
 			It("should return no error", func() {
-				err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(), util.String("100"), util.String("0"), 1, 0)
+				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 1, 0)
 				Expect(err).To(BeNil())
 			})
 		})

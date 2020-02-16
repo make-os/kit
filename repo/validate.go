@@ -495,17 +495,17 @@ func checkPushedReference(
 // CheckPushNoteConsistency performs consistency checks against the state of the
 // repository as seen by the node. If the target repo object is not set in tx,
 // local reference hash comparision is not performed.
-func CheckPushNoteConsistency(tx *types.PushNote, keepers types.Keepers) error {
+func CheckPushNoteConsistency(tx *types.PushNote, logic types.Logic) error {
 
 	// Ensure the repository exist
-	repo := keepers.RepoKeeper().GetRepo(tx.GetRepoName())
+	repo := logic.RepoKeeper().GetRepo(tx.GetRepoName())
 	if repo.IsNil() {
 		msg := fmt.Sprintf("repository named '%s' is unknown", tx.GetRepoName())
 		return types.FieldError("repoName", msg)
 	}
 
 	// Get gpg key of the pusher
-	gpgKey := keepers.GPGPubKeyKeeper().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID))
+	gpgKey := logic.GPGPubKeyKeeper().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID))
 	if gpgKey.IsNil() {
 		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", tx.PusherKeyID)
 		return types.FieldError("pusherKeyId", msg)
@@ -517,7 +517,7 @@ func CheckPushNoteConsistency(tx *types.PushNote, keepers types.Keepers) error {
 	}
 
 	// Ensure next pusher account nonce matches the pushed note's account nonce
-	pusherAcct := keepers.AccountKeeper().GetAccount(tx.PusherAddress)
+	pusherAcct := logic.AccountKeeper().GetAccount(tx.PusherAddress)
 	if pusherAcct.IsNil() {
 		return types.FieldError("pusherAddr", "pusher account not found")
 	}
@@ -532,7 +532,21 @@ func CheckPushNoteConsistency(tx *types.PushNote, keepers types.Keepers) error {
 		tx.GetTargetRepo(),
 		tx.GetPushedReferences(),
 		repo,
-		keepers); err != nil {
+		logic); err != nil {
+		return err
+	}
+
+	// Check whether the pusher can pay the specified transaction fee
+	bi, err := logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch current block info")
+	}
+	if err = logic.Tx().CanExecCoinTransfer(
+		tx.PusherAddress,
+		"0",
+		tx.GetFee(),
+		tx.AccountNonce,
+		uint64(bi.Height)); err != nil {
 		return err
 	}
 

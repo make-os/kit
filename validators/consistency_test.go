@@ -138,7 +138,7 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 				err = validators.CheckTxCoinTransferConsistency(tx, -1, mockLogic)
 			})
@@ -237,7 +237,7 @@ var _ = Describe("TxValidator", func() {
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 					mockSysLogic.EXPECT().GetCurValidatorTicketPrice().Return(10.0)
-					mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+					mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 						tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
 					err = validators.CheckTxTicketPurchaseConsistency(tx, -1, mockLogic)
@@ -392,7 +392,7 @@ var _ = Describe("TxValidator", func() {
 				}
 				mockTickMgr.EXPECT().GetByHash(tx.TicketHash).Return(ticket)
 
-				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					util.String("0"), tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
 				err = validators.CheckTxUnbondTicketConsistency(tx, -1, mockLogic)
@@ -450,7 +450,7 @@ var _ = Describe("TxValidator", func() {
 				repo := types.BareRepository()
 				mockRepoKeeper.EXPECT().GetRepo(tx.Name).Return(repo)
 
-				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
 				err = validators.CheckTxRepoCreateConsistency(tx, -1, mockLogic)
@@ -485,7 +485,7 @@ var _ = Describe("TxValidator", func() {
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 
-				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					util.String("0"), tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
 				err = validators.CheckTxSetDelegateCommissionConsistency(tx, -1, mockLogic)
@@ -577,7 +577,7 @@ var _ = Describe("TxValidator", func() {
 				pkID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				mockGPGPubKeyKeeper.EXPECT().GetGPGPubKey(pkID).Return(&types.GPGPubKey{})
 
-				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					util.String("0"), tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
 				err = validators.CheckTxAddGPGPubKeyConsistency(tx, -1, mockLogic)
@@ -641,7 +641,7 @@ var _ = Describe("TxValidator", func() {
 					GraceEndAt: 9,
 				})
 
-				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 				err = validators.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
 			})
@@ -707,7 +707,7 @@ var _ = Describe("TxValidator", func() {
 					Owner:      key.Addr().String(),
 				})
 
-				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(), util.String("0"), tx.Fee,
+				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(), util.String("0"), tx.Fee,
 					tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 				err = validators.CheckTxNamespaceDomainUpdateConsistency(tx, -1, mockLogic)
 			})
@@ -1094,7 +1094,7 @@ var _ = Describe("TxValidator", func() {
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
 				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
@@ -1480,7 +1480,7 @@ var _ = Describe("TxValidator", func() {
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 				bi := &types.BlockInfo{Height: 10}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
 				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
@@ -1584,7 +1584,7 @@ var _ = Describe("TxValidator", func() {
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
 				err = validators.CheckTxRepoProposalUpdateConsistency(tx, -1, mockLogic)
@@ -1688,7 +1688,7 @@ var _ = Describe("TxValidator", func() {
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				mockTxLogic.EXPECT().CanExecCoinTransfer(tx.Type, key.PubKey(),
+				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
 				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)

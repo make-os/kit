@@ -57,9 +57,17 @@ var _ = Describe("Transfers", func() {
 	Describe("CanExecCoinTransfer", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 
+		Context("when sender variable type is not valid", func() {
+			It("should panic", func() {
+				Expect(func() {
+					txLogic.CanExecCoinTransfer(123, util.String("100"), util.String("0"), 3, 1)
+				}).Should(Panic())
+			})
+		})
+
 		Context("when sender account has insufficient spendable balance", func() {
 			It("should not return err='sender's spendable account balance is insufficient'", func() {
-				err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(), util.String("100"), util.String("0"), 1, 1)
+				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 1, 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, error:sender's spendable account balance is insufficient"))
 			})
@@ -67,7 +75,7 @@ var _ = Describe("Transfers", func() {
 
 		Context("when nonce is invalid", func() {
 			It("should return no error", func() {
-				err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(), util.String("100"), util.String("0"), 3, 1)
+				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 3, 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, error:tx has invalid nonce (3), expected (1)"))
 			})
@@ -82,7 +90,7 @@ var _ = Describe("Transfers", func() {
 			})
 
 			It("should return no error", func() {
-				err := txLogic.CanExecCoinTransfer(types.TxTypeValidatorTicket, sender.PubKey(), util.String("100"), util.String("0"), 1, 0)
+				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 1, 0)
 				Expect(err).To(BeNil())
 			})
 		})

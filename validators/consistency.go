@@ -49,7 +49,7 @@ check:
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, tx.Value, tx.Fee,
+	if err = logic.Tx().CanExecCoinTransfer(pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func CheckTxTicketPurchaseConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, tx.Value, tx.Fee,
+	if err = logic.Tx().CanExecCoinTransfer(pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -135,7 +135,7 @@ func CheckTxUnbondTicketConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
+	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -161,7 +161,7 @@ func CheckTxRepoCreateConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, tx.Value, tx.Fee,
+	if err = logic.Tx().CanExecCoinTransfer(pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -181,7 +181,7 @@ func CheckTxSetDelegateCommissionConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
+	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -217,7 +217,7 @@ func CheckTxAddGPGPubKeyConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
+	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -312,7 +312,7 @@ func CheckTxNSAcquireConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, tx.Value, tx.Fee,
+	if err = logic.Tx().CanExecCoinTransfer(pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -344,7 +344,7 @@ func CheckTxNamespaceDomainUpdateConsistency(
 		return feI(index, "senderPubKey", "sender not permitted to perform this operation")
 	}
 
-	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
+	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -355,7 +355,6 @@ func CheckTxNamespaceDomainUpdateConsistency(
 // checkProposalCommonConsistency includes common consistency checks for
 // proposal transactions.
 func checkProposalCommonConsistency(
-	txType int,
 	txProposal *types.TxProposalCommon,
 	txCommon *types.TxCommon,
 	index int,
@@ -395,7 +394,7 @@ func checkProposalCommonConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(txCommon.GetSenderPubKey().Bytes())
-	if err := logic.Tx().CanExecCoinTransfer(txType, pubKey, txProposal.Value, txCommon.Fee,
+	if err := logic.Tx().CanExecCoinTransfer(pubKey, txProposal.Value, txCommon.Fee,
 		txCommon.GetNonce(), uint64(bi.Height)); err != nil {
 		return nil, err
 	}
@@ -411,7 +410,6 @@ func CheckTxRepoProposalUpsertOwnerConsistency(
 	logic types.Logic) error {
 
 	_, err := checkProposalCommonConsistency(
-		tx.Type,
 		tx.TxProposalCommon,
 		tx.TxCommon,
 		index,
@@ -487,7 +485,7 @@ func CheckTxVoteConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
+	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -534,7 +532,7 @@ func CheckTxRepoProposalSendFeeConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(tx.GetType(), pubKey, "0", tx.Fee,
+	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -550,7 +548,6 @@ func CheckTxRepoProposalMergeRequestConsistency(
 	logic types.Logic) error {
 
 	_, err := checkProposalCommonConsistency(
-		tx.Type,
 		tx.TxProposalCommon,
 		tx.TxCommon,
 		index,
@@ -569,7 +566,6 @@ func CheckTxRepoProposalUpdateConsistency(
 	logic types.Logic) error {
 
 	_, err := checkProposalCommonConsistency(
-		tx.Type,
 		tx.TxProposalCommon,
 		tx.TxCommon,
 		index,
