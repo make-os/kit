@@ -235,7 +235,8 @@ func RSAPubKeyID(pk *rsa.PublicKey) string {
 	return id
 }
 
-// MustDecodeRSAPubKeyID decodes a
+// MustDecodeRSAPubKeyID decodes an RSA public key id to bytes; panics if
+// decoding fails.
 func MustDecodeRSAPubKeyID(id string) []byte {
 	_, bz, err := bech32.DecodeAndConvert(id)
 	if err != nil {
@@ -260,7 +261,8 @@ func IsValidRSAPubKey(id string) bool {
 	return true
 }
 
-// MustToRSAPubKeyID takes a 20 bytes value and returns a bech32 address
+// MustToRSAPubKeyID takes a 20 bytes value and returns a bech32 address; panics
+// if decoding fails.
 func MustToRSAPubKeyID(hash20 []byte) string {
 	id, err := bech32.ConvertAndEncode(GPGAddrHRP, hash20)
 	if err != nil {

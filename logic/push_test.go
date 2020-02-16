@@ -56,7 +56,7 @@ var _ = Describe("Push", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var repo = "repo1"
-		var pkID = util.ToHex([]byte("pkID"))
+		var pkID = util.MustToRSAPubKeyID([]byte("pkID"))
 
 		When("reference has nonce = 1", func() {
 			BeforeEach(func() {
@@ -81,7 +81,7 @@ var _ = Describe("Push", func() {
 					&types.PushedReference{Name: "refs/heads/master"},
 				}
 
-				err = txLogic.execPush(repo, refs, "1", util.MustFromHex(pkID), 0)
+				err = txLogic.execPush(repo, refs, "1", util.MustDecodeRSAPubKeyID(pkID), 0)
 				Expect(err).To(BeNil())
 			})
 

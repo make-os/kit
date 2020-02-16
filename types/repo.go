@@ -524,7 +524,7 @@ func (pt *PushNote) GetPusherKeyID() []byte {
 // GetPusherKeyIDString is like GetPusherKeyID but returns hex string, prefixed
 // with 0x
 func (pt *PushNote) GetPusherKeyIDString() string {
-	return util.ToHex(pt.PusherKeyID)
+	return util.MustToRSAPubKeyID(pt.PusherKeyID)
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

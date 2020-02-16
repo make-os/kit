@@ -332,7 +332,7 @@ func checkPushNoteAgainstTxLines(pn *types.PushNote, txLines map[string]*util.Tx
 
 	// Push note pusher public key must match txline key
 	txLinesObjs := funk.Values(txLines).([]*util.TxLine)
-	if !bytes.Equal(pn.PusherKeyID, util.MustFromHex(txLinesObjs[0].PubKeyID)) {
+	if !bytes.Equal(pn.PusherKeyID, util.MustDecodeRSAPubKeyID(txLinesObjs[0].PubKeyID)) {
 		return fmt.Errorf("push note pusher public key id does not match " +
 			"txlines pusher public key id")
 	}

@@ -341,7 +341,7 @@ var _ = Describe("Validation", func() {
 		When("a notes tx blob has invalid signature format", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=xyz")
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=xyz")
 				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
@@ -354,7 +354,7 @@ var _ = Describe("Validation", func() {
 		When("a notes tx blob has an unknown public key id", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x616263")
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x616263")
 				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetterWithErr(fmt.Errorf("error finding pub key")))
 			})
 
@@ -367,7 +367,7 @@ var _ = Describe("Validation", func() {
 		When("a notes tx blob includes a public key id to an invalid public key", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x616263")
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x616263")
 				_, err = checkNote(repo, "refs/notes/note1", gpgInvalidPubKeyGetter)
 			})
 
@@ -382,11 +382,11 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
 				commitHash := getRecentCommitHash(path, "refs/notes/note1")
-				msg := []byte("0" + "0" + "0x0000000000000000000000000000000000000000" + commitHash)
+				msg := []byte("0" + "0" + "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd" + commitHash)
 				sig, err = crypto.GPGSign(privKey2, msg)
 				Expect(err).To(BeNil())
 				sigHex := hex.EncodeToString(sig)
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x"+sigHex)
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x"+sigHex)
 				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
@@ -405,7 +405,7 @@ var _ = Describe("Validation", func() {
 				sig, err = crypto.GPGSign(privKey, msg)
 				Expect(err).To(BeNil())
 				sigHex := hex.EncodeToString(sig)
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x"+sigHex)
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x"+sigHex)
 				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
@@ -420,11 +420,11 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
 				commitHash := getRecentCommitHash(path, "refs/notes/note1")
-				msg := []byte("0" + "0" + "0x0000000000000000000000000000000000000000" + commitHash)
+				msg := []byte("0" + "0" + "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd" + commitHash)
 				sig, err = crypto.GPGSign(privKey, msg)
 				Expect(err).To(BeNil())
 				sigHex := hex.EncodeToString(sig)
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=0x0000000000000000000000000000000000000000 sig=0x"+sigHex)
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x"+sigHex)
 				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
@@ -1079,7 +1079,7 @@ var _ = Describe("Validation", func() {
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
 				mockKeepers.EXPECT().RepoKeeper().Return(mockRepoKeeper)
 				mockGPGKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
-				mockGPGKeeper.EXPECT().GetGPGPubKey(util.ToHex(tx.PusherKeyID)).Return(types.BareGPGPubKey())
+				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID)).Return(types.BareGPGPubKey())
 				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
 				err = CheckPushNoteConsistency(tx, mockKeepers)
 			})
@@ -1104,7 +1104,7 @@ var _ = Describe("Validation", func() {
 
 				gpgKey := types.BareGPGPubKey()
 				gpgKey.Address = util.String("address2")
-				mockGPGKeeper.EXPECT().GetGPGPubKey(util.ToHex(tx.PusherKeyID)).Return(gpgKey)
+				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID)).Return(gpgKey)
 				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
 				err = CheckPushNoteConsistency(tx, mockKeepers)
 			})
@@ -1129,7 +1129,7 @@ var _ = Describe("Validation", func() {
 
 				gpgKey := types.BareGPGPubKey()
 				gpgKey.Address = util.String("address1")
-				mockGPGKeeper.EXPECT().GetGPGPubKey(util.ToHex(tx.PusherKeyID)).Return(gpgKey)
+				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID)).Return(gpgKey)
 				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
 
 				mockAcctKeeper := mocks.NewMockAccountKeeper(ctrl)
@@ -1160,7 +1160,7 @@ var _ = Describe("Validation", func() {
 
 				gpgKey := types.BareGPGPubKey()
 				gpgKey.Address = util.String("address1")
-				mockGPGKeeper.EXPECT().GetGPGPubKey(util.ToHex(tx.PusherKeyID)).Return(gpgKey)
+				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID)).Return(gpgKey)
 				mockKeepers.EXPECT().GPGPubKeyKeeper().Return(mockGPGKeeper)
 
 				mockAcctKeeper := mocks.NewMockAccountKeeper(ctrl)
@@ -1306,9 +1306,9 @@ var _ = Describe("Validation", func() {
 	Describe(".checkPushNoteAgainstTxLines", func() {
 		When("pusher key in push note is different from txlines pusher key", func() {
 			BeforeEach(func() {
-				pn := &types.PushNote{PusherKeyID: util.RandBytes(20)}
+				pn := &types.PushNote{PusherKeyID: util.MustDecodeRSAPubKeyID("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")}
 				txLines := map[string]*util.TxLine{
-					"refs/heads/master": &util.TxLine{PubKeyID: util.ToHex(util.RandBytes(20))},
+					"refs/heads/master": &util.TxLine{PubKeyID: util.MustToRSAPubKeyID(util.RandBytes(20))},
 				}
 				err = checkPushNoteAgainstTxLines(pn, txLines)
 			})
@@ -1325,7 +1325,7 @@ var _ = Describe("Validation", func() {
 				pn := &types.PushNote{PusherKeyID: pkID, Fee: "9"}
 				txLines := map[string]*util.TxLine{
 					"refs/heads/master": &util.TxLine{
-						PubKeyID: util.ToHex(pkID),
+						PubKeyID: util.MustToRSAPubKeyID(pkID),
 						Fee:      "10",
 					},
 				}
@@ -1350,7 +1350,7 @@ var _ = Describe("Validation", func() {
 				}
 				txLines := map[string]*util.TxLine{
 					"refs/heads/master": &util.TxLine{
-						PubKeyID: util.ToHex(pkID),
+						PubKeyID: util.MustToRSAPubKeyID(pkID),
 						Fee:      "10",
 					},
 				}
