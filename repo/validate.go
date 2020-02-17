@@ -253,7 +253,7 @@ func checkMergeCompliance(
 	gpgKey := keepers.GPGPubKeyKeeper().GetGPGPubKey(gpgKeyID)
 	if gpgKey.Address.String() != prop.Creator {
 		return fmt.Errorf("merge compliance error: "+
-			"signer must be the create of the merge proposal (%s)", mergeProposalID)
+			"signer must be the creator of the merge proposal (%s)", mergeProposalID)
 	}
 
 	// Check if the merge proposal has been closed
@@ -330,7 +330,7 @@ func checkMergeCompliance(
 	// Ensure the target commit and the proposal target match
 	propTargetHash := prop.ActionData.Get(actionKey)["targetHash"]
 	if targetCommit.GetHash().String() != propTargetHash.(string) {
-		return fmt.Errorf("merge compliance error: actual target commit hash and " +
+		return fmt.Errorf("merge compliance error: target commit hash and " +
 			"the merge proposal target hash must match")
 	}
 

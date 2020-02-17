@@ -442,7 +442,7 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
-	FDescribe(".checkMergeCompliance", func() {
+	Describe(".checkMergeCompliance", func() {
 		When("pushed reference is not a branch", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
@@ -491,7 +491,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: signer must be the create of the merge proposal (0001)"))
+				Expect(err.Error()).To(Equal("merge compliance error: signer must be the creator of the merge proposal (0001)"))
 			})
 		})
 
@@ -898,7 +898,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: actual target commit " +
+				Expect(err.Error()).To(Equal("merge compliance error: target commit " +
 					"hash and the merge proposal target hash must match"))
 			})
 		})
