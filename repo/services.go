@@ -148,14 +148,15 @@ func serveService(s *serviceParams) error {
 		return nil
 	}
 
-	// Read, analyse and pass the packfile to git
-	if err := s.pushHandler.HandleStream(reader, in); err != nil {
-		return errors.Wrap(err, "HandleStream error")
-	}
-
 	scn := pktline.NewScanner(stdout)
 	pktEnc := pktline.NewEncoder(w)
 	defer pktEnc.Flush()
+
+	// Read, analyse and pass the packfile to git
+	if err := s.pushHandler.HandleStream(reader, in); err != nil {
+		pktEnc.Encode(sidebandErr(errors.Wrap(err, "server error").Error()))
+		return errors.Wrap(err, "HandleStream error")
+	}
 
 	// Handle validate, revert and broadcast the changes
 	if err := s.pushHandler.HandleUpdate(); err != nil {

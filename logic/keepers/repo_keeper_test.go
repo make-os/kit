@@ -210,4 +210,36 @@ var _ = Describe("RepoKeeper", func() {
 			})
 		})
 	})
+
+	Describe(".MarkProposalAsClosed", func() {
+		It("should add mark", func() {
+			err := rk.MarkProposalAsClosed("repo1", "prop1")
+			Expect(err).To(BeNil())
+
+			key := MakeClosedProposalKey("repo1", "prop1")
+			rec, err := appDB.Get(key)
+			Expect(err).To(BeNil())
+			Expect(rec.Value).To(Equal([]byte("0")))
+		})
+	})
+
+	Describe(".IsProposalClosed", func() {
+		When("a proposal is not marked closed", func() {
+			It("should return false and nil error", func() {
+				closed, err := rk.IsProposalClosed("repo1", "prop1")
+				Expect(err).To(BeNil())
+				Expect(closed).To(BeFalse())
+			})
+		})
+
+		When("a proposal is marked closed", func() {
+			It("should return true and nil error", func() {
+				err := rk.MarkProposalAsClosed("repo1", "prop1")
+				Expect(err).To(BeNil())
+				closed, err := rk.IsProposalClosed("repo1", "prop1")
+				Expect(err).To(BeNil())
+				Expect(closed).To(BeTrue())
+			})
+		})
+	})
 })

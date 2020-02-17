@@ -442,13 +442,13 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
-	Describe(".checkMergeCompliance", func() {
+	FDescribe(".checkMergeCompliance", func() {
 		When("pushed reference is not a branch", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				change := &types.ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-				err = checkMergeCompliance(repo, change, oldRef, "0001")
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -463,7 +463,7 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().State().Return(types.BareRepository())
 				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-				err = checkMergeCompliance(repo, change, oldRef, "0001")
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -472,15 +472,126 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("target merge proposal outcome is not 'accepted'", func() {
+		When("signer did not create the proposal", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repoState := types.BareRepository()
-				repoState.Proposals.Add("0001", types.BareRepoProposal())
+				prop := types.BareRepoProposal()
+				prop.Creator = "address_of_creator"
+				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
+
+				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{Address: "address_xyz"})
+
 				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-				err = checkMergeCompliance(repo, change, oldRef, "0001")
+
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("merge compliance error: signer must be the create of the merge proposal (0001)"))
+			})
+		})
+
+		When("unable to check whether proposal is closed", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().GetName().Return("repo1")
+				repoState := types.BareRepository()
+				repoState.Proposals.Add("0001", types.BareRepoProposal())
+				repo.EXPECT().State().Return(repoState)
+
+				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
+
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
+
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, fmt.Errorf("error"))
+
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("merge compliance error: error"))
+			})
+		})
+
+		When("target merge proposal is closed", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().GetName().Return("repo1")
+				repoState := types.BareRepository()
+				repoState.Proposals.Add("0001", types.BareRepoProposal())
+				repo.EXPECT().State().Return(repoState)
+
+				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
+
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
+
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(true, nil)
+
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("merge compliance error: merge proposal (0001) is already closed"))
+			})
+		})
+
+		When("target merge proposal's base branch name does not match the pushed branch name", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().GetName().Return("repo1")
+				repoState := types.BareRepository()
+				prop := types.BareRepoProposal()
+				prop.Outcome = types.ProposalOutcomeAccepted
+				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+					"base": "release",
+				}
+				repoState.Proposals.Add("0001", prop)
+				repo.EXPECT().State().Return(repoState)
+
+				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
+
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
+
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("merge compliance error: pushed branch name and merge proposal base branch name must match"))
+			})
+		})
+
+		When("target merge proposal outcome is not 'accepted'", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().GetName().Return("repo1")
+				repoState := types.BareRepository()
+				prop := types.BareRepoProposal()
+				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+					"base": "master",
+				}
+				repoState.Proposals.Add("0001", prop)
+				repo.EXPECT().State().Return(repoState)
+
+				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
+
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
+
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -489,98 +600,306 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("target merge proposal's base name does not match the pushed reference name", func() {
+		When("unable to get merger initiator commit", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().GetName().Return("repo1")
 				repoState := types.BareRepository()
 				prop := types.BareRepoProposal()
 				prop.Outcome = types.ProposalOutcomeAccepted
-				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]string{
-					"base": "release",
+				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+					"base": "master",
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
+
+				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
+
 				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-				err = checkMergeCompliance(repo, change, oldRef, "0001")
+				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(nil, fmt.Errorf("error"))
+
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: pushed reference name and " +
-					"merge proposal base reference name must match"))
+				Expect(err.Error()).To(Equal("unable to get commit object: error"))
 			})
 		})
 
-		When("target merge proposal's base hash does not match the pushed reference current hash", func() {
+		When("unable to get merger initiator commit has more than 1 parents", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().GetName().Return("repo1")
 				repoState := types.BareRepository()
 				prop := types.BareRepoProposal()
 				prop.Outcome = types.ProposalOutcomeAccepted
-				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]string{
-					"base":     "master",
-					"baseHash": "my_base_master_hash",
+				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+					"base": "master",
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
+
+				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
+
 				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
-				oldRef := &Obj{Name: "refs/heads/master", Data: "current_master_hash"}
-				err = checkMergeCompliance(repo, change, oldRef, "0001")
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
+				mergerCommit := mocks.NewMockCommit(ctrl)
+				mergerCommit.EXPECT().NumParents().Return(2)
+				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(mergerCommit, nil)
+
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: pushed reference current " +
-					"hash and merge proposal base hash must match"))
+				Expect(err.Error()).To(Equal("merge compliance error: multiple targets not allowed"))
 			})
 		})
 
-		When("target merge proposal's target hash does not match the pushed reference new/updated hash", func() {
+		When("merger commit modified worktree history of parent", func() {
+			When("tree hash is modified", func() {
+				BeforeEach(func() {
+					repo := mocks.NewMockBareRepo(ctrl)
+					repo.EXPECT().GetName().Return("repo1")
+					repoState := types.BareRepository()
+					prop := types.BareRepoProposal()
+					prop.Outcome = types.ProposalOutcomeAccepted
+					prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+						"base": "master",
+					}
+					repoState.Proposals.Add("0001", prop)
+					repo.EXPECT().State().Return(repoState)
+
+					mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
+
+					change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
+
+					mergerCommit := mocks.NewMockCommit(ctrl)
+					mergerCommit.EXPECT().NumParents().Return(1)
+					treeHash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+					mergerCommit.EXPECT().GetTreeHash().Return(treeHash)
+
+					targetCommit := mocks.NewMockCommit(ctrl)
+					treeHash = plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+					targetCommit.EXPECT().GetTreeHash().Return(treeHash)
+
+					mergerCommit.EXPECT().Parent(0).Return(targetCommit, nil)
+					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(mergerCommit, nil)
+
+					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+
+					err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				})
+
+				It("should return error", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("merge compliance error: merger commit cannot modify history as seen from target commit"))
+				})
+			})
+
+			When("author is modified", func() {
+				BeforeEach(func() {
+					repo := mocks.NewMockBareRepo(ctrl)
+					repo.EXPECT().GetName().Return("repo1")
+					repoState := types.BareRepository()
+					prop := types.BareRepoProposal()
+					prop.Outcome = types.ProposalOutcomeAccepted
+					prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+						"base": "master",
+					}
+					repoState.Proposals.Add("0001", prop)
+					repo.EXPECT().State().Return(repoState)
+
+					mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
+
+					change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
+
+					mergerCommit := mocks.NewMockCommit(ctrl)
+					mergerCommit.EXPECT().NumParents().Return(1)
+					treeHash := plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
+					mergerCommit.EXPECT().GetTreeHash().Return(treeHash)
+					author := &object.Signature{Name: "author1", Email: "author@email.com"}
+					mergerCommit.EXPECT().GetAuthor().Return(author)
+
+					targetCommit := mocks.NewMockCommit(ctrl)
+					treeHash = plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
+					targetCommit.EXPECT().GetTreeHash().Return(treeHash)
+					author = &object.Signature{Name: "author1", Email: "author2@email.com"}
+					targetCommit.EXPECT().GetAuthor().Return(author)
+
+					mergerCommit.EXPECT().Parent(0).Return(targetCommit, nil)
+					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(mergerCommit, nil)
+
+					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+
+					err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				})
+
+				It("should return error", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("merge compliance error: merger commit cannot modify history as seen from target commit"))
+				})
+			})
+
+			When("committer is modified", func() {
+				BeforeEach(func() {
+					repo := mocks.NewMockBareRepo(ctrl)
+					repo.EXPECT().GetName().Return("repo1")
+					repoState := types.BareRepository()
+					prop := types.BareRepoProposal()
+					prop.Outcome = types.ProposalOutcomeAccepted
+					prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+						"base": "master",
+					}
+					repoState.Proposals.Add("0001", prop)
+					repo.EXPECT().State().Return(repoState)
+
+					mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
+
+					change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
+
+					mergerCommit := mocks.NewMockCommit(ctrl)
+					mergerCommit.EXPECT().NumParents().Return(1)
+					treeHash := plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
+					mergerCommit.EXPECT().GetTreeHash().Return(treeHash)
+					author := &object.Signature{Name: "author1", Email: "author@email.com"}
+					mergerCommit.EXPECT().GetAuthor().Return(author)
+					committer := &object.Signature{Name: "committer1", Email: "committer@email.com"}
+					mergerCommit.EXPECT().GetCommitter().Return(committer)
+
+					targetCommit := mocks.NewMockCommit(ctrl)
+					treeHash = plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
+					targetCommit.EXPECT().GetTreeHash().Return(treeHash)
+					author = &object.Signature{Name: "author1", Email: "author@email.com"}
+					targetCommit.EXPECT().GetAuthor().Return(author)
+					committer = &object.Signature{Name: "committer1", Email: "committer2@email.com"}
+					targetCommit.EXPECT().GetCommitter().Return(committer)
+
+					mergerCommit.EXPECT().Parent(0).Return(targetCommit, nil)
+					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(mergerCommit, nil)
+
+					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+
+					err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				})
+
+				It("should return error", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal("merge compliance error: merger commit cannot modify history as seen from target commit"))
+				})
+			})
+		})
+
+		When("old pushed branch hash is different from old branch hash described in the merge proposal", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().GetName().Return("repo1")
 				repoState := types.BareRepository()
 				prop := types.BareRepoProposal()
 				prop.Outcome = types.ProposalOutcomeAccepted
-				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]string{
-					"base":       "master",
-					"baseHash":   "current_master_hash",
-					"targetHash": "target_hash",
+				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+					"base":     "master",
+					"baseHash": "xyz",
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "updated_hash"}}
-				oldRef := &Obj{Name: "refs/heads/master", Data: "current_master_hash"}
-				err = checkMergeCompliance(repo, change, oldRef, "0001")
+
+				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
+
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "abc"}
+
+				mergerCommit := mocks.NewMockCommit(ctrl)
+				mergerCommit.EXPECT().NumParents().Return(1)
+				treeHash := plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
+				mergerCommit.EXPECT().GetTreeHash().Return(treeHash)
+				author := &object.Signature{Name: "author1", Email: "author@email.com"}
+				mergerCommit.EXPECT().GetAuthor().Return(author)
+				committer := &object.Signature{Name: "committer1", Email: "committer@email.com"}
+				mergerCommit.EXPECT().GetCommitter().Return(committer)
+
+				targetCommit := mocks.NewMockCommit(ctrl)
+				treeHash = plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
+				targetCommit.EXPECT().GetTreeHash().Return(treeHash)
+				author = &object.Signature{Name: "author1", Email: "author@email.com"}
+				targetCommit.EXPECT().GetAuthor().Return(author)
+				committer = &object.Signature{Name: "committer1", Email: "committer@email.com"}
+				targetCommit.EXPECT().GetCommitter().Return(committer)
+
+				mergerCommit.EXPECT().Parent(0).Return(targetCommit, nil)
+				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(mergerCommit, nil)
+
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: new base reference hash" +
-					" and merge proposal target hash must match"))
+				Expect(err.Error()).To(Equal("merge compliance error: merge proposal base branch hash is stale or invalid"))
 			})
 		})
 
-		When("target merge proposal's target hash matches the pushed reference new/updated hash", func() {
+		When("merge proposal target hash does not match the expected target hash", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().GetName().Return("repo1")
 				repoState := types.BareRepository()
 				prop := types.BareRepoProposal()
 				prop.Outcome = types.ProposalOutcomeAccepted
-				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]string{
+				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
 					"base":       "master",
-					"baseHash":   "current_master_hash",
-					"targetHash": "updated_hash",
+					"baseHash":   "abc",
+					"targetHash": "target_xyz",
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "updated_hash"}}
-				oldRef := &Obj{Name: "refs/heads/master", Data: "current_master_hash"}
-				err = checkMergeCompliance(repo, change, oldRef, "0001")
+
+				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
+
+				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "abc"}
+
+				mergerCommit := mocks.NewMockCommit(ctrl)
+				mergerCommit.EXPECT().NumParents().Return(1)
+				treeHash := plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
+				mergerCommit.EXPECT().GetTreeHash().Return(treeHash)
+				author := &object.Signature{Name: "author1", Email: "author@email.com"}
+				mergerCommit.EXPECT().GetAuthor().Return(author)
+				committer := &object.Signature{Name: "committer1", Email: "committer@email.com"}
+				mergerCommit.EXPECT().GetCommitter().Return(committer)
+
+				targetCommit := mocks.NewMockCommit(ctrl)
+				targetHash := plumbing.ComputeHash(plumbing.CommitObject, []byte("target_abc"))
+				targetCommit.EXPECT().GetHash().Return(targetHash)
+				treeHash = plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
+				targetCommit.EXPECT().GetTreeHash().Return(treeHash)
+				author = &object.Signature{Name: "author1", Email: "author@email.com"}
+				targetCommit.EXPECT().GetAuthor().Return(author)
+				committer = &object.Signature{Name: "committer1", Email: "committer@email.com"}
+				targetCommit.EXPECT().GetCommitter().Return(committer)
+
+				mergerCommit.EXPECT().Parent(0).Return(targetCommit, nil)
+				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(mergerCommit, nil)
+
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
 			})
 
-			It("should return no error", func() {
-				Expect(err).To(BeNil())
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("merge compliance error: actual target commit " +
+					"hash and the merge proposal target hash must match"))
 			})
 		})
 	})

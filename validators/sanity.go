@@ -664,9 +664,7 @@ func CheckTxRepoProposalMergeRequest(tx *types.TxRepoProposalMergeRequest, index
 		return feI(index, "base", "base branch name is required")
 	}
 
-	if tx.BaseBranchHash == "" {
-		return feI(index, "baseHash", "base branch hash is required")
-	} else if len(tx.BaseBranchHash) != 40 {
+	if len(tx.BaseBranchHash) > 0 && len(tx.BaseBranchHash) != 40 {
 		return feI(index, "baseHash", "base branch hash is not valid")
 	}
 

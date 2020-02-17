@@ -58,18 +58,13 @@ var _ = Describe("App", func() {
 		c, stateTreeDB = testutil.GetDB(cfg)
 		logic = l.New(c, stateTreeDB, cfg)
 		app = NewApp(cfg, c, logic, ticketmgr)
-	})
 
-	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = testutil.MockLogic(ctrl)
 	})
 
 	AfterEach(func() {
 		ctrl.Finish()
-	})
-
-	AfterEach(func() {
 		Expect(c.Close()).To(BeNil())
 		Expect(stateTreeDB.Close()).To(BeNil())
 		err = os.RemoveAll(cfg.DataDir())
@@ -277,7 +272,26 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("getting last block info and error is returned and it is ErrBlockInfoNotFound", func() {
+		When("unable to get last block information", func() {
+			var appHash = []byte("app_hash")
+			var height = int64(100)
+
+			BeforeEach(func() {
+				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{
+					AppHash: []byte("app_hash"),
+					Height:  height,
+				}, nil)
+				app.logic = mockLogic.AtomicLogic
+			})
+
+			It("should not panic", func() {
+				info := app.Info(abcitypes.RequestInfo{})
+				Expect(info.LastBlockAppHash).To(Equal(appHash))
+				Expect(info.LastBlockHeight).To(Equal(height))
+			})
+		})
+
+		When("last block information is returned", func() {
 			BeforeEach(func() {
 				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(nil, keepers.ErrBlockInfoNotFound)
 				app.logic = mockLogic.AtomicLogic
@@ -404,7 +418,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				params.MaxValTicketsPerBlock = 1
-				app.validatorTickets = append(app.validatorTickets, &ticketInfo{})
+				app.unIdxValidatorTickets = append(app.unIdxValidatorTickets, &ticketInfo{})
 				tx := types.NewBaseTx(types.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
 			})
@@ -432,7 +446,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should return cache the validator ticket tx", func() {
-				Expect(app.validatorTickets).To(HaveLen(1))
+				Expect(app.unIdxValidatorTickets).To(HaveLen(1))
 			})
 		})
 
@@ -452,7 +466,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should return cache the storer ticket tx", func() {
-				Expect(app.storerTickets).To(HaveLen(1))
+				Expect(app.unIdxStorerTickets).To(HaveLen(1))
 			})
 		})
 
@@ -474,6 +488,71 @@ var _ = Describe("App", func() {
 
 			It("should return cache the unbond storer ticket tx", func() {
 				Expect(app.unbondStorerReqs).To(HaveLen(1))
+			})
+		})
+	})
+
+	Describe(".postExecChecks", func() {
+		When("tx is TxRepoCreate", func() {
+			var tx *types.TxRepoCreate
+
+			BeforeEach(func() {
+				tx = types.NewBareTxRepoCreate()
+				tx.Name = "repo1"
+				resp := &abcitypes.ResponseDeliverTx{}
+				app.postExecChecks(tx, resp)
+			})
+
+			It("should add repo name to new repo index", func() {
+				Expect(app.newRepos).To(HaveLen(1))
+				Expect(app.newRepos).To(ContainElement(tx.Name))
+			})
+
+			It("should add tx to un-indexed cache", func() {
+				Expect(app.unIdxTxs).To(ContainElement(tx))
+			})
+		})
+
+		When("tx is TxRepoProposalVote", func() {
+			var tx *types.TxRepoProposalVote
+
+			BeforeEach(func() {
+				tx = types.NewBareRepoProposalVote()
+				tx.RepoName = "repo1"
+				resp := &abcitypes.ResponseDeliverTx{}
+				app.postExecChecks(tx, resp)
+			})
+
+			It("should add repo name to new repo index", func() {
+				Expect(app.unIdxRepoPropVotes).To(HaveLen(1))
+				Expect(app.unIdxRepoPropVotes).To(ContainElement(tx))
+			})
+
+			It("should add tx to un-indexed cache", func() {
+				Expect(app.unIdxTxs).To(ContainElement(tx))
+			})
+		})
+
+		When("tx is TxPush with a reference with merge proposal id", func() {
+			var tx *types.TxPush
+
+			BeforeEach(func() {
+				tx = types.NewBareTxPush()
+				tx.PushNote.RepoName = "repo1"
+				tx.PushNote.References = []*types.PushedReference{
+					{MergeProposalID: "0001"},
+				}
+				resp := &abcitypes.ResponseDeliverTx{}
+				app.postExecChecks(tx, resp)
+			})
+
+			It("should add repo and proposal id to closable proposals", func() {
+				Expect(app.unIdxClosedMergeProposal).To(HaveLen(1))
+				Expect(app.unIdxClosedMergeProposal).To(ContainElement(&mergeProposalInfo{"repo1", "0001"}))
+			})
+
+			It("should add tx to un-indexed cache", func() {
+				Expect(app.unIdxTxs).To(ContainElement(tx))
 			})
 		})
 	})
@@ -509,7 +588,7 @@ var _ = Describe("App", func() {
 				mockLogic.AtomicLogic.EXPECT().Discard().Return()
 				mockLogic.AtomicLogic.EXPECT().TxKeeper().Return(mockLogic.TxKeeper).AnyTimes()
 				app.logic = mockLogic.AtomicLogic
-				app.unIndexedTxs = append(app.unIndexedTxs, types.NewBareTxCoinTransfer())
+				app.unIdxTxs = append(app.unIdxTxs, types.NewBareTxCoinTransfer())
 			})
 
 			It("should panic", func() {
@@ -553,6 +632,61 @@ var _ = Describe("App", func() {
 			It("should return expected app hash", func() {
 				res := app.Commit()
 				Expect(res.Data).To(Equal(appHash))
+			})
+		})
+
+		When("there are un-indexed validator or storer tickets", func() {
+
+			var valTicketInfo *ticketInfo
+			var storerTicketInfo *ticketInfo
+			var valTicketTx, storerTicketTx *types.TxTicketPurchase
+
+			BeforeEach(func() {
+				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("app_hash")).Times(1)
+				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
+
+				valTicketTx = types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
+				storerTicketTx = types.NewBareTxTicketPurchase(types.TxTypeStorerTicket)
+				valTicketInfo = &ticketInfo{Tx: valTicketTx, index: 1}
+				storerTicketInfo = &ticketInfo{Tx: storerTicketTx, index: 2}
+				app.unIdxValidatorTickets = append(app.unIdxValidatorTickets, valTicketInfo)
+				app.unIdxStorerTickets = append(app.unIdxStorerTickets, storerTicketInfo)
+
+				mockLogic.ValidatorKeeper.EXPECT().Index(gomock.Any(), gomock.Any()).Times(1)
+				mockLogic.AtomicLogic.EXPECT().Commit().Times(1)
+
+				app.logic = mockLogic.AtomicLogic
+				app.ticketMgr = mockLogic.TicketManager
+			})
+
+			It("should attempt to index all collected tickets", func() {
+				mockLogic.TicketManager.EXPECT().Index(valTicketInfo.Tx, uint64(0), valTicketInfo.index).Return(nil)
+				mockLogic.TicketManager.EXPECT().Index(storerTicketInfo.Tx, uint64(0), storerTicketInfo.index).Return(nil)
+				app.Commit()
+			})
+		})
+
+		When("there are unclosed merge proposals", func() {
+			var mergePropInfo *mergeProposalInfo
+
+			BeforeEach(func() {
+				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("app_hash")).Times(1)
+				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
+
+				mergePropInfo = &mergeProposalInfo{repo: "repo1", proposalID: "0001"}
+				app.unIdxClosedMergeProposal = append(app.unIdxClosedMergeProposal, mergePropInfo)
+
+				mockLogic.ValidatorKeeper.EXPECT().Index(gomock.Any(), gomock.Any()).Times(1)
+				mockLogic.AtomicLogic.EXPECT().Commit().Times(1)
+
+				app.logic = mockLogic.AtomicLogic
+				app.ticketMgr = mockLogic.TicketManager
+			})
+
+			It("should attempt to mark the proposal as closed", func() {
+				mockLogic.RepoKeeper.EXPECT().
+					MarkProposalAsClosed(mergePropInfo.repo, mergePropInfo.proposalID).Return(nil)
+				app.Commit()
 			})
 		})
 	})

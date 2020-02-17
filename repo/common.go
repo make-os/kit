@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/makeos/mosdef/types"
+	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 // ErrRepoNotFound means a repo was not found on the local storage
@@ -56,4 +58,38 @@ func checkEvtArgs(args []interface{}) error {
 	}
 
 	return err
+}
+
+// WrappedCommit wraps a go-git commit to ensure it conforms to types.Commit
+type WrappedCommit struct {
+	*object.Commit
+}
+
+// Parent returns the ith parent of a commit.
+func (c *WrappedCommit) Parent(i int) (types.Commit, error) {
+	parent, err := c.Commit.Parent(i)
+	if err != nil {
+		return nil, err
+	}
+	return &WrappedCommit{parent}, nil
+}
+
+// GetTreeHash returns the hash of the root tree of the commit
+func (c *WrappedCommit) GetTreeHash() plumbing.Hash {
+	return c.TreeHash
+}
+
+// GetAuthor returns the original author of the commit.
+func (c *WrappedCommit) GetAuthor() *object.Signature {
+	return &c.Author
+}
+
+// GetCommitter returns the one performing the commit, might be different from Author
+func (c *WrappedCommit) GetCommitter() *object.Signature {
+	return &c.Committer
+}
+
+// GetHash returns the hash of the commit object
+func (c *WrappedCommit) GetHash() plumbing.Hash {
+	return c.Hash
 }

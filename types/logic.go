@@ -102,6 +102,9 @@ type AccountKeeper interface {
 type RepoKeeper interface {
 	// GetRepo finds a repository by name.
 	//
+	// It will populate the proposals in the repo with their correct config
+	// source from the version the repo that they where first appeared in.
+	//
 	// ARGS:
 	// name: The name of the repository to find.
 	// blockNum: The target block to query (Optional. Default: latest)
@@ -111,12 +114,18 @@ type RepoKeeper interface {
 
 	// GetRepoOnly fetches a repository by the given name without making additional
 	// queries to populate the repo with associated objects.
-	GetRepoOnly(name string, blockNum ...uint64) *Repository
-
-	// Update sets a new object at the given address.
 	//
 	// ARGS:
-	// address: The address of the repository to update
+	// name: The name of the repository to find.
+	// blockNum: The target block to query (Optional. Default: latest)
+	//
+	// CONTRACT: It returns an empty Repository if no repo is found.
+	GetRepoOnly(name string, blockNum ...uint64) *Repository
+
+	// Update sets a new object at the given name.
+	//
+	// ARGS:
+	// name: The name of the repository to update
 	// udp: The updated repository object to replace the existing object.
 	Update(name string, upd *Repository)
 
@@ -140,10 +149,32 @@ type RepoKeeper interface {
 
 	// IndexProposalEnd indexes a proposal by its end height so it can be
 	// tracked and finalized at the given height
+	//
+	// ARGS:
+	// name: The name of the repository
+	// propID: The target proposal
+	// endHeight: The chain height when the proposal will stop accepting votes.
 	IndexProposalEnd(name, propID string, endHeight uint64) error
 
 	// GetProposalsEndingAt finds repo proposals ending at the given height
+	//
+	// ARGS:
+	// height: The chain height when the proposal will stop accepting votes.
 	GetProposalsEndingAt(height uint64) []*EndingProposals
+
+	// MarkProposalAsClosed makes a proposal as "closed"
+	//
+	// ARGS:
+	// name: The name of the repository
+	// propID: The target proposal
+	MarkProposalAsClosed(name, propID string) error
+
+	// IsProposalClosed checks whether a proposal has been marked "closed"
+	//
+	// ARGS:
+	// name: The name of the repository
+	// propID: The target proposal
+	IsProposalClosed(name, propID string) (bool, error)
 }
 
 // EndingProposals describes a proposal ending height

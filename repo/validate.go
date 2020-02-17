@@ -234,18 +234,44 @@ func checkMergeCompliance(
 	repo types.BareRepo,
 	change *types.ItemChange,
 	oldRef types.Item,
-	mergeProposalID string) error {
+	mergeProposalID,
+	gpgKeyID string,
+	keepers types.Keepers) error {
 
 	ref := plumbing.ReferenceName(change.Item.GetName())
 	if !ref.IsBranch() {
 		return fmt.Errorf("merge compliance error: pushed reference must be a branch")
 	}
 
-	// Get the proposal
 	prop := repo.State().Proposals.Get(mergeProposalID)
 	if prop == nil {
 		return fmt.Errorf("merge compliance error: "+
 			"merge proposal (%s) not found", mergeProposalID)
+	}
+
+	// Ensure the signer is the creator of the proposal
+	gpgKey := keepers.GPGPubKeyKeeper().GetGPGPubKey(gpgKeyID)
+	if gpgKey.Address.String() != prop.Creator {
+		return fmt.Errorf("merge compliance error: "+
+			"signer must be the create of the merge proposal (%s)", mergeProposalID)
+	}
+
+	// Check if the merge proposal has been closed
+	closed, err := keepers.RepoKeeper().IsProposalClosed(repo.GetName(), mergeProposalID)
+	if err != nil {
+		return fmt.Errorf("merge compliance error: %s", err)
+	} else if closed {
+		return fmt.Errorf("merge compliance error: "+
+			"merge proposal (%s) is already closed", mergeProposalID)
+	}
+
+	actionKey := types.ProposalActionDataMergeRequest
+
+	// Ensure the proposal's base branch matches the pushed branch
+	propBaseBranch := prop.ActionData.Get(actionKey)["base"]
+	if ref.Short() != propBaseBranch.(string) {
+		return fmt.Errorf("merge compliance error: pushed branch name and " +
+			"merge proposal base branch name must match")
 	}
 
 	// Check whether the merge proposal has been accepted
@@ -254,29 +280,58 @@ func checkMergeCompliance(
 			"merge proposal (%s) has not been accepted", mergeProposalID)
 	}
 
-	actionKey := types.ProposalActionDataMergeRequest
+	// Get the commit that initiated the merge operation (a.k.a "merger commit").
+	// Since by convention, its parent is considered the actual merge target.
+	// As such, we need to perform some validation before we compare it with
+	// the merge proposal target hash.
+	commit, err := repo.WrappedCommitObject(plumbing.NewHash(change.Item.GetData()))
+	if err != nil {
+		return errors.Wrap(err, "unable to get commit object")
+	}
 
-	// Ensure the proposal's base name matches the pushed reference
-	base := prop.ActionData[actionKey].(map[string]string)["base"]
-	if ref.Short() != base {
-		return fmt.Errorf("merge compliance error: pushed reference name and " +
-			"merge proposal base reference name must match")
+	// Ensure the merger commit does not have multiple parents
+	if commit.NumParents() > 1 {
+		return fmt.Errorf("merge compliance error: multiple targets not allowed")
+	}
+
+	// Ensure the difference between the target commit and the merger commit
+	// only exist in the commit hash and not the tree, author and committer information.
+	// By convention, the merger commit can only modify its commit object (time,
+	// message and signature).
+	targetCommit, _ := commit.Parent(0)
+	if commit.GetTreeHash() != targetCommit.GetTreeHash() ||
+		commit.GetAuthor().String() != targetCommit.GetAuthor().String() ||
+		commit.GetCommitter().String() != targetCommit.GetCommitter().String() {
+		return fmt.Errorf("merge compliance error: merger commit " +
+			"cannot modify history as seen from target commit")
+	}
+
+	// When no older reference (ex. a new/first branch),
+	// set default hash value to zero hash.
+	oldRefHash := plumbing.ZeroHash.String()
+	if oldRef != nil {
+		oldRefHash = oldRef.GetData()
+	}
+
+	// When no base hash is given, set default hash value to zero hash
+	propBaseHash := prop.ActionData.Get(actionKey)["baseHash"]
+	propBaseHashStr := plumbing.ZeroHash.String()
+	if propBaseHash.(string) != "" {
+		propBaseHashStr = propBaseHash.(string)
 	}
 
 	// Ensure the proposals base branch hash matches the hash of the current
-	// reference before this current push/change.
-	baseHash := prop.ActionData[actionKey].(map[string]string)["baseHash"]
-	if baseHash != oldRef.GetData() {
-		return fmt.Errorf("merge compliance error: pushed reference current hash and " +
-			"merge proposal base hash must match")
+	// branch before this current push/change.
+	if propBaseHashStr != oldRefHash {
+		return fmt.Errorf("merge compliance error: merge proposal base " +
+			"branch hash is stale or invalid")
 	}
 
-	// Ensure the proposal's target branch hash matches the hash of the current
-	// reference after this current push/change.
-	targetHash := prop.ActionData[actionKey].(map[string]string)["targetHash"]
-	if targetHash != change.Item.GetData() {
-		return fmt.Errorf("merge compliance error: new base reference hash and " +
-			"merge proposal target hash must match")
+	// Ensure the target commit and the proposal target match
+	propTargetHash := prop.ActionData.Get(actionKey)["targetHash"]
+	if targetCommit.GetHash().String() != propTargetHash.(string) {
+		return fmt.Errorf("merge compliance error: actual target commit hash and " +
+			"the merge proposal target hash must match")
 	}
 
 	return nil

@@ -6,6 +6,9 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	config "github.com/makeos/mosdef/config"
 	crypto "github.com/makeos/mosdef/crypto"
@@ -18,8 +21,6 @@ import (
 	object "gopkg.in/src-d/go-git.v4/plumbing/object"
 	storer "gopkg.in/src-d/go-git.v4/plumbing/storer"
 	storage "gopkg.in/src-d/go-git.v4/storage"
-	reflect "reflect"
-	time "time"
 )
 
 // MockBareRepo is a mock of BareRepo interface
@@ -238,6 +239,21 @@ func (m *MockBareRepo) CommitObject(h plumbing.Hash) (*object.Commit, error) {
 func (mr *MockBareRepoMockRecorder) CommitObject(h interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CommitObject", reflect.TypeOf((*MockBareRepo)(nil).CommitObject), h)
+}
+
+// WrappedCommitObject mocks base method
+func (m *MockBareRepo) WrappedCommitObject(h plumbing.Hash) (types.Commit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WrappedCommitObject", h)
+	ret0, _ := ret[0].(types.Commit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WrappedCommitObject indicates an expected call of WrappedCommitObject
+func (mr *MockBareRepoMockRecorder) WrappedCommitObject(h interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WrappedCommitObject", reflect.TypeOf((*MockBareRepo)(nil).WrappedCommitObject), h)
 }
 
 // MergeBranch mocks base method
@@ -687,6 +703,114 @@ func (m *MockBareRepo) Prune(olderThan time.Time) error {
 func (mr *MockBareRepoMockRecorder) Prune(olderThan interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prune", reflect.TypeOf((*MockBareRepo)(nil).Prune), olderThan)
+}
+
+// MockCommit is a mock of Commit interface
+type MockCommit struct {
+	ctrl     *gomock.Controller
+	recorder *MockCommitMockRecorder
+}
+
+// MockCommitMockRecorder is the mock recorder for MockCommit
+type MockCommitMockRecorder struct {
+	mock *MockCommit
+}
+
+// NewMockCommit creates a new mock instance
+func NewMockCommit(ctrl *gomock.Controller) *MockCommit {
+	mock := &MockCommit{ctrl: ctrl}
+	mock.recorder = &MockCommitMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockCommit) EXPECT() *MockCommitMockRecorder {
+	return m.recorder
+}
+
+// NumParents mocks base method
+func (m *MockCommit) NumParents() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NumParents")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// NumParents indicates an expected call of NumParents
+func (mr *MockCommitMockRecorder) NumParents() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumParents", reflect.TypeOf((*MockCommit)(nil).NumParents))
+}
+
+// Parent mocks base method
+func (m *MockCommit) Parent(i int) (types.Commit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Parent", i)
+	ret0, _ := ret[0].(types.Commit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Parent indicates an expected call of Parent
+func (mr *MockCommitMockRecorder) Parent(i interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Parent", reflect.TypeOf((*MockCommit)(nil).Parent), i)
+}
+
+// GetCommitter mocks base method
+func (m *MockCommit) GetCommitter() *object.Signature {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCommitter")
+	ret0, _ := ret[0].(*object.Signature)
+	return ret0
+}
+
+// GetCommitter indicates an expected call of GetCommitter
+func (mr *MockCommitMockRecorder) GetCommitter() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCommitter", reflect.TypeOf((*MockCommit)(nil).GetCommitter))
+}
+
+// GetAuthor mocks base method
+func (m *MockCommit) GetAuthor() *object.Signature {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAuthor")
+	ret0, _ := ret[0].(*object.Signature)
+	return ret0
+}
+
+// GetAuthor indicates an expected call of GetAuthor
+func (mr *MockCommitMockRecorder) GetAuthor() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAuthor", reflect.TypeOf((*MockCommit)(nil).GetAuthor))
+}
+
+// GetTreeHash mocks base method
+func (m *MockCommit) GetTreeHash() plumbing.Hash {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTreeHash")
+	ret0, _ := ret[0].(plumbing.Hash)
+	return ret0
+}
+
+// GetTreeHash indicates an expected call of GetTreeHash
+func (mr *MockCommitMockRecorder) GetTreeHash() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTreeHash", reflect.TypeOf((*MockCommit)(nil).GetTreeHash))
+}
+
+// GetHash mocks base method
+func (m *MockCommit) GetHash() plumbing.Hash {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHash")
+	ret0, _ := ret[0].(plumbing.Hash)
+	return ret0
+}
+
+// GetHash indicates an expected call of GetHash
+func (mr *MockCommitMockRecorder) GetHash() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHash", reflect.TypeOf((*MockCommit)(nil).GetHash))
 }
 
 // MockPoolGetter is a mock of PoolGetter interface

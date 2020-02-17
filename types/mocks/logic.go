@@ -437,6 +437,35 @@ func (mr *MockRepoKeeperMockRecorder) GetProposalsEndingAt(height interface{}) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProposalsEndingAt", reflect.TypeOf((*MockRepoKeeper)(nil).GetProposalsEndingAt), height)
 }
 
+// MarkProposalAsClosed mocks base method
+func (m *MockRepoKeeper) MarkProposalAsClosed(name, propID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MarkProposalAsClosed", name, propID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// MarkProposalAsClosed indicates an expected call of MarkProposalAsClosed
+func (mr *MockRepoKeeperMockRecorder) MarkProposalAsClosed(name, propID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MarkProposalAsClosed", reflect.TypeOf((*MockRepoKeeper)(nil).MarkProposalAsClosed), name, propID)
+}
+
+// IsProposalClosed mocks base method
+func (m *MockRepoKeeper) IsProposalClosed(name, propID string) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsProposalClosed", name, propID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsProposalClosed indicates an expected call of IsProposalClosed
+func (mr *MockRepoKeeperMockRecorder) IsProposalClosed(name, propID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsProposalClosed", reflect.TypeOf((*MockRepoKeeper)(nil).IsProposalClosed), name, propID)
+}
+
 // MockNamespaceKeeper is a mock of NamespaceKeeper interface
 type MockNamespaceKeeper struct {
 	ctrl     *gomock.Controller

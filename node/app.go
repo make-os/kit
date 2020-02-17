@@ -24,6 +24,11 @@ type ticketInfo struct {
 	index int
 }
 
+type mergeProposalInfo struct {
+	repo       string
+	proposalID string
+}
+
 // App implements tendermint ABCI interface to
 type App struct {
 	db                        storage.Engine
@@ -33,16 +38,17 @@ type App struct {
 	curWorkingBlock           *types.BlockInfo
 	log                       logger.Logger
 	txIndex                   int
-	validatorTickets          []*ticketInfo
-	storerTickets             []*ticketInfo
+	unIdxValidatorTickets     []*ticketInfo
+	unIdxStorerTickets        []*ticketInfo
 	unbondStorerReqs          []util.Bytes32
 	ticketMgr                 types.TicketManager
 	isCurrentBlockProposer    bool
 	unsavedValidators         []*types.Validator
 	heightToSaveNewValidators int64
-	unIndexedTxs              []types.BaseTx
-	unIndexedRepoPropVotes    []*types.TxRepoProposalVote
+	unIdxTxs                  []types.BaseTx
+	unIdxRepoPropVotes        []*types.TxRepoProposalVote
 	newRepos                  []string
+	unIdxClosedMergeProposal  []*mergeProposalInfo
 }
 
 // NewApp creates an instance of App
@@ -185,7 +191,7 @@ func (a *App) preExecChecks(tx types.BaseTx) *abcitypes.ResponseDeliverTx {
 	// we have reached the maximum per block.
 	// TODO: Slash proposer for violating the rule.
 	if tx.Is(types.TxTypeValidatorTicket) &&
-		len(a.validatorTickets) == params.MaxValTicketsPerBlock {
+		len(a.unIdxValidatorTickets) == params.MaxValTicketsPerBlock {
 		return respDeliverTx(types.ErrCodeMaxTxTypeReached,
 			"failed to execute tx: validator ticket capacity reached")
 	}
@@ -199,18 +205,16 @@ func (a *App) postExecChecks(
 	tx types.BaseTx,
 	resp *abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
 
-	// Return immediately if not an OK response
 	if !resp.IsOK() {
 		return resp
 	}
 
 	switch o := tx.(type) {
-
 	case *types.TxTicketPurchase:
 		if o.Is(types.TxTypeValidatorTicket) {
-			a.validatorTickets = append(a.validatorTickets, &ticketInfo{Tx: tx, index: a.txIndex})
+			a.unIdxValidatorTickets = append(a.unIdxValidatorTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 		} else {
-			a.storerTickets = append(a.storerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
+			a.unIdxStorerTickets = append(a.unIdxStorerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 		}
 
 	case *types.TxTicketUnbond:
@@ -220,12 +224,22 @@ func (a *App) postExecChecks(
 		a.newRepos = append(a.newRepos, o.Name)
 
 	case *types.TxRepoProposalVote:
-		a.unIndexedRepoPropVotes = append(a.unIndexedRepoPropVotes, o)
+		a.unIdxRepoPropVotes = append(a.unIdxRepoPropVotes, o)
+
+	case *types.TxPush:
+		for _, ref := range o.PushNote.GetPushedReferences() {
+			if ref.MergeProposalID != "" {
+				a.unIdxClosedMergeProposal = append(a.unIdxClosedMergeProposal, &mergeProposalInfo{
+					repo:       o.PushNote.RepoName,
+					proposalID: ref.MergeProposalID,
+				})
+			}
+		}
 	}
 
 	// Add the successfully processed tx to the un-indexed tx cache.
 	// They will be committed in the COMMIT phase
-	a.unIndexedTxs = append(a.unIndexedTxs, tx)
+	a.unIdxTxs = append(a.unIdxTxs, tx)
 
 	return resp
 }
@@ -379,8 +393,9 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	}
 
 	// Index tickets we have collected so far.
-	for _, ptx := range append(a.validatorTickets, a.storerTickets...) {
-		if err := a.ticketMgr.Index(ptx.Tx, uint64(a.curWorkingBlock.Height), ptx.index); err != nil {
+	for _, ticket := range append(a.unIdxValidatorTickets, a.unIdxStorerTickets...) {
+		if err := a.ticketMgr.Index(ticket.Tx, uint64(a.curWorkingBlock.Height),
+			ticket.index); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to index ticket"))
 		}
 	}
@@ -398,14 +413,14 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	}
 
 	// Index the un-indexed txs
-	for _, t := range a.unIndexedTxs {
+	for _, t := range a.unIdxTxs {
 		if err := a.logic.TxKeeper().Index(t); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to index transaction after commit"))
 		}
 	}
 
 	// Index proposal votes
-	for _, v := range a.unIndexedRepoPropVotes {
+	for _, v := range a.unIdxRepoPropVotes {
 		if err := a.logic.RepoKeeper().IndexProposalVote(v.RepoName, v.ProposalID,
 			v.GetFrom().String(), v.Vote); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to index repository proposal vote"))
@@ -424,14 +439,21 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		}
 	}
 
+	// Mark all merge proposals as closed.
+	for _, info := range a.unIdxClosedMergeProposal {
+		if err := a.logic.RepoKeeper().MarkProposalAsClosed(info.repo, info.proposalID); err != nil {
+			a.commitPanic(errors.Wrap(err, "failed to mark merge proposal as closed"))
+		}
+	}
+
 	// Commit all state changes
 	if err := a.logic.Commit(); err != nil {
 		a.commitPanic(errors.Wrap(err, "failed to commit"))
 	}
 
 	// Emit events about the committed transactions
-	committedTxs := make([]types.BaseTx, len(a.unIndexedTxs))
-	copy(committedTxs, a.unIndexedTxs)
+	committedTxs := make([]types.BaseTx, len(a.unIdxTxs))
+	copy(committedTxs, a.unIdxTxs)
 	a.cfg.G().Bus.Emit(types.EvtABCICommittedTx, nil, committedTxs)
 
 	return abcitypes.ResponseCommit{
@@ -447,14 +469,15 @@ func (a *App) commitPanic(err error) {
 
 // reset cached values
 func (a *App) reset() {
-	a.validatorTickets = []*ticketInfo{}
-	a.storerTickets = []*ticketInfo{}
+	a.unIdxValidatorTickets = []*ticketInfo{}
+	a.unIdxStorerTickets = []*ticketInfo{}
 	a.unbondStorerReqs = []util.Bytes32{}
 	a.txIndex = 0
 	a.isCurrentBlockProposer = false
-	a.unIndexedTxs = []types.BaseTx{}
-	a.unIndexedRepoPropVotes = []*types.TxRepoProposalVote{}
+	a.unIdxTxs = []types.BaseTx{}
+	a.unIdxRepoPropVotes = []*types.TxRepoProposalVote{}
 	a.newRepos = []string{}
+	a.unIdxClosedMergeProposal = []*mergeProposalInfo{}
 
 	// Only reset heightToSaveNewValidators if the current height is
 	// same as it to avoid not triggering saving of new validators at the target height.

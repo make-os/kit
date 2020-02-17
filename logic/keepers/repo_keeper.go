@@ -151,6 +151,11 @@ func (a *RepoKeeper) GetProposalVote(
 
 // IndexProposalEnd indexes a proposal by its end height so it can be
 // tracked and finalized at the given height
+//
+// ARGS:
+// name: The name of the repository
+// propID: The target proposal
+// endHeight: The chain height when the proposal will stop accepting votes.
 func (a *RepoKeeper) IndexProposalEnd(name, propID string, endHeight uint64) error {
 	key := MakeRepoProposalEndIndexKey(name, propID, endHeight)
 	rec := storage.NewFromKeyValue(key, []byte("0"))
@@ -161,6 +166,9 @@ func (a *RepoKeeper) IndexProposalEnd(name, propID string, endHeight uint64) err
 }
 
 // GetProposalsEndingAt finds repo proposals ending at the given height
+//
+// ARGS:
+// height: The chain height when the proposal will stop accepting votes.
 func (a *RepoKeeper) GetProposalsEndingAt(height uint64) []*types.EndingProposals {
 	key := MakeQueryKeyRepoProposalAtEndHeight(height)
 	var res = []*types.EndingProposals{}
@@ -174,4 +182,35 @@ func (a *RepoKeeper) GetProposalsEndingAt(height uint64) []*types.EndingProposal
 		return false
 	})
 	return res
+}
+
+// MarkProposalAsClosed makes a proposal as "closed"
+//
+// ARGS:
+// name: The name of the repository
+// propID: The target proposal
+func (a *RepoKeeper) MarkProposalAsClosed(name, propID string) error {
+	key := MakeClosedProposalKey(name, propID)
+	rec := storage.NewFromKeyValue(key, []byte("0"))
+	if err := a.db.Put(rec); err != nil {
+		return errors.Wrap(err, "failed to mark proposal as closed")
+	}
+	return nil
+}
+
+// IsProposalClosed checks whether a proposal has been marked "closed"
+//
+// ARGS:
+// name: The name of the repository
+// propID: The target proposal
+func (a *RepoKeeper) IsProposalClosed(name, propID string) (bool, error) {
+	key := MakeClosedProposalKey(name, propID)
+	_, err := a.db.Get(key)
+	if err != nil {
+		if err == storage.ErrRecordNotFound {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
 }

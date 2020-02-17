@@ -176,6 +176,15 @@ func (r *Repo) CommitObject(h plumbing.Hash) (*object.Commit, error) {
 	return r.git.CommitObject(h)
 }
 
+// WrappedCommitObject returns commit that implements types.Commit interface.
+func (r *Repo) WrappedCommitObject(h plumbing.Hash) (types.Commit, error) {
+	commit, err := r.git.CommitObject(h)
+	if err != nil {
+		return nil, err
+	}
+	return &WrappedCommit{commit}, nil
+}
+
 // BlobObject returns a Blob with the given hash.
 func (r *Repo) BlobObject(h plumbing.Hash) (*object.Blob, error) {
 	return r.git.BlobObject(h)
@@ -488,7 +497,7 @@ func SignCommitCmd(
 		directives = append(directives, "deleteRef")
 	}
 	if mergeID != "" {
-		directives = append(directives, fmt.Sprintf("mergeID=%s", mergeID))
+		directives = append(directives, fmt.Sprintf("mergeId=%s", mergeID))
 	}
 
 	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil, directives...)

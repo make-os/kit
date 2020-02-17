@@ -1593,14 +1593,6 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).To(MatchError("field:base, error:base branch name is required"))
 		})
 
-		It("should return error when base branch hash is not provided", func() {
-			tx.RepoName = "repo1"
-			tx.BaseBranch = "branch_base"
-			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:baseHash, error:base branch hash is required"))
-		})
-
 		It("should return error when base branch hash is not valid", func() {
 			tx.RepoName = "repo1"
 			tx.BaseBranch = "branch_base"

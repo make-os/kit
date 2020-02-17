@@ -188,12 +188,13 @@ func (h *PushHandler) createPushNote(
 		fee := pushNote.Fee.Decimal().Add(refsTxLine[ref.name].Fee.Decimal()).String()
 		pushNote.Fee = util.String(fee)
 		pushedRef := &types.PushedReference{
-			Name:    ref.name,
-			OldHash: ref.oldHash,
-			NewHash: ref.newHash,
-			Nonce:   h.repo.State().References.Get(ref.name).Nonce + 1,
-			Objects: h.pushReader.objectsRefs.getObjectsOf(ref.name),
-			Delete:  refsTxLine[ref.name].DeleteRef,
+			Name:            ref.name,
+			OldHash:         ref.oldHash,
+			NewHash:         ref.newHash,
+			Nonce:           h.repo.State().References.Get(ref.name).Nonce + 1,
+			Objects:         h.pushReader.objectsRefs.getObjectsOf(ref.name),
+			Delete:          refsTxLine[ref.name].DeleteRef,
+			MergeProposalID: refsTxLine[ref.name].MergeProposalID,
 		}
 
 		pushNote.References = append(pushNote.References, pushedRef)
@@ -258,8 +259,13 @@ func (h *PushHandler) handleReference(ref string) (*util.TxLine, []error) {
 	// So, reference update is valid, next we need to ensure the updates
 	// is compliant with the target merge proposal, if a merge proposal id is specified
 	if err == nil && txLine.MergeProposalID != "" {
-		if err := checkMergeCompliance(h.repo, change, oldRef,
-			txLine.MergeProposalID); err != nil {
+		if err := checkMergeCompliance(
+			h.repo,
+			change,
+			oldRef,
+			txLine.MergeProposalID,
+			txLine.PubKeyID,
+			h.rMgr.GetLogic()); err != nil {
 			errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
 		}
 	}

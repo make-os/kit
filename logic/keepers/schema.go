@@ -13,6 +13,7 @@ const (
 	tagRepoPropVote          = "rpv"
 	tagRepoPropEndIndex      = "rei"
 	tagNS                    = "ns"
+	tagClosedProp            = "cp"
 	tagBlockInfo             = "b"
 	tagLastRepoSyncherHeight = "rh"
 	tagHelmRepo              = "hr"
@@ -64,6 +65,11 @@ func MakeRepoProposalEndIndexKey(repoName, proposalID string, endHeight uint64) 
 // ending at the given height
 func MakeQueryKeyRepoProposalAtEndHeight(endHeight uint64) []byte {
 	return storage.MakePrefix([]byte(tagRepoPropEndIndex), util.EncodeNumber(endHeight))
+}
+
+// MakeClosedProposalKey creates a key for marking a proposal as "closed"
+func MakeClosedProposalKey(name, propID string) []byte {
+	return storage.MakePrefix([]byte(tagClosedProp), []byte(name), []byte(propID))
 }
 
 // MakeNamespaceKey creates a key for accessing a namespace

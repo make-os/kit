@@ -61,8 +61,11 @@ type BareRepo interface {
 	// CommitObjects returns an unsorted ObjectIter with all the objects in the repository.
 	CommitObjects() (object.CommitIter, error)
 
-	// CommitObject returns an unsorted ObjectIter with all the objects in the repository.
+	// CommitObject returns a commit.
 	CommitObject(h plumbing.Hash) (*object.Commit, error)
+
+	// WrappedCommitObject returns commit that implements types.Commit interface.
+	WrappedCommitObject(h plumbing.Hash) (Commit, error)
 
 	// MergeBranch merges target branch into base
 	MergeBranch(base, target, targetRepoDir string) error
@@ -162,6 +165,28 @@ type BareRepo interface {
 
 	// Prune prunes objects older than the given time
 	Prune(olderThan time.Time) error
+}
+
+// Commit represents a Commit.
+type Commit interface {
+
+	// NumParents returns the number of parents in a commit.
+	NumParents() int
+
+	// Parent returns the ith parent of a commit.
+	Parent(i int) (Commit, error)
+
+	// GetCommitter returns the one performing the commit, might be different from Author
+	GetCommitter() *object.Signature
+
+	// GetAuthor returns the original author of the commit.
+	GetAuthor() *object.Signature
+
+	// GetTreeHash returns the hash of the root tree of the commit
+	GetTreeHash() plumbing.Hash
+
+	// GetHash returns the hash of the commit object
+	GetHash() plumbing.Hash
 }
 
 // PGPPubKeyGetter represents a function for fetching PGP public key
@@ -381,6 +406,7 @@ type PushedReference struct {
 	Nonce              uint64   `json:"nonce" msgpack:"nonce"`     // The next repo nonce of the reference
 	Objects            []string `json:"objects" msgpack:"objects"` // A list of objects pushed to the reference
 	Delete             bool     `json:"delete" msgpack:"delete"`   // Delete indicates that the reference should be deleted from the repo
+	MergeProposalID    string   `json:"mergeId" msgpack:"mergeId"` // The merge proposal ID the reference is complaint with.
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -391,7 +417,8 @@ func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
 		pr.NewHash,
 		pr.Nonce,
 		pr.Objects,
-		pr.Delete)
+		pr.Delete,
+		pr.MergeProposalID)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -402,7 +429,8 @@ func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&pr.NewHash,
 		&pr.Nonce,
 		&pr.Objects,
-		&pr.Delete)
+		&pr.Delete,
+		&pr.MergeProposalID)
 }
 
 // PushedReferences represents a collection of pushed references
