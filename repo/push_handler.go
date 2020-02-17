@@ -67,7 +67,7 @@ func (h *PushHandler) HandleStream(
 // HandleValidateAndRevert validates the transaction information and signatures
 // that must accompany pushed references afterwhich the changes introduced by
 // the push are reverted.
-func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxLine, string, error) {
+func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, string, error) {
 
 	// Expect old state to have been captured before the push was processed
 	if h.oldState == nil {
@@ -75,14 +75,14 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxLine, string
 	}
 
 	var errs []error
-	refsTxLine := map[string]*util.TxLine{}
+	refsTxParams := map[string]*util.TxParams{}
 
 	// Here, we need to validate the changes introduced by the push and also
 	// collect the transaction information pushed alongside the references
 	for _, ref := range h.pushReader.references.names() {
-		txLine, pushErrs := h.handleReference(ref)
+		txParams, pushErrs := h.handleReference(ref)
 		if len(pushErrs) == 0 {
-			refsTxLine[ref] = txLine
+			refsTxParams[ref] = txParams
 			continue
 		}
 		errs = append(errs, pushErrs...)
@@ -96,10 +96,10 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxLine, string
 	// When we have more than one pushed references, we need to ensure they both
 	// were signed using same public key id, if not, we return an error and also
 	// remove the pushed objects from the references and repository
-	var pkID = funk.Values(refsTxLine).([]*util.TxLine)[0].PubKeyID
-	if len(refsTxLine) > 1 {
-		for _, txLine := range refsTxLine {
-			if pkID != txLine.PubKeyID {
+	var pkID = funk.Values(refsTxParams).([]*util.TxParams)[0].PubKeyID
+	if len(refsTxParams) > 1 {
+		for _, txParams := range refsTxParams {
+			if pkID != txParams.PubKeyID {
 				errs = append(errs, fmt.Errorf("rejected because the pushed references "+
 					"were signed with multiple pgp keys"))
 				h.rMgr.GetPruner().Schedule(h.repo.GetName())
@@ -112,7 +112,7 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxLine, string
 		return nil, "", errs[0]
 	}
 
-	return refsTxLine, pkID, nil
+	return refsTxParams, pkID, nil
 }
 
 // HandleUpdate is called after the pushed data have been analysed and
@@ -121,13 +121,13 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxLine, string
 // the rest of the network
 func (h *PushHandler) HandleUpdate() error {
 
-	refsTxLine, pkID, err := h.HandleValidateAndRevert()
+	refsTxParams, pkID, err := h.HandleValidateAndRevert()
 	if err != nil {
 		return err
 	}
 
 	// At this point, there are no errors. We need to construct a PushNote
-	pushNote, err := h.createPushNote(pkID, refsTxLine)
+	pushNote, err := h.createPushNote(pkID, refsTxParams)
 	if err != nil {
 		return err
 	}
@@ -154,7 +154,7 @@ func (h *PushHandler) HandleUpdate() error {
 
 func (h *PushHandler) createPushNote(
 	pkID string,
-	refsTxLine map[string]*util.TxLine) (*types.PushNote, error) {
+	refsTxParams map[string]*util.TxParams) (*types.PushNote, error) {
 
 	var pushNote = &types.PushNote{
 		TargetRepo:    h.repo,
@@ -178,14 +178,14 @@ func (h *PushHandler) createPushNote(
 	for _, ref := range h.pushReader.references {
 
 		if accountNonce == 0 {
-			accountNonce = refsTxLine[ref.name].Nonce
+			accountNonce = refsTxParams[ref.name].Nonce
 			pushNote.AccountNonce = accountNonce
-		} else if accountNonce != refsTxLine[ref.name].Nonce {
-			return nil, fmt.Errorf("varying account nonce in references txline are not allowed")
+		} else if accountNonce != refsTxParams[ref.name].Nonce {
+			return nil, fmt.Errorf("varying account nonce in references txparams are not allowed")
 		}
 
-		accountNonce = refsTxLine[ref.name].Nonce
-		fee := pushNote.Fee.Decimal().Add(refsTxLine[ref.name].Fee.Decimal()).String()
+		accountNonce = refsTxParams[ref.name].Nonce
+		fee := pushNote.Fee.Decimal().Add(refsTxParams[ref.name].Fee.Decimal()).String()
 		pushNote.Fee = util.String(fee)
 		pushedRef := &types.PushedReference{
 			Name:            ref.name,
@@ -193,8 +193,8 @@ func (h *PushHandler) createPushNote(
 			NewHash:         ref.newHash,
 			Nonce:           h.repo.State().References.Get(ref.name).Nonce + 1,
 			Objects:         h.pushReader.objectsRefs.getObjectsOf(ref.name),
-			Delete:          refsTxLine[ref.name].DeleteRef,
-			MergeProposalID: refsTxLine[ref.name].MergeProposalID,
+			Delete:          refsTxParams[ref.name].DeleteRef,
+			MergeProposalID: refsTxParams[ref.name].MergeProposalID,
 		}
 
 		pushNote.References = append(pushNote.References, pushedRef)
@@ -226,7 +226,7 @@ func (h *PushHandler) announceObject(objHash string) error {
 // - Determine what changed as a result of the push.
 // - Validate the pushed references transaction information & signature.
 // - Revert the changes and delete the new objects if validation failed.
-func (h *PushHandler) handleReference(ref string) (*util.TxLine, []error) {
+func (h *PushHandler) handleReference(ref string) (*util.TxParams, []error) {
 
 	var errs = []error{}
 
@@ -251,20 +251,20 @@ func (h *PushHandler) handleReference(ref string) (*util.TxLine, []error) {
 	}
 
 	// Here, we need to validate the change
-	txLine, err := validateChange(h.repo, change, h.rMgr.GetPGPPubKeyGetter())
+	txParams, err := validateChange(h.repo, change, h.rMgr.GetPGPPubKeyGetter())
 	if err != nil {
 		errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
 	}
 
 	// So, reference update is valid, next we need to ensure the updates
 	// is compliant with the target merge proposal, if a merge proposal id is specified
-	if err == nil && txLine.MergeProposalID != "" {
+	if err == nil && txParams.MergeProposalID != "" {
 		if err := checkMergeCompliance(
 			h.repo,
 			change,
 			oldRef,
-			txLine.MergeProposalID,
-			txLine.PubKeyID,
+			txParams.MergeProposalID,
+			txParams.PubKeyID,
 			h.rMgr.GetLogic()); err != nil {
 			errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
 		}
@@ -285,5 +285,5 @@ func (h *PushHandler) handleReference(ref string) (*util.TxLine, []error) {
 		h.rMgr.GetPruner().Schedule(h.repo.GetName())
 	}
 
-	return txLine, errs
+	return txParams, errs
 }

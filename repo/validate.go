@@ -32,7 +32,7 @@ var feI = types.FieldErrorWithIndex
 func validateChange(
 	repo types.BareRepo,
 	change *types.ItemChange,
-	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxLine, error) {
+	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxParams, error) {
 
 	var commit *object.Commit
 	var err error
@@ -97,7 +97,7 @@ validatedNote:
 func checkNote(
 	repo types.BareRepo,
 	noteName string,
-	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxLine, error) {
+	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxParams, error) {
 
 	// Find a all notes entries
 	noteEntries, err := repo.ListTreeObjects(noteName, false)
@@ -106,7 +106,7 @@ func checkNote(
 		return nil, errors.Wrap(err, msg)
 	}
 
-	// From the entries, find a blob that contains a txline format
+	// From the entries, find a blob that contains a txparams format
 	// and stop after the first one is found
 	var txBlob *object.Blob
 	for hash := range noteEntries {
@@ -120,7 +120,7 @@ func checkNote(
 		}
 		prefix := make([]byte, 3)
 		r.Read(prefix)
-		if string(prefix) == util.TxLinePrefix {
+		if string(prefix) == util.TxParamsPrefix {
 			txBlob = obj
 			break
 		}
@@ -140,13 +140,13 @@ func checkNote(
 	if err != nil {
 		return nil, err
 	}
-	txLine, err := util.ParseTxLine(string(bz))
+	txParams, err := util.ParseTxParams(string(bz))
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("note (%s)", noteName))
 	}
 
 	// Get the public key
-	pubKeyStr, err := gpgPubKeyGetter(txLine.PubKeyID)
+	pubKeyStr, err := gpgPubKeyGetter(txParams.PubKeyID)
 	if err != nil {
 		msg := "unable to verify note (%s). public key was not found"
 		return nil, errors.Errorf(msg, noteName)
@@ -177,14 +177,14 @@ func checkNote(
 	}
 
 	// Now, verify the signature
-	msg := []byte(txLine.Fee.String() + txLine.GetNonceString() + txLine.PubKeyID + noteHash)
-	_, err = crypto.VerifyGPGSignature(pubKey, []byte(txLine.Signature), msg)
+	msg := []byte(txParams.Fee.String() + txParams.GetNonceString() + txParams.PubKeyID + noteHash)
+	_, err = crypto.VerifyGPGSignature(pubKey, []byte(txParams.Signature), msg)
 	if err != nil {
 		msg := "note (%s) signature verification failed: %s"
 		return nil, errors.Errorf(msg, noteName, err.Error())
 	}
 
-	return txLine, nil
+	return txParams, nil
 }
 
 // checkAnnotatedTag validates an annotated tag.
@@ -194,10 +194,10 @@ func checkNote(
 func checkAnnotatedTag(
 	tag *object.Tag,
 	repo types.BareRepo,
-	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxLine, error) {
+	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxParams, error) {
 
-	// Get and parse tx line from the commit message
-	txLine, err := util.ParseTxLine(tag.Message)
+	// Get and parse txparams from the commit message
+	txParams, err := util.ParseTxParams(tag.Message)
 	if err != nil {
 		msg := fmt.Sprintf("tag (%s)", tag.Hash.String())
 		return nil, errors.Wrap(err, msg)
@@ -209,10 +209,10 @@ func checkAnnotatedTag(
 	}
 
 	// Get the public key
-	pubKey, err := gpgPubKeyGetter(txLine.PubKeyID)
+	pubKey, err := gpgPubKeyGetter(txParams.PubKeyID)
 	if err != nil {
 		msg := "unable to verify tag (%s). public key (id:%s) was not found"
-		return nil, errors.Errorf(msg, tag.Hash.String(), txLine.PubKeyID)
+		return nil, errors.Errorf(msg, tag.Hash.String(), txParams.PubKeyID)
 	}
 
 	// Verify tag signature
@@ -337,7 +337,7 @@ func checkMergeCompliance(
 	return nil
 }
 
-// checkCommit checks a commit txline and verifies its signature
+// checkCommit checks a commit txparams and verifies its signature
 // commit: The target commit object
 // isReferenced: Whether the commit was referenced somewhere (e.g in a tag)
 // repo: The target repository where the commit exist in.
@@ -346,15 +346,15 @@ func checkCommit(
 	commit *object.Commit,
 	isReferenced bool,
 	repo types.BareRepo,
-	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxLine, error) {
+	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxParams, error) {
 
 	referencedStr := ""
 	if isReferenced {
 		referencedStr = "referenced "
 	}
 
-	// Get and parse tx line from the commit message
-	txLine, err := util.ParseTxLine(commit.Message)
+	// Get and parse txparams from the commit message
+	txParams, err := util.ParseTxParams(commit.Message)
 	if err != nil {
 		msg := fmt.Sprintf("%scommit (%s)", referencedStr, commit.Hash.String())
 		return nil, errors.Wrap(err, msg)
@@ -366,10 +366,10 @@ func checkCommit(
 	}
 
 	// Get the public key
-	pubKey, err := gpgPubKeyGetter(txLine.PubKeyID)
+	pubKey, err := gpgPubKeyGetter(txParams.PubKeyID)
 	if err != nil {
 		msg := "unable to verify %scommit (%s). public key (id:%s) was not found"
-		return nil, errors.Errorf(msg, referencedStr, commit.Hash.String(), txLine.PubKeyID)
+		return nil, errors.Errorf(msg, referencedStr, commit.Hash.String(), txParams.PubKeyID)
 	}
 
 	// Verify commit signature
@@ -378,38 +378,38 @@ func checkCommit(
 		return nil, errors.Errorf(msg, referencedStr, commit.Hash.String(), err.Error())
 	}
 
-	return txLine, nil
+	return txParams, nil
 }
 
-// checkPushNoteAgainstTxLines checks compares the value of fields in the push
-// note against the values of same fields in the txlines.
-func checkPushNoteAgainstTxLines(pn *types.PushNote, txLines map[string]*util.TxLine) error {
+// checkPushNoteAgainstTxParamss checks compares the value of fields in the push
+// note against the values of same fields in the txparamss.
+func checkPushNoteAgainstTxParamss(pn *types.PushNote, txParamss map[string]*util.TxParams) error {
 
-	// Push note pusher public key must match txline key
-	txLinesObjs := funk.Values(txLines).([]*util.TxLine)
-	if !bytes.Equal(pn.PusherKeyID, util.MustDecodeRSAPubKeyID(txLinesObjs[0].PubKeyID)) {
+	// Push note pusher public key must match txparams key
+	txParamssObjs := funk.Values(txParamss).([]*util.TxParams)
+	if !bytes.Equal(pn.PusherKeyID, util.MustDecodeRSAPubKeyID(txParamssObjs[0].PubKeyID)) {
 		return fmt.Errorf("push note pusher public key id does not match " +
-			"txlines pusher public key id")
+			"txparamss pusher public key id")
 	}
 
 	totalFees := decimal.Zero
-	for _, txline := range txLines {
-		totalFees = totalFees.Add(txline.Fee.Decimal())
+	for _, txparams := range txParamss {
+		totalFees = totalFees.Add(txparams.Fee.Decimal())
 	}
 
-	// Push note total fee must matches the total fees computed from all txlines
+	// Push note total fee must matches the total fees computed from all txparamss
 	if !pn.GetFee().Decimal().Equal(totalFees) {
-		return fmt.Errorf("push note fees does not match total txlines fees")
+		return fmt.Errorf("push note fees does not match total txparamss fees")
 	}
 
-	// Check pushed references for consistency with their txline
+	// Check pushed references for consistency with their txparams
 	for _, ref := range pn.GetPushedReferences() {
-		txline, ok := txLines[ref.Name]
+		txparams, ok := txParamss[ref.Name]
 		if !ok {
 			return fmt.Errorf("push note has unexpected pushed reference (%s)", ref.Name)
 		}
 
-		if txline.DeleteRef != ref.Delete {
+		if txparams.DeleteRef != ref.Delete {
 			return fmt.Errorf("pushed reference (%s) has an "+
 				"unexpected delete directive value", ref.Name)
 		}

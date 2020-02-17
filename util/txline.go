@@ -9,16 +9,16 @@ import (
 	"github.com/asaskevich/govalidator"
 )
 
-const TxLinePrefix = "tx:"
+const TxParamsPrefix = "tx:"
 
-// TxLine errors
+// TxParams errors
 var (
-	ErrTxLineNotFound = fmt.Errorf("txline was not set")
+	ErrTxParamsNotFound = fmt.Errorf("txparams was not set")
 )
 
-// RemoveTxLine removes all lines beginning with a 'Tx Line' prefix 'tx'.
+// RemoveTxParams removes all lines beginning with a 'TxParams' prefix 'tx'.
 // NOTE: It is case-sensitive.
-func RemoveTxLine(msg string) string {
+func RemoveTxParams(msg string) string {
 	lines := strings.Split(msg, "\n")
 	newMsg := ""
 	for i := 0; i < len(lines); i++ {
@@ -33,9 +33,9 @@ func RemoveTxLine(msg string) string {
 	return newMsg
 }
 
-// TxLine represents transaction information usually included in commits, notes
+// TxParams represents transaction information usually included in commits, notes
 // and tag objects
-type TxLine struct {
+type TxParams struct {
 	Fee             String // Network fee to be paid for update to the target ref
 	Nonce           uint64 // Nonce of the account paying the network fee and signing the update.
 	PubKeyID        string // The GPG public key ID of the reference updater.
@@ -45,17 +45,17 @@ type TxLine struct {
 }
 
 // GetNonceString returns the nonce as a string
-func (tl *TxLine) GetNonceString() string {
+func (tl *TxParams) GetNonceString() string {
 	return strconv.FormatUint(tl.Nonce, 10)
 }
 
-func (tl *TxLine) String() string {
+func (tl *TxParams) String() string {
 	nonceStr := strconv.FormatUint(tl.Nonce, 10)
-	return MakeTxLine(tl.Fee.String(), nonceStr, tl.PubKeyID, []byte(tl.Signature))
+	return MakeTxParams(tl.Fee.String(), nonceStr, tl.PubKeyID, []byte(tl.Signature))
 }
 
-// MakeTxLine returns a well formatted txline string
-func MakeTxLine(txFee, txNonce, pkID string, sig []byte, directives ...string) string {
+// MakeTxParams returns a well formatted txparams string
+func MakeTxParams(txFee, txNonce, pkID string, sig []byte, directives ...string) string {
 	str := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", txFee, txNonce, pkID)
 	for _, a := range directives {
 		str = str + fmt.Sprintf(", %s", a)
@@ -66,27 +66,27 @@ func MakeTxLine(txFee, txNonce, pkID string, sig []byte, directives ...string) s
 	return str
 }
 
-// ParseTxLine finds, parses and returns the txline found in the given msg.
-// Returns ErrTxLineNotFound if no txline in the message
-func ParseTxLine(msg string) (*TxLine, error) {
+// ParseTxParams finds, parses and returns the txparams found in the given msg.
+// Returns ErrTxParamsNotFound if no txparams in the message
+func ParseTxParams(msg string) (*TxParams, error) {
 	lines := strings.Split(msg, "\n")
-	txline := ""
+	txparams := ""
 
 	for i := 0; i < len(lines); i++ {
 		line := lines[i]
-		if strings.HasPrefix(line, TxLinePrefix) {
-			txline = line
+		if strings.HasPrefix(line, TxParamsPrefix) {
+			txparams = line
 		}
 	}
 
-	if txline == "" {
-		return nil, ErrTxLineNotFound
+	if txparams == "" {
+		return nil, ErrTxParamsNotFound
 	}
 
-	kvData := strings.Fields(strings.TrimSpace(txline[3:]))
+	kvData := strings.Fields(strings.TrimSpace(txparams[3:]))
 	sort.Strings(kvData)
 
-	var txLine = new(TxLine)
+	var txParams = new(TxParams)
 	for _, kv := range kvData {
 		kv = strings.TrimRight(strings.TrimSpace(kv), ",")
 		kvParts := strings.Split(kv, "=")
@@ -95,7 +95,7 @@ func ParseTxLine(msg string) (*TxLine, error) {
 			if !govalidator.IsFloat(kvParts[1]) {
 				return nil, fmt.Errorf("field:fee, msg: fee must be numeric")
 			}
-			txLine.Fee = String(kvParts[1])
+			txParams.Fee = String(kvParts[1])
 		}
 
 		if kvParts[0] == "nonce" {
@@ -103,7 +103,7 @@ func ParseTxLine(msg string) (*TxLine, error) {
 			if err != nil {
 				return nil, fmt.Errorf("field:nonce, msg: nonce must be an unsigned integer")
 			}
-			txLine.Nonce = nonce
+			txParams.Nonce = nonce
 		}
 
 		if kvParts[0] == "pkId" {
@@ -113,7 +113,7 @@ func ParseTxLine(msg string) (*TxLine, error) {
 			if len(kvParts[1]) != 42 || !IsValidRSAPubKey(kvParts[1]) {
 				return nil, fmt.Errorf("field:pkId, msg: public key id is invalid")
 			}
-			txLine.PubKeyID = kvParts[1]
+			txParams.PubKeyID = kvParts[1]
 		}
 
 		if kvParts[0] == "sig" {
@@ -127,11 +127,11 @@ func ParseTxLine(msg string) (*TxLine, error) {
 			if err != nil {
 				return nil, fmt.Errorf("field:sig, msg: signature format is not valid")
 			}
-			txLine.Signature = decSig
+			txParams.Signature = decSig
 		}
 
 		if kvParts[0] == "deleteRef" {
-			txLine.DeleteRef = true
+			txParams.DeleteRef = true
 		}
 
 		if kvParts[0] == "mergeId" {
@@ -144,9 +144,9 @@ func ParseTxLine(msg string) (*TxLine, error) {
 			if len(kvParts[1]) > 8 {
 				return nil, fmt.Errorf("merge id limit of 8 bytes exceeded")
 			}
-			txLine.MergeProposalID = kvParts[1]
+			txParams.MergeProposalID = kvParts[1]
 		}
 	}
 
-	return txLine, nil
+	return txParams, nil
 }

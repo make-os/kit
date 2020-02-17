@@ -500,11 +500,11 @@ func SignCommitCmd(
 		directives = append(directives, fmt.Sprintf("mergeId=%s", mergeID))
 	}
 
-	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil, directives...)
+	txParams := util.MakeTxParams(txFee, txNonce, pkID, nil, directives...)
 
 	// Create a new commit if recent commit amendment is not required
 	if !amendRecent {
-		if err := repo.MakeSignableCommit(string(txLine), signingKey); err != nil {
+		if err := repo.MakeSignableCommit(string(txParams), signingKey); err != nil {
 			return err
 		}
 		return nil
@@ -520,10 +520,10 @@ func SignCommitCmd(
 		return err
 	}
 
-	// Remove any existing txline and append the new one
+	// Remove any existing txparams and append the new one
 	commit, _ := repo.CommitObject(plumbing.NewHash(hash))
-	msg := util.RemoveTxLine(commit.Message)
-	msg += "\n\n" + txLine
+	msg := util.RemoveTxParams(commit.Message)
+	msg += "\n\n" + txParams
 
 	// Update the recent commit message
 	if err = repo.UpdateRecentCommitMsg(msg, signingKey); err != nil {
@@ -599,9 +599,9 @@ func SignTagCmd(
 		directives = append(directives, "deleteRef")
 	}
 
-	// Construct the tx line and append to the current message
-	txLine := util.MakeTxLine(txFee, txNonce, pkID, nil, directives...)
-	msg += "\n\n" + txLine
+	// Construct the txparams and append to the current message
+	txParams := util.MakeTxParams(txFee, txNonce, pkID, nil, directives...)
+	msg += "\n\n" + txParams
 
 	// Create the tag
 	if err = repo.CreateTagWithMsg(args, msg, signingKey); err != nil {
@@ -662,7 +662,7 @@ func SignNoteCmd(
 		}
 		prefix := make([]byte, 3)
 		r.Read(prefix)
-		if string(prefix) == util.TxLinePrefix {
+		if string(prefix) == util.TxParamsPrefix {
 			lastTxBlob = obj
 			break
 		}
@@ -714,8 +714,8 @@ func SignNoteCmd(
 		directives = append(directives, "deleteRef")
 	}
 
-	// Construct the tx line
-	txLine := util.MakeTxLine(txFee, txNonce, pkID, sig, directives...)
+	// Construct the txparams
+	txParams := util.MakeTxParams(txFee, txNonce, pkID, sig, directives...)
 
 	// Create a blob with 0 byte content which be the subject of our note.
 	blobHash, err := repo.CreateBlob("")
@@ -724,7 +724,7 @@ func SignNoteCmd(
 	}
 
 	// Next we add the tx blob to the note
-	if err = repo.AddEntryToNote(note, blobHash, txLine); err != nil {
+	if err = repo.AddEntryToNote(note, blobHash, txParams); err != nil {
 		return errors.Wrap(err, "failed to add tx blob")
 	}
 

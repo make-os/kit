@@ -116,7 +116,7 @@ var _ = Describe("PushHandler", func() {
 			})
 		})
 
-		When("txline was not set", func() {
+		When("txparams was not set", func() {
 			var err error
 			BeforeEach(func() {
 				handler.rMgr = mgr
@@ -135,13 +135,13 @@ var _ = Describe("PushHandler", func() {
 				_, _, err = handler.HandleValidateAndRevert()
 			})
 
-			It("should return err='validation error.*txline was not set'", func() {
+			It("should return err='validation error.*txparams was not set'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("validation error.*txline was not set"))
+				Expect(err.Error()).To(MatchRegexp("validation error.*txparams was not set"))
 			})
 		})
 
-		When("txline is set and valid", func() {
+		When("txparams is set and valid", func() {
 			var err error
 			BeforeEach(func() {
 				handler.rMgr = mgr
@@ -149,8 +149,8 @@ var _ = Describe("PushHandler", func() {
 				oldState := getRepoState(repo)
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txLine := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				appendMakeSignableCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
+				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
 
 				newState := getRepoState(repo)
 				var packfile io.ReadSeeker
@@ -174,7 +174,7 @@ var _ = Describe("PushHandler", func() {
 		})
 
 		Context("with two references", func() {
-			When("txline for both references are set and valid but pkIDs are different", func() {
+			When("txparams for both references are set and valid but pkIDs are different", func() {
 				var err error
 				BeforeEach(func() {
 					handler.rMgr = mgr
@@ -182,14 +182,14 @@ var _ = Describe("PushHandler", func() {
 					oldState := getRepoState(repo)
 					pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 					pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-					txLine := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-					appendMakeSignableCommit(path, "file.txt", "line 1", txLine, gpgKeyID)
+					txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
+					appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
 
 					createCheckoutBranch(path, "branch2")
 					pkEntity, _ = crypto.PGPEntityFromPubKey(pubKey2)
 					pkID2 := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-					txLine = fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID2)
-					appendMakeSignableCommit(path, "file.txt", "line 1", txLine, gpgKeyID2)
+					txParams = fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID2)
+					appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID2)
 
 					newState := getRepoState(repo)
 					var packfile io.ReadSeeker
