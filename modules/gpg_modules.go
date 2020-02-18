@@ -108,7 +108,10 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 		tx.PublicKey = pubKey.(string)
 	}
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)

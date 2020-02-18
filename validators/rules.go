@@ -40,8 +40,8 @@ var isDerivedFromPublicKeyRule = func(tx types.BaseTx, err error) func(interface
 
 var validPubKeyRule = func(err error) func(interface{}) error {
 	return func(val interface{}) error {
-		pk := val.(util.Bytes32)
-		if pk.Equal(util.EmptyBytes32) {
+		pk := val.(util.PublicKey)
+		if pk.Equal(util.EmptyPublicKey) {
 			return err
 		}
 		if _, _err := crypto.PubKeyFromBytes(pk.Bytes()); _err != nil {
@@ -53,8 +53,15 @@ var validPubKeyRule = func(err error) func(interface{}) error {
 
 var isEmptyByte32 = func(err error) func(interface{}) error {
 	return func(val interface{}) error {
-		if val.(util.Bytes32).Equal(util.EmptyBytes32) {
-			return err
+		switch o := val.(type) {
+		case util.Bytes32:
+			if o.Equal(util.EmptyBytes32) {
+				return err
+			}
+		case util.PublicKey:
+			if o.Equal(util.EmptyPublicKey) {
+				return err
+			}
 		}
 		return nil
 	}

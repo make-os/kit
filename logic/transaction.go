@@ -53,7 +53,7 @@ func (t *Transaction) ExecTx(tx types.BaseTx, chainHeight uint64) abcitypes.Resp
 // tx: The transaction to be processed
 // chainHeight: The height of the block chain
 func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
-	spk := tx.GetSenderPubKey()
+	spk := tx.GetSenderPubKey().ToBytes32()
 
 	switch o := tx.(type) {
 	case *types.TxCoinTransfer:

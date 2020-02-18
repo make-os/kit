@@ -166,7 +166,10 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 		tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
 	}
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
@@ -222,7 +225,10 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 	blsKey := pk.BLSKey()
 	tx.BLSPubKey = blsKey.Public().Bytes()
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
@@ -409,7 +415,10 @@ func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 		tx.TicketHash = util.BytesToBytes32(bz)
 	}
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)

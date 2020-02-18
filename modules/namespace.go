@@ -190,7 +190,10 @@ func (m *NamespaceModule) register(
 	// Hash the name
 	tx.Name = util.Hash20Hex([]byte(tx.Name))
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
@@ -238,7 +241,10 @@ func (m *NamespaceModule) updateDomain(
 	// Hash the name
 	tx.Name = util.Hash20Hex([]byte(tx.Name))
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)

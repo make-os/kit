@@ -135,7 +135,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareTxCoinTransfer()
 				tx.Value = "10.2"
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
@@ -171,7 +171,7 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					tx := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 					tx.Value = "10.2"
-					tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+					tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 					tx.Delegate = delegate.PubKey().MustBytes32()
 
 					bi := &types.BlockInfo{Height: 1}
@@ -192,7 +192,7 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					tx := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 					tx.Value = "10.2"
-					tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+					tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 					tx.Delegate = delegate.PubKey().MustBytes32()
 
 					bi := &types.BlockInfo{Height: 1}
@@ -213,7 +213,7 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					tx := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 					tx.Value = "1"
-					tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+					tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -232,7 +232,7 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					tx := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 					tx.Value = "10.5"
-					tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+					tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 
 					bi := &types.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -632,7 +632,7 @@ var _ = Describe("TxValidator", func() {
 				tx := types.NewBareTxNamespaceAcquire()
 				tx.Value = "10.2"
 				tx.Name = "name1"
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 
 				bi := &types.BlockInfo{Height: 10}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -672,7 +672,7 @@ var _ = Describe("TxValidator", func() {
 				name := "name1"
 				tx := types.NewBareTxNamespaceDomainUpdate()
 				tx.Name = name
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 
 				bi := &types.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -697,7 +697,7 @@ var _ = Describe("TxValidator", func() {
 				name := "name1"
 				tx := types.NewBareTxNamespaceDomainUpdate()
 				tx.Name = name
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 
 				bi := &types.BlockInfo{Height: 10}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -977,7 +977,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalUpsertOwner()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := types.BareRepository()
 
 				bi := &types.BlockInfo{Height: 1}
@@ -996,7 +996,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalUpsertOwner()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "10"
 				tx.ProposalID = "0001"
 				repo := types.BareRepository()
@@ -1019,7 +1019,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalUpsertOwner()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "10"
 				repo := types.BareRepository()
 				repo.AddOwner("addr", &types.RepoOwner{})
@@ -1041,7 +1041,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalUpsertOwner()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "10"
 				repo := types.BareRepository()
 				repo.Config.Governace.ProposalFee = 100
@@ -1062,7 +1062,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalUpsertOwner()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "101"
 				repo := types.BareRepository()
 				repo.Config.Governace.ProposalFee = 100
@@ -1084,7 +1084,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalUpsertOwner()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "101"
 				repo := types.BareRepository()
 				repo.Config.Governace.ProposalFee = 100
@@ -1112,7 +1112,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := types.BareRepository()
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 				err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
@@ -1129,7 +1129,7 @@ var _ = Describe("TxValidator", func() {
 				tx := types.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
 				tx.ProposalID = "proposal_xyz"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 
 				repo := types.BareRepository()
 				repo.Proposals.Add("proposal1", &types.RepoProposal{})
@@ -1148,7 +1148,7 @@ var _ = Describe("TxValidator", func() {
 				tx := types.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
 				tx.ProposalID = "proposal1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 
 				repo := types.BareRepository()
 				repo.Proposals.Add("proposal1", &types.RepoProposal{Outcome: 1})
@@ -1166,7 +1166,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
@@ -1189,7 +1189,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
@@ -1213,7 +1213,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
@@ -1239,7 +1239,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
@@ -1264,7 +1264,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
@@ -1289,7 +1289,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
@@ -1314,7 +1314,7 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					tx := types.NewBareRepoProposalVote()
 					tx.RepoName = "repo1"
-					tx.SenderPubKey = key.PubKey().MustBytes32()
+					tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 					tx.ProposalID = "proposal1"
 					tx.Vote = types.ProposalVoteNoWithVeto
 
@@ -1343,7 +1343,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := types.BareRepository()
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
@@ -1360,7 +1360,7 @@ var _ = Describe("TxValidator", func() {
 				tx := types.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
 				tx.ProposalID = "proposal_xyz"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 
 				repo := types.BareRepository()
 				repo.Proposals.Add("proposal1", &types.RepoProposal{})
@@ -1379,7 +1379,7 @@ var _ = Describe("TxValidator", func() {
 				tx := types.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
 				tx.ProposalID = "proposal1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 
 				repo := types.BareRepository()
 				repo.Proposals.Add("proposal1", &types.RepoProposal{Outcome: 1})
@@ -1397,7 +1397,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
@@ -1420,7 +1420,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
@@ -1444,7 +1444,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
@@ -1468,7 +1468,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalFeeSend()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.ProposalID = "proposal1"
 
 				repo := types.BareRepository()
@@ -1512,7 +1512,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalUpdate()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := types.BareRepository()
 
 				bi := &types.BlockInfo{Height: 1}
@@ -1531,7 +1531,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalUpdate()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "10"
 				repo := types.BareRepository()
 				repo.Config.Governace.ProposalFee = 100
@@ -1552,7 +1552,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalUpdate()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "101"
 				repo := types.BareRepository()
 				repo.Config.Governace.ProposalFee = 100
@@ -1574,7 +1574,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalUpdate()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "101"
 				repo := types.BareRepository()
 				repo.Config.Governace.ProposalFee = 100
@@ -1616,7 +1616,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalMergeRequest()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := types.BareRepository()
 
 				bi := &types.BlockInfo{Height: 1}
@@ -1635,7 +1635,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalMergeRequest()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "10"
 				repo := types.BareRepository()
 				repo.Config.Governace.ProposalFee = 100
@@ -1656,7 +1656,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalMergeRequest()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "101"
 				repo := types.BareRepository()
 				repo.Config.Governace.ProposalFee = 100
@@ -1678,7 +1678,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				tx := types.NewBareRepoProposalMergeRequest()
 				tx.RepoName = "repo1"
-				tx.SenderPubKey = key.PubKey().MustBytes32()
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "101"
 				repo := types.BareRepository()
 				repo.Config.Governace.ProposalFee = 100

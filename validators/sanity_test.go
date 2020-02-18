@@ -173,7 +173,7 @@ var _ = Describe("TxValidator", func() {
 			It("has no signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
@@ -182,7 +182,7 @@ var _ = Describe("TxValidator", func() {
 			It("has invalid signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -195,7 +195,7 @@ var _ = Describe("TxValidator", func() {
 				tx.To = key.Addr()
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, err := tx.Sign(key.PrivKey().Base58())
 				Expect(err).To(BeNil())
 				tx.Sig = sig
@@ -332,7 +332,7 @@ var _ = Describe("TxValidator", func() {
 			It("has no signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
@@ -341,7 +341,7 @@ var _ = Describe("TxValidator", func() {
 			It("has invalid signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -353,7 +353,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return no error", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Domains["domain"] = "r/repo1"
 				sig, err := tx.Sign(key.PrivKey().Base58())
 				Expect(err).To(BeNil())
@@ -464,7 +464,7 @@ var _ = Describe("TxValidator", func() {
 			It("has no signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
@@ -473,7 +473,7 @@ var _ = Describe("TxValidator", func() {
 			It("has invalid signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -508,7 +508,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return no error", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, err := tx.Sign(key.PrivKey().Base58())
 				Expect(err).To(BeNil())
 				tx.Sig = sig
@@ -576,7 +576,7 @@ var _ = Describe("TxValidator", func() {
 			It("has no signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
@@ -585,7 +585,7 @@ var _ = Describe("TxValidator", func() {
 			It("has invalid signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -597,7 +597,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return no error", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, err := tx.Sign(key.PrivKey().Base58())
 				Expect(err).To(BeNil())
 				tx.Sig = sig
@@ -826,7 +826,7 @@ var _ = Describe("TxValidator", func() {
 			It("has no signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
@@ -835,7 +835,7 @@ var _ = Describe("TxValidator", func() {
 			It("has invalid signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -847,7 +847,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return no error", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, err := tx.Sign(key.PrivKey().Base58())
 				Expect(err).To(BeNil())
 				tx.Sig = sig
@@ -923,7 +923,7 @@ var _ = Describe("TxValidator", func() {
 			It("has no signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxAddGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
@@ -932,7 +932,7 @@ var _ = Describe("TxValidator", func() {
 			It("has invalid signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxAddGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -944,7 +944,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return no error", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, err := tx.Sign(key.PrivKey().Base58())
 				Expect(err).To(BeNil())
 				tx.Sig = sig
@@ -1026,7 +1026,7 @@ var _ = Describe("TxValidator", func() {
 			It("has no signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
@@ -1035,7 +1035,7 @@ var _ = Describe("TxValidator", func() {
 			It("has invalid signature", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -1047,7 +1047,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return no error", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, err := tx.Sign(key.PrivKey().Base58())
 				Expect(err).To(BeNil())
 				tx.Sig = sig
@@ -1148,7 +1148,7 @@ var _ = Describe("TxValidator", func() {
 			It("has a no push note id", func() {
 				params.PushOKQuorumSize = 1
 				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, _ := key.PrivKey().Sign(tx.Bytes())
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
@@ -1162,7 +1162,7 @@ var _ = Describe("TxValidator", func() {
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: util.EmptyBytes32,
 				})
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, _ := key.PrivKey().Sign(tx.Bytes())
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
@@ -1176,7 +1176,7 @@ var _ = Describe("TxValidator", func() {
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: key.PubKey().MustBytes32(),
 				})
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, _ := key.PrivKey().Sign(tx.Bytes())
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
@@ -1203,7 +1203,7 @@ var _ = Describe("TxValidator", func() {
 				pushOK2.Sig = util.BytesToBytes64(sig)
 				tx.PushOKs = append(tx.PushOKs, pushOK2)
 
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, _ = key.PrivKey().Sign(tx.Bytes())
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
@@ -1236,7 +1236,7 @@ var _ = Describe("TxValidator", func() {
 				pushOK2.Sig = util.BytesToBytes64(sig)
 				tx.PushOKs = append(tx.PushOKs, pushOK2)
 
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, _ = key.PrivKey().Sign(tx.Bytes())
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
@@ -1257,7 +1257,7 @@ var _ = Describe("TxValidator", func() {
 				pok.Sig = util.BytesToBytes64(sig)
 
 				tx.PushOKs = append(tx.PushOKs, pok)
-				tx.SenderPubKey = util.BytesToBytes32(key.PubKey().MustBytes())
+				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, _ = key.PrivKey().Sign(tx.Bytes())
 				tx.Sig = sig
 

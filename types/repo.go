@@ -246,8 +246,8 @@ type RepoManager interface {
 	// SetPGPPubKeyGetter sets the PGP public key query function
 	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
 
-	// SetModulesAgg sets the modules aggregator
-	SetModulesAgg(agg ModulesAggregator)
+	// RegisterAPIHandlers registers server API handlers
+	RegisterAPIHandlers(agg ModulesAggregator)
 
 	// GetPruner returns the repo pruner
 	GetPruner() Pruner

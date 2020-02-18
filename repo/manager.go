@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/makeos/mosdef/repo/api"
 	"github.com/makeos/mosdef/util/cache"
 
 	"github.com/makeos/mosdef/config"
@@ -117,9 +118,10 @@ func (m *Manager) SetRootDir(dir string) {
 	m.rootDir = dir
 }
 
-// SetModulesAgg sets the modules aggregator
-func (m *Manager) SetModulesAgg(agg types.ModulesAggregator) {
+// RegisterAPIHandlers registers server API handlers
+func (m *Manager) RegisterAPIHandlers(agg types.ModulesAggregator) {
 	m.modulesAgg = agg
+	m.registerAPIHandlers(m.srv.Handler.(*http.ServeMux))
 }
 
 func (m *Manager) defaultGPGPubKeyGetter(pkID string) (string, error) {
@@ -171,8 +173,7 @@ func (m *Manager) addPushNoteEndorsement(pnID string, pok *types.PushOK) {
 func (m *Manager) Start() error {
 	s := http.NewServeMux()
 
-	// Register handlers
-	m.registerHandlers(s)
+	s.HandleFunc("/", m.gitRequestsHandler)
 
 	// Only start server in non-validator node
 	if !m.cfg.IsValidatorNode() {
@@ -190,10 +191,12 @@ func (m *Manager) Start() error {
 	return nil
 }
 
-func (m *Manager) registerHandlers(s *http.ServeMux) {
-	s.HandleFunc("/", m.gitRequestsHandler)
-	s.HandleFunc("/v1/get-nonce", restAPIHandler(m.apiGetNonce, m.log, "GET"))
-	s.HandleFunc("/v1/merge-request", restAPIHandler(m.apiCreateMergeRequest, m.log, "POST"))
+func (m *Manager) registerAPIHandlers(s *http.ServeMux) {
+	handlers := api.NewREST(m.modulesAgg)
+	s.HandleFunc("/v1/accounts/nonce",
+		util.RESTApiHandler("GET", handlers.GetAccountNonce, m.log))
+	s.HandleFunc("/v1/repos/merge-request",
+		util.RESTApiHandler("POST", handlers.CreateMergeRequest, m.log))
 }
 
 // GetLogic returns the application logic provider

@@ -119,7 +119,7 @@ func CheckTxUnbondTicketConsistency(
 	// For delegated ticket, compare the delegator address with the sender address
 	authErr := feI(index, "hash", "sender not authorized to unbond this ticket")
 	if ticket.Delegator == "" {
-		if tx.SenderPubKey != ticket.ProposerPubKey {
+		if tx.SenderPubKey.ToBytes32() != ticket.ProposerPubKey {
 			return authErr
 		}
 	} else if ticket.Delegator != tx.GetFrom().String() {

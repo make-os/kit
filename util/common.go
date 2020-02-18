@@ -17,6 +17,8 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/bech32"
+	"github.com/makeos/mosdef/util/logger"
+	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 
 	"github.com/thoas/go-funk"
@@ -577,5 +579,24 @@ func RESTApiErrorMsg(msg, field string, code int) map[string]interface{} {
 	}
 	return map[string]interface{}{
 		"error": obj,
+	}
+}
+
+// RESTApiHandler wraps http handlers, providing panic recoverability
+func RESTApiHandler(method string, handler func(w http.ResponseWriter,
+	r *http.Request), log logger.Logger) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if r := recover(); r != nil {
+				cause := errors.Cause(r.(error))
+				WriteJSON(w, 500, RESTApiErrorMsg(cause.Error(), "", 0))
+				log.Error("api handler error", "Err", cause.Error())
+			}
+		}()
+		if strings.ToLower(r.Method) != strings.ToLower(method) {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+		handler(w, r)
 	}
 }

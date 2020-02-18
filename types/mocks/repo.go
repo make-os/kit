@@ -1112,16 +1112,16 @@ func (mr *MockRepoManagerMockRecorder) SetPGPPubKeyGetter(pkGetter interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPGPPubKeyGetter", reflect.TypeOf((*MockRepoManager)(nil).SetPGPPubKeyGetter), pkGetter)
 }
 
-// SetModulesAgg mocks base method
-func (m *MockRepoManager) SetModulesAgg(agg types.ModulesAggregator) {
+// RegisterAPIHandlers mocks base method
+func (m *MockRepoManager) RegisterAPIHandlers(agg types.ModulesAggregator) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetModulesAgg", agg)
+	m.ctrl.Call(m, "RegisterAPIHandlers", agg)
 }
 
-// SetModulesAgg indicates an expected call of SetModulesAgg
-func (mr *MockRepoManagerMockRecorder) SetModulesAgg(agg interface{}) *gomock.Call {
+// RegisterAPIHandlers indicates an expected call of RegisterAPIHandlers
+func (mr *MockRepoManagerMockRecorder) RegisterAPIHandlers(agg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetModulesAgg", reflect.TypeOf((*MockRepoManager)(nil).SetModulesAgg), agg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterAPIHandlers", reflect.TypeOf((*MockRepoManager)(nil).RegisterAPIHandlers), agg)
 }
 
 // GetPruner mocks base method

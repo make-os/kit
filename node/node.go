@@ -245,7 +245,7 @@ func (n *Node) Start() error {
 	n.initModulesAggregatorAndExtension()
 
 	// Pass the module aggregator to the repo manager
-	n.repoMgr.SetModulesAgg(n.modulesAgg)
+	n.repoMgr.RegisterAPIHandlers(n.modulesAgg)
 
 	return nil
 }

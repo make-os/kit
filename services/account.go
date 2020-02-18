@@ -9,7 +9,7 @@ import (
 // Returned types.ErrAccountUnknown if account is unknown.
 func (s *Service) GetNonce(address util.String) (uint64, error) {
 	acct := s.logic.AccountKeeper().GetAccount(address, 0)
-	if acct.Nonce == 0 && acct.Balance == "0" {
+	if acct.IsNil() {
 		return 0, types.ErrAccountUnknown
 	}
 	return acct.Nonce, nil

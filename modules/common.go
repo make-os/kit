@@ -76,15 +76,23 @@ func decodeCommon(tx types.BaseTx, params map[string]interface{}) {
 }
 
 // finalizeTx sets the public key, timestamp and signs the transaction.
-func finalizeTx(tx types.BaseTx, service types.Service, options ...interface{}) {
+//
+// options[0] is expected to be a base58 private key
+//
+// If options[1] is set to true, true is returned; meaning the user only wants
+// the finalized payload and does not want to send the transaction to the network
+func finalizeTx(tx types.BaseTx, service types.Service, options ...interface{}) (payloadOnly bool) {
 
 	// Set timestamp if not already set
 	if tx.GetTimestamp() == 0 {
 		tx.SetTimestamp(time.Now().Unix())
 	}
 
-	// Set public key and sign the transaction only when
-	// a key is provided.
+	if len(options) > 1 {
+		payloadOnly, _ = options[1].(bool)
+	}
+
+	// Set public key and sign the transaction only when a key is provided.
 	if len(options) > 0 {
 
 		key := checkAndGetKey(options...)
@@ -113,6 +121,8 @@ func finalizeTx(tx types.BaseTx, service types.Service, options ...interface{}) 
 			tx.SetSignature(sig)
 		}
 	}
+
+	return payloadOnly
 }
 
 func checkAndGetKey(options ...interface{}) string {
@@ -183,6 +193,8 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 			m[k] = o.HexStr()
 		case util.Bytes64:
 			m[k] = o.HexStr()
+		case util.PublicKey:
+			m[k] = crypto.MustPubKeyFromBytes(o[:]).Base58()
 
 		// custom wrapped map[string]struct
 		// custom wrapped map[string]string

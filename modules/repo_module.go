@@ -112,7 +112,7 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 //		name: string
 //		timestamp: number
 // }
-// options: key
+// options[0]: key
 func (m *RepoModule) create(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -136,7 +136,10 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 		tx.Config = config.(map[string]interface{})
 	}
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
@@ -159,7 +162,7 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 // 		address: string
 //		timestamp: number
 // }
-// options: key
+// options[0]: key
 func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -193,7 +196,10 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 		tx.Veto = veto.(bool)
 	}
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
@@ -215,7 +221,7 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 //		yes: bool
 //		timestamp: number
 // }
-// options: key
+// options[0]: key
 func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -245,7 +251,10 @@ func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...in
 		}
 	}
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
@@ -315,7 +324,7 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) interface{
 //		config: {[key:string]: any}
 //		timestamp: number
 // }
-// options: key
+// options[0]: key
 func (m *RepoModule) update(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -344,7 +353,10 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 		tx.Config = config.(map[string]interface{})
 	}
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
@@ -367,7 +379,7 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 //		value: string
 //		timestamp: number
 // }
-// options: key
+// options[0]: key
 func (m *RepoModule) depositFee(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -391,7 +403,10 @@ func (m *RepoModule) depositFee(params map[string]interface{}, options ...interf
 		tx.ProposalID = id.(string)
 	}
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)
@@ -416,7 +431,7 @@ func (m *RepoModule) depositFee(params map[string]interface{}, options ...interf
 // 		targetHash: string
 //		timestamp: number
 // }
-// options: key
+// options[0]: key
 func (m *RepoModule) CreateMergeRequest(
 	params map[string]interface{},
 	options ...interface{}) interface{} {
@@ -457,7 +472,10 @@ func (m *RepoModule) CreateMergeRequest(
 		tx.TargetBranchHash = targetHash.(string)
 	}
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)

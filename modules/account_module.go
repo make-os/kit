@@ -3,6 +3,7 @@ package modules
 import (
 	"fmt"
 
+	"github.com/k0kubun/pp"
 	"github.com/makeos/mosdef/config"
 	"github.com/mitchellh/mapstructure"
 
@@ -220,6 +221,7 @@ func (m *AccountModule) getPublicKey(address string, passphrase ...string) strin
 // GetNonce returns the current nonce of an account
 func (m *AccountModule) GetNonce(address string) string {
 	nonce, err := m.service.GetNonce(util.String(address))
+	pp.Println(nonce, err)
 	if err != nil {
 		panic(err)
 	}
@@ -229,7 +231,7 @@ func (m *AccountModule) GetNonce(address string) string {
 // getAccount returns the account of the given address
 func (m *AccountModule) getAccount(address string, height ...uint64) interface{} {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
-	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
+	if account.IsNil() {
 		panic(types.ErrAccountUnknown)
 	}
 	return EncodeForJS(account)
@@ -304,7 +306,10 @@ func (m *AccountModule) setCommission(params map[string]interface{},
 		tx.Commission = util.String(commission.(string))
 	}
 
-	finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.service, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
 
 	// Process the transaction
 	hash, err := m.service.SendTx(tx)

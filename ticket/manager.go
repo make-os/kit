@@ -41,7 +41,7 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 		Index:          txIndex,
 		Value:          t.Value,
 		Hash:           t.GetHash(),
-		ProposerPubKey: t.GetSenderPubKey(),
+		ProposerPubKey: t.GetSenderPubKey().ToBytes32(),
 		BLSPubKey:      t.BLSPubKey,
 	}
 

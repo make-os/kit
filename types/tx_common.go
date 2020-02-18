@@ -45,7 +45,7 @@ type BaseTx interface {
 	GetType() int                        // Returns the type of the transaction
 	GetSignature() []byte                // Returns the transaction signature
 	SetSignature(s []byte)               // Sets the transaction signature
-	GetSenderPubKey() util.Bytes32       // Returns the transaction sender public key
+	GetSenderPubKey() util.PublicKey     // Returns the transaction sender public key
 	SetSenderPubKey(pk []byte)           // Set the transaction sender public key
 	GetTimestamp() int64                 // Return the transaction creation unix timestamp
 	SetTimestamp(t int64)                // Set the transaction creation unix timestamp
@@ -86,11 +86,11 @@ func (tx *TxType) Is(txType int) bool {
 type TxCommon struct {
 	util.DecoderHelper `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxMeta            `json:"-" msgpack:"-" mapstructure:"-"`
-	Nonce              uint64       `json:"nonce" msgpack:"nonce"`
-	Fee                util.String  `json:"fee" msgpack:"fee"`
-	Sig                []byte       `json:"sig" msgpack:"sig"`
-	Timestamp          int64        `json:"timestamp" msgpack:"timestamp"`
-	SenderPubKey       util.Bytes32 `json:"senderPubKey" msgpack:"senderPubKey"`
+	Nonce              uint64         `json:"nonce" msgpack:"nonce"`
+	Fee                util.String    `json:"fee" msgpack:"fee"`
+	Sig                []byte         `json:"sig" msgpack:"sig"`
+	Timestamp          int64          `json:"timestamp" msgpack:"timestamp"`
+	SenderPubKey       util.PublicKey `json:"senderPubKey" msgpack:"senderPubKey"`
 }
 
 // NewBareTxCommon returns an instance of TxCommon with zero values
@@ -100,7 +100,7 @@ func NewBareTxCommon() *TxCommon {
 		Nonce:        0,
 		Fee:          "0",
 		Timestamp:    0,
-		SenderPubKey: util.EmptyBytes32,
+		SenderPubKey: util.EmptyPublicKey,
 	}
 }
 
@@ -145,13 +145,13 @@ func (tx *TxCommon) SetTimestamp(t int64) {
 }
 
 // GetSenderPubKey returns the transaction sender public key
-func (tx *TxCommon) GetSenderPubKey() util.Bytes32 {
+func (tx *TxCommon) GetSenderPubKey() util.PublicKey {
 	return tx.SenderPubKey
 }
 
 // SetSenderPubKey set the transaction sender public key
 func (tx *TxCommon) SetSenderPubKey(pk []byte) {
-	tx.SenderPubKey = util.BytesToBytes32(pk)
+	tx.SenderPubKey = util.BytesToPublicKey(pk)
 }
 
 // GetFrom returns the address of the transaction sender
