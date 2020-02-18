@@ -291,7 +291,8 @@ func (m *AccountModule) getPrivateValidator(includePrivKey ...bool) interface{} 
 //		commission: float
 //		timestamp: number
 // }
-// options: key
+// options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *AccountModule) setCommission(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error

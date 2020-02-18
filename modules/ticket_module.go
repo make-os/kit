@@ -138,7 +138,8 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 //		delegate: string
 //		timestamp: number
 // }
-// options: key
+// options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -191,7 +192,8 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 //		delegate: string
 //		timestamp: number
 // }
-// options: key
+// options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *TicketModule) storerBuy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -396,7 +398,8 @@ func (m *TicketModule) listRecent(limit ...int) interface{} {
 //		hash: string    // ticket hash
 //		timestamp: number
 // }
-// options: key
+// options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error

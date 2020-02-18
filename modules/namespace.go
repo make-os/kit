@@ -148,7 +148,8 @@ func (m *NamespaceModule) getTarget(path string, height ...uint64) interface{} {
 //		timestamp: number
 //		domains: {[key:string]: string}
 // }
-// options: key
+// options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *NamespaceModule) register(
 	params map[string]interface{},
 	options ...interface{}) interface{} {
@@ -214,7 +215,8 @@ func (m *NamespaceModule) register(
 //		timestamp: number
 //		domains: {[key:string]: string}
 // }
-// options: key
+// options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *NamespaceModule) updateDomain(
 	params map[string]interface{},
 	options ...interface{}) interface{} {

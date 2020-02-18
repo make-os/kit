@@ -113,6 +113,7 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 //		timestamp: number
 // }
 // options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *RepoModule) create(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -163,6 +164,7 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 //		timestamp: number
 // }
 // options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -222,6 +224,7 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 //		timestamp: number
 // }
 // options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -325,6 +328,7 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) interface{
 //		timestamp: number
 // }
 // options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *RepoModule) update(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -380,6 +384,7 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 //		timestamp: number
 // }
 // options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *RepoModule) depositFee(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -432,6 +437,7 @@ func (m *RepoModule) depositFee(params map[string]interface{}, options ...interf
 //		timestamp: number
 // }
 // options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *RepoModule) CreateMergeRequest(
 	params map[string]interface{},
 	options ...interface{}) interface{} {

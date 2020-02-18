@@ -94,7 +94,8 @@ func (m *GPGModule) Configure() []prompt.Suggest {
 //		pubKey: string
 //		timestamp: number
 // }
-// options: key
+// options[0]: key
+// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
