@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
@@ -34,6 +35,7 @@ func castPanic(field string) {
 
 // Decode common fields like nonce, fee, timestamp into tx
 func decodeCommon(tx types.BaseTx, params map[string]interface{}) {
+
 	if nonce, ok := params["nonce"]; ok {
 		defer castPanic("nonce")
 		switch v := nonce.(type) {
@@ -41,6 +43,12 @@ func decodeCommon(tx types.BaseTx, params map[string]interface{}) {
 			tx.SetNonce(uint64(v))
 		case float64:
 			tx.SetNonce(uint64(v))
+		case string:
+			n, err := strconv.ParseUint(v, 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			tx.SetNonce(n)
 		default:
 			panic(invalidFieldValueType("nonce", "int", nonce))
 		}
@@ -62,14 +70,27 @@ func decodeCommon(tx types.BaseTx, params map[string]interface{}) {
 
 	if timestamp, ok := params["timestamp"]; ok {
 		defer castPanic("timestamp")
-		tx.SetTimestamp(timestamp.(int64))
+		switch v := timestamp.(type) {
+		case int64:
+			tx.SetTimestamp(v)
+		case float64:
+			tx.SetTimestamp(int64(v))
+		case string:
+			ts, err := strconv.ParseInt(v, 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			tx.SetTimestamp(ts)
+		default:
+			panic(invalidFieldValueType("timestamp", "int", timestamp))
+		}
 	}
 
 	if sig, ok := params["sig"]; ok {
 		defer castPanic("sig")
 		sigBz, err := util.FromHex(sig.(string))
 		if err != nil {
-			panic(types.FieldError("sig", "unable to decode signature"))
+			panic(types.FieldError("sig", "unable to decode signature: "+err.Error()))
 		}
 		tx.SetSignature(sigBz)
 	}
