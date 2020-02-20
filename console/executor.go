@@ -6,9 +6,9 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 
 	"github.com/fatih/color"
-	"gitlab.com/makeos/mosdef/util/logger"
 	prettyjson "github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
 )
 
 // Executor is responsible for executing operations inside a

@@ -2,11 +2,10 @@ package keepers
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/storage/tree"
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
-
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/pkgs/tree"
+	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // NamespaceKeeper manages namespaces.
@@ -25,7 +24,7 @@ func NewNamespaceKeeper(state *tree.SafeTree) *NamespaceKeeper {
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Namespace if no matching namespace is found.
-func (a *NamespaceKeeper) GetNamespace(name string, blockNum ...uint64) *types.Namespace {
+func (a *NamespaceKeeper) GetNamespace(name string, blockNum ...uint64) *state.Namespace {
 
 	// Get version is provided
 	var version uint64
@@ -45,11 +44,11 @@ func (a *NamespaceKeeper) GetNamespace(name string, blockNum ...uint64) *types.N
 
 	// If we don't find the namespace, we return an empty namespace.
 	if bs == nil {
-		return types.BareNamespace()
+		return state.BareNamespace()
 	}
 
 	// Otherwise, we decode the bytes to types.Namespace
-	ns, err := types.NewNamespaceFromBytes(bs)
+	ns, err := state.NewNamespaceFromBytes(bs)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to decode namespace byte slice"))
 	}
@@ -92,6 +91,6 @@ func (a *NamespaceKeeper) GetTarget(path string, blockNum ...uint64) (string, er
 // ARGS:
 // name: The name of the namespace to update
 // udp: The updated namespace object to replace the existing object.
-func (a *NamespaceKeeper) Update(name string, upd *types.Namespace) {
+func (a *NamespaceKeeper) Update(name string, upd *state.Namespace) {
 	a.state.Set(MakeNamespaceKey(name), upd.Bytes())
 }

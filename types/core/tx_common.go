@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core/repomsgs"
 	"strconv"
 
 	"github.com/stretchr/objx"
@@ -409,7 +408,7 @@ func getBareTxObject(txType int) (types.BaseTx, error) {
 	case TxTypeAddGPGPubKey:
 		tx = NewBareTxAddGPGPubKey()
 	case TxTypePush:
-		tx = repomsgs.NewBareTxPush()
+		tx = NewBareTxPush()
 	case TxTypeNSAcquire:
 		tx = NewBareTxNamespaceAcquire()
 	case TxTypeNSDomainUpdate:

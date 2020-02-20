@@ -3,7 +3,7 @@ package dht
 import (
 	"context"
 	"fmt"
-	types2 "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/dht/types"
 	"os"
 	"time"
 
@@ -12,11 +12,11 @@ import (
 	routing "github.com/libp2p/go-libp2p-routing"
 	"github.com/phayes/freeport"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/testutil"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 func randomAddr() string {
@@ -264,7 +264,7 @@ var _ = Describe("App", func() {
 
 		When("a peer annonce a key", func() {
 			BeforeEach(func() {
-				err = dht.Annonce(context.Background(), []byte("key"))
+				err = dht.Announce(context.Background(), []byte("key"))
 			})
 
 			It("should return no error", func() {
@@ -305,7 +305,7 @@ var _ = Describe("App", func() {
 
 		When("no providers exist", func() {
 			It("should return err=ErrObjNotFound", func() {
-				_, err = dht.GetObject(context.Background(), &types2.DHTObjectQuery{ObjectKey: []byte("key")})
+				_, err = dht.GetObject(context.Background(), &types.DHTObjectQuery{ObjectKey: []byte("key")})
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(ErrObjNotFound))
 			})
@@ -317,7 +317,7 @@ var _ = Describe("App", func() {
 				Expect(err).To(BeNil())
 			})
 			It("should return err about unregistered module", func() {
-				_, err = dht.GetObject(context.Background(), &types2.DHTObjectQuery{
+				_, err = dht.GetObject(context.Background(), &types.DHTObjectQuery{
 					Module:    "unknown",
 					ObjectKey: []byte("key"),
 				})
@@ -333,7 +333,7 @@ var _ = Describe("App", func() {
 				Expect(err).To(BeNil())
 			})
 			It("should return err the finder error", func() {
-				_, err = dht.GetObject(context.Background(), &types2.DHTObjectQuery{
+				_, err = dht.GetObject(context.Background(), &types.DHTObjectQuery{
 					Module:    "my-finder",
 					ObjectKey: []byte("key"),
 				})
@@ -349,7 +349,7 @@ var _ = Describe("App", func() {
 				Expect(err).To(BeNil())
 			})
 			It("should return err=ErrObjNotFound", func() {
-				_, err = dht.GetObject(context.Background(), &types2.DHTObjectQuery{
+				_, err = dht.GetObject(context.Background(), &types.DHTObjectQuery{
 					Module:    "my-finder",
 					ObjectKey: []byte("key"),
 				})
@@ -366,7 +366,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should return value returned by the object finder", func() {
-				retVal, err := dht.GetObject(context.Background(), &types2.DHTObjectQuery{
+				retVal, err := dht.GetObject(context.Background(), &types.DHTObjectQuery{
 					Module:    "my-finder",
 					ObjectKey: []byte("key"),
 				})
@@ -375,7 +375,7 @@ var _ = Describe("App", func() {
 			})
 
 			Specify("that non-local peers can also find the key and value", func() {
-				retVal, err := peerDHT.GetObject(context.Background(), &types2.DHTObjectQuery{
+				retVal, err := peerDHT.GetObject(context.Background(), &types.DHTObjectQuery{
 					Module:    "my-finder",
 					ObjectKey: []byte("key"),
 				})

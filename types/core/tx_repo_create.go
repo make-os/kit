@@ -1,4 +1,4 @@
-package msgs
+package core
 
 import (
 	"fmt"

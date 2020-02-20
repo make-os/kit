@@ -9,7 +9,7 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	config "gitlab.com/makeos/mosdef/config"
 	crypto "gitlab.com/makeos/mosdef/crypto"
-	dht "gitlab.com/makeos/mosdef/dht"
+	types2 "gitlab.com/makeos/mosdef/dht/types"
 	types "gitlab.com/makeos/mosdef/modules/types"
 	logger "gitlab.com/makeos/mosdef/pkgs/logger"
 	tree "gitlab.com/makeos/mosdef/pkgs/tree"
@@ -2037,10 +2037,10 @@ func (mr *MockRepoManagerMockRecorder) GetPruner() *gomock.Call {
 }
 
 // GetDHT mocks base method
-func (m *MockRepoManager) GetDHT() dht.DHTNode {
+func (m *MockRepoManager) GetDHT() types2.DHTNode {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDHT")
-	ret0, _ := ret[0].(dht.DHTNode)
+	ret0, _ := ret[0].(types2.DHTNode)
 	return ret0
 }
 

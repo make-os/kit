@@ -36,13 +36,12 @@ release-linux:
 	 env GOVERSION=$(GOVERSION) goreleaser release --snapshot --rm-dist -f ".goreleaser.linux.yml"
 
 genmocks:
-	cd types && \
-	mockgen -source=logic.go -destination=mocks/logic.go -package mocks && \
-	mockgen -source=dht.go -destination=mocks/dht.go -package mocks && \
-	mockgen -source=repo.go -destination=mocks/repo.go -package mocks && \
-	mockgen -source=tm.go -destination=mocks/tm.go -package mocks && \
-	mockgen -source=jsonrpc.go -destination=mocks/jsonrpc.go -package mocks && \
-	mockgen -source=mempool.go -destination=mocks/mempool.go -package mocks && \
-	mockgen -source=ticket.go -destination=mocks/ticket.go -package mocks && \
-	mockgen -source=tree.go -destination=mocks/tree.go -package mocks && \
-	mockgen -source=node.go -destination=mocks/node.go -package mocks
+	mockgen -source=types/core/logic.go -destination=mocks/logic.go -package mocks && \
+	mockgen -source=dht/types.go -destination=mocks/dht.go -package mocks && \
+	mockgen -source=types/core/repo.go -destination=mocks/repo.go -package mocks && \
+    mockgen -source=types/tendermint.go -destination=mocks/tendermint.go -package mocks && \
+    mockgen -source=rpc/types.go -destination=mocks/jsonrpc.go -package mocks && \
+    mockgen -source=types/core/mempool.go -destination=mocks/mempool.go -package mocks && \
+    mockgen -source=ticket/types/types.go -destination=mocks/ticket.go -package mocks && \
+    mockgen -source=pkgs/tree/types.go -destination=mocks/tree.go -package mocks && \
+    mockgen -source=node/types/types.go -destination=mocks/node.go -package mocks

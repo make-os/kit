@@ -1,13 +1,13 @@
 package validators
 
 import (
-	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types"
 	"time"
 
 	govalidator "github.com/asaskevich/govalidator"
+	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
-	"github.com/shopspring/decimal"
 )
 
 var validAddrRule = func(err error) func(interface{}) error {
@@ -28,7 +28,7 @@ var validAddrRule = func(err error) func(interface{}) error {
 	}
 }
 
-var isDerivedFromPublicKeyRule = func(tx msgs.BaseTx, err error) func(interface{}) error {
+var isDerivedFromPublicKeyRule = func(tx types.BaseTx, err error) func(interface{}) error {
 	return func(val interface{}) error {
 		pk, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 		if !pk.Addr().Equal(val.(util.String)) {

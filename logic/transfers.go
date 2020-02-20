@@ -3,8 +3,7 @@ package logic
 import (
 	"fmt"
 	"gitlab.com/makeos/mosdef/crypto"
-	types2 "gitlab.com/makeos/mosdef/logic/types"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -28,7 +27,7 @@ func (t *Transaction) execCoinTransfer(
 	fee util.String,
 	chainHeight uint64) error {
 
-	var recvAcct types2.BalanceAccount
+	var recvAcct core.BalanceAccount
 	recvAddr := recipientAddr.Address()
 	acctKeeper := t.logic.AccountKeeper()
 	repoKeeper := t.logic.RepoKeeper()
@@ -94,7 +93,7 @@ func (t *Transaction) execCoinTransfer(
 
 	// Save the new state of the object
 	switch o := recvAcct.(type) {
-	case *types.Account:
+	case *state.Account:
 		acctKeeper.Update(recipientAddr, o)
 	case *state.Repository:
 		repoKeeper.Update(recipientAddr.String(), o)

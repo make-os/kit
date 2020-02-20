@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 
 	. "github.com/onsi/ginkgo"

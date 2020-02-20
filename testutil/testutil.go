@@ -7,21 +7,21 @@ import (
 	"regexp"
 
 	"github.com/golang/mock/gomock"
+	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/types/mocks"
-	"gitlab.com/makeos/mosdef/util/logger"
 
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	tmconfig "github.com/tendermint/tendermint/config"
+	"gitlab.com/makeos/mosdef/util"
 
 	path "path/filepath"
 
-	"gitlab.com/makeos/mosdef/config"
 	"github.com/mitchellh/go-homedir"
+	"gitlab.com/makeos/mosdef/config"
 )
 
 // GPGProgramPath is the path to the gpg program

@@ -17,9 +17,9 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/bech32"
-	"gitlab.com/makeos/mosdef/util/logger"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
 
 	"github.com/thoas/go-funk"
 

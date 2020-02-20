@@ -2,8 +2,7 @@ package repo
 
 import (
 	"bytes"
-	"gitlab.com/makeos/mosdef/repo/types/core"
-	"gitlab.com/makeos/mosdef/repo/types/msgs"
+	"gitlab.com/makeos/mosdef/types/core"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -18,7 +17,7 @@ import (
 )
 
 // makePackfileFromPushNote creates a packfile from a PushNote
-func makePackfileFromPushNote(repo core.BareRepo, tx *msgs.PushNote) (io.ReadSeeker, error) {
+func makePackfileFromPushNote(repo core.BareRepo, tx *core.PushNote) (io.ReadSeeker, error) {
 
 	var buf = bytes.NewBuffer(nil)
 	enc := packfile.NewEncoder(buf, repo.GetStorer(), true)
@@ -40,7 +39,7 @@ func makePackfileFromPushNote(repo core.BareRepo, tx *msgs.PushNote) (io.ReadSee
 
 // makeReferenceUpdateRequest creates a git reference update request from a push
 // transaction. This is what git push sends to the git-receive-pack.
-func makeReferenceUpdateRequest(repo core.BareRepo, tx *msgs.PushNote) (io.ReadSeeker, error) {
+func makeReferenceUpdateRequest(repo core.BareRepo, tx *core.PushNote) (io.ReadSeeker, error) {
 
 	// Generate a packfile
 	packfile, err := makePackfileFromPushNote(repo, tx)
@@ -77,10 +76,10 @@ func makeReferenceUpdateRequest(repo core.BareRepo, tx *msgs.PushNote) (io.ReadS
 func makePushNoteFromStateChange(
 	repo core.BareRepo,
 	oldState,
-	newState core.BareRepoState) (*msgs.PushNote, error) {
+	newState core.BareRepoState) (*core.PushNote, error) {
 
 	// Compute the changes between old and new states
-	tx := &msgs.PushNote{References: []*core.PushedReference{}}
+	tx := &core.PushNote{References: []*core.PushedReference{}}
 	changes := oldState.GetChanges(newState)
 
 	// For each changed references, generate a PushedReference object

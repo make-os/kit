@@ -10,9 +10,9 @@ import (
 
 	tmcfg "github.com/tendermint/tendermint/config"
 
-	"gitlab.com/makeos/mosdef/util/logger"
 	"github.com/olebedev/emitter"
 	"github.com/tendermint/tendermint/p2p"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
 )
 
 // Globals holds references to global objects

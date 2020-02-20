@@ -1,7 +1,8 @@
 package logic
 
 import (
-	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 	"os"
 
 	"github.com/golang/mock/gomock"
@@ -10,13 +11,11 @@ import (
 
 	"gitlab.com/makeos/mosdef/util"
 
-	"gitlab.com/makeos/mosdef/types"
-
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Delegation", func() {
@@ -44,7 +43,7 @@ var _ = Describe("Delegation", func() {
 	})
 
 	BeforeEach(func() {
-		err := logic.SysKeeper().SaveBlockInfo(&types2.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 
@@ -57,12 +56,12 @@ var _ = Describe("Delegation", func() {
 
 	Describe(".execSetDelegatorCommission", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
-		var senderAcct *types.Account
+		var senderAcct *state.Account
 		Context("when tx has incorrect nonce", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance:             util.String("10"),
-					Stakes:              types.BareAccountStakes(),
+					Stakes:              state.BareAccountStakes(),
 					DelegatorCommission: 15.4,
 				})
 				spk := sender.PubKey().MustBytes32()

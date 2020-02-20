@@ -2,53 +2,52 @@ package modules
 
 import (
 	"fmt"
-	types4 "gitlab.com/makeos/mosdef/logic/types"
-	types3 "gitlab.com/makeos/mosdef/services/types"
-	"gitlab.com/makeos/mosdef/types/msgs"
-
 	prompt "github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+	types3 "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // NamespaceModule provides namespace management functionalities
 type NamespaceModule struct {
 	vm      *otto.Otto
-	keepers types4.Keepers
+	keepers core.Keepers
 	service types3.Service
-	repoMgr types4.RepoManager
+	repoMgr core.RepoManager
 }
 
 // NewNSModule creates an instance of NamespaceModule
 func NewNSModule(
 	vm *otto.Otto,
 	service types3.Service,
-	repoMgr types4.RepoManager,
-	keepers types4.Keepers) *NamespaceModule {
+	repoMgr core.RepoManager,
+	keepers core.Keepers) *NamespaceModule {
 	return &NamespaceModule{vm: vm, service: service, keepers: keepers, repoMgr: repoMgr}
 }
 
 // funcs are functions accessible using the `ns` namespace
-func (m *NamespaceModule) funcs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *NamespaceModule) funcs() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "register",
 			Value:       m.register,
 			Description: "Register a namespace",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "lookup",
 			Value:       m.lookup,
 			Description: "Lookup a namespace",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "getTarget",
 			Value:       m.getTarget,
 			Description: "Lookup the target of a full namespace path",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "updateDomain",
 			Value:       m.updateDomain,
 			Description: "Update one or more domains for a namespace",
@@ -56,8 +55,8 @@ func (m *NamespaceModule) funcs() []*types.ModulesAggregatorFunc {
 	}
 }
 
-func (m *NamespaceModule) globals() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{}
+func (m *NamespaceModule) globals() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{}
 }
 
 // Configure configures the JS context and return
@@ -157,7 +156,7 @@ func (m *NamespaceModule) register(
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareTxNamespaceAcquire()
+	var tx = core.NewBareTxNamespaceAcquire()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -195,7 +194,7 @@ func (m *NamespaceModule) updateDomain(
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareTxNamespaceDomainUpdate()
+	var tx = core.NewBareTxNamespaceDomainUpdate()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}

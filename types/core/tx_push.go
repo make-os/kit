@@ -1,27 +1,26 @@
-package repomsgs
+package core
 
 import (
 	"github.com/fatih/structs"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 // TxPush implements BaseTx, it describes a transaction that creates a
 // repository for the signer
 type TxPush struct {
-	*core.TxCommon `json:",flatten" mapstructure:"-"`
-	*core.TxType   `json:",flatten" msgpack:"-"`
-	PushNote       *PushNote `json:"pushNote" mapstructure:"pushNote"`
-	PushOKs        []*PushOK `json:"endorsements" mapstructure:"endorsements"`
-	AggPushOKsSig  []byte    `json:"aggEndorsersPubKey" mapstructure:"aggEndorsersPubKey"`
+	*TxCommon     `json:",flatten" mapstructure:"-"`
+	*TxType       `json:",flatten" msgpack:"-"`
+	PushNote      *PushNote `json:"pushNote" mapstructure:"pushNote"`
+	PushOKs       []*PushOK `json:"endorsements" mapstructure:"endorsements"`
+	AggPushOKsSig []byte    `json:"aggEndorsersPubKey" mapstructure:"aggEndorsersPubKey"`
 }
 
 // NewBareTxPush returns an instance of TxPush with zero values
 func NewBareTxPush() *TxPush {
 	return &TxPush{
-		TxCommon: core.NewBareTxCommon(),
-		TxType:   &core.TxType{Type: core.TxTypePush},
+		TxCommon: NewBareTxCommon(),
+		TxType:   &TxType{Type: TxTypePush},
 		PushNote: &PushNote{},
 		PushOKs:  []*PushOK{},
 	}
@@ -107,7 +106,7 @@ func (tx *TxPush) GetFrom() util.String {
 
 // Sign signs the transaction
 func (tx *TxPush) Sign(privKey string) ([]byte, error) {
-	return core.SignTransaction(tx, privKey)
+	return SignTransaction(tx, privKey)
 }
 
 // ToMap returns a map equivalent of the transaction

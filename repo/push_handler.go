@@ -3,23 +3,21 @@ package repo
 import (
 	"context"
 	"fmt"
-	"gitlab.com/makeos/mosdef/logic/types"
-	"gitlab.com/makeos/mosdef/repo/types/core"
-	"gitlab.com/makeos/mosdef/repo/types/msgs"
+	"gitlab.com/makeos/mosdef/types/core"
 	"io"
 	"time"
 
-	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/logger"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // PushHandler provides handles all phases of a push operation
 type PushHandler struct {
 	op         string
 	repo       core.BareRepo
-	rMgr       types.RepoManager
+	rMgr       core.RepoManager
 	oldState   core.BareRepoState
 	log        logger.Logger
 	pushReader *PushReader
@@ -27,7 +25,7 @@ type PushHandler struct {
 }
 
 // newPushHandler returns an instance of PushHandler
-func newPushHandler(repo core.BareRepo, rMgr types.RepoManager) *PushHandler {
+func newPushHandler(repo core.BareRepo, rMgr core.RepoManager) *PushHandler {
 	return &PushHandler{
 		repo: repo,
 		rMgr: rMgr,
@@ -156,9 +154,9 @@ func (h *PushHandler) HandleUpdate() error {
 
 func (h *PushHandler) createPushNote(
 	pkID string,
-	refsTxParams map[string]*util.TxParams) (*msgs.PushNote, error) {
+	refsTxParams map[string]*util.TxParams) (*core.PushNote, error) {
 
-	var pushNote = &msgs.PushNote{
+	var pushNote = &core.PushNote{
 		TargetRepo:    h.repo,
 		RepoName:      h.repo.GetName(),
 		PusherKeyID:   util.MustDecodeRSAPubKeyID(pkID),

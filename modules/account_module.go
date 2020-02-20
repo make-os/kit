@@ -2,13 +2,11 @@ package modules
 
 import (
 	"fmt"
-	types3 "gitlab.com/makeos/mosdef/logic/types"
-	types2 "gitlab.com/makeos/mosdef/services/types"
-	"gitlab.com/makeos/mosdef/types/msgs"
-
 	"github.com/k0kubun/pp"
 	"gitlab.com/makeos/mosdef/config"
-
+	"gitlab.com/makeos/mosdef/modules/types"
+	types2 "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/pkg/errors"
@@ -16,8 +14,8 @@ import (
 	"gitlab.com/makeos/mosdef/accountmgr"
 
 	prompt "github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
+	types3 "gitlab.com/makeos/mosdef/types"
 )
 
 // AccountModule provides account management functionalities
@@ -27,7 +25,7 @@ type AccountModule struct {
 	acctMgr *accountmgr.AccountManager
 	vm      *otto.Otto
 	service types2.Service
-	logic   types3.Logic
+	logic   core.Logic
 }
 
 // NewAccountModule creates an instance of AccountModule
@@ -36,7 +34,7 @@ func NewAccountModule(
 	vm *otto.Otto,
 	acctmgr *accountmgr.AccountManager,
 	service types2.Service,
-	logic types3.Logic) *AccountModule {
+	logic core.Logic) *AccountModule {
 	return &AccountModule{
 		cfg:     cfg,
 		acctMgr: acctmgr,
@@ -113,12 +111,12 @@ func (m *AccountModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
 	// Set the namespace object
-	util.VMSet(m.vm, types.NamespaceAccount, fMap)
+	util.VMSet(m.vm, types3.NamespaceAccount, fMap)
 
 	// add namespaced functions
 	for _, f := range m.namespacedFuncs() {
 		fMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceAccount, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", types3.NamespaceAccount, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
@@ -232,7 +230,7 @@ func (m *AccountModule) GetNonce(address string) string {
 func (m *AccountModule) getAccount(address string, height ...uint64) interface{} {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
 	if account.IsNil() {
-		panic(types.ErrAccountUnknown)
+		panic(types3.ErrAccountUnknown)
 	}
 	return EncodeForJS(account)
 }
@@ -241,7 +239,7 @@ func (m *AccountModule) getAccount(address string, height ...uint64) interface{}
 func (m *AccountModule) getSpendableBalance(address string, height ...uint64) string {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
 	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
-		panic(types.ErrAccountUnknown)
+		panic(types3.ErrAccountUnknown)
 	}
 
 	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -256,7 +254,7 @@ func (m *AccountModule) getSpendableBalance(address string, height ...uint64) st
 func (m *AccountModule) getStakedBalance(address string, height ...uint64) string {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
 	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
-		panic(types.ErrAccountUnknown)
+		panic(types3.ErrAccountUnknown)
 	}
 
 	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -298,7 +296,7 @@ func (m *AccountModule) setCommission(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareTxSetDelegateCommission()
+	var tx = core.NewBareTxSetDelegateCommission()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}

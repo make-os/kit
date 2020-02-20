@@ -3,17 +3,16 @@ package modules
 import (
 	"fmt"
 	types2 "gitlab.com/makeos/mosdef/services/types"
-	"gitlab.com/makeos/mosdef/types/msgs"
 	"math/big"
 	"reflect"
 	"time"
 
 	"github.com/fatih/structs"
+	"github.com/pkg/errors"
+	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
-	"github.com/pkg/errors"
-	"github.com/thoas/go-funk"
 )
 
 // finalizeTx sets the public key, timestamp and signs the transaction.
@@ -22,7 +21,7 @@ import (
 //
 // If options[1] is set to true, true is returned; meaning the user only wants
 // the finalized payload and does not want to send the transaction to the network
-func finalizeTx(tx msgs.BaseTx, service types2.Service, options ...interface{}) (payloadOnly bool) {
+func finalizeTx(tx types.BaseTx, service types2.Service, options ...interface{}) (payloadOnly bool) {
 
 	// Set timestamp if not already set
 	if tx.GetTimestamp() == 0 {

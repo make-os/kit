@@ -1,4 +1,4 @@
-package types
+package state
 
 import (
 	. "github.com/onsi/ginkgo"

@@ -9,18 +9,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/olebedev/emitter"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/util"
-	"github.com/olebedev/emitter"
 
 	"github.com/gobuffalo/packr"
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/config"
 
-	"gitlab.com/makeos/mosdef/util/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
 )
 
 var (

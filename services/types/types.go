@@ -1,7 +1,7 @@
 package types
 
 import (
-	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -9,7 +9,7 @@ import (
 // It is meant to be used by packages that offer operations
 // that other packages or processes might need
 type Service interface {
-	SendTx(tx msgs.BaseTx) (util.Bytes32, error)
+	SendTx(tx types.BaseTx) (util.Bytes32, error)
 	GetBlock(height int64) (map[string]interface{}, error)
 	GetCurrentHeight() (int64, error)
 	GetNonce(address util.String) (uint64, error)

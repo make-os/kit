@@ -2,17 +2,15 @@ package modules
 
 import (
 	"fmt"
-	types3 "gitlab.com/makeos/mosdef/logic/types"
-	types2 "gitlab.com/makeos/mosdef/services/types"
-	"gitlab.com/makeos/mosdef/types/msgs"
-
-	"gitlab.com/makeos/mosdef/config"
 	"github.com/pkg/errors"
-
+	"gitlab.com/makeos/mosdef/config"
+	modulestypes "gitlab.com/makeos/mosdef/modules/types"
+	servtypes "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 
 	prompt "github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
 )
 
@@ -20,16 +18,16 @@ import (
 type GPGModule struct {
 	cfg     *config.AppConfig
 	vm      *otto.Otto
-	service types2.Service
-	logic   types3.Logic
+	service servtypes.Service
+	logic   core.Logic
 }
 
 // NewGPGModule creates an instance of GPGModule
 func NewGPGModule(
 	cfg *config.AppConfig,
 	vm *otto.Otto,
-	service types2.Service,
-	logic types3.Logic) *GPGModule {
+	service servtypes.Service,
+	logic core.Logic) *GPGModule {
 	return &GPGModule{
 		cfg:     cfg,
 		vm:      vm,
@@ -38,19 +36,19 @@ func NewGPGModule(
 	}
 }
 
-func (m *GPGModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *GPGModule) namespacedFuncs() []*modulestypes.ModulesAggregatorFunc {
+	return []*modulestypes.ModulesAggregatorFunc{
+		&modulestypes.ModulesAggregatorFunc{
 			Name:        "add",
 			Value:       m.addPK,
 			Description: "Add a GPG public key",
 		},
-		&types.ModulesAggregatorFunc{
+		&modulestypes.ModulesAggregatorFunc{
 			Name:        "find",
 			Value:       m.find,
 			Description: "Find a GPG public key by its key ID",
 		},
-		&types.ModulesAggregatorFunc{
+		&modulestypes.ModulesAggregatorFunc{
 			Name:        "ownedBy",
 			Value:       m.ownedBy,
 			Description: "Get all GPG public keys belonging to an address",
@@ -58,8 +56,8 @@ func (m *GPGModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
 	}
 }
 
-func (m *GPGModule) globals() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{}
+func (m *GPGModule) globals() []*modulestypes.ModulesAggregatorFunc {
+	return []*modulestypes.ModulesAggregatorFunc{}
 }
 
 // Configure configures the JS context and return
@@ -102,7 +100,7 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx = msgs.NewBareTxAddGPGPubKey()
+	var tx = core.NewBareTxAddGPGPubKey()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}

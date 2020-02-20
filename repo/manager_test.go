@@ -2,8 +2,7 @@ package repo
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/repo/types/core"
-	"gitlab.com/makeos/mosdef/repo/types/msgs"
+	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,8 +14,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/mocks"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -28,7 +27,7 @@ var _ = Describe("Manager", func() {
 	var repo core.BareRepo
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
-	var mockDHT *mocks.MockDHT
+	var mockDHT *mocks.MockDHTNode
 	var mockMempool *mocks.MockMempool
 	var mockBlockGetter *mocks.MockBlockGetter
 
@@ -39,7 +38,7 @@ var _ = Describe("Manager", func() {
 		port, _ := freeport.GetFreePort()
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = testutil.MockLogic(ctrl)
-		mockDHT = mocks.NewMockDHT(ctrl)
+		mockDHT = mocks.NewMockDHTNode(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic,
@@ -231,7 +230,7 @@ var _ = Describe("Manager", func() {
 	Describe(".addPushNoteEndorsement", func() {
 		When("1 PushOK for id=abc is added", func() {
 			BeforeEach(func() {
-				pushOK := &msgs.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushOK := &core.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
 				repoMgr.addPushNoteEndorsement("abc", pushOK)
 			})
 
@@ -244,8 +243,8 @@ var _ = Describe("Manager", func() {
 
 		When("2 PushOKs for id=abc are added", func() {
 			BeforeEach(func() {
-				pushOK := &msgs.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
-				pushOK2 := &msgs.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushOK := &core.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushOK2 := &core.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
 				repoMgr.addPushNoteEndorsement("abc", pushOK)
 				repoMgr.addPushNoteEndorsement("abc", pushOK2)
 			})

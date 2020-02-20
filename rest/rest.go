@@ -1,13 +1,15 @@
 package rest
 
-import "gitlab.com/makeos/mosdef/types"
+import (
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+)
 
 // Rest provides a REST API handlers
 type Rest struct {
-	mods types.ModulesAggregator
+	mods modtypes.ModulesAggregator
 }
 
 // New creates an instance of Rest
-func New(mods types.ModulesAggregator) *Rest {
+func New(mods modtypes.ModulesAggregator) *Rest {
 	return &Rest{mods}
 }

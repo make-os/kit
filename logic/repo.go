@@ -1,14 +1,14 @@
 package logic
 
 import (
-	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"strings"
 
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // execRepoCreate processes a TxTypeRepoCreate transaction, which creates a git
@@ -83,8 +83,8 @@ func applyProposalAddOwner(
 	chainHeight uint64) error {
 
 	// Get the action data
-	targetAddrs := proposal.GetActionData()[types2.ProposalActionDataAddresses].(string)
-	veto := proposal.GetActionData()[types2.ProposalActionDataVeto].(bool)
+	targetAddrs := proposal.GetActionData()[core.ProposalActionDataAddresses].(string)
+	veto := proposal.GetActionData()[core.ProposalActionDataVeto].(bool)
 
 	// Add new repo owner iif the target address does not
 	// already exist as an owner. If it exists, just update the fields.
@@ -111,7 +111,7 @@ func applyProposalRepoUpdate(
 	proposal state.Proposal,
 	repo *state.Repository,
 	chainHeight uint64) error {
-	cfgUpd := proposal.GetActionData()[types2.ProposalActionDataConfig].(map[string]interface{})
+	cfgUpd := proposal.GetActionData()[core.ProposalActionDataConfig].(map[string]interface{})
 	repo.Config.MergeMap(cfgUpd)
 	return nil
 }
@@ -147,8 +147,8 @@ func (t *Transaction) execRepoUpsertOwner(
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = state.ProposalActionAddOwner
 	proposal.ActionData = map[string]interface{}{
-		types2.ProposalActionDataAddresses: addresses,
-		types2.ProposalActionDataVeto:      veto,
+		core.ProposalActionDataAddresses: addresses,
+		core.ProposalActionDataVeto:      veto,
 	}
 
 	// Deduct network fee + proposal fee from sender
@@ -202,7 +202,7 @@ func (t *Transaction) execRepoProposalUpdate(
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = state.ProposalActionRepoUpdate
-	proposal.ActionData[types2.ProposalActionDataConfig] = config
+	proposal.ActionData[core.ProposalActionDataConfig] = config
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
@@ -348,7 +348,7 @@ func (t *Transaction) execRepoProposalMergeRequest(
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = state.ProposalActionMergeRequest
-	proposal.ActionData[types2.ProposalActionDataMergeRequest] = map[string]string{
+	proposal.ActionData[core.ProposalActionDataMergeRequest] = map[string]string{
 		"base":       baseBranch,
 		"baseHash":   baseBranchHash,
 		"target":     targetBranch,

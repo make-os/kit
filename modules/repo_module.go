@@ -2,74 +2,73 @@ package modules
 
 import (
 	"fmt"
-	types4 "gitlab.com/makeos/mosdef/logic/types"
-	types3 "gitlab.com/makeos/mosdef/services/types"
-	"gitlab.com/makeos/mosdef/types/msgs"
-	"gitlab.com/makeos/mosdef/types/state"
-
 	prompt "github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+	servtypes "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // RepoModule provides repository functionalities to JS environment
 type RepoModule struct {
 	vm      *otto.Otto
-	keepers types4.Keepers
-	service types3.Service
-	repoMgr types4.RepoManager
+	keepers core.Keepers
+	service servtypes.Service
+	repoMgr core.RepoManager
 }
 
 // NewRepoModule creates an instance of RepoModule
 func NewRepoModule(
 	vm *otto.Otto,
-	service types3.Service,
-	repoMgr types4.RepoManager,
-	keepers types4.Keepers) *RepoModule {
+	service servtypes.Service,
+	repoMgr core.RepoManager,
+	keepers core.Keepers) *RepoModule {
 	return &RepoModule{vm: vm, service: service, keepers: keepers, repoMgr: repoMgr}
 }
 
 // funcs are functions accessible using the `repo` namespace
-func (m *RepoModule) funcs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *RepoModule) funcs() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "create",
 			Value:       m.create,
 			Description: "Create a git repository on the network",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "get",
 			Value:       m.get,
 			Description: "Find and return a repository",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "update",
 			Value:       m.update,
 			Description: "Update a repository",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "prune",
 			Value:       m.prune,
 			Description: "Delete all dangling and unreachable loose objects from a repository",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "upsertOwner",
 			Value:       m.upsertOwner,
 			Description: "Create a proposal to add or update a repository owner",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "vote",
 			Value:       m.voteOnProposal,
 			Description: "Vote for or against a proposal",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "depositFee",
 			Value:       m.depositFee,
 			Description: "Add fees to a deposit-enabled repository proposal",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "createMergeRequest",
 			Value:       m.CreateMergeRequest,
 			Description: "Create a merge request proposal",
@@ -77,8 +76,8 @@ func (m *RepoModule) funcs() []*types.ModulesAggregatorFunc {
 	}
 }
 
-func (m *RepoModule) globals() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{}
+func (m *RepoModule) globals() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{}
 }
 
 // Configure configures the JS context and return
@@ -120,7 +119,7 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 func (m *RepoModule) create(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareTxRepoCreate()
+	var tx = core.NewBareTxRepoCreate()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -155,7 +154,7 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareRepoProposalUpsertOwner()
+	var tx = core.NewBareRepoProposalUpsertOwner()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -189,7 +188,7 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareRepoProposalVote()
+	var tx = core.NewBareRepoProposalVote()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -271,7 +270,7 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) interface{
 func (m *RepoModule) update(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareRepoProposalUpdate()
+	var tx = core.NewBareRepoProposalUpdate()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -306,7 +305,7 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 func (m *RepoModule) depositFee(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareRepoProposalFeeSend()
+	var tx = core.NewBareRepoProposalFeeSend()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -345,7 +344,7 @@ func (m *RepoModule) CreateMergeRequest(
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareRepoProposalMergeRequest()
+	var tx = core.NewBareRepoProposalMergeRequest()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}

@@ -1,7 +1,8 @@
 package logic
 
 import (
-	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 	"os"
 
 	"github.com/golang/mock/gomock"
@@ -10,13 +11,11 @@ import (
 
 	"gitlab.com/makeos/mosdef/util"
 
-	"gitlab.com/makeos/mosdef/types"
-
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Transfers", func() {
@@ -44,7 +43,7 @@ var _ = Describe("Transfers", func() {
 	})
 
 	BeforeEach(func() {
-		err := logic.SysKeeper().SaveBlockInfo(&types2.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 
@@ -84,9 +83,9 @@ var _ = Describe("Transfers", func() {
 
 		Context("when sender account has sufficient spendable balance", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("1000"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 				})
 			})
 
@@ -103,13 +102,13 @@ var _ = Describe("Transfers", func() {
 
 		Context("when sender has bal=100, recipient has bal=10", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("100"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 				})
-				logic.AccountKeeper().Update(recipientKey.Addr(), &types.Account{
+				logic.AccountKeeper().Update(recipientKey.Addr(), &state.Account{
 					Balance: util.String("10"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 				})
 			})
 
@@ -136,9 +135,9 @@ var _ = Describe("Transfers", func() {
 
 		Context("when sender and recipient are the same; with bal=100", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("100"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 				})
 			})
 
@@ -162,12 +161,12 @@ var _ = Describe("Transfers", func() {
 			var senderNamespaceURI = util.String(ns + "/domain")
 
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("100"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 				})
 
-				logic.NamespaceKeeper().Update(util.Hash20Hex([]byte(ns)), &types.Namespace{
+				logic.NamespaceKeeper().Update(util.Hash20Hex([]byte(ns)), &state.Namespace{
 					Domains: map[string]string{
 						"domain": "a/" + sender.Addr().String(),
 					},
@@ -191,9 +190,9 @@ var _ = Describe("Transfers", func() {
 
 		When("recipient address is a prefixed user account address", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("100"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 				})
 			})
 
@@ -219,12 +218,12 @@ var _ = Describe("Transfers", func() {
 			var repoName = "repo1"
 
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("100"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 				})
 
-				logic.NamespaceKeeper().Update(util.Hash20Hex([]byte(ns)), &types.Namespace{
+				logic.NamespaceKeeper().Update(util.Hash20Hex([]byte(ns)), &state.Namespace{
 					Domains: map[string]string{
 						"domain": "r/" + repoName,
 					},
@@ -253,9 +252,9 @@ var _ = Describe("Transfers", func() {
 
 		When("recipient address is a prefixed user account address", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("100"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 				})
 			})
 

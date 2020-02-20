@@ -1,10 +1,10 @@
 package keepers
 
 import (
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/storage/tree"
-	"gitlab.com/makeos/mosdef/types"
 	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/pkgs/tree"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/types/state"
 )
 
 // GPGPubKeyKeeper manages gpg public keys.
@@ -25,7 +25,7 @@ func NewGPGPubKeyKeeper(state *tree.SafeTree, db storage.Tx) *GPGPubKeyKeeper {
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Account if no account is found.
-func (g *GPGPubKeyKeeper) GetGPGPubKey(pkID string, blockNum ...uint64) *types.GPGPubKey {
+func (g *GPGPubKeyKeeper) GetGPGPubKey(pkID string, blockNum ...uint64) *state.GPGPubKey {
 
 	// Get version is provided
 	var version uint64
@@ -45,10 +45,10 @@ func (g *GPGPubKeyKeeper) GetGPGPubKey(pkID string, blockNum ...uint64) *types.G
 
 	// If we don't find the pub key, we return an empty one.
 	if bz == nil {
-		return types.BareGPGPubKey()
+		return state.BareGPGPubKey()
 	}
 
-	gpgPubKey, err := types.NewGPGPubKeyFromBytes(bz)
+	gpgPubKey, err := state.NewGPGPubKeyFromBytes(bz)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to decode"))
 	}
@@ -62,7 +62,7 @@ func (g *GPGPubKeyKeeper) GetGPGPubKey(pkID string, blockNum ...uint64) *types.G
 // ARGS:
 // pkID: The public key unique ID
 // udp: The updated object to replace the existing object.
-func (g *GPGPubKeyKeeper) Update(pkID string, upd *types.GPGPubKey) error {
+func (g *GPGPubKeyKeeper) Update(pkID string, upd *state.GPGPubKey) error {
 	g.state.Set(MakeGPGPubKeyKey(pkID), upd.Bytes())
 	key := MakeAddrGPGPkIDIndexKey(upd.Address.String(), pkID)
 	idx := storage.NewFromKeyValue(key, []byte{})

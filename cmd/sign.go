@@ -15,14 +15,14 @@
 package cmd
 
 import (
+	"gitlab.com/makeos/mosdef/rpc"
 	"net"
 	"strconv"
 
+	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/repo"
 	"gitlab.com/makeos/mosdef/rpc/client"
-	"gitlab.com/makeos/mosdef/types"
-	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 )
@@ -43,7 +43,7 @@ func getRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 		return nil, errors.Wrap(err, "failed convert rpc port")
 	}
 
-	c := client.NewClient(&types.Options{
+	c := client.NewClient(&rpc.Options{
 		Host:     host,
 		Port:     portInt,
 		User:     rpcUser,

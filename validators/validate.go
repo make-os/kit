@@ -2,9 +2,8 @@ package validators
 
 import (
 	"fmt"
-	types3 "gitlab.com/makeos/mosdef/logic/types"
-	"gitlab.com/makeos/mosdef/repo/types/core"
-	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"path/filepath"
 
@@ -15,11 +14,11 @@ import (
 var feI = util.FieldErrorWithIndex
 
 // ValidateTxFunc represents a function for validating a transaction
-type ValidateTxFunc func(tx msgs.BaseTx, i int, logic types3.Logic) error
+type ValidateTxFunc func(tx types.BaseTx, i int, logic core.Logic) error
 
 // ValidateTxs performs both syntactic and consistency
 // validation on the given transactions.
-func ValidateTxs(txs []msgs.BaseTx, logic types3.Logic) error {
+func ValidateTxs(txs []types.BaseTx, logic core.Logic) error {
 	for i, tx := range txs {
 		if err := ValidateTx(tx, i, logic); err != nil {
 			return err
@@ -29,7 +28,7 @@ func ValidateTxs(txs []msgs.BaseTx, logic types3.Logic) error {
 }
 
 // ValidateTx validates a transaction
-func ValidateTx(tx msgs.BaseTx, i int, logic types3.Logic) error {
+func ValidateTx(tx types.BaseTx, i int, logic core.Logic) error {
 
 	if tx == nil {
 		return fmt.Errorf("nil tx")
@@ -52,35 +51,35 @@ func ValidateTx(tx msgs.BaseTx, i int, logic types3.Logic) error {
 // index: index is used to indicate the index of the transaction in a slice
 // managed by the caller. It is used for constructing error messages.
 // Use -1 if tx is not part of a collection.
-func ValidateTxSanity(tx msgs.BaseTx, index int) error {
+func ValidateTxSanity(tx types.BaseTx, index int) error {
 	switch o := tx.(type) {
-	case *msgs.TxCoinTransfer:
+	case *core.TxCoinTransfer:
 		return CheckTxCoinTransfer(o, index)
-	case *msgs.TxTicketPurchase:
+	case *core.TxTicketPurchase:
 		return CheckTxTicketPurchase(o, index)
-	case *msgs.TxSetDelegateCommission:
+	case *core.TxSetDelegateCommission:
 		return CheckTxSetDelegateCommission(o, index)
-	case *msgs.TxTicketUnbond:
+	case *core.TxTicketUnbond:
 		return CheckTxUnbondTicket(o, index)
-	case *msgs.TxRepoCreate:
+	case *core.TxRepoCreate:
 		return CheckTxRepoCreate(o, index)
-	case *msgs.TxAddGPGPubKey:
+	case *core.TxAddGPGPubKey:
 		return CheckTxAddGPGPubKey(o, index)
-	case *msgs.TxPush:
+	case *core.TxPush:
 		return CheckTxPush(o, index)
-	case *msgs.TxNamespaceAcquire:
+	case *core.TxNamespaceAcquire:
 		return CheckTxNSAcquire(o, index)
-	case *msgs.TxNamespaceDomainUpdate:
+	case *core.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdate(o, index)
-	case *msgs.TxRepoProposalUpsertOwner:
+	case *core.TxRepoProposalUpsertOwner:
 		return CheckTxRepoProposalUpsertOwner(o, index)
-	case *msgs.TxRepoProposalVote:
+	case *core.TxRepoProposalVote:
 		return CheckTxVote(o, index)
-	case *msgs.TxRepoProposalUpdate:
+	case *core.TxRepoProposalUpdate:
 		return CheckTxRepoProposalUpdate(o, index)
-	case *msgs.TxRepoProposalFeeSend:
+	case *core.TxRepoProposalFeeSend:
 		return CheckTxRepoProposalSendFee(o, index)
-	case *msgs.TxRepoProposalMergeRequest:
+	case *core.TxRepoProposalMergeRequest:
 		return CheckTxRepoProposalMergeRequest(o, index)
 	default:
 		return feI(index, "type", "unsupported transaction type")
@@ -91,37 +90,37 @@ func ValidateTxSanity(tx msgs.BaseTx, index int) error {
 // values that are consistent with the current state of the app
 //
 // CONTRACT: Sender public key must be validated by the caller.
-func ValidateTxConsistency(tx msgs.BaseTx, index int, logic types3.Logic) error {
+func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 	switch o := tx.(type) {
-	case *msgs.TxCoinTransfer:
+	case *core.TxCoinTransfer:
 		return CheckTxCoinTransferConsistency(o, index, logic)
-	case *msgs.TxTicketPurchase:
+	case *core.TxTicketPurchase:
 		return CheckTxTicketPurchaseConsistency(o, index, logic)
-	case *msgs.TxSetDelegateCommission:
+	case *core.TxSetDelegateCommission:
 		return CheckTxSetDelegateCommissionConsistency(o, index, logic)
-	case *msgs.TxTicketUnbond:
+	case *core.TxTicketUnbond:
 		return CheckTxUnbondTicketConsistency(o, index, logic)
-	case *msgs.TxRepoCreate:
+	case *core.TxRepoCreate:
 		return CheckTxRepoCreateConsistency(o, index, logic)
-	case *msgs.TxAddGPGPubKey:
+	case *core.TxAddGPGPubKey:
 		return CheckTxAddGPGPubKeyConsistency(o, index, logic)
-	case *msgs.TxPush:
+	case *core.TxPush:
 		return CheckTxPushConsistency(o, index, logic, func(name string) (core.BareRepo, error) {
 			return repo.GetRepo(filepath.Join(logic.Cfg().GetRepoRoot(), name))
 		})
-	case *msgs.TxNamespaceAcquire:
+	case *core.TxNamespaceAcquire:
 		return CheckTxNSAcquireConsistency(o, index, logic)
-	case *msgs.TxNamespaceDomainUpdate:
+	case *core.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdateConsistency(o, index, logic)
-	case *msgs.TxRepoProposalUpsertOwner:
+	case *core.TxRepoProposalUpsertOwner:
 		return CheckTxRepoProposalUpsertOwnerConsistency(o, index, logic)
-	case *msgs.TxRepoProposalVote:
+	case *core.TxRepoProposalVote:
 		return CheckTxVoteConsistency(o, index, logic)
-	case *msgs.TxRepoProposalUpdate:
+	case *core.TxRepoProposalUpdate:
 		return CheckTxRepoProposalUpdateConsistency(o, index, logic)
-	case *msgs.TxRepoProposalFeeSend:
+	case *core.TxRepoProposalFeeSend:
 		return CheckTxRepoProposalSendFeeConsistency(o, index, logic)
-	case *msgs.TxRepoProposalMergeRequest:
+	case *core.TxRepoProposalMergeRequest:
 		return CheckTxRepoProposalMergeRequestConsistency(o, index, logic)
 	default:
 		return feI(index, "type", "unsupported transaction type")
@@ -135,7 +134,7 @@ func ValidateTxConsistency(tx msgs.BaseTx, index int, logic types3.Logic) error 
 // error messages; Use -1 if tx is not part of a collection.
 //
 // CONTRACT: Sender public key must be validated by the caller.
-func checkSignature(tx msgs.BaseTx, index int) (errs []error) {
+func checkSignature(tx types.BaseTx, index int) (errs []error) {
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	valid, err := pubKey.Verify(tx.GetBytesNoSig(), tx.GetSignature())
 	if err != nil {

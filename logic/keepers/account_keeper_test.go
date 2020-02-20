@@ -1,11 +1,11 @@
 package keepers
 
 import (
-	"gitlab.com/makeos/mosdef/storage/tree"
-	"gitlab.com/makeos/mosdef/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
+	"gitlab.com/makeos/mosdef/pkgs/tree"
+	state2 "gitlab.com/makeos/mosdef/types/state"
 
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -23,12 +23,12 @@ var _ = Describe("Account", func() {
 		When("account does not exist", func() {
 			It("should return a bare account", func() {
 				acct := ak.GetAccount(util.String("unknown"), 0)
-				Expect(acct).To(Equal(types.BareAccount()))
+				Expect(acct).To(Equal(state2.BareAccount()))
 			})
 		})
 
 		When("account exists on the latest block", func() {
-			var testAcct = types.BareAccount()
+			var testAcct = state2.BareAccount()
 
 			BeforeEach(func() {
 				testAcct.Nonce = 1

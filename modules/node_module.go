@@ -2,8 +2,10 @@ package modules
 
 import (
 	"fmt"
-	types3 "gitlab.com/makeos/mosdef/logic/types"
-	types2 "gitlab.com/makeos/mosdef/services/types"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+	servtypes "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"strconv"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -15,45 +17,44 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
 )
 
 // ChainModule provides access to chain information
 type ChainModule struct {
 	vm      *otto.Otto
-	service types2.Service
-	keepers types3.Keepers
+	service servtypes.Service
+	keepers core.Keepers
 }
 
 // NewChainModule creates an instance of ChainModule
-func NewChainModule(vm *otto.Otto, service types2.Service, keepers types3.Keepers) *ChainModule {
+func NewChainModule(vm *otto.Otto, service servtypes.Service, keepers core.Keepers) *ChainModule {
 	return &ChainModule{vm: vm, service: service, keepers: keepers}
 }
 
-func (m *ChainModule) globals() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{}
+func (m *ChainModule) globals() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{}
 }
 
 // funcs exposed by the module
-func (m *ChainModule) funcs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *ChainModule) funcs() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "getBlock",
 			Value:       m.getBlock,
 			Description: "Send the native coin from an account to a destination account",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "getCurrentHeight",
 			Value:       m.getCurrentHeight,
 			Description: "Get the current block height",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "getBlockInfo",
 			Value:       m.getBlockInfo,
 			Description: "Get summary block information of a given height",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "getValidators",
 			Value:       m.getValidators,
 			Description: "Get validators at a given height",

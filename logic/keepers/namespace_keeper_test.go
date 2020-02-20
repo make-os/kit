@@ -1,12 +1,12 @@
 package keepers
 
 import (
-	"gitlab.com/makeos/mosdef/storage/tree"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
+	"gitlab.com/makeos/mosdef/pkgs/tree"
+	state2 "gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("NamespaceKeeper", func() {
@@ -22,12 +22,12 @@ var _ = Describe("NamespaceKeeper", func() {
 		When("namespace does not exist", func() {
 			It("should return a bare namespace", func() {
 				ns := nsKp.GetNamespace("unknown", 0)
-				Expect(ns).To(Equal(types.BareNamespace()))
+				Expect(ns).To(Equal(state2.BareNamespace()))
 			})
 		})
 
 		When("namespace exists", func() {
-			var testNS = types.BareNamespace()
+			var testNS = state2.BareNamespace()
 
 			BeforeEach(func() {
 				testNS.Owner = "creator_addr"
@@ -76,7 +76,7 @@ var _ = Describe("NamespaceKeeper", func() {
 		})
 
 		When("domain not found", func() {
-			var testNS = types.BareNamespace()
+			var testNS = state2.BareNamespace()
 
 			BeforeEach(func() {
 				testNS.Owner = "creator_addr"
@@ -94,7 +94,7 @@ var _ = Describe("NamespaceKeeper", func() {
 		})
 
 		When("domain exist", func() {
-			var testNS = types.BareNamespace()
+			var testNS = state2.BareNamespace()
 
 			BeforeEach(func() {
 				testNS.Owner = "creator_addr"

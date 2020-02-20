@@ -6,13 +6,13 @@ import (
 	"bytes"
 	encJson "encoding/json"
 	"fmt"
+	"gitlab.com/makeos/mosdef/rpc"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/rpc/v2/json"
-	"gitlab.com/makeos/mosdef/types"
 )
 
 // Timeout is the max duration for connection and read attempt
@@ -22,7 +22,7 @@ const Timeout = time.Duration(15 * time.Second)
 // send requests to a JSON-RPC 2.0 service
 type RPCClient struct {
 	c    *http.Client
-	opts *types.Options
+	opts *rpc.Options
 }
 
 // Error represents a custom JSON-RPC error
@@ -35,10 +35,10 @@ func (e *Error) Error() string {
 }
 
 // NewClient creates an instance of Client
-func NewClient(opts *types.Options) *RPCClient {
+func NewClient(opts *rpc.Options) *RPCClient {
 
 	if opts == nil {
-		opts = &types.Options{}
+		opts = &rpc.Options{}
 	}
 
 	if opts.Host == "" {
@@ -56,7 +56,7 @@ func NewClient(opts *types.Options) *RPCClient {
 }
 
 // GetOptions returns the client's option
-func (c *RPCClient) GetOptions() *types.Options {
+func (c *RPCClient) GetOptions() *rpc.Options {
 	return c.opts
 }
 

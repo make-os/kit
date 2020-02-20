@@ -2,7 +2,7 @@ package repo
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 	"path/filepath"
 
@@ -14,8 +14,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/mocks"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -29,7 +29,7 @@ var _ = Describe("Revert", func() {
 	var path string
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
-	var mockDHT *mocks.MockDHT
+	var mockDHT *mocks.MockDHTNode
 	var mockMempool *mocks.MockMempool
 	var mockBlockGetter *mocks.MockBlockGetter
 
@@ -45,7 +45,7 @@ var _ = Describe("Revert", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = testutil.MockLogic(ctrl)
 		port, _ := freeport.GetFreePort()
-		mockDHT = mocks.NewMockDHT(ctrl)
+		mockDHT = mocks.NewMockDHTNode(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 

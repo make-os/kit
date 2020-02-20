@@ -1,16 +1,15 @@
 package logic
 
 import (
+	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/logic/keepers"
-	types3 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/pkgs/tree"
 	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/storage/tree"
 	types2 "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
-	"github.com/pkg/errors"
 )
 
 // Logic is the central point for defining and accessing
@@ -31,13 +30,13 @@ type Logic struct {
 	stateTree *tree.SafeTree
 
 	// tx is the transaction logic for handling transactions of all kinds
-	tx types3.TxLogic
+	tx core.TxLogic
 
 	// sys provides functionalities for handling and accessing system information
-	sys types3.SysLogic
+	sys core.SysLogic
 
 	// validator provides functionalities for managing validator information
-	validator types3.ValidatorLogic
+	validator core.ValidatorLogic
 
 	// ticketMgr provides functionalities for managing tickets
 	ticketMgr types2.TicketManager
@@ -64,7 +63,7 @@ type Logic struct {
 	gpgPubKeyKeeper *keepers.GPGPubKeyKeeper
 
 	// repoMgr provides access to the git repository manager
-	repoMgr types3.RepoManager
+	repoMgr core.RepoManager
 }
 
 // New creates an instance of Logic
@@ -113,17 +112,17 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 }
 
 // ManagedSysKeeper returns a SystemKeeper initialized with a managed database
-func (l *Logic) ManagedSysKeeper() types3.SystemKeeper {
+func (l *Logic) ManagedSysKeeper() core.SystemKeeper {
 	return keepers.NewSystemKeeper(l._db.NewTx(true, true))
 }
 
 // SetRepoManager sets the repository manager
-func (l *Logic) SetRepoManager(m types3.RepoManager) {
+func (l *Logic) SetRepoManager(m core.RepoManager) {
 	l.repoMgr = m
 }
 
 // GetRepoManager returns the repository manager
-func (l *Logic) GetRepoManager() types3.RepoManager {
+func (l *Logic) GetRepoManager() core.RepoManager {
 	return l.repoMgr
 }
 
@@ -179,12 +178,12 @@ func (l *Logic) GetTicketManager() types2.TicketManager {
 }
 
 // Tx returns the transaction logic
-func (l *Logic) Tx() types3.TxLogic {
+func (l *Logic) Tx() core.TxLogic {
 	return l.tx
 }
 
 // Sys returns system logic
-func (l *Logic) Sys() types3.SysLogic {
+func (l *Logic) Sys() core.SysLogic {
 	return l.sys
 }
 
@@ -194,47 +193,47 @@ func (l *Logic) DB() storage.Engine {
 }
 
 // StateTree returns the state tree
-func (l *Logic) StateTree() types.Tree {
+func (l *Logic) StateTree() tree.Tree {
 	return l.stateTree
 }
 
 // SysKeeper returns the system keeper
-func (l *Logic) SysKeeper() types3.SystemKeeper {
+func (l *Logic) SysKeeper() core.SystemKeeper {
 	return l.systemKeeper
 }
 
 // NamespaceKeeper returns the namespace keeper
-func (l *Logic) NamespaceKeeper() types3.NamespaceKeeper {
+func (l *Logic) NamespaceKeeper() core.NamespaceKeeper {
 	return l.nsKeeper
 }
 
 // TxKeeper returns the transaction keeper
-func (l *Logic) TxKeeper() types3.TxKeeper {
+func (l *Logic) TxKeeper() core.TxKeeper {
 	return l.txKeeper
 }
 
 // ValidatorKeeper returns the validator keeper
-func (l *Logic) ValidatorKeeper() types3.ValidatorKeeper {
+func (l *Logic) ValidatorKeeper() core.ValidatorKeeper {
 	return l.validatorKeeper
 }
 
 // AccountKeeper returns the account keeper
-func (l *Logic) AccountKeeper() types3.AccountKeeper {
+func (l *Logic) AccountKeeper() core.AccountKeeper {
 	return l.accountKeeper
 }
 
 // RepoKeeper returns the repo keeper
-func (l *Logic) RepoKeeper() types3.RepoKeeper {
+func (l *Logic) RepoKeeper() core.RepoKeeper {
 	return l.repoKeeper
 }
 
 // GPGPubKeyKeeper returns the gpg public key keeper
-func (l *Logic) GPGPubKeyKeeper() types3.GPGPubKeyKeeper {
+func (l *Logic) GPGPubKeyKeeper() core.GPGPubKeyKeeper {
 	return l.gpgPubKeyKeeper
 }
 
 // Validator returns the validator logic
-func (l *Logic) Validator() types3.ValidatorLogic {
+func (l *Logic) Validator() core.ValidatorLogic {
 	return l.validator
 }
 
@@ -251,7 +250,7 @@ func (l *Logic) WriteGenesisState() error {
 
 		// Create account
 		if ga.Type == config.GenDataTypeAccount {
-			newAcct := types.BareAccount()
+			newAcct := state.BareAccount()
 			newAcct.Balance = util.String(ga.Balance)
 			l.accountKeeper.Update(util.String(ga.Address), newAcct)
 		}
@@ -283,7 +282,7 @@ func (l *Logic) WriteGenesisState() error {
 // OnEndBlock is called within the ABCI EndBlock method;
 // Do things that need to happen after each block transactions are processed;
 // Note: The ABCI will panic if an error is returned.
-func (l *Logic) OnEndBlock(block *types3.BlockInfo) error {
+func (l *Logic) OnEndBlock(block *core.BlockInfo) error {
 	if err := maybeApplyEndedProposals(l, uint64(block.Height)); err != nil {
 		return err
 	}

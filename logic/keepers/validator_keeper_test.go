@@ -2,20 +2,20 @@ package keepers
 
 import (
 	"fmt"
-	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 
 	"gitlab.com/makeos/mosdef/params"
 
 	"github.com/golang/mock/gomock"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/storage"
 	storagemocks "gitlab.com/makeos/mosdef/storage/mocks"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("SystemKeeper", func() {
@@ -67,7 +67,7 @@ var _ = Describe("SystemKeeper", func() {
 
 		When("record exist", func() {
 			height := int64(1)
-			rec := map[util.Bytes32]*types2.Validator{util.StrToBytes32("pubkey"): &types2.Validator{
+			rec := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{
 				PubKey: util.StrToBytes32("ticket1"),
 			}}
 			BeforeEach(func() {
@@ -79,14 +79,14 @@ var _ = Describe("SystemKeeper", func() {
 			It("should return err=nil and expected result", func() {
 				res, err := valKeeper.getByHeight(height)
 				Expect(err).To(BeNil())
-				Expect(res).To(Equal(types2.BlockValidators(rec)))
+				Expect(res).To(Equal(core.BlockValidators(rec)))
 			})
 		})
 	})
 
 	Describe(".GetByHeight", func() {
 		When("one validator is stored at height=1, search height = 1", func() {
-			rec := map[util.Bytes32]*types2.Validator{util.StrToBytes32("pubkey"): &types2.Validator{PubKey: util.StrToBytes32("ticket1")}}
+			rec := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket1")}}
 			BeforeEach(func() {
 				key := MakeBlockValidatorsKey(1)
 				err := valKeeper.db.Put(storage.NewFromKeyValue(key, util.ObjectToBytes(rec)))
@@ -96,13 +96,13 @@ var _ = Describe("SystemKeeper", func() {
 			It("should return err=nil and one validator", func() {
 				res, err := valKeeper.GetByHeight(1)
 				Expect(err).To(BeNil())
-				Expect(res).To(Equal(types2.BlockValidators(rec)))
+				Expect(res).To(Equal(core.BlockValidators(rec)))
 			})
 		})
 
 		When("two two validators exist; valset1 at height 1, valset2 at height 2; argument height = 0", func() {
-			valset := map[util.Bytes32]*types2.Validator{util.StrToBytes32("pubkey"): &types2.Validator{PubKey: util.StrToBytes32("ticket1")}}
-			valset2 := map[util.Bytes32]*types2.Validator{util.StrToBytes32("pubkey"): &types2.Validator{PubKey: util.StrToBytes32("ticket2")}}
+			valset := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket1")}}
+			valset2 := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket2")}}
 			BeforeEach(func() {
 				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(1), util.ObjectToBytes(valset)))
 				Expect(err).To(BeNil())
@@ -113,13 +113,13 @@ var _ = Describe("SystemKeeper", func() {
 			It("should return valset2 since it is the most recent", func() {
 				res, err := valKeeper.GetByHeight(0)
 				Expect(err).To(BeNil())
-				Expect(res).To(Equal(types2.BlockValidators(valset2)))
+				Expect(res).To(Equal(core.BlockValidators(valset2)))
 			})
 		})
 
 		When("two validators exist; valset1 at height 2, valset2 at height 4; argument height = 9; blocks per epoch = 2", func() {
-			valset := map[util.Bytes32]*types2.Validator{util.StrToBytes32("pubkey"): &types2.Validator{PubKey: util.StrToBytes32("ticket1")}}
-			valset2 := map[util.Bytes32]*types2.Validator{util.StrToBytes32("pubkey"): &types2.Validator{PubKey: util.StrToBytes32("ticket2")}}
+			valset := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket1")}}
+			valset2 := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket2")}}
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 2
 				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ObjectToBytes(valset)))
@@ -131,13 +131,13 @@ var _ = Describe("SystemKeeper", func() {
 			It("should return valset2 since it is the most recent set", func() {
 				res, err := valKeeper.GetByHeight(9)
 				Expect(err).To(BeNil())
-				Expect(res).To(Equal(types2.BlockValidators(valset2)))
+				Expect(res).To(Equal(core.BlockValidators(valset2)))
 			})
 		})
 
 		When("two validators exist; valset1 at height 2, valset2 at height 4; argument height = 10; blocks per epoch = 2", func() {
-			valset := map[util.Bytes32]*types2.Validator{util.StrToBytes32("pubkey"): &types2.Validator{PubKey: util.StrToBytes32("ticket1")}}
-			valset2 := map[util.Bytes32]*types2.Validator{util.StrToBytes32("pubkey"): &types2.Validator{PubKey: util.StrToBytes32("ticket2")}}
+			valset := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket1")}}
+			valset2 := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket2")}}
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 2
 				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ObjectToBytes(valset)))
@@ -149,7 +149,7 @@ var _ = Describe("SystemKeeper", func() {
 			It("should return valset2 since it is the most recent set", func() {
 				res, err := valKeeper.GetByHeight(10)
 				Expect(err).To(BeNil())
-				Expect(res).To(Equal(types2.BlockValidators(valset2)))
+				Expect(res).To(Equal(core.BlockValidators(valset2)))
 			})
 		})
 	})
@@ -158,7 +158,7 @@ var _ = Describe("SystemKeeper", func() {
 		var err error
 		When("no issues with database", func() {
 			BeforeEach(func() {
-				vals := []*types2.Validator{&types2.Validator{PubKey: pubKey}}
+				vals := []*core.Validator{&core.Validator{PubKey: pubKey}}
 				err = valKeeper.Index(1, vals)
 			})
 
@@ -181,7 +181,7 @@ var _ = Describe("SystemKeeper", func() {
 			})
 
 			BeforeEach(func() {
-				vals := []*types2.Validator{&types2.Validator{PubKey: pubKey}}
+				vals := []*core.Validator{&core.Validator{PubKey: pubKey}}
 				err = valKeeper.Index(1, vals)
 			})
 

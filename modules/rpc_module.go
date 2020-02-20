@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+	"gitlab.com/makeos/mosdef/types"
 	"net"
 	"strconv"
 	"strings"
@@ -11,11 +12,10 @@ import (
 
 	"gitlab.com/makeos/mosdef/config"
 
-	"gitlab.com/makeos/mosdef/util"
-
 	prompt "github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // RPCModule provides RPC functionalities
@@ -37,19 +37,19 @@ func NewRPCModule(
 	}
 }
 
-func (m *RPCModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *RPCModule) namespacedFuncs() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "isRunning",
 			Value:       m.isRunning,
 			Description: "Checks whether the local RPC server is running",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "connect",
 			Value:       m.connect,
 			Description: "Connect to an RPC server",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "local",
 			Value:       m.local(),
 			Description: "Call methods of the local RPC server",
@@ -57,8 +57,8 @@ func (m *RPCModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
 	}
 }
 
-func (m *RPCModule) globals() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{}
+func (m *RPCModule) globals() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{}
 }
 
 // Configure configures the JS context and return
@@ -122,7 +122,7 @@ func (m *RPCModule) local() rpcMethods {
 // connect to an RPC server
 func (m *RPCModule) connect(host string, port int, https bool, user, pass string) rpcMethods {
 
-	c := client.NewClient(&types.Options{
+	c := client.NewClient(&rpc.Options{
 		Host:     host,
 		Port:     port,
 		HTTPS:    https,

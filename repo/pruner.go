@@ -2,13 +2,13 @@ package repo
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/types/core"
 	"path/filepath"
 	"sync"
 	"time"
 
-	"gitlab.com/makeos/mosdef/params"
 	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/params"
 )
 
 // Pruner runs a scheduler that prunes repositories to remove unreachable or dangling

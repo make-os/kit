@@ -1,16 +1,16 @@
 package keepers
 
 import (
+	state2 "gitlab.com/makeos/mosdef/types/state"
 	"os"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/storage/tree"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/pkgs/tree"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/testutil"
 )
 
 var _ = Describe("GPGKeeper", func() {
@@ -36,9 +36,9 @@ var _ = Describe("GPGKeeper", func() {
 	})
 
 	Describe(".Update", func() {
-		var gpgPK *types.GPGPubKey
+		var gpgPK *state2.GPGPubKey
 		BeforeEach(func() {
-			gpgPK = &types.GPGPubKey{PubKey: "pub_key", Address: "addr"}
+			gpgPK = &state2.GPGPubKey{PubKey: "pub_key", Address: "addr"}
 			err = gpgKeeper.Update("pk_id", gpgPK)
 			Expect(err).To(BeNil())
 		})
@@ -58,10 +58,10 @@ var _ = Describe("GPGKeeper", func() {
 	})
 
 	Describe(".GetGPGPubKey", func() {
-		var gpgPK, gpgPK2 *types.GPGPubKey
+		var gpgPK, gpgPK2 *state2.GPGPubKey
 
 		BeforeEach(func() {
-			gpgPK = &types.GPGPubKey{PubKey: "pub_key", Address: "addr"}
+			gpgPK = &state2.GPGPubKey{PubKey: "pub_key", Address: "addr"}
 			err = gpgKeeper.Update("pk_id", gpgPK)
 			Expect(err).To(BeNil())
 			gpgPK2 = gpgKeeper.GetGPGPubKey("pk_id")
@@ -74,9 +74,9 @@ var _ = Describe("GPGKeeper", func() {
 
 	Describe(".GetPubKeyIDs", func() {
 		BeforeEach(func() {
-			err = gpgKeeper.Update("pk_id", &types.GPGPubKey{PubKey: "pub_key", Address: "addr"})
+			err = gpgKeeper.Update("pk_id", &state2.GPGPubKey{PubKey: "pub_key", Address: "addr"})
 			Expect(err).To(BeNil())
-			err = gpgKeeper.Update("pk_id2", &types.GPGPubKey{PubKey: "pub_key", Address: "addr"})
+			err = gpgKeeper.Update("pk_id2", &state2.GPGPubKey{PubKey: "pub_key", Address: "addr"})
 			Expect(err).To(BeNil())
 		})
 

@@ -2,16 +2,16 @@ package modules
 
 import (
 	"github.com/c-bata/go-prompt"
+	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/accountmgr"
 	"gitlab.com/makeos/mosdef/config"
-	types3 "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/extensions"
-	types5 "gitlab.com/makeos/mosdef/logic/types"
 	"gitlab.com/makeos/mosdef/mempool"
 	"gitlab.com/makeos/mosdef/rpc"
 	types4 "gitlab.com/makeos/mosdef/services/types"
 	types2 "gitlab.com/makeos/mosdef/ticket/types"
-	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/types/core"
 )
 
 // Modules contains all supported modules
@@ -35,14 +35,14 @@ type Modules struct {
 type Module struct {
 	cfg            *config.AppConfig
 	service        types4.Service
-	logic          types5.Logic
+	logic          core.Logic
 	mempoolReactor *mempool.Reactor
 	acctmgr        *accountmgr.AccountManager
 	ticketmgr      types2.TicketManager
-	dht            types3.DHT
+	dht            types.DHTNode
 	extMgr         *extensions.Manager
 	rpcServer      *rpc.Server
-	repoMgr        types5.RepoManager
+	repoMgr        core.RepoManager
 	Modules        *Modules
 }
 
@@ -52,13 +52,13 @@ func NewModuleAggregator(
 	cfg *config.AppConfig,
 	acctmgr *accountmgr.AccountManager,
 	service types4.Service,
-	logic types5.Logic,
+	logic core.Logic,
 	mempoolReactor *mempool.Reactor,
 	ticketmgr types2.TicketManager,
-	dht types3.DHT,
+	dht types.DHTNode,
 	extMgr *extensions.Manager,
 	rpcServer *rpc.Server,
-	repoMgr types5.RepoManager) *Module {
+	repoMgr core.RepoManager) *Module {
 
 	agg := &Module{
 		cfg:            cfg,

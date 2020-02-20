@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"fmt"
-	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/types/core"
 	state2 "gitlab.com/makeos/mosdef/types/state"
 	"io"
 	"io/ioutil"
@@ -14,16 +14,16 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
+	"gitlab.com/makeos/mosdef/pkgs/tree"
 	s "gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/storage/tree"
 
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/storage"
 
+	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/rpc/client"
 	"gitlab.com/makeos/mosdef/util"
-	"github.com/thoas/go-funk"
 
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"

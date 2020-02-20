@@ -4,9 +4,9 @@ import (
 	"sync"
 
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/rpc/jsonrpc"
 	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/logger"
 )
 
 // Result represent a response to a service method call

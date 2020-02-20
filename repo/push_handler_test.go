@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"fmt"
-	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 	"io"
 	"os"
 	"path/filepath"
@@ -16,9 +17,8 @@ import (
 
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/mocks"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -53,7 +53,7 @@ var _ = Describe("PushHandler", func() {
 		Expect(err).To(BeNil())
 
 		mockLogic = mocks.NewMockLogic(ctrl)
-		mockDHT := mocks.NewMockDHT(ctrl)
+		mockDHT := mocks.NewMockDHTNode(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		mgr = NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
@@ -161,7 +161,7 @@ var _ = Describe("PushHandler", func() {
 				handler.oldState = oldState
 
 				gpgPubKeyKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
-				gpgPubKeyKeeper.EXPECT().GetGPGPubKey(pkID).Return(&types.GPGPubKey{PubKey: pubKey})
+				gpgPubKeyKeeper.EXPECT().GetGPGPubKey(pkID).Return(&state.GPGPubKey{PubKey: pubKey})
 				mockLogic.EXPECT().GPGPubKeyKeeper().Return(gpgPubKeyKeeper)
 
 				err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
@@ -200,8 +200,8 @@ var _ = Describe("PushHandler", func() {
 					handler.oldState = oldState
 
 					gpgPubKeyKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
-					gpgPubKeyKeeper.EXPECT().GetGPGPubKey(pkID).Return(&types.GPGPubKey{PubKey: pubKey})
-					gpgPubKeyKeeper.EXPECT().GetGPGPubKey(pkID2).Return(&types.GPGPubKey{PubKey: pubKey2})
+					gpgPubKeyKeeper.EXPECT().GetGPGPubKey(pkID).Return(&state.GPGPubKey{PubKey: pubKey})
+					gpgPubKeyKeeper.EXPECT().GetGPGPubKey(pkID2).Return(&state.GPGPubKey{PubKey: pubKey2})
 					mockLogic.EXPECT().GPGPubKeyKeeper().Return(gpgPubKeyKeeper).Times(2)
 
 					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})

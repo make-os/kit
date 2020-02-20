@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 	"path/filepath"
 
@@ -10,8 +10,8 @@ import (
 	. "github.com/onsi/gomega"
 
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/mocks"
 	"gitlab.com/makeos/mosdef/util"
 )
 

@@ -2,28 +2,25 @@ package logic
 
 import (
 	"fmt"
-	types2 "gitlab.com/makeos/mosdef/logic/types"
-	"gitlab.com/makeos/mosdef/types/msgs"
-
-	"github.com/tendermint/tendermint/state"
-
-	"gitlab.com/makeos/mosdef/dht"
-	"gitlab.com/makeos/mosdef/validators"
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/state"
+	"gitlab.com/makeos/mosdef/dht"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/validators"
 
-	"gitlab.com/makeos/mosdef/types"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
+	"gitlab.com/makeos/mosdef/types"
 )
 
 // Transaction implements types.TxLogic. Provides functionalities for executing transactions.
 type Transaction struct {
-	logic types2.Logic
+	logic core.Logic
 }
 
 // ExecTx decodes the transaction from the abci request,
 // performs final validation before executing the transaction.
 // chainHeight: The height of the block chain
-func (t *Transaction) ExecTx(tx msgs.BaseTx, chainHeight uint64) abcitypes.ResponseDeliverTx {
+func (t *Transaction) ExecTx(tx types.BaseTx, chainHeight uint64) abcitypes.ResponseDeliverTx {
 
 	// Validate the transaction
 	if err := validators.ValidateTx(tx, -1, t.logic); err != nil {
@@ -54,11 +51,11 @@ func (t *Transaction) ExecTx(tx msgs.BaseTx, chainHeight uint64) abcitypes.Respo
 // It returns error if the transaction is unknown.
 // tx: The transaction to be processed
 // chainHeight: The height of the block chain
-func (t *Transaction) exec(tx msgs.BaseTx, chainHeight uint64) error {
+func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 	spk := tx.GetSenderPubKey().ToBytes32()
 
 	switch o := tx.(type) {
-	case *msgs.TxCoinTransfer:
+	case *core.TxCoinTransfer:
 		return t.execCoinTransfer(
 			spk,
 			o.To,
@@ -66,15 +63,15 @@ func (t *Transaction) exec(tx msgs.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *msgs.TxTicketPurchase:
-		if o.Is(msgs.TxTypeValidatorTicket) {
+	case *core.TxTicketPurchase:
+		if o.Is(core.TxTypeValidatorTicket) {
 			return t.execValidatorStake(
 				spk,
 				o.Value,
 				o.Fee,
 				chainHeight)
 		}
-		if o.Is(msgs.TxTypeStorerTicket) {
+		if o.Is(core.TxTypeStorerTicket) {
 			return t.execStorerStake(
 				spk,
 				o.Value,
@@ -83,21 +80,21 @@ func (t *Transaction) exec(tx msgs.BaseTx, chainHeight uint64) error {
 		}
 		return fmt.Errorf("unknown transaction type")
 
-	case *msgs.TxSetDelegateCommission:
+	case *core.TxSetDelegateCommission:
 		return t.execSetDelegatorCommission(
 			spk,
 			o.Commission,
 			o.Fee,
 			chainHeight)
 
-	case *msgs.TxTicketUnbond:
+	case *core.TxTicketUnbond:
 		return t.execUnbond(
 			spk,
 			o.TicketHash,
 			o.Fee,
 			chainHeight)
 
-	case *msgs.TxRepoCreate:
+	case *core.TxRepoCreate:
 		return t.execRepoCreate(
 			spk,
 			o.Name,
@@ -105,7 +102,7 @@ func (t *Transaction) exec(tx msgs.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *msgs.TxRepoProposalUpsertOwner:
+	case *core.TxRepoProposalUpsertOwner:
 		return t.execRepoUpsertOwner(
 			spk,
 			o.RepoName,
@@ -116,7 +113,7 @@ func (t *Transaction) exec(tx msgs.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *msgs.TxRepoProposalVote:
+	case *core.TxRepoProposalVote:
 		return t.execRepoProposalVote(
 			spk,
 			o.RepoName,
@@ -125,7 +122,7 @@ func (t *Transaction) exec(tx msgs.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *msgs.TxRepoProposalFeeSend:
+	case *core.TxRepoProposalFeeSend:
 		return t.execRepoProposalSendFee(
 			spk,
 			o.RepoName,
@@ -134,7 +131,7 @@ func (t *Transaction) exec(tx msgs.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *msgs.TxRepoProposalUpdate:
+	case *core.TxRepoProposalUpdate:
 		return t.execRepoProposalUpdate(
 			spk,
 			o.RepoName,
@@ -144,7 +141,7 @@ func (t *Transaction) exec(tx msgs.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *msgs.TxRepoProposalMergeRequest:
+	case *core.TxRepoProposalMergeRequest:
 		return t.execRepoProposalMergeRequest(
 			spk,
 			o.RepoName,
@@ -157,14 +154,14 @@ func (t *Transaction) exec(tx msgs.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *msgs.TxAddGPGPubKey:
+	case *core.TxAddGPGPubKey:
 		return t.execAddGPGKey(
 			spk,
 			o.PublicKey,
 			o.Fee,
 			chainHeight)
 
-	case *msgs.TxPush:
+	case *core.TxPush:
 		pn := o.PushNote
 		err := t.execPush(
 			pn.RepoName,
@@ -178,7 +175,7 @@ func (t *Transaction) exec(tx msgs.BaseTx, chainHeight uint64) error {
 		// Execute the tx against the repository's local state
 		return t.logic.GetRepoManager().ExecTxPush(o)
 
-	case *msgs.TxNamespaceAcquire:
+	case *core.TxNamespaceAcquire:
 		return t.execAcquireNamespace(
 			spk,
 			o.Name,
@@ -189,7 +186,7 @@ func (t *Transaction) exec(tx msgs.BaseTx, chainHeight uint64) error {
 			o.Domains,
 			chainHeight)
 
-	case *msgs.TxNamespaceDomainUpdate:
+	case *core.TxNamespaceDomainUpdate:
 		return t.execUpdateNamespaceDomains(
 			spk,
 			o.Name,

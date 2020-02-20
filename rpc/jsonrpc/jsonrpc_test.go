@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util/logger"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

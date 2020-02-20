@@ -3,25 +3,22 @@ package validators
 import (
 	"crypto/rsa"
 	"fmt"
-	types3 "gitlab.com/makeos/mosdef/logic/types"
-	"gitlab.com/makeos/mosdef/repo/types/core"
-	"gitlab.com/makeos/mosdef/types/msgs"
-	"gitlab.com/makeos/mosdef/types/state"
-
+	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/crypto/bls"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/repo"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
-	"github.com/pkg/errors"
-	"github.com/shopspring/decimal"
 )
 
 // CheckTxCoinTransferConsistency performs consistency checks on TxCoinTransfer
 func CheckTxCoinTransferConsistency(
-	tx *msgs.TxCoinTransfer,
+	tx *core.TxCoinTransfer,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	bi, err := logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -62,9 +59,9 @@ check:
 
 // CheckTxTicketPurchaseConsistency performs consistency checks on TxTicketPurchase
 func CheckTxTicketPurchaseConsistency(
-	tx *msgs.TxTicketPurchase,
+	tx *core.TxTicketPurchase,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	bi, err := logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -84,7 +81,7 @@ func CheckTxTicketPurchaseConsistency(
 
 	// For non-delegated validator ticket transaction, the value
 	// must not be lesser than the current price per ticket
-	if tx.Type == msgs.TxTypeValidatorTicket && tx.Delegate.IsEmpty() {
+	if tx.Type == core.TxTypeValidatorTicket && tx.Delegate.IsEmpty() {
 		curTicketPrice := logic.Sys().GetCurValidatorTicketPrice()
 		if tx.Value.Decimal().LessThan(decimal.NewFromFloat(curTicketPrice)) {
 			return feI(index, "value", fmt.Sprintf("value is lower than the"+
@@ -103,9 +100,9 @@ func CheckTxTicketPurchaseConsistency(
 
 // CheckTxUnbondTicketConsistency performs consistency checks on TxTicketUnbond
 func CheckTxUnbondTicketConsistency(
-	tx *msgs.TxTicketUnbond,
+	tx *core.TxTicketUnbond,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	bi, err := logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -148,9 +145,9 @@ func CheckTxUnbondTicketConsistency(
 
 // CheckTxRepoCreateConsistency performs consistency checks on TxRepoCreate
 func CheckTxRepoCreateConsistency(
-	tx *msgs.TxRepoCreate,
+	tx *core.TxRepoCreate,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	bi, err := logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -174,9 +171,9 @@ func CheckTxRepoCreateConsistency(
 
 // CheckTxSetDelegateCommissionConsistency performs consistency checks on TxSetDelegateCommission
 func CheckTxSetDelegateCommissionConsistency(
-	tx *msgs.TxSetDelegateCommission,
+	tx *core.TxSetDelegateCommission,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	bi, err := logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -194,9 +191,9 @@ func CheckTxSetDelegateCommissionConsistency(
 
 // CheckTxAddGPGPubKeyConsistency performs consistency checks on TxAddGPGPubKey
 func CheckTxAddGPGPubKeyConsistency(
-	tx *msgs.TxAddGPGPubKey,
+	tx *core.TxAddGPGPubKey,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	bi, err := logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -231,9 +228,9 @@ func CheckTxAddGPGPubKeyConsistency(
 // CheckTxPushConsistency performs consistency checks on TxPush.
 // EXPECTS: sanity check using CheckTxPush to have been performed.
 func CheckTxPushConsistency(
-	tx *msgs.TxPush,
+	tx *core.TxPush,
 	index int,
-	logic types3.Logic,
+	logic core.Logic,
 	repoGetter func(name string) (core.BareRepo, error)) error {
 
 	localRepo, err := repoGetter(tx.PushNote.GetRepoName())
@@ -300,9 +297,9 @@ func CheckTxPushConsistency(
 
 // CheckTxNSAcquireConsistency performs consistency checks on TxNamespaceAcquire
 func CheckTxNSAcquireConsistency(
-	tx *msgs.TxNamespaceAcquire,
+	tx *core.TxNamespaceAcquire,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	bi, err := logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -326,9 +323,9 @@ func CheckTxNSAcquireConsistency(
 // CheckTxNamespaceDomainUpdateConsistency performs consistency
 // checks on TxNamespaceDomainUpdate
 func CheckTxNamespaceDomainUpdateConsistency(
-	tx *msgs.TxNamespaceDomainUpdate,
+	tx *core.TxNamespaceDomainUpdate,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	bi, err := logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -358,10 +355,10 @@ func CheckTxNamespaceDomainUpdateConsistency(
 // checkProposalCommonConsistency includes common consistency checks for
 // proposal transactions.
 func checkProposalCommonConsistency(
-	txProposal *msgs.TxProposalCommon,
-	txCommon *msgs.TxCommon,
+	txProposal *core.TxProposalCommon,
+	txCommon *core.TxCommon,
 	index int,
-	logic types3.Logic) (*state.Repository, error) {
+	logic core.Logic) (*state.Repository, error) {
 
 	bi, err := logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -408,9 +405,9 @@ func checkProposalCommonConsistency(
 // CheckTxRepoProposalUpsertOwnerConsistency performs consistency
 // checks on CheckTxRepoProposalUpsertOwner
 func CheckTxRepoProposalUpsertOwnerConsistency(
-	tx *msgs.TxRepoProposalUpsertOwner,
+	tx *core.TxRepoProposalUpsertOwner,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	_, err := checkProposalCommonConsistency(
 		tx.TxProposalCommon,
@@ -426,9 +423,9 @@ func CheckTxRepoProposalUpsertOwnerConsistency(
 
 // CheckTxVoteConsistency performs consistency checks on CheckTxVote
 func CheckTxVoteConsistency(
-	tx *msgs.TxRepoProposalVote,
+	tx *core.TxRepoProposalVote,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	// The repo must exist
 	repo := logic.RepoKeeper().GetRepo(tx.RepoName)
@@ -498,9 +495,9 @@ func CheckTxVoteConsistency(
 
 // CheckTxRepoProposalSendFeeConsistency performs consistency checks on TxRepoProposalFeeSend
 func CheckTxRepoProposalSendFeeConsistency(
-	tx *msgs.TxRepoProposalFeeSend,
+	tx *core.TxRepoProposalFeeSend,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	// The repo must exist
 	repo := logic.RepoKeeper().GetRepo(tx.RepoName)
@@ -546,9 +543,9 @@ func CheckTxRepoProposalSendFeeConsistency(
 // CheckTxRepoProposalMergeRequestConsistency performs consistency
 // checks on TxRepoProposalMergeRequest
 func CheckTxRepoProposalMergeRequestConsistency(
-	tx *msgs.TxRepoProposalMergeRequest,
+	tx *core.TxRepoProposalMergeRequest,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	_, err := checkProposalCommonConsistency(
 		tx.TxProposalCommon,
@@ -564,9 +561,9 @@ func CheckTxRepoProposalMergeRequestConsistency(
 
 // CheckTxRepoProposalUpdateConsistency performs consistency checks on CheckTxRepoProposalUpdate
 func CheckTxRepoProposalUpdateConsistency(
-	tx *msgs.TxRepoProposalUpdate,
+	tx *core.TxRepoProposalUpdate,
 	index int,
-	logic types3.Logic) error {
+	logic core.Logic) error {
 
 	_, err := checkProposalCommonConsistency(
 		tx.TxProposalCommon,

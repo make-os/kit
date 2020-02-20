@@ -1,23 +1,22 @@
 package logic
 
 import (
-	types2 "gitlab.com/makeos/mosdef/logic/types"
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"os"
 
 	"github.com/golang/mock/gomock"
 
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/mocks"
+	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/util"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Repo", func() {
@@ -51,7 +50,7 @@ var _ = Describe("Repo", func() {
 
 	BeforeEach(func() {
 		state.DefaultRepoConfig = state.MakeDefaultRepoConfig()
-		err := logic.SysKeeper().SaveBlockInfo(&types2.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 
@@ -70,9 +69,9 @@ var _ = Describe("Repo", func() {
 
 		BeforeEach(func() {
 			repoCfg = state.MakeDefaultRepoConfig()
-			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 				Balance:             util.String("10"),
-				Stakes:              types.BareAccountStakes(),
+				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
 		})
@@ -150,9 +149,9 @@ var _ = Describe("Repo", func() {
 		var spk util.Bytes32
 
 		BeforeEach(func() {
-			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 				Balance:             util.String("10"),
-				Stakes:              types.BareAccountStakes(),
+				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
 		})
@@ -548,9 +547,9 @@ var _ = Describe("Repo", func() {
 		var repoUpd *state.Repository
 
 		BeforeEach(func() {
-			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 				Balance:             util.String("10"),
-				Stakes:              types.BareAccountStakes(),
+				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
 			repoUpd = state.BareRepository()
@@ -728,14 +727,14 @@ var _ = Describe("Repo", func() {
 		var repoUpd *state.Repository
 
 		BeforeEach(func() {
-			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 				Balance:             util.String("20"),
-				Stakes:              types.BareAccountStakes(),
+				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 0,
 			})
-			logic.AccountKeeper().Update(key2.Addr(), &types.Account{
+			logic.AccountKeeper().Update(key2.Addr(), &state.Account{
 				Balance:             util.String("20"),
-				Stakes:              types.BareAccountStakes(),
+				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 0,
 			})
 			repoUpd = state.BareRepository()
@@ -829,9 +828,9 @@ var _ = Describe("Repo", func() {
 		var repoUpd *state.Repository
 
 		BeforeEach(func() {
-			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 				Balance:             util.String("10"),
-				Stakes:              types.BareAccountStakes(),
+				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
 			repoUpd = state.BareRepository()
@@ -976,9 +975,9 @@ var _ = Describe("Repo", func() {
 		var repoUpd *state.Repository
 
 		BeforeEach(func() {
-			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 				Balance:             util.String("10"),
-				Stakes:              types.BareAccountStakes(),
+				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
 			repoUpd = state.BareRepository()
@@ -1084,7 +1083,7 @@ var _ = Describe("Repo", func() {
 		When("update config object is empty", func() {
 			It("should not change the config", func() {
 				proposal := &state.RepoProposal{ActionData: map[string]interface{}{
-					types2.ProposalActionDataConfig: (&state.RepoConfig{}).ToMap(),
+					core.ProposalActionDataConfig: (&state.RepoConfig{}).ToMap(),
 				}}
 				err = applyProposalRepoUpdate(proposal, repo, 0)
 				Expect(err).To(BeNil())
@@ -1095,7 +1094,7 @@ var _ = Describe("Repo", func() {
 		When("update config object is not empty", func() {
 			It("should change the config", func() {
 				proposal := &state.RepoProposal{ActionData: map[string]interface{}{
-					types2.ProposalActionDataConfig: (&state.RepoConfig{
+					core.ProposalActionDataConfig: (&state.RepoConfig{
 						Governace: &state.RepoConfigGovernance{
 							ProposalQuorum: 120,
 							ProposalDur:    100,

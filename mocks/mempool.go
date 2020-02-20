@@ -8,7 +8,8 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/tendermint/tendermint/abci/types"
 	mempool "github.com/tendermint/tendermint/mempool"
-	types0 "gitlab.com/makeos/mosdef/types"
+	types0 "github.com/tendermint/tendermint/types"
+	types1 "gitlab.com/makeos/mosdef/types"
 	reflect "reflect"
 )
 
@@ -234,7 +235,7 @@ func (mr *MockMempoolMockRecorder) CloseWAL() *gomock.Call {
 }
 
 // Add mocks base method
-func (m *MockMempool) Add(tx types0.BaseTx) error {
+func (m *MockMempool) Add(tx types1.BaseTx) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", tx)
 	ret0, _ := ret[0].(error)

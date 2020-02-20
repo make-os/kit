@@ -2,10 +2,8 @@ package node
 
 import (
 	"fmt"
-	types3 "gitlab.com/makeos/mosdef/logic/types"
-	"gitlab.com/makeos/mosdef/repo/types/core"
 	types4 "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 
 	"github.com/tendermint/tendermint/privval"
@@ -184,7 +182,7 @@ var _ = Describe("App", func() {
 				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(selected, nil)
 				app.ticketMgr = mockTicketMgr
 
-				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[util.Bytes32]*types3.Validator{}, nil)
+				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[util.Bytes32]*core.Validator{}, nil)
 				app.logic = mockLogic.AtomicLogic
 			})
 
@@ -210,8 +208,8 @@ var _ = Describe("App", func() {
 
 				// Mock the return of the existing validator
 				pubKey := existingValKey.PubKey().MustBytes32()
-				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[util.Bytes32]*types3.Validator{
-					pubKey: &types3.Validator{PubKey: util.StrToBytes32("pub_key")},
+				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[util.Bytes32]*core.Validator{
+					pubKey: &core.Validator{PubKey: util.StrToBytes32("pub_key")},
 				}, nil)
 
 				app.logic = mockLogic.AtomicLogic
@@ -281,7 +279,7 @@ var _ = Describe("App", func() {
 			var height = int64(100)
 
 			BeforeEach(func() {
-				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&types3.BlockInfo{
+				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{
 					AppHash: []byte("app_hash"),
 					Height:  height,
 				}, nil)
@@ -327,10 +325,10 @@ var _ = Describe("App", func() {
 			var res abcitypes.ResponseCheckTx
 			var expectedHash util.Bytes32
 			BeforeEach(func() {
-				app.validateTx = func(tx msgs.BaseTx, i int, logic types3.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return nil
 				}
-				tx := msgs.NewBaseTx(0, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewBaseTx(0, 0, sender.Addr(), sender, "10", "1", 1)
 				expectedHash = tx.GetHash()
 				res = app.CheckTx(abcitypes.RequestCheckTx{Tx: tx.Bytes()})
 			})
@@ -344,10 +342,10 @@ var _ = Describe("App", func() {
 		When("tx failed validation", func() {
 			var res abcitypes.ResponseCheckTx
 			BeforeEach(func() {
-				app.validateTx = func(tx msgs.BaseTx, i int, logic types3.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return fmt.Errorf("bad error")
 				}
-				tx := msgs.NewBaseTx(0, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewBaseTx(0, 0, sender.Addr(), sender, "10", "1", 1)
 				res = app.CheckTx(abcitypes.RequestCheckTx{Tx: tx.Bytes()})
 			})
 
@@ -398,10 +396,10 @@ var _ = Describe("App", func() {
 		When("tx is invalid", func() {
 			var res abcitypes.ResponseDeliverTx
 			BeforeEach(func() {
-				app.validateTx = func(tx msgs.BaseTx, i int, logic types3.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return fmt.Errorf("validation error")
 				}
-				tx := msgs.NewBaseTx(0, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewBaseTx(0, 0, sender.Addr(), sender, "10", "1", 1)
 				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
 			})
 
@@ -415,7 +413,7 @@ var _ = Describe("App", func() {
 			var res abcitypes.ResponseDeliverTx
 
 			BeforeEach(func() {
-				app.validateTx = func(tx msgs.BaseTx, i int, logic types3.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return nil
 				}
 			})
@@ -423,7 +421,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				params.MaxValTicketsPerBlock = 1
 				app.unIdxValidatorTickets = append(app.unIdxValidatorTickets, &ticketInfo{})
-				tx := msgs.NewBaseTx(msgs.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewBaseTx(core.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
 			})
 
@@ -436,13 +434,13 @@ var _ = Describe("App", func() {
 
 		When("tx type is TxTypeValidatorTicket and is successfully executed", func() {
 			BeforeEach(func() {
-				app.validateTx = func(tx msgs.BaseTx, i int, logic types3.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return nil
 				}
 			})
 
 			BeforeEach(func() {
-				tx := msgs.NewBaseTx(msgs.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewBaseTx(core.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
@@ -456,13 +454,13 @@ var _ = Describe("App", func() {
 
 		When("tx type is TxTypeStorerTicket and response code=0", func() {
 			BeforeEach(func() {
-				app.validateTx = func(tx msgs.BaseTx, i int, logic types3.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return nil
 				}
 			})
 
 			BeforeEach(func() {
-				tx := msgs.NewBaseTx(msgs.TxTypeStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewBaseTx(core.TxTypeStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
@@ -476,14 +474,14 @@ var _ = Describe("App", func() {
 
 		When("tx type is TxTypeUnbondStorerTicket and response code=0", func() {
 			BeforeEach(func() {
-				app.validateTx = func(tx msgs.BaseTx, i int, logic types3.Logic) error {
+				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return nil
 				}
 			})
 
 			BeforeEach(func() {
-				tx := msgs.NewBaseTx(msgs.TxTypeUnbondStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
-				tx.(*msgs.TxTicketUnbond).TicketHash = util.StrToBytes32("tid")
+				tx := core.NewBaseTx(core.TxTypeUnbondStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx.(*core.TxTicketUnbond).TicketHash = util.StrToBytes32("tid")
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
@@ -498,10 +496,10 @@ var _ = Describe("App", func() {
 
 	Describe(".postExecChecks", func() {
 		When("tx is TxRepoCreate", func() {
-			var tx *msgs.TxRepoCreate
+			var tx *core.TxRepoCreate
 
 			BeforeEach(func() {
-				tx = msgs.NewBareTxRepoCreate()
+				tx = core.NewBareTxRepoCreate()
 				tx.Name = "repo1"
 				resp := &abcitypes.ResponseDeliverTx{}
 				app.postExecChecks(tx, resp)
@@ -518,10 +516,10 @@ var _ = Describe("App", func() {
 		})
 
 		When("tx is TxRepoProposalVote", func() {
-			var tx *msgs.TxRepoProposalVote
+			var tx *core.TxRepoProposalVote
 
 			BeforeEach(func() {
-				tx = msgs.NewBareRepoProposalVote()
+				tx = core.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
 				resp := &abcitypes.ResponseDeliverTx{}
 				app.postExecChecks(tx, resp)
@@ -538,10 +536,10 @@ var _ = Describe("App", func() {
 		})
 
 		When("tx is TxPush with a reference with merge proposal id", func() {
-			var tx *msgs.TxPush
+			var tx *core.TxPush
 
 			BeforeEach(func() {
-				tx = msgs.NewBareTxPush()
+				tx = core.NewBareTxPush()
 				tx.PushNote.RepoName = "repo1"
 				tx.PushNote.References = []*core.PushedReference{
 					{MergeProposalID: "0001"},
@@ -592,7 +590,7 @@ var _ = Describe("App", func() {
 				mockLogic.AtomicLogic.EXPECT().Discard().Return()
 				mockLogic.AtomicLogic.EXPECT().TxKeeper().Return(mockLogic.TxKeeper).AnyTimes()
 				app.logic = mockLogic.AtomicLogic
-				app.unIdxTxs = append(app.unIdxTxs, msgs.NewBareTxCoinTransfer())
+				app.unIdxTxs = append(app.unIdxTxs, core.NewBareTxCoinTransfer())
 			})
 
 			It("should panic", func() {
@@ -643,14 +641,14 @@ var _ = Describe("App", func() {
 
 			var valTicketInfo *ticketInfo
 			var storerTicketInfo *ticketInfo
-			var valTicketTx, storerTicketTx *msgs.TxTicketPurchase
+			var valTicketTx, storerTicketTx *core.TxTicketPurchase
 
 			BeforeEach(func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("app_hash")).Times(1)
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 
-				valTicketTx = msgs.NewBareTxTicketPurchase(msgs.TxTypeValidatorTicket)
-				storerTicketTx = msgs.NewBareTxTicketPurchase(msgs.TxTypeStorerTicket)
+				valTicketTx = core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
+				storerTicketTx = core.NewBareTxTicketPurchase(core.TxTypeStorerTicket)
 				valTicketInfo = &ticketInfo{Tx: valTicketTx, index: 1}
 				storerTicketInfo = &ticketInfo{Tx: storerTicketTx, index: 2}
 				app.unIdxValidatorTickets = append(app.unIdxValidatorTickets, valTicketInfo)

@@ -4,13 +4,13 @@ import (
 	state2 "gitlab.com/makeos/mosdef/types/state"
 	"os"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/storage/tree"
-	"gitlab.com/makeos/mosdef/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/pkgs/tree"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/testutil"
 )
 
 var _ = Describe("RepoKeeper", func() {

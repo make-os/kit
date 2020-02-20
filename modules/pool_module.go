@@ -2,14 +2,14 @@ package modules
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/repo/types/core"
-
 	"gitlab.com/makeos/mosdef/mempool"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // PoolModule provides access to the transaction pool
@@ -24,24 +24,24 @@ func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor, pushPool core.PushPo
 	return &PoolModule{vm: vm, reactor: reactor, pushPool: pushPool}
 }
 
-func (m *PoolModule) globals() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{}
+func (m *PoolModule) globals() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{}
 }
 
 // funcs exposed by the module
-func (m *PoolModule) funcs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *PoolModule) funcs() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "getSize",
 			Value:       m.getSize,
 			Description: "Get the current size of the mempool",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "getTop",
 			Value:       m.getTop,
 			Description: "Get top transactions from the mempool",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "getPushPoolSize",
 			Value:       m.getPushPoolSize,
 			Description: "Get the current size of the push pool",

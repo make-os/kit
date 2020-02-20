@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -38,7 +38,7 @@ func (t *Transaction) execUnbond(
 
 	// Set new unbond height
 	newUnbondHeight := chainHeight + 1 + uint64(params.NumBlocksInStorerThawPeriod)
-	senderAcct.Stakes.UpdateUnbondHeight(types.StakeTypeStorer,
+	senderAcct.Stakes.UpdateUnbondHeight(state.StakeTypeStorer,
 		util.String(ticket.Value), 0, newUnbondHeight)
 
 	// Deduct the fee from the sender's account
@@ -70,7 +70,7 @@ func (t *Transaction) execStorerStake(
 	fee util.String,
 	chainHeight uint64) error {
 	return t.addStake(
-		msgs.TxTypeStorerTicket,
+		core.TxTypeStorerTicket,
 		senderPubKey,
 		value,
 		fee,
@@ -94,7 +94,7 @@ func (t *Transaction) execValidatorStake(
 	fee util.String,
 	chainHeight uint64) error {
 	return t.addStake(
-		msgs.TxTypeValidatorTicket,
+		core.TxTypeValidatorTicket,
 		senderPubKey,
 		value,
 		fee,
@@ -135,17 +135,17 @@ func (t *Transaction) addStake(
 
 	// Add a stake entry
 	switch txType {
-	case msgs.TxTypeValidatorTicket:
+	case core.TxTypeValidatorTicket:
 		// Determine unbond height. The unbond height is height of the next block
 		// (or proposed block) plus minimum ticket maturation duration, max ticket
 		// active duration + thawing period.
 		unbondHeight = chainHeight + 1 + uint64(params.MinTicketMatDur) +
 			uint64(params.MaxTicketActiveDur) +
 			uint64(params.NumBlocksInThawPeriod)
-		senderAcct.Stakes.Add(types.StakeTypeValidator, value, unbondHeight)
+		senderAcct.Stakes.Add(state.StakeTypeValidator, value, unbondHeight)
 
-	case msgs.TxTypeStorerTicket:
-		senderAcct.Stakes.Add(types.StakeTypeStorer, value, unbondHeight)
+	case core.TxTypeStorerTicket:
+		senderAcct.Stakes.Add(state.StakeTypeStorer, value, unbondHeight)
 	}
 
 	// Update the sender account

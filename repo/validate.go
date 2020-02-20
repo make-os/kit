@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	types3 "gitlab.com/makeos/mosdef/dht/types"
-	types4 "gitlab.com/makeos/mosdef/logic/types"
-	"gitlab.com/makeos/mosdef/repo/types/core"
-	"gitlab.com/makeos/mosdef/repo/types/msgs"
-	types5 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/dht/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"io/ioutil"
 	"strings"
@@ -241,7 +239,7 @@ func checkMergeCompliance(
 	oldRef core.Item,
 	mergeProposalID,
 	gpgKeyID string,
-	keepers types4.Keepers) error {
+	keepers core.Keepers) error {
 
 	ref := plumbing.ReferenceName(change.Item.GetName())
 	if !ref.IsBranch() {
@@ -270,7 +268,7 @@ func checkMergeCompliance(
 			"merge proposal (%s) is already closed", mergeProposalID)
 	}
 
-	actionKey := types4.ProposalActionDataMergeRequest
+	actionKey := core.ProposalActionDataMergeRequest
 
 	// Ensure the proposal's base branch matches the pushed branch
 	propBaseBranch := prop.ActionData.Get(actionKey)["base"]
@@ -388,7 +386,7 @@ func checkCommit(
 
 // checkPushNoteAgainstTxParamss checks compares the value of fields in the push
 // note against the values of same fields in the txparamss.
-func checkPushNoteAgainstTxParamss(pn *msgs.PushNote, txParamss map[string]*util.TxParams) error {
+func checkPushNoteAgainstTxParamss(pn *core.PushNote, txParamss map[string]*util.TxParams) error {
 
 	// Push note pusher public key must match txparams key
 	txParamssObjs := funk.Values(txParamss).([]*util.TxParams)
@@ -424,7 +422,7 @@ func checkPushNoteAgainstTxParamss(pn *msgs.PushNote, txParamss map[string]*util
 }
 
 // CheckPushNoteSyntax performs syntactic checks on the fields of a push transaction
-func CheckPushNoteSyntax(tx *msgs.PushNote) error {
+func CheckPushNoteSyntax(tx *core.PushNote) error {
 
 	if tx.RepoName == "" {
 		return util.FieldError("repoName", "repo name is required")
@@ -507,7 +505,7 @@ func checkPushedReference(
 	targetRepo core.BareRepo,
 	pRefs core.PushedReferences,
 	repo *state.Repository,
-	keepers types4.Keepers) error {
+	keepers core.Keepers) error {
 	for i, ref := range pRefs {
 
 		rName := ref.Name
@@ -555,7 +553,7 @@ func checkPushedReference(
 // CheckPushNoteConsistency performs consistency checks against the state of the
 // repository as seen by the node. If the target repo object is not set in tx,
 // local reference hash comparision is not performed.
-func CheckPushNoteConsistency(tx *msgs.PushNote, logic types4.Logic) error {
+func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
 
 	// Ensure the repository exist
 	repo := logic.RepoKeeper().GetRepo(tx.GetRepoName())
@@ -614,14 +612,14 @@ func CheckPushNoteConsistency(tx *msgs.PushNote, logic types4.Logic) error {
 }
 
 // checkPushNote performs validation checks on a push transaction
-func checkPushNote(tx core.RepoPushNote, dht types3.DHT,
-	logic types4.Logic) error {
+func checkPushNote(tx core.RepoPushNote, dht types.DHTNode,
+	logic core.Logic) error {
 
-	if err := CheckPushNoteSyntax(tx.(*msgs.PushNote)); err != nil {
+	if err := CheckPushNoteSyntax(tx.(*core.PushNote)); err != nil {
 		return err
 	}
 
-	if err := CheckPushNoteConsistency(tx.(*msgs.PushNote), logic); err != nil {
+	if err := CheckPushNoteConsistency(tx.(*core.PushNote), logic); err != nil {
 		return err
 	}
 
@@ -634,7 +632,7 @@ func checkPushNote(tx core.RepoPushNote, dht types3.DHT,
 }
 
 // CheckPushOK performs sanity checks on the given PushOK object
-func CheckPushOK(pushOK *msgs.PushOK, index int) error {
+func CheckPushOK(pushOK *core.PushOK, index int) error {
 
 	// Push note id must be set
 	if pushOK.PushNoteID.IsEmpty() {
@@ -652,7 +650,7 @@ func CheckPushOK(pushOK *msgs.PushOK, index int) error {
 // CheckPushOKConsistencyUsingStorer performs consistency checks on the given PushOK object
 // against the current state of the network.
 // EXPECT: Sanity check to have been performed using CheckPushOK
-func CheckPushOKConsistencyUsingStorer(storers types5.SelectedTickets, pushOK *msgs.PushOK, logic types4.Logic, noSigCheck bool, index int) error {
+func CheckPushOKConsistencyUsingStorer(storers tickettypes.SelectedTickets, pushOK *core.PushOK, logic core.Logic, noSigCheck bool, index int) error {
 
 	// Check if the sender is one of the top storers.
 	// Ensure that the signers of the PushOK are part of the storers
@@ -679,7 +677,7 @@ func CheckPushOKConsistencyUsingStorer(storers types5.SelectedTickets, pushOK *m
 // CheckPushOKConsistency performs consistency checks on the given PushOK object
 // against the current state of the network.
 // EXPECT: Sanity check to have been performed using CheckPushOK
-func CheckPushOKConsistency(pushOK *msgs.PushOK, logic types4.Logic, noSigCheck bool, index int) error {
+func CheckPushOKConsistency(pushOK *core.PushOK, logic core.Logic, noSigCheck bool, index int) error {
 	storers, err := logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
 	if err != nil {
 		return errors.Wrap(err, "failed to get top storers")
@@ -688,7 +686,7 @@ func CheckPushOKConsistency(pushOK *msgs.PushOK, logic types4.Logic, noSigCheck 
 }
 
 // checkPushOK performs sanity and state consistency checks on the given PushOK object
-func checkPushOK(pushOK *msgs.PushOK, logic types4.Logic, index int) error {
+func checkPushOK(pushOK *core.PushOK, logic core.Logic, index int) error {
 	if err := CheckPushOK(pushOK, index); err != nil {
 		return err
 	}
@@ -701,25 +699,25 @@ func checkPushOK(pushOK *msgs.PushOK, logic types4.Logic, index int) error {
 // fetchAndCheckReferenceObjects attempts to fetch and store new objects
 // introduced by the pushed references. After fetching it performs checks
 // on the objects
-func fetchAndCheckReferenceObjects(tx core.RepoPushNote, dht types3.DHT) error {
+func fetchAndCheckReferenceObjects(tx core.RepoPushNote, dhtnode types.DHTNode) error {
 	objectsSize := int64(0)
 
 	for _, objHash := range tx.GetPushedObjects(false) {
 
 	getSize:
 		// Attempt to get the object's size. If we find it, it means the object
-		// already exist so we don't have to fetch it from the dht.
+		// already exist so we don't have to fetch it from the dhtnode.
 		objSize, err := tx.GetTargetRepo().GetObjectSize(objHash)
 		if err == nil {
 			objectsSize += objSize
 			continue
 		}
 
-		// Since the object doesn't exist locally, read the object from the DHT
+		// Since the object doesn't exist locally, read the object from the DHTNode
 		dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cn()
-		objValue, err := dht.GetObject(ctx, &types3.DHTObjectQuery{
+		objValue, err := dhtnode.GetObject(ctx, &types.DHTObjectQuery{
 			Module:    core.RepoObjectModule,
 			ObjectKey: []byte(dhtKey),
 		})

@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 	"path/filepath"
 	"sort"
@@ -14,7 +14,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/storage/tree"
+	"gitlab.com/makeos/mosdef/pkgs/tree"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
 )

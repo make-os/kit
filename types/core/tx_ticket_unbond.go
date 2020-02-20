@@ -1,27 +1,26 @@
-package msgs
+package core
 
 import (
 	"fmt"
 	"github.com/fatih/structs"
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 // TxTicketUnbond implements BaseTx, it describes a transaction that unbonds a
 // staked coin owned by the signer
 type TxTicketUnbond struct {
-	*core.TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
-	*core.TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
-	TicketHash     util.Bytes32 `json:"hash" msgpack:"hash"`
+	*TxType    `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxCommon  `json:",flatten" msgpack:"-" mapstructure:"-"`
+	TicketHash util.Bytes32 `json:"hash" msgpack:"hash"`
 }
 
 // NewBareTxTicketUnbond returns an instance of TxTicketUnbond with zero values
 func NewBareTxTicketUnbond(ticketType int) *TxTicketUnbond {
 	return &TxTicketUnbond{
-		TxType:     &core.TxType{Type: ticketType},
-		TxCommon:   core.NewBareTxCommon(),
+		TxType:     &TxType{Type: ticketType},
+		TxCommon:   NewBareTxCommon(),
 		TicketHash: util.EmptyBytes32,
 	}
 }
@@ -91,7 +90,7 @@ func (tx *TxTicketUnbond) GetSize() int64 {
 
 // Sign signs the transaction
 func (tx *TxTicketUnbond) Sign(privKey string) ([]byte, error) {
-	return core.SignTransaction(tx, privKey)
+	return SignTransaction(tx, privKey)
 }
 
 // ToMap returns a map equivalent of the transaction

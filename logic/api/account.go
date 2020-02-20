@@ -1,19 +1,19 @@
 package api
 
 import (
-	types2 "gitlab.com/makeos/mosdef/logic/types"
 	"gitlab.com/makeos/mosdef/rpc/jsonrpc"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 // AccountAPI provides RPC methods for various account related functionalities.
 type AccountAPI struct {
-	logic types2.Logic
+	logic core.Logic
 }
 
 // NewAccountAPI creates an instance of AccountAPI
-func NewAccountAPI(logic types2.Logic) *AccountAPI {
+func NewAccountAPI(logic core.Logic) *AccountAPI {
 	return &AccountAPI{logic: logic}
 }
 

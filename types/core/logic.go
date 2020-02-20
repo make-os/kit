@@ -1,11 +1,13 @@
-package types
+package core
 
 import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/pkgs/tree"
 	"gitlab.com/makeos/mosdef/storage"
 	types2 "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -68,10 +70,10 @@ type TxKeeper interface {
 
 	// Index takes a transaction and stores it.
 	// It uses the tx hash as the index key
-	Index(tx BaseTx) error
+	Index(tx types.BaseTx) error
 
 	// GetTx gets a transaction by its hash
-	GetTx(hash []byte) (BaseTx, error)
+	GetTx(hash []byte) (types.BaseTx, error)
 }
 
 // BalanceAccount represents an account that maintains a balance
@@ -90,14 +92,14 @@ type AccountKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
-	GetAccount(address util.String, blockNum ...uint64) *Account
+	GetAccount(address util.String, blockNum ...uint64) *state.Account
 
 	// Update sets a new object at the given address.
 	//
 	// ARGS:
 	// address: The address of the account to update
 	// udp: The updated account object to replace the existing object.
-	Update(address util.String, upd *Account)
+	Update(address util.String, upd *state.Account)
 }
 
 // RepoKeeper describes an interface for accessing repository data
@@ -112,7 +114,7 @@ type RepoKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Repository if no repo is found.
-	GetRepo(name string, blockNum ...uint64) *core.Repository
+	GetRepo(name string, blockNum ...uint64) *state.Repository
 
 	// GetRepoOnly fetches a repository by the given name without making additional
 	// queries to populate the repo with associated objects.
@@ -122,14 +124,14 @@ type RepoKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Repository if no repo is found.
-	GetRepoOnly(name string, blockNum ...uint64) *core.Repository
+	GetRepoOnly(name string, blockNum ...uint64) *state.Repository
 
 	// Update sets a new object at the given name.
 	//
 	// ARGS:
 	// name: The name of the repository to update
 	// udp: The updated repository object to replace the existing object.
-	Update(name string, upd *core.Repository)
+	Update(name string, upd *state.Repository)
 
 	// IndexProposalVote indexes a proposal vote.
 	//
@@ -194,7 +196,7 @@ type NamespaceKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Namespace if no matching namespace is found.
-	GetNamespace(name string, blockNum ...uint64) *Namespace
+	GetNamespace(name string, blockNum ...uint64) *state.Namespace
 
 	// GetTarget looks up the target of a full namespace path
 	// ARGS:
@@ -206,7 +208,7 @@ type NamespaceKeeper interface {
 	// ARGS:
 	// name: The name of the namespace to update
 	// udp: The updated namespace object to replace the existing object.
-	Update(name string, upd *Namespace)
+	Update(name string, upd *state.Namespace)
 }
 
 // GPGPubKeyKeeper describes an interface for accessing gpg public key data
@@ -217,7 +219,7 @@ type GPGPubKeyKeeper interface {
 	// ARGS:
 	// pkID: The public key unique ID
 	// udp: The updated object to replace the existing object.
-	Update(pkID string, upd *GPGPubKey) error
+	Update(pkID string, upd *state.GPGPubKey) error
 
 	// GetGPGPubKey returns a GPG public key
 	//
@@ -226,7 +228,7 @@ type GPGPubKeyKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
-	GetGPGPubKey(pkID string, blockNum ...uint64) *GPGPubKey
+	GetGPGPubKey(pkID string, blockNum ...uint64) *state.GPGPubKey
 
 	// GetPubKeyIDs returns all public keys associated with the given address
 	//
@@ -274,7 +276,7 @@ type Logic interface {
 	DB() storage.Engine
 
 	// StateTree manages the app state tree
-	StateTree() Tree
+	StateTree() tree.Tree
 
 	// WriteGenesisState initializes the app state with initial data
 	WriteGenesisState() error
@@ -283,10 +285,10 @@ type Logic interface {
 	SetTicketManager(tm types2.TicketManager)
 
 	// SetRepoManager sets the repository manager
-	SetRepoManager(m core.RepoManager)
+	SetRepoManager(m RepoManager)
 
 	// GetRepoManager returns the repository manager
-	GetRepoManager() core.RepoManager
+	GetRepoManager() RepoManager
 
 	// Cfg returns the application config
 	Cfg() *config.AppConfig
@@ -359,7 +361,7 @@ type TxLogic interface {
 	// ExecTx decodes the transaction from the abci request,
 	// performs final validation before executing the transaction.
 	// chainHeight: The height of the block chain
-	ExecTx(tx BaseTx, chainHeight uint64) abcitypes.ResponseDeliverTx
+	ExecTx(tx types.BaseTx, chainHeight uint64) abcitypes.ResponseDeliverTx
 
 	// CanExecCoinTransfer checks whether the sender can transfer the value
 	// and fee of the transaction based on the current state of their

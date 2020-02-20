@@ -1,9 +1,9 @@
 package keepers
 
 import (
-	"gitlab.com/makeos/mosdef/storage/tree"
-	"gitlab.com/makeos/mosdef/types"
 	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/pkgs/tree"
+	"gitlab.com/makeos/mosdef/types/state"
 
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -25,7 +25,7 @@ func NewAccountKeeper(state *tree.SafeTree) *AccountKeeper {
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Account if no account is found.
-func (a *AccountKeeper) GetAccount(address util.String, blockNum ...uint64) *types.Account {
+func (a *AccountKeeper) GetAccount(address util.String, blockNum ...uint64) *state.Account {
 
 	// Get version is provided
 	var version uint64
@@ -45,11 +45,11 @@ func (a *AccountKeeper) GetAccount(address util.String, blockNum ...uint64) *typ
 
 	// If we don't find the account, we return an empty account.
 	if bs == nil {
-		return types.BareAccount()
+		return state.BareAccount()
 	}
 
 	// Otherwise, we decode the account bytes to types.Account
-	acct, err := types.NewAccountFromBytes(bs)
+	acct, err := state.NewAccountFromBytes(bs)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to decode account byte slice"))
 	}
@@ -62,6 +62,6 @@ func (a *AccountKeeper) GetAccount(address util.String, blockNum ...uint64) *typ
 // ARGS:
 // address: The address of the account to update
 // udp: The updated account object to replace the existing object.
-func (a *AccountKeeper) Update(address util.String, upd *types.Account) {
+func (a *AccountKeeper) Update(address util.String, upd *state.Account) {
 	a.state.Set(MakeAccountKey(address.String()), upd.Bytes())
 }

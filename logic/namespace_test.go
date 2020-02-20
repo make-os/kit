@@ -1,21 +1,21 @@
 package logic
 
 import (
-	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 	"os"
 
 	"github.com/golang/mock/gomock"
 
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Namespace", func() {
@@ -33,7 +33,7 @@ var _ = Describe("Namespace", func() {
 		appDB, stateTreeDB = testutil.GetDB(cfg)
 		logic = New(appDB, stateTreeDB, cfg)
 		txLogic = &Transaction{logic: logic}
-		err := logic.SysKeeper().SaveBlockInfo(&types2.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 
@@ -55,9 +55,9 @@ var _ = Describe("Namespace", func() {
 				params.NamespaceTTL = 10
 				params.NamespaceGraceDur = 10
 
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("10"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})
 
@@ -99,9 +99,9 @@ var _ = Describe("Namespace", func() {
 				params.NamespaceTTL = 10
 				params.NamespaceGraceDur = 10
 
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("10"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})
 
@@ -123,9 +123,9 @@ var _ = Describe("Namespace", func() {
 				params.NamespaceTTL = 10
 				params.NamespaceGraceDur = 10
 
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("10"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})
 
@@ -152,13 +152,13 @@ var _ = Describe("Namespace", func() {
 				params.NamespaceTTL = 10
 				params.NamespaceGraceDur = 10
 
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("10"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})
 
-				logic.NamespaceKeeper().Update(nsName, &types.Namespace{
+				logic.NamespaceKeeper().Update(nsName, &state.Namespace{
 					Domains: map[string]string{
 						"domain1": "target",
 					},
@@ -186,9 +186,9 @@ var _ = Describe("Namespace", func() {
 				params.NamespaceTTL = 10
 				params.NamespaceGraceDur = 10
 
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("10"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})
 
@@ -214,13 +214,13 @@ var _ = Describe("Namespace", func() {
 				params.NamespaceTTL = 10
 				params.NamespaceGraceDur = 10
 
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("10"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})
 
-				logic.NamespaceKeeper().Update(nsName, &types.Namespace{
+				logic.NamespaceKeeper().Update(nsName, &state.Namespace{
 					Domains: map[string]string{
 						"domain1": "target",
 						"domain2": "other_target",

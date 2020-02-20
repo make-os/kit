@@ -2,15 +2,15 @@ package pool
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types"
 	"math/big"
 	"sort"
 	"sync"
 
 	"github.com/thoas/go-funk"
 
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/shopspring/decimal"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var (
@@ -30,12 +30,12 @@ var (
 // containerItem represents the a container item.
 // It wraps a transaction and other important properties.
 type containerItem struct {
-	Tx      msgs.BaseTx
+	Tx      types.BaseTx
 	FeeRate util.String
 }
 
 // newItem creates an instance of ContainerItem
-func newItem(tx msgs.BaseTx) *containerItem {
+func newItem(tx types.BaseTx) *containerItem {
 	item := &containerItem{Tx: tx}
 	return item
 }
@@ -186,7 +186,7 @@ func (q *TxContainer) noSort() bool {
 // Returns false if container capacity has been reached.
 // It computes the fee rate and sorts the transactions
 // after addition.
-func (q *TxContainer) add(tx msgs.BaseTx) error {
+func (q *TxContainer) add(tx types.BaseTx) error {
 
 	if q.Full() {
 		return ErrContainerFull
@@ -249,7 +249,7 @@ add:
 }
 
 // Has checks whether a transaction is in the container
-func (q *TxContainer) Has(tx msgs.BaseTx) bool {
+func (q *TxContainer) Has(tx types.BaseTx) bool {
 	q.gmx.RLock()
 	defer q.gmx.RUnlock()
 	return q.hashIndex[tx.GetHash().HexStr()] != nil
@@ -264,7 +264,7 @@ func (q *TxContainer) HasByHash(hash string) bool {
 
 // First returns a single transaction at head.
 // Returns nil if container is empty
-func (q *TxContainer) First() msgs.BaseTx {
+func (q *TxContainer) First() types.BaseTx {
 
 	if q.Size() <= 0 {
 		return nil
@@ -285,7 +285,7 @@ func (q *TxContainer) First() msgs.BaseTx {
 
 // Last returns a single transaction at head.
 // Returns nil if container is empty
-func (q *TxContainer) Last() msgs.BaseTx {
+func (q *TxContainer) Last() types.BaseTx {
 
 	if q.Size() <= 0 {
 		return nil
@@ -335,7 +335,7 @@ func (q *TxContainer) Sort() {
 // each transaction. The iteratee is invoked the transaction as the
 // only argument. It immediately stops and returns the last retrieved
 // transaction when the iteratee returns true.
-func (q *TxContainer) Find(iteratee func(msgs.BaseTx) bool) msgs.BaseTx {
+func (q *TxContainer) Find(iteratee func(types.BaseTx) bool) types.BaseTx {
 	q.gmx.Lock()
 	defer q.gmx.Unlock()
 	for _, item := range q.container {
@@ -348,9 +348,9 @@ func (q *TxContainer) Find(iteratee func(msgs.BaseTx) bool) msgs.BaseTx {
 
 // remove removes transactions.
 // Note: Not thread-safe
-func (q *TxContainer) remove(txs ...msgs.BaseTx) {
+func (q *TxContainer) remove(txs ...types.BaseTx) {
 	finalTxs := funk.Filter(q.container, func(o *containerItem) bool {
-		if funk.Find(txs, func(tx msgs.BaseTx) bool {
+		if funk.Find(txs, func(tx types.BaseTx) bool {
 			return o.Tx.GetHash().Equal(tx.GetHash())
 		}) != nil {
 			delete(q.hashIndex, o.Tx.GetHash().HexStr())
@@ -387,14 +387,14 @@ func (q *TxContainer) removeByHash(txsHash ...util.Bytes32) {
 }
 
 // Remove removes a transaction
-func (q *TxContainer) Remove(txs ...msgs.BaseTx) {
+func (q *TxContainer) Remove(txs ...types.BaseTx) {
 	q.gmx.Lock()
 	defer q.gmx.Unlock()
 	q.remove(txs...)
 }
 
 // GetByHash get a transaction by its hash from the pool
-func (q *TxContainer) GetByHash(hash string) msgs.BaseTx {
+func (q *TxContainer) GetByHash(hash string) types.BaseTx {
 	for _, item := range q.container {
 		if hash == item.Tx.GetHash().HexStr() {
 			return item.Tx

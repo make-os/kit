@@ -2,20 +2,20 @@ package repo
 
 import (
 	"gitlab.com/makeos/mosdef/mempool"
-	"gitlab.com/makeos/mosdef/repo/types/core"
-	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 )
 
 func rmPushNoteFromPushPool(pushPool core.PushPool, evtArgs []interface{}) {
 	if err := checkEvtArgs(evtArgs); err != nil {
 		return
 	}
-	tx, ok := evtArgs[1].(msgs.BaseTx)
+	tx, ok := evtArgs[1].(types.BaseTx)
 	if !ok {
 		panic("expected types.BaseTx")
 	}
-	if tx.Is(msgs.TxTypePush) {
-		pushPool.Remove(tx.(*msgs.TxPush).PushNote)
+	if tx.Is(core.TxTypePush) {
+		pushPool.Remove(tx.(*core.TxPush).PushNote)
 	}
 }
 

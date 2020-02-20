@@ -1,4 +1,4 @@
-package types
+package state
 
 import (
 	"gitlab.com/makeos/mosdef/util"

@@ -2,15 +2,15 @@ package logic
 
 import (
 	"fmt"
-	types2 "gitlab.com/makeos/mosdef/logic/types"
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"math"
 
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // getProposalOutcome returns the current outcome of a proposal
@@ -98,7 +98,7 @@ func getProposalOutcome(
 
 // determineProposalOutcome determines the outcome of the proposal votes
 func determineProposalOutcome(
-	keepers types2.Keepers,
+	keepers core.Keepers,
 	proposal state.Proposal,
 	repo *state.Repository,
 	chainHeight uint64) state.ProposalOutcome {
@@ -106,7 +106,7 @@ func determineProposalOutcome(
 }
 
 // refundProposalFees refunds all fees back to their senders
-func refundProposalFees(keepers types2.Keepers, proposal state.Proposal) error {
+func refundProposalFees(keepers core.Keepers, proposal state.Proposal) error {
 	for senderAddr, fee := range proposal.GetFees() {
 		sender := util.String(senderAddr)
 		acct := keepers.AccountKeeper().GetAccount(sender)
@@ -120,7 +120,7 @@ func refundProposalFees(keepers types2.Keepers, proposal state.Proposal) error {
 // proposal fee refund or distribution
 func maybeProcessProposalFee(
 	outcome state.ProposalOutcome,
-	keepers types2.Keepers,
+	keepers core.Keepers,
 	proposal state.Proposal,
 	repo *state.Repository) error {
 
@@ -210,7 +210,7 @@ dist: // Distribute to repo and helm accounts
 
 // maybeApplyProposal attempts to apply the action of a proposal
 func maybeApplyProposal(
-	keepers types2.Keepers,
+	keepers core.Keepers,
 	proposal state.Proposal,
 	repo *state.Repository,
 	chainHeight uint64) (bool, error) {
@@ -285,7 +285,7 @@ apply:
 // maybeApplyEndedProposals finds and applies proposals that will
 // end at the given height.
 func maybeApplyEndedProposals(
-	keepers types2.Keepers,
+	keepers core.Keepers,
 	nextChainHeight uint64) error {
 
 	repoKeeper := keepers.RepoKeeper()

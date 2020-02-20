@@ -3,7 +3,7 @@ package dht
 import (
 	"context"
 	"fmt"
-	types2 "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/dht/types"
 	"io/ioutil"
 	"net"
 	"strings"
@@ -22,10 +22,10 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	dhtopts "github.com/libp2p/go-libp2p-kad-dht/opts"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/logger"
 	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // Errors
@@ -33,18 +33,18 @@ var (
 	ErrObjNotFound = fmt.Errorf("object not found")
 )
 
-// DHT provides distributed hash table functionalities
+// DHTNode provides distributed hash table functionalities
 // specifically required for storing and
 type DHT struct {
 	cfg           *config.AppConfig
 	host          host.Host
 	dht           *dht.IpfsDHT
 	log           logger.Logger
-	objectFinders map[string]types2.ObjectFinder
+	objectFinders map[string]types.ObjectFinder
 	ticker        *time.Ticker
 }
 
-// New creates a new DHT service
+// New creates a new DHTNode service
 func New(
 	ctx context.Context,
 	cfg *config.AppConfig,
@@ -77,14 +77,14 @@ func New(
 
 	log := cfg.G().Log.Module("dht")
 	fullAddr := fmt.Sprintf("%s/p2p/%s", h.Addrs()[0].String(), h.ID().Pretty())
-	log.Info("DHT service has started", "Address", fullAddr)
+	log.Info("DHTNode service has started", "Address", fullAddr)
 
 	dht := &DHT{
 		host:          h,
 		dht:           ipfsDht,
 		cfg:           cfg,
 		log:           log,
-		objectFinders: make(map[string]types2.ObjectFinder),
+		objectFinders: make(map[string]types.ObjectFinder),
 	}
 
 	h.SetStreamHandler("/fetch/1", dht.handleFetch)
@@ -143,13 +143,13 @@ func (dht *DHT) join() error {
 	return nil
 }
 
-// Start starts the DHT
+// Start starts the DHTNode
 func (dht *DHT) Start() error {
 	go dht.attemptToJoinPeers()
 	return nil
 }
 
-// attemptToJoinPeers periodically attempts to connect the DHT to a peer
+// attemptToJoinPeers periodically attempts to connect the DHTNode to a peer
 // if no connection has been established.
 func (dht *DHT) attemptToJoinPeers() {
 	dht.ticker = time.NewTicker(5 * time.Second)
@@ -161,7 +161,7 @@ func (dht *DHT) attemptToJoinPeers() {
 }
 
 // RegisterObjFinder registers a finder to handle module-targetted find operations
-func (dht *DHT) RegisterObjFinder(module string, finder types2.ObjectFinder) {
+func (dht *DHT) RegisterObjFinder(module string, finder types.ObjectFinder) {
 	dht.objectFinders[module] = finder
 }
 
@@ -197,7 +197,7 @@ func (dht *DHT) GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo, 
 
 	// For providers whose address are not included, find their address(es) from the
 	// peer store and attach it to them.
-	// Note: We are doing this here because the DHT logic does not add them when
+	// Note: We are doing this here because the DHTNode logic does not add them when
 	// it should have. (remove once fixed in go-libp2p-kad-dht)
 	for i, prov := range peers {
 		if len(prov.Addrs) == 0 {
@@ -233,7 +233,7 @@ func (dht *DHT) Close() error {
 // fetchValue requests sends a query to a peer
 func (dht *DHT) fetchValue(
 	ctx context.Context,
-	query *types2.DHTObjectQuery,
+	query *types.DHTObjectQuery,
 	peer peer.AddrInfo) ([]byte, error) {
 
 	if len(peer.Addrs) == 0 {
@@ -267,7 +267,7 @@ func (dht *DHT) fetchValue(
 // GetObject returns an object from a provider
 func (dht *DHT) GetObject(
 	ctx context.Context,
-	query *types2.DHTObjectQuery) (obj []byte, err error) {
+	query *types.DHTObjectQuery) (obj []byte, err error) {
 
 	addrs, err := dht.GetProviders(ctx, query.ObjectKey)
 	if err != nil {
@@ -316,7 +316,7 @@ func (dht *DHT) handleFetch(s network.Stream) {
 		return
 	}
 
-	var query types2.DHTObjectQuery
+	var query types.DHTObjectQuery
 	if err := util.BytesToObject(bz, &query); err != nil {
 		dht.log.Error("failed to decode query", "Err", err.Error())
 		return

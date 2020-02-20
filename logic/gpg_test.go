@@ -2,19 +2,19 @@ package logic
 
 import (
 	"crypto/rsa"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/state"
 	"io/ioutil"
 	"os"
 
 	"github.com/golang/mock/gomock"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 func getTestFile(filename string) []byte {
@@ -61,9 +61,9 @@ var _ = Describe("GPG", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 
 		BeforeEach(func() {
-			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 				Balance:             util.String("10"),
-				Stakes:              types.BareAccountStakes(),
+				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
 		})

@@ -1,9 +1,8 @@
-package core
+package state
 
 import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -138,22 +137,22 @@ const (
 
 // RepoProposal represents a repository proposal
 type RepoProposal struct {
-	ID                    string                      `json:"-" mapstructure:"-" msgpack:"-"`
-	Action                ProposalAction              `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
-	ActionData            ProposalActionData          `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
-	Creator               string                      `json:"creator" mapstructure:"creator" msgpack:"creator"`                                           // The creator is the address of the proposal creator.
-	Height                uint64                      `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
-	Config                *state.RepoConfigGovernance `json:"config" mapstructure:"config" msgpack:"-"`                                                   // The repo config to used to evaluate the proposal
-	EndAt                 uint64                      `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                                                 // Used to close the proposal after the given height.
-	FeeDepositEndAt       uint64                      `json:"feeDepEndAt" mapstructure:"feeDepEndAt" msgpack:"feeDepEndAt"`                               // Used to close the proposal after the given height.
-	ProposeeMaxJoinHeight uint64                      `json:"proposeeMaxJoinHeight" mapstructure:"proposeeMaxJoinHeight" msgpack:"proposeeMaxJoinHeight"` // Used to allow proposee that are active before a specific height.
-	Yes                   float64                     `json:"yes" mapstructure:"yes" msgpack:"yes"`                                                       // Count of "Yes" votes
-	No                    float64                     `json:"no" mapstructure:"no" msgpack:"no"`                                                          // Count of "No" votes
-	NoWithVeto            float64                     `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes from owners/stakeholders veto power
-	NoWithVetoByOwners    float64                     `json:"noWithVetoByOwners" mapstructure:"noWithVetoByOwners" msgpack:"noWithVetoByOwners"`          // Count of "No" votes specifically from owners veto power
-	Abstain               float64                     `json:"abstain" mapstructure:"abstain" msgpack:"abstain"`                                           // Count of explicit "abstain" votes
-	Fees                  ProposalFees                `json:"fees" mapstructure:"fees" msgpack:"fees"`                                                    // Count of explicit "abstain" votes
-	Outcome               ProposalOutcome             `json:"outcome" mapstructure:"outcome" msgpack:"outcome"`                                           // The outcome of the proposal vote.
+	ID                    string                `json:"-" mapstructure:"-" msgpack:"-"`
+	Action                ProposalAction        `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
+	ActionData            ProposalActionData    `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
+	Creator               string                `json:"creator" mapstructure:"creator" msgpack:"creator"`                                           // The creator is the address of the proposal creator.
+	Height                uint64                `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
+	Config                *RepoConfigGovernance `json:"config" mapstructure:"config" msgpack:"-"`                                                   // The repo config to used to evaluate the proposal
+	EndAt                 uint64                `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                                                 // Used to close the proposal after the given height.
+	FeeDepositEndAt       uint64                `json:"feeDepEndAt" mapstructure:"feeDepEndAt" msgpack:"feeDepEndAt"`                               // Used to close the proposal after the given height.
+	ProposeeMaxJoinHeight uint64                `json:"proposeeMaxJoinHeight" mapstructure:"proposeeMaxJoinHeight" msgpack:"proposeeMaxJoinHeight"` // Used to allow proposee that are active before a specific height.
+	Yes                   float64               `json:"yes" mapstructure:"yes" msgpack:"yes"`                                                       // Count of "Yes" votes
+	No                    float64               `json:"no" mapstructure:"no" msgpack:"no"`                                                          // Count of "No" votes
+	NoWithVeto            float64               `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes from owners/stakeholders veto power
+	NoWithVetoByOwners    float64               `json:"noWithVetoByOwners" mapstructure:"noWithVetoByOwners" msgpack:"noWithVetoByOwners"`          // Count of "No" votes specifically from owners veto power
+	Abstain               float64               `json:"abstain" mapstructure:"abstain" msgpack:"abstain"`                                           // Count of explicit "abstain" votes
+	Fees                  ProposalFees          `json:"fees" mapstructure:"fees" msgpack:"fees"`                                                    // Count of explicit "abstain" votes
+	Outcome               ProposalOutcome       `json:"outcome" mapstructure:"outcome" msgpack:"outcome"`                                           // The outcome of the proposal vote.
 }
 
 // ProposalActionData represents action data of a proposal
@@ -176,7 +175,7 @@ func (d *ProposalActionData) Get(actionName string) map[string]interface{} {
 // BareRepoProposal returns RepoProposal object with empty values
 func BareRepoProposal() *RepoProposal {
 	return &RepoProposal{
-		Config:     state.BareRepoConfig().Governace,
+		Config:     BareRepoConfig().Governace,
 		ActionData: make(map[string]interface{}),
 		Fees:       make(map[string]string),
 	}

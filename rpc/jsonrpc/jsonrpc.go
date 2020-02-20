@@ -7,8 +7,8 @@ import (
 	"net/http"
 
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util/logger"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/rpc/v2"

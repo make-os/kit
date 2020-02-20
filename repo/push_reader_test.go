@@ -2,7 +2,7 @@ package repo
 
 import (
 	"bytes"
-	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/types/core"
 	"io/ioutil"
 	"os"
 	"path/filepath"

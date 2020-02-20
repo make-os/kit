@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"gitlab.com/makeos/mosdef/types/mocks"
+	"gitlab.com/makeos/mosdef/mocks"
 	"os"
 	"path/filepath"
 
@@ -19,7 +19,7 @@ var _ = Describe("Repo", func() {
 	var repoMgr *Manager
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
-	var mockDHT *mocks.MockDHT
+	var mockDHT *mocks.MockDHTNode
 	var mockMempool *mocks.MockMempool
 	var mockBlockGetter *mocks.MockBlockGetter
 
@@ -29,7 +29,7 @@ var _ = Describe("Repo", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = testutil.MockLogic(ctrl)
-		mockDHT = mocks.NewMockDHT(ctrl)
+		mockDHT = mocks.NewMockDHTNode(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		repoMgr = NewManager(cfg, ":45000", mockLogic.Logic, mockDHT, mockMempool, mockBlockGetter)

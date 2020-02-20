@@ -3,27 +3,27 @@ package modules
 import (
 	"context"
 	"fmt"
-	types3 "gitlab.com/makeos/mosdef/dht/types"
-	"gitlab.com/makeos/mosdef/repo/types/core"
-
 	"gitlab.com/makeos/mosdef/config"
+	types2 "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"gitlab.com/makeos/mosdef/util"
 
 	prompt "github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
+	moduletypes "gitlab.com/makeos/mosdef/modules/types"
 )
 
 // DHTModule provides gpg key management functionality
 type DHTModule struct {
 	cfg *config.AppConfig
 	vm  *otto.Otto
-	dht types3.DHT
+	dht types2.DHTNode
 }
 
 // NewDHTModule creates an instance of DHTModule
-func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht types3.DHT) *DHTModule {
+func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht types2.DHTNode) *DHTModule {
 	return &DHTModule{
 		cfg: cfg,
 		vm:  vm,
@@ -31,43 +31,43 @@ func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht types3.DHT) *DHTModu
 	}
 }
 
-func (m *DHTModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *DHTModule) namespacedFuncs() []*moduletypes.ModulesAggregatorFunc {
+	return []*moduletypes.ModulesAggregatorFunc{
+		&moduletypes.ModulesAggregatorFunc{
 			Name:        "store",
 			Value:       m.store,
 			Description: "Add a value that correspond to a given key",
 		},
-		&types.ModulesAggregatorFunc{
+		&moduletypes.ModulesAggregatorFunc{
 			Name:        "lookup",
 			Value:       m.lookup,
 			Description: "Find a record that correspond to a given key",
 		},
-		&types.ModulesAggregatorFunc{
+		&moduletypes.ModulesAggregatorFunc{
 			Name:        "announce",
 			Value:       m.announce,
 			Description: "Inform the network that this node can provide value for a key",
 		},
-		&types.ModulesAggregatorFunc{
+		&moduletypes.ModulesAggregatorFunc{
 			Name:        "getProviders",
 			Value:       m.getProviders,
 			Description: "Get providers for a given key",
 		},
-		&types.ModulesAggregatorFunc{
+		&moduletypes.ModulesAggregatorFunc{
 			Name:        "getRepoObject",
 			Value:       m.getRepoObject,
 			Description: "Find and return a repo object",
 		},
-		&types.ModulesAggregatorFunc{
+		&moduletypes.ModulesAggregatorFunc{
 			Name:        "getPeers",
 			Value:       m.getPeers,
-			Description: "Returns a list of all DHT peers",
+			Description: "Returns a list of all DHTNode peers",
 		},
 	}
 }
 
-func (m *DHTModule) globals() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{}
+func (m *DHTModule) globals() []*moduletypes.ModulesAggregatorFunc {
+	return []*moduletypes.ModulesAggregatorFunc{}
 }
 
 // Configure configures the JS context and return
@@ -140,7 +140,7 @@ func (m *DHTModule) getProviders(key string) (res []map[string]interface{}) {
 
 // getRepoObject finds a repository object from a provider
 func (m *DHTModule) getRepoObject(objURI string) []byte {
-	bz, err := m.dht.GetObject(context.Background(), &types3.DHTObjectQuery{
+	bz, err := m.dht.GetObject(context.Background(), &types2.DHTObjectQuery{
 		Module:    core.RepoObjectModule,
 		ObjectKey: []byte(objURI),
 	})
@@ -151,7 +151,7 @@ func (m *DHTModule) getRepoObject(objURI string) []byte {
 	return bz
 }
 
-// getPeers returns a list of all DHT peers
+// getPeers returns a list of all DHTNode peers
 func (m *DHTModule) getPeers() []string {
 	peers := m.dht.Peers()
 	if len(peers) == 0 {

@@ -3,10 +3,10 @@ package modules_test
 import (
 	"math/big"
 
-	"gitlab.com/makeos/mosdef/modules"
-	"gitlab.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gitlab.com/makeos/mosdef/modules"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Common", func() {
@@ -92,7 +92,7 @@ var _ = Describe("Common", func() {
 
 			BeforeEach(func() {
 				result := modules.EncodeForJS(t1)
-				Expect(result.(map[string]interface{})["Age"]).To(Equal("30"))
+				Expect(result.(map[string]interface{})["Age"]).To(Equal(30))
 			})
 
 			It("should not modify field", func() {

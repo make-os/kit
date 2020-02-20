@@ -1,21 +1,21 @@
 package logic
 
 import (
-	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"os"
 
 	"github.com/golang/mock/gomock"
 
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types/mocks"
+	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/util"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("ProposalHandler", func() {
@@ -33,7 +33,7 @@ var _ = Describe("ProposalHandler", func() {
 		Expect(err).To(BeNil())
 		appDB, stateTreeDB = testutil.GetDB(cfg)
 		logic = New(appDB, stateTreeDB, cfg)
-		err := logic.SysKeeper().SaveBlockInfo(&types2.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 

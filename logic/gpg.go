@@ -2,9 +2,9 @@ package logic
 
 import (
 	"crypto/rsa"
+	"gitlab.com/makeos/mosdef/types/state"
 
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -29,7 +29,7 @@ func (t *Transaction) execAddGPGKey(
 	acctKeeper := t.logic.AccountKeeper()
 
 	// Create a new GPGPubKey
-	gpgPubKey := types.BareGPGPubKey()
+	gpgPubKey := state.BareGPGPubKey()
 	gpgPubKey.PubKey = gpgPublicKey
 	gpgPubKey.Address = spk.Addr()
 

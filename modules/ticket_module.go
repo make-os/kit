@@ -2,33 +2,33 @@ package modules
 
 import (
 	"fmt"
-	types2 "gitlab.com/makeos/mosdef/services/types"
-	types3 "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/msgs"
-
 	"github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	"github.com/shopspring/decimal"
+	"gitlab.com/makeos/mosdef/crypto"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+	servtypes "gitlab.com/makeos/mosdef/services/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // TicketModule provides access to various utility functions
 type TicketModule struct {
 	vm        *otto.Otto
-	service   types2.Service
-	ticketmgr types3.TicketManager
+	service   servtypes.Service
+	ticketmgr tickettypes.TicketManager
 	storerObj map[string]interface{}
 }
 
 // NewTicketModule creates an instance of TicketModule
 func NewTicketModule(
 	vm *otto.Otto,
-	service types2.Service,
-	ticketmgr types3.TicketManager) *TicketModule {
+	service servtypes.Service,
+	ticketmgr tickettypes.TicketManager) *TicketModule {
 	return &TicketModule{
 		vm:        vm,
 		service:   service,
@@ -37,44 +37,44 @@ func NewTicketModule(
 	}
 }
 
-func (m *TicketModule) globals() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{}
+func (m *TicketModule) globals() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{}
 }
 
 // funcs exposed by the module
-func (m *TicketModule) funcs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *TicketModule) funcs() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "buy",
 			Value:       m.buy,
 			Description: "Buy a validator ticket",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "listValidatorTicketsOfProposer",
 			Value:       m.listValidatorTicketsOfProposer,
 			Description: "List validator tickets where given public key is the proposer",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "listStorerTicketsOfProposer",
 			Value:       m.listStorerTicketsOfProposer,
 			Description: "List storer tickets where given public key is the proposer",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "listRecent",
 			Value:       m.listRecent,
 			Description: "List most recent tickets up to the given limit",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "stats",
 			Value:       m.ticketStats,
 			Description: "Get ticket stats of network and a public key",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "listTopValidators",
 			Value:       m.listTopValidators,
 			Description: "List tickets of top network validators up to the given limit",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "listTopStorers",
 			Value:       m.listTopStorers,
 			Description: "List tickets of top network storers up to the given limit",
@@ -83,14 +83,14 @@ func (m *TicketModule) funcs() []*types.ModulesAggregatorFunc {
 }
 
 // storerFuncs are `storer` funcs exposed by the module
-func (m *TicketModule) storerFuncs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *TicketModule) storerFuncs() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "buy",
 			Value:       m.storerBuy,
 			Description: "Buy an storer ticket",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "unbond",
 			Value:       m.unbondStorerTicket,
 			Description: "Unbond the stake associated with a storer ticket",
@@ -146,7 +146,7 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareTxTicketPurchase(msgs.TxTypeValidatorTicket)
+	var tx = core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -181,7 +181,7 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 func (m *TicketModule) storerBuy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareTxTicketPurchase(msgs.TxTypeStorerTicket)
+	var tx = core.NewBareTxTicketPurchase(core.TxTypeStorerTicket)
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -214,7 +214,7 @@ func (m *TicketModule) listValidatorTicketsOfProposer(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) interface{} {
 
-	var qopts types3.QueryOptions
+	var qopts tickettypes.QueryOptions
 
 	// Prepare query options
 	if len(queryOpts) > 0 {
@@ -239,7 +239,7 @@ func (m *TicketModule) listValidatorTicketsOfProposer(
 		panic(errors.Wrap(err, "failed to decode proposer public key"))
 	}
 
-	res, err := m.ticketmgr.GetByProposer(msgs.TxTypeValidatorTicket, pk.MustBytes32(), qopts)
+	res, err := m.ticketmgr.GetByProposer(core.TxTypeValidatorTicket, pk.MustBytes32(), qopts)
 	if err != nil {
 		panic(err)
 	}
@@ -253,7 +253,7 @@ func (m *TicketModule) listStorerTicketsOfProposer(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) interface{} {
 
-	var qopts types3.QueryOptions
+	var qopts tickettypes.QueryOptions
 	if len(queryOpts) > 0 {
 		mapstructure.Decode(queryOpts[0], &qopts)
 	}
@@ -268,7 +268,7 @@ func (m *TicketModule) listStorerTicketsOfProposer(
 		panic(errors.Wrap(err, "failed to decode proposer public key"))
 	}
 
-	res, err := m.ticketmgr.GetByProposer(msgs.TxTypeStorerTicket, pk.MustBytes32(), qopts)
+	res, err := m.ticketmgr.GetByProposer(core.TxTypeStorerTicket, pk.MustBytes32(), qopts)
 	if err != nil {
 		panic(err)
 	}
@@ -346,7 +346,7 @@ func (m *TicketModule) listRecent(limit ...int) interface{} {
 	if len(limit) > 0 {
 		n = limit[0]
 	}
-	res := m.ticketmgr.Query(func(t *types3.Ticket) bool { return true }, types3.QueryOptions{
+	res := m.ticketmgr.Query(func(t *tickettypes.Ticket) bool { return true }, tickettypes.QueryOptions{
 		Limit:        n,
 		SortByHeight: -1,
 	})
@@ -368,7 +368,7 @@ func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareTxTicketUnbond(msgs.TxTypeUnbondStorerTicket)
+	var tx = core.NewBareTxTicketUnbond(core.TxTypeUnbondStorerTicket)
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}

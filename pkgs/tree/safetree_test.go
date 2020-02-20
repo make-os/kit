@@ -3,8 +3,8 @@ package tree_test
 import (
 	"os"
 
+	. "gitlab.com/makeos/mosdef/pkgs/tree"
 	"gitlab.com/makeos/mosdef/storage"
-	. "gitlab.com/makeos/mosdef/storage/tree"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

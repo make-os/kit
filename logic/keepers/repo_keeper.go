@@ -2,13 +2,13 @@ package keepers
 
 import (
 	"fmt"
-	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"strconv"
 
-	"gitlab.com/makeos/mosdef/storage"
-	"gitlab.com/makeos/mosdef/storage/tree"
 	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/pkgs/tree"
+	"gitlab.com/makeos/mosdef/storage"
 )
 
 // RepoKeeper manages repository state.
@@ -169,12 +169,12 @@ func (a *RepoKeeper) IndexProposalEnd(name, propID string, endHeight uint64) err
 //
 // ARGS:
 // height: The chain height when the proposal will stop accepting votes.
-func (a *RepoKeeper) GetProposalsEndingAt(height uint64) []*types2.EndingProposals {
+func (a *RepoKeeper) GetProposalsEndingAt(height uint64) []*core.EndingProposals {
 	key := MakeQueryKeyRepoProposalAtEndHeight(height)
-	var res = []*types2.EndingProposals{}
+	var res = []*core.EndingProposals{}
 	a.db.Iterate(key, true, func(rec *storage.Record) bool {
 		prefixes := storage.SplitPrefix(rec.GetKey())
-		res = append(res, &types2.EndingProposals{
+		res = append(res, &core.EndingProposals{
 			RepoName:   string(prefixes[2]),
 			ProposalID: string(prefixes[3]),
 			EndHeight:  height,

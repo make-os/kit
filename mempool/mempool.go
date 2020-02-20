@@ -2,7 +2,7 @@ package mempool
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types/core"
 	"sync"
 
 	"gitlab.com/makeos/mosdef/params"
@@ -11,14 +11,14 @@ import (
 
 	t "gitlab.com/makeos/mosdef/types"
 
-	"gitlab.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
 
-	"gitlab.com/makeos/mosdef/mempool/pool"
 	abci "github.com/tendermint/tendermint/abci/types"
 	auto "github.com/tendermint/tendermint/libs/autofile"
 	"github.com/tendermint/tendermint/mempool"
 	"github.com/tendermint/tendermint/proxy"
 	"github.com/tendermint/tendermint/types"
+	"gitlab.com/makeos/mosdef/mempool/pool"
 )
 
 // Mempool related events
@@ -76,7 +76,7 @@ func (mp *Mempool) CheckTx(tx types.Tx, callback func(*abci.Response)) error {
 }
 
 // Add attempts to add a transaction to the pool
-func (mp *Mempool) Add(tx msgs.BaseTx) error {
+func (mp *Mempool) Add(tx t.BaseTx) error {
 	var errCh = make(chan error, 1)
 	mp.CheckTx(tx.Bytes(), func(res *abci.Response) {
 		if chkRes := res.GetCheckTx(); chkRes.Code != 0 {
@@ -158,7 +158,7 @@ func (mp *Mempool) addTx(bs []byte, res *abci.Response) {
 	switch r := res.Value.(type) {
 	case *abci.Response_CheckTx:
 
-		tx, _ := msgs.DecodeTx(bs)
+		tx, _ := core.DecodeTx(bs)
 
 		// At this point, the transaction failed the ABCI check
 		if r.CheckTx.Code != abci.CodeTypeOK {
@@ -207,7 +207,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 	var totalBytes int64
 	txs := make([]types.Tx, 0, mp.pool.Size())
 	numValTicketTxReaped := 0
-	ignoredTx := []msgs.BaseTx{}
+	ignoredTx := []t.BaseTx{}
 
 	// Collect transactions from the top
 	// of the pool up to the given maxBytes.
@@ -222,7 +222,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 		// if tx is a validator ticket and we already reaped n
 		// validator tickets, we cache and ignore it. We will
 		// flush them back to the pool after reaping.
-		if memTx.GetType() == msgs.TxTypeValidatorTicket &&
+		if memTx.GetType() == core.TxTypeValidatorTicket &&
 			numValTicketTxReaped == params.MaxValTicketsPerBlock {
 			ignoredTx = append(ignoredTx, memTx)
 			continue
@@ -239,7 +239,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 		txs = append(txs, txBs)
 
 		// Increment num validator tickets seen
-		if memTx.GetType() == msgs.TxTypeValidatorTicket {
+		if memTx.GetType() == core.TxTypeValidatorTicket {
 			numValTicketTxReaped++
 		}
 	}
@@ -282,7 +282,7 @@ func (mp *Mempool) Update(blockHeight int64, txs types.Txs,
 
 	// Remove the transactions
 	for i, txBs := range txs {
-		tx, _ := msgs.DecodeTx(txBs)
+		tx, _ := core.DecodeTx(txBs)
 		mp.pool.Remove(tx)
 		mp.cfg.G().Bus.Emit(EvtMempoolTxRemoved, nil, tx)
 

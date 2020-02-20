@@ -3,34 +3,34 @@ package modules
 import (
 	"encoding/hex"
 	"fmt"
-	types3 "gitlab.com/makeos/mosdef/logic/types"
-	types2 "gitlab.com/makeos/mosdef/services/types"
-	"gitlab.com/makeos/mosdef/types/msgs"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+	servtypes "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"strings"
 
 	"github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
 	vm      *otto.Otto
-	keepers types3.Keepers
-	service types2.Service
+	keepers core.Keepers
+	service servtypes.Service
 }
 
 // NewTxModule creates an instance of TxModule
-func NewTxModule(vm *otto.Otto, service types2.Service, keepers types3.Keepers) *TxModule {
+func NewTxModule(vm *otto.Otto, service servtypes.Service, keepers core.Keepers) *TxModule {
 	return &TxModule{vm: vm, service: service, keepers: keepers}
 }
 
 // txCoinFuncs are functions accessible using the `tx.coin` namespace
-func (m *TxModule) txCoinFuncs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *TxModule) txCoinFuncs() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "send",
 			Value:       m.sendTx,
 			Description: "Send coins to another account",
@@ -39,14 +39,14 @@ func (m *TxModule) txCoinFuncs() []*types.ModulesAggregatorFunc {
 }
 
 // funcs are functions accessible using the `tx` namespace
-func (m *TxModule) funcs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *TxModule) funcs() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "get",
 			Value:       m.Get,
 			Description: "Get a transactions by its hash",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "sendPayload",
 			Value:       m.SendPayload,
 			Description: "Send a signed transaction payload to the network",
@@ -54,8 +54,8 @@ func (m *TxModule) funcs() []*types.ModulesAggregatorFunc {
 	}
 }
 
-func (m *TxModule) globals() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{}
+func (m *TxModule) globals() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{}
 }
 
 // Configure configures the JS context and return
@@ -111,7 +111,7 @@ func (m *TxModule) Configure() []prompt.Suggest {
 func (m *TxModule) sendTx(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = msgs.NewBareTxCoinTransfer()
+	var tx = core.NewBareTxCoinTransfer()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -154,7 +154,7 @@ func (m *TxModule) Get(hash string) interface{} {
 
 // sendPayload sends an already signed transaction object to the network
 func (m *TxModule) SendPayload(txData map[string]interface{}) interface{} {
-	tx, err := msgs.DecodeTxFromMap(txData)
+	tx, err := core.DecodeTxFromMap(txData)
 	if err != nil {
 		panic(err)
 	}

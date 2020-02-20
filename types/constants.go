@@ -17,3 +17,8 @@ const (
 	NamespaceTicket    = "ticket"
 	NamespaceStorer    = "storer"
 )
+
+// ABCI related events
+const (
+	EvtABCICommittedTx = "abci_delivered_valid_tx"
+)

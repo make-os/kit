@@ -1,18 +1,18 @@
 package api
 
 import (
-	types2 "gitlab.com/makeos/mosdef/logic/types"
 	"gitlab.com/makeos/mosdef/rpc/jsonrpc"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 )
 
 // GPGAPI provides RPC methods for various gpg key functionalities.
 type GPGAPI struct {
-	logic types2.Logic
+	logic core.Logic
 }
 
 // NewGPGAPI creates an instance of GPGAPI
-func NewGPGAPI(logic types2.Logic) *GPGAPI {
+func NewGPGAPI(logic core.Logic) *GPGAPI {
 	return &GPGAPI{logic: logic}
 }
 

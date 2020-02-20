@@ -1,7 +1,7 @@
 package logic
 
 import (
-	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 
 	"gitlab.com/makeos/mosdef/testutil"
@@ -53,7 +53,7 @@ var _ = Describe("System", func() {
 		When("initial ticket price = 10, blocks per price window=100, percent increase=20, cur. height = 2", func() {
 			BeforeEach(func() {
 				params.MinValidatorsTicketPrice = 10
-				err := logic.SysKeeper().SaveBlockInfo(&types2.BlockInfo{AppHash: []byte("stuff"), Height: 2})
+				err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{AppHash: []byte("stuff"), Height: 2})
 				Expect(err).To(BeNil())
 			})
 

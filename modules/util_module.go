@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+	"gitlab.com/makeos/mosdef/types"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -9,7 +10,7 @@ import (
 	"github.com/c-bata/go-prompt"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/types"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/util"
 	prettyjson "github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
@@ -25,39 +26,39 @@ func NewUtilModule(vm *otto.Otto) *UtilModule {
 	return &UtilModule{vm: vm}
 }
 
-func (m *UtilModule) globals() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *UtilModule) globals() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "pp",
 			Value:       m.prettyPrint,
 			Description: "Pretty print an object",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "eval",
 			Value:       m.eval,
 			Description: "Execute javascript code represented as a string",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "evalFile",
 			Value:       m.evalFile,
 			Description: "Execute javascript code stored in a file",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "readFile",
 			Value:       m.readFile,
 			Description: "Read a file",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "readTextFile",
 			Value:       m.readTextFile,
 			Description: "Read a text file",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "treasuryAddress",
 			Value:       m.treasuryAddress(),
 			Description: "Get the treasury address",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "genKey",
 			Value:       m.genKey,
 			Description: "Generate an Ed25519 key",
@@ -66,39 +67,39 @@ func (m *UtilModule) globals() []*types.ModulesAggregatorFunc {
 }
 
 // funcs exposed by the module
-func (m *UtilModule) funcs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *UtilModule) funcs() []*modtypes.ModulesAggregatorFunc {
+	return []*modtypes.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "prettyPrint",
 			Value:       m.prettyPrint,
 			Description: "Pretty print an object",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "eval",
 			Value:       m.eval,
 			Description: "Execute javascript code represented as a string",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "evalFile",
 			Value:       m.evalFile,
 			Description: "Execute javascript code stored in a file",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "readFile",
 			Value:       m.readFile,
 			Description: "Read a file",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "readTextFile",
 			Value:       m.readTextFile,
 			Description: "Read a text file",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "treasuryAddress",
 			Value:       m.treasuryAddress(),
 			Description: "Get the treasury address",
 		},
-		&types.ModulesAggregatorFunc{
+		&modtypes.ModulesAggregatorFunc{
 			Name:        "genKey",
 			Value:       m.genKey,
 			Description: "Generate an Ed25519 key",

@@ -1,4 +1,4 @@
-package msgs
+package core
 
 import (
 	"fmt"
@@ -6,26 +6,25 @@ import (
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 // TxTicketPurchase implements BaseTx, it describes a transaction that purchases
 // a ticket from the signer or delegates to another address.
 type TxTicketPurchase struct {
-	*core.TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
-	*core.TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
-	*core.TxValue  `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Delegate       util.PublicKey `json:"delegate" msgpack:"delegate"`
-	BLSPubKey      []byte         `json:"blsPubKey" msgpack:"blsPubKey"`
+	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxValue  `json:",flatten" msgpack:"-" mapstructure:"-"`
+	Delegate  util.PublicKey `json:"delegate" msgpack:"delegate"`
+	BLSPubKey []byte         `json:"blsPubKey" msgpack:"blsPubKey"`
 }
 
 // NewBareTxTicketPurchase returns an instance of TxTicketPurchase with zero values
 func NewBareTxTicketPurchase(ticketType int) *TxTicketPurchase {
 	return &TxTicketPurchase{
-		TxType:    &core.TxType{Type: ticketType},
-		TxCommon:  core.NewBareTxCommon(),
-		TxValue:   &core.TxValue{Value: "0"},
+		TxType:    &TxType{Type: ticketType},
+		TxCommon:  NewBareTxCommon(),
+		TxValue:   &TxValue{Value: "0"},
 		Delegate:  util.EmptyPublicKey,
 		BLSPubKey: []byte{},
 	}
@@ -100,7 +99,7 @@ func (tx *TxTicketPurchase) GetSize() int64 {
 
 // Sign signs the transaction
 func (tx *TxTicketPurchase) Sign(privKey string) ([]byte, error) {
-	return core.SignTransaction(tx, privKey)
+	return SignTransaction(tx, privKey)
 }
 
 // ToMap returns a map equivalent of the transaction

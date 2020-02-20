@@ -1,11 +1,11 @@
 package keepers
 
 import (
-	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
-	"github.com/pkg/errors"
 )
 
 // ValidatorKeeper manages information about validators
@@ -19,7 +19,7 @@ func NewValidatorKeeper(db storage.Tx) *ValidatorKeeper {
 }
 
 // GetByHeight gets a list of validators that produced a block.
-func (v *ValidatorKeeper) getByHeight(height int64) (types2.BlockValidators, error) {
+func (v *ValidatorKeeper) getByHeight(height int64) (core.BlockValidators, error) {
 
 	// Get the height of the last block of the previous epoch
 	lastEpochEndBlockHeight := height - (height % int64(params.NumBlocksPerEpoch))
@@ -30,7 +30,7 @@ get:
 	}
 
 	// Find the validator set attached to the height.
-	res := make(map[util.Bytes32]*types2.Validator)
+	res := make(map[util.Bytes32]*core.Validator)
 	key := MakeBlockValidatorsKey(lastEpochEndBlockHeight)
 	rec, err := v.db.Get(key)
 	if err != nil {
@@ -58,14 +58,14 @@ get:
 
 // GetByHeight gets validators at the given height. If height is <= 0, the
 // validator set of the highest height is returned.
-func (v *ValidatorKeeper) GetByHeight(height int64) (types2.BlockValidators, error) {
+func (v *ValidatorKeeper) GetByHeight(height int64) (core.BlockValidators, error) {
 
 	if height > 0 {
 		return v.getByHeight(height)
 	}
 
 	var err error
-	res := make(map[util.Bytes32]*types2.Validator)
+	res := make(map[util.Bytes32]*core.Validator)
 	key := MakeQueryKeyBlockValidators()
 	v.db.Iterate(key, false, func(rec *storage.Record) bool {
 		err = rec.Scan(&res)
@@ -80,10 +80,10 @@ func (v *ValidatorKeeper) GetByHeight(height int64) (types2.BlockValidators, err
 }
 
 // Index adds a set of validators associated to the given height
-func (v *ValidatorKeeper) Index(height int64, validators []*types2.Validator) error {
+func (v *ValidatorKeeper) Index(height int64, validators []*core.Validator) error {
 
 	// Convert the slice of validators to a map structure
-	var data = make(map[util.Bytes32]*types2.Validator)
+	var data = make(map[util.Bytes32]*core.Validator)
 	for _, v := range validators {
 		data[v.PubKey] = v
 		v.PubKey = util.EmptyBytes32

@@ -1,22 +1,20 @@
 package logic
 
 import (
-	types3 "gitlab.com/makeos/mosdef/logic/types"
-	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"os"
 
 	"github.com/golang/mock/gomock"
 
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Push", func() {
@@ -44,7 +42,7 @@ var _ = Describe("Push", func() {
 	})
 
 	BeforeEach(func() {
-		err := logic.SysKeeper().SaveBlockInfo(&types3.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 
@@ -63,13 +61,13 @@ var _ = Describe("Push", func() {
 
 		When("reference has nonce = 1", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("10"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})
 
-				logic.GPGPubKeyKeeper().Update(pkID, &types.GPGPubKey{
+				logic.GPGPubKeyKeeper().Update(pkID, &state.GPGPubKey{
 					PubKey:  "pub_key",
 					Address: sender.Addr(),
 				})

@@ -2,17 +2,17 @@ package keepers
 
 import (
 	"fmt"
-	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 
 	storagemocks "gitlab.com/makeos/mosdef/storage/mocks"
 
 	"github.com/golang/mock/gomock"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("SystemKeeper", func() {
@@ -39,7 +39,7 @@ var _ = Describe("SystemKeeper", func() {
 	})
 
 	Describe(".SaveBlockInfo", func() {
-		var info = &types2.BlockInfo{AppHash: []byte("stuff"), Height: 1}
+		var info = &core.BlockInfo{AppHash: []byte("stuff"), Height: 1}
 
 		BeforeEach(func() {
 			err := sysKeeper.SaveBlockInfo(info)
@@ -49,7 +49,7 @@ var _ = Describe("SystemKeeper", func() {
 		It("should store last block info", func() {
 			rec, err := appDB.Get(MakeKeyBlockInfo(info.Height))
 			Expect(err).To(BeNil())
-			var actual types2.BlockInfo
+			var actual core.BlockInfo
 			err = rec.Scan(&actual)
 			Expect(err).To(BeNil())
 			Expect(info).To(BeEquivalentTo(&actual))
@@ -66,8 +66,8 @@ var _ = Describe("SystemKeeper", func() {
 		})
 
 		When("there are 2 blocks info stored", func() {
-			var info2 = &types2.BlockInfo{AppHash: []byte("stuff 2"), Height: 2}
-			var info1 = &types2.BlockInfo{AppHash: []byte("stuff 1"), Height: 1}
+			var info2 = &core.BlockInfo{AppHash: []byte("stuff 2"), Height: 2}
+			var info1 = &core.BlockInfo{AppHash: []byte("stuff 1"), Height: 1}
 
 			BeforeEach(func() {
 				err := sysKeeper.SaveBlockInfo(info1)
@@ -110,8 +110,8 @@ var _ = Describe("SystemKeeper", func() {
 		})
 
 		When("there are 2 block info stored", func() {
-			var info2 = &types2.BlockInfo{AppHash: []byte("stuff 2"), Height: 2}
-			var info1 = &types2.BlockInfo{AppHash: []byte("stuff 1"), Height: 1}
+			var info2 = &core.BlockInfo{AppHash: []byte("stuff 2"), Height: 2}
+			var info1 = &core.BlockInfo{AppHash: []byte("stuff 1"), Height: 1}
 			BeforeEach(func() {
 				err := sysKeeper.SaveBlockInfo(info2)
 				Expect(err).To(BeNil())

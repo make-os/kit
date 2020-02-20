@@ -2,9 +2,8 @@ package logic
 
 import (
 	"fmt"
-	types2 "gitlab.com/makeos/mosdef/logic/types"
-
 	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/types/core"
 )
 
 // ErrNoSeedFound means no secret was found
@@ -13,7 +12,7 @@ var ErrNoSeedFound = fmt.Errorf("no secret found")
 // System implements types.TxLogic.
 // Provides functionalities for executing transactions
 type System struct {
-	logic types2.Logic
+	logic core.Logic
 }
 
 // GetCurValidatorTicketPrice returns the ticket price.

@@ -1,8 +1,8 @@
 package logic
 
 import (
-	types2 "gitlab.com/makeos/mosdef/logic/types"
-	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 	"os"
 
 	"gitlab.com/makeos/mosdef/crypto"
@@ -11,15 +11,15 @@ import (
 
 	"gitlab.com/makeos/mosdef/types"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 type unknownTxType struct {
-	*msgs.TxCoinTransfer
+	*core.TxCoinTransfer
 }
 
 var _ = Describe("Transaction", func() {
@@ -38,7 +38,7 @@ var _ = Describe("Transaction", func() {
 	})
 
 	BeforeEach(func() {
-		err := logic.SysKeeper().SaveBlockInfo(&types2.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 
@@ -53,7 +53,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("when tx is invalid", func() {
 			It("should return err='tx failed validation...'", func() {
-				tx := msgs.NewBareTxCoinTransfer()
+				tx := core.NewBareTxCoinTransfer()
 				tx.Sig = []byte("sig")
 				resp := txLogic.ExecTx(tx, 1)
 				Expect(resp.Code).To(Equal(types.ErrCodeFailedDecode))
@@ -63,7 +63,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("with unknown transaction type", func() {
 			It("should return err", func() {
-				tx := &unknownTxType{TxCoinTransfer: msgs.NewBareTxCoinTransfer()}
+				tx := &unknownTxType{TxCoinTransfer: core.NewBareTxCoinTransfer()}
 				resp := logic.Tx().ExecTx(tx, 1)
 				Expect(resp.GetCode()).ToNot(BeZero())
 				Expect(resp.GetLog()).To(Equal("tx failed validation: field:type, error:unsupported transaction type"))
@@ -72,7 +72,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("with unknown ticket purchase tx type", func() {
 			It("should return err", func() {
-				tx := msgs.NewBareTxTicketPurchase(1000)
+				tx := core.NewBareTxTicketPurchase(1000)
 				resp := logic.Tx().ExecTx(tx, 1)
 				Expect(resp.GetCode()).ToNot(BeZero())
 				Expect(resp.Log).To(Equal("tx failed validation: field:type, error:type is invalid"))
@@ -109,9 +109,9 @@ var _ = Describe("Transaction", func() {
 
 		Context("when sender account has sufficient spendable balance", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &types.Account{
+				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("1000"),
-					Stakes:  types.BareAccountStakes(),
+					Stakes:  state.BareAccountStakes(),
 				})
 			})
 

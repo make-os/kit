@@ -3,26 +3,26 @@ package node
 import (
 	"context"
 	"fmt"
-	types3 "gitlab.com/makeos/mosdef/dht/types"
-	types5 "gitlab.com/makeos/mosdef/logic/types"
-	"gitlab.com/makeos/mosdef/repo/types/core"
-	types4 "gitlab.com/makeos/mosdef/services/types"
-	types6 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/dht/types"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+	servtypes "gitlab.com/makeos/mosdef/services/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"net"
 	"net/url"
 	"os"
 
 	"gitlab.com/makeos/mosdef/rpc"
 
+	"github.com/thoas/go-funk"
 	jsm "gitlab.com/makeos/mosdef/modules"
 	"gitlab.com/makeos/mosdef/util"
-	"github.com/thoas/go-funk"
 
+	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/accountmgr"
 	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/extensions"
 	"gitlab.com/makeos/mosdef/repo"
-	"github.com/robertkrimen/otto"
 
 	"github.com/tendermint/tendermint/node"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -37,8 +37,6 @@ import (
 
 	"gitlab.com/makeos/mosdef/services"
 
-	"gitlab.com/makeos/mosdef/types"
-
 	"github.com/pkg/errors"
 
 	"github.com/tendermint/tendermint/privval"
@@ -49,11 +47,11 @@ import (
 
 	"gitlab.com/makeos/mosdef/storage"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/util/logger"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	nm "github.com/tendermint/tendermint/node"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
 )
 
 // Node represents the client
@@ -67,15 +65,15 @@ type Node struct {
 	db             storage.Engine
 	stateTreeDB    storage.Engine
 	tm             *nm.Node
-	service        types4.Service
+	service        servtypes.Service
 	tmrpc          *tmrpc.TMRPC
-	logic          types5.AtomicLogic
+	logic          core.AtomicLogic
 	mempoolReactor *mempool.Reactor
-	ticketMgr      types6.TicketManager
-	dht            types3.DHT
-	modulesAgg     types.ModulesAggregator
+	ticketMgr      tickettypes.TicketManager
+	dht            types.DHTNode
+	modulesAgg     modtypes.ModulesAggregator
 	rpcServer      *rpc.Server
-	repoMgr        types5.RepoManager
+	repoMgr        core.RepoManager
 }
 
 // NewNode creates an instance of Node
@@ -169,7 +167,7 @@ func (n *Node) Start() error {
 	}
 	n.logic.SetTicketManager(n.ticketMgr)
 
-	// Create DHT reactor and add it to the switch
+	// Create DHTNode reactor and add it to the switch
 	key, _ := n.cfg.G().PrivVal.GetKey()
 	n.dht, err = dht.New(
 		context.Background(),
@@ -353,22 +351,22 @@ func (n *Node) ConsoleOn() bool {
 }
 
 // GetModulesAggregator returns the javascript module instance
-func (n *Node) GetModulesAggregator() types.ModulesAggregator {
+func (n *Node) GetModulesAggregator() modtypes.ModulesAggregator {
 	return n.modulesAgg
 }
 
 // GetTicketManager returns the ticket manager
-func (n *Node) GetTicketManager() types6.TicketManager {
+func (n *Node) GetTicketManager() tickettypes.TicketManager {
 	return n.ticketMgr
 }
 
 // GetLogic returns the logic instance
-func (n *Node) GetLogic() types5.Logic {
+func (n *Node) GetLogic() core.Logic {
 	return n.logic
 }
 
-// GetDHT returns the DHT service
-func (n *Node) GetDHT() types3.DHT {
+// GetDHT returns the DHTNode service
+func (n *Node) GetDHT() types.DHTNode {
 	return n.dht
 }
 
@@ -384,7 +382,7 @@ func (n *Node) GetCurrentValidators() []*tmtypes.Validator {
 }
 
 // GetService returns the node's service
-func (n *Node) GetService() types4.Service {
+func (n *Node) GetService() servtypes.Service {
 	return n.service
 }
 

@@ -3,10 +3,10 @@ package repo
 import (
 	"context"
 	"fmt"
-	types3 "gitlab.com/makeos/mosdef/dht/types"
-	types4 "gitlab.com/makeos/mosdef/logic/types"
-	"gitlab.com/makeos/mosdef/repo/types/core"
-	"gitlab.com/makeos/mosdef/repo/types/msgs"
+	types2 "gitlab.com/makeos/mosdef/dht/types"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+	"gitlab.com/makeos/mosdef/node/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -14,16 +14,15 @@ import (
 	"sync"
 	"time"
 
+	"gitlab.com/makeos/mosdef/pkgs/cache"
 	"gitlab.com/makeos/mosdef/rest"
-	"gitlab.com/makeos/mosdef/util/cache"
 
+	"github.com/tendermint/tendermint/p2p"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/util/logger"
-	"github.com/tendermint/tendermint/p2p"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -59,33 +58,33 @@ var services = [][]interface{}{
 type Manager struct {
 	p2p.BaseReactor
 	cfg                  *config.AppConfig
-	log                  logger.Logger           // log is the application logger
-	wg                   *sync.WaitGroup         // wait group for waiting for the manager
-	srv                  *http.Server            // the http server
-	rootDir              string                  // the root directory where all repos are stored
-	addr                 string                  // addr is the listening address for the http server
-	gitBinPath           string                  // gitBinPath is the path of the git executable
-	pushPool             core.PushPool           // The transaction pool for push transactions
-	mempool              types.Mempool           // The general transaction pool for block-bound transaction
-	logic                types4.Logic            // logic is the application logic provider
-	privValidatorKey     *crypto.Key             // the node's private validator key for signing transactions
-	pgpPubKeyGetter      core.PGPPubKeyGetter    // finds and returns PGP public key
-	dht                  types3.DHT              // The dht service
-	pruner               core.Pruner             // The repo runner
-	blockGetter          types.BlockGetter       // Provides access to blocks
-	pushNoteSenders      *cache.Cache            // Store senders of push notes
-	pushOKSenders        *cache.Cache            // Stores senders of PushOK messages
-	pushNoteEndorsements *cache.Cache            // Store PushOKs
-	modulesAgg           types.ModulesAggregator // Modules aggregator
+	log                  logger.Logger              // log is the application logger
+	wg                   *sync.WaitGroup            // wait group for waiting for the manager
+	srv                  *http.Server               // the http server
+	rootDir              string                     // the root directory where all repos are stored
+	addr                 string                     // addr is the listening address for the http server
+	gitBinPath           string                     // gitBinPath is the path of the git executable
+	pushPool             core.PushPool              // The transaction pool for push transactions
+	mempool              core.Mempool               // The general transaction pool for block-bound transaction
+	logic                core.Logic                 // logic is the application logic provider
+	privValidatorKey     *crypto.Key                // the node's private validator key for signing transactions
+	pgpPubKeyGetter      core.PGPPubKeyGetter       // finds and returns PGP public key
+	dht                  types2.DHTNode             // The dht service
+	pruner               core.Pruner                // The repo runner
+	blockGetter          types.BlockGetter          // Provides access to blocks
+	pushNoteSenders      *cache.Cache               // Store senders of push notes
+	pushOKSenders        *cache.Cache               // Stores senders of PushOK messages
+	pushNoteEndorsements *cache.Cache               // Store PushOKs
+	modulesAgg           modtypes.ModulesAggregator // Modules aggregator
 }
 
 // NewManager creates an instance of Manager
 func NewManager(
 	cfg *config.AppConfig,
 	addr string,
-	logic types4.Logic,
-	dht types3.DHT,
-	mempool types.Mempool,
+	logic core.Logic,
+	dht types2.DHTNode,
+	mempool core.Mempool,
 	blockGetter types.BlockGetter) *Manager {
 
 	wg := &sync.WaitGroup{}
@@ -123,7 +122,7 @@ func (m *Manager) SetRootDir(dir string) {
 }
 
 // RegisterAPIHandlers registers server API handlers
-func (m *Manager) RegisterAPIHandlers(agg types.ModulesAggregator) {
+func (m *Manager) RegisterAPIHandlers(agg modtypes.ModulesAggregator) {
 	m.modulesAgg = agg
 	m.registerAPIHandlers(m.srv.Handler.(*http.ServeMux))
 }
@@ -163,12 +162,12 @@ func (m *Manager) isPushOKSender(senderID string, txID string) bool {
 }
 
 // addPushNoteEndorsement indexes a PushOK for a given push note
-func (m *Manager) addPushNoteEndorsement(pnID string, pok *msgs.PushOK) {
+func (m *Manager) addPushNoteEndorsement(pnID string, pok *core.PushOK) {
 	pokList := m.pushNoteEndorsements.Get(pnID)
 	if pokList == nil {
-		pokList = map[string]*msgs.PushOK{}
+		pokList = map[string]*core.PushOK{}
 	}
-	pokList.(map[string]*msgs.PushOK)[pok.ID().String()] = pok
+	pokList.(map[string]*core.PushOK)[pok.ID().String()] = pok
 	m.pushNoteEndorsements.Add(pnID, pokList)
 }
 
@@ -201,7 +200,7 @@ func (m *Manager) registerAPIHandlers(s *http.ServeMux) {
 }
 
 // GetLogic returns the application logic provider
-func (m *Manager) GetLogic() types4.Logic {
+func (m *Manager) GetLogic() core.Logic {
 	return m.logic
 }
 
@@ -221,12 +220,12 @@ func (m *Manager) GetPushPool() core.PushPool {
 }
 
 // GetMempool returns the transaction pool
-func (m *Manager) GetMempool() types.Mempool {
+func (m *Manager) GetMempool() core.Mempool {
 	return m.mempool
 }
 
 // GetDHT returns the dht service
-func (m *Manager) GetDHT() types3.DHT {
+func (m *Manager) GetDHT() types2.DHTNode {
 	return m.dht
 }
 

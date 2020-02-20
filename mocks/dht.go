@@ -8,7 +8,7 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	peer "github.com/libp2p/go-libp2p-core/peer"
-	dht "gitlab.com/makeos/mosdef/dht"
+	"gitlab.com/makeos/mosdef/dht/types"
 	reflect "reflect"
 )
 
@@ -132,7 +132,7 @@ func (mr *MockDHTNodeMockRecorder) Announce(ctx, key interface{}) *gomock.Call {
 }
 
 // GetObject mocks base method
-func (m *MockDHTNode) GetObject(ctx context.Context, query *dht.DHTObjectQuery) ([]byte, error) {
+func (m *MockDHTNode) GetObject(ctx context.Context, query *types.DHTObjectQuery) ([]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetObject", ctx, query)
 	ret0, _ := ret[0].([]byte)
@@ -147,7 +147,7 @@ func (mr *MockDHTNodeMockRecorder) GetObject(ctx, query interface{}) *gomock.Cal
 }
 
 // RegisterObjFinder mocks base method
-func (m *MockDHTNode) RegisterObjFinder(objType string, finder dht.ObjectFinder) {
+func (m *MockDHTNode) RegisterObjFinder(objType string, finder types.ObjectFinder) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RegisterObjFinder", objType, finder)
 }

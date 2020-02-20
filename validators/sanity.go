@@ -2,24 +2,25 @@ package validators
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"regexp"
 	"strings"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/repo"
 	"gitlab.com/makeos/mosdef/util"
-	"github.com/thoas/go-funk"
 
 	v "github.com/go-ozzo/ozzo-validation"
-	"gitlab.com/makeos/mosdef/params"
 	"github.com/shopspring/decimal"
+	"gitlab.com/makeos/mosdef/params"
 )
 
 // CheckRecipient validates the recipient address
-func CheckRecipient(tx *msgs.TxRecipient, index int) error {
+func CheckRecipient(tx *core.TxRecipient, index int) error {
 
 	recipient := tx.To.Address()
 
@@ -49,7 +50,7 @@ bad:
 	return feI(index, "to", "recipient address is not valid")
 }
 
-func checkValue(tx *msgs.TxValue, index int) error {
+func checkValue(tx *core.TxValue, index int) error {
 	if err := v.Validate(tx.Value, v.Required.Error(feI(index, "value",
 		"value is required").Error()), v.By(validValueRule("value", index)),
 	); err != nil {
@@ -58,7 +59,7 @@ func checkValue(tx *msgs.TxValue, index int) error {
 	return nil
 }
 
-func checkPositiveValue(tx *msgs.TxValue, index int) error {
+func checkPositiveValue(tx *core.TxValue, index int) error {
 	if err := v.Validate(tx.Value,
 		v.Required.Error(feI(index, "value", "value is required").Error()),
 		v.By(validValueRule("value", index)),
@@ -71,14 +72,14 @@ func checkPositiveValue(tx *msgs.TxValue, index int) error {
 	return nil
 }
 
-func checkType(tx *msgs.TxType, expected int, index int) error {
+func checkType(tx *core.TxType, expected int, index int) error {
 	if tx.Type != expected {
 		return feI(index, "type", "type is invalid")
 	}
 	return nil
 }
 
-func checkCommon(tx msgs.BaseTx, index int) error {
+func checkCommon(tx types.BaseTx, index int) error {
 
 	var baseFee, txSize decimal.Decimal
 
@@ -130,9 +131,9 @@ func checkCommon(tx msgs.BaseTx, index int) error {
 }
 
 // CheckTxCoinTransfer performs sanity checks on TxCoinTransfer
-func CheckTxCoinTransfer(tx *msgs.TxCoinTransfer, index int) error {
+func CheckTxCoinTransfer(tx *core.TxCoinTransfer, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypeCoinTransfer, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeCoinTransfer, index); err != nil {
 		return err
 	}
 
@@ -152,9 +153,9 @@ func CheckTxCoinTransfer(tx *msgs.TxCoinTransfer, index int) error {
 }
 
 // CheckTxTicketPurchase performs sanity checks on TxTicketPurchase
-func CheckTxTicketPurchase(tx *msgs.TxTicketPurchase, index int) error {
+func CheckTxTicketPurchase(tx *core.TxTicketPurchase, index int) error {
 
-	if tx.Type != msgs.TxTypeValidatorTicket && tx.Type != msgs.TxTypeStorerTicket {
+	if tx.Type != core.TxTypeValidatorTicket && tx.Type != core.TxTypeStorerTicket {
 		return feI(index, "type", "type is invalid")
 	}
 
@@ -163,7 +164,7 @@ func CheckTxTicketPurchase(tx *msgs.TxTicketPurchase, index int) error {
 	}
 
 	// Non-delegate storer ticket value must reach the minimum stake
-	if tx.Is(msgs.TxTypeStorerTicket) && tx.Delegate.IsEmpty() {
+	if tx.Is(core.TxTypeStorerTicket) && tx.Delegate.IsEmpty() {
 		if tx.Value.Decimal().LessThan(params.MinStorerStake) {
 			return feI(index, "value", fmt.Sprintf("value is lower than minimum storer stake"))
 		}
@@ -177,7 +178,7 @@ func CheckTxTicketPurchase(tx *msgs.TxTicketPurchase, index int) error {
 		}
 	}
 
-	if tx.Is(msgs.TxTypeStorerTicket) {
+	if tx.Is(core.TxTypeStorerTicket) {
 		if len(tx.BLSPubKey) == 0 {
 			return feI(index, "blsPubKey", "BLS public key is required")
 		}
@@ -194,9 +195,9 @@ func CheckTxTicketPurchase(tx *msgs.TxTicketPurchase, index int) error {
 }
 
 // CheckTxUnbondTicket performs sanity checks on TxTicketUnbond
-func CheckTxUnbondTicket(tx *msgs.TxTicketUnbond, index int) error {
+func CheckTxUnbondTicket(tx *core.TxTicketUnbond, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypeStorerTicket, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeStorerTicket, index); err != nil {
 		return err
 	}
 
@@ -278,9 +279,9 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 }
 
 // CheckTxRepoCreate performs sanity checks on TxRepoCreate
-func CheckTxRepoCreate(tx *msgs.TxRepoCreate, index int) error {
+func CheckTxRepoCreate(tx *core.TxRepoCreate, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypeRepoCreate, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeRepoCreate, index); err != nil {
 		return err
 	}
 
@@ -307,9 +308,9 @@ func CheckTxRepoCreate(tx *msgs.TxRepoCreate, index int) error {
 }
 
 // CheckTxAddGPGPubKey performs sanity checks on TxAddGPGPubKey
-func CheckTxAddGPGPubKey(tx *msgs.TxAddGPGPubKey, index int) error {
+func CheckTxAddGPGPubKey(tx *core.TxAddGPGPubKey, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypeAddGPGPubKey, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeAddGPGPubKey, index); err != nil {
 		return err
 	}
 
@@ -328,9 +329,9 @@ func CheckTxAddGPGPubKey(tx *msgs.TxAddGPGPubKey, index int) error {
 }
 
 // CheckTxSetDelegateCommission performs sanity checks on TxSetDelegateCommission
-func CheckTxSetDelegateCommission(tx *msgs.TxSetDelegateCommission, index int) error {
+func CheckTxSetDelegateCommission(tx *core.TxSetDelegateCommission, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypeSetDelegatorCommission, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeSetDelegatorCommission, index); err != nil {
 		return err
 	}
 
@@ -357,9 +358,9 @@ func CheckTxSetDelegateCommission(tx *msgs.TxSetDelegateCommission, index int) e
 }
 
 // CheckTxPush performs sanity checks on TxPush
-func CheckTxPush(tx *msgs.TxPush, index int) error {
+func CheckTxPush(tx *core.TxPush, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypePush, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypePush, index); err != nil {
 		return err
 	}
 
@@ -436,9 +437,9 @@ func CheckNamespaceDomains(domains map[string]string, index int) error {
 }
 
 // CheckTxNSAcquire performs sanity checks on TxNamespaceAcquire
-func CheckTxNSAcquire(tx *msgs.TxNamespaceAcquire, index int) error {
+func CheckTxNSAcquire(tx *core.TxNamespaceAcquire, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypeNSAcquire, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeNSAcquire, index); err != nil {
 		return err
 	}
 
@@ -484,9 +485,9 @@ func CheckTxNSAcquire(tx *msgs.TxNamespaceAcquire, index int) error {
 }
 
 // CheckTxNamespaceDomainUpdate performs sanity checks on TxNamespaceDomainUpdate
-func CheckTxNamespaceDomainUpdate(tx *msgs.TxNamespaceDomainUpdate, index int) error {
+func CheckTxNamespaceDomainUpdate(tx *core.TxNamespaceDomainUpdate, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypeNSDomainUpdate, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeNSDomainUpdate, index); err != nil {
 		return err
 	}
 
@@ -511,9 +512,9 @@ func CheckTxNamespaceDomainUpdate(tx *msgs.TxNamespaceDomainUpdate, index int) e
 }
 
 // CheckTxRepoProposalUpsertOwner performs sanity checks on TxRepoProposalUpsertOwner
-func CheckTxRepoProposalUpsertOwner(tx *msgs.TxRepoProposalUpsertOwner, index int) error {
+func CheckTxRepoProposalUpsertOwner(tx *core.TxRepoProposalUpsertOwner, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypeRepoProposalUpsertOwner, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeRepoProposalUpsertOwner, index); err != nil {
 		return err
 	}
 
@@ -532,7 +533,7 @@ func CheckTxRepoProposalUpsertOwner(tx *msgs.TxRepoProposalUpsertOwner, index in
 		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
 	}
 
-	if err := checkValue(&msgs.TxValue{Value: tx.Value}, index); err != nil {
+	if err := checkValue(&core.TxValue{Value: tx.Value}, index); err != nil {
 		return err
 	} else if tx.Value.Decimal().
 		LessThan(decimal.NewFromFloat(params.MinProposalFee)) {
@@ -566,9 +567,9 @@ func CheckTxRepoProposalUpsertOwner(tx *msgs.TxRepoProposalUpsertOwner, index in
 }
 
 // CheckTxVote performs sanity checks on TxRepoProposalVote
-func CheckTxVote(tx *msgs.TxRepoProposalVote, index int) error {
+func CheckTxVote(tx *core.TxRepoProposalVote, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypeRepoProposalVote, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeRepoProposalVote, index); err != nil {
 		return err
 	}
 
@@ -599,9 +600,9 @@ func CheckTxVote(tx *msgs.TxRepoProposalVote, index int) error {
 }
 
 // CheckTxRepoProposalSendFee performs sanity checks on TxRepoProposalFeeSend
-func CheckTxRepoProposalSendFee(tx *msgs.TxRepoProposalFeeSend, index int) error {
+func CheckTxRepoProposalSendFee(tx *core.TxRepoProposalFeeSend, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypeRepoProposalFeeSend, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeRepoProposalFeeSend, index); err != nil {
 		return err
 	}
 
@@ -620,7 +621,7 @@ func CheckTxRepoProposalSendFee(tx *msgs.TxRepoProposalFeeSend, index int) error
 		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
 	}
 
-	if err := checkValue(&msgs.TxValue{Value: tx.Value}, index); err != nil {
+	if err := checkValue(&core.TxValue{Value: tx.Value}, index); err != nil {
 		return err
 	}
 
@@ -632,9 +633,9 @@ func CheckTxRepoProposalSendFee(tx *msgs.TxRepoProposalFeeSend, index int) error
 }
 
 // CheckTxRepoProposalMergeRequest performs sanity checks on TxRepoProposalMergeRequest
-func CheckTxRepoProposalMergeRequest(tx *msgs.TxRepoProposalMergeRequest, index int) error {
+func CheckTxRepoProposalMergeRequest(tx *core.TxRepoProposalMergeRequest, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypeRepoProposalMergeRequest, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeRepoProposalMergeRequest, index); err != nil {
 		return err
 	}
 
@@ -653,7 +654,7 @@ func CheckTxRepoProposalMergeRequest(tx *msgs.TxRepoProposalMergeRequest, index 
 		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
 	}
 
-	if err := checkValue(&msgs.TxValue{Value: tx.Value}, index); err != nil {
+	if err := checkValue(&core.TxValue{Value: tx.Value}, index); err != nil {
 		return err
 	} else if tx.Value.Decimal().
 		LessThan(decimal.NewFromFloat(params.MinProposalFee)) {
@@ -687,9 +688,9 @@ func CheckTxRepoProposalMergeRequest(tx *msgs.TxRepoProposalMergeRequest, index 
 }
 
 // CheckTxRepoProposalUpdate performs sanity checks on TxRepoProposalUpdate
-func CheckTxRepoProposalUpdate(tx *msgs.TxRepoProposalUpdate, index int) error {
+func CheckTxRepoProposalUpdate(tx *core.TxRepoProposalUpdate, index int) error {
 
-	if err := checkType(tx.TxType, msgs.TxTypeRepoProposalUpdate, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeRepoProposalUpdate, index); err != nil {
 		return err
 	}
 
@@ -708,7 +709,7 @@ func CheckTxRepoProposalUpdate(tx *msgs.TxRepoProposalUpdate, index int) error {
 		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
 	}
 
-	if err := checkValue(&msgs.TxValue{Value: tx.Value}, index); err != nil {
+	if err := checkValue(&core.TxValue{Value: tx.Value}, index); err != nil {
 		return err
 	} else if tx.Value.Decimal().
 		LessThan(decimal.NewFromFloat(params.MinProposalFee)) {

@@ -2,6 +2,7 @@ package extensions
 
 import (
 	"fmt"
+	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -24,7 +25,7 @@ import (
 type Manager struct {
 	cfg        *config.AppConfig
 	vm         *otto.Otto
-	main       types.ModulesAggregator
+	main       modulestypes.ModulesAggregator
 	runningExt map[string]*ExtensionControl
 }
 
@@ -46,43 +47,43 @@ func (m *Manager) SetVM(vm *otto.Otto) *Manager {
 }
 
 // SetMainModule configures the main JS module
-func (m *Manager) SetMainModule(main types.ModulesAggregator) {
+func (m *Manager) SetMainModule(main modulestypes.ModulesAggregator) {
 	m.main = main
 }
 
-func (m *Manager) namespacedFuncs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+func (m *Manager) namespacedFuncs() []*modulestypes.ModulesAggregatorFunc {
+	return []*modulestypes.ModulesAggregatorFunc{
+		&modulestypes.ModulesAggregatorFunc{
 			Name:        "run",
 			Value:       m.Run,
 			Description: "Load and run an extension",
 		},
-		&types.ModulesAggregatorFunc{
+		&modulestypes.ModulesAggregatorFunc{
 			Name:        "load",
 			Value:       m.Load,
 			Description: "Load an extension",
 		},
-		&types.ModulesAggregatorFunc{
+		&modulestypes.ModulesAggregatorFunc{
 			Name:        "isInstalled",
 			Value:       m.Exist,
 			Description: "Check whether an extension is installed",
 		},
-		&types.ModulesAggregatorFunc{
+		&modulestypes.ModulesAggregatorFunc{
 			Name:        "installed",
 			Value:       m.Installed,
 			Description: "Fetch all installed extensions",
 		},
-		&types.ModulesAggregatorFunc{
+		&modulestypes.ModulesAggregatorFunc{
 			Name:        "running",
 			Value:       m.Running,
 			Description: "Fetch a list of running extensions",
 		},
-		&types.ModulesAggregatorFunc{
+		&modulestypes.ModulesAggregatorFunc{
 			Name:        "isRunning",
 			Value:       m.IsRunning,
 			Description: "Check whether an extension is currently running",
 		},
-		&types.ModulesAggregatorFunc{
+		&modulestypes.ModulesAggregatorFunc{
 			Name:        "stop",
 			Value:       m.Stop,
 			Description: "Stop a running extension",
@@ -90,8 +91,8 @@ func (m *Manager) namespacedFuncs() []*types.ModulesAggregatorFunc {
 	}
 }
 
-func (m *Manager) globals() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{}
+func (m *Manager) globals() []*modulestypes.ModulesAggregatorFunc {
+	return []*modulestypes.ModulesAggregatorFunc{}
 }
 
 // Configure implements types.ModulesAggregator. It configures the JS
