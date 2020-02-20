@@ -1,8 +1,11 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/fatih/structs"
 	"github.com/makeos/mosdef/util"
+	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -116,4 +119,58 @@ func (tx *TxRepoProposalMergeRequest) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
+}
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxRepoProposalMergeRequest) FromMap(data map[string]interface{}) error {
+	err := tx.TxCommon.FromMap(data)
+	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
+	err = util.CallOnNilErr(err, func() error { return tx.TxProposalCommon.FromMap(data) })
+
+	o := objx.New(data)
+
+	// BaseBranch: expects string type in map
+	if baseVal := o.Get("base"); !baseVal.IsNil() {
+		if baseVal.IsStr() {
+			tx.BaseBranch = baseVal.Str()
+		} else {
+			return FieldError("base", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", baseVal.Inter()))
+		}
+	}
+
+	// BaseBranchHash: expects string type in map
+	if baseHashVal := o.Get("baseHash"); !baseHashVal.IsNil() {
+		if baseHashVal.IsStr() {
+			tx.BaseBranchHash = baseHashVal.Str()
+		} else {
+			return FieldError("baseHash", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", baseHashVal.Inter()))
+		}
+	}
+
+	// TargetBranch: expects string type in map
+	if targetVal := o.Get("target"); !targetVal.IsNil() {
+		if targetVal.IsStr() {
+			tx.TargetBranch = targetVal.Str()
+		} else {
+			return FieldError("target", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", targetVal.Inter()))
+		}
+	}
+
+	// TargetBranchHash: expects string type in map
+	if targetHashVal := o.Get("targetHash"); !targetHashVal.IsNil() {
+		if targetHashVal.IsStr() {
+			tx.TargetBranchHash = targetHashVal.Str()
+		} else {
+			return FieldError("targetHash", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", targetHashVal.Inter()))
+		}
+	}
+
+	return err
 }

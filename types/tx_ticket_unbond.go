@@ -1,8 +1,11 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/fatih/structs"
 	"github.com/makeos/mosdef/util"
+	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -96,4 +99,31 @@ func (tx *TxTicketUnbond) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
+}
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxTicketUnbond) FromMap(data map[string]interface{}) error {
+	err := tx.TxCommon.FromMap(data)
+	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
+
+	o := objx.New(data)
+
+	// TicketHash: expects string type in map
+	if tickHashVal := o.Get("hash"); !tickHashVal.IsNil() {
+		if tickHashVal.IsStr() {
+			bz, err := util.FromHex(tickHashVal.Str())
+			if err != nil {
+				return FieldError("blsPubKey", "unable to decode from hex")
+			}
+			tx.TicketHash = util.BytesToBytes32(bz)
+		} else {
+			return FieldError("addresses", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", tickHashVal.Inter()))
+		}
+	}
+
+	return err
 }

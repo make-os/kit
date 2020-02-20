@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/makeos/mosdef/repo/api"
+	"github.com/makeos/mosdef/rest"
 	"github.com/makeos/mosdef/util/cache"
 
 	"github.com/makeos/mosdef/config"
@@ -173,17 +173,16 @@ func (m *Manager) addPushNoteEndorsement(pnID string, pok *types.PushOK) {
 func (m *Manager) Start() error {
 	s := http.NewServeMux()
 
-	s.HandleFunc("/", m.gitRequestsHandler)
-
-	// Only start server in non-validator node
 	if !m.cfg.IsValidatorNode() {
-		m.log.Info("Server has started", "Address", m.addr)
-		m.srv = &http.Server{Addr: m.addr, Handler: s}
-		go func() {
-			m.srv.ListenAndServe()
-			m.wg.Done()
-		}()
+		s.HandleFunc("/", m.gitRequestsHandler)
 	}
+
+	m.log.Info("Server has started", "Address", m.addr)
+	m.srv = &http.Server{Addr: m.addr, Handler: s}
+	go func() {
+		m.srv.ListenAndServe()
+		m.wg.Done()
+	}()
 
 	go m.subscribe()
 	go m.pruner.Start()
@@ -192,11 +191,9 @@ func (m *Manager) Start() error {
 }
 
 func (m *Manager) registerAPIHandlers(s *http.ServeMux) {
-	handlers := api.NewREST(m.modulesAgg)
-	s.HandleFunc("/v1/accounts/nonce",
-		util.RESTApiHandler("GET", handlers.GetAccountNonce, m.log))
-	s.HandleFunc("/v1/repos/merge-request",
-		util.RESTApiHandler("POST", handlers.CreateMergeRequest, m.log))
+	handlers := rest.New(m.modulesAgg)
+	s.HandleFunc("/v1/accounts/nonce", util.RESTApiHandler("GET", handlers.GetAccountNonce, m.log))
+	s.HandleFunc("/v1/txs", util.RESTApiHandler("POST", handlers.SendTx, m.log))
 }
 
 // GetLogic returns the application logic provider

@@ -3,6 +3,9 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"strconv"
+
+	"github.com/stretchr/objx"
 
 	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util"
@@ -42,34 +45,35 @@ func (m *TxMeta) GetMeta() map[string]interface{} {
 type BaseTx interface {
 	msgpack.CustomEncoder
 	msgpack.CustomDecoder
-	GetType() int                        // Returns the type of the transaction
-	GetSignature() []byte                // Returns the transaction signature
-	SetSignature(s []byte)               // Sets the transaction signature
-	GetSenderPubKey() util.PublicKey     // Returns the transaction sender public key
-	SetSenderPubKey(pk []byte)           // Set the transaction sender public key
-	GetTimestamp() int64                 // Return the transaction creation unix timestamp
-	SetTimestamp(t int64)                // Set the transaction creation unix timestamp
-	GetNonce() uint64                    // Returns the transaction nonce
-	SetNonce(nonce uint64)               // Set the transaction nonce
-	SetFee(fee util.String)              // Set the fee
-	GetFee() util.String                 // Returns the transaction fee
-	GetFrom() util.String                // Returns the address of the transaction sender
-	GetHash() util.Bytes32               // Returns the hash of the transaction
-	GetBytesNoSig() []byte               // Returns the serialized the tx excluding the signature
-	Bytes() []byte                       // Returns the serialized transaction
-	ComputeHash() util.Bytes32           // Computes the hash of the transaction
-	GetID() string                       // Returns the id of the transaction (also the hash)
-	Sign(privKey string) ([]byte, error) // Signs the transaction
-	GetEcoSize() int64                   // Returns the size of the tx for use in proto economics
-	GetSize() int64                      // Returns the size of the tx object (excluding nothing)
-	ToMap() map[string]interface{}       // Returns a map equivalent of the transaction
-	GetMeta() map[string]interface{}     // Returns the meta information of the transaction
-	Is(txType int) bool                  // Checks if the tx is a given type
+	GetType() int                         // Returns the type of the transaction
+	GetSignature() []byte                 // Returns the transaction signature
+	SetSignature(s []byte)                // Sets the transaction signature
+	GetSenderPubKey() util.PublicKey      // Returns the transaction sender public key
+	SetSenderPubKey(pk []byte)            // Set the transaction sender public key
+	GetTimestamp() int64                  // Return the transaction creation unix timestamp
+	SetTimestamp(t int64)                 // Set the transaction creation unix timestamp
+	GetNonce() uint64                     // Returns the transaction nonce
+	SetNonce(nonce uint64)                // Set the transaction nonce
+	SetFee(fee util.String)               // Set the fee
+	GetFee() util.String                  // Returns the transaction fee
+	GetFrom() util.String                 // Returns the address of the transaction sender
+	GetHash() util.Bytes32                // Returns the hash of the transaction
+	GetBytesNoSig() []byte                // Returns the serialized the tx excluding the signature
+	Bytes() []byte                        // Returns the serialized transaction
+	ComputeHash() util.Bytes32            // Computes the hash of the transaction
+	GetID() string                        // Returns the id of the transaction (also the hash)
+	Sign(privKey string) ([]byte, error)  // Signs the transaction
+	GetEcoSize() int64                    // Returns the size of the tx for use in proto economics
+	GetSize() int64                       // Returns the size of the tx object (excluding nothing)
+	ToMap() map[string]interface{}        // Returns a map equivalent of the transaction
+	FromMap(map[string]interface{}) error // Populate the fields from a map
+	GetMeta() map[string]interface{}      // Returns the meta information of the transaction
+	Is(txType int) bool                   // Checks if the tx is a given type
 }
 
 // TxType implements some of BaseTx, it includes type information about a transaction
 type TxType struct {
-	Type int `json:"type" msgpack:"type"`
+	Type int `json:"type" msgpack:"type" mapstructure:"type"`
 }
 
 // GetType returns the type of the transaction
@@ -82,15 +86,41 @@ func (tx *TxType) Is(txType int) bool {
 	return tx.Type == txType
 }
 
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxType) FromMap(data map[string]interface{}) (err error) {
+	o := objx.New(data)
+
+	// Type: expects int64 or string types in map
+	if typeVal := o.Get("type"); !typeVal.IsNil() {
+		if typeVal.IsInt64() {
+			tx.Type = int(typeVal.Int64())
+		} else if typeVal.IsStr() {
+			var err error
+			tx.Type, err = strconv.Atoi(typeVal.Str())
+			if err != nil {
+				return FieldError("type", "must be numeric")
+			}
+		} else {
+			return FieldError("type", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string|int", typeVal.Inter()))
+		}
+	}
+
+	return nil
+}
+
 // TxCommon implements some of BaseTx, it includes some common fields and methods
 type TxCommon struct {
 	util.DecoderHelper `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxMeta            `json:"-" msgpack:"-" mapstructure:"-"`
-	Nonce              uint64         `json:"nonce" msgpack:"nonce"`
-	Fee                util.String    `json:"fee" msgpack:"fee"`
-	Sig                []byte         `json:"sig" msgpack:"sig"`
-	Timestamp          int64          `json:"timestamp" msgpack:"timestamp"`
-	SenderPubKey       util.PublicKey `json:"senderPubKey" msgpack:"senderPubKey"`
+	Nonce              uint64         `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`
+	Fee                util.String    `json:"fee" msgpack:"fee" mapstructure:"fee"`
+	Sig                []byte         `json:"sig" msgpack:"sig" mapstructure:"sig"`
+	Timestamp          int64          `json:"timestamp" msgpack:"timestamp" mapstructure:"timestamp"`
+	SenderPubKey       util.PublicKey `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
 }
 
 // NewBareTxCommon returns an instance of TxCommon with zero values
@@ -102,6 +132,89 @@ func NewBareTxCommon() *TxCommon {
 		Timestamp:    0,
 		SenderPubKey: util.EmptyPublicKey,
 	}
+}
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxCommon) FromMap(data map[string]interface{}) (err error) {
+	o := objx.New(data)
+
+	// Timestamp: expects int, int64 or string types in map
+	if tsVal := o.Get("timestamp"); !tsVal.IsNil() {
+		if tsVal.IsInt() {
+			tx.Timestamp = int64(tsVal.Int())
+		} else if tsVal.IsInt64() {
+			tx.Timestamp = tsVal.Int64()
+		} else if tsVal.IsStr() {
+			tx.Timestamp, err = strconv.ParseInt(tsVal.Str(), 10, 64)
+			if err != nil {
+				return FieldError("timestamp", "must be numeric")
+			}
+		} else {
+			return FieldError("timestamp", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string|int", tsVal.Inter()))
+		}
+	}
+
+	// Fee: expects int64, float64 or string types in map
+	if feeVal := o.Get("fee"); !feeVal.IsNil() {
+		if feeVal.IsInt() || feeVal.IsInt64() || feeVal.IsFloat64() {
+			tx.Fee = util.String(fmt.Sprintf("%v", feeVal.Inter()))
+		} else if feeVal.IsStr() {
+			tx.Fee = util.String(feeVal.Str())
+		} else {
+			return FieldError("fee", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string|int|float", feeVal.Inter()))
+		}
+	}
+
+	// Nonce: expects int64 or string types in map
+	if nonceVal := o.Get("nonce"); !nonceVal.IsNil() {
+		if nonceVal.IsInt() {
+			tx.Nonce = uint64(nonceVal.Int())
+		} else if nonceVal.IsInt64() {
+			tx.Nonce = uint64(nonceVal.Int64())
+		} else if nonceVal.IsStr() {
+			tx.Nonce, err = strconv.ParseUint(nonceVal.Str(), 10, 64)
+			if err != nil {
+				return FieldError("nonce", "must be numeric")
+			}
+		} else {
+			return FieldError("nonce", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string|int", nonceVal.Inter()))
+		}
+	}
+
+	// Sig: expects string type, hex encoded
+	if sigVal := o.Get("sig"); !sigVal.IsNil() {
+		if sigVal.IsStr() {
+			tx.Sig, err = util.FromHex(sigVal.Str())
+			if err != nil {
+				return FieldError("sig", "unable to decode from hex")
+			}
+		} else {
+			return FieldError("sig", fmt.Sprintf("invalid value type: has %T, "+
+				"wants hex string", sigVal.Inter()))
+		}
+	}
+
+	// SenderPubKey: expects string type, base58 encoded
+	if spkVal := o.Get("senderPubKey"); !spkVal.IsNil() {
+		if spkVal.IsStr() {
+			pubKey, err := crypto.PubKeyFromBase58(spkVal.Str())
+			if err != nil {
+				return FieldError("senderPubKey", "unable to decode from base58")
+			}
+			tx.SenderPubKey = util.BytesToPublicKey(pubKey.MustBytes())
+		} else {
+			return FieldError("senderPubKey", fmt.Sprintf("invalid value type: has %T, "+
+				"wants base58 string", spkVal.Inter()))
+		}
+	}
+
+	return nil
 }
 
 // GetFee returns the transaction nonce
@@ -182,23 +295,115 @@ func SignTransaction(tx BaseTx, privKey string) ([]byte, error) {
 
 // TxRecipient describes a transaction receiver
 type TxRecipient struct {
-	To util.String `json:"to" msgpack:"to"`
+	To util.String `json:"to" msgpack:"to" mapstructure:"to"`
+}
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxRecipient) FromMap(data map[string]interface{}) (err error) {
+	o := objx.New(data)
+
+	// To: expects string type in map
+	if toVal := o.Get("to"); !toVal.IsNil() {
+		if toVal.IsStr() {
+			tx.To = util.String(toVal.Str())
+		} else {
+			return FieldError("to", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", toVal.Inter()))
+		}
+	}
+
+	return nil
 }
 
 // TxValue describes a transaction value
 type TxValue struct {
-	Value util.String `json:"value" msgpack:"value"`
+	Value util.String `json:"value" msgpack:"value" mapstructure:"value"`
+}
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxValue) FromMap(data map[string]interface{}) (err error) {
+	o := objx.New(data)
+
+	// Value: expects int64, float64 or string types in map
+	if valVal := o.Get("value"); !valVal.IsNil() {
+		if valVal.IsInt64() || valVal.IsFloat64() {
+			tx.Value = util.String(fmt.Sprintf("%v", valVal.Inter()))
+		} else if valVal.IsStr() {
+			tx.Value = util.String(valVal.Str())
+		} else {
+			return FieldError("value", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string|int64|float", valVal.Inter()))
+		}
+	}
+
+	return nil
 }
 
 // TxProposalCommon describes proposal fields
 type TxProposalCommon struct {
-	RepoName   string      `json:"name" msgpack:"name"`
-	Value      util.String `json:"value" msgpack:"value"`
-	ProposalID string      `json:"id" msgpack:"id"`
+	RepoName   string      `json:"name" msgpack:"name" mapstructure:"name"`
+	Value      util.String `json:"value" msgpack:"value" mapstructure:"value"`
+	ProposalID string      `json:"id,omitempty" msgpack:"id" mapstructure:"id"`
 }
 
-// DecodeTx takes a potential tx byte size and returns the transaction object
-// for the given type
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxProposalCommon) FromMap(data map[string]interface{}) (err error) {
+	o := objx.New(data)
+
+	// RepoName: expects string type in map
+	if repoNameVal := o.Get("name"); !repoNameVal.IsNil() {
+		if repoNameVal.IsStr() {
+			tx.RepoName = repoNameVal.Str()
+		} else {
+			return FieldError("name", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", repoNameVal.Inter()))
+		}
+	}
+
+	// ProposalID: expects string type in map
+	if propIDVal := o.Get("id"); !propIDVal.IsNil() {
+		if propIDVal.IsStr() {
+			tx.ProposalID = propIDVal.Str()
+		} else {
+			return FieldError("id", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", propIDVal.Inter()))
+		}
+	}
+	// Value: expects int64, float64 or string types in map
+	if valVal := o.Get("value"); !valVal.IsNil() {
+		if valVal.IsInt64() || valVal.IsFloat64() {
+			tx.Value = util.String(fmt.Sprintf("%v", valVal.Inter()))
+		} else if valVal.IsStr() {
+			tx.Value = util.String(valVal.Str())
+		} else {
+			return FieldError("value", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string|int64|float", valVal.Inter()))
+		}
+	}
+
+	return nil
+}
+
+// DecodeTxFromMap decodes a user-provided map to a transaction object.
+func DecodeTxFromMap(data map[string]interface{}) (BaseTx, error) {
+	txType := objx.New(data).Get("type").Int64(-1)
+	txObj, err := getBareTxObject(int(txType))
+	if err != nil {
+		return nil, err
+	}
+	return txObj, txObj.FromMap(data)
+}
+
+// DecodeTx decodes msgpack data to transactions.
 func DecodeTx(txBz []byte) (BaseTx, error) {
 	dec := msgpack.NewDecoder(bytes.NewBuffer(txBz))
 	txType, err := dec.DecodeInt()
@@ -206,6 +411,15 @@ func DecodeTx(txBz []byte) (BaseTx, error) {
 		return nil, fmt.Errorf("failed to decode tx type")
 	}
 
+	tx, err := getBareTxObject(txType)
+	if err != nil {
+		return nil, err
+	}
+
+	return tx, util.BytesToObject(txBz, tx)
+}
+
+func getBareTxObject(txType int) (BaseTx, error) {
 	var tx interface{}
 	switch txType {
 	case TxTypeCoinTransfer:
@@ -242,7 +456,7 @@ func DecodeTx(txBz []byte) (BaseTx, error) {
 		return nil, fmt.Errorf("unsupported tx type")
 	}
 
-	return tx.(BaseTx), util.BytesToObject(txBz, tx)
+	return tx.(BaseTx), nil
 }
 
 // NewBaseTx creates a new, signed transaction of a given type

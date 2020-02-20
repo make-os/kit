@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/makeos/mosdef/config"
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
 	"github.com/makeos/mosdef/util"
@@ -101,12 +100,8 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 
 	// Decode parameters into a transaction object
 	var tx = types.NewBareTxAddGPGPubKey()
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if pubKey, ok := params["pubKey"]; ok {
-		defer castPanic("pubKey")
-		tx.PublicKey = pubKey.(string)
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	payloadOnly := finalizeTx(tx, m.service, options...)

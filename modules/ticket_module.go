@@ -143,28 +143,9 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if value, ok := params["value"]; ok {
-		defer castPanic("value")
-		tx.Value = util.String(value.(string))
-	}
-
-	delegate := ""
-	if to, ok := params["delegate"]; ok {
-		defer castPanic("delegate")
-		delegate = to.(string)
-	}
-
-	if delegate != "" {
-		pubKey, err := crypto.PubKeyFromBase58(delegate)
-		if err != nil {
-			panic(errors.Wrap(err, "failed to decode 'delegate' to public key"))
-		}
-		tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	payloadOnly := finalizeTx(tx, m.service, options...)
@@ -197,28 +178,9 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 func (m *TicketModule) storerBuy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareTxTicketPurchase(types.TxTypeStorerTicket)
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if value, ok := params["value"]; ok {
-		defer castPanic("value")
-		tx.Value = util.String(value.(string))
-	}
-
-	delegate := ""
-	if to, ok := params["delegate"]; ok {
-		defer castPanic("delegate")
-		delegate = to.(string)
-	}
-
-	if delegate != "" {
-		pubKey, err := crypto.PubKeyFromBase58(delegate)
-		if err != nil {
-			panic(errors.Wrap(err, "failed to decode 'delegate' to public key"))
-		}
-		tx.Delegate = util.BytesToBytes32(pubKey.MustBytes())
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	// Derive BLS public key
@@ -232,7 +194,6 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 		return EncodeForJS(tx.ToMap())
 	}
 
-	// Process the transaction
 	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
@@ -404,18 +365,9 @@ func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareTxTicketUnbond(types.TxTypeUnbondStorerTicket)
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if ticketHash, ok := params["hash"]; ok {
-		defer castPanic("fee")
-		bz, err := util.FromHex(ticketHash.(string))
-		if err != nil {
-			panic(errors.Wrap(err, "failed to decode ticket hash from hex"))
-		}
-		tx.TicketHash = util.BytesToBytes32(bz)
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	payloadOnly := finalizeTx(tx, m.service, options...)
@@ -423,7 +375,6 @@ func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 		return EncodeForJS(tx.ToMap())
 	}
 
-	// Process the transaction
 	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))

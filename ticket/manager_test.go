@@ -354,7 +354,7 @@ var _ = Describe("Manager", func() {
 				txn := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 				txn.Value = util.String("35")
 				txn.SenderPubKey = util.BytesToPublicKey(delegator.PubKey().MustBytes())
-				txn.Delegate = proposer.PubKey().MustBytes32()
+				txn.Delegate = util.BytesToPublicKey(proposer.PubKey().MustBytes())
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
@@ -393,7 +393,7 @@ var _ = Describe("Manager", func() {
 				txn := types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
 				txn.Value = util.String("35")
 				txn.SenderPubKey = util.BytesToPublicKey(delegator.PubKey().MustBytes())
-				txn.Delegate = proposer.PubKey().MustBytes32()
+				txn.Delegate = util.BytesToPublicKey(proposer.PubKey().MustBytes())
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())

@@ -6,7 +6,6 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )
@@ -117,24 +116,9 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 func (m *RepoModule) create(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareTxRepoCreate()
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if value, ok := params["value"]; ok {
-		defer castPanic("value")
-		tx.Value = util.String(value.(string))
-	}
-
-	if repoName, ok := params["name"]; ok {
-		defer castPanic("name")
-		tx.Name = repoName.(string)
-	}
-
-	if config, ok := params["config"]; ok {
-		defer castPanic("config")
-		tx.Config = config.(map[string]interface{})
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	payloadOnly := finalizeTx(tx, m.service, options...)
@@ -142,7 +126,6 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 		return EncodeForJS(tx.ToMap())
 	}
 
-	// Process the transaction
 	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
@@ -168,34 +151,9 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareRepoProposalUpsertOwner()
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if repoName, ok := params["name"]; ok {
-		defer castPanic("name")
-		tx.RepoName = repoName.(string)
-	}
-
-	if id, ok := params["id"]; ok {
-		defer castPanic("id")
-		tx.ProposalID = id.(string)
-	}
-
-	if ownerAddrs, ok := params["addresses"]; ok {
-		defer castPanic("addresses")
-		tx.Addresses = ownerAddrs.(string)
-	}
-
-	if value, ok := params["value"]; ok {
-		defer castPanic("value")
-		tx.Value = util.String(value.(string))
-	}
-
-	if veto, ok := params["veto"]; ok {
-		defer castPanic("veto")
-		tx.Veto = veto.(bool)
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	payloadOnly := finalizeTx(tx, m.service, options...)
@@ -203,7 +161,6 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 		return EncodeForJS(tx.ToMap())
 	}
 
-	// Process the transaction
 	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
@@ -228,30 +185,9 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareRepoProposalVote()
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if repoName, ok := params["name"]; ok {
-		defer castPanic("name")
-		tx.RepoName = repoName.(string)
-	}
-
-	if id, ok := params["id"]; ok {
-		defer castPanic("id")
-		tx.ProposalID = id.(string)
-	}
-
-	if vote, ok := params["vote"]; ok {
-		switch v := vote.(type) {
-		case int64:
-			tx.Vote = int(v)
-		case float64:
-			tx.Vote = int(v)
-		default:
-			panic("unexpected type for 'vote'")
-		}
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	payloadOnly := finalizeTx(tx, m.service, options...)
@@ -259,7 +195,6 @@ func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...in
 		return EncodeForJS(tx.ToMap())
 	}
 
-	// Process the transaction
 	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
@@ -332,29 +267,9 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) interface{
 func (m *RepoModule) update(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareRepoProposalUpdate()
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if repoName, ok := params["name"]; ok {
-		defer castPanic("name")
-		tx.RepoName = repoName.(string)
-	}
-
-	if id, ok := params["id"]; ok {
-		defer castPanic("id")
-		tx.ProposalID = id.(string)
-	}
-
-	if value, ok := params["value"]; ok {
-		defer castPanic("value")
-		tx.Value = util.String(value.(string))
-	}
-
-	if config, ok := params["config"]; ok {
-		defer castPanic("config")
-		tx.Config = config.(map[string]interface{})
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	payloadOnly := finalizeTx(tx, m.service, options...)
@@ -362,7 +277,6 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 		return EncodeForJS(tx.ToMap())
 	}
 
-	// Process the transaction
 	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
@@ -388,24 +302,9 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 func (m *RepoModule) depositFee(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareRepoProposalFeeSend()
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if repoName, ok := params["name"]; ok {
-		defer castPanic("name")
-		tx.RepoName = repoName.(string)
-	}
-
-	if value, ok := params["value"]; ok {
-		defer castPanic("value")
-		tx.Value = util.String(value.(string))
-	}
-
-	if id, ok := params["id"]; ok {
-		defer castPanic("id")
-		tx.ProposalID = id.(string)
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	payloadOnly := finalizeTx(tx, m.service, options...)
@@ -413,7 +312,6 @@ func (m *RepoModule) depositFee(params map[string]interface{}, options ...interf
 		return EncodeForJS(tx.ToMap())
 	}
 
-	// Process the transaction
 	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
@@ -443,39 +341,9 @@ func (m *RepoModule) CreateMergeRequest(
 	options ...interface{}) interface{} {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareRepoProposalMergeRequest()
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if repoName, ok := params["name"]; ok {
-		defer castPanic("name")
-		tx.RepoName = repoName.(string)
-	}
-
-	if id, ok := params["id"]; ok {
-		defer castPanic("id")
-		tx.ProposalID = id.(string)
-	}
-
-	if base, ok := params["base"]; ok {
-		defer castPanic("base")
-		tx.BaseBranch = base.(string)
-	}
-
-	if baseHash, ok := params["baseHash"]; ok {
-		defer castPanic("baseHash")
-		tx.BaseBranchHash = baseHash.(string)
-	}
-
-	if target, ok := params["target"]; ok {
-		defer castPanic("target")
-		tx.TargetBranch = target.(string)
-	}
-
-	if targetHash, ok := params["targetHash"]; ok {
-		defer castPanic("targetHash")
-		tx.TargetBranchHash = targetHash.(string)
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	payloadOnly := finalizeTx(tx, m.service, options...)
@@ -483,7 +351,6 @@ func (m *RepoModule) CreateMergeRequest(
 		return EncodeForJS(tx.ToMap())
 	}
 
-	// Process the transaction
 	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))

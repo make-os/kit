@@ -1,8 +1,11 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/fatih/structs"
 	"github.com/makeos/mosdef/util"
+	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -99,4 +102,42 @@ func (tx *TxNamespaceDomainUpdate) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
+}
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxNamespaceDomainUpdate) FromMap(data map[string]interface{}) error {
+	err := tx.TxCommon.FromMap(data)
+	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
+
+	o := objx.New(data)
+
+	// Name: expects string type in map
+	if nameVal := o.Get("name"); !nameVal.IsNil() {
+		if nameVal.IsStr() {
+			tx.Name = nameVal.Str()
+		} else {
+			return FieldError("name", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", nameVal.Inter()))
+		}
+	}
+
+	// Domains: expects map[string]string type in map
+	if domainsVal := o.Get("domains"); !domainsVal.IsNil() {
+		if domainsVal.IsObjxMap() {
+			if tx.Domains == nil {
+				tx.Domains = make(map[string]string)
+			}
+			for k, v := range domainsVal.Inter().(map[string]interface{}) {
+				tx.Domains[k] = v.(string)
+			}
+		} else {
+			return FieldError("domains", fmt.Sprintf("invalid value type: has %T, "+
+				"wants map", domainsVal.Inter()))
+		}
+	}
+
+	return err
 }

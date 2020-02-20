@@ -8,7 +8,6 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )
@@ -41,8 +40,13 @@ func (m *TxModule) funcs() []*types.ModulesAggregatorFunc {
 	return []*types.ModulesAggregatorFunc{
 		&types.ModulesAggregatorFunc{
 			Name:        "get",
-			Value:       m.get,
-			Description: "Get a transactions by hash",
+			Value:       m.Get,
+			Description: "Get a transactions by its hash",
+		},
+		&types.ModulesAggregatorFunc{
+			Name:        "sendPayload",
+			Value:       m.SendPayload,
+			Description: "Send a signed transaction payload to the network",
 		},
 	}
 }
@@ -102,22 +106,11 @@ func (m *TxModule) Configure() []prompt.Suggest {
 // options[0]: key
 // options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
 func (m *TxModule) sendTx(params map[string]interface{}, options ...interface{}) interface{} {
-
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareTxCoinTransfer()
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if value, ok := params["value"]; ok {
-		defer castPanic("value")
-		tx.Value = util.String(value.(string))
-	}
-
-	if to, ok := params["to"]; ok {
-		defer castPanic("to")
-		tx.To = util.String(to.(string))
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	payloadOnly := finalizeTx(tx, m.service, options...)
@@ -125,7 +118,6 @@ func (m *TxModule) sendTx(params map[string]interface{}, options ...interface{})
 		return EncodeForJS(tx.ToMap())
 	}
 
-	// Process the transaction
 	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
@@ -137,7 +129,7 @@ func (m *TxModule) sendTx(params map[string]interface{}, options ...interface{})
 }
 
 // get fetches a tx by its hash
-func (m *TxModule) get(hash string) interface{} {
+func (m *TxModule) Get(hash string) interface{} {
 
 	if strings.ToLower(hash[:2]) == "0x" {
 		hash = hash[2:]
@@ -155,4 +147,21 @@ func (m *TxModule) get(hash string) interface{} {
 	}
 
 	return EncodeForJS(tx)
+}
+
+// sendPayload sends an already signed transaction object to the network
+func (m *TxModule) SendPayload(txData map[string]interface{}) interface{} {
+	tx, err := types.DecodeTxFromMap(txData)
+	if err != nil {
+		panic(err)
+	}
+
+	hash, err := m.service.SendTx(tx)
+	if err != nil {
+		panic(errors.Wrap(err, "failed to send transaction"))
+	}
+
+	return EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
 }

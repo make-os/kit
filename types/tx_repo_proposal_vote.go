@@ -1,8 +1,11 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/fatih/structs"
 	"github.com/makeos/mosdef/util"
+	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -104,4 +107,47 @@ func (tx *TxRepoProposalVote) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
+}
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxRepoProposalVote) FromMap(data map[string]interface{}) error {
+	err := tx.TxCommon.FromMap(data)
+	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
+
+	o := objx.New(data)
+
+	// RepoName: expects string type in map
+	if nameVal := o.Get("name"); !nameVal.IsNil() {
+		if nameVal.IsStr() {
+			tx.RepoName = nameVal.Str()
+		} else {
+			return FieldError("name", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", nameVal.Inter()))
+		}
+	}
+
+	// ProposalID: expects string type in map
+	if propIDVal := o.Get("id"); !propIDVal.IsNil() {
+		if propIDVal.IsStr() {
+			tx.ProposalID = propIDVal.Str()
+		} else {
+			return FieldError("id", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", propIDVal.Inter()))
+		}
+	}
+
+	// Vote: expects int type in map
+	if voteVal := o.Get("vote"); !voteVal.IsNil() {
+		if voteVal.IsInt64() {
+			tx.Vote = int(voteVal.Int64())
+		} else {
+			return FieldError("vote", fmt.Sprintf("invalid value type: has %T, "+
+				"wants int", voteVal.Inter()))
+		}
+	}
+
+	return err
 }

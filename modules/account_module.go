@@ -5,7 +5,6 @@ import (
 
 	"github.com/k0kubun/pp"
 	"github.com/makeos/mosdef/config"
-	"github.com/mitchellh/mapstructure"
 
 	"github.com/makeos/mosdef/util"
 
@@ -151,7 +150,6 @@ func (m *AccountModule) listAccounts() []string {
 // If passphrase is not set, an interactive prompt will be started
 // to collect the passphrase without revealing it in the terminal.
 func (m *AccountModule) getKey(address string, passphrase ...string) string {
-
 	var pass string
 
 	if address == "undefined" {
@@ -187,7 +185,6 @@ func (m *AccountModule) getKey(address string, passphrase ...string) string {
 // If passphrase is not set, an interactive prompt will be started
 // to collect the passphrase without revealing it in the terminal.
 func (m *AccountModule) getPublicKey(address string, passphrase ...string) string {
-
 	var pass string
 
 	if address == "undefined" {
@@ -281,6 +278,7 @@ func (m *AccountModule) getPrivateValidator(includePrivKey ...bool) interface{} 
 	if len(includePrivKey) > 0 && includePrivKey[0] {
 		info["privateKey"] = key.PrivKey().Base58()
 	}
+	
 	return info
 }
 
@@ -297,14 +295,9 @@ func (m *AccountModule) setCommission(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareTxSetDelegateCommission()
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if commission, ok := params["commission"]; ok {
-		defer castPanic("commission")
-		tx.Commission = util.String(commission.(string))
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	payloadOnly := finalizeTx(tx, m.service, options...)
@@ -312,7 +305,6 @@ func (m *AccountModule) setCommission(params map[string]interface{},
 		return EncodeForJS(tx.ToMap())
 	}
 
-	// Process the transaction
 	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))

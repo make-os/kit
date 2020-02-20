@@ -600,3 +600,11 @@ func RESTApiHandler(method string, handler func(w http.ResponseWriter,
 		handler(w, r)
 	}
 }
+
+// CallOnNilErr calls f if err is nil
+func CallOnNilErr(err error, f func() error) error {
+	if err == nil {
+		err = f()
+	}
+	return err
+}

@@ -1,8 +1,11 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/fatih/structs"
 	"github.com/makeos/mosdef/util"
+	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -11,7 +14,7 @@ import (
 type TxSetDelegateCommission struct {
 	*TxType    `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxCommon  `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Commission util.String `json:"commission" msgpack:"commission"`
+	Commission util.String `json:"commission" msgpack:"commission" mapstructure:"commission"`
 }
 
 // NewBareTxSetDelegateCommission returns an instance of TxSetDelegateCommission with zero values
@@ -96,4 +99,29 @@ func (tx *TxSetDelegateCommission) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
+}
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxSetDelegateCommission) FromMap(data map[string]interface{}) error {
+	err := tx.TxCommon.FromMap(data)
+	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
+
+	o := objx.New(data)
+
+	// Commission: expects int64, float64 or string types in map
+	if commissionVal := o.Get("commission"); !commissionVal.IsNil() {
+		if commissionVal.IsInt64() || commissionVal.IsFloat64() {
+			tx.Commission = util.String(fmt.Sprintf("%v", commissionVal.Inter()))
+		} else if commissionVal.IsStr() {
+			tx.Commission = util.String(commissionVal.Str())
+		} else {
+			return FieldError("commission", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string|int64|float", commissionVal.Inter()))
+		}
+	}
+
+	return err
 }

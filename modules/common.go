@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/fatih/structs"
@@ -15,86 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 )
-
-func invalidFieldValueType(fieldName, want string, field interface{}) error {
-	return fmt.Errorf("field:%s, error:has invalid value type: %s want %s", fieldName,
-		reflect.ValueOf(field).Type().String(), want)
-}
-
-func castPanic(field string) {
-	if err := recover(); err != nil {
-		if strings.HasPrefix(err.(error).Error(), "interface conversion") {
-			msg := fmt.Sprintf("field:%s, error:has invalid value type: %s", field, err)
-			msg = strings.ReplaceAll(msg, "interface conversion: interface {} is", "has")
-			msg = strings.ReplaceAll(msg, "not", "want")
-			panic(fmt.Errorf(msg))
-		}
-		panic(err)
-	}
-}
-
-// Decode common fields like nonce, fee, timestamp into tx
-func decodeCommon(tx types.BaseTx, params map[string]interface{}) {
-
-	if nonce, ok := params["nonce"]; ok {
-		defer castPanic("nonce")
-		switch v := nonce.(type) {
-		case int64:
-			tx.SetNonce(uint64(v))
-		case float64:
-			tx.SetNonce(uint64(v))
-		case string:
-			n, err := strconv.ParseUint(v, 10, 64)
-			if err != nil {
-				panic(err)
-			}
-			tx.SetNonce(n)
-		default:
-			panic(invalidFieldValueType("nonce", "int", nonce))
-		}
-	}
-
-	if senderPubKey, ok := params["senderPubKey"]; ok {
-		defer castPanic("senderPubKey")
-		pk, err := crypto.PubKeyFromBase58(senderPubKey.(string))
-		if err != nil {
-			panic(types.FieldError("senderPubKey", "public key is not valid"))
-		}
-		tx.SetSenderPubKey(pk.MustBytes())
-	}
-
-	if fee, ok := params["fee"]; ok {
-		defer castPanic("fee")
-		tx.SetFee(util.String(fee.(string)))
-	}
-
-	if timestamp, ok := params["timestamp"]; ok {
-		defer castPanic("timestamp")
-		switch v := timestamp.(type) {
-		case int64:
-			tx.SetTimestamp(v)
-		case float64:
-			tx.SetTimestamp(int64(v))
-		case string:
-			ts, err := strconv.ParseInt(v, 10, 64)
-			if err != nil {
-				panic(err)
-			}
-			tx.SetTimestamp(ts)
-		default:
-			panic(invalidFieldValueType("timestamp", "int", timestamp))
-		}
-	}
-
-	if sig, ok := params["sig"]; ok {
-		defer castPanic("sig")
-		sigBz, err := util.FromHex(sig.(string))
-		if err != nil {
-			panic(types.FieldError("sig", "unable to decode signature: "+err.Error()))
-		}
-		tx.SetSignature(sigBz)
-	}
-}
 
 // finalizeTx sets the public key, timestamp and signs the transaction.
 //
@@ -176,8 +94,6 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 	if obj == nil {
 		return obj
 	}
-
-	// var m map[string]interface{}
 
 	var m map[string]interface{}
 	structs.DefaultTagName = "json"

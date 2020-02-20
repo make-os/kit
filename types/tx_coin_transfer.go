@@ -101,3 +101,15 @@ func (tx *TxCoinTransfer) ToMap() map[string]interface{} {
 	s.TagName = "json"
 	return s.Map()
 }
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxCoinTransfer) FromMap(data map[string]interface{}) error {
+	err := tx.TxCommon.FromMap(data)
+	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
+	err = util.CallOnNilErr(err, func() error { return tx.TxRecipient.FromMap(data) })
+	err = util.CallOnNilErr(err, func() error { return tx.TxValue.FromMap(data) })
+	return err
+}

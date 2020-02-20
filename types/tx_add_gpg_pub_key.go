@@ -1,8 +1,11 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/fatih/structs"
 	"github.com/makeos/mosdef/util"
+	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -11,7 +14,7 @@ import (
 type TxAddGPGPubKey struct {
 	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
-	PublicKey string `json:"pubKey" msgpack:"pubKey"`
+	PublicKey string `json:"pubKey" msgpack:"pubKey" mapstructure:"pubKey"`
 }
 
 // NewBareTxAddGPGPubKey returns an instance of TxAddGPGPubKey with zero values
@@ -96,4 +99,27 @@ func (tx *TxAddGPGPubKey) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
+}
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxAddGPGPubKey) FromMap(data map[string]interface{}) error {
+	err := tx.TxCommon.FromMap(data)
+	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
+
+	o := objx.New(data)
+
+	// PublicKey: expects string type in map
+	if pubKeyVal := o.Get("pubKey"); !pubKeyVal.IsNil() {
+		if pubKeyVal.IsStr() {
+			tx.PublicKey = pubKeyVal.Str()
+		} else {
+			return FieldError("pubKey", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", pubKeyVal.Inter()))
+		}
+	}
+
+	return err
 }

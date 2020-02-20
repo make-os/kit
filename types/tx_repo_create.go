@@ -1,8 +1,11 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/fatih/structs"
 	"github.com/makeos/mosdef/util"
+	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -12,8 +15,8 @@ type TxRepoCreate struct {
 	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxValue  `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Name      string                 `json:"name" msgpack:"name"`
-	Config    map[string]interface{} `json:"config" msgpack:"config"`
+	Name      string                 `json:"name" msgpack:"name" mapstructure:"name"`
+	Config    map[string]interface{} `json:"config" msgpack:"config" mapstructure:"config"`
 }
 
 // NewBareTxRepoCreate returns an instance of TxRepoCreate with zero values
@@ -104,4 +107,38 @@ func (tx *TxRepoCreate) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
+}
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxRepoCreate) FromMap(data map[string]interface{}) error {
+	err := tx.TxCommon.FromMap(data)
+	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
+	err = util.CallOnNilErr(err, func() error { return tx.TxValue.FromMap(data) })
+
+	o := objx.New(data)
+
+	// Name: expects string type in map
+	if nameVal := o.Get("name"); !nameVal.IsNil() {
+		if nameVal.IsStr() {
+			tx.Name = nameVal.Str()
+		} else {
+			return FieldError("name", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", nameVal.Inter()))
+		}
+	}
+
+	// Config: expects map type in map
+	if configVal := o.Get("config"); !configVal.IsNil() {
+		if configVal.IsObjxMap() {
+			tx.Config = configVal.ObjxMap()
+		} else {
+			return FieldError("config", fmt.Sprintf("invalid value type: has %T, "+
+				"wants map", configVal.Inter()))
+		}
+	}
+
+	return err
 }

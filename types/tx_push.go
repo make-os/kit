@@ -115,3 +115,11 @@ func (tx *TxPush) ToMap() map[string]interface{} {
 	s.TagName = "json"
 	return s.Map()
 }
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxPush) FromMap(data map[string]interface{}) error {
+	panic("FromMap: not supported")
+}

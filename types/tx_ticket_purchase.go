@@ -1,8 +1,12 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/fatih/structs"
+	"github.com/makeos/mosdef/crypto"
 	"github.com/makeos/mosdef/util"
+	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -12,8 +16,8 @@ type TxTicketPurchase struct {
 	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxValue  `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Delegate  util.Bytes32 `json:"delegate" msgpack:"delegate"`
-	BLSPubKey []byte       `json:"blsPubKey" msgpack:"blsPubKey"`
+	Delegate  util.PublicKey `json:"delegate" msgpack:"delegate"`
+	BLSPubKey []byte         `json:"blsPubKey" msgpack:"blsPubKey"`
 }
 
 // NewBareTxTicketPurchase returns an instance of TxTicketPurchase with zero values
@@ -22,7 +26,7 @@ func NewBareTxTicketPurchase(ticketType int) *TxTicketPurchase {
 		TxType:    &TxType{Type: ticketType},
 		TxCommon:  NewBareTxCommon(),
 		TxValue:   &TxValue{Value: "0"},
-		Delegate:  util.EmptyBytes32,
+		Delegate:  util.EmptyPublicKey,
 		BLSPubKey: []byte{},
 	}
 }
@@ -104,4 +108,45 @@ func (tx *TxTicketPurchase) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
+}
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxTicketPurchase) FromMap(data map[string]interface{}) error {
+	err := tx.TxCommon.FromMap(data)
+	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
+	err = util.CallOnNilErr(err, func() error { return tx.TxValue.FromMap(data) })
+
+	o := objx.New(data)
+
+	// Delegate: expects string type in map
+	if delVal := o.Get("delegate"); !delVal.IsNil() {
+		if delVal.IsStr() {
+			pubKey, err := crypto.PubKeyFromBase58(delVal.Str())
+			if err != nil {
+				return FieldError("delegate", "unable to decode from base58")
+			}
+			tx.Delegate = util.BytesToPublicKey(pubKey.MustBytes())
+		} else {
+			return FieldError("name", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", delVal.Inter()))
+		}
+	}
+
+	// BLSPubKey: expects string type, hex encoded
+	if blsPKVal := o.Get("blsPubKey"); !blsPKVal.IsNil() {
+		if blsPKVal.IsStr() {
+			tx.BLSPubKey, err = util.FromHex(blsPKVal.Str())
+			if err != nil {
+				return FieldError("blsPubKey", "unable to decode from hex")
+			}
+		} else {
+			return FieldError("blsPubKey", fmt.Sprintf("invalid value type: has %T, "+
+				"wants hex string", blsPKVal.Inter()))
+		}
+	}
+
+	return err
 }

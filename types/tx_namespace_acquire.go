@@ -1,8 +1,11 @@
 package types
 
 import (
+	"fmt"
+
 	"github.com/fatih/structs"
 	"github.com/makeos/mosdef/util"
+	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 )
 
@@ -11,10 +14,10 @@ type TxNamespaceAcquire struct {
 	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxCommon         `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxValue          `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Name              string            `json:"name" msgpack:"name"`                           // The name of the namespace
-	TransferToRepo    string            `json:"transferToRepo" msgpack:"transferToRepo"`       // Name of repo that will own the name.
-	TransferToAccount string            `json:"transferToAccount" msgpack:"transferToAccount"` // Name of the account that will own the name.
-	Domains           map[string]string `json:"domains" msgpack:"domains"`                     // Dictionary of namespace domains and their target
+	Name              string            `json:"name" msgpack:"name" mapstructure:"name"`                // The name of the namespace
+	TransferToRepo    string            `json:"toRepo" msgpack:"toRepo" mapstructure:"toRepo"`          // Name of repo that will own the name.
+	TransferToAccount string            `json:"toAccount" msgpack:"toAccount" mapstructure:"toAccount"` // Name of the account that will own the name.
+	Domains           map[string]string `json:"domains" msgpack:"domains" mapstructure:"domains"`       // Dictionary of namespace domains and their target
 }
 
 // NewBareTxNamespaceAcquire returns an instance of TxNamespaceAcquire with zero values
@@ -111,4 +114,62 @@ func (tx *TxNamespaceAcquire) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
+}
+
+// FromMap populates fields from a map.
+// Note: Default or zero values may be set for fields that aren't present in the
+// map. Also, an error will be returned when unable to convert types in map to
+// actual types in the object.
+func (tx *TxNamespaceAcquire) FromMap(data map[string]interface{}) error {
+	err := tx.TxCommon.FromMap(data)
+	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
+	err = util.CallOnNilErr(err, func() error { return tx.TxValue.FromMap(data) })
+
+	o := objx.New(data)
+
+	// Name: expects string type in map
+	if nameVal := o.Get("name"); !nameVal.IsNil() {
+		if nameVal.IsStr() {
+			tx.Name = nameVal.Str()
+		} else {
+			return FieldError("name", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", nameVal.Inter()))
+		}
+	}
+
+	// TransferToRepo: expects string type in map
+	if toRepoVal := o.Get("toRepo"); !toRepoVal.IsNil() {
+		if toRepoVal.IsStr() {
+			tx.TransferToRepo = toRepoVal.Str()
+		} else {
+			return FieldError("toRepo", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", toRepoVal.Inter()))
+		}
+	}
+
+	// TransferToAccount: expects string type in map
+	if toAccountVal := o.Get("toAccount"); !toAccountVal.IsNil() {
+		if toAccountVal.IsStr() {
+			tx.TransferToAccount = toAccountVal.Str()
+		} else {
+			return FieldError("toAccount", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", toAccountVal.Inter()))
+		}
+	}
+	// Domains: expects map[string]string type in map
+	if domainsVal := o.Get("domains"); !domainsVal.IsNil() {
+		if domainsVal.IsObjxMap() {
+			if tx.Domains == nil {
+				tx.Domains = make(map[string]string)
+			}
+			for k, v := range domainsVal.Inter().(map[string]interface{}) {
+				tx.Domains[k] = v.(string)
+			}
+		} else {
+			return FieldError("domains", fmt.Sprintf("invalid value type: has %T, "+
+				"wants map[string]string", domainsVal.Inter()))
+		}
+	}
+
+	return err
 }

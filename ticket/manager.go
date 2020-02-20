@@ -51,7 +51,7 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 	if !t.Delegate.IsEmpty() {
 
 		// Set the given delegate as the proposer
-		ticket.ProposerPubKey = t.Delegate
+		ticket.ProposerPubKey = t.Delegate.ToBytes32()
 
 		// Set the sender address as the delegator
 		ticket.Delegator = t.GetFrom().String()

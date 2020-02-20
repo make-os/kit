@@ -6,7 +6,6 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/makeos/mosdef/types"
 	"github.com/makeos/mosdef/util"
-	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )
@@ -155,37 +154,9 @@ func (m *NamespaceModule) register(
 	options ...interface{}) interface{} {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareTxNamespaceAcquire()
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if value, ok := params["value"]; ok {
-		defer castPanic("value")
-		tx.Value = util.String(value.(string))
-	}
-
-	if namespace, ok := params["name"]; ok {
-		defer castPanic("name")
-		tx.Name = namespace.(string)
-	}
-
-	if trToAccount, ok := params["toAccount"]; ok {
-		defer castPanic("toAccount")
-		tx.TransferToAccount = trToAccount.(string)
-	}
-
-	if trToRepo, ok := params["toRepo"]; ok {
-		defer castPanic("toRepo")
-		tx.TransferToRepo = trToRepo.(string)
-	}
-
-	if domains, ok := params["domains"]; ok {
-		defer castPanic("domains")
-		domains := domains.(map[string]interface{})
-		for k, v := range domains {
-			tx.Domains[k] = v.(string)
-		}
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	// Hash the name
@@ -196,7 +167,6 @@ func (m *NamespaceModule) register(
 		return EncodeForJS(tx.ToMap())
 	}
 
-	// Process the transaction
 	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
@@ -222,22 +192,9 @@ func (m *NamespaceModule) updateDomain(
 	options ...interface{}) interface{} {
 	var err error
 
-	// Decode parameters into a transaction object
 	var tx = types.NewBareTxNamespaceDomainUpdate()
-	mapstructure.Decode(params, tx)
-	decodeCommon(tx, params)
-
-	if namespace, ok := params["name"]; ok {
-		defer castPanic("name")
-		tx.Name = namespace.(string)
-	}
-
-	if domains, ok := params["domains"]; ok {
-		defer castPanic("domains")
-		domains := domains.(map[string]interface{})
-		for k, v := range domains {
-			tx.Domains[k] = v.(string)
-		}
+	if err = tx.FromMap(params); err != nil {
+		panic(err)
 	}
 
 	// Hash the name
@@ -248,7 +205,6 @@ func (m *NamespaceModule) updateDomain(
 		return EncodeForJS(tx.ToMap())
 	}
 
-	// Process the transaction
 	hash, err := m.service.SendTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
