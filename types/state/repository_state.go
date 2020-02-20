@@ -1,13 +1,13 @@
-package state
+package core
 
 import (
 	"reflect"
 
 	"github.com/fatih/structs"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // BareReference returns an empty reference object
