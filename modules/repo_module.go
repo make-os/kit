@@ -2,10 +2,14 @@ package modules
 
 import (
 	"fmt"
+	types4 "gitlab.com/makeos/mosdef/logic/types"
+	types3 "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types/state"
 
 	prompt "github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )
@@ -13,17 +17,17 @@ import (
 // RepoModule provides repository functionalities to JS environment
 type RepoModule struct {
 	vm      *otto.Otto
-	keepers types.Keepers
-	service types.Service
-	repoMgr types.RepoManager
+	keepers types4.Keepers
+	service types3.Service
+	repoMgr types4.RepoManager
 }
 
 // NewRepoModule creates an instance of RepoModule
 func NewRepoModule(
 	vm *otto.Otto,
-	service types.Service,
-	repoMgr types.RepoManager,
-	keepers types.Keepers) *RepoModule {
+	service types3.Service,
+	repoMgr types4.RepoManager,
+	keepers types4.Keepers) *RepoModule {
 	return &RepoModule{vm: vm, service: service, keepers: keepers, repoMgr: repoMgr}
 }
 
@@ -116,7 +120,7 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 func (m *RepoModule) create(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareTxRepoCreate()
+	var tx = msgs.NewBareTxRepoCreate()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -151,7 +155,7 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareRepoProposalUpsertOwner()
+	var tx = msgs.NewBareRepoProposalUpsertOwner()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -185,7 +189,7 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareRepoProposalVote()
+	var tx = msgs.NewBareRepoProposalVote()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -237,7 +241,7 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) interface{
 		}
 	}
 
-	var repo *types.Repository
+	var repo *state.Repository
 	if !noProposals {
 		repo = m.keepers.RepoKeeper().GetRepo(name, targetHeight)
 	} else {
@@ -267,7 +271,7 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) interface{
 func (m *RepoModule) update(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareRepoProposalUpdate()
+	var tx = msgs.NewBareRepoProposalUpdate()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -302,7 +306,7 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 func (m *RepoModule) depositFee(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareRepoProposalFeeSend()
+	var tx = msgs.NewBareRepoProposalFeeSend()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -341,7 +345,7 @@ func (m *RepoModule) CreateMergeRequest(
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareRepoProposalMergeRequest()
+	var tx = msgs.NewBareRepoProposalMergeRequest()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}

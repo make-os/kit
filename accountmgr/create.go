@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/util"
 	funk "github.com/thoas/go-funk"
 	"github.com/vmihailenco/msgpack"
 )

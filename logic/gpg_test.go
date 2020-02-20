@@ -2,17 +2,17 @@ package logic
 
 import (
 	"crypto/rsa"
+	"gitlab.com/makeos/mosdef/types"
 	"io/ioutil"
 	"os"
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

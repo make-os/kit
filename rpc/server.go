@@ -3,10 +3,10 @@ package rpc
 import (
 	"sync"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/rpc/jsonrpc"
-	"github.com/makeos/mosdef/util"
-	"github.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/rpc/jsonrpc"
+	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/logger"
 )
 
 // Result represent a response to a service method call

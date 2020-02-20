@@ -1,9 +1,9 @@
 package keepers
 
 import (
-	"github.com/makeos/mosdef/storage/tree"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/storage/tree"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"

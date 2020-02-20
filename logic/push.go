@@ -1,8 +1,8 @@
 package logic
 
 import (
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // execPush executes a push transaction
@@ -20,7 +20,7 @@ import (
 // - Pusher GPG key must exist
 func (t *Transaction) execPush(
 	repoName string,
-	references types.PushedReferences,
+	references core.PushedReferences,
 	fee util.String,
 	pusherKeyID []byte,
 	chainHeight uint64) error {

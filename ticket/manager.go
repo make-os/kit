@@ -1,41 +1,43 @@
 package ticket
 
 import (
+	types2 "gitlab.com/makeos/mosdef/logic/types"
+	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
 	"sort"
 
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/shopspring/decimal"
 
-	"github.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/crypto"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/params"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/params"
 )
 
 // Manager implements types.TicketManager.
 // It provides ticket management functionalities.
 type Manager struct {
 	cfg   *config.AppConfig
-	logic types.Logic
+	logic types2.Logic
 	s     Storer
 }
 
 // NewManager returns an instance of Manager.
 // Returns error if unable to initialize the store.
-func NewManager(db storage.Tx, cfg *config.AppConfig, logic types.Logic) *Manager {
+func NewManager(db storage.Tx, cfg *config.AppConfig, logic types2.Logic) *Manager {
 	mgr := &Manager{cfg: cfg, logic: logic}
 	mgr.s = NewStore(db)
 	return mgr
 }
 
 // Index takes a tx and creates a ticket out of it
-func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error {
+func (m *Manager) Index(tx msgs.BaseTx, blockHeight uint64, txIndex int) error {
 
-	t := tx.(*types.TxTicketPurchase)
+	t := tx.(*msgs.TxTicketPurchase)
 
-	ticket := &types.Ticket{
+	ticket := &types3.Ticket{
 		Type:           tx.GetType(),
 		Height:         blockHeight,
 		Index:          txIndex,
@@ -67,7 +69,7 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 	ticket.MatureBy = blockHeight + uint64(params.MinTicketMatDur)
 
 	// Only validator tickets have a pre-determined decay height
-	if t.Is(types.TxTypeValidatorTicket) {
+	if t.Is(msgs.TxTypeValidatorTicket) {
 		ticket.DecayBy = ticket.MatureBy + uint64(params.MaxTicketActiveDur)
 	}
 
@@ -80,17 +82,17 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 }
 
 // GetTopStorers gets storer tickets with the most total delegated value.
-func (m *Manager) GetTopStorers(limit int) (types.SelectedTickets, error) {
-	return m.getTopTickets(types.TxTypeStorerTicket, limit)
+func (m *Manager) GetTopStorers(limit int) (types3.SelectedTickets, error) {
+	return m.getTopTickets(msgs.TxTypeStorerTicket, limit)
 }
 
 // GetTopValidators gets validator tickets with the most total delegated value.
-func (m *Manager) GetTopValidators(limit int) (types.SelectedTickets, error) {
-	return m.getTopTickets(types.TxTypeValidatorTicket, limit)
+func (m *Manager) GetTopValidators(limit int) (types3.SelectedTickets, error) {
+	return m.getTopTickets(msgs.TxTypeValidatorTicket, limit)
 }
 
 // getTopTickets finds tickets with the most delegated value
-func (m *Manager) getTopTickets(ticketType, limit int) (types.SelectedTickets, error) {
+func (m *Manager) getTopTickets(ticketType, limit int) (types3.SelectedTickets, error) {
 
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -99,7 +101,7 @@ func (m *Manager) getTopTickets(ticketType, limit int) (types.SelectedTickets, e
 	}
 
 	// Get active storer tickets
-	activeTickets := m.s.Query(func(t *types.Ticket) bool {
+	activeTickets := m.s.Query(func(t *types3.Ticket) bool {
 		return t.Type == ticketType &&
 			t.MatureBy <= uint64(bi.Height) &&
 			(t.DecayBy > uint64(bi.Height) || t.DecayBy == 0)
@@ -109,12 +111,12 @@ func (m *Manager) getTopTickets(ticketType, limit int) (types.SelectedTickets, e
 	// delegated to it. If a proposer already exist in the index, its value is
 	// added to the total value of the existing ticket in the index.
 	// While doing this, collect the selected tickets.
-	var proposerIdx = make(map[string]*types.SelectedTicket)
-	var selectedTickets []*types.SelectedTicket
+	var proposerIdx = make(map[string]*types3.SelectedTicket)
+	var selectedTickets []*types3.SelectedTicket
 	for _, ticket := range activeTickets {
 		existingTicket, ok := proposerIdx[ticket.ProposerPubKey.HexStr()]
 		if !ok {
-			proposerIdx[ticket.ProposerPubKey.HexStr()] = &types.SelectedTicket{
+			proposerIdx[ticket.ProposerPubKey.HexStr()] = &types3.SelectedTicket{
 				Ticket: ticket,
 				Power:  ticket.Value,
 			}
@@ -149,7 +151,7 @@ func (m *Manager) Remove(hash util.Bytes32) error {
 func (m *Manager) GetByProposer(
 	ticketType int,
 	proposerPubKey util.Bytes32,
-	queryOpt ...interface{}) ([]*types.Ticket, error) {
+	queryOpt ...interface{}) ([]*types3.Ticket, error) {
 
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -158,7 +160,7 @@ func (m *Manager) GetByProposer(
 
 	qo := getQueryOptions(queryOpt...)
 
-	res := m.s.Query(func(t *types.Ticket) bool {
+	res := m.s.Query(func(t *types3.Ticket) bool {
 		ok := true
 		if t.Type != ticketType || t.ProposerPubKey != proposerPubKey {
 			ok = false
@@ -185,7 +187,7 @@ func (m *Manager) GetByProposer(
 // public key as the proposer or the delegator;
 // If maturityHeight is non-zero, then only tickets that reached maturity before
 // or on the given height are selected. Otherwise, the current chain height is used.
-func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*types.Ticket, error) {
+func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*types3.Ticket, error) {
 
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -201,10 +203,10 @@ func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint6
 		return nil, err
 	}
 
-	result := m.s.Query(func(t *types.Ticket) bool {
+	result := m.s.Query(func(t *types3.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) && // not decayed
+				(t.DecayBy == 0 && t.Type == msgs.TxTypeStorerTicket)) && // not decayed
 			(t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String()) // is delegator or not
 	})
 
@@ -220,8 +222,8 @@ func (m *Manager) CountActiveValidatorTickets() (int, error) {
 		return 0, err
 	}
 
-	count := m.s.Count(func(t *types.Ticket) bool {
-		return t.Type == types.TxTypeValidatorTicket &&
+	count := m.s.Count(func(t *types3.Ticket) bool {
+		return t.Type == msgs.TxTypeValidatorTicket &&
 			t.MatureBy <= uint64(bi.Height) &&
 			t.DecayBy > uint64(bi.Height)
 	})
@@ -236,7 +238,7 @@ func (m *Manager) CountActiveValidatorTickets() (int, error) {
 // ticketType: Filter the search to a specific ticket type
 func (m *Manager) GetNonDelegatedTickets(
 	pubKey util.Bytes32,
-	ticketType int) ([]*types.Ticket, error) {
+	ticketType int) ([]*types3.Ticket, error) {
 
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -244,10 +246,10 @@ func (m *Manager) GetNonDelegatedTickets(
 		return nil, err
 	}
 
-	result := m.s.Query(func(t *types.Ticket) bool {
+	result := m.s.Query(func(t *types3.Ticket) bool {
 		return t.Type == ticketType &&
 			t.MatureBy <= uint64(bi.Height) &&
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) &&
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == msgs.TxTypeStorerTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator == ""
 	})
@@ -276,9 +278,9 @@ func (m *Manager) ValueOfNonDelegatedTickets(
 		maturityHeight = uint64(bi.Height)
 	}
 
-	result := m.s.Query(func(t *types.Ticket) bool {
+	result := m.s.Query(func(t *types3.Ticket) bool {
 		return t.MatureBy <= maturityHeight &&
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) &&
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == msgs.TxTypeStorerTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator == ""
 	})
@@ -313,9 +315,9 @@ func (m *Manager) ValueOfDelegatedTickets(
 		maturityHeight = uint64(bi.Height)
 	}
 
-	result := m.s.Query(func(t *types.Ticket) bool {
+	result := m.s.Query(func(t *types3.Ticket) bool {
 		return t.MatureBy <= maturityHeight &&
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) &&
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == msgs.TxTypeStorerTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator != ""
 	})
@@ -355,10 +357,10 @@ func (m *Manager) ValueOfTickets(
 		return 0, err
 	}
 
-	result := m.s.Query(func(t *types.Ticket) bool {
+	result := m.s.Query(func(t *types3.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) && // not decayed
+				(t.DecayBy == 0 && t.Type == msgs.TxTypeStorerTicket)) && // not decayed
 			(t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String()) // is delegated or not
 	})
 
@@ -388,10 +390,10 @@ func (m *Manager) ValueOfAllTickets(maturityHeight uint64) (float64, error) {
 		maturityHeight = uint64(bi.Height)
 	}
 
-	result := m.s.Query(func(t *types.Ticket) bool {
+	result := m.s.Query(func(t *types3.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == types.TxTypeStorerTicket)) // not decayed
+				(t.DecayBy == 0 && t.Type == msgs.TxTypeStorerTicket)) // not decayed
 	})
 
 	var sum = decimal.Zero
@@ -404,25 +406,25 @@ func (m *Manager) ValueOfAllTickets(maturityHeight uint64) (float64, error) {
 }
 
 // Query finds and returns tickets that match the given query
-func (m *Manager) Query(qf func(t *types.Ticket) bool, queryOpt ...interface{}) []*types.Ticket {
+func (m *Manager) Query(qf func(t *types3.Ticket) bool, queryOpt ...interface{}) []*types3.Ticket {
 	return m.s.Query(qf, queryOpt...)
 }
 
 // QueryOne finds and returns a ticket that match the given query
-func (m *Manager) QueryOne(qf func(t *types.Ticket) bool) *types.Ticket {
+func (m *Manager) QueryOne(qf func(t *types3.Ticket) bool) *types3.Ticket {
 	return m.s.QueryOne(qf)
 }
 
 // UpdateDecayBy updates the decay height of a ticket
 func (m *Manager) UpdateDecayBy(hash util.Bytes32, newDecayHeight uint64) error {
-	m.s.UpdateOne(types.Ticket{DecayBy: newDecayHeight},
-		func(t *types.Ticket) bool { return t.Hash == hash })
+	m.s.UpdateOne(types3.Ticket{DecayBy: newDecayHeight},
+		func(t *types3.Ticket) bool { return t.Hash == hash })
 	return nil
 }
 
 // GetByHash get a ticket by hash
-func (m *Manager) GetByHash(hash util.Bytes32) *types.Ticket {
-	return m.QueryOne(func(t *types.Ticket) bool { return t.Hash == hash })
+func (m *Manager) GetByHash(hash util.Bytes32) *types3.Ticket {
+	return m.QueryOne(func(t *types3.Ticket) bool { return t.Hash == hash })
 }
 
 // Stop stores the manager

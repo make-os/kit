@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/fatih/color"
-	"github.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/crypto"
 
 	funk "github.com/thoas/go-funk"
 )

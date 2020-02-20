@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

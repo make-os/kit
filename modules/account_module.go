@@ -2,18 +2,21 @@ package modules
 
 import (
 	"fmt"
+	types3 "gitlab.com/makeos/mosdef/logic/types"
+	types2 "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
 
 	"github.com/k0kubun/pp"
-	"github.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/config"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/pkg/errors"
 
-	"github.com/makeos/mosdef/accountmgr"
+	"gitlab.com/makeos/mosdef/accountmgr"
 
 	prompt "github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
 )
 
@@ -23,8 +26,8 @@ type AccountModule struct {
 	cfg     *config.AppConfig
 	acctMgr *accountmgr.AccountManager
 	vm      *otto.Otto
-	service types.Service
-	logic   types.Logic
+	service types2.Service
+	logic   types3.Logic
 }
 
 // NewAccountModule creates an instance of AccountModule
@@ -32,8 +35,8 @@ func NewAccountModule(
 	cfg *config.AppConfig,
 	vm *otto.Otto,
 	acctmgr *accountmgr.AccountManager,
-	service types.Service,
-	logic types.Logic) *AccountModule {
+	service types2.Service,
+	logic types3.Logic) *AccountModule {
 	return &AccountModule{
 		cfg:     cfg,
 		acctMgr: acctmgr,
@@ -295,7 +298,7 @@ func (m *AccountModule) setCommission(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareTxSetDelegateCommission()
+	var tx = msgs.NewBareTxSetDelegateCommission()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}

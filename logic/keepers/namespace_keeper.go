@@ -2,11 +2,11 @@ package keepers
 
 import (
 	"fmt"
-	"github.com/makeos/mosdef/storage/tree"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/storage/tree"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 )
 
 // NamespaceKeeper manages namespaces.

@@ -1,9 +1,9 @@
 package keepers
 
 import (
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/storage/tree"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/storage/tree"
+	"gitlab.com/makeos/mosdef/types"
 	"github.com/pkg/errors"
 )
 

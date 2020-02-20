@@ -8,7 +8,7 @@ import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
 	peer "github.com/libp2p/go-libp2p-core/peer"
-	types "github.com/makeos/mosdef/types"
+	types2 "gitlab.com/makeos/mosdef/dht/types"
 	reflect "reflect"
 )
 
@@ -117,22 +117,22 @@ func (mr *MockDHTMockRecorder) GetProviders(ctx, key interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProviders", reflect.TypeOf((*MockDHT)(nil).GetProviders), ctx, key)
 }
 
-// Annonce mocks base method
-func (m *MockDHT) Annonce(ctx context.Context, key []byte) error {
+// Announce mocks base method
+func (m *MockDHT) Announce(ctx context.Context, key []byte) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Annonce", ctx, key)
+	ret := m.ctrl.Call(m, "Announce", ctx, key)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Annonce indicates an expected call of Annonce
+// Announce indicates an expected call of Announce
 func (mr *MockDHTMockRecorder) Annonce(ctx, key interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Annonce", reflect.TypeOf((*MockDHT)(nil).Annonce), ctx, key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Announce", reflect.TypeOf((*MockDHT)(nil).Announce), ctx, key)
 }
 
 // GetObject mocks base method
-func (m *MockDHT) GetObject(ctx context.Context, query *types.DHTObjectQuery) ([]byte, error) {
+func (m *MockDHT) GetObject(ctx context.Context, query *types2.DHTObjectQuery) ([]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetObject", ctx, query)
 	ret0, _ := ret[0].([]byte)
@@ -147,7 +147,7 @@ func (mr *MockDHTMockRecorder) GetObject(ctx, query interface{}) *gomock.Call {
 }
 
 // RegisterObjFinder mocks base method
-func (m *MockDHT) RegisterObjFinder(objType string, finder types.ObjectFinder) {
+func (m *MockDHT) RegisterObjFinder(objType string, finder types2.ObjectFinder) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RegisterObjFinder", objType, finder)
 }

@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
 	types0 "github.com/tendermint/tendermint/abci/types"
 	mempool "github.com/tendermint/tendermint/mempool"
 	types1 "github.com/tendermint/tendermint/types"
@@ -235,7 +235,7 @@ func (mr *MockMempoolMockRecorder) CloseWAL() *gomock.Call {
 }
 
 // Add mocks base method
-func (m *MockMempool) Add(tx types.BaseTx) error {
+func (m *MockMempool) Add(tx msgs.BaseTx) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", tx)
 	ret0, _ := ret[0].(error)

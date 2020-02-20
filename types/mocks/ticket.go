@@ -6,8 +6,9 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/makeos/mosdef/types"
-	util "github.com/makeos/mosdef/util"
+	types2 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
+	util "gitlab.com/makeos/mosdef/util"
 	reflect "reflect"
 )
 
@@ -35,7 +36,7 @@ func (m *MockTicketManager) EXPECT() *MockTicketManagerMockRecorder {
 }
 
 // Index mocks base method
-func (m *MockTicketManager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error {
+func (m *MockTicketManager) Index(tx msgs.BaseTx, blockHeight uint64, txIndex int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Index", tx, blockHeight, txIndex)
 	ret0, _ := ret[0].(error)
@@ -63,14 +64,14 @@ func (mr *MockTicketManagerMockRecorder) Remove(hash interface{}) *gomock.Call {
 }
 
 // GetByProposer mocks base method
-func (m *MockTicketManager) GetByProposer(ticketType int, proposerPubKey util.Bytes32, queryOpt ...interface{}) ([]*types.Ticket, error) {
+func (m *MockTicketManager) GetByProposer(ticketType int, proposerPubKey util.Bytes32, queryOpt ...interface{}) ([]*types2.Ticket, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ticketType, proposerPubKey}
 	for _, a := range queryOpt {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetByProposer", varargs...)
-	ret0, _ := ret[0].([]*types.Ticket)
+	ret0, _ := ret[0].([]*types2.Ticket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -98,10 +99,10 @@ func (mr *MockTicketManagerMockRecorder) CountActiveValidatorTickets() *gomock.C
 }
 
 // GetNonDelegatedTickets mocks base method
-func (m *MockTicketManager) GetNonDelegatedTickets(pubKey util.Bytes32, ticketType int) ([]*types.Ticket, error) {
+func (m *MockTicketManager) GetNonDelegatedTickets(pubKey util.Bytes32, ticketType int) ([]*types2.Ticket, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNonDelegatedTickets", pubKey, ticketType)
-	ret0, _ := ret[0].([]*types.Ticket)
+	ret0, _ := ret[0].([]*types2.Ticket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -113,14 +114,14 @@ func (mr *MockTicketManagerMockRecorder) GetNonDelegatedTickets(pubKey, ticketTy
 }
 
 // Query mocks base method
-func (m *MockTicketManager) Query(qf func(*types.Ticket) bool, queryOpt ...interface{}) []*types.Ticket {
+func (m *MockTicketManager) Query(qf func(*types2.Ticket) bool, queryOpt ...interface{}) []*types2.Ticket {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{qf}
 	for _, a := range queryOpt {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Query", varargs...)
-	ret0, _ := ret[0].([]*types.Ticket)
+	ret0, _ := ret[0].([]*types2.Ticket)
 	return ret0
 }
 
@@ -132,10 +133,10 @@ func (mr *MockTicketManagerMockRecorder) Query(qf interface{}, queryOpt ...inter
 }
 
 // QueryOne mocks base method
-func (m *MockTicketManager) QueryOne(qf func(*types.Ticket) bool) *types.Ticket {
+func (m *MockTicketManager) QueryOne(qf func(*types2.Ticket) bool) *types2.Ticket {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryOne", qf)
-	ret0, _ := ret[0].(*types.Ticket)
+	ret0, _ := ret[0].(*types2.Ticket)
 	return ret0
 }
 
@@ -146,10 +147,10 @@ func (mr *MockTicketManagerMockRecorder) QueryOne(qf interface{}) *gomock.Call {
 }
 
 // GetByHash mocks base method
-func (m *MockTicketManager) GetByHash(hash util.Bytes32) *types.Ticket {
+func (m *MockTicketManager) GetByHash(hash util.Bytes32) *types2.Ticket {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByHash", hash)
-	ret0, _ := ret[0].(*types.Ticket)
+	ret0, _ := ret[0].(*types2.Ticket)
 	return ret0
 }
 
@@ -174,10 +175,10 @@ func (mr *MockTicketManagerMockRecorder) UpdateDecayBy(hash, newDecayHeight inte
 }
 
 // GetTopStorers mocks base method
-func (m *MockTicketManager) GetTopStorers(limit int) (types.SelectedTickets, error) {
+func (m *MockTicketManager) GetTopStorers(limit int) (types2.SelectedTickets, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTopStorers", limit)
-	ret0, _ := ret[0].(types.SelectedTickets)
+	ret0, _ := ret[0].(types2.SelectedTickets)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -189,10 +190,10 @@ func (mr *MockTicketManagerMockRecorder) GetTopStorers(limit interface{}) *gomoc
 }
 
 // GetTopValidators mocks base method
-func (m *MockTicketManager) GetTopValidators(limit int) (types.SelectedTickets, error) {
+func (m *MockTicketManager) GetTopValidators(limit int) (types2.SelectedTickets, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTopValidators", limit)
-	ret0, _ := ret[0].(types.SelectedTickets)
+	ret0, _ := ret[0].(types2.SelectedTickets)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -264,10 +265,10 @@ func (mr *MockTicketManagerMockRecorder) ValueOfAllTickets(maturityHeight interf
 }
 
 // GetNonDecayedTickets mocks base method
-func (m *MockTicketManager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*types.Ticket, error) {
+func (m *MockTicketManager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*types2.Ticket, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNonDecayedTickets", pubKey, maturityHeight)
-	ret0, _ := ret[0].([]*types.Ticket)
+	ret0, _ := ret[0].([]*types2.Ticket)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util/logger"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

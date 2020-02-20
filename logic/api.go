@@ -1,8 +1,8 @@
 package logic
 
 import (
-	"github.com/makeos/mosdef/logic/api"
-	"github.com/makeos/mosdef/rpc/jsonrpc"
+	"gitlab.com/makeos/mosdef/logic/api"
+	"gitlab.com/makeos/mosdef/rpc/jsonrpc"
 )
 
 // APIs returns all API handlers

@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/params"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 	prettyjson "github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
 )

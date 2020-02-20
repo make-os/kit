@@ -1,8 +1,8 @@
 package services
 
 import (
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // GetNonce returns the current nonce of an account.

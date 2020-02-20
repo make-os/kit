@@ -1,13 +1,13 @@
 package keepers
 
 import (
-	"github.com/makeos/mosdef/storage/tree"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/storage/tree"
+	"gitlab.com/makeos/mosdef/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Account", func() {

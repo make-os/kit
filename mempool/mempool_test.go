@@ -1,6 +1,7 @@
 package mempool
 
 import (
+	"gitlab.com/makeos/mosdef/types/msgs"
 	"os"
 	"time"
 
@@ -11,11 +12,9 @@ import (
 
 	tmmem "github.com/tendermint/tendermint/mempool"
 
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/types"
-
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/testutil"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -46,12 +45,12 @@ var _ = Describe("Mempool", func() {
 			BeforeEach(func() {
 				cfg.Mempool.Size = 1
 				cfg.Mempool.MaxTxsSize = 200
-				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr", sender, "10", "0.1", time.Now().Unix())
+				tx := msgs.NewBaseTx(msgs.TxTypeCoinTransfer, 0, "recipient_addr", sender, "10", "0.1", time.Now().Unix())
 				mempool.pool.Put(tx)
 			})
 
 			It("should return error when we try to add a tx", func() {
-				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
+				tx := msgs.NewBaseTx(msgs.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				err := mempool.CheckTxWithInfo(tx.Bytes(), nil, tmmem.TxInfo{})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("mempool is full: number of txs 1 (max: 1)"))
@@ -62,12 +61,12 @@ var _ = Describe("Mempool", func() {
 			BeforeEach(func() {
 				cfg.Mempool.Size = 2
 				cfg.Mempool.MaxTxsSize = 100
-				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr", sender, "10", "0.1", time.Now().Unix())
+				tx := msgs.NewBaseTx(msgs.TxTypeCoinTransfer, 0, "recipient_addr", sender, "10", "0.1", time.Now().Unix())
 				mempool.pool.Put(tx)
 			})
 
 			It("should return error when we try to add a tx", func() {
-				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
+				tx := msgs.NewBaseTx(msgs.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				err := mempool.CheckTxWithInfo(tx.Bytes(), nil, tmmem.TxInfo{})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("mempool is full: number of txs 1 (max: 2)"))
@@ -81,7 +80,7 @@ var _ = Describe("Mempool", func() {
 			})
 
 			It("should return error when we try to add a tx", func() {
-				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
+				tx := msgs.NewBaseTx(msgs.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				err := mempool.CheckTxWithInfo(tx.Bytes(), nil, tmmem.TxInfo{})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("Tx too large. Max size is 100, but got"))
@@ -92,7 +91,7 @@ var _ = Describe("Mempool", func() {
 	Describe(".addTx", func() {
 		When("status code is not OK", func() {
 			It("should not add tx to pool", func() {
-				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
+				tx := msgs.NewBaseTx(msgs.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				mempool.addTx(tx.Bytes(), &abci.Response{Value: &abci.Response_CheckTx{CheckTx: &abci.ResponseCheckTx{
 					Code: 1,
 				}}})
@@ -102,7 +101,7 @@ var _ = Describe("Mempool", func() {
 
 		When("status code is OK", func() {
 			It("should add tx to pool", func() {
-				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
+				tx := msgs.NewBaseTx(msgs.TxTypeCoinTransfer, 0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				mempool.addTx(tx.Bytes(), &abci.Response{Value: &abci.Response_CheckTx{CheckTx: &abci.ResponseCheckTx{
 					Code: abci.CodeTypeOK,
 				}}})
@@ -125,8 +124,8 @@ var _ = Describe("Mempool", func() {
 			}}}
 
 			BeforeEach(func() {
-				tx := types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
-				tx2 := types.NewBaseTx(types.TxTypeCoinTransfer, 1, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
+				tx := msgs.NewBaseTx(msgs.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
+				tx2 := msgs.NewBaseTx(msgs.TxTypeCoinTransfer, 1, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				mempool.addTx(tx.Bytes(), okRes)
 				mempool.addTx(tx2.Bytes(), okRes)
 				Expect(mempool.Size()).To(Equal(2))
@@ -145,16 +144,16 @@ var _ = Describe("Mempool", func() {
 		})
 
 		When("pool has three transactions; 1 is a coin transfer and 2 are validator ticket purchase txs", func() {
-			var tx, tx2, tx3 types.BaseTx
+			var tx, tx2, tx3 msgs.BaseTx
 			var res []tmtypes.Tx
 			okRes := &abci.Response{Value: &abci.Response_CheckTx{CheckTx: &abci.ResponseCheckTx{
 				Code: abci.CodeTypeOK,
 			}}}
 
 			BeforeEach(func() {
-				tx = types.NewBaseTx(types.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
-				tx2 = types.NewBaseTx(types.TxTypeValidatorTicket, 1, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
-				tx3 = types.NewBaseTx(types.TxTypeValidatorTicket, 2, "recipient_addr3", sender, "10", "0.1", time.Now().Unix())
+				tx = msgs.NewBaseTx(msgs.TxTypeCoinTransfer, 0, "recipient_addr1", sender, "10", "0.1", time.Now().Unix())
+				tx2 = msgs.NewBaseTx(msgs.TxTypeValidatorTicket, 1, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
+				tx3 = msgs.NewBaseTx(msgs.TxTypeValidatorTicket, 2, "recipient_addr3", sender, "10", "0.1", time.Now().Unix())
 				mempool.addTx(tx.Bytes(), okRes)
 				mempool.addTx(tx2.Bytes(), okRes)
 				mempool.addTx(tx3.Bytes(), okRes)
@@ -167,7 +166,7 @@ var _ = Describe("Mempool", func() {
 				Expect(mempool.pool.Size()).To(Equal(int64(1)))
 				Expect(mempool.pool.HasByHash(tx3.GetHash().HexStr())).To(BeTrue())
 				actual := mempool.pool.Head()
-				Expect(actual.GetType()).To(Equal(types.TxTypeValidatorTicket))
+				Expect(actual.GetType()).To(Equal(msgs.TxTypeValidatorTicket))
 			})
 		})
 

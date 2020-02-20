@@ -2,26 +2,28 @@ package logic
 
 import (
 	"fmt"
+	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
 
 	"github.com/tendermint/tendermint/state"
 
-	"github.com/makeos/mosdef/dht"
-	"github.com/makeos/mosdef/validators"
+	"gitlab.com/makeos/mosdef/dht"
+	"gitlab.com/makeos/mosdef/validators"
 	"github.com/pkg/errors"
 
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
 // Transaction implements types.TxLogic. Provides functionalities for executing transactions.
 type Transaction struct {
-	logic types.Logic
+	logic types2.Logic
 }
 
 // ExecTx decodes the transaction from the abci request,
 // performs final validation before executing the transaction.
 // chainHeight: The height of the block chain
-func (t *Transaction) ExecTx(tx types.BaseTx, chainHeight uint64) abcitypes.ResponseDeliverTx {
+func (t *Transaction) ExecTx(tx msgs.BaseTx, chainHeight uint64) abcitypes.ResponseDeliverTx {
 
 	// Validate the transaction
 	if err := validators.ValidateTx(tx, -1, t.logic); err != nil {
@@ -52,11 +54,11 @@ func (t *Transaction) ExecTx(tx types.BaseTx, chainHeight uint64) abcitypes.Resp
 // It returns error if the transaction is unknown.
 // tx: The transaction to be processed
 // chainHeight: The height of the block chain
-func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
+func (t *Transaction) exec(tx msgs.BaseTx, chainHeight uint64) error {
 	spk := tx.GetSenderPubKey().ToBytes32()
 
 	switch o := tx.(type) {
-	case *types.TxCoinTransfer:
+	case *msgs.TxCoinTransfer:
 		return t.execCoinTransfer(
 			spk,
 			o.To,
@@ -64,15 +66,15 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *types.TxTicketPurchase:
-		if o.Is(types.TxTypeValidatorTicket) {
+	case *msgs.TxTicketPurchase:
+		if o.Is(msgs.TxTypeValidatorTicket) {
 			return t.execValidatorStake(
 				spk,
 				o.Value,
 				o.Fee,
 				chainHeight)
 		}
-		if o.Is(types.TxTypeStorerTicket) {
+		if o.Is(msgs.TxTypeStorerTicket) {
 			return t.execStorerStake(
 				spk,
 				o.Value,
@@ -81,21 +83,21 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 		}
 		return fmt.Errorf("unknown transaction type")
 
-	case *types.TxSetDelegateCommission:
+	case *msgs.TxSetDelegateCommission:
 		return t.execSetDelegatorCommission(
 			spk,
 			o.Commission,
 			o.Fee,
 			chainHeight)
 
-	case *types.TxTicketUnbond:
+	case *msgs.TxTicketUnbond:
 		return t.execUnbond(
 			spk,
 			o.TicketHash,
 			o.Fee,
 			chainHeight)
 
-	case *types.TxRepoCreate:
+	case *msgs.TxRepoCreate:
 		return t.execRepoCreate(
 			spk,
 			o.Name,
@@ -103,7 +105,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *types.TxRepoProposalUpsertOwner:
+	case *msgs.TxRepoProposalUpsertOwner:
 		return t.execRepoUpsertOwner(
 			spk,
 			o.RepoName,
@@ -114,7 +116,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *types.TxRepoProposalVote:
+	case *msgs.TxRepoProposalVote:
 		return t.execRepoProposalVote(
 			spk,
 			o.RepoName,
@@ -123,7 +125,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *types.TxRepoProposalFeeSend:
+	case *msgs.TxRepoProposalFeeSend:
 		return t.execRepoProposalSendFee(
 			spk,
 			o.RepoName,
@@ -132,7 +134,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *types.TxRepoProposalUpdate:
+	case *msgs.TxRepoProposalUpdate:
 		return t.execRepoProposalUpdate(
 			spk,
 			o.RepoName,
@@ -142,7 +144,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *types.TxRepoProposalMergeRequest:
+	case *msgs.TxRepoProposalMergeRequest:
 		return t.execRepoProposalMergeRequest(
 			spk,
 			o.RepoName,
@@ -155,14 +157,14 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *types.TxAddGPGPubKey:
+	case *msgs.TxAddGPGPubKey:
 		return t.execAddGPGKey(
 			spk,
 			o.PublicKey,
 			o.Fee,
 			chainHeight)
 
-	case *types.TxPush:
+	case *msgs.TxPush:
 		pn := o.PushNote
 		err := t.execPush(
 			pn.RepoName,
@@ -176,7 +178,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 		// Execute the tx against the repository's local state
 		return t.logic.GetRepoManager().ExecTxPush(o)
 
-	case *types.TxNamespaceAcquire:
+	case *msgs.TxNamespaceAcquire:
 		return t.execAcquireNamespace(
 			spk,
 			o.Name,
@@ -187,7 +189,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.Domains,
 			chainHeight)
 
-	case *types.TxNamespaceDomainUpdate:
+	case *msgs.TxNamespaceDomainUpdate:
 		return t.execUpdateNamespaceDomains(
 			spk,
 			o.Name,

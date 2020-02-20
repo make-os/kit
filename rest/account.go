@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/makeos/mosdef/modules"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/modules"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 type getNonceBody struct {

@@ -3,15 +3,15 @@ package logic_test
 import (
 	"os"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	l "github.com/makeos/mosdef/logic"
+	l "gitlab.com/makeos/mosdef/logic"
 )
 
 var _ = Describe("Logic", func() {

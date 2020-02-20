@@ -2,11 +2,11 @@ package ticket
 
 import (
 	"bytes"
+	types2 "gitlab.com/makeos/mosdef/ticket/types"
 	"sort"
 
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 const (
@@ -36,29 +36,29 @@ func MakeHashKey(hash []byte) []byte {
 type Storer interface {
 
 	// Add adds one or more tickets to the store
-	Add(tickets ...*types.Ticket) error
+	Add(tickets ...*types2.Ticket) error
 
 	// GetByHash queries a ticket by its hash
-	GetByHash(hash util.Bytes32) *types.Ticket
+	GetByHash(hash util.Bytes32) *types2.Ticket
 
 	// RemoveByHash deletes a ticket by its hash
 	RemoveByHash(hash util.Bytes32) error
 
 	// QueryOne iterates over the tickets and returns the first ticket
 	// for which the predicate returns true.
-	QueryOne(predicate func(*types.Ticket) bool) *types.Ticket
+	QueryOne(predicate func(*types2.Ticket) bool) *types2.Ticket
 
 	// Query iterates over the tickets and returns all tickets
 	// for which the predicate returns true.
-	Query(predicate func(*types.Ticket) bool, queryOpt ...interface{}) []*types.Ticket
+	Query(predicate func(*types2.Ticket) bool, queryOpt ...interface{}) []*types2.Ticket
 
 	// Count counts tickets for which the predicate returns true.
-	Count(predicate func(*types.Ticket) bool) int
+	Count(predicate func(*types2.Ticket) bool) int
 
 	// UpdateOne update a ticket for which the query predicate returns true.
 	// NOTE: If the fields that make up the key of the ticket is updated, a new record
 	// with different key composition will be created.
-	UpdateOne(upd types.Ticket, queryPredicate func(*types.Ticket) bool)
+	UpdateOne(upd types2.Ticket, queryPredicate func(*types2.Ticket) bool)
 }
 
 // Store implements Storer
@@ -73,18 +73,18 @@ func NewStore(db storage.Tx) *Store {
 }
 
 // getQueryOptions returns a types.QueryOptions stored in a slice of interface
-func getQueryOptions(queryOptions ...interface{}) types.QueryOptions {
+func getQueryOptions(queryOptions ...interface{}) types2.QueryOptions {
 	if len(queryOptions) > 0 {
-		opts, ok := queryOptions[0].(types.QueryOptions)
+		opts, ok := queryOptions[0].(types2.QueryOptions)
 		if ok {
 			return opts
 		}
 	}
-	return types.QueryOptions{}
+	return types2.QueryOptions{}
 }
 
 // Add adds one or more tickets to the store
-func (s *Store) Add(tickets ...*types.Ticket) error {
+func (s *Store) Add(tickets ...*types2.Ticket) error {
 	for _, ticket := range tickets {
 		key := MakeKey(ticket.Hash.Bytes(), ticket.Height, ticket.Index)
 		rec := storage.NewRecord(key, util.ObjectToBytes(ticket))
@@ -96,8 +96,8 @@ func (s *Store) Add(tickets ...*types.Ticket) error {
 }
 
 // GetByHash queries a ticket by its hash
-func (s *Store) GetByHash(hash util.Bytes32) *types.Ticket {
-	var t *types.Ticket
+func (s *Store) GetByHash(hash util.Bytes32) *types2.Ticket {
+	var t *types2.Ticket
 	s.db.Iterate(MakeHashKey(hash.Bytes()), false, func(r *storage.Record) bool {
 		r.Scan(&t)
 		return true
@@ -116,10 +116,10 @@ func (s *Store) RemoveByHash(hash util.Bytes32) error {
 
 // QueryOne iterates over the tickets and returns the first ticket
 // for which the predicate returns true.
-func (s *Store) QueryOne(predicate func(*types.Ticket) bool) *types.Ticket {
-	var selected *types.Ticket
+func (s *Store) QueryOne(predicate func(*types2.Ticket) bool) *types2.Ticket {
+	var selected *types2.Ticket
 	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *storage.Record) bool {
-		var t types.Ticket
+		var t types2.Ticket
 		rec.Scan(&t)
 		if predicate(&t) {
 			selected = &t
@@ -132,9 +132,9 @@ func (s *Store) QueryOne(predicate func(*types.Ticket) bool) *types.Ticket {
 
 // Query iterates over the tickets and returns all tickets
 // for which the predicate returns true.
-func (s *Store) Query(predicate func(*types.Ticket) bool,
-	queryOpt ...interface{}) []*types.Ticket {
-	var selected []*types.Ticket
+func (s *Store) Query(predicate func(*types2.Ticket) bool,
+	queryOpt ...interface{}) []*types2.Ticket {
+	var selected []*types2.Ticket
 	var qo = getQueryOptions(queryOpt...)
 	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *storage.Record) bool {
 
@@ -143,7 +143,7 @@ func (s *Store) Query(predicate func(*types.Ticket) bool,
 			return true
 		}
 
-		var t types.Ticket
+		var t types2.Ticket
 		rec.Scan(&t)
 		if predicate(&t) {
 			selected = append(selected, &t)
@@ -177,10 +177,10 @@ func (s *Store) FromTail() *Store {
 }
 
 // Count counts tickets for which the predicate returns true.
-func (s *Store) Count(predicate func(*types.Ticket) bool) int {
+func (s *Store) Count(predicate func(*types2.Ticket) bool) int {
 	var count int
 	s.db.Iterate([]byte(TagTicket), s.fromHead, func(rec *storage.Record) bool {
-		var t types.Ticket
+		var t types2.Ticket
 		rec.Scan(&t)
 		if predicate(&t) {
 			count++
@@ -193,7 +193,7 @@ func (s *Store) Count(predicate func(*types.Ticket) bool) int {
 // UpdateOne update a ticket for which the query predicate returns true.
 // NOTE: If the fields that make up the key of the ticket is updated, a new record
 // with different key composition will be created.
-func (s *Store) UpdateOne(upd types.Ticket, queryPredicate func(*types.Ticket) bool) {
+func (s *Store) UpdateOne(upd types2.Ticket, queryPredicate func(*types2.Ticket) bool) {
 	target := s.QueryOne(queryPredicate)
 	if target == nil {
 		return

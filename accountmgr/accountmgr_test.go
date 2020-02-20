@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/config"
 
 	"github.com/thoas/go-funk"
 
-	"github.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

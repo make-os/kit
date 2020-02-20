@@ -6,9 +6,9 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/makeos/mosdef/config"
-	. "github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/config"
+	. "gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/testutil"
 )
 
 var pk = `-----BEGIN PGP PUBLIC KEY BLOCK-----

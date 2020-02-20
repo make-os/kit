@@ -2,9 +2,9 @@ package keepers
 
 import (
 	"fmt"
+	"gitlab.com/makeos/mosdef/types/msgs"
 
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/storage"
 	"github.com/pkg/errors"
 )
 
@@ -23,7 +23,7 @@ func NewTxKeeper(db storage.Tx) *TxKeeper {
 
 // Index takes a transaction and stores it.
 // It uses the tx hash as the index key
-func (tk *TxKeeper) Index(tx types.BaseTx) error {
+func (tk *TxKeeper) Index(tx msgs.BaseTx) error {
 	rec := storage.NewFromKeyValue(MakeTxKey(tx.GetHash().Bytes()), tx.Bytes())
 	if err := tk.db.Put(rec); err != nil {
 		return errors.Wrap(err, "failed to index tx")
@@ -32,7 +32,7 @@ func (tk *TxKeeper) Index(tx types.BaseTx) error {
 }
 
 // GetTx gets a transaction by its hash
-func (tk *TxKeeper) GetTx(hash []byte) (types.BaseTx, error) {
+func (tk *TxKeeper) GetTx(hash []byte) (msgs.BaseTx, error) {
 	rec, err := tk.db.Get(MakeTxKey(hash))
 	if err != nil {
 		if err != storage.ErrRecordNotFound {
@@ -40,5 +40,5 @@ func (tk *TxKeeper) GetTx(hash []byte) (types.BaseTx, error) {
 		}
 		return nil, ErrTxNotFound
 	}
-	return types.DecodeTx(rec.Value)
+	return msgs.DecodeTx(rec.Value)
 }

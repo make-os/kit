@@ -3,6 +3,10 @@ package repo
 import (
 	"context"
 	"fmt"
+	types3 "gitlab.com/makeos/mosdef/dht/types"
+	types4 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/repo/types/msgs"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -10,15 +14,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/makeos/mosdef/rest"
-	"github.com/makeos/mosdef/util/cache"
+	"gitlab.com/makeos/mosdef/rest"
+	"gitlab.com/makeos/mosdef/util/cache"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/params"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
-	"github.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/logger"
 	"github.com/tendermint/tendermint/p2p"
 	"gopkg.in/src-d/go-git.v4"
 )
@@ -61,13 +65,13 @@ type Manager struct {
 	rootDir              string                  // the root directory where all repos are stored
 	addr                 string                  // addr is the listening address for the http server
 	gitBinPath           string                  // gitBinPath is the path of the git executable
-	pushPool             types.PushPool          // The transaction pool for push transactions
+	pushPool             core.PushPool           // The transaction pool for push transactions
 	mempool              types.Mempool           // The general transaction pool for block-bound transaction
-	logic                types.Logic             // logic is the application logic provider
+	logic                types4.Logic            // logic is the application logic provider
 	privValidatorKey     *crypto.Key             // the node's private validator key for signing transactions
-	pgpPubKeyGetter      types.PGPPubKeyGetter   // finds and returns PGP public key
-	dht                  types.DHT               // The dht service
-	pruner               types.Pruner            // The repo runner
+	pgpPubKeyGetter      core.PGPPubKeyGetter    // finds and returns PGP public key
+	dht                  types3.DHT              // The dht service
+	pruner               core.Pruner             // The repo runner
 	blockGetter          types.BlockGetter       // Provides access to blocks
 	pushNoteSenders      *cache.Cache            // Store senders of push notes
 	pushOKSenders        *cache.Cache            // Stores senders of PushOK messages
@@ -79,8 +83,8 @@ type Manager struct {
 func NewManager(
 	cfg *config.AppConfig,
 	addr string,
-	logic types.Logic,
-	dht types.DHT,
+	logic types4.Logic,
+	dht types3.DHT,
 	mempool types.Mempool,
 	blockGetter types.BlockGetter) *Manager {
 
@@ -159,12 +163,12 @@ func (m *Manager) isPushOKSender(senderID string, txID string) bool {
 }
 
 // addPushNoteEndorsement indexes a PushOK for a given push note
-func (m *Manager) addPushNoteEndorsement(pnID string, pok *types.PushOK) {
+func (m *Manager) addPushNoteEndorsement(pnID string, pok *msgs.PushOK) {
 	pokList := m.pushNoteEndorsements.Get(pnID)
 	if pokList == nil {
-		pokList = map[string]*types.PushOK{}
+		pokList = map[string]*msgs.PushOK{}
 	}
-	pokList.(map[string]*types.PushOK)[pok.ID().String()] = pok
+	pokList.(map[string]*msgs.PushOK)[pok.ID().String()] = pok
 	m.pushNoteEndorsements.Add(pnID, pokList)
 }
 
@@ -197,7 +201,7 @@ func (m *Manager) registerAPIHandlers(s *http.ServeMux) {
 }
 
 // GetLogic returns the application logic provider
-func (m *Manager) GetLogic() types.Logic {
+func (m *Manager) GetLogic() types4.Logic {
 	return m.logic
 }
 
@@ -207,12 +211,12 @@ func (m *Manager) GetPrivateValidatorKey() *crypto.Key {
 }
 
 // GetPruner returns the repo pruner
-func (m *Manager) GetPruner() types.Pruner {
+func (m *Manager) GetPruner() core.Pruner {
 	return m.pruner
 }
 
 // GetPushPool returns the push pool
-func (m *Manager) GetPushPool() types.PushPool {
+func (m *Manager) GetPushPool() core.PushPool {
 	return m.pushPool
 }
 
@@ -222,7 +226,7 @@ func (m *Manager) GetMempool() types.Mempool {
 }
 
 // GetDHT returns the dht service
-func (m *Manager) GetDHT() types.DHT {
+func (m *Manager) GetDHT() types3.DHT {
 	return m.dht
 }
 
@@ -360,7 +364,7 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetPGPPubKeyGetter implements RepositoryManager
-func (m *Manager) GetPGPPubKeyGetter() types.PGPPubKeyGetter {
+func (m *Manager) GetPGPPubKeyGetter() core.PGPPubKeyGetter {
 	return m.pgpPubKeyGetter
 }
 
@@ -370,12 +374,12 @@ func (m *Manager) Log() logger.Logger {
 }
 
 // SetPGPPubKeyGetter implements SetPGPPubKeyGetter
-func (m *Manager) SetPGPPubKeyGetter(pkGetter types.PGPPubKeyGetter) {
+func (m *Manager) SetPGPPubKeyGetter(pkGetter core.PGPPubKeyGetter) {
 	m.pgpPubKeyGetter = pkGetter
 }
 
 // GetRepoState implements RepositoryManager
-func (m *Manager) GetRepoState(repo types.BareRepo, options ...types.KVOption) (types.BareRepoState, error) {
+func (m *Manager) GetRepoState(repo core.BareRepo, options ...core.KVOption) (core.BareRepoState, error) {
 	return getRepoState(repo, options...), nil
 }
 
@@ -410,7 +414,7 @@ func (m *Manager) FindObject(key []byte) ([]byte, error) {
 }
 
 // GetRepo returns a repo handle
-func (m *Manager) GetRepo(name string) (types.BareRepo, error) {
+func (m *Manager) GetRepo(name string) (core.BareRepo, error) {
 	return getRepoWithGitOpt(m.gitBinPath, m.getRepoPath(name))
 }
 

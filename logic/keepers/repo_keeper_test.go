@@ -1,13 +1,13 @@
 package keepers
 
 import (
+	state2 "gitlab.com/makeos/mosdef/types/state"
 	"os"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/storage/tree"
-	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/storage/tree"
+	"gitlab.com/makeos/mosdef/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	tmdb "github.com/tendermint/tm-db"
@@ -37,15 +37,15 @@ var _ = Describe("RepoKeeper", func() {
 		When("repository does not exist", func() {
 			It("should return a bare repository", func() {
 				repo := rk.GetRepo("unknown", 0)
-				Expect(repo).To(Equal(types.BareRepository()))
+				Expect(repo).To(Equal(state2.BareRepository()))
 			})
 		})
 
 		When("repository exists", func() {
-			var testRepo = types.BareRepository()
+			var testRepo = state2.BareRepository()
 
 			BeforeEach(func() {
-				testRepo.AddOwner("owner", &types.RepoOwner{})
+				testRepo.AddOwner("owner", &state2.RepoOwner{})
 
 				repoKey := MakeRepoKey("repo1")
 				state.Set(repoKey, testRepo.Bytes())
@@ -60,8 +60,8 @@ var _ = Describe("RepoKeeper", func() {
 		})
 
 		When("repo has a proposal that was introduced at height/stateVersion=1", func() {
-			testRepo := types.BareRepository()
-			repoAtVersion1 := types.BareRepository()
+			testRepo := state2.BareRepository()
+			repoAtVersion1 := state2.BareRepository()
 
 			BeforeEach(func() {
 				repoAtVersion1.Config.Governace.ProposalFee = 100000
@@ -69,8 +69,8 @@ var _ = Describe("RepoKeeper", func() {
 				_, _, err := state.SaveVersion()
 				Expect(err).To(BeNil())
 
-				testRepo.Proposals.Add("1", &types.RepoProposal{Height: 1})
-				testRepo.AddOwner("owner", &types.RepoOwner{})
+				testRepo.Proposals.Add("1", &state2.RepoProposal{Height: 1})
+				testRepo.AddOwner("owner", &state2.RepoOwner{})
 
 				repoKey := MakeRepoKey("repo1")
 				state.Set(repoKey, testRepo.Bytes())
@@ -87,7 +87,7 @@ var _ = Describe("RepoKeeper", func() {
 		})
 
 		When("repo has a proposal with a config height that is the same as the current state version", func() {
-			repo := types.BareRepository()
+			repo := state2.BareRepository()
 
 			BeforeEach(func() {
 				// Version 1
@@ -100,8 +100,8 @@ var _ = Describe("RepoKeeper", func() {
 				state.Set(MakeRepoKey("repo1"), repo.Bytes())
 				state.SaveVersion()
 
-				repo.Proposals.Add("1", &types.RepoProposal{Height: 3})
-				repo.AddOwner("owner", &types.RepoOwner{})
+				repo.Proposals.Add("1", &state2.RepoProposal{Height: 3})
+				repo.AddOwner("owner", &state2.RepoOwner{})
 
 				repoKey := MakeRepoKey("repo1")
 				state.Set(repoKey, repo.Bytes())
@@ -124,7 +124,7 @@ var _ = Describe("RepoKeeper", func() {
 			repo := rk.GetRepo(key)
 			Expect(repo.Owners).To(BeEmpty())
 
-			repo.AddOwner("owner", &types.RepoOwner{})
+			repo.AddOwner("owner", &state2.RepoOwner{})
 			rk.Update(key, repo)
 
 			repo2 := rk.GetRepo(key)

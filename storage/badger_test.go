@@ -3,13 +3,13 @@ package storage_test
 import (
 	"os"
 
-	"github.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/testutil"
 
-	"github.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/storage"
 
 	"github.com/dgraph-io/badger"
 
-	"github.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

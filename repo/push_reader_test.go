@@ -2,6 +2,7 @@ package repo
 
 import (
 	"bytes"
+	"gitlab.com/makeos/mosdef/repo/types/core"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -10,10 +11,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/thoas/go-funk"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 type WriteCloser struct {
@@ -28,7 +28,7 @@ var _ = Describe("PushReader", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
-	var repo types.BareRepo
+	var repo core.BareRepo
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()

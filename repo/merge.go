@@ -2,10 +2,10 @@ package repo
 
 import (
 	"fmt"
+	"gitlab.com/makeos/mosdef/repo/types/core"
 	"path/filepath"
 	"strings"
 
-	"github.com/makeos/mosdef/types"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -14,7 +14,7 @@ import (
 // target can be of the form '<remote-repo>:branch>' to represent a target
 // branch another repo.
 // TODO: Remove if not in use
-func merge(baseRepo types.BareRepo, base, target, reposDir string, uncommitted bool) error {
+func merge(baseRepo core.BareRepo, base, target, reposDir string, uncommitted bool) error {
 
 	// Check if repo has the base branch
 	_, err := baseRepo.Reference(plumbing.NewBranchReferenceName(base), false)

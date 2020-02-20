@@ -1,20 +1,19 @@
 package logic
 
 import (
+	types2 "gitlab.com/makeos/mosdef/logic/types"
 	"os"
 
-	"github.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/testutil"
 
 	"github.com/golang/mock/gomock"
-	"github.com/makeos/mosdef/types"
-
-	"github.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/params"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/storage"
 )
 
 var _ = Describe("System", func() {
@@ -54,7 +53,7 @@ var _ = Describe("System", func() {
 		When("initial ticket price = 10, blocks per price window=100, percent increase=20, cur. height = 2", func() {
 			BeforeEach(func() {
 				params.MinValidatorsTicketPrice = 10
-				err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{AppHash: []byte("stuff"), Height: 2})
+				err := logic.SysKeeper().SaveBlockInfo(&types2.BlockInfo{AppHash: []byte("stuff"), Height: 2})
 				Expect(err).To(BeNil())
 			})
 

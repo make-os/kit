@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/rpc/v2/json"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 )
 
 // Timeout is the max duration for connection and read attempt

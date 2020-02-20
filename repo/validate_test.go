@@ -4,13 +4,19 @@ import (
 	"crypto/rsa"
 	"encoding/hex"
 	"fmt"
+	types3 "gitlab.com/makeos/mosdef/dht/types"
+	types4 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/repo/types/msgs"
+	types5 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/state"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/golang/mock/gomock"
-	"github.com/makeos/mosdef/types/mocks"
+	"gitlab.com/makeos/mosdef/types/mocks"
 
 	"github.com/bitfield/script"
 	"golang.org/x/crypto/openpgp"
@@ -20,17 +26,17 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Validation", func() {
 	var err error
 	var cfg *config.AppConfig
-	var repo types.BareRepo
+	var repo core.BareRepo
 	var path string
 	var gpgKeyID string
 	var pubKey string
@@ -446,7 +452,7 @@ var _ = Describe("Validation", func() {
 		When("pushed reference is not a branch", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
-				change := &types.ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
 			})
@@ -460,8 +466,8 @@ var _ = Describe("Validation", func() {
 		When("target merge proposal does not exist", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
-				repo.EXPECT().State().Return(types.BareRepository())
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				repo.EXPECT().State().Return(state.BareRepository())
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
 			})
@@ -475,15 +481,15 @@ var _ = Describe("Validation", func() {
 		When("signer did not create the proposal", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
-				repoState := types.BareRepository()
-				prop := types.BareRepoProposal()
+				repoState := state.BareRepository()
+				prop := state.BareRepoProposal()
 				prop.Creator = "address_of_creator"
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
 				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{Address: "address_xyz"})
 
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
@@ -499,13 +505,13 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
-				repoState := types.BareRepository()
-				repoState.Proposals.Add("0001", types.BareRepoProposal())
+				repoState := state.BareRepository()
+				repoState.Proposals.Add("0001", state.BareRepoProposal())
 				repo.EXPECT().State().Return(repoState)
 
 				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
 
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, fmt.Errorf("error"))
@@ -523,13 +529,13 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
-				repoState := types.BareRepository()
-				repoState.Proposals.Add("0001", types.BareRepoProposal())
+				repoState := state.BareRepository()
+				repoState.Proposals.Add("0001", state.BareRepoProposal())
 				repo.EXPECT().State().Return(repoState)
 
 				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
 
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(true, nil)
@@ -547,10 +553,10 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
-				repoState := types.BareRepository()
-				prop := types.BareRepoProposal()
-				prop.Outcome = types.ProposalOutcomeAccepted
-				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+				repoState := state.BareRepository()
+				prop := state.BareRepoProposal()
+				prop.Outcome = state.ProposalOutcomeAccepted
+				prop.ActionData[types4.ProposalActionDataMergeRequest] = map[string]interface{}{
 					"base": "release",
 				}
 				repoState.Proposals.Add("0001", prop)
@@ -558,7 +564,7 @@ var _ = Describe("Validation", func() {
 
 				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
 
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -576,9 +582,9 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
-				repoState := types.BareRepository()
-				prop := types.BareRepoProposal()
-				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+				repoState := state.BareRepository()
+				prop := state.BareRepoProposal()
+				prop.ActionData[types4.ProposalActionDataMergeRequest] = map[string]interface{}{
 					"base": "master",
 				}
 				repoState.Proposals.Add("0001", prop)
@@ -586,7 +592,7 @@ var _ = Describe("Validation", func() {
 
 				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
 
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -604,10 +610,10 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
-				repoState := types.BareRepository()
-				prop := types.BareRepoProposal()
-				prop.Outcome = types.ProposalOutcomeAccepted
-				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+				repoState := state.BareRepository()
+				prop := state.BareRepoProposal()
+				prop.Outcome = state.ProposalOutcomeAccepted
+				prop.ActionData[types4.ProposalActionDataMergeRequest] = map[string]interface{}{
 					"base": "master",
 				}
 				repoState.Proposals.Add("0001", prop)
@@ -615,7 +621,7 @@ var _ = Describe("Validation", func() {
 
 				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
 
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(nil, fmt.Errorf("error"))
 
@@ -634,10 +640,10 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
-				repoState := types.BareRepository()
-				prop := types.BareRepoProposal()
-				prop.Outcome = types.ProposalOutcomeAccepted
-				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+				repoState := state.BareRepository()
+				prop := state.BareRepoProposal()
+				prop.Outcome = state.ProposalOutcomeAccepted
+				prop.ActionData[types4.ProposalActionDataMergeRequest] = map[string]interface{}{
 					"base": "master",
 				}
 				repoState.Proposals.Add("0001", prop)
@@ -645,7 +651,7 @@ var _ = Describe("Validation", func() {
 
 				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
 
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 				mergerCommit := mocks.NewMockCommit(ctrl)
 				mergerCommit.EXPECT().NumParents().Return(2)
@@ -667,10 +673,10 @@ var _ = Describe("Validation", func() {
 				BeforeEach(func() {
 					repo := mocks.NewMockBareRepo(ctrl)
 					repo.EXPECT().GetName().Return("repo1")
-					repoState := types.BareRepository()
-					prop := types.BareRepoProposal()
-					prop.Outcome = types.ProposalOutcomeAccepted
-					prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+					repoState := state.BareRepository()
+					prop := state.BareRepoProposal()
+					prop.Outcome = state.ProposalOutcomeAccepted
+					prop.ActionData[types4.ProposalActionDataMergeRequest] = map[string]interface{}{
 						"base": "master",
 					}
 					repoState.Proposals.Add("0001", prop)
@@ -678,7 +684,7 @@ var _ = Describe("Validation", func() {
 
 					mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
 
-					change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 					mergerCommit := mocks.NewMockCommit(ctrl)
@@ -708,10 +714,10 @@ var _ = Describe("Validation", func() {
 				BeforeEach(func() {
 					repo := mocks.NewMockBareRepo(ctrl)
 					repo.EXPECT().GetName().Return("repo1")
-					repoState := types.BareRepository()
-					prop := types.BareRepoProposal()
-					prop.Outcome = types.ProposalOutcomeAccepted
-					prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+					repoState := state.BareRepository()
+					prop := state.BareRepoProposal()
+					prop.Outcome = state.ProposalOutcomeAccepted
+					prop.ActionData[types4.ProposalActionDataMergeRequest] = map[string]interface{}{
 						"base": "master",
 					}
 					repoState.Proposals.Add("0001", prop)
@@ -719,7 +725,7 @@ var _ = Describe("Validation", func() {
 
 					mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
 
-					change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 					mergerCommit := mocks.NewMockCommit(ctrl)
@@ -753,10 +759,10 @@ var _ = Describe("Validation", func() {
 				BeforeEach(func() {
 					repo := mocks.NewMockBareRepo(ctrl)
 					repo.EXPECT().GetName().Return("repo1")
-					repoState := types.BareRepository()
-					prop := types.BareRepoProposal()
-					prop.Outcome = types.ProposalOutcomeAccepted
-					prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+					repoState := state.BareRepository()
+					prop := state.BareRepoProposal()
+					prop.Outcome = state.ProposalOutcomeAccepted
+					prop.ActionData[types4.ProposalActionDataMergeRequest] = map[string]interface{}{
 						"base": "master",
 					}
 					repoState.Proposals.Add("0001", prop)
@@ -764,7 +770,7 @@ var _ = Describe("Validation", func() {
 
 					mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
 
-					change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 					mergerCommit := mocks.NewMockCommit(ctrl)
@@ -803,10 +809,10 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
-				repoState := types.BareRepository()
-				prop := types.BareRepoProposal()
-				prop.Outcome = types.ProposalOutcomeAccepted
-				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+				repoState := state.BareRepository()
+				prop := state.BareRepoProposal()
+				prop.Outcome = state.ProposalOutcomeAccepted
+				prop.ActionData[types4.ProposalActionDataMergeRequest] = map[string]interface{}{
 					"base":     "master",
 					"baseHash": "xyz",
 				}
@@ -815,7 +821,7 @@ var _ = Describe("Validation", func() {
 
 				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
 
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "abc"}
 
 				mergerCommit := mocks.NewMockCommit(ctrl)
@@ -853,10 +859,10 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
-				repoState := types.BareRepository()
-				prop := types.BareRepoProposal()
-				prop.Outcome = types.ProposalOutcomeAccepted
-				prop.ActionData[types.ProposalActionDataMergeRequest] = map[string]interface{}{
+				repoState := state.BareRepository()
+				prop := state.BareRepoProposal()
+				prop.Outcome = state.ProposalOutcomeAccepted
+				prop.ActionData[types4.ProposalActionDataMergeRequest] = map[string]interface{}{
 					"base":       "master",
 					"baseHash":   "abc",
 					"targetHash": "target_xyz",
@@ -866,7 +872,7 @@ var _ = Describe("Validation", func() {
 
 				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&types.GPGPubKey{})
 
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "abc"}
 
 				mergerCommit := mocks.NewMockCommit(ctrl)
@@ -909,7 +915,7 @@ var _ = Describe("Validation", func() {
 
 		When("change item has a reference name format that is not known", func() {
 			BeforeEach(func() {
-				change := &types.ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
 				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
@@ -921,7 +927,7 @@ var _ = Describe("Validation", func() {
 
 		When("change item referenced object is an unknown commit object", func() {
 			BeforeEach(func() {
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
 				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
@@ -933,7 +939,7 @@ var _ = Describe("Validation", func() {
 
 		When("change item referenced object is an unknown tag object", func() {
 			BeforeEach(func() {
-				change := &types.ItemChange{Item: &Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
 				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
@@ -955,7 +961,7 @@ var _ = Describe("Validation", func() {
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 
-				change := &types.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: cob.Hash.String()}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: cob.Hash.String()}}
 				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
@@ -976,7 +982,7 @@ var _ = Describe("Validation", func() {
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 
-				change := &types.ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tob.Hash.String()}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tob.Hash.String()}}
 				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
@@ -995,7 +1001,7 @@ var _ = Describe("Validation", func() {
 				createMakeSignableCommitAndLightWeightTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
 				tagRef, _ := repo.Tag("v1")
 
-				change := &types.ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tagRef.Target().String()}}
+				change := &core.ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tagRef.Target().String()}}
 				_, err = validateChange(repo, change, gpgPubKeyGetter)
 			})
 
@@ -1007,13 +1013,13 @@ var _ = Describe("Validation", func() {
 
 	Describe(".CheckPushOK", func() {
 		It("should return error when push note id is not set", func() {
-			err := CheckPushOK(&types.PushOK{}, -1)
+			err := CheckPushOK(&msgs.PushOK{}, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("field:endorsements.pushNoteID, error:push note id is required"))
 		})
 
 		It("should return error when public key is not valid", func() {
-			err := CheckPushOK(&types.PushOK{
+			err := CheckPushOK(&msgs.PushOK{
 				PushNoteID:   util.StrToBytes32("id"),
 				SenderPubKey: util.EmptyBytes32,
 			}, -1)
@@ -1026,7 +1032,7 @@ var _ = Describe("Validation", func() {
 		When("unable to fetch top storers", func() {
 			BeforeEach(func() {
 				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return(nil, fmt.Errorf("error"))
-				err = CheckPushOKConsistency(&types.PushOK{
+				err = CheckPushOKConsistency(&msgs.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: util.EmptyBytes32,
 				}, mockLogic, false, -1)
@@ -1041,8 +1047,8 @@ var _ = Describe("Validation", func() {
 		When("sender is not a storer", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{}, nil)
-				err = CheckPushOKConsistency(&types.PushOK{
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types5.SelectedTicket{}, nil)
+				err = CheckPushOKConsistency(&msgs.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: key.PubKey().MustBytes32(),
 				}, mockLogic, false, -1)
@@ -1057,15 +1063,15 @@ var _ = Describe("Validation", func() {
 		When("unable to decode storer's BLS public key", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{
-					&types.SelectedTicket{
-						Ticket: &types.Ticket{
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types5.SelectedTicket{
+					&types5.SelectedTicket{
+						Ticket: &types5.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      util.RandBytes(128),
 						},
 					},
 				}, nil)
-				err = CheckPushOKConsistency(&types.PushOK{
+				err = CheckPushOKConsistency(&msgs.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: key.PubKey().MustBytes32(),
 				}, mockLogic, false, -1)
@@ -1081,15 +1087,15 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
 				key2 := crypto.NewKeyFromIntSeed(2)
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{
-					&types.SelectedTicket{
-						Ticket: &types.Ticket{
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types5.SelectedTicket{
+					&types5.SelectedTicket{
+						Ticket: &types5.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      key2.PrivKey().BLSKey().Public().Bytes(),
 						},
 					},
 				}, nil)
-				err = CheckPushOKConsistency(&types.PushOK{
+				err = CheckPushOKConsistency(&msgs.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: key.PubKey().MustBytes32(),
 				}, mockLogic, false, -1)
@@ -1105,15 +1111,15 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
 				key2 := crypto.NewKeyFromIntSeed(2)
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{
-					&types.SelectedTicket{
-						Ticket: &types.Ticket{
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types5.SelectedTicket{
+					&types5.SelectedTicket{
+						Ticket: &types5.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      key2.PrivKey().BLSKey().Public().Bytes(),
 						},
 					},
 				}, nil)
-				err = CheckPushOKConsistency(&types.PushOK{
+				err = CheckPushOKConsistency(&msgs.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: key.PubKey().MustBytes32(),
 				}, mockLogic, true, -1)
@@ -1127,42 +1133,42 @@ var _ = Describe("Validation", func() {
 
 	Describe(".checkPushNoteSyntax", func() {
 		key := crypto.NewKeyFromIntSeed(1)
-		okTx := &types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().MustBytes32()}
+		okTx := &msgs.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().MustBytes32()}
 		bz, _ := key.PrivKey().Sign(okTx.Bytes())
 		okTx.NodeSig = bz
 
 		var cases = [][]interface{}{
-			{&types.PushNote{}, fmt.Errorf("field:repoName, error:repo name is required")},
-			{&types.PushNote{RepoName: "repo"}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key id is required")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: []byte("xyz")}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key is not valid")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 0}, fmt.Errorf("field:timestamp, error:timestamp is required")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 2000000000}, fmt.Errorf("field:timestamp, error:timestamp cannot be a future time")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, fmt.Errorf("field:accountNonce, error:account nonce must be greater than zero")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: ""}, fmt.Errorf("field:fee, error:fee is required")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "one"}, fmt.Errorf("field:fee, error:fee must be numeric")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1"}, fmt.Errorf("field:nodePubKey, error:push node public key is required")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32()}, fmt.Errorf("field:nodeSig, error:push node signature is required")},
-			{&types.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid signature")}, fmt.Errorf("field:nodeSig, error:failed to verify signature")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
-				&types.PushedReference{},
+			{&msgs.PushNote{}, fmt.Errorf("field:repoName, error:repo name is required")},
+			{&msgs.PushNote{RepoName: "repo"}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key id is required")},
+			{&msgs.PushNote{RepoName: "repo", PusherKeyID: []byte("xyz")}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key is not valid")},
+			{&msgs.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 0}, fmt.Errorf("field:timestamp, error:timestamp is required")},
+			{&msgs.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 2000000000}, fmt.Errorf("field:timestamp, error:timestamp cannot be a future time")},
+			{&msgs.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, fmt.Errorf("field:accountNonce, error:account nonce must be greater than zero")},
+			{&msgs.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: ""}, fmt.Errorf("field:fee, error:fee is required")},
+			{&msgs.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "one"}, fmt.Errorf("field:fee, error:fee must be numeric")},
+			{&msgs.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1"}, fmt.Errorf("field:nodePubKey, error:push node public key is required")},
+			{&msgs.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32()}, fmt.Errorf("field:nodeSig, error:push node signature is required")},
+			{&msgs.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid signature")}, fmt.Errorf("field:nodeSig, error:failed to verify signature")},
+			{&msgs.PushNote{RepoName: "repo", References: []*core.PushedReference{
+				&core.PushedReference{},
 			}}, fmt.Errorf("index:0, field:references.name, error:name is required")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
-				&types.PushedReference{Name: "ref1"},
+			{&msgs.PushNote{RepoName: "repo", References: []*core.PushedReference{
+				&core.PushedReference{Name: "ref1"},
 			}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is required")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
-				&types.PushedReference{Name: "ref1", OldHash: "invalid"},
+			{&msgs.PushNote{RepoName: "repo", References: []*core.PushedReference{
+				&core.PushedReference{Name: "ref1", OldHash: "invalid"},
 			}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is not valid")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
-				&types.PushedReference{Name: "ref1", OldHash: util.RandString(40)},
+			{&msgs.PushNote{RepoName: "repo", References: []*core.PushedReference{
+				&core.PushedReference{Name: "ref1", OldHash: util.RandString(40)},
 			}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is required")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
-				&types.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: "invalid"},
+			{&msgs.PushNote{RepoName: "repo", References: []*core.PushedReference{
+				&core.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: "invalid"},
 			}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is not valid")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
-				&types.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40)},
+			{&msgs.PushNote{RepoName: "repo", References: []*core.PushedReference{
+				&core.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40)},
 			}}, fmt.Errorf("index:0, field:references.nonce, error:reference nonce must be greater than zero")},
-			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{
-				&types.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Objects: []string{"invalid object"}},
+			{&msgs.PushNote{RepoName: "repo", References: []*core.PushedReference{
+				&core.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Objects: []string{"invalid object"}},
 			}}, fmt.Errorf("index:0, field:references.objects.0, error:object hash is not valid")},
 		}
 
@@ -1170,9 +1176,9 @@ var _ = Describe("Validation", func() {
 			for _, c := range cases {
 				_c := c
 				if _c[1] != nil {
-					Expect(CheckPushNoteSyntax(_c[0].(*types.PushNote))).To(Equal(_c[1]))
+					Expect(CheckPushNoteSyntax(_c[0].(*msgs.PushNote))).To(Equal(_c[1]))
 				} else {
-					Expect(CheckPushNoteSyntax(_c[0].(*types.PushNote))).To(BeNil())
+					Expect(CheckPushNoteSyntax(_c[0].(*msgs.PushNote))).To(BeNil())
 				}
 			}
 		})
@@ -1190,11 +1196,11 @@ var _ = Describe("Validation", func() {
 
 		When("old hash is non-zero and pushed reference does not exist", func() {
 			BeforeEach(func() {
-				refs := []*types.PushedReference{
+				refs := []*core.PushedReference{
 					{Name: "refs/heads/master", OldHash: oldHash},
 				}
-				repository := &types.Repository{
-					References: types.References(map[string]interface{}{}),
+				repository := &state.Repository{
+					References: state.References(map[string]interface{}{}),
 				}
 				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
 			})
@@ -1207,11 +1213,11 @@ var _ = Describe("Validation", func() {
 
 		When("old hash is zero and pushed reference does not exist", func() {
 			BeforeEach(func() {
-				refs := []*types.PushedReference{
+				refs := []*core.PushedReference{
 					{Name: "refs/heads/master", OldHash: strings.Repeat("0", 40)},
 				}
-				repository := &types.Repository{
-					References: types.References(map[string]interface{}{}),
+				repository := &state.Repository{
+					References: state.References(map[string]interface{}{}),
 				}
 				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
 			})
@@ -1225,12 +1231,12 @@ var _ = Describe("Validation", func() {
 		When("old hash of reference is different from the local hash of same reference", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				refs := []*types.PushedReference{
+				refs := []*core.PushedReference{
 					{Name: refName, OldHash: oldHash},
 				}
-				repository := &types.Repository{
-					References: types.References(map[string]interface{}{
-						refName: &types.Reference{Nonce: 0},
+				repository := &state.Repository{
+					References: state.References(map[string]interface{}{
+						refName: &state.Reference{Nonce: 0},
 					}),
 				}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
@@ -1248,12 +1254,12 @@ var _ = Describe("Validation", func() {
 		When("old hash of reference is non-zero and the local equivalent reference is not accessible", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				refs := []*types.PushedReference{
+				refs := []*core.PushedReference{
 					{Name: refName, OldHash: oldHash},
 				}
-				repository := &types.Repository{
-					References: types.References(map[string]interface{}{
-						refName: &types.Reference{Nonce: 0},
+				repository := &state.Repository{
+					References: state.References(map[string]interface{}{
+						refName: &state.Reference{Nonce: 0},
 					}),
 				}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
@@ -1271,12 +1277,12 @@ var _ = Describe("Validation", func() {
 		When("old hash of reference is non-zero and nil repo passed", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				refs := []*types.PushedReference{
+				refs := []*core.PushedReference{
 					{Name: refName, OldHash: oldHash},
 				}
-				repository := &types.Repository{
-					References: types.References(map[string]interface{}{
-						refName: &types.Reference{Nonce: 0},
+				repository := &state.Repository{
+					References: state.References(map[string]interface{}{
+						refName: &state.Reference{Nonce: 0},
 					}),
 				}
 
@@ -1292,12 +1298,12 @@ var _ = Describe("Validation", func() {
 		When("old hash of reference is non-zero and it is different from the hash of the equivalent local reference", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				refs := []*types.PushedReference{
+				refs := []*core.PushedReference{
 					{Name: refName, OldHash: oldHash},
 				}
-				repository := &types.Repository{
-					References: types.References(map[string]interface{}{
-						refName: &types.Reference{Nonce: 0},
+				repository := &state.Repository{
+					References: state.References(map[string]interface{}{
+						refName: &state.Reference{Nonce: 0},
 					}),
 				}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
@@ -1316,7 +1322,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
 				newHash := util.RandString(40)
-				refs := []*types.PushedReference{
+				refs := []*core.PushedReference{
 					{
 						Name:    refName,
 						OldHash: oldHash,
@@ -1326,9 +1332,9 @@ var _ = Describe("Validation", func() {
 					},
 				}
 
-				repository := &types.Repository{
-					References: types.References(map[string]interface{}{
-						refName: &types.Reference{Nonce: 0},
+				repository := &state.Repository{
+					References: state.References(map[string]interface{}{
+						refName: &state.Reference{Nonce: 0},
 					}),
 				}
 
@@ -1349,7 +1355,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
 				newHash := util.RandString(40)
-				refs := []*types.PushedReference{
+				refs := []*core.PushedReference{
 					{
 						Name:    refName,
 						OldHash: oldHash,
@@ -1359,9 +1365,9 @@ var _ = Describe("Validation", func() {
 					},
 				}
 
-				repository := &types.Repository{
-					References: types.References(map[string]interface{}{
-						refName: &types.Reference{Nonce: 0},
+				repository := &state.Repository{
+					References: state.References(map[string]interface{}{
+						refName: &state.Reference{Nonce: 0},
 					}),
 				}
 
@@ -1382,8 +1388,8 @@ var _ = Describe("Validation", func() {
 
 		When("no repository with matching name exist", func() {
 			BeforeEach(func() {
-				tx := &types.PushNote{RepoName: "unknown"}
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(types.BareRepository())
+				tx := &msgs.PushNote{RepoName: "unknown"}
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(state.BareRepository())
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -1395,8 +1401,8 @@ var _ = Describe("Validation", func() {
 
 		When("pusher public key id is unknown", func() {
 			BeforeEach(func() {
-				tx := &types.PushNote{RepoName: "repo1", PusherKeyID: util.RandBytes(20)}
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
+				tx := &msgs.PushNote{RepoName: "repo1", PusherKeyID: util.RandBytes(20)}
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&state.Repository{Balance: "10"})
 				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID)).Return(types.BareGPGPubKey())
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
@@ -1409,12 +1415,12 @@ var _ = Describe("Validation", func() {
 
 		When("gpg owner address not the same as the pusher address", func() {
 			BeforeEach(func() {
-				tx := &types.PushNote{
+				tx := &msgs.PushNote{
 					RepoName:      "repo1",
 					PusherKeyID:   util.RandBytes(20),
 					PusherAddress: "address1",
 				}
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				gpgKey := types.BareGPGPubKey()
 				gpgKey.Address = util.String("address2")
@@ -1430,12 +1436,12 @@ var _ = Describe("Validation", func() {
 
 		When("unable to find pusher account", func() {
 			BeforeEach(func() {
-				tx := &types.PushNote{
+				tx := &msgs.PushNote{
 					RepoName:      "repo1",
 					PusherKeyID:   util.RandBytes(20),
 					PusherAddress: "address1",
 				}
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				gpgKey := types.BareGPGPubKey()
 				gpgKey.Address = util.String("address1")
@@ -1454,13 +1460,13 @@ var _ = Describe("Validation", func() {
 
 		When("push note account nonce not correct", func() {
 			BeforeEach(func() {
-				tx := &types.PushNote{
+				tx := &msgs.PushNote{
 					RepoName:      "repo1",
 					PusherKeyID:   util.RandBytes(20),
 					PusherAddress: "address1",
 					AccountNonce:  3,
 				}
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				gpgKey := types.BareGPGPubKey()
 				gpgKey.Address = util.String("address1")
@@ -1482,7 +1488,7 @@ var _ = Describe("Validation", func() {
 		When("pusher account balance not sufficient to pay fee", func() {
 			BeforeEach(func() {
 
-				tx := &types.PushNote{
+				tx := &msgs.PushNote{
 					RepoName:      "repo1",
 					PusherKeyID:   util.RandBytes(20),
 					PusherAddress: "address1",
@@ -1490,7 +1496,7 @@ var _ = Describe("Validation", func() {
 					Fee:           "10",
 				}
 
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&types.Repository{Balance: "10"})
+				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				gpgKey := types.BareGPGPubKey()
 				gpgKey.Address = util.String("address1")
@@ -1500,7 +1506,7 @@ var _ = Describe("Validation", func() {
 				acct.Nonce = 1
 				mockAcctKeeper.EXPECT().GetAccount(tx.PusherAddress).Return(acct)
 
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types.BlockInfo{Height: 1}, nil)
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&types4.BlockInfo{Height: 1}, nil)
 				mockTxLogic.EXPECT().
 					CanExecCoinTransfer(tx.PusherAddress, util.String("0"), tx.Fee, uint64(2), uint64(1)).
 					Return(fmt.Errorf("insufficient"))
@@ -1520,7 +1526,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				objHash := "obj_hash"
 
-				tx := &types.PushNote{RepoName: "repo1", References: []*types.PushedReference{
+				tx := &msgs.PushNote{RepoName: "repo1", References: []*core.PushedReference{
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}}
 
@@ -1530,8 +1536,8 @@ var _ = Describe("Validation", func() {
 
 				mockDHT := mocks.NewMockDHT(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
-				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
-					Module:    types.RepoObjectModule,
+				mockDHT.EXPECT().GetObject(gomock.Any(), &types3.DHTObjectQuery{
+					Module:    core.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(nil, fmt.Errorf("object not found"))
 
@@ -1548,7 +1554,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				objHash := "obj_hash"
 
-				tx := &types.PushNote{RepoName: "repo1", References: []*types.PushedReference{
+				tx := &msgs.PushNote{RepoName: "repo1", References: []*core.PushedReference{
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}}
 
@@ -1559,8 +1565,8 @@ var _ = Describe("Validation", func() {
 				mockDHT := mocks.NewMockDHT(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 				content := []byte("content")
-				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
-					Module:    types.RepoObjectModule,
+				mockDHT.EXPECT().GetObject(gomock.Any(), &types3.DHTObjectQuery{
+					Module:    core.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(content, nil)
 
@@ -1579,7 +1585,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				objHash := "obj_hash"
 
-				tx := &types.PushNote{RepoName: "repo1", References: []*types.PushedReference{
+				tx := &msgs.PushNote{RepoName: "repo1", References: []*core.PushedReference{
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}, Size: 7}
 
@@ -1590,8 +1596,8 @@ var _ = Describe("Validation", func() {
 				mockDHT := mocks.NewMockDHT(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 				content := []byte("content")
-				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
-					Module:    types.RepoObjectModule,
+				mockDHT.EXPECT().GetObject(gomock.Any(), &types3.DHTObjectQuery{
+					Module:    core.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(content, nil)
 
@@ -1610,7 +1616,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				objHash := "obj_hash"
 
-				tx := &types.PushNote{RepoName: "repo1", References: []*types.PushedReference{
+				tx := &msgs.PushNote{RepoName: "repo1", References: []*core.PushedReference{
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}, Size: 10}
 
@@ -1621,8 +1627,8 @@ var _ = Describe("Validation", func() {
 				mockDHT := mocks.NewMockDHT(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 				content := []byte("content")
-				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
-					Module:    types.RepoObjectModule,
+				mockDHT.EXPECT().GetObject(gomock.Any(), &types3.DHTObjectQuery{
+					Module:    core.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(content, nil)
 
@@ -1642,7 +1648,7 @@ var _ = Describe("Validation", func() {
 	Describe(".checkPushNoteAgainstTxParamss", func() {
 		When("pusher key in push note is different from txparamss pusher key", func() {
 			BeforeEach(func() {
-				pn := &types.PushNote{PusherKeyID: util.MustDecodeRSAPubKeyID("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")}
+				pn := &msgs.PushNote{PusherKeyID: util.MustDecodeRSAPubKeyID("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")}
 				txParamss := map[string]*util.TxParams{
 					"refs/heads/master": &util.TxParams{PubKeyID: util.MustToRSAPubKeyID(util.RandBytes(20))},
 				}
@@ -1658,7 +1664,7 @@ var _ = Describe("Validation", func() {
 		When("fee do not match", func() {
 			BeforeEach(func() {
 				pkID := util.RandBytes(20)
-				pn := &types.PushNote{PusherKeyID: pkID, Fee: "9"}
+				pn := &msgs.PushNote{PusherKeyID: pkID, Fee: "9"}
 				txParamss := map[string]*util.TxParams{
 					"refs/heads/master": &util.TxParams{
 						PubKeyID: util.MustToRSAPubKeyID(pkID),
@@ -1677,10 +1683,10 @@ var _ = Describe("Validation", func() {
 		When("push note has unexpected pushed reference", func() {
 			BeforeEach(func() {
 				pkID := util.RandBytes(20)
-				pn := &types.PushNote{
+				pn := &msgs.PushNote{
 					PusherKeyID: pkID,
 					Fee:         "10",
-					References: []*types.PushedReference{
+					References: []*core.PushedReference{
 						{Name: "refs/heads/dev"},
 					},
 				}

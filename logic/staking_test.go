@@ -1,21 +1,24 @@
 package logic
 
 import (
+	types2 "gitlab.com/makeos/mosdef/logic/types"
+	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
 	"os"
 
-	"github.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/params"
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/crypto"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -48,7 +51,7 @@ var _ = Describe("Staking", func() {
 	})
 
 	BeforeEach(func() {
-		err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&types2.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 
@@ -77,7 +80,7 @@ var _ = Describe("Staking", func() {
 
 				Specify("that when another stake entry value=10, unbondHeight=100 is added with fee=1 then spendable balance = 89", func() {
 					senderPubKey := sender.PubKey().MustBytes32()
-					err := txLogic.addStake(types.TxTypeValidatorTicket, senderPubKey, util.String("10"), util.String("1"), 0)
+					err := txLogic.addStake(msgs.TxTypeValidatorTicket, senderPubKey, util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 					acct := logic.AccountKeeper().GetAccount(sender.Addr())
 					Expect(acct.GetBalance()).To(Equal(util.String("99")))
@@ -100,7 +103,7 @@ var _ = Describe("Staking", func() {
 
 				Specify("that when another stake entry value=10, unbondHeight=100 is added with fee=1 then spendable balance = 39", func() {
 					senderPubKey := sender.PubKey().MustBytes32()
-					err := txLogic.addStake(types.TxTypeValidatorTicket, senderPubKey, util.String("10"), util.String("1"), 0)
+					err := txLogic.addStake(msgs.TxTypeValidatorTicket, senderPubKey, util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 					acct := logic.AccountKeeper().GetAccount(sender.Addr())
 					Expect(acct.GetBalance()).To(Equal(util.String("99")))
@@ -120,7 +123,7 @@ var _ = Describe("Staking", func() {
 					Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("100")))
 
 					senderPubKey = sender.PubKey().MustBytes32()
-					err := txLogic.addStake(types.TxTypeStorerTicket, senderPubKey, util.String("10"), util.String("1"), 0)
+					err := txLogic.addStake(msgs.TxTypeStorerTicket, senderPubKey, util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -175,7 +178,7 @@ var _ = Describe("Staking", func() {
 
 				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), uint64(1)).Return(acct)
 
-				returnTicket := &types.Ticket{Hash: util.StrToBytes32("ticket_id"), Value: "100"}
+				returnTicket := &types3.Ticket{Hash: util.StrToBytes32("ticket_id"), Value: "100"}
 				mockLogic.TicketManager.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
 
 				mockLogic.AccountKeeper.EXPECT().Update(sender.Addr(), acct)

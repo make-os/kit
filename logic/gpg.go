@@ -3,9 +3,9 @@ package logic
 import (
 	"crypto/rsa"
 
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // execAddGPGKey associates a GPG key to an account

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/crypto/ed25519"

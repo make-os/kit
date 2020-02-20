@@ -1,11 +1,11 @@
 package keepers
 
 import (
-	"github.com/makeos/mosdef/storage/tree"
+	"gitlab.com/makeos/mosdef/storage/tree"
+	"gitlab.com/makeos/mosdef/types"
 	"github.com/pkg/errors"
 
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // AccountKeeper manages account state.

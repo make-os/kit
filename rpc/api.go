@@ -1,8 +1,8 @@
 package rpc
 
 import (
-	"github.com/makeos/mosdef/rpc/jsonrpc"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/rpc/jsonrpc"
+	"gitlab.com/makeos/mosdef/types"
 )
 
 func (s *Server) apiRPCStop(params interface{}) *jsonrpc.Response {

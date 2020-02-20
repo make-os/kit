@@ -2,14 +2,17 @@ package modules
 
 import (
 	"fmt"
+	types3 "gitlab.com/makeos/mosdef/logic/types"
+	types2 "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
 
-	"github.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/config"
 	"github.com/pkg/errors"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
 	prompt "github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
 )
 
@@ -17,16 +20,16 @@ import (
 type GPGModule struct {
 	cfg     *config.AppConfig
 	vm      *otto.Otto
-	service types.Service
-	logic   types.Logic
+	service types2.Service
+	logic   types3.Logic
 }
 
 // NewGPGModule creates an instance of GPGModule
 func NewGPGModule(
 	cfg *config.AppConfig,
 	vm *otto.Otto,
-	service types.Service,
-	logic types.Logic) *GPGModule {
+	service types2.Service,
+	logic types3.Logic) *GPGModule {
 	return &GPGModule{
 		cfg:     cfg,
 		vm:      vm,
@@ -99,7 +102,7 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx = types.NewBareTxAddGPGPubKey()
+	var tx = msgs.NewBareTxAddGPGPubKey()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}

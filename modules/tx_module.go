@@ -3,11 +3,14 @@ package modules
 import (
 	"encoding/hex"
 	"fmt"
+	types3 "gitlab.com/makeos/mosdef/logic/types"
+	types2 "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
 	"strings"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )
@@ -15,12 +18,12 @@ import (
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
 	vm      *otto.Otto
-	keepers types.Keepers
-	service types.Service
+	keepers types3.Keepers
+	service types2.Service
 }
 
 // NewTxModule creates an instance of TxModule
-func NewTxModule(vm *otto.Otto, service types.Service, keepers types.Keepers) *TxModule {
+func NewTxModule(vm *otto.Otto, service types2.Service, keepers types3.Keepers) *TxModule {
 	return &TxModule{vm: vm, service: service, keepers: keepers}
 }
 
@@ -108,7 +111,7 @@ func (m *TxModule) Configure() []prompt.Suggest {
 func (m *TxModule) sendTx(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareTxCoinTransfer()
+	var tx = msgs.NewBareTxCoinTransfer()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -151,7 +154,7 @@ func (m *TxModule) Get(hash string) interface{} {
 
 // sendPayload sends an already signed transaction object to the network
 func (m *TxModule) SendPayload(txData map[string]interface{}) interface{} {
-	tx, err := types.DecodeTxFromMap(txData)
+	tx, err := msgs.DecodeTxFromMap(txData)
 	if err != nil {
 		panic(err)
 	}

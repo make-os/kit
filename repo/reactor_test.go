@@ -2,6 +2,11 @@ package repo
 
 import (
 	"fmt"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	msgs2 "gitlab.com/makeos/mosdef/repo/types/msgs"
+	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types/state"
 	"os"
 
 	"github.com/golang/mock/gomock"
@@ -9,13 +14,12 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/p2p"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/params"
-	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/types/mocks"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/types/mocks"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Reactor", func() {
@@ -77,8 +81,8 @@ var _ = Describe("Reactor", func() {
 		When("repo referenced in PushNote is not found", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
-				mockRepoKeeper.EXPECT().GetRepo("unknown").Return(types.BareRepository())
-				pn := &types.PushNote{RepoName: "unknown"}
+				mockRepoKeeper.EXPECT().GetRepo("unknown").Return(state.BareRepository())
+				pn := &msgs2.PushNote{RepoName: "unknown"}
 				err = mgr.onPushNote(mockPeer, pn.Bytes())
 			})
 
@@ -91,10 +95,10 @@ var _ = Describe("Reactor", func() {
 		When("unable to open the target repo", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
-				mockRepoKeeper.EXPECT().GetRepo("unknown").Return(&types.Repository{
+				mockRepoKeeper.EXPECT().GetRepo("unknown").Return(&state.Repository{
 					Balance: "10",
 				})
-				pn := &types.PushNote{RepoName: "unknown"}
+				pn := &msgs2.PushNote{RepoName: "unknown"}
 				err = mgr.onPushNote(mockPeer, pn.Bytes())
 			})
 
@@ -135,7 +139,7 @@ var _ = Describe("Reactor", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
 				params.PushOKQuorumSize = 2
-				mgr.addPushNoteEndorsement(pushNoteID, &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
+				mgr.addPushNoteEndorsement(pushNoteID, &msgs2.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = mgr.MaybeCreatePushTx(pushNoteID)
 			})
 
@@ -149,7 +153,7 @@ var _ = Describe("Reactor", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
 				params.PushOKQuorumSize = 1
-				mgr.addPushNoteEndorsement(pushNoteID, &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
+				mgr.addPushNoteEndorsement(pushNoteID, &msgs2.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = mgr.MaybeCreatePushTx(pushNoteID)
 			})
 
@@ -162,12 +166,12 @@ var _ = Describe("Reactor", func() {
 		When("unable to get top storers", func() {
 			BeforeEach(func() {
 				params.PushOKQuorumSize = 1
-				var pushNote = &types.PushNote{RepoName: "repo1"}
+				var pushNote = &msgs2.PushNote{RepoName: "repo1"}
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return(nil, fmt.Errorf("error"))
-				mgr.addPushNoteEndorsement(pushNote.ID().String(), &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
+				mgr.addPushNoteEndorsement(pushNote.ID().String(), &msgs2.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
 			})
 
@@ -180,12 +184,12 @@ var _ = Describe("Reactor", func() {
 		When("unable to get ticket of push endorsement sender", func() {
 			BeforeEach(func() {
 				params.PushOKQuorumSize = 1
-				var pushNote = &types.PushNote{RepoName: "repo1"}
+				var pushNote = &msgs2.PushNote{RepoName: "repo1"}
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{}, nil)
-				pok := &types.PushOK{
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types3.SelectedTicket{}, nil)
+				pok := &msgs2.PushOK{
 					Sig:          util.BytesToBytes64(util.RandBytes(5)),
 					SenderPubKey: util.BytesToBytes32(util.RandBytes(32)),
 				}
@@ -202,19 +206,19 @@ var _ = Describe("Reactor", func() {
 		When("a push endorsement has invalid bls public key", func() {
 			BeforeEach(func() {
 				params.PushOKQuorumSize = 1
-				var pushNote = &types.PushNote{RepoName: "repo1"}
+				var pushNote = &msgs2.PushNote{RepoName: "repo1"}
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{
-					&types.SelectedTicket{
-						Ticket: &types.Ticket{
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types3.SelectedTicket{
+					&types3.SelectedTicket{
+						Ticket: &types3.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      []byte("invalid bls public key"),
 						},
 					},
 				}, nil)
-				pok := &types.PushOK{
+				pok := &msgs2.PushOK{
 					SenderPubKey: key.PubKey().MustBytes32(),
 				}
 
@@ -231,19 +235,19 @@ var _ = Describe("Reactor", func() {
 		When("endorsement signature is invalid", func() {
 			BeforeEach(func() {
 				params.PushOKQuorumSize = 1
-				var pushNote = &types.PushNote{RepoName: "repo1"}
+				var pushNote = &msgs2.PushNote{RepoName: "repo1"}
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{
-					&types.SelectedTicket{
-						Ticket: &types.Ticket{
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types3.SelectedTicket{
+					&types3.SelectedTicket{
+						Ticket: &types3.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
 						},
 					},
 				}, nil)
-				pok := &types.PushOK{
+				pok := &msgs2.PushOK{
 					SenderPubKey: key.PubKey().MustBytes32(),
 				}
 				pok.Sig = util.BytesToBytes64(util.RandBytes(64))
@@ -261,19 +265,19 @@ var _ = Describe("Reactor", func() {
 		When("push note is ok", func() {
 			BeforeEach(func() {
 				params.PushOKQuorumSize = 1
-				var pushNote = &types.PushNote{RepoName: "repo1"}
+				var pushNote = &msgs2.PushNote{RepoName: "repo1"}
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types.SelectedTicket{
-					&types.SelectedTicket{
-						Ticket: &types.Ticket{
+				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types3.SelectedTicket{
+					&types3.SelectedTicket{
+						Ticket: &types3.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
 						},
 					},
 				}, nil)
-				pok := &types.PushOK{
+				pok := &msgs2.PushOK{
 					SenderPubKey: key.PubKey().MustBytes32(),
 				}
 				var pokSig []byte
@@ -281,7 +285,7 @@ var _ = Describe("Reactor", func() {
 				Expect(err).To(BeNil())
 				pok.Sig = util.BytesToBytes64(pokSig)
 
-				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&types.TxPush{})).Return(nil)
+				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&msgs.TxPush{})).Return(nil)
 				mgr.addPushNoteEndorsement(pushNote.ID().String(), pok)
 				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
 			})
@@ -307,7 +311,7 @@ var _ = Describe("Reactor", func() {
 
 		When("target repo does not exist locally", func() {
 			BeforeEach(func() {
-				tx := types.NewBareTxPush()
+				tx := msgs.NewBareTxPush()
 				tx.PushNote.RepoName = "unknown"
 				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(nil, fmt.Errorf("error"))
 				err = execTxPush(mockMgr, tx)
@@ -321,12 +325,12 @@ var _ = Describe("Reactor", func() {
 
 		When("object existed locally", func() {
 			BeforeEach(func() {
-				tx := types.NewBareTxPush()
+				tx := msgs.NewBareTxPush()
 				tx.PushNote.RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = types.PushedReferences([]*types.PushedReference{
-					&types.PushedReference{Objects: []string{obj}},
+				tx.PushNote.References = core.PushedReferences([]*core.PushedReference{
+					&core.PushedReference{Objects: []string{obj}},
 				})
 
 				repo := mocks.NewMockBareRepo(ctrl)
@@ -344,12 +348,12 @@ var _ = Describe("Reactor", func() {
 
 		When("tx merge operation fail", func() {
 			BeforeEach(func() {
-				tx := types.NewBareTxPush()
+				tx := msgs.NewBareTxPush()
 				tx.PushNote.RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = types.PushedReferences([]*types.PushedReference{
-					&types.PushedReference{Objects: []string{obj}},
+				tx.PushNote.References = core.PushedReferences([]*core.PushedReference{
+					&core.PushedReference{Objects: []string{obj}},
 				})
 
 				repo := mocks.NewMockBareRepo(ctrl)
@@ -368,12 +372,12 @@ var _ = Describe("Reactor", func() {
 
 		When("an object does not exist and dht download failed", func() {
 			BeforeEach(func() {
-				tx := types.NewBareTxPush()
+				tx := msgs.NewBareTxPush()
 				tx.PushNote.RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = types.PushedReferences([]*types.PushedReference{
-					&types.PushedReference{Objects: []string{obj}},
+				tx.PushNote.References = core.PushedReferences([]*core.PushedReference{
+					&core.PushedReference{Objects: []string{obj}},
 				})
 
 				repo := mocks.NewMockBareRepo(ctrl)
@@ -392,12 +396,12 @@ var _ = Describe("Reactor", func() {
 
 		When("downloaded object cannot be written to disk", func() {
 			BeforeEach(func() {
-				tx := types.NewBareTxPush()
+				tx := msgs.NewBareTxPush()
 				tx.PushNote.RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = types.PushedReferences([]*types.PushedReference{
-					&types.PushedReference{Objects: []string{obj}},
+				tx.PushNote.References = core.PushedReferences([]*core.PushedReference{
+					&core.PushedReference{Objects: []string{obj}},
 				})
 
 				repo := mocks.NewMockBareRepo(ctrl)
@@ -419,12 +423,12 @@ var _ = Describe("Reactor", func() {
 
 		When("object download succeeded but object announcement fails", func() {
 			BeforeEach(func() {
-				tx := types.NewBareTxPush()
+				tx := msgs.NewBareTxPush()
 				tx.PushNote.RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = types.PushedReferences([]*types.PushedReference{
-					&types.PushedReference{Objects: []string{obj}},
+				tx.PushNote.References = core.PushedReferences([]*core.PushedReference{
+					&core.PushedReference{Objects: []string{obj}},
 				})
 
 				repo := mocks.NewMockBareRepo(ctrl)
@@ -448,16 +452,16 @@ var _ = Describe("Reactor", func() {
 		When("object download succeeded but pushed reference has a delete directive", func() {
 			var repo *mocks.MockBareRepo
 			var obj string
-			var tx *types.TxPush
+			var tx *msgs.TxPush
 			var objBytes []byte
 
 			BeforeEach(func() {
-				tx = types.NewBareTxPush()
+				tx = msgs.NewBareTxPush()
 				tx.PushNote.RepoName = "repo1"
 
 				obj = util.RandString(40)
-				tx.PushNote.References = types.PushedReferences([]*types.PushedReference{
-					&types.PushedReference{Name: "ref1", Objects: []string{obj}, Delete: true},
+				tx.PushNote.References = core.PushedReferences([]*core.PushedReference{
+					&core.PushedReference{Name: "ref1", Objects: []string{obj}, Delete: true},
 				})
 
 				repo = mocks.NewMockBareRepo(ctrl)

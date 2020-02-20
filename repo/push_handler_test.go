@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"fmt"
+	"gitlab.com/makeos/mosdef/repo/types/core"
 	"io"
 	"os"
 	"path/filepath"
@@ -13,19 +14,19 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/types/mocks"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/mocks"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("PushHandler", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
-	var repo types.BareRepo
+	var repo core.BareRepo
 	var mockMgr *mocks.MockRepoManager
 	var mgr *Manager
 	var handler *PushHandler

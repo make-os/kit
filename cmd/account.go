@@ -19,8 +19,8 @@ import (
 	path "path/filepath"
 
 	"github.com/fatih/color"
-	"github.com/makeos/mosdef/accountmgr"
-	"github.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/accountmgr"
+	"gitlab.com/makeos/mosdef/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

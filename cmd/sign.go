@@ -18,10 +18,10 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/repo"
-	"github.com/makeos/mosdef/rpc/client"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/repo"
+	"gitlab.com/makeos/mosdef/rpc/client"
+	"gitlab.com/makeos/mosdef/types"
 	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"

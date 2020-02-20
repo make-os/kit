@@ -2,21 +2,24 @@ package validators
 
 import (
 	"fmt"
+	types3 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/util"
 	"path/filepath"
 
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/repo"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/repo"
 )
 
-var feI = types.FieldErrorWithIndex
+var feI = util.FieldErrorWithIndex
 
 // ValidateTxFunc represents a function for validating a transaction
-type ValidateTxFunc func(tx types.BaseTx, i int, logic types.Logic) error
+type ValidateTxFunc func(tx msgs.BaseTx, i int, logic types3.Logic) error
 
 // ValidateTxs performs both syntactic and consistency
 // validation on the given transactions.
-func ValidateTxs(txs []types.BaseTx, logic types.Logic) error {
+func ValidateTxs(txs []msgs.BaseTx, logic types3.Logic) error {
 	for i, tx := range txs {
 		if err := ValidateTx(tx, i, logic); err != nil {
 			return err
@@ -26,7 +29,7 @@ func ValidateTxs(txs []types.BaseTx, logic types.Logic) error {
 }
 
 // ValidateTx validates a transaction
-func ValidateTx(tx types.BaseTx, i int, logic types.Logic) error {
+func ValidateTx(tx msgs.BaseTx, i int, logic types3.Logic) error {
 
 	if tx == nil {
 		return fmt.Errorf("nil tx")
@@ -49,35 +52,35 @@ func ValidateTx(tx types.BaseTx, i int, logic types.Logic) error {
 // index: index is used to indicate the index of the transaction in a slice
 // managed by the caller. It is used for constructing error messages.
 // Use -1 if tx is not part of a collection.
-func ValidateTxSanity(tx types.BaseTx, index int) error {
+func ValidateTxSanity(tx msgs.BaseTx, index int) error {
 	switch o := tx.(type) {
-	case *types.TxCoinTransfer:
+	case *msgs.TxCoinTransfer:
 		return CheckTxCoinTransfer(o, index)
-	case *types.TxTicketPurchase:
+	case *msgs.TxTicketPurchase:
 		return CheckTxTicketPurchase(o, index)
-	case *types.TxSetDelegateCommission:
+	case *msgs.TxSetDelegateCommission:
 		return CheckTxSetDelegateCommission(o, index)
-	case *types.TxTicketUnbond:
+	case *msgs.TxTicketUnbond:
 		return CheckTxUnbondTicket(o, index)
-	case *types.TxRepoCreate:
+	case *msgs.TxRepoCreate:
 		return CheckTxRepoCreate(o, index)
-	case *types.TxAddGPGPubKey:
+	case *msgs.TxAddGPGPubKey:
 		return CheckTxAddGPGPubKey(o, index)
-	case *types.TxPush:
+	case *msgs.TxPush:
 		return CheckTxPush(o, index)
-	case *types.TxNamespaceAcquire:
+	case *msgs.TxNamespaceAcquire:
 		return CheckTxNSAcquire(o, index)
-	case *types.TxNamespaceDomainUpdate:
+	case *msgs.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdate(o, index)
-	case *types.TxRepoProposalUpsertOwner:
+	case *msgs.TxRepoProposalUpsertOwner:
 		return CheckTxRepoProposalUpsertOwner(o, index)
-	case *types.TxRepoProposalVote:
+	case *msgs.TxRepoProposalVote:
 		return CheckTxVote(o, index)
-	case *types.TxRepoProposalUpdate:
+	case *msgs.TxRepoProposalUpdate:
 		return CheckTxRepoProposalUpdate(o, index)
-	case *types.TxRepoProposalFeeSend:
+	case *msgs.TxRepoProposalFeeSend:
 		return CheckTxRepoProposalSendFee(o, index)
-	case *types.TxRepoProposalMergeRequest:
+	case *msgs.TxRepoProposalMergeRequest:
 		return CheckTxRepoProposalMergeRequest(o, index)
 	default:
 		return feI(index, "type", "unsupported transaction type")
@@ -88,37 +91,37 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 // values that are consistent with the current state of the app
 //
 // CONTRACT: Sender public key must be validated by the caller.
-func ValidateTxConsistency(tx types.BaseTx, index int, logic types.Logic) error {
+func ValidateTxConsistency(tx msgs.BaseTx, index int, logic types3.Logic) error {
 	switch o := tx.(type) {
-	case *types.TxCoinTransfer:
+	case *msgs.TxCoinTransfer:
 		return CheckTxCoinTransferConsistency(o, index, logic)
-	case *types.TxTicketPurchase:
+	case *msgs.TxTicketPurchase:
 		return CheckTxTicketPurchaseConsistency(o, index, logic)
-	case *types.TxSetDelegateCommission:
+	case *msgs.TxSetDelegateCommission:
 		return CheckTxSetDelegateCommissionConsistency(o, index, logic)
-	case *types.TxTicketUnbond:
+	case *msgs.TxTicketUnbond:
 		return CheckTxUnbondTicketConsistency(o, index, logic)
-	case *types.TxRepoCreate:
+	case *msgs.TxRepoCreate:
 		return CheckTxRepoCreateConsistency(o, index, logic)
-	case *types.TxAddGPGPubKey:
+	case *msgs.TxAddGPGPubKey:
 		return CheckTxAddGPGPubKeyConsistency(o, index, logic)
-	case *types.TxPush:
-		return CheckTxPushConsistency(o, index, logic, func(name string) (types.BareRepo, error) {
+	case *msgs.TxPush:
+		return CheckTxPushConsistency(o, index, logic, func(name string) (core.BareRepo, error) {
 			return repo.GetRepo(filepath.Join(logic.Cfg().GetRepoRoot(), name))
 		})
-	case *types.TxNamespaceAcquire:
+	case *msgs.TxNamespaceAcquire:
 		return CheckTxNSAcquireConsistency(o, index, logic)
-	case *types.TxNamespaceDomainUpdate:
+	case *msgs.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdateConsistency(o, index, logic)
-	case *types.TxRepoProposalUpsertOwner:
+	case *msgs.TxRepoProposalUpsertOwner:
 		return CheckTxRepoProposalUpsertOwnerConsistency(o, index, logic)
-	case *types.TxRepoProposalVote:
+	case *msgs.TxRepoProposalVote:
 		return CheckTxVoteConsistency(o, index, logic)
-	case *types.TxRepoProposalUpdate:
+	case *msgs.TxRepoProposalUpdate:
 		return CheckTxRepoProposalUpdateConsistency(o, index, logic)
-	case *types.TxRepoProposalFeeSend:
+	case *msgs.TxRepoProposalFeeSend:
 		return CheckTxRepoProposalSendFeeConsistency(o, index, logic)
-	case *types.TxRepoProposalMergeRequest:
+	case *msgs.TxRepoProposalMergeRequest:
 		return CheckTxRepoProposalMergeRequestConsistency(o, index, logic)
 	default:
 		return feI(index, "type", "unsupported transaction type")
@@ -132,7 +135,7 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic types.Logic) error 
 // error messages; Use -1 if tx is not part of a collection.
 //
 // CONTRACT: Sender public key must be validated by the caller.
-func checkSignature(tx types.BaseTx, index int) (errs []error) {
+func checkSignature(tx msgs.BaseTx, index int) (errs []error) {
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	valid, err := pubKey.Verify(tx.GetBytesNoSig(), tx.GetSignature())
 	if err != nil {

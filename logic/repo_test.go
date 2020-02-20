@@ -1,18 +1,21 @@
 package logic
 
 import (
+	types2 "gitlab.com/makeos/mosdef/logic/types"
+	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/state"
 	"os"
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/types/mocks"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/mocks"
+	"gitlab.com/makeos/mosdef/util"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -47,8 +50,8 @@ var _ = Describe("Repo", func() {
 	})
 
 	BeforeEach(func() {
-		types.DefaultRepoConfig = types.MakeDefaultRepoConfig()
-		err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 1})
+		state.DefaultRepoConfig = state.MakeDefaultRepoConfig()
+		err := logic.SysKeeper().SaveBlockInfo(&types2.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 
@@ -63,10 +66,10 @@ var _ = Describe("Repo", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var spk util.Bytes32
-		var repoCfg *types.RepoConfig
+		var repoCfg *state.RepoConfig
 
 		BeforeEach(func() {
-			repoCfg = types.MakeDefaultRepoConfig()
+			repoCfg = state.MakeDefaultRepoConfig()
 			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
 				Balance:             util.String("10"),
 				Stakes:              types.BareAccountStakes(),
@@ -83,7 +86,7 @@ var _ = Describe("Repo", func() {
 
 			Specify("that repo config is the default", func() {
 				repo := txLogic.logic.RepoKeeper().GetRepo("repo")
-				Expect(repo.Config).To(Equal(types.DefaultRepoConfig))
+				Expect(repo.Config).To(Equal(state.DefaultRepoConfig))
 			})
 
 			Specify("that fee is deducted from sender account", func() {
@@ -98,7 +101,7 @@ var _ = Describe("Repo", func() {
 
 			When("proposee is ProposalOwner", func() {
 				BeforeEach(func() {
-					repoCfg.Governace.ProposalProposee = types.ProposeeOwner
+					repoCfg.Governace.ProposalProposee = state.ProposeeOwner
 					spk = sender.PubKey().MustBytes32()
 					err = txLogic.execRepoCreate(spk, "repo", repoCfg.ToMap(), "1.5", 0)
 					Expect(err).To(BeNil())
@@ -113,7 +116,7 @@ var _ = Describe("Repo", func() {
 
 			When("proposee is not ProposalOwner", func() {
 				BeforeEach(func() {
-					repoCfg.Governace.ProposalProposee = types.ProposeeNetStakeholders
+					repoCfg.Governace.ProposalProposee = state.ProposeeNetStakeholders
 					spk = sender.PubKey().MustBytes32()
 					err = txLogic.execRepoCreate(spk, "repo", repoCfg.ToMap(), "1.5", 0)
 					Expect(err).To(BeNil())
@@ -126,7 +129,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			When("non-nil repo config is provided", func() {
-				repoCfg2 := &types.RepoConfig{Governace: &types.RepoConfigGovernance{ProposalDur: 1000}}
+				repoCfg2 := &state.RepoConfig{Governace: &state.RepoConfigGovernance{ProposalDur: 1000}}
 				BeforeEach(func() {
 					spk = sender.PubKey().MustBytes32()
 					err = txLogic.execRepoCreate(spk, "repo", repoCfg2.ToMap(), "1.5", 0)
@@ -135,7 +138,7 @@ var _ = Describe("Repo", func() {
 
 				Specify("that repo config is not the default", func() {
 					repo := txLogic.logic.RepoKeeper().GetRepo("repo")
-					Expect(repo.Config).ToNot(Equal(types.DefaultRepoConfig))
+					Expect(repo.Config).ToNot(Equal(state.DefaultRepoConfig))
 					Expect(repo.Config.Governace.ProposalDur).To(Equal(uint64(1000)))
 				})
 			})
@@ -159,12 +162,12 @@ var _ = Describe("Repo", func() {
 			var repoName = "repo"
 
 			BeforeEach(func() {
-				repoUpd := types.BareRepository()
-				repoUpd.Config = types.DefaultRepoConfig
-				repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
-				repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodIdentity
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-				proposal := &types.RepoProposal{
+				repoUpd := state.BareRepository()
+				repoUpd.Config = state.DefaultRepoConfig
+				repoUpd.Config.Governace.ProposalProposee = state.ProposeeOwner
+				repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodIdentity
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+				proposal := &state.RepoProposal{
 					Config: repoUpd.Config.Governace,
 					Yes:    1,
 				}
@@ -172,7 +175,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+				err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -183,23 +186,23 @@ var _ = Describe("Repo", func() {
 
 			Context("with two votes; vote 1 = NoWithVeto, vote 2=Yes", func() {
 				BeforeEach(func() {
-					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodIdentity
-					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-					repoUpd.AddOwner(key2.Addr().String(), &types.RepoOwner{})
-					proposal := &types.RepoProposal{Config: repoUpd.Config.Governace}
+					repoUpd := state.BareRepository()
+					repoUpd.Config = state.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodIdentity
+					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+					repoUpd.AddOwner(key2.Addr().String(), &state.RepoOwner{})
+					proposal := &state.RepoProposal{Config: repoUpd.Config.Governace}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
 
 					// Vote 1
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteNoWithVeto, "1.5", 0)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteNoWithVeto, "1.5", 0)
 					Expect(err).To(BeNil())
 
 					// Vote 2
 					spk = key2.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -216,12 +219,12 @@ var _ = Describe("Repo", func() {
 			var repoName = "repo"
 
 			BeforeEach(func() {
-				repoUpd := types.BareRepository()
-				repoUpd.Config = types.DefaultRepoConfig
-				repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
-				repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodCoinWeighted
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-				proposal := &types.RepoProposal{
+				repoUpd := state.BareRepository()
+				repoUpd.Config = state.DefaultRepoConfig
+				repoUpd.Config.Governace.ProposalProposee = state.ProposeeOwner
+				repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodCoinWeighted
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+				proposal := &state.RepoProposal{
 					Config: repoUpd.Config.Governace,
 					Yes:    1,
 				}
@@ -229,7 +232,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+				err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -244,11 +247,11 @@ var _ = Describe("Repo", func() {
 			var repoName = "repo"
 
 			BeforeEach(func() {
-				repoUpd := types.BareRepository()
-				repoUpd.Config = types.DefaultRepoConfig
-				repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStakeOfProposer
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-				proposal := &types.RepoProposal{
+				repoUpd := state.BareRepository()
+				repoUpd.Config = state.DefaultRepoConfig
+				repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStakeOfProposer
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+				proposal := &state.RepoProposal{
 					Config: repoUpd.Config.Governace,
 					Yes:    0,
 				}
@@ -260,7 +263,7 @@ var _ = Describe("Repo", func() {
 				txLogic.logic.SetTicketManager(mockTickMgr)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+				err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -275,11 +278,11 @@ var _ = Describe("Repo", func() {
 			var repoName = "repo"
 
 			BeforeEach(func() {
-				repoUpd := types.BareRepository()
-				repoUpd.Config = types.DefaultRepoConfig
-				repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStakeOfDelegators
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-				proposal := &types.RepoProposal{
+				repoUpd := state.BareRepository()
+				repoUpd.Config = state.DefaultRepoConfig
+				repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStakeOfDelegators
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+				proposal := &state.RepoProposal{
 					Config: repoUpd.Config.Governace,
 					Yes:    0,
 				}
@@ -291,7 +294,7 @@ var _ = Describe("Repo", func() {
 				txLogic.logic.SetTicketManager(mockTickMgr)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+				err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -307,27 +310,27 @@ var _ = Describe("Repo", func() {
 
 			When("ticketA and ticketB are not delegated, with value 10, 20 respectively", func() {
 				BeforeEach(func() {
-					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStake
-					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-					proposal := &types.RepoProposal{
+					repoUpd := state.BareRepository()
+					repoUpd.Config = state.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+					proposal := &state.RepoProposal{
 						Config: repoUpd.Config.Governace,
 						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
 
-					ticketA := &types.Ticket{Value: "10"}
-					ticketB := &types.Ticket{Value: "20"}
-					tickets := []*types.Ticket{ticketA, ticketB}
+					ticketA := &types3.Ticket{Value: "10"}
+					ticketB := &types3.Ticket{Value: "20"}
+					tickets := []*types3.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
 						MustBytes32(), uint64(0)).Return(tickets, nil)
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -339,31 +342,31 @@ var _ = Describe("Repo", func() {
 
 			When("ticketA and ticketB exist, with value 10, 20 respectively. voter is delegator and proposer of ticketB", func() {
 				BeforeEach(func() {
-					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStake
-					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-					proposal := &types.RepoProposal{
+					repoUpd := state.BareRepository()
+					repoUpd.Config = state.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+					proposal := &state.RepoProposal{
 						Config: repoUpd.Config.Governace,
 						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
 
-					ticketA := &types.Ticket{Value: "10"}
-					ticketB := &types.Ticket{
+					ticketA := &types3.Ticket{Value: "10"}
+					ticketB := &types3.Ticket{
 						Value:          "20",
 						ProposerPubKey: sender.PubKey().MustBytes32(),
 						Delegator:      sender.Addr().String(),
 					}
-					tickets := []*types.Ticket{ticketA, ticketB}
+					tickets := []*types3.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
 						MustBytes32(), uint64(0)).Return(tickets, nil)
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -377,31 +380,31 @@ var _ = Describe("Repo", func() {
 				"proposer of ticketB but someone else is delegator and they have not "+
 				"voted on the proposal", func() {
 				BeforeEach(func() {
-					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStake
-					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-					proposal := &types.RepoProposal{
+					repoUpd := state.BareRepository()
+					repoUpd.Config = state.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+					proposal := &state.RepoProposal{
 						Config: repoUpd.Config.Governace,
 						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
 
-					ticketA := &types.Ticket{Value: "10"}
-					ticketB := &types.Ticket{
+					ticketA := &types3.Ticket{Value: "10"}
+					ticketB := &types3.Ticket{
 						Value:          "20",
 						ProposerPubKey: sender.PubKey().MustBytes32(),
 						Delegator:      key2.Addr().String(),
 					}
-					tickets := []*types.Ticket{ticketA, ticketB}
+					tickets := []*types3.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
 						MustBytes32(), uint64(0)).Return(tickets, nil)
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -415,34 +418,34 @@ var _ = Describe("Repo", func() {
 				"proposer of ticketB but someone else is delegator and they have "+
 				"voted on the proposal", func() {
 				BeforeEach(func() {
-					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStake
-					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-					proposal := &types.RepoProposal{
+					repoUpd := state.BareRepository()
+					repoUpd.Config = state.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+					proposal := &state.RepoProposal{
 						Config: repoUpd.Config.Governace,
 						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
 
-					ticketA := &types.Ticket{Value: "10"}
-					ticketB := &types.Ticket{
+					ticketA := &types3.Ticket{Value: "10"}
+					ticketB := &types3.Ticket{
 						Value:          "20",
 						ProposerPubKey: sender.PubKey().MustBytes32(),
 						Delegator:      key2.Addr().String(),
 					}
-					tickets := []*types.Ticket{ticketA, ticketB}
+					tickets := []*types3.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
 						MustBytes32(), uint64(0)).Return(tickets, nil)
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					logic.RepoKeeper().IndexProposalVote(repoName, propID,
-						key2.Addr().String(), types.ProposalVoteYes)
+						key2.Addr().String(), state.ProposalVoteYes)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -456,31 +459,31 @@ var _ = Describe("Repo", func() {
 				"delegator of ticketB but someone else is proposer and they have not "+
 				"voted on the proposal", func() {
 				BeforeEach(func() {
-					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStake
-					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-					proposal := &types.RepoProposal{
+					repoUpd := state.BareRepository()
+					repoUpd.Config = state.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+					proposal := &state.RepoProposal{
 						Config: repoUpd.Config.Governace,
 						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
 
-					ticketA := &types.Ticket{Value: "10"}
-					ticketB := &types.Ticket{
+					ticketA := &types3.Ticket{Value: "10"}
+					ticketB := &types3.Ticket{
 						Value:          "20",
 						ProposerPubKey: key2.PubKey().MustBytes32(),
 						Delegator:      sender.Addr().String(),
 					}
-					tickets := []*types.Ticket{ticketA, ticketB}
+					tickets := []*types3.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
 						MustBytes32(), uint64(0)).Return(tickets, nil)
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteYes, "1.5", 0)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -494,33 +497,33 @@ var _ = Describe("Repo", func() {
 				"delegator of ticketB but someone else is proposer and they have "+
 				"voted 'Yes' on the proposal", func() {
 				BeforeEach(func() {
-					repoUpd := types.BareRepository()
-					repoUpd.Config = types.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = types.ProposalTallyMethodNetStake
-					repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-					proposal := &types.RepoProposal{
+					repoUpd := state.BareRepository()
+					repoUpd.Config = state.DefaultRepoConfig
+					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+					proposal := &state.RepoProposal{
 						Yes: 100,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
 
-					ticketA := &types.Ticket{Value: "10"}
-					ticketB := &types.Ticket{
+					ticketA := &types3.Ticket{Value: "10"}
+					ticketB := &types3.Ticket{
 						Value:          "20",
 						ProposerPubKey: key2.PubKey().MustBytes32(),
 						Delegator:      sender.Addr().String(),
 					}
-					tickets := []*types.Ticket{ticketA, ticketB}
+					tickets := []*types3.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
 						MustBytes32(), uint64(0)).Return(tickets, nil)
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					logic.RepoKeeper().IndexProposalVote(repoName, propID,
-						key2.Addr().String(), types.ProposalVoteYes)
+						key2.Addr().String(), state.ProposalVoteYes)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, types.ProposalVoteNo, "1.5", 0)
+					err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteNo, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -542,7 +545,7 @@ var _ = Describe("Repo", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var key2 = crypto.NewKeyFromIntSeed(2)
 		var spk util.Bytes32
-		var repoUpd *types.Repository
+		var repoUpd *state.Repository
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
@@ -550,9 +553,9 @@ var _ = Describe("Repo", func() {
 				Stakes:              types.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
-			repoUpd = types.BareRepository()
-			repoUpd.Config = types.DefaultRepoConfig
-			repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
+			repoUpd = state.BareRepository()
+			repoUpd.Config = state.DefaultRepoConfig
+			repoUpd.Config.Governace.ProposalProposee = state.ProposeeOwner
 		})
 
 		When("sender is the only owner", func() {
@@ -561,7 +564,7 @@ var _ = Describe("Repo", func() {
 			proposalFee := util.String("1")
 
 			BeforeEach(func() {
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
@@ -605,7 +608,7 @@ var _ = Describe("Repo", func() {
 			proposalFee := util.String("1")
 
 			BeforeEach(func() {
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
@@ -623,7 +626,7 @@ var _ = Describe("Repo", func() {
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
 				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(1)))
-				Expect(repo.Proposals.Get("1").Outcome).To(Equal(types.ProposalOutcomeAccepted))
+				Expect(repo.Proposals.Get("1").Outcome).To(Equal(state.ProposalOutcomeAccepted))
 			})
 
 			Specify("that three owners were added", func() {
@@ -651,8 +654,8 @@ var _ = Describe("Repo", func() {
 			proposalFee := util.String("1")
 
 			BeforeEach(func() {
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-				repoUpd.AddOwner(key2.Addr().String(), &types.RepoOwner{})
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+				repoUpd.AddOwner(key2.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
@@ -700,7 +703,7 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				repoUpd.Config.Governace.ProposalDur = 1000
 				repoUpd.Config.Governace.ProposalFeeDepDur = 100
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
@@ -722,7 +725,7 @@ var _ = Describe("Repo", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var spk util.Bytes32
 		var key2 = crypto.NewKeyFromIntSeed(2)
-		var repoUpd *types.Repository
+		var repoUpd *state.Repository
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
@@ -735,9 +738,9 @@ var _ = Describe("Repo", func() {
 				Stakes:              types.BareAccountStakes(),
 				DelegatorCommission: 0,
 			})
-			repoUpd = types.BareRepository()
-			repoUpd.Config = types.DefaultRepoConfig
-			repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
+			repoUpd = state.BareRepository()
+			repoUpd.Config = state.DefaultRepoConfig
+			repoUpd.Config.Governace.ProposalProposee = state.ProposeeOwner
 		})
 
 		When("sender has not previously deposited", func() {
@@ -745,7 +748,7 @@ var _ = Describe("Repo", func() {
 			proposalFee := util.String("10")
 
 			BeforeEach(func() {
-				repoUpd.Proposals.Add("1", &types.RepoProposal{
+				repoUpd.Proposals.Add("1", &state.RepoProposal{
 					Fees: map[string]string{},
 				})
 				logic.RepoKeeper().Update(repoName, repoUpd)
@@ -794,7 +797,7 @@ var _ = Describe("Repo", func() {
 			proposalFee := util.String("10")
 
 			BeforeEach(func() {
-				repoUpd.Proposals.Add("1", &types.RepoProposal{
+				repoUpd.Proposals.Add("1", &state.RepoProposal{
 					Fees: map[string]string{},
 				})
 				logic.RepoKeeper().Update(repoName, repoUpd)
@@ -823,7 +826,7 @@ var _ = Describe("Repo", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var spk util.Bytes32
 		var key2 = crypto.NewKeyFromIntSeed(2)
-		var repoUpd *types.Repository
+		var repoUpd *state.Repository
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
@@ -831,9 +834,9 @@ var _ = Describe("Repo", func() {
 				Stakes:              types.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
-			repoUpd = types.BareRepository()
-			repoUpd.Config = types.DefaultRepoConfig
-			repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
+			repoUpd = state.BareRepository()
+			repoUpd.Config = state.DefaultRepoConfig
+			repoUpd.Config.Governace.ProposalProposee = state.ProposeeOwner
 		})
 
 		When("sender is the only owner", func() {
@@ -841,12 +844,12 @@ var _ = Describe("Repo", func() {
 			proposalFee := util.String("1")
 
 			BeforeEach(func() {
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				config := &types.RepoConfig{
-					Governace: &types.RepoConfigGovernance{ProposalDur: 1000},
+				config := &state.RepoConfig{
+					Governace: &state.RepoConfigGovernance{ProposalDur: 1000},
 				}
 				err = txLogic.execRepoProposalUpdate(spk, repoName, "1", config.ToMap(),
 					proposalFee, "1.5", 0)
@@ -890,13 +893,13 @@ var _ = Describe("Repo", func() {
 			proposalFee := util.String("1")
 
 			BeforeEach(func() {
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-				repoUpd.AddOwner(key2.Addr().String(), &types.RepoOwner{})
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+				repoUpd.AddOwner(key2.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				config := &types.RepoConfig{
-					Governace: &types.RepoConfigGovernance{ProposalDur: 1000},
+				config := &state.RepoConfig{
+					Governace: &state.RepoConfigGovernance{ProposalDur: 1000},
 				}
 
 				err = txLogic.execRepoProposalUpdate(spk, repoName, "1", config.ToMap(), proposalFee, "1.5", curHeight)
@@ -941,12 +944,12 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				repoUpd.Config.Governace.ProposalDur = 1000
 				repoUpd.Config.Governace.ProposalFeeDepDur = 100
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				config := &types.RepoConfig{
-					Governace: &types.RepoConfigGovernance{
+				config := &state.RepoConfig{
+					Governace: &state.RepoConfigGovernance{
 						ProposalDur: 2000,
 					},
 				}
@@ -970,7 +973,7 @@ var _ = Describe("Repo", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var spk util.Bytes32
 		// var key2 = crypto.NewKeyFromIntSeed(2)
-		var repoUpd *types.Repository
+		var repoUpd *state.Repository
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &types.Account{
@@ -978,9 +981,9 @@ var _ = Describe("Repo", func() {
 				Stakes:              types.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
-			repoUpd = types.BareRepository()
-			repoUpd.Config = types.DefaultRepoConfig
-			repoUpd.Config.Governace.ProposalProposee = types.ProposeeOwner
+			repoUpd = state.BareRepository()
+			repoUpd.Config = state.DefaultRepoConfig
+			repoUpd.Config.Governace.ProposalProposee = state.ProposeeOwner
 		})
 
 		When("sender is the only owner", func() {
@@ -988,7 +991,7 @@ var _ = Describe("Repo", func() {
 			proposalFee := util.String("1")
 
 			BeforeEach(func() {
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
@@ -1028,8 +1031,8 @@ var _ = Describe("Repo", func() {
 			proposalFee := util.String("1")
 
 			BeforeEach(func() {
-				repoUpd.AddOwner(sender.Addr().String(), &types.RepoOwner{})
-				repoUpd.AddOwner(key2.Addr().String(), &types.RepoOwner{})
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+				repoUpd.AddOwner(key2.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
@@ -1071,29 +1074,29 @@ var _ = Describe("Repo", func() {
 
 	Describe(".applyProposalRepoUpdate", func() {
 		var err error
-		var repo *types.Repository
+		var repo *state.Repository
 
 		BeforeEach(func() {
-			repo = types.BareRepository()
-			repo.Config = types.DefaultRepoConfig
+			repo = state.BareRepository()
+			repo.Config = state.DefaultRepoConfig
 		})
 
 		When("update config object is empty", func() {
 			It("should not change the config", func() {
-				proposal := &types.RepoProposal{ActionData: map[string]interface{}{
-					types.ProposalActionDataConfig: (&types.RepoConfig{}).ToMap(),
+				proposal := &state.RepoProposal{ActionData: map[string]interface{}{
+					types2.ProposalActionDataConfig: (&state.RepoConfig{}).ToMap(),
 				}}
 				err = applyProposalRepoUpdate(proposal, repo, 0)
 				Expect(err).To(BeNil())
-				Expect(repo.Config).To(Equal(types.DefaultRepoConfig))
+				Expect(repo.Config).To(Equal(state.DefaultRepoConfig))
 			})
 		})
 
 		When("update config object is not empty", func() {
 			It("should change the config", func() {
-				proposal := &types.RepoProposal{ActionData: map[string]interface{}{
-					types.ProposalActionDataConfig: (&types.RepoConfig{
-						Governace: &types.RepoConfigGovernance{
+				proposal := &state.RepoProposal{ActionData: map[string]interface{}{
+					types2.ProposalActionDataConfig: (&state.RepoConfig{
+						Governace: &state.RepoConfigGovernance{
 							ProposalQuorum: 120,
 							ProposalDur:    100,
 						},

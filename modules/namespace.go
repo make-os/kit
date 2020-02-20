@@ -2,10 +2,13 @@ package modules
 
 import (
 	"fmt"
+	types4 "gitlab.com/makeos/mosdef/logic/types"
+	types3 "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
 
 	prompt "github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 )
@@ -13,17 +16,17 @@ import (
 // NamespaceModule provides namespace management functionalities
 type NamespaceModule struct {
 	vm      *otto.Otto
-	keepers types.Keepers
-	service types.Service
-	repoMgr types.RepoManager
+	keepers types4.Keepers
+	service types3.Service
+	repoMgr types4.RepoManager
 }
 
 // NewNSModule creates an instance of NamespaceModule
 func NewNSModule(
 	vm *otto.Otto,
-	service types.Service,
-	repoMgr types.RepoManager,
-	keepers types.Keepers) *NamespaceModule {
+	service types3.Service,
+	repoMgr types4.RepoManager,
+	keepers types4.Keepers) *NamespaceModule {
 	return &NamespaceModule{vm: vm, service: service, keepers: keepers, repoMgr: repoMgr}
 }
 
@@ -154,7 +157,7 @@ func (m *NamespaceModule) register(
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareTxNamespaceAcquire()
+	var tx = msgs.NewBareTxNamespaceAcquire()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -192,7 +195,7 @@ func (m *NamespaceModule) updateDomain(
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareTxNamespaceDomainUpdate()
+	var tx = msgs.NewBareTxNamespaceDomainUpdate()
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}

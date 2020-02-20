@@ -6,7 +6,7 @@ import (
 	prompt "github.com/c-bata/go-prompt"
 
 	"github.com/fatih/color"
-	"github.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/util/logger"
 	prettyjson "github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
 )

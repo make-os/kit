@@ -1,21 +1,23 @@
 package validators_test
 
 import (
+	msgs2 "gitlab.com/makeos/mosdef/repo/types/msgs"
+	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types/state"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
 
-	"github.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/params"
 	"github.com/shopspring/decimal"
 
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/util"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/validators"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/validators"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -41,7 +43,7 @@ var _ = Describe("TxValidator", func() {
 	Describe(".CheckRecipient", func() {
 		When("recipient address is not set", func() {
 			It("should return err", func() {
-				tx := types.NewBareTxCoinTransfer()
+				tx := msgs.NewBareTxCoinTransfer()
 				err := validators.CheckRecipient(tx.TxRecipient, 0)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("index:0, field:to, error:recipient address is required"))
@@ -50,7 +52,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("recipient address is an invalid base58 encoded address", func() {
 			It("should return err", func() {
-				tx := types.NewBareTxCoinTransfer()
+				tx := msgs.NewBareTxCoinTransfer()
 				tx.To = "abcdef"
 				err := validators.CheckRecipient(tx.TxRecipient, 0)
 				Expect(err).ToNot(BeNil())
@@ -60,7 +62,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("recipient address is not base58 encoded but a namespaced address", func() {
 			It("should return no error", func() {
-				tx := types.NewBareTxCoinTransfer()
+				tx := msgs.NewBareTxCoinTransfer()
 				tx.To = "namespace/domain"
 				err := validators.CheckRecipient(tx.TxRecipient, 0)
 				Expect(err).To(BeNil())
@@ -69,7 +71,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("recipient address is not base58 encoded but a prefixed address", func() {
 			It("should return no error", func() {
-				tx := types.NewBareTxCoinTransfer()
+				tx := msgs.NewBareTxCoinTransfer()
 				tx.To = "r/domain"
 				err := validators.CheckRecipient(tx.TxRecipient, 0)
 				Expect(err).To(BeNil())
@@ -78,7 +80,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("recipient address is not base58 encoded but a prefixed account address", func() {
 			It("should return err", func() {
-				tx := types.NewBareTxCoinTransfer()
+				tx := msgs.NewBareTxCoinTransfer()
 				tx.To = "a/abcdef"
 				err := validators.CheckRecipient(tx.TxRecipient, 0)
 				Expect(err).ToNot(BeNil())
@@ -88,7 +90,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("recipient address is a base58 encoded address that is valid", func() {
 			It("should return no error", func() {
-				tx := types.NewBareTxCoinTransfer()
+				tx := msgs.NewBareTxCoinTransfer()
 				tx.To = key.Addr()
 				err := validators.CheckRecipient(tx.TxRecipient, 0)
 				Expect(err).To(BeNil())
@@ -97,9 +99,9 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxCoinTransfer", func() {
-		var tx *types.TxCoinTransfer
+		var tx *msgs.TxCoinTransfer
 		BeforeEach(func() {
-			tx = types.NewBareTxCoinTransfer()
+			tx = msgs.NewBareTxCoinTransfer()
 			tx.To = key.Addr()
 			tx.Fee = "1"
 		})
@@ -206,10 +208,10 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxNSAcquire", func() {
-		var tx *types.TxNamespaceAcquire
+		var tx *msgs.TxNamespaceAcquire
 		BeforeEach(func() {
 			params.CostOfNamespace = decimal.NewFromFloat(5)
-			tx = types.NewBareTxNamespaceAcquire()
+			tx = msgs.NewBareTxNamespaceAcquire()
 			tx.Fee = "1"
 			tx.Name = "namespace"
 			tx.Value = util.String(params.CostOfNamespace.String())
@@ -394,9 +396,9 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxTicketPurchase", func() {
-		var tx *types.TxTicketPurchase
+		var tx *msgs.TxTicketPurchase
 		BeforeEach(func() {
-			tx = types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
+			tx = msgs.NewBareTxTicketPurchase(msgs.TxTypeValidatorTicket)
 			tx.Fee = "1"
 			tx.Value = "1"
 		})
@@ -418,7 +420,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("has type of TxTypeStorerTicket and value is lower than minimum stake", func() {
 				params.MinStorerStake = decimal.NewFromFloat(20)
-				tx.Type = types.TxTypeStorerTicket
+				tx.Type = msgs.TxTypeStorerTicket
 				tx.Value = "10"
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -485,7 +487,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Value = "10"
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.Type = types.TxTypeStorerTicket
+				tx.Type = msgs.TxTypeStorerTicket
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:blsPubKey, error:BLS public key is required"))
@@ -496,7 +498,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Value = "10"
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.Type = types.TxTypeStorerTicket
+				tx.Type = msgs.TxTypeStorerTicket
 				tx.BLSPubKey = util.RandBytes(32)
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -519,10 +521,10 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxUnbondTicket", func() {
-		var tx *types.TxTicketUnbond
+		var tx *msgs.TxTicketUnbond
 
 		BeforeEach(func() {
-			tx = types.NewBareTxTicketUnbond(types.TxTypeStorerTicket)
+			tx = msgs.NewBareTxTicketUnbond(msgs.TxTypeStorerTicket)
 			tx.TicketHash = util.StrToBytes32("hash")
 			tx.Fee = "1"
 		})
@@ -610,8 +612,8 @@ var _ = Describe("TxValidator", func() {
 	Describe(".CheckRepoConfig", func() {
 		When("proposee type is unknown", func() {
 			It("should return error", func() {
-				repoCfg := &types.RepoConfig{
-					Governace: &types.RepoConfigGovernance{
+				repoCfg := &state.RepoConfig{
+					Governace: &state.RepoConfigGovernance{
 						ProposalProposee: 1000,
 					},
 				}
@@ -623,9 +625,9 @@ var _ = Describe("TxValidator", func() {
 
 		When("tally method is unknown", func() {
 			It("should return error", func() {
-				repoCfg := &types.RepoConfig{
-					Governace: &types.RepoConfigGovernance{
-						ProposalProposee:    types.ProposeeOwner,
+				repoCfg := &state.RepoConfig{
+					Governace: &state.RepoConfigGovernance{
+						ProposalProposee:    state.ProposeeOwner,
 						ProposalTallyMethod: 1000,
 					},
 				}
@@ -637,10 +639,10 @@ var _ = Describe("TxValidator", func() {
 
 		When("quorum is negative", func() {
 			It("should return error", func() {
-				repoCfg := &types.RepoConfig{
-					Governace: &types.RepoConfigGovernance{
-						ProposalProposee:    types.ProposeeOwner,
-						ProposalTallyMethod: types.ProposalTallyMethodNetStake,
+				repoCfg := &state.RepoConfig{
+					Governace: &state.RepoConfigGovernance{
+						ProposalProposee:    state.ProposeeOwner,
+						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
 						ProposalQuorum:      -1,
 					},
 				}
@@ -652,10 +654,10 @@ var _ = Describe("TxValidator", func() {
 
 		When("threshold is negative", func() {
 			It("should return error", func() {
-				repoCfg := &types.RepoConfig{
-					Governace: &types.RepoConfigGovernance{
-						ProposalProposee:    types.ProposeeOwner,
-						ProposalTallyMethod: types.ProposalTallyMethodNetStake,
+				repoCfg := &state.RepoConfig{
+					Governace: &state.RepoConfigGovernance{
+						ProposalProposee:    state.ProposeeOwner,
+						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
 						ProposalQuorum:      1,
 						ProposalThreshold:   -1,
 					},
@@ -668,10 +670,10 @@ var _ = Describe("TxValidator", func() {
 
 		When("veto quorum is negative", func() {
 			It("should return error", func() {
-				repoCfg := &types.RepoConfig{
-					Governace: &types.RepoConfigGovernance{
-						ProposalProposee:    types.ProposeeOwner,
-						ProposalTallyMethod: types.ProposalTallyMethodNetStake,
+				repoCfg := &state.RepoConfig{
+					Governace: &state.RepoConfigGovernance{
+						ProposalProposee:    state.ProposeeOwner,
+						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
 						ProposalQuorum:      1,
 						ProposalThreshold:   1,
 						ProposalVetoQuorum:  -1,
@@ -685,10 +687,10 @@ var _ = Describe("TxValidator", func() {
 
 		When("veto owners quorum is negative", func() {
 			It("should return error", func() {
-				repoCfg := &types.RepoConfig{
-					Governace: &types.RepoConfigGovernance{
-						ProposalProposee:         types.ProposeeOwner,
-						ProposalTallyMethod:      types.ProposalTallyMethodNetStake,
+				repoCfg := &state.RepoConfig{
+					Governace: &state.RepoConfigGovernance{
+						ProposalProposee:         state.ProposeeOwner,
+						ProposalTallyMethod:      state.ProposalTallyMethodNetStake,
 						ProposalQuorum:           1,
 						ProposalThreshold:        1,
 						ProposalVetoQuorum:       1,
@@ -704,10 +706,10 @@ var _ = Describe("TxValidator", func() {
 		When("proposal fee is below network minimum", func() {
 			It("should return error", func() {
 				params.MinProposalFee = float64(400)
-				repoCfg := &types.RepoConfig{
-					Governace: &types.RepoConfigGovernance{
-						ProposalProposee:         types.ProposeeOwner,
-						ProposalTallyMethod:      types.ProposalTallyMethodNetStake,
+				repoCfg := &state.RepoConfig{
+					Governace: &state.RepoConfigGovernance{
+						ProposalProposee:         state.ProposeeOwner,
+						ProposalTallyMethod:      state.ProposalTallyMethodNetStake,
 						ProposalQuorum:           1,
 						ProposalThreshold:        1,
 						ProposalVetoQuorum:       1,
@@ -724,10 +726,10 @@ var _ = Describe("TxValidator", func() {
 
 		When("proposee is not ProposeeOwner and tally method is CoinWeighted", func() {
 			It("should return error", func() {
-				repoCfg := &types.RepoConfig{
-					Governace: &types.RepoConfigGovernance{
-						ProposalProposee:    types.ProposeeNetStakeholders,
-						ProposalTallyMethod: types.ProposalTallyMethodCoinWeighted,
+				repoCfg := &state.RepoConfig{
+					Governace: &state.RepoConfigGovernance{
+						ProposalProposee:    state.ProposeeNetStakeholders,
+						ProposalTallyMethod: state.ProposalTallyMethodCoinWeighted,
 					},
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -739,10 +741,10 @@ var _ = Describe("TxValidator", func() {
 
 		When("proposee is not ProposeeOwner and tally method is Identity", func() {
 			It("should return error", func() {
-				repoCfg := &types.RepoConfig{
-					Governace: &types.RepoConfigGovernance{
-						ProposalProposee:    types.ProposeeNetStakeholders,
-						ProposalTallyMethod: types.ProposalTallyMethodIdentity,
+				repoCfg := &state.RepoConfig{
+					Governace: &state.RepoConfigGovernance{
+						ProposalProposee:    state.ProposeeNetStakeholders,
+						ProposalTallyMethod: state.ProposalTallyMethodIdentity,
 					},
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -754,9 +756,9 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxRepoCreate", func() {
-		var tx *types.TxRepoCreate
+		var tx *msgs.TxRepoCreate
 		BeforeEach(func() {
-			tx = types.NewBareTxRepoCreate()
+			tx = msgs.NewBareTxRepoCreate()
 			tx.Name = "repo"
 			tx.Fee = "1"
 		})
@@ -858,13 +860,13 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxAddGPGPubKey", func() {
-		var tx *types.TxAddGPGPubKey
+		var tx *msgs.TxAddGPGPubKey
 		var gpgKey []byte
 
 		BeforeEach(func() {
 			gpgKey, err = ioutil.ReadFile("testdata/gpgkey.pub")
 			Expect(err).To(BeNil())
-			tx = types.NewBareTxAddGPGPubKey()
+			tx = msgs.NewBareTxAddGPGPubKey()
 			tx.PublicKey = string(gpgKey)
 			tx.Fee = "2"
 		})
@@ -955,10 +957,10 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxSetDelegateCommission", func() {
-		var tx *types.TxSetDelegateCommission
+		var tx *msgs.TxSetDelegateCommission
 
 		BeforeEach(func() {
-			tx = types.NewBareTxSetDelegateCommission()
+			tx = msgs.NewBareTxSetDelegateCommission()
 			tx.Commission = "60"
 			tx.Fee = "1"
 		})
@@ -1058,10 +1060,10 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxNamespaceDomainUpdate", func() {
-		var tx *types.TxNamespaceDomainUpdate
+		var tx *msgs.TxNamespaceDomainUpdate
 
 		BeforeEach(func() {
-			tx = types.NewBareTxNamespaceDomainUpdate()
+			tx = msgs.NewBareTxNamespaceDomainUpdate()
 			tx.Fee = "1"
 		})
 
@@ -1102,10 +1104,10 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxPush", func() {
-		var tx *types.TxPush
+		var tx *msgs.TxPush
 
 		BeforeEach(func() {
-			tx = types.NewBareTxPush()
+			tx = msgs.NewBareTxPush()
 			tx.Timestamp = time.Now().Unix()
 			tx.PushNote.RepoName = "repo1"
 			tx.PushNote.PusherKeyID = util.RandBytes(20)
@@ -1147,7 +1149,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("has a no push note id", func() {
 				params.PushOKQuorumSize = 1
-				tx.PushOKs = append(tx.PushOKs, &types.PushOK{})
+				tx.PushOKs = append(tx.PushOKs, &msgs2.PushOK{})
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, _ := key.PrivKey().Sign(tx.Bytes())
 				tx.Sig = sig
@@ -1158,7 +1160,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("has a PushOK with no sender public key", func() {
 				params.PushOKQuorumSize = 1
-				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
+				tx.PushOKs = append(tx.PushOKs, &msgs2.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: util.EmptyBytes32,
 				})
@@ -1172,7 +1174,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("has a PushOK with a push note id that is different from the PushTx.PushNoteID", func() {
 				params.PushOKQuorumSize = 1
-				tx.PushOKs = append(tx.PushOKs, &types.PushOK{
+				tx.PushOKs = append(tx.PushOKs, &msgs2.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: key.PubKey().MustBytes32(),
 				})
@@ -1187,7 +1189,7 @@ var _ = Describe("TxValidator", func() {
 			It("has multiple PushOKs from same sender", func() {
 				params.PushOKQuorumSize = 1
 
-				pushOK1 := &types.PushOK{
+				pushOK1 := &msgs2.PushOK{
 					PushNoteID:   tx.PushNote.ID(),
 					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
 				}
@@ -1195,7 +1197,7 @@ var _ = Describe("TxValidator", func() {
 				pushOK1.Sig = util.BytesToBytes64(sig)
 				tx.PushOKs = append(tx.PushOKs, pushOK1)
 
-				pushOK2 := &types.PushOK{
+				pushOK2 := &msgs2.PushOK{
 					PushNoteID:   tx.PushNote.ID(),
 					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
 				}
@@ -1214,10 +1216,10 @@ var _ = Describe("TxValidator", func() {
 			It("has PushOKs with different references hash set", func() {
 				params.PushOKQuorumSize = 1
 
-				pushOK1 := &types.PushOK{
+				pushOK1 := &msgs2.PushOK{
 					PushNoteID:   tx.PushNote.ID(),
 					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-					ReferencesHash: []*types.ReferenceHash{
+					ReferencesHash: []*msgs2.ReferenceHash{
 						{Hash: util.BytesToBytes32(util.RandBytes(32))},
 					},
 				}
@@ -1225,10 +1227,10 @@ var _ = Describe("TxValidator", func() {
 				pushOK1.Sig = util.BytesToBytes64(sig)
 				tx.PushOKs = append(tx.PushOKs, pushOK1)
 
-				pushOK2 := &types.PushOK{
+				pushOK2 := &msgs2.PushOK{
 					PushNoteID:   tx.PushNote.ID(),
 					SenderPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
-					ReferencesHash: []*types.ReferenceHash{
+					ReferencesHash: []*msgs2.ReferenceHash{
 						{Hash: util.BytesToBytes32(util.RandBytes(32))},
 					},
 				}
@@ -1249,7 +1251,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return no error", func() {
 				params.PushOKQuorumSize = 1
 
-				pok := &types.PushOK{
+				pok := &msgs2.PushOK{
 					PushNoteID:   tx.PushNote.ID(),
 					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
 				}
@@ -1268,11 +1270,11 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxRepoProposalUpsertOwner", func() {
-		var tx *types.TxRepoProposalUpsertOwner
+		var tx *msgs.TxRepoProposalUpsertOwner
 
 		BeforeEach(func() {
 			params.MinProposalFee = 10
-			tx = types.NewBareRepoProposalUpsertOwner()
+			tx = msgs.NewBareRepoProposalUpsertOwner()
 			tx.Timestamp = time.Now().Unix()
 			tx.Value = "11"
 			tx.ProposalID = "123"
@@ -1358,10 +1360,10 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxVote", func() {
-		var tx *types.TxRepoProposalVote
+		var tx *msgs.TxRepoProposalVote
 
 		BeforeEach(func() {
-			tx = types.NewBareRepoProposalVote()
+			tx = msgs.NewBareRepoProposalVote()
 			tx.Timestamp = time.Now().Unix()
 		})
 
@@ -1414,10 +1416,10 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxRepoProposalSendFee", func() {
-		var tx *types.TxRepoProposalFeeSend
+		var tx *msgs.TxRepoProposalFeeSend
 
 		BeforeEach(func() {
-			tx = types.NewBareRepoProposalFeeSend()
+			tx = msgs.NewBareRepoProposalFeeSend()
 			tx.Timestamp = time.Now().Unix()
 		})
 
@@ -1468,10 +1470,10 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxRepoProposalUpdate", func() {
-		var tx *types.TxRepoProposalUpdate
+		var tx *msgs.TxRepoProposalUpdate
 
 		BeforeEach(func() {
-			tx = types.NewBareRepoProposalUpdate()
+			tx = msgs.NewBareRepoProposalUpdate()
 			tx.Timestamp = time.Now().Unix()
 			tx.ProposalID = "123"
 		})
@@ -1532,10 +1534,10 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxRepoProposalMergeRequest", func() {
-		var tx *types.TxRepoProposalMergeRequest
+		var tx *msgs.TxRepoProposalMergeRequest
 
 		BeforeEach(func() {
-			tx = types.NewBareRepoProposalMergeRequest()
+			tx = msgs.NewBareRepoProposalMergeRequest()
 			tx.Timestamp = time.Now().Unix()
 			tx.ProposalID = "123"
 		})

@@ -1,6 +1,6 @@
 package rest
 
-import "github.com/makeos/mosdef/types"
+import "gitlab.com/makeos/mosdef/types"
 
 // Rest provides a REST API handlers
 type Rest struct {

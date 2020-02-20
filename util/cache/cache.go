@@ -3,7 +3,7 @@ package cache
 import (
 	"time"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
 	lru "github.com/hashicorp/golang-lru"
 )

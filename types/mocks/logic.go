@@ -6,10 +6,14 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	config "github.com/makeos/mosdef/config"
-	storage "github.com/makeos/mosdef/storage"
-	types "github.com/makeos/mosdef/types"
-	util "github.com/makeos/mosdef/util"
+	config "gitlab.com/makeos/mosdef/config"
+	types3 "gitlab.com/makeos/mosdef/logic/types"
+	storage "gitlab.com/makeos/mosdef/storage"
+	types2 "gitlab.com/makeos/mosdef/ticket/types"
+	types "gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types/state"
+	util "gitlab.com/makeos/mosdef/util"
 	types0 "github.com/tendermint/tendermint/abci/types"
 	reflect "reflect"
 )
@@ -38,7 +42,7 @@ func (m *MockSystemKeeper) EXPECT() *MockSystemKeeperMockRecorder {
 }
 
 // SaveBlockInfo mocks base method
-func (m *MockSystemKeeper) SaveBlockInfo(info *types.BlockInfo) error {
+func (m *MockSystemKeeper) SaveBlockInfo(info *types3.BlockInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SaveBlockInfo", info)
 	ret0, _ := ret[0].(error)
@@ -52,10 +56,10 @@ func (mr *MockSystemKeeperMockRecorder) SaveBlockInfo(info interface{}) *gomock.
 }
 
 // GetLastBlockInfo mocks base method
-func (m *MockSystemKeeper) GetLastBlockInfo() (*types.BlockInfo, error) {
+func (m *MockSystemKeeper) GetLastBlockInfo() (*types3.BlockInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLastBlockInfo")
-	ret0, _ := ret[0].(*types.BlockInfo)
+	ret0, _ := ret[0].(*types3.BlockInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -67,10 +71,10 @@ func (mr *MockSystemKeeperMockRecorder) GetLastBlockInfo() *gomock.Call {
 }
 
 // GetBlockInfo mocks base method
-func (m *MockSystemKeeper) GetBlockInfo(height int64) (*types.BlockInfo, error) {
+func (m *MockSystemKeeper) GetBlockInfo(height int64) (*types3.BlockInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBlockInfo", height)
-	ret0, _ := ret[0].(*types.BlockInfo)
+	ret0, _ := ret[0].(*types3.BlockInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -163,7 +167,7 @@ func (m *MockTxKeeper) EXPECT() *MockTxKeeperMockRecorder {
 }
 
 // Index mocks base method
-func (m *MockTxKeeper) Index(tx types.BaseTx) error {
+func (m *MockTxKeeper) Index(tx msgs.BaseTx) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Index", tx)
 	ret0, _ := ret[0].(error)
@@ -177,10 +181,10 @@ func (mr *MockTxKeeperMockRecorder) Index(tx interface{}) *gomock.Call {
 }
 
 // GetTx mocks base method
-func (m *MockTxKeeper) GetTx(hash []byte) (types.BaseTx, error) {
+func (m *MockTxKeeper) GetTx(hash []byte) (msgs.BaseTx, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTx", hash)
-	ret0, _ := ret[0].(types.BaseTx)
+	ret0, _ := ret[0].(msgs.BaseTx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -330,14 +334,14 @@ func (m *MockRepoKeeper) EXPECT() *MockRepoKeeperMockRecorder {
 }
 
 // GetRepo mocks base method
-func (m *MockRepoKeeper) GetRepo(name string, blockNum ...uint64) *types.Repository {
+func (m *MockRepoKeeper) GetRepo(name string, blockNum ...uint64) *state.Repository {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{name}
 	for _, a := range blockNum {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetRepo", varargs...)
-	ret0, _ := ret[0].(*types.Repository)
+	ret0, _ := ret[0].(*state.Repository)
 	return ret0
 }
 
@@ -349,14 +353,14 @@ func (mr *MockRepoKeeperMockRecorder) GetRepo(name interface{}, blockNum ...inte
 }
 
 // GetRepoOnly mocks base method
-func (m *MockRepoKeeper) GetRepoOnly(name string, blockNum ...uint64) *types.Repository {
+func (m *MockRepoKeeper) GetRepoOnly(name string, blockNum ...uint64) *state.Repository {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{name}
 	for _, a := range blockNum {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetRepoOnly", varargs...)
-	ret0, _ := ret[0].(*types.Repository)
+	ret0, _ := ret[0].(*state.Repository)
 	return ret0
 }
 
@@ -368,7 +372,7 @@ func (mr *MockRepoKeeperMockRecorder) GetRepoOnly(name interface{}, blockNum ...
 }
 
 // Update mocks base method
-func (m *MockRepoKeeper) Update(name string, upd *types.Repository) {
+func (m *MockRepoKeeper) Update(name string, upd *state.Repository) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Update", name, upd)
 }
@@ -424,10 +428,10 @@ func (mr *MockRepoKeeperMockRecorder) IndexProposalEnd(name, propID, endHeight i
 }
 
 // GetProposalsEndingAt mocks base method
-func (m *MockRepoKeeper) GetProposalsEndingAt(height uint64) []*types.EndingProposals {
+func (m *MockRepoKeeper) GetProposalsEndingAt(height uint64) []*types3.EndingProposals {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetProposalsEndingAt", height)
-	ret0, _ := ret[0].([]*types.EndingProposals)
+	ret0, _ := ret[0].([]*types3.EndingProposals)
 	return ret0
 }
 
@@ -634,10 +638,10 @@ func (m *MockAtomicLogic) EXPECT() *MockAtomicLogicMockRecorder {
 }
 
 // SysKeeper mocks base method
-func (m *MockAtomicLogic) SysKeeper() types.SystemKeeper {
+func (m *MockAtomicLogic) SysKeeper() types3.SystemKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SysKeeper")
-	ret0, _ := ret[0].(types.SystemKeeper)
+	ret0, _ := ret[0].(types3.SystemKeeper)
 	return ret0
 }
 
@@ -648,10 +652,10 @@ func (mr *MockAtomicLogicMockRecorder) SysKeeper() *gomock.Call {
 }
 
 // ManagedSysKeeper mocks base method
-func (m *MockAtomicLogic) ManagedSysKeeper() types.SystemKeeper {
+func (m *MockAtomicLogic) ManagedSysKeeper() types3.SystemKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ManagedSysKeeper")
-	ret0, _ := ret[0].(types.SystemKeeper)
+	ret0, _ := ret[0].(types3.SystemKeeper)
 	return ret0
 }
 
@@ -662,10 +666,10 @@ func (mr *MockAtomicLogicMockRecorder) ManagedSysKeeper() *gomock.Call {
 }
 
 // AccountKeeper mocks base method
-func (m *MockAtomicLogic) AccountKeeper() types.AccountKeeper {
+func (m *MockAtomicLogic) AccountKeeper() types3.AccountKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AccountKeeper")
-	ret0, _ := ret[0].(types.AccountKeeper)
+	ret0, _ := ret[0].(types3.AccountKeeper)
 	return ret0
 }
 
@@ -676,10 +680,10 @@ func (mr *MockAtomicLogicMockRecorder) AccountKeeper() *gomock.Call {
 }
 
 // ValidatorKeeper mocks base method
-func (m *MockAtomicLogic) ValidatorKeeper() types.ValidatorKeeper {
+func (m *MockAtomicLogic) ValidatorKeeper() types3.ValidatorKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidatorKeeper")
-	ret0, _ := ret[0].(types.ValidatorKeeper)
+	ret0, _ := ret[0].(types3.ValidatorKeeper)
 	return ret0
 }
 
@@ -690,10 +694,10 @@ func (mr *MockAtomicLogicMockRecorder) ValidatorKeeper() *gomock.Call {
 }
 
 // TxKeeper mocks base method
-func (m *MockAtomicLogic) TxKeeper() types.TxKeeper {
+func (m *MockAtomicLogic) TxKeeper() types3.TxKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TxKeeper")
-	ret0, _ := ret[0].(types.TxKeeper)
+	ret0, _ := ret[0].(types3.TxKeeper)
 	return ret0
 }
 
@@ -704,10 +708,10 @@ func (mr *MockAtomicLogicMockRecorder) TxKeeper() *gomock.Call {
 }
 
 // RepoKeeper mocks base method
-func (m *MockAtomicLogic) RepoKeeper() types.RepoKeeper {
+func (m *MockAtomicLogic) RepoKeeper() types3.RepoKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RepoKeeper")
-	ret0, _ := ret[0].(types.RepoKeeper)
+	ret0, _ := ret[0].(types3.RepoKeeper)
 	return ret0
 }
 
@@ -718,10 +722,10 @@ func (mr *MockAtomicLogicMockRecorder) RepoKeeper() *gomock.Call {
 }
 
 // GPGPubKeyKeeper mocks base method
-func (m *MockAtomicLogic) GPGPubKeyKeeper() types.GPGPubKeyKeeper {
+func (m *MockAtomicLogic) GPGPubKeyKeeper() types3.GPGPubKeyKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GPGPubKeyKeeper")
-	ret0, _ := ret[0].(types.GPGPubKeyKeeper)
+	ret0, _ := ret[0].(types3.GPGPubKeyKeeper)
 	return ret0
 }
 
@@ -732,10 +736,10 @@ func (mr *MockAtomicLogicMockRecorder) GPGPubKeyKeeper() *gomock.Call {
 }
 
 // GetTicketManager mocks base method
-func (m *MockAtomicLogic) GetTicketManager() types.TicketManager {
+func (m *MockAtomicLogic) GetTicketManager() types2.TicketManager {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTicketManager")
-	ret0, _ := ret[0].(types.TicketManager)
+	ret0, _ := ret[0].(types2.TicketManager)
 	return ret0
 }
 
@@ -746,10 +750,10 @@ func (mr *MockAtomicLogicMockRecorder) GetTicketManager() *gomock.Call {
 }
 
 // NamespaceKeeper mocks base method
-func (m *MockAtomicLogic) NamespaceKeeper() types.NamespaceKeeper {
+func (m *MockAtomicLogic) NamespaceKeeper() types3.NamespaceKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NamespaceKeeper")
-	ret0, _ := ret[0].(types.NamespaceKeeper)
+	ret0, _ := ret[0].(types3.NamespaceKeeper)
 	return ret0
 }
 
@@ -760,10 +764,10 @@ func (mr *MockAtomicLogicMockRecorder) NamespaceKeeper() *gomock.Call {
 }
 
 // Tx mocks base method
-func (m *MockAtomicLogic) Tx() types.TxLogic {
+func (m *MockAtomicLogic) Tx() types3.TxLogic {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Tx")
-	ret0, _ := ret[0].(types.TxLogic)
+	ret0, _ := ret[0].(types3.TxLogic)
 	return ret0
 }
 
@@ -774,10 +778,10 @@ func (mr *MockAtomicLogicMockRecorder) Tx() *gomock.Call {
 }
 
 // Sys mocks base method
-func (m *MockAtomicLogic) Sys() types.SysLogic {
+func (m *MockAtomicLogic) Sys() types3.SysLogic {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Sys")
-	ret0, _ := ret[0].(types.SysLogic)
+	ret0, _ := ret[0].(types3.SysLogic)
 	return ret0
 }
 
@@ -788,10 +792,10 @@ func (mr *MockAtomicLogicMockRecorder) Sys() *gomock.Call {
 }
 
 // Validator mocks base method
-func (m *MockAtomicLogic) Validator() types.ValidatorLogic {
+func (m *MockAtomicLogic) Validator() types3.ValidatorLogic {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Validator")
-	ret0, _ := ret[0].(types.ValidatorLogic)
+	ret0, _ := ret[0].(types3.ValidatorLogic)
 	return ret0
 }
 
@@ -844,7 +848,7 @@ func (mr *MockAtomicLogicMockRecorder) WriteGenesisState() *gomock.Call {
 }
 
 // SetTicketManager mocks base method
-func (m *MockAtomicLogic) SetTicketManager(tm types.TicketManager) {
+func (m *MockAtomicLogic) SetTicketManager(tm types2.TicketManager) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetTicketManager", tm)
 }
@@ -856,7 +860,7 @@ func (mr *MockAtomicLogicMockRecorder) SetTicketManager(tm interface{}) *gomock.
 }
 
 // SetRepoManager mocks base method
-func (m_2 *MockAtomicLogic) SetRepoManager(m types.RepoManager) {
+func (m_2 *MockAtomicLogic) SetRepoManager(m types3.RepoManager) {
 	m_2.ctrl.T.Helper()
 	m_2.ctrl.Call(m_2, "SetRepoManager", m)
 }
@@ -868,10 +872,10 @@ func (mr *MockAtomicLogicMockRecorder) SetRepoManager(m interface{}) *gomock.Cal
 }
 
 // GetRepoManager mocks base method
-func (m *MockAtomicLogic) GetRepoManager() types.RepoManager {
+func (m *MockAtomicLogic) GetRepoManager() types3.RepoManager {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRepoManager")
-	ret0, _ := ret[0].(types.RepoManager)
+	ret0, _ := ret[0].(types3.RepoManager)
 	return ret0
 }
 
@@ -896,7 +900,7 @@ func (mr *MockAtomicLogicMockRecorder) Cfg() *gomock.Call {
 }
 
 // OnEndBlock mocks base method
-func (m *MockAtomicLogic) OnEndBlock(block *types.BlockInfo) error {
+func (m *MockAtomicLogic) OnEndBlock(block *types3.BlockInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OnEndBlock", block)
 	ret0, _ := ret[0].(error)
@@ -973,10 +977,10 @@ func (m *MockLogic) EXPECT() *MockLogicMockRecorder {
 }
 
 // SysKeeper mocks base method
-func (m *MockLogic) SysKeeper() types.SystemKeeper {
+func (m *MockLogic) SysKeeper() types3.SystemKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SysKeeper")
-	ret0, _ := ret[0].(types.SystemKeeper)
+	ret0, _ := ret[0].(types3.SystemKeeper)
 	return ret0
 }
 
@@ -987,10 +991,10 @@ func (mr *MockLogicMockRecorder) SysKeeper() *gomock.Call {
 }
 
 // ManagedSysKeeper mocks base method
-func (m *MockLogic) ManagedSysKeeper() types.SystemKeeper {
+func (m *MockLogic) ManagedSysKeeper() types3.SystemKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ManagedSysKeeper")
-	ret0, _ := ret[0].(types.SystemKeeper)
+	ret0, _ := ret[0].(types3.SystemKeeper)
 	return ret0
 }
 
@@ -1001,10 +1005,10 @@ func (mr *MockLogicMockRecorder) ManagedSysKeeper() *gomock.Call {
 }
 
 // AccountKeeper mocks base method
-func (m *MockLogic) AccountKeeper() types.AccountKeeper {
+func (m *MockLogic) AccountKeeper() types3.AccountKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AccountKeeper")
-	ret0, _ := ret[0].(types.AccountKeeper)
+	ret0, _ := ret[0].(types3.AccountKeeper)
 	return ret0
 }
 
@@ -1015,10 +1019,10 @@ func (mr *MockLogicMockRecorder) AccountKeeper() *gomock.Call {
 }
 
 // ValidatorKeeper mocks base method
-func (m *MockLogic) ValidatorKeeper() types.ValidatorKeeper {
+func (m *MockLogic) ValidatorKeeper() types3.ValidatorKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidatorKeeper")
-	ret0, _ := ret[0].(types.ValidatorKeeper)
+	ret0, _ := ret[0].(types3.ValidatorKeeper)
 	return ret0
 }
 
@@ -1029,10 +1033,10 @@ func (mr *MockLogicMockRecorder) ValidatorKeeper() *gomock.Call {
 }
 
 // TxKeeper mocks base method
-func (m *MockLogic) TxKeeper() types.TxKeeper {
+func (m *MockLogic) TxKeeper() types3.TxKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TxKeeper")
-	ret0, _ := ret[0].(types.TxKeeper)
+	ret0, _ := ret[0].(types3.TxKeeper)
 	return ret0
 }
 
@@ -1043,10 +1047,10 @@ func (mr *MockLogicMockRecorder) TxKeeper() *gomock.Call {
 }
 
 // RepoKeeper mocks base method
-func (m *MockLogic) RepoKeeper() types.RepoKeeper {
+func (m *MockLogic) RepoKeeper() types3.RepoKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RepoKeeper")
-	ret0, _ := ret[0].(types.RepoKeeper)
+	ret0, _ := ret[0].(types3.RepoKeeper)
 	return ret0
 }
 
@@ -1057,10 +1061,10 @@ func (mr *MockLogicMockRecorder) RepoKeeper() *gomock.Call {
 }
 
 // GPGPubKeyKeeper mocks base method
-func (m *MockLogic) GPGPubKeyKeeper() types.GPGPubKeyKeeper {
+func (m *MockLogic) GPGPubKeyKeeper() types3.GPGPubKeyKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GPGPubKeyKeeper")
-	ret0, _ := ret[0].(types.GPGPubKeyKeeper)
+	ret0, _ := ret[0].(types3.GPGPubKeyKeeper)
 	return ret0
 }
 
@@ -1071,10 +1075,10 @@ func (mr *MockLogicMockRecorder) GPGPubKeyKeeper() *gomock.Call {
 }
 
 // GetTicketManager mocks base method
-func (m *MockLogic) GetTicketManager() types.TicketManager {
+func (m *MockLogic) GetTicketManager() types2.TicketManager {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTicketManager")
-	ret0, _ := ret[0].(types.TicketManager)
+	ret0, _ := ret[0].(types2.TicketManager)
 	return ret0
 }
 
@@ -1085,10 +1089,10 @@ func (mr *MockLogicMockRecorder) GetTicketManager() *gomock.Call {
 }
 
 // NamespaceKeeper mocks base method
-func (m *MockLogic) NamespaceKeeper() types.NamespaceKeeper {
+func (m *MockLogic) NamespaceKeeper() types3.NamespaceKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NamespaceKeeper")
-	ret0, _ := ret[0].(types.NamespaceKeeper)
+	ret0, _ := ret[0].(types3.NamespaceKeeper)
 	return ret0
 }
 
@@ -1099,10 +1103,10 @@ func (mr *MockLogicMockRecorder) NamespaceKeeper() *gomock.Call {
 }
 
 // Tx mocks base method
-func (m *MockLogic) Tx() types.TxLogic {
+func (m *MockLogic) Tx() types3.TxLogic {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Tx")
-	ret0, _ := ret[0].(types.TxLogic)
+	ret0, _ := ret[0].(types3.TxLogic)
 	return ret0
 }
 
@@ -1113,10 +1117,10 @@ func (mr *MockLogicMockRecorder) Tx() *gomock.Call {
 }
 
 // Sys mocks base method
-func (m *MockLogic) Sys() types.SysLogic {
+func (m *MockLogic) Sys() types3.SysLogic {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Sys")
-	ret0, _ := ret[0].(types.SysLogic)
+	ret0, _ := ret[0].(types3.SysLogic)
 	return ret0
 }
 
@@ -1127,10 +1131,10 @@ func (mr *MockLogicMockRecorder) Sys() *gomock.Call {
 }
 
 // Validator mocks base method
-func (m *MockLogic) Validator() types.ValidatorLogic {
+func (m *MockLogic) Validator() types3.ValidatorLogic {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Validator")
-	ret0, _ := ret[0].(types.ValidatorLogic)
+	ret0, _ := ret[0].(types3.ValidatorLogic)
 	return ret0
 }
 
@@ -1183,7 +1187,7 @@ func (mr *MockLogicMockRecorder) WriteGenesisState() *gomock.Call {
 }
 
 // SetTicketManager mocks base method
-func (m *MockLogic) SetTicketManager(tm types.TicketManager) {
+func (m *MockLogic) SetTicketManager(tm types2.TicketManager) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetTicketManager", tm)
 }
@@ -1195,7 +1199,7 @@ func (mr *MockLogicMockRecorder) SetTicketManager(tm interface{}) *gomock.Call {
 }
 
 // SetRepoManager mocks base method
-func (m_2 *MockLogic) SetRepoManager(m types.RepoManager) {
+func (m_2 *MockLogic) SetRepoManager(m types3.RepoManager) {
 	m_2.ctrl.T.Helper()
 	m_2.ctrl.Call(m_2, "SetRepoManager", m)
 }
@@ -1207,10 +1211,10 @@ func (mr *MockLogicMockRecorder) SetRepoManager(m interface{}) *gomock.Call {
 }
 
 // GetRepoManager mocks base method
-func (m *MockLogic) GetRepoManager() types.RepoManager {
+func (m *MockLogic) GetRepoManager() types3.RepoManager {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRepoManager")
-	ret0, _ := ret[0].(types.RepoManager)
+	ret0, _ := ret[0].(types3.RepoManager)
 	return ret0
 }
 
@@ -1235,7 +1239,7 @@ func (mr *MockLogicMockRecorder) Cfg() *gomock.Call {
 }
 
 // OnEndBlock mocks base method
-func (m *MockLogic) OnEndBlock(block *types.BlockInfo) error {
+func (m *MockLogic) OnEndBlock(block *types3.BlockInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OnEndBlock", block)
 	ret0, _ := ret[0].(error)
@@ -1272,10 +1276,10 @@ func (m *MockKeepers) EXPECT() *MockKeepersMockRecorder {
 }
 
 // SysKeeper mocks base method
-func (m *MockKeepers) SysKeeper() types.SystemKeeper {
+func (m *MockKeepers) SysKeeper() types3.SystemKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SysKeeper")
-	ret0, _ := ret[0].(types.SystemKeeper)
+	ret0, _ := ret[0].(types3.SystemKeeper)
 	return ret0
 }
 
@@ -1286,10 +1290,10 @@ func (mr *MockKeepersMockRecorder) SysKeeper() *gomock.Call {
 }
 
 // ManagedSysKeeper mocks base method
-func (m *MockKeepers) ManagedSysKeeper() types.SystemKeeper {
+func (m *MockKeepers) ManagedSysKeeper() types3.SystemKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ManagedSysKeeper")
-	ret0, _ := ret[0].(types.SystemKeeper)
+	ret0, _ := ret[0].(types3.SystemKeeper)
 	return ret0
 }
 
@@ -1300,10 +1304,10 @@ func (mr *MockKeepersMockRecorder) ManagedSysKeeper() *gomock.Call {
 }
 
 // AccountKeeper mocks base method
-func (m *MockKeepers) AccountKeeper() types.AccountKeeper {
+func (m *MockKeepers) AccountKeeper() types3.AccountKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AccountKeeper")
-	ret0, _ := ret[0].(types.AccountKeeper)
+	ret0, _ := ret[0].(types3.AccountKeeper)
 	return ret0
 }
 
@@ -1314,10 +1318,10 @@ func (mr *MockKeepersMockRecorder) AccountKeeper() *gomock.Call {
 }
 
 // ValidatorKeeper mocks base method
-func (m *MockKeepers) ValidatorKeeper() types.ValidatorKeeper {
+func (m *MockKeepers) ValidatorKeeper() types3.ValidatorKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ValidatorKeeper")
-	ret0, _ := ret[0].(types.ValidatorKeeper)
+	ret0, _ := ret[0].(types3.ValidatorKeeper)
 	return ret0
 }
 
@@ -1328,10 +1332,10 @@ func (mr *MockKeepersMockRecorder) ValidatorKeeper() *gomock.Call {
 }
 
 // TxKeeper mocks base method
-func (m *MockKeepers) TxKeeper() types.TxKeeper {
+func (m *MockKeepers) TxKeeper() types3.TxKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TxKeeper")
-	ret0, _ := ret[0].(types.TxKeeper)
+	ret0, _ := ret[0].(types3.TxKeeper)
 	return ret0
 }
 
@@ -1342,10 +1346,10 @@ func (mr *MockKeepersMockRecorder) TxKeeper() *gomock.Call {
 }
 
 // RepoKeeper mocks base method
-func (m *MockKeepers) RepoKeeper() types.RepoKeeper {
+func (m *MockKeepers) RepoKeeper() types3.RepoKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RepoKeeper")
-	ret0, _ := ret[0].(types.RepoKeeper)
+	ret0, _ := ret[0].(types3.RepoKeeper)
 	return ret0
 }
 
@@ -1356,10 +1360,10 @@ func (mr *MockKeepersMockRecorder) RepoKeeper() *gomock.Call {
 }
 
 // GPGPubKeyKeeper mocks base method
-func (m *MockKeepers) GPGPubKeyKeeper() types.GPGPubKeyKeeper {
+func (m *MockKeepers) GPGPubKeyKeeper() types3.GPGPubKeyKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GPGPubKeyKeeper")
-	ret0, _ := ret[0].(types.GPGPubKeyKeeper)
+	ret0, _ := ret[0].(types3.GPGPubKeyKeeper)
 	return ret0
 }
 
@@ -1370,10 +1374,10 @@ func (mr *MockKeepersMockRecorder) GPGPubKeyKeeper() *gomock.Call {
 }
 
 // GetTicketManager mocks base method
-func (m *MockKeepers) GetTicketManager() types.TicketManager {
+func (m *MockKeepers) GetTicketManager() types2.TicketManager {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTicketManager")
-	ret0, _ := ret[0].(types.TicketManager)
+	ret0, _ := ret[0].(types2.TicketManager)
 	return ret0
 }
 
@@ -1384,10 +1388,10 @@ func (mr *MockKeepersMockRecorder) GetTicketManager() *gomock.Call {
 }
 
 // NamespaceKeeper mocks base method
-func (m *MockKeepers) NamespaceKeeper() types.NamespaceKeeper {
+func (m *MockKeepers) NamespaceKeeper() types3.NamespaceKeeper {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NamespaceKeeper")
-	ret0, _ := ret[0].(types.NamespaceKeeper)
+	ret0, _ := ret[0].(types3.NamespaceKeeper)
 	return ret0
 }
 
@@ -1444,10 +1448,10 @@ func (m *MockValidatorKeeper) EXPECT() *MockValidatorKeeperMockRecorder {
 }
 
 // GetByHeight mocks base method
-func (m *MockValidatorKeeper) GetByHeight(height int64) (types.BlockValidators, error) {
+func (m *MockValidatorKeeper) GetByHeight(height int64) (types3.BlockValidators, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByHeight", height)
-	ret0, _ := ret[0].(types.BlockValidators)
+	ret0, _ := ret[0].(types3.BlockValidators)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1459,7 +1463,7 @@ func (mr *MockValidatorKeeperMockRecorder) GetByHeight(height interface{}) *gomo
 }
 
 // Index mocks base method
-func (m *MockValidatorKeeper) Index(height int64, validators []*types.Validator) error {
+func (m *MockValidatorKeeper) Index(height int64, validators []*types3.Validator) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Index", height, validators)
 	ret0, _ := ret[0].(error)
@@ -1533,7 +1537,7 @@ func (m *MockTxLogic) EXPECT() *MockTxLogicMockRecorder {
 }
 
 // ExecTx mocks base method
-func (m *MockTxLogic) ExecTx(tx types.BaseTx, chainHeight uint64) types0.ResponseDeliverTx {
+func (m *MockTxLogic) ExecTx(tx msgs.BaseTx, chainHeight uint64) types0.ResponseDeliverTx {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecTx", tx, chainHeight)
 	ret0, _ := ret[0].(types0.ResponseDeliverTx)

@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"fmt"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	state2 "gitlab.com/makeos/mosdef/types/state"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,16 +14,15 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
-	s "github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/storage/tree"
+	s "gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/storage/tree"
 
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/storage"
 
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/rpc/client"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/rpc/client"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/thoas/go-funk"
 
 	"gopkg.in/src-d/go-git.v4"
@@ -39,7 +40,7 @@ type Repo struct {
 	path  string
 	name  string
 	ops   *GitOps
-	state *types.Repository
+	state *state2.Repository
 }
 
 func getReferenceTree(path, ref string) (*tree.SafeTree, func() error, error) {
@@ -101,7 +102,7 @@ func (r *Repo) TreeRoot(ref string) (util.Bytes32, error) {
 }
 
 // State returns the repository's network state
-func (r *Repo) State() *types.Repository {
+func (r *Repo) State() *state2.Repository {
 	return r.state
 }
 
@@ -177,7 +178,7 @@ func (r *Repo) CommitObject(h plumbing.Hash) (*object.Commit, error) {
 }
 
 // WrappedCommitObject returns commit that implements types.Commit interface.
-func (r *Repo) WrappedCommitObject(h plumbing.Hash) (types.Commit, error) {
+func (r *Repo) WrappedCommitObject(h plumbing.Hash) (core.Commit, error) {
 	commit, err := r.git.CommitObject(h)
 	if err != nil {
 		return nil, err
@@ -383,7 +384,7 @@ func (r *Repo) TryMergeBranch(base, target, targetRepoDir string) error {
 }
 
 // GetRepo returns a repository
-func GetRepo(path string) (types.BareRepo, error) {
+func GetRepo(path string) (core.BareRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
@@ -394,7 +395,7 @@ func GetRepo(path string) (types.BareRepo, error) {
 	}, nil
 }
 
-func getRepoWithGitOpt(gitBinPath, path string) (types.BareRepo, error) {
+func getRepoWithGitOpt(gitBinPath, path string) (core.BareRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
@@ -408,7 +409,7 @@ func getRepoWithGitOpt(gitBinPath, path string) (types.BareRepo, error) {
 
 // getCurrentWDRepo returns a Repo instance pointed to the repository
 // in the current working directory.
-func getCurrentWDRepo(gitBinDir string) (types.BareRepo, error) {
+func getCurrentWDRepo(gitBinDir string) (core.BareRepo, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current working directory")
@@ -732,7 +733,7 @@ func SignNoteCmd(
 }
 
 // getTreeEntries returns all entries in a tree.
-func getTreeEntries(repo types.BareRepo, treeHash string) ([]string, error) {
+func getTreeEntries(repo core.BareRepo, treeHash string) ([]string, error) {
 	entries, err := repo.ListTreeObjectsSlice(treeHash, true, true)
 	if err != nil {
 		return nil, err
@@ -745,7 +746,7 @@ func getTreeEntries(repo types.BareRepo, treeHash string) ([]string, error) {
 // repo: The target repository
 // commit: The target commit
 // stopCommitHash: A commit hash that when found triggers the end of the search.
-func getCommitHistory(repo types.BareRepo, commit *object.Commit, stopCommitHash string) ([]string, error) {
+func getCommitHistory(repo core.BareRepo, commit *object.Commit, stopCommitHash string) ([]string, error) {
 	var hashes []string
 
 	// Stop if commit hash matches the stop hash
@@ -778,7 +779,7 @@ func getCommitHistory(repo types.BareRepo, commit *object.Commit, stopCommitHash
 }
 
 // getObjectsSize returns the total size of the given objects.
-func getObjectsSize(repo types.BareRepo, objects []string) (uint64, error) {
+func getObjectsSize(repo core.BareRepo, objects []string) (uint64, error) {
 	var size int64
 	for _, hash := range objects {
 		objSize, err := repo.GetObjectSize(hash)
@@ -793,7 +794,7 @@ func getObjectsSize(repo types.BareRepo, objects []string) (uint64, error) {
 // updateReferencesTree takes a slice of pushed references and use them to
 // update the merkle tree of target references
 func updateReferencesTree(
-	pushedRefs types.PushedReferences,
+	pushedRefs core.PushedReferences,
 	repoPath string) (map[string]util.Bytes32, error) {
 
 	repo, err := GetRepo(repoPath)

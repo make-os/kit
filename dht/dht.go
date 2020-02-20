@@ -3,6 +3,7 @@ package dht
 import (
 	"context"
 	"fmt"
+	types2 "gitlab.com/makeos/mosdef/dht/types"
 	"io/ioutil"
 	"net"
 	"strings"
@@ -21,10 +22,9 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	dhtopts "github.com/libp2p/go-libp2p-kad-dht/opts"
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
-	"github.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/logger"
 	"github.com/pkg/errors"
 )
 
@@ -40,7 +40,7 @@ type DHT struct {
 	host          host.Host
 	dht           *dht.IpfsDHT
 	log           logger.Logger
-	objectFinders map[string]types.ObjectFinder
+	objectFinders map[string]types2.ObjectFinder
 	ticker        *time.Ticker
 }
 
@@ -84,7 +84,7 @@ func New(
 		dht:           ipfsDht,
 		cfg:           cfg,
 		log:           log,
-		objectFinders: make(map[string]types.ObjectFinder),
+		objectFinders: make(map[string]types2.ObjectFinder),
 	}
 
 	h.SetStreamHandler("/fetch/1", dht.handleFetch)
@@ -161,7 +161,7 @@ func (dht *DHT) attemptToJoinPeers() {
 }
 
 // RegisterObjFinder registers a finder to handle module-targetted find operations
-func (dht *DHT) RegisterObjFinder(module string, finder types.ObjectFinder) {
+func (dht *DHT) RegisterObjFinder(module string, finder types2.ObjectFinder) {
 	dht.objectFinders[module] = finder
 }
 
@@ -210,8 +210,8 @@ func (dht *DHT) GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo, 
 	return peers, nil
 }
 
-// Annonce informs the network that it can provide value for the given key
-func (dht *DHT) Annonce(ctx context.Context, key []byte) error {
+// Announce informs the network that it can provide value for the given key
+func (dht *DHT) Announce(ctx context.Context, key []byte) error {
 	cid, err := cid.NewPrefixV1(cid.Raw, multihash.BLAKE2B_MAX).Sum(key)
 	if err != nil {
 		return err
@@ -233,7 +233,7 @@ func (dht *DHT) Close() error {
 // fetchValue requests sends a query to a peer
 func (dht *DHT) fetchValue(
 	ctx context.Context,
-	query *types.DHTObjectQuery,
+	query *types2.DHTObjectQuery,
 	peer peer.AddrInfo) ([]byte, error) {
 
 	if len(peer.Addrs) == 0 {
@@ -267,7 +267,7 @@ func (dht *DHT) fetchValue(
 // GetObject returns an object from a provider
 func (dht *DHT) GetObject(
 	ctx context.Context,
-	query *types.DHTObjectQuery) (obj []byte, err error) {
+	query *types2.DHTObjectQuery) (obj []byte, err error) {
 
 	addrs, err := dht.GetProviders(ctx, query.ObjectKey)
 	if err != nil {
@@ -316,7 +316,7 @@ func (dht *DHT) handleFetch(s network.Stream) {
 		return
 	}
 
-	var query types.DHTObjectQuery
+	var query types2.DHTObjectQuery
 	if err := util.BytesToObject(bz, &query); err != nil {
 		dht.log.Error("failed to decode query", "Err", err.Error())
 		return

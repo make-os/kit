@@ -2,11 +2,11 @@ package keepers
 
 import (
 	"fmt"
+	types2 "gitlab.com/makeos/mosdef/logic/types"
 	"sync"
 
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // ErrBlockInfoNotFound means the block info was not found
@@ -18,7 +18,7 @@ type SystemKeeper struct {
 	db storage.Tx
 
 	gmx       *sync.RWMutex
-	lastSaved *types.BlockInfo
+	lastSaved *types2.BlockInfo
 }
 
 // NewSystemKeeper creates an instance of SystemKeeper
@@ -29,7 +29,7 @@ func NewSystemKeeper(db storage.Tx) *SystemKeeper {
 // SaveBlockInfo saves a committed block information.
 // Indexes the saved block info for faster future retrieval so
 // that GetLastBlockInfo will not refetch
-func (s *SystemKeeper) SaveBlockInfo(info *types.BlockInfo) error {
+func (s *SystemKeeper) SaveBlockInfo(info *types2.BlockInfo) error {
 	data := util.ObjectToBytes(info)
 	record := storage.NewFromKeyValue(MakeKeyBlockInfo(info.Height), data)
 
@@ -41,7 +41,7 @@ func (s *SystemKeeper) SaveBlockInfo(info *types.BlockInfo) error {
 }
 
 // GetLastBlockInfo returns information about the last committed block.
-func (s *SystemKeeper) GetLastBlockInfo() (*types.BlockInfo, error) {
+func (s *SystemKeeper) GetLastBlockInfo() (*types2.BlockInfo, error) {
 
 	// Retrieve the cached last saved block info if set
 	s.gmx.RLock()
@@ -60,7 +60,7 @@ func (s *SystemKeeper) GetLastBlockInfo() (*types.BlockInfo, error) {
 		return nil, ErrBlockInfoNotFound
 	}
 
-	var blockInfo types.BlockInfo
+	var blockInfo types2.BlockInfo
 	if err := rec.Scan(&blockInfo); err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func (s *SystemKeeper) GetLastBlockInfo() (*types.BlockInfo, error) {
 }
 
 // GetBlockInfo returns block information at a given height
-func (s *SystemKeeper) GetBlockInfo(height int64) (*types.BlockInfo, error) {
+func (s *SystemKeeper) GetBlockInfo(height int64) (*types2.BlockInfo, error) {
 	rec, err := s.db.Get(MakeKeyBlockInfo(height))
 	if err != nil {
 		if err == storage.ErrRecordNotFound {
@@ -78,7 +78,7 @@ func (s *SystemKeeper) GetBlockInfo(height int64) (*types.BlockInfo, error) {
 		return nil, err
 	}
 
-	var blockInfo types.BlockInfo
+	var blockInfo types2.BlockInfo
 	if err := rec.Scan(&blockInfo); err != nil {
 		return nil, err
 	}

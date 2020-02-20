@@ -6,15 +6,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/makeos/mosdef/rpc"
-	"github.com/makeos/mosdef/rpc/client"
+	"gitlab.com/makeos/mosdef/rpc"
+	"gitlab.com/makeos/mosdef/rpc/client"
 
-	"github.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/config"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
 	prompt "github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
 )
 

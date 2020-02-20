@@ -7,7 +7,7 @@ package extra25519
 import (
 	"crypto/sha512"
 
-	"github.com/makeos/mosdef/crypto/vrf/ed25519/edwards25519"
+	"gitlab.com/makeos/mosdef/crypto/vrf/ed25519/edwards25519"
 )
 
 // PrivateKeyToCurve25519 converts an ed25519 private key into a corresponding

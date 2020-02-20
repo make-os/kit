@@ -2,11 +2,14 @@ package modules
 
 import (
 	"fmt"
+	types2 "gitlab.com/makeos/mosdef/services/types"
+	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
@@ -16,16 +19,16 @@ import (
 // TicketModule provides access to various utility functions
 type TicketModule struct {
 	vm        *otto.Otto
-	service   types.Service
-	ticketmgr types.TicketManager
+	service   types2.Service
+	ticketmgr types3.TicketManager
 	storerObj map[string]interface{}
 }
 
 // NewTicketModule creates an instance of TicketModule
 func NewTicketModule(
 	vm *otto.Otto,
-	service types.Service,
-	ticketmgr types.TicketManager) *TicketModule {
+	service types2.Service,
+	ticketmgr types3.TicketManager) *TicketModule {
 	return &TicketModule{
 		vm:        vm,
 		service:   service,
@@ -143,7 +146,7 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareTxTicketPurchase(types.TxTypeValidatorTicket)
+	var tx = msgs.NewBareTxTicketPurchase(msgs.TxTypeValidatorTicket)
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -178,7 +181,7 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 func (m *TicketModule) storerBuy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareTxTicketPurchase(types.TxTypeStorerTicket)
+	var tx = msgs.NewBareTxTicketPurchase(msgs.TxTypeStorerTicket)
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -211,7 +214,7 @@ func (m *TicketModule) listValidatorTicketsOfProposer(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) interface{} {
 
-	var qopts types.QueryOptions
+	var qopts types3.QueryOptions
 
 	// Prepare query options
 	if len(queryOpts) > 0 {
@@ -236,7 +239,7 @@ func (m *TicketModule) listValidatorTicketsOfProposer(
 		panic(errors.Wrap(err, "failed to decode proposer public key"))
 	}
 
-	res, err := m.ticketmgr.GetByProposer(types.TxTypeValidatorTicket, pk.MustBytes32(), qopts)
+	res, err := m.ticketmgr.GetByProposer(msgs.TxTypeValidatorTicket, pk.MustBytes32(), qopts)
 	if err != nil {
 		panic(err)
 	}
@@ -250,7 +253,7 @@ func (m *TicketModule) listStorerTicketsOfProposer(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) interface{} {
 
-	var qopts types.QueryOptions
+	var qopts types3.QueryOptions
 	if len(queryOpts) > 0 {
 		mapstructure.Decode(queryOpts[0], &qopts)
 	}
@@ -265,7 +268,7 @@ func (m *TicketModule) listStorerTicketsOfProposer(
 		panic(errors.Wrap(err, "failed to decode proposer public key"))
 	}
 
-	res, err := m.ticketmgr.GetByProposer(types.TxTypeStorerTicket, pk.MustBytes32(), qopts)
+	res, err := m.ticketmgr.GetByProposer(msgs.TxTypeStorerTicket, pk.MustBytes32(), qopts)
 	if err != nil {
 		panic(err)
 	}
@@ -343,7 +346,7 @@ func (m *TicketModule) listRecent(limit ...int) interface{} {
 	if len(limit) > 0 {
 		n = limit[0]
 	}
-	res := m.ticketmgr.Query(func(t *types.Ticket) bool { return true }, types.QueryOptions{
+	res := m.ticketmgr.Query(func(t *types3.Ticket) bool { return true }, types3.QueryOptions{
 		Limit:        n,
 		SortByHeight: -1,
 	})
@@ -365,7 +368,7 @@ func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = types.NewBareTxTicketUnbond(types.TxTypeUnbondStorerTicket)
+	var tx = msgs.NewBareTxTicketUnbond(msgs.TxTypeUnbondStorerTicket)
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}

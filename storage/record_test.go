@@ -1,7 +1,7 @@
 package storage_test
 
 import (
-	"github.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/storage"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

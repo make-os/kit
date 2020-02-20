@@ -2,12 +2,12 @@ package repo
 
 import (
 	"fmt"
+	"gitlab.com/makeos/mosdef/repo/types/core"
 	"path/filepath"
 	"sync"
 	"time"
 
-	"github.com/makeos/mosdef/params"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/params"
 	"github.com/pkg/errors"
 )
 
@@ -16,14 +16,14 @@ import (
 // transactions in both the transaction and push pools.
 type Pruner struct {
 	gmx        *sync.Mutex
-	poolGetter types.PoolGetter
+	poolGetter core.PoolGetter
 	reposDir   string
 	targets    map[string]struct{}
 	tick       *time.Ticker
 }
 
 // newPruner creates an instance of pruner
-func newPruner(poolGetter types.PoolGetter, reposDir string) *Pruner {
+func newPruner(poolGetter core.PoolGetter, reposDir string) *Pruner {
 	p := &Pruner{
 		gmx:        &sync.Mutex{},
 		reposDir:   reposDir,

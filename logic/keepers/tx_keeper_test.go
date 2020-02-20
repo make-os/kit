@@ -2,17 +2,16 @@ package keepers
 
 import (
 	"fmt"
+	"gitlab.com/makeos/mosdef/types/msgs"
 	"os"
 
-	"github.com/makeos/mosdef/types"
-
-	storagemocks "github.com/makeos/mosdef/storage/mocks"
+	storagemocks "gitlab.com/makeos/mosdef/storage/mocks"
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -49,7 +48,7 @@ var _ = Describe("TxKeeper", func() {
 			})
 
 			It("should return err='failed to index tx: error'", func() {
-				tx := types.NewBareTxCoinTransfer()
+				tx := msgs.NewBareTxCoinTransfer()
 				err := txKeeper.Index(tx)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to index tx: error"))
@@ -57,7 +56,7 @@ var _ = Describe("TxKeeper", func() {
 		})
 
 		When("index is successful", func() {
-			tx := types.NewBareTxCoinTransfer()
+			tx := msgs.NewBareTxCoinTransfer()
 
 			BeforeEach(func() {
 				err := txKeeper.Index(tx)
@@ -81,7 +80,7 @@ var _ = Describe("TxKeeper", func() {
 			})
 
 			It("should return err='failed to get tx: error'", func() {
-				tx := types.NewBareTxCoinTransfer()
+				tx := msgs.NewBareTxCoinTransfer()
 				_, err := txKeeper.GetTx(tx.GetHash().Bytes())
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to get tx: error"))
@@ -89,7 +88,7 @@ var _ = Describe("TxKeeper", func() {
 		})
 
 		When("tx is found", func() {
-			tx := types.NewBareTxCoinTransfer()
+			tx := msgs.NewBareTxCoinTransfer()
 
 			BeforeEach(func() {
 				err := txKeeper.Index(tx)

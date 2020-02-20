@@ -11,16 +11,16 @@ import (
 
 	"github.com/thoas/go-funk"
 
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 
 	"github.com/pkg/errors"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/fatih/color"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/util/logger"
 
 	prompt "github.com/c-bata/go-prompt"
 )

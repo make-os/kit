@@ -2,30 +2,32 @@ package modules
 
 import (
 	"fmt"
+	types3 "gitlab.com/makeos/mosdef/logic/types"
+	types2 "gitlab.com/makeos/mosdef/services/types"
 	"strconv"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
 
-	"github.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/crypto"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/pkg/errors"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
 )
 
 // ChainModule provides access to chain information
 type ChainModule struct {
 	vm      *otto.Otto
-	service types.Service
-	keepers types.Keepers
+	service types2.Service
+	keepers types3.Keepers
 }
 
 // NewChainModule creates an instance of ChainModule
-func NewChainModule(vm *otto.Otto, service types.Service, keepers types.Keepers) *ChainModule {
+func NewChainModule(vm *otto.Otto, service types2.Service, keepers types3.Keepers) *ChainModule {
 	return &ChainModule{vm: vm, service: service, keepers: keepers}
 }
 

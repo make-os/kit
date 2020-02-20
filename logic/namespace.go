@@ -1,9 +1,9 @@
 package logic
 
 import (
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/params"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // execPush executes a namespace acquisition request

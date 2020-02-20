@@ -1,19 +1,20 @@
 package logic
 
 import (
+	types2 "gitlab.com/makeos/mosdef/logic/types"
 	"os"
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/crypto"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -43,7 +44,7 @@ var _ = Describe("Transfers", func() {
 	})
 
 	BeforeEach(func() {
-		err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&types2.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 

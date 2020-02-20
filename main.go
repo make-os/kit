@@ -15,7 +15,7 @@
 package main
 
 import (
-	"github.com/makeos/mosdef/cmd"
+	"gitlab.com/makeos/mosdef/cmd"
 )
 
 var (

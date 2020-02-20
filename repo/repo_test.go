@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"gitlab.com/makeos/mosdef/repo/types/core"
 	"os"
 	"path/filepath"
 	"sort"
@@ -12,18 +13,17 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/storage/tree"
-	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/storage/tree"
+	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Repo", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path, dotGitPath string
-	var repo types.BareRepo
+	var repo core.BareRepo
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()

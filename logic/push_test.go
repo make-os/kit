@@ -1,17 +1,20 @@
 package logic
 
 import (
+	types3 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 	"os"
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -41,7 +44,7 @@ var _ = Describe("Push", func() {
 	})
 
 	BeforeEach(func() {
-		err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&types3.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 
@@ -71,14 +74,14 @@ var _ = Describe("Push", func() {
 					Address: sender.Addr(),
 				})
 
-				logic.RepoKeeper().Update(repo, &types.Repository{
+				logic.RepoKeeper().Update(repo, &state.Repository{
 					References: map[string]interface{}{
-						"refs/heads/master": &types.Reference{Nonce: 1},
+						"refs/heads/master": &state.Reference{Nonce: 1},
 					},
 				})
 
-				refs := []*types.PushedReference{
-					&types.PushedReference{Name: "refs/heads/master"},
+				refs := []*core.PushedReference{
+					&core.PushedReference{Name: "refs/heads/master"},
 				}
 
 				err = txLogic.execPush(repo, refs, "1", util.MustDecodeRSAPubKeyID(pkID), 0)

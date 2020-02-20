@@ -1,11 +1,12 @@
 package logic
 
 import (
+	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/state"
 	"strings"
 
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
@@ -31,18 +32,18 @@ func (t *Transaction) execRepoCreate(
 
 	// Create the repo object; Set the config to default if
 	// the passed config is unset.
-	newRepo := types.BareRepository()
-	newRepo.Config = types.MakeDefaultRepoConfig()
+	newRepo := state.BareRepository()
+	newRepo.Config = state.MakeDefaultRepoConfig()
 	newRepo.Config.MergeMap(config)
 
 	proposee := newRepo.Config.Governace.ProposalProposee
 
 	// Add sender as owner only if proposee type is ProposeeOwner
 	// Add sender as a veto owner if proposee type is ProposeeNetStakeholdersAndVetoOwner
-	if proposee == types.ProposeeOwner || proposee == types.ProposeeNetStakeholdersAndVetoOwner {
-		newRepo.AddOwner(spk.Addr().String(), &types.RepoOwner{
+	if proposee == state.ProposeeOwner || proposee == state.ProposeeNetStakeholdersAndVetoOwner {
+		newRepo.AddOwner(spk.Addr().String(), &state.RepoOwner{
 			Creator:  true,
-			Veto:     proposee == types.ProposeeNetStakeholdersAndVetoOwner,
+			Veto:     proposee == state.ProposeeNetStakeholdersAndVetoOwner,
 			JoinedAt: chainHeight + 1,
 		})
 	}
@@ -77,13 +78,13 @@ func (t *Transaction) deductValue(spk *crypto.PubKey, fee decimal.Decimal, chain
 
 // applyProposalAddOwner adds the address described in the proposal as a repo owner.
 func applyProposalAddOwner(
-	proposal types.Proposal,
-	repo *types.Repository,
+	proposal state.Proposal,
+	repo *state.Repository,
 	chainHeight uint64) error {
 
 	// Get the action data
-	targetAddrs := proposal.GetActionData()[types.ProposalActionDataAddresses].(string)
-	veto := proposal.GetActionData()[types.ProposalActionDataVeto].(bool)
+	targetAddrs := proposal.GetActionData()[types2.ProposalActionDataAddresses].(string)
+	veto := proposal.GetActionData()[types2.ProposalActionDataVeto].(bool)
 
 	// Add new repo owner iif the target address does not
 	// already exist as an owner. If it exists, just update the fields.
@@ -95,7 +96,7 @@ func applyProposalAddOwner(
 			continue
 		}
 
-		repo.AddOwner(address, &types.RepoOwner{
+		repo.AddOwner(address, &state.RepoOwner{
 			Creator:  false,
 			JoinedAt: chainHeight + 1,
 			Veto:     veto,
@@ -107,10 +108,10 @@ func applyProposalAddOwner(
 
 // applyProposalRepoUpdate updates a repo with data in the proposal.
 func applyProposalRepoUpdate(
-	proposal types.Proposal,
-	repo *types.Repository,
+	proposal state.Proposal,
+	repo *state.Repository,
 	chainHeight uint64) error {
-	cfgUpd := proposal.GetActionData()[types.ProposalActionDataConfig].(map[string]interface{})
+	cfgUpd := proposal.GetActionData()[types2.ProposalActionDataConfig].(map[string]interface{})
 	repo.Config.MergeMap(cfgUpd)
 	return nil
 }
@@ -144,10 +145,10 @@ func (t *Transaction) execRepoUpsertOwner(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
-	proposal.Action = types.ProposalActionAddOwner
+	proposal.Action = state.ProposalActionAddOwner
 	proposal.ActionData = map[string]interface{}{
-		types.ProposalActionDataAddresses: addresses,
-		types.ProposalActionDataVeto:      veto,
+		types2.ProposalActionDataAddresses: addresses,
+		types2.ProposalActionDataVeto:      veto,
 	}
 
 	// Deduct network fee + proposal fee from sender
@@ -200,8 +201,8 @@ func (t *Transaction) execRepoProposalUpdate(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
-	proposal.Action = types.ProposalActionRepoUpdate
-	proposal.ActionData[types.ProposalActionDataConfig] = config
+	proposal.Action = state.ProposalActionRepoUpdate
+	proposal.ActionData[types2.ProposalActionDataConfig] = config
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
@@ -276,12 +277,12 @@ func (t *Transaction) execRepoProposalSendFee(
 
 func makeProposal(
 	spk *crypto.PubKey,
-	repo *types.Repository,
+	repo *state.Repository,
 	id string,
 	proposalFee util.String,
-	chainHeight uint64) *types.RepoProposal {
+	chainHeight uint64) *state.RepoProposal {
 
-	proposal := &types.RepoProposal{
+	proposal := &state.RepoProposal{
 		ID:         id,
 		Config:     repo.Config.Clone().Governace,
 		Creator:    spk.Addr().String(),
@@ -346,8 +347,8 @@ func (t *Transaction) execRepoProposalMergeRequest(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
-	proposal.Action = types.ProposalActionMergeRequest
-	proposal.ActionData[types.ProposalActionDataMergeRequest] = map[string]string{
+	proposal.Action = state.ProposalActionMergeRequest
+	proposal.ActionData[types2.ProposalActionDataMergeRequest] = map[string]string{
 		"base":       baseBranch,
 		"baseHash":   baseBranchHash,
 		"target":     targetBranch,
@@ -408,23 +409,23 @@ func (t *Transaction) execRepoProposalVote(
 
 	// When proposees are the owners, and tally method is ProposalTallyMethodIdentity
 	// each proposee will have 1 voting power.
-	if prop.Config.ProposalProposee == types.ProposeeOwner &&
-		prop.Config.ProposalTallyMethod == types.ProposalTallyMethodIdentity {
+	if prop.Config.ProposalProposee == state.ProposeeOwner &&
+		prop.Config.ProposalTallyMethod == state.ProposalTallyMethodIdentity {
 		increments = 1
 	}
 
 	// When proposees are the owners, and tally method is ProposalTallyMethodCoinWeighted
 	// each proposee will use the value of the voter's account spendable balance
 	// as their voting power.
-	if prop.Config.ProposalProposee == types.ProposeeOwner &&
-		prop.Config.ProposalTallyMethod == types.ProposalTallyMethodCoinWeighted {
+	if prop.Config.ProposalProposee == state.ProposeeOwner &&
+		prop.Config.ProposalTallyMethod == state.ProposalTallyMethodCoinWeighted {
 		senderAcct := t.logic.AccountKeeper().GetAccount(spk.Addr())
 		increments = senderAcct.GetSpendableBalance(chainHeight).Float()
 	}
 
 	// For network staked-weighted votes, use the total value of coins directly
 	// staked by the voter as their vote power
-	if prop.Config.ProposalTallyMethod == types.ProposalTallyMethodNetStakeOfProposer {
+	if prop.Config.ProposalTallyMethod == state.ProposalTallyMethodNetStakeOfProposer {
 		increments, err = t.logic.GetTicketManager().
 			ValueOfNonDelegatedTickets(senderPubKey, prop.ProposeeMaxJoinHeight)
 		if err != nil {
@@ -434,7 +435,7 @@ func (t *Transaction) execRepoProposalVote(
 
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
-	if prop.Config.ProposalTallyMethod == types.ProposalTallyMethodNetStakeOfDelegators {
+	if prop.Config.ProposalTallyMethod == state.ProposalTallyMethodNetStakeOfDelegators {
 		increments, err = t.logic.GetTicketManager().
 			ValueOfDelegatedTickets(senderPubKey, prop.ProposeeMaxJoinHeight)
 		if err != nil {
@@ -444,7 +445,7 @@ func (t *Transaction) execRepoProposalVote(
 
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
-	if prop.Config.ProposalTallyMethod == types.ProposalTallyMethodNetStake {
+	if prop.Config.ProposalTallyMethod == state.ProposalTallyMethodNetStake {
 
 		tickets, err := t.logic.GetTicketManager().
 			GetNonDecayedTickets(senderPubKey, prop.ProposeeMaxJoinHeight)
@@ -496,22 +497,22 @@ func (t *Transaction) execRepoProposalVote(
 				}
 
 				switch vote {
-				case types.ProposalVoteYes:
+				case state.ProposalVoteYes:
 					newYes := decimal.NewFromFloat(prop.Yes)
 					newYes = newYes.Sub(ticket.Value.Decimal())
 					prop.Yes, _ = newYes.Float64()
 
-				case types.ProposalVoteNo:
+				case state.ProposalVoteNo:
 					newNo := decimal.NewFromFloat(prop.No)
 					newNo = newNo.Sub(ticket.Value.Decimal())
 					prop.Yes, _ = newNo.Float64()
 
-				case types.ProposalVoteNoWithVeto:
+				case state.ProposalVoteNoWithVeto:
 					newNoWithVeto := decimal.NewFromFloat(prop.NoWithVeto)
 					newNoWithVeto = newNoWithVeto.Sub(ticket.Value.Decimal())
 					prop.NoWithVeto, _ = newNoWithVeto.Float64()
 
-				case types.ProposalVoteAbstain:
+				case state.ProposalVoteAbstain:
 					newAbstain := decimal.NewFromFloat(prop.Abstain)
 					newAbstain = newAbstain.Sub(ticket.Value.Decimal())
 					prop.Abstain, _ = newAbstain.Float64()
@@ -524,20 +525,20 @@ func (t *Transaction) execRepoProposalVote(
 		increments, _ = sumValue.Float64()
 	}
 
-	if vote == types.ProposalVoteYes {
+	if vote == state.ProposalVoteYes {
 		prop.Yes += increments
-	} else if vote == types.ProposalVoteNo {
+	} else if vote == state.ProposalVoteNo {
 		prop.No += increments
-	} else if vote == types.ProposalVoteAbstain {
+	} else if vote == state.ProposalVoteAbstain {
 		prop.Abstain += increments
-	} else if vote == types.ProposalVoteNoWithVeto {
+	} else if vote == state.ProposalVoteNoWithVeto {
 		prop.NoWithVeto += increments
 
 		// Also, if the proposee type for the proposal is stakeholders and veto
 		// owners and voter is an owner, increment NoWithVetoByOwners by 1
 		voterAsOwner := repo.Owners.Get(spk.Addr().String())
 		isStakeholderAndVetoOwnerProposee := prop.Config.ProposalProposee ==
-			types.ProposeeNetStakeholdersAndVetoOwner
+			state.ProposeeNetStakeholdersAndVetoOwner
 		if isStakeholderAndVetoOwnerProposee && voterAsOwner != nil && voterAsOwner.Veto {
 			prop.NoWithVetoByOwners = 1
 		}

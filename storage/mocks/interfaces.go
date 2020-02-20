@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	storage "github.com/makeos/mosdef/storage"
+	storage "gitlab.com/makeos/mosdef/storage"
 	reflect "reflect"
 )
 

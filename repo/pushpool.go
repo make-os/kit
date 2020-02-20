@@ -2,12 +2,15 @@ package repo
 
 import (
 	"fmt"
+	types3 "gitlab.com/makeos/mosdef/dht/types"
+	types4 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/repo/types/msgs"
 	"sync"
 	"time"
 
-	"github.com/makeos/mosdef/params"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
@@ -19,7 +22,7 @@ var (
 )
 
 type containerItem struct {
-	Note      *types.PushNote
+	Note      *msgs.PushNote
 	FeeRate   util.String
 	TimeAdded time.Time
 }
@@ -110,12 +113,12 @@ func (i *refNonceIndex) remove(refKey string) {
 }
 
 // newItem creates an instance of ContainerItem
-func newItem(note *types.PushNote) *containerItem {
+func newItem(note *msgs.PushNote) *containerItem {
 	item := &containerItem{Note: note, TimeAdded: time.Now()}
 	return item
 }
 
-type pushPoolValidator func(note types.RepoPushNote, dht types.DHT, logic types.Logic) error
+type pushPoolValidator func(note core.RepoPushNote, dht types3.DHT, logic types4.Logic) error
 
 // PushPool implements types.PushPool.
 type PushPool struct {
@@ -126,13 +129,13 @@ type PushPool struct {
 	refIndex     containerIndex    // Helps keep track of note targeting references of a repository
 	refNonceIdx  refNonceIndex     // Helps keep track of the nonce of repo references
 	repoNotesIdx repoNotesIndex    // Helps keep track of repos and push notes target them
-	logic        types.Logic       // The application logic manager
-	dht          types.DHT         // The application's DHT provider
+	logic        types4.Logic      // The application logic manager
+	dht          types3.DHT        // The application's DHT provider
 	noteChecker  pushPoolValidator // Function used to validate a transaction
 }
 
 // NewPushPool creates an instance of PushPool
-func NewPushPool(cap int, logic types.Logic, dht types.DHT) *PushPool {
+func NewPushPool(cap int, logic types4.Logic, dht types3.DHT) *PushPool {
 	pool := &PushPool{
 		gmx:          &sync.RWMutex{},
 		cap:          cap,
@@ -177,7 +180,7 @@ func (p *PushPool) Full() bool {
 // combined fee rate of the replaceable push notes.
 //
 // noValidation disables note validation
-func (p *PushPool) Add(note types.RepoPushNote, noValidation ...bool) error {
+func (p *PushPool) Add(note core.RepoPushNote, noValidation ...bool) error {
 
 	if p.Full() {
 		return errFullPushPool
@@ -191,7 +194,7 @@ func (p *PushPool) Add(note types.RepoPushNote, noValidation ...bool) error {
 		return errTxExistInPushPool
 	}
 
-	item := newItem(note.(*types.PushNote))
+	item := newItem(note.(*msgs.PushNote))
 
 	// Calculate and set fee rate
 	billableTxSize := decimal.NewFromFloat(float64(note.BillableSize()))
@@ -199,11 +202,11 @@ func (p *PushPool) Add(note types.RepoPushNote, noValidation ...bool) error {
 
 	// Check if references of the push notes are valid
 	// or can replace an existing transaction
-	var replaceable = make(map[string]*types.PushNote)
+	var replaceable = make(map[string]*msgs.PushNote)
 	var totalReplaceableFee = decimal.NewFromFloat(0)
-	for _, ref := range note.(*types.PushNote).References {
+	for _, ref := range note.(*msgs.PushNote).References {
 
-		existingRefNonce := p.refNonceIdx.getNonce(makeRefKey(note.(*types.PushNote).RepoName, ref.Name))
+		existingRefNonce := p.refNonceIdx.getNonce(makeRefKey(note.(*msgs.PushNote).RepoName, ref.Name))
 		if existingRefNonce == 0 {
 			continue
 		}
@@ -215,14 +218,14 @@ func (p *PushPool) Add(note types.RepoPushNote, noValidation ...bool) error {
 				"nonce has been staged")
 		}
 
-		existingItem := p.refIndex.get(makeRefKey(note.(*types.PushNote).RepoName, ref.Name))
+		existingItem := p.refIndex.get(makeRefKey(note.(*msgs.PushNote).RepoName, ref.Name))
 		if existingItem == nil {
 			panic(fmt.Errorf("unexpectedly failed to find existing reference note"))
 		}
 
 		if existingItem.Note.GetFee().Decimal().GreaterThanOrEqual(note.GetFee().Decimal()) {
 			msg := fmt.Sprintf("replace-by-fee on staged reference (ref:%s, repo:%s) "+
-				"not allowed due to inferior fee.", ref.Name, note.(*types.PushNote).RepoName)
+				"not allowed due to inferior fee.", ref.Name, note.(*msgs.PushNote).RepoName)
 			return fmt.Errorf(msg)
 		}
 
@@ -241,7 +244,7 @@ func (p *PushPool) Add(note types.RepoPushNote, noValidation ...bool) error {
 				"allowed due to inferior fee.")
 			return fmt.Errorf(msg)
 		}
-		p.remove(funk.Values(replaceable).([]*types.PushNote)...)
+		p.remove(funk.Values(replaceable).([]*msgs.PushNote)...)
 	}
 
 	// Validate the transaction
@@ -258,8 +261,8 @@ func (p *PushPool) Add(note types.RepoPushNote, noValidation ...bool) error {
 	p.index.add(id.HexStr(), item)
 	p.repoNotesIdx.add(note.GetRepoName(), item)
 	for _, ref := range item.Note.References {
-		p.refIndex.add(makeRefKey(note.(*types.PushNote).RepoName, ref.Name), item)
-		p.refNonceIdx.add(makeRefKey(note.(*types.PushNote).RepoName, ref.Name), ref.Nonce)
+		p.refIndex.add(makeRefKey(note.(*msgs.PushNote).RepoName, ref.Name), item)
+		p.refNonceIdx.add(makeRefKey(note.(*msgs.PushNote).RepoName, ref.Name), ref.Nonce)
 	}
 
 	return nil
@@ -267,7 +270,7 @@ func (p *PushPool) Add(note types.RepoPushNote, noValidation ...bool) error {
 
 // removeOps removes a transaction from all indexes.
 // Note: Not thread safe
-func (p *PushPool) removeOps(note *types.PushNote) {
+func (p *PushPool) removeOps(note *msgs.PushNote) {
 	delete(p.index, note.ID().HexStr())
 	p.repoNotesIdx.remove(note.RepoName, note.ID().String())
 	for _, ref := range note.References {
@@ -278,9 +281,9 @@ func (p *PushPool) removeOps(note *types.PushNote) {
 
 // remove removes push notes from the pool
 // Note: Not thread-safe.
-func (p *PushPool) remove(pushNotes ...*types.PushNote) {
+func (p *PushPool) remove(pushNotes ...*msgs.PushNote) {
 	finalTxs := funk.Filter(p.container, func(o *containerItem) bool {
-		if funk.Find(pushNotes, func(note *types.PushNote) bool {
+		if funk.Find(pushNotes, func(note *msgs.PushNote) bool {
 			return o.Note.ID().Equal(note.ID())
 		}) != nil {
 			p.removeOps(o.Note)
@@ -292,14 +295,14 @@ func (p *PushPool) remove(pushNotes ...*types.PushNote) {
 }
 
 // Remove removes a push note
-func (p *PushPool) Remove(pushNote *types.PushNote) {
+func (p *PushPool) Remove(pushNote *msgs.PushNote) {
 	p.gmx.Lock()
 	defer p.gmx.Unlock()
 	p.remove(pushNote)
 }
 
 // Get finds and returns a push note
-func (p *PushPool) Get(noteID string) *types.PushNote {
+func (p *PushPool) Get(noteID string) *msgs.PushNote {
 	res := p.index.get(noteID)
 	if res == nil {
 		return nil
@@ -308,7 +311,7 @@ func (p *PushPool) Get(noteID string) *types.PushNote {
 }
 
 // validate validates a push transaction
-func (p *PushPool) validate(note types.RepoPushNote) error {
+func (p *PushPool) validate(note core.RepoPushNote) error {
 	return p.noteChecker(note, p.dht, p.logic)
 }
 

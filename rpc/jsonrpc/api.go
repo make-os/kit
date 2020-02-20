@@ -1,7 +1,7 @@
 package jsonrpc
 
 import (
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // Params represent JSON API parameters

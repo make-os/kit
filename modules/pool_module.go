@@ -2,12 +2,13 @@ package modules
 
 import (
 	"fmt"
+	"gitlab.com/makeos/mosdef/repo/types/core"
 
-	"github.com/makeos/mosdef/mempool"
+	"gitlab.com/makeos/mosdef/mempool"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/robertkrimen/otto"
 )
 
@@ -15,11 +16,11 @@ import (
 type PoolModule struct {
 	vm       *otto.Otto
 	reactor  *mempool.Reactor
-	pushPool types.PushPool
+	pushPool core.PushPool
 }
 
 // NewPoolModule creates an instance of PoolModule
-func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor, pushPool types.PushPool) *PoolModule {
+func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor, pushPool core.PushPool) *PoolModule {
 	return &PoolModule{vm: vm, reactor: reactor, pushPool: pushPool}
 }
 

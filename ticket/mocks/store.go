@@ -6,7 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/makeos/mosdef/types"
+	types2 "gitlab.com/makeos/mosdef/ticket/types"
 	reflect "reflect"
 )
 
@@ -34,7 +34,7 @@ func (m *MockStorer) EXPECT() *MockStorerMockRecorder {
 }
 
 // Add mocks base method
-func (m *MockStorer) Add(tickets ...*types.Ticket) error {
+func (m *MockStorer) Add(tickets ...*types2.Ticket) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range tickets {
@@ -52,10 +52,10 @@ func (mr *MockStorerMockRecorder) Add(tickets ...interface{}) *gomock.Call {
 }
 
 // GetByHash mocks base method
-func (m *MockStorer) GetByHash(hash string) *types.Ticket {
+func (m *MockStorer) GetByHash(hash string) *types2.Ticket {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByHash", hash)
-	ret0, _ := ret[0].(*types.Ticket)
+	ret0, _ := ret[0].(*types2.Ticket)
 	return ret0
 }
 
@@ -80,10 +80,10 @@ func (mr *MockStorerMockRecorder) RemoveByHash(hash interface{}) *gomock.Call {
 }
 
 // QueryOne mocks base method
-func (m *MockStorer) QueryOne(predicate func(*types.Ticket) bool) *types.Ticket {
+func (m *MockStorer) QueryOne(predicate func(*types2.Ticket) bool) *types2.Ticket {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryOne", predicate)
-	ret0, _ := ret[0].(*types.Ticket)
+	ret0, _ := ret[0].(*types2.Ticket)
 	return ret0
 }
 
@@ -94,14 +94,14 @@ func (mr *MockStorerMockRecorder) QueryOne(predicate interface{}) *gomock.Call {
 }
 
 // Query mocks base method
-func (m *MockStorer) Query(predicate func(*types.Ticket) bool, queryOpt ...interface{}) []*types.Ticket {
+func (m *MockStorer) Query(predicate func(*types2.Ticket) bool, queryOpt ...interface{}) []*types2.Ticket {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{predicate}
 	for _, a := range queryOpt {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Query", varargs...)
-	ret0, _ := ret[0].([]*types.Ticket)
+	ret0, _ := ret[0].([]*types2.Ticket)
 	return ret0
 }
 
@@ -113,7 +113,7 @@ func (mr *MockStorerMockRecorder) Query(predicate interface{}, queryOpt ...inter
 }
 
 // Count mocks base method
-func (m *MockStorer) Count(predicate func(*types.Ticket) bool) int {
+func (m *MockStorer) Count(predicate func(*types2.Ticket) bool) int {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Count", predicate)
 	ret0, _ := ret[0].(int)
@@ -127,7 +127,7 @@ func (mr *MockStorerMockRecorder) Count(predicate interface{}) *gomock.Call {
 }
 
 // UpdateOne mocks base method
-func (m *MockStorer) UpdateOne(upd types.Ticket, queryPredicate func(*types.Ticket) bool) {
+func (m *MockStorer) UpdateOne(upd types2.Ticket, queryPredicate func(*types2.Ticket) bool) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "UpdateOne", upd, queryPredicate)
 }

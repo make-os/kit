@@ -3,24 +3,27 @@ package node
 import (
 	"bytes"
 	"fmt"
+	types2 "gitlab.com/makeos/mosdef/logic/types"
+	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
 
 	"github.com/tendermint/tendermint/state"
 
 	"github.com/fatih/color"
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/logic/keepers"
-	"github.com/makeos/mosdef/params"
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
-	"github.com/makeos/mosdef/util/logger"
-	"github.com/makeos/mosdef/validators"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/logic/keepers"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/validators"
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 )
 
 type ticketInfo struct {
-	Tx    types.BaseTx
+	Tx    msgs.BaseTx
 	index int
 }
 
@@ -32,21 +35,21 @@ type mergeProposalInfo struct {
 // App implements tendermint ABCI interface to
 type App struct {
 	db                        storage.Engine
-	logic                     types.AtomicLogic
+	logic                     types2.AtomicLogic
 	cfg                       *config.AppConfig
 	validateTx                validators.ValidateTxFunc
-	curWorkingBlock           *types.BlockInfo
+	curWorkingBlock           *types2.BlockInfo
 	log                       logger.Logger
 	txIndex                   int
 	unIdxValidatorTickets     []*ticketInfo
 	unIdxStorerTickets        []*ticketInfo
 	unbondStorerReqs          []util.Bytes32
-	ticketMgr                 types.TicketManager
+	ticketMgr                 types3.TicketManager
 	isCurrentBlockProposer    bool
-	unsavedValidators         []*types.Validator
+	unsavedValidators         []*types2.Validator
 	heightToSaveNewValidators int64
-	unIdxTxs                  []types.BaseTx
-	unIdxRepoPropVotes        []*types.TxRepoProposalVote
+	unIdxTxs                  []msgs.BaseTx
+	unIdxRepoPropVotes        []*msgs.TxRepoProposalVote
 	newRepos                  []string
 	unIdxClosedMergeProposal  []*mergeProposalInfo
 }
@@ -55,13 +58,13 @@ type App struct {
 func NewApp(
 	cfg *config.AppConfig,
 	db storage.Engine,
-	logic types.AtomicLogic,
-	ticketMgr types.TicketManager) *App {
+	logic types2.AtomicLogic,
+	ticketMgr types3.TicketManager) *App {
 	return &App{
 		db:              db,
 		logic:           logic,
 		cfg:             cfg,
-		curWorkingBlock: &types.BlockInfo{},
+		curWorkingBlock: &types2.BlockInfo{},
 		log:             cfg.G().Log.Module("app"),
 		ticketMgr:       ticketMgr,
 		validateTx:      validators.ValidateTx,
@@ -138,7 +141,7 @@ func (a *App) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetOpt
 func (a *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 
 	// Decode the transaction in byte form to types.BaseTx
-	tx, err := types.DecodeTx(req.Tx)
+	tx, err := msgs.DecodeTx(req.Tx)
 	if err != nil {
 		return abcitypes.ResponseCheckTx{
 			Code: types.ErrCodeTxBadEncode,
@@ -185,12 +188,12 @@ func respDeliverTx(code uint32, log string) *abcitypes.ResponseDeliverTx {
 // preExecChecks performs some checks that attempt to spot problems with
 // specific transaction types before they are validated. These checks are
 // against the ABCI block execution session(s).
-func (a *App) preExecChecks(tx types.BaseTx) *abcitypes.ResponseDeliverTx {
+func (a *App) preExecChecks(tx msgs.BaseTx) *abcitypes.ResponseDeliverTx {
 
 	// Invalidate the transaction if it is a validator ticket acquisition tx and
 	// we have reached the maximum per block.
 	// TODO: Slash proposer for violating the rule.
-	if tx.Is(types.TxTypeValidatorTicket) &&
+	if tx.Is(msgs.TxTypeValidatorTicket) &&
 		len(a.unIdxValidatorTickets) == params.MaxValTicketsPerBlock {
 		return respDeliverTx(types.ErrCodeMaxTxTypeReached,
 			"failed to execute tx: validator ticket capacity reached")
@@ -202,7 +205,7 @@ func (a *App) preExecChecks(tx types.BaseTx) *abcitypes.ResponseDeliverTx {
 // postExecChecks performs some checks that reacts to the
 // result from executing a transaction.
 func (a *App) postExecChecks(
-	tx types.BaseTx,
+	tx msgs.BaseTx,
 	resp *abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
 
 	if !resp.IsOK() {
@@ -210,23 +213,23 @@ func (a *App) postExecChecks(
 	}
 
 	switch o := tx.(type) {
-	case *types.TxTicketPurchase:
-		if o.Is(types.TxTypeValidatorTicket) {
+	case *msgs.TxTicketPurchase:
+		if o.Is(msgs.TxTypeValidatorTicket) {
 			a.unIdxValidatorTickets = append(a.unIdxValidatorTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 		} else {
 			a.unIdxStorerTickets = append(a.unIdxStorerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 		}
 
-	case *types.TxTicketUnbond:
+	case *msgs.TxTicketUnbond:
 		a.unbondStorerReqs = append(a.unbondStorerReqs, o.TicketHash)
 
-	case *types.TxRepoCreate:
+	case *msgs.TxRepoCreate:
 		a.newRepos = append(a.newRepos, o.Name)
 
-	case *types.TxRepoProposalVote:
+	case *msgs.TxRepoProposalVote:
 		a.unIdxRepoPropVotes = append(a.unIdxRepoPropVotes, o)
 
-	case *types.TxPush:
+	case *msgs.TxPush:
 		for _, ref := range o.PushNote.GetPushedReferences() {
 			if ref.MergeProposalID != "" {
 				a.unIdxClosedMergeProposal = append(a.unIdxClosedMergeProposal, &mergeProposalInfo{
@@ -252,7 +255,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	a.txIndex++
 
 	// Decode transaction to types.BaseTx
-	tx, err := types.DecodeTx(req.Tx)
+	tx, err := msgs.DecodeTx(req.Tx)
 	if err != nil {
 		return *respDeliverTx(types.ErrCodeTxBadEncode, "unable to decode to types.BaseTx")
 	}
@@ -308,14 +311,14 @@ func (a *App) updateValidators(curHeight int64, resp *abcitypes.ResponseEndBlock
 	// Create a new validator list.
 	// Keep an index of validators public key for faster query.
 	var newValUpdates []abcitypes.ValidatorUpdate // for tendermint
-	var newValidators []*types.Validator          // for validator keeper
+	var newValidators []*types2.Validator         // for validator keeper
 	var vIndex = map[string]struct{}{}
 	for _, st := range selected {
 		newValUpdates = append(newValUpdates, abcitypes.ValidatorUpdate{
 			PubKey: abcitypes.PubKey{Type: "ed25519", Data: st.Ticket.ProposerPubKey.Bytes()},
 			Power:  1,
 		})
-		newValidators = append(newValidators, &types.Validator{
+		newValidators = append(newValidators, &types2.Validator{
 			PubKey:   st.Ticket.ProposerPubKey,
 			TicketID: st.Ticket.Hash,
 		})
@@ -378,7 +381,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	defer a.reset()
 
 	// Construct a new block information object
-	bi := &types.BlockInfo{
+	bi := &types2.BlockInfo{
 		Height:          a.curWorkingBlock.Height,
 		Hash:            a.curWorkingBlock.Hash,
 		LastAppHash:     a.curWorkingBlock.LastAppHash,
@@ -452,7 +455,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	}
 
 	// Emit events about the committed transactions
-	committedTxs := make([]types.BaseTx, len(a.unIdxTxs))
+	committedTxs := make([]msgs.BaseTx, len(a.unIdxTxs))
 	copy(committedTxs, a.unIdxTxs)
 	a.cfg.G().Bus.Emit(types.EvtABCICommittedTx, nil, committedTxs)
 
@@ -474,8 +477,8 @@ func (a *App) reset() {
 	a.unbondStorerReqs = []util.Bytes32{}
 	a.txIndex = 0
 	a.isCurrentBlockProposer = false
-	a.unIdxTxs = []types.BaseTx{}
-	a.unIdxRepoPropVotes = []*types.TxRepoProposalVote{}
+	a.unIdxTxs = []msgs.BaseTx{}
+	a.unIdxRepoPropVotes = []*msgs.TxRepoProposalVote{}
 	a.newRepos = []string{}
 	a.unIdxClosedMergeProposal = []*mergeProposalInfo{}
 
@@ -485,7 +488,7 @@ func (a *App) reset() {
 		a.heightToSaveNewValidators = 0
 	}
 
-	a.curWorkingBlock = &types.BlockInfo{}
+	a.curWorkingBlock = &types2.BlockInfo{}
 }
 
 // Query for data from the application.

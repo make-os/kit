@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/imroc/req"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // TMRPC provides convenience features that enables

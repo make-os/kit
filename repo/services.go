@@ -3,13 +3,13 @@ package repo
 import (
 	"compress/gzip"
 	"fmt"
+	"gitlab.com/makeos/mosdef/repo/types/core"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 
-	"github.com/makeos/mosdef/types"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 )
@@ -24,7 +24,7 @@ type serviceParams struct {
 	w           http.ResponseWriter
 	r           *http.Request
 	pushHandler *PushHandler
-	repo        types.BareRepo
+	repo        core.BareRepo
 	repoDir     string
 	op          string
 	srvName     string

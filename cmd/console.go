@@ -15,9 +15,9 @@
 package cmd
 
 import (
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/console"
-	"github.com/makeos/mosdef/node"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/console"
+	"gitlab.com/makeos/mosdef/node"
 	"github.com/spf13/cobra"
 )
 

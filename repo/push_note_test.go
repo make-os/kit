@@ -2,14 +2,15 @@ package repo
 
 import (
 	"bytes"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/repo/types/msgs"
 	"io"
 	"os"
 	"path/filepath"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -17,9 +18,9 @@ import (
 )
 
 var _ = Describe("PushNote", func() {
-	var pushNote *types.PushNote
+	var pushNote *msgs.PushNote
 	var cfg *config.AppConfig
-	var repo types.BareRepo
+	var repo core.BareRepo
 	var path string
 	var err error
 
@@ -41,13 +42,13 @@ var _ = Describe("PushNote", func() {
 
 	BeforeEach(func() {
 		var pkID = []byte("pk_id")
-		pushNote = &types.PushNote{
+		pushNote = &msgs.PushNote{
 			RepoName:     "repo",
 			NodeSig:      []byte("node_signer_sig"),
 			PusherKeyID:  pkID,
 			Fee:          "0.2",
 			AccountNonce: 2,
-			References: []*types.PushedReference{
+			References: []*core.PushedReference{
 				{
 					Nonce:   1,
 					NewHash: "new_object_hash",
@@ -76,7 +77,7 @@ var _ = Describe("PushNote", func() {
 		})
 
 		It("should return expected total fee", func() {
-			pushNote.References = append(pushNote.References, &types.PushedReference{
+			pushNote.References = append(pushNote.References, &core.PushedReference{
 				Nonce:   1,
 				NewHash: "new_object_hash",
 				Name:    "refs/heads/master",
@@ -112,8 +113,8 @@ var _ = Describe("PushNote", func() {
 			BeforeEach(func() {
 				appendCommit(path, "file.txt", "some text", "commit msg")
 				commitHash, _ = repo.GetRecentCommit()
-				tx := &types.PushNote{
-					References: []*types.PushedReference{
+				tx := &msgs.PushNote{
+					References: []*core.PushedReference{
 						{Objects: []string{commitHash}},
 					},
 				}
@@ -144,8 +145,8 @@ var _ = Describe("PushNote", func() {
 				commitHash, _ = repo.GetRecentCommit()
 				appendCommit(path, "file.txt", "some text", "commit msg")
 				commitHash2, _ = repo.GetRecentCommit()
-				tx := &types.PushNote{
-					References: []*types.PushedReference{
+				tx := &msgs.PushNote{
+					References: []*core.PushedReference{
 						{Objects: []string{commitHash, commitHash2}},
 					},
 				}
@@ -163,8 +164,8 @@ var _ = Describe("PushNote", func() {
 		When("a hash that does not exist in the repository is added to a reference object list", func() {
 			BeforeEach(func() {
 				commitHash = "c212fb1166aeb2f42a54203f9f9315107265028f"
-				tx := &types.PushNote{
-					References: []*types.PushedReference{
+				tx := &msgs.PushNote{
+					References: []*core.PushedReference{
 						{Objects: []string{commitHash}},
 					},
 				}
@@ -185,8 +186,8 @@ var _ = Describe("PushNote", func() {
 		BeforeEach(func() {
 			appendCommit(path, "file.txt", "some text", "commit msg")
 			commitHash, _ = repo.GetRecentCommit()
-			tx := &types.PushNote{
-				References: []*types.PushedReference{
+			tx := &msgs.PushNote{
+				References: []*core.PushedReference{
 					{Name: "refs/heads/master", OldHash: plumbing.ZeroHash.String(), NewHash: commitHash, Objects: []string{commitHash}},
 				},
 			}
@@ -203,7 +204,7 @@ var _ = Describe("PushNote", func() {
 	Describe("makePushNoteFromStateChange", func() {
 		Context("branch changes", func() {
 			When("an empty repository is updated with a new branch with 1 commit (with 1 file)", func() {
-				var tx *types.PushNote
+				var tx *msgs.PushNote
 				var latestCommitHash string
 
 				BeforeEach(func() {
@@ -225,7 +226,7 @@ var _ = Describe("PushNote", func() {
 			})
 
 			When("a repo's old state has 1 branch, with 1 commit (1 file) and new state adds 1 commit (1 file)", func() {
-				var tx *types.PushNote
+				var tx *msgs.PushNote
 				var oldCommitHash, latestCommitHash string
 
 				BeforeEach(func() {
@@ -249,7 +250,7 @@ var _ = Describe("PushNote", func() {
 			})
 
 			When("old state has 2 branches with 1 commit (1 file each); new state has only 1 branch with 1 commit (1 file)", func() {
-				var tx *types.PushNote
+				var tx *msgs.PushNote
 				var oldCommitHash string
 
 				BeforeEach(func() {
@@ -274,7 +275,7 @@ var _ = Describe("PushNote", func() {
 			})
 
 			When("old state has 1 branch with 1 commit (1 file each); new state has 0 branch", func() {
-				var tx *types.PushNote
+				var tx *msgs.PushNote
 				var oldCommitHash string
 
 				BeforeEach(func() {
@@ -299,8 +300,8 @@ var _ = Describe("PushNote", func() {
 
 		Context("annotated tag changes", func() {
 			When("old state is empty; new state has 1 annotated tag and 1 commit (with 1 file)", func() {
-				var tx *types.PushNote
-				var newState types.BareRepoState
+				var tx *msgs.PushNote
+				var newState core.BareRepoState
 
 				BeforeEach(func() {
 					oldState := getRepoState(repo)
@@ -321,8 +322,8 @@ var _ = Describe("PushNote", func() {
 			})
 
 			When("old state has tag A; new state updates tag A", func() {
-				var tx *types.PushNote
-				var oldState types.BareRepoState
+				var tx *msgs.PushNote
+				var oldState core.BareRepoState
 
 				BeforeEach(func() {
 					createCommitAndAnnotatedTag(path, "file.txt", "first file", "commit", "v1")
@@ -343,8 +344,8 @@ var _ = Describe("PushNote", func() {
 			})
 
 			When("old state has tag A; new state deletes tag A", func() {
-				var tx *types.PushNote
-				var oldState types.BareRepoState
+				var tx *msgs.PushNote
+				var oldState core.BareRepoState
 
 				BeforeEach(func() {
 					createCommitAndAnnotatedTag(path, "file.txt", "first file", "commit", "v1")
@@ -368,8 +369,8 @@ var _ = Describe("PushNote", func() {
 
 		Context("lightweight tag changes", func() {
 			When("old state is empty; new state has 1 tag and 1 commit (with 1 file)", func() {
-				var tx *types.PushNote
-				var newState types.BareRepoState
+				var tx *msgs.PushNote
+				var newState core.BareRepoState
 
 				BeforeEach(func() {
 					oldState := getRepoState(repo)
@@ -390,8 +391,8 @@ var _ = Describe("PushNote", func() {
 			})
 
 			When("old state has tag A; new state updates tag A", func() {
-				var tx *types.PushNote
-				var oldState types.BareRepoState
+				var tx *msgs.PushNote
+				var oldState core.BareRepoState
 
 				BeforeEach(func() {
 					createCommitAndLightWeightTag(path, "file.txt", "first file", "commit", "v1")
@@ -412,8 +413,8 @@ var _ = Describe("PushNote", func() {
 			})
 
 			When("old state has tag A; new state deletes tag A", func() {
-				var tx *types.PushNote
-				var oldState types.BareRepoState
+				var tx *msgs.PushNote
+				var oldState core.BareRepoState
 
 				BeforeEach(func() {
 					createCommitAndLightWeightTag(path, "file.txt", "first file", "commit", "v1")
@@ -437,8 +438,8 @@ var _ = Describe("PushNote", func() {
 
 		Context("note changes", func() {
 			When("an empty repo is updated with a note and 1 commit (with 1 file)", func() {
-				var tx *types.PushNote
-				var newState types.BareRepoState
+				var tx *msgs.PushNote
+				var newState core.BareRepoState
 
 				BeforeEach(func() {
 					oldState := getRepoState(repo)
@@ -459,8 +460,8 @@ var _ = Describe("PushNote", func() {
 			})
 
 			When("repo has note A for commit A and note A is updated for commit B", func() {
-				var tx *types.PushNote
-				var newState, oldState types.BareRepoState
+				var tx *msgs.PushNote
+				var newState, oldState core.BareRepoState
 
 				BeforeEach(func() {
 					createCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "noteA")
@@ -483,8 +484,8 @@ var _ = Describe("PushNote", func() {
 			})
 
 			When("repo has note A for commit A and note A's message is updated", func() {
-				var tx *types.PushNote
-				var newState, oldState types.BareRepoState
+				var tx *msgs.PushNote
+				var newState, oldState core.BareRepoState
 
 				BeforeEach(func() {
 					createCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "noteA")
@@ -507,8 +508,8 @@ var _ = Describe("PushNote", func() {
 			})
 
 			When("old state has note A and new state has no note A", func() {
-				var tx *types.PushNote
-				var newState, oldState types.BareRepoState
+				var tx *msgs.PushNote
+				var newState, oldState core.BareRepoState
 
 				BeforeEach(func() {
 					createCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "noteA")

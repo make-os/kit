@@ -1,23 +1,25 @@
 package logic
 
 import (
+	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/msgs"
 	"os"
 
-	"github.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/crypto"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 type unknownTxType struct {
-	*types.TxCoinTransfer
+	*msgs.TxCoinTransfer
 }
 
 var _ = Describe("Transaction", func() {
@@ -36,7 +38,7 @@ var _ = Describe("Transaction", func() {
 	})
 
 	BeforeEach(func() {
-		err := logic.SysKeeper().SaveBlockInfo(&types.BlockInfo{Height: 1})
+		err := logic.SysKeeper().SaveBlockInfo(&types2.BlockInfo{Height: 1})
 		Expect(err).To(BeNil())
 	})
 
@@ -51,7 +53,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("when tx is invalid", func() {
 			It("should return err='tx failed validation...'", func() {
-				tx := types.NewBareTxCoinTransfer()
+				tx := msgs.NewBareTxCoinTransfer()
 				tx.Sig = []byte("sig")
 				resp := txLogic.ExecTx(tx, 1)
 				Expect(resp.Code).To(Equal(types.ErrCodeFailedDecode))
@@ -61,7 +63,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("with unknown transaction type", func() {
 			It("should return err", func() {
-				tx := &unknownTxType{TxCoinTransfer: types.NewBareTxCoinTransfer()}
+				tx := &unknownTxType{TxCoinTransfer: msgs.NewBareTxCoinTransfer()}
 				resp := logic.Tx().ExecTx(tx, 1)
 				Expect(resp.GetCode()).ToNot(BeZero())
 				Expect(resp.GetLog()).To(Equal("tx failed validation: field:type, error:unsupported transaction type"))
@@ -70,7 +72,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("with unknown ticket purchase tx type", func() {
 			It("should return err", func() {
-				tx := types.NewBareTxTicketPurchase(1000)
+				tx := msgs.NewBareTxTicketPurchase(1000)
 				resp := logic.Tx().ExecTx(tx, 1)
 				Expect(resp.GetCode()).ToNot(BeZero())
 				Expect(resp.Log).To(Equal("tx failed validation: field:type, error:type is invalid"))

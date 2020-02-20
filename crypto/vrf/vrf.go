@@ -29,8 +29,8 @@ import (
 
 	"golang.org/x/crypto/sha3"
 
-	"github.com/makeos/mosdef/crypto/vrf/ed25519/edwards25519"
-	"github.com/makeos/mosdef/crypto/vrf/ed25519/extra25519"
+	"gitlab.com/makeos/mosdef/crypto/vrf/ed25519/edwards25519"
+	"gitlab.com/makeos/mosdef/crypto/vrf/ed25519/extra25519"
 	"golang.org/x/crypto/ed25519"
 )
 

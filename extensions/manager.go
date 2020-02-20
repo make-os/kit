@@ -9,14 +9,14 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"github.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/config"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
 	prompt "github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
 )
 

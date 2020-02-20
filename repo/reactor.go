@@ -3,16 +3,20 @@ package repo
 import (
 	"context"
 	"fmt"
+	types3 "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	msgs2 "gitlab.com/makeos/mosdef/repo/types/msgs"
+	"gitlab.com/makeos/mosdef/types/msgs"
 	"io"
 	"os/exec"
 	"time"
 
-	"github.com/makeos/mosdef/crypto/bls"
-	"github.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/crypto/bls"
+	"gitlab.com/makeos/mosdef/params"
 	"github.com/thoas/go-funk"
 
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
 	"gopkg.in/src-d/go-git.v4"
@@ -41,7 +45,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Attempt to decode message to PushNote
-	var pn types.PushNote
+	var pn msgs2.PushNote
 	if err := util.BytesToObject(msgBytes, &pn); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
@@ -160,7 +164,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		dhtKey := MakeRepoObjectDHTKey(repoName, hash)
 		ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
 		defer c()
-		if err := m.GetDHT().Annonce(ctx, []byte(dhtKey)); err != nil {
+		if err := m.GetDHT().Announce(ctx, []byte(dhtKey)); err != nil {
 			m.log.Warn("unable to announce git object", "Err", err)
 			continue
 		}
@@ -184,7 +188,7 @@ func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Attempt to decode message to PushOK object
-	var pok types.PushOK
+	var pok msgs2.PushOK
 	if err := util.BytesToObject(msgBytes, &pok); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
@@ -217,7 +221,7 @@ func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
 
 // BroadcastPushObjects broadcasts repo push notes and PushOK; PushOK is only
 // created and broadcast only if the node is a top storer.
-func (m *Manager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
+func (m *Manager) BroadcastPushObjects(pushNote core.RepoPushNote) error {
 
 	// Broadcast the push note to peers
 	m.broadcastPushNote(pushNote)
@@ -253,9 +257,9 @@ func (m *Manager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
 }
 
 // createPushOK creates a PushOK for a push note
-func (m *Manager) createPushOK(pushNote types.RepoPushNote) (*types.PushOK, error) {
+func (m *Manager) createPushOK(pushNote core.RepoPushNote) (*msgs2.PushOK, error) {
 
-	pok := &types.PushOK{}
+	pok := &msgs2.PushOK{}
 	pok.PushNoteID = pushNote.ID()
 	pok.SenderPubKey = util.BytesToBytes32(m.privValidatorKey.PubKey().MustBytes())
 
@@ -266,7 +270,7 @@ func (m *Manager) createPushOK(pushNote types.RepoPushNote) (*types.PushOK, erro
 
 	// Set the state hash for every reference
 	for _, pushedRef := range pushNote.GetPushedReferences() {
-		refHash := &types.ReferenceHash{}
+		refHash := &msgs2.ReferenceHash{}
 		refHash.Hash, err = repo.TreeRoot(pushedRef.Name)
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("failed to get reference (%s) state hash",
@@ -284,7 +288,7 @@ func (m *Manager) createPushOK(pushNote types.RepoPushNote) (*types.PushOK, erro
 
 // broadcastPushNote broadcast push transaction to peers.
 // It will not send to original sender of the push note.
-func (m *Manager) broadcastPushNote(pushNote types.RepoPushNote) {
+func (m *Manager) broadcastPushNote(pushNote core.RepoPushNote) {
 	for _, peer := range m.Switch.Peers().List() {
 		bz, id := pushNote.BytesAndID()
 		if m.isPushNoteSender(string(peer.ID()), id.String()) {
@@ -297,7 +301,7 @@ func (m *Manager) broadcastPushNote(pushNote types.RepoPushNote) {
 }
 
 // broadcastPushOK sends out push endorsements (PushOK) to peers
-func (m *Manager) broadcastPushOK(pushOk types.RepoPushOK) {
+func (m *Manager) broadcastPushOK(pushOk core.RepoPushOK) {
 	for _, peer := range m.Switch.Peers().List() {
 		bz, id := pushOk.BytesAndID()
 		if m.isPushOKSender(string(peer.ID()), id.String()) {
@@ -336,7 +340,7 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 	}
 
 	// Ensure there are enough PushOKs
-	pushOKIdx := notePushOKs.(map[string]*types.PushOK)
+	pushOKIdx := notePushOKs.(map[string]*msgs2.PushOK)
 	if len(pushOKIdx) < params.PushOKQuorumSize {
 		return fmt.Errorf("Not enough push endorsements to satisfy quorum size")
 	}
@@ -354,7 +358,7 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 
 	// Collect the BLS public keys of all PushOK senders.
 	// We need them for the construction of BLS aggregated signature.
-	pushOKs := funk.Values(pushOKIdx).([]*types.PushOK)
+	pushOKs := funk.Values(pushOKIdx).([]*msgs2.PushOK)
 	pokPubKeys := []*bls.PublicKey{}
 	pokSigs := [][]byte{}
 	for i, pok := range pushOKs {
@@ -374,7 +378,7 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 		pushOKs[i].Sig = util.EmptyBytes64
 	}
 
-	pushTx := types.NewBareTxPush()
+	pushTx := msgs.NewBareTxPush()
 	pushTx.PushNote = note
 	pushTx.PushOKs = pushOKs
 
@@ -397,7 +401,7 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 
 // mergeTxPush takes a push transaction and attempts to merge it into the
 // target repository
-func (m *Manager) mergeTxPush(tx *types.TxPush) error {
+func (m *Manager) mergeTxPush(tx *msgs.TxPush) error {
 
 	repoPath := m.getRepoPath(tx.PushNote.GetRepoName())
 
@@ -452,7 +456,7 @@ func (m *Manager) mergeTxPush(tx *types.TxPush) error {
 
 // UpdateRepoWithTxPush attempts to merge a push transaction to a repository and
 // also update the repository's state tree.
-func (m *Manager) UpdateRepoWithTxPush(tx *types.TxPush) error {
+func (m *Manager) UpdateRepoWithTxPush(tx *msgs.TxPush) error {
 
 	// Merge the push transaction to the repo only if the node is not in
 	// validator mode.
@@ -480,13 +484,13 @@ func (m *Manager) UpdateRepoWithTxPush(tx *types.TxPush) error {
 }
 
 // ExecTxPush executes a push transaction
-func (m *Manager) ExecTxPush(tx *types.TxPush) error {
+func (m *Manager) ExecTxPush(tx *msgs.TxPush) error {
 	return execTxPush(m, tx)
 }
 
 // execTxPush executes a push transaction coming from a block that is currently
 // being processed.
-func execTxPush(m types.RepoManager, tx *types.TxPush) error {
+func execTxPush(m types.RepoManager, tx *msgs.TxPush) error {
 
 	repoName := tx.PushNote.RepoName
 	repo, err := m.GetRepo(repoName)
@@ -512,8 +516,8 @@ func execTxPush(m types.RepoManager, tx *types.TxPush) error {
 		dhtKey := MakeRepoObjectDHTKey(repoName, objHash)
 		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cn()
-		objValue, err := m.GetDHT().GetObject(ctx, &types.DHTObjectQuery{
-			Module:    types.RepoObjectModule,
+		objValue, err := m.GetDHT().GetObject(ctx, &types3.DHTObjectQuery{
+			Module:    core.RepoObjectModule,
 			ObjectKey: []byte(dhtKey),
 		})
 		if err != nil {
@@ -528,8 +532,8 @@ func execTxPush(m types.RepoManager, tx *types.TxPush) error {
 			return errors.Wrap(err, msg)
 		}
 
-		// Annonce ourselves as the newest provider of the object
-		if err := m.GetDHT().Annonce(ctx, []byte(dhtKey)); err != nil {
+		// Announce ourselves as the newest provider of the object
+		if err := m.GetDHT().Announce(ctx, []byte(dhtKey)); err != nil {
 			m.Log().Warn("unable to announce git object", "Err", err)
 			continue
 		}

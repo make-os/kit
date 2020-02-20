@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/makeos/mosdef/params"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/olebedev/emitter"
 
 	"github.com/gobuffalo/packr"
@@ -18,7 +18,7 @@ import (
 
 	"github.com/tendermint/tendermint/config"
 
-	"github.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/util/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

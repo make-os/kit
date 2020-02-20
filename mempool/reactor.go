@@ -2,16 +2,15 @@ package mempool
 
 import (
 	"fmt"
+	"gitlab.com/makeos/mosdef/types/msgs"
 	"math"
 
-	"github.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/config"
 
-	"github.com/makeos/mosdef/util/cache"
-	"github.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/util/cache"
+	"gitlab.com/makeos/mosdef/util/logger"
 
-	"github.com/makeos/mosdef/util"
-
-	t "github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/p2p"
@@ -85,7 +84,7 @@ func (r *Reactor) RemovePeer(peer p2p.Peer, reason interface{}) {}
 // It adds any received transactions to the mempool.
 func (r *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 
-	tx, err := t.DecodeTx(msgBytes)
+	tx, err := msgs.DecodeTx(msgBytes)
 	if err != nil {
 		r.log.Error("Failed to decode received transaction", "Err", err)
 		return
@@ -115,9 +114,9 @@ func (r *Reactor) GetPoolSize() *PoolSizeInfo {
 
 // GetTop returns the top n transactions in the pool.
 // It will return all transactions if n is zero or negative.
-func (r *Reactor) GetTop(n int) []t.BaseTx {
-	var txs []t.BaseTx
-	r.mempool.pool.Find(func(tx t.BaseTx) bool {
+func (r *Reactor) GetTop(n int) []msgs.BaseTx {
+	var txs []msgs.BaseTx
+	r.mempool.pool.Find(func(tx msgs.BaseTx) bool {
 		txs = append(txs, tx)
 		if n > 0 && len(txs) == n {
 			return true
@@ -128,7 +127,7 @@ func (r *Reactor) GetTop(n int) []t.BaseTx {
 }
 
 // AddTx adds a transaction to the tx pool and broadcasts it.
-func (r *Reactor) AddTx(tx t.BaseTx) (hash util.Bytes32, err error) {
+func (r *Reactor) AddTx(tx msgs.BaseTx) (hash util.Bytes32, err error) {
 	err = r.mempool.Add(tx)
 	if err != nil {
 		return util.Bytes32{}, err
@@ -142,7 +141,7 @@ func (r *Reactor) AddTx(tx t.BaseTx) (hash util.Bytes32, err error) {
 // broadcastTx sends a valid transaction to all known peers.
 // It will not resend the transaction to peers that have previously
 // sent the same transaction
-func (r *Reactor) broadcastTx(tx t.BaseTx) {
+func (r *Reactor) broadcastTx(tx msgs.BaseTx) {
 	txHash := tx.GetHash().HexStr()
 	txBytes := tx.Bytes()
 	for _, peer := range r.Switch.Peers().List() {

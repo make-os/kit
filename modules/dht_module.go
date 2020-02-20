@@ -3,13 +3,15 @@ package modules
 import (
 	"context"
 	"fmt"
+	types3 "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/repo/types/core"
 
-	"github.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/config"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 
 	prompt "github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
 )
 
@@ -17,11 +19,11 @@ import (
 type DHTModule struct {
 	cfg *config.AppConfig
 	vm  *otto.Otto
-	dht types.DHT
+	dht types3.DHT
 }
 
 // NewDHTModule creates an instance of DHTModule
-func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht types.DHT) *DHTModule {
+func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht types3.DHT) *DHTModule {
 	return &DHTModule{
 		cfg: cfg,
 		vm:  vm,
@@ -114,7 +116,7 @@ func (m *DHTModule) lookup(key string) interface{} {
 // announce announces to the network that the node
 // can provide value for a given key
 func (m *DHTModule) announce(key string) {
-	m.dht.Annonce(context.Background(), []byte(key))
+	m.dht.Announce(context.Background(), []byte(key))
 }
 
 // getProviders returns the providers for a given key
@@ -138,8 +140,8 @@ func (m *DHTModule) getProviders(key string) (res []map[string]interface{}) {
 
 // getRepoObject finds a repository object from a provider
 func (m *DHTModule) getRepoObject(objURI string) []byte {
-	bz, err := m.dht.GetObject(context.Background(), &types.DHTObjectQuery{
-		Module:    types.RepoObjectModule,
+	bz, err := m.dht.GetObject(context.Background(), &types3.DHTObjectQuery{
+		Module:    core.RepoObjectModule,
 		ObjectKey: []byte(objURI),
 	})
 	if err != nil {

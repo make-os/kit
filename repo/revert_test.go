@@ -2,6 +2,7 @@ package repo
 
 import (
 	"fmt"
+	"gitlab.com/makeos/mosdef/repo/types/core"
 	"os"
 	"path/filepath"
 
@@ -12,11 +13,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/types/mocks"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/types/mocks"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var gitPath = "/usr/bin/git"
@@ -25,7 +25,7 @@ var _ = Describe("Revert", func() {
 	var err error
 	var cfg *config.AppConfig
 	var repoMgr *Manager
-	var repo types.BareRepo
+	var repo core.BareRepo
 	var path string
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
@@ -61,7 +61,7 @@ var _ = Describe("Revert", func() {
 	})
 
 	Describe(".revert (head references)", func() {
-		var prevState types.BareRepoState
+		var prevState core.BareRepoState
 
 		When("a repo has 1 ref and 4 commits; revert the 4th commit", func() {
 
@@ -115,7 +115,7 @@ var _ = Describe("Revert", func() {
 				appendCommit(path, "file.txt", "line 1\n", "commit 1")
 				appendCommit(path, "file.txt", "line 2\n", "commit 2")
 				prevState = &State{
-					References: NewObjCol(map[string]types.Item{
+					References: NewObjCol(map[string]core.Item{
 						"refs/heads/master": &Obj{
 							Type: "ref",
 							Name: "refs/heads/master",
@@ -206,7 +206,7 @@ var _ = Describe("Revert", func() {
 
 	Describe(".revert (annotated tags)", func() {
 		var path string
-		var prevState types.BareRepoState
+		var prevState core.BareRepoState
 
 		BeforeEach(func() {
 			repoName := util.RandString(5)
@@ -317,7 +317,7 @@ var _ = Describe("Revert", func() {
 
 	Describe(".revert (notes)", func() {
 		var path string
-		var prevState types.BareRepoState
+		var prevState core.BareRepoState
 
 		BeforeEach(func() {
 			repoName := util.RandString(5)
@@ -377,7 +377,7 @@ var _ = Describe("Revert", func() {
 	Describe(".getBranchRevertActions", func() {
 		When("change type is unknown", func() {
 			It("should return err=unknown change type", func() {
-				changeItem := &types.ItemChange{
+				changeItem := &core.ItemChange{
 					Action: 100,
 					Item:   &Obj{Name: "refs/heads/branch"},
 				}
@@ -391,7 +391,7 @@ var _ = Describe("Revert", func() {
 	Describe(".getTagRevertActions", func() {
 		When("change type is unknown", func() {
 			It("should return err=unknown change type", func() {
-				changeItem := &types.ItemChange{
+				changeItem := &core.ItemChange{
 					Action: 100,
 					Item:   &Obj{Name: "refs/tags/tagname"},
 				}
@@ -405,7 +405,7 @@ var _ = Describe("Revert", func() {
 	Describe(".getNoteRevertActions", func() {
 		When("change type is unknown", func() {
 			It("should return err=unknown change type", func() {
-				changeItem := &types.ItemChange{
+				changeItem := &core.ItemChange{
 					Action: 100,
 					Item:   &Obj{Name: "refs/notes/notename"},
 				}

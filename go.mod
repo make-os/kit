@@ -1,4 +1,4 @@
-module github.com/makeos/mosdef
+module gitlab.com/makeos/mosdef
 
 go 1.13
 

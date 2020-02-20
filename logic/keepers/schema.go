@@ -1,8 +1,8 @@
 package keepers
 
 import (
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 const (

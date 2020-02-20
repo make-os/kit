@@ -3,6 +3,7 @@ package dht
 import (
 	"context"
 	"fmt"
+	types2 "gitlab.com/makeos/mosdef/dht/types"
 	"os"
 	"time"
 
@@ -11,10 +12,9 @@ import (
 	routing "github.com/libp2p/go-libp2p-routing"
 	"github.com/phayes/freeport"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/testutil"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -247,7 +247,7 @@ var _ = Describe("App", func() {
 		})
 	})
 
-	Describe(".Annonce and .GetProviders", func() {
+	Describe(".Announce and .GetProviders", func() {
 		var peerDHT *DHT
 		var dht *DHT
 
@@ -305,7 +305,7 @@ var _ = Describe("App", func() {
 
 		When("no providers exist", func() {
 			It("should return err=ErrObjNotFound", func() {
-				_, err = dht.GetObject(context.Background(), &types.DHTObjectQuery{ObjectKey: []byte("key")})
+				_, err = dht.GetObject(context.Background(), &types2.DHTObjectQuery{ObjectKey: []byte("key")})
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(ErrObjNotFound))
 			})
@@ -313,11 +313,11 @@ var _ = Describe("App", func() {
 
 		When("provider is the local address, but the target finder module was not registered", func() {
 			BeforeEach(func() {
-				err = dht.Annonce(context.Background(), []byte("key"))
+				err = dht.Announce(context.Background(), []byte("key"))
 				Expect(err).To(BeNil())
 			})
 			It("should return err about unregistered module", func() {
-				_, err = dht.GetObject(context.Background(), &types.DHTObjectQuery{
+				_, err = dht.GetObject(context.Background(), &types2.DHTObjectQuery{
 					Module:    "unknown",
 					ObjectKey: []byte("key"),
 				})
@@ -329,11 +329,11 @@ var _ = Describe("App", func() {
 		When("provider is the local address, but the target finder module returns an error", func() {
 			BeforeEach(func() {
 				dht.RegisterObjFinder("my-finder", &testObjectFinder{err: fmt.Errorf("bad error")})
-				err = dht.Annonce(context.Background(), []byte("key"))
+				err = dht.Announce(context.Background(), []byte("key"))
 				Expect(err).To(BeNil())
 			})
 			It("should return err the finder error", func() {
-				_, err = dht.GetObject(context.Background(), &types.DHTObjectQuery{
+				_, err = dht.GetObject(context.Background(), &types2.DHTObjectQuery{
 					Module:    "my-finder",
 					ObjectKey: []byte("key"),
 				})
@@ -345,11 +345,11 @@ var _ = Describe("App", func() {
 		When("provider is the local address, but the target finder module returns no error and nil value", func() {
 			BeforeEach(func() {
 				dht.RegisterObjFinder("my-finder", &testObjectFinder{})
-				err = dht.Annonce(context.Background(), []byte("key"))
+				err = dht.Announce(context.Background(), []byte("key"))
 				Expect(err).To(BeNil())
 			})
 			It("should return err=ErrObjNotFound", func() {
-				_, err = dht.GetObject(context.Background(), &types.DHTObjectQuery{
+				_, err = dht.GetObject(context.Background(), &types2.DHTObjectQuery{
 					Module:    "my-finder",
 					ObjectKey: []byte("key"),
 				})
@@ -361,12 +361,12 @@ var _ = Describe("App", func() {
 		When("provider is the local address and the target finder module returns a value and no error", func() {
 			BeforeEach(func() {
 				dht.RegisterObjFinder("my-finder", &testObjectFinder{value: []byte("value")})
-				err = dht.Annonce(context.Background(), []byte("key"))
+				err = dht.Announce(context.Background(), []byte("key"))
 				Expect(err).To(BeNil())
 			})
 
 			It("should return value returned by the object finder", func() {
-				retVal, err := dht.GetObject(context.Background(), &types.DHTObjectQuery{
+				retVal, err := dht.GetObject(context.Background(), &types2.DHTObjectQuery{
 					Module:    "my-finder",
 					ObjectKey: []byte("key"),
 				})
@@ -375,7 +375,7 @@ var _ = Describe("App", func() {
 			})
 
 			Specify("that non-local peers can also find the key and value", func() {
-				retVal, err := peerDHT.GetObject(context.Background(), &types.DHTObjectQuery{
+				retVal, err := peerDHT.GetObject(context.Background(), &types2.DHTObjectQuery{
 					Module:    "my-finder",
 					ObjectKey: []byte("key"),
 				})

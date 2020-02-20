@@ -2,12 +2,15 @@ package modules
 
 import (
 	"github.com/c-bata/go-prompt"
-	"github.com/makeos/mosdef/accountmgr"
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/extensions"
-	"github.com/makeos/mosdef/mempool"
-	"github.com/makeos/mosdef/rpc"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/accountmgr"
+	"gitlab.com/makeos/mosdef/config"
+	types3 "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/extensions"
+	types5 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/mempool"
+	"gitlab.com/makeos/mosdef/rpc"
+	types4 "gitlab.com/makeos/mosdef/services/types"
+	types2 "gitlab.com/makeos/mosdef/ticket/types"
 	"github.com/robertkrimen/otto"
 )
 
@@ -31,15 +34,15 @@ type Modules struct {
 // environment and suitable for reuse in JSON-RPC and REST APIs.
 type Module struct {
 	cfg            *config.AppConfig
-	service        types.Service
-	logic          types.Logic
+	service        types4.Service
+	logic          types5.Logic
 	mempoolReactor *mempool.Reactor
 	acctmgr        *accountmgr.AccountManager
-	ticketmgr      types.TicketManager
-	dht            types.DHT
+	ticketmgr      types2.TicketManager
+	dht            types3.DHT
 	extMgr         *extensions.Manager
 	rpcServer      *rpc.Server
-	repoMgr        types.RepoManager
+	repoMgr        types5.RepoManager
 	Modules        *Modules
 }
 
@@ -48,14 +51,14 @@ type Module struct {
 func NewModuleAggregator(
 	cfg *config.AppConfig,
 	acctmgr *accountmgr.AccountManager,
-	service types.Service,
-	logic types.Logic,
+	service types4.Service,
+	logic types5.Logic,
 	mempoolReactor *mempool.Reactor,
-	ticketmgr types.TicketManager,
-	dht types.DHT,
+	ticketmgr types2.TicketManager,
+	dht types3.DHT,
 	extMgr *extensions.Manager,
 	rpcServer *rpc.Server,
-	repoMgr types.RepoManager) *Module {
+	repoMgr types5.RepoManager) *Module {
 
 	agg := &Module{
 		cfg:            cfg,

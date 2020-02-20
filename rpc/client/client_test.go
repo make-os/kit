@@ -3,7 +3,7 @@ package client
 import (
 	"testing"
 
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

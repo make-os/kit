@@ -1,8 +1,8 @@
 package accountmgr
 
 import (
-	"github.com/makeos/mosdef/rpc/jsonrpc"
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/rpc/jsonrpc"
+	"gitlab.com/makeos/mosdef/types"
 )
 
 func (am *AccountManager) apiListAccounts(interface{}) *jsonrpc.Response {

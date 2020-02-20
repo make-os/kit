@@ -3,12 +3,14 @@ package repo
 import (
 	"context"
 	"fmt"
+	"gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/repo/types/msgs"
 	"io"
 	"time"
 
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
-	"github.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/logger"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 )
@@ -16,16 +18,16 @@ import (
 // PushHandler provides handles all phases of a push operation
 type PushHandler struct {
 	op         string
-	repo       types.BareRepo
+	repo       core.BareRepo
 	rMgr       types.RepoManager
-	oldState   types.BareRepoState
+	oldState   core.BareRepoState
 	log        logger.Logger
 	pushReader *PushReader
 	pushNoteID string
 }
 
 // newPushHandler returns an instance of PushHandler
-func newPushHandler(repo types.BareRepo, rMgr types.RepoManager) *PushHandler {
+func newPushHandler(repo core.BareRepo, rMgr types.RepoManager) *PushHandler {
 	return &PushHandler{
 		repo: repo,
 		rMgr: rMgr,
@@ -154,15 +156,15 @@ func (h *PushHandler) HandleUpdate() error {
 
 func (h *PushHandler) createPushNote(
 	pkID string,
-	refsTxParams map[string]*util.TxParams) (*types.PushNote, error) {
+	refsTxParams map[string]*util.TxParams) (*msgs.PushNote, error) {
 
-	var pushNote = &types.PushNote{
+	var pushNote = &msgs.PushNote{
 		TargetRepo:    h.repo,
 		RepoName:      h.repo.GetName(),
 		PusherKeyID:   util.MustDecodeRSAPubKeyID(pkID),
 		PusherAddress: h.rMgr.GetLogic().GPGPubKeyKeeper().GetGPGPubKey(pkID).Address,
 		Timestamp:     time.Now().Unix(),
-		References:    types.PushedReferences([]*types.PushedReference{}),
+		References:    core.PushedReferences([]*core.PushedReference{}),
 		NodePubKey:    h.rMgr.GetPrivateValidatorKey().PubKey().MustBytes32(),
 		Fee:           util.ZeroString,
 	}
@@ -187,7 +189,7 @@ func (h *PushHandler) createPushNote(
 		accountNonce = refsTxParams[ref.name].Nonce
 		fee := pushNote.Fee.Decimal().Add(refsTxParams[ref.name].Fee.Decimal()).String()
 		pushNote.Fee = util.String(fee)
-		pushedRef := &types.PushedReference{
+		pushedRef := &core.PushedReference{
 			Name:            ref.name,
 			OldHash:         ref.oldHash,
 			NewHash:         ref.newHash,
@@ -214,7 +216,7 @@ func (h *PushHandler) announceObject(objHash string) error {
 	dhtKey := MakeRepoObjectDHTKey(h.repo.GetName(), objHash)
 	ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
 	defer c()
-	if err := h.rMgr.GetDHT().Annonce(ctx, []byte(dhtKey)); err != nil {
+	if err := h.rMgr.GetDHT().Announce(ctx, []byte(dhtKey)); err != nil {
 		h.log.Warn("unable to announce git object", "Err", err)
 		return err
 	}
@@ -245,7 +247,7 @@ func (h *PushHandler) handleReference(ref string) (*util.TxParams, []error) {
 
 	// Now, compute the changes from the target reference old state to its current.
 	changes := oldRefState.GetChanges(curState.(*State))
-	var change *types.ItemChange
+	var change *core.ItemChange
 	if len(changes.References.Changes) > 0 {
 		change = changes.References.Changes[0]
 	}

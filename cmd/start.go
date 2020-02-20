@@ -19,8 +19,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/node"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/node"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

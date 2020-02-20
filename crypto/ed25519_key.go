@@ -17,10 +17,10 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/gogo/protobuf/proto"
-	"github.com/makeos/mosdef/crypto/bls"
-	"github.com/makeos/mosdef/crypto/vrf"
-	"github.com/makeos/mosdef/params"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto/bls"
+	"gitlab.com/makeos/mosdef/crypto/vrf"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 )

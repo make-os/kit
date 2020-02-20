@@ -1,12 +1,15 @@
 package logic
 
 import (
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/logic/keepers"
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/storage/tree"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/logic/keepers"
+	types3 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/storage/tree"
+	types2 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/pkg/errors"
 )
 
@@ -28,16 +31,16 @@ type Logic struct {
 	stateTree *tree.SafeTree
 
 	// tx is the transaction logic for handling transactions of all kinds
-	tx types.TxLogic
+	tx types3.TxLogic
 
 	// sys provides functionalities for handling and accessing system information
-	sys types.SysLogic
+	sys types3.SysLogic
 
 	// validator provides functionalities for managing validator information
-	validator types.ValidatorLogic
+	validator types3.ValidatorLogic
 
 	// ticketMgr provides functionalities for managing tickets
-	ticketMgr types.TicketManager
+	ticketMgr types2.TicketManager
 
 	// systemKeeper provides functionalities for managing system data
 	systemKeeper *keepers.SystemKeeper
@@ -61,7 +64,7 @@ type Logic struct {
 	gpgPubKeyKeeper *keepers.GPGPubKeyKeeper
 
 	// repoMgr provides access to the git repository manager
-	repoMgr types.RepoManager
+	repoMgr types3.RepoManager
 }
 
 // New creates an instance of Logic
@@ -110,17 +113,17 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 }
 
 // ManagedSysKeeper returns a SystemKeeper initialized with a managed database
-func (l *Logic) ManagedSysKeeper() types.SystemKeeper {
+func (l *Logic) ManagedSysKeeper() types3.SystemKeeper {
 	return keepers.NewSystemKeeper(l._db.NewTx(true, true))
 }
 
 // SetRepoManager sets the repository manager
-func (l *Logic) SetRepoManager(m types.RepoManager) {
+func (l *Logic) SetRepoManager(m types3.RepoManager) {
 	l.repoMgr = m
 }
 
 // GetRepoManager returns the repository manager
-func (l *Logic) GetRepoManager() types.RepoManager {
+func (l *Logic) GetRepoManager() types3.RepoManager {
 	return l.repoMgr
 }
 
@@ -166,22 +169,22 @@ func (l *Logic) Discard() {
 }
 
 // SetTicketManager sets the ticket manager
-func (l *Logic) SetTicketManager(tm types.TicketManager) {
+func (l *Logic) SetTicketManager(tm types2.TicketManager) {
 	l.ticketMgr = tm
 }
 
 // GetTicketManager returns the ticket manager
-func (l *Logic) GetTicketManager() types.TicketManager {
+func (l *Logic) GetTicketManager() types2.TicketManager {
 	return l.ticketMgr
 }
 
 // Tx returns the transaction logic
-func (l *Logic) Tx() types.TxLogic {
+func (l *Logic) Tx() types3.TxLogic {
 	return l.tx
 }
 
 // Sys returns system logic
-func (l *Logic) Sys() types.SysLogic {
+func (l *Logic) Sys() types3.SysLogic {
 	return l.sys
 }
 
@@ -196,42 +199,42 @@ func (l *Logic) StateTree() types.Tree {
 }
 
 // SysKeeper returns the system keeper
-func (l *Logic) SysKeeper() types.SystemKeeper {
+func (l *Logic) SysKeeper() types3.SystemKeeper {
 	return l.systemKeeper
 }
 
 // NamespaceKeeper returns the namespace keeper
-func (l *Logic) NamespaceKeeper() types.NamespaceKeeper {
+func (l *Logic) NamespaceKeeper() types3.NamespaceKeeper {
 	return l.nsKeeper
 }
 
 // TxKeeper returns the transaction keeper
-func (l *Logic) TxKeeper() types.TxKeeper {
+func (l *Logic) TxKeeper() types3.TxKeeper {
 	return l.txKeeper
 }
 
 // ValidatorKeeper returns the validator keeper
-func (l *Logic) ValidatorKeeper() types.ValidatorKeeper {
+func (l *Logic) ValidatorKeeper() types3.ValidatorKeeper {
 	return l.validatorKeeper
 }
 
 // AccountKeeper returns the account keeper
-func (l *Logic) AccountKeeper() types.AccountKeeper {
+func (l *Logic) AccountKeeper() types3.AccountKeeper {
 	return l.accountKeeper
 }
 
 // RepoKeeper returns the repo keeper
-func (l *Logic) RepoKeeper() types.RepoKeeper {
+func (l *Logic) RepoKeeper() types3.RepoKeeper {
 	return l.repoKeeper
 }
 
 // GPGPubKeyKeeper returns the gpg public key keeper
-func (l *Logic) GPGPubKeyKeeper() types.GPGPubKeyKeeper {
+func (l *Logic) GPGPubKeyKeeper() types3.GPGPubKeyKeeper {
 	return l.gpgPubKeyKeeper
 }
 
 // Validator returns the validator logic
-func (l *Logic) Validator() types.ValidatorLogic {
+func (l *Logic) Validator() types3.ValidatorLogic {
 	return l.validator
 }
 
@@ -255,15 +258,15 @@ func (l *Logic) WriteGenesisState() error {
 
 		// Create repository
 		if ga.Type == config.GenDataTypeRepo {
-			newRepo := types.BareRepository()
+			newRepo := state.BareRepository()
 			for address, owner := range ga.Owners {
-				newRepo.AddOwner(address, &types.RepoOwner{
+				newRepo.AddOwner(address, &state.RepoOwner{
 					Creator:  owner.Creator,
 					JoinedAt: owner.JoinedAt,
 					Veto:     owner.Veto,
 				})
 			}
-			newRepo.Config = types.MakeDefaultRepoConfig()
+			newRepo.Config = state.MakeDefaultRepoConfig()
 			newRepo.Config.MergeMap(ga.Config)
 			l.RepoKeeper().Update(ga.Name, newRepo)
 			if ga.Helm {
@@ -280,7 +283,7 @@ func (l *Logic) WriteGenesisState() error {
 // OnEndBlock is called within the ABCI EndBlock method;
 // Do things that need to happen after each block transactions are processed;
 // Note: The ABCI will panic if an error is returned.
-func (l *Logic) OnEndBlock(block *types.BlockInfo) error {
+func (l *Logic) OnEndBlock(block *types3.BlockInfo) error {
 	if err := maybeApplyEndedProposals(l, uint64(block.Height)); err != nil {
 		return err
 	}

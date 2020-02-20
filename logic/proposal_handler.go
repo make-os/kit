@@ -2,11 +2,13 @@ package logic
 
 import (
 	"fmt"
+	types2 "gitlab.com/makeos/mosdef/logic/types"
+	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/state"
 	"math"
 
-	"github.com/makeos/mosdef/params"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
 )
@@ -16,9 +18,9 @@ import (
 // a proposee max join height, only stakeholders whose tickets became mature
 // before the proposee max join height
 func getProposalOutcome(
-	tickmgr types.TicketManager,
-	prop types.Proposal,
-	repo *types.Repository) types.ProposalOutcome {
+	tickmgr types3.TicketManager,
+	prop state.Proposal,
+	repo *state.Repository) state.ProposalOutcome {
 
 	var err error
 	totalPower := float64(0)
@@ -27,9 +29,9 @@ func getProposalOutcome(
 	// number of owners of the repository - one vote to one owner.
 	// However, If there is a max proposee join height, eligible owners are
 	// those who joined on or before the proposee max join height.
-	if prop.GetProposeeType() == types.ProposeeOwner {
+	if prop.GetProposeeType() == state.ProposeeOwner {
 		maxJoinHeight := prop.GetProposeeMaxJoinHeight()
-		repo.Owners.ForEach(func(o *types.RepoOwner, addr string) {
+		repo.Owners.ForEach(func(o *state.RepoOwner, addr string) {
 			if maxJoinHeight > 0 && maxJoinHeight < o.JoinedAt {
 				return
 			}
@@ -39,8 +41,8 @@ func getProposalOutcome(
 
 	// When proposees include only network stakeholders, the total power is the total
 	// value of mature and active tickets on the network.
-	if prop.GetProposeeType() == types.ProposeeNetStakeholders ||
-		prop.GetProposeeType() == types.ProposeeNetStakeholdersAndVetoOwner {
+	if prop.GetProposeeType() == state.ProposeeNetStakeholders ||
+		prop.GetProposeeType() == state.ProposeeNetStakeholdersAndVetoOwner {
 		totalPower, err = tickmgr.ValueOfAllTickets(prop.GetProposeeMaxJoinHeight())
 		if err != nil {
 			panic(err)
@@ -61,20 +63,20 @@ func getProposalOutcome(
 	// Check if general vote quorum is satisfied.
 	// Ensures that a certain number of general vote population participated.
 	if totalVotesReceived < quorum {
-		return types.ProposalOutcomeQuorumNotMet
+		return state.ProposalOutcomeQuorumNotMet
 	}
 
 	// Check if the "NoWithVeto" votes reached the general veto quorum.
 	if nRejectedWithVetoVotes > 0 && nRejectedWithVetoVotes >= vetoQuorum {
-		return types.ProposalOutcomeRejectedWithVeto
+		return state.ProposalOutcomeRejectedWithVeto
 	}
 
 	// When proposee are stakeholders and veto owners, the veto owners win
 	// the vote iff the "NoWithVetoByOwners" reached the special veto owner quorum.
-	if prop.GetProposeeType() == types.ProposeeNetStakeholdersAndVetoOwner {
+	if prop.GetProposeeType() == state.ProposeeNetStakeholdersAndVetoOwner {
 		if nRejectedWithVetoVotesByOwners > 0 &&
 			nRejectedWithVetoVotesByOwners >= vetoOwnerQuorum {
-			return types.ProposalOutcomeRejectedWithVetoByOwners
+			return state.ProposalOutcomeRejectedWithVetoByOwners
 		}
 	}
 
@@ -83,28 +85,28 @@ func getProposalOutcome(
 
 	// Check if the "Yes" votes reached the threshold
 	if accepted && !rejected {
-		return types.ProposalOutcomeAccepted
+		return state.ProposalOutcomeAccepted
 	}
 
 	// Check if the "No" votes reached the threshold
 	if rejected && !accepted {
-		return types.ProposalOutcomeRejected
+		return state.ProposalOutcomeRejected
 	}
 
-	return types.ProposalOutcomeBelowThreshold
+	return state.ProposalOutcomeBelowThreshold
 }
 
 // determineProposalOutcome determines the outcome of the proposal votes
 func determineProposalOutcome(
-	keepers types.Keepers,
-	proposal types.Proposal,
-	repo *types.Repository,
-	chainHeight uint64) types.ProposalOutcome {
+	keepers types2.Keepers,
+	proposal state.Proposal,
+	repo *state.Repository,
+	chainHeight uint64) state.ProposalOutcome {
 	return getProposalOutcome(keepers.GetTicketManager(), proposal, repo)
 }
 
 // refundProposalFees refunds all fees back to their senders
-func refundProposalFees(keepers types.Keepers, proposal types.Proposal) error {
+func refundProposalFees(keepers types2.Keepers, proposal state.Proposal) error {
 	for senderAddr, fee := range proposal.GetFees() {
 		sender := util.String(senderAddr)
 		acct := keepers.AccountKeeper().GetAccount(sender)
@@ -117,73 +119,73 @@ func refundProposalFees(keepers types.Keepers, proposal types.Proposal) error {
 // maybeProcessProposalFee determines and execute
 // proposal fee refund or distribution
 func maybeProcessProposalFee(
-	outcome types.ProposalOutcome,
-	keepers types.Keepers,
-	proposal types.Proposal,
-	repo *types.Repository) error {
+	outcome state.ProposalOutcome,
+	keepers types2.Keepers,
+	proposal state.Proposal,
+	repo *state.Repository) error {
 
 	switch proposal.GetRefundType() {
-	case types.ProposalFeeRefundNo:
+	case state.ProposalFeeRefundNo:
 		goto dist
-	case types.ProposalFeeRefundOnAccept:
-		if outcome == types.ProposalOutcomeAccepted {
+	case state.ProposalFeeRefundOnAccept:
+		if outcome == state.ProposalOutcomeAccepted {
 			return refundProposalFees(keepers, proposal)
 		}
 
-	case types.ProposalFeeRefundOnAcceptReject:
-		expected := []types.ProposalOutcome{
-			types.ProposalOutcomeAccepted,
-			types.ProposalOutcomeRejected,
+	case state.ProposalFeeRefundOnAcceptReject:
+		expected := []state.ProposalOutcome{
+			state.ProposalOutcomeAccepted,
+			state.ProposalOutcomeRejected,
 		}
 		if funk.Contains(expected, outcome) {
 			return refundProposalFees(keepers, proposal)
 		}
 
-	case types.ProposalFeeRefundOnAcceptAllReject:
-		expected := []types.ProposalOutcome{
-			types.ProposalOutcomeAccepted,
-			types.ProposalOutcomeRejected,
-			types.ProposalOutcomeRejectedWithVeto,
-			types.ProposalOutcomeRejectedWithVetoByOwners,
+	case state.ProposalFeeRefundOnAcceptAllReject:
+		expected := []state.ProposalOutcome{
+			state.ProposalOutcomeAccepted,
+			state.ProposalOutcomeRejected,
+			state.ProposalOutcomeRejectedWithVeto,
+			state.ProposalOutcomeRejectedWithVetoByOwners,
 		}
 		if funk.Contains(expected, outcome) {
 			return refundProposalFees(keepers, proposal)
 		}
 
-	case types.ProposalFeeRefundOnBelowThreshold:
-		expected := []types.ProposalOutcome{
-			types.ProposalOutcomeBelowThreshold,
+	case state.ProposalFeeRefundOnBelowThreshold:
+		expected := []state.ProposalOutcome{
+			state.ProposalOutcomeBelowThreshold,
 		}
 		if funk.Contains(expected, outcome) {
 			return refundProposalFees(keepers, proposal)
 		}
 
-	case types.ProposalFeeRefundOnBelowThresholdAccept:
-		expected := []types.ProposalOutcome{
-			types.ProposalOutcomeBelowThreshold,
-			types.ProposalOutcomeAccepted,
+	case state.ProposalFeeRefundOnBelowThresholdAccept:
+		expected := []state.ProposalOutcome{
+			state.ProposalOutcomeBelowThreshold,
+			state.ProposalOutcomeAccepted,
 		}
 		if funk.Contains(expected, outcome) {
 			return refundProposalFees(keepers, proposal)
 		}
 
-	case types.ProposalFeeRefundOnBelowThresholdAcceptReject:
-		expected := []types.ProposalOutcome{
-			types.ProposalOutcomeBelowThreshold,
-			types.ProposalOutcomeAccepted,
-			types.ProposalOutcomeRejected,
+	case state.ProposalFeeRefundOnBelowThresholdAcceptReject:
+		expected := []state.ProposalOutcome{
+			state.ProposalOutcomeBelowThreshold,
+			state.ProposalOutcomeAccepted,
+			state.ProposalOutcomeRejected,
 		}
 		if funk.Contains(expected, outcome) {
 			return refundProposalFees(keepers, proposal)
 		}
 
-	case types.ProposalFeeRefundOnBelowThresholdAcceptAllReject:
-		expected := []types.ProposalOutcome{
-			types.ProposalOutcomeBelowThreshold,
-			types.ProposalOutcomeAccepted,
-			types.ProposalOutcomeRejected,
-			types.ProposalOutcomeRejectedWithVeto,
-			types.ProposalOutcomeRejectedWithVetoByOwners,
+	case state.ProposalFeeRefundOnBelowThresholdAcceptAllReject:
+		expected := []state.ProposalOutcome{
+			state.ProposalOutcomeBelowThreshold,
+			state.ProposalOutcomeAccepted,
+			state.ProposalOutcomeRejected,
+			state.ProposalOutcomeRejectedWithVeto,
+			state.ProposalOutcomeRejectedWithVetoByOwners,
 		}
 		if funk.Contains(expected, outcome) {
 			return refundProposalFees(keepers, proposal)
@@ -208,9 +210,9 @@ dist: // Distribute to repo and helm accounts
 
 // maybeApplyProposal attempts to apply the action of a proposal
 func maybeApplyProposal(
-	keepers types.Keepers,
-	proposal types.Proposal,
-	repo *types.Repository,
+	keepers types2.Keepers,
+	proposal state.Proposal,
+	repo *state.Repository,
 	chainHeight uint64) (bool, error) {
 
 	// When the proposal has already been finalized, do nothing.
@@ -225,19 +227,19 @@ func maybeApplyProposal(
 	if proposal.IsFeeDepositEnabled() &&
 		!proposal.IsDepositPeriod(chainHeight+1) &&
 		!proposal.IsDepositedFeeOK() {
-		proposal.SetOutcome(types.ProposalOutcomeInsufficientDeposit)
+		proposal.SetOutcome(state.ProposalOutcomeInsufficientDeposit)
 		return false, refundProposalFees(keepers, proposal)
 	}
 
 	var err error
-	var outcome types.ProposalOutcome
+	var outcome state.ProposalOutcome
 
 	// When allowed voters are only the repo owners and there is just one owner
 	// whom is also the creator of the proposal, instantly apply the proposal.
-	isOwnersOnlyProposal := proposal.GetProposeeType() == types.ProposeeOwner
+	isOwnersOnlyProposal := proposal.GetProposeeType() == state.ProposeeOwner
 	if isOwnersOnlyProposal && len(repo.Owners) == 1 &&
 		repo.Owners.Has(proposal.GetCreator()) {
-		outcome = types.ProposalOutcomeAccepted
+		outcome = state.ProposalOutcomeAccepted
 		proposal.SetOutcome(outcome)
 		proposal.IncrAccept()
 		goto apply
@@ -252,18 +254,18 @@ func maybeApplyProposal(
 	// outcome was an acceptance, if not we return false.
 	outcome = determineProposalOutcome(keepers, proposal, repo, chainHeight)
 	proposal.SetOutcome(outcome)
-	if outcome != types.ProposalOutcomeAccepted {
+	if outcome != state.ProposalOutcomeAccepted {
 		err := maybeProcessProposalFee(outcome, keepers, proposal, repo)
 		return false, err
 	}
 
 apply:
 	switch proposal.GetAction() {
-	case types.ProposalActionAddOwner:
+	case state.ProposalActionAddOwner:
 		err = applyProposalAddOwner(proposal, repo, chainHeight)
-	case types.ProposalActionRepoUpdate:
+	case state.ProposalActionRepoUpdate:
 		err = applyProposalRepoUpdate(proposal, repo, chainHeight)
-	case types.ProposalActionMergeRequest:
+	case state.ProposalActionMergeRequest:
 		// Do nothing since there is no on-chain action
 	default:
 		err = fmt.Errorf("unsupported proposal action")
@@ -283,7 +285,7 @@ apply:
 // maybeApplyEndedProposals finds and applies proposals that will
 // end at the given height.
 func maybeApplyEndedProposals(
-	keepers types.Keepers,
+	keepers types2.Keepers,
 	nextChainHeight uint64) error {
 
 	repoKeeper := keepers.RepoKeeper()

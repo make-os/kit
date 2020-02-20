@@ -2,13 +2,13 @@ package keepers
 
 import (
 	"fmt"
+	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types/state"
 	"strconv"
 
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/storage/tree"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/storage/tree"
 	"github.com/pkg/errors"
-
-	"github.com/makeos/mosdef/types"
 )
 
 // RepoKeeper manages repository state.
@@ -32,14 +32,14 @@ func NewRepoKeeper(state *tree.SafeTree, db storage.Tx) *RepoKeeper {
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Repository if no repo is found.
-func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *types.Repository {
+func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *state.Repository {
 
 	repo := a.GetRepoOnly(name, blockNum...)
 
 	// For each proposal in the repo, fetch their config from the version of the
 	// repo where they first appeared.
 	stateVersion := a.state.Version()
-	err := repo.Proposals.ForEach(func(prop *types.RepoProposal, id string) error {
+	err := repo.Proposals.ForEach(func(prop *state.RepoProposal, id string) error {
 		if prop.Height == uint64(stateVersion) {
 			prop.Config = repo.Config.Governace
 			return nil
@@ -66,7 +66,7 @@ func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *types.Repository 
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Repository if no repo is found.
-func (a *RepoKeeper) GetRepoOnly(name string, blockNum ...uint64) *types.Repository {
+func (a *RepoKeeper) GetRepoOnly(name string, blockNum ...uint64) *state.Repository {
 
 	// Get version is provided
 	var version uint64
@@ -86,11 +86,11 @@ func (a *RepoKeeper) GetRepoOnly(name string, blockNum ...uint64) *types.Reposit
 
 	// If we don't find the repo, we return an empty repository.
 	if bs == nil {
-		return types.BareRepository()
+		return state.BareRepository()
 	}
 
 	// Otherwise, we decode the repo bytes to types.Repository
-	repo, err := types.NewRepositoryFromBytes(bs)
+	repo, err := state.NewRepositoryFromBytes(bs)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to decode repo byte slice"))
 	}
@@ -103,7 +103,7 @@ func (a *RepoKeeper) GetRepoOnly(name string, blockNum ...uint64) *types.Reposit
 // ARGS:
 // name: The name of the repository to update
 // udp: The updated repository object to replace the existing object.
-func (a *RepoKeeper) Update(name string, upd *types.Repository) {
+func (a *RepoKeeper) Update(name string, upd *state.Repository) {
 	a.state.Set(MakeRepoKey(name), upd.Bytes())
 }
 
@@ -169,12 +169,12 @@ func (a *RepoKeeper) IndexProposalEnd(name, propID string, endHeight uint64) err
 //
 // ARGS:
 // height: The chain height when the proposal will stop accepting votes.
-func (a *RepoKeeper) GetProposalsEndingAt(height uint64) []*types.EndingProposals {
+func (a *RepoKeeper) GetProposalsEndingAt(height uint64) []*types2.EndingProposals {
 	key := MakeQueryKeyRepoProposalAtEndHeight(height)
-	var res = []*types.EndingProposals{}
+	var res = []*types2.EndingProposals{}
 	a.db.Iterate(key, true, func(rec *storage.Record) bool {
 		prefixes := storage.SplitPrefix(rec.GetKey())
-		res = append(res, &types.EndingProposals{
+		res = append(res, &types2.EndingProposals{
 			RepoName:   string(prefixes[2]),
 			ProposalID: string(prefixes[3]),
 			EndHeight:  height,

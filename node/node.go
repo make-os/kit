@@ -3,36 +3,41 @@ package node
 import (
 	"context"
 	"fmt"
+	types3 "gitlab.com/makeos/mosdef/dht/types"
+	types5 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	types4 "gitlab.com/makeos/mosdef/services/types"
+	types6 "gitlab.com/makeos/mosdef/ticket/types"
 	"net"
 	"net/url"
 	"os"
 
-	"github.com/makeos/mosdef/rpc"
+	"gitlab.com/makeos/mosdef/rpc"
 
-	jsm "github.com/makeos/mosdef/modules"
-	"github.com/makeos/mosdef/util"
+	jsm "gitlab.com/makeos/mosdef/modules"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/thoas/go-funk"
 
-	"github.com/makeos/mosdef/accountmgr"
-	"github.com/makeos/mosdef/dht"
-	"github.com/makeos/mosdef/extensions"
-	"github.com/makeos/mosdef/repo"
+	"gitlab.com/makeos/mosdef/accountmgr"
+	"gitlab.com/makeos/mosdef/dht"
+	"gitlab.com/makeos/mosdef/extensions"
+	"gitlab.com/makeos/mosdef/repo"
 	"github.com/robertkrimen/otto"
 
 	"github.com/tendermint/tendermint/node"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/makeos/mosdef/ticket"
+	"gitlab.com/makeos/mosdef/ticket"
 
-	"github.com/makeos/mosdef/mempool"
+	"gitlab.com/makeos/mosdef/mempool"
 
-	logic "github.com/makeos/mosdef/logic"
+	logic "gitlab.com/makeos/mosdef/logic"
 
-	"github.com/makeos/mosdef/tmrpc"
+	"gitlab.com/makeos/mosdef/tmrpc"
 
-	"github.com/makeos/mosdef/services"
+	"gitlab.com/makeos/mosdef/services"
 
-	"github.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 
 	"github.com/pkg/errors"
 
@@ -42,10 +47,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	"github.com/tendermint/tendermint/p2p"
 
-	"github.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/storage"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/util/logger"
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmflags "github.com/tendermint/tendermint/libs/cli/flags"
 	nm "github.com/tendermint/tendermint/node"
@@ -62,15 +67,15 @@ type Node struct {
 	db             storage.Engine
 	stateTreeDB    storage.Engine
 	tm             *nm.Node
-	service        types.Service
+	service        types4.Service
 	tmrpc          *tmrpc.TMRPC
-	logic          types.AtomicLogic
+	logic          types5.AtomicLogic
 	mempoolReactor *mempool.Reactor
-	ticketMgr      types.TicketManager
-	dht            types.DHT
+	ticketMgr      types6.TicketManager
+	dht            types3.DHT
 	modulesAgg     types.ModulesAggregator
 	rpcServer      *rpc.Server
-	repoMgr        types.RepoManager
+	repoMgr        types5.RepoManager
 }
 
 // NewNode creates an instance of Node
@@ -227,7 +232,7 @@ func (n *Node) Start() error {
 	n.service = services.New(n.tmrpc, n.logic, mempR)
 
 	// Register some object finder on the dht
-	n.dht.RegisterObjFinder(types.RepoObjectModule, repoMgr)
+	n.dht.RegisterObjFinder(core.RepoObjectModule, repoMgr)
 
 	// Pass repo manager to logic manager
 	n.logic.SetRepoManager(repoMgr)
@@ -353,17 +358,17 @@ func (n *Node) GetModulesAggregator() types.ModulesAggregator {
 }
 
 // GetTicketManager returns the ticket manager
-func (n *Node) GetTicketManager() types.TicketManager {
+func (n *Node) GetTicketManager() types6.TicketManager {
 	return n.ticketMgr
 }
 
 // GetLogic returns the logic instance
-func (n *Node) GetLogic() types.Logic {
+func (n *Node) GetLogic() types5.Logic {
 	return n.logic
 }
 
 // GetDHT returns the DHT service
-func (n *Node) GetDHT() types.DHT {
+func (n *Node) GetDHT() types3.DHT {
 	return n.dht
 }
 
@@ -379,7 +384,7 @@ func (n *Node) GetCurrentValidators() []*tmtypes.Validator {
 }
 
 // GetService returns the node's service
-func (n *Node) GetService() types.Service {
+func (n *Node) GetService() types4.Service {
 	return n.service
 }
 

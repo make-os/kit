@@ -6,16 +6,22 @@ package mocks
 
 import (
 	context "context"
+	types3 "gitlab.com/makeos/mosdef/dht/types"
+	types4 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	msgs2 "gitlab.com/makeos/mosdef/repo/types/msgs"
+	"gitlab.com/makeos/mosdef/types/msgs"
+	"gitlab.com/makeos/mosdef/types/state"
 	reflect "reflect"
 	time "time"
 
 	gomock "github.com/golang/mock/gomock"
-	config "github.com/makeos/mosdef/config"
-	crypto "github.com/makeos/mosdef/crypto"
-	tree "github.com/makeos/mosdef/storage/tree"
-	types "github.com/makeos/mosdef/types"
-	util "github.com/makeos/mosdef/util"
-	logger "github.com/makeos/mosdef/util/logger"
+	config "gitlab.com/makeos/mosdef/config"
+	crypto "gitlab.com/makeos/mosdef/crypto"
+	tree "gitlab.com/makeos/mosdef/storage/tree"
+	types "gitlab.com/makeos/mosdef/types"
+	util "gitlab.com/makeos/mosdef/util"
+	logger "gitlab.com/makeos/mosdef/util/logger"
 	config0 "gopkg.in/src-d/go-git.v4/config"
 	plumbing "gopkg.in/src-d/go-git.v4/plumbing"
 	object "gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -242,10 +248,10 @@ func (mr *MockBareRepoMockRecorder) CommitObject(h interface{}) *gomock.Call {
 }
 
 // WrappedCommitObject mocks base method
-func (m *MockBareRepo) WrappedCommitObject(h plumbing.Hash) (types.Commit, error) {
+func (m *MockBareRepo) WrappedCommitObject(h plumbing.Hash) (core.Commit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WrappedCommitObject", h)
-	ret0, _ := ret[0].(types.Commit)
+	ret0, _ := ret[0].(core.Commit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -561,10 +567,10 @@ func (mr *MockBareRepoMockRecorder) Path() *gomock.Call {
 }
 
 // State mocks base method
-func (m *MockBareRepo) State() *types.Repository {
+func (m *MockBareRepo) State() *state.Repository {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "State")
-	ret0, _ := ret[0].(*types.Repository)
+	ret0, _ := ret[0].(*state.Repository)
 	return ret0
 }
 
@@ -743,10 +749,10 @@ func (mr *MockCommitMockRecorder) NumParents() *gomock.Call {
 }
 
 // Parent mocks base method
-func (m *MockCommit) Parent(i int) (types.Commit, error) {
+func (m *MockCommit) Parent(i int) (core.Commit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Parent", i)
-	ret0, _ := ret[0].(types.Commit)
+	ret0, _ := ret[0].(core.Commit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -837,10 +843,10 @@ func (m *MockPoolGetter) EXPECT() *MockPoolGetterMockRecorder {
 }
 
 // GetPushPool mocks base method
-func (m *MockPoolGetter) GetPushPool() types.PushPool {
+func (m *MockPoolGetter) GetPushPool() core.PushPool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types.PushPool)
+	ret0, _ := ret[0].(core.PushPool)
 	return ret0
 }
 
@@ -888,10 +894,10 @@ func (m *MockRepoManager) EXPECT() *MockRepoManagerMockRecorder {
 }
 
 // GetPushPool mocks base method
-func (m *MockRepoManager) GetPushPool() types.PushPool {
+func (m *MockRepoManager) GetPushPool() core.PushPool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types.PushPool)
+	ret0, _ := ret[0].(core.PushPool)
 	return ret0
 }
 
@@ -916,10 +922,10 @@ func (mr *MockRepoManagerMockRecorder) GetMempool() *gomock.Call {
 }
 
 // GetRepo mocks base method
-func (m *MockRepoManager) GetRepo(name string) (types.BareRepo, error) {
+func (m *MockRepoManager) GetRepo(name string) (core.BareRepo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRepo", name)
-	ret0, _ := ret[0].(types.BareRepo)
+	ret0, _ := ret[0].(core.BareRepo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -931,7 +937,7 @@ func (mr *MockRepoManagerMockRecorder) GetRepo(name interface{}) *gomock.Call {
 }
 
 // UpdateRepoWithTxPush mocks base method
-func (m *MockRepoManager) UpdateRepoWithTxPush(tx *types.TxPush) error {
+func (m *MockRepoManager) UpdateRepoWithTxPush(tx *msgs.TxPush) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateRepoWithTxPush", tx)
 	ret0, _ := ret[0].(error)
@@ -973,14 +979,14 @@ func (mr *MockRepoManagerMockRecorder) Cfg() *gomock.Call {
 }
 
 // GetRepoState mocks base method
-func (m *MockRepoManager) GetRepoState(target types.BareRepo, options ...types.KVOption) (types.BareRepoState, error) {
+func (m *MockRepoManager) GetRepoState(target core.BareRepo, options ...core.KVOption) (core.BareRepoState, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{target}
 	for _, a := range options {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetRepoState", varargs...)
-	ret0, _ := ret[0].(types.BareRepoState)
+	ret0, _ := ret[0].(core.BareRepoState)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -993,10 +999,10 @@ func (mr *MockRepoManagerMockRecorder) GetRepoState(target interface{}, options 
 }
 
 // GetPGPPubKeyGetter mocks base method
-func (m *MockRepoManager) GetPGPPubKeyGetter() types.PGPPubKeyGetter {
+func (m *MockRepoManager) GetPGPPubKeyGetter() core.PGPPubKeyGetter {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPGPPubKeyGetter")
-	ret0, _ := ret[0].(types.PGPPubKeyGetter)
+	ret0, _ := ret[0].(core.PGPPubKeyGetter)
 	return ret0
 }
 
@@ -1007,10 +1013,10 @@ func (mr *MockRepoManagerMockRecorder) GetPGPPubKeyGetter() *gomock.Call {
 }
 
 // GetLogic mocks base method
-func (m *MockRepoManager) GetLogic() types.Logic {
+func (m *MockRepoManager) GetLogic() types4.Logic {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLogic")
-	ret0, _ := ret[0].(types.Logic)
+	ret0, _ := ret[0].(types4.Logic)
 	return ret0
 }
 
@@ -1087,7 +1093,7 @@ func (mr *MockRepoManagerMockRecorder) BroadcastMsg(ch, msg interface{}) *gomock
 }
 
 // BroadcastPushObjects mocks base method
-func (m *MockRepoManager) BroadcastPushObjects(pushNote types.RepoPushNote) error {
+func (m *MockRepoManager) BroadcastPushObjects(pushNote core.RepoPushNote) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BroadcastPushObjects", pushNote)
 	ret0, _ := ret[0].(error)
@@ -1101,7 +1107,7 @@ func (mr *MockRepoManagerMockRecorder) BroadcastPushObjects(pushNote interface{}
 }
 
 // SetPGPPubKeyGetter mocks base method
-func (m *MockRepoManager) SetPGPPubKeyGetter(pkGetter types.PGPPubKeyGetter) {
+func (m *MockRepoManager) SetPGPPubKeyGetter(pkGetter core.PGPPubKeyGetter) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetPGPPubKeyGetter", pkGetter)
 }
@@ -1125,10 +1131,10 @@ func (mr *MockRepoManagerMockRecorder) RegisterAPIHandlers(agg interface{}) *gom
 }
 
 // GetPruner mocks base method
-func (m *MockRepoManager) GetPruner() types.Pruner {
+func (m *MockRepoManager) GetPruner() core.Pruner {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPruner")
-	ret0, _ := ret[0].(types.Pruner)
+	ret0, _ := ret[0].(core.Pruner)
 	return ret0
 }
 
@@ -1139,10 +1145,10 @@ func (mr *MockRepoManagerMockRecorder) GetPruner() *gomock.Call {
 }
 
 // GetDHT mocks base method
-func (m *MockRepoManager) GetDHT() types.DHT {
+func (m *MockRepoManager) GetDHT() types3.DHT {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDHT")
-	ret0, _ := ret[0].(types.DHT)
+	ret0, _ := ret[0].(types3.DHT)
 	return ret0
 }
 
@@ -1153,7 +1159,7 @@ func (mr *MockRepoManagerMockRecorder) GetDHT() *gomock.Call {
 }
 
 // ExecTxPush mocks base method
-func (m *MockRepoManager) ExecTxPush(tx *types.TxPush) error {
+func (m *MockRepoManager) ExecTxPush(tx *msgs.TxPush) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecTxPush", tx)
 	ret0, _ := ret[0].(error)
@@ -1216,10 +1222,10 @@ func (m *MockRepoGetter) EXPECT() *MockRepoGetterMockRecorder {
 }
 
 // GetRepo mocks base method
-func (m *MockRepoGetter) GetRepo(name string) (types.BareRepo, error) {
+func (m *MockRepoGetter) GetRepo(name string) (core.BareRepo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRepo", name)
-	ret0, _ := ret[0].(types.BareRepo)
+	ret0, _ := ret[0].(core.BareRepo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1254,7 +1260,7 @@ func (m *MockTxPushMerger) EXPECT() *MockTxPushMergerMockRecorder {
 }
 
 // UpdateRepoWithTxPush mocks base method
-func (m *MockTxPushMerger) UpdateRepoWithTxPush(tx *types.TxPush) error {
+func (m *MockTxPushMerger) UpdateRepoWithTxPush(tx *msgs.TxPush) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateRepoWithTxPush", tx)
 	ret0, _ := ret[0].(error)
@@ -1352,7 +1358,7 @@ func (m *MockPushPool) EXPECT() *MockPushPoolMockRecorder {
 }
 
 // Add mocks base method
-func (m *MockPushPool) Add(tx types.RepoPushNote, noValidation ...bool) error {
+func (m *MockPushPool) Add(tx core.RepoPushNote, noValidation ...bool) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{tx}
 	for _, a := range noValidation {
@@ -1399,10 +1405,10 @@ func (mr *MockPushPoolMockRecorder) RepoHasPushNote(repo interface{}) *gomock.Ca
 }
 
 // Get mocks base method
-func (m *MockPushPool) Get(noteID string) *types.PushNote {
+func (m *MockPushPool) Get(noteID string) *msgs2.PushNote {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", noteID)
-	ret0, _ := ret[0].(*types.PushNote)
+	ret0, _ := ret[0].(*msgs2.PushNote)
 	return ret0
 }
 
@@ -1427,7 +1433,7 @@ func (mr *MockPushPoolMockRecorder) Len() *gomock.Call {
 }
 
 // Remove mocks base method
-func (m *MockPushPool) Remove(pushNote *types.PushNote) {
+func (m *MockPushPool) Remove(pushNote *msgs2.PushNote) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Remove", pushNote)
 }
@@ -1574,10 +1580,10 @@ func (mr *MockRepoPushNoteMockRecorder) GetFee() *gomock.Call {
 }
 
 // GetPushedReferences mocks base method
-func (m *MockRepoPushNote) GetPushedReferences() types.PushedReferences {
+func (m *MockRepoPushNote) GetPushedReferences() core.PushedReferences {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushedReferences")
-	ret0, _ := ret[0].(types.PushedReferences)
+	ret0, _ := ret[0].(core.PushedReferences)
 	return ret0
 }
 
@@ -1616,10 +1622,10 @@ func (mr *MockRepoPushNoteMockRecorder) GetPusherKeyIDString() *gomock.Call {
 }
 
 // GetTargetRepo mocks base method
-func (m *MockRepoPushNote) GetTargetRepo() types.BareRepo {
+func (m *MockRepoPushNote) GetTargetRepo() core.BareRepo {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTargetRepo")
-	ret0, _ := ret[0].(types.BareRepo)
+	ret0, _ := ret[0].(core.BareRepo)
 	return ret0
 }
 
@@ -1769,10 +1775,10 @@ func (m *MockBareRepoState) EXPECT() *MockBareRepoStateMockRecorder {
 }
 
 // GetReferences mocks base method
-func (m *MockBareRepoState) GetReferences() types.Items {
+func (m *MockBareRepoState) GetReferences() core.Items {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetReferences")
-	ret0, _ := ret[0].(types.Items)
+	ret0, _ := ret[0].(core.Items)
 	return ret0
 }
 
@@ -1811,10 +1817,10 @@ func (mr *MockBareRepoStateMockRecorder) Hash() *gomock.Call {
 }
 
 // GetChanges mocks base method
-func (m *MockBareRepoState) GetChanges(y types.BareRepoState) *types.Changes {
+func (m *MockBareRepoState) GetChanges(y core.BareRepoState) *core.Changes {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetChanges", y)
-	ret0, _ := ret[0].(*types.Changes)
+	ret0, _ := ret[0].(*core.Changes)
 	return ret0
 }
 
@@ -1941,10 +1947,10 @@ func (mr *MockItemsMockRecorder) Has(name interface{}) *gomock.Call {
 }
 
 // Get mocks base method
-func (m *MockItems) Get(name interface{}) types.Item {
+func (m *MockItems) Get(name interface{}) core.Item {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", name)
-	ret0, _ := ret[0].(types.Item)
+	ret0, _ := ret[0].(core.Item)
 	return ret0
 }
 
@@ -1969,7 +1975,7 @@ func (mr *MockItemsMockRecorder) Equal(o interface{}) *gomock.Call {
 }
 
 // ForEach mocks base method
-func (m *MockItems) ForEach(arg0 func(types.Item) bool) {
+func (m *MockItems) ForEach(arg0 func(core.Item) bool) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "ForEach", arg0)
 }

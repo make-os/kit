@@ -2,9 +2,9 @@ package repo
 
 import (
 	"fmt"
+	"gitlab.com/makeos/mosdef/repo/types/core"
 	"strings"
 
-	"github.com/makeos/mosdef/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
@@ -12,7 +12,7 @@ import (
 // ErrRepoNotFound means a repo was not found on the local storage
 var ErrRepoNotFound = fmt.Errorf("repo not found")
 
-func getKVOpt(key string, options []types.KVOption) interface{} {
+func getKVOpt(key string, options []core.KVOption) interface{} {
 	for _, opt := range options {
 		if opt.Key == key {
 			return opt.Value
@@ -21,12 +21,12 @@ func getKVOpt(key string, options []types.KVOption) interface{} {
 	return nil
 }
 
-func matchOpt(val string) types.KVOption {
-	return types.KVOption{Key: "match", Value: val}
+func matchOpt(val string) core.KVOption {
+	return core.KVOption{Key: "match", Value: val}
 }
 
-func changesOpt(ch *types.Changes) types.KVOption {
-	return types.KVOption{Key: "changes", Value: ch}
+func changesOpt(ch *core.Changes) core.KVOption {
+	return core.KVOption{Key: "changes", Value: ch}
 }
 
 // MakeRepoObjectDHTKey returns a key for announcing a repository object
@@ -66,7 +66,7 @@ type WrappedCommit struct {
 }
 
 // Parent returns the ith parent of a commit.
-func (c *WrappedCommit) Parent(i int) (types.Commit, error) {
+func (c *WrappedCommit) Parent(i int) (core.Commit, error) {
 	parent, err := c.Commit.Parent(i)
 	if err != nil {
 		return nil, err

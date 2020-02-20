@@ -3,8 +3,8 @@ package modules_test
 import (
 	"math/big"
 
-	"github.com/makeos/mosdef/modules"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/modules"
+	"gitlab.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

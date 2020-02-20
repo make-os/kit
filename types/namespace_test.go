@@ -4,7 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "github.com/makeos/mosdef/types"
+	. "gitlab.com/makeos/mosdef/types"
 )
 
 var _ = Describe("Namespace", func() {

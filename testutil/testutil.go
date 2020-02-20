@@ -7,20 +7,20 @@ import (
 	"regexp"
 
 	"github.com/golang/mock/gomock"
-	"github.com/makeos/mosdef/storage"
-	"github.com/makeos/mosdef/types/mocks"
-	"github.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/types/mocks"
+	"gitlab.com/makeos/mosdef/util/logger"
 
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	tmconfig "github.com/tendermint/tendermint/config"
 
 	path "path/filepath"
 
-	"github.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/config"
 	"github.com/mitchellh/go-homedir"
 )
 

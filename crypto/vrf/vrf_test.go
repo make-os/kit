@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 func TestHonestComplete(t *testing.T) {

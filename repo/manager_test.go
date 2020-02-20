@@ -2,6 +2,8 @@ package repo
 
 import (
 	"fmt"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/repo/types/msgs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,11 +14,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/makeos/mosdef/config"
-	"github.com/makeos/mosdef/testutil"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/types/mocks"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/types/mocks"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Manager", func() {
@@ -24,7 +25,7 @@ var _ = Describe("Manager", func() {
 	var cfg *config.AppConfig
 	var repoMgr *Manager
 	var path, repoName string
-	var repo types.BareRepo
+	var repo core.BareRepo
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
 	var mockDHT *mocks.MockDHT
@@ -230,7 +231,7 @@ var _ = Describe("Manager", func() {
 	Describe(".addPushNoteEndorsement", func() {
 		When("1 PushOK for id=abc is added", func() {
 			BeforeEach(func() {
-				pushOK := &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushOK := &msgs.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
 				repoMgr.addPushNoteEndorsement("abc", pushOK)
 			})
 
@@ -243,8 +244,8 @@ var _ = Describe("Manager", func() {
 
 		When("2 PushOKs for id=abc are added", func() {
 			BeforeEach(func() {
-				pushOK := &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
-				pushOK2 := &types.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushOK := &msgs.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushOK2 := &msgs.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
 				repoMgr.addPushNoteEndorsement("abc", pushOK)
 				repoMgr.addPushNoteEndorsement("abc", pushOK2)
 			})

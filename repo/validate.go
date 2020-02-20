@@ -4,6 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	types3 "gitlab.com/makeos/mosdef/dht/types"
+	types4 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/repo/types/msgs"
+	types5 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/state"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -12,27 +18,26 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
 
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/crypto/bls"
-	"github.com/makeos/mosdef/params"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/crypto/bls"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-var feI = types.FieldErrorWithIndex
+var feI = util.FieldErrorWithIndex
 
 // validateChange validates a change to a repository
 // repo: The target repository
 // change: The item that changed the repository
 // gpgPubKeyGetter: Getter function for reading gpg public key
 func validateChange(
-	repo types.BareRepo,
-	change *types.ItemChange,
-	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxParams, error) {
+	repo core.BareRepo,
+	change *core.ItemChange,
+	gpgPubKeyGetter core.PGPPubKeyGetter) (*util.TxParams, error) {
 
 	var commit *object.Commit
 	var err error
@@ -95,9 +100,9 @@ validatedNote:
 // repo: The repo where the tag exists in.
 // gpgPubKeyGetter: Getter function for reading gpg public key
 func checkNote(
-	repo types.BareRepo,
+	repo core.BareRepo,
 	noteName string,
-	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxParams, error) {
+	gpgPubKeyGetter core.PGPPubKeyGetter) (*util.TxParams, error) {
 
 	// Find a all notes entries
 	noteEntries, err := repo.ListTreeObjects(noteName, false)
@@ -193,8 +198,8 @@ func checkNote(
 // gpgPubKeyGetter: Getter function for reading gpg public key
 func checkAnnotatedTag(
 	tag *object.Tag,
-	repo types.BareRepo,
-	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxParams, error) {
+	repo core.BareRepo,
+	gpgPubKeyGetter core.PGPPubKeyGetter) (*util.TxParams, error) {
 
 	// Get and parse txparams from the commit message
 	txParams, err := util.ParseTxParams(tag.Message)
@@ -231,12 +236,12 @@ func checkAnnotatedTag(
 // checkMergeCompliance checks whether push to a branch satisfied
 // an accepted merge proposal
 func checkMergeCompliance(
-	repo types.BareRepo,
-	change *types.ItemChange,
-	oldRef types.Item,
+	repo core.BareRepo,
+	change *core.ItemChange,
+	oldRef core.Item,
 	mergeProposalID,
 	gpgKeyID string,
-	keepers types.Keepers) error {
+	keepers types4.Keepers) error {
 
 	ref := plumbing.ReferenceName(change.Item.GetName())
 	if !ref.IsBranch() {
@@ -265,7 +270,7 @@ func checkMergeCompliance(
 			"merge proposal (%s) is already closed", mergeProposalID)
 	}
 
-	actionKey := types.ProposalActionDataMergeRequest
+	actionKey := types4.ProposalActionDataMergeRequest
 
 	// Ensure the proposal's base branch matches the pushed branch
 	propBaseBranch := prop.ActionData.Get(actionKey)["base"]
@@ -275,7 +280,7 @@ func checkMergeCompliance(
 	}
 
 	// Check whether the merge proposal has been accepted
-	if prop.Outcome != types.ProposalOutcomeAccepted {
+	if prop.Outcome != state.ProposalOutcomeAccepted {
 		return fmt.Errorf("merge compliance error: "+
 			"merge proposal (%s) has not been accepted", mergeProposalID)
 	}
@@ -345,8 +350,8 @@ func checkMergeCompliance(
 func checkCommit(
 	commit *object.Commit,
 	isReferenced bool,
-	repo types.BareRepo,
-	gpgPubKeyGetter types.PGPPubKeyGetter) (*util.TxParams, error) {
+	repo core.BareRepo,
+	gpgPubKeyGetter core.PGPPubKeyGetter) (*util.TxParams, error) {
 
 	referencedStr := ""
 	if isReferenced {
@@ -383,7 +388,7 @@ func checkCommit(
 
 // checkPushNoteAgainstTxParamss checks compares the value of fields in the push
 // note against the values of same fields in the txparamss.
-func checkPushNoteAgainstTxParamss(pn *types.PushNote, txParamss map[string]*util.TxParams) error {
+func checkPushNoteAgainstTxParamss(pn *msgs.PushNote, txParamss map[string]*util.TxParams) error {
 
 	// Push note pusher public key must match txparams key
 	txParamssObjs := funk.Values(txParamss).([]*util.TxParams)
@@ -419,13 +424,13 @@ func checkPushNoteAgainstTxParamss(pn *types.PushNote, txParamss map[string]*uti
 }
 
 // CheckPushNoteSyntax performs syntactic checks on the fields of a push transaction
-func CheckPushNoteSyntax(tx *types.PushNote) error {
+func CheckPushNoteSyntax(tx *msgs.PushNote) error {
 
 	if tx.RepoName == "" {
-		return types.FieldError("repoName", "repo name is required")
+		return util.FieldError("repoName", "repo name is required")
 	}
 
-	fe := types.FieldErrorWithIndex
+	fe := util.FieldErrorWithIndex
 	for i, ref := range tx.References {
 		if ref.Name == "" {
 			return fe(i, "references.name", "name is required")
@@ -453,45 +458,45 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 	}
 
 	if len(tx.PusherKeyID) == 0 {
-		return types.FieldError("pusherKeyId", "pusher gpg key id is required")
+		return util.FieldError("pusherKeyId", "pusher gpg key id is required")
 	}
 	if len(tx.PusherKeyID) != 20 {
-		return types.FieldError("pusherKeyId", "pusher gpg key is not valid")
+		return util.FieldError("pusherKeyId", "pusher gpg key is not valid")
 	}
 
 	if tx.Timestamp == 0 {
-		return types.FieldError("timestamp", "timestamp is required")
+		return util.FieldError("timestamp", "timestamp is required")
 	}
 	if tx.Timestamp > time.Now().Unix() {
-		return types.FieldError("timestamp", "timestamp cannot be a future time")
+		return util.FieldError("timestamp", "timestamp cannot be a future time")
 	}
 
 	if tx.AccountNonce == 0 {
-		return types.FieldError("accountNonce", "account nonce must be greater than zero")
+		return util.FieldError("accountNonce", "account nonce must be greater than zero")
 	}
 
 	if tx.Fee == "" {
-		return types.FieldError("fee", "fee is required")
+		return util.FieldError("fee", "fee is required")
 	}
 	if !gv.IsFloat(tx.Fee.String()) {
-		return types.FieldError("fee", "fee must be numeric")
+		return util.FieldError("fee", "fee must be numeric")
 	}
 
 	if tx.NodePubKey.IsEmpty() {
-		return types.FieldError("nodePubKey", "push node public key is required")
+		return util.FieldError("nodePubKey", "push node public key is required")
 	}
 
 	pk, err := crypto.PubKeyFromBytes(tx.NodePubKey.Bytes())
 	if err != nil {
-		return types.FieldError("nodePubKey", "push node public key is not valid")
+		return util.FieldError("nodePubKey", "push node public key is not valid")
 	}
 
 	if len(tx.NodeSig) == 0 {
-		return types.FieldError("nodeSig", "push node signature is required")
+		return util.FieldError("nodeSig", "push node signature is required")
 	}
 
 	if ok, err := pk.Verify(tx.BytesNoSig(), tx.NodeSig); err != nil || !ok {
-		return types.FieldError("nodeSig", "failed to verify signature")
+		return util.FieldError("nodeSig", "failed to verify signature")
 	}
 
 	return nil
@@ -499,10 +504,10 @@ func CheckPushNoteSyntax(tx *types.PushNote) error {
 
 // checkPushedReference validates pushed transactions
 func checkPushedReference(
-	targetRepo types.BareRepo,
-	pRefs types.PushedReferences,
-	repo *types.Repository,
-	keepers types.Keepers) error {
+	targetRepo core.BareRepo,
+	pRefs core.PushedReferences,
+	repo *state.Repository,
+	keepers types4.Keepers) error {
 	for i, ref := range pRefs {
 
 		rName := ref.Name
@@ -515,7 +520,7 @@ func checkPushedReference(
 		// references and as such we don't expect to find it in the repo.
 		if !oldHashIsZero && !repo.References.Has(rName) {
 			msg := fmts("reference '%s' is unknown", rName)
-			return types.FieldErrorWithIndex(i, "references", msg)
+			return util.FieldErrorWithIndex(i, "references", msg)
 		}
 
 		// 2. If target repo is set and old hash is non-zero, we need to ensure
@@ -525,12 +530,12 @@ func checkPushedReference(
 			localRef, err := targetRepo.Reference(plumbing.ReferenceName(rName), false)
 			if err != nil {
 				msg := fmts("reference '%s' does not exist locally", rName)
-				return types.FieldErrorWithIndex(i, "references", msg)
+				return util.FieldErrorWithIndex(i, "references", msg)
 			}
 
 			if ref.OldHash != localRef.Hash().String() {
 				msg := fmts("reference '%s' old hash does not match its local version", rName)
-				return types.FieldErrorWithIndex(i, "references", msg)
+				return util.FieldErrorWithIndex(i, "references", msg)
 			}
 		}
 
@@ -540,7 +545,7 @@ func checkPushedReference(
 		nextNonce := refInfo.Nonce + 1
 		if nextNonce != ref.Nonce {
 			msg := fmts("reference '%s' has nonce '%d', expecting '%d'", rName, rNonce, nextNonce)
-			return types.FieldErrorWithIndex(i, "references", msg)
+			return util.FieldErrorWithIndex(i, "references", msg)
 		}
 	}
 
@@ -550,36 +555,36 @@ func checkPushedReference(
 // CheckPushNoteConsistency performs consistency checks against the state of the
 // repository as seen by the node. If the target repo object is not set in tx,
 // local reference hash comparision is not performed.
-func CheckPushNoteConsistency(tx *types.PushNote, logic types.Logic) error {
+func CheckPushNoteConsistency(tx *msgs.PushNote, logic types4.Logic) error {
 
 	// Ensure the repository exist
 	repo := logic.RepoKeeper().GetRepo(tx.GetRepoName())
 	if repo.IsNil() {
 		msg := fmt.Sprintf("repository named '%s' is unknown", tx.GetRepoName())
-		return types.FieldError("repoName", msg)
+		return util.FieldError("repoName", msg)
 	}
 
 	// Get gpg key of the pusher
 	gpgKey := logic.GPGPubKeyKeeper().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID))
 	if gpgKey.IsNil() {
 		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", tx.PusherKeyID)
-		return types.FieldError("pusherKeyId", msg)
+		return util.FieldError("pusherKeyId", msg)
 	}
 
 	// Ensure the gpg key linked address matches the pusher address
 	if gpgKey.Address != tx.PusherAddress {
-		return types.FieldError("pusherAddr", "gpg key is not associated with the pusher address")
+		return util.FieldError("pusherAddr", "gpg key is not associated with the pusher address")
 	}
 
 	// Ensure next pusher account nonce matches the pushed note's account nonce
 	pusherAcct := logic.AccountKeeper().GetAccount(tx.PusherAddress)
 	if pusherAcct.IsNil() {
-		return types.FieldError("pusherAddr", "pusher account not found")
+		return util.FieldError("pusherAddr", "pusher account not found")
 	}
 	nextNonce := pusherAcct.Nonce + 1
 	if tx.AccountNonce != nextNonce {
 		msg := fmt.Sprintf("wrong account nonce '%d', expecting '%d'", tx.AccountNonce, nextNonce)
-		return types.FieldError("pusherAddr", msg)
+		return util.FieldError("pusherAddr", msg)
 	}
 
 	// Check each references against the state version
@@ -609,14 +614,14 @@ func CheckPushNoteConsistency(tx *types.PushNote, logic types.Logic) error {
 }
 
 // checkPushNote performs validation checks on a push transaction
-func checkPushNote(tx types.RepoPushNote, dht types.DHT,
-	logic types.Logic) error {
+func checkPushNote(tx core.RepoPushNote, dht types3.DHT,
+	logic types4.Logic) error {
 
-	if err := CheckPushNoteSyntax(tx.(*types.PushNote)); err != nil {
+	if err := CheckPushNoteSyntax(tx.(*msgs.PushNote)); err != nil {
 		return err
 	}
 
-	if err := CheckPushNoteConsistency(tx.(*types.PushNote), logic); err != nil {
+	if err := CheckPushNoteConsistency(tx.(*msgs.PushNote), logic); err != nil {
 		return err
 	}
 
@@ -629,7 +634,7 @@ func checkPushNote(tx types.RepoPushNote, dht types.DHT,
 }
 
 // CheckPushOK performs sanity checks on the given PushOK object
-func CheckPushOK(pushOK *types.PushOK, index int) error {
+func CheckPushOK(pushOK *msgs.PushOK, index int) error {
 
 	// Push note id must be set
 	if pushOK.PushNoteID.IsEmpty() {
@@ -647,7 +652,7 @@ func CheckPushOK(pushOK *types.PushOK, index int) error {
 // CheckPushOKConsistencyUsingStorer performs consistency checks on the given PushOK object
 // against the current state of the network.
 // EXPECT: Sanity check to have been performed using CheckPushOK
-func CheckPushOKConsistencyUsingStorer(storers types.SelectedTickets, pushOK *types.PushOK, logic types.Logic, noSigCheck bool, index int) error {
+func CheckPushOKConsistencyUsingStorer(storers types5.SelectedTickets, pushOK *msgs.PushOK, logic types4.Logic, noSigCheck bool, index int) error {
 
 	// Check if the sender is one of the top storers.
 	// Ensure that the signers of the PushOK are part of the storers
@@ -674,7 +679,7 @@ func CheckPushOKConsistencyUsingStorer(storers types.SelectedTickets, pushOK *ty
 // CheckPushOKConsistency performs consistency checks on the given PushOK object
 // against the current state of the network.
 // EXPECT: Sanity check to have been performed using CheckPushOK
-func CheckPushOKConsistency(pushOK *types.PushOK, logic types.Logic, noSigCheck bool, index int) error {
+func CheckPushOKConsistency(pushOK *msgs.PushOK, logic types4.Logic, noSigCheck bool, index int) error {
 	storers, err := logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
 	if err != nil {
 		return errors.Wrap(err, "failed to get top storers")
@@ -683,7 +688,7 @@ func CheckPushOKConsistency(pushOK *types.PushOK, logic types.Logic, noSigCheck 
 }
 
 // checkPushOK performs sanity and state consistency checks on the given PushOK object
-func checkPushOK(pushOK *types.PushOK, logic types.Logic, index int) error {
+func checkPushOK(pushOK *msgs.PushOK, logic types4.Logic, index int) error {
 	if err := CheckPushOK(pushOK, index); err != nil {
 		return err
 	}
@@ -696,7 +701,7 @@ func checkPushOK(pushOK *types.PushOK, logic types.Logic, index int) error {
 // fetchAndCheckReferenceObjects attempts to fetch and store new objects
 // introduced by the pushed references. After fetching it performs checks
 // on the objects
-func fetchAndCheckReferenceObjects(tx types.RepoPushNote, dht types.DHT) error {
+func fetchAndCheckReferenceObjects(tx core.RepoPushNote, dht types3.DHT) error {
 	objectsSize := int64(0)
 
 	for _, objHash := range tx.GetPushedObjects(false) {
@@ -714,8 +719,8 @@ func fetchAndCheckReferenceObjects(tx types.RepoPushNote, dht types.DHT) error {
 		dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cn()
-		objValue, err := dht.GetObject(ctx, &types.DHTObjectQuery{
-			Module:    types.RepoObjectModule,
+		objValue, err := dht.GetObject(ctx, &types3.DHTObjectQuery{
+			Module:    core.RepoObjectModule,
 			ObjectKey: []byte(dhtKey),
 		})
 		if err != nil {
@@ -735,7 +740,7 @@ func fetchAndCheckReferenceObjects(tx types.RepoPushNote, dht types.DHT) error {
 	if objectsSize != int64(tx.GetSize()) {
 		msg := fmt.Sprintf("invalid size (%d bytes). "+
 			"actual object size (%d bytes) is different", tx.GetSize(), objectsSize)
-		return types.FieldError("size", msg)
+		return util.FieldError("size", msg)
 	}
 
 	return nil

@@ -2,10 +2,11 @@ package logic
 
 import (
 	"fmt"
-
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/types"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	types2 "gitlab.com/makeos/mosdef/logic/types"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // execCoinTransfer transfers units of the native currency from a sender account
@@ -27,7 +28,7 @@ func (t *Transaction) execCoinTransfer(
 	fee util.String,
 	chainHeight uint64) error {
 
-	var recvAcct types.BalanceAccount
+	var recvAcct types2.BalanceAccount
 	recvAddr := recipientAddr.Address()
 	acctKeeper := t.logic.AccountKeeper()
 	repoKeeper := t.logic.RepoKeeper()
@@ -95,7 +96,7 @@ func (t *Transaction) execCoinTransfer(
 	switch o := recvAcct.(type) {
 	case *types.Account:
 		acctKeeper.Update(recipientAddr, o)
-	case *types.Repository:
+	case *state.Repository:
 		repoKeeper.Update(recipientAddr.String(), o)
 	}
 
@@ -143,7 +144,7 @@ func (t *Transaction) CanExecCoinTransfer(
 	// Ensure the transaction nonce is the next expected nonce
 	expectedNonce := senderAcct.Nonce + 1
 	if expectedNonce != nonce {
-		return types.FieldError(field, fmt.Sprintf("tx has invalid nonce (%d), expected (%d)",
+		return util.FieldError(field, fmt.Sprintf("tx has invalid nonce (%d), expected (%d)",
 			nonce, expectedNonce))
 	}
 
@@ -151,7 +152,7 @@ func (t *Transaction) CanExecCoinTransfer(
 	spendAmt := value.Decimal().Add(fee.Decimal())
 	senderBal := senderAcct.GetSpendableBalance(chainHeight).Decimal()
 	if !senderBal.GreaterThanOrEqual(spendAmt) {
-		return types.FieldError(field, fmt.Sprintf("sender's spendable account "+
+		return util.FieldError(field, fmt.Sprintf("sender's spendable account "+
 			"balance is insufficient"))
 	}
 

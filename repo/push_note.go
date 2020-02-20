@@ -2,11 +2,12 @@ package repo
 
 import (
 	"bytes"
+	"gitlab.com/makeos/mosdef/repo/types/core"
+	"gitlab.com/makeos/mosdef/repo/types/msgs"
 	"io"
 	"io/ioutil"
 	"strings"
 
-	"github.com/makeos/mosdef/types"
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -17,7 +18,7 @@ import (
 )
 
 // makePackfileFromPushNote creates a packfile from a PushNote
-func makePackfileFromPushNote(repo types.BareRepo, tx *types.PushNote) (io.ReadSeeker, error) {
+func makePackfileFromPushNote(repo core.BareRepo, tx *msgs.PushNote) (io.ReadSeeker, error) {
 
 	var buf = bytes.NewBuffer(nil)
 	enc := packfile.NewEncoder(buf, repo.GetStorer(), true)
@@ -39,7 +40,7 @@ func makePackfileFromPushNote(repo types.BareRepo, tx *types.PushNote) (io.ReadS
 
 // makeReferenceUpdateRequest creates a git reference update request from a push
 // transaction. This is what git push sends to the git-receive-pack.
-func makeReferenceUpdateRequest(repo types.BareRepo, tx *types.PushNote) (io.ReadSeeker, error) {
+func makeReferenceUpdateRequest(repo core.BareRepo, tx *msgs.PushNote) (io.ReadSeeker, error) {
 
 	// Generate a packfile
 	packfile, err := makePackfileFromPushNote(repo, tx)
@@ -74,12 +75,12 @@ func makeReferenceUpdateRequest(repo types.BareRepo, tx *types.PushNote) (io.Rea
 // makePushNoteFromStateChange creates a PushNote object from changes between two
 // states. Only the reference information is set in the PushNote object returned.
 func makePushNoteFromStateChange(
-	repo types.BareRepo,
+	repo core.BareRepo,
 	oldState,
-	newState types.BareRepoState) (*types.PushNote, error) {
+	newState core.BareRepoState) (*msgs.PushNote, error) {
 
 	// Compute the changes between old and new states
-	tx := &types.PushNote{References: []*types.PushedReference{}}
+	tx := &msgs.PushNote{References: []*core.PushedReference{}}
 	changes := oldState.GetChanges(newState)
 
 	// For each changed references, generate a PushedReference object
@@ -114,7 +115,7 @@ func makePushNoteFromStateChange(
 			// the reference addition section
 			tag, err := repo.Tag(nameParts[len(nameParts)-1])
 			if err != nil {
-				if err == git.ErrTagNotFound && change.Action == types.ChangeTypeRemove {
+				if err == git.ErrTagNotFound && change.Action == core.ChangeTypeRemove {
 					goto addRef
 				}
 				return nil, err
@@ -169,32 +170,32 @@ func makePushNoteFromStateChange(
 		// Generate the pushed reference object depending on the type of change
 		// that happened to the reference.
 		switch change.Action {
-		case types.ChangeTypeNew:
+		case core.ChangeTypeNew:
 			histHashes, err := getCommitHistory(repo, commit, "")
 			if err != nil {
 				return nil, err
 			}
-			tx.References = append(tx.References, &types.PushedReference{
+			tx.References = append(tx.References, &core.PushedReference{
 				Name:    change.Item.GetName(),
 				NewHash: newHash,
 				OldHash: plumbing.ZeroHash.String(),
 				Objects: append(objHashes, histHashes...),
 			})
 
-		case types.ChangeTypeUpdate:
+		case core.ChangeTypeUpdate:
 			histHashes, err := getCommitHistory(repo, commit, changedRefOldVerHash)
 			if err != nil {
 				return nil, err
 			}
-			tx.References = append(tx.References, &types.PushedReference{
+			tx.References = append(tx.References, &core.PushedReference{
 				Name:    change.Item.GetName(),
 				Objects: append(objHashes, histHashes...),
 				NewHash: newHash,
 				OldHash: oldState.GetReferences().Get(change.Item.GetName()).GetData(),
 			})
 
-		case types.ChangeTypeRemove:
-			tx.References = append(tx.References, &types.PushedReference{
+		case core.ChangeTypeRemove:
+			tx.References = append(tx.References, &core.PushedReference{
 				Name:    change.Item.GetName(),
 				NewHash: plumbing.ZeroHash.String(),
 				OldHash: changedRefOldVerHash,
@@ -208,9 +209,9 @@ func makePushNoteFromStateChange(
 // makePackfile creates a git reference update request packfile from state
 // changes between old and new repository state.
 func makePackfile(
-	repo types.BareRepo,
+	repo core.BareRepo,
 	oldState,
-	newState types.BareRepoState) (io.ReadSeeker, error) {
+	newState core.BareRepoState) (io.ReadSeeker, error) {
 
 	pushNote, err := makePushNoteFromStateChange(repo, oldState, newState)
 	if err != nil {

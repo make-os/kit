@@ -18,12 +18,12 @@ import (
 	golog "log"
 	"os"
 
-	"github.com/makeos/mosdef/util"
-	"github.com/makeos/mosdef/util/logger"
+	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/logger"
 
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"github.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/config"
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 	tmcfg "github.com/tendermint/tendermint/config"
 

@@ -1,8 +1,8 @@
 package logic
 
 import (
-	"github.com/makeos/mosdef/crypto"
-	"github.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // execSetDelegatorCommission sets the delegator commission of an account
