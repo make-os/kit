@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
-	state2 "gitlab.com/makeos/mosdef/types/state"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"gitlab.com/makeos/mosdef/types/core"
+	state2 "gitlab.com/makeos/mosdef/types/state"
 
 	"github.com/asaskevich/govalidator"
 	"gitlab.com/makeos/mosdef/pkgs/tree"
@@ -486,7 +487,7 @@ func SignCommitCmd(
 
 	// If nonce is not provided and rpc client is set,
 	// attempt to get nonce using the client
-	if txNonce == "" && rpcClient != nil {
+	if txNonce == "0" && rpcClient != nil {
 		txNonce, err = getNextNonceFromClient(pkID, rpcClient)
 		if err != nil {
 			return err

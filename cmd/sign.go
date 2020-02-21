@@ -15,9 +15,10 @@
 package cmd
 
 import (
-	"gitlab.com/makeos/mosdef/rpc"
 	"net"
 	"strconv"
+
+	"gitlab.com/makeos/mosdef/rpc"
 
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
@@ -57,15 +58,34 @@ func getRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 // signCmd represents the commit command
 var signCmd = &cobra.Command{
 	Use:   "sign",
-	Short: "Add transaction information and sign git commits, tags and notes",
-	Long:  `Add transaction information and sign git commits, tags and notes`,
+	Short: "Signs git commit, tag and note and adds network transaction parameters.",
+	Long:  `Signs git commit, tag and note and adds network transaction parameters.`,
 	Run:   func(cmd *cobra.Command, args []string) {},
 }
 
 var signCommitCmd = &cobra.Command{
 	Use:   "commit",
-	Short: "Add transaction information to a new commit and signs it",
-	Long:  `Add transaction information to a new commit and signs it`,
+	Short: "Adds a signed commit containing transaction information in the commit message",
+	Long: `
+Adds a signed commit containing transaction information in the commit message. Use '--amend' or '-a'
+flags to update the current commit instead of creating a new one.
+
+The transaction information is included in the commit message and signed. The GPG key used for 
+signing the commit is derived from git 'user.signingKey' config parameter. It can also be directly
+passed via '--signing-key' or '-s' flags. 
+
+The signer's network account nonce is required in the transaction information, therefore the signer 
+may provide their account nonce using '--nonce' or '-n' flags. If not, the command attempts to 
+fetch the nonce by first querying the git Remote API and a JSON-RPC API as a fallback. Use the 
+'--rpc-*' flags to overwrite the default JSON-RPC connection details.
+
+Setting '--delete' or '-d' to true will include a reference delete directive in the signed
+transaction information which will cause the reference to be deleted from the remote. 
+
+If a merge proposal ID is provided via '--merge' or '-m' flags, a merge directive is included in
+the signed transaction information which will cause the remote to consider the push operation as
+a merge request that will be validated according to the merge proposal contract. 
+`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
@@ -76,7 +96,7 @@ var signCommitCmd = &cobra.Command{
 
 		var client *client.RPCClient
 		var err error
-		if nonce == "" || nonce == "0" {
+		if nonce == "0" {
 			client, err = getRPCClient(cmd)
 			if err != nil {
 				log.Fatal(err.Error())
@@ -92,8 +112,21 @@ var signCommitCmd = &cobra.Command{
 
 var signTagCmd = &cobra.Command{
 	Use:   "tag",
-	Short: "Create an annotated tag with transaction information and sign it",
-	Long:  `Create an annotated tags with transaction information and sign it`,
+	Short: "Create a signed annotated tag containing transaction information.",
+	Long: `
+Create a signed annotated tag containing transaction information. 
+
+The transaction information is included in the message and signed. The GPG key used for 
+signing the commit is derived from git 'user.signingKey' config parameter. It can also 
+be directly passed via '--signing-key' or '-s' flags. 
+
+The signer's network account nonce is required in the transaction information, therefore the 
+signer may provide their account nonce using '--nonce' or '-n' flags. If not, the command 
+attempts to fetch the nonce by first querying the git Remote API and a JSON-RPC API as a 
+fallback. Use the '--rpc-*' flags to overwrite the default JSON-RPC connection details.
+
+Setting '--delete' or '-d' to true will include a reference delete directive in the signed
+transaction information which will cause the reference to be deleted from the remote. `,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
@@ -118,9 +151,9 @@ var signTagCmd = &cobra.Command{
 }
 
 var signNoteCmd = &cobra.Command{
-	Use:   "note",
-	Short: "Create a note, add transaction information and sign it",
-	Long:  `Create a note, add transaction information and sign it`,
+	Use:   "notes",
+	Short: "Create a signed note containing transaction information. ",
+	Long:  `Create a signed note containing transaction information. `,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
