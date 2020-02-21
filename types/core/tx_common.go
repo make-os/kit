@@ -3,8 +3,9 @@ package core
 import (
 	"bytes"
 	"fmt"
-	"gitlab.com/makeos/mosdef/types"
 	"strconv"
+
+	"gitlab.com/makeos/mosdef/types"
 
 	"github.com/stretchr/objx"
 
@@ -269,6 +270,11 @@ type TxRecipient struct {
 	To util.String `json:"to" msgpack:"to" mapstructure:"to"`
 }
 
+// SetRecipient sets the recipient
+func (tx *TxRecipient) SetRecipient(to util.String) {
+	tx.To = to
+}
+
 // FromMap populates fields from a map.
 // Note: Default or zero values may be set for fields that aren't present in the
 // map. Also, an error will be returned when unable to convert types in map to
@@ -292,6 +298,11 @@ func (tx *TxRecipient) FromMap(data map[string]interface{}) (err error) {
 // TxValue describes a transaction value
 type TxValue struct {
 	Value util.String `json:"value" msgpack:"value" mapstructure:"value"`
+}
+
+// SetValue sets the value
+func (tx *TxValue) SetValue(value util.String) {
+	tx.Value = value
 }
 
 // FromMap populates fields from a map.
@@ -430,7 +441,8 @@ func getBareTxObject(txType int) (types.BaseTx, error) {
 	return tx.(types.BaseTx), nil
 }
 
-// NewBaseTx creates a new, signed transaction of a given type
+// NewBaseTx creates a new, signed transaction of a given type; Solely used in
+// tests. 
 func NewBaseTx(txType int,
 	nonce uint64,
 	to util.String,
@@ -442,70 +454,38 @@ func NewBaseTx(txType int,
 	switch txType {
 	case TxTypeCoinTransfer:
 		tx := NewBareTxCoinTransfer()
-		tx.Nonce = nonce
-		tx.To = to
-		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
-		tx.Value = value
-		tx.Fee = fee
-		tx.Timestamp = timestamp
+		tx.SetRecipient(to)
+		tx.SetValue(value)
 		baseTx = tx
-		goto sign
 	case TxTypeValidatorTicket:
 		tx := NewBareTxTicketPurchase(TxTypeValidatorTicket)
-		tx.Nonce = nonce
-		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
-		tx.Value = value
-		tx.Fee = fee
-		tx.Timestamp = timestamp
+		tx.SetValue(value)
 		baseTx = tx
-		goto sign
 	case TxTypeStorerTicket:
 		tx := NewBareTxTicketPurchase(TxTypeStorerTicket)
-		tx.Nonce = nonce
-		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
-		tx.Value = value
-		tx.Fee = fee
-		tx.Timestamp = timestamp
+		tx.SetValue(value)
 		baseTx = tx
-		goto sign
 	case TxTypeSetDelegatorCommission:
 		tx := NewBareTxSetDelegateCommission()
-		tx.Nonce = nonce
-		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
-		tx.Fee = fee
-		tx.Timestamp = timestamp
 		baseTx = tx
-		goto sign
 	case TxTypeUnbondStorerTicket:
 		tx := NewBareTxTicketUnbond(TxTypeUnbondStorerTicket)
-		tx.Nonce = nonce
-		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
-		tx.Fee = fee
-		tx.Timestamp = timestamp
 		baseTx = tx
-		goto sign
 	case TxTypeRepoCreate:
 		tx := NewBareTxRepoCreate()
-		tx.Nonce = nonce
-		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
-		tx.Value = value
-		tx.Fee = fee
-		tx.Timestamp = timestamp
+		tx.SetValue(value)
 		baseTx = tx
-		goto sign
 	case TxTypeAddGPGPubKey:
 		tx := NewBareTxAddGPGPubKey()
-		tx.Nonce = nonce
-		tx.SetSenderPubKey(senderKey.PubKey().MustBytes())
-		tx.Fee = fee
-		tx.Timestamp = timestamp
 		baseTx = tx
-		goto sign
 	default:
 		panic("unsupported tx type")
 	}
 
-sign:
+	baseTx.SetTimestamp(timestamp)
+	baseTx.SetFee(fee)
+	baseTx.SetNonce(nonce)
+	baseTx.SetSenderPubKey(senderKey.PubKey().MustBytes())
 	sig, err := baseTx.Sign(senderKey.PrivKey().Base58())
 	if err != nil {
 		panic(err)

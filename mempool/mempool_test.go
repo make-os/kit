@@ -1,10 +1,11 @@
 package mempool
 
 import (
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 	"time"
+
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/golang/mock/gomock"
 	tmtypes "github.com/tendermint/tendermint/types"
