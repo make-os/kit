@@ -9,8 +9,8 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	config "gitlab.com/makeos/mosdef/config"
 	crypto "gitlab.com/makeos/mosdef/crypto"
-	types2 "gitlab.com/makeos/mosdef/dht/types"
-	types "gitlab.com/makeos/mosdef/modules/types"
+	types "gitlab.com/makeos/mosdef/dht/types"
+	types0 "gitlab.com/makeos/mosdef/modules/types"
 	logger "gitlab.com/makeos/mosdef/pkgs/logger"
 	tree "gitlab.com/makeos/mosdef/pkgs/tree"
 	core "gitlab.com/makeos/mosdef/types/core"
@@ -132,6 +132,20 @@ func (m *MockBareRepo) TagDelete(tagname string) error {
 func (mr *MockBareRepoMockRecorder) TagDelete(tagname interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TagDelete", reflect.TypeOf((*MockBareRepo)(nil).TagDelete), tagname)
+}
+
+// GetRemoteURLs mocks base method
+func (m *MockBareRepo) GetRemoteURLs() []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRemoteURLs")
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetRemoteURLs indicates an expected call of GetRemoteURLs
+func (mr *MockBareRepoMockRecorder) GetRemoteURLs() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemoteURLs", reflect.TypeOf((*MockBareRepo)(nil).GetRemoteURLs))
 }
 
 // ListTreeObjects mocks base method
@@ -2011,7 +2025,7 @@ func (mr *MockRepoManagerMockRecorder) SetPGPPubKeyGetter(pkGetter interface{}) 
 }
 
 // RegisterAPIHandlers mocks base method
-func (m *MockRepoManager) RegisterAPIHandlers(agg types.ModulesAggregator) {
+func (m *MockRepoManager) RegisterAPIHandlers(agg types0.ModulesAggregator) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RegisterAPIHandlers", agg)
 }
@@ -2037,10 +2051,10 @@ func (mr *MockRepoManagerMockRecorder) GetPruner() *gomock.Call {
 }
 
 // GetDHT mocks base method
-func (m *MockRepoManager) GetDHT() types2.DHTNode {
+func (m *MockRepoManager) GetDHT() types.DHTNode {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDHT")
-	ret0, _ := ret[0].(types2.DHTNode)
+	ret0, _ := ret[0].(types.DHTNode)
 	return ret0
 }
 

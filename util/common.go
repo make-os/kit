@@ -627,8 +627,3 @@ func FieldErrorWithIndex(index int, field, err string) error {
 	}
 	return fmt.Errorf(fmt.Sprintf("index:%d, "+fieldArg+"error:%s", index, field, err))
 }
-
-
-
-
-

@@ -2,13 +2,14 @@ package core
 
 import (
 	"context"
+	"time"
+
 	config2 "gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	types2 "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/types/state"
-	"time"
 
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/pkgs/tree"
@@ -45,6 +46,9 @@ type BareRepo interface {
 
 	// TagDelete executes `git tag -d <tagname>` to delete a tag
 	TagDelete(tagname string) error
+
+	// GetRemoteURLs returns the remote URLS of the repository
+	GetRemoteURLs() (urls []string)
 
 	// ListTreeObjects executes `git tag -d <tagname>` to delete a tag
 	ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error)
@@ -535,4 +539,3 @@ type RepoManager interface {
 	// Stop implements Reactor
 	Stop() error
 }
-

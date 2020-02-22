@@ -54,6 +54,11 @@ func (tl *TxParams) String() string {
 	return MakeTxParams(tl.Fee.String(), nonceStr, tl.PubKeyID, []byte(tl.Signature))
 }
 
+// IsZeroString returns true if str is empty or equal "0"
+func IsZeroString(str string) bool {
+	return str == "" || str == "0"
+}
+
 // MakeTxParams returns a well formatted txparams string
 func MakeTxParams(txFee, txNonce, pkID string, sig []byte, directives ...string) string {
 	str := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", txFee, txNonce, pkID)
@@ -64,6 +69,28 @@ func MakeTxParams(txFee, txNonce, pkID string, sig []byte, directives ...string)
 		str = str + fmt.Sprintf(", sig=%s", ToHex(sig))
 	}
 	return str
+}
+
+// MakeAndValidateTxParams is like MakeTxParams but also validates it
+func MakeAndValidateTxParams(
+	txFee,
+	txNonce,
+	pkID string,
+	sig []byte,
+	directives ...string) (string, error) {
+	str := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", txFee, txNonce, pkID)
+	for _, a := range directives {
+		str = str + fmt.Sprintf(", %s", a)
+	}
+	if sig != nil {
+		str = str + fmt.Sprintf(", sig=%s", ToHex(sig))
+	}
+
+	if _, err := ParseTxParams(str); err != nil {
+		return "", err
+	}
+
+	return str, nil
 }
 
 // ParseTxParams finds, parses and returns the txparams found in the given msg.

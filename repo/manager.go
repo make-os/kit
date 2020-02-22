@@ -3,16 +3,17 @@ package repo
 import (
 	"context"
 	"fmt"
-	types2 "gitlab.com/makeos/mosdef/dht/types"
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
-	"gitlab.com/makeos/mosdef/node/types"
-	"gitlab.com/makeos/mosdef/types/core"
 	"net/http"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	types2 "gitlab.com/makeos/mosdef/dht/types"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+	"gitlab.com/makeos/mosdef/node/types"
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"gitlab.com/makeos/mosdef/pkgs/cache"
 	"gitlab.com/makeos/mosdef/rest"
@@ -194,9 +195,8 @@ func (m *Manager) Start() error {
 }
 
 func (m *Manager) registerAPIHandlers(s *http.ServeMux) {
-	handlers := rest.New(m.modulesAgg)
-	s.HandleFunc("/v1/accounts/nonce", util.RESTApiHandler("GET", handlers.GetAccountNonce, m.log))
-	s.HandleFunc("/v1/txs", util.RESTApiHandler("POST", handlers.SendTx, m.log))
+	rest := rest.New(m.modulesAgg, m.log)
+	rest.RegisterEndpoints(s)
 }
 
 // GetLogic returns the application logic provider

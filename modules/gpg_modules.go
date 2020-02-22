@@ -8,6 +8,7 @@ import (
 	servtypes "gitlab.com/makeos/mosdef/services/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 
 	prompt "github.com/c-bata/go-prompt"
@@ -45,7 +46,7 @@ func (m *GPGModule) namespacedFuncs() []*modulestypes.ModulesAggregatorFunc {
 		},
 		&modulestypes.ModulesAggregatorFunc{
 			Name:        "find",
-			Value:       m.find,
+			Value:       m.Find,
 			Description: "Find a GPG public key by its key ID",
 		},
 		&modulestypes.ModulesAggregatorFunc{
@@ -121,8 +122,8 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 	})
 }
 
-// find fetches a gpg public key object by pkID
-func (m *GPGModule) find(pkID string) interface{} {
+// Find fetches a gpg public key object by pkID
+func (m *GPGModule) Find(pkID string) *state.GPGPubKey {
 	o := m.logic.GPGPubKeyKeeper().GetGPGPubKey(pkID)
 	if o.IsNil() {
 		panic(fmt.Errorf("gpg public key not found"))

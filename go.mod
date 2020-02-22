@@ -42,7 +42,7 @@ require (
 	github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e // indirect
 	github.com/howeyc/gopass v0.0.0-20190910152052-7cb4b85ec19c // indirect
 	github.com/imdario/mergo v0.3.8
-	github.com/imroc/req v0.2.4
+	github.com/imroc/req v0.3.0
 	github.com/ipfs/go-cid v0.0.4
 	github.com/ipfs/go-ds-badger v0.2.0
 	github.com/ipfs/go-log v1.0.0 // indirect

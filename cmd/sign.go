@@ -1,26 +1,17 @@
-// Copyright © 2019 NAME HERE <EMAIL ADDRESS>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 
+	"gitlab.com/makeos/mosdef/rest"
 	"gitlab.com/makeos/mosdef/rpc"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 
 	"github.com/pkg/errors"
+	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/repo"
 	"gitlab.com/makeos/mosdef/rpc/client"
@@ -28,7 +19,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// getRPCClient returns a JSON-RPC client or error if unable to
+// create one. It will return nil client and nil error if --use.rpc
+// is false.
 func getRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
+	useRPC, _ := cmd.Flags().GetBool("use.rpc")
+	if !useRPC {
+		return nil, nil
+	}
+
 	rpcAddress, _ := cmd.Flags().GetString("rpc.address")
 	rpcUser, _ := cmd.Flags().GetString("rpc.user")
 	rpcPassword, _ := cmd.Flags().GetString("rpc.password")
@@ -53,6 +52,56 @@ func getRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 	})
 
 	return c, nil
+}
+
+// getRemoteAPIClients gets REST clients for every
+// http(s) remote URL set on the given repository
+func getRemoteAPIClients(repo core.BareRepo) (clients []*rest.Client) {
+	for _, url := range repo.GetRemoteURLs() {
+		ep, _ := transport.NewEndpoint(url)
+		if !funk.ContainsString([]string{"http", "https"}, ep.Protocol) {
+			continue
+		}
+
+		apiURL := fmt.Sprintf("%s://%s", ep.Protocol, ep.Host)
+		if ep.Port != 0 {
+			apiURL = fmt.Sprintf("%s:%d", apiURL, ep.Port)
+		}
+
+		clients = append(clients, rest.NewClient(apiURL))
+	}
+	return
+}
+
+// getClients returns RPC and Remote API clients
+func getRepoAndClients(cmd *cobra.Command, nonce string) (core.BareRepo,
+	*client.RPCClient, []*rest.Client) {
+
+	useRemote, _ := cmd.Flags().GetBool("use.remote")
+
+	// Get JSON RPC client
+	var client *client.RPCClient
+	var err error
+	if nonce == "0" {
+		client, err = getRPCClient(cmd)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}
+
+	// Get the repository
+	targetRepo, err := repo.GetCurrentWDRepo(cfg.Node.GitBinPath)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	// Get remote APIs from the repository
+	remoteClients := []*rest.Client{}
+	if useRemote && nonce == "0" {
+		remoteClients = getRemoteAPIClients(targetRepo)
+	}
+
+	return targetRepo, client, remoteClients
 }
 
 // signCmd represents the commit command
@@ -94,17 +143,10 @@ a merge request that will be validated according to the merge proposal contract.
 		mergeID, _ := cmd.Flags().GetString("merge-id")
 		amend, _ := cmd.Flags().GetBool("amend")
 
-		var client *client.RPCClient
-		var err error
-		if nonce == "0" {
-			client, err = getRPCClient(cmd)
-			if err != nil {
-				log.Fatal(err.Error())
-			}
-		}
+		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
 
-		if err := repo.SignCommitCmd(cfg.Node.GitBinPath, fee,
-			nonce, sk, amend, delete, mergeID, client); err != nil {
+		if err := repo.SignCommitCmd(targetRepo, fee,
+			nonce, sk, amend, delete, mergeID, client, remoteClients); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -133,18 +175,11 @@ transaction information which will cause the reference to be deleted from the re
 		sk, _ := cmd.Flags().GetString("signingKey")
 		delete, _ := cmd.Flags().GetBool("delete")
 
-		var client *client.RPCClient
-		var err error
-		if nonce == "" || nonce == "0" {
-			client, err = getRPCClient(cmd)
-			if err != nil {
-				log.Fatal(err.Error())
-			}
-		}
+		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
 
 		args = cmd.Flags().Args()
-		if err := repo.SignTagCmd(args, cfg.Node.GitBinPath, fee,
-			nonce, sk, delete, client); err != nil {
+		if err := repo.SignTagCmd(args, targetRepo, fee,
+			nonce, sk, delete, client, remoteClients); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -160,27 +195,21 @@ var signNoteCmd = &cobra.Command{
 		sk, _ := cmd.Flags().GetString("signingKey")
 		delete, _ := cmd.Flags().GetBool("delete")
 
-		var client *client.RPCClient
-		var err error
-		if nonce == "" || nonce == "0" {
-			client, err = getRPCClient(cmd)
-			if err != nil {
-				log.Fatal(err.Error())
-			}
-		}
+		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
 
 		if len(args) == 0 {
 			log.Fatal("name is required")
 		}
 
 		if err := repo.SignNoteCmd(
-			cfg.Node.GitBinPath,
+			targetRepo,
 			fee,
 			nonce,
 			sk,
 			args[0],
 			delete,
-			client); err != nil {
+			client,
+			remoteClients); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -196,6 +225,8 @@ func initCommit() {
 	pf.StringP("fee", "f", "0", "Set the transaction fee")
 	pf.StringP("nonce", "n", "0", "Set the transaction nonce")
 	pf.StringP("signing-key", "s", "", "Set the GPG signing key ID")
+	pf.Bool("use.remote", true, "Enable the ability to query the Remote API")
+	pf.Bool("use.rpc", true, "Enable the ability to query the JSON-RPC API")
 	pf.String("rpc.user", "", "Set the RPC username")
 	pf.String("rpc.password", "", "Set the RPC password")
 	pf.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")

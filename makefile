@@ -37,7 +37,7 @@ release-linux:
 
 genmocks:
 	mockgen -source=types/core/logic.go -destination=mocks/logic.go -package mocks && \
-	mockgen -source=dht/types.go -destination=mocks/dht.go -package mocks && \
+	mockgen -source=dht/types/types.go -destination=mocks/dht.go -package mocks && \
 	mockgen -source=types/core/repo.go -destination=mocks/repo.go -package mocks && \
     mockgen -source=types/tendermint.go -destination=mocks/tendermint.go -package mocks && \
     mockgen -source=rpc/types.go -destination=mocks/jsonrpc.go -package mocks && \

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"gitlab.com/makeos/mosdef/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -15,5 +14,5 @@ func (r *Rest) SendTx(w http.ResponseWriter, req *http.Request) {
 		util.WriteJSON(w, 400, util.RESTApiErrorMsg("malformed body", "", 0))
 		return
 	}
-	util.WriteJSON(w, 201, r.mods.GetModules().(*modules.Modules).Tx.SendPayload(body))
+	util.WriteJSON(w, 201, r.Modules().Tx.SendPayload(body))
 }

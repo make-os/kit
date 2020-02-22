@@ -8,8 +8,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
+
+	"gitlab.com/makeos/mosdef/rest"
 
 	"gitlab.com/makeos/mosdef/types/core"
 	state2 "gitlab.com/makeos/mosdef/types/state"
@@ -269,6 +272,18 @@ func (r *Repo) UpdateRecentCommitMsg(msg, signingKey string, env ...string) erro
 	return r.ops.UpdateRecentCommitMsg(msg, signingKey, env...)
 }
 
+// GetRemoteURLs returns the remote URLS of the repository
+func (r *Repo) GetRemoteURLs() (urls []string) {
+	remotes, err := r.git.Remotes()
+	if err != nil {
+		return
+	}
+	for _, r := range remotes {
+		urls = append(urls, r.Config().URLs...)
+	}
+	return
+}
+
 // ObjectExist checks whether an object exist in the target repository
 func (r *Repo) ObjectExist(objHash string) bool {
 	_, err := r.Object(plumbing.AnyObject, plumbing.NewHash(objHash))
@@ -408,9 +423,9 @@ func getRepoWithGitOpt(gitBinPath, path string) (core.BareRepo, error) {
 	}, nil
 }
 
-// getCurrentWDRepo returns a Repo instance pointed to the repository
+// GetCurrentWDRepo returns a Repo instance pointed to the repository
 // in the current working directory.
-func getCurrentWDRepo(gitBinDir string) (core.BareRepo, error) {
+func GetCurrentWDRepo(gitBinDir string) (core.BareRepo, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current working directory")
@@ -428,10 +443,10 @@ func getCurrentWDRepo(gitBinDir string) (core.BareRepo, error) {
 	return repo, nil
 }
 
-func getNextNonceFromClient(pkID string, client *client.RPCClient) (string, error) {
+func getNextNonceWithRPCClient(pkID string, client *client.RPCClient) (string, error) {
 	out, err := client.Call("gpg_find", pkID)
 	if err != nil {
-		msg := "can't find registered gpg key corresponding to the signing key"
+		msg := "unable to query gpg key"
 		return "", errors.Wrap(err, msg)
 	}
 
@@ -444,28 +459,93 @@ func getNextNonceFromClient(pkID string, client *client.RPCClient) (string, erro
 	return fmt.Sprintf("%d", uint64(nonce.(float64))+1), nil
 }
 
+func getNextNonceWithRemoteClients(
+	clients []*rest.Client,
+	gpgPubKeyID string) (string, error) {
+	var err error
+
+	// Try each remote client.
+	// Return the result from the first successfully trial.
+	for _, client := range clients {
+		var resp *rest.AccountGetNonceResponse
+		resp, err = client.GPGGetOwnerNonce(gpgPubKeyID)
+		if err != nil {
+			err = errors.Wrap(err, "failed to query nonce")
+			continue
+		}
+		return resp.Nonce, nil
+	}
+
+	return "", errors.Wrap(err, "remote-client")
+}
+
+// determineNextNonce is used to determine the next nonce of the account that
+// owns the given public key ID.
+//
+// If nonceFromFlag is set, it is returned as tne next nonce.
+// Otherwise, it will use the rpc and remote clients as source to request for
+// the current account nonce.
+//
+// First, it will query remote API clients and will use the first value returned by
+// any of the clients, increment the value by 1 and return it as the next nonce.
+//
+// If still unable to get the nonce, it will attempt to query the JSON-RPC
+// client, increment its result by 1 and return it as the next nonce.
+//
+// It returns error if unable to get nonce.
+func determineNextNonce(
+	nonceFromFlag,
+	pkID string,
+	rpcClient *client.RPCClient,
+	remoteClients []*rest.Client) (string, error) {
+
+	if !util.IsZeroString(nonceFromFlag) {
+		return nonceFromFlag, nil
+	}
+
+	// If nonce is not provided, attempt to get the nonce from the remote API.
+	var errViaRemote error
+	if util.IsZeroString(nonceFromFlag) && len(remoteClients) > 0 {
+		nonceFromFlag, errViaRemote = getNextNonceWithRemoteClients(remoteClients, pkID)
+	}
+
+	// If the nonce is still not known and rpc client non-nil,
+	// attempt to get nonce using the client
+	var err error
+	if util.IsZeroString(nonceFromFlag) && rpcClient != nil {
+		nonceFromFlag, err = getNextNonceWithRPCClient(pkID, rpcClient)
+		if err != nil {
+			msg := "rpc-client:failed to get nonce from both Remote and JSON-RPC APIs"
+			return "", errors.Wrap(errors.Wrap(errViaRemote, err.Error()), msg)
+		}
+	} else if errViaRemote != nil {
+		return "", errViaRemote
+	} else if util.IsZeroString(nonceFromFlag) {
+		return "", fmt.Errorf("signer's account nonce is required")
+	}
+
+	nonceInt, _ := strconv.ParseInt(nonceFromFlag, 10, 64)
+	return fmt.Sprintf("%d", nonceInt+1), nil
+}
+
 // SignCommitCmd adds transaction information to the recent commit and signs it.
 // If rpcClient is set, the transaction nonce of the signing account is fetched
 // from the rpc server.
 func SignCommitCmd(
-	gitBinDir,
+	repo core.BareRepo,
 	txFee,
-	txNonce,
+	nonceFromFlag,
 	signingKey string,
 	amendRecent,
 	deleteRefAction bool,
 	mergeID string,
-	rpcClient *client.RPCClient) error {
+	rpcClient *client.RPCClient,
+	remoteClients []*rest.Client) error {
 
 	if !govalidator.IsNumeric(mergeID) {
 		return fmt.Errorf("merge id must be numeric")
 	} else if len(mergeID) > 8 {
 		return fmt.Errorf("merge id limit of 8 bytes exceeded")
-	}
-
-	repo, err := getCurrentWDRepo(gitBinDir)
-	if err != nil {
-		return err
 	}
 
 	// Get the signing key id from the git config if not passed as an argument
@@ -485,13 +565,14 @@ func SignCommitCmd(
 	// Get the public key network ID
 	pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
-	// If nonce is not provided and rpc client is set,
-	// attempt to get nonce using the client
-	if txNonce == "0" && rpcClient != nil {
-		txNonce, err = getNextNonceFromClient(pkID, rpcClient)
-		if err != nil {
-			return err
-		}
+	// Get the next nonce.
+	nextNonce, err := determineNextNonce(
+		nonceFromFlag,
+		pkID,
+		rpcClient,
+		remoteClients)
+	if err != nil {
+		return err
 	}
 
 	directives := []string{}
@@ -502,7 +583,10 @@ func SignCommitCmd(
 		directives = append(directives, fmt.Sprintf("mergeId=%s", mergeID))
 	}
 
-	txParams := util.MakeTxParams(txFee, txNonce, pkID, nil, directives...)
+	txParams, err := util.MakeAndValidateTxParams(txFee, nextNonce, pkID, nil, directives...)
+	if err != nil {
+		return err
+	}
 
 	// Create a new commit if recent commit amendment is not required
 	if !amendRecent {
@@ -541,17 +625,13 @@ func SignCommitCmd(
 // from the rpc server.
 func SignTagCmd(
 	args []string,
-	gitBinDir,
+	repo core.BareRepo,
 	txFee,
-	txNonce,
+	nonceFromFlag,
 	signingKey string,
 	deleteRefAction bool,
-	rpcClient *client.RPCClient) error {
-
-	repo, err := getCurrentWDRepo(gitBinDir)
-	if err != nil {
-		return err
-	}
+	rpcClient *client.RPCClient,
+	remoteClients []*rest.Client) error {
 
 	parsed := util.ParseSimpleArgs(args)
 
@@ -588,12 +668,14 @@ func SignTagCmd(
 	// Get the public key network ID
 	pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
-	// If rpc client is provided, get nonce using the client
-	if rpcClient != nil {
-		txNonce, err = getNextNonceFromClient(pkID, rpcClient)
-		if err != nil {
-			return err
-		}
+	// Get the next nonce.
+	nextNonce, err := determineNextNonce(
+		nonceFromFlag,
+		pkID,
+		rpcClient,
+		remoteClients)
+	if err != nil {
+		return err
 	}
 
 	directives := []string{}
@@ -602,10 +684,13 @@ func SignTagCmd(
 	}
 
 	// Construct the txparams and append to the current message
-	txParams := util.MakeTxParams(txFee, txNonce, pkID, nil, directives...)
-	msg += "\n\n" + txParams
+	txParams, err := util.MakeAndValidateTxParams(txFee, nextNonce, pkID, nil, directives...)
+	if err != nil {
+		return err
+	}
 
 	// Create the tag
+	msg += "\n\n" + txParams
 	if err = repo.CreateTagWithMsg(args, msg, signingKey); err != nil {
 		return err
 	}
@@ -617,18 +702,14 @@ func SignTagCmd(
 // If rpcClient is set, the transaction nonce of the signing account is fetched
 // from the rpc server.
 func SignNoteCmd(
-	gitBinDir,
+	repo core.BareRepo,
 	txFee,
-	txNonce,
+	nonceFromFlag,
 	signingKey,
 	note string,
 	deleteRefAction bool,
-	rpcClient *client.RPCClient) error {
-
-	repo, err := getCurrentWDRepo(gitBinDir)
-	if err != nil {
-		return err
-	}
+	rpcClient *client.RPCClient,
+	remoteClients []*rest.Client) error {
 
 	// Get the signing key id from the git config if not provided via -s flag
 	if signingKey == "" {
@@ -695,17 +776,19 @@ func SignNoteCmd(
 	// Get the public key network ID
 	pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
-	// If rpc client is provided, get nonce using the client
-	if rpcClient != nil {
-		txNonce, err = getNextNonceFromClient(pkID, rpcClient)
-		if err != nil {
-			return err
-		}
+	// Get the next nonce.
+	nextNonce, err := determineNextNonce(
+		nonceFromFlag,
+		pkID,
+		rpcClient,
+		remoteClients)
+	if err != nil {
+		return err
 	}
 
 	// Sign a message composed of the tx information
 	// fee + nonce + public key id + note hash
-	sigMsg := []byte(txFee + txNonce + pkID + noteHash)
+	sigMsg := []byte(txFee + nextNonce + pkID + noteHash)
 	sig, err := crypto.GPGSign(pkEntity, sigMsg)
 	if err != nil {
 		return errors.Wrap(err, "failed to sign transaction parameters")
@@ -717,7 +800,10 @@ func SignNoteCmd(
 	}
 
 	// Construct the txparams
-	txParams := util.MakeTxParams(txFee, txNonce, pkID, sig, directives...)
+	txParams, err := util.MakeAndValidateTxParams(txFee, nonceFromFlag, pkID, sig, directives...)
+	if err != nil {
+		return err
+	}
 
 	// Create a blob with 0 byte content which be the subject of our note.
 	blobHash, err := repo.CreateBlob("")

@@ -2,7 +2,7 @@ package modules
 
 import (
 	"fmt"
-	"github.com/k0kubun/pp"
+
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/modules/types"
 	types2 "gitlab.com/makeos/mosdef/services/types"
@@ -62,7 +62,7 @@ func (m *AccountModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
 			Description: "Get the public key of an account (supports interactive mode)",
 		},
 		&types.ModulesAggregatorFunc{
-			Name:        "GetNonce",
+			Name:        "getNonce",
 			Value:       m.GetNonce,
 			Description: "Get the nonce of an account",
 		},
@@ -219,7 +219,6 @@ func (m *AccountModule) getPublicKey(address string, passphrase ...string) strin
 // GetNonce returns the current nonce of an account
 func (m *AccountModule) GetNonce(address string) string {
 	nonce, err := m.service.GetNonce(util.String(address))
-	pp.Println(nonce, err)
 	if err != nil {
 		panic(err)
 	}
@@ -279,7 +278,7 @@ func (m *AccountModule) getPrivateValidator(includePrivKey ...bool) interface{} 
 	if len(includePrivKey) > 0 && includePrivKey[0] {
 		info["privateKey"] = key.PrivKey().Base58()
 	}
-	
+
 	return info
 }
 
