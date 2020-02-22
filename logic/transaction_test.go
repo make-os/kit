@@ -1,9 +1,10 @@
 package logic
 
 import (
+	"os"
+
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"os"
 
 	"gitlab.com/makeos/mosdef/crypto"
 
@@ -66,7 +67,7 @@ var _ = Describe("Transaction", func() {
 				tx := &unknownTxType{TxCoinTransfer: core.NewBareTxCoinTransfer()}
 				resp := logic.Tx().ExecTx(tx, 1)
 				Expect(resp.GetCode()).ToNot(BeZero())
-				Expect(resp.GetLog()).To(Equal("tx failed validation: field:type, error:unsupported transaction type"))
+				Expect(resp.GetLog()).To(Equal("tx failed validation: field:type, msg:unsupported transaction type"))
 			})
 		})
 
@@ -75,7 +76,7 @@ var _ = Describe("Transaction", func() {
 				tx := core.NewBareTxTicketPurchase(1000)
 				resp := logic.Tx().ExecTx(tx, 1)
 				Expect(resp.GetCode()).ToNot(BeZero())
-				Expect(resp.Log).To(Equal("tx failed validation: field:type, error:type is invalid"))
+				Expect(resp.Log).To(Equal("tx failed validation: field:type, msg:type is invalid"))
 			})
 		})
 	})
@@ -87,14 +88,14 @@ var _ = Describe("Transaction", func() {
 			It("should not return err='sender's spendable account balance is insufficient'", func() {
 				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 1, 1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, error:sender's spendable account balance is insufficient"))
+				Expect(err.Error()).To(Equal("field:value, msg:sender's spendable account balance is insufficient"))
 			})
 
 			When("value=0 and fee is non-zero", func() {
 				It("should not return err='sender's spendable account balance is insufficient' with field=fee", func() {
 					err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("0"), util.String("10"), 1, 1)
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("field:fee, error:sender's spendable account balance is insufficient"))
+					Expect(err.Error()).To(Equal("field:fee, msg:sender's spendable account balance is insufficient"))
 				})
 			})
 		})
@@ -103,7 +104,7 @@ var _ = Describe("Transaction", func() {
 			It("should return no error", func() {
 				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 3, 1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, error:tx has invalid nonce (3), expected (1)"))
+				Expect(err.Error()).To(Equal("field:value, msg:tx has invalid nonce (3), expected (1)"))
 			})
 		})
 

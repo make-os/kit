@@ -1,12 +1,13 @@
 package validators_test
 
 import (
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
+
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 
 	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/params"
@@ -45,7 +46,7 @@ var _ = Describe("TxValidator", func() {
 				tx := core.NewBareTxCoinTransfer()
 				err := validators.CheckRecipient(tx.TxRecipient, 0)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:0, field:to, error:recipient address is required"))
+				Expect(err).To(MatchError("index:0, field:to, msg:recipient address is required"))
 			})
 		})
 
@@ -55,7 +56,7 @@ var _ = Describe("TxValidator", func() {
 				tx.To = "abcdef"
 				err := validators.CheckRecipient(tx.TxRecipient, 0)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:0, field:to, error:recipient address is not valid"))
+				Expect(err).To(MatchError("index:0, field:to, msg:recipient address is not valid"))
 			})
 		})
 
@@ -83,7 +84,7 @@ var _ = Describe("TxValidator", func() {
 				tx.To = "a/abcdef"
 				err := validators.CheckRecipient(tx.TxRecipient, 0)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:0, field:to, error:recipient address is not valid"))
+				Expect(err).To(MatchError("index:0, field:to, msg:recipient address is not valid"))
 			})
 		})
 
@@ -110,34 +111,34 @@ var _ = Describe("TxValidator", func() {
 				tx.Type = -10
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
+				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 			})
 
 			It("has no recipient address", func() {
 				tx.To = ""
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:to, error:recipient address is required"))
+				Expect(err.Error()).To(Equal("field:to, msg:recipient address is required"))
 			})
 
 			It("has invalid recipient address", func() {
 				tx.To = "invalid"
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:to, error:recipient address is not valid"))
+				Expect(err.Error()).To(Equal("field:to, msg:recipient address is not valid"))
 			})
 
 			It("has invalid value", func() {
 				tx.Value = "invalid"
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, error:invalid number; must be numeric"))
+				Expect(err.Error()).To(Equal("field:value, msg:invalid number; must be numeric"))
 			})
 
 			It("has no nonce", func() {
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, error:nonce is required"))
+				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 			})
 
 			It("has invalid fee", func() {
@@ -145,7 +146,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Fee = "invalid"
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, error:invalid number; must be numeric"))
+				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
 			})
 
 			It("has low fee", func() {
@@ -153,14 +154,14 @@ var _ = Describe("TxValidator", func() {
 				tx.Fee = "0"
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("field:fee, error:fee cannot be lower than the base price"))
+				Expect(err.Error()).To(ContainSubstring("field:fee, msg:fee cannot be lower than the base price"))
 			})
 
 			It("has no timestamp", func() {
 				tx.Nonce = 1
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, error:timestamp is required"))
+				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
 			})
 
 			It("has no public key", func() {
@@ -168,7 +169,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Timestamp = time.Now().Unix()
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
+				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
 			})
 
 			It("has no signature", func() {
@@ -177,7 +178,7 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
 			})
 
 			It("has invalid signature", func() {
@@ -187,7 +188,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxCoinTransfer(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 		})
 
@@ -222,28 +223,28 @@ var _ = Describe("TxValidator", func() {
 				tx.Type = -10
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
+				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 			})
 
 			It("has invalid value", func() {
 				tx.Value = "invalid"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, error:invalid number; must be numeric"))
+				Expect(err.Error()).To(Equal("field:value, msg:invalid number; must be numeric"))
 			})
 
 			It("has no name", func() {
 				tx.Name = ""
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:name, error:requires a unique name"))
+				Expect(err.Error()).To(Equal("field:name, msg:requires a unique name"))
 			})
 
 			It("has an invalid name", func() {
 				tx.Name = "invalid&"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+				Expect(err.Error()).To(Equal("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 			})
 
 			It("has transfer repo and account fields set", func() {
@@ -251,21 +252,21 @@ var _ = Describe("TxValidator", func() {
 				tx.TransferToAccount = "account"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:, error:can only transfer ownership to either an account or a repo"))
+				Expect(err.Error()).To(Equal("field:, msg:can only transfer ownership to either an account or a repo"))
 			})
 
 			It("has invalid transfer account", func() {
 				tx.TransferToAccount = "account"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:transferToAccount, error:address is not valid"))
+				Expect(err.Error()).To(Equal("field:transferToAccount, msg:address is not valid"))
 			})
 
 			It("has value not equal to namespace price", func() {
 				tx.Value = "1"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, error:invalid value; has 1, want 5"))
+				Expect(err.Error()).To(Equal("field:value, msg:invalid value; has 1, want 5"))
 			})
 
 			It("has domain target with invalid format", func() {
@@ -273,7 +274,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Domains["domain"] = "invalid:format"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:domains, error:domains.domain: target is invalid"))
+				Expect(err.Error()).To(Equal("field:domains, msg:domains.domain: target is invalid"))
 			})
 
 			It("has domain target with unknown target type", func() {
@@ -281,7 +282,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Domains["domain"] = "unknown_type/name"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:domains, error:domains.domain: target is invalid"))
+				Expect(err.Error()).To(Equal("field:domains, msg:domains.domain: target is invalid"))
 			})
 
 			It("has domain target with account target type that has an invalid address", func() {
@@ -289,7 +290,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Domains["domain"] = "a/invalid_addr"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:domains, error:domains.domain: target is not a valid address"))
+				Expect(err.Error()).To(Equal("field:domains, msg:domains.domain: target is not a valid address"))
 			})
 
 			It("has invalid fee", func() {
@@ -297,7 +298,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Fee = "invalid"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, error:invalid number; must be numeric"))
+				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
 			})
 
 			It("has low fee", func() {
@@ -305,21 +306,21 @@ var _ = Describe("TxValidator", func() {
 				tx.Fee = "0"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("field:fee, error:fee cannot be lower than the base price"))
+				Expect(err.Error()).To(ContainSubstring("field:fee, msg:fee cannot be lower than the base price"))
 			})
 
 			It("has no nonce", func() {
 				tx.Nonce = 0
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, error:nonce is required"))
+				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 			})
 
 			It("has no timestamp", func() {
 				tx.Nonce = 1
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, error:timestamp is required"))
+				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
 			})
 
 			It("has no public key", func() {
@@ -327,7 +328,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Timestamp = time.Now().Unix()
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
+				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
 			})
 
 			It("has no signature", func() {
@@ -336,7 +337,7 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
 			})
 
 			It("has invalid signature", func() {
@@ -346,7 +347,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 		})
 
@@ -371,7 +372,7 @@ var _ = Describe("TxValidator", func() {
 				domains := map[string]string{"goo&": "abc"}
 				err := validators.CheckNamespaceDomains(domains, 0)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:0, field:domains, error:domains.goo&: name is invalid"))
+				Expect(err).To(MatchError("index:0, field:domains, msg:domains.goo&: name is invalid"))
 			})
 		})
 
@@ -380,7 +381,7 @@ var _ = Describe("TxValidator", func() {
 				domains := map[string]string{"google": "xyz"}
 				err := validators.CheckNamespaceDomains(domains, 0)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:0, field:domains, error:domains.google: target is invalid"))
+				Expect(err).To(MatchError("index:0, field:domains, msg:domains.google: target is invalid"))
 			})
 		})
 
@@ -389,7 +390,7 @@ var _ = Describe("TxValidator", func() {
 				domains := map[string]string{"google": "a/xyz"}
 				err := validators.CheckNamespaceDomains(domains, 0)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:0, field:domains, error:domains.google: target is not a valid address"))
+				Expect(err).To(MatchError("index:0, field:domains, msg:domains.google: target is not a valid address"))
 			})
 		})
 	})
@@ -407,14 +408,14 @@ var _ = Describe("TxValidator", func() {
 				tx.Type = -10
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
+				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 			})
 
 			It("has invalid value", func() {
 				tx.Value = "invalid"
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, error:invalid number; must be numeric"))
+				Expect(err.Error()).To(Equal("field:value, msg:invalid number; must be numeric"))
 			})
 
 			It("has type of TxTypeStorerTicket and value is lower than minimum stake", func() {
@@ -423,20 +424,20 @@ var _ = Describe("TxValidator", func() {
 				tx.Value = "10"
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, error:value is lower than minimum storer stake"))
+				Expect(err.Error()).To(Equal("field:value, msg:value is lower than minimum storer stake"))
 			})
 
 			It("has negative or zero value", func() {
 				tx.Value = "0"
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, error:value must be a positive number"))
+				Expect(err.Error()).To(Equal("field:value, msg:value must be a positive number"))
 			})
 
 			It("has no nonce", func() {
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, error:nonce is required"))
+				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 			})
 
 			It("has invalid fee", func() {
@@ -444,14 +445,14 @@ var _ = Describe("TxValidator", func() {
 				tx.Fee = "invalid"
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, error:invalid number; must be numeric"))
+				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
 			})
 
 			It("has no timestamp", func() {
 				tx.Nonce = 1
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, error:timestamp is required"))
+				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
 			})
 
 			It("has no public key", func() {
@@ -459,7 +460,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Timestamp = time.Now().Unix()
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
+				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
 			})
 
 			It("has no signature", func() {
@@ -468,7 +469,7 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
 			})
 
 			It("has invalid signature", func() {
@@ -478,7 +479,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 
 			It("has type of TxTypeStorerTicket and BLS public key is unset", func() {
@@ -489,7 +490,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Type = core.TxTypeStorerTicket
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:blsPubKey, error:BLS public key is required"))
+				Expect(err.Error()).To(Equal("field:blsPubKey, msg:BLS public key is required"))
 			})
 
 			It("has type of TxTypeStorerTicket and BLS public key has invalid length", func() {
@@ -501,7 +502,7 @@ var _ = Describe("TxValidator", func() {
 				tx.BLSPubKey = util.RandBytes(32)
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:blsPubKey, error:BLS public key length is invalid"))
+				Expect(err.Error()).To(Equal("field:blsPubKey, msg:BLS public key length is invalid"))
 			})
 		})
 
@@ -533,7 +534,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Type = -10
 				err := validators.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
+				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 			})
 
 			It("has no ticket hash", func() {
@@ -542,13 +543,13 @@ var _ = Describe("TxValidator", func() {
 				tx.TicketHash = util.EmptyBytes32
 				err := validators.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:ticket, error:ticket id is required"))
+				Expect(err.Error()).To(Equal("field:ticket, msg:ticket id is required"))
 			})
 
 			It("has no nonce", func() {
 				err := validators.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, error:nonce is required"))
+				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 			})
 
 			It("has invalid fee", func() {
@@ -556,14 +557,14 @@ var _ = Describe("TxValidator", func() {
 				tx.Fee = "invalid"
 				err := validators.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, error:invalid number; must be numeric"))
+				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
 			})
 
 			It("has no timestamp", func() {
 				tx.Nonce = 1
 				err := validators.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, error:timestamp is required"))
+				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
 			})
 
 			It("has no public key", func() {
@@ -571,7 +572,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Timestamp = time.Now().Unix()
 				err := validators.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
+				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
 			})
 
 			It("has no signature", func() {
@@ -580,7 +581,7 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
 			})
 
 			It("has invalid signature", func() {
@@ -590,7 +591,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxUnbondTicket(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 		})
 
@@ -618,7 +619,7 @@ var _ = Describe("TxValidator", func() {
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propProposee, error:unknown value"))
+				Expect(err.Error()).To(Equal("field:config.gov.propProposee, msg:unknown value"))
 			})
 		})
 
@@ -632,7 +633,7 @@ var _ = Describe("TxValidator", func() {
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propTallyMethod, error:unknown value"))
+				Expect(err.Error()).To(Equal("field:config.gov.propTallyMethod, msg:unknown value"))
 			})
 		})
 
@@ -647,7 +648,7 @@ var _ = Describe("TxValidator", func() {
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propQuorum, error:must be a non-negative number"))
+				Expect(err.Error()).To(Equal("field:config.gov.propQuorum, msg:must be a non-negative number"))
 			})
 		})
 
@@ -663,7 +664,7 @@ var _ = Describe("TxValidator", func() {
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propThreshold, error:must be a non-negative number"))
+				Expect(err.Error()).To(Equal("field:config.gov.propThreshold, msg:must be a non-negative number"))
 			})
 		})
 
@@ -680,7 +681,7 @@ var _ = Describe("TxValidator", func() {
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propVetoQuorum, error:must be a non-negative number"))
+				Expect(err.Error()).To(Equal("field:config.gov.propVetoQuorum, msg:must be a non-negative number"))
 			})
 		})
 
@@ -698,7 +699,7 @@ var _ = Describe("TxValidator", func() {
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propVetoOwnersQuorum, error:must be a non-negative number"))
+				Expect(err.Error()).To(Equal("field:config.gov.propVetoOwnersQuorum, msg:must be a non-negative number"))
 			})
 		})
 
@@ -718,7 +719,7 @@ var _ = Describe("TxValidator", func() {
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propFee, error:cannot be lower " +
+				Expect(err.Error()).To(Equal("field:config.gov.propFee, msg:cannot be lower " +
 					"than network minimum"))
 			})
 		})
@@ -733,7 +734,7 @@ var _ = Describe("TxValidator", func() {
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config, error:when proposee type " +
+				Expect(err.Error()).To(Equal("field:config, msg:when proposee type " +
 					"is not 'ProposeeOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
 			})
 		})
@@ -748,7 +749,7 @@ var _ = Describe("TxValidator", func() {
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config, error:when proposee type " +
+				Expect(err.Error()).To(Equal("field:config, msg:when proposee type " +
 					"is not 'ProposeeOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
 			})
 		})
@@ -767,14 +768,14 @@ var _ = Describe("TxValidator", func() {
 				tx.Type = -10
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
+				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 			})
 
 			It("has invalid value", func() {
 				tx.Value = "invalid"
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, error:invalid number; must be numeric"))
+				Expect(err.Error()).To(Equal("field:value, msg:invalid number; must be numeric"))
 			})
 
 			It("has no name", func() {
@@ -783,7 +784,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Name = ""
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:name, error:requires a unique name"))
+				Expect(err.Error()).To(Equal("field:name, msg:requires a unique name"))
 			})
 
 			It("has invalid name", func() {
@@ -792,13 +793,13 @@ var _ = Describe("TxValidator", func() {
 				tx.Name = "org&name#"
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+				Expect(err.Error()).To(Equal("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 			})
 
 			It("has no nonce", func() {
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, error:nonce is required"))
+				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 			})
 
 			It("has invalid fee", func() {
@@ -806,14 +807,14 @@ var _ = Describe("TxValidator", func() {
 				tx.Fee = "invalid"
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, error:invalid number; must be numeric"))
+				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
 			})
 
 			It("has no timestamp", func() {
 				tx.Nonce = 1
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, error:timestamp is required"))
+				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
 			})
 
 			It("has no public key", func() {
@@ -821,7 +822,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Timestamp = time.Now().Unix()
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
+				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
 			})
 
 			It("has no signature", func() {
@@ -830,7 +831,7 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
 			})
 
 			It("has invalid signature", func() {
@@ -840,7 +841,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 		})
 
@@ -875,27 +876,27 @@ var _ = Describe("TxValidator", func() {
 				tx.Type = -10
 				err := validators.CheckTxAddGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
+				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 			})
 
 			It("has no gpg public key", func() {
 				tx.PublicKey = ""
 				err := validators.CheckTxAddGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pubKey, error:public key is required"))
+				Expect(err.Error()).To(Equal("field:pubKey, msg:public key is required"))
 			})
 
 			It("has invalid gpg public key", func() {
 				tx.PublicKey = "invalid"
 				err := validators.CheckTxAddGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pubKey, error:invalid gpg public key"))
+				Expect(err.Error()).To(Equal("field:pubKey, msg:invalid gpg public key"))
 			})
 
 			It("has no nonce", func() {
 				err := validators.CheckTxAddGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, error:nonce is required"))
+				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 			})
 
 			It("has invalid fee", func() {
@@ -903,14 +904,14 @@ var _ = Describe("TxValidator", func() {
 				tx.Fee = "invalid"
 				err := validators.CheckTxAddGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, error:invalid number; must be numeric"))
+				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
 			})
 
 			It("has no timestamp", func() {
 				tx.Nonce = 1
 				err := validators.CheckTxAddGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, error:timestamp is required"))
+				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
 			})
 
 			It("has no public key", func() {
@@ -918,7 +919,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Timestamp = time.Now().Unix()
 				err := validators.CheckTxAddGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
+				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
 			})
 
 			It("has no signature", func() {
@@ -927,7 +928,7 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxAddGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
 			})
 
 			It("has invalid signature", func() {
@@ -937,7 +938,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxAddGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 		})
 
@@ -969,14 +970,14 @@ var _ = Describe("TxValidator", func() {
 				tx.Type = -10
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
+				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 			})
 
 			It("has no commission value", func() {
 				tx.Commission = ""
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:commission, error:commission rate is required"))
+				Expect(err.Error()).To(Equal("field:commission, msg:commission rate is required"))
 			})
 
 			It("has no commission value is below minimum", func() {
@@ -984,7 +985,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Commission = "49"
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:commission, error:rate cannot be below the minimum (50%)"))
+				Expect(err.Error()).To(Equal("field:commission, msg:rate cannot be below the minimum (50%)"))
 			})
 
 			It("has no commission value is above 100", func() {
@@ -992,13 +993,13 @@ var _ = Describe("TxValidator", func() {
 				tx.Commission = "101"
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:commission, error:commission rate cannot exceed 100%"))
+				Expect(err.Error()).To(Equal("field:commission, msg:commission rate cannot exceed 100%"))
 			})
 
 			It("has no nonce", func() {
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, error:nonce is required"))
+				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 			})
 
 			It("has invalid fee", func() {
@@ -1006,14 +1007,14 @@ var _ = Describe("TxValidator", func() {
 				tx.Fee = "invalid"
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, error:invalid number; must be numeric"))
+				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
 			})
 
 			It("has no timestamp", func() {
 				tx.Nonce = 1
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:timestamp, error:timestamp is required"))
+				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
 			})
 
 			It("has no public key", func() {
@@ -1021,7 +1022,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Timestamp = time.Now().Unix()
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender public key is required"))
+				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
 			})
 
 			It("has no signature", func() {
@@ -1030,7 +1031,7 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is required"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
 			})
 
 			It("has invalid signature", func() {
@@ -1040,7 +1041,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = []byte("invalid")
 				err := validators.CheckTxSetDelegateCommission(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, error:signature is not valid"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 		})
 
@@ -1071,7 +1072,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Type = -10
 				err := validators.CheckTxNamespaceDomainUpdate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
+				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 			})
 		})
 
@@ -1079,7 +1080,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return err", func() {
 				err := validators.CheckTxNamespaceDomainUpdate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:name, error:requires a name"))
+				Expect(err.Error()).To(Equal("field:name, msg:requires a name"))
 			})
 		})
 
@@ -1088,7 +1089,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Name = "&name"
 				err := validators.CheckTxNamespaceDomainUpdate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+				Expect(err.Error()).To(Equal("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 			})
 		})
 
@@ -1097,7 +1098,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Name = "ab"
 				err := validators.CheckTxNamespaceDomainUpdate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:name, error:name is too short. Must be at least 3 characters long"))
+				Expect(err.Error()).To(Equal("field:name, msg:name is too short. Must be at least 3 characters long"))
 			})
 		})
 	})
@@ -1122,28 +1123,28 @@ var _ = Describe("TxValidator", func() {
 				tx.Type = -10
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:type, error:type is invalid"))
+				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 			})
 
 			It("has no push note", func() {
 				tx.PushNote = nil
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pushNote, error:push note is required"))
+				Expect(err.Error()).To(Equal("field:pushNote, msg:push note is required"))
 			})
 
 			It("has an invalid push note (with no repo name)", func() {
 				tx.PushNote.RepoName = ""
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:repoName, error:repo name is required"))
+				Expect(err.Error()).To(Equal("field:repoName, msg:repo name is required"))
 			})
 
 			It("has low endorsement (not up to quorum)", func() {
 				params.PushOKQuorumSize = 1
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:endorsements, error:not enough endorsements included"))
+				Expect(err.Error()).To(Equal("field:endorsements, msg:not enough endorsements included"))
 			})
 
 			It("has a no push note id", func() {
@@ -1154,7 +1155,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:endorsements.pushNoteID, error:push note id is required"))
+				Expect(err.Error()).To(Equal("index:0, field:endorsements.pushNoteID, msg:push note id is required"))
 			})
 
 			It("has a PushOK with no sender public key", func() {
@@ -1168,7 +1169,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:endorsements.senderPubKey, error:sender public key is required"))
+				Expect(err.Error()).To(Equal("index:0, field:endorsements.senderPubKey, msg:sender public key is required"))
 			})
 
 			It("has a PushOK with a push note id that is different from the PushTx.PushNoteID", func() {
@@ -1182,7 +1183,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:endorsements.pushNoteID, error:push note id and push endorsement id must match"))
+				Expect(err.Error()).To(Equal("index:0, field:endorsements.pushNoteID, msg:push note id and push endorsement id must match"))
 			})
 
 			It("has multiple PushOKs from same sender", func() {
@@ -1209,7 +1210,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:1, field:endorsements.senderPubKey, error:multiple endorsement by a single sender not permitted"))
+				Expect(err.Error()).To(Equal("index:1, field:endorsements.senderPubKey, msg:multiple endorsement by a single sender not permitted"))
 			})
 
 			It("has PushOKs with different references hash set", func() {
@@ -1242,7 +1243,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Sig = sig
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:1, field:endorsements.refsHash, error:references of all endorsements must match"))
+				Expect(err.Error()).To(Equal("index:1, field:endorsements.refsHash, msg:references of all endorsements must match"))
 			})
 		})
 
@@ -1282,14 +1283,14 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when repo name is not provided", func() {
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, error:repo name is required"))
+			Expect(err).To(MatchError("field:name, msg:repo name is required"))
 		})
 
 		It("should return error when repo name is not valid", func() {
 			tx.RepoName = "*&^"
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+			Expect(err).To(MatchError("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 		})
 
 		It("should return error when proposal id is unset", func() {
@@ -1297,7 +1298,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = ""
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id is required"))
+			Expect(err).To(MatchError("field:id, msg:proposal id is required"))
 		})
 
 		It("should return error when proposal id is not valid", func() {
@@ -1305,7 +1306,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = "abc123"
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
+			Expect(err).To(MatchError("field:id, msg:proposal id is not valid"))
 		})
 
 		It("should return error when proposal id length exceeds max", func() {
@@ -1313,7 +1314,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = "123456789"
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id limit of 8 bytes exceeded"))
+			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
 		})
 
 		It("should return error when value is not provided", func() {
@@ -1321,7 +1322,7 @@ var _ = Describe("TxValidator", func() {
 			tx.Value = ""
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:value, error:value is required"))
+			Expect(err).To(MatchError("field:value, msg:value is required"))
 		})
 
 		It("should return error when value below minimum network proposal fee", func() {
@@ -1330,14 +1331,14 @@ var _ = Describe("TxValidator", func() {
 			tx.Value = "1"
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:value, error:proposal creation fee cannot be less than network minimum"))
+			Expect(err).To(MatchError("field:value, msg:proposal creation fee cannot be less than network minimum"))
 		})
 
 		It("should return error when target address is not provided", func() {
 			tx.RepoName = "repo1"
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:addresses, error:at least one address is required"))
+			Expect(err).To(MatchError("field:addresses, msg:at least one address is required"))
 		})
 
 		It("should return error when target addresses exceed maximum", func() {
@@ -1346,7 +1347,7 @@ var _ = Describe("TxValidator", func() {
 			tx.Addresses = addresses
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:addresses, error:only a maximum of 10 addresses are allowed"))
+			Expect(err).To(MatchError("field:addresses, msg:only a maximum of 10 addresses are allowed"))
 		})
 
 		It("should return error when target address is not valid", func() {
@@ -1354,7 +1355,7 @@ var _ = Describe("TxValidator", func() {
 			tx.Addresses = "invalid_addr"
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:addresses[0], error:address is not valid"))
+			Expect(err).To(MatchError("field:addresses[0], msg:address is not valid"))
 		})
 	})
 
@@ -1369,21 +1370,21 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when repo name is not provided", func() {
 			err := validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, error:repo name is required"))
+			Expect(err).To(MatchError("field:name, msg:repo name is required"))
 		})
 
 		It("should return error when repo name is not valid", func() {
 			tx.RepoName = "*&^"
 			err := validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+			Expect(err).To(MatchError("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 		})
 
 		It("should return error when proposal id is not provided", func() {
 			tx.RepoName = "repo1"
 			err := validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id is required"))
+			Expect(err).To(MatchError("field:id, msg:proposal id is required"))
 		})
 
 		It("should return error when proposal id is not numerical", func() {
@@ -1391,7 +1392,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = "abc"
 			err := validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
+			Expect(err).To(MatchError("field:id, msg:proposal id is not valid"))
 		})
 
 		It("should return error when vote choice is not between -2 and 1 (inclusive)", func() {
@@ -1400,17 +1401,17 @@ var _ = Describe("TxValidator", func() {
 			tx.Vote = 2
 			err := validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:vote, error:vote choice is unknown"))
+			Expect(err).To(MatchError("field:vote, msg:vote choice is unknown"))
 
 			tx.Vote = -3
 			err = validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:vote, error:vote choice is unknown"))
+			Expect(err).To(MatchError("field:vote, msg:vote choice is unknown"))
 
 			tx.Vote = -1
 			err = validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).ToNot(MatchError("field:vote, error:vote choice is unknown"))
+			Expect(err).ToNot(MatchError("field:vote, msg:vote choice is unknown"))
 		})
 	})
 
@@ -1425,21 +1426,21 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when repo name is not provided", func() {
 			err := validators.CheckTxRepoProposalSendFee(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, error:repo name is required"))
+			Expect(err).To(MatchError("field:name, msg:repo name is required"))
 		})
 
 		It("should return error when repo name is not valid", func() {
 			tx.RepoName = "*&^"
 			err := validators.CheckTxRepoProposalSendFee(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+			Expect(err).To(MatchError("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 		})
 
 		It("should return error when proposal id is not provided", func() {
 			tx.RepoName = "repo1"
 			err := validators.CheckTxRepoProposalSendFee(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id is required"))
+			Expect(err).To(MatchError("field:id, msg:proposal id is required"))
 		})
 
 		It("should return error when proposal id is not numerical", func() {
@@ -1447,7 +1448,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = "abc"
 			err := validators.CheckTxRepoProposalSendFee(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
+			Expect(err).To(MatchError("field:id, msg:proposal id is not valid"))
 		})
 
 		It("should return error when proposal id exceeds max length", func() {
@@ -1455,7 +1456,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = "1234556789"
 			err := validators.CheckTxRepoProposalSendFee(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id limit of 8 bytes exceeded"))
+			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
 		})
 
 		It("should return error when value is not provided", func() {
@@ -1464,7 +1465,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = "1"
 			err := validators.CheckTxRepoProposalSendFee(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:value, error:value is required"))
+			Expect(err).To(MatchError("field:value, msg:value is required"))
 		})
 	})
 
@@ -1480,14 +1481,14 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when repo name is not provided", func() {
 			err := validators.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, error:repo name is required"))
+			Expect(err).To(MatchError("field:name, msg:repo name is required"))
 		})
 
 		It("should return error when repo name is not valid", func() {
 			tx.RepoName = "*&^"
 			err := validators.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, error:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+			Expect(err).To(MatchError("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 		})
 
 		It("should return error when proposal id is unset", func() {
@@ -1495,7 +1496,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = ""
 			err := validators.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id is required"))
+			Expect(err).To(MatchError("field:id, msg:proposal id is required"))
 		})
 
 		It("should return error when proposal id is not valid", func() {
@@ -1503,7 +1504,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = "abc123"
 			err := validators.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
+			Expect(err).To(MatchError("field:id, msg:proposal id is not valid"))
 		})
 
 		It("should return error when proposal id length exceeds max", func() {
@@ -1511,7 +1512,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = "123456789"
 			err := validators.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id limit of 8 bytes exceeded"))
+			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
 		})
 
 		It("should return error when value is not provided", func() {
@@ -1519,7 +1520,7 @@ var _ = Describe("TxValidator", func() {
 			tx.Value = ""
 			err := validators.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:value, error:value is required"))
+			Expect(err).To(MatchError("field:value, msg:value is required"))
 		})
 
 		It("should return error when value below minimum network proposal fee", func() {
@@ -1528,7 +1529,7 @@ var _ = Describe("TxValidator", func() {
 			tx.Value = "1"
 			err := validators.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:value, error:proposal creation fee cannot be less than network minimum"))
+			Expect(err).To(MatchError("field:value, msg:proposal creation fee cannot be less than network minimum"))
 		})
 	})
 
@@ -1544,14 +1545,14 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when repo name is not provided", func() {
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, error:repo name is required"))
+			Expect(err).To(MatchError("field:name, msg:repo name is required"))
 		})
 
 		It("should return error when repo name is not valid", func() {
 			tx.RepoName = "*&^"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, error:invalid characters in name. " +
+			Expect(err).To(MatchError("field:name, msg:invalid characters in name. " +
 				"Only alphanumeric, _ and - characters are allowed"))
 		})
 
@@ -1560,7 +1561,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = ""
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id is required"))
+			Expect(err).To(MatchError("field:id, msg:proposal id is required"))
 		})
 
 		It("should return error when proposal id is not valid", func() {
@@ -1568,7 +1569,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = "abc123"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id is not valid"))
+			Expect(err).To(MatchError("field:id, msg:proposal id is not valid"))
 		})
 
 		It("should return error when proposal id length exceeds max", func() {
@@ -1576,7 +1577,7 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = "123456789"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:id, error:proposal id limit of 8 bytes exceeded"))
+			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
 		})
 
 		It("should return error when value is not provided", func() {
@@ -1584,14 +1585,14 @@ var _ = Describe("TxValidator", func() {
 			tx.Value = ""
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:value, error:value is required"))
+			Expect(err).To(MatchError("field:value, msg:value is required"))
 		})
 
 		It("should return error when base branch is not provided", func() {
 			tx.RepoName = "repo1"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:base, error:base branch name is required"))
+			Expect(err).To(MatchError("field:base, msg:base branch name is required"))
 		})
 
 		It("should return error when base branch hash is not valid", func() {
@@ -1600,7 +1601,7 @@ var _ = Describe("TxValidator", func() {
 			tx.BaseBranchHash = "invalid"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:baseHash, error:base branch hash is not valid"))
+			Expect(err).To(MatchError("field:baseHash, msg:base branch hash is not valid"))
 		})
 
 		It("should return error when target branch is not provided", func() {
@@ -1609,7 +1610,7 @@ var _ = Describe("TxValidator", func() {
 			tx.BaseBranchHash = util.RandString(40)
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:target, error:target branch name is required"))
+			Expect(err).To(MatchError("field:target, msg:target branch name is required"))
 		})
 
 		It("should return error when target branch hash is not provided", func() {
@@ -1619,7 +1620,7 @@ var _ = Describe("TxValidator", func() {
 			tx.TargetBranch = "branch_base"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:targetHash, error:target branch hash is required"))
+			Expect(err).To(MatchError("field:targetHash, msg:target branch hash is required"))
 		})
 
 		It("should return error when target branch hash is not valid", func() {
@@ -1630,7 +1631,7 @@ var _ = Describe("TxValidator", func() {
 			tx.TargetBranchHash = "invalid"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:targetHash, error:target branch hash is not valid"))
+			Expect(err).To(MatchError("field:targetHash, msg:target branch hash is not valid"))
 		})
 	})
 })

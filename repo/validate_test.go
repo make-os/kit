@@ -4,14 +4,15 @@ import (
 	"crypto/rsa"
 	"encoding/hex"
 	"fmt"
-	"gitlab.com/makeos/mosdef/dht/types"
-	types5 "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"gitlab.com/makeos/mosdef/dht/types"
+	types5 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 
 	"github.com/golang/mock/gomock"
 	"gitlab.com/makeos/mosdef/mocks"
@@ -1012,7 +1013,7 @@ var _ = Describe("Validation", func() {
 		It("should return error when push note id is not set", func() {
 			err := CheckPushOK(&core.PushOK{}, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("field:endorsements.pushNoteID, error:push note id is required"))
+			Expect(err.Error()).To(Equal("field:endorsements.pushNoteID, msg:push note id is required"))
 		})
 
 		It("should return error when public key is not valid", func() {
@@ -1021,7 +1022,7 @@ var _ = Describe("Validation", func() {
 				SenderPubKey: util.EmptyBytes32,
 			}, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, error:sender public key is required"))
+			Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, msg:sender public key is required"))
 		})
 	})
 
@@ -1053,7 +1054,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, error:sender public key does not belong to an active storer"))
+				Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, msg:sender public key does not belong to an active storer"))
 			})
 		})
 
@@ -1100,7 +1101,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("field:endorsements.sig, error:signature could not be verified"))
+				Expect(err.Error()).To(ContainSubstring("field:endorsements.sig, msg:signature could not be verified"))
 			})
 		})
 
@@ -1135,38 +1136,38 @@ var _ = Describe("Validation", func() {
 		okTx.NodeSig = bz
 
 		var cases = [][]interface{}{
-			{&core.PushNote{}, fmt.Errorf("field:repoName, error:repo name is required")},
-			{&core.PushNote{RepoName: "repo"}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key id is required")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: []byte("xyz")}, fmt.Errorf("field:pusherKeyId, error:pusher gpg key is not valid")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 0}, fmt.Errorf("field:timestamp, error:timestamp is required")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 2000000000}, fmt.Errorf("field:timestamp, error:timestamp cannot be a future time")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, fmt.Errorf("field:accountNonce, error:account nonce must be greater than zero")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: ""}, fmt.Errorf("field:fee, error:fee is required")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "one"}, fmt.Errorf("field:fee, error:fee must be numeric")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1"}, fmt.Errorf("field:nodePubKey, error:push node public key is required")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32()}, fmt.Errorf("field:nodeSig, error:push node signature is required")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid signature")}, fmt.Errorf("field:nodeSig, error:failed to verify signature")},
+			{&core.PushNote{}, fmt.Errorf("field:repoName, msg:repo name is required")},
+			{&core.PushNote{RepoName: "repo"}, fmt.Errorf("field:pusherKeyId, msg:pusher gpg key id is required")},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: []byte("xyz")}, fmt.Errorf("field:pusherKeyId, msg:pusher gpg key is not valid")},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 0}, fmt.Errorf("field:timestamp, msg:timestamp is required")},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 2000000000}, fmt.Errorf("field:timestamp, msg:timestamp cannot be a future time")},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, fmt.Errorf("field:accountNonce, msg:account nonce must be greater than zero")},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: ""}, fmt.Errorf("field:fee, msg:fee is required")},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "one"}, fmt.Errorf("field:fee, msg:fee must be numeric")},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1"}, fmt.Errorf("field:nodePubKey, msg:push node public key is required")},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32()}, fmt.Errorf("field:nodeSig, msg:push node signature is required")},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid signature")}, fmt.Errorf("field:nodeSig, msg:failed to verify signature")},
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
 				&core.PushedReference{},
-			}}, fmt.Errorf("index:0, field:references.name, error:name is required")},
+			}}, fmt.Errorf("index:0, field:references.name, msg:name is required")},
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
 				&core.PushedReference{Name: "ref1"},
-			}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is required")},
+			}}, fmt.Errorf("index:0, field:references.oldHash, msg:old hash is required")},
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
 				&core.PushedReference{Name: "ref1", OldHash: "invalid"},
-			}}, fmt.Errorf("index:0, field:references.oldHash, error:old hash is not valid")},
+			}}, fmt.Errorf("index:0, field:references.oldHash, msg:old hash is not valid")},
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
 				&core.PushedReference{Name: "ref1", OldHash: util.RandString(40)},
-			}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is required")},
+			}}, fmt.Errorf("index:0, field:references.newHash, msg:new hash is required")},
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
 				&core.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: "invalid"},
-			}}, fmt.Errorf("index:0, field:references.newHash, error:new hash is not valid")},
+			}}, fmt.Errorf("index:0, field:references.newHash, msg:new hash is not valid")},
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
 				&core.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40)},
-			}}, fmt.Errorf("index:0, field:references.nonce, error:reference nonce must be greater than zero")},
+			}}, fmt.Errorf("index:0, field:references.nonce, msg:reference nonce must be greater than zero")},
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
 				&core.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Objects: []string{"invalid object"}},
-			}}, fmt.Errorf("index:0, field:references.objects.0, error:object hash is not valid")},
+			}}, fmt.Errorf("index:0, field:references.objects.0, msg:object hash is not valid")},
 		}
 
 		It("should check cases", func() {
@@ -1204,7 +1205,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' is unknown"))
+				Expect(err.Error()).To(Equal("index:0, field:references, msg:reference 'refs/heads/master' is unknown"))
 			})
 		})
 
@@ -1221,7 +1222,7 @@ var _ = Describe("Validation", func() {
 
 			It("should not return error about unknown reference", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).ToNot(Equal("index:0, field:references, error:reference 'refs/heads/master' is unknown"))
+				Expect(err.Error()).ToNot(Equal("index:0, field:references, msg:reference 'refs/heads/master' is unknown"))
 			})
 		})
 
@@ -1244,7 +1245,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' old hash does not match its local version"))
+				Expect(err.Error()).To(Equal("index:0, field:references, msg:reference 'refs/heads/master' old hash does not match its local version"))
 			})
 		})
 
@@ -1267,7 +1268,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' does not exist locally"))
+				Expect(err.Error()).To(Equal("index:0, field:references, msg:reference 'refs/heads/master' does not exist locally"))
 			})
 		})
 
@@ -1288,7 +1289,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).ToNot(Equal("index:0, field:references, error:reference 'refs/heads/master' does not exist locally"))
+				Expect(err.Error()).ToNot(Equal("index:0, field:references, msg:reference 'refs/heads/master' does not exist locally"))
 			})
 		})
 
@@ -1311,7 +1312,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' old hash does not match its local version"))
+				Expect(err.Error()).To(Equal("index:0, field:references, msg:reference 'refs/heads/master' old hash does not match its local version"))
 			})
 		})
 
@@ -1344,7 +1345,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:references, error:reference 'refs/heads/master' has nonce '2', expecting '1'"))
+				Expect(err.Error()).To(Equal("index:0, field:references, msg:reference 'refs/heads/master' has nonce '2', expecting '1'"))
 			})
 		})
 
@@ -1392,7 +1393,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:repoName, error:repository named 'unknown' is unknown"))
+				Expect(err.Error()).To(Equal("field:repoName, msg:repository named 'unknown' is unknown"))
 			})
 		})
 
@@ -1406,7 +1407,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("field:pusherKeyId, error:pusher's public key id '.*' is unknown"))
+				Expect(err.Error()).To(MatchRegexp("field:pusherKeyId, msg:pusher's public key id '.*' is unknown"))
 			})
 		})
 
@@ -1427,7 +1428,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pusherAddr, error:gpg key is not associated with the pusher address"))
+				Expect(err.Error()).To(Equal("field:pusherAddr, msg:gpg key is not associated with the pusher address"))
 			})
 		})
 
@@ -1451,7 +1452,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pusherAddr, error:pusher account not found"))
+				Expect(err.Error()).To(Equal("field:pusherAddr, msg:pusher account not found"))
 			})
 		})
 
@@ -1478,7 +1479,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pusherAddr, error:wrong account nonce '3', expecting '2'"))
+				Expect(err.Error()).To(Equal("field:pusherAddr, msg:wrong account nonce '3', expecting '2'"))
 			})
 		})
 
@@ -1637,7 +1638,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:size, error:invalid size (10 bytes). actual object size (7 bytes) is different"))
+				Expect(err.Error()).To(Equal("field:size, msg:invalid size (10 bytes). actual object size (7 bytes) is different"))
 			})
 		})
 	})

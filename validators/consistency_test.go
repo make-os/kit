@@ -3,11 +3,12 @@ package validators_test
 import (
 	"crypto/rsa"
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	types4 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"io/ioutil"
-	"os"
 
 	"gitlab.com/makeos/mosdef/params"
 
@@ -91,7 +92,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:to, error:recipient repo not found"))
+				Expect(err.Error()).To(Equal("field:to, msg:recipient repo not found"))
 			})
 		})
 
@@ -111,7 +112,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:to, error:recipient repo not found"))
+				Expect(err.Error()).To(Equal("field:to, msg:recipient repo not found"))
 			})
 		})
 
@@ -129,7 +130,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:to, error:error"))
+				Expect(err.Error()).To(Equal("field:to, msg:error"))
 			})
 		})
 
@@ -207,7 +208,7 @@ var _ = Describe("TxValidator", func() {
 
 				It("should return err", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("field:delegate, error:specified delegate is not active"))
+					Expect(err.Error()).To(Equal("field:delegate, msg:specified delegate is not active"))
 				})
 			})
 
@@ -226,7 +227,7 @@ var _ = Describe("TxValidator", func() {
 
 				It("should return err", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(ContainSubstring("field:value, error:value is lower than the minimum ticket price"))
+					Expect(err.Error()).To(ContainSubstring("field:value, msg:value is lower than the minimum ticket price"))
 				})
 			})
 
@@ -281,7 +282,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:hash, error:ticket not found"))
+				Expect(err.Error()).To(Equal("field:hash, msg:ticket not found"))
 			})
 		})
 
@@ -303,7 +304,7 @@ var _ = Describe("TxValidator", func() {
 
 				It("should return err", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("field:hash, error:sender not authorized to unbond this ticket"))
+					Expect(err.Error()).To(Equal("field:hash, msg:sender not authorized to unbond this ticket"))
 				})
 			})
 		})
@@ -329,7 +330,7 @@ var _ = Describe("TxValidator", func() {
 
 				It("should return err", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("field:hash, error:sender not authorized to unbond this ticket"))
+					Expect(err.Error()).To(Equal("field:hash, msg:sender not authorized to unbond this ticket"))
 				})
 			})
 		})
@@ -353,7 +354,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:hash, error:ticket is already decaying"))
+				Expect(err.Error()).To(Equal("field:hash, msg:ticket is already decaying"))
 			})
 		})
 
@@ -376,7 +377,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:hash, error:ticket has already decayed"))
+				Expect(err.Error()).To(Equal("field:hash, msg:ticket has already decayed"))
 			})
 		})
 
@@ -437,7 +438,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:name, error:name is not available. choose another"))
+				Expect(err.Error()).To(Equal("field:name, msg:name is not available. choose another"))
 			})
 		})
 
@@ -532,7 +533,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pubKey, error:gpg public key bit length must be at least 2048 bits"))
+				Expect(err.Error()).To(Equal("field:pubKey, msg:gpg public key bit length must be at least 2048 bits"))
 			})
 		})
 
@@ -558,7 +559,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pubKey, error:gpg public key already registered"))
+				Expect(err.Error()).To(Equal("field:pubKey, msg:gpg public key already registered"))
 			})
 		})
 
@@ -623,9 +624,9 @@ var _ = Describe("TxValidator", func() {
 				err = validators.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
 			})
 
-			It("should return err='field:name, error:chosen name is not currently available'", func() {
+			It("should return err='field:name, msg:chosen name is not currently available'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:name, error:chosen name is not currently available"))
+				Expect(err.Error()).To(Equal("field:name, msg:chosen name is not currently available"))
 			})
 		})
 
@@ -688,9 +689,9 @@ var _ = Describe("TxValidator", func() {
 				err = validators.CheckTxNamespaceDomainUpdateConsistency(tx, -1, mockLogic)
 			})
 
-			It("should return err='field:senderPubKey, error:sender not permitted to perform this operation'", func() {
+			It("should return err='field:senderPubKey, msg:sender not permitted to perform this operation'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender not permitted to perform this operation"))
+				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender not permitted to perform this operation"))
 			})
 		})
 
@@ -795,7 +796,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:endorsements.senderPubKey, error:sender public key does not belong to an active storer"))
+				Expect(err.Error()).To(Equal("index:0, field:endorsements.senderPubKey, msg:sender public key does not belong to an active storer"))
 			})
 		})
 
@@ -918,7 +919,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:endorsements.refsHash, error:wrong tree hash for reference (refs/heads/master)"))
+				Expect(err.Error()).To(Equal("index:0, field:endorsements.refsHash, msg:wrong tree hash for reference (refs/heads/master)"))
 			})
 		})
 
@@ -990,7 +991,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:name, error:repo not found"))
+				Expect(err).To(MatchError("field:name, msg:repo not found"))
 			})
 		})
 
@@ -1013,7 +1014,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:id, error:proposal id has been used, choose another"))
+				Expect(err).To(MatchError("field:id, msg:proposal id has been used, choose another"))
 			})
 		})
 
@@ -1035,7 +1036,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:value, error:proposal fee is not required but was provided"))
+				Expect(err).To(MatchError("field:value, msg:proposal fee is not required but was provided"))
 			})
 		})
 
@@ -1056,7 +1057,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:value, error:proposal fee cannot be less than repo minimum"))
+				Expect(err).To(MatchError("field:value, msg:proposal fee cannot be less than repo minimum"))
 			})
 		})
 
@@ -1078,7 +1079,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:senderPubKey, error:sender is not one of the repo owners"))
+				Expect(err).To(MatchError("field:senderPubKey, msg:sender is not one of the repo owners"))
 			})
 		})
 
@@ -1122,7 +1123,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:name, error:repo not found"))
+				Expect(err).To(MatchError("field:name, msg:repo not found"))
 			})
 		})
 
@@ -1141,7 +1142,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:id, error:proposal not found"))
+				Expect(err).To(MatchError("field:id, msg:proposal not found"))
 			})
 		})
 
@@ -1160,7 +1161,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:id, error:proposal has concluded"))
+				Expect(err).To(MatchError("field:id, msg:proposal has concluded"))
 			})
 		})
 
@@ -1207,7 +1208,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:id, error:proposal is currently in fee deposit period"))
+				Expect(err.Error()).To(Equal("field:id, msg:proposal is currently in fee deposit period"))
 			})
 		})
 
@@ -1233,7 +1234,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:id, error:total deposited proposal fee is insufficient"))
+				Expect(err.Error()).To(Equal("field:id, msg:total deposited proposal fee is insufficient"))
 			})
 		})
 
@@ -1283,7 +1284,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:id, error:vote already cast on the target proposal"))
+				Expect(err.Error()).To(Equal("field:id, msg:vote already cast on the target proposal"))
 			})
 		})
 
@@ -1307,7 +1308,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:senderPubKey, error:sender is not one of the repo owners"))
+				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender is not one of the repo owners"))
 			})
 		})
 
@@ -1334,7 +1335,7 @@ var _ = Describe("TxValidator", func() {
 
 				It("should return err", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("field:senderPubKey, error:sender cannot vote 'no with veto' because they have no veto right"))
+					Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender cannot vote 'no with veto' because they have no veto right"))
 				})
 			})
 		})
@@ -1353,7 +1354,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:name, error:repo not found"))
+				Expect(err).To(MatchError("field:name, msg:repo not found"))
 			})
 		})
 
@@ -1372,7 +1373,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:id, error:proposal not found"))
+				Expect(err).To(MatchError("field:id, msg:proposal not found"))
 			})
 		})
 
@@ -1391,7 +1392,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:id, error:proposal has concluded"))
+				Expect(err).To(MatchError("field:id, msg:proposal has concluded"))
 			})
 		})
 
@@ -1438,7 +1439,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:id, error:fee deposit not enabled for the proposal"))
+				Expect(err.Error()).To(Equal("field:id, msg:fee deposit not enabled for the proposal"))
 			})
 		})
 
@@ -1462,7 +1463,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:id, error:proposal fee deposit period has closed"))
+				Expect(err.Error()).To(Equal("field:id, msg:proposal fee deposit period has closed"))
 			})
 		})
 
@@ -1525,7 +1526,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:name, error:repo not found"))
+				Expect(err).To(MatchError("field:name, msg:repo not found"))
 			})
 		})
 
@@ -1546,7 +1547,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:value, error:proposal fee cannot be less than repo minimum"))
+				Expect(err).To(MatchError("field:value, msg:proposal fee cannot be less than repo minimum"))
 			})
 		})
 
@@ -1568,7 +1569,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:senderPubKey, error:sender is not one of the repo owners"))
+				Expect(err).To(MatchError("field:senderPubKey, msg:sender is not one of the repo owners"))
 			})
 		})
 
@@ -1629,7 +1630,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:name, error:repo not found"))
+				Expect(err).To(MatchError("field:name, msg:repo not found"))
 			})
 		})
 
@@ -1650,7 +1651,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:value, error:proposal fee cannot be less than repo minimum"))
+				Expect(err).To(MatchError("field:value, msg:proposal fee cannot be less than repo minimum"))
 			})
 		})
 
@@ -1672,7 +1673,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:senderPubKey, error:sender is not one of the repo owners"))
+				Expect(err).To(MatchError("field:senderPubKey, msg:sender is not one of the repo owners"))
 			})
 		})
 

@@ -611,7 +611,7 @@ func CallOnNilErr(err error, f func() error) error {
 
 // FieldError is used to describe an error concerning an objects field/property
 func FieldError(field, err string) error {
-	return fmt.Errorf(fmt.Sprintf("field:%s, error:%s", field, err))
+	return fmt.Errorf(fmt.Sprintf("field:%s, msg:%s", field, err))
 }
 
 // FieldErrorWithIndex is used to describe an error concerning an field/property
@@ -625,5 +625,5 @@ func FieldErrorWithIndex(index int, field, err string) error {
 	if field == "" {
 		fieldArg = "%s"
 	}
-	return fmt.Errorf(fmt.Sprintf("index:%d, "+fieldArg+"error:%s", index, field, err))
+	return fmt.Errorf(fmt.Sprintf("index:%d, "+fieldArg+"msg:%s", index, field, err))
 }

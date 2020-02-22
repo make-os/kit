@@ -97,7 +97,7 @@ var _ = Describe("Common", func() {
 				"senderPubKey": key.PubKey().Base58(),
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("field:sig, error:unable to decode from hex"))
+			Expect(err.Error()).To(Equal("field:sig, msg:unable to decode from hex"))
 		})
 
 		It("case 5 - malformed sender public key", func() {
@@ -110,7 +110,7 @@ var _ = Describe("Common", func() {
 				"senderPubKey": "bad public key",
 			})
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("field:senderPubKey, error:unable to decode from base58"))
+			Expect(err.Error()).To(Equal("field:senderPubKey, msg:unable to decode from base58"))
 		})
 	})
 })
