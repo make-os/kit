@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"strings"
+	"time"
+
 	"gitlab.com/makeos/mosdef/dht/types"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"io/ioutil"
-	"strings"
-	"time"
 
 	gv "github.com/asaskevich/govalidator"
 	"github.com/shopspring/decimal"
@@ -180,7 +181,12 @@ func checkNote(
 	}
 
 	// Now, verify the signature
-	msg := []byte(txParams.Fee.String() + txParams.GetNonceString() + txParams.PubKeyID + noteHash)
+	msg := []byte(
+		txParams.Fee.String() +
+			txParams.GetNonceString() +
+			txParams.PubKeyID +
+			noteHash +
+			fmt.Sprintf("%v", txParams.DeleteRef))
 	_, err = crypto.VerifyGPGSignature(pubKey, []byte(txParams.Signature), msg)
 	if err != nil {
 		msg := "note (%s) signature verification failed: %s"

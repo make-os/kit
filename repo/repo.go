@@ -788,7 +788,11 @@ func SignNoteCmd(
 
 	// Sign a message composed of the tx information
 	// fee + nonce + public key id + note hash
-	sigMsg := []byte(txFee + nextNonce + pkID + noteHash)
+	sigMsg := []byte(txFee +
+		nextNonce +
+		pkID +
+		noteHash +
+		fmt.Sprintf("%v", deleteRefAction))
 	sig, err := crypto.GPGSign(pkEntity, sigMsg)
 	if err != nil {
 		return errors.Wrap(err, "failed to sign transaction parameters")
