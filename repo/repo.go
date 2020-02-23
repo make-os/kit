@@ -4,14 +4,19 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"fmt"
+	"github.com/k0kubun/pp"
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	appcfg "gitlab.com/makeos/mosdef/config"
+
+	"gitlab.com/makeos/mosdef/accountmgr"
 	"gitlab.com/makeos/mosdef/rest"
 
 	"gitlab.com/makeos/mosdef/types/core"
@@ -819,6 +824,24 @@ func SignNoteCmd(
 	if err = repo.AddEntryToNote(note, blobHash, txParams); err != nil {
 		return errors.Wrap(err, "failed to add tx blob")
 	}
+
+	return nil
+}
+
+// CreateAndSendMergeRequestCmd creates merge request proposal
+// and sends it to the network
+func CreateAndSendMergeRequestCmd(
+	cfg *appcfg.AppConfig,
+	account,
+	passphrase string) error {
+
+	am := accountmgr.New(path.Join(cfg.DataDir(), appcfg.AccountDirName))
+	unlocked, err := am.UIUnlockAccount(account, passphrase)
+	if err != nil {
+		return errors.Wrap(err, "unable to unlock")
+	}
+
+	pp.Println(unlocked.GetKey().PrivKey().Base58())
 
 	return nil
 }

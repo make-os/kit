@@ -5,91 +5,42 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/vmihailenco/msgpack"
-
 	"gitlab.com/makeos/mosdef/util"
-	"github.com/thoas/go-funk"
 )
 
 // UpdateCmd fetches and lists all accounts
-func (am *AccountManager) UpdateCmd(address string) error {
+func (am *AccountManager) UpdateCmd(addressOrIndex, passphrase string) error {
 
-	if len(address) == 0 {
-		util.PrintCLIError("Address is required")
+	if len(addressOrIndex) == 0 {
 		return fmt.Errorf("Address is required")
 	}
 
-	// find the account with a matching address
-	accounts, err := am.ListAccounts()
+	// Unlock the account
+	account, err := am.UIUnlockAccount(addressOrIndex, passphrase)
 	if err != nil {
 		return err
 	}
 
-	account := funk.Find(accounts, func(x *StoredAccount) bool {
-		return x.Address == address
-	})
-
-	if account == nil {
-		util.PrintCLIError("Account {%s} does not exist", address)
-		return fmt.Errorf("account not found")
-	}
-
-	// collect account password
-	fmt.Println(fmt.Sprintf("Enter your current password for the account {%s}", address))
-	passphrase, err := am.AskForPasswordOnce()
-	if err != nil {
-		return err
-	}
-
-	// attempt to decrypt the account
-	passphraseBs := hardenPassword([]byte(passphrase))
-	acctBytes, err := util.Decrypt(account.(*StoredAccount).Cipher, passphraseBs[:])
-	if err != nil {
-		if funk.Contains(err.Error(), "invalid key") {
-			util.PrintCLIError("Invalid passphrase. Could not unlock account.")
-			return err
-		}
-		return err
-	}
-
-	// we expect a base58check content, verify it
-	acctBytesBase58Dec, _, err := base58.CheckDecode(string(acctBytes))
-	if err != nil {
-		util.PrintCLIError("Invalid passphrase. Could not unlock account.")
-		return err
-	}
-
-	// attempt to decode to ensure content is json encoded
-	var accountData map[string]string
-	if err := msgpack.Unmarshal(acctBytesBase58Dec, &accountData); err != nil {
-		util.PrintCLIError("Unable to parse unlocked account data")
-		return err
-	}
-
-	// collect new password
+	// Collect the new password
 	fmt.Println("Enter your new password")
 	newPassphrase, err := am.AskForPassword()
 	if err != nil {
-		util.PrintCLIError(err.Error())
 		return err
 	}
 
-	// re-encrypt with new password
+	// Re-encrypt with the new passphrase
 	newPassphraseHardened := hardenPassword([]byte(newPassphrase))
-	updatedCipher, err := util.Encrypt(acctBytes, newPassphraseHardened[:])
+	updatedCipher, err := util.Encrypt(account.DecryptedCipher, newPassphraseHardened[:])
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to lock account with new passphrase")
 	}
 
-	acct := account.(*StoredAccount)
-	filename := filepath.Join(am.accountDir, fmt.Sprintf("%d_%s", acct.CreatedAt.Unix(), acct.Address))
+	filename := filepath.Join(am.accountDir, fmt.Sprintf("%d_%s", account.CreatedAt.Unix(), account.Address))
 	err = ioutil.WriteFile(filename, updatedCipher, 0644)
 	if err != nil {
-		util.PrintCLIError("Unable to persist cipher. %s", err.Error())
-		return err
+		return fmt.Errorf("unable to write locked account to disk")
 	}
-
 	fmt.Println("Successfully updated account")
+
 	return nil
 }

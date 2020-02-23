@@ -16,7 +16,6 @@ import (
 
 	"golang.org/x/crypto/blake2b"
 
-	crypto "github.com/libp2p/go-libp2p-crypto"
 	"github.com/tendermint/tendermint/libs/bech32"
 )
 
@@ -66,15 +65,6 @@ func (pk PublicKey) Hex() []byte {
 // IsEmpty checks whether the object is empty (having zero values)
 func (pk PublicKey) IsEmpty() bool {
 	return pk == EmptyPublicKey
-}
-
-// HexToPublicKey creates an hex value to PublicKey
-func HexToPublicKey(hex string) (PublicKey, error) {
-	bs, err := FromHex(hex)
-	if err != nil {
-		return EmptyPublicKey, err
-	}
-	return BytesToPublicKey(bs), nil
 }
 
 // BytesToPublicKey copies b to a PublicKey
@@ -198,30 +188,11 @@ func (h Bytes64) IsEmpty() bool {
 	return h == EmptyBytes64
 }
 
-// HexToBytes64 creates an hex value to Bytes64
-func HexToBytes64(hex string) (Bytes64, error) {
-	bs, err := FromHex(hex)
-	if err != nil {
-		return EmptyBytes64, err
-	}
-	return BytesToBytes64(bs), nil
-}
-
 // BytesToBytes64 copies b to a Bytes64
 func BytesToBytes64(b []byte) Bytes64 {
 	var h Bytes64
 	copy(h[:], b)
 	return h
-}
-
-// StrToBytes64 converts a string to a Bytes64
-func StrToBytes64(s string) Bytes64 {
-	return BytesToBytes64([]byte(s))
-}
-
-// GenerateKeyPair generates private and public keys
-func GenerateKeyPair(r io.Reader) (crypto.PrivKey, crypto.PubKey, error) {
-	return crypto.GenerateEd25519Key(r)
 }
 
 // Encrypt encrypts a plaintext
@@ -243,7 +214,7 @@ func Encrypt(plaintext []byte, key []byte) ([]byte, error) {
 	return cipherText, nil
 }
 
-// Decrypt decrypts a ciphertext
+// Unlock decrypts a ciphertext
 func Decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 
 	iv := ciphertext[:aes.BlockSize]

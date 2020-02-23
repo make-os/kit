@@ -61,9 +61,8 @@ func (am *AccountManager) AskForPassword() (string, error) {
 // AskForPasswordOnce is like askForPassword but it does not
 // ask to confirm password.
 func (am *AccountManager) AskForPasswordOnce() (string, error) {
-	fmt.Println(color.CyanString("Please enter your passphrase below"))
+	fmt.Println(color.CyanString("Enter passphrase to unlock the account"))
 	for {
-
 		passphrase := am.getPassword("Passphrase")
 		if len(passphrase) == 0 {
 			continue

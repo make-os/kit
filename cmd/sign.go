@@ -17,6 +17,7 @@ import (
 	"gitlab.com/makeos/mosdef/rpc/client"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // getRPCClient returns a JSON-RPC client or error if unable to
@@ -215,23 +216,32 @@ var signNoteCmd = &cobra.Command{
 	},
 }
 
-func initCommit() {
+func addAPIConnectionFlags(pf *pflag.FlagSet) {
+	pf.String("rpc.user", "", "Set the RPC username")
+	pf.String("rpc.password", "", "Set the RPC password")
+	pf.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")
+	pf.Bool("rpc.https", false, "Force the client to use https:// protocol")
+	pf.Bool("use.remote", true, "Enable the ability to query the Remote API")
+	pf.Bool("use.rpc", true, "Enable the ability to query the JSON-RPC API")
+}
+
+func initSign() {
 	rootCmd.AddCommand(signCmd)
 	signCmd.AddCommand(signTagCmd)
 	signCmd.AddCommand(signCommitCmd)
 	signCmd.AddCommand(signNoteCmd)
 
 	pf := signCmd.PersistentFlags()
-	pf.StringP("fee", "f", "0", "Set the transaction fee")
-	pf.StringP("nonce", "n", "0", "Set the transaction nonce")
-	pf.StringP("signing-key", "s", "", "Set the GPG signing key ID")
-	pf.Bool("use.remote", true, "Enable the ability to query the Remote API")
-	pf.Bool("use.rpc", true, "Enable the ability to query the JSON-RPC API")
-	pf.String("rpc.user", "", "Set the RPC username")
-	pf.String("rpc.password", "", "Set the RPC password")
-	pf.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")
-	pf.String("rpc.https", "", "Force the client to use https:// protocol")
+
 	pf.BoolP("delete", "d", false, "Add a directive to delete the target reference")
 	signCommitCmd.Flags().StringP("merge-id", "m", "", "Provide a merge proposal ID for merge fulfilment")
 	signCommitCmd.Flags().BoolP("amend", "a", false, "Amend and sign the recent comment instead of a new one")
+
+	// Transaction information
+	pf.StringP("fee", "f", "0", "Set the transaction fee")
+	pf.StringP("nonce", "n", "0", "Set the transaction nonce")
+	pf.StringP("signing-key", "s", "", "Set the GPG signing key ID")
+
+	// API connection config flags
+	addAPIConnectionFlags(pf)
 }

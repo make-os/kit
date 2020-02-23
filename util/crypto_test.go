@@ -29,7 +29,7 @@ var _ = Describe("Crypto", func() {
 		})
 	})
 
-	Describe(".Decrypt", func() {
+	Describe(".Unlock", func() {
 		It("should successfully decrypt", func() {
 			msg := []byte("hello")
 			key := []byte("abcdefghijklmnopqrstuvwxyzabcdef")

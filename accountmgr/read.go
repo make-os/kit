@@ -2,13 +2,15 @@ package accountmgr
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/btcsuite/btcutil/base58"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/util"
 	funk "github.com/thoas/go-funk"
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var (
@@ -27,6 +29,10 @@ type StoredAccount struct {
 
 	// Cipher includes the encryption data
 	Cipher []byte
+
+	// DecryptedCipher contains the decrypted data.
+	// Only available after account is unlocked.
+	DecryptedCipher []byte
 
 	// key stores the instantiated equivalent of the stored account key
 	key *crypto.Key
@@ -95,6 +101,18 @@ func (am *AccountManager) GetByIndex(i int) (*StoredAccount, error) {
 	return accounts[i], nil
 }
 
+// GetByIndexOrAddress gets an account by either its address or index
+func (am *AccountManager) GetByIndexOrAddress(idxOrAddr string) (*StoredAccount, error) {
+	if crypto.IsValidAddr(idxOrAddr) == nil {
+		return am.GetByAddress(idxOrAddr)
+	}
+	if govalidator.IsNumeric(idxOrAddr) {
+		idx, _ := strconv.Atoi(idxOrAddr)
+		return am.GetByIndex(idx)
+	}
+	return nil, ErrAccountNotFound
+}
+
 // GetByAddress gets an account by its address in the list of accounts.
 func (am *AccountManager) GetByAddress(addr string) (*StoredAccount, error) {
 
@@ -131,13 +149,14 @@ func (sa *StoredAccount) GetMeta() StoredAccountMeta {
 }
 
 // GetKey gets an instance of the decrypted account's key.
-// Decrypt() must be called first.
+// Unlock() must be called first.
 func (sa *StoredAccount) GetKey() *crypto.Key {
 	return sa.key
 }
 
-// Decrypt decrypts the account cipher and initializes the address field.
-func (sa *StoredAccount) Decrypt(passphrase string) error {
+// Unlock decrypts the account using the given passphrase.
+// It populates the decrypted cipher and private key fields.
+func (sa *StoredAccount) Unlock(passphrase string) error {
 
 	passphraseBs := hardenPassword([]byte(passphrase))
 	acctBytes, err := util.Decrypt(sa.Cipher, passphraseBs[:])
@@ -147,24 +166,25 @@ func (sa *StoredAccount) Decrypt(passphrase string) error {
 		}
 		return err
 	}
+	sa.DecryptedCipher = acctBytes
 
-	// we expect a base58check content, verify it
+	// Decode from base58
 	acctData, _, err := base58.CheckDecode(string(acctBytes))
 	if err != nil {
 		return fmt.Errorf("invalid passphrase")
 	}
 
-	// attempt to decode to ensure content is json encoded
+	// Decode from msgpack
 	var accountData map[string]string
 	if err := msgpack.Unmarshal(acctData, &accountData); err != nil {
 		return fmt.Errorf("unable to parse account data")
 	}
 
+	// Convert the secret key to PrivKey object
 	privKey, err := crypto.PrivKeyFromBase58(accountData["sk"])
 	if err != nil {
 		return err
 	}
-
 	sa.key = crypto.NewKeyFromPrivKey(privKey)
 
 	return nil

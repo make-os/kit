@@ -15,10 +15,10 @@
 package cmd
 
 import (
+	"github.com/spf13/cobra"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/node"
-	"github.com/spf13/cobra"
 )
 
 // consoleCmd represents the console command
@@ -28,8 +28,7 @@ var consoleCmd = &cobra.Command{
 	Long:  `Start an interactive javascript console mode and start the node`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		// Start the node and also start the console
-		// after the node has started
+		// Start the node and also start the console after the node has started
 		start(func(n *node.Node) {
 			console := console.New(cfg.GetConsoleHistoryPath(), cfg, log)
 			console.SetVersions(config.GetNetVersion(), BuildVersion, GoVersion, BuildCommit)

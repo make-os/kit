@@ -46,47 +46,47 @@ func NewAccountModule(
 
 func (m *AccountModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
 	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+		{
 			Name:        "listAccounts",
 			Value:       m.listAccounts,
 			Description: "Fetch all accounts that exist on this node",
 		},
-		&types.ModulesAggregatorFunc{
+		{
 			Name:        "getKey",
 			Value:       m.getKey,
 			Description: "Get the private key of an account (supports interactive mode)",
 		},
-		&types.ModulesAggregatorFunc{
+		{
 			Name:        "getPublicKey",
 			Value:       m.getPublicKey,
 			Description: "Get the public key of an account (supports interactive mode)",
 		},
-		&types.ModulesAggregatorFunc{
+		{
 			Name:        "getNonce",
 			Value:       m.GetNonce,
 			Description: "Get the nonce of an account",
 		},
-		&types.ModulesAggregatorFunc{
+		{
 			Name:        "get",
 			Value:       m.getAccount,
 			Description: "Get the account of a given address",
 		},
-		&types.ModulesAggregatorFunc{
+		{
 			Name:        "getBalance",
 			Value:       m.getSpendableBalance,
 			Description: "Get the spendable coin balance of an account",
 		},
-		&types.ModulesAggregatorFunc{
+		{
 			Name:        "getStakedBalance",
 			Value:       m.getStakedBalance,
 			Description: "Get the total staked coins of an account",
 		},
-		&types.ModulesAggregatorFunc{
+		{
 			Name:        "getPV",
 			Value:       m.getPrivateValidator,
 			Description: "Get the private validator information",
 		},
-		&types.ModulesAggregatorFunc{
+		{
 			Name:        "setCommission",
 			Value:       m.setCommission,
 			Description: "Set the percentage of reward to share with a delegator",
@@ -96,7 +96,7 @@ func (m *AccountModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
 
 func (m *AccountModule) globals() []*types.ModulesAggregatorFunc {
 	return []*types.ModulesAggregatorFunc{
-		&types.ModulesAggregatorFunc{
+		{
 			Name:        "accounts",
 			Value:       m.listAccounts(),
 			Description: "Get the list of accounts that exist on this node",
@@ -123,7 +123,7 @@ func (m *AccountModule) Configure() []prompt.Suggest {
 
 	// Add global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
+		_ = m.vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}
@@ -173,8 +173,8 @@ func (m *AccountModule) getKey(address string, passphrase ...string) string {
 		pass = passphrase[0]
 	}
 
-	// Decrypt the account using the passphrase
-	if err := acct.Decrypt(pass); err != nil {
+	// Unlock the account using the passphrase
+	if err := acct.Unlock(pass); err != nil {
 		panic(errors.Wrap(err, "failed to unlock account with the provided passphrase"))
 	}
 
@@ -208,8 +208,8 @@ func (m *AccountModule) getPublicKey(address string, passphrase ...string) strin
 		pass = passphrase[0]
 	}
 
-	// Decrypt the account using the passphrase
-	if err := acct.Decrypt(pass); err != nil {
+	// Unlock the account using the passphrase
+	if err := acct.Unlock(pass); err != nil {
 		panic(errors.Wrap(err, "failed to unlock account with the provided passphrase"))
 	}
 

@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"gitlab.com/makeos/mosdef/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gitlab.com/makeos/mosdef/crypto"
 )
 
 var _ = Describe("Read", func() {
@@ -146,11 +146,37 @@ var _ = Describe("Read", func() {
 				Expect(err).To(Equal(ErrAccountNotFound))
 			})
 		})
+
+		Describe(".GetByIndexOrAddress", func() {
+
+			var address *crypto.Key
+			am := New(accountPath)
+
+			BeforeEach(func() {
+				seed := int64(1)
+				address, _ = crypto.NewKey(&seed)
+				passphrase := "edge123"
+				err := am.CreateAccount(false, address, passphrase)
+				Expect(err).To(BeNil())
+			})
+
+			It("should successfully get account by its address", func() {
+				act, err := am.GetByIndexOrAddress(address.Addr().String())
+				Expect(err).To(BeNil())
+				Expect(act.Address).To(Equal(address.Addr().String()))
+			})
+
+			It("should successfully get account by its index", func() {
+				act, err := am.GetByIndexOrAddress("0")
+				Expect(err).To(BeNil())
+				Expect(act.Address).To(Equal(address.Addr().String()))
+			})
+		})
 	})
 
 	Describe("StoredAccount", func() {
 
-		Describe(".Decrypt", func() {
+		Describe(".Unlock", func() {
 
 			var account *StoredAccount
 			var passphrase string
@@ -171,13 +197,13 @@ var _ = Describe("Read", func() {
 			})
 
 			It("should return err = 'invalid passphrase' when password is invalid", func() {
-				err := account.Decrypt("invalid")
+				err := account.Unlock("invalid")
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("invalid passphrase"))
 			})
 
 			It("should return nil when decryption is successful. account.address must not be nil.", func() {
-				err := account.Decrypt(passphrase)
+				err := account.Unlock(passphrase)
 				Expect(err).To(BeNil())
 				Expect(account.key).ToNot(BeNil())
 			})

@@ -19,10 +19,10 @@ import (
 	path "path/filepath"
 
 	"github.com/fatih/color"
-	"gitlab.com/makeos/mosdef/accountmgr"
-	"gitlab.com/makeos/mosdef/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gitlab.com/makeos/mosdef/accountmgr"
+	"gitlab.com/makeos/mosdef/config"
 )
 
 // accountCmd represents the account command
@@ -56,22 +56,22 @@ to unlock your account if you do.
 Password will be stored under <DATADIR>/` + config.AccountDirName + `. 
 It is safe to transfer the directory or individual accounts to another node. 
 
-Use --pwd to directly specify a password without going interactive mode. You 
+Use --pass to directly specify a password without going interactive mode. You 
 can also provide a path to a file containing a password. If a path is provided,
 password is fetched with leading and trailing newline character removed. 
 
 Always backup your keeps regularly.`,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		viper.BindPFlag("node.password", cmd.Flags().Lookup("pwd"))
-		viper.BindPFlag("node.seed", cmd.Flags().Lookup("seed"))
+		_ = viper.BindPFlag("node.password", cmd.Flags().Lookup("pass"))
+		_ = viper.BindPFlag("node.seed", cmd.Flags().Lookup("seed"))
 		seed := viper.GetInt64("node.seed")
-		pwd := viper.GetString("node.password")
+		pass := viper.GetString("node.password")
 
 		am := accountmgr.New(path.Join(cfg.DataDir(), config.AccountDirName))
-		key, err := am.CreateCmd(false, seed, pwd)
+		key, err := am.CreateCmd(false, seed, pass)
 		if err != nil {
-			return
+			log.Fatal(err.Error())
 		}
 
 		fmt.Println("New account created, encrypted and stored.")
@@ -90,7 +90,9 @@ list is lexicographically sorted such that the oldest account will be at the top
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		am := accountmgr.New(path.Join(cfg.DataDir(), config.AccountDirName))
-		am.ListCmd()
+		if err := am.ListCmd(); err != nil {
+			log.Fatal(err.Error())
+		}
 	},
 }
 
@@ -108,8 +110,13 @@ convert an account encrypted in an old format to a new one.
 			address = args[0]
 		}
 
+		_ = viper.BindPFlag("node.password", cmd.Flags().Lookup("pass"))
+		pass := viper.GetString("node.password")
+
 		am := accountmgr.New(path.Join(cfg.DataDir(), config.AccountDirName))
-		am.UpdateCmd(address)
+		if err := am.UpdateCmd(address, pass); err != nil {
+			log.Fatal(err.Error())
+		}
 	},
 }
 
@@ -123,7 +130,7 @@ in an encrypted format.
 
 The keyfile is expected to contain an unencrypted private key in Base58 format.
 
-You can skip the interactive mode by providing your password via the '--pwd' flag. 
+You can skip the interactive mode by providing your password via the '--pass' flag. 
 Also, a path to a file containing a password can be provided to the flag.
 
 You must not forget your password, otherwise you will not be able to unlock your
@@ -131,16 +138,18 @@ account.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		var keyfile string
+		var keyFile string
 		if len(args) >= 1 {
-			keyfile = args[0]
+			keyFile = args[0]
 		}
 
-		viper.BindPFlag("node.password", cmd.Flags().Lookup("pwd"))
-		pwd := viper.GetString("node.password")
+		_ = viper.BindPFlag("node.password", cmd.Flags().Lookup("pass"))
+		pass := viper.GetString("node.password")
 
 		am := accountmgr.New(path.Join(cfg.DataDir(), config.AccountDirName))
-		am.ImportCmd(keyfile, pwd)
+		if err := am.ImportCmd(keyFile, pass); err != nil {
+			log.Fatal(err.Error())
+		}
 	},
 }
 
@@ -151,7 +160,7 @@ var accountRevealCmd = &cobra.Command{
 This command reveals the private key of an account. You will be prompted to 
 provide your password. 
 	
-You can skip the interactive mode by providing your password via the '--pwd' flag. 
+You can skip the interactive mode by providing your password via the '--pass' flag. 
 Also, the flag accepts a path to a file containing a password.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -161,11 +170,13 @@ Also, the flag accepts a path to a file containing a password.
 			address = args[0]
 		}
 
-		viper.BindPFlag("node.password", cmd.Flags().Lookup("pwd"))
-		pwd := viper.GetString("node.password")
+		_ = viper.BindPFlag("node.password", cmd.Flags().Lookup("pass"))
+		pass := viper.GetString("node.password")
 
 		am := accountmgr.New(path.Join(cfg.DataDir(), config.AccountDirName))
-		am.RevealCmd(address, pwd)
+		if err := am.RevealCmd(address, pass); err != nil {
+			log.Fatal(err.Error())
+		}
 	},
 }
 
@@ -175,9 +186,10 @@ func setAccountCmdAndFlags() {
 	accountCmd.AddCommand(accountUpdateCmd)
 	accountCmd.AddCommand(accountImportCmd)
 	accountCmd.AddCommand(accountRevealCmd)
-	accountCreateCmd.Flags().String("pwd", "", "Providing a password or path to a file containing a password (No interactive mode)")
 	accountCreateCmd.Flags().Int64P("seed", "s", 0, "Provide a strong seed (not recommended)")
-	accountImportCmd.Flags().String("pwd", "", "Providing a password or path to a file containing a password (No interactive mode)")
-	accountRevealCmd.Flags().String("pwd", "", "Providing a password or path to a file containing a password (No interactive mode)")
+	accountCreateCmd.Flags().String("pass", "", "Password to unlock signer account and skip interactive mode")
+	accountImportCmd.Flags().String("pass", "", "Password to unlock the target account and skip interactive mode")
+	accountUpdateCmd.Flags().String("pass", "", "Password to unlock the target account and skip interactive mode")
+	accountRevealCmd.Flags().String("pass", "", "Password to unlock the target account and skip interactive mode")
 	rootCmd.AddCommand(accountCmd)
 }

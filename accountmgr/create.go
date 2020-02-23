@@ -9,20 +9,12 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/util"
+	"github.com/pkg/errors"
 	funk "github.com/thoas/go-funk"
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/util"
 )
-
-// HasDefaultAccount checks whether a default account exists
-func HasDefaultAccount(am *AccountManager) bool {
-	filePath := path.Join(am.accountDir, "default")
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		return false
-	}
-	return true
-}
 
 // CreateAccount creates a new account
 func (am *AccountManager) CreateAccount(defaultAccount bool, address *crypto.Key,
@@ -86,42 +78,41 @@ func (am *AccountManager) CreateAccount(defaultAccount bool, address *crypto.Key
 // CreateCmd creates a new account and interactively obtains encryption passphrase.
 // defaultAccount argument indicates that this account should be marked as default.
 // If seed is non-zero, it is used. Otherwise, one will be randomly generated.
-// If pwd is provide and it is not a file path, it is used as
+// If pass is provide and it is not a file path, it is used as
 // the password. Otherwise, the file is read, trimmed of newline
-// characters (left and right) and used as the password. When pwd
+// characters (left and right) and used as the password. When pass
 // is set, interactive password collection is not used.
-func (am *AccountManager) CreateCmd(defaultAccount bool, seed int64, pwd string) (*crypto.Key, error) {
+func (am *AccountManager) CreateCmd(defaultAccount bool, seed int64, pass string) (*crypto.Key, error) {
 
 	var passphrase string
 	var err error
 
 	// If no password is provided, we start an interactive session to
 	// collect the password or passphrase
-	if len(pwd) == 0 {
+	if len(pass) == 0 {
 		fmt.Println("Your new account needs to be locked with a password. Please enter a password.")
 		passphrase, err = am.AskForPassword()
 		if err != nil {
-			util.PrintCLIError(err.Error())
 			return nil, err
 		}
 	}
 
 	// But if the password is set and is a valid file, read it and use as password
-	if len(pwd) > 0 && (os.IsPathSeparator(pwd[0]) || (len(pwd) >= 2 && pwd[:2] == "./")) {
-		content, err := ioutil.ReadFile(pwd)
+	if len(pass) > 0 && (os.IsPathSeparator(pass[0]) || (len(pass) >= 2 && pass[:2] == "./")) {
+		content, err := ioutil.ReadFile(pass)
 		if err != nil {
 			if funk.Contains(err.Error(), "no such file") {
-				util.PrintCLIError("Password file {%s} not found.", pwd)
+				err = errors.Wrapf(err, "Password file {%s} not found.", pass)
 			}
 			if funk.Contains(err.Error(), "is a directory") {
-				util.PrintCLIError("Password file path {%s} is a directory. Expects a file.", pwd)
+				err = errors.Wrapf(err, "Password file path {%s} is a directory. Expects a file.", pass)
 			}
 			return nil, err
 		}
 		passphrase = string(content)
 		passphrase = strings.TrimSpace(strings.Trim(passphrase, "/n"))
-	} else if len(pwd) > 0 {
-		passphrase = pwd
+	} else if len(pass) > 0 {
+		passphrase = pass
 	}
 
 	// Generate an address (which includes a private key)
@@ -137,7 +128,6 @@ func (am *AccountManager) CreateCmd(defaultAccount bool, seed int64, pwd string)
 
 	// Create and encrypted the account on disk
 	if err := am.CreateAccount(defaultAccount, address, passphrase); err != nil {
-		util.PrintCLIError(err.Error())
 		return nil, err
 	}
 

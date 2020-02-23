@@ -43,9 +43,6 @@ var (
 
 	// GoVersion is the version of go used to build the client
 	GoVersion = "go1.12.4"
-
-	// DefaultGitBin is the default git executable path
-	DefaultGitBin = "/usr/bin/git"
 )
 
 var (
@@ -136,6 +133,7 @@ func initialize() {
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(consoleCmd)
+	rootCmd.AddCommand(mergeReqCmd)
 
 	// Add flags
 	rootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
@@ -153,5 +151,6 @@ func initialize() {
 
 	setStartFlags(startCmd, consoleCmd)
 	setAccountCmdAndFlags()
-	initCommit()
+	initSign()
+	initMerge()
 }

@@ -6,9 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"gitlab.com/makeos/mosdef/util"
-
 	"github.com/fatih/color"
+	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/crypto"
 
 	funk "github.com/thoas/go-funk"
@@ -16,68 +15,64 @@ import (
 
 // ImportCmd takes a keyfile containing unencrypted password to create
 // a new account. Keyfile must be a path to a file that exists.
-// If pwd is provide and it is not a file path, it is used as
+// If pass is provide and it is not a file path, it is used as
 // the password. Otherwise, the file is read, trimmed of newline
-// characters (left and right) and used as the password. When pwd
+// characters (left and right) and used as the password. When pass
 // is set, interactive password collection is not used.
-func (am *AccountManager) ImportCmd(keyfile, pwd string) error {
+func (am *AccountManager) ImportCmd(keyFile, pass string) error {
 
-	if keyfile == "" {
-		util.PrintCLIError("Keyfile is required.")
-		return fmt.Errorf("Keyfile is required")
+	if keyFile == "" {
+		return fmt.Errorf("Key file is required")
 	}
 
-	fullKeyfilePath, err := filepath.Abs(keyfile)
+	fullKeyFilePath, err := filepath.Abs(keyFile)
 	if err != nil {
-		util.PrintCLIError("Invalid keyfile path {%s}", keyfile)
-		return fmt.Errorf("Invalid keyfile path")
+		return fmt.Errorf("Invalid keyFile path {%s}", keyFile)
 	}
 
-	keyFileContent, err := ioutil.ReadFile(fullKeyfilePath)
+	keyFileContent, err := ioutil.ReadFile(fullKeyFilePath)
 	if err != nil {
 		if funk.Contains(err.Error(), "no such file") {
-			util.PrintCLIError("Keyfile {%s} not found.", keyfile)
+			err = errors.Wrapf(err, "Key file {%s} not found.", keyFile)
 		}
 		if funk.Contains(err.Error(), "is a directory") {
-			util.PrintCLIError("Keyfile {%s} is a directory. Expects a file.", keyfile)
+			err = errors.Wrapf(err, "Key file {%s} is a directory. Expects a file.", keyFile)
 		}
 		return err
 	}
 
-	// attempt to validate and instantiate the private key
+	// Attempt to validate and instantiate the private key
 	fileContentStr := strings.TrimSpace(string(keyFileContent))
 	sk, err := crypto.PrivKeyFromBase58(fileContentStr)
 	if err != nil {
-		util.PrintCLIError("Keyfile contains invalid private key")
-		return err
+		return errors.Wrap(err, "Key file contains invalid private key")
 	}
 
 	var content []byte
 
 	// if no password or password file is provided, ask for password
 	passphrase := ""
-	if len(pwd) == 0 {
+	if len(pass) == 0 {
 		fmt.Println("Your new account needs to be locked with a password. Please enter a password.")
 		passphrase, err = am.AskForPassword()
 		if err != nil {
-			util.PrintCLIError(err.Error())
 			return err
 		}
 		goto create
 	}
 
-	if !strings.HasPrefix(pwd, "./") && !strings.HasPrefix(pwd, "/") && filepath.Ext(pwd) == "" {
-		passphrase = pwd
+	if !strings.HasPrefix(pass, "./") && !strings.HasPrefix(pass, "/") && filepath.Ext(pass) == "" {
+		passphrase = pass
 		goto create
 	}
 
-	content, err = ioutil.ReadFile(pwd)
+	content, err = ioutil.ReadFile(pass)
 	if err != nil {
 		if funk.Contains(err.Error(), "no such file") {
-			util.PrintCLIError("Password file {%s} not found.", pwd)
+			err = errors.Wrapf(err, "Password file {%s} not found.", pass)
 		}
 		if funk.Contains(err.Error(), "is a directory") {
-			util.PrintCLIError("Password file path {%s} is a directory. Expects a file.", pwd)
+			err = errors.Wrapf(err, "Password file path {%s} is a directory. Expects a file.", pass)
 		}
 		return err
 	}
@@ -87,7 +82,6 @@ func (am *AccountManager) ImportCmd(keyfile, pwd string) error {
 create:
 	address := crypto.NewKeyFromPrivKey(sk)
 	if err := am.CreateAccount(false, address, passphrase); err != nil {
-		util.PrintCLIError(err.Error())
 		return err
 	}
 

@@ -19,10 +19,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/node"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/node"
 )
 
 func start(onStart func(n *node.Node)) {
@@ -89,7 +89,7 @@ func setStartFlags(cmds ...*cobra.Command) {
 		f.StringToStringVar(&extArgsMap, "node.extsargs", map[string]string{}, "Specify arguments for extensions")
 
 		// Apply only to the active command
-		if os.Args[1] == cmd.Name() {
+		if len(os.Args) > 1 && os.Args[1] == cmd.Name() {
 			viper.BindPFlag("rpc.on", cmd.Flags().Lookup("rpc.on"))
 			viper.BindPFlag("rpc.address", cmd.Flags().Lookup("rpc.address"))
 			viper.BindPFlag("rpc.user", cmd.Flags().Lookup("rpc.user"))

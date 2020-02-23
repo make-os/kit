@@ -70,8 +70,10 @@ func (am *AccountManager) ListCmd() error {
 		if a.Default {
 			tagStr = "[default]"
 		}
-		fmt.Println(fmt.Sprintf("[%d]\t%s     %s\t     %s", i, color.CyanString(a.Address),
-			humanize.Time(a.CreatedAt), tagStr))
+		fmt.Println(fmt.Sprintf("[%d]\t%s     %s\t     %s", i,
+			color.CyanString(a.Address),
+			humanize.Time(a.CreatedAt),
+			tagStr))
 	}
 
 	return nil
