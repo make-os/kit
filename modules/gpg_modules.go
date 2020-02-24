@@ -39,20 +39,25 @@ func NewGPGModule(
 
 func (m *GPGModule) namespacedFuncs() []*modulestypes.ModulesAggregatorFunc {
 	return []*modulestypes.ModulesAggregatorFunc{
-		&modulestypes.ModulesAggregatorFunc{
+		{
 			Name:        "add",
 			Value:       m.addPK,
 			Description: "Add a GPG public key",
 		},
-		&modulestypes.ModulesAggregatorFunc{
+		{
 			Name:        "find",
 			Value:       m.Find,
 			Description: "Find a GPG public key by its key ID",
 		},
-		&modulestypes.ModulesAggregatorFunc{
+		{
 			Name:        "ownedBy",
 			Value:       m.ownedBy,
 			Description: "Get all GPG public keys belonging to an address",
+		},
+		{
+			Name:        "getAccountOfOwner",
+			Value:       m.GetAccountOfOwner,
+			Description: "Get the account of the key owner",
 		},
 	}
 }
@@ -134,4 +139,14 @@ func (m *GPGModule) Find(pkID string) *state.GPGPubKey {
 // ownedBy returns the gpg public key ownedBy associated with the given address
 func (m *GPGModule) ownedBy(address string) []string {
 	return m.logic.GPGPubKeyKeeper().GetPubKeyIDs(address)
+}
+
+// GetAccountOfOwner returns the account of the key owner
+func (m *GPGModule) GetAccountOfOwner(pkID string) *state.Account {
+	gpgKey := m.Find(pkID)
+	acct := m.logic.AccountKeeper().GetAccount(gpgKey.Address)
+	if acct.IsNil() {
+		panic(types.ErrAccountUnknown)
+	}
+	return acct
 }

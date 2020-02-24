@@ -22,12 +22,12 @@ func (a *GPGAPI) find(params interface{}) *jsonrpc.Response {
 	pkID, ok := params.(string)
 	if !ok {
 		err := types.ErrParamDecode("string")
-		return jsonrpc.Error(types.ErrCodeInvalidParamType, err.Error(), nil)
+		return jsonrpc.Error(types.RPCErrCodeInvalidParamType, err.Error(), nil)
 	}
 
 	key := a.logic.GPGPubKeyKeeper().GetGPGPubKey(pkID)
 	if key.IsNil() {
-		return jsonrpc.Error(types.ErrCodeGPGKeyNotFound, "gpg key not found", nil)
+		return jsonrpc.Error(types.RPCErrCodeGPGKeyNotFound, "gpg key not found", nil)
 	}
 
 	return jsonrpc.Success(key)

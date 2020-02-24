@@ -99,7 +99,7 @@ func (c *RPCClient) Call(method string, params interface{}) (interface{}, error)
 
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("request unsuccessful. Status code: %d. Body: %s",
+		return nil, fmt.Errorf("request unsuccessful: Status code: %d. Body: %s",
 			resp.StatusCode, string(body))
 	}
 

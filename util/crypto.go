@@ -19,7 +19,7 @@ import (
 	"github.com/tendermint/tendermint/libs/bech32"
 )
 
-// Fixed bytes array lengths
+// Constants
 const (
 	Length32   = 32
 	Length64   = 64

@@ -12,6 +12,7 @@ import (
 	r "math/rand"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -626,4 +627,10 @@ func FieldErrorWithIndex(index int, field, err string) error {
 		fieldArg = "%s"
 	}
 	return fmt.Errorf(fmt.Sprintf("index:%d, "+fieldArg+"msg:%s", index, field, err))
+}
+
+// WrongFieldValueMsg generates a message to indicate an unexpected field value type
+func WrongFieldValueMsg(field, expectedType string, actual interface{}) error {
+	return FieldError(field, fmt.Sprintf("wrong value type, want '%s', got %T",
+		expectedType, reflect.TypeOf(actual).String()))
 }

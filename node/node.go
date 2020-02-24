@@ -257,15 +257,15 @@ func (n *Node) Start() error {
 func (n *Node) startRPCServer() {
 	if n.cfg.RPC.On {
 		n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-sever"), n.cfg.G().Interrupt)
-		n.addRPCAPIs()
+		n.addRPCApis()
 		go n.rpcServer.Serve()
 	}
 }
 
-func (n *Node) addRPCAPIs() {
+func (n *Node) addRPCApis() {
 	n.rpcServer.AddAPI(n.acctMgr.APIs())
 	if n.logic != nil {
-		n.rpcServer.AddAPI(n.logic.(*logic.Logic).APIs())
+		n.rpcServer.AddAPI(n.logic.APIs())
 	}
 }
 
@@ -276,7 +276,7 @@ func (n *Node) startConsoleOnly() error {
 	n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-sever"), n.cfg.G().Interrupt)
 
 	// Add RPC APIs
-	n.addRPCAPIs()
+	n.addRPCApis()
 
 	// Initialize and start JS modules and extensions
 	n.initModulesAggregatorAndExtension()

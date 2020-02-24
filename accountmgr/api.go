@@ -8,7 +8,7 @@ import (
 func (am *AccountManager) apiListAccounts(interface{}) *jsonrpc.Response {
 	accounts, err := am.ListAccounts()
 	if err != nil {
-		return jsonrpc.Error(types.ErrCodeUnexpected, err.Error(), nil)
+		return jsonrpc.Error(types.RPCErrCodeUnexpected, err.Error(), nil)
 	}
 
 	var addresses []string

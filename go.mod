@@ -11,22 +11,19 @@ replace (
 
 require (
 	github.com/AndreasBriese/bbloom v0.0.0-20190825152654-46b345b51c96 // indirect
-	github.com/BurntSushi/toml v0.3.1
-	github.com/Workiva/go-datastructures v1.0.50
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496
 	github.com/bitfield/script v0.14.0
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/c-bata/go-prompt v0.2.3
-	github.com/coniks-sys/coniks-go v0.0.0-20180722014011-11acf4819b71
-	github.com/dedis/drand v0.5.0
+	github.com/coniks-sys/coniks-go v0.0.0-20180722014011-11acf4819b71 // indirect
+	github.com/dedis/drand v0.5.0 // indirect
 	github.com/dghubble/go-twitter v0.0.0-20190719072343-39e5462e111f // indirect
 	github.com/dghubble/oauth1 v0.6.0 // indirect
 	github.com/dgraph-io/badger v1.6.0
 	github.com/dgryski/go-farm v0.0.0-20191112170834-c2139c5d712b // indirect
-	github.com/drand/bls12-381 v0.0.0-20200110233355-faca855b3a67
-	github.com/drand/kyber v1.0.1-0.20200110225416-8de27ed8c0e2
+	github.com/drand/bls12-381 v0.0.0-20200110233355-faca855b3a67 // indirect
 	github.com/dustin/go-humanize v1.0.0
-	github.com/ellcrys/go-ethereum v1.8.7
+	github.com/ellcrys/go-ethereum v1.8.7 // indirect
 	github.com/ellcrys/go-prompt v1.2.1
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fatih/color v1.7.0
@@ -41,7 +38,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.3
 	github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e // indirect
 	github.com/howeyc/gopass v0.0.0-20190910152052-7cb4b85ec19c // indirect
-	github.com/imdario/mergo v0.3.8
+	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/imroc/req v0.3.0
 	github.com/ipfs/go-cid v0.0.4
 	github.com/ipfs/go-ds-badger v0.2.0
@@ -54,9 +51,7 @@ require (
 	github.com/lestrrat-go/strftime v0.0.0-20190725011945-5c849dd2c51d // indirect
 	github.com/libp2p/go-libp2p v0.5.0
 	github.com/libp2p/go-libp2p-core v0.3.0
-	github.com/libp2p/go-libp2p-crypto v0.1.0
 	github.com/libp2p/go-libp2p-kad-dht v0.5.0
-	github.com/libp2p/go-libp2p-peer v0.2.0
 	github.com/libp2p/go-libp2p-routing v0.1.0
 	github.com/libp2p/go-yamux v1.2.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
@@ -66,9 +61,8 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/multiformats/go-multiaddr v0.2.0
 	github.com/multiformats/go-multihash v0.0.10
-	github.com/ncodes/coniks-go v0.0.0-20180722014011-11acf4819b71
+	github.com/ncodes/coniks-go v0.0.0-20180722014011-11acf4819b71 // indirect
 	github.com/ncodes/go-prettyjson v0.0.0-20180528130907-d229c224a219
-	github.com/nikkolasg/hexjson v0.0.0-20181101101858-78e39397e00c
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
@@ -88,7 +82,6 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.6.1
 	github.com/stretchr/objx v0.2.0
-	github.com/stretchr/testify v1.4.0
 	github.com/stumble/gorocksdb v0.0.3 // indirect
 	github.com/tebeka/strftime v0.1.3 // indirect
 	github.com/tendermint/iavl v0.12.4

@@ -18,10 +18,10 @@ var _ = Describe("RPC", func() {
 
 	var rpc *JSONRPC
 	var log = logger.NewLogrusNoOp()
-	var cfg *config.RPCConfig
+	var cfg *config.AppConfig
 
 	BeforeEach(func() {
-		cfg = &config.RPCConfig{}
+		cfg = &config.AppConfig{}
 		rpc = New("", cfg, log)
 	})
 
@@ -225,7 +225,7 @@ var _ = Describe("RPC", func() {
 			var req *http.Request
 			var rr *httptest.ResponseRecorder
 			BeforeEach(func() {
-				cfg.DisableAuth = false
+				cfg.RPC.DisableAuth = false
 
 				rpc.apiSet["echo"] = APIInfo{
 					Private:   true,
@@ -262,9 +262,9 @@ var _ = Describe("RPC", func() {
 			var req *http.Request
 			var rr *httptest.ResponseRecorder
 			BeforeEach(func() {
-				cfg.DisableAuth = false
-				cfg.User = "correct_user"
-				cfg.Password = "correct_pass"
+				cfg.RPC.DisableAuth = false
+				cfg.RPC.User = "correct_user"
+				cfg.RPC.Password = "correct_pass"
 
 				rpc.apiSet["echo"] = APIInfo{
 					Private:   true,
@@ -302,9 +302,9 @@ var _ = Describe("RPC", func() {
 			var req *http.Request
 			var rr *httptest.ResponseRecorder
 			BeforeEach(func() {
-				cfg.DisableAuth = true
-				cfg.User = "correct_user"
-				cfg.Password = "correct_pass"
+				cfg.RPC.DisableAuth = true
+				cfg.RPC.User = "correct_user"
+				cfg.RPC.Password = "correct_pass"
 
 				rpc.apiSet["echo"] = APIInfo{
 					Private:   true,
@@ -340,10 +340,10 @@ var _ = Describe("RPC", func() {
 			var req *http.Request
 			var rr *httptest.ResponseRecorder
 			BeforeEach(func() {
-				cfg.DisableAuth = false
-				cfg.AuthPubMethod = true
-				cfg.User = "correct_user"
-				cfg.Password = "correct_pass"
+				cfg.RPC.DisableAuth = false
+				cfg.RPC.AuthPubMethod = true
+				cfg.RPC.User = "correct_user"
+				cfg.RPC.Password = "correct_pass"
 
 				rpc.apiSet["echo"] = APIInfo{
 					Private:   false,
@@ -381,10 +381,10 @@ var _ = Describe("RPC", func() {
 			var req *http.Request
 			var rr *httptest.ResponseRecorder
 			BeforeEach(func() {
-				cfg.DisableAuth = false
-				cfg.AuthPubMethod = false
-				cfg.User = "correct_user"
-				cfg.Password = "correct_pass"
+				cfg.RPC.DisableAuth = false
+				cfg.RPC.AuthPubMethod = false
+				cfg.RPC.User = "correct_user"
+				cfg.RPC.Password = "correct_pass"
 
 				rpc.apiSet["echo"] = APIInfo{
 					Private:   false,

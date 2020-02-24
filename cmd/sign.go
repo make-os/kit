@@ -20,12 +20,12 @@ import (
 	"github.com/spf13/pflag"
 )
 
-// getRPCClient returns a JSON-RPC client or error if unable to
-// create one. It will return nil client and nil error if --use.rpc
-// is false.
-func getRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
-	useRPC, _ := cmd.Flags().GetBool("use.rpc")
-	if !useRPC {
+// getJSONRPCClient returns a JSON-RPC client or error if unable to
+// create one. It will return nil client and nil error if --no.rpc
+// is true.
+func getJSONRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
+	noRPC, _ := cmd.Flags().GetBool("no.rpc")
+	if noRPC {
 		return nil, nil
 	}
 
@@ -55,9 +55,15 @@ func getRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 	return c, nil
 }
 
-// getRemoteAPIClients gets REST clients for every
-// http(s) remote URL set on the given repository
-func getRemoteAPIClients(repo core.BareRepo) (clients []*rest.Client) {
+// getRemoteAPIClients gets REST clients for every  http(s) remote
+// URL set on the given repository. Immediately returns nothing if
+// --no.remote is true.
+func getRemoteAPIClients(cmd *cobra.Command, repo core.BareRepo) (clients []*api.Client) {
+	noRemote, _ := cmd.Flags().GetBool("no.remote")
+	if noRemote {
+		return
+	}
+
 	for _, url := range repo.GetRemoteURLs() {
 		ep, _ := transport.NewEndpoint(url)
 		if !funk.ContainsString([]string{"http", "https"}, ep.Protocol) {
@@ -69,26 +75,14 @@ func getRemoteAPIClients(repo core.BareRepo) (clients []*rest.Client) {
 			apiURL = fmt.Sprintf("%s:%d", apiURL, ep.Port)
 		}
 
-		clients = append(clients, rest.NewClient(apiURL))
+		clients = append(clients, api.NewClient(apiURL))
 	}
 	return
 }
 
 // getClients returns RPC and Remote API clients
-func getRepoAndClients(cmd *cobra.Command, nonce string) (core.BareRepo,
-	*client.RPCClient, []*rest.Client) {
-
-	useRemote, _ := cmd.Flags().GetBool("use.remote")
-
-	// Get JSON RPC client
-	var client *client.RPCClient
-	var err error
-	if nonce == "0" {
-		client, err = getRPCClient(cmd)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	}
+func getRepoAndClients(cmd *cobra.Command, nonceFromFlag string) (core.BareRepo,
+	*client.RPCClient, []*api.Client) {
 
 	// Get the repository
 	targetRepo, err := repo.GetCurrentWDRepo(cfg.Node.GitBinPath)
@@ -96,13 +90,17 @@ func getRepoAndClients(cmd *cobra.Command, nonce string) (core.BareRepo,
 		log.Fatal(err.Error())
 	}
 
-	// Get remote APIs from the repository
-	remoteClients := []*rest.Client{}
-	if useRemote && nonce == "0" {
-		remoteClients = getRemoteAPIClients(targetRepo)
+	// Get JSON RPC client
+	var rpcClient *client.RPCClient
+	rpcClient, err = getJSONRPCClient(cmd)
+	if err != nil {
+		log.Fatal(err.Error())
 	}
 
-	return targetRepo, client, remoteClients
+	// Get remote APIs from the repository
+	remoteClients := getRemoteAPIClients(cmd, targetRepo)
+
+	return targetRepo, rpcClient, remoteClients
 }
 
 // signCmd represents the commit command
@@ -140,14 +138,14 @@ a merge request that will be validated according to the merge proposal contract.
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
 		sk, _ := cmd.Flags().GetString("signingKey")
-		delete, _ := cmd.Flags().GetBool("delete")
+		deleteRef, _ := cmd.Flags().GetBool("delete")
 		mergeID, _ := cmd.Flags().GetString("merge-id")
 		amend, _ := cmd.Flags().GetBool("amend")
 
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
 
 		if err := repo.SignCommitCmd(targetRepo, fee,
-			nonce, sk, amend, delete, mergeID, client, remoteClients); err != nil {
+			nonce, sk, amend, deleteRef, mergeID, client, remoteClients); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -221,8 +219,8 @@ func addAPIConnectionFlags(pf *pflag.FlagSet) {
 	pf.String("rpc.password", "", "Set the RPC password")
 	pf.String("rpc.address", config.DefaultRPCAddress, "Set the RPC listening address")
 	pf.Bool("rpc.https", false, "Force the client to use https:// protocol")
-	pf.Bool("use.remote", true, "Enable the ability to query the Remote API")
-	pf.Bool("use.rpc", true, "Enable the ability to query the JSON-RPC API")
+	pf.Bool("no.remote", false, "Disable the ability to query the Remote API")
+	pf.Bool("no.rpc", false, "Disable the ability to query the JSON-RPC API")
 }
 
 func initSign() {

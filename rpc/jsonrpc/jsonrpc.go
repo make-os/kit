@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
@@ -84,7 +85,7 @@ func (r Response) IsError() bool {
 type JSONRPC struct {
 	log logger.Logger
 
-	cfg *config.RPCConfig
+	cfg *config.AppConfig
 
 	// addr is the listening address
 	addr string
@@ -117,13 +118,13 @@ func Success(result interface{}) *Response {
 	return &Response{JSONRPCVersion: "2.0", Result: result}
 }
 
-// New creates a JSONRPC server
-func New(addr string, cfg *config.RPCConfig, log logger.Logger) *JSONRPC {
+// New creates a JSON-RPC 2.0 server
+func New(addr string, cfg *config.AppConfig, log logger.Logger) *JSONRPC {
 	rpc := &JSONRPC{
 		cfg:    cfg,
 		addr:   addr,
 		apiSet: APISet{},
-		log:    log.Module("jsonrpc"),
+		log:    log.Module("json-rpc"),
 	}
 	rpc.MergeAPISet(rpc.APIs())
 	return rpc
@@ -242,13 +243,13 @@ func (s *JSONRPC) handle(w http.ResponseWriter, r *http.Request) *Response {
 		return Error(-32601, "Method not found", nil)
 	}
 
-	if !s.cfg.DisableAuth && (f.Private || s.cfg.AuthPubMethod) {
+	if !s.cfg.RPC.DisableAuth && (f.Private || s.cfg.RPC.AuthPubMethod) {
 		username, password, ok := r.BasicAuth()
 		if !ok {
 			w.WriteHeader(http.StatusUnauthorized)
 			return Error(types.ErrCodeInvalidAuthHeader, "basic authentication header is invalid", nil)
 		}
-		if username != s.cfg.User || password != s.cfg.Password {
+		if username != s.cfg.RPC.User || password != s.cfg.RPC.Password {
 			w.WriteHeader(http.StatusUnauthorized)
 			return Error(types.ErrCodeInvalidAuthCredentials, "authentication has failed. Invalid credentials", nil)
 		}
@@ -260,6 +261,9 @@ func (s *JSONRPC) handle(w http.ResponseWriter, r *http.Request) *Response {
 		if rcv, ok := recover().(error); ok {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(Error(serverErrCode, rcv.Error(), nil))
+			if s.cfg.IsDev() {
+				fmt.Println(string(debug.Stack()))
+			}
 		}
 	}()
 

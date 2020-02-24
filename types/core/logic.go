@@ -4,6 +4,7 @@ import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/pkgs/tree"
+	"gitlab.com/makeos/mosdef/rpc/jsonrpc"
 	"gitlab.com/makeos/mosdef/storage"
 	types2 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
@@ -292,6 +293,9 @@ type Logic interface {
 
 	// Cfg returns the application config
 	Cfg() *config.AppConfig
+
+	// APIs returns all API handlers
+	APIs() jsonrpc.APISet
 
 	// OnEndBlock is called within the ABCI EndBlock method;
 	// Do things that need to happen after each block transactions are processed.

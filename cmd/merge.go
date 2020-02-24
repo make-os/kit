@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"gitlab.com/makeos/mosdef/repo"
+	// "gitlab.com/makeos/mosdef/repo"
 )
 
 // mergeReqCmd represents the merge request command
@@ -11,15 +11,15 @@ var mergeReqCmd = &cobra.Command{
 	Short: "Create and send a merge request proposal",
 	Long:  `Create and send a merge request proposal`,
 	Run: func(cmd *cobra.Command, args []string) {
-		account, _ := cmd.Flags().GetString("account")
-		passphrase, _ := cmd.Flags().GetString("pass")
-
-		if err := repo.CreateAndSendMergeRequestCmd(
-			cfg,
-			account,
-			passphrase); err != nil {
-			log.Fatal(err.Error())
-		}
+		// account, _ := cmd.Flags().GetString("account")
+		// passphrase, _ := cmd.Flags().GetString("pass")
+		//
+		// if err := repo.CreateAndSendMergeRequestCmd(
+		// 	cfg,
+		// 	account,
+		// 	passphrase); err != nil {
+		// 	log.Fatal(err.Error())
+		// }
 	},
 }
 

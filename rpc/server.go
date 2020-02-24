@@ -46,7 +46,7 @@ func NewServer(cfg *config.AppConfig, log logger.Logger,
 		addr:      cfg.RPC.Address,
 		log:       log,
 		cfg:       cfg,
-		rpc:       jsonrpc.New(cfg.RPC.Address, cfg.RPC, log),
+		rpc:       jsonrpc.New(cfg.RPC.Address, cfg, log),
 		interrupt: interrupt,
 	}
 	srv.AddAPI(srv.APIs())

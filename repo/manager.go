@@ -195,7 +195,7 @@ func (m *Manager) Start() error {
 }
 
 func (m *Manager) registerAPIHandlers(s *http.ServeMux) {
-	rest := rest.New(m.modulesAgg, m.log)
+	rest := api.New(m.modulesAgg, m.log)
 	rest.RegisterEndpoints(s)
 }
 
