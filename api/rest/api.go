@@ -43,7 +43,7 @@ const (
 	getNonceMethodName    = "get-nonce"
 	sendPayloadMethodName = "send-payload"
 	ownerNonceMethodName  = "owner-nonce"
-	gpgFindMethodName    = "find"
+	gpgFindMethodName     = "find"
 )
 
 // RegisterEndpoints registers handlers to endpoints
