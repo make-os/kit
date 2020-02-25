@@ -6,13 +6,12 @@ import (
 	"reflect"
 	"time"
 
-	types2 "gitlab.com/makeos/mosdef/services/types"
-
 	"github.com/fatih/structs"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -22,7 +21,7 @@ import (
 //
 // If options[1] is set to true, true is returned; meaning the user only wants
 // the finalized payload and does not want to send the transaction to the network
-func finalizeTx(tx types.BaseTx, service types2.Service, options ...interface{}) (payloadOnly bool) {
+func finalizeTx(tx types.BaseTx, keepers core.Keepers, options ...interface{}) (payloadOnly bool) {
 
 	// Set timestamp if not already set
 	if tx.GetTimestamp() == 0 {
@@ -46,11 +45,11 @@ func finalizeTx(tx types.BaseTx, service types2.Service, options ...interface{})
 
 		// Set nonce if nonce is not provided
 		if tx.GetNonce() == 0 {
-			nonce, err := service.GetNonce(tx.GetFrom())
-			if err != nil {
-				panic(errors.Wrap(err, "failed to get sender's nonce"))
+			senderAcct := keepers.AccountKeeper().GetAccount(tx.GetFrom())
+			if senderAcct.IsNil() {
+				panic(fmt.Errorf("sender account not found"))
 			}
-			tx.SetNonce(nonce + 1)
+			tx.SetNonce(senderAcct.Nonce + 1)
 		}
 
 		// Sign the tx only if unsigned

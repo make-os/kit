@@ -3,11 +3,12 @@ package modules
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
+
 	modtypes "gitlab.com/makeos/mosdef/modules/types"
-	servtypes "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
-	"strings"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/pkg/errors"
@@ -18,13 +19,13 @@ import (
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
 	vm      *otto.Otto
-	keepers core.Keepers
-	service servtypes.Service
+	logic   core.Logic
+	service services.Service
 }
 
 // NewTxModule creates an instance of TxModule
-func NewTxModule(vm *otto.Otto, service servtypes.Service, keepers core.Keepers) *TxModule {
-	return &TxModule{vm: vm, service: service, keepers: keepers}
+func NewTxModule(vm *otto.Otto, service services.Service, logic core.Logic) *TxModule {
+	return &TxModule{vm: vm, service: service, logic: logic}
 }
 
 // txCoinFuncs are functions accessible using the `tx.coin` namespace
@@ -119,12 +120,12 @@ func (m *TxModule) sendCoin(params map[string]interface{}, options ...interface{
 		panic(err)
 	}
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
@@ -147,7 +148,7 @@ func (m *TxModule) Get(hash string) Map {
 		panic(errors.Wrap(err, "invalid transaction hash"))
 	}
 
-	tx, err := m.keepers.TxKeeper().GetTx(bz)
+	tx, err := m.logic.TxKeeper().GetTx(bz)
 	if err != nil {
 		panic(err)
 	}
@@ -168,7 +169,7 @@ func (m *TxModule) SendPayload(txData map[string]interface{}) Map {
 		panic(err)
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}

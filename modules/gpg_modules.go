@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
-	servtypes "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -20,7 +20,7 @@ import (
 type GPGModule struct {
 	cfg     *config.AppConfig
 	vm      *otto.Otto
-	service servtypes.Service
+	service services.Service
 	logic   core.Logic
 }
 
@@ -28,7 +28,7 @@ type GPGModule struct {
 func NewGPGModule(
 	cfg *config.AppConfig,
 	vm *otto.Otto,
-	service servtypes.Service,
+	service services.Service,
 	logic core.Logic) *GPGModule {
 	return &GPGModule{
 		cfg:     cfg,
@@ -119,13 +119,13 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 		panic(err)
 	}
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
 	// Process the transaction
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}

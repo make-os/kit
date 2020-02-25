@@ -293,6 +293,12 @@ type Logic interface {
 	// Cfg returns the application config
 	Cfg() *config.AppConfig
 
+	// GetMempoolReactor returns the mempool reactor
+	GetMempoolReactor() MempoolReactor
+
+	// SetMempoolReactor sets the mempool reactor
+	SetMempoolReactor(mr MempoolReactor)
+
 	// OnEndBlock is called within the ABCI EndBlock method;
 	// Do things that need to happen after each block transactions are processed.
 	OnEndBlock(block *BlockInfo) error

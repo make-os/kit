@@ -53,10 +53,10 @@ type Logic struct {
 	// nsKeeper provides functionalities for managing namespace data
 	nsKeeper *keepers.NamespaceKeeper
 
-	// validatorKeeper provides functionalities for managing validator data
+	// validatorKeeper provides operations for managing validator data
 	validatorKeeper *keepers.ValidatorKeeper
 
-	// txKeeper provides functionalities for managing transaction data
+	// txKeeper provides operations for managing transaction data
 	txKeeper *keepers.TxKeeper
 
 	// gpgPubKeyKeeper provides functionalities for managing gpg public keys
@@ -64,6 +64,9 @@ type Logic struct {
 
 	// repoMgr provides access to the git repository manager
 	repoMgr core.RepoManager
+
+	// mempoolReactor provides access to mempool operations
+	mempoolReactor core.MempoolReactor
 }
 
 // New creates an instance of Logic
@@ -114,6 +117,16 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 // ManagedSysKeeper returns a SystemKeeper initialized with a managed database
 func (l *Logic) ManagedSysKeeper() core.SystemKeeper {
 	return keepers.NewSystemKeeper(l._db.NewTx(true, true))
+}
+
+// SetMempoolReactor sets the mempool reactor
+func (l *Logic) SetMempoolReactor(mr core.MempoolReactor) {
+	l.mempoolReactor = mr
+}
+
+// GetMempoolReactor returns the mempool reactor
+func (l *Logic) GetMempoolReactor() core.MempoolReactor {
+	return l.mempoolReactor
 }
 
 // SetRepoManager sets the repository manager

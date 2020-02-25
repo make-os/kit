@@ -2,11 +2,12 @@ package modules
 
 import (
 	"fmt"
+
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	modtypes "gitlab.com/makeos/mosdef/modules/types"
-	types3 "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
@@ -15,18 +16,18 @@ import (
 // NamespaceModule provides namespace management functionalities
 type NamespaceModule struct {
 	vm      *otto.Otto
-	keepers core.Keepers
-	service types3.Service
+	logic   core.Logic
+	service services.Service
 	repoMgr core.RepoManager
 }
 
 // NewNSModule creates an instance of NamespaceModule
 func NewNSModule(
 	vm *otto.Otto,
-	service types3.Service,
+	service services.Service,
 	repoMgr core.RepoManager,
-	keepers core.Keepers) *NamespaceModule {
-	return &NamespaceModule{vm: vm, service: service, keepers: keepers, repoMgr: repoMgr}
+	logic core.Logic) *NamespaceModule {
+	return &NamespaceModule{vm: vm, service: service, logic: logic, repoMgr: repoMgr}
 }
 
 // funcs are functions accessible using the `ns` namespace
@@ -102,7 +103,7 @@ func (m *NamespaceModule) lookup(name string, height ...uint64) interface{} {
 		targetHeight = uint64(height[0])
 	}
 
-	ns := m.keepers.NamespaceKeeper().GetNamespace(util.Hash20Hex([]byte(name)), targetHeight)
+	ns := m.logic.NamespaceKeeper().GetNamespace(util.Hash20Hex([]byte(name)), targetHeight)
 	if ns.IsNil() {
 		return nil
 	}
@@ -111,7 +112,7 @@ func (m *NamespaceModule) lookup(name string, height ...uint64) interface{} {
 	nsMap["expired"] = false
 	nsMap["expiring"] = false
 
-	curBlockInfo, err := m.keepers.SysKeeper().GetLastBlockInfo()
+	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
 		panic(err)
 	}
@@ -141,7 +142,7 @@ func (m *NamespaceModule) getTarget(path string, height ...uint64) string {
 		targetHeight = uint64(height[0])
 	}
 
-	target, err := m.keepers.NamespaceKeeper().GetTarget(path, targetHeight)
+	target, err := m.logic.NamespaceKeeper().GetTarget(path, targetHeight)
 	if err != nil {
 		panic(err)
 	}
@@ -181,12 +182,12 @@ func (m *NamespaceModule) register(
 	// Hash the name
 	tx.Name = util.Hash20Hex([]byte(tx.Name))
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
@@ -225,12 +226,12 @@ func (m *NamespaceModule) updateDomain(
 	// Hash the name
 	tx.Name = util.Hash20Hex([]byte(tx.Name))
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}

@@ -899,6 +899,32 @@ func (mr *MockAtomicLogicMockRecorder) Cfg() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockAtomicLogic)(nil).Cfg))
 }
 
+// GetMempoolReactor mocks base method
+func (m *MockAtomicLogic) GetMempoolReactor() core.MempoolReactor {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMempoolReactor")
+	ret0, _ := ret[0].(core.MempoolReactor)
+	return ret0
+}
+
+// GetMempoolReactor indicates an expected call of GetMempoolReactor
+func (mr *MockAtomicLogicMockRecorder) GetMempoolReactor() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMempoolReactor", reflect.TypeOf((*MockAtomicLogic)(nil).GetMempoolReactor))
+}
+
+// SetMempoolReactor mocks base method
+func (m *MockAtomicLogic) SetMempoolReactor(mr core.MempoolReactor) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetMempoolReactor", mr)
+}
+
+// SetMempoolReactor indicates an expected call of SetMempoolReactor
+func (mr_2 *MockAtomicLogicMockRecorder) SetMempoolReactor(mr interface{}) *gomock.Call {
+	mr_2.mock.ctrl.T.Helper()
+	return mr_2.mock.ctrl.RecordCallWithMethodType(mr_2.mock, "SetMempoolReactor", reflect.TypeOf((*MockAtomicLogic)(nil).SetMempoolReactor), mr)
+}
+
 // OnEndBlock mocks base method
 func (m *MockAtomicLogic) OnEndBlock(block *core.BlockInfo) error {
 	m.ctrl.T.Helper()
@@ -1236,6 +1262,32 @@ func (m *MockLogic) Cfg() *config.AppConfig {
 func (mr *MockLogicMockRecorder) Cfg() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockLogic)(nil).Cfg))
+}
+
+// GetMempoolReactor mocks base method
+func (m *MockLogic) GetMempoolReactor() core.MempoolReactor {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMempoolReactor")
+	ret0, _ := ret[0].(core.MempoolReactor)
+	return ret0
+}
+
+// GetMempoolReactor indicates an expected call of GetMempoolReactor
+func (mr *MockLogicMockRecorder) GetMempoolReactor() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMempoolReactor", reflect.TypeOf((*MockLogic)(nil).GetMempoolReactor))
+}
+
+// SetMempoolReactor mocks base method
+func (m *MockLogic) SetMempoolReactor(mr core.MempoolReactor) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetMempoolReactor", mr)
+}
+
+// SetMempoolReactor indicates an expected call of SetMempoolReactor
+func (mr_2 *MockLogicMockRecorder) SetMempoolReactor(mr interface{}) *gomock.Call {
+	mr_2.mock.ctrl.T.Helper()
+	return mr_2.mock.ctrl.RecordCallWithMethodType(mr_2.mock, "SetMempoolReactor", reflect.TypeOf((*MockLogic)(nil).SetMempoolReactor), mr)
 }
 
 // OnEndBlock mocks base method

@@ -3,14 +3,14 @@ package node
 import (
 	"context"
 	"fmt"
-	"gitlab.com/makeos/mosdef/dht/types"
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
-	servtypes "gitlab.com/makeos/mosdef/services/types"
-	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/core"
 	"net"
 	"net/url"
 	"os"
+
+	"gitlab.com/makeos/mosdef/dht/types"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/core"
 
 	rpcApi "gitlab.com/makeos/mosdef/api/rpc"
 	"gitlab.com/makeos/mosdef/rpc"
@@ -34,9 +34,7 @@ import (
 
 	logic "gitlab.com/makeos/mosdef/logic"
 
-	"gitlab.com/makeos/mosdef/tmrpc"
-
-	"gitlab.com/makeos/mosdef/services"
+	"gitlab.com/makeos/mosdef/node/services"
 
 	"github.com/pkg/errors"
 
@@ -66,8 +64,7 @@ type Node struct {
 	db             storage.Engine
 	stateTreeDB    storage.Engine
 	tm             *nm.Node
-	service        servtypes.Service
-	tmrpc          *tmrpc.TMRPC
+	service        services.Service
 	logic          core.AtomicLogic
 	mempoolReactor *mempool.Reactor
 	ticketMgr      tickettypes.TicketManager
@@ -80,20 +77,18 @@ type Node struct {
 // NewNode creates an instance of Node
 func NewNode(cfg *config.AppConfig, tmcfg *tmconfig.Config) *Node {
 
-	// Parse the RPC address
-	parsedURL, err := url.Parse(tmcfg.RPC.ListenAddress)
+	// Parse tendermint RPC address
+	tmRPCAddr, err := url.Parse(tmcfg.RPC.ListenAddress)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to parse RPC address"))
 	}
-	tmrpc := tmrpc.New(net.JoinHostPort(parsedURL.Hostname(), parsedURL.Port()))
 
 	return &Node{
 		cfg:     cfg,
 		nodeKey: cfg.G().NodeKey,
 		log:     cfg.G().Log.Module("node"),
 		tmcfg:   tmcfg,
-		service: services.New(tmrpc, nil, nil),
-		tmrpc:   tmrpc,
+		service: services.New(net.JoinHostPort(tmRPCAddr.Hostname(), tmRPCAddr.Port())),
 		acctMgr: accountmgr.New(cfg.AccountDir()),
 	}
 }
@@ -196,6 +191,9 @@ func (n *Node) Start() error {
 	memp := cusMemp.Mempool.(*mempool.Mempool)
 	mempR := cusMemp.MempoolReactor.(*mempool.Reactor)
 
+	// Pass mempool reactor to logic
+	n.logic.SetMempoolReactor(mempR)
+
 	// Create repository manager and pass it to logic
 	repoMgr := repo.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht, memp, n)
 	n.repoMgr = repoMgr
@@ -228,7 +226,6 @@ func (n *Node) Start() error {
 	// Set references of various instances on the node
 	n.tm = tmNode
 	n.mempoolReactor = mempR
-	n.service = services.New(n.tmrpc, n.logic, mempR)
 
 	// Register some object finder on the dht
 	n.dht.RegisterObjFinder(core.RepoObjectModule, repoMgr)
@@ -381,7 +378,7 @@ func (n *Node) GetCurrentValidators() []*tmtypes.Validator {
 }
 
 // GetService returns the node's service
-func (n *Node) GetService() servtypes.Service {
+func (n *Node) GetService() services.Service {
 	return n.service
 }
 

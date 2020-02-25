@@ -10,6 +10,8 @@ import (
 	mempool "github.com/tendermint/tendermint/mempool"
 	types0 "github.com/tendermint/tendermint/types"
 	types1 "gitlab.com/makeos/mosdef/types"
+	core "gitlab.com/makeos/mosdef/types/core"
+	util "gitlab.com/makeos/mosdef/util"
 	reflect "reflect"
 )
 
@@ -246,4 +248,70 @@ func (m *MockMempool) Add(tx types1.BaseTx) error {
 func (mr *MockMempoolMockRecorder) Add(tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockMempool)(nil).Add), tx)
+}
+
+// MockMempoolReactor is a mock of MempoolReactor interface
+type MockMempoolReactor struct {
+	ctrl     *gomock.Controller
+	recorder *MockMempoolReactorMockRecorder
+}
+
+// MockMempoolReactorMockRecorder is the mock recorder for MockMempoolReactor
+type MockMempoolReactorMockRecorder struct {
+	mock *MockMempoolReactor
+}
+
+// NewMockMempoolReactor creates a new mock instance
+func NewMockMempoolReactor(ctrl *gomock.Controller) *MockMempoolReactor {
+	mock := &MockMempoolReactor{ctrl: ctrl}
+	mock.recorder = &MockMempoolReactorMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockMempoolReactor) EXPECT() *MockMempoolReactorMockRecorder {
+	return m.recorder
+}
+
+// GetPoolSize mocks base method
+func (m *MockMempoolReactor) GetPoolSize() *core.PoolSizeInfo {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPoolSize")
+	ret0, _ := ret[0].(*core.PoolSizeInfo)
+	return ret0
+}
+
+// GetPoolSize indicates an expected call of GetPoolSize
+func (mr *MockMempoolReactorMockRecorder) GetPoolSize() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPoolSize", reflect.TypeOf((*MockMempoolReactor)(nil).GetPoolSize))
+}
+
+// GetTop mocks base method
+func (m *MockMempoolReactor) GetTop(n int) []types1.BaseTx {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTop", n)
+	ret0, _ := ret[0].([]types1.BaseTx)
+	return ret0
+}
+
+// GetTop indicates an expected call of GetTop
+func (mr *MockMempoolReactorMockRecorder) GetTop(n interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTop", reflect.TypeOf((*MockMempoolReactor)(nil).GetTop), n)
+}
+
+// AddTx mocks base method
+func (m *MockMempoolReactor) AddTx(tx types1.BaseTx) (util.Bytes32, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddTx", tx)
+	ret0, _ := ret[0].(util.Bytes32)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AddTx indicates an expected call of AddTx
+func (mr *MockMempoolReactorMockRecorder) AddTx(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddTx", reflect.TypeOf((*MockMempoolReactor)(nil).AddTx), tx)
 }

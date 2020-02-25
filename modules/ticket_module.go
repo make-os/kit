@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+
 	"github.com/c-bata/go-prompt"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -9,7 +10,7 @@ import (
 	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/crypto"
 	modtypes "gitlab.com/makeos/mosdef/modules/types"
-	servtypes "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/node/services"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -19,7 +20,8 @@ import (
 // TicketModule provides access to various utility functions
 type TicketModule struct {
 	vm        *otto.Otto
-	service   servtypes.Service
+	service   services.Service
+	logic     core.Logic
 	ticketmgr tickettypes.TicketManager
 	storerObj map[string]interface{}
 }
@@ -27,12 +29,14 @@ type TicketModule struct {
 // NewTicketModule creates an instance of TicketModule
 func NewTicketModule(
 	vm *otto.Otto,
-	service servtypes.Service,
+	service services.Service,
+	logic core.Logic,
 	ticketmgr tickettypes.TicketManager) *TicketModule {
 	return &TicketModule{
 		vm:        vm,
 		service:   service,
 		ticketmgr: ticketmgr,
+		logic:     logic,
 		storerObj: make(map[string]interface{}),
 	}
 }
@@ -156,13 +160,13 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 		panic(err)
 	}
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
 	// Process the transaction
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
@@ -202,12 +206,12 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 	blsKey := pk.BLSKey()
 	tx.BLSPubKey = blsKey.Public().Bytes()
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
@@ -419,12 +423,12 @@ func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 		panic(err)
 	}
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}

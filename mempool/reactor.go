@@ -2,9 +2,10 @@ package mempool
 
 import (
 	"fmt"
+	"math"
+
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
-	"math"
 
 	"gitlab.com/makeos/mosdef/config"
 
@@ -30,12 +31,6 @@ const (
 
 	maxActiveIDs = math.MaxUint16
 )
-
-// PoolSizeInfo describes the transaction byte size an count of the tx pool
-type PoolSizeInfo struct {
-	TotalTxSize int64 `json:"totalTxSize"`
-	TxCount     int   `json:"txCount"`
-}
 
 // Reactor handles mempool tx broadcasting amongst peers.
 // It maintains a map from peer ID to counter, to prevent gossiping txs to the
@@ -106,8 +101,8 @@ func (r *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 }
 
 // GetPoolSize returns the size information of the pool
-func (r *Reactor) GetPoolSize() *PoolSizeInfo {
-	return &PoolSizeInfo{
+func (r *Reactor) GetPoolSize() *core.PoolSizeInfo {
+	return &core.PoolSizeInfo{
 		TotalTxSize: r.mempool.TxsBytes(),
 		TxCount:     r.mempool.Size(),
 	}

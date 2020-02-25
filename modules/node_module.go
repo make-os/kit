@@ -2,11 +2,12 @@ package modules
 
 import (
 	"fmt"
+	"strconv"
+
 	modtypes "gitlab.com/makeos/mosdef/modules/types"
-	servtypes "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
-	"strconv"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
 
@@ -23,12 +24,12 @@ import (
 // ChainModule provides access to chain information
 type ChainModule struct {
 	vm      *otto.Otto
-	service servtypes.Service
+	service services.Service
 	keepers core.Keepers
 }
 
 // NewChainModule creates an instance of ChainModule
-func NewChainModule(vm *otto.Otto, service servtypes.Service, keepers core.Keepers) *ChainModule {
+func NewChainModule(vm *otto.Otto, service services.Service, keepers core.Keepers) *ChainModule {
 	return &ChainModule{vm: vm, service: service, keepers: keepers}
 }
 
@@ -109,12 +110,12 @@ func (m *ChainModule) getBlock(height string) Map {
 
 // getCurrentHeight returns the current block height
 func (m *ChainModule) getCurrentHeight() interface{} {
-	res, err := m.service.GetCurrentHeight()
+	bi, err := m.keepers.SysKeeper().GetLastBlockInfo()
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get current block height"))
 	}
 	return EncodeForJS(map[string]interface{}{
-		"height": fmt.Sprintf("%d", res),
+		"height": fmt.Sprintf("%d", bi.Height),
 	})
 }
 

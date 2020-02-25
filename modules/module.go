@@ -8,8 +8,8 @@ import (
 	"gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/extensions"
 	"gitlab.com/makeos/mosdef/mempool"
+	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/rpc"
-	types4 "gitlab.com/makeos/mosdef/services/types"
 	types2 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 )
@@ -34,7 +34,7 @@ type Modules struct {
 // environment and suitable for reuse in JSON-RPC and REST APIs.
 type Module struct {
 	cfg            *config.AppConfig
-	service        types4.Service
+	service        services.Service
 	logic          core.Logic
 	mempoolReactor *mempool.Reactor
 	acctmgr        *accountmgr.AccountManager
@@ -51,7 +51,7 @@ type Module struct {
 func NewModuleAggregator(
 	cfg *config.AppConfig,
 	acctmgr *accountmgr.AccountManager,
-	service types4.Service,
+	service services.Service,
 	logic core.Logic,
 	mempoolReactor *mempool.Reactor,
 	ticketmgr types2.TicketManager,
@@ -87,7 +87,7 @@ func (m *Module) registerModules(vm *otto.Otto) {
 	m.Modules.Chain = NewChainModule(vm, m.service, m.logic)
 	m.Modules.Account = NewAccountModule(m.cfg, vm, m.acctmgr, m.service, m.logic)
 	m.Modules.GPG = NewGPGModule(m.cfg, vm, m.service, m.logic)
-	m.Modules.Ticket = NewTicketModule(vm, m.service, m.ticketmgr)
+	m.Modules.Ticket = NewTicketModule(vm, m.service, m.logic, m.ticketmgr)
 	m.Modules.Repo = NewRepoModule(vm, m.service, m.repoMgr, m.logic)
 	m.Modules.NS = NewNSModule(vm, m.service, m.repoMgr, m.logic)
 	m.Modules.DHT = NewDHTModule(m.cfg, vm, m.dht)

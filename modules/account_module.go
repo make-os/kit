@@ -5,7 +5,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/modules/types"
-	types2 "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 
@@ -24,7 +24,7 @@ type AccountModule struct {
 	cfg     *config.AppConfig
 	acctMgr *accountmgr.AccountManager
 	vm      *otto.Otto
-	service types2.Service
+	service services.Service
 	logic   core.Logic
 }
 
@@ -33,7 +33,7 @@ func NewAccountModule(
 	cfg *config.AppConfig,
 	vm *otto.Otto,
 	acctmgr *accountmgr.AccountManager,
-	service types2.Service,
+	service services.Service,
 	logic core.Logic) *AccountModule {
 	return &AccountModule{
 		cfg:     cfg,
@@ -331,12 +331,12 @@ func (m *AccountModule) SetCommission(params map[string]interface{},
 		panic(err)
 	}
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}

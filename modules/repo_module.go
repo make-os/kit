@@ -2,11 +2,12 @@ package modules
 
 import (
 	"fmt"
+
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	modtypes "gitlab.com/makeos/mosdef/modules/types"
-	servtypes "gitlab.com/makeos/mosdef/services/types"
+	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -16,18 +17,18 @@ import (
 // RepoModule provides repository functionalities to JS environment
 type RepoModule struct {
 	vm      *otto.Otto
-	keepers core.Keepers
-	service servtypes.Service
+	logic   core.Logic
+	service services.Service
 	repoMgr core.RepoManager
 }
 
 // NewRepoModule creates an instance of RepoModule
 func NewRepoModule(
 	vm *otto.Otto,
-	service servtypes.Service,
+	service services.Service,
 	repoMgr core.RepoManager,
-	keepers core.Keepers) *RepoModule {
-	return &RepoModule{vm: vm, service: service, keepers: keepers, repoMgr: repoMgr}
+	logic core.Logic) *RepoModule {
+	return &RepoModule{vm: vm, service: service, logic: logic, repoMgr: repoMgr}
 }
 
 // funcs are functions accessible using the `repo` namespace
@@ -131,12 +132,12 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 		panic(err)
 	}
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
@@ -172,12 +173,12 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 		panic(err)
 	}
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
@@ -212,12 +213,12 @@ func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...in
 		panic(err)
 	}
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
@@ -268,9 +269,9 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) Map {
 
 	var repo *state.Repository
 	if !noProposals {
-		repo = m.keepers.RepoKeeper().GetRepo(name, targetHeight)
+		repo = m.logic.RepoKeeper().GetRepo(name, targetHeight)
 	} else {
-		repo = m.keepers.RepoKeeper().GetRepoOnly(name, targetHeight)
+		repo = m.logic.RepoKeeper().GetRepoOnly(name, targetHeight)
 		repo.Proposals = map[string]interface{}{}
 	}
 
@@ -307,12 +308,12 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 		panic(err)
 	}
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
@@ -347,12 +348,12 @@ func (m *RepoModule) depositFee(params map[string]interface{}, options ...interf
 		panic(err)
 	}
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
@@ -392,12 +393,12 @@ func (m *RepoModule) CreateMergeRequest(
 		panic(err)
 	}
 
-	payloadOnly := finalizeTx(tx, m.service, options...)
+	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
 		return EncodeForJS(tx.ToMap())
 	}
 
-	hash, err := m.service.SendTx(tx)
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to send transaction"))
 	}
