@@ -2,10 +2,11 @@ package modules
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types"
 	"net"
 	"strconv"
 	"strings"
+
+	"gitlab.com/makeos/mosdef/types"
 
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/rpc/client"
@@ -38,23 +39,28 @@ func NewRPCModule(
 }
 
 func (m *RPCModule) namespacedFuncs() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{
-		&modtypes.ModulesAggregatorFunc{
+	modFuncs := []*modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "isRunning",
 			Value:       m.isRunning,
 			Description: "Checks whether the local RPC server is running",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "connect",
 			Value:       m.connect,
 			Description: "Connect to an RPC server",
 		},
-		&modtypes.ModulesAggregatorFunc{
+	}
+
+	if !m.cfg.ConsoleOnly() {
+		modFuncs = append(modFuncs, &modtypes.ModulesAggregatorFunc{
 			Name:        "local",
 			Value:       m.local(),
 			Description: "Call methods of the local RPC server",
-		},
+		})
 	}
+
+	return modFuncs
 }
 
 func (m *RPCModule) globals() []*modtypes.ModulesAggregatorFunc {
@@ -87,9 +93,9 @@ func (m *RPCModule) Configure() []prompt.Suggest {
 		})
 	}
 
-	// If the local rpc server is initialized, get the supported
-	// methods and use them to create suggestions
-	if m.rpcServer != nil {
+	// If the local rpc server is initialized and  we are not in console-only mode,
+	// get the supported methods and use them to create rpc suggestions under 'local' namespace
+	if m.rpcServer != nil && !m.cfg.ConsoleOnly() {
 		for _, method := range m.rpcServer.GetMethods() {
 			funcFullName := fmt.Sprintf("%s.local.%s", types.NamespaceRPC,
 				strings.ReplaceAll(method.Name, "_", "."))
@@ -120,6 +126,15 @@ func (m *RPCModule) local() rpcMethods {
 }
 
 // connect to an RPC server
+//
+// ARGS
+// host: The server's IP address
+// port: The server's port number
+// https: Forces/Disable secure connection with server
+// user: The server's username
+// pass: The server's password
+//
+// RETURNS <map>: A mapping of rpc methods and call functions
 func (m *RPCModule) connect(host string, port int, https bool, user, pass string) rpcMethods {
 
 	c := client.NewClient(&rpc.Options{

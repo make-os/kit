@@ -31,17 +31,17 @@ func (m *PoolModule) globals() []*modtypes.ModulesAggregatorFunc {
 // funcs exposed by the module
 func (m *PoolModule) funcs() []*modtypes.ModulesAggregatorFunc {
 	return []*modtypes.ModulesAggregatorFunc{
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "getSize",
 			Value:       m.getSize,
 			Description: "Get the current size of the mempool",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "getTop",
 			Value:       m.getTop,
 			Description: "Get top transactions from the mempool",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "getPushPoolSize",
 			Value:       m.getPushPoolSize,
 			Description: "Get the current size of the push pool",
@@ -76,13 +76,13 @@ func (m *PoolModule) Configure() []prompt.Suggest {
 }
 
 // getSize returns the size of the pool
-func (m *PoolModule) getSize() interface{} {
+func (m *PoolModule) getSize() Map {
 	return EncodeForJS(m.reactor.GetPoolSize())
 }
 
 // getTop returns all the transactions in the pool
-func (m *PoolModule) getTop(n int) interface{} {
-	var res = []interface{}{}
+func (m *PoolModule) getTop(n int) []Map {
+	var res = []Map{}
 	for _, tx := range m.reactor.GetTop(n) {
 		res = append(res, EncodeForJS(tx.ToMap()))
 	}
@@ -90,6 +90,6 @@ func (m *PoolModule) getTop(n int) interface{} {
 }
 
 // getPushPoolSize returns the size of the push pool
-func (m *PoolModule) getPushPoolSize() interface{} {
+func (m *PoolModule) getPushPoolSize() int {
 	return m.pushPool.Len()
 }

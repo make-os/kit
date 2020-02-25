@@ -5,7 +5,7 @@ import (
 	"net"
 	"strconv"
 
-	"gitlab.com/makeos/mosdef/rest"
+	"gitlab.com/makeos/mosdef/api/rest"
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
@@ -58,7 +58,7 @@ func getJSONRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 // getRemoteAPIClients gets REST clients for every  http(s) remote
 // URL set on the given repository. Immediately returns nothing if
 // --no.remote is true.
-func getRemoteAPIClients(cmd *cobra.Command, repo core.BareRepo) (clients []*api.Client) {
+func getRemoteAPIClients(cmd *cobra.Command, repo core.BareRepo) (clients []*rest.Client) {
 	noRemote, _ := cmd.Flags().GetBool("no.remote")
 	if noRemote {
 		return
@@ -75,14 +75,14 @@ func getRemoteAPIClients(cmd *cobra.Command, repo core.BareRepo) (clients []*api
 			apiURL = fmt.Sprintf("%s:%d", apiURL, ep.Port)
 		}
 
-		clients = append(clients, api.NewClient(apiURL))
+		clients = append(clients, rest.NewClient(apiURL))
 	}
 	return
 }
 
 // getClients returns RPC and Remote API clients
 func getRepoAndClients(cmd *cobra.Command, nonceFromFlag string) (core.BareRepo,
-	*client.RPCClient, []*api.Client) {
+	*client.RPCClient, []*rest.Client) {
 
 	// Get the repository
 	targetRepo, err := repo.GetCurrentWDRepo(cfg.Node.GitBinPath)

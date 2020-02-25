@@ -159,8 +159,8 @@ func (c *Console) Prepare() error {
 	return nil
 }
 
-// AddModulesAggregators adds javascript modules
-func (c *Console) AddModulesAggregators(modules ...types2.ModulesAggregator) {
+// AddModulesAggregator adds javascript modules
+func (c *Console) AddModulesAggregator(modules ...types2.ModulesAggregator) {
 	c.jsModules = append(c.jsModules, modules...)
 }
 

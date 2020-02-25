@@ -33,32 +33,32 @@ func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht types2.DHTNode) *DHT
 
 func (m *DHTModule) namespacedFuncs() []*moduletypes.ModulesAggregatorFunc {
 	return []*moduletypes.ModulesAggregatorFunc{
-		&moduletypes.ModulesAggregatorFunc{
+		{
 			Name:        "store",
 			Value:       m.store,
 			Description: "Add a value that correspond to a given key",
 		},
-		&moduletypes.ModulesAggregatorFunc{
+		{
 			Name:        "lookup",
 			Value:       m.lookup,
 			Description: "Find a record that correspond to a given key",
 		},
-		&moduletypes.ModulesAggregatorFunc{
+		{
 			Name:        "announce",
 			Value:       m.announce,
 			Description: "Inform the network that this node can provide value for a key",
 		},
-		&moduletypes.ModulesAggregatorFunc{
+		{
 			Name:        "getProviders",
 			Value:       m.getProviders,
 			Description: "Get providers for a given key",
 		},
-		&moduletypes.ModulesAggregatorFunc{
+		{
 			Name:        "getRepoObject",
 			Value:       m.getRepoObject,
 			Description: "Find and return a repo object",
 		},
-		&moduletypes.ModulesAggregatorFunc{
+		{
 			Name:        "getPeers",
 			Value:       m.getPeers,
 			Description: "Returns a list of all DHTNode peers",
@@ -98,6 +98,10 @@ func (m *DHTModule) Configure() []prompt.Suggest {
 }
 
 // store stores a value corresponding to the given key
+//
+// ARGS:
+// key: The data query key
+// val: The data to be stored
 func (m *DHTModule) store(key string, val string) {
 	if err := m.dht.Store(context.Background(), key, []byte(val)); err != nil {
 		panic(err)
@@ -105,6 +109,11 @@ func (m *DHTModule) store(key string, val string) {
 }
 
 // lookup finds a value for a given key
+//
+// ARGS:
+// key: The data query key
+//
+// RETURNS: <[]bytes> - The data stored on the key
 func (m *DHTModule) lookup(key string) interface{} {
 	bz, err := m.dht.Lookup(context.Background(), key)
 	if err != nil {
@@ -113,13 +122,22 @@ func (m *DHTModule) lookup(key string) interface{} {
 	return bz
 }
 
-// announce announces to the network that the node
-// can provide value for a given key
+// announce announces to the network that the node can provide value for a given key
+//
+// ARGS:
+// - key: The data query key
 func (m *DHTModule) announce(key string) {
 	m.dht.Announce(context.Background(), []byte(key))
 }
 
 // getProviders returns the providers for a given key
+//
+// ARGS:
+// key: The data query key
+//
+// RETURNS: resp <[]map[string]interface{}>
+// resp.id <string>: The libp2p ID of the provider
+// resp.addresses	<[]string>: A list of p2p multiaddrs of the provider
 func (m *DHTModule) getProviders(key string) (res []map[string]interface{}) {
 	peers, err := m.dht.GetProviders(context.Background(), []byte(key))
 	if err != nil {
@@ -139,6 +157,9 @@ func (m *DHTModule) getProviders(key string) (res []map[string]interface{}) {
 }
 
 // getRepoObject finds a repository object from a provider
+//
+// ARGS:
+// objURI: The repo object URI
 func (m *DHTModule) getRepoObject(objURI string) []byte {
 	bz, err := m.dht.GetObject(context.Background(), &types2.DHTObjectQuery{
 		Module:    core.RepoObjectModule,
@@ -151,7 +172,7 @@ func (m *DHTModule) getRepoObject(objURI string) []byte {
 	return bz
 }
 
-// getPeers returns a list of all DHTNode peers
+// getPeers returns a list of all connected peers
 func (m *DHTModule) getPeers() []string {
 	peers := m.dht.Peers()
 	if len(peers) == 0 {

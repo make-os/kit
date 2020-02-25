@@ -11,9 +11,9 @@ import (
 	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/accountmgr"
+	"gitlab.com/makeos/mosdef/api/rest"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/rest"
 	"gitlab.com/makeos/mosdef/rpc/client"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
@@ -48,14 +48,14 @@ func getNextNonceOfGPGKeyOwnerWithRPCClient(pkID string, client *client.RPCClien
 // getNextNonceOfGPGKeyOwnerWithRemoteClients gets the next account nonce of the owner of the gpg
 // key by querying the given Remote API clients.
 func getNextNonceOfGPGKeyOwnerWithRemoteClients(
-	clients []*api.Client,
+	clients []*rest.Client,
 	gpgPubKeyID string) (string, error) {
 	var err error
 
 	// Try each remote client.
 	// Return the result from the first successfully trial.
 	for _, cl := range clients {
-		var resp *api.AccountGetNonceResponse
+		var resp *rest.AccountGetNonceResponse
 		resp, err = cl.GPGGetOwnerNonce(gpgPubKeyID)
 		if err != nil {
 			err = errors.Wrap(err, "failed to query nonce")
@@ -85,7 +85,7 @@ func determineNextNonceOfGPGKeyOwner(
 	nonceFromFlag,
 	pkID string,
 	rpcClient *client.RPCClient,
-	remoteClients []*api.Client) (string, error) {
+	remoteClients []*rest.Client) (string, error) {
 
 	if !util.IsZeroString(nonceFromFlag) {
 		return nonceFromFlag, nil
@@ -136,7 +136,7 @@ func SignCommitCmd(
 	deleteRefAction bool,
 	mergeID string,
 	rpcClient *client.RPCClient,
-	remoteClients []*api.Client) error {
+	remoteClients []*rest.Client) error {
 
 	if !govalidator.IsNumeric(mergeID) {
 		return fmt.Errorf("merge id must be numeric")
@@ -227,7 +227,7 @@ func SignTagCmd(
 	signingKey string,
 	deleteRefAction bool,
 	rpcClient *client.RPCClient,
-	remoteClients []*api.Client) error {
+	remoteClients []*rest.Client) error {
 
 	parsed := util.ParseSimpleArgs(args)
 
@@ -305,7 +305,7 @@ func SignNoteCmd(
 	note string,
 	deleteRefAction bool,
 	rpcClient *client.RPCClient,
-	remoteClients []*api.Client) error {
+	remoteClients []*rest.Client) error {
 
 	// Get the signing key id from the git config if not provided via -s flag
 	if signingKey == "" {
@@ -435,7 +435,7 @@ func CreateAndSendMergeRequestCmd(
 	fee,
 	nonceFromFlag string,
 	rpcClient *client.RPCClient,
-	remoteClients []*api.Client) error {
+	remoteClients []*rest.Client) error {
 
 	// Get the signer account
 	am := accountmgr.New(path.Join(cfg.DataDir(), config.AccountDirName))

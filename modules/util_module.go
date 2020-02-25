@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 
 	"github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/params"
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
-	"gitlab.com/makeos/mosdef/util"
 	prettyjson "github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/crypto"
+	modtypes "gitlab.com/makeos/mosdef/modules/types"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // UtilModule provides access to various utility functions
@@ -28,37 +28,37 @@ func NewUtilModule(vm *otto.Otto) *UtilModule {
 
 func (m *UtilModule) globals() []*modtypes.ModulesAggregatorFunc {
 	return []*modtypes.ModulesAggregatorFunc{
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "pp",
 			Value:       m.prettyPrint,
 			Description: "Pretty print an object",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "eval",
 			Value:       m.eval,
 			Description: "Execute javascript code represented as a string",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "evalFile",
 			Value:       m.evalFile,
 			Description: "Execute javascript code stored in a file",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "readFile",
 			Value:       m.readFile,
 			Description: "Read a file",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "readTextFile",
 			Value:       m.readTextFile,
 			Description: "Read a text file",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "treasuryAddress",
 			Value:       m.treasuryAddress(),
 			Description: "Get the treasury address",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "genKey",
 			Value:       m.genKey,
 			Description: "Generate an Ed25519 key",
@@ -69,37 +69,37 @@ func (m *UtilModule) globals() []*modtypes.ModulesAggregatorFunc {
 // funcs exposed by the module
 func (m *UtilModule) funcs() []*modtypes.ModulesAggregatorFunc {
 	return []*modtypes.ModulesAggregatorFunc{
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "prettyPrint",
 			Value:       m.prettyPrint,
 			Description: "Pretty print an object",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "eval",
 			Value:       m.eval,
 			Description: "Execute javascript code represented as a string",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "evalFile",
 			Value:       m.evalFile,
 			Description: "Execute javascript code stored in a file",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "readFile",
 			Value:       m.readFile,
 			Description: "Read a file",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "readTextFile",
 			Value:       m.readTextFile,
 			Description: "Read a text file",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "treasuryAddress",
 			Value:       m.treasuryAddress(),
 			Description: "Get the treasury address",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "genKey",
 			Value:       m.genKey,
 			Description: "Generate an Ed25519 key",

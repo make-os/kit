@@ -15,22 +15,15 @@ require (
 	github.com/bitfield/script v0.14.0
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/c-bata/go-prompt v0.2.3
-	github.com/coniks-sys/coniks-go v0.0.0-20180722014011-11acf4819b71 // indirect
-	github.com/dedis/drand v0.5.0 // indirect
-	github.com/dghubble/go-twitter v0.0.0-20190719072343-39e5462e111f // indirect
-	github.com/dghubble/oauth1 v0.6.0 // indirect
 	github.com/dgraph-io/badger v1.6.0
 	github.com/dgryski/go-farm v0.0.0-20191112170834-c2139c5d712b // indirect
-	github.com/drand/bls12-381 v0.0.0-20200110233355-faca855b3a67 // indirect
 	github.com/dustin/go-humanize v1.0.0
-	github.com/ellcrys/go-ethereum v1.8.7 // indirect
 	github.com/ellcrys/go-prompt v1.2.1
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/gobuffalo/packr v1.30.1
-	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.3.1
 	github.com/gorilla/mux v1.7.3
@@ -38,7 +31,6 @@ require (
 	github.com/hashicorp/golang-lru v0.5.3
 	github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e // indirect
 	github.com/howeyc/gopass v0.0.0-20190910152052-7cb4b85ec19c // indirect
-	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/imroc/req v0.3.0
 	github.com/ipfs/go-cid v0.0.4
 	github.com/ipfs/go-ds-badger v0.2.0
@@ -61,7 +53,6 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/multiformats/go-multiaddr v0.2.0
 	github.com/multiformats/go-multihash v0.0.10
-	github.com/ncodes/coniks-go v0.0.0-20180722014011-11acf4819b71 // indirect
 	github.com/ncodes/go-prettyjson v0.0.0-20180528130907-d229c224a219
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
 	github.com/onsi/ginkgo v1.8.0
@@ -99,6 +90,7 @@ require (
 	golang.org/x/sys v0.0.0-20191210023423-ac6580df4449 // indirect
 	golang.org/x/tools v0.0.0-20191206204035-259af5ff87bd // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
+	google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/oleiade/lane.v1 v1.0.0
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect

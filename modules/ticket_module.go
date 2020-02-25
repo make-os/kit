@@ -44,37 +44,37 @@ func (m *TicketModule) globals() []*modtypes.ModulesAggregatorFunc {
 // funcs exposed by the module
 func (m *TicketModule) funcs() []*modtypes.ModulesAggregatorFunc {
 	return []*modtypes.ModulesAggregatorFunc{
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "buy",
 			Value:       m.buy,
 			Description: "Buy a validator ticket",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "listValidatorTicketsOfProposer",
 			Value:       m.listValidatorTicketsOfProposer,
 			Description: "List validator tickets where given public key is the proposer",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "listStorerTicketsOfProposer",
 			Value:       m.listStorerTicketsOfProposer,
 			Description: "List storer tickets where given public key is the proposer",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "listRecent",
 			Value:       m.listRecent,
 			Description: "List most recent tickets up to the given limit",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "stats",
 			Value:       m.ticketStats,
 			Description: "Get ticket stats of network and a public key",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "listTopValidators",
 			Value:       m.listTopValidators,
 			Description: "List tickets of top network validators up to the given limit",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "listTopStorers",
 			Value:       m.listTopStorers,
 			Description: "List tickets of top network storers up to the given limit",
@@ -85,12 +85,12 @@ func (m *TicketModule) funcs() []*modtypes.ModulesAggregatorFunc {
 // storerFuncs are `storer` funcs exposed by the module
 func (m *TicketModule) storerFuncs() []*modtypes.ModulesAggregatorFunc {
 	return []*modtypes.ModulesAggregatorFunc{
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "buy",
 			Value:       m.storerBuy,
 			Description: "Buy an storer ticket",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "unbond",
 			Value:       m.unbondStorerTicket,
 			Description: "Unbond the stake associated with a storer ticket",
@@ -124,7 +124,7 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 
 	// Add global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
+		_ = m.vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}
@@ -132,17 +132,22 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 	return suggestions
 }
 
-// buy creates and executes a ticket purchase order
+// buy creates a transaction to acquire a validator ticket
 //
-// params {
-// 		nonce: number,
-//		fee: string,
-// 		value: string,
-//		delegate: string
-//		timestamp: number
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
+// ARGS:
+// params <map>
+// params.value 		<number|string>: 	The amount to pay for the ticket
+// params.delegate 		<string>: 			A base58 public key of an active delegate
+// params.nonce 		<number|string>: 	The senders next account nonce
+// params.fee 			<number|string>: 	The transaction fee to pay
+// params.timestamp 	<number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 				The transaction hash
 func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -167,17 +172,22 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 	})
 }
 
-// buy creates and executes a ticket purchase order
+// storerBuy creates a transaction to acquire a storer ticket
 //
-// params {
-// 		nonce: number,
-//		fee: string,
-// 		value: string,
-//		delegate: string
-//		timestamp: number
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
+// ARGS:
+// params <map>
+// params.value 		<number|string>: 	The amount to pay for the ticket
+// params.delegate 		<string>: 			A base58 public key of an active delegate
+// params.nonce 		<number|string>: 	The senders next account nonce
+// params.fee 			<number|string>: 	The transaction fee to pay
+// params.timestamp 	<number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 				The transaction hash
 func (m *TicketModule) storerBuy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -210,23 +220,29 @@ func (m *TicketModule) storerBuy(params map[string]interface{}, options ...inter
 // listValidatorTicketsOfProposer finds validator tickets where the given public
 // key is the proposer; By default it will filter out decayed tickets. Use query
 // option to override this behaviour
+//
+// ARGS:
+// proposerPubKey: The public key of the target proposer
+//
+// [queryOpts] <map>
+// [queryOpts].nonDecayed <bool>	Forces only non-decayed tickets to be returned (default: true)
+// [queryOpts].decayed 	<bool>	Forces only decayed tickets to be returned
+//
+// RETURNS <[]types.Ticket>
 func (m *TicketModule) listValidatorTicketsOfProposer(
 	proposerPubKey string,
-	queryOpts ...map[string]interface{}) interface{} {
+	queryOpts ...map[string]interface{}) []Map {
 
 	var qopts tickettypes.QueryOptions
 
-	// Prepare query options
 	if len(queryOpts) > 0 {
 		qoMap := queryOpts[0]
-
 		// If the user didn't set 'decay' and 'nonDecayed' filters, we set the
-		// default of `nonDecayed` tp true to return only non-decayed tickets
+		// default of `nonDecayed` to true to return only non-decayed tickets
 		if qoMap["nonDecayed"] == nil && qoMap["decayed"] == nil {
 			qopts.NonDecayedOnly = true
 		}
-
-		mapstructure.Decode(qoMap, &qopts)
+		_ = mapstructure.Decode(qoMap, &qopts)
 	}
 
 	// If no sort by height directive, sort by height in descending order
@@ -249,13 +265,20 @@ func (m *TicketModule) listValidatorTicketsOfProposer(
 
 // listStorerTicketsOfProposer finds storer tickets where the given public
 // key is the proposer
+//
+// ARGS:
+// proposerPubKey: The public key of the target proposer
+//
+// [queryOpts] <map>
+// [queryOpts].nonDecayed <bool>	Forces only non-decayed tickets to be returned (default: true)
+// [queryOpts].decayed 	<bool>	Forces only decayed tickets to be returned
 func (m *TicketModule) listStorerTicketsOfProposer(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) interface{} {
 
 	var qopts tickettypes.QueryOptions
 	if len(queryOpts) > 0 {
-		mapstructure.Decode(queryOpts[0], &qopts)
+		_ = mapstructure.Decode(queryOpts[0], &qopts)
 	}
 
 	// If no sort by height directive, sort by height in descending order
@@ -277,6 +300,9 @@ func (m *TicketModule) listStorerTicketsOfProposer(
 }
 
 // listTopValidators returns top n validators
+//
+// ARGS:
+// [limit] <int>: Set the number of result to return (default: 0 = no limit)
 func (m *TicketModule) listTopValidators(limit ...int) interface{} {
 	n := 0
 	if len(limit) > 0 {
@@ -290,6 +316,9 @@ func (m *TicketModule) listTopValidators(limit ...int) interface{} {
 }
 
 // listTopStorers returns top n storers
+//
+// ARGS
+// [limit] <int>: Set the number of result to return (default: 0 = no limit)
 func (m *TicketModule) listTopStorers(limit ...int) interface{} {
 	n := 0
 	if len(limit) > 0 {
@@ -304,7 +333,16 @@ func (m *TicketModule) listTopStorers(limit ...int) interface{} {
 
 // ticketStats returns ticket statistics of the network; If proposerPubKey is
 // provided, the proposer's personalized ticket stats are included.
-func (m *TicketModule) ticketStats(proposerPubKey ...string) interface{} {
+//
+// ARGS:
+// [proposerPubKey]: Public key of a proposer. Set to return only stats for a given proposer
+//
+// RETURNS res <map>
+// result.valueOfNonDelegated 	<number>: 	The total value of non-delegated tickets owned by the proposer
+// result.valueOfDelegated 		<number>: 	The total value of tickets delegated to the proposer
+// result.publicKeyPower 		<number>: 	The total value staked coins power assigned to the proposer
+// result.valueOfAll 			<number>: 	The total value of all tickets
+func (m *TicketModule) ticketStats(proposerPubKey ...string) (result Map) {
 
 	valNonDel, valDel := float64(0), float64(0)
 	res := make(map[string]interface{})
@@ -340,8 +378,11 @@ func (m *TicketModule) ticketStats(proposerPubKey ...string) interface{} {
 	return EncodeForJS(res)
 }
 
-// listRecent returns most recent tickets up to the given limit
-func (m *TicketModule) listRecent(limit ...int) interface{} {
+// listRecent returns most recently acquired tickets
+//
+// ARGS
+// [limit] <int>: Set the number of result to return (default: 0 = no limit)
+func (m *TicketModule) listRecent(limit ...int) []Map {
 	n := 0
 	if len(limit) > 0 {
 		n = limit[0]
@@ -356,14 +397,19 @@ func (m *TicketModule) listRecent(limit ...int) interface{} {
 // unbondStorerTicket initiates the release of stake associated with a storer
 // ticket
 //
-// params {
-// 		nonce: number,
-//		fee: string,
-//		hash: string    // ticket hash
-//		timestamp: number
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
+// ARGS:
+// params <map>
+// params.hash 			<string>: 			A hash of the storer ticket
+// params.nonce 		<number|string>: 	The senders next account nonce
+// params.fee 			<number|string>: 	The transaction fee to pay
+// params.timestamp 	<number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 				The transaction hash
 func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error

@@ -33,42 +33,42 @@ func NewRepoModule(
 // funcs are functions accessible using the `repo` namespace
 func (m *RepoModule) funcs() []*modtypes.ModulesAggregatorFunc {
 	return []*modtypes.ModulesAggregatorFunc{
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "create",
 			Value:       m.create,
 			Description: "Create a git repository on the network",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "get",
 			Value:       m.get,
 			Description: "Find and return a repository",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "update",
 			Value:       m.update,
 			Description: "Update a repository",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "prune",
 			Value:       m.prune,
 			Description: "Delete all dangling and unreachable loose objects from a repository",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "upsertOwner",
 			Value:       m.upsertOwner,
 			Description: "Create a proposal to add or update a repository owner",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "vote",
 			Value:       m.voteOnProposal,
 			Description: "Vote for or against a proposal",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "depositFee",
 			Value:       m.depositFee,
 			Description: "Add fees to a deposit-enabled repository proposal",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "createMergeRequest",
 			Value:       m.CreateMergeRequest,
 			Description: "Create a merge request proposal",
@@ -106,16 +106,23 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 	return suggestions
 }
 
-// create sends a TxTypeRepoCreate transaction to create a git repository
-// params {
-// 		nonce: number,
-//		fee: string,
-// 		value: string,
-//		name: string
-//		timestamp: number
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
+// create registers a git repository on the network
+//
+// ARGS:
+// params <map>
+// params.name <string>:				The name of the namespace
+// params.value <string>:				The amount to pay for initial resources
+// params.nonce <number|string>: 		The senders next account nonce
+// params.fee <number|string>: 			The transaction fee to pay
+// params.timestamp <number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 	The transaction hash
+// object.address <string: 	The address of the repository
 func (m *RepoModule) create(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -141,17 +148,23 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 }
 
 // upsertOwner creates a proposal to add or update a repository owner
-// params {
-// 		nonce: number,
-//		fee: string,
-//		name: string
-// 		id: string
-// 		address: string
-//		timestamp: number
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
-func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...interface{}) interface{} {
+//
+// ARGS:
+// params <map>
+// params.id 		<string>: 			A unique proposal id
+// params.addresses <string>: 			A comma separated list of addresses
+// params.veto 		<bool>: 			Whether to grant/revoke veto right
+// params.nonce 	<number|string>: 	The senders next account nonce
+// params.fee 		<number|string>: 	The transaction fee to pay
+// params.timestamp <number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 				The transaction hash
+func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...interface{}) Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalUpsertOwner()
@@ -175,17 +188,23 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 }
 
 // voteOnProposal sends a TxTypeRepoCreate transaction to create a git repository
-// params {
-// 		nonce: number,
-//		fee: string,
-//		name: string
-// 		id: string
-//		yes: bool
-//		timestamp: number
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
-func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...interface{}) interface{} {
+//
+// ARGS:
+// params <map>
+// params.id 		<string>: 			The proposal ID to vote on
+// params.name 		<string>: 			The name of the repository
+// params.vote 		<uint>: 			The vote choice (1) yes (0) no (-1) vote no with veto (-2) abstain
+// params.nonce 	<number|string>: 	The senders next account nonce
+// params.fee 		<number|string>: 	The transaction fee to pay
+// params.timestamp <number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 				The transaction hash
+func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...interface{}) Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalVote()
@@ -209,7 +228,10 @@ func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...in
 }
 
 // prune removes dangling or unreachable objects from a repository.
-// If force is true, the repository is immediately pruned.
+//
+// ARGS:
+// name: The name of the repository
+// force: When true, forcefully prunes the target repository
 func (m *RepoModule) prune(name string, force bool) {
 	if force {
 		if err := m.repoMgr.GetPruner().Prune(name, true); err != nil {
@@ -222,11 +244,15 @@ func (m *RepoModule) prune(name string, force bool) {
 
 // get finds and returns a repository
 //
+// ARGS:
 // name: The name of the repository
-// opts: Optional options
-// opts.height: Limit the query to a given block height
-// opts.noProps: Hide proposals.
-func (m *RepoModule) get(name string, opts ...map[string]interface{}) interface{} {
+//
+// opts <map>: fetch options
+// opts.height: Query a specific block
+// opts.noProps: When true, the result will not include proposals
+//
+// RETURNS <map|nil>
+func (m *RepoModule) get(name string, opts ...map[string]interface{}) Map {
 	var targetHeight uint64
 	var noProposals bool
 
@@ -249,25 +275,31 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) interface{
 	}
 
 	if repo.IsNil() {
-		return otto.NullValue()
+		return nil
 	}
 
 	return EncodeForJS(repo)
 }
 
-// update sends a TxTypeRepoProposalUpdate transaction to update a repository
-// params {
-// 		nonce: number,
-//		fee: string,
-//		name: string,
-// 		id: string
-//		value: string
-//		config: {[key:string]: any}
-//		timestamp: number
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
-func (m *RepoModule) update(params map[string]interface{}, options ...interface{}) interface{} {
+// update creates a proposal to update a repository
+//
+// ARGS:
+// params <map>
+// params.name 		<string>: 				The name of the repository
+// params.id 		<string>: 				A unique proposal ID
+// params.value 	<string|number>:		The proposal fee
+// params.config 	<map[string]string>: 	The updated repository config
+// params.nonce 	<number|string>: 		The senders next account nonce
+// params.fee 		<number|string>: 		The transaction fee to pay
+// params.timestamp <number>: 				The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 				The transaction hash
+func (m *RepoModule) update(params map[string]interface{}, options ...interface{}) Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalUpdate()
@@ -290,19 +322,24 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 	})
 }
 
-// depositFee sends a TxTypeRepoProposalFeeSend transaction to add fees to a
-// repo's proposal.
-// params {
-// 		nonce: number,
-//		fee: string,
-//		name: string,
-// 		id: string
-//		value: string
-//		timestamp: number
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
-func (m *RepoModule) depositFee(params map[string]interface{}, options ...interface{}) interface{} {
+// depositFee creates a transaction to deposit a fee to a proposal
+//
+// ARGS:
+// params <map>
+// params.name 		<string>: 				The name of the repository
+// params.id 		<string>: 				A unique proposal ID
+// params.value 	<string|number>:		The amount to add
+// params.nonce 	<number|string>: 		The senders next account nonce
+// params.fee 		<number|string>: 		The transaction fee to pay
+// params.timestamp <number>: 				The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 				The transaction hash
+func (m *RepoModule) depositFee(params map[string]interface{}, options ...interface{}) Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalFeeSend()
@@ -326,19 +363,25 @@ func (m *RepoModule) depositFee(params map[string]interface{}, options ...interf
 }
 
 // CreateMergeRequest creates a merge request proposal
-// params {
-// 		nonce: number,
-//		fee: string,
-//		name: string,
-// 		id: string
-//		base: string
-//		baseHash: string
-// 		target: string
-// 		targetHash: string
-//		timestamp: number
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
+//
+// ARGS:
+// params <map>
+// params.name 			<string>: 				The name of the repository
+// params.id 			<string>: 				A unique proposal ID
+// params.base 			<string>:				The base branch name
+// params.baseHash 		<string>:				The base branch pre-merge hash
+// params.target 		<string>:				The target branch name
+// params.targetHash	<string>:				The target branch hash
+// params.nonce 		<number|string>: 		The senders next account nonce
+// params.fee 			<number|string>: 		The transaction fee to pay
+// params.timestamp 	<number>: 				The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 				The transaction hash
 func (m *RepoModule) CreateMergeRequest(
 	params map[string]interface{},
 	options ...interface{}) interface{} {

@@ -32,22 +32,22 @@ func NewNSModule(
 // funcs are functions accessible using the `ns` namespace
 func (m *NamespaceModule) funcs() []*modtypes.ModulesAggregatorFunc {
 	return []*modtypes.ModulesAggregatorFunc{
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "register",
 			Value:       m.register,
 			Description: "Register a namespace",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "lookup",
 			Value:       m.lookup,
 			Description: "Lookup a namespace",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "getTarget",
 			Value:       m.getTarget,
 			Description: "Lookup the target of a full namespace path",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "updateDomain",
 			Value:       m.updateDomain,
 			Description: "Update one or more domains for a namespace",
@@ -86,8 +86,15 @@ func (m *NamespaceModule) Configure() []prompt.Suggest {
 }
 
 // lookup finds a namespace
+//
+// ARGS:
 // name: The name of the namespace
 // height: Optional max block height to limit the search to.
+//
+// RETURNS: resp <map|nil>
+// resp.name <string>: The name of the namespace
+// resp.expired <bool>: Indicates whether the namespace is expired
+// resp.expiring <bool>: Indicates whether the namespace is currently expiring
 func (m *NamespaceModule) lookup(name string, height ...uint64) interface{} {
 
 	var targetHeight uint64
@@ -97,7 +104,7 @@ func (m *NamespaceModule) lookup(name string, height ...uint64) interface{} {
 
 	ns := m.keepers.NamespaceKeeper().GetNamespace(util.Hash20Hex([]byte(name)), targetHeight)
 	if ns.IsNil() {
-		return otto.NullValue()
+		return nil
 	}
 	nsMap := util.StructToJSON(ns)
 	nsMap["name"] = name
@@ -121,9 +128,13 @@ func (m *NamespaceModule) lookup(name string, height ...uint64) interface{} {
 }
 
 // getTarget looks up the target of a full namespace path
+
+// ARGS:
 // path: The path to look up.
-// height: Optional max block height to limit the search to.
-func (m *NamespaceModule) getTarget(path string, height ...uint64) interface{} {
+// [height]: The block height to query
+//
+// RETURNS: <string>: A domain's target
+func (m *NamespaceModule) getTarget(path string, height ...uint64) string {
 
 	var targetHeight uint64
 	if len(height) > 0 {
@@ -138,19 +149,25 @@ func (m *NamespaceModule) getTarget(path string, height ...uint64) interface{} {
 	return target
 }
 
-// register sends a TxTypeNSAcquire transaction to buy a namespace
-// params {
-// 		nonce: number,
-//		fee: string,
-// 		value: string,
-//		name: string
-//		toAccount: string
-//		toRepo: string
-//		timestamp: number
-//		domains: {[key:string]: string}
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
+// register a new namespace
+//
+// ARGS:
+// params <map>
+// params.name <string>:				The name of the namespace
+// params.value <string>:				The cost of the namespace.
+// [params.toAccount] <string>:			Set the account that will take ownership
+// [params.toRepo] <string>:			Set the repo that will take ownership
+// [params.domains] <map[string]string>:The initial domain->target mapping
+// params.nonce <number|string>: 		The senders next account nonce
+// params.fee <number|string>: 			The transaction fee to pay
+// params.timestamp <number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: The transaction hash
 func (m *NamespaceModule) register(
 	params map[string]interface{},
 	options ...interface{}) interface{} {
@@ -180,15 +197,21 @@ func (m *NamespaceModule) register(
 }
 
 // updateDomain updates one or more domains of a namespace
-// params {
-// 		nonce: number,
-//		fee: string,
-//		name: string
-//		timestamp: number
-//		domains: {[key:string]: string}
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
+//
+// ARGS:
+// params <map>
+// params.name <string>:				The name of the namespace
+// [params.domains] <map[string]string>:The initial domain->target mapping
+// params.nonce <number|string>: 		The senders next account nonce
+// params.fee <number|string>: 			The transaction fee to pay
+// params.timestamp <number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: The transaction hash
 func (m *NamespaceModule) updateDomain(
 	params map[string]interface{},
 	options ...interface{}) interface{} {

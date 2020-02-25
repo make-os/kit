@@ -39,7 +39,7 @@ var consoleCmd = &cobra.Command{
 			})
 
 			// Add JS module
-			console.AddModulesAggregators(n.GetModulesAggregator())
+			console.AddModulesAggregator(n.GetModulesAggregator())
 
 			// Run the console
 			go func() {

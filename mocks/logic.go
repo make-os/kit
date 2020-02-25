@@ -9,7 +9,6 @@ import (
 	types "github.com/tendermint/tendermint/abci/types"
 	config "gitlab.com/makeos/mosdef/config"
 	tree "gitlab.com/makeos/mosdef/pkgs/tree"
-	jsonrpc "gitlab.com/makeos/mosdef/rpc/jsonrpc"
 	storage "gitlab.com/makeos/mosdef/storage"
 	types0 "gitlab.com/makeos/mosdef/ticket/types"
 	types1 "gitlab.com/makeos/mosdef/types"
@@ -900,20 +899,6 @@ func (mr *MockAtomicLogicMockRecorder) Cfg() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockAtomicLogic)(nil).Cfg))
 }
 
-// APIs mocks base method
-func (m *MockAtomicLogic) APIs() jsonrpc.APISet {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "APIs")
-	ret0, _ := ret[0].(jsonrpc.APISet)
-	return ret0
-}
-
-// APIs indicates an expected call of APIs
-func (mr *MockAtomicLogicMockRecorder) APIs() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "APIs", reflect.TypeOf((*MockAtomicLogic)(nil).APIs))
-}
-
 // OnEndBlock mocks base method
 func (m *MockAtomicLogic) OnEndBlock(block *core.BlockInfo) error {
 	m.ctrl.T.Helper()
@@ -1251,20 +1236,6 @@ func (m *MockLogic) Cfg() *config.AppConfig {
 func (mr *MockLogicMockRecorder) Cfg() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockLogic)(nil).Cfg))
-}
-
-// APIs mocks base method
-func (m *MockLogic) APIs() jsonrpc.APISet {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "APIs")
-	ret0, _ := ret[0].(jsonrpc.APISet)
-	return ret0
-}
-
-// APIs indicates an expected call of APIs
-func (mr *MockLogicMockRecorder) APIs() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "APIs", reflect.TypeOf((*MockLogic)(nil).APIs))
 }
 
 // OnEndBlock mocks base method

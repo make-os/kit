@@ -8,8 +8,13 @@ type AccountGetNonceResponse struct {
 }
 
 // AccountGetNonce returns the nonce of the given address
+// Body:
+// - address <string>: The address of the account
+// - [blockHeight] <string>: The target query block height (default: latest).
+// Response:
+// - resp <state.Account -> map> - The account object
 func (c *Client) AccountGetNonce(address string) (*AccountGetNonceResponse, error) {
-	resp, err := c.GetCall(v1Path(types.NamespaceAccount, getNonceMethodName), M{
+	resp, err := c.GetCall(v1Path(types.NamespaceUser, getNonceMethodName), M{
 		"address": address,
 	})
 	if err != nil {

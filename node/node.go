@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 
+	rpcApi "gitlab.com/makeos/mosdef/api/rpc"
 	"gitlab.com/makeos/mosdef/rpc"
 
 	"github.com/thoas/go-funk"
@@ -71,7 +72,7 @@ type Node struct {
 	mempoolReactor *mempool.Reactor
 	ticketMgr      tickettypes.TicketManager
 	dht            types.DHTNode
-	modulesAgg     modtypes.ModulesAggregator
+	modules        modtypes.ModulesAggregator
 	rpcServer      *rpc.Server
 	repoMgr        core.RepoManager
 }
@@ -245,10 +246,10 @@ func (n *Node) Start() error {
 	n.startRPCServer()
 
 	// Initialize extension manager and start extensions
-	n.initModulesAggregatorAndExtension()
+	n.configureInterfaces()
 
 	// Pass the module aggregator to the repo manager
-	n.repoMgr.RegisterAPIHandlers(n.modulesAgg)
+	n.repoMgr.RegisterAPIHandlers(n.modules)
 
 	return nil
 }
@@ -257,44 +258,39 @@ func (n *Node) Start() error {
 func (n *Node) startRPCServer() {
 	if n.cfg.RPC.On {
 		n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-sever"), n.cfg.G().Interrupt)
-		n.addRPCApis()
 		go n.rpcServer.Serve()
 	}
 }
 
-func (n *Node) addRPCApis() {
-	n.rpcServer.AddAPI(n.acctMgr.APIs())
-	if n.logic != nil {
-		n.rpcServer.AddAPI(n.logic.APIs())
-	}
-}
-
+// startConsoleOnly configures modules, extension manager and the RPC server.
+// However, the RPC server is not started.
 func (n *Node) startConsoleOnly() error {
 
 	// Create the rpc server, add APIs but don't start it.
 	// The console will need a non-nil instance to learn about the RPC methods.
 	n.rpcServer = rpc.NewServer(n.cfg, n.log.Module("rpc-sever"), n.cfg.G().Interrupt)
 
-	// Add RPC APIs
-	n.addRPCApis()
-
 	// Initialize and start JS modules and extensions
-	n.initModulesAggregatorAndExtension()
+	n.configureInterfaces()
 
 	return nil
 }
 
-// initModulesAggregatorAndExtension initializes  and starts the extension manager
-func (n *Node) initModulesAggregatorAndExtension() {
+// configureInterfaces configures:
+// - Extension manager and runs extensions
+// - Creates module aggregator
+// - Registers methods to JSON-RPC 2.0 server
+// - Initializes JS virtual machine context
+func (n *Node) configureInterfaces() {
 
 	// Create extension manager
 	vm := otto.New()
 	extMgr := extensions.NewManager(n.cfg, vm)
 
-	// Create the javascript module instance
-	n.modulesAgg = jsm.NewModuleAggregator(
+	// Create modules
+	n.modules = jsm.NewModuleAggregator(
 		n.cfg,
-		accountmgr.New(n.cfg.AccountDir()),
+		n.acctMgr,
 		n.service,
 		n.logic,
 		n.mempoolReactor,
@@ -305,12 +301,15 @@ func (n *Node) initModulesAggregatorAndExtension() {
 		n.repoMgr,
 	)
 
-	// Set the js module to be the main module of the extension manager
-	extMgr.SetMainModule(n.modulesAgg)
+	// Register JSON RPC methods
+	n.rpcServer.AddAPI(rpcApi.APIs(n.modules, n.acctMgr, n.rpcServer))
 
-	// Configure the js module if we are not in console mode
+	// Set the js module to be the main module of the extension manager
+	extMgr.SetMainModule(n.modules)
+
+	// Configure the js module if we are not in console-only mode
 	if !n.ConsoleOn() {
-		n.modulesAgg.ConfigureVM(vm)
+		n.modules.ConfigureVM(vm)
 	}
 
 	// Parse the arguments and run extensions
@@ -352,7 +351,7 @@ func (n *Node) ConsoleOn() bool {
 
 // GetModulesAggregator returns the javascript module instance
 func (n *Node) GetModulesAggregator() modtypes.ModulesAggregator {
-	return n.modulesAgg
+	return n.modules
 }
 
 // GetTicketManager returns the ticket manager

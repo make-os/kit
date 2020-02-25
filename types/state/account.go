@@ -6,8 +6,8 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // Various names for staking categories
@@ -31,7 +31,7 @@ type Account struct {
 	util.DecoderHelper  `json:"-" msgpack:"-"`
 	Balance             util.String   `json:"balance" msgpack:"balance"`
 	Nonce               uint64        `json:"nonce" msgpack:"nonce"`
-	Stakes              AccountStakes `json:"stakes" msgpack:"stakes"`
+	Stakes              AccountStakes `json:"stakes,omitempty" msgpack:"stakes"`
 	DelegatorCommission float64       `json:"delegatorCommission" msgpack:"delegatorCommission"`
 }
 

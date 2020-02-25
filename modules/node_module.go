@@ -39,22 +39,22 @@ func (m *ChainModule) globals() []*modtypes.ModulesAggregatorFunc {
 // funcs exposed by the module
 func (m *ChainModule) funcs() []*modtypes.ModulesAggregatorFunc {
 	return []*modtypes.ModulesAggregatorFunc{
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "getBlock",
 			Value:       m.getBlock,
 			Description: "Send the native coin from an account to a destination account",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "getCurrentHeight",
 			Value:       m.getCurrentHeight,
 			Description: "Get the current block height",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "getBlockInfo",
 			Value:       m.getBlockInfo,
 			Description: "Get summary block information of a given height",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "getValidators",
 			Value:       m.getValidators,
 			Description: "Get validators at a given height",
@@ -89,22 +89,14 @@ func (m *ChainModule) Configure() []prompt.Suggest {
 }
 
 // getBlock fetches a block at the given height
-func (m *ChainModule) getBlock(height interface{}) interface{} {
+func (m *ChainModule) getBlock(height string) Map {
 
 	var err error
 	var blockHeight int64
 
-	// Convert to the expected type (int64)
-	switch v := height.(type) {
-	case int64:
-		blockHeight = int64(v)
-	case string:
-		blockHeight, err = strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			panic(types.ErrArgDecode("Int64", 0))
-		}
-	default:
-		panic(types.ErrArgDecode("integer/string", 0))
+	blockHeight, err = strconv.ParseInt(height, 10, 64)
+	if err != nil {
+		panic(types.ErrArgDecode("Int64", 0))
 	}
 
 	res, err := m.service.GetBlock(blockHeight)
@@ -127,22 +119,14 @@ func (m *ChainModule) getCurrentHeight() interface{} {
 }
 
 // getBlockInfo get summary block information of a given height
-func (m *ChainModule) getBlockInfo(height interface{}) interface{} {
+func (m *ChainModule) getBlockInfo(height string) Map {
 
 	var err error
 	var blockHeight int64
 
-	// Convert to the expected type (int64)
-	switch v := height.(type) {
-	case int64:
-		blockHeight = int64(v)
-	case string:
-		blockHeight, err = strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			panic(types.ErrArgDecode("Int64", 0))
-		}
-	default:
-		panic(types.ErrArgDecode("integer/string", 0))
+	blockHeight, err = strconv.ParseInt(height, 10, 64)
+	if err != nil {
+		panic(types.ErrArgDecode("Int64", 0))
 	}
 
 	res, err := m.keepers.SysKeeper().GetBlockInfo(blockHeight)
@@ -153,23 +137,24 @@ func (m *ChainModule) getBlockInfo(height interface{}) interface{} {
 	return EncodeForJS(res)
 }
 
-// getValidators returns the current validators
-func (m *ChainModule) getValidators(height interface{}) interface{} {
+// getValidators returns validators of a given block
+//
+// ARGS:
+// height: The target block height
+//
+// RETURNS res []Map
+// res.publicKey <string>: 	The base58 public key of validator
+// res.address <string>: 	The bech32 address of the validator
+// res.tmAddress <string>: 	The tendermint address and the validator
+// res.ticketId <string>: 	The id of the validator ticket
+func (m *ChainModule) getValidators(height string) (res []Map) {
 
 	var err error
 	var blockHeight int64
 
-	// Convert to the expected type (int64)
-	switch v := height.(type) {
-	case int64:
-		blockHeight = int64(v)
-	case string:
-		blockHeight, err = strconv.ParseInt(v, 10, 64)
-		if err != nil {
-			panic(types.ErrArgDecode("Int64", 0))
-		}
-	default:
-		panic(types.ErrArgDecode("integer/string", 0))
+	blockHeight, err = strconv.ParseInt(height, 10, 64)
+	if err != nil {
+		panic(types.ErrArgDecode("Int64", 0))
 	}
 
 	validators, err := m.keepers.ValidatorKeeper().GetByHeight(blockHeight)
@@ -177,7 +162,7 @@ func (m *ChainModule) getValidators(height interface{}) interface{} {
 		panic(err)
 	}
 
-	var vList = []map[string]interface{}{}
+	var vList = []Map{}
 	for pubKey, valInfo := range validators {
 
 		var pub32 ed25519.PubKeyEd25519

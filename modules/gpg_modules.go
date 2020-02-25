@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
@@ -94,14 +95,21 @@ func (m *GPGModule) Configure() []prompt.Suggest {
 }
 
 // addPk adds a GPG public key to an account.
-// params {
-// 		nonce: number,
-//		fee: string,
-//		pubKey: string
-//		timestamp: number
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
+//
+// ARGS:
+// params <map>
+// params.nonce <number|string>: 		The senders next account nonce
+// params.fee <number|string>: 			The transaction fee to pay
+// params.commission <number|string>:	The network commission value
+// params.timestamp <number>: 			The unix timestamp
+// params.pubKey <string>:				The GPG public key
+//
+// options <[]interface{}>
+// options[0] key 			<string>: 	The signer's private key
+// options[1] payloadOnly 	<bool>: 	When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>:
+// object.hash <string>: The transaction hash
 func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -127,21 +135,44 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 	})
 }
 
-// Find fetches a gpg public key object by pkID
-func (m *GPGModule) Find(pkID string) *state.GPGPubKey {
-	o := m.logic.GPGPubKeyKeeper().GetGPGPubKey(pkID)
+// Find fetches a GPG public key object by id
+//
+// ARGS:
+// id: 				The public key ID to search for
+// [blockHeight]: 	The target block height to query (default: latest)
+//
+// RETURNS state.GPGPubKey
+func (m *GPGModule) Find(id string, blockHeight ...uint64) *state.GPGPubKey {
+
+	targetHeight := uint64(0)
+	if len(blockHeight) > 0 {
+		targetHeight = blockHeight[0]
+	}
+
+	o := m.logic.GPGPubKeyKeeper().GetGPGPubKey(id, targetHeight)
 	if o.IsNil() {
 		panic(fmt.Errorf("gpg public key not found"))
 	}
+
 	return o
 }
 
 // ownedBy returns the gpg public key ownedBy associated with the given address
+//
+// ARGS:
+// address: An address of an account
+//
+// RETURNS: List of GPG public key ids
 func (m *GPGModule) ownedBy(address string) []string {
 	return m.logic.GPGPubKeyKeeper().GetPubKeyIDs(address)
 }
 
 // GetAccountOfOwner returns the account of the key owner
+//
+// ARGS:
+// pkID: The GPG key id
+//
+// RETURNS state.Account
 func (m *GPGModule) GetAccountOfOwner(pkID string) *state.Account {
 	gpgKey := m.Find(pkID)
 	acct := m.logic.AccountKeeper().GetAccount(gpgKey.Address)

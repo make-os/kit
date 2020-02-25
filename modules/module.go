@@ -85,7 +85,6 @@ func (m *Module) GetModules() interface{} {
 func (m *Module) registerModules(vm *otto.Otto) {
 	m.Modules.Tx = NewTxModule(vm, m.service, m.logic)
 	m.Modules.Chain = NewChainModule(vm, m.service, m.logic)
-	m.Modules.Pool = NewPoolModule(vm, m.mempoolReactor, m.repoMgr.GetPushPool())
 	m.Modules.Account = NewAccountModule(m.cfg, vm, m.acctmgr, m.service, m.logic)
 	m.Modules.GPG = NewGPGModule(m.cfg, vm, m.service, m.logic)
 	m.Modules.Ticket = NewTicketModule(vm, m.service, m.ticketmgr)
@@ -95,6 +94,10 @@ func (m *Module) registerModules(vm *otto.Otto) {
 	m.Modules.ExtMgr = m.extMgr
 	m.Modules.Util = NewUtilModule(vm)
 	m.Modules.RPC = NewRPCModule(m.cfg, vm, m.rpcServer)
+
+	if !m.cfg.ConsoleOnly() {
+		m.Modules.Pool = NewPoolModule(vm, m.mempoolReactor, m.repoMgr.GetPushPool())
+	}
 }
 
 // ConfigureVM initialized the module and all sub-modules

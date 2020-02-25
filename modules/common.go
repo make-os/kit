@@ -2,10 +2,11 @@ package modules
 
 import (
 	"fmt"
-	types2 "gitlab.com/makeos/mosdef/services/types"
 	"math/big"
 	"reflect"
 	"time"
+
+	types2 "gitlab.com/makeos/mosdef/services/types"
 
 	"github.com/fatih/structs"
 	"github.com/pkg/errors"
@@ -85,15 +86,17 @@ func checkAndGetKey(options ...interface{}) string {
 	return key
 }
 
+type Map map[string]interface{}
+
 // EncodeForJS takes a struct and converts
 // selected types to values that are compatible in the
 // JS environment. It returns a map and will panic
 // if obj is not a map/struct.
 // Set fieldToIgnore to ignore matching fields
-func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
+func EncodeForJS(obj interface{}, fieldToIgnore ...string) map[string]interface{} {
 
 	if obj == nil {
-		return obj
+		return nil
 	}
 
 	var m map[string]interface{}
@@ -118,7 +121,9 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 		case float64:
 			m[k] = fmt.Sprintf("%f", o)
 		case map[string]interface{}:
-			m[k] = EncodeForJS(o)
+			if len(o) > 0 { // no need adding empty maps
+				m[k] = EncodeForJS(o)
+			}
 		case []interface{}:
 			for i, item := range o {
 				o[i] = EncodeForJS(item)
@@ -160,8 +165,8 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) interface{} {
 }
 
 // EncodeManyForJS is like EncodeForJS but accepts a slice of objects
-func EncodeManyForJS(objs interface{}, fieldToIgnore ...string) []interface{} {
-	var many []interface{}
+func EncodeManyForJS(objs interface{}, fieldToIgnore ...string) []Map {
+	var many []Map
 
 	t := reflect.TypeOf(objs)
 	if t.Kind() != reflect.Slice {

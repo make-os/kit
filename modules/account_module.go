@@ -15,7 +15,7 @@ import (
 
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	types3 "gitlab.com/makeos/mosdef/types"
+	apptypes "gitlab.com/makeos/mosdef/types"
 )
 
 // AccountModule provides account management functionalities
@@ -48,17 +48,17 @@ func (m *AccountModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
 	return []*types.ModulesAggregatorFunc{
 		{
 			Name:        "listAccounts",
-			Value:       m.listAccounts,
-			Description: "Fetch all accounts that exist on this node",
+			Value:       m.ListLocalAccounts,
+			Description: "List local accounts on this node",
 		},
 		{
 			Name:        "getKey",
-			Value:       m.getKey,
+			Value:       m.GetKey,
 			Description: "Get the private key of an account (supports interactive mode)",
 		},
 		{
 			Name:        "getPublicKey",
-			Value:       m.getPublicKey,
+			Value:       m.GetPublicKey,
 			Description: "Get the public key of an account (supports interactive mode)",
 		},
 		{
@@ -68,27 +68,27 @@ func (m *AccountModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
 		},
 		{
 			Name:        "get",
-			Value:       m.getAccount,
+			Value:       m.GetAccount,
 			Description: "Get the account of a given address",
 		},
 		{
 			Name:        "getBalance",
-			Value:       m.getSpendableBalance,
+			Value:       m.GetSpendableBalance,
 			Description: "Get the spendable coin balance of an account",
 		},
 		{
 			Name:        "getStakedBalance",
-			Value:       m.getStakedBalance,
+			Value:       m.GetStakedBalance,
 			Description: "Get the total staked coins of an account",
 		},
 		{
 			Name:        "getPV",
-			Value:       m.getPrivateValidator,
+			Value:       m.GetPrivateValidator,
 			Description: "Get the private validator information",
 		},
 		{
 			Name:        "setCommission",
-			Value:       m.setCommission,
+			Value:       m.SetCommission,
 			Description: "Set the percentage of reward to share with a delegator",
 		},
 	}
@@ -98,7 +98,7 @@ func (m *AccountModule) globals() []*types.ModulesAggregatorFunc {
 	return []*types.ModulesAggregatorFunc{
 		{
 			Name:        "accounts",
-			Value:       m.listAccounts(),
+			Value:       m.ListLocalAccounts(),
 			Description: "Get the list of accounts that exist on this node",
 		},
 	}
@@ -111,12 +111,12 @@ func (m *AccountModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
 	// Set the namespace object
-	util.VMSet(m.vm, types3.NamespaceAccount, fMap)
+	util.VMSet(m.vm, apptypes.NamespaceUser, fMap)
 
 	// add namespaced functions
 	for _, f := range m.namespacedFuncs() {
 		fMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", types3.NamespaceAccount, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", apptypes.NamespaceUser, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
@@ -132,7 +132,7 @@ func (m *AccountModule) Configure() []prompt.Suggest {
 }
 
 // listAccounts lists all accounts on this node
-func (m *AccountModule) listAccounts() []string {
+func (m *AccountModule) ListLocalAccounts() []string {
 	accounts, err := m.acctMgr.ListAccounts()
 	if err != nil {
 		panic(err)
@@ -150,7 +150,10 @@ func (m *AccountModule) listAccounts() []string {
 // The passphrase argument is used to unlock the account.
 // If passphrase is not set, an interactive prompt will be started
 // to collect the passphrase without revealing it in the terminal.
-func (m *AccountModule) getKey(address string, passphrase ...string) string {
+//
+// address: The address corresponding the the local account
+// [passphrase]: The passphrase of the local account
+func (m *AccountModule) GetKey(address string, passphrase ...string) string {
 	var pass string
 
 	if address == "undefined" {
@@ -185,7 +188,10 @@ func (m *AccountModule) getKey(address string, passphrase ...string) string {
 // The passphrase argument is used to unlock the account.
 // If passphrase is not set, an interactive prompt will be started
 // to collect the passphrase without revealing it in the terminal.
-func (m *AccountModule) getPublicKey(address string, passphrase ...string) string {
+//
+// address: The address corresponding the the local account
+// [passphrase]: The passphrase of the local account
+func (m *AccountModule) GetPublicKey(address string, passphrase ...string) string {
 	var pass string
 
 	if address == "undefined" {
@@ -216,29 +222,38 @@ func (m *AccountModule) getPublicKey(address string, passphrase ...string) strin
 	return acct.GetKey().PubKey().Base58()
 }
 
-// GetNonce returns the current nonce of an account
-func (m *AccountModule) GetNonce(address string) string {
-	nonce, err := m.service.GetNonce(util.String(address))
-	if err != nil {
-		panic(err)
-	}
-	return fmt.Sprintf("%d", nonce)
-}
-
-// getAccount returns the account of the given address
-func (m *AccountModule) getAccount(address string, height ...uint64) interface{} {
+// GetNonce returns the current nonce of a network account
+// address: The address corresponding the account
+// [passphrase]: The target block height to query (default: latest)
+func (m *AccountModule) GetNonce(address string, height ...uint64) string {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
 	if account.IsNil() {
-		panic(types3.ErrAccountUnknown)
+		panic(apptypes.ErrAccountUnknown)
+	}
+	return fmt.Sprintf("%d", account.Nonce)
+}
+
+// GetAccount returns the account of the given address
+// address: The address corresponding the account
+// [height]: The target block height to query (default: latest)
+func (m *AccountModule) GetAccount(address string, height ...uint64) interface{} {
+	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
+	if account.IsNil() {
+		panic(apptypes.ErrAccountUnknown)
+	}
+	if len(account.Stakes) == 0 {
+		account.Stakes = nil
 	}
 	return EncodeForJS(account)
 }
 
-// getSpendableBalance returns the spendable balance of an account
-func (m *AccountModule) getSpendableBalance(address string, height ...uint64) string {
+// GetSpendableBalance returns the spendable balance of an account
+// address: The address corresponding the account
+// [height]: The target block height to query (default: latest)
+func (m *AccountModule) GetSpendableBalance(address string, height ...uint64) string {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
 	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
-		panic(types3.ErrAccountUnknown)
+		panic(apptypes.ErrAccountUnknown)
 	}
 
 	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -250,10 +265,14 @@ func (m *AccountModule) getSpendableBalance(address string, height ...uint64) st
 }
 
 // getStakedBalance returns the total staked coins of an account
-func (m *AccountModule) getStakedBalance(address string, height ...uint64) string {
+//
+// ARGS:
+// address: The address corresponding the account
+// [height]: The target block height to query (default: latest)
+func (m *AccountModule) GetStakedBalance(address string, height ...uint64) string {
 	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
 	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
-		panic(types3.ErrAccountUnknown)
+		panic(apptypes.ErrAccountUnknown)
 	}
 
 	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -265,9 +284,15 @@ func (m *AccountModule) getStakedBalance(address string, height ...uint64) strin
 }
 
 // getPrivateValidator returns the address, public and private keys of the validator.
-// If includePrivKey is true, the private key of the validator
-// will be included in the result.
-func (m *AccountModule) getPrivateValidator(includePrivKey ...bool) interface{} {
+//
+// ARGS:
+// includePrivKey: Indicates that the private key of the validator should be included in the result
+//
+// RETURNS object <map>:
+// object.publicKey <string> -	The validator base58 public key
+// object.address 	<string> -	The validator's bech32 address.
+// object.tmAddress <string> -	The tendermint address
+func (m *AccountModule) GetPrivateValidator(includePrivKey ...bool) interface{} {
 	key, _ := m.cfg.G().PrivVal.GetKey()
 
 	info := map[string]string{
@@ -283,15 +308,21 @@ func (m *AccountModule) getPrivateValidator(includePrivKey ...bool) interface{} 
 }
 
 // setCommission sets the delegator commission for an account
-// params {
-// 		nonce: number,
-//		fee: string,
-//		commission: float
-//		timestamp: number
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
-func (m *AccountModule) setCommission(params map[string]interface{},
+//
+// ARGS:
+// params <map>
+// params.nonce <number|string>: 		The senders next account nonce
+// params.fee <number|string>: 			The transaction fee to pay
+// params.commission <number|string>:	The network commission value
+// params.timestamp <number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>:
+// object.hash <string>: The transaction hash
+func (m *AccountModule) SetCommission(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
 

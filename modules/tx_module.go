@@ -30,9 +30,9 @@ func NewTxModule(vm *otto.Otto, service servtypes.Service, keepers core.Keepers)
 // txCoinFuncs are functions accessible using the `tx.coin` namespace
 func (m *TxModule) txCoinFuncs() []*modtypes.ModulesAggregatorFunc {
 	return []*modtypes.ModulesAggregatorFunc{
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "send",
-			Value:       m.sendTx,
+			Value:       m.sendCoin,
 			Description: "Send coins to another account",
 		},
 	}
@@ -41,12 +41,12 @@ func (m *TxModule) txCoinFuncs() []*modtypes.ModulesAggregatorFunc {
 // funcs are functions accessible using the `tx` namespace
 func (m *TxModule) funcs() []*modtypes.ModulesAggregatorFunc {
 	return []*modtypes.ModulesAggregatorFunc{
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "get",
 			Value:       m.Get,
 			Description: "Get a transactions by its hash",
 		},
-		&modtypes.ModulesAggregatorFunc{
+		{
 			Name:        "sendPayload",
 			Value:       m.SendPayload,
 			Description: "Send a signed transaction payload to the network",
@@ -95,20 +95,23 @@ func (m *TxModule) Configure() []prompt.Suggest {
 	return suggestions
 }
 
-// sendTx sends the native coin from a source account
-// to a destination account. It returns an object containing
-// the hash of the transaction. It panics when an error occurs.
+// sendCoin sends the native coin from a source account to a destination account.
 //
-// params {
-// 		nonce: number,
-//		fee: string,
-// 		value: string,
-//		to: string
-//		timestamp: number
-// }
-// options[0]: key
-// options[1]: payloadOnly - When true, returns the payload only, without sending the tx.
-func (m *TxModule) sendTx(params map[string]interface{}, options ...interface{}) interface{} {
+// ARGS:
+// params <map>
+// params.value 		<string>: 			The amount of coin to send
+// params.to 			<string>: 			The address of the recipient
+// params.nonce 		<number|string>: 	The senders next account nonce
+// params.fee 			<number|string>: 	The transaction fee to pay
+// params.timestamp 	<number>: 			The unix timestamp
+//
+// options <[]interface{}>
+// options[0] key <string>: 			The signer's private key
+// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 				The transaction hash
+func (m *TxModule) sendCoin(params map[string]interface{}, options ...interface{}) Map {
 	var err error
 
 	var tx = core.NewBareTxCoinTransfer()
@@ -131,8 +134,8 @@ func (m *TxModule) sendTx(params map[string]interface{}, options ...interface{})
 	})
 }
 
-// get fetches a tx by its hash
-func (m *TxModule) Get(hash string) interface{} {
+// get returns a tx by hash
+func (m *TxModule) Get(hash string) Map {
 
 	if strings.ToLower(hash[:2]) == "0x" {
 		hash = hash[2:]
@@ -153,7 +156,13 @@ func (m *TxModule) Get(hash string) interface{} {
 }
 
 // sendPayload sends an already signed transaction object to the network
-func (m *TxModule) SendPayload(txData map[string]interface{}) interface{} {
+//
+// ARGS:
+// txData: The transaction data
+//
+// RETURNS object <map>
+// object.hash <string>: 				The transaction hash
+func (m *TxModule) SendPayload(txData map[string]interface{}) Map {
 	tx, err := core.DecodeTxFromMap(txData)
 	if err != nil {
 		panic(err)

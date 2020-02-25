@@ -41,6 +41,7 @@ func (r *Rest) post(handler func(w http.ResponseWriter, r *http.Request)) func(w
 
 const (
 	getNonceMethodName    = "get-nonce"
+	getAccountMethodName  = "get-account"
 	sendPayloadMethodName = "send-payload"
 	ownerNonceMethodName  = "owner-nonce"
 	gpgFindMethodName     = "find"
@@ -48,7 +49,8 @@ const (
 
 // RegisterEndpoints registers handlers to endpoints
 func (r *Rest) RegisterEndpoints(s *http.ServeMux) {
-	s.HandleFunc(v1Path(types.NamespaceAccount, getNonceMethodName), r.get(r.GetAccountNonce))
+	s.HandleFunc(v1Path(types.NamespaceUser, getNonceMethodName), r.get(r.GetAccountNonce))
+	s.HandleFunc(v1Path(types.NamespaceUser, getAccountMethodName), r.get(r.GetAccount))
 	s.HandleFunc(v1Path(types.NamespaceTx, sendPayloadMethodName), r.post(r.SendTx))
 	s.HandleFunc(v1Path(types.NamespaceGPG, ownerNonceMethodName), r.get(r.GPGGetOwnerNonce))
 	s.HandleFunc(v1Path(types.NamespaceGPG, gpgFindMethodName), r.get(r.GPGFind))

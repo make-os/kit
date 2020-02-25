@@ -8,6 +8,9 @@ import (
 )
 
 // SendTx sends a signed transaction
+// Body (JSON): map that conforms to any valid types.BaseTx transaction
+// Response:
+// - resp.hash <string>: The hash of the transaction
 func (r *Rest) SendTx(w http.ResponseWriter, req *http.Request) {
 	var body = make(map[string]interface{})
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {

@@ -15,8 +15,8 @@ import (
 	"gitlab.com/makeos/mosdef/node/types"
 	"gitlab.com/makeos/mosdef/types/core"
 
+	"gitlab.com/makeos/mosdef/api/rest"
 	"gitlab.com/makeos/mosdef/pkgs/cache"
-	"gitlab.com/makeos/mosdef/rest"
 
 	"github.com/tendermint/tendermint/p2p"
 	"gitlab.com/makeos/mosdef/config"
@@ -195,7 +195,7 @@ func (m *Manager) Start() error {
 }
 
 func (m *Manager) registerAPIHandlers(s *http.ServeMux) {
-	rest := api.New(m.modulesAgg, m.log)
+	rest := rest.New(m.modulesAgg, m.log)
 	rest.RegisterEndpoints(s)
 }
 
