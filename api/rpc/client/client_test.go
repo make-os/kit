@@ -33,7 +33,7 @@ var _ = Describe("Client", func() {
 
 	Describe(".Call", func() {
 		It("should return error when options haven't been set", func() {
-			c := RPC{opts: &rpc.Options{Host: "127.0.0.1"}}
+			c := RPCClient{opts: &rpc.Options{Host: "127.0.0.1"}}
 			_, err := c.Call("", nil)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("http client and options not set"))

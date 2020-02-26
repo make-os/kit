@@ -43,12 +43,12 @@ func (m *RPCModule) namespacedFuncs() []*modtypes.ModulesAggregatorFunc {
 		{
 			Name:        "isRunning",
 			Value:       m.isRunning,
-			Description: "Checks whether the local RPC server is running",
+			Description: "Checks whether the local RPCClient server is running",
 		},
 		{
 			Name:        "connect",
 			Value:       m.connect,
-			Description: "Connect to an RPC server",
+			Description: "Connect to an RPCClient server",
 		},
 	}
 
@@ -56,7 +56,7 @@ func (m *RPCModule) namespacedFuncs() []*modtypes.ModulesAggregatorFunc {
 		modFuncs = append(modFuncs, &modtypes.ModulesAggregatorFunc{
 			Name:        "local",
 			Value:       m.local(),
-			Description: "Call methods of the local RPC server",
+			Description: "Call methods of the local RPCClient server",
 		})
 	}
 
@@ -125,7 +125,7 @@ func (m *RPCModule) local() rpcMethods {
 	return m.connect(host, portInt, false, m.cfg.RPC.User, m.cfg.RPC.Password)
 }
 
-// connect to an RPC server
+// connect to an RPCClient server
 //
 // ARGS
 // host: The server's IP address

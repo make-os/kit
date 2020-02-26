@@ -19,7 +19,7 @@ import (
 // getJSONRPCClient returns a JSON-RPC client or error if unable to
 // create one. It will return nil client and nil error if --no.rpc
 // is true.
-func getJSONRPCClient(cmd *cobra.Command) (*client.RPC, error) {
+func getJSONRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 	noRPC, _ := cmd.Flags().GetBool("no.rpc")
 	if noRPC {
 		return nil, nil
@@ -78,7 +78,7 @@ func getRemoteAPIClients(cmd *cobra.Command, repo core.BareRepo) (clients []*cli
 
 // getClients returns RPC and Remote API clients
 func getRepoAndClients(cmd *cobra.Command, nonceFromFlag string) (core.BareRepo,
-	*client.RPC, []*client2.RESTClient) {
+	*client.RPCClient, []*client2.RESTClient) {
 
 	// Get the repository
 	targetRepo, err := repo.GetCurrentWDRepo(cfg.Node.GitBinPath)

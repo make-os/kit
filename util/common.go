@@ -636,3 +636,12 @@ func WrongFieldValueMsg(field, expectedType string, actual interface{}) error {
 	return FieldError(field, fmt.Sprintf("wrong value type, want '%s', got %T",
 		expectedType, reflect.TypeOf(actual).String()))
 }
+
+// OptUint64 gets an index from a uint64 variadic value.
+// Returns 0 if opts is empty
+func OptUint64(index int, opts ...uint64) uint64 {
+	if len(opts) == 0 {
+		return 0
+	}
+	return opts[index]
+}

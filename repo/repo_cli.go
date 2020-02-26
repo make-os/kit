@@ -20,17 +20,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-func getNextNonceOfAccountWithRPCClient(address string, client *client.RPC) (string, error) {
-	out, err := client.Call("user_getNonce", map[string]interface{}{"address": address})
-	if err != nil {
-		msg := "unable to query nonce"
-		return "", errors.Wrap(err, msg)
-	}
-
-	_ = out
-	return "", nil
-}
-
 // determineNextNonceOfGPGKeyOwner is used to determine the next nonce of the account that
 // owns the given gpg key ID.
 //
@@ -41,14 +30,14 @@ func getNextNonceOfAccountWithRPCClient(address string, client *client.RPC) (str
 // First, it will query remote API clients and will use the first value returned by
 // any of the clients, increment the value by 1 and return it as the next nonce.
 //
-// If still unable to get the nonce, it will attempt to query the JSON-RPC
+// If still unable to get the nonce, it will attempt to query the JSON-RPCClient
 // client, increment its result by 1 and return it as the next nonce.
 //
 // It returns error if unable to get nonce.
 func determineNextNonceOfGPGKeyOwner(
 	nonceFromFlag,
 	gpgID string,
-	rpcClient *client.RPC,
+	rpcClient *client.RPCClient,
 	remoteClients []*client2.RESTClient) (string, error) {
 
 	if !util.IsZeroString(nonceFromFlag) {
@@ -72,13 +61,13 @@ func determineNextNonceOfGPGKeyOwner(
 	// Check errors and return appropriate error messages
 	if errRemoteClients != nil && errRPCClient != nil {
 		wrapped := errors.Wrap(errRemoteClients, errRPCClient.Error())
-		msg := "failed to get nonce using both Remote API and JSON-RPC API clients"
+		msg := "failed to get nonce using both Remote API and JSON-RPCClient API clients"
 		return "", errors.Wrap(wrapped, msg)
 	} else if errRemoteClients != nil {
 		msg := "failed to get nonce using Remote API client"
 		return "", errors.Wrap(errRemoteClients, msg)
 	} else if errRPCClient != nil {
-		msg := "failed to get nonce using JSON-RPC API client"
+		msg := "failed to get nonce using JSON-RPCClient API client"
 		return "", errors.Wrap(errRPCClient, msg)
 	}
 
@@ -100,7 +89,7 @@ func SignCommitCmd(
 	amendRecent,
 	deleteRefAction bool,
 	mergeID string,
-	rpcClient *client.RPC,
+	rpcClient *client.RPCClient,
 	remoteClients []*client2.RESTClient) error {
 
 	if !govalidator.IsNumeric(mergeID) {
@@ -191,7 +180,7 @@ func SignTagCmd(
 	nonceFromFlag,
 	signingKey string,
 	deleteRefAction bool,
-	rpcClient *client.RPC,
+	rpcClient *client.RPCClient,
 	remoteClients []*client2.RESTClient) error {
 
 	parsed := util.ParseSimpleArgs(args)
@@ -269,7 +258,7 @@ func SignNoteCmd(
 	signingKey,
 	note string,
 	deleteRefAction bool,
-	rpcClient *client.RPC,
+	rpcClient *client.RPCClient,
 	remoteClients []*client2.RESTClient) error {
 
 	// Get the signing key id from the git config if not provided via -s flag
@@ -399,7 +388,7 @@ func CreateAndSendMergeRequestCmd(
 	targetHash,
 	fee,
 	nonceFromFlag string,
-	rpcClient *client.RPC,
+	rpcClient *client.RPCClient,
 	remoteClients []*client2.RESTClient) error {
 
 	// Get the signer account
