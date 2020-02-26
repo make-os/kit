@@ -11,12 +11,11 @@ import (
 	client2 "gitlab.com/makeos/mosdef/api/rest/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/repo"
-	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
 
-// getJSONRPCClient returns a JSON-RPC client or error if unable to
+// getJSONRPCClient returns a JSON-RPCclient or error if unable to
 // create one. It will return nil client and nil error if --no.rpc
 // is true.
 func getJSONRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
@@ -40,7 +39,7 @@ func getJSONRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 		return nil, errors.Wrap(err, "failed convert rpc port")
 	}
 
-	c := client.NewClient(&rpc.Options{
+	c := client.NewClient(&client.Options{
 		Host:     host,
 		Port:     portInt,
 		User:     rpcUser,
@@ -76,7 +75,7 @@ func getRemoteAPIClients(cmd *cobra.Command, repo core.BareRepo) (clients []*cli
 	return
 }
 
-// getClients returns RPC and Remote API clients
+// getClients returns RPCClient and Remote API clients
 func getRepoAndClients(cmd *cobra.Command, nonceFromFlag string) (core.BareRepo,
 	*client.RPCClient, []*client2.RESTClient) {
 
@@ -86,8 +85,8 @@ func getRepoAndClients(cmd *cobra.Command, nonceFromFlag string) (core.BareRepo,
 		log.Fatal(err.Error())
 	}
 
-	// Get JSON RPC client
-	var rpcClient *client.RPC
+	// Get JSON RPCClient client
+	var rpcClient *client.RPCClient
 	rpcClient, err = getJSONRPCClient(cmd)
 	if err != nil {
 		log.Fatal(err.Error())

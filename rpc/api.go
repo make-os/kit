@@ -1,4 +1,4 @@
-package jsonrpc
+package rpc
 
 import (
 	"gitlab.com/makeos/mosdef/util"

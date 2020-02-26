@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	cmd2 "gitlab.com/makeos/mosdef/repo/cmd"
 	// "gitlab.com/makeos/mosdef/repo"
 )
 
@@ -11,15 +12,31 @@ var mergeReqCmd = &cobra.Command{
 	Short: "Create and send a merge request proposal",
 	Long:  `Create and send a merge request proposal`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// account, _ := cmd.Flags().GetString("account")
-		// passphrase, _ := cmd.Flags().GetString("pass")
-		//
-		// if err := repo.CreateAndSendMergeRequestCmd(
-		// 	cfg,
-		// 	account,
-		// 	passphrase); err != nil {
-		// 	log.Fatal(err.Error())
-		// }
+		account, _ := cmd.Flags().GetString("account")
+		passphrase, _ := cmd.Flags().GetString("pass")
+		baseBranch, _ := cmd.Flags().GetString("base")
+		baseBranchHash, _ := cmd.Flags().GetString("baseHash")
+		target, _ := cmd.Flags().GetString("target")
+		targetHash, _ := cmd.Flags().GetString("targetHash")
+		fee, _ := cmd.Flags().GetString("fee")
+		nonce, _ := cmd.Flags().GetString("nonce")
+
+		_, client, remoteClients := getRepoAndClients(cmd, nonce)
+
+		if err := cmd2.CreateAndSendMergeRequestCmd(
+			cfg,
+			account,
+			passphrase,
+			baseBranch,
+			baseBranchHash,
+			target,
+			targetHash,
+			fee,
+			nonce,
+			client,
+			remoteClients); err != nil {
+			log.Fatal(err.Error())
+		}
 	},
 }
 

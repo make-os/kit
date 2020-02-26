@@ -3,7 +3,7 @@ package modules
 import (
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/accountmgr"
+	"gitlab.com/makeos/mosdef/account"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/extensions"
@@ -37,7 +37,7 @@ type Module struct {
 	service        services.Service
 	logic          core.Logic
 	mempoolReactor *mempool.Reactor
-	acctmgr        *accountmgr.AccountManager
+	acctmgr        *account.AccountManager
 	ticketmgr      types2.TicketManager
 	dht            types.DHTNode
 	extMgr         *extensions.Manager
@@ -50,7 +50,7 @@ type Module struct {
 // provides functionality of configuring supported modules
 func NewModuleAggregator(
 	cfg *config.AppConfig,
-	acctmgr *accountmgr.AccountManager,
+	acctmgr *account.AccountManager,
 	service services.Service,
 	logic core.Logic,
 	mempoolReactor *mempool.Reactor,

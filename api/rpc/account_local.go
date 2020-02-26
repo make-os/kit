@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"gitlab.com/makeos/mosdef/modules"
-	"gitlab.com/makeos/mosdef/rpc/jsonrpc"
+	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types"
 )
 
@@ -19,13 +19,13 @@ func NewLocalAccountAPI(mods *modules.Modules) *LocalAccountAPI {
 // getAccount returns the account corresponding to the given address
 // Response:
 // - resp - (Array<string>): list of addresses
-func (l *LocalAccountAPI) listAccounts(interface{}) (resp *jsonrpc.Response) {
-	return jsonrpc.Success(l.mods.Account.ListLocalAccounts())
+func (l *LocalAccountAPI) listAccounts(interface{}) (resp *rpc.Response) {
+	return rpc.Success(l.mods.Account.ListLocalAccounts())
 }
 
 // APIs returns all API handlers
-func (l *LocalAccountAPI) APIs() jsonrpc.APISet {
-	return map[string]jsonrpc.APIInfo{
+func (l *LocalAccountAPI) APIs() rpc.APISet {
+	return map[string]rpc.APIInfo{
 		"listAccounts": {
 			Namespace:   types.NamespaceUser,
 			Private:     true,

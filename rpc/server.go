@@ -5,7 +5,6 @@ import (
 
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/rpc/jsonrpc"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -31,7 +30,7 @@ type Server struct {
 	log logger.Logger
 
 	// rpc is the JSONRPC 2.0 server
-	rpc *jsonrpc.JSONRPC
+	rpc *JSONRPC
 
 	// started indicates the start state of the server
 	started bool
@@ -46,7 +45,7 @@ func NewServer(cfg *config.AppConfig, log logger.Logger,
 		addr:      cfg.RPC.Address,
 		log:       log,
 		cfg:       cfg,
-		rpc:       jsonrpc.New(cfg.RPC.Address, cfg, log),
+		rpc:       New(cfg.RPC.Address, cfg, log),
 		interrupt: interrupt,
 	}
 	return srv
@@ -96,13 +95,13 @@ func (s *Server) Stop() {
 }
 
 // AddAPI adds one or more API sets
-func (s *Server) AddAPI(apis ...jsonrpc.APISet) {
+func (s *Server) AddAPI(apis ...APISet) {
 	s.Lock()
 	defer s.Unlock()
 	s.rpc.MergeAPISet(apis...)
 }
 
 // GetMethods returns all registered RPC methods
-func (s *Server) GetMethods() []jsonrpc.MethodInfo {
+func (s *Server) GetMethods() []MethodInfo {
 	return s.rpc.Methods()
 }

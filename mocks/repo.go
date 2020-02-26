@@ -694,10 +694,10 @@ func (mr *MockBareRepoMockRecorder) GetCompressedObject(hash interface{}) *gomoc
 }
 
 // GetHost mocks base method
-func (m *MockBareRepo) GetHost() storage.Host {
+func (m *MockBareRepo) GetHost() storage.Storer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetHost")
-	ret0, _ := ret[0].(storage.Host)
+	ret0, _ := ret[0].(storage.Storer)
 	return ret0
 }
 

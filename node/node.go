@@ -20,7 +20,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/accountmgr"
+	"gitlab.com/makeos/mosdef/account"
 	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/extensions"
 	"gitlab.com/makeos/mosdef/repo"
@@ -57,7 +57,7 @@ import (
 type Node struct {
 	app            *App
 	cfg            *config.AppConfig
-	acctMgr        *accountmgr.AccountManager
+	acctMgr        *account.AccountManager
 	tmcfg          *tmconfig.Config
 	nodeKey        *p2p.NodeKey
 	log            logger.Logger
@@ -89,7 +89,7 @@ func NewNode(cfg *config.AppConfig, tmcfg *tmconfig.Config) *Node {
 		log:     cfg.G().Log.Module("node"),
 		tmcfg:   tmcfg,
 		service: services.New(net.JoinHostPort(tmRPCAddr.Hostname(), tmRPCAddr.Port())),
-		acctMgr: accountmgr.New(cfg.AccountDir()),
+		acctMgr: account.New(cfg.AccountDir()),
 	}
 }
 

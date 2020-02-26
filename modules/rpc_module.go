@@ -19,7 +19,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// RPCModule provides RPC functionalities
+// RPCModule provides RPCClient functionalities
 type RPCModule struct {
 	cfg       *config.AppConfig
 	vm        *otto.Otto
@@ -137,7 +137,7 @@ func (m *RPCModule) local() rpcMethods {
 // RETURNS <map>: A mapping of rpc methods and call functions
 func (m *RPCModule) connect(host string, port int, https bool, user, pass string) rpcMethods {
 
-	c := client.NewClient(&rpc.Options{
+	c := client.NewClient(&client.Options{
 		Host:     host,
 		Port:     port,
 		HTTPS:    https,

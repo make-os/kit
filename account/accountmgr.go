@@ -1,6 +1,6 @@
-// Package accountmgr provides account creation and management
+// Package account provides account creation and management
 // functionalities.
-package accountmgr
+package account
 
 import (
 	"crypto/sha256"

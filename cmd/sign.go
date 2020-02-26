@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/repo"
+	cmd2 "gitlab.com/makeos/mosdef/repo/cmd"
 )
 
 // signCmd represents the commit command
@@ -48,7 +48,7 @@ a merge request that will be validated according to the merge proposal contract.
 
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
 
-		if err := repo.SignCommitCmd(targetRepo, fee,
+		if err := cmd2.SignCommitCmd(targetRepo, fee,
 			nonce, sk, amend, deleteRef, mergeID, client, remoteClients); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
@@ -81,7 +81,7 @@ transaction information which will cause the reference to be deleted from the re
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
 
 		args = cmd.Flags().Args()
-		if err := repo.SignTagCmd(args, targetRepo, fee,
+		if err := cmd2.SignTagCmd(args, targetRepo, fee,
 			nonce, sk, delete, client, remoteClients); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
@@ -104,7 +104,7 @@ var signNoteCmd = &cobra.Command{
 			log.Fatal("name is required")
 		}
 
-		if err := repo.SignNoteCmd(
+		if err := cmd2.SignNoteCmd(
 			targetRepo,
 			fee,
 			nonce,

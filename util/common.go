@@ -20,9 +20,8 @@ import (
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
-
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
 
 	"github.com/fatih/color"
 
@@ -637,9 +636,9 @@ func WrongFieldValueMsg(field, expectedType string, actual interface{}) error {
 		expectedType, reflect.TypeOf(actual).String()))
 }
 
-// OptUint64 gets an index from a uint64 variadic value.
+// AtUint64Slice gets an index from a uint64 variadic value.
 // Returns 0 if opts is empty
-func OptUint64(index int, opts ...uint64) uint64 {
+func AtUint64Slice(index int, opts ...uint64) uint64 {
 	if len(opts) == 0 {
 		return 0
 	}

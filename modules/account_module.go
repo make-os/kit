@@ -11,7 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"gitlab.com/makeos/mosdef/accountmgr"
+	"gitlab.com/makeos/mosdef/account"
 
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
@@ -22,7 +22,7 @@ import (
 // that are accessed through the javascript console environment
 type AccountModule struct {
 	cfg     *config.AppConfig
-	acctMgr *accountmgr.AccountManager
+	acctMgr *account.AccountManager
 	vm      *otto.Otto
 	service services.Service
 	logic   core.Logic
@@ -32,7 +32,7 @@ type AccountModule struct {
 func NewAccountModule(
 	cfg *config.AppConfig,
 	vm *otto.Otto,
-	acctmgr *accountmgr.AccountManager,
+	acctmgr *account.AccountManager,
 	service services.Service,
 	logic core.Logic) *AccountModule {
 	return &AccountModule{

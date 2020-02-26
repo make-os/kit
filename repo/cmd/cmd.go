@@ -1,82 +1,32 @@
-package repo
+package cmd
 
 import (
 	"crypto/rsa"
 	"fmt"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/accountmgr"
-	client2 "gitlab.com/makeos/mosdef/api/rest/client"
+	"gitlab.com/makeos/mosdef/account"
+	"gitlab.com/makeos/mosdef/api"
+	restclient "gitlab.com/makeos/mosdef/api/rest/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
+	repo2 "gitlab.com/makeos/mosdef/repo"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-// determineNextNonceOfGPGKeyOwner is used to determine the next nonce of the account that
-// owns the given gpg key ID.
+// DetermineNextNonceOfAccount is used to determine the next nonce of the account
 //
-// If nonceFromFlag is set, it is returned as tne next nonce.
-// Otherwise, it will use the rpc and remote clients as source to request for
+// It will use the rpc and remote clients as source to request for
 // the current account nonce.
-//
-// First, it will query remote API clients and will use the first value returned by
-// any of the clients, increment the value by 1 and return it as the next nonce.
-//
-// If still unable to get the nonce, it will attempt to query the JSON-RPCClient
-// client, increment its result by 1 and return it as the next nonce.
-//
-// It returns error if unable to get nonce.
-func determineNextNonceOfGPGKeyOwner(
-	nonceFromFlag,
-	gpgID string,
-	rpcClient *client.RPCClient,
-	remoteClients []*client2.RESTClient) (string, error) {
-
-	if !util.IsZeroString(nonceFromFlag) {
-		return nonceFromFlag, nil
-	}
-
-	nonce := nonceFromFlag
-
-	// If nonce is not provided, attempt to get the nonce from the remote API.
-	var errRemoteClients error
-	if util.IsZeroString(nonce) && len(remoteClients) > 0 {
-		nonce, errRemoteClients = client2.GPGGetNextNonceOfOwnerUsingClients(remoteClients, gpgID)
-	}
-
-	// If the nonce is still not known and rpc client non-nil, attempt to get nonce using the client
-	var errRPCClient error
-	if util.IsZeroString(nonce) && rpcClient != nil {
-		nonce, errRPCClient = client.GetNextNonceOfGPGKeyOwnerUsingRPCClient(gpgID, rpcClient)
-	}
-
-	// Check errors and return appropriate error messages
-	if errRemoteClients != nil && errRPCClient != nil {
-		wrapped := errors.Wrap(errRemoteClients, errRPCClient.Error())
-		msg := "failed to get nonce using both Remote API and JSON-RPCClient API clients"
-		return "", errors.Wrap(wrapped, msg)
-	} else if errRemoteClients != nil {
-		msg := "failed to get nonce using Remote API client"
-		return "", errors.Wrap(errRemoteClients, msg)
-	} else if errRPCClient != nil {
-		msg := "failed to get nonce using JSON-RPCClient API client"
-		return "", errors.Wrap(errRPCClient, msg)
-	}
-
-	if util.IsZeroString(nonce) {
-		return "", fmt.Errorf("signer's account nonce is required")
-	}
-
-	return nonce, nil
-}
 
 // SignCommitCmd adds transaction information to the recent commit and signs it.
 // If rpcClient is set, the transaction nonce of the signing account is fetched
@@ -84,13 +34,13 @@ func determineNextNonceOfGPGKeyOwner(
 func SignCommitCmd(
 	repo core.BareRepo,
 	txFee,
-	nonceFromFlag,
+	nextNonce,
 	signingKey string,
 	amendRecent,
 	deleteRefAction bool,
 	mergeID string,
 	rpcClient *client.RPCClient,
-	remoteClients []*client2.RESTClient) error {
+	remoteClients []*restclient.RESTClient) error {
 
 	if !govalidator.IsNumeric(mergeID) {
 		return fmt.Errorf("merge id must be numeric")
@@ -115,14 +65,12 @@ func SignCommitCmd(
 	// Get the public key network ID
 	gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
-	// Get the next nonce.
-	nextNonce, err := determineNextNonceOfGPGKeyOwner(
-		nonceFromFlag,
-		gpgID,
-		rpcClient,
-		remoteClients)
-	if err != nil {
-		return err
+	// Get the next nonce, if not set
+	if nextNonce == "" {
+		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(gpgID, rpcClient, remoteClients)
+		if err != nil {
+			return err
+		}
 	}
 
 	directives := []string{}
@@ -150,7 +98,7 @@ func SignCommitCmd(
 	// Get recent commit hash of the current branch.
 	hash, err := repo.GetRecentCommit()
 	if err != nil {
-		if err == ErrNoCommits {
+		if err == repo2.ErrNoCommits {
 			return errors.New("no commits have been created yet")
 		}
 		return err
@@ -177,11 +125,11 @@ func SignTagCmd(
 	args []string,
 	repo core.BareRepo,
 	txFee,
-	nonceFromFlag,
+	nextNonce,
 	signingKey string,
 	deleteRefAction bool,
 	rpcClient *client.RPCClient,
-	remoteClients []*client2.RESTClient) error {
+	remoteClients []*restclient.RESTClient) error {
 
 	parsed := util.ParseSimpleArgs(args)
 
@@ -218,14 +166,12 @@ func SignTagCmd(
 	// Get the public key network ID
 	gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
-	// Get the next nonce.
-	nextNonce, err := determineNextNonceOfGPGKeyOwner(
-		nonceFromFlag,
-		gpgID,
-		rpcClient,
-		remoteClients)
-	if err != nil {
-		return err
+	// Get the next nonce, if not set
+	if nextNonce == "" {
+		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(gpgID, rpcClient, remoteClients)
+		if err != nil {
+			return err
+		}
 	}
 
 	directives := []string{}
@@ -254,12 +200,12 @@ func SignTagCmd(
 func SignNoteCmd(
 	repo core.BareRepo,
 	txFee,
-	nonceFromFlag,
+	nextNonce,
 	signingKey,
 	note string,
 	deleteRefAction bool,
 	rpcClient *client.RPCClient,
-	remoteClients []*client2.RESTClient) error {
+	remoteClients []*restclient.RESTClient) error {
 
 	// Get the signing key id from the git config if not provided via -s flag
 	if signingKey == "" {
@@ -326,14 +272,12 @@ func SignNoteCmd(
 	// Get the public key network ID
 	gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
-	// Get the next nonce.
-	nextNonce, err := determineNextNonceOfGPGKeyOwner(
-		nonceFromFlag,
-		gpgID,
-		rpcClient,
-		remoteClients)
-	if err != nil {
-		return err
+	// Get the next nonce, if not set
+	if nextNonce == "" {
+		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(gpgID, rpcClient, remoteClients)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Sign a message composed of the tx information
@@ -354,7 +298,7 @@ func SignNoteCmd(
 	}
 
 	// Construct the txparams
-	txParams, err := util.MakeAndValidateTxParams(txFee, nonceFromFlag, gpgID, sig, directives...)
+	txParams, err := util.MakeAndValidateTxParams(txFee, nextNonce, gpgID, sig, directives...)
 	if err != nil {
 		return err
 	}
@@ -387,42 +331,41 @@ func CreateAndSendMergeRequestCmd(
 	targetBranch,
 	targetHash,
 	fee,
-	nonceFromFlag string,
+	nonce string,
 	rpcClient *client.RPCClient,
-	remoteClients []*client2.RESTClient) error {
+	remoteClients []*restclient.RESTClient) error {
 
 	// Get the signer account
-	am := accountmgr.New(path.Join(cfg.DataDir(), config.AccountDirName))
+	am := account.New(path.Join(cfg.DataDir(), config.AccountDirName))
 	unlocked, err := am.UIUnlockAccount(addrOrIdx, passphrase)
 	if err != nil {
 		return errors.Wrap(err, "unable to unlock")
 	}
 
-	// Get the next nonce.
-	nextNonce, err := determineNextNonceOfGPGKeyOwner(
-		nonceFromFlag,
-		"",
-		rpcClient,
-		remoteClients)
+	// Create the merge request transaction
+	tx := core.NewBareRepoProposalMergeRequest()
+	tx.Fee = util.String(fee)
+	tx.SenderPubKey = util.StrToPublicKey(unlocked.GetKey().PubKey().Base58())
+	tx.BaseBranch = baseBranch
+	tx.BaseBranchHash = baseHash
+	tx.TargetBranch = targetBranch
+	tx.TargetBranchHash = targetHash
+
+	// Determine the next nonce, if unset from flag
+	if nonce == "" {
+		nonce, err = api.DetermineNextNonceOfAccount(unlocked.Address, rpcClient, remoteClients)
+		if err != nil {
+			return err
+		}
+	}
+
+	nonceUInt, err := strconv.ParseUint(nonce, 10, 64)
 	if err != nil {
 		return err
 	}
+	tx.SetNonce(nonceUInt)
 
-	// Create the merge request transaction
-	tx := core.TxRepoProposalMergeRequest{
-		TxCommon: &core.TxCommon{
-			Fee:          util.String(fee),
-			SenderPubKey: util.StrToPublicKey(unlocked.GetKey().PubKey().Base58()),
-		},
-		TxType:           nil,
-		TxProposalCommon: nil,
-		BaseBranch:       baseBranch,
-		BaseBranchHash:   baseHash,
-		TargetBranch:     targetBranch,
-		TargetBranchHash: targetHash,
-	}
-
-	pp.Println(tx, nextNonce)
+	pp.Println(tx)
 
 	return nil
 }

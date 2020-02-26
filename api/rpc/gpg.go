@@ -2,9 +2,8 @@ package rpc
 
 import (
 	"github.com/stretchr/objx"
-	"gitlab.com/makeos/mosdef/api"
 	"gitlab.com/makeos/mosdef/modules"
-	"gitlab.com/makeos/mosdef/rpc/jsonrpc"
+	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types"
 )
 
@@ -24,21 +23,21 @@ func NewGPGAPI(mod *modules.Modules) *GPGAPI {
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
 // - resp <string> - The account nonce
-func (a *GPGAPI) find(params interface{}) (resp *jsonrpc.Response) {
+func (a *GPGAPI) find(params interface{}) (resp *rpc.Response) {
 	o := objx.New(params)
 
-	keyId, errResp := api.GetStringFromObjxMap(o, "id", true)
+	keyId, errResp := rpc.GetStringFromObjxMap(o, "id", true)
 	if errResp != nil {
 		return errResp
 	}
 
-	blockHeight, errResp := api.GetStringToUint64FromObjxMap(o, "blockHeight", false)
+	blockHeight, errResp := rpc.GetStringToUint64FromObjxMap(o, "blockHeight", false)
 	if errResp != nil {
 		return errResp
 	}
 
 	key := a.mods.GPG.Find(keyId, blockHeight)
-	return jsonrpc.Success(key)
+	return rpc.Success(key)
 }
 
 // find finds and returns a GPG public key by its key ID
@@ -47,27 +46,27 @@ func (a *GPGAPI) find(params interface{}) (resp *jsonrpc.Response) {
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
 // - resp <string> - The account nonce
-func (a *GPGAPI) getAccountOfOwner(params interface{}) (resp *jsonrpc.Response) {
+func (a *GPGAPI) getAccountOfOwner(params interface{}) (resp *rpc.Response) {
 	o := objx.New(params)
 
-	keyId, errResp := api.GetStringFromObjxMap(o, "id", true)
+	keyId, errResp := rpc.GetStringFromObjxMap(o, "id", true)
 	if errResp != nil {
 		return errResp
 	}
 
-	blockHeight, errResp := api.GetStringToUint64FromObjxMap(o, "blockHeight", false)
+	blockHeight, errResp := rpc.GetStringToUint64FromObjxMap(o, "blockHeight", false)
 	if errResp != nil {
 		return errResp
 	}
 
 	account := a.mods.GPG.GetAccountOfOwner(keyId, blockHeight)
 
-	return jsonrpc.Success(account)
+	return rpc.Success(account)
 }
 
 // APIs returns all API handlers
-func (a *GPGAPI) APIs() jsonrpc.APISet {
-	return map[string]jsonrpc.APIInfo{
+func (a *GPGAPI) APIs() rpc.APISet {
+	return map[string]rpc.APIInfo{
 		"find": {
 			Namespace:   types.NamespaceGPG,
 			Description: "Find a GPG key by its key ID",

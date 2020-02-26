@@ -1,4 +1,4 @@
-package accountmgr
+package rpc_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestAccountmgr(t *testing.T) {
+func TestJsonrpc(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Accountmgr Suite")
+	RunSpecs(t, "RPC Suite")
 }

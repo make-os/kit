@@ -1,4 +1,4 @@
-package jsonrpc_test
+package account
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestJsonrpc(t *testing.T) {
+func TestAccountmgr(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Jsonrpc Suite")
+	RunSpecs(t, "Accountmgr Suite")
 }

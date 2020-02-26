@@ -1,4 +1,4 @@
-package accountmgr
+package account
 
 import (
 	"io/ioutil"
@@ -10,9 +10,9 @@ import (
 
 	"github.com/thoas/go-funk"
 
-	"gitlab.com/makeos/mosdef/crypto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gitlab.com/makeos/mosdef/crypto"
 )
 
 func testPrompt(resp string) PasswordPrompt {

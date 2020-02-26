@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/stretchr/objx"
-	"gitlab.com/makeos/mosdef/api"
+	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -19,14 +19,14 @@ func (r *RESTApi) GetAccountNonce(w http.ResponseWriter, req *http.Request) {
 	body.Set("address", req.URL.Query().Get("address"))
 	body.Set("blockHeight", req.URL.Query().Get("blockHeight"))
 
-	address, errResp := api.GetStringFromObjxMap(body, "address", true)
+	address, errResp := rpc.GetStringFromObjxMap(body, "address", true)
 	if errResp != nil {
 		util.WriteJSON(w, 400, util.RESTApiErrorMsg(
 			errResp.Err.Message, "address", errResp.Err.Code))
 		return
 	}
 
-	blockHeight, errResp := api.GetStringToUint64FromObjxMap(body, "blockHeight", false)
+	blockHeight, errResp := rpc.GetStringToUint64FromObjxMap(body, "blockHeight", false)
 	if errResp != nil {
 		util.WriteJSON(w, 400, util.RESTApiErrorMsg(
 			errResp.Err.Message, "blockHeight", errResp.Err.Code))
@@ -49,14 +49,14 @@ func (r *RESTApi) GetAccount(w http.ResponseWriter, req *http.Request) {
 	body.Set("address", req.URL.Query().Get("address"))
 	body.Set("blockHeight", req.URL.Query().Get("blockHeight"))
 
-	address, errResp := api.GetStringFromObjxMap(body, "address", true)
+	address, errResp := rpc.GetStringFromObjxMap(body, "address", true)
 	if errResp != nil {
 		util.WriteJSON(w, 400, util.RESTApiErrorMsg(
 			errResp.Err.Message, "address", errResp.Err.Code))
 		return
 	}
 
-	blockHeight, errResp := api.GetStringToUint64FromObjxMap(body, "blockHeight", false)
+	blockHeight, errResp := rpc.GetStringToUint64FromObjxMap(body, "blockHeight", false)
 	if errResp != nil {
 		util.WriteJSON(w, 400, util.RESTApiErrorMsg(
 			errResp.Err.Message, "blockHeight", errResp.Err.Code))

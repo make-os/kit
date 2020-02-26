@@ -1,4 +1,4 @@
-package accountmgr
+package account
 
 import (
 	"fmt"

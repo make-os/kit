@@ -48,5 +48,5 @@ func GPGGetNextNonceOfOwnerUsingClients(clients []*RESTClient, gpgID string) (st
 		nonce, _ := strconv.ParseUint(resp.Nonce, 10, 64)
 		return fmt.Sprintf("%d", nonce+1), nil
 	}
-	return "", errors.Wrap(err, "remote-client")
+	return "", err
 }

@@ -21,7 +21,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.com/makeos/mosdef/accountmgr"
+	"gitlab.com/makeos/mosdef/account"
 	"gitlab.com/makeos/mosdef/config"
 )
 
@@ -68,7 +68,7 @@ Always backup your keeps regularly.`,
 		seed := viper.GetInt64("node.seed")
 		pass := viper.GetString("node.password")
 
-		am := accountmgr.New(path.Join(cfg.DataDir(), config.AccountDirName))
+		am := account.New(path.Join(cfg.DataDir(), config.AccountDirName))
 		key, err := am.CreateCmd(false, seed, pass)
 		if err != nil {
 			log.Fatal(err.Error())
@@ -89,7 +89,7 @@ Given that an account in the directory begins with a timestamp of its creation t
 list is lexicographically sorted such that the oldest account will be at the top on the list
 `,
 	Run: func(cmd *cobra.Command, args []string) {
-		am := accountmgr.New(path.Join(cfg.DataDir(), config.AccountDirName))
+		am := account.New(path.Join(cfg.DataDir(), config.AccountDirName))
 		if err := am.ListCmd(); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -113,7 +113,7 @@ convert an account encrypted in an old format to a new one.
 		_ = viper.BindPFlag("node.password", cmd.Flags().Lookup("pass"))
 		pass := viper.GetString("node.password")
 
-		am := accountmgr.New(path.Join(cfg.DataDir(), config.AccountDirName))
+		am := account.New(path.Join(cfg.DataDir(), config.AccountDirName))
 		if err := am.UpdateCmd(address, pass); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -146,7 +146,7 @@ account.
 		_ = viper.BindPFlag("node.password", cmd.Flags().Lookup("pass"))
 		pass := viper.GetString("node.password")
 
-		am := accountmgr.New(path.Join(cfg.DataDir(), config.AccountDirName))
+		am := account.New(path.Join(cfg.DataDir(), config.AccountDirName))
 		if err := am.ImportCmd(keyFile, pass); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -173,7 +173,7 @@ Also, the flag accepts a path to a file containing a password.
 		_ = viper.BindPFlag("node.password", cmd.Flags().Lookup("pass"))
 		pass := viper.GetString("node.password")
 
-		am := accountmgr.New(path.Join(cfg.DataDir(), config.AccountDirName))
+		am := account.New(path.Join(cfg.DataDir(), config.AccountDirName))
 		if err := am.RevealCmd(address, pass); err != nil {
 			log.Fatal(err.Error())
 		}

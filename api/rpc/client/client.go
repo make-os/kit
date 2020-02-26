@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"net"
 	"net/http"
+	"strconv"
 	"time"
-
-	"gitlab.com/makeos/mosdef/rpc"
 
 	"github.com/gorilla/rpc/v2/json"
 )
@@ -19,13 +19,40 @@ import (
 // Timeout is the max duration for connection and read attempt
 const Timeout = time.Duration(15 * time.Second)
 
-// RPCClient provides the ability to interact with a JSON-RPCClient 2.0 service
-type RPCClient struct {
-	c    *http.Client
-	opts *rpc.Options
+// Client represents a JSON-RPC client
+type Client interface {
+	Call(method string, params interface{}) (interface{}, error)
+	New(opts *Options) Client
+	GetOptions() *Options
 }
 
-// Error represents a custom JSON-RPCClient error
+// Options describes the options used to
+// configure the client
+type Options struct {
+	Host     string
+	Port     int
+	HTTPS    bool
+	User     string
+	Password string
+}
+
+// URL returns a fully formed url to
+// use for making requests
+func (o *Options) URL() string {
+	protocol := "http://"
+	if o.HTTPS {
+		protocol = "https://"
+	}
+	return protocol + net.JoinHostPort(o.Host, strconv.Itoa(o.Port))
+}
+
+// RPCClient provides the ability to interact with a JSON-RPC 2.0 service
+type RPCClient struct {
+	c    *http.Client
+	opts *Options
+}
+
+// Error represents a custom JSON-RPCerror
 type Error struct {
 	Data map[string]interface{} `json:"data"`
 }
@@ -35,10 +62,10 @@ func (e *Error) Error() string {
 }
 
 // NewClient creates an instance of Client
-func NewClient(opts *rpc.Options) *RPCClient {
+func NewClient(opts *Options) *RPCClient {
 
 	if opts == nil {
-		opts = &rpc.Options{}
+		opts = &Options{}
 	}
 
 	if opts.Host == "" {
@@ -56,7 +83,7 @@ func NewClient(opts *rpc.Options) *RPCClient {
 }
 
 // GetOptions returns the client's option
-func (c *RPCClient) GetOptions() *rpc.Options {
+func (c *RPCClient) GetOptions() *Options {
 	return c.opts
 }
 
