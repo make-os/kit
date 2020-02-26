@@ -170,14 +170,22 @@ func (m *GPGModule) ownedBy(address string) []string {
 // GetAccountOfOwner returns the account of the key owner
 //
 // ARGS:
-// pkID: The GPG key id
+// gpgID: The GPG key id
+// [blockHeight]: 	The target block height to query (default: latest)
 //
 // RETURNS state.Account
-func (m *GPGModule) GetAccountOfOwner(pkID string) *state.Account {
-	gpgKey := m.Find(pkID)
-	acct := m.logic.AccountKeeper().GetAccount(gpgKey.Address)
+func (m *GPGModule) GetAccountOfOwner(gpgID string, blockHeight ...uint64) *state.Account {
+	gpgKey := m.Find(gpgID, blockHeight...)
+
+	targetHeight := uint64(0)
+	if len(blockHeight) > 0 {
+		targetHeight = blockHeight[0]
+	}
+
+	acct := m.logic.AccountKeeper().GetAccount(gpgKey.Address, targetHeight)
 	if acct.IsNil() {
 		panic(types.ErrAccountUnknown)
 	}
+
 	return acct
 }

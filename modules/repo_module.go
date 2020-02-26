@@ -165,7 +165,7 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...interface{}) Map {
+func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalUpsertOwner()
@@ -205,7 +205,7 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...interface{}) Map {
+func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalVote()
@@ -253,7 +253,7 @@ func (m *RepoModule) prune(name string, force bool) {
 // opts.noProps: When true, the result will not include proposals
 //
 // RETURNS <map|nil>
-func (m *RepoModule) get(name string, opts ...map[string]interface{}) Map {
+func (m *RepoModule) get(name string, opts ...map[string]interface{}) util.Map {
 	var targetHeight uint64
 	var noProposals bool
 
@@ -300,7 +300,7 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) Map {
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *RepoModule) update(params map[string]interface{}, options ...interface{}) Map {
+func (m *RepoModule) update(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalUpdate()
@@ -340,7 +340,7 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *RepoModule) depositFee(params map[string]interface{}, options ...interface{}) Map {
+func (m *RepoModule) depositFee(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalFeeSend()

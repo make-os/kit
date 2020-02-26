@@ -8,8 +8,8 @@ import (
 
 	"gitlab.com/makeos/mosdef/types"
 
+	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/rpc/client"
 
 	"gitlab.com/makeos/mosdef/config"
 

@@ -81,9 +81,9 @@ var _ = Describe("GPGKeeper", func() {
 		})
 
 		It("should return expected pk ids", func() {
-			pkIDs := gpgKeeper.GetPubKeyIDs("addr")
-			Expect(pkIDs).To(HaveLen(2))
-			Expect(pkIDs).To(ConsistOf("pk_id", "pk_id2"))
+			gpgIDs := gpgKeeper.GetPubKeyIDs("addr")
+			Expect(gpgIDs).To(HaveLen(2))
+			Expect(gpgIDs).To(ConsistOf("pk_id", "pk_id2"))
 		})
 	})
 })

@@ -28,13 +28,13 @@ func MakeAccountKey(address string) []byte {
 }
 
 // MakeGPGPubKeyKey creates a key for storing GPG public key
-func MakeGPGPubKeyKey(pkID string) []byte {
-	return storage.MakePrefix([]byte(tagGPGPubKey), []byte(pkID))
+func MakeGPGPubKeyKey(gpgID string) []byte {
+	return storage.MakePrefix([]byte(tagGPGPubKey), []byte(gpgID))
 }
 
 // MakeAddrGPGPkIDIndexKey creates a key for address to gpg pub key index
-func MakeAddrGPGPkIDIndexKey(address, pkID string) []byte {
-	return storage.MakePrefix([]byte(tagAddressGPGPkID), []byte(address), []byte(pkID))
+func MakeAddrGPGPkIDIndexKey(address, gpgID string) []byte {
+	return storage.MakePrefix([]byte(tagAddressGPGPkID), []byte(address), []byte(gpgID))
 }
 
 // MakeQueryPkIDs creates a key for querying public key ids belonging

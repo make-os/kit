@@ -244,7 +244,7 @@ func checkMergeCompliance(
 	change *core.ItemChange,
 	oldRef core.Item,
 	mergeProposalID,
-	gpgKeyID string,
+	gpgID string,
 	keepers core.Keepers) error {
 
 	ref := plumbing.ReferenceName(change.Item.GetName())
@@ -259,7 +259,7 @@ func checkMergeCompliance(
 	}
 
 	// Ensure the signer is the creator of the proposal
-	gpgKey := keepers.GPGPubKeyKeeper().GetGPGPubKey(gpgKeyID)
+	gpgKey := keepers.GPGPubKeyKeeper().GetGPGPubKey(gpgID)
 	if gpgKey.Address.String() != prop.Creator {
 		return fmt.Errorf("merge compliance error: "+
 			"signer must be the creator of the merge proposal (%s)", mergeProposalID)

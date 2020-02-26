@@ -85,8 +85,6 @@ func checkAndGetKey(options ...interface{}) string {
 	return key
 }
 
-type Map map[string]interface{}
-
 // EncodeForJS takes a struct and converts
 // selected types to values that are compatible in the
 // JS environment. It returns a map and will panic
@@ -164,8 +162,8 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) map[string]interface{
 }
 
 // EncodeManyForJS is like EncodeForJS but accepts a slice of objects
-func EncodeManyForJS(objs interface{}, fieldToIgnore ...string) []Map {
-	var many []Map
+func EncodeManyForJS(objs interface{}, fieldToIgnore ...string) []util.Map {
+	var many []util.Map
 
 	t := reflect.TypeOf(objs)
 	if t.Kind() != reflect.Slice {

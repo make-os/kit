@@ -21,11 +21,11 @@ func NewGPGPubKeyKeeper(state *tree.SafeTree, db storage.Tx) *GPGPubKeyKeeper {
 // GetGPGPubKey returns a GPG public key
 //
 // ARGS:
-// pkID: The unique ID of the public key
+// gpgID: The unique ID of the public key
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Account if no account is found.
-func (g *GPGPubKeyKeeper) GetGPGPubKey(pkID string, blockNum ...uint64) *state.GPGPubKey {
+func (g *GPGPubKeyKeeper) GetGPGPubKey(gpgID string, blockNum ...uint64) *state.GPGPubKey {
 
 	// Get version is provided
 	var version uint64
@@ -35,7 +35,7 @@ func (g *GPGPubKeyKeeper) GetGPGPubKey(pkID string, blockNum ...uint64) *state.G
 
 	// Query the gpg pub key. If version is provided,
 	// we do a versioned query, otherwise we query the latest.
-	key := MakeGPGPubKeyKey(pkID)
+	key := MakeGPGPubKeyKey(gpgID)
 	var bz []byte
 	if version != 0 {
 		_, bz = g.state.GetVersioned(key, int64(version))
@@ -60,11 +60,11 @@ func (g *GPGPubKeyKeeper) GetGPGPubKey(pkID string, blockNum ...uint64) *state.G
 // It also adds an address->pubID index search for public keys by address.
 //
 // ARGS:
-// pkID: The public key unique ID
+// gpgID: The public key unique ID
 // udp: The updated object to replace the existing object.
-func (g *GPGPubKeyKeeper) Update(pkID string, upd *state.GPGPubKey) error {
-	g.state.Set(MakeGPGPubKeyKey(pkID), upd.Bytes())
-	key := MakeAddrGPGPkIDIndexKey(upd.Address.String(), pkID)
+func (g *GPGPubKeyKeeper) Update(gpgID string, upd *state.GPGPubKey) error {
+	g.state.Set(MakeGPGPubKeyKey(gpgID), upd.Bytes())
+	key := MakeAddrGPGPkIDIndexKey(upd.Address.String(), gpgID)
 	idx := storage.NewFromKeyValue(key, []byte{})
 	return g.db.Put(idx)
 }
@@ -74,11 +74,11 @@ func (g *GPGPubKeyKeeper) Update(pkID string, upd *state.GPGPubKey) error {
 // ARGS:
 // address: The target address
 func (g *GPGPubKeyKeeper) GetPubKeyIDs(address string) []string {
-	pkIDs := []string{}
+	gpgIDs := []string{}
 	g.db.Iterate(MakeQueryPkIDs(address), true, func(rec *storage.Record) bool {
 		parts := storage.SplitPrefix(rec.Key)
-		pkIDs = append(pkIDs, string(parts[len(parts)-1]))
+		gpgIDs = append(gpgIDs, string(parts[len(parts)-1]))
 		return false
 	})
-	return pkIDs
+	return gpgIDs
 }

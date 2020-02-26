@@ -90,7 +90,7 @@ func (m *ChainModule) Configure() []prompt.Suggest {
 }
 
 // getBlock fetches a block at the given height
-func (m *ChainModule) getBlock(height string) Map {
+func (m *ChainModule) getBlock(height string) util.Map {
 
 	var err error
 	var blockHeight int64
@@ -120,7 +120,7 @@ func (m *ChainModule) getCurrentHeight() interface{} {
 }
 
 // getBlockInfo get summary block information of a given height
-func (m *ChainModule) getBlockInfo(height string) Map {
+func (m *ChainModule) getBlockInfo(height string) util.Map {
 
 	var err error
 	var blockHeight int64
@@ -148,7 +148,7 @@ func (m *ChainModule) getBlockInfo(height string) Map {
 // res.address <string>: 	The bech32 address of the validator
 // res.tmAddress <string>: 	The tendermint address and the validator
 // res.ticketId <string>: 	The id of the validator ticket
-func (m *ChainModule) getValidators(height string) (res []Map) {
+func (m *ChainModule) getValidators(height string) (res []util.Map) {
 
 	var err error
 	var blockHeight int64
@@ -163,7 +163,7 @@ func (m *ChainModule) getValidators(height string) (res []Map) {
 		panic(err)
 	}
 
-	var vList = []Map{}
+	var vList = []util.Map{}
 	for pubKey, valInfo := range validators {
 
 		var pub32 ed25519.PubKeyEd25519

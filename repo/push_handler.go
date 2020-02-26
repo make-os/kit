@@ -96,10 +96,10 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, stri
 	// When we have more than one pushed references, we need to ensure they both
 	// were signed using same public key id, if not, we return an error and also
 	// remove the pushed objects from the references and repository
-	var pkID = funk.Values(refsTxParams).([]*util.TxParams)[0].PubKeyID
+	var gpgID = funk.Values(refsTxParams).([]*util.TxParams)[0].PubKeyID
 	if len(refsTxParams) > 1 {
 		for _, txParams := range refsTxParams {
-			if pkID != txParams.PubKeyID {
+			if gpgID != txParams.PubKeyID {
 				errs = append(errs, fmt.Errorf("rejected because the pushed references "+
 					"were signed with multiple pgp keys"))
 				h.rMgr.GetPruner().Schedule(h.repo.GetName())
@@ -112,7 +112,7 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, stri
 		return nil, "", errs[0]
 	}
 
-	return refsTxParams, pkID, nil
+	return refsTxParams, gpgID, nil
 }
 
 // HandleUpdate is called after the pushed data have been analysed and
@@ -121,13 +121,13 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, stri
 // the rest of the network
 func (h *PushHandler) HandleUpdate() error {
 
-	refsTxParams, pkID, err := h.HandleValidateAndRevert()
+	refsTxParams, gpgID, err := h.HandleValidateAndRevert()
 	if err != nil {
 		return err
 	}
 
 	// At this point, there are no errors. We need to construct a PushNote
-	pushNote, err := h.createPushNote(pkID, refsTxParams)
+	pushNote, err := h.createPushNote(gpgID, refsTxParams)
 	if err != nil {
 		return err
 	}
@@ -153,14 +153,14 @@ func (h *PushHandler) HandleUpdate() error {
 }
 
 func (h *PushHandler) createPushNote(
-	pkID string,
+	gpgID string,
 	refsTxParams map[string]*util.TxParams) (*core.PushNote, error) {
 
 	var pushNote = &core.PushNote{
 		TargetRepo:    h.repo,
 		RepoName:      h.repo.GetName(),
-		PusherKeyID:   util.MustDecodeRSAPubKeyID(pkID),
-		PusherAddress: h.rMgr.GetLogic().GPGPubKeyKeeper().GetGPGPubKey(pkID).Address,
+		PusherKeyID:   util.MustDecodeRSAPubKeyID(gpgID),
+		PusherAddress: h.rMgr.GetLogic().GPGPubKeyKeeper().GetGPGPubKey(gpgID).Address,
 		Timestamp:     time.Now().Unix(),
 		References:    core.PushedReferences([]*core.PushedReference{}),
 		NodePubKey:    h.rMgr.GetPrivateValidatorKey().PubKey().MustBytes32(),

@@ -45,6 +45,8 @@ const (
 	ZeroString = String("0")
 )
 
+type Map map[string]interface{}
+
 // Big0 represents a zero value big.Int
 var Big0 = new(big.Int).SetInt64(0)
 

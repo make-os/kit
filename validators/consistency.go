@@ -210,8 +210,8 @@ func CheckTxAddGPGPubKeyConsistency(
 	}
 
 	// Check whether there is a matching gpg key already existing
-	pkID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-	gpgPubKey := logic.GPGPubKeyKeeper().GetGPGPubKey(pkID)
+	gpgID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+	gpgPubKey := logic.GPGPubKeyKeeper().GetGPGPubKey(gpgID)
 	if !gpgPubKey.IsNil() {
 		return feI(index, "pubKey", "gpg public key already registered")
 	}

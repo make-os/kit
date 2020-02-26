@@ -112,7 +112,7 @@ func (m *TxModule) Configure() []prompt.Suggest {
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TxModule) sendCoin(params map[string]interface{}, options ...interface{}) Map {
+func (m *TxModule) sendCoin(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareTxCoinTransfer()
@@ -136,7 +136,7 @@ func (m *TxModule) sendCoin(params map[string]interface{}, options ...interface{
 }
 
 // get returns a tx by hash
-func (m *TxModule) Get(hash string) Map {
+func (m *TxModule) Get(hash string) util.Map {
 
 	if strings.ToLower(hash[:2]) == "0x" {
 		hash = hash[2:]
@@ -163,7 +163,7 @@ func (m *TxModule) Get(hash string) Map {
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TxModule) SendPayload(txData map[string]interface{}) Map {
+func (m *TxModule) SendPayload(txData map[string]interface{}) util.Map {
 	tx, err := core.DecodeTxFromMap(txData)
 	if err != nil {
 		panic(err)

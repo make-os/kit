@@ -57,7 +57,7 @@ var _ = Describe("Push", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var repo = "repo1"
-		var pkID = util.MustToRSAPubKeyID([]byte("pkID"))
+		var gpgID = util.MustToRSAPubKeyID([]byte("gpgID"))
 
 		When("reference has nonce = 1", func() {
 			BeforeEach(func() {
@@ -67,7 +67,7 @@ var _ = Describe("Push", func() {
 					Nonce:   1,
 				})
 
-				logic.GPGPubKeyKeeper().Update(pkID, &state.GPGPubKey{
+				logic.GPGPubKeyKeeper().Update(gpgID, &state.GPGPubKey{
 					PubKey:  "pub_key",
 					Address: sender.Addr(),
 				})
@@ -82,7 +82,7 @@ var _ = Describe("Push", func() {
 					&core.PushedReference{Name: "refs/heads/master"},
 				}
 
-				err = txLogic.execPush(repo, refs, "1", util.MustDecodeRSAPubKeyID(pkID), 0)
+				err = txLogic.execPush(repo, refs, "1", util.MustDecodeRSAPubKeyID(gpgID), 0)
 				Expect(err).To(BeNil())
 			})
 

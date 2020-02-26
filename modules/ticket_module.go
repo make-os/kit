@@ -235,7 +235,7 @@ func (m *TicketModule) hostBuy(params map[string]interface{}, options ...interfa
 // RETURNS <[]types.Ticket>
 func (m *TicketModule) listValidatorTicketsOfProposer(
 	proposerPubKey string,
-	queryOpts ...map[string]interface{}) []Map {
+	queryOpts ...map[string]interface{}) []util.Map {
 
 	var qopts tickettypes.QueryOptions
 
@@ -346,7 +346,7 @@ func (m *TicketModule) listTopHosts(limit ...int) interface{} {
 // result.valueOfDelegated 		<number>: 	The total value of tickets delegated to the proposer
 // result.publicKeyPower 		<number>: 	The total value staked coins power assigned to the proposer
 // result.valueOfAll 			<number>: 	The total value of all tickets
-func (m *TicketModule) ticketStats(proposerPubKey ...string) (result Map) {
+func (m *TicketModule) ticketStats(proposerPubKey ...string) (result util.Map) {
 
 	valNonDel, valDel := float64(0), float64(0)
 	res := make(map[string]interface{})
@@ -386,7 +386,7 @@ func (m *TicketModule) ticketStats(proposerPubKey ...string) (result Map) {
 //
 // ARGS
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
-func (m *TicketModule) listRecent(limit ...int) []Map {
+func (m *TicketModule) listRecent(limit ...int) []util.Map {
 	n := 0
 	if len(limit) > 0 {
 		n = limit[0]

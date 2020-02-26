@@ -19,9 +19,8 @@ import (
 // Timeout is the max duration for connection and read attempt
 const Timeout = time.Duration(15 * time.Second)
 
-// RPCClient provides the ability create and
-// send requests to a JSON-RPC 2.0 service
-type RPCClient struct {
+// RPC provides the ability to interact with a JSON-RPC 2.0 service
+type RPC struct {
 	c    *http.Client
 	opts *rpc.Options
 }
@@ -36,7 +35,7 @@ func (e *Error) Error() string {
 }
 
 // NewClient creates an instance of Client
-func NewClient(opts *rpc.Options) *RPCClient {
+func NewClient(opts *rpc.Options) *RPC {
 
 	if opts == nil {
 		opts = &rpc.Options{}
@@ -50,19 +49,19 @@ func NewClient(opts *rpc.Options) *RPCClient {
 		panic("options.port is required")
 	}
 
-	return &RPCClient{
+	return &RPC{
 		c:    new(http.Client),
 		opts: opts,
 	}
 }
 
 // GetOptions returns the client's option
-func (c *RPCClient) GetOptions() *rpc.Options {
+func (c *RPC) GetOptions() *rpc.Options {
 	return c.opts
 }
 
 // Call calls a method on the RPC service.
-func (c *RPCClient) Call(method string, params interface{}) (interface{}, error) {
+func (c *RPC) Call(method string, params interface{}) (interface{}, error) {
 
 	if c.c == nil {
 		return nil, fmt.Errorf("http client and options not set")
@@ -112,6 +111,6 @@ func (c *RPCClient) Call(method string, params interface{}) (interface{}, error)
 		}
 		return nil, err
 	}
-	// pp.Println("AA", m)
+
 	return m, nil
 }

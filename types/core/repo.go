@@ -197,7 +197,7 @@ type Commit interface {
 }
 
 // PGPPubKeyGetter represents a function for fetching PGP public key
-type PGPPubKeyGetter func(pkId string) (string, error)
+type PGPPubKeyGetter func(gpgID string) (string, error)
 
 // PoolGetter returns various pools
 type PoolGetter interface {
@@ -349,7 +349,7 @@ type PushedReference struct {
 	Nonce              uint64   `json:"nonce" msgpack:"nonce"`     // The next repo nonce of the reference
 	Objects            []string `json:"objects" msgpack:"objects"` // A list of objects pushed to the reference
 	Delete             bool     `json:"delete" msgpack:"delete"`   // Delete indicates that the reference should be deleted from the repo
-	MergeProposalID    string   `json:"mergeId" msgpack:"mergeId"` // The merge proposal ID the reference is complaint with.
+	MergeProposalID    string   `json:"mergeID" msgpack:"mergeID"` // The merge proposal ID the reference is complaint with.
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

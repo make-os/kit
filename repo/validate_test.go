@@ -36,7 +36,7 @@ var _ = Describe("Validation", func() {
 	var cfg *config.AppConfig
 	var repo core.BareRepo
 	var path string
-	var gpgKeyID string
+	var gpgID string
 	var pubKey string
 	var privKey *openpgp.Entity
 	var privKey2 *openpgp.Entity
@@ -49,16 +49,16 @@ var _ = Describe("Validation", func() {
 	var mockSysKeeper *mocks.MockSystemKeeper
 	var mockTxLogic *mocks.MockTxLogic
 
-	var gpgPubKeyGetter = func(pkId string) (string, error) {
+	var gpgPubKeyGetter = func(gpgID string) (string, error) {
 		return pubKey, nil
 	}
 
-	var gpgInvalidPubKeyGetter = func(pkId string) (string, error) {
+	var gpgInvalidPubKeyGetter = func(gpgID string) (string, error) {
 		return "invalid key", nil
 	}
 
-	var gpgPubKeyGetterWithErr = func(err error) func(pkId string) (string, error) {
-		return func(pkId string) (string, error) {
+	var gpgPubKeyGetterWithErr = func(err error) func(gpgID string) (string, error) {
+		return func(gpgID string) (string, error) {
 			return "", err
 		}
 	}
@@ -69,11 +69,11 @@ var _ = Describe("Validation", func() {
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
-		gpgKeyID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		gpgKeyID2 := testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		pubKey, err = crypto.GetGPGPublicKeyStr(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
-		privKey, err = crypto.GetGPGPrivateKey(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
-		privKey2, err = crypto.GetGPGPrivateKey(gpgKeyID2, testutil.GPGProgramPath, cfg.DataDir())
+		gpgID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
+		gpgID2 := testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
+		pubKey, err = crypto.GetGPGPublicKeyStr(gpgID, testutil.GPGProgramPath, cfg.DataDir())
+		privKey, err = crypto.GetGPGPrivateKey(gpgID, testutil.GPGProgramPath, cfg.DataDir())
+		privKey2, err = crypto.GetGPGPrivateKey(gpgID2, testutil.GPGProgramPath, cfg.DataDir())
 		Expect(err).To(BeNil())
 
 		GitEnv = append(GitEnv, "GNUPGHOME="+cfg.DataDir())
@@ -118,9 +118,9 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("txparams.pkId is not valid", func() {
+		When("txparams.gpgID is not valid", func() {
 			BeforeEach(func() {
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", "invalid_pk_id")
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", "invalid_pk_id")
 				appendCommit(path, "file.txt", "line 1", txParams)
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`,
 					path).String()
@@ -137,8 +137,8 @@ var _ = Describe("Validation", func() {
 		When("commit is not signed", func() {
 			BeforeEach(func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
 				appendCommit(path, "file.txt", "line 1", txParams)
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
@@ -151,11 +151,11 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("commit is signed but unable to get public key using the pkID", func() {
+		When("commit is signed but unable to get public key using the gpgID", func() {
 			BeforeEach(func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
 				appendCommit(path, "file.txt", "line 1", txParams)
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
@@ -172,8 +172,8 @@ var _ = Describe("Validation", func() {
 		When("commit has a signature but the signature is not valid", func() {
 			BeforeEach(func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
 				appendCommit(path, "file.txt", "line 1", txParams)
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
@@ -190,9 +190,9 @@ var _ = Describe("Validation", func() {
 		When("commit has a signature and the signature is valid", func() {
 			BeforeEach(func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
+				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgID)
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
@@ -222,9 +222,9 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("txparams.pkId is not valid", func() {
+		When("txparams.gpgID is not valid", func() {
 			BeforeEach(func() {
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", "invalid_pk_id")
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", "invalid_pk_id")
 				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
@@ -240,8 +240,8 @@ var _ = Describe("Validation", func() {
 		When("tag is not signed", func() {
 			BeforeEach(func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
 				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
@@ -254,11 +254,11 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("tag is signed but unable to get public key using the pkID", func() {
+		When("tag is signed but unable to get public key using the gpgID", func() {
 			BeforeEach(func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
 				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
@@ -275,8 +275,8 @@ var _ = Describe("Validation", func() {
 		When("tag has a signature but the signature is not valid", func() {
 			BeforeEach(func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
 				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
@@ -293,9 +293,9 @@ var _ = Describe("Validation", func() {
 		When("tag has a valid signature but the referenced commit is unsigned", func() {
 			BeforeEach(func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				createCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
+				createCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgID)
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
@@ -310,9 +310,9 @@ var _ = Describe("Validation", func() {
 		When("tag has a valid signature and the referenced commit is valid", func() {
 			BeforeEach(func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				createMakeSignableCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
+				createMakeSignableCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgID)
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
@@ -353,7 +353,7 @@ var _ = Describe("Validation", func() {
 		When("a notes tx blob has invalid signature format", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=xyz")
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=xyz")
 				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
@@ -366,7 +366,7 @@ var _ = Describe("Validation", func() {
 		When("a notes tx blob has an unknown public key id", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x616263")
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x616263")
 				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetterWithErr(fmt.Errorf("error finding pub key")))
 			})
 
@@ -379,7 +379,7 @@ var _ = Describe("Validation", func() {
 		When("a notes tx blob includes a public key id to an invalid public key", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x616263")
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x616263")
 				_, err = checkNote(repo, "refs/notes/note1", gpgInvalidPubKeyGetter)
 			})
 
@@ -398,7 +398,7 @@ var _ = Describe("Validation", func() {
 				sig, err = crypto.GPGSign(privKey2, msg)
 				Expect(err).To(BeNil())
 				sigHex := hex.EncodeToString(sig)
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x"+sigHex)
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x"+sigHex)
 				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
@@ -417,7 +417,7 @@ var _ = Describe("Validation", func() {
 				sig, err = crypto.GPGSign(privKey, msg)
 				Expect(err).To(BeNil())
 				sigHex := hex.EncodeToString(sig)
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x"+sigHex)
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x"+sigHex)
 				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
@@ -436,7 +436,7 @@ var _ = Describe("Validation", func() {
 				sig, err = crypto.GPGSign(privKey, msg)
 				Expect(err).To(BeNil())
 				sigHex := hex.EncodeToString(sig)
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkId=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x"+sigHex)
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x"+sigHex)
 				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
@@ -953,9 +953,9 @@ var _ = Describe("Validation", func() {
 
 			BeforeEach(func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
+				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgID)
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 
@@ -974,9 +974,9 @@ var _ = Describe("Validation", func() {
 
 			BeforeEach(func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				createMakeSignableCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
+				createMakeSignableCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgID)
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 
@@ -994,9 +994,9 @@ var _ = Describe("Validation", func() {
 
 			BeforeEach(func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				createMakeSignableCommitAndLightWeightTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
+				createMakeSignableCommitAndLightWeightTag(path, "file.txt", "first file", txParams, "v1", gpgID)
 				tagRef, _ := repo.Tag("v1")
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tagRef.Target().String()}}
@@ -1661,11 +1661,11 @@ var _ = Describe("Validation", func() {
 
 		When("fee do not match", func() {
 			BeforeEach(func() {
-				pkID := util.RandBytes(20)
-				pn := &core.PushNote{PusherKeyID: pkID, Fee: "9"}
+				gpgID := util.RandBytes(20)
+				pn := &core.PushNote{PusherKeyID: gpgID, Fee: "9"}
 				txParamss := map[string]*util.TxParams{
 					"refs/heads/master": &util.TxParams{
-						PubKeyID: util.MustToRSAPubKeyID(pkID),
+						PubKeyID: util.MustToRSAPubKeyID(gpgID),
 						Fee:      "10",
 					},
 				}
@@ -1680,9 +1680,9 @@ var _ = Describe("Validation", func() {
 
 		When("push note has unexpected pushed reference", func() {
 			BeforeEach(func() {
-				pkID := util.RandBytes(20)
+				gpgID := util.RandBytes(20)
 				pn := &core.PushNote{
-					PusherKeyID: pkID,
+					PusherKeyID: gpgID,
 					Fee:         "10",
 					References: []*core.PushedReference{
 						{Name: "refs/heads/dev"},
@@ -1690,7 +1690,7 @@ var _ = Describe("Validation", func() {
 				}
 				txParamss := map[string]*util.TxParams{
 					"refs/heads/master": &util.TxParams{
-						PubKeyID: util.MustToRSAPubKeyID(pkID),
+						PubKeyID: util.MustToRSAPubKeyID(gpgID),
 						Fee:      "10",
 					},
 				}

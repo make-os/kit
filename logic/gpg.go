@@ -35,8 +35,8 @@ func (t *Transaction) execAddGPGKey(
 
 	// Store the new public key
 	entity, _ := crypto.PGPEntityFromPubKey(gpgPublicKey)
-	pkID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-	if err := t.logic.GPGPubKeyKeeper().Update(pkID, gpgPubKey); err != nil {
+	gpgID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+	if err := t.logic.GPGPubKeyKeeper().Update(gpgID, gpgPubKey); err != nil {
 		return err
 	}
 

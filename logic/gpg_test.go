@@ -80,8 +80,8 @@ var _ = Describe("GPG", func() {
 
 			Specify("that the gpg public key was added to the tree", func() {
 				entity, _ := crypto.PGPEntityFromPubKey(gpgPubKey)
-				pkID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				gpgKey := logic.gpgPubKeyKeeper.GetGPGPubKey(pkID, 0)
+				gpgID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				gpgKey := logic.gpgPubKeyKeeper.GetGPGPubKey(gpgID, 0)
 				Expect(gpgKey.IsNil()).To(BeFalse())
 				Expect(gpgKey.Address).To(Equal(sender.Addr()))
 				Expect(gpgKey.PubKey).To(Equal(gpgPubKey))

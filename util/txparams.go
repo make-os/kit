@@ -60,8 +60,8 @@ func IsZeroString(str string) bool {
 }
 
 // MakeTxParams returns a well formatted txparams string
-func MakeTxParams(txFee, txNonce, pkID string, sig []byte, directives ...string) string {
-	str := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", txFee, txNonce, pkID)
+func MakeTxParams(txFee, txNonce, gpgID string, sig []byte, directives ...string) string {
+	str := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", txFee, txNonce, gpgID)
 	for _, a := range directives {
 		str = str + fmt.Sprintf(", %s", a)
 	}
@@ -75,10 +75,10 @@ func MakeTxParams(txFee, txNonce, pkID string, sig []byte, directives ...string)
 func MakeAndValidateTxParams(
 	txFee,
 	txNonce,
-	pkID string,
+	gpgID string,
 	sig []byte,
 	directives ...string) (string, error) {
-	str := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", txFee, txNonce, pkID)
+	str := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", txFee, txNonce, gpgID)
 	for _, a := range directives {
 		str = str + fmt.Sprintf(", %s", a)
 	}
@@ -133,12 +133,12 @@ func ParseTxParams(msg string) (*TxParams, error) {
 			txParams.Nonce = nonce
 		}
 
-		if kvParts[0] == "pkId" {
+		if kvParts[0] == "gpgID" {
 			if kvParts[1] == "" {
-				return nil, fmt.Errorf("field:pkId, msg: public key id is required")
+				return nil, fmt.Errorf("field:gpgID, msg: public key id is required")
 			}
 			if len(kvParts[1]) != 42 || !IsValidRSAPubKey(kvParts[1]) {
-				return nil, fmt.Errorf("field:pkId, msg: public key id is invalid")
+				return nil, fmt.Errorf("field:gpgID, msg: public key id is invalid")
 			}
 			txParams.PubKeyID = kvParts[1]
 		}
@@ -161,7 +161,7 @@ func ParseTxParams(msg string) (*TxParams, error) {
 			txParams.DeleteRef = true
 		}
 
-		if kvParts[0] == "mergeId" {
+		if kvParts[0] == "mergeID" {
 			if len(kvParts) == 1 || kvParts[1] == "" {
 				return nil, fmt.Errorf("merge proposal id is required")
 			}

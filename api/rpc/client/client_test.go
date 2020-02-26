@@ -1,8 +1,9 @@
 package client
 
 import (
-	"gitlab.com/makeos/mosdef/rpc"
 	"testing"
+
+	"gitlab.com/makeos/mosdef/rpc"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,7 +33,7 @@ var _ = Describe("Client", func() {
 
 	Describe(".Call", func() {
 		It("should return error when options haven't been set", func() {
-			c := RPCClient{opts: &rpc.Options{Host: "127.0.0.1"}}
+			c := RPC{opts: &rpc.Options{Host: "127.0.0.1"}}
 			_, err := c.Call("", nil)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("http client and options not set"))

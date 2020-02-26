@@ -1,4 +1,4 @@
-package rest
+package client
 
 import (
 	"fmt"
@@ -16,27 +16,27 @@ func joinURL(base string, paths ...string) string {
 	return fmt.Sprintf("%s/%s", strings.TrimRight(base, "/"), strings.TrimLeft(p, "/"))
 }
 
-// Client is a REST API client
-type Client struct {
+// RESTClient is a REST API client
+type RESTClient struct {
 	apiRoot string
 }
 
-// NewClient creates an instance of Client;
+// NewREST creates an instance of RESTClient;
 //
 // ARGS:
 // apiRoot is the URL path to the API server
-func NewClient(apiRoot string) *Client {
-	return &Client{apiRoot}
+func NewREST(apiRoot string) *RESTClient {
+	return &RESTClient{apiRoot}
 }
 
 // GetCall makes a get call to the endpoint
-func (c *Client) GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error) {
+func (c *RESTClient) GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error) {
 	url := joinURL(c.apiRoot, endpoint)
 	return req.Get(url, req.QueryParam(params))
 }
 
 // PostCall makes a get call to the endpoint
-func (c *Client) PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error) {
+func (c *RESTClient) PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error) {
 	url := joinURL(c.apiRoot, endpoint)
 	return req.Post(url, req.BodyJSON(body))
 }

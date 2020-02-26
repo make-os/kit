@@ -128,8 +128,8 @@ func (m *Manager) RegisterAPIHandlers(agg modtypes.ModulesAggregator) {
 	m.registerAPIHandlers(m.srv.Handler.(*http.ServeMux))
 }
 
-func (m *Manager) defaultGPGPubKeyGetter(pkID string) (string, error) {
-	gpgPK := m.logic.GPGPubKeyKeeper().GetGPGPubKey(pkID)
+func (m *Manager) defaultGPGPubKeyGetter(gpgID string) (string, error) {
+	gpgPK := m.logic.GPGPubKeyKeeper().GetGPGPubKey(gpgID)
 	if gpgPK.IsNil() {
 		return "", fmt.Errorf("gpg public key not found for the given ID")
 	}
@@ -195,7 +195,7 @@ func (m *Manager) Start() error {
 }
 
 func (m *Manager) registerAPIHandlers(s *http.ServeMux) {
-	rest := rest.New(m.modulesAgg, m.log)
+	rest := rest.NewAPI(m.modulesAgg, m.log)
 	rest.RegisterEndpoints(s)
 }
 
@@ -251,7 +251,7 @@ func (m *Manager) getRepoPath(name string) string {
 // gitRequestsHandler handles incoming http request from a git client
 func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
-	m.log.Debug("New request",
+	m.log.Debug("NewAPI request",
 		"Method", r.Method,
 		"URL", r.URL.String(),
 		"ProtocolVersion", r.Proto)

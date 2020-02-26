@@ -14,7 +14,7 @@ import (
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
 // - resp <string> - The account nonce
-func (r *Rest) GetAccountNonce(w http.ResponseWriter, req *http.Request) {
+func (r *RESTApi) GetAccountNonce(w http.ResponseWriter, req *http.Request) {
 	var body = objx.New(map[string]interface{}{})
 	body.Set("address", req.URL.Query().Get("address"))
 	body.Set("blockHeight", req.URL.Query().Get("blockHeight"))
@@ -44,7 +44,7 @@ func (r *Rest) GetAccountNonce(w http.ResponseWriter, req *http.Request) {
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
 // - resp <state.Account -> map> - The account object
-func (r *Rest) GetAccount(w http.ResponseWriter, req *http.Request) {
+func (r *RESTApi) GetAccount(w http.ResponseWriter, req *http.Request) {
 	var body = objx.New(map[string]interface{}{})
 	body.Set("address", req.URL.Query().Get("address"))
 	body.Set("blockHeight", req.URL.Query().Get("blockHeight"))

@@ -33,7 +33,7 @@ var _ = Describe("PushHandler", func() {
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var pubKey, pubKey2 string
-	var gpgKeyID, gpgKeyID2 string
+	var gpgID, gpgID2 string
 	var repoName string
 	var mockMempool *mocks.MockMempool
 	var mockBlockGetter *mocks.MockBlockGetter
@@ -63,11 +63,11 @@ var _ = Describe("PushHandler", func() {
 		mockMgr.EXPECT().Log().Return(cfg.G().Log)
 		handler = newPushHandler(repo, mockMgr)
 
-		gpgKeyID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		pubKey, err = crypto.GetGPGPublicKeyStr(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
+		gpgID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
+		pubKey, err = crypto.GetGPGPublicKeyStr(gpgID, testutil.GPGProgramPath, cfg.DataDir())
 		Expect(err).To(BeNil())
-		gpgKeyID2 = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		pubKey2, err = crypto.GetGPGPublicKeyStr(gpgKeyID2, testutil.GPGProgramPath, cfg.DataDir())
+		gpgID2 = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
+		pubKey2, err = crypto.GetGPGPublicKeyStr(gpgID2, testutil.GPGProgramPath, cfg.DataDir())
 		Expect(err).To(BeNil())
 		GitEnv = append(GitEnv, "GNUPGHOME="+cfg.DataDir())
 	})
@@ -149,9 +149,9 @@ var _ = Describe("PushHandler", func() {
 
 				oldState := getRepoState(repo)
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
+				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
+				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgID)
 
 				newState := getRepoState(repo)
 				var packfile io.ReadSeeker
@@ -161,7 +161,7 @@ var _ = Describe("PushHandler", func() {
 				handler.oldState = oldState
 
 				gpgPubKeyKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
-				gpgPubKeyKeeper.EXPECT().GetGPGPubKey(pkID).Return(&state.GPGPubKey{PubKey: pubKey})
+				gpgPubKeyKeeper.EXPECT().GetGPGPubKey(gpgID).Return(&state.GPGPubKey{PubKey: pubKey})
 				mockLogic.EXPECT().GPGPubKeyKeeper().Return(gpgPubKeyKeeper)
 
 				err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
@@ -175,22 +175,22 @@ var _ = Describe("PushHandler", func() {
 		})
 
 		Context("with two references", func() {
-			When("txparams for both references are set and valid but pkIDs are different", func() {
+			When("txparams for both references are set and valid but gpgIDs are different", func() {
 				var err error
 				BeforeEach(func() {
 					handler.rMgr = mgr
 
 					oldState := getRepoState(repo)
 					pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-					pkID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-					txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID)
-					appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
+					gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+					txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
+					appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgID)
 
 					createCheckoutBranch(path, "branch2")
 					pkEntity, _ = crypto.PGPEntityFromPubKey(pubKey2)
-					pkID2 := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-					txParams = fmt.Sprintf("tx: fee=%s, nonce=%s, pkId=%s", "0", "0", pkID2)
-					appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID2)
+					gpgID2 := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+					txParams = fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID2)
+					appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgID2)
 
 					newState := getRepoState(repo)
 					var packfile io.ReadSeeker
@@ -200,8 +200,8 @@ var _ = Describe("PushHandler", func() {
 					handler.oldState = oldState
 
 					gpgPubKeyKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
-					gpgPubKeyKeeper.EXPECT().GetGPGPubKey(pkID).Return(&state.GPGPubKey{PubKey: pubKey})
-					gpgPubKeyKeeper.EXPECT().GetGPGPubKey(pkID2).Return(&state.GPGPubKey{PubKey: pubKey2})
+					gpgPubKeyKeeper.EXPECT().GetGPGPubKey(gpgID).Return(&state.GPGPubKey{PubKey: pubKey})
+					gpgPubKeyKeeper.EXPECT().GetGPGPubKey(gpgID2).Return(&state.GPGPubKey{PubKey: pubKey2})
 					mockLogic.EXPECT().GPGPubKeyKeeper().Return(gpgPubKeyKeeper).Times(2)
 
 					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})

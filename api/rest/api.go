@@ -11,47 +11,47 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// Rest provides a REST API handlers
-type Rest struct {
+// RESTApi provides a REST API handlers
+type RESTApi struct {
 	mods modtypes.ModulesAggregator
 	log  logger.Logger
 }
 
-// New creates an instance of Rest
-func New(mods modtypes.ModulesAggregator, log logger.Logger) *Rest {
-	return &Rest{mods: mods, log: log.Module("rest-api")}
+// NewAPI creates an instance of RESTApi
+func NewAPI(mods modtypes.ModulesAggregator, log logger.Logger) *RESTApi {
+	return &RESTApi{mods: mods, log: log.Module("rest-api")}
 }
 
 // Modules returns modules
-func (r *Rest) Modules() *modules.Modules {
+func (r *RESTApi) Modules() *modules.Modules {
 	return r.mods.GetModules().(*modules.Modules)
 }
 
-func v1Path(ns, method string) string {
+func V1Path(ns, method string) string {
 	return fmt.Sprintf("/v1/%s/%s", ns, method)
 }
 
-func (r *Rest) get(handler func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+func (r *RESTApi) get(handler func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return util.RESTApiHandler("GET", handler, r.log)
 }
 
-func (r *Rest) post(handler func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+func (r *RESTApi) post(handler func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return util.RESTApiHandler("POST", handler, r.log)
 }
 
 const (
-	getNonceMethodName    = "get-nonce"
-	getAccountMethodName  = "get-account"
-	sendPayloadMethodName = "send-payload"
-	ownerNonceMethodName  = "owner-nonce"
-	gpgFindMethodName     = "find"
+	MethodNameGetNonce    = "get-nonce"
+	MethodNameGetAccount  = "get-account"
+	MethodNameSendPayload = "send-payload"
+	MethodNameOwnerNonce  = "owner-nonce"
+	MethodNameGPGFind     = "find"
 )
 
 // RegisterEndpoints registers handlers to endpoints
-func (r *Rest) RegisterEndpoints(s *http.ServeMux) {
-	s.HandleFunc(v1Path(types.NamespaceUser, getNonceMethodName), r.get(r.GetAccountNonce))
-	s.HandleFunc(v1Path(types.NamespaceUser, getAccountMethodName), r.get(r.GetAccount))
-	s.HandleFunc(v1Path(types.NamespaceTx, sendPayloadMethodName), r.post(r.SendTx))
-	s.HandleFunc(v1Path(types.NamespaceGPG, ownerNonceMethodName), r.get(r.GPGGetOwnerNonce))
-	s.HandleFunc(v1Path(types.NamespaceGPG, gpgFindMethodName), r.get(r.GPGFind))
+func (r *RESTApi) RegisterEndpoints(s *http.ServeMux) {
+	s.HandleFunc(V1Path(types.NamespaceUser, MethodNameGetNonce), r.get(r.GetAccountNonce))
+	s.HandleFunc(V1Path(types.NamespaceUser, MethodNameGetAccount), r.get(r.GetAccount))
+	s.HandleFunc(V1Path(types.NamespaceTx, MethodNameSendPayload), r.post(r.SendTx))
+	s.HandleFunc(V1Path(types.NamespaceGPG, MethodNameOwnerNonce), r.get(r.GPGGetOwnerNonce))
+	s.HandleFunc(V1Path(types.NamespaceGPG, MethodNameGPGFind), r.get(r.GPGFind))
 }

@@ -1,107 +1,11 @@
 package cmd
 
 import (
-	"fmt"
-	"net"
-	"strconv"
-
-	"gitlab.com/makeos/mosdef/api/rest"
-	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gopkg.in/src-d/go-git.v4/plumbing/transport"
-
-	"github.com/pkg/errors"
-	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/repo"
-	"gitlab.com/makeos/mosdef/rpc/client"
-
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/repo"
 )
-
-// getJSONRPCClient returns a JSON-RPC client or error if unable to
-// create one. It will return nil client and nil error if --no.rpc
-// is true.
-func getJSONRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
-	noRPC, _ := cmd.Flags().GetBool("no.rpc")
-	if noRPC {
-		return nil, nil
-	}
-
-	rpcAddress, _ := cmd.Flags().GetString("rpc.address")
-	rpcUser, _ := cmd.Flags().GetString("rpc.user")
-	rpcPassword, _ := cmd.Flags().GetString("rpc.password")
-	rpcSecured, _ := cmd.Flags().GetBool("rpc.https")
-
-	host, port, err := net.SplitHostPort(rpcAddress)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed parse rpc address")
-	}
-
-	portInt, err := strconv.Atoi(port)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed convert rpc port")
-	}
-
-	c := client.NewClient(&rpc.Options{
-		Host:     host,
-		Port:     portInt,
-		User:     rpcUser,
-		Password: rpcPassword,
-		HTTPS:    rpcSecured,
-	})
-
-	return c, nil
-}
-
-// getRemoteAPIClients gets REST clients for every  http(s) remote
-// URL set on the given repository. Immediately returns nothing if
-// --no.remote is true.
-func getRemoteAPIClients(cmd *cobra.Command, repo core.BareRepo) (clients []*rest.Client) {
-	noRemote, _ := cmd.Flags().GetBool("no.remote")
-	if noRemote {
-		return
-	}
-
-	for _, url := range repo.GetRemoteURLs() {
-		ep, _ := transport.NewEndpoint(url)
-		if !funk.ContainsString([]string{"http", "https"}, ep.Protocol) {
-			continue
-		}
-
-		apiURL := fmt.Sprintf("%s://%s", ep.Protocol, ep.Host)
-		if ep.Port != 0 {
-			apiURL = fmt.Sprintf("%s:%d", apiURL, ep.Port)
-		}
-
-		clients = append(clients, rest.NewClient(apiURL))
-	}
-	return
-}
-
-// getClients returns RPC and Remote API clients
-func getRepoAndClients(cmd *cobra.Command, nonceFromFlag string) (core.BareRepo,
-	*client.RPCClient, []*rest.Client) {
-
-	// Get the repository
-	targetRepo, err := repo.GetCurrentWDRepo(cfg.Node.GitBinPath)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	// Get JSON RPC client
-	var rpcClient *client.RPCClient
-	rpcClient, err = getJSONRPCClient(cmd)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	// Get remote APIs from the repository
-	remoteClients := getRemoteAPIClients(cmd, targetRepo)
-
-	return targetRepo, rpcClient, remoteClients
-}
 
 // signCmd represents the commit command
 var signCmd = &cobra.Command{

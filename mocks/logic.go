@@ -568,23 +568,23 @@ func (m *MockGPGPubKeyKeeper) EXPECT() *MockGPGPubKeyKeeperMockRecorder {
 }
 
 // Update mocks base method
-func (m *MockGPGPubKeyKeeper) Update(pkID string, upd *state.GPGPubKey) error {
+func (m *MockGPGPubKeyKeeper) Update(gpgID string, upd *state.GPGPubKey) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", pkID, upd)
+	ret := m.ctrl.Call(m, "Update", gpgID, upd)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Update indicates an expected call of Update
-func (mr *MockGPGPubKeyKeeperMockRecorder) Update(pkID, upd interface{}) *gomock.Call {
+func (mr *MockGPGPubKeyKeeperMockRecorder) Update(gpgID, upd interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).Update), pkID, upd)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).Update), gpgID, upd)
 }
 
 // GetGPGPubKey mocks base method
-func (m *MockGPGPubKeyKeeper) GetGPGPubKey(pkID string, blockNum ...uint64) *state.GPGPubKey {
+func (m *MockGPGPubKeyKeeper) GetGPGPubKey(gpgID string, blockNum ...uint64) *state.GPGPubKey {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{pkID}
+	varargs := []interface{}{gpgID}
 	for _, a := range blockNum {
 		varargs = append(varargs, a)
 	}
@@ -594,9 +594,9 @@ func (m *MockGPGPubKeyKeeper) GetGPGPubKey(pkID string, blockNum ...uint64) *sta
 }
 
 // GetGPGPubKey indicates an expected call of GetGPGPubKey
-func (mr *MockGPGPubKeyKeeperMockRecorder) GetGPGPubKey(pkID interface{}, blockNum ...interface{}) *gomock.Call {
+func (mr *MockGPGPubKeyKeeperMockRecorder) GetGPGPubKey(gpgID interface{}, blockNum ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{pkID}, blockNum...)
+	varargs := append([]interface{}{gpgID}, blockNum...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGPGPubKey", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).GetGPGPubKey), varargs...)
 }
 

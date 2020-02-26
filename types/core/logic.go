@@ -217,24 +217,24 @@ type GPGPubKeyKeeper interface {
 	// Update sets a new value for the given public key id
 	//
 	// ARGS:
-	// pkID: The public key unique ID
+	// gpgID: The public key unique ID
 	// udp: The updated object to replace the existing object.
-	Update(pkID string, upd *state.GPGPubKey) error
+	Update(gpgID string, upd *state.GPGPubKey) error
 
 	// GetGPGPubKey returns a GPG public key
 	//
 	// ARGS:
-	// pkID: The unique ID of the public key
+	// gpgID: The unique ID of the public key
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
-	GetGPGPubKey(pkID string, blockNum ...uint64) *state.GPGPubKey
+	GetGPGPubKey(gpgID string, blockNum ...uint64) *state.GPGPubKey
 
 	// GetPubKeyIDs returns all public keys associated with the given address
 	//
 	// ARGS:
 	// address: The target address
-	GetPubKeyIDs(address string) (pkIDs []string)
+	GetPubKeyIDs(address string) (gpgIDs []string)
 }
 
 // AtomicLogic is like Logic but allows all operations

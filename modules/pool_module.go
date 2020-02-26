@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+
 	"gitlab.com/makeos/mosdef/mempool"
 	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/types"
@@ -76,13 +77,13 @@ func (m *PoolModule) Configure() []prompt.Suggest {
 }
 
 // getSize returns the size of the pool
-func (m *PoolModule) getSize() Map {
+func (m *PoolModule) getSize() util.Map {
 	return EncodeForJS(m.reactor.GetPoolSize())
 }
 
 // getTop returns all the transactions in the pool
-func (m *PoolModule) getTop(n int) []Map {
-	var res = []Map{}
+func (m *PoolModule) getTop(n int) []util.Map {
+	var res = []util.Map{}
 	for _, tx := range m.reactor.GetTop(n) {
 		res = append(res, EncodeForJS(tx.ToMap()))
 	}
