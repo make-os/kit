@@ -23,7 +23,7 @@ type TicketModule struct {
 	service   services.Service
 	logic     core.Logic
 	ticketmgr tickettypes.TicketManager
-	storerObj map[string]interface{}
+	hostObj   map[string]interface{}
 }
 
 // NewTicketModule creates an instance of TicketModule
@@ -37,7 +37,7 @@ func NewTicketModule(
 		service:   service,
 		ticketmgr: ticketmgr,
 		logic:     logic,
-		storerObj: make(map[string]interface{}),
+		hostObj:   make(map[string]interface{}),
 	}
 }
 
@@ -59,9 +59,9 @@ func (m *TicketModule) funcs() []*modtypes.ModulesAggregatorFunc {
 			Description: "List validator tickets where given public key is the proposer",
 		},
 		{
-			Name:        "listStorerTicketsOfProposer",
-			Value:       m.listStorerTicketsOfProposer,
-			Description: "List storer tickets where given public key is the proposer",
+			Name:        "listHostTicketsOfProposer",
+			Value:       m.listHostTicketsOfProposer,
+			Description: "List host tickets where given public key is the proposer",
 		},
 		{
 			Name:        "listRecent",
@@ -79,25 +79,25 @@ func (m *TicketModule) funcs() []*modtypes.ModulesAggregatorFunc {
 			Description: "List tickets of top network validators up to the given limit",
 		},
 		{
-			Name:        "listTopStorers",
-			Value:       m.listTopStorers,
-			Description: "List tickets of top network storers up to the given limit",
+			Name:        "listTopHosts",
+			Value:       m.listTopHosts,
+			Description: "List tickets of top network hosts up to the given limit",
 		},
 	}
 }
 
-// storerFuncs are `storer` funcs exposed by the module
-func (m *TicketModule) storerFuncs() []*modtypes.ModulesAggregatorFunc {
+// hostFuncs are `host` funcs exposed by the module
+func (m *TicketModule) hostFuncs() []*modtypes.ModulesAggregatorFunc {
 	return []*modtypes.ModulesAggregatorFunc{
 		{
 			Name:        "buy",
-			Value:       m.storerBuy,
-			Description: "Buy an storer ticket",
+			Value:       m.hostBuy,
+			Description: "Buy an host ticket",
 		},
 		{
 			Name:        "unbond",
-			Value:       m.unbondStorerTicket,
-			Description: "Unbond the stake associated with a storer ticket",
+			Value:       m.unbondHostTicket,
+			Description: "Unbond the stake associated with a host ticket",
 		},
 	}
 }
@@ -108,9 +108,9 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
 	// Set the namespaces
-	ticketObj := map[string]interface{}{"storer": m.storerObj}
+	ticketObj := map[string]interface{}{"host": m.hostObj}
 	util.VMSet(m.vm, types.NamespaceTicket, ticketObj)
-	storerNS := fmt.Sprintf("%s.%s", types.NamespaceTicket, types.NamespaceStorer)
+	hostNS := fmt.Sprintf("%s.%s", types.NamespaceTicket, types.NamespaceHost)
 
 	for _, f := range m.funcs() {
 		ticketObj[f.Name] = f.Value
@@ -119,9 +119,9 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 			Description: f.Description})
 	}
 
-	for _, f := range m.storerFuncs() {
-		m.storerObj[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", storerNS, f.Name)
+	for _, f := range m.hostFuncs() {
+		m.hostObj[f.Name] = f.Value
+		funcFullName := fmt.Sprintf("%s.%s", hostNS, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
@@ -176,7 +176,7 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 	})
 }
 
-// storerBuy creates a transaction to acquire a storer ticket
+// hostBuy creates a transaction to acquire a host ticket
 //
 // ARGS:
 // params <map>
@@ -192,10 +192,10 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TicketModule) storerBuy(params map[string]interface{}, options ...interface{}) interface{} {
+func (m *TicketModule) hostBuy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = core.NewBareTxTicketPurchase(core.TxTypeStorerTicket)
+	var tx = core.NewBareTxTicketPurchase(core.TxTypeHostTicket)
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}
@@ -267,7 +267,7 @@ func (m *TicketModule) listValidatorTicketsOfProposer(
 	return EncodeManyForJS(res)
 }
 
-// listStorerTicketsOfProposer finds storer tickets where the given public
+// listHostTicketsOfProposer finds host tickets where the given public
 // key is the proposer
 //
 // ARGS:
@@ -276,7 +276,7 @@ func (m *TicketModule) listValidatorTicketsOfProposer(
 // [queryOpts] <map>
 // [queryOpts].nonDecayed <bool>	Forces only non-decayed tickets to be returned (default: true)
 // [queryOpts].decayed 	<bool>	Forces only decayed tickets to be returned
-func (m *TicketModule) listStorerTicketsOfProposer(
+func (m *TicketModule) listHostTicketsOfProposer(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) interface{} {
 
@@ -295,7 +295,7 @@ func (m *TicketModule) listStorerTicketsOfProposer(
 		panic(errors.Wrap(err, "failed to decode proposer public key"))
 	}
 
-	res, err := m.ticketmgr.GetByProposer(core.TxTypeStorerTicket, pk.MustBytes32(), qopts)
+	res, err := m.ticketmgr.GetByProposer(core.TxTypeHostTicket, pk.MustBytes32(), qopts)
 	if err != nil {
 		panic(err)
 	}
@@ -319,16 +319,16 @@ func (m *TicketModule) listTopValidators(limit ...int) interface{} {
 	return EncodeManyForJS(tickets)
 }
 
-// listTopStorers returns top n storers
+// listTopHosts returns top n hosts
 //
 // ARGS
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
-func (m *TicketModule) listTopStorers(limit ...int) interface{} {
+func (m *TicketModule) listTopHosts(limit ...int) interface{} {
 	n := 0
 	if len(limit) > 0 {
 		n = limit[0]
 	}
-	tickets, err := m.ticketmgr.GetTopStorers(n)
+	tickets, err := m.ticketmgr.GetTopHosts(n)
 	if err != nil {
 		panic(err)
 	}
@@ -398,12 +398,12 @@ func (m *TicketModule) listRecent(limit ...int) []Map {
 	return EncodeManyForJS(res)
 }
 
-// unbondStorerTicket initiates the release of stake associated with a storer
+// unbondHostTicket initiates the release of stake associated with a host
 // ticket
 //
 // ARGS:
 // params <map>
-// params.hash 			<string>: 			A hash of the storer ticket
+// params.hash 			<string>: 			A hash of the host ticket
 // params.nonce 		<number|string>: 	The senders next account nonce
 // params.fee 			<number|string>: 	The transaction fee to pay
 // params.timestamp 	<number>: 			The unix timestamp
@@ -414,11 +414,11 @@ func (m *TicketModule) listRecent(limit ...int) []Map {
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TicketModule) unbondStorerTicket(params map[string]interface{},
+func (m *TicketModule) unbondHostTicket(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = core.NewBareTxTicketUnbond(core.TxTypeUnbondStorerTicket)
+	var tx = core.NewBareTxTicketUnbond(core.TxTypeUnbondHostTicket)
 	if err = tx.FromMap(params); err != nil {
 		panic(err)
 	}

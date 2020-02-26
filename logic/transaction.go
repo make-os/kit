@@ -71,8 +71,8 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 				o.Fee,
 				chainHeight)
 		}
-		if o.Is(core.TxTypeStorerTicket) {
-			return t.execStorerStake(
+		if o.Is(core.TxTypeHostTicket) {
+			return t.execHostStake(
 				spk,
 				o.Value,
 				o.Fee,

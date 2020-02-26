@@ -39,8 +39,8 @@ type App struct {
 	log                       logger.Logger
 	txIndex                   int
 	unIdxValidatorTickets     []*ticketInfo
-	unIdxStorerTickets        []*ticketInfo
-	unbondStorerReqs          []util.Bytes32
+	unIdxHostTickets          []*ticketInfo
+	unbondHostReqs            []util.Bytes32
 	ticketMgr                 types3.TicketManager
 	isCurrentBlockProposer    bool
 	unsavedValidators         []*core.Validator
@@ -214,11 +214,11 @@ func (a *App) postExecChecks(
 		if o.Is(core.TxTypeValidatorTicket) {
 			a.unIdxValidatorTickets = append(a.unIdxValidatorTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 		} else {
-			a.unIdxStorerTickets = append(a.unIdxStorerTickets, &ticketInfo{Tx: tx, index: a.txIndex})
+			a.unIdxHostTickets = append(a.unIdxHostTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 		}
 
 	case *core.TxTicketUnbond:
-		a.unbondStorerReqs = append(a.unbondStorerReqs, o.TicketHash)
+		a.unbondHostReqs = append(a.unbondHostReqs, o.TicketHash)
 
 	case *core.TxRepoCreate:
 		a.newRepos = append(a.newRepos, o.Name)
@@ -393,7 +393,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	}
 
 	// Index tickets we have collected so far.
-	for _, ticket := range append(a.unIdxValidatorTickets, a.unIdxStorerTickets...) {
+	for _, ticket := range append(a.unIdxValidatorTickets, a.unIdxHostTickets...) {
 		if err := a.ticketMgr.Index(ticket.Tx, uint64(a.curWorkingBlock.Height),
 			ticket.index); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to index ticket"))
@@ -427,8 +427,8 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 		}
 	}
 
-	// Set the decay height for each storer stake unbond request
-	for _, ticketHash := range a.unbondStorerReqs {
+	// Set the decay height for each host stake unbond request
+	for _, ticketHash := range a.unbondHostReqs {
 		a.logic.GetTicketManager().UpdateDecayBy(ticketHash, uint64(a.curWorkingBlock.Height))
 	}
 
@@ -470,8 +470,8 @@ func (a *App) commitPanic(err error) {
 // reset cached values
 func (a *App) reset() {
 	a.unIdxValidatorTickets = []*ticketInfo{}
-	a.unIdxStorerTickets = []*ticketInfo{}
-	a.unbondStorerReqs = []util.Bytes32{}
+	a.unIdxHostTickets = []*ticketInfo{}
+	a.unbondHostReqs = []util.Bytes32{}
 	a.txIndex = 0
 	a.isCurrentBlockProposer = false
 	a.unIdxTxs = []types.BaseTx{}

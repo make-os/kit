@@ -37,8 +37,8 @@ func (t *Transaction) execUnbond(
 	}
 
 	// Set new unbond height
-	newUnbondHeight := chainHeight + 1 + uint64(params.NumBlocksInStorerThawPeriod)
-	senderAcct.Stakes.UpdateUnbondHeight(state.StakeTypeStorer,
+	newUnbondHeight := chainHeight + 1 + uint64(params.NumBlocksInHostThawPeriod)
+	senderAcct.Stakes.UpdateUnbondHeight(state.StakeTypeHost,
 		util.String(ticket.Value), 0, newUnbondHeight)
 
 	// Deduct the fee from the sender's account
@@ -54,7 +54,7 @@ func (t *Transaction) execUnbond(
 	return nil
 }
 
-// execStorerStake sets aside some balance as storer stake.
+// execHostStake sets aside some balance as host stake.
 //
 // ARGS:
 // senderPubKey: The public key of the tx sender.
@@ -64,13 +64,13 @@ func (t *Transaction) execUnbond(
 // chainHeight: The current chain height.
 //
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
-func (t *Transaction) execStorerStake(
+func (t *Transaction) execHostStake(
 	senderPubKey util.Bytes32,
 	value util.String,
 	fee util.String,
 	chainHeight uint64) error {
 	return t.addStake(
-		core.TxTypeStorerTicket,
+		core.TxTypeHostTicket,
 		senderPubKey,
 		value,
 		fee,
@@ -144,8 +144,8 @@ func (t *Transaction) addStake(
 			uint64(params.NumBlocksInThawPeriod)
 		senderAcct.Stakes.Add(state.StakeTypeValidator, value, unbondHeight)
 
-	case core.TxTypeStorerTicket:
-		senderAcct.Stakes.Add(state.StakeTypeStorer, value, unbondHeight)
+	case core.TxTypeHostTicket:
+		senderAcct.Stakes.Add(state.StakeTypeHost, value, unbondHeight)
 	}
 
 	// Update the sender account

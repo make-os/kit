@@ -693,18 +693,18 @@ func (mr *MockBareRepoMockRecorder) GetCompressedObject(hash interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCompressedObject", reflect.TypeOf((*MockBareRepo)(nil).GetCompressedObject), hash)
 }
 
-// GetStorer mocks base method
-func (m *MockBareRepo) GetStorer() storage.Storer {
+// GetHost mocks base method
+func (m *MockBareRepo) GetHost() storage.Host {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetStorer")
-	ret0, _ := ret[0].(storage.Storer)
+	ret := m.ctrl.Call(m, "GetHost")
+	ret0, _ := ret[0].(storage.Host)
 	return ret0
 }
 
-// GetStorer indicates an expected call of GetStorer
-func (mr *MockBareRepoMockRecorder) GetStorer() *gomock.Call {
+// GetHost indicates an expected call of GetHost
+func (mr *MockBareRepoMockRecorder) GetHost() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStorer", reflect.TypeOf((*MockBareRepo)(nil).GetStorer))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHost", reflect.TypeOf((*MockBareRepo)(nil).GetHost))
 }
 
 // Prune mocks base method

@@ -21,7 +21,7 @@ import (
 type Manager struct {
 	cfg   *config.AppConfig
 	logic core.Logic
-	s     Storer
+	s     Host
 }
 
 // NewManager returns an instance of Manager.
@@ -81,9 +81,9 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 	return nil
 }
 
-// GetTopStorers gets storer tickets with the most total delegated value.
-func (m *Manager) GetTopStorers(limit int) (types3.SelectedTickets, error) {
-	return m.getTopTickets(core.TxTypeStorerTicket, limit)
+// GetTopHosts gets host tickets with the most total delegated value.
+func (m *Manager) GetTopHosts(limit int) (types3.SelectedTickets, error) {
+	return m.getTopTickets(core.TxTypeHostTicket, limit)
 }
 
 // GetTopValidators gets validator tickets with the most total delegated value.
@@ -100,7 +100,7 @@ func (m *Manager) getTopTickets(ticketType, limit int) (types3.SelectedTickets, 
 		return nil, err
 	}
 
-	// Get active storer tickets
+	// Get active host tickets
 	activeTickets := m.s.Query(func(t *types3.Ticket) bool {
 		return t.Type == ticketType &&
 			t.MatureBy <= uint64(bi.Height) &&
@@ -206,7 +206,7 @@ func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint6
 	result := m.s.Query(func(t *types3.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == core.TxTypeStorerTicket)) && // not decayed
+				(t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) && // not decayed
 			(t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String()) // is delegator or not
 	})
 
@@ -249,7 +249,7 @@ func (m *Manager) GetNonDelegatedTickets(
 	result := m.s.Query(func(t *types3.Ticket) bool {
 		return t.Type == ticketType &&
 			t.MatureBy <= uint64(bi.Height) &&
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == core.TxTypeStorerTicket)) &&
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator == ""
 	})
@@ -259,7 +259,7 @@ func (m *Manager) GetNonDelegatedTickets(
 
 // ValueOfNonDelegatedTickets returns the sum of value of all
 // non-delegated, non-decayed tickets which has the given public
-// key as the proposer; Includes both validator and storer tickets.
+// key as the proposer; Includes both validator and host tickets.
 //
 // pubKey: The public key of the proposer
 // maturityHeight: if set to non-zero, only tickets that reached maturity before
@@ -280,7 +280,7 @@ func (m *Manager) ValueOfNonDelegatedTickets(
 
 	result := m.s.Query(func(t *types3.Ticket) bool {
 		return t.MatureBy <= maturityHeight &&
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == core.TxTypeStorerTicket)) &&
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator == ""
 	})
@@ -296,7 +296,7 @@ func (m *Manager) ValueOfNonDelegatedTickets(
 
 // ValueOfDelegatedTickets returns the sum of value of all
 // delegated, non-decayed tickets which has the given public
-// key as the proposer; Includes both validator and storer tickets.
+// key as the proposer; Includes both validator and host tickets.
 //
 // pubKey: The public key of the proposer
 // maturityHeight: if set to non-zero, only tickets that reached maturity before
@@ -317,7 +317,7 @@ func (m *Manager) ValueOfDelegatedTickets(
 
 	result := m.s.Query(func(t *types3.Ticket) bool {
 		return t.MatureBy <= maturityHeight &&
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == core.TxTypeStorerTicket)) &&
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator != ""
 	})
@@ -333,7 +333,7 @@ func (m *Manager) ValueOfDelegatedTickets(
 
 // ValueOfTickets returns the sum of value of all non-decayed
 // tickets where the given public key is the proposer or delegator;
-// Includes both validator and storer tickets.
+// Includes both validator and host tickets.
 //
 // pubKey: The public key of the proposer
 // maturityHeight: if set to non-zero, only tickets that reached maturity before
@@ -360,7 +360,7 @@ func (m *Manager) ValueOfTickets(
 	result := m.s.Query(func(t *types3.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == core.TxTypeStorerTicket)) && // not decayed
+				(t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) && // not decayed
 			(t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String()) // is delegated or not
 	})
 
@@ -374,7 +374,7 @@ func (m *Manager) ValueOfTickets(
 }
 
 // ValueOfAllTickets returns the sum of value of all non-decayed
-// tickets; Includes both validator and storer tickets.
+// tickets; Includes both validator and host tickets.
 //
 // maturityHeight: if set to non-zero, only tickets that reached maturity before
 // or on the given height are selected. Otherwise, the current chain height is used.
@@ -393,7 +393,7 @@ func (m *Manager) ValueOfAllTickets(maturityHeight uint64) (float64, error) {
 	result := m.s.Query(func(t *types3.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == core.TxTypeStorerTicket)) // not decayed
+				(t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) // not decayed
 	})
 
 	var sum = decimal.Zero

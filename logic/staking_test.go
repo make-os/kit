@@ -62,7 +62,7 @@ var _ = Describe("Staking", func() {
 
 	Describe(".addStake", func() {
 
-		Context("for tx of type TxTypeValidatorTicket & TxTypeStorerTicket", func() {
+		Context("for tx of type TxTypeValidatorTicket & TxTypeHostTicket", func() {
 			Context("when [current block height]=1; an account balance is 100 with validator stake entry of value=50, unbondHeight=1", func() {
 				BeforeEach(func() {
 					stakes := state.BareAccountStakes()
@@ -110,7 +110,7 @@ var _ = Describe("Staking", func() {
 			})
 		})
 
-		Context("types.TxTypeStorerTicket", func() {
+		Context("types.TxTypeHostTicket", func() {
 			Context("add a stake with value=10", func() {
 				var senderPubKey util.Bytes32
 
@@ -121,7 +121,7 @@ var _ = Describe("Staking", func() {
 					Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("100")))
 
 					senderPubKey = sender.PubKey().MustBytes32()
-					err := txLogic.addStake(core.TxTypeStorerTicket, senderPubKey, util.String("10"), util.String("1"), 0)
+					err := txLogic.addStake(core.TxTypeHostTicket, senderPubKey, util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -129,7 +129,7 @@ var _ = Describe("Staking", func() {
 					acct := logic.AccountKeeper().GetAccount(sender.Addr())
 					Expect(acct.Stakes).To(HaveLen(1))
 					Expect(acct.Stakes.TotalStaked(1)).To(Equal(util.String("10")))
-					Expect(acct.Stakes[state.StakeTypeStorer+"0"].(*state.StakeInfo).UnbondHeight).To(Equal(uint64(0)))
+					Expect(acct.Stakes[state.StakeTypeHost+"0"].(*state.StakeInfo).UnbondHeight).To(Equal(uint64(0)))
 				})
 			})
 		})
@@ -160,19 +160,19 @@ var _ = Describe("Staking", func() {
 			})
 		})
 
-		When("storer stake=100, unbondHeight=0, balance=1000 and fee=1", func() {
+		When("host stake=100, unbondHeight=0, balance=1000 and fee=1", func() {
 			var senderPubKey util.Bytes32
 			var err error
 			var acct *state.Account
 
 			BeforeEach(func() {
-				params.NumBlocksInStorerThawPeriod = 200
+				params.NumBlocksInHostThawPeriod = 200
 
 				txLogic.logic = mockLogic.Logic
 
 				acct = state.BareAccount()
 				acct.Balance = util.String("1000")
-				acct.Stakes.Add(state.StakeTypeStorer, "100", 0)
+				acct.Stakes.Add(state.StakeTypeHost, "100", 0)
 
 				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), uint64(1)).Return(acct)
 

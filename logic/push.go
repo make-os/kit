@@ -10,7 +10,7 @@ import (
 // ARGS:
 // repoName: The name of the target repo
 // references: The pushed references
-// endorsements: The endorsements by storers
+// endorsements: The endorsements by hosts
 // fee: The fee paid by the sender
 // pusherKeyID: The id of the pusher
 // chainHeight: The chain height to limit query to

@@ -155,7 +155,7 @@ func CheckTxCoinTransfer(tx *core.TxCoinTransfer, index int) error {
 // CheckTxTicketPurchase performs sanity checks on TxTicketPurchase
 func CheckTxTicketPurchase(tx *core.TxTicketPurchase, index int) error {
 
-	if tx.Type != core.TxTypeValidatorTicket && tx.Type != core.TxTypeStorerTicket {
+	if tx.Type != core.TxTypeValidatorTicket && tx.Type != core.TxTypeHostTicket {
 		return feI(index, "type", "type is invalid")
 	}
 
@@ -163,10 +163,10 @@ func CheckTxTicketPurchase(tx *core.TxTicketPurchase, index int) error {
 		return err
 	}
 
-	// Non-delegate storer ticket value must reach the minimum stake
-	if tx.Is(core.TxTypeStorerTicket) && tx.Delegate.IsEmpty() {
-		if tx.Value.Decimal().LessThan(params.MinStorerStake) {
-			return feI(index, "value", fmt.Sprintf("value is lower than minimum storer stake"))
+	// Non-delegate host ticket value must reach the minimum stake
+	if tx.Is(core.TxTypeHostTicket) && tx.Delegate.IsEmpty() {
+		if tx.Value.Decimal().LessThan(params.MinHostStake) {
+			return feI(index, "value", fmt.Sprintf("value is lower than minimum host stake"))
 		}
 	}
 
@@ -178,7 +178,7 @@ func CheckTxTicketPurchase(tx *core.TxTicketPurchase, index int) error {
 		}
 	}
 
-	if tx.Is(core.TxTypeStorerTicket) {
+	if tx.Is(core.TxTypeHostTicket) {
 		if len(tx.BLSPubKey) == 0 {
 			return feI(index, "blsPubKey", "BLS public key is required")
 		}
@@ -197,7 +197,7 @@ func CheckTxTicketPurchase(tx *core.TxTicketPurchase, index int) error {
 // CheckTxUnbondTicket performs sanity checks on TxTicketUnbond
 func CheckTxUnbondTicket(tx *core.TxTicketUnbond, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeStorerTicket, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeHostTicket, index); err != nil {
 		return err
 	}
 

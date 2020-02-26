@@ -258,7 +258,7 @@ var _ = Describe("TxValidator", func() {
 		When("unable to get last block information", func() {
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-				tx := core.NewBareTxTicketUnbond(core.TxTypeStorerTicket)
+				tx := core.NewBareTxTicketUnbond(core.TxTypeHostTicket)
 				err = validators.CheckTxUnbondTicketConsistency(tx, -1, mockLogic)
 			})
 
@@ -270,7 +270,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("target ticket does not exist", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxTicketUnbond(core.TxTypeStorerTicket)
+				tx := core.NewBareTxTicketUnbond(core.TxTypeHostTicket)
 				tx.TicketHash = util.StrToBytes32("ticket_hash")
 
 				bi := &core.BlockInfo{Height: 1}
@@ -290,7 +290,7 @@ var _ = Describe("TxValidator", func() {
 			When("sender is not the ticket proposer", func() {
 				BeforeEach(func() {
 					key2 := crypto.NewKeyFromIntSeed(2)
-					tx := core.NewBareTxTicketUnbond(core.TxTypeStorerTicket)
+					tx := core.NewBareTxTicketUnbond(core.TxTypeHostTicket)
 					tx.TicketHash = util.StrToBytes32("ticket_hash")
 					tx.SetSenderPubKey(key2.PubKey().MustBytes())
 
@@ -313,7 +313,7 @@ var _ = Describe("TxValidator", func() {
 			When("sender is not the delegator", func() {
 				BeforeEach(func() {
 					key2 := crypto.NewKeyFromIntSeed(2)
-					tx := core.NewBareTxTicketUnbond(core.TxTypeStorerTicket)
+					tx := core.NewBareTxTicketUnbond(core.TxTypeHostTicket)
 					tx.TicketHash = util.StrToBytes32("ticket_hash")
 					tx.SetSenderPubKey(key2.PubKey().MustBytes())
 
@@ -337,7 +337,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("ticket decay height is set and greater than current block height", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxTicketUnbond(core.TxTypeStorerTicket)
+				tx := core.NewBareTxTicketUnbond(core.TxTypeHostTicket)
 				tx.TicketHash = util.StrToBytes32("ticket_hash")
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
@@ -360,7 +360,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("ticket decay height is set less than current block height", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxTicketUnbond(core.TxTypeStorerTicket)
+				tx := core.NewBareTxTicketUnbond(core.TxTypeHostTicket)
 				tx.TicketHash = util.StrToBytes32("ticket_hash")
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
@@ -383,7 +383,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("coin transfer dry-run fails", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxTicketUnbond(core.TxTypeStorerTicket)
+				tx := core.NewBareTxTicketUnbond(core.TxTypeHostTicket)
 				tx.TicketHash = util.StrToBytes32("ticket_hash")
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
@@ -745,11 +745,11 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("unable to get top storers", func() {
+		When("unable to get top hosts", func() {
 			BeforeEach(func() {
-				params.NumTopStorersLimit = 10
+				params.NumTopHostsLimit = 10
 
-				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(nil, fmt.Errorf("error"))
+				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(nil, fmt.Errorf("error"))
 
 				tx := core.NewBareTxPush()
 				tx.PushOKs = append(tx.PushOKs, &core.PushOK{
@@ -766,20 +766,20 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to get top storers: error"))
+				Expect(err.Error()).To(Equal("failed to get top hosts: error"))
 			})
 		})
 
-		When("a PushOK signer is not among the top storers", func() {
+		When("a PushOK signer is not among the top hosts", func() {
 			BeforeEach(func() {
-				params.NumTopStorersLimit = 10
-				storers := []*types4.SelectedTicket{
+				params.NumTopHostsLimit = 10
+				hosts := []*types4.SelectedTicket{
 					&types4.SelectedTicket{Ticket: &types4.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 					}},
 				}
 
-				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
+				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(hosts, nil)
 
 				tx := core.NewBareTxPush()
 				tx.PushOKs = append(tx.PushOKs, &core.PushOK{
@@ -796,21 +796,21 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:endorsements.senderPubKey, msg:sender public key does not belong to an active storer"))
+				Expect(err.Error()).To(Equal("index:0, field:endorsements.senderPubKey, msg:sender public key does not belong to an active host"))
 			})
 		})
 
 		When("a PushOK has invalid BLS public key", func() {
 			BeforeEach(func() {
-				params.NumTopStorersLimit = 10
-				storers := []*types4.SelectedTicket{
+				params.NumTopHostsLimit = 10
+				hosts := []*types4.SelectedTicket{
 					&types4.SelectedTicket{Ticket: &types4.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 						BLSPubKey:      []byte("invalid"),
 					}},
 				}
 
-				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
+				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(hosts, nil)
 
 				tx := core.NewBareTxPush()
 				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{
@@ -839,15 +839,15 @@ var _ = Describe("TxValidator", func() {
 
 		When("unable to get reference tree", func() {
 			BeforeEach(func() {
-				params.NumTopStorersLimit = 10
-				storers := []*types4.SelectedTicket{
+				params.NumTopHostsLimit = 10
+				hosts := []*types4.SelectedTicket{
 					&types4.SelectedTicket{Ticket: &types4.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 						BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
 					}},
 				}
 
-				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
+				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(hosts, nil)
 
 				tx := core.NewBareTxPush()
 				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{
@@ -882,15 +882,15 @@ var _ = Describe("TxValidator", func() {
 
 		When("a PushOK reference has a hash that does not match the local reference hash", func() {
 			BeforeEach(func() {
-				params.NumTopStorersLimit = 10
-				storers := []*types4.SelectedTicket{
+				params.NumTopHostsLimit = 10
+				hosts := []*types4.SelectedTicket{
 					&types4.SelectedTicket{Ticket: &types4.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 						BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
 					}},
 				}
 
-				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
+				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(hosts, nil)
 
 				tx := core.NewBareTxPush()
 				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{
@@ -925,15 +925,15 @@ var _ = Describe("TxValidator", func() {
 
 		When("aggregated signature is invalid", func() {
 			BeforeEach(func() {
-				params.NumTopStorersLimit = 10
-				storers := []*types4.SelectedTicket{
+				params.NumTopHostsLimit = 10
+				hosts := []*types4.SelectedTicket{
 					&types4.SelectedTicket{Ticket: &types4.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 						BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
 					}},
 				}
 
-				mockTickMgr.EXPECT().GetTopStorers(params.NumTopStorersLimit).Return(storers, nil)
+				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(hosts, nil)
 
 				tx := core.NewBareTxPush()
 

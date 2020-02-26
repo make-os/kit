@@ -174,19 +174,19 @@ func (mr *MockTicketManagerMockRecorder) UpdateDecayBy(hash, newDecayHeight inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateDecayBy", reflect.TypeOf((*MockTicketManager)(nil).UpdateDecayBy), hash, newDecayHeight)
 }
 
-// GetTopStorers mocks base method
-func (m *MockTicketManager) GetTopStorers(limit int) (types.SelectedTickets, error) {
+// GetTopHosts mocks base method
+func (m *MockTicketManager) GetTopHosts(limit int) (types.SelectedTickets, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTopStorers", limit)
+	ret := m.ctrl.Call(m, "GetTopHosts", limit)
 	ret0, _ := ret[0].(types.SelectedTickets)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetTopStorers indicates an expected call of GetTopStorers
-func (mr *MockTicketManagerMockRecorder) GetTopStorers(limit interface{}) *gomock.Call {
+// GetTopHosts indicates an expected call of GetTopHosts
+func (mr *MockTicketManagerMockRecorder) GetTopHosts(limit interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopStorers", reflect.TypeOf((*MockTicketManager)(nil).GetTopStorers), limit)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopHosts", reflect.TypeOf((*MockTicketManager)(nil).GetTopHosts), limit)
 }
 
 // GetTopValidators mocks base method

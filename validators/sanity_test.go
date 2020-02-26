@@ -418,13 +418,13 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:value, msg:invalid number; must be numeric"))
 			})
 
-			It("has type of TxTypeStorerTicket and value is lower than minimum stake", func() {
-				params.MinStorerStake = decimal.NewFromFloat(20)
-				tx.Type = core.TxTypeStorerTicket
+			It("has type of TxTypeHostTicket and value is lower than minimum stake", func() {
+				params.MinHostStake = decimal.NewFromFloat(20)
+				tx.Type = core.TxTypeHostTicket
 				tx.Value = "10"
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, msg:value is lower than minimum storer stake"))
+				Expect(err.Error()).To(Equal("field:value, msg:value is lower than minimum host stake"))
 			})
 
 			It("has negative or zero value", func() {
@@ -482,23 +482,23 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
 
-			It("has type of TxTypeStorerTicket and BLS public key is unset", func() {
-				params.MinStorerStake = decimal.NewFromFloat(5)
+			It("has type of TxTypeHostTicket and BLS public key is unset", func() {
+				params.MinHostStake = decimal.NewFromFloat(5)
 				tx.Value = "10"
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.Type = core.TxTypeStorerTicket
+				tx.Type = core.TxTypeHostTicket
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:blsPubKey, msg:BLS public key is required"))
 			})
 
-			It("has type of TxTypeStorerTicket and BLS public key has invalid length", func() {
-				params.MinStorerStake = decimal.NewFromFloat(5)
+			It("has type of TxTypeHostTicket and BLS public key has invalid length", func() {
+				params.MinHostStake = decimal.NewFromFloat(5)
 				tx.Value = "10"
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				tx.Type = core.TxTypeStorerTicket
+				tx.Type = core.TxTypeHostTicket
 				tx.BLSPubKey = util.RandBytes(32)
 				err := validators.CheckTxTicketPurchase(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -524,7 +524,7 @@ var _ = Describe("TxValidator", func() {
 		var tx *core.TxTicketUnbond
 
 		BeforeEach(func() {
-			tx = core.NewBareTxTicketUnbond(core.TxTypeStorerTicket)
+			tx = core.NewBareTxTicketUnbond(core.TxTypeHostTicket)
 			tx.TicketHash = util.StrToBytes32("hash")
 			tx.Fee = "1"
 		})

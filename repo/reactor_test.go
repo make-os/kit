@@ -161,21 +161,21 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("unable to get top storers", func() {
+		When("unable to get top hosts", func() {
 			BeforeEach(func() {
 				params.PushOKQuorumSize = 1
 				var pushNote = &core.PushNote{RepoName: "repo1"}
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return(nil, fmt.Errorf("error"))
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(nil, fmt.Errorf("error"))
 				mgr.addPushNoteEndorsement(pushNote.ID().String(), &core.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to get top storers: error"))
+				Expect(err.Error()).To(Equal("failed to get top hosts: error"))
 			})
 		})
 
@@ -186,7 +186,7 @@ var _ = Describe("Reactor", func() {
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types3.SelectedTicket{}, nil)
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{}, nil)
 				pok := &core.PushOK{
 					Sig:          util.BytesToBytes64(util.RandBytes(5)),
 					SenderPubKey: util.BytesToBytes32(util.RandBytes(32)),
@@ -197,7 +197,7 @@ var _ = Describe("Reactor", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("endorsement[0]: ticket not found in top storers list"))
+				Expect(err.Error()).To(Equal("endorsement[0]: ticket not found in top hosts list"))
 			})
 		})
 
@@ -208,7 +208,7 @@ var _ = Describe("Reactor", func() {
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types3.SelectedTicket{
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{
 					&types3.SelectedTicket{
 						Ticket: &types3.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
@@ -237,7 +237,7 @@ var _ = Describe("Reactor", func() {
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types3.SelectedTicket{
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{
 					&types3.SelectedTicket{
 						Ticket: &types3.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
@@ -267,7 +267,7 @@ var _ = Describe("Reactor", func() {
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types3.SelectedTicket{
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{
 					&types3.SelectedTicket{
 						Ticket: &types3.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),

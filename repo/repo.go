@@ -367,8 +367,8 @@ func (r *Repo) GetCompressedObject(hash string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// GetStorer returns the storage engine of the repository
-func (r *Repo) GetStorer() storage.Storer {
+// GetHost returns the storage engine of the repository
+func (r *Repo) GetHost() storage.Storer {
 	return r.git.Storer
 }
 

@@ -452,7 +452,7 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("tx type is TxTypeStorerTicket and response code=0", func() {
+		When("tx type is TxTypeHostTicket and response code=0", func() {
 			BeforeEach(func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return nil
@@ -460,19 +460,19 @@ var _ = Describe("App", func() {
 			})
 
 			BeforeEach(func() {
-				tx := core.NewBaseTx(core.TxTypeStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewBaseTx(core.TxTypeHostTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
 				Expect(app.DeliverTx(req).Code).To(Equal(uint32(0)))
 			})
 
-			It("should return cache the storer ticket tx", func() {
-				Expect(app.unIdxStorerTickets).To(HaveLen(1))
+			It("should return cache the host ticket tx", func() {
+				Expect(app.unIdxHostTickets).To(HaveLen(1))
 			})
 		})
 
-		When("tx type is TxTypeUnbondStorerTicket and response code=0", func() {
+		When("tx type is TxTypeUnbondHostTicket and response code=0", func() {
 			BeforeEach(func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return nil
@@ -480,7 +480,7 @@ var _ = Describe("App", func() {
 			})
 
 			BeforeEach(func() {
-				tx := core.NewBaseTx(core.TxTypeUnbondStorerTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewBaseTx(core.TxTypeUnbondHostTicket, 0, sender.Addr(), sender, "10", "1", 1)
 				tx.(*core.TxTicketUnbond).TicketHash = util.StrToBytes32("tid")
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
@@ -488,8 +488,8 @@ var _ = Describe("App", func() {
 				Expect(app.DeliverTx(req).Code).To(Equal(uint32(0)))
 			})
 
-			It("should return cache the unbond storer ticket tx", func() {
-				Expect(app.unbondStorerReqs).To(HaveLen(1))
+			It("should return cache the unbond host ticket tx", func() {
+				Expect(app.unbondHostReqs).To(HaveLen(1))
 			})
 		})
 	})
@@ -617,14 +617,14 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("there is an unbond storer request; should attempt to update the ticket decay height", func() {
+		When("there is an unbond host request; should attempt to update the ticket decay height", func() {
 			appHash := []byte("app_hash")
 
 			BeforeEach(func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("app_hash")).Times(1)
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 				app.heightToSaveNewValidators = 100
-				app.unbondStorerReqs = append(app.unbondStorerReqs, util.StrToBytes32("ticket_hash"))
+				app.unbondHostReqs = append(app.unbondHostReqs, util.StrToBytes32("ticket_hash"))
 				mockLogic.TicketManager.EXPECT().UpdateDecayBy(util.StrToBytes32("ticket_hash"), uint64(app.curWorkingBlock.Height))
 				mockLogic.AtomicLogic.EXPECT().Commit().Return(nil)
 				app.logic = mockLogic.AtomicLogic
@@ -637,22 +637,22 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		When("there are un-indexed validator or storer tickets", func() {
+		When("there are un-indexed validator or host tickets", func() {
 
 			var valTicketInfo *ticketInfo
-			var storerTicketInfo *ticketInfo
-			var valTicketTx, storerTicketTx *core.TxTicketPurchase
+			var hostTicketInfo *ticketInfo
+			var valTicketTx, hostTicketTx *core.TxTicketPurchase
 
 			BeforeEach(func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("app_hash")).Times(1)
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 
 				valTicketTx = core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
-				storerTicketTx = core.NewBareTxTicketPurchase(core.TxTypeStorerTicket)
+				hostTicketTx = core.NewBareTxTicketPurchase(core.TxTypeHostTicket)
 				valTicketInfo = &ticketInfo{Tx: valTicketTx, index: 1}
-				storerTicketInfo = &ticketInfo{Tx: storerTicketTx, index: 2}
+				hostTicketInfo = &ticketInfo{Tx: hostTicketTx, index: 2}
 				app.unIdxValidatorTickets = append(app.unIdxValidatorTickets, valTicketInfo)
-				app.unIdxStorerTickets = append(app.unIdxStorerTickets, storerTicketInfo)
+				app.unIdxHostTickets = append(app.unIdxHostTickets, hostTicketInfo)
 
 				mockLogic.ValidatorKeeper.EXPECT().Index(gomock.Any(), gomock.Any()).Times(1)
 				mockLogic.AtomicLogic.EXPECT().Commit().Times(1)
@@ -663,7 +663,7 @@ var _ = Describe("App", func() {
 
 			It("should attempt to index all collected tickets", func() {
 				mockLogic.TicketManager.EXPECT().Index(valTicketInfo.Tx, uint64(0), valTicketInfo.index).Return(nil)
-				mockLogic.TicketManager.EXPECT().Index(storerTicketInfo.Tx, uint64(0), storerTicketInfo.index).Return(nil)
+				mockLogic.TicketManager.EXPECT().Index(hostTicketInfo.Tx, uint64(0), hostTicketInfo.index).Return(nil)
 				app.Commit()
 			})
 		})

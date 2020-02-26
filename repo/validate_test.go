@@ -1027,9 +1027,9 @@ var _ = Describe("Validation", func() {
 	})
 
 	Describe(".CheckPushOKConsistency", func() {
-		When("unable to fetch top storers", func() {
+		When("unable to fetch top hosts", func() {
 			BeforeEach(func() {
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return(nil, fmt.Errorf("error"))
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(nil, fmt.Errorf("error"))
 				err = CheckPushOKConsistency(&core.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: util.EmptyBytes32,
@@ -1038,14 +1038,14 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to get top storers: error"))
+				Expect(err.Error()).To(Equal("failed to get top hosts: error"))
 			})
 		})
 
-		When("sender is not a storer", func() {
+		When("sender is not a host", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types5.SelectedTicket{}, nil)
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types5.SelectedTicket{}, nil)
 				err = CheckPushOKConsistency(&core.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: key.PubKey().MustBytes32(),
@@ -1054,14 +1054,14 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, msg:sender public key does not belong to an active storer"))
+				Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, msg:sender public key does not belong to an active host"))
 			})
 		})
 
-		When("unable to decode storer's BLS public key", func() {
+		When("unable to decode host's BLS public key", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types5.SelectedTicket{
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types5.SelectedTicket{
 					&types5.SelectedTicket{
 						Ticket: &types5.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
@@ -1085,7 +1085,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
 				key2 := crypto.NewKeyFromIntSeed(2)
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types5.SelectedTicket{
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types5.SelectedTicket{
 					&types5.SelectedTicket{
 						Ticket: &types5.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
@@ -1109,7 +1109,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
 				key2 := crypto.NewKeyFromIntSeed(2)
-				mockTickMgr.EXPECT().GetTopStorers(gomock.Any()).Return([]*types5.SelectedTicket{
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types5.SelectedTicket{
 					&types5.SelectedTicket{
 						Ticket: &types5.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),

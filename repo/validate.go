@@ -653,17 +653,17 @@ func CheckPushOK(pushOK *core.PushOK, index int) error {
 	return nil
 }
 
-// CheckPushOKConsistencyUsingStorer performs consistency checks on the given PushOK object
+// CheckPushOKConsistencyUsingHost performs consistency checks on the given PushOK object
 // against the current state of the network.
 // EXPECT: Sanity check to have been performed using CheckPushOK
-func CheckPushOKConsistencyUsingStorer(storers tickettypes.SelectedTickets, pushOK *core.PushOK, logic core.Logic, noSigCheck bool, index int) error {
+func CheckPushOKConsistencyUsingHost(hosts tickettypes.SelectedTickets, pushOK *core.PushOK, logic core.Logic, noSigCheck bool, index int) error {
 
-	// Check if the sender is one of the top storers.
-	// Ensure that the signers of the PushOK are part of the storers
-	signerSelectedTicket := storers.Get(pushOK.SenderPubKey)
+	// Check if the sender is one of the top hosts.
+	// Ensure that the signers of the PushOK are part of the hosts
+	signerSelectedTicket := hosts.Get(pushOK.SenderPubKey)
 	if signerSelectedTicket == nil {
 		return feI(index, "endorsements.senderPubKey",
-			"sender public key does not belong to an active storer")
+			"sender public key does not belong to an active host")
 	}
 
 	// Ensure the signature can be verified using the BLS public key of the selected ticket
@@ -684,11 +684,11 @@ func CheckPushOKConsistencyUsingStorer(storers tickettypes.SelectedTickets, push
 // against the current state of the network.
 // EXPECT: Sanity check to have been performed using CheckPushOK
 func CheckPushOKConsistency(pushOK *core.PushOK, logic core.Logic, noSigCheck bool, index int) error {
-	storers, err := logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
+	hosts, err := logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
 	if err != nil {
-		return errors.Wrap(err, "failed to get top storers")
+		return errors.Wrap(err, "failed to get top hosts")
 	}
-	return CheckPushOKConsistencyUsingStorer(storers, pushOK, logic, noSigCheck, index)
+	return CheckPushOKConsistencyUsingHost(hosts, pushOK, logic, noSigCheck, index)
 }
 
 // checkPushOK performs sanity and state consistency checks on the given PushOK object

@@ -238,9 +238,9 @@ func CheckTxPushConsistency(
 		return errors.Wrap(err, "failed to get repo")
 	}
 
-	storers, err := logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
+	hosts, err := logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
 	if err != nil {
-		return errors.Wrap(err, "failed to get top storers")
+		return errors.Wrap(err, "failed to get top hosts")
 	}
 
 	pokPubKeys := []*bls.PublicKey{}
@@ -249,15 +249,15 @@ func CheckTxPushConsistency(
 		// Perform consistency checks but don't check the signature as we don't
 		// care about that when dealing with a TxPush object, instead we care
 		// about checking the aggregated BLS signature
-		if err := repo.CheckPushOKConsistencyUsingStorer(storers, pok,
+		if err := repo.CheckPushOKConsistencyUsingHost(hosts, pok,
 			logic, true, index); err != nil {
 			return err
 		}
 
 		// Get the BLS public key of the PushOK signer
-		signerTicket := storers.Get(pok.SenderPubKey)
+		signerTicket := hosts.Get(pok.SenderPubKey)
 		if signerTicket == nil {
-			return fmt.Errorf("push endorser not part of the top storers")
+			return fmt.Errorf("push endorser not part of the top hosts")
 		}
 		blsPubKey, err := bls.BytesToPublicKey(signerTicket.Ticket.BLSPubKey)
 		if err != nil {

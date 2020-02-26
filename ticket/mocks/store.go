@@ -10,31 +10,31 @@ import (
 	reflect "reflect"
 )
 
-// MockStorer is a mock of Storer interface
-type MockStorer struct {
+// MockHost is a mock of Host interface
+type MockHost struct {
 	ctrl     *gomock.Controller
-	recorder *MockStorerMockRecorder
+	recorder *MockHostMockRecorder
 }
 
-// MockStorerMockRecorder is the mock recorder for MockStorer
-type MockStorerMockRecorder struct {
-	mock *MockStorer
+// MockHostMockRecorder is the mock recorder for MockHost
+type MockHostMockRecorder struct {
+	mock *MockHost
 }
 
-// NewMockStorer creates a new mock instance
-func NewMockStorer(ctrl *gomock.Controller) *MockStorer {
-	mock := &MockStorer{ctrl: ctrl}
-	mock.recorder = &MockStorerMockRecorder{mock}
+// NewMockHost creates a new mock instance
+func NewMockHost(ctrl *gomock.Controller) *MockHost {
+	mock := &MockHost{ctrl: ctrl}
+	mock.recorder = &MockHostMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockStorer) EXPECT() *MockStorerMockRecorder {
+func (m *MockHost) EXPECT() *MockHostMockRecorder {
 	return m.recorder
 }
 
 // Add mocks base method
-func (m *MockStorer) Add(tickets ...*types2.Ticket) error {
+func (m *MockHost) Add(tickets ...*types2.Ticket) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range tickets {
@@ -46,13 +46,13 @@ func (m *MockStorer) Add(tickets ...*types2.Ticket) error {
 }
 
 // Add indicates an expected call of Add
-func (mr *MockStorerMockRecorder) Add(tickets ...interface{}) *gomock.Call {
+func (mr *MockHostMockRecorder) Add(tickets ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockStorer)(nil).Add), tickets...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockHost)(nil).Add), tickets...)
 }
 
 // GetByHash mocks base method
-func (m *MockStorer) GetByHash(hash string) *types2.Ticket {
+func (m *MockHost) GetByHash(hash string) *types2.Ticket {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByHash", hash)
 	ret0, _ := ret[0].(*types2.Ticket)
@@ -60,13 +60,13 @@ func (m *MockStorer) GetByHash(hash string) *types2.Ticket {
 }
 
 // GetByHash indicates an expected call of GetByHash
-func (mr *MockStorerMockRecorder) GetByHash(hash interface{}) *gomock.Call {
+func (mr *MockHostMockRecorder) GetByHash(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByHash", reflect.TypeOf((*MockStorer)(nil).GetByHash), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByHash", reflect.TypeOf((*MockHost)(nil).GetByHash), hash)
 }
 
 // RemoveByHash mocks base method
-func (m *MockStorer) RemoveByHash(hash string) error {
+func (m *MockHost) RemoveByHash(hash string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RemoveByHash", hash)
 	ret0, _ := ret[0].(error)
@@ -74,13 +74,13 @@ func (m *MockStorer) RemoveByHash(hash string) error {
 }
 
 // RemoveByHash indicates an expected call of RemoveByHash
-func (mr *MockStorerMockRecorder) RemoveByHash(hash interface{}) *gomock.Call {
+func (mr *MockHostMockRecorder) RemoveByHash(hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveByHash", reflect.TypeOf((*MockStorer)(nil).RemoveByHash), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveByHash", reflect.TypeOf((*MockHost)(nil).RemoveByHash), hash)
 }
 
 // QueryOne mocks base method
-func (m *MockStorer) QueryOne(predicate func(*types2.Ticket) bool) *types2.Ticket {
+func (m *MockHost) QueryOne(predicate func(*types2.Ticket) bool) *types2.Ticket {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "QueryOne", predicate)
 	ret0, _ := ret[0].(*types2.Ticket)
@@ -88,13 +88,13 @@ func (m *MockStorer) QueryOne(predicate func(*types2.Ticket) bool) *types2.Ticke
 }
 
 // QueryOne indicates an expected call of QueryOne
-func (mr *MockStorerMockRecorder) QueryOne(predicate interface{}) *gomock.Call {
+func (mr *MockHostMockRecorder) QueryOne(predicate interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryOne", reflect.TypeOf((*MockStorer)(nil).QueryOne), predicate)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueryOne", reflect.TypeOf((*MockHost)(nil).QueryOne), predicate)
 }
 
 // Query mocks base method
-func (m *MockStorer) Query(predicate func(*types2.Ticket) bool, queryOpt ...interface{}) []*types2.Ticket {
+func (m *MockHost) Query(predicate func(*types2.Ticket) bool, queryOpt ...interface{}) []*types2.Ticket {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{predicate}
 	for _, a := range queryOpt {
@@ -106,14 +106,14 @@ func (m *MockStorer) Query(predicate func(*types2.Ticket) bool, queryOpt ...inte
 }
 
 // Query indicates an expected call of Query
-func (mr *MockStorerMockRecorder) Query(predicate interface{}, queryOpt ...interface{}) *gomock.Call {
+func (mr *MockHostMockRecorder) Query(predicate interface{}, queryOpt ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{predicate}, queryOpt...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockStorer)(nil).Query), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockHost)(nil).Query), varargs...)
 }
 
 // Count mocks base method
-func (m *MockStorer) Count(predicate func(*types2.Ticket) bool) int {
+func (m *MockHost) Count(predicate func(*types2.Ticket) bool) int {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Count", predicate)
 	ret0, _ := ret[0].(int)
@@ -121,19 +121,19 @@ func (m *MockStorer) Count(predicate func(*types2.Ticket) bool) int {
 }
 
 // Count indicates an expected call of Count
-func (mr *MockStorerMockRecorder) Count(predicate interface{}) *gomock.Call {
+func (mr *MockHostMockRecorder) Count(predicate interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockStorer)(nil).Count), predicate)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Count", reflect.TypeOf((*MockHost)(nil).Count), predicate)
 }
 
 // UpdateOne mocks base method
-func (m *MockStorer) UpdateOne(upd types2.Ticket, queryPredicate func(*types2.Ticket) bool) {
+func (m *MockHost) UpdateOne(upd types2.Ticket, queryPredicate func(*types2.Ticket) bool) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "UpdateOne", upd, queryPredicate)
 }
 
 // UpdateOne indicates an expected call of UpdateOne
-func (mr *MockStorerMockRecorder) UpdateOne(upd, queryPredicate interface{}) *gomock.Call {
+func (mr *MockHostMockRecorder) UpdateOne(upd, queryPredicate interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockStorer)(nil).UpdateOne), upd, queryPredicate)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateOne", reflect.TypeOf((*MockHost)(nil).UpdateOne), upd, queryPredicate)
 }

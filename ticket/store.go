@@ -32,8 +32,8 @@ func MakeHashKey(hash []byte) []byte {
 	return bytes.Join([][]byte{tagBz, bzSep, hash}, nil)
 }
 
-// Storer describes the functions of a ticker store
-type Storer interface {
+// Host describes the functions of a ticker store
+type Host interface {
 
 	// Add adds one or more tickets to the store
 	Add(tickets ...*types2.Ticket) error
@@ -61,7 +61,7 @@ type Storer interface {
 	UpdateOne(upd types2.Ticket, queryPredicate func(*types2.Ticket) bool)
 }
 
-// Store implements Storer
+// Store implements Host
 type Store struct {
 	db       storage.Tx // The DB transaction
 	fromHead bool       // If true, the iterator iterates from the tail

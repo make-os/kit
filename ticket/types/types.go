@@ -70,15 +70,15 @@ type TicketManager interface {
 	// UpdateDecayBy updates the decay height of a ticket
 	UpdateDecayBy(hash util.Bytes32, newDecayHeight uint64) error
 
-	// GetTopStorers gets storer tickets with the most total delegated value.
-	GetTopStorers(limit int) (SelectedTickets, error)
+	// GetTopHosts gets host tickets with the most total delegated value.
+	GetTopHosts(limit int) (SelectedTickets, error)
 
 	// GetTopValidators gets validator tickets with the most total delegated value.
 	GetTopValidators(limit int) (SelectedTickets, error)
 
 	// ValueOfNonDelegatedTickets returns the sum of value of all
 	// non-delegated, non-decayed tickets which has the given public
-	// key as the proposer; Includes both validator and storer tickets.
+	// key as the proposer; Includes both validator and host tickets.
 	//
 	// pubKey: The public key of the proposer
 	// maturityHeight: if set to non-zero, only tickets that reached maturity before
@@ -87,7 +87,7 @@ type TicketManager interface {
 
 	// ValueOfDelegatedTickets returns the sum of value of all
 	// delegated, non-decayed tickets which has the given public
-	// key as the proposer; Includes both validator and storer tickets.
+	// key as the proposer; Includes both validator and host tickets.
 	//
 	// pubKey: The public key of the proposer
 	// maturityHeight: if set to non-zero, only tickets that reached maturity before
@@ -96,7 +96,7 @@ type TicketManager interface {
 
 	// ValueOfTickets returns the sum of value of all non-decayed
 	// tickets where the given public key is the proposer or delegator;
-	// Includes both validator and storer tickets.
+	// Includes both validator and host tickets.
 	//
 	// pubKey: The public key of the proposer
 	// maturityHeight: if set to non-zero, only tickets that reached maturity before
@@ -104,7 +104,7 @@ type TicketManager interface {
 	ValueOfTickets(pubKey util.Bytes32, maturityHeight uint64) (float64, error)
 
 	// ValueOfAllTickets returns the sum of value of all non-decayed
-	// tickets; Includes both validator and storer tickets.
+	// tickets; Includes both validator and host tickets.
 	//
 	// maturityHeight: if set to non-zero, only tickets that reached maturity before
 	// or on the given height are selected. Otherwise, the current chain height is used.

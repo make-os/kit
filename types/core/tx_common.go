@@ -19,8 +19,8 @@ var (
 	TxTypeCoinTransfer             = 0  // For native coin transfer to/between accounts
 	TxTypeValidatorTicket          = 1  // For validator ticket purchase
 	TxTypeSetDelegatorCommission   = 2  // For setting delegator commission
-	TxTypeStorerTicket             = 3  // For purchasing storer ticket
-	TxTypeUnbondStorerTicket       = 4  // For unbonding storer ticket
+	TxTypeHostTicket               = 3  // For purchasing host ticket
+	TxTypeUnbondHostTicket         = 4  // For unbonding host ticket
 	TxTypeRepoCreate               = 5  // For creating a repository
 	TxTypeAddGPGPubKey             = 6  // For adding a GPG public key
 	TxTypePush                     = 7  // For pushing updates to a repository
@@ -408,12 +408,12 @@ func getBareTxObject(txType int) (types.BaseTx, error) {
 		tx = NewBareTxCoinTransfer()
 	case TxTypeValidatorTicket:
 		tx = NewBareTxTicketPurchase(TxTypeValidatorTicket)
-	case TxTypeStorerTicket:
-		tx = NewBareTxTicketPurchase(TxTypeStorerTicket)
+	case TxTypeHostTicket:
+		tx = NewBareTxTicketPurchase(TxTypeHostTicket)
 	case TxTypeSetDelegatorCommission:
 		tx = NewBareTxSetDelegateCommission()
-	case TxTypeUnbondStorerTicket:
-		tx = NewBareTxTicketUnbond(TxTypeUnbondStorerTicket)
+	case TxTypeUnbondHostTicket:
+		tx = NewBareTxTicketUnbond(TxTypeUnbondHostTicket)
 	case TxTypeRepoCreate:
 		tx = NewBareTxRepoCreate()
 	case TxTypeAddGPGPubKey:
@@ -442,7 +442,7 @@ func getBareTxObject(txType int) (types.BaseTx, error) {
 }
 
 // NewBaseTx creates a new, signed transaction of a given type; Solely used in
-// tests. 
+// tests.
 func NewBaseTx(txType int,
 	nonce uint64,
 	to util.String,
@@ -461,15 +461,15 @@ func NewBaseTx(txType int,
 		tx := NewBareTxTicketPurchase(TxTypeValidatorTicket)
 		tx.SetValue(value)
 		baseTx = tx
-	case TxTypeStorerTicket:
-		tx := NewBareTxTicketPurchase(TxTypeStorerTicket)
+	case TxTypeHostTicket:
+		tx := NewBareTxTicketPurchase(TxTypeHostTicket)
 		tx.SetValue(value)
 		baseTx = tx
 	case TxTypeSetDelegatorCommission:
 		tx := NewBareTxSetDelegateCommission()
 		baseTx = tx
-	case TxTypeUnbondStorerTicket:
-		tx := NewBareTxTicketUnbond(TxTypeUnbondStorerTicket)
+	case TxTypeUnbondHostTicket:
+		tx := NewBareTxTicketUnbond(TxTypeUnbondHostTicket)
 		baseTx = tx
 	case TxTypeRepoCreate:
 		tx := NewBareTxRepoCreate()

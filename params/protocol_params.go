@@ -66,12 +66,12 @@ var (
 	// MinDelegatorCommission is the number of percentage delegators pay validators
 	MinDelegatorCommission = decimal.NewFromFloat(10)
 
-	// MinStorerStake is the minimum stake for a storer ticket
-	MinStorerStake = decimal.NewFromFloat(10)
+	// MinHostStake is the minimum stake for a host ticket
+	MinHostStake = decimal.NewFromFloat(10)
 
-	// NumBlocksInStorerThawPeriod is the number of blocks before a storer stake
+	// NumBlocksInHostThawPeriod is the number of blocks before a host stake
 	// is unbonded
-	NumBlocksInStorerThawPeriod = 10
+	NumBlocksInHostThawPeriod = 10
 
 	// ValidatorTicketPoolSize is the size of the ticket pool from which validator
 	// tickets are selected randomly
@@ -102,8 +102,8 @@ var (
 	// for approval
 	PushOKQuorumSize = 2
 
-	// NumTopStorersLimit is maximum the number of top storers
-	NumTopStorersLimit = 21
+	// NumTopHostsLimit is maximum the number of top hosts
+	NumTopHostsLimit = 21
 
 	// CostOfNamespace is the amount of native coin required to obtain a
 	// repo namespace

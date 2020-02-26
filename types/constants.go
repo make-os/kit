@@ -16,7 +16,7 @@ const (
 	NamespaceDHT       = "dht"
 	NamespaceUtil      = "util"
 	NamespaceTicket    = "ticket"
-	NamespaceStorer    = "storer"
+	NamespaceHost      = "host"
 )
 
 // ABCI related events

@@ -167,8 +167,8 @@ type BareRepo interface {
 	// GetCompressedObject compressed version of an object
 	GetCompressedObject(hash string) ([]byte, error)
 
-	// GetStorer returns the storage engine of the repository
-	GetStorer() storage.Storer
+	// GetHost returns the storage engine of the repository
+	GetHost() storage.Storer
 
 	// Prune prunes objects older than the given time
 	Prune(olderThan time.Time) error

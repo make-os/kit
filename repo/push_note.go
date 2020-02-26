@@ -20,7 +20,7 @@ import (
 func makePackfileFromPushNote(repo core.BareRepo, tx *core.PushNote) (io.ReadSeeker, error) {
 
 	var buf = bytes.NewBuffer(nil)
-	enc := packfile.NewEncoder(buf, repo.GetStorer(), true)
+	enc := packfile.NewEncoder(buf, repo.GetHost(), true)
 
 	var hashes []plumbing.Hash
 	for _, ref := range tx.References {

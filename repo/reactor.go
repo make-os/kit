@@ -217,24 +217,24 @@ func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
 }
 
 // BroadcastPushObjects broadcasts repo push notes and PushOK; PushOK is only
-// created and broadcast only if the node is a top storer.
+// created and broadcast only if the node is a top host.
 func (m *Manager) BroadcastPushObjects(pushNote core.RepoPushNote) error {
 
 	// Broadcast the push note to peers
 	m.broadcastPushNote(pushNote)
 
-	// Get the top storers
-	topStorers, err := m.logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
+	// Get the top hosts
+	topHosts, err := m.logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
 	if err != nil {
-		return errors.Wrap(err, "failed to get top storers")
+		return errors.Wrap(err, "failed to get top hosts")
 	}
 
-	// Exit with nil if node is not among the top storers
-	if !topStorers.Has(m.privValidatorKey.PubKey().MustBytes32()) {
+	// Exit with nil if node is not among the top hosts
+	if !topHosts.Has(m.privValidatorKey.PubKey().MustBytes32()) {
 		return nil
 	}
 
-	// At this point, the node is a top storer, so we create, sign and broadcast a PushOK
+	// At this point, the node is a top host, so we create, sign and broadcast a PushOK
 	pok, err := m.createPushOK(pushNote)
 	if err != nil {
 		return err
@@ -348,9 +348,9 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 		return fmt.Errorf("push note not found in pool")
 	}
 
-	storers, err := m.logic.GetTicketManager().GetTopStorers(params.NumTopStorersLimit)
+	hosts, err := m.logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
 	if err != nil {
-		return errors.Wrap(err, "failed to get top storers")
+		return errors.Wrap(err, "failed to get top hosts")
 	}
 
 	// Collect the BLS public keys of all PushOK senders.
@@ -359,9 +359,9 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 	pokPubKeys := []*bls.PublicKey{}
 	pokSigs := [][]byte{}
 	for i, pok := range pushOKs {
-		selTicket := storers.Get(pok.SenderPubKey)
+		selTicket := hosts.Get(pok.SenderPubKey)
 		if selTicket == nil {
-			return fmt.Errorf("endorsement[%d]: ticket not found in top storers list", i)
+			return fmt.Errorf("endorsement[%d]: ticket not found in top hosts list", i)
 		}
 
 		pk, err := bls.BytesToPublicKey(selTicket.Ticket.BLSPubKey)

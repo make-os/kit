@@ -13,7 +13,7 @@ import (
 // Various names for staking categories
 const (
 	StakeTypeValidator = "v"
-	StakeTypeStorer    = "s"
+	StakeTypeHost      = "s"
 )
 
 // BareAccount returns an empty account
