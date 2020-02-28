@@ -65,19 +65,17 @@ func (tx *TxType) Is(txType int) bool {
 func (tx *TxType) FromMap(data map[string]interface{}) (err error) {
 	o := objx.New(data)
 
-	// Type: expects int64 or string types in map
+	// Type: expects int, int64 or float64 types in map
 	if typeVal := o.Get("type"); !typeVal.IsNil() {
 		if typeVal.IsInt64() {
 			tx.Type = int(typeVal.Int64())
-		} else if typeVal.IsStr() {
-			var err error
-			tx.Type, err = strconv.Atoi(typeVal.Str())
-			if err != nil {
-				return util.FieldError("type", "must be numeric")
-			}
+		} else if typeVal.IsInt() {
+			tx.Type = int(typeVal.Int())
+		} else if typeVal.IsFloat64() {
+			tx.Type = int(typeVal.Float64())
 		} else {
 			return util.FieldError("type", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string|int", typeVal.Inter()))
+				"wants int", typeVal.Inter()))
 		}
 	}
 
@@ -113,12 +111,14 @@ func NewBareTxCommon() *TxCommon {
 func (tx *TxCommon) FromMap(data map[string]interface{}) (err error) {
 	o := objx.New(data)
 
-	// Timestamp: expects int, int64 or string types in map
+	// Timestamp: expects int, float64, int64 or string types in map
 	if tsVal := o.Get("timestamp"); !tsVal.IsNil() {
 		if tsVal.IsInt() {
 			tx.Timestamp = int64(tsVal.Int())
 		} else if tsVal.IsInt64() {
 			tx.Timestamp = tsVal.Int64()
+		} else if tsVal.IsFloat64() {
+			tx.Timestamp = int64(tsVal.Float64())
 		} else if tsVal.IsStr() {
 			tx.Timestamp, err = strconv.ParseInt(tsVal.Str(), 10, 64)
 			if err != nil {
@@ -377,11 +377,16 @@ func (tx *TxProposalCommon) FromMap(data map[string]interface{}) (err error) {
 
 // DecodeTxFromMap decodes a user-provided map to a transaction object.
 func DecodeTxFromMap(data map[string]interface{}) (types.BaseTx, error) {
-	txType := objx.New(data).Get("type").Int64(-1)
-	txObj, err := getBareTxObject(int(txType))
+	txType := &TxType{}
+	if err := txType.FromMap(data); err != nil {
+		return nil, err
+	}
+
+	txObj, err := getBareTxObject(txType.Type)
 	if err != nil {
 		return nil, err
 	}
+
 	return txObj, txObj.FromMap(data)
 }
 
