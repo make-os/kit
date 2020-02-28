@@ -11,7 +11,6 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/c-bata/go-prompt"
-	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -117,7 +116,7 @@ func (m *TxModule) sendCoin(params map[string]interface{}, options ...interface{
 
 	var tx = core.NewBareTxCoinTransfer()
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -127,7 +126,7 @@ func (m *TxModule) sendCoin(params map[string]interface{}, options ...interface{
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{
@@ -145,12 +144,15 @@ func (m *TxModule) Get(hash string) util.Map {
 	// decode the hash from hex to byte
 	bz, err := hex.DecodeString(hash)
 	if err != nil {
-		panic(errors.Wrap(err, "invalid transaction hash"))
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "hash", "invalid transaction hash"))
 	}
 
 	tx, err := m.logic.TxKeeper().GetTx(bz)
 	if err != nil {
-		panic(err)
+		if err == types.ErrTxNotFound {
+			panic(util.NewStatusError(404, StatusCodeTxNotFound, "hash", types.ErrTxNotFound.Error()))
+		}
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
 	return EncodeForJS(tx)
@@ -163,15 +165,15 @@ func (m *TxModule) Get(hash string) util.Map {
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TxModule) SendPayload(txData map[string]interface{}) util.Map {
-	tx, err := core.DecodeTxFromMap(txData)
+func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
+	tx, err := core.DecodeTxFromMap(params)
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{
