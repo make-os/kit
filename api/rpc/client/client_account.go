@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// GPGGetAccountOfOwner returns the account of the owner of a given gpg public key
-// Body:
+// AccountGet gets an account corresponding to a given address
+//
+// ARGS:
 // - address <string>: The address of an account
 // - [blockHeight] <string>: The target query block height (default: latest).
-// Response:
+//
+// RETURNS:
 // - resp <map> - state.Account
 func (c *RPCClient) AccountGet(address string, blockHeight ...uint64) (util.Map, error) {
 	acct, err := c.Call("user_get", util.Map{
@@ -27,10 +28,17 @@ func (c *RPCClient) AccountGet(address string, blockHeight ...uint64) (util.Map,
 
 // AccountGetNextNonceUsingRPCClient gets the next account nonce
 // of the owner of the gpg key by querying the given JSON-RPC 2.0 client.
+//
+// ARGS:
+// address: The address of the account
+// client: The RPCClient to use
+//
+// RETURNS:
+// nonce: The next nonce of the account
 func AccountGetNextNonceUsingRPCClient(address string, client *RPCClient) (string, error) {
 	acct, err := client.AccountGet(address)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to query account")
+		return "", err
 	}
 	nonceStr := acct["nonce"].(string)
 	nonce, _ := strconv.ParseUint(nonceStr, 10, 64)

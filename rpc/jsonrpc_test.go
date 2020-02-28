@@ -21,12 +21,13 @@ var _ = Describe("RPC", func() {
 	var cfg *config.AppConfig
 
 	BeforeEach(func() {
-		cfg = &config.AppConfig{}
+		cfg = &config.AppConfig{
+			RPC: &config.RPCConfig{},
+		}
 		rpc = New("", cfg, log)
 	})
 
 	Describe(".handle", func() {
-
 		It("should return 'Parse error' when json is invalid", func() {
 
 			data := []byte("{,}")
@@ -48,7 +49,6 @@ var _ = Describe("RPC", func() {
 		})
 
 		It("should return '`jsonrpc` value is required' when json rpc version is invalid", func() {
-
 			data, _ := json.Marshal(Request{})
 			req, _ := http.NewRequest("POST", "/rpc", bytes.NewReader(data))
 
@@ -68,11 +68,7 @@ var _ = Describe("RPC", func() {
 		})
 
 		It("should return Method not found' when json rpc method is unknown", func() {
-
-			data, _ := json.Marshal(Request{
-				JSONRPCVersion: "2.0",
-				Method:         "unknown",
-			})
+			data, _ := json.Marshal(Request{JSONRPCVersion: "2.0", Method: "unknown"})
 			req, _ := http.NewRequest("POST", "/rpc", bytes.NewReader(data))
 
 			rr := httptest.NewRecorder()
@@ -91,11 +87,7 @@ var _ = Describe("RPC", func() {
 		})
 
 		It("should return 'Method not found' when json rpc method is not provided", func() {
-
-			data, _ := json.Marshal(Request{
-				JSONRPCVersion: "2.0",
-				Method:         "",
-			})
+			data, _ := json.Marshal(Request{JSONRPCVersion: "2.0", Method: ""})
 			req, _ := http.NewRequest("POST", "/rpc", bytes.NewReader(data))
 
 			rr := httptest.NewRecorder()
@@ -114,7 +106,7 @@ var _ = Describe("RPC", func() {
 		})
 
 		It("should return 'Method not found' error", func() {
-			rpc.apiSet["add"] = rpc2.APIInfo{
+			rpc.apiSet["add"] = APIInfo{
 				Func: func(params interface{}) *Response {
 					m := params.(map[string]interface{})
 					return Success(m["x"].(float64) + m["y"].(float64))
@@ -149,7 +141,7 @@ var _ = Describe("RPC", func() {
 		Context("Successfully call method", func() {
 			When("ID is added to the request body", func() {
 				It("should return result", func() {
-					rpc.apiSet["add"] = rpc2.APIInfo{
+					rpc.apiSet["add"] = APIInfo{
 						Namespace: "math",
 						Func: func(params interface{}) *Response {
 							m := params.(map[string]interface{})
@@ -185,7 +177,7 @@ var _ = Describe("RPC", func() {
 
 			When("ID is not added to the request body", func() {
 				It("should not return result", func() {
-					rpc.apiSet["add"] = rpc2.APIInfo{
+					rpc.apiSet["add"] = APIInfo{
 						Namespace: "math",
 						Func: func(params interface{}) *Response {
 							m := params.(map[string]interface{})
@@ -227,7 +219,7 @@ var _ = Describe("RPC", func() {
 			BeforeEach(func() {
 				cfg.RPC.DisableAuth = false
 
-				rpc.apiSet["echo"] = rpc2.APIInfo{
+				rpc.apiSet["echo"] = APIInfo{
 					Private:   true,
 					Namespace: "test",
 					Func: func(params interface{}) *Response {
@@ -266,7 +258,7 @@ var _ = Describe("RPC", func() {
 				cfg.RPC.User = "correct_user"
 				cfg.RPC.Password = "correct_pass"
 
-				rpc.apiSet["echo"] = rpc2.APIInfo{
+				rpc.apiSet["echo"] = APIInfo{
 					Private:   true,
 					Namespace: "test",
 					Func: func(params interface{}) *Response {
@@ -306,7 +298,7 @@ var _ = Describe("RPC", func() {
 				cfg.RPC.User = "correct_user"
 				cfg.RPC.Password = "correct_pass"
 
-				rpc.apiSet["echo"] = rpc2.APIInfo{
+				rpc.apiSet["echo"] = APIInfo{
 					Private:   true,
 					Namespace: "test",
 					Func: func(params interface{}) *Response {
@@ -345,7 +337,7 @@ var _ = Describe("RPC", func() {
 				cfg.RPC.User = "correct_user"
 				cfg.RPC.Password = "correct_pass"
 
-				rpc.apiSet["echo"] = rpc2.APIInfo{
+				rpc.apiSet["echo"] = APIInfo{
 					Private:   false,
 					Namespace: "test",
 					Func: func(params interface{}) *Response {
@@ -386,7 +378,7 @@ var _ = Describe("RPC", func() {
 				cfg.RPC.User = "correct_user"
 				cfg.RPC.Password = "correct_pass"
 
-				rpc.apiSet["echo"] = rpc2.APIInfo{
+				rpc.apiSet["echo"] = APIInfo{
 					Private:   false,
 					Namespace: "test",
 					Func: func(params interface{}) *Response {
@@ -420,7 +412,7 @@ var _ = Describe("RPC", func() {
 	Describe(".AddAPI", func() {
 		Context("with no namespace provided", func() {
 			It("should add API", func() {
-				rpc.AddAPI("add", rpc2.APIInfo{
+				rpc.AddAPI("add", APIInfo{
 					Func: func(params interface{}) *Response {
 						m := params.(map[string]interface{})
 						return Success(m["x"].(float64) + m["y"].(float64))
@@ -433,7 +425,7 @@ var _ = Describe("RPC", func() {
 
 		Context("with a namespace provided", func() {
 			It("should add API", func() {
-				rpc.AddAPI("add", rpc2.APIInfo{
+				rpc.AddAPI("add", APIInfo{
 					Namespace: "math",
 					Func: func(params interface{}) *Response {
 						m := params.(map[string]interface{})
@@ -448,7 +440,7 @@ var _ = Describe("RPC", func() {
 
 	Describe(".AddAPI", func() {
 		It("should add API", func() {
-			apiSet1 := rpc2.APISet(map[string]rpc2.APIInfo{
+			apiSet1 := APISet(map[string]APIInfo{
 				"add": {
 					Func: func(params interface{}) *Response {
 						m := params.(map[string]interface{})
@@ -456,7 +448,7 @@ var _ = Describe("RPC", func() {
 					},
 				},
 			})
-			apiSet2 := rpc2.APISet(map[string]rpc2.APIInfo{
+			apiSet2 := APISet(map[string]APIInfo{
 				"add": {
 					Func: func(params interface{}) *Response {
 						m := params.(map[string]interface{})
@@ -477,7 +469,7 @@ var _ = Describe("RPC", func() {
 
 	Describe(".Methods", func() {
 		It("should return all methods name", func() {
-			apiSet1 := rpc2.APISet(map[string]rpc2.APIInfo{
+			apiSet1 := APISet(map[string]APIInfo{
 				"add": {
 					Namespace: "math",
 					Func: func(params interface{}) *Response {
@@ -486,7 +478,7 @@ var _ = Describe("RPC", func() {
 					},
 				},
 			})
-			apiSet2 := rpc2.APISet(map[string]rpc2.APIInfo{
+			apiSet2 := APISet(map[string]APIInfo{
 				"add": {
 					Namespace: "math",
 					Func: func(params interface{}) *Response {

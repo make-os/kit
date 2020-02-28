@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	prompt "github.com/c-bata/go-prompt"
-	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
@@ -129,7 +128,7 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 
 	var tx = core.NewBareTxRepoCreate()
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -139,7 +138,7 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{
@@ -163,14 +162,16 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 // options[0] key <string>: 			The signer's private key
 // options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
 //
-// RETURNS object <map>
-// object.hash <string>: 				The transaction hash
+// RETURNS <map>: 						When payloadOnly is false
+// hash <string>: 						The transaction hash
+//
+// RETURNS <core.TxRepoProposalUpsertOwner>: 	When payloadOnly is true, returns signed transaction object
 func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalUpsertOwner()
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -180,7 +181,7 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{
@@ -210,7 +211,7 @@ func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...in
 
 	var tx = core.NewBareRepoProposalVote()
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -220,7 +221,7 @@ func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...in
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{
@@ -243,7 +244,7 @@ func (m *RepoModule) prune(name string, force bool) {
 	m.repoMgr.GetPruner().Schedule(name)
 }
 
-// get finds and returns a repository
+// get finds and returns a repository. Panic if not found.
 //
 // ARGS:
 // name: The name of the repository
@@ -252,7 +253,7 @@ func (m *RepoModule) prune(name string, force bool) {
 // opts.height: Query a specific block
 // opts.noProps: When true, the result will not include proposals
 //
-// RETURNS <map|nil>
+// RETURNS <map>
 func (m *RepoModule) get(name string, opts ...map[string]interface{}) util.Map {
 	var targetHeight uint64
 	var noProposals bool
@@ -276,7 +277,7 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) util.Map {
 	}
 
 	if repo.IsNil() {
-		return nil
+		panic(util.NewStatusError(404, StatusCodeRepoNotFound, "name", types.ErrRepoNotFound.Error()))
 	}
 
 	return EncodeForJS(repo)
@@ -305,7 +306,7 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 
 	var tx = core.NewBareRepoProposalUpdate()
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -315,7 +316,7 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{
@@ -345,7 +346,7 @@ func (m *RepoModule) depositFee(params map[string]interface{}, options ...interf
 
 	var tx = core.NewBareRepoProposalFeeSend()
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -355,7 +356,7 @@ func (m *RepoModule) depositFee(params map[string]interface{}, options ...interf
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{
@@ -390,7 +391,7 @@ func (m *RepoModule) CreateMergeRequest(
 
 	var tx = core.NewBareRepoProposalMergeRequest()
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -400,7 +401,7 @@ func (m *RepoModule) CreateMergeRequest(
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{

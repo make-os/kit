@@ -10,12 +10,13 @@ import (
 	funk "github.com/thoas/go-funk"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 var (
-	// ErrAccountNotFound represents an error about a missing account
-	ErrAccountNotFound = fmt.Errorf("account not found")
+	// ErrAccountNotFound  = fmt.Errorf("account not found")
+	ErrInvalidPassprase = fmt.Errorf("invalid passphrase")
 )
 
 // StoredAccountMeta represents additional meta data of an account
@@ -73,7 +74,7 @@ func (am *AccountManager) GetDefault() (*StoredAccount, error) {
 	}
 
 	if len(accounts) == 0 {
-		return nil, ErrAccountNotFound
+		return nil, types.ErrAccountUnknown
 	}
 
 	for _, a := range accounts {
@@ -82,7 +83,7 @@ func (am *AccountManager) GetDefault() (*StoredAccount, error) {
 		}
 	}
 
-	return nil, ErrAccountNotFound
+	return nil, types.ErrAccountUnknown
 }
 
 // GetByIndex returns an account by its current position in the
@@ -95,7 +96,7 @@ func (am *AccountManager) GetByIndex(i int) (*StoredAccount, error) {
 	}
 
 	if acctLen := len(accounts); acctLen-1 < i {
-		return nil, ErrAccountNotFound
+		return nil, types.ErrAccountUnknown
 	}
 
 	return accounts[i], nil
@@ -110,7 +111,7 @@ func (am *AccountManager) GetByIndexOrAddress(idxOrAddr string) (*StoredAccount,
 		idx, _ := strconv.Atoi(idxOrAddr)
 		return am.GetByIndex(idx)
 	}
-	return nil, ErrAccountNotFound
+	return nil, types.ErrAccountUnknown
 }
 
 // GetByAddress gets an account by its address in the list of accounts.
@@ -126,7 +127,7 @@ func (am *AccountManager) GetByAddress(addr string) (*StoredAccount, error) {
 	})
 
 	if account == nil {
-		return nil, ErrAccountNotFound
+		return nil, types.ErrAccountUnknown
 	}
 
 	return account.(*StoredAccount), nil
@@ -162,7 +163,7 @@ func (sa *StoredAccount) Unlock(passphrase string) error {
 	acctBytes, err := util.Decrypt(sa.Cipher, passphraseBs[:])
 	if err != nil {
 		if funk.Contains(err.Error(), "invalid key") {
-			return fmt.Errorf("invalid passphrase")
+			return ErrInvalidPassprase
 		}
 		return err
 	}
@@ -171,7 +172,7 @@ func (sa *StoredAccount) Unlock(passphrase string) error {
 	// Decode from base58
 	acctData, _, err := base58.CheckDecode(string(acctBytes))
 	if err != nil {
-		return fmt.Errorf("invalid passphrase")
+		return ErrInvalidPassprase
 	}
 
 	// Decode from msgpack

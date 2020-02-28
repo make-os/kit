@@ -93,3 +93,12 @@ func (c *WrappedCommit) GetCommitter() *object.Signature {
 func (c *WrappedCommit) GetHash() plumbing.Hash {
 	return c.Hash
 }
+
+// MakeNoteSigMsg creates the message for note signature
+func MakeNoteSigMsg(txFee, nextNonce, gpgID, noteHash string, deleteRef bool) []byte {
+	return []byte(txFee +
+		nextNonce +
+		gpgID +
+		noteHash +
+		fmt.Sprintf("%v", deleteRef))
+}

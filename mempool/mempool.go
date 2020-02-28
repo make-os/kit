@@ -2,8 +2,9 @@ package mempool
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"sync"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"gitlab.com/makeos/mosdef/params"
 
@@ -78,7 +79,7 @@ func (mp *Mempool) CheckTx(tx types.Tx, callback func(*abci.Response)) error {
 // Add attempts to add a transaction to the pool
 func (mp *Mempool) Add(tx t.BaseTx) error {
 	var errCh = make(chan error, 1)
-	mp.CheckTx(tx.Bytes(), func(res *abci.Response) {
+	_ = mp.CheckTx(tx.Bytes(), func(res *abci.Response) {
 		if chkRes := res.GetCheckTx(); chkRes.Code != 0 {
 			errCh <- fmt.Errorf(chkRes.GetLog())
 			return

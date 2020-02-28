@@ -1,7 +1,6 @@
 package repo
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,18 +17,17 @@ func execGit(workDir string, arg ...string) []byte {
 	cmd.Env = GitEnv
 	bz, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(string(bz))
 		panic(err)
 	}
 	return bz
 }
 
 func appendToFile(path, file string, data string) {
-	script.Echo(data).AppendFile(filepath.Join(path, file))
+	_, _ = script.Echo(data).AppendFile(filepath.Join(path, file))
 }
 
 func writeToFile(path, file string, data string) {
-	script.Echo(data).WriteFile(filepath.Join(path, file))
+	_, _ = script.Echo(data).WriteFile(filepath.Join(path, file))
 }
 
 func execGitCommit(path, msg string) []byte {

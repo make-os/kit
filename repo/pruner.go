@@ -22,8 +22,8 @@ type Pruner struct {
 	tick       *time.Ticker
 }
 
-// newPruner creates an instance of pruner
-func newPruner(poolGetter core.PoolGetter, reposDir string) *Pruner {
+// NewPruner creates an instance of pruner
+func NewPruner(poolGetter core.PoolGetter, reposDir string) *Pruner {
 	p := &Pruner{
 		gmx:        &sync.Mutex{},
 		reposDir:   reposDir,

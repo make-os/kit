@@ -12,7 +12,6 @@ import (
 	r "math/rand"
 	"net/http"
 	"os"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -278,17 +277,17 @@ func GetPtrAddr(ptrAddr interface{}) *big.Int {
 // MapDecode decodes a map to a struct.
 // It uses mapstructure.Decode internally but
 // with 'json' TagName.
-func MapDecode(m interface{}, rawVal interface{}) error {
+func MapDecode(srcMap interface{}, dest interface{}) error {
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Metadata: nil,
-		Result:   rawVal,
+		Result:   dest,
 		TagName:  "json",
 	})
 	if err != nil {
 		return err
 	}
 
-	return decoder.Decode(m)
+	return decoder.Decode(srcMap)
 }
 
 // EncodeNumber serializes a number to BigEndian
@@ -601,39 +600,6 @@ func RESTApiHandler(method string, handler func(w http.ResponseWriter,
 		}
 		handler(w, r)
 	}
-}
-
-// CallOnNilErr calls f if err is nil
-func CallOnNilErr(err error, f func() error) error {
-	if err == nil {
-		err = f()
-	}
-	return err
-}
-
-// FieldError is used to describe an error concerning an objects field/property
-func FieldError(field, err string) error {
-	return fmt.Errorf(fmt.Sprintf("field:%s, msg:%s", field, err))
-}
-
-// FieldErrorWithIndex is used to describe an error concerning an field/property
-// of an object contained in list (array or slice).
-// If index is -1, it will revert to FieldError
-func FieldErrorWithIndex(index int, field, err string) error {
-	if index == -1 {
-		return FieldError(field, err)
-	}
-	var fieldArg = "field:%s, "
-	if field == "" {
-		fieldArg = "%s"
-	}
-	return fmt.Errorf(fmt.Sprintf("index:%d, "+fieldArg+"msg:%s", index, field, err))
-}
-
-// WrongFieldValueMsg generates a message to indicate an unexpected field value type
-func WrongFieldValueMsg(field, expectedType string, actual interface{}) error {
-	return FieldError(field, fmt.Sprintf("wrong value type, want '%s', got %T",
-		expectedType, reflect.TypeOf(actual).String()))
 }
 
 // AtUint64Slice gets an index from a uint64 variadic value.

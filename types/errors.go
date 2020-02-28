@@ -2,9 +2,6 @@ package types
 
 import "fmt"
 
-// RPC package error codes
-const ()
-
 // RPC error codes
 const (
 	// Account package error codes
@@ -16,32 +13,24 @@ const (
 	ErrCodeInvalidAuthCredentials = 40001
 
 	// Implementation error codes
-	RPCErrCodeInvalidParamType  = 60000
-	RPCErrCodeInvalidParamValue = 60001
-	RPCErrCodeUnexpected        = 60002
+	RPCErrCodeInvalidParamValue = 60000
+	RPCErrCodeUnexpected        = 60001
 )
 
-// Account package errors
+// General
 var (
-	// ErrAccountUnknown indicates an unknown/missing account
-	ErrAccountUnknown = fmt.Errorf("account not found")
-)
-
-// Crypto package errors
-var (
-	// ErrInvalidPrivKey indicates an invalid private key
-	ErrInvalidPrivKey = fmt.Errorf("private key is invalid")
+	ErrAccountUnknown   = fmt.Errorf("account not found")
+	ErrGPGPubKeyUnknown = fmt.Errorf("gpg public key not found")
+	ErrInvalidPrivKey   = fmt.Errorf("private key is invalid")
+	ErrRepoNotFound     = fmt.Errorf("repo not found")
+	ErrTxNotFound       = fmt.Errorf("transaction not found")
 )
 
 // Decode/Cast Error
 var (
 	// ErrArgDecode means a parameter could not be decoded
 	ErrArgDecode = func(castType string, index int) error {
-		return fmt.Errorf("Failed to decode argument.%d to %s", index, castType)
-	}
-	// ErrParamDecode means a parameter could not be decoded
-	ErrParamDecode = func(castType string) error {
-		return fmt.Errorf("Failed to decode parameter to %s", castType)
+		return fmt.Errorf("failed to decode argument.%d to %s", index, castType)
 	}
 )
 

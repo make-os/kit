@@ -112,7 +112,7 @@ func NewManager(
 
 	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
 	mgr.BaseReactor = *p2p.NewBaseReactor("Reactor", mgr)
-	mgr.pruner = newPruner(mgr, mgr.rootDir)
+	mgr.pruner = NewPruner(mgr, mgr.rootDir)
 
 	return mgr
 }

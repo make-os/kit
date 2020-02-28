@@ -33,7 +33,7 @@ var _ = Describe("PushHandler", func() {
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var pubKey, pubKey2 string
-	var gpgID, gpgID2 string
+	var gpgKeyID, gpgKeyID2 string
 	var repoName string
 	var mockMempool *mocks.MockMempool
 	var mockBlockGetter *mocks.MockBlockGetter
@@ -63,11 +63,11 @@ var _ = Describe("PushHandler", func() {
 		mockMgr.EXPECT().Log().Return(cfg.G().Log)
 		handler = newPushHandler(repo, mockMgr)
 
-		gpgID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		pubKey, err = crypto.GetGPGPublicKeyStr(gpgID, testutil.GPGProgramPath, cfg.DataDir())
+		gpgKeyID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
+		pubKey, err = crypto.GetGPGPublicKeyStr(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
 		Expect(err).To(BeNil())
-		gpgID2 = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		pubKey2, err = crypto.GetGPGPublicKeyStr(gpgID2, testutil.GPGProgramPath, cfg.DataDir())
+		gpgKeyID2 = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
+		pubKey2, err = crypto.GetGPGPublicKeyStr(gpgKeyID2, testutil.GPGProgramPath, cfg.DataDir())
 		Expect(err).To(BeNil())
 		GitEnv = append(GitEnv, "GNUPGHOME="+cfg.DataDir())
 	})
@@ -151,7 +151,7 @@ var _ = Describe("PushHandler", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgID)
+				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
 
 				newState := getRepoState(repo)
 				var packfile io.ReadSeeker
@@ -184,13 +184,13 @@ var _ = Describe("PushHandler", func() {
 					pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 					gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 					txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-					appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgID)
+					appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
 
 					createCheckoutBranch(path, "branch2")
 					pkEntity, _ = crypto.PGPEntityFromPubKey(pubKey2)
 					gpgID2 := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 					txParams = fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID2)
-					appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgID2)
+					appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID2)
 
 					newState := getRepoState(repo)
 					var packfile io.ReadSeeker

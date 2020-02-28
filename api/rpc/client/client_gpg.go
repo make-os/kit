@@ -8,10 +8,12 @@ import (
 )
 
 // GPGGetAccountOfOwner returns the account of the owner of a given gpg public key
-// Body:
-// - id <string>: The GPG key unique ID
-// - [blockHeight] <string>: The target query block height (default: latest).
-// Response:
+//
+// ARGS:
+// - id: The GPG public key unique ID
+// - [blockHeight]: The target block height to query (default: latest).
+//
+// RETURNS:
 // - resp <map> - state.Account
 func (c *RPCClient) GPGGetAccountOfOwner(id string, blockHeight ...uint64) (util.Map, error) {
 	out, err := c.Call("gpg_getAccountOfOwner", util.Map{"id": id,
@@ -24,6 +26,13 @@ func (c *RPCClient) GPGGetAccountOfOwner(id string, blockHeight ...uint64) (util
 
 // GPGGetNonceOfOwnerUsingRPCClient gets the next account nonce
 // of the owner of the gpg key by querying the given JSON-RPC 2.0 client.
+//
+// ARGS:
+// gpgID: The GPG public key ID
+// client: The RPCClient to use
+//
+// RETURNS
+// nonce: The next nonce of the account
 func GPGGetNonceOfOwnerUsingRPCClient(gpgID string, client *RPCClient) (string, error) {
 	out, err := client.GPGGetAccountOfOwner(gpgID)
 	if err != nil {

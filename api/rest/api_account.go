@@ -12,8 +12,8 @@ import (
 // QueryParams:
 // - address <string>: The address of the account
 // - [blockHeight] <string>: The target query block height (default: latest).
-// Response:
-// - resp <string> - The account nonce
+// Response <map>
+// - nonce <string> - The account nonce
 func (r *RESTApi) GetAccountNonce(w http.ResponseWriter, req *http.Request) {
 	var body = objx.New(map[string]interface{}{})
 	body.Set("address", req.URL.Query().Get("address"))

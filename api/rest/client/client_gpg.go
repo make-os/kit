@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/api/rest"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -42,7 +41,6 @@ func GPGGetNextNonceOfOwnerUsingClients(clients []*RESTClient, gpgID string) (st
 		var resp *AccountGetNonceResponse
 		resp, err = cl.GPGGetNonceOfOwner(gpgID)
 		if err != nil {
-			err = errors.Wrap(err, "failed to query nonce")
 			continue
 		}
 		nonce, _ := strconv.ParseUint(resp.Nonce, 10, 64)

@@ -125,7 +125,7 @@ var _ = Describe("App", func() {
 
 		When("an address exist and is valid but not reachable", func() {
 			It("should return error", func() {
-				addr := "/ip4/127.0.0.1/tcp/9003/p2p/12D3KooWFtwJ7hUhHGCSiJNNwANjfsrTzbTdBw9GdmLNZHwyMPcd"
+				addr := "/ip4/127.0.0.1/tcp/9111/p2p/12D3KooWFtwJ7hUhHGCSiJNNwANjfsrTzbTdBw9GdmLNZHwyMPcd"
 				cfg.DHT.BootstrapPeers = addr
 				err = dht.join()
 				Expect(err).ToNot(BeNil())

@@ -9,8 +9,6 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 
-	"github.com/pkg/errors"
-
 	"gitlab.com/makeos/mosdef/account"
 
 	prompt "github.com/c-bata/go-prompt"
@@ -135,7 +133,7 @@ func (m *AccountModule) Configure() []prompt.Suggest {
 func (m *AccountModule) ListLocalAccounts() []string {
 	accounts, err := m.acctMgr.ListAccounts()
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
 	var resp = []string{}
@@ -156,29 +154,32 @@ func (m *AccountModule) ListLocalAccounts() []string {
 func (m *AccountModule) GetKey(address string, passphrase ...string) string {
 	var pass string
 
-	if address == "undefined" {
-		panic(fmt.Errorf("address is required"))
+	if address == "" {
+		panic(util.NewStatusError(400, StatusCodeAddressRequire, "address", "address is required"))
 	}
 
 	// Find the address
 	acct, err := m.acctMgr.GetByAddress(address)
 	if err != nil {
-		panic(err)
+		if err != apptypes.ErrAccountUnknown {
+			panic(util.NewStatusError(500, StatusCodeAppErr, "address", err.Error()))
+		}
+		panic(util.NewStatusError(404, StatusCodeAccountNotFound, "address", err.Error()))
 	}
 
 	// If passphrase is not set, start interactive mode
 	if len(passphrase) == 0 {
-		pass, err = m.acctMgr.AskForPasswordOnce()
-		if err != nil {
-			panic(err)
-		}
+		pass = m.acctMgr.AskForPasswordOnce()
 	} else {
 		pass = passphrase[0]
 	}
 
 	// Unlock the account using the passphrase
 	if err := acct.Unlock(pass); err != nil {
-		panic(errors.Wrap(err, "failed to unlock account with the provided passphrase"))
+		if err == account.ErrInvalidPassprase {
+			panic(util.NewStatusError(401, StatusCodeInvalidPass, "passphrase", err.Error()))
+		}
+		panic(util.NewStatusError(500, StatusCodeAppErr, "passphrase", err.Error()))
 	}
 
 	return acct.GetKey().PrivKey().Base58()
@@ -194,29 +195,32 @@ func (m *AccountModule) GetKey(address string, passphrase ...string) string {
 func (m *AccountModule) GetPublicKey(address string, passphrase ...string) string {
 	var pass string
 
-	if address == "undefined" {
-		panic(fmt.Errorf("address is required"))
+	if address == "" {
+		panic(util.NewStatusError(400, StatusCodeAddressRequire, "address", "address is required"))
 	}
 
 	// Find the address
 	acct, err := m.acctMgr.GetByAddress(address)
 	if err != nil {
-		panic(err)
+		if err == apptypes.ErrAccountUnknown {
+			panic(util.NewStatusError(404, StatusCodeAccountNotFound, "address", err.Error()))
+		}
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
 	// If passphrase is not set, start interactive mode
 	if len(passphrase) == 0 {
-		pass, err = m.acctMgr.AskForPasswordOnce()
-		if err != nil {
-			panic(err)
-		}
+		pass = m.acctMgr.AskForPasswordOnce()
 	} else {
 		pass = passphrase[0]
 	}
 
 	// Unlock the account using the passphrase
 	if err := acct.Unlock(pass); err != nil {
-		panic(errors.Wrap(err, "failed to unlock account with the provided passphrase"))
+		if err == account.ErrInvalidPassprase {
+			panic(util.NewStatusError(401, StatusCodeInvalidPass, "passphrase", err.Error()))
+		}
+		panic(util.NewStatusError(500, StatusCodeAppErr, "passphrase", err.Error()))
 	}
 
 	return acct.GetKey().PubKey().Base58()
@@ -225,43 +229,47 @@ func (m *AccountModule) GetPublicKey(address string, passphrase ...string) strin
 // GetNonce returns the current nonce of a network account
 // address: The address corresponding the account
 // [passphrase]: The target block height to query (default: latest)
+// [height]: The target block height to query (default: latest)
 func (m *AccountModule) GetNonce(address string, height ...uint64) string {
-	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
-	if account.IsNil() {
-		panic(apptypes.ErrAccountUnknown)
+	acct := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
+	if acct.IsNil() {
+		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
+			"address", apptypes.ErrAccountUnknown.Error()))
 	}
-	return fmt.Sprintf("%d", account.Nonce)
+	return fmt.Sprintf("%d", acct.Nonce)
 }
 
 // GetAccount returns the account of the given address
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
 func (m *AccountModule) GetAccount(address string, height ...uint64) interface{} {
-	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
-	if account.IsNil() {
-		panic(apptypes.ErrAccountUnknown)
+	acct := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
+	if acct.IsNil() {
+		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
+			"address", apptypes.ErrAccountUnknown.Error()))
 	}
-	if len(account.Stakes) == 0 {
-		account.Stakes = nil
+	if len(acct.Stakes) == 0 {
+		acct.Stakes = nil
 	}
-	return EncodeForJS(account)
+	return EncodeForJS(acct)
 }
 
 // GetSpendableBalance returns the spendable balance of an account
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
 func (m *AccountModule) GetSpendableBalance(address string, height ...uint64) string {
-	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
-	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
-		panic(apptypes.ErrAccountUnknown)
+	acct := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
+	if acct.IsNil() {
+		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
+			"address", apptypes.ErrAccountUnknown.Error()))
 	}
 
 	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(errors.Wrap(err, "failed to get current block info"))
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	return account.GetSpendableBalance(uint64(curBlockInfo.Height)).String()
+	return acct.GetSpendableBalance(uint64(curBlockInfo.Height)).String()
 }
 
 // getStakedBalance returns the total staked coins of an account
@@ -269,18 +277,21 @@ func (m *AccountModule) GetSpendableBalance(address string, height ...uint64) st
 // ARGS:
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
+//
+// RETURNS <string>: numeric value
 func (m *AccountModule) GetStakedBalance(address string, height ...uint64) string {
-	account := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
-	if account.Balance.String() == "0" && account.Nonce == uint64(0) {
-		panic(apptypes.ErrAccountUnknown)
+	acct := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
+	if acct.IsNil() {
+		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
+			"address", apptypes.ErrAccountUnknown.Error()))
 	}
 
 	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(errors.Wrap(err, "failed to get current block info"))
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	return account.Stakes.TotalStaked(uint64(curBlockInfo.Height)).String()
+	return acct.Stakes.TotalStaked(uint64(curBlockInfo.Height)).String()
 }
 
 // getPrivateValidator returns the address, public and private keys of the validator.
@@ -289,9 +300,9 @@ func (m *AccountModule) GetStakedBalance(address string, height ...uint64) strin
 // includePrivKey: Indicates that the private key of the validator should be included in the result
 //
 // RETURNS object <map>:
-// object.publicKey <string> -	The validator base58 public key
-// object.address 	<string> -	The validator's bech32 address.
-// object.tmAddress <string> -	The tendermint address
+// publicKey <string> -	The validator base58 public key
+// address 	<string> -	The validator's bech32 address.
+// tmAddress <string> -	The tendermint address
 func (m *AccountModule) GetPrivateValidator(includePrivKey ...bool) interface{} {
 	key, _ := m.cfg.G().PrivVal.GetKey()
 
@@ -328,7 +339,7 @@ func (m *AccountModule) SetCommission(params map[string]interface{},
 
 	var tx = core.NewBareTxSetDelegateCommission()
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -338,7 +349,7 @@ func (m *AccountModule) SetCommission(params map[string]interface{},
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{

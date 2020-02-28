@@ -74,8 +74,7 @@ var _ = Describe("AccountMgr", func() {
 		It("should return the first input received", func() {
 			count := 0
 			am.getPassword = testPrompt2(&count, []string{"", "", "passAb"})
-			password, err := am.AskForPasswordOnce()
-			Expect(err).To(BeNil())
+			password := am.AskForPasswordOnce()
 			Expect(password).To(Equal("passAb"))
 		})
 	})

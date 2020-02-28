@@ -17,7 +17,7 @@ var (
 	accountEncryptionVersion = "0.0.1"
 )
 
-// PasswordPrompt reprents a function that can collect user input
+// PasswordPrompt represents a function that can collect user input
 type PasswordPrompt func(string, ...interface{}) string
 
 // AccountManager defines functionalities to create,
@@ -60,7 +60,7 @@ func (am *AccountManager) AskForPassword() (string, error) {
 
 // AskForPasswordOnce is like askForPassword but it does not
 // ask to confirm password.
-func (am *AccountManager) AskForPasswordOnce() (string, error) {
+func (am *AccountManager) AskForPasswordOnce() string {
 	fmt.Println(color.CyanString("Enter passphrase to unlock the account"))
 	for {
 		passphrase := am.getPassword("Passphrase")
@@ -68,7 +68,7 @@ func (am *AccountManager) AskForPasswordOnce() (string, error) {
 			continue
 		}
 
-		return passphrase, nil
+		return passphrase
 	}
 }
 

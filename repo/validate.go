@@ -181,12 +181,9 @@ func checkNote(
 	}
 
 	// Now, verify the signature
-	msg := []byte(
-		txParams.Fee.String() +
-			txParams.GetNonceString() +
-			txParams.PubKeyID +
-			noteHash +
-			fmt.Sprintf("%v", txParams.DeleteRef))
+	// TODO: use MakeNoteSigMsg
+	msg := []byte(txParams.Fee.String() + txParams.GetNonceString() + txParams.PubKeyID + noteHash +
+		fmt.Sprintf("%v", txParams.DeleteRef))
 	_, err = crypto.VerifyGPGSignature(pubKey, []byte(txParams.Signature), msg)
 	if err != nil {
 		msg := "note (%s) signature verification failed: %s"

@@ -3,11 +3,12 @@ package dht
 import (
 	"context"
 	"fmt"
-	"gitlab.com/makeos/mosdef/dht/types"
 	"io/ioutil"
 	"net"
 	"strings"
 	"time"
+
+	"gitlab.com/makeos/mosdef/dht/types"
 
 	"github.com/ipfs/go-cid"
 	badger "github.com/ipfs/go-ds-badger"

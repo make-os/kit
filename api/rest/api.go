@@ -51,7 +51,7 @@ const (
 func (r *RESTApi) RegisterEndpoints(s *http.ServeMux) {
 	s.HandleFunc(V1Path(types.NamespaceUser, MethodNameGetNonce), r.get(r.GetAccountNonce))
 	s.HandleFunc(V1Path(types.NamespaceUser, MethodNameGetAccount), r.get(r.GetAccount))
-	s.HandleFunc(V1Path(types.NamespaceTx, MethodNameSendPayload), r.post(r.SendTx))
+	s.HandleFunc(V1Path(types.NamespaceTx, MethodNameSendPayload), r.post(r.TxSendPayload))
 	s.HandleFunc(V1Path(types.NamespaceGPG, MethodNameOwnerNonce), r.get(r.GPGGetOwnerNonce))
 	s.HandleFunc(V1Path(types.NamespaceGPG, MethodNameGPGFind), r.get(r.GPGFind))
 }

@@ -13,8 +13,8 @@ type GPGAPI struct {
 }
 
 // NewGPGAPI creates an instance of GPGAPI
-func NewGPGAPI(mod *modules.Modules) *GPGAPI {
-	return &GPGAPI{mods: mod}
+func NewGPGAPI(mods *modules.Modules) *GPGAPI {
+	return &GPGAPI{mods: mods}
 }
 
 // find finds and returns a GPG public key by its key ID

@@ -3,7 +3,6 @@ package modules
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
@@ -110,13 +109,13 @@ func (m *GPGModule) Configure() []prompt.Suggest {
 //
 // RETURNS object <map>:
 // object.hash <string>: The transaction hash
-func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{}) interface{} {
+func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	// Decode parameters into a transaction object
 	var tx = core.NewBareTxAddGPGPubKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -127,7 +126,7 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 	// Process the transaction
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{
@@ -151,7 +150,7 @@ func (m *GPGModule) Find(id string, blockHeight ...uint64) *state.GPGPubKey {
 
 	o := m.logic.GPGPubKeyKeeper().GetGPGPubKey(id, targetHeight)
 	if o.IsNil() {
-		panic(fmt.Errorf("gpg public key not found"))
+		panic(util.NewStatusError(404, StatusCodeGPGPubKeyNotFound, "", types.ErrGPGPubKeyUnknown.Error()))
 	}
 
 	return o
@@ -184,7 +183,7 @@ func (m *GPGModule) GetAccountOfOwner(gpgID string, blockHeight ...uint64) *stat
 
 	acct := m.logic.AccountKeeper().GetAccount(gpgKey.Address, targetHeight)
 	if acct.IsNil() {
-		panic(types.ErrAccountUnknown)
+		panic(util.NewStatusError(404, StatusCodeAccountNotFound, "gpgID", types.ErrAccountUnknown.Error()))
 	}
 
 	return acct

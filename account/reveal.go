@@ -60,7 +60,7 @@ func (am *AccountManager) RevealCmd(addrOrIdx, pass string) error {
 
 	// if no password or password file is provided, ask for password
 	if len(pass) == 0 {
-		passphrase, err = am.AskForPasswordOnce()
+		passphrase = am.AskForPasswordOnce()
 		if err != nil {
 			return err
 		}

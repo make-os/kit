@@ -1,14 +1,14 @@
-package cmd
+package repo
 
 import (
 	"crypto/rsa"
 	"fmt"
 	"path"
-	"strconv"
 	"strings"
+	"time"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/k0kubun/pp"
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/account"
 	"gitlab.com/makeos/mosdef/api"
@@ -16,7 +16,6 @@ import (
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
-	repo2 "gitlab.com/makeos/mosdef/repo"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -32,7 +31,7 @@ import (
 // If rpcClient is set, the transaction nonce of the signing account is fetched
 // from the rpc server.
 func SignCommitCmd(
-	repo core.BareRepo,
+	targetRepo core.BareRepo,
 	txFee,
 	nextNonce,
 	signingKey string,
@@ -50,14 +49,14 @@ func SignCommitCmd(
 
 	// Get the signing key id from the git config if not passed as an argument
 	if signingKey == "" {
-		signingKey = repo.GetConfig("user.signingKey")
+		signingKey = targetRepo.GetConfig("user.signingKey")
 	}
 	if signingKey == "" {
 		return errors.New("signing key was not set or provided")
 	}
 
 	// Get the public key of the signing key
-	pkEntity, err := crypto.GetGPGPublicKey(signingKey, repo.GetConfig("gpg.program"), "")
+	pkEntity, err := crypto.GetGPGPublicKey(signingKey, targetRepo.GetConfig("gpg.program"), "")
 	if err != nil {
 		return errors.Wrap(err, "failed to get gpg public key")
 	}
@@ -66,7 +65,7 @@ func SignCommitCmd(
 	gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
 	// Get the next nonce, if not set
-	if nextNonce == "" {
+	if util.IsZeroString(nextNonce) {
 		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(gpgID, rpcClient, remoteClients)
 		if err != nil {
 			return err
@@ -88,7 +87,7 @@ func SignCommitCmd(
 
 	// Create a new commit if recent commit amendment is not required
 	if !amendRecent {
-		if err := repo.MakeSignableCommit(string(txParams), signingKey); err != nil {
+		if err := targetRepo.MakeSignableCommit(string(txParams), signingKey); err != nil {
 			return err
 		}
 		return nil
@@ -96,21 +95,21 @@ func SignCommitCmd(
 
 	// Otherwise, amend the recent commit.
 	// Get recent commit hash of the current branch.
-	hash, err := repo.GetRecentCommit()
+	hash, err := targetRepo.GetRecentCommit()
 	if err != nil {
-		if err == repo2.ErrNoCommits {
+		if err == ErrNoCommits {
 			return errors.New("no commits have been created yet")
 		}
 		return err
 	}
 
 	// Remove any existing txparams and append the new one
-	commit, _ := repo.CommitObject(plumbing.NewHash(hash))
+	commit, _ := targetRepo.CommitObject(plumbing.NewHash(hash))
 	msg := util.RemoveTxParams(commit.Message)
 	msg += "\n\n" + txParams
 
 	// Update the recent commit message
-	if err = repo.UpdateRecentCommitMsg(msg, signingKey); err != nil {
+	if err = targetRepo.UpdateRecentCommitMsg(msg, signingKey); err != nil {
 		return err
 	}
 
@@ -123,7 +122,7 @@ func SignCommitCmd(
 // from the rpc server.
 func SignTagCmd(
 	args []string,
-	repo core.BareRepo,
+	targetRepo core.BareRepo,
 	txFee,
 	nextNonce,
 	signingKey string,
@@ -139,7 +138,7 @@ func SignTagCmd(
 	}
 	// Get the signing key id from the git config if not passed via app -u flag
 	if signingKey == "" {
-		signingKey = repo.GetConfig("user.signingKey")
+		signingKey = targetRepo.GetConfig("user.signingKey")
 	}
 	// Return error if we still don't have a signing key
 	if signingKey == "" {
@@ -158,7 +157,7 @@ func SignTagCmd(
 	args = util.RemoveFlagVal(args, []string{"m", "message", "u"})
 
 	// Get the public key of the signing key
-	pkEntity, err := crypto.GetGPGPublicKey(signingKey, repo.GetConfig("gpg.program"), "")
+	pkEntity, err := crypto.GetGPGPublicKey(signingKey, targetRepo.GetConfig("gpg.program"), "")
 	if err != nil {
 		return errors.Wrap(err, "failed to get gpg public key")
 	}
@@ -167,7 +166,7 @@ func SignTagCmd(
 	gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
 	// Get the next nonce, if not set
-	if nextNonce == "" {
+	if util.IsZeroString(nextNonce) {
 		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(gpgID, rpcClient, remoteClients)
 		if err != nil {
 			return err
@@ -187,7 +186,7 @@ func SignTagCmd(
 
 	// Create the tag
 	msg += "\n\n" + txParams
-	if err = repo.CreateTagWithMsg(args, msg, signingKey); err != nil {
+	if err = targetRepo.CreateTagWithMsg(args, msg, signingKey); err != nil {
 		return err
 	}
 
@@ -198,7 +197,7 @@ func SignTagCmd(
 // If rpcClient is set, the transaction nonce of the signing account is fetched
 // from the rpc server.
 func SignNoteCmd(
-	repo core.BareRepo,
+	targetRepo core.BareRepo,
 	txFee,
 	nextNonce,
 	signingKey,
@@ -209,7 +208,7 @@ func SignNoteCmd(
 
 	// Get the signing key id from the git config if not provided via -s flag
 	if signingKey == "" {
-		signingKey = repo.GetConfig("user.signingKey")
+		signingKey = targetRepo.GetConfig("user.signingKey")
 	}
 	// Return error if we still don't have a signing key
 	if signingKey == "" {
@@ -222,7 +221,7 @@ func SignNoteCmd(
 	}
 
 	// Find a list of all notes entries in the note
-	noteEntries, err := repo.ListTreeObjects(note, false)
+	noteEntries, err := targetRepo.ListTreeObjects(note, false)
 	if err != nil {
 		msg := fmt.Sprintf("unable to fetch note entries for tree object (%s)", note)
 		return errors.Wrap(err, msg)
@@ -231,7 +230,7 @@ func SignNoteCmd(
 	// From the entries, find existing tx blob and stop after the first one
 	var lastTxBlob *object.Blob
 	for hash := range noteEntries {
-		obj, err := repo.BlobObject(plumbing.NewHash(hash))
+		obj, err := targetRepo.BlobObject(plumbing.NewHash(hash))
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("failed to read object (%s)", hash))
 		}
@@ -240,7 +239,7 @@ func SignNoteCmd(
 			return err
 		}
 		prefix := make([]byte, 3)
-		r.Read(prefix)
+		_, _ = r.Read(prefix)
 		if string(prefix) == util.TxParamsPrefix {
 			lastTxBlob = obj
 			break
@@ -249,7 +248,7 @@ func SignNoteCmd(
 
 	// Remove the last tx blob from the note, if present
 	if lastTxBlob != nil {
-		err = repo.RemoveEntryFromNote(note, noteEntries[lastTxBlob.Hash.String()])
+		err = targetRepo.RemoveEntryFromNote(note, noteEntries[lastTxBlob.Hash.String()])
 		if err != nil {
 			return errors.Wrap(err, "failed to delete existing transaction blob")
 		}
@@ -257,14 +256,14 @@ func SignNoteCmd(
 
 	// Get the commit hash the note is currently referencing.
 	// We need to add this hash to the signature.
-	noteRef, err := repo.Reference(plumbing.ReferenceName(note), true)
+	noteRef, err := targetRepo.Reference(plumbing.ReferenceName(note), true)
 	if err != nil {
 		return errors.Wrap(err, "failed to get note reference")
 	}
 	noteHash := noteRef.Hash().String()
 
 	// Get the public key of the signing key
-	pkEntity, err := crypto.GetGPGPrivateKey(signingKey, repo.GetConfig("gpg.program"), "")
+	pkEntity, err := crypto.GetGPGPrivateKey(signingKey, targetRepo.GetConfig("gpg.program"), "")
 	if err != nil {
 		return errors.Wrap(err, "failed to get gpg public key")
 	}
@@ -273,7 +272,7 @@ func SignNoteCmd(
 	gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
 	// Get the next nonce, if not set
-	if nextNonce == "" {
+	if util.IsZeroString(nextNonce) {
 		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(gpgID, rpcClient, remoteClients)
 		if err != nil {
 			return err
@@ -281,12 +280,7 @@ func SignNoteCmd(
 	}
 
 	// Sign a message composed of the tx information
-	// fee + nonce + public key id + note hash
-	sigMsg := []byte(txFee +
-		nextNonce +
-		gpgID +
-		noteHash +
-		fmt.Sprintf("%v", deleteRefAction))
+	sigMsg := MakeNoteSigMsg(txFee, nextNonce, gpgID, noteHash, deleteRefAction)
 	sig, err := crypto.GPGSign(pkEntity, sigMsg)
 	if err != nil {
 		return errors.Wrap(err, "failed to sign transaction parameters")
@@ -304,13 +298,13 @@ func SignNoteCmd(
 	}
 
 	// Create a blob with 0 byte content which be the subject of our note.
-	blobHash, err := repo.CreateBlob("")
+	blobHash, err := targetRepo.CreateBlob("")
 	if err != nil {
 		return err
 	}
 
 	// Next we add the tx blob to the note
-	if err = repo.AddEntryToNote(note, blobHash, txParams); err != nil {
+	if err = targetRepo.AddEntryToNote(note, blobHash, txParams); err != nil {
 		return errors.Wrap(err, "failed to add tx blob")
 	}
 
@@ -324,48 +318,70 @@ func SignNoteCmd(
 // passphrase: Passphrase of account
 func CreateAndSendMergeRequestCmd(
 	cfg *config.AppConfig,
-	addrOrIdx,
+	accountAddrOrIdx,
 	passphrase,
+	repoName,
+	proposalID,
 	baseBranch,
 	baseHash,
 	targetBranch,
 	targetHash,
 	fee,
-	nonce string,
+	nextNonce string,
 	rpcClient *client.RPCClient,
 	remoteClients []*restclient.RESTClient) error {
 
 	// Get the signer account
 	am := account.New(path.Join(cfg.DataDir(), config.AccountDirName))
-	unlocked, err := am.UIUnlockAccount(addrOrIdx, passphrase)
+	unlocked, err := am.UIUnlockAccount(accountAddrOrIdx, passphrase)
 	if err != nil {
 		return errors.Wrap(err, "unable to unlock")
 	}
 
-	// Create the merge request transaction
-	tx := core.NewBareRepoProposalMergeRequest()
-	tx.Fee = util.String(fee)
-	tx.SenderPubKey = util.StrToPublicKey(unlocked.GetKey().PubKey().Base58())
-	tx.BaseBranch = baseBranch
-	tx.BaseBranchHash = baseHash
-	tx.TargetBranch = targetBranch
-	tx.TargetBranchHash = targetHash
-
 	// Determine the next nonce, if unset from flag
-	if nonce == "" {
-		nonce, err = api.DetermineNextNonceOfAccount(unlocked.Address, rpcClient, remoteClients)
+	if util.IsZeroString(nextNonce) {
+		nextNonce, err = api.DetermineNextNonceOfAccount(unlocked.Address, rpcClient, remoteClients)
 		if err != nil {
 			return err
 		}
 	}
 
-	nonceUInt, err := strconv.ParseUint(nonce, 10, 64)
+	// Create the merge request transaction
+	data := map[string]interface{}{
+		"name":         repoName,
+		"id":           proposalID,
+		"type":         core.TxTypeRepoProposalMergeRequest,
+		"fee":          fee,
+		"senderPubKey": unlocked.GetKey().PubKey().Base58(),
+		"nonce":        nextNonce,
+		"base":         baseBranch,
+		"baseHash":     baseHash,
+		"target":       targetBranch,
+		"targetHash":   targetHash,
+		"timestamp":    time.Now().Unix(),
+	}
+
+	// Attempt to load the transaction from map to its native object.
+	// If we successfully create its native object, we are sure that the server will
+	// be able to do it without error. Also use the object `Sign` method to create
+	// a signature and set it on the map
+	o := core.NewBareRepoProposalMergeRequest()
+	if err := o.FromMap(data); err != nil {
+		return errors.Wrap(err, "invalid transaction data")
+	}
+	sig, err := o.Sign(unlocked.GetKey().PrivKey().Base58())
+	if err != nil {
+		return errors.Wrap(err, "failed to sign transaction")
+	}
+	data["sig"] = util.ToHex(sig)
+
+	txHash, err := api.SendTxPayload(data, rpcClient, remoteClients)
 	if err != nil {
 		return err
 	}
-	tx.SetNonce(nonceUInt)
 
-	pp.Println(tx)
+	fmt.Println(color.GreenString("Success! Merge proposal sent."))
+	fmt.Println("Hash:", txHash)
 
 	return nil
 }

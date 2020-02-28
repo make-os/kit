@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/types"
 )
 
 var _ = Describe("Read", func() {
@@ -81,7 +82,7 @@ var _ = Describe("Read", func() {
 			It("should return ErrAccountNotFound if no address was found", func() {
 				account, err := am.GetDefault()
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(ErrAccountNotFound))
+				Expect(err).To(Equal(types.ErrAccountUnknown))
 				Expect(account).To(BeNil())
 			})
 		})
@@ -117,7 +118,7 @@ var _ = Describe("Read", func() {
 			It("should return err = 'account not found' when no account is found", func() {
 				_, err := am.GetByIndex(2)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(ErrAccountNotFound))
+				Expect(err).To(Equal(types.ErrAccountUnknown))
 			})
 		})
 
@@ -143,7 +144,7 @@ var _ = Describe("Read", func() {
 			It("should return err = 'account not found' when address does not exist", func() {
 				_, err := am.GetByAddress("unknown_address")
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(ErrAccountNotFound))
+				Expect(err).To(Equal(types.ErrAccountUnknown))
 			})
 		})
 
@@ -199,7 +200,7 @@ var _ = Describe("Read", func() {
 			It("should return err = 'invalid passphrase' when password is invalid", func() {
 				err := account.Unlock("invalid")
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("invalid passphrase"))
+				Expect(err).To(Equal(ErrInvalidPassprase))
 			})
 
 			It("should return nil when decryption is successful. account.address must not be nil.", func() {

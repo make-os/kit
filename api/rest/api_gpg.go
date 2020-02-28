@@ -10,8 +10,7 @@ import (
 // GPGFind gets the GPG key associated with the given ID
 // QueryParams:
 // - id: The gpg key bech32 unique ID
-// Response
-// - state.GPGPubKey
+// Response <map> - state.GPGPubKey
 func (r *RESTApi) GPGFind(w http.ResponseWriter, req *http.Request) {
 	id := req.URL.Query().Get("id")
 	gpgKey := r.Modules().GPG.Find(id)
@@ -21,7 +20,7 @@ func (r *RESTApi) GPGFind(w http.ResponseWriter, req *http.Request) {
 // GPGGetNonceOfOwner gets the account nonce of the gpg key owner
 // QueryParams:
 // - id: The gpg key bech32 unique ID
-// Response
+// Response <map>
 // - nonce <string> The key owner account nonce
 func (r *RESTApi) GPGGetOwnerNonce(w http.ResponseWriter, req *http.Request) {
 	id := req.URL.Query().Get("id")

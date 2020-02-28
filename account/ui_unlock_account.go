@@ -27,7 +27,7 @@ func (am *AccountManager) UIUnlockAccount(addressOrIndex, passphrase string) (*S
 
 	// Ask for passphrase is not provided
 	if passphrase == "" {
-		passphrase, err = am.AskForPasswordOnce()
+		passphrase = am.AskForPasswordOnce()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read passphrase")
 		}

@@ -39,7 +39,7 @@ var _ = Describe("Pruner", func() {
 		Expect(err).To(BeNil())
 
 		mgr = mocks.NewMockPoolGetter(ctrl)
-		pruner = newPruner(mgr, cfg.GetRepoRoot())
+		pruner = NewPruner(mgr, cfg.GetRepoRoot())
 		go pruner.Start()
 	})
 

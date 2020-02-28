@@ -120,14 +120,13 @@ func (c *RPCClient) Call(method string, params interface{}) (interface{}, error)
 	c.c.Timeout = Timeout
 	resp, err := c.c.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to call method: %s", err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("request unsuccessful: Status code: %d. Body: %s",
-			resp.StatusCode, string(body))
+		return nil, fmt.Errorf("%s", string(body))
 	}
 
 	var m interface{}

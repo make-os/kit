@@ -3,6 +3,7 @@ package modules
 import (
 	"context"
 	"fmt"
+
 	"gitlab.com/makeos/mosdef/config"
 	types2 "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/types"
@@ -104,7 +105,7 @@ func (m *DHTModule) Configure() []prompt.Suggest {
 // val: The data to be stored
 func (m *DHTModule) store(key string, val string) {
 	if err := m.dht.Store(context.Background(), key, []byte(val)); err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
 	}
 }
 
@@ -117,7 +118,7 @@ func (m *DHTModule) store(key string, val string) {
 func (m *DHTModule) lookup(key string) interface{} {
 	bz, err := m.dht.Lookup(context.Background(), key)
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
 	}
 	return bz
 }
@@ -127,7 +128,9 @@ func (m *DHTModule) lookup(key string) interface{} {
 // ARGS:
 // - key: The data query key
 func (m *DHTModule) announce(key string) {
-	m.dht.Announce(context.Background(), []byte(key))
+	if err := m.dht.Announce(context.Background(), []byte(key)); err != nil {
+		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
+	}
 }
 
 // getProviders returns the providers for a given key
@@ -141,7 +144,7 @@ func (m *DHTModule) announce(key string) {
 func (m *DHTModule) getProviders(key string) (res []map[string]interface{}) {
 	peers, err := m.dht.GetProviders(context.Background(), []byte(key))
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
 	}
 	for _, p := range peers {
 		address := []string{}
@@ -166,7 +169,7 @@ func (m *DHTModule) getRepoObject(objURI string) []byte {
 		ObjectKey: []byte(objURI),
 	})
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
 	return bz

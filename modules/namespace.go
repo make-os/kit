@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	prompt "github.com/c-bata/go-prompt"
-	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
@@ -114,7 +113,7 @@ func (m *NamespaceModule) lookup(name string, height ...uint64) interface{} {
 
 	curBlockInfo, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
 	if ns.GraceEndAt <= uint64(curBlockInfo.Height) {
@@ -144,7 +143,7 @@ func (m *NamespaceModule) getTarget(path string, height ...uint64) string {
 
 	target, err := m.logic.NamespaceKeeper().GetTarget(path, targetHeight)
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
 	return target
@@ -176,7 +175,7 @@ func (m *NamespaceModule) register(
 
 	var tx = core.NewBareTxNamespaceAcquire()
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	// Hash the name
@@ -189,7 +188,7 @@ func (m *NamespaceModule) register(
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{
@@ -220,7 +219,7 @@ func (m *NamespaceModule) updateDomain(
 
 	var tx = core.NewBareTxNamespaceDomainUpdate()
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	// Hash the name
@@ -233,7 +232,7 @@ func (m *NamespaceModule) updateDomain(
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{

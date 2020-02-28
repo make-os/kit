@@ -5,7 +5,6 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/crypto"
@@ -157,7 +156,7 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 
 	var tx = core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -168,7 +167,7 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 	// Process the transaction
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{
@@ -197,7 +196,7 @@ func (m *TicketModule) hostBuy(params map[string]interface{}, options ...interfa
 
 	var tx = core.NewBareTxTicketPurchase(core.TxTypeHostTicket)
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	// Derive BLS public key
@@ -213,7 +212,7 @@ func (m *TicketModule) hostBuy(params map[string]interface{}, options ...interfa
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{
@@ -240,9 +239,9 @@ func (m *TicketModule) listValidatorTicketsOfProposer(
 	var qopts tickettypes.QueryOptions
 
 	if len(queryOpts) > 0 {
-		qoMap := queryOpts[0]
 		// If the user didn't set 'decay' and 'nonDecayed' filters, we set the
 		// default of `nonDecayed` to true to return only non-decayed tickets
+		qoMap := queryOpts[0]
 		if qoMap["nonDecayed"] == nil && qoMap["decayed"] == nil {
 			qopts.NonDecayedOnly = true
 		}
@@ -256,12 +255,12 @@ func (m *TicketModule) listValidatorTicketsOfProposer(
 
 	pk, err := crypto.PubKeyFromBase58(proposerPubKey)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to decode proposer public key"))
+		panic(util.NewStatusError(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 	}
 
 	res, err := m.ticketmgr.GetByProposer(core.TxTypeValidatorTicket, pk.MustBytes32(), qopts)
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
 	return EncodeManyForJS(res)
@@ -292,12 +291,12 @@ func (m *TicketModule) listHostTicketsOfProposer(
 
 	pk, err := crypto.PubKeyFromBase58(proposerPubKey)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to decode proposer public key"))
+		panic(util.NewStatusError(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 	}
 
 	res, err := m.ticketmgr.GetByProposer(core.TxTypeHostTicket, pk.MustBytes32(), qopts)
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
 	return EncodeManyForJS(res)
@@ -314,7 +313,7 @@ func (m *TicketModule) listTopValidators(limit ...int) interface{} {
 	}
 	tickets, err := m.ticketmgr.GetTopValidators(n)
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 	return EncodeManyForJS(tickets)
 }
@@ -330,7 +329,7 @@ func (m *TicketModule) listTopHosts(limit ...int) interface{} {
 	}
 	tickets, err := m.ticketmgr.GetTopHosts(n)
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 	return EncodeManyForJS(tickets)
 }
@@ -354,17 +353,17 @@ func (m *TicketModule) ticketStats(proposerPubKey ...string) (result util.Map) {
 	if len(proposerPubKey) > 0 {
 		pk, err := crypto.PubKeyFromBase58(proposerPubKey[0])
 		if err != nil {
-			panic(errors.Wrap(err, "failed to decode proposer public key"))
+			panic(util.NewStatusError(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 		}
 
 		valNonDel, err = m.ticketmgr.ValueOfNonDelegatedTickets(pk.MustBytes32(), 0)
 		if err != nil {
-			panic(err)
+			panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 		}
 
 		valDel, err = m.ticketmgr.ValueOfDelegatedTickets(pk.MustBytes32(), 0)
 		if err != nil {
-			panic(err)
+			panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 		}
 
 		res["valueOfNonDelegated"] = valNonDel
@@ -375,7 +374,7 @@ func (m *TicketModule) ticketStats(proposerPubKey ...string) (result util.Map) {
 
 	valAll, err := m.ticketmgr.ValueOfAllTickets(0)
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 	res["valueOfAll"] = valAll
 
@@ -420,7 +419,7 @@ func (m *TicketModule) unbondHostTicket(params map[string]interface{},
 
 	var tx = core.NewBareTxTicketUnbond(core.TxTypeUnbondHostTicket)
 	if err = tx.FromMap(params); err != nil {
-		panic(err)
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -430,7 +429,7 @@ func (m *TicketModule) unbondHostTicket(params map[string]interface{},
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to send transaction"))
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
 	return EncodeForJS(map[string]interface{}{

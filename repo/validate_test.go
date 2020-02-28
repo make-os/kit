@@ -36,7 +36,7 @@ var _ = Describe("Validation", func() {
 	var cfg *config.AppConfig
 	var repo core.BareRepo
 	var path string
-	var gpgID string
+	var gpgKeyID string
 	var pubKey string
 	var privKey *openpgp.Entity
 	var privKey2 *openpgp.Entity
@@ -69,11 +69,11 @@ var _ = Describe("Validation", func() {
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
-		gpgID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		gpgID2 := testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		pubKey, err = crypto.GetGPGPublicKeyStr(gpgID, testutil.GPGProgramPath, cfg.DataDir())
-		privKey, err = crypto.GetGPGPrivateKey(gpgID, testutil.GPGProgramPath, cfg.DataDir())
-		privKey2, err = crypto.GetGPGPrivateKey(gpgID2, testutil.GPGProgramPath, cfg.DataDir())
+		gpgKeyID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
+		gpgKeyID2 := testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
+		pubKey, err = crypto.GetGPGPublicKeyStr(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
+		privKey, err = crypto.GetGPGPrivateKey(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
+		privKey2, err = crypto.GetGPGPrivateKey(gpgKeyID2, testutil.GPGProgramPath, cfg.DataDir())
 		Expect(err).To(BeNil())
 
 		GitEnv = append(GitEnv, "GNUPGHOME="+cfg.DataDir())
@@ -192,7 +192,7 @@ var _ = Describe("Validation", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgID)
+				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
@@ -295,7 +295,7 @@ var _ = Describe("Validation", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-				createCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgID)
+				createCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
@@ -312,7 +312,7 @@ var _ = Describe("Validation", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-				createMakeSignableCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgID)
+				createMakeSignableCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
@@ -394,7 +394,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
 				commitHash := getRecentCommitHash(path, "refs/notes/note1")
-				msg := []byte("0" + "0" + "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd" + commitHash)
+				msg := MakeNoteSigMsg("0", "0", "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd", commitHash, false)
 				sig, err = crypto.GPGSign(privKey2, msg)
 				Expect(err).To(BeNil())
 				sigHex := hex.EncodeToString(sig)
@@ -432,7 +432,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
 				commitHash := getRecentCommitHash(path, "refs/notes/note1")
-				msg := []byte("0" + "0" + "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd" + commitHash)
+				msg := MakeNoteSigMsg("0", "0", "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd", commitHash, false)
 				sig, err = crypto.GPGSign(privKey, msg)
 				Expect(err).To(BeNil())
 				sigHex := hex.EncodeToString(sig)
@@ -955,7 +955,7 @@ var _ = Describe("Validation", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgID)
+				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 
@@ -976,7 +976,7 @@ var _ = Describe("Validation", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-				createMakeSignableCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgID)
+				createMakeSignableCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 
@@ -996,7 +996,7 @@ var _ = Describe("Validation", func() {
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
 				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-				createMakeSignableCommitAndLightWeightTag(path, "file.txt", "first file", txParams, "v1", gpgID)
+				createMakeSignableCommitAndLightWeightTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
 				tagRef, _ := repo.Tag("v1")
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tagRef.Target().String()}}
@@ -1062,7 +1062,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types5.SelectedTicket{
-					&types5.SelectedTicket{
+					{
 						Ticket: &types5.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      util.RandBytes(128),
@@ -1086,7 +1086,7 @@ var _ = Describe("Validation", func() {
 				key := crypto.NewKeyFromIntSeed(1)
 				key2 := crypto.NewKeyFromIntSeed(2)
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types5.SelectedTicket{
-					&types5.SelectedTicket{
+					{
 						Ticket: &types5.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      key2.PrivKey().BLSKey().Public().Bytes(),
@@ -1110,7 +1110,7 @@ var _ = Describe("Validation", func() {
 				key := crypto.NewKeyFromIntSeed(1)
 				key2 := crypto.NewKeyFromIntSeed(2)
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types5.SelectedTicket{
-					&types5.SelectedTicket{
+					{
 						Ticket: &types5.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      key2.PrivKey().BLSKey().Public().Bytes(),
@@ -1136,45 +1136,31 @@ var _ = Describe("Validation", func() {
 		okTx.NodeSig = bz
 
 		var cases = [][]interface{}{
-			{&core.PushNote{}, fmt.Errorf("field:repoName, msg:repo name is required")},
-			{&core.PushNote{RepoName: "repo"}, fmt.Errorf("field:pusherKeyId, msg:pusher gpg key id is required")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: []byte("xyz")}, fmt.Errorf("field:pusherKeyId, msg:pusher gpg key is not valid")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 0}, fmt.Errorf("field:timestamp, msg:timestamp is required")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 2000000000}, fmt.Errorf("field:timestamp, msg:timestamp cannot be a future time")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, fmt.Errorf("field:accountNonce, msg:account nonce must be greater than zero")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: ""}, fmt.Errorf("field:fee, msg:fee is required")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "one"}, fmt.Errorf("field:fee, msg:fee must be numeric")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1"}, fmt.Errorf("field:nodePubKey, msg:push node public key is required")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32()}, fmt.Errorf("field:nodeSig, msg:push node signature is required")},
-			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid signature")}, fmt.Errorf("field:nodeSig, msg:failed to verify signature")},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
-				&core.PushedReference{},
-			}}, fmt.Errorf("index:0, field:references.name, msg:name is required")},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
-				&core.PushedReference{Name: "ref1"},
-			}}, fmt.Errorf("index:0, field:references.oldHash, msg:old hash is required")},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
-				&core.PushedReference{Name: "ref1", OldHash: "invalid"},
-			}}, fmt.Errorf("index:0, field:references.oldHash, msg:old hash is not valid")},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
-				&core.PushedReference{Name: "ref1", OldHash: util.RandString(40)},
-			}}, fmt.Errorf("index:0, field:references.newHash, msg:new hash is required")},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
-				&core.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: "invalid"},
-			}}, fmt.Errorf("index:0, field:references.newHash, msg:new hash is not valid")},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
-				&core.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40)},
-			}}, fmt.Errorf("index:0, field:references.nonce, msg:reference nonce must be greater than zero")},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{
-				&core.PushedReference{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Objects: []string{"invalid object"}},
-			}}, fmt.Errorf("index:0, field:references.objects.0, msg:object hash is not valid")},
+			{&core.PushNote{}, "field:repoName, msg:repo name is required"},
+			{&core.PushNote{RepoName: "repo"}, "field:pusherKeyId, msg:pusher gpg key id is required"},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: []byte("xyz")}, "field:pusherKeyId, msg:pusher gpg key is not valid"},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 0}, "field:timestamp, msg:timestamp is required"},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: 2000000000}, "field:timestamp, msg:timestamp cannot be a future time"},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, "field:accountNonce, msg:account nonce must be greater than zero"},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: ""}, "field:fee, msg:fee is required"},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "one"}, "field:fee, msg:fee must be numeric"},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1"}, "field:nodePubKey, msg:push node public key is required"},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32()}, "field:nodeSig, msg:push node signature is required"},
+			{&core.PushNote{RepoName: "repo", PusherKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), AccountNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid signature")}, "field:nodeSig, msg:failed to verify signature"},
+			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{}}}, "index:0, field:references.name, msg:name is required"},
+			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1"}}}, "index:0, field:references.oldHash, msg:old hash is required"},
+			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: "invalid"}}}, "index:0, field:references.oldHash, msg:old hash is not valid"},
+			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40)}}}, "index:0, field:references.newHash, msg:new hash is required"},
+			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: "invalid"}}}, "index:0, field:references.newHash, msg:new hash is not valid"},
+			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40)}}}, "index:0, field:references.nonce, msg:reference nonce must be greater than zero"},
+			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Objects: []string{"invalid object"}}}}, "index:0, field:references.objects.0, msg:object hash is not valid"},
 		}
 
 		It("should check cases", func() {
 			for _, c := range cases {
 				_c := c
 				if _c[1] != nil {
-					Expect(CheckPushNoteSyntax(_c[0].(*core.PushNote))).To(Equal(_c[1]))
+					Expect(CheckPushNoteSyntax(_c[0].(*core.PushNote)).Error()).To(Equal(_c[1]))
 				} else {
 					Expect(CheckPushNoteSyntax(_c[0].(*core.PushNote))).To(BeNil())
 				}
@@ -1648,7 +1634,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				pn := &core.PushNote{PusherKeyID: util.MustDecodeRSAPubKeyID("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")}
 				txParamss := map[string]*util.TxParams{
-					"refs/heads/master": &util.TxParams{PubKeyID: util.MustToRSAPubKeyID(util.RandBytes(20))},
+					"refs/heads/master": {PubKeyID: util.MustToRSAPubKeyID(util.RandBytes(20))},
 				}
 				err = checkPushNoteAgainstTxParamss(pn, txParamss)
 			})
@@ -1664,7 +1650,7 @@ var _ = Describe("Validation", func() {
 				gpgID := util.RandBytes(20)
 				pn := &core.PushNote{PusherKeyID: gpgID, Fee: "9"}
 				txParamss := map[string]*util.TxParams{
-					"refs/heads/master": &util.TxParams{
+					"refs/heads/master": {
 						PubKeyID: util.MustToRSAPubKeyID(gpgID),
 						Fee:      "10",
 					},
@@ -1689,7 +1675,7 @@ var _ = Describe("Validation", func() {
 					},
 				}
 				txParamss := map[string]*util.TxParams{
-					"refs/heads/master": &util.TxParams{
+					"refs/heads/master": {
 						PubKeyID: util.MustToRSAPubKeyID(gpgID),
 						Fee:      "10",
 					},

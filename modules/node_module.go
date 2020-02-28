@@ -15,8 +15,6 @@ import (
 
 	"gitlab.com/makeos/mosdef/util"
 
-	"github.com/pkg/errors"
-
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 )
@@ -97,22 +95,22 @@ func (m *ChainModule) getBlock(height string) util.Map {
 
 	blockHeight, err = strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(types.ErrArgDecode("Int64", 0))
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "height", "value is invalid"))
 	}
 
 	res, err := m.service.GetBlock(blockHeight)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to get block"))
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
 	return EncodeForJS(res)
 }
 
 // getCurrentHeight returns the current block height
-func (m *ChainModule) getCurrentHeight() interface{} {
+func (m *ChainModule) getCurrentHeight() util.Map {
 	bi, err := m.keepers.SysKeeper().GetLastBlockInfo()
 	if err != nil {
-		panic(errors.Wrap(err, "failed to get current block height"))
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 	return EncodeForJS(map[string]interface{}{
 		"height": fmt.Sprintf("%d", bi.Height),
@@ -127,12 +125,12 @@ func (m *ChainModule) getBlockInfo(height string) util.Map {
 
 	blockHeight, err = strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(types.ErrArgDecode("Int64", 0))
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "height", "value is invalid"))
 	}
 
 	res, err := m.keepers.SysKeeper().GetBlockInfo(blockHeight)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to get block info"))
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
 	return EncodeForJS(res)
@@ -155,12 +153,12 @@ func (m *ChainModule) getValidators(height string) (res []util.Map) {
 
 	blockHeight, err = strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(types.ErrArgDecode("Int64", 0))
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "height", "value is invalid"))
 	}
 
 	validators, err := m.keepers.ValidatorKeeper().GetByHeight(blockHeight)
 	if err != nil {
-		panic(err)
+		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
 	var vList = []util.Map{}
