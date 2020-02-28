@@ -1,15 +1,11 @@
 package keepers
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 )
-
-// ErrTxNotFound means a tx was not found
-var ErrTxNotFound = fmt.Errorf("transaction not found")
 
 // TxKeeper manages transaction data
 type TxKeeper struct {
@@ -38,7 +34,7 @@ func (tk *TxKeeper) GetTx(hash []byte) (types.BaseTx, error) {
 		if err != storage.ErrRecordNotFound {
 			return nil, errors.Wrap(err, "failed to get tx")
 		}
-		return nil, ErrTxNotFound
+		return nil, types.ErrTxNotFound
 	}
 	return core.DecodeTx(rec.Value)
 }
