@@ -2,8 +2,10 @@ package keepers
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"os"
+
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 
 	storagemocks "gitlab.com/makeos/mosdef/storage/mocks"
 
@@ -106,7 +108,7 @@ var _ = Describe("TxKeeper", func() {
 			It("should return tx", func() {
 				_, err := txKeeper.GetTx([]byte("unknown"))
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(ErrTxNotFound))
+				Expect(err).To(Equal(types.ErrTxNotFound))
 			})
 		})
 	})
