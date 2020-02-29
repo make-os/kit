@@ -61,7 +61,7 @@ func (r Request) IsNotification() bool {
 
 // Err represents JSON RPC error object
 type Err struct {
-	Code    int         `json:"code"`
+	Code    string      `json:"code"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
 }
@@ -106,10 +106,10 @@ type JSONRPC struct {
 }
 
 // Error creates an error response
-func Error(code int, message string, data interface{}) *Response {
+func Error(code interface{}, message string, data interface{}) *Response {
 	return &Response{
 		JSONRPCVersion: "2.0",
-		Err:            &Err{Code: code, Message: message, Data: data},
+		Err:            &Err{Code: fmt.Sprintf("%v", code), Message: message, Data: data},
 	}
 }
 

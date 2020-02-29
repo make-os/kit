@@ -25,13 +25,12 @@ func GetStringFromObjxMap(o objx.Map, field string, required bool) (string, *Res
 		return "", nil
 	}
 
-	if isStrFieldSet(vField) && !vField.IsStr() {
-		msg := util.WrongFieldValueMsg(field, "string", vField.Inter()).Error()
-		return "", Error(types.RPCErrCodeInvalidParamValue, msg, nil)
+	if !isStrFieldSet(vField) {
+		return "", Error(types.RPCErrCodeInvalidParamValue, field+" is required", nil)
 	}
 
-	if !isStrFieldSet(vField) {
-		msg := util.FieldError(field, field+" is required").Error()
+	if !vField.IsStr() {
+		msg := util.WrongFieldValueMsg(field, "string", vField.Inter())
 		return "", Error(types.RPCErrCodeInvalidParamValue, msg, nil)
 	}
 
@@ -51,25 +50,23 @@ func GetStringToUint64FromObjxMap(o objx.Map, field string, required bool) (uint
 		return 0, nil
 	}
 
-	if isStrFieldSet(vField) && !vField.IsStr() {
-		msg := util.WrongFieldValueMsg(field, "string", vField.Inter()).Error()
-		return 0, Error(types.RPCErrCodeInvalidParamValue, msg, nil)
+	if !isStrFieldSet(vField) {
+		return 0, Error(types.RPCErrCodeInvalidParamValue, field+" is required", nil)
 	}
 
-	if !isStrFieldSet(vField) {
-		msg := util.FieldError(field, field+" is required").Error()
+	if !vField.IsStr() {
+		msg := util.WrongFieldValueMsg(field, "string", vField.Inter())
 		return 0, Error(types.RPCErrCodeInvalidParamValue, msg, nil)
 	}
 
 	if !govalidator.IsNumeric(vField.Str()) {
-		msg := util.FieldError(field, "numeric value required").Error()
+		msg := field + " requires a numeric value"
 		return 0, Error(types.RPCErrCodeInvalidParamValue, msg, nil)
 	}
 
 	fieldValue, err := strconv.ParseUint(vField.Str(), 10, 64)
 	if err != nil {
-		return 0, Error(types.RPCErrCodeInvalidParamValue,
-			"failed to parse to unsigned integer", nil)
+		return 0, Error(types.RPCErrCodeInvalidParamValue, "failed to parse to unsigned integer", nil)
 	}
 
 	return fieldValue, nil

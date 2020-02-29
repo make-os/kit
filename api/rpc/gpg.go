@@ -2,9 +2,9 @@ package rpc
 
 import (
 	"github.com/stretchr/objx"
-	"gitlab.com/makeos/mosdef/modules"
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/modules"
 )
 
 // GPGAPI provides RPC methods for various gpg key functionality.

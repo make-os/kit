@@ -8,15 +8,15 @@ import (
 	"os"
 
 	"gitlab.com/makeos/mosdef/dht/types"
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	modules2 "gitlab.com/makeos/mosdef/types/modules"
 
 	rpcApi "gitlab.com/makeos/mosdef/api/rpc"
 	"gitlab.com/makeos/mosdef/rpc"
 
 	"github.com/thoas/go-funk"
-	jsm "gitlab.com/makeos/mosdef/modules"
+	"gitlab.com/makeos/mosdef/modules"
 	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/robertkrimen/otto"
@@ -69,7 +69,7 @@ type Node struct {
 	mempoolReactor *mempool.Reactor
 	ticketMgr      tickettypes.TicketManager
 	dht            types.DHTNode
-	modules        modtypes.ModulesAggregator
+	modules        modules2.ModuleHub
 	rpcServer      *rpc.Server
 	repoMgr        core.RepoManager
 }
@@ -284,8 +284,8 @@ func (n *Node) configureInterfaces() {
 	vm := otto.New()
 	extMgr := extensions.NewManager(n.cfg, vm)
 
-	// Create modules
-	n.modules = jsm.NewModuleAggregator(
+	// Create module hub
+	n.modules = modules.New(
 		n.cfg,
 		n.acctMgr,
 		n.service,
@@ -347,7 +347,7 @@ func (n *Node) ConsoleOn() bool {
 }
 
 // GetModulesAggregator returns the javascript module instance
-func (n *Node) GetModulesAggregator() modtypes.ModulesAggregator {
+func (n *Node) GetModulesAggregator() modules2.ModuleHub {
 	return n.modules
 }
 

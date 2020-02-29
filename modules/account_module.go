@@ -3,13 +3,12 @@ package modules
 import (
 	"fmt"
 
+	"gitlab.com/makeos/mosdef/account"
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
-
-	"gitlab.com/makeos/mosdef/account"
 
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
@@ -42,8 +41,8 @@ func NewAccountModule(
 	}
 }
 
-func (m *AccountModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
+func (m *AccountModule) namespacedFuncs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "listAccounts",
 			Value:       m.ListLocalAccounts,
@@ -92,8 +91,8 @@ func (m *AccountModule) namespacedFuncs() []*types.ModulesAggregatorFunc {
 	}
 }
 
-func (m *AccountModule) globals() []*types.ModulesAggregatorFunc {
-	return []*types.ModulesAggregatorFunc{
+func (m *AccountModule) globals() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "accounts",
 			Value:       m.ListLocalAccounts(),
@@ -176,7 +175,7 @@ func (m *AccountModule) GetKey(address string, passphrase ...string) string {
 
 	// Unlock the account using the passphrase
 	if err := acct.Unlock(pass); err != nil {
-		if err == account.ErrInvalidPassprase {
+		if err == apptypes.ErrInvalidPassprase {
 			panic(util.NewStatusError(401, StatusCodeInvalidPass, "passphrase", err.Error()))
 		}
 		panic(util.NewStatusError(500, StatusCodeAppErr, "passphrase", err.Error()))
@@ -217,7 +216,7 @@ func (m *AccountModule) GetPublicKey(address string, passphrase ...string) strin
 
 	// Unlock the account using the passphrase
 	if err := acct.Unlock(pass); err != nil {
-		if err == account.ErrInvalidPassprase {
+		if err == apptypes.ErrInvalidPassprase {
 			panic(util.NewStatusError(401, StatusCodeInvalidPass, "passphrase", err.Error()))
 		}
 		panic(util.NewStatusError(500, StatusCodeAppErr, "passphrase", err.Error()))

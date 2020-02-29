@@ -5,13 +5,9 @@ import (
 	"strconv"
 
 	"gitlab.com/makeos/mosdef/api/rest"
+	apitypes "gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/types"
 )
-
-// AccountGetNonceResponse is the response of AccountGetNonce endpoint
-type AccountGetNonceResponse struct {
-	Nonce string `json:"nonce"`
-}
 
 // AccountGetNonce returns the nonce of the given address
 // Body:
@@ -19,21 +15,21 @@ type AccountGetNonceResponse struct {
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
 // - resp <state.Account -> map> - The account object
-func (c *RESTClient) AccountGetNonce(address string, blockHeight ...uint64) (*AccountGetNonceResponse, error) {
+func (c *RESTClient) AccountGetNonce(address string, blockHeight ...uint64) (*apitypes.AccountGetNonceResponse, error) {
 
 	height := uint64(0)
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
 	}
 
-	resp, err := c.GetCall(rest.V1Path(types.NamespaceUser, rest.MethodNameGetNonce), M{
+	resp, err := c.GetCall(rest.RestV1Path(types.NamespaceUser, rest.MethodNameGetNonce), M{
 		"address":     address,
 		"blockHeight": height,
 	})
 	if err != nil {
 		return nil, err
 	}
-	var result AccountGetNonceResponse
+	var result apitypes.AccountGetNonceResponse
 	return &result, resp.ToJSON(&result)
 }
 
@@ -43,14 +39,14 @@ func (c *RESTClient) AccountGetNonce(address string, blockHeight ...uint64) (*Ac
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
 // - resp <state.Account -> map> - The account object
-func (c *RESTClient) AccountGet(address string) (*AccountGetNonceResponse, error) {
-	resp, err := c.GetCall(rest.V1Path(types.NamespaceUser, rest.MethodNameGetAccount), M{
+func (c *RESTClient) AccountGet(address string) (*apitypes.AccountGetNonceResponse, error) {
+	resp, err := c.GetCall(rest.RestV1Path(types.NamespaceUser, rest.MethodNameGetAccount), M{
 		"address": address,
 	})
 	if err != nil {
 		return nil, err
 	}
-	var result AccountGetNonceResponse
+	var result apitypes.AccountGetNonceResponse
 	return &result, resp.ToJSON(&result)
 }
 
@@ -59,7 +55,7 @@ func (c *RESTClient) AccountGet(address string) (*AccountGetNonceResponse, error
 func AccountGetNextNonceUsingClients(clients []*RESTClient, address string) (string, error) {
 	var err error
 	for _, cl := range clients {
-		var resp *AccountGetNonceResponse
+		var resp *apitypes.AccountGetNonceResponse
 		resp, err = cl.AccountGetNonce(address)
 		if err != nil {
 			continue

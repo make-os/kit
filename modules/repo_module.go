@@ -5,10 +5,10 @@ import (
 
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -31,41 +31,41 @@ func NewRepoModule(
 }
 
 // funcs are functions accessible using the `repo` namespace
-func (m *RepoModule) funcs() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{
+func (m *RepoModule) funcs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "create",
-			Value:       m.create,
+			Value:       m.Create,
 			Description: "Create a git repository on the network",
 		},
 		{
 			Name:        "get",
-			Value:       m.get,
+			Value:       m.Get,
 			Description: "Find and return a repository",
 		},
 		{
 			Name:        "update",
-			Value:       m.update,
+			Value:       m.Update,
 			Description: "Update a repository",
 		},
 		{
 			Name:        "prune",
-			Value:       m.prune,
+			Value:       m.Prune,
 			Description: "Delete all dangling and unreachable loose objects from a repository",
 		},
 		{
 			Name:        "upsertOwner",
-			Value:       m.upsertOwner,
+			Value:       m.UpsertOwner,
 			Description: "Create a proposal to add or update a repository owner",
 		},
 		{
 			Name:        "vote",
-			Value:       m.voteOnProposal,
+			Value:       m.VoteOnProposal,
 			Description: "Vote for or against a proposal",
 		},
 		{
 			Name:        "depositFee",
-			Value:       m.depositFee,
+			Value:       m.DepositFee,
 			Description: "Add fees to a deposit-enabled repository proposal",
 		},
 		{
@@ -76,8 +76,8 @@ func (m *RepoModule) funcs() []*modtypes.ModulesAggregatorFunc {
 	}
 }
 
-func (m *RepoModule) globals() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{}
+func (m *RepoModule) globals() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{}
 }
 
 // Configure configures the JS context and return
@@ -123,7 +123,7 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 // RETURNS object <map>
 // object.hash <string>: 	The transaction hash
 // object.address <string: 	The address of the repository
-func (m *RepoModule) create(params map[string]interface{}, options ...interface{}) interface{} {
+func (m *RepoModule) Create(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
 	var tx = core.NewBareTxRepoCreate()
@@ -166,7 +166,7 @@ func (m *RepoModule) create(params map[string]interface{}, options ...interface{
 // hash <string>: 						The transaction hash
 //
 // RETURNS <core.TxRepoProposalUpsertOwner>: 	When payloadOnly is true, returns signed transaction object
-func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalUpsertOwner()
@@ -206,7 +206,7 @@ func (m *RepoModule) upsertOwner(params map[string]interface{}, options ...inter
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *RepoModule) VoteOnProposal(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalVote()
@@ -234,7 +234,7 @@ func (m *RepoModule) voteOnProposal(params map[string]interface{}, options ...in
 // ARGS:
 // name: The name of the repository
 // force: When true, forcefully prunes the target repository
-func (m *RepoModule) prune(name string, force bool) {
+func (m *RepoModule) Prune(name string, force bool) {
 	if force {
 		if err := m.repoMgr.GetPruner().Prune(name, true); err != nil {
 			panic(err)
@@ -254,7 +254,7 @@ func (m *RepoModule) prune(name string, force bool) {
 // opts.noProps: When true, the result will not include proposals
 //
 // RETURNS <map>
-func (m *RepoModule) get(name string, opts ...map[string]interface{}) util.Map {
+func (m *RepoModule) Get(name string, opts ...map[string]interface{}) util.Map {
 	var targetHeight uint64
 	var noProposals bool
 
@@ -301,7 +301,7 @@ func (m *RepoModule) get(name string, opts ...map[string]interface{}) util.Map {
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *RepoModule) update(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *RepoModule) Update(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalUpdate()
@@ -341,7 +341,7 @@ func (m *RepoModule) update(params map[string]interface{}, options ...interface{
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *RepoModule) depositFee(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareRepoProposalFeeSend()

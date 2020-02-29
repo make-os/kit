@@ -5,10 +5,10 @@ import (
 
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -30,33 +30,33 @@ func NewNSModule(
 }
 
 // funcs are functions accessible using the `ns` namespace
-func (m *NamespaceModule) funcs() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{
+func (m *NamespaceModule) funcs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "register",
-			Value:       m.register,
+			Value:       m.Register,
 			Description: "Register a namespace",
 		},
 		{
 			Name:        "lookup",
-			Value:       m.lookup,
+			Value:       m.Lookup,
 			Description: "Lookup a namespace",
 		},
 		{
 			Name:        "getTarget",
-			Value:       m.getTarget,
+			Value:       m.GetTarget,
 			Description: "Lookup the target of a full namespace path",
 		},
 		{
 			Name:        "updateDomain",
-			Value:       m.updateDomain,
+			Value:       m.UpdateDomain,
 			Description: "Update one or more domains for a namespace",
 		},
 	}
 }
 
-func (m *NamespaceModule) globals() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{}
+func (m *NamespaceModule) globals() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{}
 }
 
 // Configure configures the JS context and return
@@ -95,7 +95,7 @@ func (m *NamespaceModule) Configure() []prompt.Suggest {
 // resp.name <string>: The name of the namespace
 // resp.expired <bool>: Indicates whether the namespace is expired
 // resp.expiring <bool>: Indicates whether the namespace is currently expiring
-func (m *NamespaceModule) lookup(name string, height ...uint64) interface{} {
+func (m *NamespaceModule) Lookup(name string, height ...uint64) interface{} {
 
 	var targetHeight uint64
 	if len(height) > 0 {
@@ -134,7 +134,7 @@ func (m *NamespaceModule) lookup(name string, height ...uint64) interface{} {
 // [height]: The block height to query
 //
 // RETURNS: <string>: A domain's target
-func (m *NamespaceModule) getTarget(path string, height ...uint64) string {
+func (m *NamespaceModule) GetTarget(path string, height ...uint64) string {
 
 	var targetHeight uint64
 	if len(height) > 0 {
@@ -168,7 +168,7 @@ func (m *NamespaceModule) getTarget(path string, height ...uint64) string {
 //
 // RETURNS object <map>
 // object.hash <string>: The transaction hash
-func (m *NamespaceModule) register(
+func (m *NamespaceModule) Register(
 	params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
@@ -212,7 +212,7 @@ func (m *NamespaceModule) register(
 //
 // RETURNS object <map>
 // object.hash <string>: The transaction hash
-func (m *NamespaceModule) updateDomain(
+func (m *NamespaceModule) UpdateDomain(
 	params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error

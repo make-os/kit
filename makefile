@@ -40,7 +40,9 @@ genmocks:
 	mockgen -source=dht/types/types.go -destination=mocks/dht.go -package mocks && \
 	mockgen -source=types/core/repo.go -destination=mocks/repo.go -package mocks && \
     mockgen -source=types/tendermint.go -destination=mocks/tendermint.go -package mocks && \
-    mockgen -source=types/core/mempool.go -destination=mocks/mempool.go -package mocks && \
     mockgen -source=ticket/types/types.go -destination=mocks/ticket.go -package mocks && \
+    mockgen -source=types/core/mempool.go -destination=mocks/mempool.go -package mocks && \
+    mockgen -source=types/core/account_mgr.go -destination=mocks/account_mgr.go -package mocks && \
+    mockgen -source=types/modules/modules.go -destination=mocks/modules.go -package mocks && \
     mockgen -source=pkgs/tree/types.go -destination=mocks/tree.go -package mocks && \
     mockgen -source=node/types/types.go -destination=mocks/node.go -package mocks

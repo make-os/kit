@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"gitlab.com/makeos/mosdef/config"
-	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 
@@ -37,11 +37,11 @@ func NewGPGModule(
 	}
 }
 
-func (m *GPGModule) namespacedFuncs() []*modulestypes.ModulesAggregatorFunc {
-	return []*modulestypes.ModulesAggregatorFunc{
+func (m *GPGModule) namespacedFuncs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "add",
-			Value:       m.addPK,
+			Value:       m.AddPK,
 			Description: "Add a GPG public key",
 		},
 		{
@@ -51,7 +51,7 @@ func (m *GPGModule) namespacedFuncs() []*modulestypes.ModulesAggregatorFunc {
 		},
 		{
 			Name:        "ownedBy",
-			Value:       m.ownedBy,
+			Value:       m.OwnedBy,
 			Description: "Get all GPG public keys belonging to an address",
 		},
 		{
@@ -62,8 +62,8 @@ func (m *GPGModule) namespacedFuncs() []*modulestypes.ModulesAggregatorFunc {
 	}
 }
 
-func (m *GPGModule) globals() []*modulestypes.ModulesAggregatorFunc {
-	return []*modulestypes.ModulesAggregatorFunc{}
+func (m *GPGModule) globals() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{}
 }
 
 // Configure configures the JS context and return
@@ -109,7 +109,7 @@ func (m *GPGModule) Configure() []prompt.Suggest {
 //
 // RETURNS object <map>:
 // object.hash <string>: The transaction hash
-func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *GPGModule) AddPK(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	// Decode parameters into a transaction object
@@ -143,6 +143,10 @@ func (m *GPGModule) addPK(params map[string]interface{}, options ...interface{})
 // RETURNS state.GPGPubKey
 func (m *GPGModule) Find(id string, blockHeight ...uint64) *state.GPGPubKey {
 
+	if id == "" {
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "id", "gpg id is required"))
+	}
+
 	targetHeight := uint64(0)
 	if len(blockHeight) > 0 {
 		targetHeight = blockHeight[0]
@@ -162,7 +166,7 @@ func (m *GPGModule) Find(id string, blockHeight ...uint64) *state.GPGPubKey {
 // address: An address of an account
 //
 // RETURNS: List of GPG public key ids
-func (m *GPGModule) ownedBy(address string) []string {
+func (m *GPGModule) OwnedBy(address string) []string {
 	return m.logic.GPGPubKeyKeeper().GetPubKeyIDs(address)
 }
 

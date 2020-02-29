@@ -17,12 +17,9 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/bech32"
-	"github.com/pkg/errors"
+	"github.com/fatih/color"
 	"github.com/robertkrimen/otto"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/pkgs/logger"
-
-	"github.com/fatih/color"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -569,36 +566,17 @@ func WriteJSON(w http.ResponseWriter, statuscode int, respObj interface{}) {
 }
 
 // RESTApiErrorMsg returns a message suitable for reporting REST API errors
-func RESTApiErrorMsg(msg, field string, code int) map[string]interface{} {
+func RESTApiErrorMsg(msg, field string, code string) map[string]interface{} {
 	obj := make(map[string]interface{})
 	obj["msg"] = msg
 	if field != "" {
 		obj["field"] = field
 	}
-	if code != 0 {
+	if code != "" {
 		obj["code"] = code
 	}
 	return map[string]interface{}{
 		"error": obj,
-	}
-}
-
-// RESTApiHandler wraps http handlers, providing panic recoverability
-func RESTApiHandler(method string, handler func(w http.ResponseWriter,
-	r *http.Request), log logger.Logger) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if r := recover(); r != nil {
-				cause := errors.Cause(r.(error))
-				WriteJSON(w, 500, RESTApiErrorMsg(cause.Error(), "", 0))
-				log.Error("api handler error", "Err", cause.Error())
-			}
-		}()
-		if strings.ToLower(r.Method) != strings.ToLower(method) {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-		handler(w, r)
 	}
 }
 

@@ -2,16 +2,17 @@ package modules
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/modules"
 
 	"github.com/c-bata/go-prompt"
 	prettyjson "github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/crypto"
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -26,8 +27,8 @@ func NewUtilModule(vm *otto.Otto) *UtilModule {
 	return &UtilModule{vm: vm}
 }
 
-func (m *UtilModule) globals() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{
+func (m *UtilModule) globals() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "pp",
 			Value:       m.prettyPrint,
@@ -55,20 +56,20 @@ func (m *UtilModule) globals() []*modtypes.ModulesAggregatorFunc {
 		},
 		{
 			Name:        "treasuryAddress",
-			Value:       m.treasuryAddress(),
+			Value:       m.TreasuryAddress(),
 			Description: "Get the treasury address",
 		},
 		{
 			Name:        "genKey",
-			Value:       m.genKey,
+			Value:       m.GenKey,
 			Description: "Generate an Ed25519 key",
 		},
 	}
 }
 
 // funcs exposed by the module
-func (m *UtilModule) funcs() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{
+func (m *UtilModule) funcs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "prettyPrint",
 			Value:       m.prettyPrint,
@@ -96,12 +97,12 @@ func (m *UtilModule) funcs() []*modtypes.ModulesAggregatorFunc {
 		},
 		{
 			Name:        "treasuryAddress",
-			Value:       m.treasuryAddress(),
+			Value:       m.TreasuryAddress(),
 			Description: "Get the treasury address",
 		},
 		{
 			Name:        "genKey",
-			Value:       m.genKey,
+			Value:       m.GenKey,
 			Description: "Generate an Ed25519 key",
 		},
 	}
@@ -200,13 +201,13 @@ func (m *UtilModule) readTextFile(filename string) string {
 	return string(bz.([]byte))
 }
 
-func (m *UtilModule) treasuryAddress() string {
+func (m *UtilModule) TreasuryAddress() string {
 	return params.TreasuryAddress
 }
 
 // genKey generates an Ed25519 key.
 // seed: Specify an optional seed
-func (m *UtilModule) genKey(seed ...int64) interface{} {
+func (m *UtilModule) GenKey(seed ...int64) interface{} {
 
 	var s *int64 = nil
 	if len(seed) > 0 {

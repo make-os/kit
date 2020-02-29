@@ -200,7 +200,7 @@ var _ = Describe("Read", func() {
 			It("should return err = 'invalid passphrase' when password is invalid", func() {
 				err := account.Unlock("invalid")
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(ErrInvalidPassprase))
+				Expect(err).To(Equal(types.ErrInvalidPassprase))
 			})
 
 			It("should return nil when decryption is successful. account.address must not be nil.", func() {

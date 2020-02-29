@@ -8,12 +8,12 @@ import (
 	types2 "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/modules"
 
 	"gitlab.com/makeos/mosdef/util"
 
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	moduletypes "gitlab.com/makeos/mosdef/modules/types"
 )
 
 // DHTModule provides gpg key management functionality
@@ -32,43 +32,43 @@ func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht types2.DHTNode) *DHT
 	}
 }
 
-func (m *DHTModule) namespacedFuncs() []*moduletypes.ModulesAggregatorFunc {
-	return []*moduletypes.ModulesAggregatorFunc{
+func (m *DHTModule) namespacedFuncs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "store",
-			Value:       m.store,
+			Value:       m.Store,
 			Description: "Add a value that correspond to a given key",
 		},
 		{
 			Name:        "lookup",
-			Value:       m.lookup,
+			Value:       m.Lookup,
 			Description: "Find a record that correspond to a given key",
 		},
 		{
 			Name:        "announce",
-			Value:       m.announce,
+			Value:       m.Announce,
 			Description: "Inform the network that this node can provide value for a key",
 		},
 		{
 			Name:        "getProviders",
-			Value:       m.getProviders,
+			Value:       m.GetProviders,
 			Description: "Get providers for a given key",
 		},
 		{
 			Name:        "getRepoObject",
-			Value:       m.getRepoObject,
+			Value:       m.GetRepoObject,
 			Description: "Find and return a repo object",
 		},
 		{
 			Name:        "getPeers",
-			Value:       m.getPeers,
+			Value:       m.GetPeers,
 			Description: "Returns a list of all DHTNode peers",
 		},
 	}
 }
 
-func (m *DHTModule) globals() []*moduletypes.ModulesAggregatorFunc {
-	return []*moduletypes.ModulesAggregatorFunc{}
+func (m *DHTModule) globals() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{}
 }
 
 // Configure configures the JS context and return
@@ -103,7 +103,7 @@ func (m *DHTModule) Configure() []prompt.Suggest {
 // ARGS:
 // key: The data query key
 // val: The data to be stored
-func (m *DHTModule) store(key string, val string) {
+func (m *DHTModule) Store(key string, val string) {
 	if err := m.dht.Store(context.Background(), key, []byte(val)); err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
 	}
@@ -115,7 +115,7 @@ func (m *DHTModule) store(key string, val string) {
 // key: The data query key
 //
 // RETURNS: <[]bytes> - The data stored on the key
-func (m *DHTModule) lookup(key string) interface{} {
+func (m *DHTModule) Lookup(key string) interface{} {
 	bz, err := m.dht.Lookup(context.Background(), key)
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
@@ -127,7 +127,7 @@ func (m *DHTModule) lookup(key string) interface{} {
 //
 // ARGS:
 // - key: The data query key
-func (m *DHTModule) announce(key string) {
+func (m *DHTModule) Announce(key string) {
 	if err := m.dht.Announce(context.Background(), []byte(key)); err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
 	}
@@ -141,7 +141,7 @@ func (m *DHTModule) announce(key string) {
 // RETURNS: resp <[]map[string]interface{}>
 // resp.id <string>: The libp2p ID of the provider
 // resp.addresses	<[]string>: A list of p2p multiaddrs of the provider
-func (m *DHTModule) getProviders(key string) (res []map[string]interface{}) {
+func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
 	peers, err := m.dht.GetProviders(context.Background(), []byte(key))
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
@@ -163,7 +163,7 @@ func (m *DHTModule) getProviders(key string) (res []map[string]interface{}) {
 //
 // ARGS:
 // objURI: The repo object URI
-func (m *DHTModule) getRepoObject(objURI string) []byte {
+func (m *DHTModule) GetRepoObject(objURI string) []byte {
 	bz, err := m.dht.GetObject(context.Background(), &types2.DHTObjectQuery{
 		Module:    core.RepoObjectModule,
 		ObjectKey: []byte(objURI),
@@ -176,7 +176,7 @@ func (m *DHTModule) getRepoObject(objURI string) []byte {
 }
 
 // getPeers returns a list of all connected peers
-func (m *DHTModule) getPeers() []string {
+func (m *DHTModule) GetPeers() []string {
 	peers := m.dht.Peers()
 	if len(peers) == 0 {
 		return []string{}

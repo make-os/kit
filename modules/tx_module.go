@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/modules"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
@@ -28,19 +28,19 @@ func NewTxModule(vm *otto.Otto, service services.Service, logic core.Logic) *TxM
 }
 
 // txCoinFuncs are functions accessible using the `tx.coin` namespace
-func (m *TxModule) txCoinFuncs() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{
+func (m *TxModule) txCoinFuncs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "send",
-			Value:       m.sendCoin,
+			Value:       m.SendCoin,
 			Description: "Send coins to another account",
 		},
 	}
 }
 
 // funcs are functions accessible using the `tx` namespace
-func (m *TxModule) funcs() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{
+func (m *TxModule) funcs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "get",
 			Value:       m.Get,
@@ -54,8 +54,8 @@ func (m *TxModule) funcs() []*modtypes.ModulesAggregatorFunc {
 	}
 }
 
-func (m *TxModule) globals() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{}
+func (m *TxModule) globals() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{}
 }
 
 // Configure configures the JS context and return
@@ -111,7 +111,7 @@ func (m *TxModule) Configure() []prompt.Suggest {
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TxModule) sendCoin(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareTxCoinTransfer()

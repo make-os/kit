@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/modules"
 
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/rpc"
@@ -15,7 +16,6 @@ import (
 
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -38,24 +38,24 @@ func NewRPCModule(
 	}
 }
 
-func (m *RPCModule) namespacedFuncs() []*modtypes.ModulesAggregatorFunc {
-	modFuncs := []*modtypes.ModulesAggregatorFunc{
+func (m *RPCModule) namespacedFuncs() []*modules.ModuleFunc {
+	modFuncs := []*modules.ModuleFunc{
 		{
 			Name:        "isRunning",
-			Value:       m.isRunning,
+			Value:       m.IsRunning,
 			Description: "Checks whether the local RPCClient server is running",
 		},
 		{
 			Name:        "connect",
-			Value:       m.connect,
+			Value:       m.Connect,
 			Description: "Connect to an RPCClient server",
 		},
 	}
 
 	if !m.cfg.ConsoleOnly() {
-		modFuncs = append(modFuncs, &modtypes.ModulesAggregatorFunc{
+		modFuncs = append(modFuncs, &modules.ModuleFunc{
 			Name:        "local",
-			Value:       m.local(),
+			Value:       m.Local(),
 			Description: "Call methods of the local RPCClient server",
 		})
 	}
@@ -63,8 +63,8 @@ func (m *RPCModule) namespacedFuncs() []*modtypes.ModulesAggregatorFunc {
 	return modFuncs
 }
 
-func (m *RPCModule) globals() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{}
+func (m *RPCModule) globals() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{}
 }
 
 // Configure configures the JS context and return
@@ -110,19 +110,17 @@ func (m *RPCModule) Configure() []prompt.Suggest {
 }
 
 // isRunning checks whether the server is running
-func (m *RPCModule) isRunning() bool {
+func (m *RPCModule) IsRunning() bool {
 	return m.rpcServer != nil && m.rpcServer.IsRunning()
 }
 
-type rpcMethods map[string]interface{}
-
-func (m *RPCModule) local() rpcMethods {
+func (m *RPCModule) Local() util.Map {
 	host, port, err := net.SplitHostPort(m.cfg.RPC.Address)
 	if err != nil {
 		panic(err)
 	}
 	portInt, _ := strconv.Atoi(port)
-	return m.connect(host, portInt, false, m.cfg.RPC.User, m.cfg.RPC.Password)
+	return m.Connect(host, portInt, false, m.cfg.RPC.User, m.cfg.RPC.Password)
 }
 
 // connect to an RPCClient server
@@ -135,7 +133,7 @@ func (m *RPCModule) local() rpcMethods {
 // pass: The server's password
 //
 // RETURNS <map>: A mapping of rpc methods and call functions
-func (m *RPCModule) connect(host string, port int, https bool, user, pass string) rpcMethods {
+func (m *RPCModule) Connect(host string, port int, https bool, user, pass string) util.Map {
 
 	c := client.NewClient(&client.Options{
 		Host:     host,

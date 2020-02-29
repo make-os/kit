@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
-
 	"golang.org/x/crypto/scrypt"
 
 	"github.com/ellcrys/go-prompt"

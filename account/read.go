@@ -14,11 +14,6 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-var (
-	// ErrAccountNotFound  = fmt.Errorf("account not found")
-	ErrInvalidPassprase = fmt.Errorf("invalid passphrase")
-)
-
 // StoredAccountMeta represents additional meta data of an account
 type StoredAccountMeta map[string]interface{}
 
@@ -159,7 +154,7 @@ func (sa *StoredAccount) Unlock(passphrase string) error {
 	acctBytes, err := util.Decrypt(sa.Cipher, passphraseBs[:])
 	if err != nil {
 		if funk.Contains(err.Error(), "invalid key") {
-			return ErrInvalidPassprase
+			return types.ErrInvalidPassprase
 		}
 		return err
 	}
@@ -168,7 +163,7 @@ func (sa *StoredAccount) Unlock(passphrase string) error {
 	// Decode from base58
 	acctData, _, err := base58.CheckDecode(string(acctBytes))
 	if err != nil {
-		return ErrInvalidPassprase
+		return types.ErrInvalidPassprase
 	}
 
 	// Decode from msgpack

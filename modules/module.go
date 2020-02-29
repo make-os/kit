@@ -12,23 +12,8 @@ import (
 	"gitlab.com/makeos/mosdef/rpc"
 	types2 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/modules"
 )
-
-// Modules contains all supported modules
-type Modules struct {
-	Tx      *TxModule
-	Chain   *ChainModule
-	Pool    *PoolModule
-	Account *AccountModule
-	GPG     *GPGModule
-	Util    *UtilModule
-	Ticket  *TicketModule
-	Repo    *RepoModule
-	NS      *NamespaceModule
-	DHT     *DHTModule
-	ExtMgr  *extensions.Manager
-	RPC     *RPCModule
-}
 
 // Module consists of submodules optimized for accessing through Javascript
 // environment and suitable for reuse in JSON-RPC and REST APIs.
@@ -40,15 +25,15 @@ type Module struct {
 	acctmgr        *account.AccountManager
 	ticketmgr      types2.TicketManager
 	dht            types.DHTNode
-	extMgr         *extensions.Manager
+	extMgr         modules.ExtManager
 	rpcServer      *rpc.Server
 	repoMgr        core.RepoManager
-	Modules        *Modules
+	Modules        *modules.Modules
 }
 
-// NewModuleAggregator creates an instance of Module which aggregates and
+// New creates an instance of Module which aggregates and
 // provides functionality of configuring supported modules
-func NewModuleAggregator(
+func New(
 	cfg *config.AppConfig,
 	acctmgr *account.AccountManager,
 	service services.Service,
@@ -71,14 +56,14 @@ func NewModuleAggregator(
 		extMgr:         extMgr,
 		rpcServer:      rpcServer,
 		repoMgr:        repoMgr,
-		Modules:        &Modules{},
+		Modules:        &modules.Modules{},
 	}
 
 	return agg
 }
 
 // GetModules returns all sub-modules
-func (m *Module) GetModules() interface{} {
+func (m *Module) GetModules() *modules.Modules {
 	return m.Modules
 }
 

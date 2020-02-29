@@ -21,15 +21,13 @@ func (r *RESTApi) GetAccountNonce(w http.ResponseWriter, req *http.Request) {
 
 	address, errResp := rpc.GetStringFromObjxMap(body, "address", true)
 	if errResp != nil {
-		util.WriteJSON(w, 400, util.RESTApiErrorMsg(
-			errResp.Err.Message, "address", errResp.Err.Code))
+		util.WriteJSON(w, 400, util.RESTApiErrorMsg(errResp.Err.Message, "address", errResp.Err.Code))
 		return
 	}
 
 	blockHeight, errResp := rpc.GetStringToUint64FromObjxMap(body, "blockHeight", false)
 	if errResp != nil {
-		util.WriteJSON(w, 400, util.RESTApiErrorMsg(
-			errResp.Err.Message, "blockHeight", errResp.Err.Code))
+		util.WriteJSON(w, 400, util.RESTApiErrorMsg(errResp.Err.Message, "blockHeight", errResp.Err.Code))
 		return
 	}
 

@@ -10,10 +10,10 @@ import (
 	config "gitlab.com/makeos/mosdef/config"
 	crypto "gitlab.com/makeos/mosdef/crypto"
 	types "gitlab.com/makeos/mosdef/dht/types"
-	types0 "gitlab.com/makeos/mosdef/modules/types"
 	logger "gitlab.com/makeos/mosdef/pkgs/logger"
 	tree "gitlab.com/makeos/mosdef/pkgs/tree"
 	core "gitlab.com/makeos/mosdef/types/core"
+	modules "gitlab.com/makeos/mosdef/types/modules"
 	state "gitlab.com/makeos/mosdef/types/state"
 	util "gitlab.com/makeos/mosdef/util"
 	config0 "gopkg.in/src-d/go-git.v4/config"
@@ -2025,7 +2025,7 @@ func (mr *MockRepoManagerMockRecorder) SetPGPPubKeyGetter(pkGetter interface{}) 
 }
 
 // RegisterAPIHandlers mocks base method
-func (m *MockRepoManager) RegisterAPIHandlers(agg types0.ModulesAggregator) {
+func (m *MockRepoManager) RegisterAPIHandlers(agg modules.ModuleHub) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RegisterAPIHandlers", agg)
 }

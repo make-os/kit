@@ -5,25 +5,26 @@ import (
 	"strconv"
 
 	"gitlab.com/makeos/mosdef/api/rest"
+	types2 "gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/state"
 )
 
 // GPGGetNonceOfOwner returns the nonce of the gpg owner account
-func (c *RESTClient) GPGGetNonceOfOwner(gpgID string) (*AccountGetNonceResponse, error) {
-	resp, err := c.GetCall(rest.V1Path(types.NamespaceGPG, rest.MethodNameOwnerNonce), M{
+func (c *RESTClient) GPGGetNonceOfOwner(gpgID string) (*types2.AccountGetNonceResponse, error) {
+	resp, err := c.GetCall(rest.RestV1Path(types.NamespaceGPG, rest.MethodNameOwnerNonce), M{
 		"id": gpgID,
 	})
 	if err != nil {
 		return nil, err
 	}
-	var result AccountGetNonceResponse
+	var result types2.AccountGetNonceResponse
 	return &result, resp.ToJSON(&result)
 }
 
 // GPGFind finds a GPG public key matching the given ID
 func (c *RESTClient) GPGFind(gpgID string) (*state.GPGPubKey, error) {
-	resp, err := c.GetCall(rest.V1Path(types.NamespaceGPG, rest.MethodNameGPGFind), M{
+	resp, err := c.GetCall(rest.RestV1Path(types.NamespaceGPG, rest.MethodNameGPGFind), M{
 		"id": gpgID,
 	})
 	if err != nil {
@@ -38,7 +39,7 @@ func (c *RESTClient) GPGFind(gpgID string) (*state.GPGPubKey, error) {
 func GPGGetNextNonceOfOwnerUsingClients(clients []*RESTClient, gpgID string) (string, error) {
 	var err error
 	for _, cl := range clients {
-		var resp *AccountGetNonceResponse
+		var resp *types2.AccountGetNonceResponse
 		resp, err = cl.GPGGetNonceOfOwner(gpgID)
 		if err != nil {
 			continue

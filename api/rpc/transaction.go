@@ -1,9 +1,9 @@
 package rpc
 
 import (
-	"gitlab.com/makeos/mosdef/modules"
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -24,7 +24,8 @@ func NewTransactionAPI(mods *modules.Modules) *TransactionAPI {
 func (t *TransactionAPI) sendPayload(params interface{}) (resp *rpc.Response) {
 	txMap, ok := params.(map[string]interface{})
 	if !ok {
-		msg := util.WrongFieldValueMsg("params", "map", params).Error()
+		msg := util.WrongFieldValueMsg("params", "map", params)
+		msg = util.FieldError("params", msg).Error()
 		return rpc.Error(types.RPCErrCodeInvalidParamValue, msg, nil)
 	}
 	return rpc.Success(t.mods.Tx.SendPayload(txMap))

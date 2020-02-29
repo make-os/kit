@@ -11,7 +11,7 @@ import (
 
 // TxSendPayload sends a signed transaction to the mempool
 func (c *RESTClient) TxSendPayload(data map[string]interface{}) (*apitypes.TxSendPayloadResponse, error) {
-	resp, err := c.PostCall(rest.V1Path(types.NamespaceTx, rest.MethodNameSendPayload), data)
+	resp, err := c.PostCall(rest.RestV1Path(types.NamespaceTx, rest.MethodNameSendPayload), data)
 	if err != nil {
 		return nil, err
 	}

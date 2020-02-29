@@ -2,7 +2,6 @@ package extensions
 
 import (
 	"fmt"
-	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -10,22 +9,23 @@ import (
 	"time"
 
 	"github.com/fatih/color"
-	"gitlab.com/makeos/mosdef/config"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/types/modules"
 
 	"gitlab.com/makeos/mosdef/util"
 
 	prompt "github.com/c-bata/go-prompt"
-	"gitlab.com/makeos/mosdef/types"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/types"
 )
 
 // Manager provides extension management capabilities
 type Manager struct {
 	cfg        *config.AppConfig
 	vm         *otto.Otto
-	main       modulestypes.ModulesAggregator
+	main       modules.ModuleHub
 	runningExt map[string]*ExtensionControl
 }
 
@@ -41,61 +41,33 @@ func NewManager(
 }
 
 // SetVM sets the main vm where module JS functions are written to
-func (m *Manager) SetVM(vm *otto.Otto) *Manager {
+func (m *Manager) SetVM(vm *otto.Otto) modules.ExtManager {
 	m.vm = vm
 	return m
 }
 
 // SetMainModule configures the main JS module
-func (m *Manager) SetMainModule(main modulestypes.ModulesAggregator) {
+func (m *Manager) SetMainModule(main modules.ModuleHub) {
 	m.main = main
 }
 
-func (m *Manager) namespacedFuncs() []*modulestypes.ModulesAggregatorFunc {
-	return []*modulestypes.ModulesAggregatorFunc{
-		&modulestypes.ModulesAggregatorFunc{
-			Name:        "run",
-			Value:       m.Run,
-			Description: "Load and run an extension",
-		},
-		&modulestypes.ModulesAggregatorFunc{
-			Name:        "load",
-			Value:       m.Load,
-			Description: "Load an extension",
-		},
-		&modulestypes.ModulesAggregatorFunc{
-			Name:        "isInstalled",
-			Value:       m.Exist,
-			Description: "Check whether an extension is installed",
-		},
-		&modulestypes.ModulesAggregatorFunc{
-			Name:        "installed",
-			Value:       m.Installed,
-			Description: "Fetch all installed extensions",
-		},
-		&modulestypes.ModulesAggregatorFunc{
-			Name:        "running",
-			Value:       m.Running,
-			Description: "Fetch a list of running extensions",
-		},
-		&modulestypes.ModulesAggregatorFunc{
-			Name:        "isRunning",
-			Value:       m.IsRunning,
-			Description: "Check whether an extension is currently running",
-		},
-		&modulestypes.ModulesAggregatorFunc{
-			Name:        "stop",
-			Value:       m.Stop,
-			Description: "Stop a running extension",
-		},
+func (m *Manager) namespacedFuncs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
+		{Name: "run", Value: m.Run, Description: "Load and run an extension"},
+		{Name: "load", Value: m.Load, Description: "Load an extension"},
+		{Name: "isInstalled", Value: m.Exist, Description: "Check whether an extension is installed"},
+		{Name: "getInstalled", Value: m.Installed, Description: "Fetch all installed extensions"},
+		{Name: "getRunning", Value: m.Running, Description: "Fetch a list of running extensions"},
+		{Name: "isRunning", Value: m.IsRunning, Description: "Check whether an extension is currently running"},
+		{Name: "stop", Value: m.Stop, Description: "Stop a running extension"},
 	}
 }
 
-func (m *Manager) globals() []*modulestypes.ModulesAggregatorFunc {
-	return []*modulestypes.ModulesAggregatorFunc{}
+func (m *Manager) globals() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{}
 }
 
-// Configure implements types.ModulesAggregator. It configures the JS
+// Configure implements types.ModuleHub. It configures the JS
 // context and return any number of console prompt suggestions
 func (m *Manager) Configure() []prompt.Suggest {
 	fMap := map[string]interface{}{}

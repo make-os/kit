@@ -8,11 +8,11 @@ import (
 	"github.com/robertkrimen/otto"
 	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/crypto"
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -40,62 +40,62 @@ func NewTicketModule(
 	}
 }
 
-func (m *TicketModule) globals() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{}
+func (m *TicketModule) globals() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{}
 }
 
 // funcs exposed by the module
-func (m *TicketModule) funcs() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{
+func (m *TicketModule) funcs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "buy",
-			Value:       m.buy,
+			Value:       m.Buy,
 			Description: "Buy a validator ticket",
 		},
 		{
 			Name:        "listValidatorTicketsOfProposer",
-			Value:       m.listValidatorTicketsOfProposer,
+			Value:       m.ListValidatorTicketsOfProposer,
 			Description: "List validator tickets where given public key is the proposer",
 		},
 		{
 			Name:        "listHostTicketsOfProposer",
-			Value:       m.listHostTicketsOfProposer,
+			Value:       m.ListHostTicketsOfProposer,
 			Description: "List host tickets where given public key is the proposer",
 		},
 		{
 			Name:        "listRecent",
-			Value:       m.listRecent,
+			Value:       m.ListRecent,
 			Description: "List most recent tickets up to the given limit",
 		},
 		{
 			Name:        "stats",
-			Value:       m.ticketStats,
+			Value:       m.TicketStats,
 			Description: "Get ticket stats of network and a public key",
 		},
 		{
 			Name:        "listTopValidators",
-			Value:       m.listTopValidators,
+			Value:       m.ListTopValidators,
 			Description: "List tickets of top network validators up to the given limit",
 		},
 		{
 			Name:        "listTopHosts",
-			Value:       m.listTopHosts,
+			Value:       m.ListTopHosts,
 			Description: "List tickets of top network hosts up to the given limit",
 		},
 	}
 }
 
 // hostFuncs are `host` funcs exposed by the module
-func (m *TicketModule) hostFuncs() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{
+func (m *TicketModule) hostFuncs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "buy",
-			Value:       m.hostBuy,
+			Value:       m.HostBuy,
 			Description: "Buy an host ticket",
 		},
 		{
 			Name:        "unbond",
-			Value:       m.unbondHostTicket,
+			Value:       m.UnbondHostTicket,
 			Description: "Unbond the stake associated with a host ticket",
 		},
 	}
@@ -151,7 +151,7 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}) interface{} {
+func (m *TicketModule) Buy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
 	var tx = core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
@@ -191,7 +191,7 @@ func (m *TicketModule) buy(params map[string]interface{}, options ...interface{}
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TicketModule) hostBuy(params map[string]interface{}, options ...interface{}) interface{} {
+func (m *TicketModule) HostBuy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
 	var tx = core.NewBareTxTicketPurchase(core.TxTypeHostTicket)
@@ -232,7 +232,7 @@ func (m *TicketModule) hostBuy(params map[string]interface{}, options ...interfa
 // [queryOpts].decayed 	<bool>	Forces only decayed tickets to be returned
 //
 // RETURNS <[]types.Ticket>
-func (m *TicketModule) listValidatorTicketsOfProposer(
+func (m *TicketModule) ListValidatorTicketsOfProposer(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) []util.Map {
 
@@ -275,7 +275,7 @@ func (m *TicketModule) listValidatorTicketsOfProposer(
 // [queryOpts] <map>
 // [queryOpts].nonDecayed <bool>	Forces only non-decayed tickets to be returned (default: true)
 // [queryOpts].decayed 	<bool>	Forces only decayed tickets to be returned
-func (m *TicketModule) listHostTicketsOfProposer(
+func (m *TicketModule) ListHostTicketsOfProposer(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) interface{} {
 
@@ -306,7 +306,7 @@ func (m *TicketModule) listHostTicketsOfProposer(
 //
 // ARGS:
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
-func (m *TicketModule) listTopValidators(limit ...int) interface{} {
+func (m *TicketModule) ListTopValidators(limit ...int) interface{} {
 	n := 0
 	if len(limit) > 0 {
 		n = limit[0]
@@ -322,7 +322,7 @@ func (m *TicketModule) listTopValidators(limit ...int) interface{} {
 //
 // ARGS
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
-func (m *TicketModule) listTopHosts(limit ...int) interface{} {
+func (m *TicketModule) ListTopHosts(limit ...int) interface{} {
 	n := 0
 	if len(limit) > 0 {
 		n = limit[0]
@@ -345,7 +345,7 @@ func (m *TicketModule) listTopHosts(limit ...int) interface{} {
 // result.valueOfDelegated 		<number>: 	The total value of tickets delegated to the proposer
 // result.publicKeyPower 		<number>: 	The total value staked coins power assigned to the proposer
 // result.valueOfAll 			<number>: 	The total value of all tickets
-func (m *TicketModule) ticketStats(proposerPubKey ...string) (result util.Map) {
+func (m *TicketModule) TicketStats(proposerPubKey ...string) (result util.Map) {
 
 	valNonDel, valDel := float64(0), float64(0)
 	res := make(map[string]interface{})
@@ -385,7 +385,7 @@ func (m *TicketModule) ticketStats(proposerPubKey ...string) (result util.Map) {
 //
 // ARGS
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
-func (m *TicketModule) listRecent(limit ...int) []util.Map {
+func (m *TicketModule) ListRecent(limit ...int) []util.Map {
 	n := 0
 	if len(limit) > 0 {
 		n = limit[0]
@@ -413,7 +413,7 @@ func (m *TicketModule) listRecent(limit ...int) []util.Map {
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TicketModule) unbondHostTicket(params map[string]interface{},
+func (m *TicketModule) UnbondHostTicket(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
 

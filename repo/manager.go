@@ -11,9 +11,9 @@ import (
 	"time"
 
 	types2 "gitlab.com/makeos/mosdef/dht/types"
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/modules"
 
 	"gitlab.com/makeos/mosdef/api/rest"
 	"gitlab.com/makeos/mosdef/pkgs/cache"
@@ -59,24 +59,24 @@ var services = [][]interface{}{
 type Manager struct {
 	p2p.BaseReactor
 	cfg                  *config.AppConfig
-	log                  logger.Logger              // log is the application logger
-	wg                   *sync.WaitGroup            // wait group for waiting for the manager
-	srv                  *http.Server               // the http server
-	rootDir              string                     // the root directory where all repos are stored
-	addr                 string                     // addr is the listening address for the http server
-	gitBinPath           string                     // gitBinPath is the path of the git executable
-	pushPool             core.PushPool              // The transaction pool for push transactions
-	mempool              core.Mempool               // The general transaction pool for block-bound transaction
-	logic                core.Logic                 // logic is the application logic provider
-	privValidatorKey     *crypto.Key                // the node's private validator key for signing transactions
-	pgpPubKeyGetter      core.PGPPubKeyGetter       // finds and returns PGP public key
-	dht                  types2.DHTNode             // The dht service
-	pruner               core.Pruner                // The repo runner
-	blockGetter          types.BlockGetter          // Provides access to blocks
-	pushNoteSenders      *cache.Cache               // Store senders of push notes
-	pushOKSenders        *cache.Cache               // Stores senders of PushOK messages
-	pushNoteEndorsements *cache.Cache               // Store PushOKs
-	modulesAgg           modtypes.ModulesAggregator // Modules aggregator
+	log                  logger.Logger        // log is the application logger
+	wg                   *sync.WaitGroup      // wait group for waiting for the manager
+	srv                  *http.Server         // the http server
+	rootDir              string               // the root directory where all repos are stored
+	addr                 string               // addr is the listening address for the http server
+	gitBinPath           string               // gitBinPath is the path of the git executable
+	pushPool             core.PushPool        // The transaction pool for push transactions
+	mempool              core.Mempool         // The general transaction pool for block-bound transaction
+	logic                core.Logic           // logic is the application logic provider
+	privValidatorKey     *crypto.Key          // the node's private validator key for signing transactions
+	pgpPubKeyGetter      core.PGPPubKeyGetter // finds and returns PGP public key
+	dht                  types2.DHTNode       // The dht service
+	pruner               core.Pruner          // The repo runner
+	blockGetter          types.BlockGetter    // Provides access to blocks
+	pushNoteSenders      *cache.Cache         // Store senders of push notes
+	pushOKSenders        *cache.Cache         // Stores senders of PushOK messages
+	pushNoteEndorsements *cache.Cache         // Store PushOKs
+	modulesAgg           modules.ModuleHub    // Modules aggregator
 }
 
 // NewManager creates an instance of Manager
@@ -123,7 +123,7 @@ func (m *Manager) SetRootDir(dir string) {
 }
 
 // RegisterAPIHandlers registers server API handlers
-func (m *Manager) RegisterAPIHandlers(agg modtypes.ModulesAggregator) {
+func (m *Manager) RegisterAPIHandlers(agg modules.ModuleHub) {
 	m.modulesAgg = agg
 	m.registerAPIHandlers(m.srv.Handler.(*http.ServeMux))
 }

@@ -1,9 +1,9 @@
 package rpc
 
 import (
-	"gitlab.com/makeos/mosdef/modules"
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/modules"
 )
 
 // LocalAccountAPI provides RPC methods for various local account management functionality.

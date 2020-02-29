@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"gitlab.com/makeos/mosdef/mempool"
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/modules"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
@@ -25,26 +25,26 @@ func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor, pushPool core.PushPo
 	return &PoolModule{vm: vm, reactor: reactor, pushPool: pushPool}
 }
 
-func (m *PoolModule) globals() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{}
+func (m *PoolModule) globals() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{}
 }
 
 // funcs exposed by the module
-func (m *PoolModule) funcs() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{
+func (m *PoolModule) funcs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "getSize",
-			Value:       m.getSize,
+			Value:       m.GetSize,
 			Description: "Get the current size of the mempool",
 		},
 		{
 			Name:        "getTop",
-			Value:       m.getTop,
+			Value:       m.GetTop,
 			Description: "Get top transactions from the mempool",
 		},
 		{
 			Name:        "getPushPoolSize",
-			Value:       m.getPushPoolSize,
+			Value:       m.GetPushPoolSize,
 			Description: "Get the current size of the push pool",
 		},
 	}
@@ -77,12 +77,12 @@ func (m *PoolModule) Configure() []prompt.Suggest {
 }
 
 // getSize returns the size of the pool
-func (m *PoolModule) getSize() util.Map {
+func (m *PoolModule) GetSize() util.Map {
 	return EncodeForJS(m.reactor.GetPoolSize())
 }
 
 // getTop returns all the transactions in the pool
-func (m *PoolModule) getTop(n int) []util.Map {
+func (m *PoolModule) GetTop(n int) []util.Map {
 	var res = []util.Map{}
 	for _, tx := range m.reactor.GetTop(n) {
 		res = append(res, EncodeForJS(tx.ToMap()))
@@ -91,6 +91,6 @@ func (m *PoolModule) getTop(n int) []util.Map {
 }
 
 // getPushPoolSize returns the size of the push pool
-func (m *PoolModule) getPushPoolSize() int {
+func (m *PoolModule) GetPushPoolSize() int {
 	return m.pushPool.Len()
 }

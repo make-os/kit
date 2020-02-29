@@ -7,8 +7,8 @@ import (
 	config2 "gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	types2 "gitlab.com/makeos/mosdef/dht/types"
-	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/state"
 
 	"github.com/vmihailenco/msgpack"
@@ -521,7 +521,7 @@ type RepoManager interface {
 	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
 
 	// RegisterAPIHandlers registers server API handlers
-	RegisterAPIHandlers(agg types.ModulesAggregator)
+	RegisterAPIHandlers(agg modules.ModuleHub)
 
 	// GetPruner returns the repo pruner
 	GetPruner() Pruner

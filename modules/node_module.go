@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
-	modtypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/modules"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
 
@@ -31,31 +31,31 @@ func NewChainModule(vm *otto.Otto, service services.Service, keepers core.Keeper
 	return &ChainModule{vm: vm, service: service, keepers: keepers}
 }
 
-func (m *ChainModule) globals() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{}
+func (m *ChainModule) globals() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{}
 }
 
 // funcs exposed by the module
-func (m *ChainModule) funcs() []*modtypes.ModulesAggregatorFunc {
-	return []*modtypes.ModulesAggregatorFunc{
+func (m *ChainModule) funcs() []*modules.ModuleFunc {
+	return []*modules.ModuleFunc{
 		{
 			Name:        "getBlock",
-			Value:       m.getBlock,
+			Value:       m.GetBlock,
 			Description: "Send the native coin from an account to a destination account",
 		},
 		{
 			Name:        "getCurrentHeight",
-			Value:       m.getCurrentHeight,
+			Value:       m.GetCurrentHeight,
 			Description: "Get the current block height",
 		},
 		{
 			Name:        "getBlockInfo",
-			Value:       m.getBlockInfo,
+			Value:       m.GetBlockInfo,
 			Description: "Get summary block information of a given height",
 		},
 		{
 			Name:        "getValidators",
-			Value:       m.getValidators,
+			Value:       m.GetValidators,
 			Description: "Get validators at a given height",
 		},
 	}
@@ -88,7 +88,7 @@ func (m *ChainModule) Configure() []prompt.Suggest {
 }
 
 // getBlock fetches a block at the given height
-func (m *ChainModule) getBlock(height string) util.Map {
+func (m *ChainModule) GetBlock(height string) util.Map {
 
 	var err error
 	var blockHeight int64
@@ -107,7 +107,7 @@ func (m *ChainModule) getBlock(height string) util.Map {
 }
 
 // getCurrentHeight returns the current block height
-func (m *ChainModule) getCurrentHeight() util.Map {
+func (m *ChainModule) GetCurrentHeight() util.Map {
 	bi, err := m.keepers.SysKeeper().GetLastBlockInfo()
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
@@ -118,7 +118,7 @@ func (m *ChainModule) getCurrentHeight() util.Map {
 }
 
 // getBlockInfo get summary block information of a given height
-func (m *ChainModule) getBlockInfo(height string) util.Map {
+func (m *ChainModule) GetBlockInfo(height string) util.Map {
 
 	var err error
 	var blockHeight int64
@@ -146,7 +146,7 @@ func (m *ChainModule) getBlockInfo(height string) util.Map {
 // res.address <string>: 	The bech32 address of the validator
 // res.tmAddress <string>: 	The tendermint address and the validator
 // res.ticketId <string>: 	The id of the validator ticket
-func (m *ChainModule) getValidators(height string) (res []util.Map) {
+func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 
 	var err error
 	var blockHeight int64

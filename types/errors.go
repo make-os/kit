@@ -24,6 +24,7 @@ var (
 	ErrInvalidPrivKey   = fmt.Errorf("private key is invalid")
 	ErrRepoNotFound     = fmt.Errorf("repo not found")
 	ErrTxNotFound       = fmt.Errorf("transaction not found")
+	ErrInvalidPassprase = fmt.Errorf("invalid passphrase")
 )
 
 // Decode/Cast Error

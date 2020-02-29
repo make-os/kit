@@ -1,15 +1,14 @@
 package rpc
 
 import (
-	"gitlab.com/makeos/mosdef/modules"
-	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
+	"gitlab.com/makeos/mosdef/types/modules"
 )
 
 // APIs returns all API handlers
-func APIs(modulesAgg types.ModulesAggregator, rpcServer *rpc.Server) rpc.APISet {
+func APIs(modulesAgg modules.ModuleHub, rpcServer *rpc.Server) rpc.APISet {
 
-	mods := modulesAgg.GetModules().(*modules.Modules)
+	mods := modulesAgg.GetModules()
 	var apiSets = []rpc.APISet{
 		NewAccountAPI(mods).APIs(),
 		NewGPGAPI(mods).APIs(),
