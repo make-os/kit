@@ -73,7 +73,7 @@ func (am *AccountManager) AskForPasswordOnce() string {
 }
 
 // harden improves a password's security and hardens it against
-// bruteforce attacks by passing it to an RDF like scrypt.
+// brute force attacks by passing it to an RDF like scrypt.
 func hardenPassword(pass []byte) []byte {
 
 	passHash := sha256.Sum256(pass)

@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestAccountmgr(t *testing.T) {
+func TestAccount(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Accountmgr Suite")
 }

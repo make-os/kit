@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/pkg/errors"
 )
 
 // UIUnlockAccount renders a CLI UI to unlock a target account.
@@ -28,9 +27,6 @@ func (am *AccountManager) UIUnlockAccount(addressOrIndex, passphrase string) (*S
 	// Ask for passphrase is not provided
 	if passphrase == "" {
 		passphrase = am.AskForPasswordOnce()
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to read passphrase")
-		}
 	}
 
 	// If passphrase is not a path to a file, proceed to unlock the account

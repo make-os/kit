@@ -73,10 +73,6 @@ func (am *AccountManager) GetDefault() (*StoredAccount, error) {
 		return nil, err
 	}
 
-	if len(accounts) == 0 {
-		return nil, types.ErrAccountUnknown
-	}
-
 	for _, a := range accounts {
 		if a.Default {
 			return a, nil

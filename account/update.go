@@ -32,13 +32,13 @@ func (am *AccountManager) UpdateCmd(addressOrIndex, passphrase string) error {
 	newPassphraseHardened := hardenPassword([]byte(newPassphrase))
 	updatedCipher, err := util.Encrypt(account.DecryptedCipher, newPassphraseHardened[:])
 	if err != nil {
-		return fmt.Errorf("unable to lock account with new passphrase")
+		return fmt.Errorf("unable to relock account")
 	}
 
 	filename := filepath.Join(am.accountDir, fmt.Sprintf("%d_%s", account.CreatedAt.Unix(), account.Address))
 	err = ioutil.WriteFile(filename, updatedCipher, 0644)
 	if err != nil {
-		return fmt.Errorf("unable to write locked account to disk")
+		return fmt.Errorf("unable to write relocked account to disk")
 	}
 	fmt.Println("Successfully updated account")
 

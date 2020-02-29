@@ -22,7 +22,8 @@ func (am *AccountManager) CreateAccount(defaultAccount bool, address *crypto.Key
 
 	if address == nil {
 		return fmt.Errorf("Address is required")
-	} else if passphrase == "" {
+	}
+	if passphrase == "" {
 		return fmt.Errorf("Passphrase is required")
 	}
 

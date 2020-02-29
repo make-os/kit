@@ -6,10 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/util"
-
 	"github.com/fatih/color"
+	"github.com/pkg/errors"
 
 	funk "github.com/thoas/go-funk"
 )
@@ -17,24 +15,17 @@ import (
 // ReadPassFromFile reads a passphrase from a file path; prints
 // error messages to stdout
 func ReadPassFromFile(path string) (string, error) {
-
-	fullPath, err := filepath.Abs(path)
-	if err != nil {
-		util.PrintCLIError("Invalid file path {%s}: %s", path, err.Error())
-		return "", err
-	}
-
+	fullPath, _ := filepath.Abs(path)
 	content, err := ioutil.ReadFile(fullPath)
 	if err != nil {
 		if funk.Contains(err.Error(), "no such file") {
-			util.PrintCLIError("Password file {%s} not found.", path)
+			err = errors.Wrap(err, "password file not found")
 		}
 		if funk.Contains(err.Error(), "is a directory") {
-			util.PrintCLIError("Password file path {%s} is a directory. Expects a file.", path)
+			err = errors.Wrapf(err, "path is a directory. Expected a file")
 		}
 		return "", err
 	}
-
 	return strings.TrimSpace(strings.Trim(string(content), "/n")), nil
 }
 
@@ -44,8 +35,6 @@ func ReadPassFromFile(path string) (string, error) {
 // characters (left and right) and used as the password. When pass
 // is set, interactive password collection is not used.
 func (am *AccountManager) RevealCmd(addrOrIdx, pass string) error {
-
-	var passphrase string
 
 	if addrOrIdx == "" {
 		return fmt.Errorf("address is required")
@@ -59,11 +48,9 @@ func (am *AccountManager) RevealCmd(addrOrIdx, pass string) error {
 	fmt.Println(color.HiBlackString("Account: ") + storedAcct.Address)
 
 	// if no password or password file is provided, ask for password
+	var passphrase string
 	if len(pass) == 0 {
 		passphrase = am.AskForPasswordOnce()
-		if err != nil {
-			return err
-		}
 		goto unlock
 	}
 
@@ -82,7 +69,7 @@ func (am *AccountManager) RevealCmd(addrOrIdx, pass string) error {
 unlock:
 
 	if err = storedAcct.Unlock(passphrase); err != nil {
-		return errors.Wrap(err, "Could not unlock account")
+		return errors.Wrap(err, "could not unlock account")
 	}
 
 	fmt.Println(color.HiCyanString("Private Key:"), storedAcct.key.PrivKey().Base58())
