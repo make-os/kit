@@ -2,6 +2,7 @@ package logic
 
 import (
 	"crypto/rsa"
+
 	"gitlab.com/makeos/mosdef/types/state"
 
 	"gitlab.com/makeos/mosdef/crypto"
@@ -35,7 +36,7 @@ func (t *Transaction) execAddGPGKey(
 
 	// Store the new public key
 	entity, _ := crypto.PGPEntityFromPubKey(gpgPublicKey)
-	gpgID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+	gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 	if err := t.logic.GPGPubKeyKeeper().Update(gpgID, gpgPubKey); err != nil {
 		return err
 	}

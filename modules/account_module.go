@@ -241,7 +241,7 @@ func (m *AccountModule) GetNonce(address string, height ...uint64) string {
 // GetAccount returns the account of the given address
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
-func (m *AccountModule) GetAccount(address string, height ...uint64) interface{} {
+func (m *AccountModule) GetAccount(address string, height ...uint64) util.Map {
 	acct := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
@@ -299,13 +299,13 @@ func (m *AccountModule) GetStakedBalance(address string, height ...uint64) strin
 // includePrivKey: Indicates that the private key of the validator should be included in the result
 //
 // RETURNS object <map>:
-// publicKey <string> -	The validator base58 public key
-// address 	<string> -	The validator's bech32 address.
-// tmAddress <string> -	The tendermint address
-func (m *AccountModule) GetPrivateValidator(includePrivKey ...bool) interface{} {
+// publicKey <string>:	The validator base58 public key
+// address 	<string>:	The validator's bech32 address.
+// tmAddress <string>:	The tendermint address
+func (m *AccountModule) GetPrivateValidator(includePrivKey ...bool) util.Map {
 	key, _ := m.cfg.G().PrivVal.GetKey()
 
-	info := map[string]string{
+	info := map[string]interface{}{
 		"publicKey": key.PubKey().Base58(),
 		"address":   key.Addr().String(),
 		"tmAddress": m.cfg.G().PrivVal.Key.Address.String(),
@@ -332,8 +332,7 @@ func (m *AccountModule) GetPrivateValidator(includePrivKey ...bool) interface{} 
 //
 // RETURNS object <map>:
 // object.hash <string>: The transaction hash
-func (m *AccountModule) SetCommission(params map[string]interface{},
-	options ...interface{}) interface{} {
+func (m *AccountModule) SetCommission(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareTxSetDelegateCommission()

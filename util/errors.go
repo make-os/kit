@@ -70,7 +70,7 @@ func fieldErrorWithIndex(index int, field, err string) error {
 }
 
 // WrongFieldValueMsg generates a message to indicate an unexpected field value type
-func WrongFieldValueMsg(field, expectedType string, actual interface{}) string {
+func WrongFieldValueMsg(expectedType string, actual interface{}) string {
 	return fmt.Sprintf("wrong value type, want '%s', got %T",
 		expectedType, reflect.TypeOf(actual).String())
 }

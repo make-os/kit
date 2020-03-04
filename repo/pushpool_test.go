@@ -2,9 +2,10 @@ package repo
 
 import (
 	"fmt"
+	"time"
+
 	"gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/types/core"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
@@ -49,7 +50,7 @@ var _ = Describe("PushPool", func() {
 		tx = &core.PushNote{
 			RepoName:     "repo",
 			NodeSig:      []byte("sig"),
-			PusherKeyID:  util.MustDecodeRSAPubKeyID(gpgID),
+			PusherKeyID:  util.MustDecodeGPGIDToRSAHash(gpgID),
 			Fee:          "0.2",
 			AccountNonce: 2,
 			References: []*core.PushedReference{
@@ -59,7 +60,7 @@ var _ = Describe("PushPool", func() {
 		tx2 = &core.PushNote{
 			RepoName:     "repo2",
 			NodeSig:      []byte("sig_2"),
-			PusherKeyID:  util.MustDecodeRSAPubKeyID(gpgID2),
+			PusherKeyID:  util.MustDecodeGPGIDToRSAHash(gpgID2),
 			Fee:          "0.2",
 			AccountNonce: 2,
 			References: []*core.PushedReference{
@@ -156,7 +157,7 @@ var _ = Describe("PushPool", func() {
 				tx2 := &core.PushNote{
 					RepoName:     "repo",
 					NodeSig:      []byte("sig"),
-					PusherKeyID:  util.MustDecodeRSAPubKeyID(gpgID),
+					PusherKeyID:  util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp:    100000000,
 					Fee:          "0.2",
 					AccountNonce: 2,
@@ -186,7 +187,7 @@ var _ = Describe("PushPool", func() {
 				tx2 = &core.PushNote{
 					RepoName:    "repo",
 					NodeSig:     []byte("sig"),
-					PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID),
+					PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp:   100000000,
 					Fee:         "0.01", AccountNonce: 2,
 					References: []*core.PushedReference{
@@ -214,7 +215,7 @@ var _ = Describe("PushPool", func() {
 				tx2 = &core.PushNote{
 					RepoName:    "repo",
 					NodeSig:     []byte("sig"),
-					PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID),
+					PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp:   100000000,
 					Fee:         "0.01", AccountNonce: 2,
 					References: []*core.PushedReference{
@@ -241,7 +242,7 @@ var _ = Describe("PushPool", func() {
 				tx2 := &core.PushNote{
 					RepoName:    "repo",
 					NodeSig:     []byte("sig"),
-					PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID),
+					PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp:   100000000,
 					Fee:         "0.01", AccountNonce: 2,
 					References: []*core.PushedReference{
@@ -270,7 +271,7 @@ var _ = Describe("PushPool", func() {
 				tx2 = &core.PushNote{
 					RepoName:    "repo",
 					NodeSig:     []byte("sig"),
-					PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID),
+					PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp:   100000000,
 					Fee:         "0.5", AccountNonce: 2,
 					References: []*core.PushedReference{
@@ -300,7 +301,7 @@ var _ = Describe("PushPool", func() {
 				txY = &core.PushNote{
 					RepoName:     "repo",
 					NodeSig:      []byte("sig"),
-					PusherKeyID:  util.MustDecodeRSAPubKeyID(gpgID),
+					PusherKeyID:  util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp:    100000000,
 					Fee:          "0.01",
 					AccountNonce: 2,
@@ -312,7 +313,7 @@ var _ = Describe("PushPool", func() {
 				txZ = &core.PushNote{
 					RepoName:    "repo",
 					NodeSig:     []byte("sig"),
-					PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID),
+					PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp:   100000000,
 					Fee:         "0.01", AccountNonce: 2,
 					References: []*core.PushedReference{
@@ -323,7 +324,7 @@ var _ = Describe("PushPool", func() {
 				txX = &core.PushNote{
 					RepoName:    "repo",
 					NodeSig:     []byte("sig"),
-					PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID),
+					PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp:   100000000,
 					Fee:         "0.03", AccountNonce: 2,
 					References: []*core.PushedReference{
@@ -361,7 +362,7 @@ var _ = Describe("PushPool", func() {
 				txY = &core.PushNote{
 					RepoName:    "repo",
 					NodeSig:     []byte("sig"),
-					PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID),
+					PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp:   100000000,
 					Fee:         "0.4", AccountNonce: 2,
 					References: []*core.PushedReference{
@@ -372,7 +373,7 @@ var _ = Describe("PushPool", func() {
 				txZ = &core.PushNote{
 					RepoName:     "repo",
 					NodeSig:      []byte("sig"),
-					PusherKeyID:  util.MustDecodeRSAPubKeyID(gpgID),
+					PusherKeyID:  util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp:    100000000,
 					Fee:          "0.4",
 					AccountNonce: 2,
@@ -384,7 +385,7 @@ var _ = Describe("PushPool", func() {
 				txX = &core.PushNote{
 					RepoName:    "repo",
 					NodeSig:     []byte("sig"),
-					PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID),
+					PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp:   100000000,
 					Fee:         "0.7", AccountNonce: 2,
 					References: []*core.PushedReference{
@@ -411,7 +412,7 @@ var _ = Describe("PushPool", func() {
 			var txX *core.PushNote
 			BeforeEach(func() {
 				txX = &core.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID),
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp: 100000000,
 					Fee:       "0.01", AccountNonce: 2,
 					References: []*core.PushedReference{
@@ -433,7 +434,7 @@ var _ = Describe("PushPool", func() {
 			var txX *core.PushNote
 			BeforeEach(func() {
 				txX = &core.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID),
+					RepoName: "repo", NodeSig: []byte("sig"), PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
 					Timestamp: 100000000,
 					Fee:       "0.01", AccountNonce: 2,
 					References: []*core.PushedReference{
@@ -619,7 +620,7 @@ var _ = Describe("refNonceIndex", func() {
 })
 
 var _ = Describe("repoNotesIndex", func() {
-	var gpgID = util.MustToRSAPubKeyID([]byte("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"))
+	var gpgID = util.MustCreateGPGID([]byte("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"))
 
 	Describe(".add", func() {
 		var idx repoNotesIndex
@@ -671,7 +672,7 @@ var _ = Describe("repoNotesIndex", func() {
 		When("repo has 1 txA and txA is removed", func() {
 			var txA *core.PushNote
 			BeforeEach(func() {
-				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID), Timestamp: 100000000}
+				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID), Timestamp: 100000000}
 				idx = repoNotesIndex(map[string][]*containerItem{})
 				idx.add("repo1", &containerItem{Note: txA})
 				Expect(idx["repo1"]).To(HaveLen(1))
@@ -686,8 +687,8 @@ var _ = Describe("repoNotesIndex", func() {
 		When("repo has 2 txs (txA and TxB) and txA is removed", func() {
 			var txA, txB *core.PushNote
 			BeforeEach(func() {
-				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID), Timestamp: 100000000}
-				txB = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: util.MustDecodeRSAPubKeyID(gpgID), Timestamp: 200000000}
+				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID), Timestamp: 100000000}
+				txB = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PusherKeyID: util.MustDecodeGPGIDToRSAHash(gpgID), Timestamp: 200000000}
 				idx = repoNotesIndex(map[string][]*containerItem{})
 				idx.add("repo1", &containerItem{Note: txA})
 				idx.add("repo1", &containerItem{Note: txB})

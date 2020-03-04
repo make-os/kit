@@ -2,9 +2,11 @@ package state
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/stretchr/objx"
 
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/util"
@@ -33,6 +35,56 @@ type Account struct {
 	Nonce               uint64        `json:"nonce" msgpack:"nonce"`
 	Stakes              AccountStakes `json:"stakes,omitempty" msgpack:"stakes"`
 	DelegatorCommission float64       `json:"delegatorCommission" msgpack:"delegatorCommission"`
+}
+
+// FromMap populates the object from a map
+func (a *Account) FromMap(m map[string]interface{}) error {
+	var err error
+	o := objx.New(m)
+
+	// Balance: expects string
+	if bal := o.Get("balance"); !bal.IsNil() {
+		if bal.IsStr() {
+			a.Balance = util.String(bal.Str())
+		} else {
+			return util.FieldError("balance",
+				fmt.Sprintf("invalid value type: has %T, wants string", bal.Inter()))
+		}
+	}
+
+	// Nonce: expects string
+	if nonce := o.Get("nonce"); !nonce.IsNil() {
+		if nonce.IsStr() {
+			a.Nonce, err = strconv.ParseUint(nonce.Str(), 10, 64)
+			if err != nil {
+				return util.FieldError("nonce", "failed to convert to uint64")
+			}
+		} else if nonce.IsFloat64() {
+			a.Nonce = uint64(nonce.Float64())
+		} else if nonce.IsInt64() {
+			a.Nonce = uint64(nonce.Int64())
+		} else {
+			return util.FieldError("nonce",
+				fmt.Sprintf("invalid value type: has %T, wants string", nonce.Inter()))
+		}
+	}
+
+	// DelegatorCommission: expects string
+	if delCom := o.Get("delegatorCommission"); !delCom.IsNil() {
+		if delCom.IsStr() {
+			a.DelegatorCommission, err = strconv.ParseFloat(delCom.Str(), 64)
+			if err != nil {
+				return util.FieldError("delegatorCommission", "failed to convert to uint64")
+			}
+		} else if delCom.IsFloat64() {
+			a.DelegatorCommission = delCom.Float64()
+		} else {
+			return util.FieldError("delegatorCommission",
+				fmt.Sprintf("invalid value type: has %T, wants string", delCom.Inter()))
+		}
+	}
+
+	return nil
 }
 
 // GetBalance implements types.BalanceAccount

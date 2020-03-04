@@ -1,9 +1,10 @@
 package logic
 
 import (
+	"os"
+
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"os"
 
 	"github.com/golang/mock/gomock"
 
@@ -57,7 +58,7 @@ var _ = Describe("Push", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var repo = "repo1"
-		var gpgID = util.MustToRSAPubKeyID([]byte("gpgID"))
+		var gpgID = util.MustCreateGPGID([]byte("gpgID"))
 
 		When("reference has nonce = 1", func() {
 			BeforeEach(func() {
@@ -82,7 +83,7 @@ var _ = Describe("Push", func() {
 					&core.PushedReference{Name: "refs/heads/master"},
 				}
 
-				err = txLogic.execPush(repo, refs, "1", util.MustDecodeRSAPubKeyID(gpgID), 0)
+				err = txLogic.execPush(repo, refs, "1", util.MustDecodeGPGIDToRSAHash(gpgID), 0)
 				Expect(err).To(BeNil())
 			})
 

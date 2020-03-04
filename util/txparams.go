@@ -44,19 +44,14 @@ type TxParams struct {
 	MergeProposalID string // A directive to handle a pushed branch based on the constraints defined in a merge proposal
 }
 
-// GetNonceString returns the nonce as a string
-func (tl *TxParams) GetNonceString() string {
+// GetNonceAsString returns the nonce as a string
+func (tl *TxParams) GetNonceAsString() string {
 	return strconv.FormatUint(tl.Nonce, 10)
 }
 
 func (tl *TxParams) String() string {
 	nonceStr := strconv.FormatUint(tl.Nonce, 10)
 	return MakeTxParams(tl.Fee.String(), nonceStr, tl.PubKeyID, []byte(tl.Signature))
-}
-
-// IsZeroString returns true if str is empty or equal "0"
-func IsZeroString(str string) bool {
-	return str == "" || str == "0"
 }
 
 // MakeTxParams returns a well formatted txparams string
@@ -120,59 +115,67 @@ func ParseTxParams(msg string) (*TxParams, error) {
 
 		if kvParts[0] == "fee" {
 			if !govalidator.IsFloat(kvParts[1]) {
-				return nil, fmt.Errorf("field:fee, msg: fee must be numeric")
+				return nil, fieldError("fee", "fee must be numeric")
 			}
 			txParams.Fee = String(kvParts[1])
+			continue
 		}
 
 		if kvParts[0] == "nonce" {
 			nonce, err := strconv.ParseUint(kvParts[1], 10, 64)
 			if err != nil {
-				return nil, fmt.Errorf("field:nonce, msg: nonce must be an unsigned integer")
+				return nil, fieldError("nonce", "nonce must be an unsigned integer")
 			}
 			txParams.Nonce = nonce
+			continue
 		}
 
 		if kvParts[0] == "gpgID" {
 			if kvParts[1] == "" {
-				return nil, fmt.Errorf("field:gpgID, msg: public key id is required")
+				return nil, fieldError("gpgID", "gpg key id is required")
 			}
-			if len(kvParts[1]) != 42 || !IsValidRSAPubKey(kvParts[1]) {
-				return nil, fmt.Errorf("field:gpgID, msg: public key id is invalid")
+			if len(kvParts[1]) != 42 || !IsValidGPGID(kvParts[1]) {
+				return nil, fieldError("gpgID", "gpg key id is invalid")
 			}
 			txParams.PubKeyID = kvParts[1]
+			continue
 		}
 
 		if kvParts[0] == "sig" {
 			if kvParts[1] == "" {
-				return nil, fmt.Errorf("field:sig, msg: signature value is required")
+				return nil, fieldError("sig", "signature value is required")
 			}
 			if kvParts[1][:2] != "0x" {
-				return nil, fmt.Errorf("field:sig, msg: signature format is not valid")
+				return nil, fieldError("sig", "signature format is not valid")
 			}
 			decSig, err := HexToStr(kvParts[1])
 			if err != nil {
-				return nil, fmt.Errorf("field:sig, msg: signature format is not valid")
+				return nil, fieldError("sig", "signature format is not valid")
 			}
 			txParams.Signature = decSig
+			continue
 		}
 
 		if kvParts[0] == "deleteRef" {
 			txParams.DeleteRef = true
+			continue
 		}
 
 		if kvParts[0] == "mergeID" {
 			if len(kvParts) == 1 || kvParts[1] == "" {
-				return nil, fmt.Errorf("merge proposal id is required")
+				return nil, fieldError("mergeID", "merge proposal id is required")
 			}
 			if !govalidator.IsNumeric(kvParts[1]) {
-				return nil, fmt.Errorf("merge proposal id format is not valid")
+				return nil, fieldError("mergeID", "merge proposal id format is not valid")
 			}
 			if len(kvParts[1]) > 8 {
-				return nil, fmt.Errorf("merge id limit of 8 bytes exceeded")
+				return nil, fieldError("mergeID", "merge id limit of 8 bytes exceeded")
 			}
 			txParams.MergeProposalID = kvParts[1]
+			continue
 		}
+
+		return nil, fieldError(kvParts[0], "unknown field")
 	}
 
 	return txParams, nil

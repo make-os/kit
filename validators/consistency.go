@@ -3,6 +3,7 @@ package validators
 import (
 	"crypto/rsa"
 	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/crypto"
@@ -28,10 +29,10 @@ func CheckTxCoinTransferConsistency(
 	recipient := tx.To.Address()
 
 check:
-	// If recipient address is a prefixed, repo address, ensure repo exist
+	// If recipient address is a prefixed repo address, ensure repo exist
 	if recipient.IsPrefixedRepoAddress() {
-		repo := logic.RepoKeeper().GetRepo(recipient.String()[2:], uint64(bi.Height))
-		if repo.IsNil() {
+		targetRepo := logic.RepoKeeper().GetRepo(recipient.String()[2:], uint64(bi.Height))
+		if targetRepo.IsNil() {
 			return feI(index, "to", "recipient repo not found")
 		}
 	}
@@ -210,7 +211,7 @@ func CheckTxAddGPGPubKeyConsistency(
 	}
 
 	// Check whether there is a matching gpg key already existing
-	gpgID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+	gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 	gpgPubKey := logic.GPGPubKeyKeeper().GetGPGPubKey(gpgID)
 	if !gpgPubKey.IsNil() {
 		return feI(index, "pubKey", "gpg public key already registered")

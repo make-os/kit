@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/stretchr/objx"
@@ -12,6 +11,7 @@ import (
 // GPGFind gets the GPG key associated with the given ID
 // QueryParams:
 // - id: The gpg key bech32 unique ID
+// - [blockHeight]: The height of the block to query (default: latest)
 // Response <map> - state.GPGPubKey
 func (r *RESTApi) GPGFind(w http.ResponseWriter, req *http.Request) {
 	query := objx.MustFromURLQuery(req.URL.Query().Encode())
@@ -30,6 +30,7 @@ func (r *RESTApi) GPGFind(w http.ResponseWriter, req *http.Request) {
 // GPGGetNonceOfOwner gets the account nonce of the gpg key owner
 // QueryParams:
 // - id: The gpg key bech32 unique ID
+// - [blockHeight]: The height of the block to query (default: latest)
 // Response <map>
 // - nonce <string> The key owner account nonce
 func (r *RESTApi) GPGGetOwnerNonce(w http.ResponseWriter, req *http.Request) {
@@ -43,7 +44,8 @@ func (r *RESTApi) GPGGetOwnerNonce(w http.ResponseWriter, req *http.Request) {
 	}
 
 	acct := r.Modules().GPG.GetAccountOfOwner(id, blockHeight)
+
 	util.WriteJSON(w, 200, map[string]interface{}{
-		"nonce": fmt.Sprintf("%d", acct.Nonce),
+		"nonce": acct["nonce"].(string),
 	})
 }

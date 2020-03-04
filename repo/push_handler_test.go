@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"crypto/rsa"
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
@@ -149,7 +150,7 @@ var _ = Describe("PushHandler", func() {
 
 				oldState := getRepoState(repo)
 				pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-				gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
 				appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
 
@@ -182,13 +183,13 @@ var _ = Describe("PushHandler", func() {
 
 					oldState := getRepoState(repo)
 					pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-					gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+					gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 					txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
 					appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
 
 					createCheckoutBranch(path, "branch2")
 					pkEntity, _ = crypto.PGPEntityFromPubKey(pubKey2)
-					gpgID2 := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+					gpgID2 := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 					txParams = fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID2)
 					appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID2)
 

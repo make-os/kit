@@ -26,7 +26,7 @@ import (
 func DetermineNextNonceOfGPGKeyOwner(
 	gpgID string,
 	rpcClient *client.RPCClient,
-	remoteClients []*restclient.RESTClient) (string, error) {
+	remoteClients []restclient.RestClient) (string, error) {
 
 	var nextNonce string
 
@@ -39,7 +39,7 @@ func DetermineNextNonceOfGPGKeyOwner(
 	// If the nonce is still not known and rpc client non-nil, attempt to get nonce using the client
 	var errRPC error
 	if util.IsZeroString(nextNonce) && rpcClient != nil {
-		nextNonce, errRPC = client.GPGGetNonceOfOwnerUsingRPCClient(gpgID, rpcClient)
+		nextNonce, errRPC = client.GPGGetNextNonceOfOwnerUsingRPCClient(gpgID, rpcClient)
 	}
 
 	// At this point, we have failed to use the clients to get the next nonce.
@@ -75,7 +75,7 @@ func DetermineNextNonceOfGPGKeyOwner(
 func DetermineNextNonceOfAccount(
 	address string,
 	rpcClient *client.RPCClient,
-	remoteClients []*restclient.RESTClient) (string, error) {
+	remoteClients []restclient.RestClient) (string, error) {
 
 	var nextNonce string
 
@@ -119,7 +119,7 @@ func DetermineNextNonceOfAccount(
 func SendTxPayload(
 	data map[string]interface{},
 	rpcClient *client.RPCClient,
-	remoteClients []*restclient.RESTClient) (string, error) {
+	remoteClients []restclient.RestClient) (string, error) {
 
 	var resp *types.TxSendPayloadResponse
 	var errRPC, errRemote error

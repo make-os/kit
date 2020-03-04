@@ -3,6 +3,7 @@ package rpc
 import (
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // RPCManagerAPI provides RPC methods for various local account management functionality.
@@ -18,10 +19,10 @@ func NewRPCManagerAPI(srv *rpc.Server) *RPCManagerAPI {
 // echo returns any parameter sent in the request
 // Body:
 // - params <any>: Arbitrary parameter
-// Response:
-// - resp <any> - Returns the inputted params
+// Response <map>:
+// - data <any>: The params passed in the request
 func (l *RPCManagerAPI) echo(params interface{}) (resp *rpc.Response) {
-	return rpc.Success(params)
+	return rpc.Success(util.Map{"data": params})
 }
 
 // APIs returns all API handlers

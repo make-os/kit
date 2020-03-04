@@ -1,23 +1,22 @@
 package util
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math/big"
 	r "math/rand"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/btcsuite/btcutil/bech32"
-	"github.com/fatih/color"
 	"github.com/robertkrimen/otto"
 	"github.com/thoas/go-funk"
 
@@ -91,21 +90,19 @@ func (s String) Decimal() decimal.Decimal {
 	return StrToDec(s.String())
 }
 
-// Float returns the float equivalent of the numeric value
+// Float returns the float equivalent of the numeric value.
+// Panics if not convertible to float64
 func (s String) Float() float64 {
-	dec := s.Decimal()
-	valF, _ := dec.Float64()
-	return valF
+	f, err := strconv.ParseFloat(string(s), 64)
+	if err != nil {
+		panic(err)
+	}
+	return f
 }
 
-// IsDecimal checks whether the string
-// can be converted to decimal
+// IsDecimal checks whether the string can be converted to Decimal
 func (s String) IsDecimal() bool {
-	defer func() {
-		_ = recover()
-	}()
-	s.Decimal()
-	return true
+	return govalidator.IsFloat(string(s))
 }
 
 // ObjectToBytes returns msgpack encoded representation of s.
@@ -246,11 +243,6 @@ func MustFromHex(hexValue string) []byte {
 	return v
 }
 
-// LogAlert wraps pp.Println with a read [Alert] prefix.
-func LogAlert(format string, args ...interface{}) {
-	fmt.Println(color.RedString("[Alert] "+format, args...))
-}
-
 // StructToMap converts s to a map.
 // If tagName is not provided, 'json' tag is used as a default.
 func StructToMap(s interface{}, tagName ...string) map[string]interface{} {
@@ -316,9 +308,6 @@ func MayDecodeNumber(encNum []byte) (r uint64, err error) {
 // out on a block.
 type BlockNonce [8]byte
 
-// EmptyBlockNonce is a BlockNonce with no values
-var EmptyBlockNonce = BlockNonce([8]byte{})
-
 // EncodeNonce converts the given integer to a block nonce.
 func EncodeNonce(i uint64) BlockNonce {
 	var n BlockNonce
@@ -329,16 +318,6 @@ func EncodeNonce(i uint64) BlockNonce {
 // Uint64 returns the integer value of a block nonce.
 func (n BlockNonce) Uint64() uint64 {
 	return binary.BigEndian.Uint64(n[:])
-}
-
-// MarshalText encodes n as a hex string with 0x prefix.
-func (n BlockNonce) MarshalText() string {
-	return ToHex(n[:])
-}
-
-// PrintCLIError prints an error message formatted for the command line
-func PrintCLIError(msg string, args ...interface{}) {
-	fmt.Println(color.RedString("Error:"), fmt.Sprintf(msg, args...))
 }
 
 // IsBoolChanClosed checks whether a boolean channel is closed
@@ -374,8 +353,7 @@ func IsFuncChanClosed(c <-chan func()) bool {
 	return false
 }
 
-// VMSet sets a value in the vm context only if it
-// has been set before.
+// VMSet sets a value in the vm context only if it has not been set before.
 func VMSet(vm *otto.Otto, name string, value interface{}) interface{} {
 	existing, _ := vm.Get(name)
 	if !existing.IsUndefined() {
@@ -391,14 +369,6 @@ func XorBytes(a, b []byte) []byte {
 	iA := new(big.Int).SetBytes(a)
 	iB := new(big.Int).SetBytes(b)
 	return new(big.Int).Xor(iA, iB).Bytes()
-}
-
-// TouchReader reads one byte from reader into a buffer.
-func TouchReader(reader io.Reader) io.Reader {
-	bf := bufio.NewReader(reader)
-	bf.ReadByte()
-	bf.UnreadByte()
-	return bf
 }
 
 // RemoveFlagVal takes a slice of arguments and remove
@@ -498,13 +468,6 @@ func ParseExtArgs(extArgs map[string]string) (extsArgs map[string]map[string]str
 	return
 }
 
-// StructToJSON converts struct to map
-func StructToJSON(s interface{}) map[string]interface{} {
-	st := structs.New(s)
-	st.TagName = "json"
-	return st.Map()
-}
-
 // CopyMap copies src map to dst
 func CopyMap(src, dst map[string]interface{}) {
 	for k, v := range src {
@@ -580,11 +543,31 @@ func RESTApiErrorMsg(msg, field string, code string) map[string]interface{} {
 	}
 }
 
-// AtUint64Slice gets an index from a uint64 variadic value.
+// GetIndexFromUInt64Slice gets an index from a uint64 variadic param.
 // Returns 0 if opts is empty
-func AtUint64Slice(index int, opts ...uint64) uint64 {
+func GetIndexFromUInt64Slice(index int, opts ...uint64) uint64 {
 	if len(opts) == 0 {
 		return 0
 	}
 	return opts[index]
+}
+
+// ToMapSI converts a map to map[string]interface{}
+func ToMapSI(mapType interface{}) Map {
+	v := reflect.ValueOf(mapType)
+	if v.Kind() != reflect.Map {
+		panic("not a map type")
+	}
+
+	res := Map{}
+	for _, k := range v.MapKeys() {
+		res[k.String()] = v.MapIndex(k).Interface()
+	}
+
+	return res
+}
+
+// IsZeroString returns true if str is empty or equal "0"
+func IsZeroString(str string) bool {
+	return str == "" || str == "0"
 }

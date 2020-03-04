@@ -4,6 +4,7 @@ import (
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/modules"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // LocalAccountAPI provides RPC methods for various local account management functionality.
@@ -17,10 +18,12 @@ func NewLocalAccountAPI(mods *modules.Modules) *LocalAccountAPI {
 }
 
 // getAccount returns the account corresponding to the given address
-// Response:
-// - resp - (Array<string>): list of addresses
+// Response <map>:
+// - accounts <[]string>: list of addresses
 func (l *LocalAccountAPI) listAccounts(interface{}) (resp *rpc.Response) {
-	return rpc.Success(l.mods.Account.ListLocalAccounts())
+	return rpc.Success(util.Map{
+		"accounts": l.mods.Account.ListLocalAccounts(),
+	})
 }
 
 // APIs returns all API handlers

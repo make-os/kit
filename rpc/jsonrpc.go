@@ -3,17 +3,16 @@ package rpc
 import (
 	"context"
 	"encoding/json"
+	errors2 "errors"
 	"fmt"
 	"net/http"
 	"runtime/debug"
 
+	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/types"
-
-	"github.com/gorilla/mux"
-	"github.com/gorilla/rpc/v2"
-	"github.com/gorilla/rpc/v2/json2"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 const (
@@ -69,7 +68,7 @@ type Err struct {
 // Response represents a JSON RPC response
 type Response struct {
 	JSONRPCVersion string      `json:"jsonrpc"`
-	Result         interface{} `json:"result"`
+	Result         util.Map    `json:"result"`
 	Err            *Err        `json:"error,omitempty"`
 	ID             interface{} `json:"id,omitempty"` // string or float64
 }
@@ -77,6 +76,12 @@ type Response struct {
 // IsError checks whether r is an error response
 func (r Response) IsError() bool {
 	return r.Err != nil
+}
+
+// ToJSON returns the JSON encoding of r
+func (r Response) ToJSON() []byte {
+	bz, _ := json.Marshal(r)
+	return bz
 }
 
 // JSONRPC defines a wrapper over mux json rpc
@@ -98,8 +103,8 @@ type JSONRPC struct {
 	// the request response.
 	onRequest OnRequestFunc
 
-	// handlerConfigured lets us know when the request handler has been configured
-	handlerConfigured bool
+	// handlerSet lets us know when the request handler has been configured
+	handlerSet bool
 
 	// server is the rpc server
 	server *http.Server
@@ -114,20 +119,20 @@ func Error(code interface{}, message string, data interface{}) *Response {
 }
 
 // Success creates a success response
-func Success(result interface{}) *Response {
+func Success(result util.Map) *Response {
 	return &Response{JSONRPCVersion: "2.0", Result: result}
 }
 
 // New creates a JSON-RPC 2.0 server
 func New(addr string, cfg *config.AppConfig, log logger.Logger) *JSONRPC {
-	rpc := &JSONRPC{
+	jsonrpc := &JSONRPC{
 		cfg:    cfg,
 		addr:   addr,
 		apiSet: APISet{},
 		log:    log.Module("json-rpc"),
 	}
-	rpc.MergeAPISet(rpc.APIs())
-	return rpc
+	jsonrpc.MergeAPISet(jsonrpc.APIs())
+	return jsonrpc
 }
 
 // APIs returns APIs for the jsonrpc package
@@ -137,36 +142,40 @@ func (s *JSONRPC) APIs() APISet {
 			Description: "List RPC methods",
 			Namespace:   "rpc",
 			Func: func(interface{}) *Response {
-				return Success(s.Methods())
+				return Success(util.ToMapSI(s.Methods()))
 			},
 		},
 	}
 }
 
 // Methods gets the names of all methods in the API set.
-func (s *JSONRPC) Methods() (methodsInfo []MethodInfo) {
+func (s *JSONRPC) Methods() (methodsInfo map[string]MethodInfo) {
+	methodsInfo = make(map[string]MethodInfo)
 	for name, d := range s.apiSet {
-		methodsInfo = append(methodsInfo, MethodInfo{
+		methodsInfo[name] = MethodInfo{
 			Name:        name,
 			Description: d.Description,
 			Namespace:   d.Namespace,
 			Private:     d.Private,
-		})
+		}
 	}
 	return
 }
 
+func (s *JSONRPC) methodWithInterVal() map[string]interface{} {
+	dest := make(map[string]interface{})
+	for k, v := range s.Methods() {
+		dest[k] = v
+	}
+	return dest
+}
+
 // Serve starts the server
 func (s *JSONRPC) Serve() {
-
-	r := mux.NewRouter()
-	server := rpc.NewServer()
-	server.RegisterCodec(json2.NewCodec(), "application/json")
-	server.RegisterCodec(json2.NewCodec(), "application/json;charset=UTF-8")
-	r.Handle("/", server)
-
+	mux := http.NewServeMux()
 	s.server = &http.Server{Addr: s.addr}
-	s.registerHandler()
+	s.registerHandler(mux, "/")
+	s.server.Handler = mux
 	if err := s.server.ListenAndServe(); err != nil {
 		if err != http.ErrServerClosed {
 			s.log.Fatal("Failed to start rpc server", "Err", err)
@@ -174,20 +183,29 @@ func (s *JSONRPC) Serve() {
 	}
 }
 
-func (s *JSONRPC) registerHandler() {
-	if s.handlerConfigured {
+// registerHandler registers the main handler
+func (s *JSONRPC) registerHandler(mux *http.ServeMux, path string) {
+	if s.handlerSet {
 		return
 	}
-	http.HandleFunc("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	s.handlerSet = true
+	mux.Handle(path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if s.onRequest != nil {
 			if err := s.onRequest(r); err != nil {
-				json.NewEncoder(w).Encode(Error(middlewareErrCode, err.Error(), nil))
+				_ = json.NewEncoder(w).Encode(Error(middlewareErrCode, err.Error(), nil))
 				return
 			}
 		}
-		json.NewEncoder(w).Encode(s.handle(w, r))
+
+		// Handle the request.
+		// When the response is non-nil, write it to the http writer.
+		// Otherwise, do nothing as this indicates a panic occurred and in
+		// such a case, the panic recovery function will write an appropriate
+		// error response.
+		if resp := s.handle(w, r); resp != nil {
+			_ = json.NewEncoder(w).Encode(resp)
+		}
 	}))
-	s.handlerConfigured = true
 }
 
 // Stop stops the RPC server
@@ -259,8 +277,26 @@ func (s *JSONRPC) handle(w http.ResponseWriter, r *http.Request) *Response {
 
 	defer func() {
 		if rcv, ok := recover().(error); ok {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(Error(serverErrCode, rcv.Error(), nil))
+			cause := errors.Cause(rcv)
+			var resp *Response
+			var respCode int
+
+			// Check if a StatusError is the cause. If so, we use the information
+			// in the StatusError to create a good error response, otherwise we return
+			// a less useful 500 error
+			se := &util.StatusError{}
+			if errors2.As(cause, &se) {
+				respCode = se.HttpCode
+				resp = Error(se.Code, se.Msg, se.Field)
+			} else {
+				respCode = http.StatusInternalServerError
+				resp = Error("", cause.Error(), "")
+			}
+
+			w.WriteHeader(respCode)
+			_ = json.NewEncoder(w).Encode(resp)
+
+			// In dev mode, print out the stack for easy debugging
 			if s.cfg.IsDev() {
 				fmt.Println(string(debug.Stack()))
 			}

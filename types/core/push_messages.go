@@ -34,7 +34,7 @@ func (pt *PushNote) GetPusherKeyID() []byte {
 // GetPusherKeyIDString is like GetPusherKeyID but returns hex string, prefixed
 // with 0x
 func (pt *PushNote) GetPusherKeyIDString() string {
-	return util.MustToRSAPubKeyID(pt.PusherKeyID)
+	return util.MustCreateGPGID(pt.PusherKeyID)
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -231,4 +231,3 @@ func (po *PushOK) Clone() *PushOK {
 	}
 	return cp
 }
-

@@ -2,7 +2,9 @@ package util
 
 import (
 	"io/ioutil"
+	"net/http/httptest"
 	"os"
+	"strings"
 
 	"github.com/robertkrimen/otto"
 
@@ -178,6 +180,19 @@ var _ = Describe("Common", func() {
 	})
 
 	Describe("String", func() {
+		Describe(".Address", func() {
+			It("should return Address type", func() {
+				Expect(String("addr1").Address()).To(Equal(Address("addr1")))
+			})
+		})
+
+		Describe(".Empty", func() {
+			It("should return true when empty and false when not", func() {
+				Expect(String("").Empty()).To(BeTrue())
+				Expect(String("xyz").Empty()).To(BeFalse())
+			})
+		})
+
 		Describe(".Bytes", func() {
 			It("should return expected bytes value", func() {
 				s := String("abc")
@@ -239,6 +254,36 @@ var _ = Describe("Common", func() {
 				Expect(actual).To(BeFalse())
 			})
 		})
+
+		Describe(".Float", func() {
+			It("should panic if unable to convert to float64", func() {
+				Expect(func() {
+					String("1.0a").Float()
+				}).To(Panic())
+			})
+
+			It("should return float64 if string is numeric", func() {
+				Expect(String("1.3").Float()).To(Equal(1.3))
+			})
+		})
+
+		Describe(".IsDecimal", func() {
+			It("should return true if string contains integer", func() {
+				Expect(String("23").IsDecimal()).To(BeTrue())
+			})
+			It("should return true if string contains float", func() {
+				Expect(String("23.726").IsDecimal()).To(BeTrue())
+			})
+			It("should return false if string is not numerical", func() {
+				Expect(String("23a").IsDecimal()).To(BeFalse())
+			})
+		})
+	})
+
+	Describe(".RandString", func() {
+		It("should produce string output of the specified length", func() {
+			Expect(RandString(10)).To(HaveLen(10))
+		})
 	})
 
 	Describe(".StructToMap", func() {
@@ -253,6 +298,22 @@ var _ = Describe("Common", func() {
 			Expect(StructToMap(s)).To(Equal(expected))
 		})
 
+	})
+
+	Describe("BlockNonce", func() {
+		Describe(".EncodeNonce", func() {
+			It("should encode to BlockNonce", func() {
+				bn := EncodeNonce(1000)
+				Expect(bn).To(BeAssignableToTypeOf(BlockNonce{}))
+			})
+		})
+
+		Describe(".Uint64", func() {
+			It("should return uint64 value", func() {
+				bn := EncodeNonce(1000)
+				Expect(bn.Uint64()).To(Equal(uint64(1000)))
+			})
+		})
 	})
 
 	Describe(".GetPtrAddr", func() {
@@ -318,15 +379,41 @@ var _ = Describe("Common", func() {
 	})
 
 	Describe(".IsBoolChanClosed", func() {
-		It("should return false if not closed", func() {
+		It("should return false if bool channel is not closed", func() {
 			c := make(chan bool)
 			Expect(IsBoolChanClosed(c)).To(BeFalse())
 		})
 
-		It("should return true if closed", func() {
+		It("should return true if bool channel is closed", func() {
 			c := make(chan bool)
 			close(c)
 			Expect(IsBoolChanClosed(c)).To(BeTrue())
+		})
+	})
+
+	Describe(".IsStructChanClosed", func() {
+		It("should return false if struct channel is not closed", func() {
+			c := make(chan struct{})
+			Expect(IsStructChanClosed(c)).To(BeFalse())
+		})
+
+		It("should return true if struct channel is closed", func() {
+			c := make(chan struct{})
+			close(c)
+			Expect(IsStructChanClosed(c)).To(BeTrue())
+		})
+	})
+
+	Describe(".IsStructChanClosed", func() {
+		It("should return false if struct channel is not closed", func() {
+			c := make(chan func())
+			Expect(IsFuncChanClosed(c)).To(BeFalse())
+		})
+
+		It("should return true if struct channel is closed", func() {
+			c := make(chan func())
+			close(c)
+			Expect(IsFuncChanClosed(c)).To(BeTrue())
 		})
 	})
 
@@ -342,6 +429,98 @@ var _ = Describe("Common", func() {
 			m2, err := obj.Value().Export()
 			Expect(err).To(BeNil())
 			Expect(m2).To(Equal(m))
+		})
+
+		It("should not reset variable if already set", func() {
+			vm := otto.New()
+			m := map[string]interface{}{"a": 2}
+			initial := VMSet(vm, "m", m)
+			current := VMSet(vm, "m", map[string]interface{}{"a": 3})
+			Expect(initial).To(Equal(current))
+		})
+	})
+
+	Describe("Interrupt", func() {
+		Describe(".IsClosed", func() {
+			It("should return true when closed and false when not", func() {
+				itr := Interrupt(make(chan struct{}))
+				Expect(itr.IsClosed()).To(BeFalse())
+				close(itr)
+				Expect(itr.IsClosed()).To(BeTrue())
+			})
+		})
+
+		Describe(".Close", func() {
+			It("should close the channel", func() {
+				itr := Interrupt(make(chan struct{}))
+				itr.Close()
+				Expect(itr.IsClosed()).To(BeTrue())
+			})
+		})
+	})
+
+	Describe(".CopyMap", func() {
+		It("should copy a map to another map", func() {
+			src := map[string]interface{}{"age": 10}
+			dst := make(map[string]interface{})
+			CopyMap(src, dst)
+			Expect(src).To(Equal(dst))
+		})
+	})
+
+	Describe(".CloneMap", func() {
+		It("should clone a map", func() {
+			src := map[string]interface{}{"age": 10}
+			clone := CloneMap(src)
+			Expect(src).To(Equal(clone))
+		})
+	})
+
+	Describe(".WriteJSON", func() {
+		It("should write JSON to writer", func() {
+			w := httptest.NewRecorder()
+			WriteJSON(w, 500, map[string]interface{}{"age": 100})
+			Expect(strings.TrimSpace(w.Body.String())).To(Equal(`{"age":100}`))
+		})
+	})
+
+	Describe(".RESTApiErrorMsg", func() {
+		It("should return an object with expected fields", func() {
+			err := RESTApiErrorMsg("message", "field", "E200")
+			Expect(err).To(HaveKey("error"))
+			err = err["error"].(map[string]interface{})
+			Expect(err["msg"]).To(Equal("message"))
+			Expect(err["field"]).To(Equal("field"))
+			Expect(err["code"]).To(Equal("E200"))
+		})
+	})
+
+	Describe(".GetIndexFromUInt64Slice", func() {
+		It("should return 0 when slice is empty", func() {
+			retval := GetIndexFromUInt64Slice(1)
+			Expect(retval).To(BeZero())
+		})
+
+		It("should return value at target index", func() {
+			retval := GetIndexFromUInt64Slice(1, 3, 4, 5)
+			Expect(retval).To(Equal(uint64(4)))
+		})
+	})
+
+	Describe(".ToMapSI", func() {
+		It("should convert map with non-interface value to map[string]interface{} type", func() {
+			src := map[string]int{"jin": 20}
+			conv := ToMapSI(src)
+			Expect(conv).To(HaveLen(1))
+			Expect(conv["jin"]).To(Equal(20))
+		})
+	})
+
+	Describe("IsZeroString", func() {
+		It("should return true when value is empty or '0' or false when not", func() {
+			Expect(IsZeroString("")).To(BeTrue())
+			Expect(IsZeroString("0")).To(BeTrue())
+			Expect(IsZeroString("1")).To(BeFalse())
 		})
 	})
 

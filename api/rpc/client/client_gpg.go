@@ -3,7 +3,7 @@ package client
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -15,16 +15,23 @@ import (
 //
 // RETURNS:
 // - resp <map> - state.Account
-func (c *RPCClient) GPGGetAccountOfOwner(id string, blockHeight ...uint64) (util.Map, error) {
-	out, err := c.Call("gpg_getAccountOfOwner", util.Map{"id": id,
-		"blockHeight": util.AtUint64Slice(0, blockHeight...)})
+func (c *RPCClient) GPGGetAccountOfOwner(id string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
+	out, statusCode, err := c.call("gpg_getAccountOfOwner", util.Map{
+		"id":          id,
+		"blockHeight": util.GetIndexFromUInt64Slice(0, blockHeight...)})
 	if err != nil {
-		return nil, err
+		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
-	return out.(map[string]interface{}), nil
+
+	acct := state.BareAccount()
+	if err = acct.FromMap(out); err != nil {
+		return nil, makeClientStatusErr("failed to decode call response: %s", err)
+	}
+
+	return acct, nil
 }
 
-// GPGGetNonceOfOwnerUsingRPCClient gets the next account nonce
+// GPGGetNextNonceOfOwnerUsingRPCClient gets the next account nonce
 // of the owner of the gpg key by querying the given JSON-RPC 2.0 client.
 //
 // ARGS:
@@ -33,11 +40,10 @@ func (c *RPCClient) GPGGetAccountOfOwner(id string, blockHeight ...uint64) (util
 //
 // RETURNS
 // nonce: The next nonce of the account
-func GPGGetNonceOfOwnerUsingRPCClient(gpgID string, client *RPCClient) (string, error) {
-	out, err := client.GPGGetAccountOfOwner(gpgID)
+func GPGGetNextNonceOfOwnerUsingRPCClient(gpgID string, client Client) (string, *util.StatusError) {
+	acct, err := client.GPGGetAccountOfOwner(gpgID)
 	if err != nil {
-		return "", errors.Wrap(err, "unable to query gpg key")
+		return "", err
 	}
-	nonce := out["nonce"]
-	return fmt.Sprintf("%d", uint64(nonce.(float64)+1)), nil
+	return fmt.Sprintf("%d", uint64(acct.Nonce+1)), nil
 }

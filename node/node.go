@@ -299,7 +299,9 @@ func (n *Node) configureInterfaces() {
 	)
 
 	// Register JSON RPC methods
-	n.rpcServer.AddAPI(rpcApi.APIs(n.modules, n.rpcServer))
+	if n.rpcServer != nil {
+		n.rpcServer.AddAPI(rpcApi.APIs(n.modules, n.rpcServer))
+	}
 
 	// Set the js module to be the main module of the extension manager
 	extMgr.SetMainModule(n.modules)

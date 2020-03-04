@@ -551,7 +551,7 @@ var _ = Describe("TxValidator", func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 
 				entity, _ := crypto.PGPEntityFromPubKey(tx.PublicKey)
-				gpgID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				mockGPGPubKeyKeeper.EXPECT().GetGPGPubKey(gpgID).Return(&state.GPGPubKey{PubKey: tx.PublicKey})
 
 				err = validators.CheckTxAddGPGPubKeyConsistency(tx, -1, mockLogic)
@@ -577,7 +577,7 @@ var _ = Describe("TxValidator", func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 
 				entity, _ := crypto.PGPEntityFromPubKey(tx.PublicKey)
-				gpgID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				mockGPGPubKeyKeeper.EXPECT().GetGPGPubKey(gpgID).Return(&state.GPGPubKey{})
 
 				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),

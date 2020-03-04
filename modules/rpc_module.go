@@ -148,7 +148,7 @@ func (m *RPCModule) Connect(host string, port int, https bool, user, pass string
 		if len(params) > 0 {
 			p = params[0]
 		}
-		out, err := c.Call(methodName, p)
+		out, _, err := c.Call(methodName, p)
 		if err != nil {
 			panic(err)
 		}
@@ -158,8 +158,11 @@ func (m *RPCModule) Connect(host string, port int, https bool, user, pass string
 	rpcNs := make(map[string]interface{})
 	rpcNs["call"] = callFunc
 
-	// Fill the rpc namespace with convenience methods that allow calls such
+	// Fill the rpc namespace with convenience methods that allows calls such
 	// as namespace.method(param).
+	// ---
+	// When the local RPC server is running, directly ask it for a collection
+	// of methods it supports, and use them to create the convenience methods.
 	if m.rpcServer != nil && m.rpcServer.IsRunning() {
 		for _, method := range m.rpcServer.GetMethods() {
 			methodName := method.Name
@@ -174,22 +177,28 @@ func (m *RPCModule) Connect(host string, port int, https bool, user, pass string
 				return callFunc(methodName, params...)
 			}
 		}
-	} else {
-		methods, err := c.Call("rpc_methods", nil)
-		if err == nil {
-			for _, method := range methods.([]interface{}) {
-				fullName := method.(map[string]interface{})["name"].(string)
-				parts := strings.Split(fullName, "_")
-				ns := parts[0]
-				curNs, ok := rpcNs[ns]
-				if !ok {
-					curNs = make(map[string]interface{})
-					rpcNs[ns] = curNs
-				}
-				curNs.(map[string]interface{})[parts[1]] = func(
-					params ...interface{}) interface{} {
-					return callFunc(fullName, params...)
-				}
+		return rpcNs
+	}
+
+	// At this point, the rpc server has not been initialized or is running.
+	// So we have to ask the remote RPC server for the RPC methods via the client
+	// and use the response to populate the rpc namespace with the convenience methods
+	methods, _, err := c.Call("rpc_methods", nil)
+	if err == nil {
+		var m map[string]rpc.MethodInfo
+		_ = util.MapDecode(methods, &m)
+		for _, method := range m {
+			fullName := method.Name
+			parts := strings.Split(fullName, "_")
+			ns := parts[0]
+			curNs, ok := rpcNs[ns]
+			if !ok {
+				curNs = make(map[string]interface{})
+				rpcNs[ns] = curNs
+			}
+			curNs.(map[string]interface{})[parts[1]] = func(
+				params ...interface{}) interface{} {
+				return callFunc(fullName, params...)
 			}
 		}
 	}

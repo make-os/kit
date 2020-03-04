@@ -11,7 +11,6 @@ import (
 	account "gitlab.com/makeos/mosdef/account"
 	crypto "gitlab.com/makeos/mosdef/crypto"
 	modules "gitlab.com/makeos/mosdef/types/modules"
-	state "gitlab.com/makeos/mosdef/types/state"
 	util "gitlab.com/makeos/mosdef/util"
 	reflect "reflect"
 )
@@ -688,14 +687,14 @@ func (mr *MockAccountModuleMockRecorder) GetNonce(address interface{}, height ..
 }
 
 // GetAccount mocks base method
-func (m *MockAccountModule) GetAccount(address string, height ...uint64) interface{} {
+func (m *MockAccountModule) GetAccount(address string, height ...uint64) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range height {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetAccount", varargs...)
-	ret0, _ := ret[0].(interface{})
+	ret0, _ := ret[0].(util.Map)
 	return ret0
 }
 
@@ -745,14 +744,14 @@ func (mr *MockAccountModuleMockRecorder) GetStakedBalance(address interface{}, h
 }
 
 // GetPrivateValidator mocks base method
-func (m *MockAccountModule) GetPrivateValidator(includePrivKey ...bool) interface{} {
+func (m *MockAccountModule) GetPrivateValidator(includePrivKey ...bool) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range includePrivKey {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetPrivateValidator", varargs...)
-	ret0, _ := ret[0].(interface{})
+	ret0, _ := ret[0].(util.Map)
 	return ret0
 }
 
@@ -763,14 +762,14 @@ func (mr *MockAccountModuleMockRecorder) GetPrivateValidator(includePrivKey ...i
 }
 
 // SetCommission mocks base method
-func (m *MockAccountModule) SetCommission(params map[string]interface{}, options ...interface{}) interface{} {
+func (m *MockAccountModule) SetCommission(params map[string]interface{}, options ...interface{}) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{params}
 	for _, a := range options {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "SetCommission", varargs...)
-	ret0, _ := ret[0].(interface{})
+	ret0, _ := ret[0].(util.Map)
 	return ret0
 }
 
@@ -838,14 +837,14 @@ func (mr *MockGPGModuleMockRecorder) AddPK(params interface{}, options ...interf
 }
 
 // Find mocks base method
-func (m *MockGPGModule) Find(id string, blockHeight ...uint64) *state.GPGPubKey {
+func (m *MockGPGModule) Find(id string, blockHeight ...uint64) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{id}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "Find", varargs...)
-	ret0, _ := ret[0].(*state.GPGPubKey)
+	ret0, _ := ret[0].(util.Map)
 	return ret0
 }
 
@@ -871,14 +870,14 @@ func (mr *MockGPGModuleMockRecorder) OwnedBy(address interface{}) *gomock.Call {
 }
 
 // GetAccountOfOwner mocks base method
-func (m *MockGPGModule) GetAccountOfOwner(gpgID string, blockHeight ...uint64) *state.Account {
+func (m *MockGPGModule) GetAccountOfOwner(gpgID string, blockHeight ...uint64) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{gpgID}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetAccountOfOwner", varargs...)
-	ret0, _ := ret[0].(*state.Account)
+	ret0, _ := ret[0].(util.Map)
 	return ret0
 }
 

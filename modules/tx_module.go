@@ -161,7 +161,7 @@ func (m *TxModule) Get(hash string) util.Map {
 // sendPayload sends an already signed transaction object to the network
 //
 // ARGS:
-// txData: The transaction data
+// params: The transaction data
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
@@ -173,7 +173,12 @@ func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		se := util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error())
+		if bfe := util.BadFieldErrorFromStr(err.Error()); bfe.Msg != "" && bfe.Field != "" {
+			se.Msg = bfe.Msg
+			se.Field = bfe.Field
+		}
+		panic(se)
 	}
 
 	return EncodeForJS(map[string]interface{}{

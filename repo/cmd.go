@@ -39,7 +39,7 @@ func SignCommitCmd(
 	deleteRefAction bool,
 	mergeID string,
 	rpcClient *client.RPCClient,
-	remoteClients []*restclient.RESTClient) error {
+	remoteClients []restclient.RestClient) error {
 
 	if !govalidator.IsNumeric(mergeID) {
 		return fmt.Errorf("merge id must be numeric")
@@ -62,7 +62,7 @@ func SignCommitCmd(
 	}
 
 	// Get the public key network ID
-	gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+	gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
@@ -128,7 +128,7 @@ func SignTagCmd(
 	signingKey string,
 	deleteRefAction bool,
 	rpcClient *client.RPCClient,
-	remoteClients []*restclient.RESTClient) error {
+	remoteClients []restclient.RestClient) error {
 
 	parsed := util.ParseSimpleArgs(args)
 
@@ -163,7 +163,7 @@ func SignTagCmd(
 	}
 
 	// Get the public key network ID
-	gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+	gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
@@ -204,7 +204,7 @@ func SignNoteCmd(
 	note string,
 	deleteRefAction bool,
 	rpcClient *client.RPCClient,
-	remoteClients []*restclient.RESTClient) error {
+	remoteClients []restclient.RestClient) error {
 
 	// Get the signing key id from the git config if not provided via -s flag
 	if signingKey == "" {
@@ -269,7 +269,7 @@ func SignNoteCmd(
 	}
 
 	// Get the public key network ID
-	gpgID := util.RSAPubKeyID(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+	gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
@@ -329,7 +329,7 @@ func CreateAndSendMergeRequestCmd(
 	fee,
 	nextNonce string,
 	rpcClient *client.RPCClient,
-	remoteClients []*restclient.RESTClient) error {
+	remoteClients []restclient.RestClient) error {
 
 	// Get the signer account
 	am := account.New(path.Join(cfg.DataDir(), config.AccountDirName))

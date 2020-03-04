@@ -67,7 +67,7 @@ var _ = Describe("TxParams", func() {
 				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2a, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
 				_, err := ParseTxParams(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:nonce, msg: nonce must be an unsigned integer"))
+				Expect(err.Error()).To(Equal("field:nonce, msg:nonce must be an unsigned integer"))
 			})
 		})
 
@@ -76,7 +76,7 @@ var _ = Describe("TxParams", func() {
 				str := "This is a line\nThis is another line\ntx: fee=1a, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
 				_, err := ParseTxParams(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:fee, msg: fee must be numeric"))
+				Expect(err.Error()).To(Equal("field:fee, msg:fee must be numeric"))
 			})
 		})
 
@@ -85,7 +85,7 @@ var _ = Describe("TxParams", func() {
 				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig="
 				_, err := ParseTxParams(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg: signature value is required"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature value is required"))
 			})
 		})
 
@@ -94,7 +94,7 @@ var _ = Describe("TxParams", func() {
 				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=abc"
 				_, err := ParseTxParams(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg: signature format is not valid"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature format is not valid"))
 			})
 		})
 
@@ -103,7 +103,7 @@ var _ = Describe("TxParams", func() {
 				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0xabc"
 				_, err := ParseTxParams(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:sig, msg: signature format is not valid"))
+				Expect(err.Error()).To(Equal("field:sig, msg:signature format is not valid"))
 			})
 		})
 
@@ -127,7 +127,7 @@ var _ = Describe("TxParams", func() {
 				str := "tx: fee=0.2, nonce=14, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, mergeID"
 				_, err := ParseTxParams(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("merge proposal id is required"))
+				Expect(err).To(MatchError("field:mergeID, msg:merge proposal id is required"))
 			})
 		})
 
@@ -136,7 +136,7 @@ var _ = Describe("TxParams", func() {
 				str := "tx: fee=0.2, nonce=14, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, mergeID=abc12"
 				_, err := ParseTxParams(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("merge proposal id format is not valid"))
+				Expect(err).To(MatchError("field:mergeID, msg:merge proposal id format is not valid"))
 			})
 		})
 
@@ -145,7 +145,7 @@ var _ = Describe("TxParams", func() {
 				str := "tx: fee=0.2, nonce=14, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, mergeID=123456789"
 				_, err := ParseTxParams(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("merge id limit of 8 bytes exceeded"))
+				Expect(err).To(MatchError("field:mergeID, msg:merge id limit of 8 bytes exceeded"))
 			})
 		})
 
@@ -163,7 +163,7 @@ var _ = Describe("TxParams", func() {
 				str := "tx: fee=0.2, nonce=14, gpgID=0x9aed9d"
 				_, err := ParseTxParams(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:gpgID, msg: public key id is invalid"))
+				Expect(err).To(MatchError("field:gpgID, msg:gpg key id is invalid"))
 			})
 		})
 
@@ -172,7 +172,16 @@ var _ = Describe("TxParams", func() {
 				str := "tx: fee=0.2, nonce=14, gpgID=xas1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
 				_, err := ParseTxParams(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:gpgID, msg: public key id is invalid"))
+				Expect(err).To(MatchError("field:gpgID, msg:gpg key id is invalid"))
+			})
+		})
+
+		When("txparams contains an unexpected key", func() {
+			It("should return err about missing value", func() {
+				str := "tx: fee=0.2, nonze=14, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
+				_, err := ParseTxParams(str)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:nonze, msg:unknown field"))
 			})
 		})
 	})
@@ -200,16 +209,44 @@ var _ = Describe("TxParams", func() {
 		})
 	})
 
-	Describe("TxParams.String", func() {
-		It("should return", func() {
-			txParams := &TxParams{
-				Fee:       "1",
-				Nonce:     0x0000000000000002,
-				PubKeyID:  "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd",
-				Signature: "abc",
-			}
-			expected := `tx: fee=1, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, sig=0x616263`
-			Expect(txParams.String()).To(Equal(expected))
+	Describe("TxParams", func() {
+		Describe(".String", func() {
+			It("should return", func() {
+				txParams := &TxParams{
+					Fee:       "1",
+					Nonce:     0x0000000000000002,
+					PubKeyID:  "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd",
+					Signature: "abc",
+				}
+				expected := `tx: fee=1, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, sig=0x616263`
+				Expect(txParams.String()).To(Equal(expected))
+			})
+		})
+
+		Describe(".GetNonceAsString", func() {
+			It("should return nonce", func() {
+				txParams := &TxParams{Fee: "1", Nonce: 100}
+				Expect(txParams.GetNonceAsString()).To(Equal("100"))
+			})
 		})
 	})
+
+	Describe(".MakeAndValidateTxParams", func() {
+		When("txparam is invalid", func() {
+			It("should return err", func() {
+				_, err := MakeAndValidateTxParams("1", "1", "", nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:gpgID, msg:gpg key id is required"))
+			})
+		})
+
+		When("txparam is valid", func() {
+			It("should return txparam string", func() {
+				tp, err := MakeAndValidateTxParams("1", "1", "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd", nil)
+				Expect(err).To(BeNil())
+				Expect(tp).To(Equal("tx: fee=1, nonce=1, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"))
+			})
+		})
+	})
+
 })

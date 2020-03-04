@@ -182,7 +182,7 @@ func checkNote(
 
 	// Now, verify the signature
 	// TODO: use MakeNoteSigMsg
-	msg := []byte(txParams.Fee.String() + txParams.GetNonceString() + txParams.PubKeyID + noteHash +
+	msg := []byte(txParams.Fee.String() + txParams.GetNonceAsString() + txParams.PubKeyID + noteHash +
 		fmt.Sprintf("%v", txParams.DeleteRef))
 	_, err = crypto.VerifyGPGSignature(pubKey, []byte(txParams.Signature), msg)
 	if err != nil {
@@ -393,7 +393,7 @@ func checkPushNoteAgainstTxParamss(pn *core.PushNote, txParamss map[string]*util
 
 	// Push note pusher public key must match txparams key
 	txParamssObjs := funk.Values(txParamss).([]*util.TxParams)
-	if !bytes.Equal(pn.PusherKeyID, util.MustDecodeRSAPubKeyID(txParamssObjs[0].PubKeyID)) {
+	if !bytes.Equal(pn.PusherKeyID, util.MustDecodeGPGIDToRSAHash(txParamssObjs[0].PubKeyID)) {
 		return fmt.Errorf("push note pusher public key id does not match " +
 			"txparamss pusher public key id")
 	}
@@ -566,7 +566,7 @@ func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
 	}
 
 	// Get gpg key of the pusher
-	gpgKey := logic.GPGPubKeyKeeper().GetGPGPubKey(util.MustToRSAPubKeyID(tx.PusherKeyID))
+	gpgKey := logic.GPGPubKeyKeeper().GetGPGPubKey(util.MustCreateGPGID(tx.PusherKeyID))
 	if gpgKey.IsNil() {
 		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", tx.PusherKeyID)
 		return util.FieldError("pusherKeyId", msg)

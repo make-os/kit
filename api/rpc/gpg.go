@@ -21,8 +21,7 @@ func NewGPGAPI(mods *modules.Modules) *GPGAPI {
 // Body:
 // - id <string>: The GPG key unique ID
 // - [blockHeight] <string>: The target query block height (default: latest).
-// Response:
-// - resp <string> - The account nonce
+// Response <state.GPGPubKey -> map>
 func (a *GPGAPI) find(params interface{}) (resp *rpc.Response) {
 	o := objx.New(params)
 
@@ -44,8 +43,7 @@ func (a *GPGAPI) find(params interface{}) (resp *rpc.Response) {
 // Body:
 // - id <string>: The GPG key unique ID
 // - [blockHeight] <string>: The target query block height (default: latest).
-// Response:
-// - resp <string> - The account nonce
+// Response <state.Account -> map>
 func (a *GPGAPI) getAccountOfOwner(params interface{}) (resp *rpc.Response) {
 	o := objx.New(params)
 
@@ -60,7 +58,6 @@ func (a *GPGAPI) getAccountOfOwner(params interface{}) (resp *rpc.Response) {
 	}
 
 	account := a.mods.GPG.GetAccountOfOwner(keyId, blockHeight)
-
 	return rpc.Success(account)
 }
 

@@ -2,9 +2,10 @@ package logic
 
 import (
 	"crypto/rsa"
-	"gitlab.com/makeos/mosdef/types/state"
 	"io/ioutil"
 	"os"
+
+	"gitlab.com/makeos/mosdef/types/state"
 
 	"github.com/golang/mock/gomock"
 
@@ -80,7 +81,7 @@ var _ = Describe("GPG", func() {
 
 			Specify("that the gpg public key was added to the tree", func() {
 				entity, _ := crypto.PGPEntityFromPubKey(gpgPubKey)
-				gpgID := util.RSAPubKeyID(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+				gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				gpgKey := logic.gpgPubKeyKeeper.GetGPGPubKey(gpgID, 0)
 				Expect(gpgKey.IsNil()).To(BeFalse())
 				Expect(gpgKey.Address).To(Equal(sender.Addr()))

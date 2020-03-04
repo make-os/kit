@@ -8,7 +8,6 @@ import (
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
-	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 
 	prompt "github.com/c-bata/go-prompt"
@@ -141,7 +140,7 @@ func (m *GPGModule) AddPK(params map[string]interface{}, options ...interface{})
 // [blockHeight]: 	The target block height to query (default: latest)
 //
 // RETURNS state.GPGPubKey
-func (m *GPGModule) Find(id string, blockHeight ...uint64) *state.GPGPubKey {
+func (m *GPGModule) Find(id string, blockHeight ...uint64) util.Map {
 
 	if id == "" {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "id", "gpg id is required"))
@@ -157,7 +156,7 @@ func (m *GPGModule) Find(id string, blockHeight ...uint64) *state.GPGPubKey {
 		panic(util.NewStatusError(404, StatusCodeGPGPubKeyNotFound, "", types.ErrGPGPubKeyUnknown.Error()))
 	}
 
-	return o
+	return EncodeForJS(o)
 }
 
 // ownedBy returns the gpg public key ownedBy associated with the given address
@@ -177,7 +176,7 @@ func (m *GPGModule) OwnedBy(address string) []string {
 // [blockHeight]: 	The target block height to query (default: latest)
 //
 // RETURNS state.Account
-func (m *GPGModule) GetAccountOfOwner(gpgID string, blockHeight ...uint64) *state.Account {
+func (m *GPGModule) GetAccountOfOwner(gpgID string, blockHeight ...uint64) util.Map {
 	gpgKey := m.Find(gpgID, blockHeight...)
 
 	targetHeight := uint64(0)
@@ -190,5 +189,5 @@ func (m *GPGModule) GetAccountOfOwner(gpgID string, blockHeight ...uint64) *stat
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound, "gpgID", types.ErrAccountUnknown.Error()))
 	}
 
-	return acct
+	return EncodeForJS(acct)
 }

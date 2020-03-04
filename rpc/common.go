@@ -21,17 +21,18 @@ func isStrFieldSet(val *objx.Value) bool {
 func GetStringFromObjxMap(o objx.Map, field string, required bool) (string, *Response) {
 
 	vField := o.Get(field)
-	if !isStrFieldSet(vField) && !required {
+
+	if vField.IsNil() && !required {
 		return "", nil
 	}
 
-	if !isStrFieldSet(vField) {
-		return "", Error(types.RPCErrCodeInvalidParamValue, field+" is required", nil)
+	if vField.IsNil() {
+		return "", Error(types.RPCErrCodeInvalidParamValue, field+" is required", field)
 	}
 
 	if !vField.IsStr() {
-		msg := util.WrongFieldValueMsg(field, "string", vField.Inter())
-		return "", Error(types.RPCErrCodeInvalidParamValue, msg, nil)
+		msg := util.WrongFieldValueMsg("string", vField.Inter())
+		return "", Error(types.RPCErrCodeInvalidParamValue, msg, field)
 	}
 
 	return vField.Str(), nil
@@ -46,27 +47,28 @@ func GetStringFromObjxMap(o objx.Map, field string, required bool) (string, *Res
 func GetStringToUint64FromObjxMap(o objx.Map, field string, required bool) (uint64, *Response) {
 
 	vField := o.Get(field)
-	if !isStrFieldSet(vField) && !required {
+
+	if vField.IsNil() && !required {
 		return 0, nil
 	}
 
-	if !isStrFieldSet(vField) {
-		return 0, Error(types.RPCErrCodeInvalidParamValue, field+" is required", nil)
+	if vField.IsNil() {
+		return 0, Error(types.RPCErrCodeInvalidParamValue, field+" is required", field)
 	}
 
 	if !vField.IsStr() {
-		msg := util.WrongFieldValueMsg(field, "string", vField.Inter())
-		return 0, Error(types.RPCErrCodeInvalidParamValue, msg, nil)
+		msg := util.WrongFieldValueMsg("string", vField.Inter())
+		return 0, Error(types.RPCErrCodeInvalidParamValue, msg, field)
 	}
 
 	if !govalidator.IsNumeric(vField.Str()) {
 		msg := field + " requires a numeric value"
-		return 0, Error(types.RPCErrCodeInvalidParamValue, msg, nil)
+		return 0, Error(types.RPCErrCodeInvalidParamValue, msg, field)
 	}
 
 	fieldValue, err := strconv.ParseUint(vField.Str(), 10, 64)
 	if err != nil {
-		return 0, Error(types.RPCErrCodeInvalidParamValue, "failed to parse to unsigned integer", nil)
+		return 0, Error(types.RPCErrCodeInvalidParamValue, "failed to parse to unsigned integer", field)
 	}
 
 	return fieldValue, nil

@@ -3,9 +3,10 @@ package repo
 import (
 	"context"
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"io"
 	"time"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
@@ -159,7 +160,7 @@ func (h *PushHandler) createPushNote(
 	var pushNote = &core.PushNote{
 		TargetRepo:    h.repo,
 		RepoName:      h.repo.GetName(),
-		PusherKeyID:   util.MustDecodeRSAPubKeyID(gpgID),
+		PusherKeyID:   util.MustDecodeGPGIDToRSAHash(gpgID),
 		PusherAddress: h.rMgr.GetLogic().GPGPubKeyKeeper().GetGPGPubKey(gpgID).Address,
 		Timestamp:     time.Now().Unix(),
 		References:    core.PushedReferences([]*core.PushedReference{}),

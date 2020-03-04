@@ -24,8 +24,7 @@ func NewTransactionAPI(mods *modules.Modules) *TransactionAPI {
 func (t *TransactionAPI) sendPayload(params interface{}) (resp *rpc.Response) {
 	txMap, ok := params.(map[string]interface{})
 	if !ok {
-		msg := util.WrongFieldValueMsg("params", "map", params)
-		msg = util.FieldError("params", msg).Error()
+		msg := util.FieldError("params", util.WrongFieldValueMsg("map", params)).Error()
 		return rpc.Error(types.RPCErrCodeInvalidParamValue, msg, nil)
 	}
 	return rpc.Success(t.mods.Tx.SendPayload(txMap))

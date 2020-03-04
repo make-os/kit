@@ -7,8 +7,6 @@ import (
 var initialSuggestions = []prompt.Suggest{
 	{Text: ".exit", Description: "Exit the console"},
 	{Text: ".help", Description: "Print the help message"},
-	{Text: "methods", Description: "List all RPC methods"},
-	{Text: "login()", Description: "Login to begin an authenticated session"},
 }
 
 var commonFunc = [][]string{

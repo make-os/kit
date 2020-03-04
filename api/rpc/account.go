@@ -5,6 +5,7 @@ import (
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/modules"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // AccountAPI provides RPC methods for various account related functionalities.
@@ -37,8 +38,9 @@ func (a *AccountAPI) getNonce(params interface{}) (resp *rpc.Response) {
 	}
 
 	nonce := a.mods.Account.GetNonce(address, blockHeight)
-
-	return rpc.Success(nonce)
+	return rpc.Success(util.Map{
+		"nonce": nonce,
+	})
 }
 
 // getAccount returns the account corresponding to the given address
@@ -61,7 +63,6 @@ func (a *AccountAPI) getAccount(params interface{}) (resp *rpc.Response) {
 	}
 
 	account := a.mods.Account.GetAccount(address, blockHeight)
-
 	return rpc.Success(account)
 }
 

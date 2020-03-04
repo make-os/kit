@@ -2,8 +2,8 @@ package client
 
 import (
 	"fmt"
-	"strconv"
 
+	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -15,15 +15,21 @@ import (
 //
 // RETURNS:
 // - resp <map> - state.Account
-func (c *RPCClient) AccountGet(address string, blockHeight ...uint64) (util.Map, error) {
-	acct, err := c.Call("user_get", util.Map{
+func (c *RPCClient) AccountGet(address string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
+	resp, statusCode, err := c.call("user_get", util.Map{
 		"address":     address,
-		"blockHeight": util.AtUint64Slice(0, blockHeight...),
+		"blockHeight": util.GetIndexFromUInt64Slice(0, blockHeight...),
 	})
 	if err != nil {
-		return nil, err
+		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
-	return acct.(map[string]interface{}), nil
+
+	acct := state.BareAccount()
+	if err = acct.FromMap(resp); err != nil {
+		return nil, makeClientStatusErr("failed to decode call response: %s", err)
+	}
+
+	return acct, nil
 }
 
 // AccountGetNextNonceUsingRPCClient gets the next account nonce
@@ -35,12 +41,10 @@ func (c *RPCClient) AccountGet(address string, blockHeight ...uint64) (util.Map,
 //
 // RETURNS:
 // nonce: The next nonce of the account
-func AccountGetNextNonceUsingRPCClient(address string, client *RPCClient) (string, error) {
+func AccountGetNextNonceUsingRPCClient(address string, client Client) (string, *util.StatusError) {
 	acct, err := client.AccountGet(address)
 	if err != nil {
 		return "", err
 	}
-	nonceStr := acct["nonce"].(string)
-	nonce, _ := strconv.ParseUint(nonceStr, 10, 64)
-	return fmt.Sprintf("%d", uint64(nonce+1)), nil
+	return fmt.Sprintf("%d", uint64(acct.Nonce+1)), nil
 }

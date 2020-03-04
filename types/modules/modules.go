@@ -5,7 +5,6 @@ import (
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/account"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -87,19 +86,19 @@ type AccountModule interface {
 	GetKey(address string, passphrase ...string) string
 	GetPublicKey(address string, passphrase ...string) string
 	GetNonce(address string, height ...uint64) string
-	GetAccount(address string, height ...uint64) interface{}
+	GetAccount(address string, height ...uint64) util.Map
 	GetSpendableBalance(address string, height ...uint64) string
 	GetStakedBalance(address string, height ...uint64) string
-	GetPrivateValidator(includePrivKey ...bool) interface{}
-	SetCommission(params map[string]interface{}, options ...interface{}) interface{}
+	GetPrivateValidator(includePrivKey ...bool) util.Map
+	SetCommission(params map[string]interface{}, options ...interface{}) util.Map
 }
 
 type GPGModule interface {
 	Configure() []prompt.Suggest
 	AddPK(params map[string]interface{}, options ...interface{}) util.Map
-	Find(id string, blockHeight ...uint64) *state.GPGPubKey
+	Find(id string, blockHeight ...uint64) util.Map
 	OwnedBy(address string) []string
-	GetAccountOfOwner(gpgID string, blockHeight ...uint64) *state.Account
+	GetAccountOfOwner(gpgID string, blockHeight ...uint64) util.Map
 }
 
 type UtilModule interface {
