@@ -175,7 +175,7 @@ func (d *ProposalActionData) Get(actionName string) map[string]interface{} {
 // BareRepoProposal returns RepoProposal object with empty values
 func BareRepoProposal() *RepoProposal {
 	return &RepoProposal{
-		Config:     BareRepoConfig().Governace,
+		Config:     BareRepoConfig().Governance,
 		ActionData: make(map[string]interface{}),
 		Fees:       make(map[string]string),
 	}

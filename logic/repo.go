@@ -1,9 +1,10 @@
 package logic
 
 import (
+	"strings"
+
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
@@ -36,7 +37,7 @@ func (t *Transaction) execRepoCreate(
 	newRepo.Config = state.MakeDefaultRepoConfig()
 	newRepo.Config.MergeMap(config)
 
-	proposee := newRepo.Config.Governace.ProposalProposee
+	proposee := newRepo.Config.Governance.ProposalProposee
 
 	// Add sender as owner only if proposee type is ProposeeOwner
 	// Add sender as a veto owner if proposee type is ProposeeNetStakeholdersAndVetoOwner
@@ -284,10 +285,10 @@ func makeProposal(
 
 	proposal := &state.RepoProposal{
 		ID:         id,
-		Config:     repo.Config.Clone().Governace,
+		Config:     repo.Config.Clone().Governance,
 		Creator:    spk.Addr().String(),
 		Height:     chainHeight,
-		EndAt:      repo.Config.Governace.ProposalDur + chainHeight + 1,
+		EndAt:      repo.Config.Governance.ProposalDur + chainHeight + 1,
 		Fees:       map[string]string{},
 		ActionData: map[string]interface{}{},
 	}
@@ -298,15 +299,15 @@ func makeProposal(
 	}
 
 	// Set the max. join height for voters.
-	if repo.Config.Governace.ProposalProposeeLimitToCurHeight {
+	if repo.Config.Governance.ProposalProposeeLimitToCurHeight {
 		proposal.ProposeeMaxJoinHeight = chainHeight + 1
 	}
 
 	// Set the fee deposit end height and also update the proposal end height to
 	// be after the fee deposit height
-	if repo.Config.Governace.ProposalFeeDepDur > 0 {
-		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governace.ProposalFeeDepDur
-		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governace.ProposalDur
+	if repo.Config.Governance.ProposalFeeDepDur > 0 {
+		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governance.ProposalFeeDepDur
+		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governance.ProposalDur
 	}
 
 	// Add the proposal to the repo

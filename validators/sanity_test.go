@@ -613,7 +613,7 @@ var _ = Describe("TxValidator", func() {
 		When("proposee type is unknown", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
-					Governace: &state.RepoConfigGovernance{
+					Governance: &state.RepoConfigGovernance{
 						ProposalProposee: 1000,
 					},
 				}
@@ -626,7 +626,7 @@ var _ = Describe("TxValidator", func() {
 		When("tally method is unknown", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
-					Governace: &state.RepoConfigGovernance{
+					Governance: &state.RepoConfigGovernance{
 						ProposalProposee:    state.ProposeeOwner,
 						ProposalTallyMethod: 1000,
 					},
@@ -640,7 +640,7 @@ var _ = Describe("TxValidator", func() {
 		When("quorum is negative", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
-					Governace: &state.RepoConfigGovernance{
+					Governance: &state.RepoConfigGovernance{
 						ProposalProposee:    state.ProposeeOwner,
 						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
 						ProposalQuorum:      -1,
@@ -655,7 +655,7 @@ var _ = Describe("TxValidator", func() {
 		When("threshold is negative", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
-					Governace: &state.RepoConfigGovernance{
+					Governance: &state.RepoConfigGovernance{
 						ProposalProposee:    state.ProposeeOwner,
 						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
 						ProposalQuorum:      1,
@@ -671,7 +671,7 @@ var _ = Describe("TxValidator", func() {
 		When("veto quorum is negative", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
-					Governace: &state.RepoConfigGovernance{
+					Governance: &state.RepoConfigGovernance{
 						ProposalProposee:    state.ProposeeOwner,
 						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
 						ProposalQuorum:      1,
@@ -688,7 +688,7 @@ var _ = Describe("TxValidator", func() {
 		When("veto owners quorum is negative", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
-					Governace: &state.RepoConfigGovernance{
+					Governance: &state.RepoConfigGovernance{
 						ProposalProposee:         state.ProposeeOwner,
 						ProposalTallyMethod:      state.ProposalTallyMethodNetStake,
 						ProposalQuorum:           1,
@@ -707,7 +707,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				params.MinProposalFee = float64(400)
 				repoCfg := &state.RepoConfig{
-					Governace: &state.RepoConfigGovernance{
+					Governance: &state.RepoConfigGovernance{
 						ProposalProposee:         state.ProposeeOwner,
 						ProposalTallyMethod:      state.ProposalTallyMethodNetStake,
 						ProposalQuorum:           1,
@@ -727,7 +727,7 @@ var _ = Describe("TxValidator", func() {
 		When("proposee is not ProposeeOwner and tally method is CoinWeighted", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
-					Governace: &state.RepoConfigGovernance{
+					Governance: &state.RepoConfigGovernance{
 						ProposalProposee:    state.ProposeeNetStakeholders,
 						ProposalTallyMethod: state.ProposalTallyMethodCoinWeighted,
 					},
@@ -742,7 +742,7 @@ var _ = Describe("TxValidator", func() {
 		When("proposee is not ProposeeOwner and tally method is Identity", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
-					Governace: &state.RepoConfigGovernance{
+					Governance: &state.RepoConfigGovernance{
 						ProposalProposee:    state.ProposeeNetStakeholders,
 						ProposalTallyMethod: state.ProposalTallyMethodIdentity,
 					},

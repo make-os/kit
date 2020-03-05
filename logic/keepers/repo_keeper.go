@@ -2,9 +2,10 @@ package keepers
 
 import (
 	"fmt"
+	"strconv"
+
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"strconv"
 
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/pkgs/tree"
@@ -41,14 +42,14 @@ func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *state.Repository 
 	stateVersion := a.state.Version()
 	err := repo.Proposals.ForEach(func(prop *state.RepoProposal, id string) error {
 		if prop.Height == uint64(stateVersion) {
-			prop.Config = repo.Config.Governace
+			prop.Config = repo.Config.Governance
 			return nil
 		}
 		propParent := a.GetRepoOnly(name, prop.Height)
 		if propParent.IsNil() {
 			return fmt.Errorf("failed to get repo version of proposal (%s)", id)
 		}
-		prop.Config = propParent.Config.Governace
+		prop.Config = propParent.Config.Governance
 		return nil
 	})
 	if err != nil {

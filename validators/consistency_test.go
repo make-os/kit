@@ -1026,7 +1026,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Value = "10"
 				repo := state.BareRepository()
 				repo.AddOwner("addr", &state.RepoOwner{})
-				repo.Config.Governace.ProposalFee = 0
+				repo.Config.Governance.ProposalFee = 0
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
@@ -1047,7 +1047,7 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "10"
 				repo := state.BareRepository()
-				repo.Config.Governace.ProposalFee = 100
+				repo.Config.Governance.ProposalFee = 100
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
@@ -1068,8 +1068,8 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "101"
 				repo := state.BareRepository()
-				repo.Config.Governace.ProposalFee = 100
-				repo.Config.Governace.ProposalProposee = state.ProposeeOwner
+				repo.Config.Governance.ProposalFee = 100
+				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
@@ -1090,8 +1090,8 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "101"
 				repo := state.BareRepository()
-				repo.Config.Governace.ProposalFee = 100
-				repo.Config.Governace.ProposalProposee = state.ProposeeOwner
+				repo.Config.Governance.ProposalFee = 100
+				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
 				repo.Owners[key.Addr().String()] = &state.RepoOwner{}
 
 				bi := &core.BlockInfo{Height: 1}
@@ -1174,7 +1174,7 @@ var _ = Describe("TxValidator", func() {
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
-					Config: repo.Config.Governace,
+					Config: repo.Config.Governance,
 				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
@@ -1197,7 +1197,7 @@ var _ = Describe("TxValidator", func() {
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
-					Config:          repo.Config.Governace,
+					Config:          repo.Config.Governance,
 					FeeDepositEndAt: 100,
 				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
@@ -1220,9 +1220,9 @@ var _ = Describe("TxValidator", func() {
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
-				repo.Config.Governace.ProposalFee = 200
+				repo.Config.Governance.ProposalFee = 200
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
-					Config:          repo.Config.Governace,
+					Config:          repo.Config.Governance,
 					FeeDepositEndAt: 100,
 					Fees:            map[string]string{},
 				})
@@ -1247,7 +1247,7 @@ var _ = Describe("TxValidator", func() {
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
-					Config: repo.Config.Governace,
+					Config: repo.Config.Governance,
 				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
@@ -1272,7 +1272,7 @@ var _ = Describe("TxValidator", func() {
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
-					Config: repo.Config.Governace,
+					Config: repo.Config.Governance,
 				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
@@ -1296,9 +1296,9 @@ var _ = Describe("TxValidator", func() {
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
-				repo.Config.Governace.ProposalProposee = state.ProposeeOwner
+				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
-					Config: repo.Config.Governace,
+					Config: repo.Config.Governance,
 				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
@@ -1323,9 +1323,9 @@ var _ = Describe("TxValidator", func() {
 
 					repo := state.BareRepository()
 					repo.AddOwner(key.Addr().String(), &state.RepoOwner{})
-					repo.Config.Governace.ProposalProposee = state.ProposeeOwner
+					repo.Config.Governance.ProposalProposee = state.ProposeeOwner
 					repo.Proposals.Add("proposal1", &state.RepoProposal{
-						Config: repo.Config.Governace,
+						Config: repo.Config.Governance,
 					})
 					mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
@@ -1405,7 +1405,7 @@ var _ = Describe("TxValidator", func() {
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
-					Config: repo.Config.Governace,
+					Config: repo.Config.Governance,
 				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
@@ -1428,7 +1428,7 @@ var _ = Describe("TxValidator", func() {
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
-					Config:          repo.Config.Governace,
+					Config:          repo.Config.Governance,
 					FeeDepositEndAt: 0,
 				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
@@ -1452,7 +1452,7 @@ var _ = Describe("TxValidator", func() {
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
-					Config:          repo.Config.Governace,
+					Config:          repo.Config.Governance,
 					FeeDepositEndAt: 100,
 				})
 				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
@@ -1476,7 +1476,7 @@ var _ = Describe("TxValidator", func() {
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
-					Config:          repo.Config.Governace,
+					Config:          repo.Config.Governance,
 					FeeDepositEndAt: 100,
 				})
 
@@ -1537,7 +1537,7 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "10"
 				repo := state.BareRepository()
-				repo.Config.Governace.ProposalFee = 100
+				repo.Config.Governance.ProposalFee = 100
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
@@ -1558,8 +1558,8 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "101"
 				repo := state.BareRepository()
-				repo.Config.Governace.ProposalFee = 100
-				repo.Config.Governace.ProposalProposee = state.ProposeeOwner
+				repo.Config.Governance.ProposalFee = 100
+				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
@@ -1580,8 +1580,8 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "101"
 				repo := state.BareRepository()
-				repo.Config.Governace.ProposalFee = 100
-				repo.Config.Governace.ProposalProposee = state.ProposeeOwner
+				repo.Config.Governance.ProposalFee = 100
+				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
 				repo.Owners[key.Addr().String()] = &state.RepoOwner{}
 
 				bi := &core.BlockInfo{Height: 1}
@@ -1641,7 +1641,7 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "10"
 				repo := state.BareRepository()
-				repo.Config.Governace.ProposalFee = 100
+				repo.Config.Governance.ProposalFee = 100
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
@@ -1662,8 +1662,8 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "101"
 				repo := state.BareRepository()
-				repo.Config.Governace.ProposalFee = 100
-				repo.Config.Governace.ProposalProposee = state.ProposeeOwner
+				repo.Config.Governance.ProposalFee = 100
+				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
@@ -1684,8 +1684,8 @@ var _ = Describe("TxValidator", func() {
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Value = "101"
 				repo := state.BareRepository()
-				repo.Config.Governace.ProposalFee = 100
-				repo.Config.Governace.ProposalProposee = state.ProposeeOwner
+				repo.Config.Governance.ProposalFee = 100
+				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
 				repo.Owners[key.Addr().String()] = &state.RepoOwner{}
 
 				bi := &core.BlockInfo{Height: 1}

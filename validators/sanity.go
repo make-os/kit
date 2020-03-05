@@ -2,11 +2,12 @@ package validators
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
+
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"regexp"
-	"strings"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/thoas/go-funk"
@@ -221,7 +222,7 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 	// the config and validate it
 	actual := state.MakeDefaultRepoConfig()
 	actual.MergeMap(cfg)
-	govCfg := actual.Governace
+	govCfg := actual.Governance
 
 	// Ensure the proposee type is known
 	allowedProposeeChoices := []state.ProposeeType{0,

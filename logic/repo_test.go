@@ -1,10 +1,11 @@
 package logic
 
 import (
+	"os"
+
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"os"
 
 	"github.com/golang/mock/gomock"
 
@@ -100,7 +101,7 @@ var _ = Describe("Repo", func() {
 
 			When("proposee is ProposalOwner", func() {
 				BeforeEach(func() {
-					repoCfg.Governace.ProposalProposee = state.ProposeeOwner
+					repoCfg.Governance.ProposalProposee = state.ProposeeOwner
 					spk = sender.PubKey().MustBytes32()
 					err = txLogic.execRepoCreate(spk, "repo", repoCfg.ToMap(), "1.5", 0)
 					Expect(err).To(BeNil())
@@ -115,7 +116,7 @@ var _ = Describe("Repo", func() {
 
 			When("proposee is not ProposalOwner", func() {
 				BeforeEach(func() {
-					repoCfg.Governace.ProposalProposee = state.ProposeeNetStakeholders
+					repoCfg.Governance.ProposalProposee = state.ProposeeNetStakeholders
 					spk = sender.PubKey().MustBytes32()
 					err = txLogic.execRepoCreate(spk, "repo", repoCfg.ToMap(), "1.5", 0)
 					Expect(err).To(BeNil())
@@ -128,7 +129,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			When("non-nil repo config is provided", func() {
-				repoCfg2 := &state.RepoConfig{Governace: &state.RepoConfigGovernance{ProposalDur: 1000}}
+				repoCfg2 := &state.RepoConfig{Governance: &state.RepoConfigGovernance{ProposalDur: 1000}}
 				BeforeEach(func() {
 					spk = sender.PubKey().MustBytes32()
 					err = txLogic.execRepoCreate(spk, "repo", repoCfg2.ToMap(), "1.5", 0)
@@ -138,7 +139,7 @@ var _ = Describe("Repo", func() {
 				Specify("that repo config is not the default", func() {
 					repo := txLogic.logic.RepoKeeper().GetRepo("repo")
 					Expect(repo.Config).ToNot(Equal(state.DefaultRepoConfig))
-					Expect(repo.Config.Governace.ProposalDur).To(Equal(uint64(1000)))
+					Expect(repo.Config.Governance.ProposalDur).To(Equal(uint64(1000)))
 				})
 			})
 		})
@@ -163,11 +164,11 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				repoUpd := state.BareRepository()
 				repoUpd.Config = state.DefaultRepoConfig
-				repoUpd.Config.Governace.ProposalProposee = state.ProposeeOwner
-				repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodIdentity
+				repoUpd.Config.Governance.ProposalProposee = state.ProposeeOwner
+				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodIdentity
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
-					Config: repoUpd.Config.Governace,
+					Config: repoUpd.Config.Governance,
 					Yes:    1,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -187,10 +188,10 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := state.BareRepository()
 					repoUpd.Config = state.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodIdentity
+					repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodIdentity
 					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 					repoUpd.AddOwner(key2.Addr().String(), &state.RepoOwner{})
-					proposal := &state.RepoProposal{Config: repoUpd.Config.Governace}
+					proposal := &state.RepoProposal{Config: repoUpd.Config.Governance}
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
 
@@ -220,11 +221,11 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				repoUpd := state.BareRepository()
 				repoUpd.Config = state.DefaultRepoConfig
-				repoUpd.Config.Governace.ProposalProposee = state.ProposeeOwner
-				repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodCoinWeighted
+				repoUpd.Config.Governance.ProposalProposee = state.ProposeeOwner
+				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodCoinWeighted
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
-					Config: repoUpd.Config.Governace,
+					Config: repoUpd.Config.Governance,
 					Yes:    1,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -248,10 +249,10 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				repoUpd := state.BareRepository()
 				repoUpd.Config = state.DefaultRepoConfig
-				repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStakeOfProposer
+				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStakeOfProposer
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
-					Config: repoUpd.Config.Governace,
+					Config: repoUpd.Config.Governance,
 					Yes:    0,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -279,10 +280,10 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				repoUpd := state.BareRepository()
 				repoUpd.Config = state.DefaultRepoConfig
-				repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStakeOfDelegators
+				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStakeOfDelegators
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
-					Config: repoUpd.Config.Governace,
+					Config: repoUpd.Config.Governance,
 					Yes:    0,
 				}
 				repoUpd.Proposals.Add(propID, proposal)
@@ -311,10 +312,10 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := state.BareRepository()
 					repoUpd.Config = state.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 					proposal := &state.RepoProposal{
-						Config: repoUpd.Config.Governace,
+						Config: repoUpd.Config.Governance,
 						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
@@ -343,10 +344,10 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := state.BareRepository()
 					repoUpd.Config = state.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 					proposal := &state.RepoProposal{
-						Config: repoUpd.Config.Governace,
+						Config: repoUpd.Config.Governance,
 						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
@@ -381,10 +382,10 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := state.BareRepository()
 					repoUpd.Config = state.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 					proposal := &state.RepoProposal{
-						Config: repoUpd.Config.Governace,
+						Config: repoUpd.Config.Governance,
 						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
@@ -419,10 +420,10 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := state.BareRepository()
 					repoUpd.Config = state.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 					proposal := &state.RepoProposal{
-						Config: repoUpd.Config.Governace,
+						Config: repoUpd.Config.Governance,
 						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
@@ -460,10 +461,10 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := state.BareRepository()
 					repoUpd.Config = state.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 					proposal := &state.RepoProposal{
-						Config: repoUpd.Config.Governace,
+						Config: repoUpd.Config.Governance,
 						Yes:    0,
 					}
 					repoUpd.Proposals.Add(propID, proposal)
@@ -498,7 +499,7 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					repoUpd := state.BareRepository()
 					repoUpd.Config = state.DefaultRepoConfig
-					repoUpd.Config.Governace.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+					repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
 					repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 					proposal := &state.RepoProposal{
 						Yes: 100,
@@ -554,7 +555,7 @@ var _ = Describe("Repo", func() {
 			})
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
-			repoUpd.Config.Governace.ProposalProposee = state.ProposeeOwner
+			repoUpd.Config.Governance.ProposalProposee = state.ProposeeOwner
 		})
 
 		When("sender is the only owner", func() {
@@ -688,7 +689,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governace.ProposalDur + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governance.ProposalDur + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})
@@ -700,8 +701,8 @@ var _ = Describe("Repo", func() {
 			currentHeight := uint64(200)
 
 			BeforeEach(func() {
-				repoUpd.Config.Governace.ProposalDur = 1000
-				repoUpd.Config.Governace.ProposalFeeDepDur = 100
+				repoUpd.Config.Governance.ProposalDur = 1000
+				repoUpd.Config.Governance.ProposalFeeDepDur = 100
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
@@ -739,7 +740,7 @@ var _ = Describe("Repo", func() {
 			})
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
-			repoUpd.Config.Governace.ProposalProposee = state.ProposeeOwner
+			repoUpd.Config.Governance.ProposalProposee = state.ProposeeOwner
 		})
 
 		When("sender has not previously deposited", func() {
@@ -835,7 +836,7 @@ var _ = Describe("Repo", func() {
 			})
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
-			repoUpd.Config.Governace.ProposalProposee = state.ProposeeOwner
+			repoUpd.Config.Governance.ProposalProposee = state.ProposeeOwner
 		})
 
 		When("sender is the only owner", func() {
@@ -848,7 +849,7 @@ var _ = Describe("Repo", func() {
 
 				spk = sender.PubKey().MustBytes32()
 				config := &state.RepoConfig{
-					Governace: &state.RepoConfigGovernance{ProposalDur: 1000},
+					Governance: &state.RepoConfigGovernance{ProposalDur: 1000},
 				}
 				err = txLogic.execRepoProposalUpdate(spk, repoName, "1", config.ToMap(),
 					proposalFee, "1.5", 0)
@@ -870,7 +871,7 @@ var _ = Describe("Repo", func() {
 			Specify("that config is updated", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Config).ToNot(Equal(repoUpd.Config))
-				Expect(repo.Config.Governace.ProposalDur).To(Equal(uint64(1000)))
+				Expect(repo.Config.Governance.ProposalDur).To(Equal(uint64(1000)))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
@@ -898,7 +899,7 @@ var _ = Describe("Repo", func() {
 
 				spk = sender.PubKey().MustBytes32()
 				config := &state.RepoConfig{
-					Governace: &state.RepoConfigGovernance{ProposalDur: 1000},
+					Governance: &state.RepoConfigGovernance{ProposalDur: 1000},
 				}
 
 				err = txLogic.execRepoProposalUpdate(spk, repoName, "1", config.ToMap(), proposalFee, "1.5", curHeight)
@@ -930,7 +931,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governace.ProposalDur + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governance.ProposalDur + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})
@@ -941,14 +942,14 @@ var _ = Describe("Repo", func() {
 			currentHeight := uint64(200)
 
 			BeforeEach(func() {
-				repoUpd.Config.Governace.ProposalDur = 1000
-				repoUpd.Config.Governace.ProposalFeeDepDur = 100
+				repoUpd.Config.Governance.ProposalDur = 1000
+				repoUpd.Config.Governance.ProposalFeeDepDur = 100
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
 				config := &state.RepoConfig{
-					Governace: &state.RepoConfigGovernance{
+					Governance: &state.RepoConfigGovernance{
 						ProposalDur: 2000,
 					},
 				}
@@ -982,7 +983,7 @@ var _ = Describe("Repo", func() {
 			})
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
-			repoUpd.Config.Governace.ProposalProposee = state.ProposeeOwner
+			repoUpd.Config.Governance.ProposalProposee = state.ProposeeOwner
 		})
 
 		When("sender is the only owner", func() {
@@ -1065,7 +1066,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governace.ProposalDur + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governance.ProposalDur + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})
@@ -1095,7 +1096,7 @@ var _ = Describe("Repo", func() {
 			It("should change the config", func() {
 				proposal := &state.RepoProposal{ActionData: map[string]interface{}{
 					core.ProposalActionDataConfig: (&state.RepoConfig{
-						Governace: &state.RepoConfigGovernance{
+						Governance: &state.RepoConfigGovernance{
 							ProposalQuorum: 120,
 							ProposalDur:    100,
 						},
@@ -1103,8 +1104,8 @@ var _ = Describe("Repo", func() {
 				}}
 				err = applyProposalRepoUpdate(proposal, repo, 0)
 				Expect(err).To(BeNil())
-				Expect(repo.Config.Governace.ProposalQuorum).To(Equal(float64(120)))
-				Expect(repo.Config.Governace.ProposalDur).To(Equal(uint64(100)))
+				Expect(repo.Config.Governance.ProposalQuorum).To(Equal(float64(120)))
+				Expect(repo.Config.Governance.ProposalDur).To(Equal(uint64(100)))
 			})
 		})
 	})

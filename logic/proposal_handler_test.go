@@ -1,9 +1,10 @@
 package logic
 
 import (
+	"os"
+
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"os"
 
 	"github.com/golang/mock/gomock"
 
@@ -66,7 +67,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			BeforeEach(func() {
 				proposal = &state.RepoProposal{
-					Config: state.MakeDefaultRepoConfig().Governace,
+					Config: state.MakeDefaultRepoConfig().Governance,
 				}
 				proposal.Config.ProposalProposee = state.ProposeeOwner
 				proposal.Creator = key.Addr().String()
@@ -99,7 +100,7 @@ var _ = Describe("ProposalHandler", func() {
 
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governace,
+						Config: state.MakeDefaultRepoConfig().Governance,
 					}
 					proposal.Config.ProposalProposee = state.ProposeeOwner
 					proposal.Creator = key.Addr().String()
@@ -149,7 +150,7 @@ var _ = Describe("ProposalHandler", func() {
 			var repo *state.Repository
 
 			BeforeEach(func() {
-				govCfg := state.MakeDefaultRepoConfig().Governace
+				govCfg := state.MakeDefaultRepoConfig().Governance
 				govCfg.ProposalFee = 1
 				proposal = &state.RepoProposal{
 					Config:          govCfg,
@@ -174,7 +175,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			BeforeEach(func() {
 				proposal = &state.RepoProposal{
-					Config: state.MakeDefaultRepoConfig().Governace,
+					Config: state.MakeDefaultRepoConfig().Governance,
 				}
 				proposal.Config.ProposalProposee = state.ProposeeOwner
 				proposal.Creator = key.Addr().String()
@@ -219,7 +220,7 @@ var _ = Describe("ProposalHandler", func() {
 					Expect(err).To(BeNil())
 
 					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governace,
+						Config: state.MakeDefaultRepoConfig().Governance,
 					}
 					proposal.Config.ProposalProposee = state.ProposeeOwner
 					proposal.Creator = key.Addr().String()
@@ -259,7 +260,7 @@ var _ = Describe("ProposalHandler", func() {
 					Expect(err).To(BeNil())
 
 					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governace,
+						Config: state.MakeDefaultRepoConfig().Governance,
 					}
 					proposal.Config.ProposalProposee = state.ProposeeOwner
 					proposal.Creator = key.Addr().String()
@@ -299,7 +300,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			BeforeEach(func() {
 				proposal = &state.RepoProposal{
-					Config: state.MakeDefaultRepoConfig().Governace,
+					Config: state.MakeDefaultRepoConfig().Governance,
 				}
 				proposal.Config.ProposalProposee = state.ProposeeNetStakeholders
 				proposal.Creator = key.Addr().String()
@@ -325,7 +326,7 @@ var _ = Describe("ProposalHandler", func() {
 
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governace,
+						Config: state.MakeDefaultRepoConfig().Governance,
 					}
 					proposal.Config.ProposalProposee = state.ProposeeOwner
 					proposal.Creator = key.Addr().String()
@@ -346,7 +347,7 @@ var _ = Describe("ProposalHandler", func() {
 
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governace,
+						Config: state.MakeDefaultRepoConfig().Governance,
 					}
 					proposal.Config.ProposalProposee = state.ProposeeOwner
 					proposal.Creator = key.Addr().String()
@@ -368,7 +369,7 @@ var _ = Describe("ProposalHandler", func() {
 
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governace,
+						Config: state.MakeDefaultRepoConfig().Governance,
 					}
 					proposal.Config.ProposalProposee = state.ProposeeNetStakeholdersAndVetoOwner
 					proposal.Creator = key.Addr().String()
@@ -396,7 +397,7 @@ var _ = Describe("ProposalHandler", func() {
 
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governace,
+						Config: state.MakeDefaultRepoConfig().Governance,
 					}
 					proposal.Config.ProposalProposee = state.ProposeeOwner
 					proposal.Creator = key.Addr().String()
@@ -418,7 +419,7 @@ var _ = Describe("ProposalHandler", func() {
 
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governace,
+						Config: state.MakeDefaultRepoConfig().Governance,
 					}
 					proposal.Config.ProposalProposee = state.ProposeeOwner
 					proposal.Creator = key.Addr().String()
@@ -440,7 +441,7 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governace,
+						Config: state.MakeDefaultRepoConfig().Governance,
 					}
 					proposal.Config.ProposalProposee = state.ProposeeOwner
 					proposal.Creator = key.Addr().String()
@@ -463,7 +464,7 @@ var _ = Describe("ProposalHandler", func() {
 
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governace,
+						Config: state.MakeDefaultRepoConfig().Governance,
 					}
 					proposal.Config.ProposalProposee = state.ProposeeOwner
 					proposal.Creator = key.Addr().String()

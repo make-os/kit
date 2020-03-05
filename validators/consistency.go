@@ -375,13 +375,13 @@ func checkProposalCommonConsistency(
 		return nil, feI(index, "id", "proposal id has been used, choose another")
 	}
 
-	repoPropFee := decimal.NewFromFloat(repo.Config.Governace.ProposalFee)
+	repoPropFee := decimal.NewFromFloat(repo.Config.Governance.ProposalFee)
 	if repoPropFee.Equal(decimal.Zero) &&
 		!txProposal.Value.Decimal().Equal(decimal.Zero) {
 		return nil, feI(index, "value", "proposal fee is not required but was provided")
 	}
 
-	if repo.Config.Governace.ProposalFeeDepDur == 0 {
+	if repo.Config.Governance.ProposalFeeDepDur == 0 {
 		if repoPropFee.GreaterThan(decimal.Zero) &&
 			txProposal.Value.Decimal().LessThan(repoPropFee) {
 			return nil, feI(index, "value", "proposal fee cannot be less than repo minimum")
@@ -390,7 +390,7 @@ func checkProposalCommonConsistency(
 
 	// If the repo is owned by some owners, ensure the sender is one of the owners
 	senderOwner := repo.Owners.Get(txCommon.GetFrom().String())
-	if repo.Config.Governace.ProposalProposee == state.ProposeeOwner && senderOwner == nil {
+	if repo.Config.Governance.ProposalProposee == state.ProposeeOwner && senderOwner == nil {
 		return nil, feI(index, "senderPubKey", "sender is not one of the repo owners")
 	}
 

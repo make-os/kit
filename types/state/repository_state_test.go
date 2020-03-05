@@ -2,6 +2,7 @@ package state
 
 import (
 	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -185,7 +186,7 @@ var _ = Describe("Repository", func() {
 	Describe("RepoConfig.MergeMap", func() {
 		Context("merge all key/value in map", func() {
 			base := &RepoConfig{
-				Governace: &RepoConfigGovernance{
+				Governance: &RepoConfigGovernance{
 					ProposalProposee:                 1,
 					ProposalProposeeLimitToCurHeight: true,
 				},
@@ -199,8 +200,8 @@ var _ = Describe("Repository", func() {
 						"propProposeeLimitToCurHeight": false,
 					},
 				})
-				Expect(int(base.Governace.ProposalProposee)).To(Equal(13))
-				Expect(base.Governace.ProposalProposeeLimitToCurHeight).To(BeFalse())
+				Expect(int(base.Governance.ProposalProposee)).To(Equal(13))
+				Expect(base.Governance.ProposalProposeeLimitToCurHeight).To(BeFalse())
 			})
 
 		})
@@ -208,7 +209,7 @@ var _ = Describe("Repository", func() {
 
 	Describe("RepoConfig.Clone", func() {
 		base := &RepoConfig{
-			Governace: &RepoConfigGovernance{
+			Governance: &RepoConfigGovernance{
 				ProposalProposee:                 1,
 				ProposalProposeeLimitToCurHeight: true,
 			},
@@ -218,27 +219,27 @@ var _ = Describe("Repository", func() {
 			clone := base.Clone()
 			Expect(base).To(Equal(clone))
 			Expect(fmt.Sprintf("%p", base)).ToNot(Equal(fmt.Sprintf("%p", clone)))
-			Expect(fmt.Sprintf("%p", base.Governace)).ToNot(Equal(fmt.Sprintf("%p", clone.Governace)))
+			Expect(fmt.Sprintf("%p", base.Governance)).ToNot(Equal(fmt.Sprintf("%p", clone.Governance)))
 		})
 	})
 
 	Describe("RepoConfig.Merge", func() {
 		When("other object is nil", func() {
 			It("should change nothing", func() {
-				o := &RepoConfig{Governace: &RepoConfigGovernance{ProposalProposee: 1}}
+				o := &RepoConfig{Governance: &RepoConfigGovernance{ProposalProposee: 1}}
 				o.Merge(nil)
-				Expect(int(o.Governace.ProposalProposee)).To(Equal(1))
+				Expect(int(o.Governance.ProposalProposee)).To(Equal(1))
 
-				o = &RepoConfig{Governace: &RepoConfigGovernance{ProposalProposee: 1}}
+				o = &RepoConfig{Governance: &RepoConfigGovernance{ProposalProposee: 1}}
 				o.Merge(&RepoConfig{})
-				Expect(int(o.Governace.ProposalProposee)).To(Equal(1))
+				Expect(int(o.Governance.ProposalProposee)).To(Equal(1))
 			})
 		})
 
 		When("other object is not nil", func() {
 			It("should change base fields to values of non-zero, non-equal fields", func() {
 				o := &RepoConfig{
-					Governace: &RepoConfigGovernance{
+					Governance: &RepoConfigGovernance{
 						ProposalProposee:                 1,
 						ProposalDur:                      2,
 						ProposalTallyMethod:              4,
@@ -251,7 +252,7 @@ var _ = Describe("Repository", func() {
 				}
 
 				o2 := &RepoConfig{
-					Governace: &RepoConfigGovernance{
+					Governance: &RepoConfigGovernance{
 						ProposalProposee:                 3,
 						ProposalDur:                      5,
 						ProposalTallyMethod:              6,
@@ -271,7 +272,7 @@ var _ = Describe("Repository", func() {
 		When("other object is not nil but some values are zero", func() {
 			It("should change base fields to values of non-zero, non-equal fields", func() {
 				o := &RepoConfig{
-					Governace: &RepoConfigGovernance{
+					Governance: &RepoConfigGovernance{
 						ProposalProposee:                 1,
 						ProposalDur:                      2,
 						ProposalTallyMethod:              4,
@@ -284,7 +285,7 @@ var _ = Describe("Repository", func() {
 				}
 
 				o2 := &RepoConfig{
-					Governace: &RepoConfigGovernance{
+					Governance: &RepoConfigGovernance{
 						ProposalProposee:                 3,
 						ProposalDur:                      5,
 						ProposalTallyMethod:              6,
@@ -298,8 +299,8 @@ var _ = Describe("Repository", func() {
 
 				o.Merge(o2)
 				Expect(o).ToNot(Equal(o2))
-				Expect(o.Governace.ProposalThreshold).ToNot(BeZero())
-				Expect(o.Governace.ProposalVetoQuorum).ToNot(BeZero())
+				Expect(o.Governance.ProposalThreshold).ToNot(BeZero())
+				Expect(o.Governance.ProposalVetoQuorum).ToNot(BeZero())
 			})
 		})
 	})

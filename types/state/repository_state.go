@@ -102,7 +102,7 @@ type RepoConfigGovernance struct {
 
 // RepoConfig contains repo-specific configuration settings
 type RepoConfig struct {
-	Governace *RepoConfigGovernance `json:"gov" mapstructure:"gov" msgpack:"gov"`
+	Governance *RepoConfigGovernance `json:"gov" mapstructure:"gov" msgpack:"gov"`
 }
 
 // Clone clones c
@@ -122,7 +122,7 @@ func (c *RepoConfig) MergeMap(o map[string]interface{}) {
 
 // Merge merges non-zero fields of o into c
 func (c *RepoConfig) Merge(o *RepoConfig) {
-	if c.Governace == nil || o == nil || o.Governace == nil {
+	if c.Governance == nil || o == nil || o.Governance == nil {
 		return
 	}
 
@@ -145,7 +145,7 @@ func (c *RepoConfig) Merge(o *RepoConfig) {
 
 // IsNil checks if the object's field all have zero value
 func (c *RepoConfig) IsNil() bool {
-	return c.Governace == nil || *c.Governace == RepoConfigGovernance{}
+	return c.Governance == nil || *c.Governance == RepoConfigGovernance{}
 }
 
 // ToMap converts the object to map
@@ -161,7 +161,7 @@ var (
 // MakeDefaultRepoConfig returns sane defaults for repository configurations
 func MakeDefaultRepoConfig() *RepoConfig {
 	return &RepoConfig{
-		Governace: &RepoConfigGovernance{
+		Governance: &RepoConfigGovernance{
 			ProposalProposee:                 ProposeeOwner,
 			ProposalProposeeLimitToCurHeight: false,
 			ProposalDur:                      params.RepoProposalDur,
@@ -180,7 +180,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 // BareRepoConfig returns empty repository configurations
 func BareRepoConfig() *RepoConfig {
 	return &RepoConfig{
-		Governace: &RepoConfigGovernance{},
+		Governance: &RepoConfigGovernance{},
 	}
 }
 
