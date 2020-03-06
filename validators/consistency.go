@@ -366,22 +366,22 @@ func checkProposalCommonConsistency(
 		return nil, errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	repo := logic.RepoKeeper().GetRepo(txProposal.RepoName, uint64(bi.Height))
-	if repo.IsNil() {
+	targetRepo := logic.RepoKeeper().GetRepo(txProposal.RepoName, uint64(bi.Height))
+	if targetRepo.IsNil() {
 		return nil, feI(index, "name", "repo not found")
 	}
 
-	if repo.Proposals.Get(txProposal.ProposalID) != nil {
+	if targetRepo.Proposals.Get(txProposal.ProposalID) != nil {
 		return nil, feI(index, "id", "proposal id has been used, choose another")
 	}
 
-	repoPropFee := decimal.NewFromFloat(repo.Config.Governance.ProposalFee)
+	repoPropFee := decimal.NewFromFloat(targetRepo.Config.Governance.ProposalFee)
 	if repoPropFee.Equal(decimal.Zero) &&
 		!txProposal.Value.Decimal().Equal(decimal.Zero) {
 		return nil, feI(index, "value", "proposal fee is not required but was provided")
 	}
 
-	if repo.Config.Governance.ProposalFeeDepDur == 0 {
+	if targetRepo.Config.Governance.ProposalFeeDepDur == 0 {
 		if repoPropFee.GreaterThan(decimal.Zero) &&
 			txProposal.Value.Decimal().LessThan(repoPropFee) {
 			return nil, feI(index, "value", "proposal fee cannot be less than repo minimum")
@@ -389,8 +389,8 @@ func checkProposalCommonConsistency(
 	}
 
 	// If the repo is owned by some owners, ensure the sender is one of the owners
-	senderOwner := repo.Owners.Get(txCommon.GetFrom().String())
-	if repo.Config.Governance.ProposalProposee == state.ProposeeOwner && senderOwner == nil {
+	senderOwner := targetRepo.Owners.Get(txCommon.GetFrom().String())
+	if targetRepo.Config.Governance.ProposalProposee == state.ProposeeOwner && senderOwner == nil {
 		return nil, feI(index, "senderPubKey", "sender is not one of the repo owners")
 	}
 
@@ -400,7 +400,7 @@ func checkProposalCommonConsistency(
 		return nil, err
 	}
 
-	return repo, nil
+	return targetRepo, nil
 }
 
 // CheckTxRepoProposalUpsertOwnerConsistency performs consistency

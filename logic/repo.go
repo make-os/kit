@@ -3,6 +3,7 @@ package logic
 import (
 	"strings"
 
+	"github.com/k0kubun/pp"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 
@@ -113,7 +114,22 @@ func applyProposalRepoUpdate(
 	repo *state.Repository,
 	chainHeight uint64) error {
 	cfgUpd := proposal.GetActionData()[core.ProposalActionDataConfig].(map[string]interface{})
+
+	// Merge update with existing config
 	repo.Config.MergeMap(cfgUpd)
+
+	// Since empty ACL policy update means a deletion request,
+	// find policies with empty content and remove them
+	if cfgUpd["acl"] != nil {
+		pp.Println(cfgUpd)
+		aclRules := cfgUpd["acl"].(map[string]interface{})
+		for policyName, content := range aclRules {
+			if len(content.(map[string]interface{})) == 0 {
+				delete(repo.Config.ACL, policyName)
+			}
+		}
+	}
+
 	return nil
 }
 

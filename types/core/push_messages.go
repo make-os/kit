@@ -7,18 +7,18 @@ import (
 
 // PushNote implements types.PushNote
 type PushNote struct {
-	util.DecoderHelper `json:",flatten" msgpack:"-" mapstructure:"-"`
-	TargetRepo         BareRepo         `json:",flatten" msgpack:"-" mapstructure:"-"`
-	RepoName           string           `json:"repoName" msgpack:"repoName"`         // The name of the repo
-	References         PushedReferences `json:"references" msgpack:"references"`     // A list of references pushed
-	PusherKeyID        []byte           `json:"pusherKeyId" msgpack:"pusherKeyId"`   // The PGP key of the pusher
-	PusherAddress      util.String      `json:"pusherAddr" msgpack:"pusherAddr"`     // The Address of the pusher
-	Size               uint64           `json:"size" msgpack:"size"`                 // Total size of all objects pushed
-	Timestamp          int64            `json:"timestamp" msgpack:"timestamp"`       // Unix timestamp
-	AccountNonce       uint64           `json:"accountNonce" msgpack:"accountNonce"` // Next nonce of the pusher's account
-	Fee                util.String      `json:"fee" msgpack:"fee"`                   // Total fees to pay for the pushed references
-	NodeSig            []byte           `json:"nodeSig" msgpack:"nodeSig"`           // The signature of the node that created the PushNote
-	NodePubKey         util.Bytes32     `json:"nodePubKey" msgpack:"nodePubKey"`     // The public key of the push note signer
+	util.SerializerHelper `json:",flatten" msgpack:"-" mapstructure:"-"`
+	TargetRepo            BareRepo         `json:",flatten" msgpack:"-" mapstructure:"-"`
+	RepoName              string           `json:"repoName" msgpack:"repoName"`         // The name of the repo
+	References            PushedReferences `json:"references" msgpack:"references"`     // A list of references pushed
+	PusherKeyID           []byte           `json:"pusherKeyId" msgpack:"pusherKeyId"`   // The PGP key of the pusher
+	PusherAddress         util.String      `json:"pusherAddr" msgpack:"pusherAddr"`     // The Address of the pusher
+	Size                  uint64           `json:"size" msgpack:"size"`                 // Total size of all objects pushed
+	Timestamp             int64            `json:"timestamp" msgpack:"timestamp"`       // Unix timestamp
+	AccountNonce          uint64           `json:"accountNonce" msgpack:"accountNonce"` // Next nonce of the pusher's account
+	Fee                   util.String      `json:"fee" msgpack:"fee"`                   // Total fees to pay for the pushed references
+	NodeSig               []byte           `json:"nodeSig" msgpack:"nodeSig"`           // The signature of the node that created the PushNote
+	NodePubKey            util.Bytes32     `json:"nodePubKey" msgpack:"nodePubKey"`     // The public key of the push note signer
 }
 
 // GetTargetRepo returns the target repository
@@ -165,11 +165,11 @@ func (r *ReferenceHashes) ID() util.Bytes32 {
 
 // PushOK is used to endorse a push note
 type PushOK struct {
-	util.DecoderHelper `json:",flatten" msgpack:"-" mapstructure:"-"`
-	PushNoteID         util.Bytes32    `json:"pushNoteID" msgpack:"pushNoteID" mapstructure:"pushNoteID"`
-	ReferencesHash     ReferenceHashes `json:"refsHash" msgpack:"refsHash" mapstructure:"refsHash"`
-	SenderPubKey       util.Bytes32    `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
-	Sig                util.Bytes64    `json:"sig" msgpack:"sig" mapstructure:"sig"`
+	util.SerializerHelper `json:",flatten" msgpack:"-" mapstructure:"-"`
+	PushNoteID            util.Bytes32    `json:"pushNoteID" msgpack:"pushNoteID" mapstructure:"pushNoteID"`
+	ReferencesHash        ReferenceHashes `json:"refsHash" msgpack:"refsHash" mapstructure:"refsHash"`
+	SenderPubKey          util.Bytes32    `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
+	Sig                   util.Bytes64    `json:"sig" msgpack:"sig" mapstructure:"sig"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

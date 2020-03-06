@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+
 	"github.com/fatih/structs"
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
@@ -129,7 +130,7 @@ func (tx *TxRepoCreate) FromMap(data map[string]interface{}) error {
 		}
 	}
 
-	// Config: expects map type in map
+	// Config: expects map type in map_
 	if configVal := o.Get("config"); !configVal.IsNil() {
 		if configVal.IsObjxMap() {
 			tx.Config = configVal.ObjxMap()

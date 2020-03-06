@@ -1,7 +1,6 @@
 package state
 
 import (
-	"github.com/mitchellh/mapstructure"
 	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -299,11 +298,7 @@ func (p *RepoProposal) GetRejectedWithVetoByOwners() float64 {
 }
 
 // RepoProposals represents an index of proposals for a repo.
-// Note: we are using map[string]interface{} instead of map[string]*RepoProposal
-// because we want to take advantage of msgpack map sorting which only works on the
-// former.
-// CONTRACT: interface{} is always *RepoProposal
-type RepoProposals map[string]interface{}
+type RepoProposals map[string]*RepoProposal
 
 // Add adds a proposal map to the give id
 func (p *RepoProposals) Add(id string, rp *RepoProposal) {
@@ -317,33 +312,14 @@ func (p *RepoProposals) Has(id string) bool {
 
 // Get returns the proposal corresponding to the given id
 func (p *RepoProposals) Get(id string) *RepoProposal {
-	switch val := (*p)[id].(type) {
-	case map[string]interface{}:
-		var proposal RepoProposal
-		mapstructure.Decode(val, &proposal)
-		p.Add(id, &proposal)
-		return &proposal
-	case *RepoProposal:
-		return val
-	}
-	return nil
+	return (*p)[id]
 }
 
 // ForEach iterates through items, passing each to the callback function
 func (p *RepoProposals) ForEach(itr func(prop *RepoProposal, id string) error) error {
 	for id, prop := range *p {
-		switch val := prop.(type) {
-		case map[string]interface{}:
-			var proposal RepoProposal
-			mapstructure.Decode(val, &proposal)
-			p.Add(id, &proposal)
-			if err := itr(&proposal, id); err != nil {
-				return err
-			}
-		case *RepoProposal:
-			if err := itr(val, id); err != nil {
-				return err
-			}
+		if err := itr(prop, id); err != nil {
+			return err
 		}
 	}
 	return nil

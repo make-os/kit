@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/objx"
 
 	"github.com/vmihailenco/msgpack"
@@ -23,18 +22,18 @@ func BareAccount() *Account {
 	return &Account{
 		Balance: util.String("0"),
 		Nonce:   0,
-		Stakes:  AccountStakes(map[string]interface{}{}),
+		Stakes:  AccountStakes(map[string]*StakeInfo{}),
 	}
 }
 
 // Account represents a user's identity and includes
 // balance and other information.
 type Account struct {
-	util.DecoderHelper  `json:"-" msgpack:"-"`
-	Balance             util.String   `json:"balance" msgpack:"balance"`
-	Nonce               uint64        `json:"nonce" msgpack:"nonce"`
-	Stakes              AccountStakes `json:"stakes,omitempty" msgpack:"stakes"`
-	DelegatorCommission float64       `json:"delegatorCommission" msgpack:"delegatorCommission"`
+	util.SerializerHelper `json:"-" msgpack:"-"`
+	Balance               util.String   `json:"balance" msgpack:"balance"`
+	Nonce                 uint64        `json:"nonce" msgpack:"nonce"`
+	Stakes                AccountStakes `json:"stakes,omitempty" msgpack:"stakes"`
+	DelegatorCommission   float64       `json:"delegatorCommission" msgpack:"delegatorCommission"`
 }
 
 // FromMap populates the object from a map
@@ -115,7 +114,11 @@ func (a *Account) GetSpendableBalance(curHeight uint64) util.String {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (a *Account) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(a.Balance, a.Nonce, a.Stakes, a.DelegatorCommission)
+	return a.EncodeMulti(enc,
+		a.Balance,
+		a.Nonce,
+		a.Stakes,
+		a.DelegatorCommission)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -134,7 +137,7 @@ func (a *Account) Bytes() []byte {
 // curHeight: The current blockchain height
 func (a *Account) Clean(curHeight uint64) {
 	for name, stake := range a.Stakes {
-		if stake.(*StakeInfo).UnbondHeight != 0 && stake.(*StakeInfo).UnbondHeight <= curHeight {
+		if stake.UnbondHeight != 0 && stake.UnbondHeight <= curHeight {
 			delete(a.Stakes, name)
 		}
 	}
@@ -142,7 +145,7 @@ func (a *Account) Clean(curHeight uint64) {
 
 // BareAccountStakes returns an empty AccountStakes
 func BareAccountStakes() AccountStakes {
-	return AccountStakes(map[string]interface{}{})
+	return AccountStakes(map[string]*StakeInfo{})
 }
 
 // BareStakeInfo returns an empty StakeInfo
@@ -161,11 +164,7 @@ type StakeInfo struct {
 }
 
 // AccountStakes holds staked balances
-// Note: we are using map[string]interface{} instead of map[string]*StakeInfo
-// because we want to take advantage of msgpack map sorting which only works on the
-// former.
-// CONTRACT: interface{} is always *StakeInfo
-type AccountStakes map[string]interface{}
+type AccountStakes map[string]*StakeInfo
 
 // Add adds a staked balance
 // stakeType: The unique stake identifier
@@ -195,8 +194,8 @@ func (s *AccountStakes) Add(stakeType string, value util.String, unbondHeight ui
 func (s *AccountStakes) Remove(stakeType string, value util.String, unbondHeight uint64) string {
 	for k, si := range *s {
 		if strings.HasPrefix(k, stakeType) &&
-			si.(*StakeInfo).Value.Equal(value) &&
-			unbondHeight == si.(*StakeInfo).UnbondHeight {
+			si.Value.Equal(value) &&
+			unbondHeight == si.UnbondHeight {
 			delete(*s, k)
 			return k
 		}
@@ -213,9 +212,9 @@ func (s *AccountStakes) UpdateUnbondHeight(
 	newUnbondHeight uint64) string {
 	for k, si := range *s {
 		if strings.HasPrefix(k, stakeType) &&
-			si.(*StakeInfo).Value.Equal(value) &&
-			unbondHeight == si.(*StakeInfo).UnbondHeight {
-			si.(*StakeInfo).UnbondHeight = newUnbondHeight
+			si.Value.Equal(value) &&
+			unbondHeight == si.UnbondHeight {
+			si.UnbondHeight = newUnbondHeight
 			return k
 		}
 	}
@@ -235,7 +234,7 @@ func (s *AccountStakes) Get(name string) *StakeInfo {
 	if !s.Has(name) {
 		return BareStakeInfo()
 	}
-	return (*s)[name].(*StakeInfo)
+	return (*s)[name]
 }
 
 // TotalStaked returns the sum of all staked balances
@@ -243,8 +242,8 @@ func (s *AccountStakes) Get(name string) *StakeInfo {
 func (s *AccountStakes) TotalStaked(curHeight uint64) util.String {
 	total := util.String("0").Decimal()
 	for _, si := range *s {
-		if si.(*StakeInfo).UnbondHeight == 0 || si.(*StakeInfo).UnbondHeight > curHeight {
-			total = total.Add(si.(*StakeInfo).Value.Decimal())
+		if si.UnbondHeight == 0 || si.UnbondHeight > curHeight {
+			total = total.Add(si.Value.Decimal())
 		}
 	}
 	return util.String(total.String())
@@ -252,17 +251,9 @@ func (s *AccountStakes) TotalStaked(curHeight uint64) util.String {
 
 // NewAccountFromBytes decodes bz to Account
 func NewAccountFromBytes(bz []byte) (*Account, error) {
-
 	var a = &Account{}
 	if err := util.BytesToObject(bz, a); err != nil {
 		return nil, err
 	}
-
-	for k, v := range a.Stakes {
-		var stakeInfo StakeInfo
-		mapstructure.Decode(v, &stakeInfo)
-		a.Stakes[k] = &stakeInfo
-	}
-
 	return a, nil
 }

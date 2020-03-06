@@ -342,14 +342,14 @@ type Pruner interface {
 
 // PushedReference represents a reference that was pushed by git client
 type PushedReference struct {
-	util.DecoderHelper `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Name               string   `json:"name" msgpack:"name"`       // The full name of the reference
-	OldHash            string   `json:"oldHash" msgpack:"oldHash"` // The hash of the reference before the push
-	NewHash            string   `json:"newHash" msgpack:"newHash"` // The hash of the reference after the push
-	Nonce              uint64   `json:"nonce" msgpack:"nonce"`     // The next repo nonce of the reference
-	Objects            []string `json:"objects" msgpack:"objects"` // A list of objects pushed to the reference
-	Delete             bool     `json:"delete" msgpack:"delete"`   // Delete indicates that the reference should be deleted from the repo
-	MergeProposalID    string   `json:"mergeID" msgpack:"mergeID"` // The merge proposal ID the reference is complaint with.
+	util.SerializerHelper `json:",flatten" msgpack:"-" mapstructure:"-"`
+	Name                  string   `json:"name" msgpack:"name"`       // The full name of the reference
+	OldHash               string   `json:"oldHash" msgpack:"oldHash"` // The hash of the reference before the push
+	NewHash               string   `json:"newHash" msgpack:"newHash"` // The hash of the reference after the push
+	Nonce                 uint64   `json:"nonce" msgpack:"nonce"`     // The next repo nonce of the reference
+	Objects               []string `json:"objects" msgpack:"objects"` // A list of objects pushed to the reference
+	Delete                bool     `json:"delete" msgpack:"delete"`   // Delete indicates that the reference should be deleted from the repo
+	MergeProposalID       string   `json:"mergeID" msgpack:"mergeID"` // The merge proposal ID the reference is complaint with.
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

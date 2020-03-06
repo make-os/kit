@@ -46,4 +46,5 @@ genmocks:
     mockgen -source=api/rpc/client/client.go -destination=api/rpc/client/mocks.go -package client && \
     mockgen -source=types/modules/modules.go -destination=mocks/modules.go -package mocks && \
     mockgen -source=pkgs/tree/types.go -destination=mocks/tree.go -package mocks && \
-    mockgen -source=node/types/types.go -destination=mocks/node.go -package mocks
+    mockgen -source=node/types/types.go -destination=mocks/node.go -package mocks && \
+    mockgen -source=util/serialize_helper.go -destination=util/mocks/serialize_helper.go -package mocks

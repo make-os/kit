@@ -2,6 +2,7 @@ package state
 
 import (
 	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -9,7 +10,7 @@ import (
 var _ = Describe("RepoProposals", func() {
 	Describe(".Add", func() {
 		It("should add new proposal successfully", func() {
-			rp := RepoProposals(map[string]interface{}{})
+			rp := RepoProposals(map[string]*RepoProposal{})
 			rp.Add("1", &RepoProposal{Creator: "address1"})
 			rp.Add("2", &RepoProposal{Creator: "address1"})
 			Expect(rp).To(HaveLen(2))
@@ -18,7 +19,7 @@ var _ = Describe("RepoProposals", func() {
 
 	Describe(".Has", func() {
 		It("should return true if proposal with target ID exist", func() {
-			rp := RepoProposals(map[string]interface{}{})
+			rp := RepoProposals(map[string]*RepoProposal{})
 			rp.Add("1", &RepoProposal{Creator: "address1"})
 			Expect(rp.Has("2")).To(BeFalse())
 			Expect(rp.Has("1")).To(BeTrue())
@@ -27,7 +28,7 @@ var _ = Describe("RepoProposals", func() {
 
 	Describe(".Get", func() {
 		It("should return the expected value when proposal with target ID exist", func() {
-			rp := RepoProposals(map[string]interface{}{})
+			rp := RepoProposals(map[string]*RepoProposal{})
 			rp.Add("1", &RepoProposal{Creator: "address1"})
 			res := rp.Get("1")
 			Expect(res).ToNot(BeNil())
@@ -35,7 +36,7 @@ var _ = Describe("RepoProposals", func() {
 		})
 
 		It("should return nil when proposal with target ID does not exist", func() {
-			rp := RepoProposals(map[string]interface{}{})
+			rp := RepoProposals(map[string]*RepoProposal{})
 			res := rp.Get("1")
 			Expect(res).To(BeNil())
 		})
@@ -43,7 +44,7 @@ var _ = Describe("RepoProposals", func() {
 
 	Describe(".ForEach", func() {
 		It("should loop through all items as long as iteratee does not return error", func() {
-			rp := RepoProposals(map[string]interface{}{})
+			rp := RepoProposals(map[string]*RepoProposal{})
 			rp.Add("1", &RepoProposal{Creator: "address1"})
 			rp.Add("2", &RepoProposal{Creator: "address1"})
 			var idsIterated = map[string]struct{}{}
@@ -55,7 +56,7 @@ var _ = Describe("RepoProposals", func() {
 		})
 
 		It("should stop iterating through items once iteratee returns error", func() {
-			rp := RepoProposals(map[string]interface{}{})
+			rp := RepoProposals(map[string]*RepoProposal{})
 			rp.Add("1", &RepoProposal{Creator: "address1"})
 			rp.Add("2", &RepoProposal{Creator: "address1"})
 			var idsIterated = map[string]struct{}{}

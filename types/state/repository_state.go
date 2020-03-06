@@ -1,9 +1,6 @@
 package state
 
 import (
-	"reflect"
-
-	"github.com/fatih/structs"
 	"github.com/mitchellh/mapstructure"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/params"
@@ -21,19 +18,15 @@ type Reference struct {
 }
 
 // References represents a collection of references
-// Note: we are using map[string]interface{} instead of map[string]*Reference
-// because we want to take advantage of msgpack map sorting which only works on the
-// former.
-// CONTRACT: interface{} is always *Reference
-type References map[string]interface{}
+type References map[string]*Reference
 
 // Get a reference by name, returns empty reference if not found.
 func (r *References) Get(name string) *Reference {
-	ref, _ := (*r)[name]
+	ref := (*r)[name]
 	if ref == nil {
 		return BareReference()
 	}
-	return ref.(*Reference)
+	return ref
 }
 
 // Has checks whether a reference exist
@@ -49,33 +42,17 @@ type RepoOwner struct {
 }
 
 // RepoOwners represents an index of owners of a repository.
-// Note: we are using map[string]interface{} instead of map[string]*RepoOwner
-// because we want to take advantage of msgpack map sorting which only works on the
-// former.
-// CONTRACT: interface{} is always *RepoOwner
-type RepoOwners map[string]interface{}
+type RepoOwners map[string]*RepoOwner
 
 // Has returns true of address exist
 func (r RepoOwners) Has(address string) bool {
-	return r[address] != nil
+	_, has := r[address]
+	return has
 }
 
 // Get return a repo owner associated with the given address
 func (r RepoOwners) Get(address string) *RepoOwner {
-	ro, ok := r[address]
-	if !ok {
-		return nil
-	}
-	switch v := ro.(type) {
-	case *RepoOwner:
-		return v
-	case map[string]interface{}:
-		var ro RepoOwner
-		mapstructure.Decode(v, &ro)
-		r[address] = &ro
-		return &ro
-	}
-	return nil
+	return r[address]
 }
 
 // ForEach iterates through the collection passing each item to the iter callback
@@ -100,52 +77,55 @@ type RepoConfigGovernance struct {
 	ProposalFeeRefundType            ProposalFeeRefundType `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType"`
 }
 
+// RepoACLPolicy describes an ACL policy
+type RepoACLPolicy struct {
+	Object  string `json:"obj,omitempty" mapstructure:"obj,omitempty" msgpack:"obj,omitempty"`
+	Subject string `json:"sub,omitempty" mapstructure:"sub,omitempty" msgpack:"sub,omitempty"`
+	Action  string `json:"act,omitempty" mapstructure:"act,omitempty" msgpack:"act,omitempty"`
+}
+
+// RepoACLPolicies represents an index of repo ACL policies
+// key is policy id
+type RepoACLPolicies map[string]*RepoACLPolicy
+
 // RepoConfig contains repo-specific configuration settings
 type RepoConfig struct {
+	util.SerializerHelper
 	Governance *RepoConfigGovernance `json:"gov" mapstructure:"gov" msgpack:"gov"`
+	ACL        RepoACLPolicies       `json:"acl" mapstructure:"acl" msgpack:"acl"`
+}
+
+func (c *RepoConfig) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return c.EncodeMulti(enc,
+		c.Governance,
+		c.ACL)
+}
+
+func (c *RepoConfig) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return c.DecodeMulti(dec,
+		&c.Governance,
+		&c.ACL)
 }
 
 // Clone clones c
 func (c *RepoConfig) Clone() *RepoConfig {
 	var clone RepoConfig
 	m := util.StructToMap(c)
-	mapstructure.Decode(m, &clone)
+	_ = mapstructure.Decode(m, &clone)
 	return &clone
 }
 
 // MergeMap merges map o into c
 func (c *RepoConfig) MergeMap(o map[string]interface{}) {
 	baseMap := util.StructToMap(c)
-	mapstructure.Decode(o, &baseMap)
-	mapstructure.Decode(baseMap, c)
-}
-
-// Merge merges non-zero fields of o into c
-func (c *RepoConfig) Merge(o *RepoConfig) {
-	if c.Governance == nil || o == nil || o.Governance == nil {
-		return
-	}
-
-	var merger func(base, target *structs.Struct)
-	merger = func(base, target *structs.Struct) {
-		for _, baseField := range base.Fields() {
-			if targetField := target.Field(baseField.Name()); !targetField.IsZero() ||
-				targetField.Kind() == reflect.Bool {
-				if structs.IsStruct(targetField.Value()) && structs.IsStruct(baseField.Value()) {
-					merger(structs.New(baseField.Value()), structs.New(targetField.Value()))
-					continue
-				}
-				baseField.Set(targetField.Value())
-			}
-		}
-	}
-
-	merger(structs.New(c), structs.New(o))
+	_ = mapstructure.Decode(o, &baseMap)
+	_ = mapstructure.Decode(baseMap, c)
 }
 
 // IsNil checks if the object's field all have zero value
 func (c *RepoConfig) IsNil() bool {
-	return c.Governance == nil || *c.Governance == RepoConfigGovernance{}
+	return (c.Governance == nil || *c.Governance == RepoConfigGovernance{}) &&
+		len(c.ACL) == 0
 }
 
 // ToMap converts the object to map
@@ -174,6 +154,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			ProposalFeeRefundType:            0,
 			ProposalFeeDepDur:                0,
 		},
+		ACL: map[string]*RepoACLPolicy{},
 	}
 }
 
@@ -181,6 +162,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 func BareRepoConfig() *RepoConfig {
 	return &RepoConfig{
 		Governance: &RepoConfigGovernance{},
+		ACL:        RepoACLPolicies{},
 	}
 }
 
@@ -188,21 +170,21 @@ func BareRepoConfig() *RepoConfig {
 func BareRepository() *Repository {
 	return &Repository{
 		Balance:    "0",
-		References: make(map[string]interface{}),
-		Owners:     make(map[string]interface{}),
-		Proposals:  make(map[string]interface{}),
+		References: make(map[string]*Reference),
+		Owners:     make(map[string]*RepoOwner),
+		Proposals:  make(map[string]*RepoProposal),
 		Config:     BareRepoConfig(),
 	}
 }
 
 // Repository represents a git repository.
 type Repository struct {
-	util.DecoderHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	Balance            util.String   `json:"balance" msgpack:"balance" mapstructure:"balance"`
-	References         References    `json:"references" msgpack:"references" mapstructure:"references"`
-	Owners             RepoOwners    `json:"owners" msgpack:"owners" mapstructure:"owners"`
-	Proposals          RepoProposals `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
-	Config             *RepoConfig   `json:"config" msgpack:"config" mapstructure:"config"`
+	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
+	Balance               util.String   `json:"balance" msgpack:"balance" mapstructure:"balance"`
+	References            References    `json:"references" msgpack:"references" mapstructure:"references"`
+	Owners                RepoOwners    `json:"owners" msgpack:"owners" mapstructure:"owners"`
+	Proposals             RepoProposals `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
+	Config                *RepoConfig   `json:"config" msgpack:"config" mapstructure:"config"`
 }
 
 // GetBalance implements types.BalanceAccount
@@ -234,10 +216,10 @@ func (r *Repository) IsNil() bool {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return r.EncodeMulti(enc,
 		r.Balance,
-		r.References,
 		r.Owners,
+		r.References,
 		r.Proposals,
 		r.Config)
 }
@@ -246,8 +228,8 @@ func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return r.DecodeMulti(dec,
 		&r.Balance,
-		&r.References,
 		&r.Owners,
+		&r.References,
 		&r.Proposals,
 		&r.Config)
 }
@@ -265,22 +247,24 @@ func NewRepositoryFromBytes(bz []byte) (*Repository, error) {
 		return nil, err
 	}
 
-	for k, v := range repo.References {
-		var ref Reference
-		mapstructure.Decode(v, &ref)
-		repo.References[k] = &ref
-	}
-
 	for k, v := range repo.Owners {
 		var owner RepoOwner
-		mapstructure.Decode(v, &owner)
+		_ = mapstructure.Decode(v, &owner)
 		repo.AddOwner(k, &owner)
 	}
 
 	for k, v := range repo.Proposals {
 		var prop RepoProposal
-		mapstructure.Decode(v, &prop)
+		_ = mapstructure.Decode(v, &prop)
 		repo.Proposals.Add(k, &prop)
+	}
+
+	if len(repo.Config.ACL) > 0 {
+		for k, v := range repo.Config.ACL {
+			var po RepoACLPolicy
+			_ = mapstructure.Decode(v, &po)
+			repo.Config.ACL[k] = &po
+		}
 	}
 
 	return repo, nil

@@ -2,10 +2,11 @@ package validators
 
 import (
 	"fmt"
+	"path/filepath"
+
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
-	"path/filepath"
 
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/repo"

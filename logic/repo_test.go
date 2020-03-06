@@ -1072,7 +1072,7 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
-	Describe(".applyProposalRepoUpdate", func() {
+	FDescribe(".applyProposalRepoUpdate", func() {
 		var err error
 		var repo *state.Repository
 

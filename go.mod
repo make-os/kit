@@ -15,6 +15,7 @@ require (
 	github.com/bitfield/script v0.14.0
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/c-bata/go-prompt v0.2.3
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/badger v1.6.0
 	github.com/dgryski/go-farm v0.0.0-20191112170834-c2139c5d712b // indirect
 	github.com/dustin/go-humanize v1.0.0

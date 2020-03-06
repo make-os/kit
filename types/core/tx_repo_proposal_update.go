@@ -2,10 +2,10 @@ package core
 
 import (
 	"fmt"
+
 	"github.com/fatih/structs"
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -24,7 +24,7 @@ func NewBareRepoProposalUpdate() *TxRepoProposalUpdate {
 		TxCommon:         NewBareTxCommon(),
 		TxType:           &TxType{Type: TxTypeRepoProposalUpdate},
 		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: "", ProposalID: ""},
-		Config:           state.BareRepoConfig().ToMap(),
+		Config:           make(map[string]interface{}),
 	}
 }
 

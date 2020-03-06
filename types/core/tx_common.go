@@ -84,13 +84,13 @@ func (tx *TxType) FromMap(data map[string]interface{}) (err error) {
 
 // TxCommon implements some of BaseTx, it includes some common fields and methods
 type TxCommon struct {
-	util.DecoderHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxMeta            `json:"-" msgpack:"-" mapstructure:"-"`
-	Nonce              uint64         `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`
-	Fee                util.String    `json:"fee" msgpack:"fee" mapstructure:"fee"`
-	Sig                []byte         `json:"sig" msgpack:"sig" mapstructure:"sig"`
-	Timestamp          int64          `json:"timestamp" msgpack:"timestamp" mapstructure:"timestamp"`
-	SenderPubKey       util.PublicKey `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
+	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxMeta               `json:"-" msgpack:"-" mapstructure:"-"`
+	Nonce                 uint64         `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`
+	Fee                   util.String    `json:"fee" msgpack:"fee" mapstructure:"fee"`
+	Sig                   []byte         `json:"sig" msgpack:"sig" mapstructure:"sig"`
+	Timestamp             int64          `json:"timestamp" msgpack:"timestamp" mapstructure:"timestamp"`
+	SenderPubKey          util.PublicKey `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
 }
 
 // NewBareTxCommon returns an instance of TxCommon with zero values

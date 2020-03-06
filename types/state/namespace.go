@@ -1,18 +1,18 @@
 package state
 
 import (
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // Namespace describes an object for storing human-readable names mapping to
 // various network resources
 type Namespace struct {
-	util.DecoderHelper `json:"-" msgpack:"-"`
-	Owner              string           `json:"owner" mapstructure:"owner" msgpack:"owner"`
-	GraceEndAt         uint64           `json:"graceEndAt" mapstructure:"graceEndAt" msgpack:"graceEndAt"`
-	ExpiresAt          uint64           `json:"expiresAt" mapstructure:"expiresAt" msgpack:"expiresAt"`
-	Domains            NamespaceDomains `json:"domains" mapstructure:"domains" msgpack:"domains"`
+	util.SerializerHelper `json:"-" msgpack:"-"`
+	Owner                 string           `json:"owner" mapstructure:"owner" msgpack:"owner"`
+	GraceEndAt            uint64           `json:"graceEndAt" mapstructure:"graceEndAt" msgpack:"graceEndAt"`
+	ExpiresAt             uint64           `json:"expiresAt" mapstructure:"expiresAt" msgpack:"expiresAt"`
+	Domains               NamespaceDomains `json:"domains" mapstructure:"domains" msgpack:"domains"`
 }
 
 // NamespaceDomains represents a map of human-readable names to their original,
@@ -41,7 +41,7 @@ func (ns *Namespace) IsNil() bool {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (ns *Namespace) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return ns.EncodeMulti(enc,
 		ns.Owner,
 		ns.GraceEndAt,
 		ns.ExpiresAt,
@@ -50,15 +50,11 @@ func (ns *Namespace) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (ns *Namespace) DecodeMsgpack(dec *msgpack.Decoder) error {
-	err := ns.DecodeMulti(dec,
+	return ns.DecodeMulti(dec,
 		&ns.Owner,
 		&ns.GraceEndAt,
 		&ns.ExpiresAt,
 		&ns.Domains)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // Bytes return the bytes equivalent of the account

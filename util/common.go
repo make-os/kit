@@ -484,20 +484,6 @@ func CloneMap(src map[string]interface{}) (dst map[string]interface{}) {
 	return
 }
 
-// DecoderHelper for msgpack
-type DecoderHelper struct{}
-
-// DecodeMulti wraps msgpack.Decoder and ignore EOF error
-func (h DecoderHelper) DecodeMulti(dec *msgpack.Decoder, v ...interface{}) error {
-	err := dec.DecodeMulti(v...)
-	if err != nil {
-		if err.Error() != "EOF" {
-			return err
-		}
-	}
-	return nil
-}
-
 // SplitNamespaceDomain splits a full namespace address into namespace and domain
 func SplitNamespaceDomain(name string) (ns string, domain string, err error) {
 	parts := strings.Split(name, "/")
@@ -553,13 +539,13 @@ func GetIndexFromUInt64Slice(index int, opts ...uint64) uint64 {
 }
 
 // ToMapSI converts a map to map[string]interface{}
-func ToMapSI(mapType interface{}) Map {
+func ToMapSI(mapType interface{}) map[string]interface{} {
 	v := reflect.ValueOf(mapType)
 	if v.Kind() != reflect.Map {
 		panic("not a map type")
 	}
 
-	res := Map{}
+	res := make(map[string]interface{})
 	for _, k := range v.MapKeys() {
 		res[k.String()] = v.MapIndex(k).Interface()
 	}

@@ -1,8 +1,8 @@
 package state
 
 import (
-	"gitlab.com/makeos/mosdef/util"
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // BareGPGPubKey returns a GPGPubKey object with zero values
@@ -12,14 +12,14 @@ func BareGPGPubKey() *GPGPubKey {
 
 // GPGPubKey represents a GPG public key
 type GPGPubKey struct {
-	util.DecoderHelper `json:"-" msgpack:"-"`
-	PubKey             string      `json:"pubKey" msgpack:"pubKey"`
-	Address            util.String `json:"address" msgpack:"address"`
+	util.SerializerHelper `json:"-" msgpack:"-"`
+	PubKey                string      `json:"pubKey" msgpack:"pubKey"`
+	Address               util.String `json:"address" msgpack:"address"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (g *GPGPubKey) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(g.PubKey, g.Address)
+	return g.EncodeMulti(enc, g.PubKey, g.Address)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
