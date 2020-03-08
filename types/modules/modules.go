@@ -3,8 +3,6 @@ package modules
 import (
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/account"
-	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -37,25 +35,6 @@ type Modules struct {
 	DHT     DHTModule
 	ExtMgr  ExtManager
 	RPC     RPCModule
-}
-
-type AccountManager interface {
-	Configure() []prompt.Suggest
-	UpdateCmd(addressOrIndex, passphrase string) error
-	RevealCmd(addrOrIdx, pass string) error
-	ListAccounts() (accounts []*account.StoredAccount, err error)
-	ListCmd() error
-	CreateAccount(defaultAccount bool, address *crypto.Key, passphrase string) error
-	CreateCmd(defaultAccount bool, seed int64, pass string) (*crypto.Key, error)
-	ImportCmd(keyFile, pass string) error
-	AskForPassword() (string, error)
-	AskForPasswordOnce() string
-	AccountExist(address string) (bool, error)
-	GetDefault() (*account.StoredAccount, error)
-	GetByIndex(i int) (*account.StoredAccount, error)
-	GetByIndexOrAddress(idxOrAddr string) (*account.StoredAccount, error)
-	GetByAddress(addr string) (*account.StoredAccount, error)
-	UIUnlockAccount(addressOrIndex, passphrase string) (*account.StoredAccount, error)
 }
 
 type ChainModule interface {

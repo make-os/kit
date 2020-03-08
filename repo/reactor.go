@@ -3,11 +3,12 @@ package repo
 import (
 	"context"
 	"fmt"
-	"gitlab.com/makeos/mosdef/dht/types"
-	"gitlab.com/makeos/mosdef/types/core"
 	"io"
 	"os/exec"
 	"time"
+
+	"gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto/bls"
@@ -43,7 +44,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 
 	// Attempt to decode message to PushNote
 	var pn core.PushNote
-	if err := util.BytesToObject(msgBytes, &pn); err != nil {
+	if err := util.ToObject(msgBytes, &pn); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
 
@@ -186,7 +187,7 @@ func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
 
 	// Attempt to decode message to PushOK object
 	var pok core.PushOK
-	if err := util.BytesToObject(msgBytes, &pok); err != nil {
+	if err := util.ToObject(msgBytes, &pok); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
 

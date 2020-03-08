@@ -2,10 +2,11 @@ package logic
 
 import (
 	"fmt"
+	"math"
+
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"math"
 
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
@@ -237,8 +238,7 @@ func maybeApplyProposal(
 	// When allowed voters are only the repo owners and there is just one owner
 	// whom is also the creator of the proposal, instantly apply the proposal.
 	isOwnersOnlyProposal := proposal.GetProposeeType() == state.ProposeeOwner
-	if isOwnersOnlyProposal && len(repo.Owners) == 1 &&
-		repo.Owners.Has(proposal.GetCreator()) {
+	if isOwnersOnlyProposal && len(repo.Owners) == 1 && repo.Owners.Has(proposal.GetCreator()) {
 		outcome = state.ProposalOutcomeAccepted
 		proposal.SetOutcome(outcome)
 		proposal.IncrAccept()
@@ -262,11 +262,13 @@ func maybeApplyProposal(
 apply:
 	switch proposal.GetAction() {
 	case state.ProposalActionAddOwner:
-		err = applyProposalAddOwner(proposal, repo, chainHeight)
+		err = applyProposalUpsertOwner(proposal, repo, chainHeight)
 	case state.ProposalActionRepoUpdate:
 		err = applyProposalRepoUpdate(proposal, repo, chainHeight)
+	case state.ProposalActionRegisterGPGID:
+		err = applyProposalRegisterGPGKeys(proposal, repo, chainHeight)
 	case state.ProposalActionMergeRequest:
-		// Do nothing since there is no on-chain action
+	// Do nothing since there is no on-chain action
 	default:
 		err = fmt.Errorf("unsupported proposal action")
 	}

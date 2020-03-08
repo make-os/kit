@@ -53,7 +53,7 @@ func (tx *TxCoinTransfer) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 // Bytes returns the serialized transaction
 func (tx *TxCoinTransfer) Bytes() []byte {
-	return util.ObjectToBytes(tx)
+	return util.ToBytes(tx)
 }
 
 // GetBytesNoSig returns the serialized the transaction excluding the signature

@@ -30,12 +30,13 @@ func (am *AccountManager) UpdateCmd(addressOrIndex, passphrase string) error {
 
 	// Re-encrypt with the new passphrase
 	newPassphraseHardened := hardenPassword([]byte(newPassphrase))
-	updatedCipher, err := util.Encrypt(account.DecryptedCipher, newPassphraseHardened[:])
+	updatedCipher, err := util.Encrypt(account.GetUnlockedData(), newPassphraseHardened[:])
 	if err != nil {
 		return fmt.Errorf("unable to relock account")
 	}
 
-	filename := filepath.Join(am.accountDir, fmt.Sprintf("%d_%s", account.CreatedAt.Unix(), account.Address))
+	filename := filepath.Join(am.accountDir, fmt.Sprintf("%d_%s",
+		account.GetCreatedAt().Unix(), account.GetAddress()))
 	err = ioutil.WriteFile(filename, updatedCipher, 0644)
 	if err != nil {
 		return fmt.Errorf("unable to write relocked account to disk")

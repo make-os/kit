@@ -186,7 +186,7 @@ func (m *RPCModule) Connect(host string, port int, https bool, user, pass string
 	methods, _, err := c.Call("rpc_methods", nil)
 	if err == nil {
 		var m map[string]rpc.MethodInfo
-		_ = util.MapDecode(methods, &m)
+		_ = util.DecodeMap(methods, &m)
 		for _, method := range m {
 			fullName := method.Name
 			parts := strings.Split(fullName, "_")

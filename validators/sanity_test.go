@@ -1344,7 +1344,7 @@ var _ = Describe("TxValidator", func() {
 		It("should return error when target addresses exceed maximum", func() {
 			tx.RepoName = "repo1"
 			addresses := strings.TrimRight(strings.Repeat("addr1,", 11), ",")
-			tx.Addresses = addresses
+			tx.Addresses = strings.Split(addresses, ",")
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:addresses, msg:only a maximum of 10 addresses are allowed"))
@@ -1352,7 +1352,7 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when target address is not valid", func() {
 			tx.RepoName = "repo1"
-			tx.Addresses = "invalid_addr"
+			tx.Addresses = []string{"invalid_addr"}
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:addresses[0], msg:address is not valid"))
@@ -1542,6 +1542,13 @@ var _ = Describe("TxValidator", func() {
 			tx.ProposalID = "123"
 		})
 
+		It("should return error='type is invalid'", func() {
+			tx.Type = -10
+			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
+		})
+
 		It("should return error when repo name is not provided", func() {
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
@@ -1632,6 +1639,150 @@ var _ = Describe("TxValidator", func() {
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:targetHash, msg:target branch hash is not valid"))
+		})
+	})
+
+	FDescribe(".CheckTxRepoProposalRegisterGPGKey", func() {
+		var tx *core.TxRepoProposalRegisterGPGKey
+
+		BeforeEach(func() {
+			tx = core.NewBareRepoProposalRegisterGPGKey()
+			tx.Timestamp = time.Now().Unix()
+			tx.ProposalID = "123"
+		})
+
+		It("should return error='type is invalid'", func() {
+			tx.Type = -10
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
+		})
+
+		It("should return error when repo name is not provided", func() {
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:name, msg:repo name is required"))
+		})
+
+		It("should return error when repo name is not valid", func() {
+			tx.RepoName = "*&^"
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+		})
+
+		It("should return error when proposal id is unset", func() {
+			tx.RepoName = "good-repo"
+			tx.ProposalID = ""
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, msg:proposal id is required"))
+		})
+
+		It("should return error when proposal id is not valid", func() {
+			tx.RepoName = "good-repo"
+			tx.ProposalID = "abc123"
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, msg:proposal id is not valid"))
+		})
+
+		It("should return error when proposal id length exceeds max", func() {
+			tx.RepoName = "good-repo"
+			tx.ProposalID = "123456789"
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
+		})
+
+		It("should return error when value is not provided", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = ""
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:value, msg:value is required"))
+		})
+
+		It("should return error when value below minimum network proposal fee", func() {
+			params.MinProposalFee = 100
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+		})
+
+		It("should return error when a gpg id is not valid", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			tx.KeyIDs = append(tx.KeyIDs, "gpg1_abc")
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:gpgId, msg:GPG id (gpg1_abc) is not valid"))
+		})
+
+		It("should return error when a gpg id is a duplicate", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			tx.KeyIDs = append(tx.KeyIDs, "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
+			tx.KeyIDs = append(tx.KeyIDs, "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:gpgId, msg:GPG id " +
+				"(gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd) is a duplicate"))
+		})
+
+		It("should return error when fee mode is unknown", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			tx.KeyIDs = append(tx.KeyIDs, "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
+			tx.FeeMode = 100
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:feeMode, msg:fee mode is unknown"))
+		})
+
+		It("should return error when fee mode is FeeModeRepoCapped but fee cap is unset", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			tx.KeyIDs = append(tx.KeyIDs, "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
+			tx.FeeMode = state.FeeModeRepoPaysCapped
+			tx.FeeCap = ""
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:feeCap, msg:value is required"))
+		})
+
+		It("should return error when fee mode is FeeModeRepoCapped but fee cap is not numeric", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			tx.KeyIDs = append(tx.KeyIDs, "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
+			tx.FeeMode = state.FeeModeRepoPaysCapped
+			tx.FeeCap = "ten"
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:feeCap, msg:invalid number; must be numeric"))
+		})
+
+		It("should return error when fee mode is FeeModeRepoCapped but fee cap is not a positive number", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			tx.KeyIDs = append(tx.KeyIDs, "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
+			tx.FeeMode = state.FeeModeRepoPaysCapped
+			tx.FeeCap = "-1"
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:feeCap, msg:negative figure not allowed"))
+		})
+
+		It("should return error when fee mode is not FeeModeRepoCapped but fee cap is set", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = "1"
+			tx.KeyIDs = append(tx.KeyIDs, "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
+			tx.FeeMode = state.FeeModeRepoPays
+			tx.FeeCap = "1"
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:feeCap, msg:value not expected for the chosen fee mode"))
 		})
 	})
 })

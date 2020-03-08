@@ -20,7 +20,7 @@ func (c *RPCClient) TxSendPayload(data map[string]interface{}) (*types.TxSendPay
 	}
 
 	var result types.TxSendPayloadResponse
-	_ = util.MapDecode(out, &result)
+	_ = util.DecodeMap(out, &result)
 
 	return &result, nil
 }

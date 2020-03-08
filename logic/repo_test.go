@@ -148,8 +148,13 @@ var _ = Describe("Repo", func() {
 	Describe(".execRepoProposalVote", func() {
 		var err error
 		var spk util.Bytes32
+		var repoUpd *state.Repository
+		var propID = "proposer_id"
+		var repoName = "repo"
 
 		BeforeEach(func() {
+			repoUpd = state.BareRepository()
+			repoUpd.Config = state.DefaultRepoConfig
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 				Balance:             util.String("10"),
 				Stakes:              state.BareAccountStakes(),
@@ -158,12 +163,7 @@ var _ = Describe("Repo", func() {
 		})
 
 		When("proposal tally method is ProposalTallyMethodIdentity", func() {
-			var propID = "proposer_id"
-			var repoName = "repo"
-
 			BeforeEach(func() {
-				repoUpd := state.BareRepository()
-				repoUpd.Config = state.DefaultRepoConfig
 				repoUpd.Config.Governance.ProposalProposee = state.ProposeeOwner
 				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodIdentity
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
@@ -215,12 +215,7 @@ var _ = Describe("Repo", func() {
 		})
 
 		When("proposal tally method is ProposalTallyMethodCoinWeighted", func() {
-			var propID = "proposer_id"
-			var repoName = "repo"
-
 			BeforeEach(func() {
-				repoUpd := state.BareRepository()
-				repoUpd.Config = state.DefaultRepoConfig
 				repoUpd.Config.Governance.ProposalProposee = state.ProposeeOwner
 				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodCoinWeighted
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
@@ -243,12 +238,7 @@ var _ = Describe("Repo", func() {
 		})
 
 		When("proposal tally method is ProposalTallyMethodNetStakeOfProposer and the voter's non-delegated ticket value=100", func() {
-			var propID = "proposer_id"
-			var repoName = "repo"
-
 			BeforeEach(func() {
-				repoUpd := state.BareRepository()
-				repoUpd.Config = state.DefaultRepoConfig
 				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStakeOfProposer
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
@@ -274,12 +264,7 @@ var _ = Describe("Repo", func() {
 		})
 
 		When("proposal tally method is ProposalTallyMethodNetStakeOfDelegators and the voter's non-delegated ticket value=100", func() {
-			var propID = "proposer_id"
-			var repoName = "repo"
-
 			BeforeEach(func() {
-				repoUpd := state.BareRepository()
-				repoUpd.Config = state.DefaultRepoConfig
 				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStakeOfDelegators
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				proposal := &state.RepoProposal{
@@ -305,9 +290,6 @@ var _ = Describe("Repo", func() {
 		})
 
 		When("proposal tally method is ProposalTallyMethodNetStake", func() {
-			var propID = "proposer_id"
-			var repoName = "repo"
-
 			When("ticketA and ticketB are not delegated, with value 10, 20 respectively", func() {
 				BeforeEach(func() {
 					repoUpd := state.BareRepository()
@@ -330,13 +312,42 @@ var _ = Describe("Repo", func() {
 					txLogic.logic.SetTicketManager(mockTickMgr)
 
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
-					Expect(err).To(BeNil())
 				})
 
-				It("should increment proposal.Yes by 30", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
-					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(30)))
+				When("vote is ProposalVoteYes", func() {
+					It("should increment proposal.Yes by 30", func() {
+						err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
+						Expect(err).To(BeNil())
+						repo := logic.RepoKeeper().GetRepo(repoName)
+						Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(30)))
+					})
+				})
+
+				When("vote is ProposalVoteNo", func() {
+					It("should increment proposal.Yes by 30", func() {
+						err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteNo, "1.5", 0)
+						Expect(err).To(BeNil())
+						repo := logic.RepoKeeper().GetRepo(repoName)
+						Expect(repo.Proposals.Get(propID).No).To(Equal(float64(30)))
+					})
+				})
+
+				When("vote is Abstain", func() {
+					It("should increment proposal.Yes by 30", func() {
+						err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteAbstain, "1.5", 0)
+						Expect(err).To(BeNil())
+						repo := logic.RepoKeeper().GetRepo(repoName)
+						Expect(repo.Proposals.Get(propID).Abstain).To(Equal(float64(30)))
+					})
+				})
+
+				When("vote is NoWithVeto", func() {
+					It("should increment proposal.Yes by 30", func() {
+						err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteNoWithVeto, "1.5", 0)
+						Expect(err).To(BeNil())
+						repo := logic.RepoKeeper().GetRepo(repoName)
+						Expect(repo.Proposals.Get(propID).NoWithVeto).To(Equal(float64(30)))
+					})
 				})
 			})
 
@@ -538,9 +549,50 @@ var _ = Describe("Repo", func() {
 				})
 			})
 		})
+
+		When("proposal tally method is ProposalTallyMethodNetStake and "+
+			"proposee type is ProposeeNetStakeholdersAndVetoOwner and "+
+			"voter is a veto owner", func() {
+			BeforeEach(func() {
+				repoUpd.Config.Governance.ProposalTallyMethod = state.ProposalTallyMethodNetStake
+				repoUpd.Config.Governance.ProposalProposee = state.ProposeeNetStakeholdersAndVetoOwner
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{Veto: true})
+				proposal := &state.RepoProposal{
+					Config: repoUpd.Config.Governance,
+					Yes:    0,
+				}
+				repoUpd.Proposals.Add(propID, proposal)
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				ticketA := &types3.Ticket{Value: "10"}
+				ticketB := &types3.Ticket{Value: "20"}
+				tickets := []*types3.Ticket{ticketA, ticketB}
+
+				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
+					MustBytes32(), uint64(0)).Return(tickets, nil)
+				txLogic.logic.SetTicketManager(mockTickMgr)
+
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteNoWithVeto, "1.5", 0)
+				Expect(err).To(BeNil())
+			})
+
+			When("vote is NoWithVeto", func() {
+				It("should increment proposal.NoWithVeto by 30", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.Proposals.Get(propID).NoWithVeto).To(Equal(float64(30)))
+				})
+
+				It("should increment NoWithVetoByOwners by 1", func() {
+					repo := logic.RepoKeeper().GetRepo(repoName)
+					Expect(repo.Proposals.Get(propID).NoWithVetoByOwners).To(Equal(float64(1)))
+				})
+			})
+		})
+
 	})
 
-	Describe(".execRepoUpsertOwner", func() {
+	Describe(".execRepoProposalUpsertOwner", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var key2 = crypto.NewKeyFromIntSeed(2)
@@ -560,7 +612,7 @@ var _ = Describe("Repo", func() {
 
 		When("sender is the only owner", func() {
 			repoName := "repo"
-			address := "owner_address"
+			address := []string{"owner_address"}
 			proposalFee := util.String("1")
 
 			BeforeEach(func() {
@@ -568,7 +620,8 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, repoName, "1", address, false, proposalFee, "1.5", 0)
+				err = txLogic.execRepoProposalUpsertOwner(spk, repoName, "1",
+					address, false, proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -594,7 +647,7 @@ var _ = Describe("Repo", func() {
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
-			Specify("that the fee by the sender is registered on the proposal", func() {
+			Specify("that the proposal fee by the sender is registered on the proposal", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
@@ -604,7 +657,7 @@ var _ = Describe("Repo", func() {
 
 		When("sender is the only owner and there are multiple addresses", func() {
 			repoName := "repo"
-			addresses := "owner_address,owner_address2"
+			addresses := []string{"owner_address", "owner_address2"}
 			proposalFee := util.String("1")
 
 			BeforeEach(func() {
@@ -612,7 +665,8 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, repoName, "1", addresses, false, proposalFee, "1.5", 0)
+				err = txLogic.execRepoProposalUpsertOwner(spk, repoName, "1",
+					addresses, false, proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -639,7 +693,7 @@ var _ = Describe("Repo", func() {
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
-			Specify("that the fee by the sender is registered on the proposal", func() {
+			Specify("that the proposal fee by the sender is registered on the proposal", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
@@ -649,7 +703,7 @@ var _ = Describe("Repo", func() {
 
 		When("sender is not the only owner", func() {
 			repoName := "repo"
-			address := "owner_address"
+			address := []string{"owner_address"}
 			curHeight := uint64(0)
 			proposalFee := util.String("1")
 
@@ -659,7 +713,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, repoName, "1", address, false,
+				err = txLogic.execRepoProposalUpsertOwner(spk, repoName, "1", address, false,
 					proposalFee, "1.5", curHeight)
 				Expect(err).To(BeNil())
 			})
@@ -681,7 +735,7 @@ var _ = Describe("Repo", func() {
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
-			Specify("that the fee by the sender is registered on the proposal", func() {
+			Specify("that the proposal fee by the sender is registered on the proposal", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
@@ -697,7 +751,7 @@ var _ = Describe("Repo", func() {
 		When("repo config has proposal deposit fee duration set to a non-zero number", func() {
 			repoName := "repo"
 			proposalFee := util.String("1")
-			address := "owner_address"
+			address := []string{"owner_address"}
 			currentHeight := uint64(200)
 
 			BeforeEach(func() {
@@ -707,7 +761,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoUpsertOwner(spk, repoName, "1", address, false, proposalFee, "1.5", currentHeight)
+				err = txLogic.execRepoProposalUpsertOwner(spk, repoName, "1", address, false, proposalFee, "1.5", currentHeight)
 				Expect(err).To(BeNil())
 			})
 
@@ -720,7 +774,58 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
-	Describe(".execRepoProposalSendFee", func() {
+	Describe(".applyProposalUpsertOwner", func() {
+		var repoUpd *state.Repository
+
+		BeforeEach(func() {
+			repoUpd = state.BareRepository()
+			repoUpd.Config = state.DefaultRepoConfig
+		})
+
+		When("proposal includes 2 addresses", func() {
+			BeforeEach(func() {
+				proposal := &state.RepoProposal{ActionData: map[string][]byte{
+					"addresses": util.ToBytes([]string{"addr1", "addr2"}),
+				}}
+				err = applyProposalUpsertOwner(proposal, repoUpd, 0)
+			})
+
+			It("should return no err", func() {
+				Expect(err).To(BeNil())
+			})
+
+			It("should add 2 owners", func() {
+				Expect(repoUpd.Owners).To(HaveLen(2))
+			})
+		})
+
+		When("address (addr1) already exist", func() {
+			var existing = &state.RepoOwner{Veto: false, JoinedAt: 100}
+			BeforeEach(func() {
+				repoUpd.AddOwner("addr1", existing)
+				proposal := &state.RepoProposal{ActionData: map[string][]byte{
+					"addresses": util.ToBytes([]string{"addr1", "addr2"}),
+					"veto":      util.ToBytes(true),
+				}}
+				err = applyProposalUpsertOwner(proposal, repoUpd, 200)
+			})
+
+			It("should return no err", func() {
+				Expect(err).To(BeNil())
+			})
+
+			It("should add 2 owners", func() {
+				Expect(repoUpd.Owners).To(HaveLen(2))
+			})
+
+			Specify("that addr1 was updated", func() {
+				owner := repoUpd.Owners.Get("addr1")
+				Expect(owner.Veto).To(BeTrue())
+			})
+		})
+	})
+
+	Describe(".execRepoProposalFeeDeposit", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var spk util.Bytes32
@@ -753,7 +858,7 @@ var _ = Describe("Repo", func() {
 				})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoProposalSendFee(spk, repoName, "1", proposalFee, "1.5", 0)
+				err = txLogic.execRepoProposalFeeDeposit(spk, repoName, "1", proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -774,7 +879,7 @@ var _ = Describe("Repo", func() {
 
 				BeforeEach(func() {
 					spk = sender.PubKey().MustBytes32()
-					err = txLogic.execRepoProposalSendFee(spk, repoName, "1", proposalFee, "1.5", 0)
+					err = txLogic.execRepoProposalFeeDeposit(spk, repoName, "1", proposalFee, "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -802,11 +907,11 @@ var _ = Describe("Repo", func() {
 				})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoProposalSendFee(spk, repoName, "1", proposalFee, "1.5", 0)
+				err = txLogic.execRepoProposalFeeDeposit(spk, repoName, "1", proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 
 				spk = key2.PubKey().MustBytes32()
-				err = txLogic.execRepoProposalSendFee(spk, repoName, "1", proposalFee, "1.5", 0)
+				err = txLogic.execRepoProposalFeeDeposit(spk, repoName, "1", proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -879,7 +984,7 @@ var _ = Describe("Repo", func() {
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
-			Specify("that the fee by the sender is registered on the proposal", func() {
+			Specify("that the proposal fee by the sender is registered on the proposal", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
@@ -923,7 +1028,7 @@ var _ = Describe("Repo", func() {
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
-			Specify("that the fee by the sender is registered on the proposal", func() {
+			Specify("that the proposal fee by the sender is registered on the proposal", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
@@ -968,11 +1073,46 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
+	Describe(".applyProposalRepoUpdate", func() {
+		var err error
+		var repo *state.Repository
+
+		BeforeEach(func() {
+			repo = state.BareRepository()
+			repo.Config = state.DefaultRepoConfig
+		})
+
+		When("update config object is empty", func() {
+			It("should not change the config", func() {
+				proposal := &state.RepoProposal{
+					ActionData: map[string][]byte{"cfg": util.ToBytes((&state.RepoConfig{}).ToMap())},
+				}
+				err = applyProposalRepoUpdate(proposal, repo, 0)
+				Expect(err).To(BeNil())
+				Expect(repo.Config).To(Equal(state.DefaultRepoConfig))
+			})
+		})
+
+		When("update config object is not empty", func() {
+			It("should change the config", func() {
+				cfg := &state.RepoConfig{Governance: &state.RepoConfigGovernance{ProposalQuorum: 120, ProposalDur: 100}}
+				proposal := &state.RepoProposal{
+					ActionData: map[string][]byte{
+						"cfg": util.ToBytes(cfg.ToMap()),
+					},
+				}
+				err = applyProposalRepoUpdate(proposal, repo, 0)
+				Expect(err).To(BeNil())
+				Expect(repo.Config.Governance.ProposalQuorum).To(Equal(float64(120)))
+				Expect(repo.Config.Governance.ProposalDur).To(Equal(uint64(100)))
+			})
+		})
+	})
+
 	Describe(".execRepoProposalMergeRequest", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var spk util.Bytes32
-		// var key2 = crypto.NewKeyFromIntSeed(2)
 		var repoUpd *state.Repository
 
 		BeforeEach(func() {
@@ -1017,7 +1157,7 @@ var _ = Describe("Repo", func() {
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
-			Specify("that the fee by the sender is registered on the proposal", func() {
+			Specify("that the proposal fee by the sender is registered on the proposal", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
@@ -1058,7 +1198,7 @@ var _ = Describe("Repo", func() {
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
-			Specify("that the fee by the sender is registered on the proposal", func() {
+			Specify("that the proposal fee by the sender is registered on the proposal", func() {
 				repo := logic.RepoKeeper().GetRepo(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
@@ -1072,40 +1212,124 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
-	FDescribe(".applyProposalRepoUpdate", func() {
+	Describe(".execRepoProposalRegisterGPGKeys", func() {
 		var err error
-		var repo *state.Repository
+		var sender = crypto.NewKeyFromIntSeed(1)
+		var spk util.Bytes32
+		var repoUpd *state.Repository
 
 		BeforeEach(func() {
-			repo = state.BareRepository()
-			repo.Config = state.DefaultRepoConfig
+			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
+				Balance:             util.String("10"),
+				Stakes:              state.BareAccountStakes(),
+				DelegatorCommission: 10,
+			})
+			repoUpd = state.BareRepository()
+			repoUpd.Config = state.DefaultRepoConfig
+			repoUpd.Config.Governance.ProposalProposee = state.ProposeeOwner
 		})
 
-		When("update config object is empty", func() {
-			It("should not change the config", func() {
-				proposal := &state.RepoProposal{ActionData: map[string]interface{}{
-					core.ProposalActionDataConfig: (&state.RepoConfig{}).ToMap(),
-				}}
-				err = applyProposalRepoUpdate(proposal, repo, 0)
+		When("sender is the only owner", func() {
+			repoName := "repo"
+			proposalFee := util.String("1")
+
+			BeforeEach(func() {
+				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
+				logic.RepoKeeper().Update(repoName, repoUpd)
+
+				spk = sender.PubKey().MustBytes32()
+				err = txLogic.execRepoProposalRegisterGPGKeys(spk, repoName, "1",
+					[]string{"gpg1_abc"}, state.FeeModePusherPays,
+					"0",
+					[]*state.RepoACLPolicy{},
+					proposalFee, "1.5", 0)
 				Expect(err).To(BeNil())
-				Expect(repo.Config).To(Equal(state.DefaultRepoConfig))
+			})
+
+			It("should add the new proposal to the repo", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+			})
+
+			Specify("that the proposal is finalized and self accepted", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
+				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(1)))
+			})
+
+			Specify("that network fee + proposal fee was deducted", func() {
+				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				Expect(acct.Balance.String()).To(Equal("7.5"))
+			})
+
+			Specify("that the proposal fee by the sender is registered on the proposal", func() {
+				repo := logic.RepoKeeper().GetRepo(repoName)
+				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
+				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
+				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
+			})
+		})
+	})
+
+	Describe(".applyProposalRegisterGPGKeys", func() {
+		var repoUpd *state.Repository
+
+		BeforeEach(func() {
+			repoUpd = state.BareRepository()
+			repoUpd.Config = state.DefaultRepoConfig
+		})
+
+		When("2 ids were provided in action data", func() {
+			BeforeEach(func() {
+				proposal := &state.RepoProposal{ActionData: map[string][]byte{
+					"policies": util.ToBytes([]*state.RepoACLPolicy{{Action: "act", Subject: "sub", Object: "obj"}}),
+					"ids":      util.ToBytes([]string{"gpg1_abc", "gpg1_xyz"}),
+					"feeMode":  util.ToBytes(state.FeeModePusherPays),
+				}}
+				err = applyProposalRegisterGPGKeys(proposal, repoUpd, 0)
+				Expect(err).To(BeNil())
+			})
+
+			It("should add 2 contributors with same policies, feeMode, feeCap, feeUsed fields", func() {
+				Expect(repoUpd.Contributors).To(HaveLen(2))
+				Expect(repoUpd.Contributors["gpg1_abc"]).To(Equal(repoUpd.Contributors["gpg1_xyz"]))
 			})
 		})
 
-		When("update config object is not empty", func() {
-			It("should change the config", func() {
-				proposal := &state.RepoProposal{ActionData: map[string]interface{}{
-					core.ProposalActionDataConfig: (&state.RepoConfig{
-						Governance: &state.RepoConfigGovernance{
-							ProposalQuorum: 120,
-							ProposalDur:    100,
-						},
-					}).ToMap(),
+		When("feeMode is FeeModeRepoPaysCapped", func() {
+			BeforeEach(func() {
+				proposal := &state.RepoProposal{ActionData: map[string][]byte{
+					"policies": util.ToBytes([]*state.RepoACLPolicy{{Action: "act", Subject: "sub", Object: "obj"}}),
+					"ids":      util.ToBytes([]string{"gpg1_abc"}),
+					"feeMode":  util.ToBytes(state.FeeModeRepoPaysCapped),
+					"feeCap":   util.ToBytes(util.String("100")),
 				}}
-				err = applyProposalRepoUpdate(proposal, repo, 0)
+				err = applyProposalRegisterGPGKeys(proposal, repoUpd, 0)
 				Expect(err).To(BeNil())
-				Expect(repo.Config.Governance.ProposalQuorum).To(Equal(float64(120)))
-				Expect(repo.Config.Governance.ProposalDur).To(Equal(uint64(100)))
+			})
+
+			It("should set feeCap field", func() {
+				Expect(repoUpd.Contributors).To(HaveLen(1))
+				Expect(repoUpd.Contributors["gpg1_abc"].FeeCap).To(Equal(util.String("100")))
+			})
+		})
+
+		When("feeMode is not FeeModeRepoPaysCapped", func() {
+			BeforeEach(func() {
+				proposal := &state.RepoProposal{ActionData: map[string][]byte{
+					"policies": util.ToBytes([]*state.RepoACLPolicy{{Action: "act", Subject: "sub", Object: "obj"}}),
+					"ids":      util.ToBytes([]string{"gpg1_abc"}),
+					"feeMode":  util.ToBytes(state.FeeModeRepoPays),
+					"feeCap":   util.ToBytes(util.String("100")),
+				}}
+				err = applyProposalRegisterGPGKeys(proposal, repoUpd, 0)
+				Expect(err).To(BeNil())
+			})
+
+			Specify("that feeCap field is zero", func() {
+				Expect(repoUpd.Contributors).To(HaveLen(1))
+				Expect(repoUpd.Contributors["gpg1_abc"].FeeCap).To(Equal(util.String("0")))
 			})
 		})
 	})

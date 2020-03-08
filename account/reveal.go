@@ -45,7 +45,7 @@ func (am *AccountManager) RevealCmd(addrOrIdx, pass string) error {
 		return err
 	}
 
-	fmt.Println(color.HiBlackString("Account: ") + storedAcct.Address)
+	fmt.Println(color.HiBlackString("Account: ") + storedAcct.GetAddress())
 
 	// if no password or password file is provided, ask for password
 	var passphrase string
@@ -72,7 +72,7 @@ unlock:
 		return errors.Wrap(err, "could not unlock account")
 	}
 
-	fmt.Println(color.HiCyanString("Private Key:"), storedAcct.key.PrivKey().Base58())
+	fmt.Println(color.HiCyanString("Private Key:"), storedAcct.GetKey().PrivKey().Base58())
 
 	return nil
 }

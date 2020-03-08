@@ -1,10 +1,6 @@
 package logic
 
 import (
-	"strings"
-
-	"github.com/k0kubun/pp"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 
 	"github.com/pkg/errors"
@@ -78,20 +74,23 @@ func (t *Transaction) deductValue(spk *crypto.PubKey, fee decimal.Decimal, chain
 	acctKeeper.Update(spk.Addr(), senderAcct)
 }
 
-// applyProposalAddOwner adds the address described in the proposal as a repo owner.
-func applyProposalAddOwner(
+// applyProposalUpsertOwner adds the address described in the proposal as a repo owner.
+//noinspection ALL
+func applyProposalUpsertOwner(
 	proposal state.Proposal,
 	repo *state.Repository,
 	chainHeight uint64) error {
 
 	// Get the action data
-	targetAddrs := proposal.GetActionData()[core.ProposalActionDataAddresses].(string)
-	veto := proposal.GetActionData()[core.ProposalActionDataVeto].(bool)
+	ad := proposal.GetActionData()
+	var targetAddrs []string
+	util.ToObject(ad["addresses"], &targetAddrs)
+	var veto bool
+	util.ToObject(ad["veto"], &veto)
 
 	// Add new repo owner iif the target address does not
-	// already exist as an owner. If it exists, just update the fields.
-	for _, address := range strings.Split(targetAddrs, ",") {
-
+	// already exist as an owner. If it exists, just update select fields.
+	for _, address := range targetAddrs {
 		existingOwner := repo.Owners.Get(address)
 		if existingOwner != nil {
 			existingOwner.Veto = veto
@@ -108,32 +107,7 @@ func applyProposalAddOwner(
 	return nil
 }
 
-// applyProposalRepoUpdate updates a repo with data in the proposal.
-func applyProposalRepoUpdate(
-	proposal state.Proposal,
-	repo *state.Repository,
-	chainHeight uint64) error {
-	cfgUpd := proposal.GetActionData()[core.ProposalActionDataConfig].(map[string]interface{})
-
-	// Merge update with existing config
-	repo.Config.MergeMap(cfgUpd)
-
-	// Since empty ACL policy update means a deletion request,
-	// find policies with empty content and remove them
-	if cfgUpd["acl"] != nil {
-		pp.Println(cfgUpd)
-		aclRules := cfgUpd["acl"].(map[string]interface{})
-		for policyName, content := range aclRules {
-			if len(content.(map[string]interface{})) == 0 {
-				delete(repo.Config.ACL, policyName)
-			}
-		}
-	}
-
-	return nil
-}
-
-// execRepoUpsertOwner adds or update a repository owner
+// execRepoProposalUpsertOwner adds or update a repository owner
 //
 // ARGS:
 // senderPubKey: The public key of the transaction sender.
@@ -145,11 +119,11 @@ func applyProposalRepoUpdate(
 // chainHeight: The height of the block chain
 //
 // CONTRACT: Sender's public key must be valid
-func (t *Transaction) execRepoUpsertOwner(
+func (t *Transaction) execRepoProposalUpsertOwner(
 	senderPubKey util.Bytes32,
 	repoName,
-	proposalID,
-	addresses string,
+	proposalID string,
+	addresses []string,
 	veto bool,
 	proposalFee util.String,
 	fee util.String,
@@ -163,9 +137,9 @@ func (t *Transaction) execRepoUpsertOwner(
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = state.ProposalActionAddOwner
-	proposal.ActionData = map[string]interface{}{
-		core.ProposalActionDataAddresses: addresses,
-		core.ProposalActionDataVeto:      veto,
+	proposal.ActionData = map[string][]byte{
+		"addresses": util.ToBytes(addresses),
+		"veto":      util.ToBytes(veto),
 	}
 
 	// Deduct network fee + proposal fee from sender
@@ -188,6 +162,35 @@ func (t *Transaction) execRepoUpsertOwner(
 
 update:
 	repoKeeper.Update(repoName, repo)
+	return nil
+}
+
+// applyProposalRepoUpdate updates a repo with data in the proposal.
+func applyProposalRepoUpdate(
+	proposal state.Proposal,
+	repo *state.Repository,
+	chainHeight uint64) error {
+
+	var cfgUpd map[string]interface{}
+	util.ToObject(proposal.GetActionData()["cfg"], &cfgUpd)
+
+	// Merge update with existing config
+	repo.Config.MergeMap(cfgUpd)
+
+	policies := cfgUpd["policies"]
+	if policies == nil {
+		return nil
+	}
+
+	// Since empty Policies policy update means a deletion request,
+	// find policies with empty content and remove them
+	aclRules := policies.(map[string]interface{})
+	for policyName, content := range aclRules {
+		if len(content.(map[string]interface{})) == 0 {
+			delete(repo.Config.Policies, policyName)
+		}
+	}
+
 	return nil
 }
 
@@ -219,7 +222,7 @@ func (t *Transaction) execRepoProposalUpdate(
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = state.ProposalActionRepoUpdate
-	proposal.ActionData[core.ProposalActionDataConfig] = config
+	proposal.ActionData["cfg"] = util.ToBytes(config)
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
@@ -244,7 +247,7 @@ update:
 	return nil
 }
 
-// execRepoProposalSendFee adds proposal fee
+// execRepoProposalFeeDeposit adds proposal fee
 //
 // ARGS:
 // senderPubKey: The public key of the transaction sender.
@@ -255,7 +258,7 @@ update:
 // chainHeight: The height of the block chain
 //
 // CONTRACT: Sender's public key must be valid
-func (t *Transaction) execRepoProposalSendFee(
+func (t *Transaction) execRepoProposalFeeDeposit(
 	senderPubKey util.Bytes32,
 	repoName string,
 	proposalID string,
@@ -306,7 +309,7 @@ func makeProposal(
 		Height:     chainHeight,
 		EndAt:      repo.Config.Governance.ProposalDur + chainHeight + 1,
 		Fees:       map[string]string{},
-		ActionData: map[string]interface{}{},
+		ActionData: map[string][]byte{},
 	}
 
 	// Add proposal fee if set
@@ -341,6 +344,7 @@ func makeProposal(
 // baseBranchHash: The base branch hash
 // targetBranch: The target branch
 // targetBranchHash: The target branch hash
+// proposalFee: The proposal anti-spam fee
 // fee: The fee to be paid by the sender.
 // chainHeight: The height of the block chain
 //
@@ -365,11 +369,109 @@ func (t *Transaction) execRepoProposalMergeRequest(
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = state.ProposalActionMergeRequest
-	proposal.ActionData[core.ProposalActionDataMergeRequest] = map[string]string{
-		"base":       baseBranch,
-		"baseHash":   baseBranchHash,
-		"target":     targetBranch,
-		"targetHash": targetBranchHash,
+	proposal.ActionData = map[string][]byte{
+		"base":       util.ToBytes(baseBranch),
+		"baseHash":   util.ToBytes(baseBranchHash),
+		"target":     util.ToBytes(targetBranch),
+		"targetHash": util.ToBytes(targetBranchHash),
+	}
+
+	// Deduct network fee + proposal fee from sender
+	totalFee := fee.Decimal().Add(proposalFee.Decimal())
+	t.deductValue(spk, totalFee, chainHeight)
+
+	// Attempt to apply the proposal action
+	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)
+	if err != nil {
+		return errors.Wrap(err, "failed to apply proposal")
+	} else if applied {
+		goto update
+	}
+
+	// Index the proposal against its end height so it can be tracked and
+	// finalized at that height.
+	if err = repoKeeper.IndexProposalEnd(repoName, proposal.ID, proposal.EndAt); err != nil {
+		return errors.Wrap(err, "failed to index proposal against end height")
+	}
+
+update:
+	repoKeeper.Update(repoName, repo)
+	return nil
+}
+
+// applyProposalRegisterGPGKeys updates a repo's contributor collection.
+func applyProposalRegisterGPGKeys(
+	proposal state.Proposal,
+	repo *state.Repository,
+	chainHeight uint64) error {
+
+	ad := proposal.GetActionData()
+
+	// Extract the policies.
+	var policies []*state.RepoACLPolicy
+	_ = util.ToObject(ad["policies"], &policies)
+
+	// Extract the gpg IDs.
+	var gpgIDs []string
+	_ = util.ToObject(ad["ids"], &gpgIDs)
+
+	// Extract fee mode and fee cap
+	var feeMode state.FeeMode
+	_ = util.ToObject(ad["feeMode"], &feeMode)
+	var feeCap = util.String("0")
+	if feeMode == state.FeeModeRepoPaysCapped {
+		_ = util.ToObject(ad["feeCap"], &feeCap)
+	}
+
+	// For each gpg ID, add a contributor.
+	// This will replace any existing contributor with matching GPG ID
+	for _, gpgID := range gpgIDs {
+		contributor := &state.Contributor{Policies: policies, FeeMode: feeMode, FeeCap: feeCap, FeeUsed: "0"}
+		repo.Contributors[gpgID] = contributor
+	}
+
+	return nil
+}
+
+// execRepoProposalRegisterGPGKeys creates a proposal to register one or more GPG ID as contributors
+//
+// ARGS:
+// senderPubKey: The public key of the transaction sender.
+// repoName: The name of the target repository.
+// gpgIDs: The list of GPG IDs to register
+// aclPolicies: A list of ACL policies to set for each gpg ID
+// targetBranch: The target branch
+// targetBranchHash: The target branch hash
+// proposalFee: The proposal anti-spam fee
+// fee: The fee to be paid by the sender.
+// chainHeight: The height of the block chain
+//
+// CONTRACT: Sender's public key must be valid
+func (t *Transaction) execRepoProposalRegisterGPGKeys(
+	senderPubKey util.Bytes32,
+	repoName,
+	proposalID string,
+	gpgIDs []string,
+	feeMode state.FeeMode,
+	feeCap util.String,
+	aclPolicies []*state.RepoACLPolicy,
+	proposalFee,
+	fee util.String,
+	chainHeight uint64) error {
+
+	// Get the repo
+	repoKeeper := t.logic.RepoKeeper()
+	repo := repoKeeper.GetRepo(repoName)
+
+	// Create a proposal
+	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
+	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
+	proposal.Action = state.ProposalActionRegisterGPGID
+	proposal.ActionData = map[string][]byte{
+		"ids":      util.ToBytes(gpgIDs),
+		"policies": util.ToBytes(aclPolicies),
+		"feeMode":  util.ToBytes(feeMode),
+		"feeCap":   util.ToBytes(feeCap.String()),
 	}
 
 	// Deduct network fee + proposal fee from sender
@@ -553,10 +655,9 @@ func (t *Transaction) execRepoProposalVote(
 
 		// Also, if the proposee type for the proposal is stakeholders and veto
 		// owners and voter is an owner, increment NoWithVetoByOwners by 1
-		voterAsOwner := repo.Owners.Get(spk.Addr().String())
-		isStakeholderAndVetoOwnerProposee := prop.Config.ProposalProposee ==
-			state.ProposeeNetStakeholdersAndVetoOwner
-		if isStakeholderAndVetoOwnerProposee && voterAsOwner != nil && voterAsOwner.Veto {
+		voterOwnerObj := repo.Owners.Get(spk.Addr().String())
+		isStakeholderAndVetoOwnerProposee := prop.Config.ProposalProposee == state.ProposeeNetStakeholdersAndVetoOwner
+		if isStakeholderAndVetoOwnerProposee && voterOwnerObj != nil && voterOwnerObj.Veto {
 			prop.NoWithVetoByOwners = 1
 		}
 	}

@@ -82,6 +82,8 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxRepoProposalSendFee(o, index)
 	case *core.TxRepoProposalMergeRequest:
 		return CheckTxRepoProposalMergeRequest(o, index)
+	case *core.TxRepoProposalRegisterGPGKey:
+		return CheckTxRepoProposalRegisterGPGKey(o, index)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}
@@ -123,6 +125,8 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 		return CheckTxRepoProposalSendFeeConsistency(o, index, logic)
 	case *core.TxRepoProposalMergeRequest:
 		return CheckTxRepoProposalMergeRequestConsistency(o, index, logic)
+	case *core.TxRepoProposalRegisterGPGKey:
+		return CheckTxRepoProposalRegisterGPGKeyConsistency(o, index, logic)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}

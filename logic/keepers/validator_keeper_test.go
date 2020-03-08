@@ -2,8 +2,9 @@ package keepers
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"os"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"gitlab.com/makeos/mosdef/params"
 
@@ -72,7 +73,7 @@ var _ = Describe("SystemKeeper", func() {
 			}}
 			BeforeEach(func() {
 				key := MakeBlockValidatorsKey(height)
-				err := valKeeper.db.Put(storage.NewFromKeyValue(key, util.ObjectToBytes(rec)))
+				err := valKeeper.db.Put(storage.NewFromKeyValue(key, util.ToBytes(rec)))
 				Expect(err).To(BeNil())
 			})
 
@@ -89,7 +90,7 @@ var _ = Describe("SystemKeeper", func() {
 			rec := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket1")}}
 			BeforeEach(func() {
 				key := MakeBlockValidatorsKey(1)
-				err := valKeeper.db.Put(storage.NewFromKeyValue(key, util.ObjectToBytes(rec)))
+				err := valKeeper.db.Put(storage.NewFromKeyValue(key, util.ToBytes(rec)))
 				Expect(err).To(BeNil())
 			})
 
@@ -104,9 +105,9 @@ var _ = Describe("SystemKeeper", func() {
 			valset := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket1")}}
 			valset2 := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket2")}}
 			BeforeEach(func() {
-				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(1), util.ObjectToBytes(valset)))
+				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(1), util.ToBytes(valset)))
 				Expect(err).To(BeNil())
-				err = valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ObjectToBytes(valset2)))
+				err = valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ToBytes(valset2)))
 				Expect(err).To(BeNil())
 			})
 
@@ -122,9 +123,9 @@ var _ = Describe("SystemKeeper", func() {
 			valset2 := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket2")}}
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 2
-				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ObjectToBytes(valset)))
+				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ToBytes(valset)))
 				Expect(err).To(BeNil())
-				err = valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(4), util.ObjectToBytes(valset2)))
+				err = valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(4), util.ToBytes(valset2)))
 				Expect(err).To(BeNil())
 			})
 
@@ -140,9 +141,9 @@ var _ = Describe("SystemKeeper", func() {
 			valset2 := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket2")}}
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 2
-				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ObjectToBytes(valset)))
+				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ToBytes(valset)))
 				Expect(err).To(BeNil())
-				err = valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(4), util.ObjectToBytes(valset2)))
+				err = valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(4), util.ToBytes(valset2)))
 				Expect(err).To(BeNil())
 			})
 

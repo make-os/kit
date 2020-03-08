@@ -519,39 +519,27 @@ func CheckTxRepoProposalUpsertOwner(tx *core.TxRepoProposalUpsertOwner, index in
 		return err
 	}
 
-	if err := v.Validate(tx.RepoName,
-		v.Required.Error(feI(index, "name", "repo name is required").Error()),
-		v.By(validObjectNameRule("name", index)),
-	); err != nil {
+	if err := checkRepoName(tx.RepoName, index); err != nil {
 		return err
 	}
 
-	if tx.ProposalID == "" {
-		return feI(index, "id", "proposal id is required")
-	} else if !govalidator.IsNumeric(tx.ProposalID) {
-		return feI(index, "id", "proposal id is not valid")
-	} else if len(tx.ProposalID) > 8 {
-		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
+	if err := checkProposalID(tx.ProposalID, index); err != nil {
+		return err
 	}
 
-	if err := checkValue(&core.TxValue{Value: tx.Value}, index); err != nil {
+	if err := checkProposalFee(tx.Value, index); err != nil {
 		return err
-	} else if tx.Value.Decimal().
-		LessThan(decimal.NewFromFloat(params.MinProposalFee)) {
-		return feI(index, "value", "proposal creation fee cannot be "+
-			"less than network minimum")
 	}
 
 	if len(tx.Addresses) == 0 {
 		return feI(index, "addresses", "at least one address is required")
 	}
 
-	addresses := strings.Split(tx.Addresses, ",")
-	if len(addresses) > 10 {
+	if len(tx.Addresses) > 10 {
 		return feI(index, "addresses", "only a maximum of 10 addresses are allowed")
 	}
 
-	for i, addr := range addresses {
+	for i, addr := range tx.Addresses {
 		field := fmt.Sprintf("addresses[%d]", i)
 		if err := v.Validate(addr,
 			v.By(validAddrRule(feI(index, field, "address is not valid"))),
@@ -574,17 +562,12 @@ func CheckTxVote(tx *core.TxRepoProposalVote, index int) error {
 		return err
 	}
 
-	if err := v.Validate(tx.RepoName,
-		v.Required.Error(feI(index, "name", "repo name is required").Error()),
-		v.By(validObjectNameRule("name", index)),
-	); err != nil {
+	if err := checkRepoName(tx.RepoName, index); err != nil {
 		return err
 	}
 
-	if tx.ProposalID == "" {
-		return feI(index, "id", "proposal id is required")
-	} else if !govalidator.IsNumeric(tx.ProposalID) {
-		return feI(index, "id", "proposal id is not valid")
+	if err := checkProposalID(tx.ProposalID, index); err != nil {
+		return err
 	}
 
 	// Vote cannot be less than -1 or greater than 1.
@@ -607,19 +590,12 @@ func CheckTxRepoProposalSendFee(tx *core.TxRepoProposalFeeSend, index int) error
 		return err
 	}
 
-	if err := v.Validate(tx.RepoName,
-		v.Required.Error(feI(index, "name", "repo name is required").Error()),
-		v.By(validObjectNameRule("name", index)),
-	); err != nil {
+	if err := checkRepoName(tx.RepoName, index); err != nil {
 		return err
 	}
 
-	if tx.ProposalID == "" {
-		return feI(index, "id", "proposal id is required")
-	} else if !govalidator.IsNumeric(tx.ProposalID) {
-		return feI(index, "id", "proposal id is not valid")
-	} else if len(tx.ProposalID) > 8 {
-		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
+	if err := checkProposalID(tx.ProposalID, index); err != nil {
+		return err
 	}
 
 	if err := checkValue(&core.TxValue{Value: tx.Value}, index); err != nil {
@@ -633,6 +609,37 @@ func CheckTxRepoProposalSendFee(tx *core.TxRepoProposalFeeSend, index int) error
 	return nil
 }
 
+// checkProposalID performs sanity checks of a proposal id
+func checkProposalID(id string, index int) error {
+	if id == "" {
+		return feI(index, "id", "proposal id is required")
+	} else if !govalidator.IsNumeric(id) {
+		return feI(index, "id", "proposal id is not valid")
+	} else if len(id) > 8 {
+		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
+	}
+	return nil
+}
+
+// checkRepoName performs sanity checks on a repository name
+func checkRepoName(name string, index int) error {
+	return v.Validate(name,
+		v.Required.Error(feI(index, "name", "repo name is required").Error()),
+		v.By(validObjectNameRule("name", index)),
+	)
+}
+
+// checkProposalFee performs sanity checks on a proposal fee
+func checkProposalFee(fee util.String, index int) error {
+	if err := checkValue(&core.TxValue{Value: fee}, index); err != nil {
+		return err
+	} else if fee.Decimal().LessThan(decimal.NewFromFloat(params.MinProposalFee)) {
+		return feI(index, "value", "proposal creation fee cannot be "+
+			"less than network minimum")
+	}
+	return nil
+}
+
 // CheckTxRepoProposalMergeRequest performs sanity checks on TxRepoProposalMergeRequest
 func CheckTxRepoProposalMergeRequest(tx *core.TxRepoProposalMergeRequest, index int) error {
 
@@ -640,27 +647,16 @@ func CheckTxRepoProposalMergeRequest(tx *core.TxRepoProposalMergeRequest, index 
 		return err
 	}
 
-	if err := v.Validate(tx.RepoName,
-		v.Required.Error(feI(index, "name", "repo name is required").Error()),
-		v.By(validObjectNameRule("name", index)),
-	); err != nil {
+	if err := checkRepoName(tx.RepoName, index); err != nil {
 		return err
 	}
 
-	if tx.ProposalID == "" {
-		return feI(index, "id", "proposal id is required")
-	} else if !govalidator.IsNumeric(tx.ProposalID) {
-		return feI(index, "id", "proposal id is not valid")
-	} else if len(tx.ProposalID) > 8 {
-		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
+	if err := checkProposalID(tx.ProposalID, index); err != nil {
+		return err
 	}
 
-	if err := checkValue(&core.TxValue{Value: tx.Value}, index); err != nil {
+	if err := checkProposalFee(tx.Value, index); err != nil {
 		return err
-	} else if tx.Value.Decimal().
-		LessThan(decimal.NewFromFloat(params.MinProposalFee)) {
-		return feI(index, "value", "proposal creation fee cannot be "+
-			"less than network minimum")
 	}
 
 	if tx.BaseBranch == "" {
@@ -695,31 +691,81 @@ func CheckTxRepoProposalUpdate(tx *core.TxRepoProposalUpdate, index int) error {
 		return err
 	}
 
-	if err := v.Validate(tx.RepoName,
-		v.Required.Error(feI(index, "name", "repo name is required").Error()),
-		v.By(validObjectNameRule("name", index)),
-	); err != nil {
+	if err := checkRepoName(tx.RepoName, index); err != nil {
 		return err
 	}
 
-	if tx.ProposalID == "" {
-		return feI(index, "id", "proposal id is required")
-	} else if !govalidator.IsNumeric(tx.ProposalID) {
-		return feI(index, "id", "proposal id is not valid")
-	} else if len(tx.ProposalID) > 8 {
-		return feI(index, "id", "proposal id limit of 8 bytes exceeded")
+	if err := checkProposalID(tx.ProposalID, index); err != nil {
+		return err
 	}
 
-	if err := checkValue(&core.TxValue{Value: tx.Value}, index); err != nil {
+	if err := checkProposalFee(tx.Value, index); err != nil {
 		return err
-	} else if tx.Value.Decimal().
-		LessThan(decimal.NewFromFloat(params.MinProposalFee)) {
-		return feI(index, "value", "proposal creation fee cannot be "+
-			"less than network minimum")
 	}
 
 	if err := CheckRepoConfig(tx.Config, index); err != nil {
 		return err
+	}
+
+	if err := checkCommon(tx, index); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CheckTxRepoProposalRegisterGPGKey performs sanity checks on TxRepoProposalRegisterGPGKey
+func CheckTxRepoProposalRegisterGPGKey(tx *core.TxRepoProposalRegisterGPGKey, index int) error {
+
+	if err := checkType(tx.TxType, core.TxTypeRepoProposalRegisterGPGKey, index); err != nil {
+		return err
+	}
+
+	if err := checkRepoName(tx.RepoName, index); err != nil {
+		return err
+	}
+
+	if err := checkProposalID(tx.ProposalID, index); err != nil {
+		return err
+	}
+
+	if err := checkProposalFee(tx.Value, index); err != nil {
+		return err
+	}
+
+	// Ensure all gpg key ids are unique and valid
+	found := map[string]struct{}{}
+	for _, gpgID := range tx.KeyIDs {
+		if !util.IsValidGPGID(gpgID) {
+			return feI(index, "ids", fmt.Sprintf("GPG id (%s) is not valid", gpgID))
+		}
+		if _, ok := found[gpgID]; ok {
+			return feI(index, "ids", fmt.Sprintf("GPG id (%s) is a duplicate", gpgID))
+		}
+		found[gpgID] = struct{}{}
+	}
+
+	// Ensure fee mode is valid
+	validFeeModes := []int{state.FeeModePusherPays, state.FeeModeRepoPays, state.FeeModeRepoPaysCapped}
+	if !funk.ContainsInt(validFeeModes, int(tx.FeeMode)) {
+		return feI(index, "feeMode", "fee mode is unknown")
+	}
+
+	// If fee mode is FeeModeRepoPaysCapped, ensure FeeCappedAt is set and non-zero.
+	if tx.FeeMode == state.FeeModeRepoPaysCapped {
+		if err := v.Validate(tx.FeeCap,
+			v.Required.Error(feI(index, "feeCap", "value is required").Error()),
+			v.By(validValueRule("feeCap", index)),
+		); err != nil {
+			return err
+		}
+		if tx.FeeCap.Decimal().LessThanOrEqual(decimal.Zero) {
+			return feI(index, "feeCap", "value must be a positive number")
+		}
+	} else {
+		if tx.FeeCap != "" {
+			return feI(index, "feeCap", "value not expected for the chosen fee mode")
+		}
 	}
 
 	if err := checkCommon(tx, index); err != nil {

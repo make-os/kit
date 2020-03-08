@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 )
 
 var _ = Describe("Read", func() {
@@ -76,7 +77,7 @@ var _ = Describe("Read", func() {
 				account, err := am.GetDefault()
 				Expect(err).To(BeNil())
 				Expect(account).ToNot(BeNil())
-				Expect(account.Address).To(Equal(address.Addr().String()))
+				Expect(account.GetAddress()).To(Equal(address.Addr().String()))
 			})
 
 			It("should return ErrAccountNotFound if no address was found", func() {
@@ -110,9 +111,9 @@ var _ = Describe("Read", func() {
 			It("should get accounts at index 0 and 1", func() {
 				act, err := am.GetByIndex(0)
 				Expect(err).To(BeNil())
-				Expect(act.Address).To(Equal(address.Addr().String()))
+				Expect(act.GetAddress()).To(Equal(address.Addr().String()))
 				act, err = am.GetByIndex(1)
-				Expect(act.Address).To(Equal(address2.Addr().String()))
+				Expect(act.GetAddress()).To(Equal(address2.Addr().String()))
 			})
 
 			It("should return err = 'account not found' when no account is found", func() {
@@ -138,7 +139,7 @@ var _ = Describe("Read", func() {
 			It("should successfully get account with address", func() {
 				act, err := am.GetByAddress(address.Addr().String())
 				Expect(err).To(BeNil())
-				Expect(act.Address).To(Equal(address.Addr().String()))
+				Expect(act.GetAddress()).To(Equal(address.Addr().String()))
 			})
 
 			It("should return err = 'account not found' when address does not exist", func() {
@@ -164,13 +165,13 @@ var _ = Describe("Read", func() {
 			It("should successfully get account by its address", func() {
 				act, err := am.GetByIndexOrAddress(address.Addr().String())
 				Expect(err).To(BeNil())
-				Expect(act.Address).To(Equal(address.Addr().String()))
+				Expect(act.GetAddress()).To(Equal(address.Addr().String()))
 			})
 
 			It("should successfully get account by its index", func() {
 				act, err := am.GetByIndexOrAddress("0")
 				Expect(err).To(BeNil())
-				Expect(act.Address).To(Equal(address.Addr().String()))
+				Expect(act.GetAddress()).To(Equal(address.Addr().String()))
 			})
 		})
 	})
@@ -179,7 +180,7 @@ var _ = Describe("Read", func() {
 
 		Describe(".Unlock", func() {
 
-			var account *StoredAccount
+			var account core.StoredAccount
 			var passphrase string
 			am := New(accountPath)
 
@@ -206,7 +207,7 @@ var _ = Describe("Read", func() {
 			It("should return nil when decryption is successful. account.address must not be nil.", func() {
 				err := account.Unlock(passphrase)
 				Expect(err).To(BeNil())
-				Expect(account.key).ToNot(BeNil())
+				Expect(account.GetKey()).ToNot(BeNil())
 			})
 		})
 	})

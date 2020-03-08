@@ -85,6 +85,7 @@ func New(
 		dht:           ipfsDht,
 		cfg:           cfg,
 		log:           log,
+		ticker:        time.NewTicker(5 * time.Second),
 		objectFinders: make(map[string]types.ObjectFinder),
 	}
 
@@ -153,7 +154,6 @@ func (dht *DHT) Start() error {
 // attemptToJoinPeers periodically attempts to connect the DHTNode to a peer
 // if no connection has been established.
 func (dht *DHT) attemptToJoinPeers() {
-	dht.ticker = time.NewTicker(5 * time.Second)
 	for range dht.ticker.C {
 		if len(dht.host.Network().Conns()) == 0 {
 			dht.join()
@@ -318,7 +318,7 @@ func (dht *DHT) handleFetch(s network.Stream) {
 	}
 
 	var query types.DHTObjectQuery
-	if err := util.BytesToObject(bz, &query); err != nil {
+	if err := util.ToObject(bz, &query); err != nil {
 		dht.log.Error("failed to decode query", "Err", err.Error())
 		return
 	}

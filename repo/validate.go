@@ -271,11 +271,10 @@ func checkMergeCompliance(
 			"merge proposal (%s) is already closed", mergeProposalID)
 	}
 
-	actionKey := core.ProposalActionDataMergeRequest
-
 	// Ensure the proposal's base branch matches the pushed branch
-	propBaseBranch := prop.ActionData.Get(actionKey)["base"]
-	if ref.Short() != propBaseBranch.(string) {
+	var propBaseBranch string
+	_ = util.ToObject(prop.ActionData["base"], &propBaseBranch)
+	if ref.Short() != propBaseBranch {
 		return fmt.Errorf("merge compliance error: pushed branch name and " +
 			"merge proposal base branch name must match")
 	}
@@ -320,10 +319,11 @@ func checkMergeCompliance(
 	}
 
 	// When no base hash is given, set default hash value to zero hash
-	propBaseHash := prop.ActionData.Get(actionKey)["baseHash"]
+	var propBaseHash string
+	_ = util.ToObject(prop.ActionData["baseHash"], &propBaseHash)
 	propBaseHashStr := plumbing.ZeroHash.String()
-	if propBaseHash.(string) != "" {
-		propBaseHashStr = propBaseHash.(string)
+	if propBaseHash != "" {
+		propBaseHashStr = propBaseHash
 	}
 
 	// Ensure the proposals base branch hash matches the hash of the current
@@ -334,8 +334,9 @@ func checkMergeCompliance(
 	}
 
 	// Ensure the target commit and the proposal target match
-	propTargetHash := prop.ActionData.Get(actionKey)["targetHash"]
-	if targetCommit.GetHash().String() != propTargetHash.(string) {
+	var propTargetHash string
+	_ = util.ToObject(prop.ActionData["targetHash"], &propTargetHash)
+	if targetCommit.GetHash().String() != propTargetHash {
 		return fmt.Errorf("merge compliance error: target commit hash and " +
 			"the merge proposal target hash must match")
 	}

@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http/httptest"
 	"os"
@@ -20,24 +21,24 @@ var _ = Describe("Common", func() {
 			expected := []uint8{
 				0x81, 0xa4, 0x4e, 0x61, 0x6d, 0x65, 0xa3, 0x62, 0x65, 0x6e,
 			}
-			bs := ObjectToBytes(s)
+			bs := ToBytes(s)
 			Expect(bs).To(Equal(expected))
 		})
 	})
 
-	Describe(".BytesToObject", func() {
+	Describe(".ToObject", func() {
 
 		var bs []byte
 		var m = map[string]interface{}{"stuff": int8(10)}
 
 		BeforeEach(func() {
-			bs = ObjectToBytes(m)
+			bs = ToBytes(m)
 			Expect(bs).ToNot(BeEmpty())
 		})
 
 		It("should decode to expected value", func() {
 			var actual map[string]interface{}
-			err := BytesToObject(bs, &actual)
+			err := ToObject(bs, &actual)
 			Expect(err).To(BeNil())
 			Expect(actual).To(Equal(m))
 		})
@@ -324,7 +325,7 @@ var _ = Describe("Common", func() {
 		})
 	})
 
-	Describe(".MapDecode", func() {
+	Describe(".DecodeMap", func() {
 
 		type testStruct struct {
 			Name string
@@ -333,7 +334,7 @@ var _ = Describe("Common", func() {
 		It("should decode map to struct", func() {
 			var m = map[string]interface{}{"Name": "abc"}
 			var s testStruct
-			err := MapDecode(m, &s)
+			err := DecodeMap(m, &s)
 			Expect(err).To(BeNil())
 			Expect(s.Name).To(Equal(m["Name"]))
 		})
@@ -510,9 +511,81 @@ var _ = Describe("Common", func() {
 	Describe(".ToMapSI", func() {
 		It("should convert map with non-interface value to map[string]interface{} type", func() {
 			src := map[string]int{"jin": 20}
-			conv := ToMapSI(src)
-			Expect(conv).To(HaveLen(1))
-			Expect(conv["jin"]).To(Equal(20))
+			out := ToMapSI(src)
+			Expect(out).To(HaveLen(1))
+			Expect(out["jin"]).To(Equal(20))
+		})
+
+		It("should panic if arg is not a map[string]interface{}", func() {
+			src := map[int]string{1: "abc"}
+			Expect(func() { ToMapSI(src) }).To(Panic())
+		})
+
+		It("should return same arg if arg is already a map[string]interface{}", func() {
+			src := map[string]interface{}{"key": "abc"}
+			out := ToMapSI(src)
+			Expect(fmt.Sprintf("%p", src)).To(Equal(fmt.Sprintf("%p", out)))
+		})
+
+		It("should convert struct element to map if structToMap is true", func() {
+			src := map[string]struct{ Name string }{"jin": {Name: "jin"}}
+			out := ToMapSI(src, true)
+			Expect(out).To(Equal(map[string]interface{}{"jin": map[string]interface{}{"Name": "jin"}}))
+		})
+	})
+
+	Describe(".StructSliceToMapSlice", func() {
+		It("should panic if arg is not a slice", func() {
+			Expect(func() {
+				arr := [2]string{"a", "b"}
+				StructSliceToMapSlice(arr)
+			}).To(Panic())
+		})
+
+		It("should return empty slice element type is not map or struct", func() {
+			Expect(func() {
+				arg := []string{}
+				StructSliceToMapSlice(arg)
+			}).To(Panic())
+		})
+
+		It("should return empty slice of map[string]interface{} when slice arg is empty", func() {
+			arg := []map[string]interface{}{}
+			out := StructSliceToMapSlice(arg)
+			Expect(out).To(Equal(arg))
+		})
+
+		type testStruct struct{ Name string }
+		It("should return slice of map[string]interface{} when arg is slice of *struct", func() {
+			arg := []*testStruct{{Name: "ben"}}
+			out := StructSliceToMapSlice(arg)
+			Expect(out).To(Equal([]map[string]interface{}{{"Name": "ben"}}))
+		})
+
+		It("should return slice of map[string]interface{} when arg is slice of struct", func() {
+			arg := []testStruct{{Name: "ben"}}
+			out := StructSliceToMapSlice(arg)
+			Expect(out).To(Equal([]map[string]interface{}{{"Name": "ben"}}))
+		})
+
+		It("should return slice of map[string]interface{} when arg is slice of map[string]struct", func() {
+			arg := []map[string]testStruct{
+				{"person1": {Name: "ben"}},
+			}
+			out := StructSliceToMapSlice(arg)
+			Expect(out).To(Equal([]map[string]interface{}{
+				{"person1": map[string]interface{}{"Name": "ben"}},
+			}))
+		})
+
+		It("should return slice of map[string]interface{} when arg is slice of map[string]*struct", func() {
+			arg := []map[string]*testStruct{
+				{"person1": {Name: "ben"}},
+			}
+			out := StructSliceToMapSlice(arg)
+			Expect(out).To(Equal([]map[string]interface{}{
+				{"person1": map[string]interface{}{"Name": "ben"}},
+			}))
 		})
 	})
 

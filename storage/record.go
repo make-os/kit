@@ -30,7 +30,7 @@ func (r *Record) IsEmpty() bool {
 
 // Scan marshals the value into dest
 func (r *Record) Scan(dest interface{}) error {
-	return util.BytesToObject(r.Value, &dest)
+	return util.ToObject(r.Value, &dest)
 }
 
 // MakePrefix creates a prefix string

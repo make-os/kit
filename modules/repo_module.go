@@ -73,6 +73,11 @@ func (m *RepoModule) funcs() []*modules.ModuleFunc {
 			Value:       m.CreateMergeRequest,
 			Description: "Create a merge request proposal",
 		},
+		{
+			Name:        "registerKey",
+			Value:       m.RegisterGPGKey,
+			Description: "Register one or more GPG keys to a repository",
+		},
 	}
 }
 
@@ -121,8 +126,8 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 // options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>
-// object.hash <string>: 	The transaction hash
-// object.address <string: 	The address of the repository
+// object.hash <string>: 				The transaction hash
+// object.address <string: 				The address of the repository
 func (m *RepoModule) Create(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
@@ -151,19 +156,18 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 //
 // ARGS:
 // params <map>
-// params.id 		<string>: 			A unique proposal id
-// params.addresses <string>: 			A comma separated list of addresses
-// params.veto 		<bool>: 			Whether to grant/revoke veto right
-// params.nonce 	<number|string>: 	The senders next account nonce
-// params.fee 		<number|string>: 	The transaction fee to pay
-// params.timestamp <number>: 			The unix timestamp
+// params.id 		<string>: 					A unique proposal id
+// params.addresses <string>: 					A comma separated list of addresses
+// params.veto 		<bool>: 					The senders next account nonce
+// params.fee 		<number|string>: 			The transaction fee to pay
+// params.timestamp <number>: 					The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+// options[0] key <string>: 					The signer's private key
+// options[1] payloadOnly <bool>: 				When true, returns the payload only, without sending the tx.
 //
-// RETURNS <map>: 						When payloadOnly is false
-// hash <string>: 						The transaction hash
+// RETURNS <map>: 								When payloadOnly is false
+// hash <string>: 								The transaction hash
 //
 // RETURNS <core.TxRepoProposalUpsertOwner>: 	When payloadOnly is true, returns signed transaction object
 func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...interface{}) util.Map {
@@ -273,7 +277,7 @@ func (m *RepoModule) Get(name string, opts ...map[string]interface{}) util.Map {
 		repo = m.logic.RepoKeeper().GetRepo(name, targetHeight)
 	} else {
 		repo = m.logic.RepoKeeper().GetRepoOnly(name, targetHeight)
-		repo.Proposals = map[string]interface{}{}
+		repo.Proposals = state.RepoProposals{}
 	}
 
 	if repo.IsNil() {
@@ -296,11 +300,11 @@ func (m *RepoModule) Get(name string, opts ...map[string]interface{}) util.Map {
 // params.timestamp <number>: 				The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+// options[0] key <string>: 				The signer's private key
+// options[1] payloadOnly <bool>: 			When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>
-// object.hash <string>: 				The transaction hash
+// object.hash <string>: 					The transaction hash
 func (m *RepoModule) Update(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -336,11 +340,11 @@ func (m *RepoModule) Update(params map[string]interface{}, options ...interface{
 // params.timestamp <number>: 				The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+// options[0] key <string>: 				The signer's private key
+// options[1] payloadOnly <bool>: 			When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>
-// object.hash <string>: 				The transaction hash
+// object.hash <string>: 					The transaction hash
 func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -379,17 +383,64 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 // params.timestamp 	<number>: 				The unix timestamp
 //
 // options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+// options[0] key <string>: 					The signer's private key
+// options[1] payloadOnly <bool>: 				When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>
-// object.hash <string>: 				The transaction hash
+// object.hash <string>: 						The transaction hash
 func (m *RepoModule) CreateMergeRequest(
 	params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
 
 	var tx = core.NewBareRepoProposalMergeRequest()
+	if err = tx.FromMap(params); err != nil {
+		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+	}
+
+	payloadOnly := finalizeTx(tx, m.logic, options...)
+	if payloadOnly {
+		return EncodeForJS(tx.ToMap())
+	}
+
+	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
+	if err != nil {
+		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+	}
+
+	return EncodeForJS(map[string]interface{}{
+		"hash": hash,
+	})
+}
+
+// RegisterGPGKey creates a proposal to register one or more GPG key
+//
+// ARGS:
+// params <map>
+// params.name 		<string>: 						The name of the repository
+// params.id 		<string>: 						A unique proposal ID
+// params.gpgId 	<string|[]string>: 				A list or comma separated list of GPG IDs to add
+// params.policies 	<[]map[string]interface{}>: 	A list of policies
+//	- sub 			<string>:						The policy's subject
+//	- obj 			<string>:						The policy's object
+//	- act 			<string>:						The policy's action
+// params.value 	<string|number>:				The proposal fee to pay
+// params.nonce 	<number|string>: 				The senders next account nonce
+// params.fee 		<number|string>: 				The transaction fee to pay
+// params.timestamp <number>: 						The unix timestamp
+//
+// options 			<[]interface{}>
+// options[0] 		key <string>: 					The signer's private key
+// options[1] 		payloadOnly <bool>: 			When true, returns the payload only, without sending the tx.
+//
+// RETURNS object <map>
+// object.hash <string>: 							The transaction hash
+func (m *RepoModule) RegisterGPGKey(
+	params map[string]interface{},
+	options ...interface{}) interface{} {
+	var err error
+
+	var tx = core.NewBareRepoProposalRegisterGPGKey()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}

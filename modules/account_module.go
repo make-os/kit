@@ -137,7 +137,7 @@ func (m *AccountModule) ListLocalAccounts() []string {
 
 	var resp = []string{}
 	for _, a := range accounts {
-		resp = append(resp, a.Address)
+		resp = append(resp, a.GetAddress())
 	}
 
 	return resp

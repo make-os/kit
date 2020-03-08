@@ -2,6 +2,7 @@ package logic
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/state"
 	"gitlab.com/makeos/mosdef/dht"
@@ -103,7 +104,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			chainHeight)
 
 	case *core.TxRepoProposalUpsertOwner:
-		return t.execRepoUpsertOwner(
+		return t.execRepoProposalUpsertOwner(
 			spk,
 			o.RepoName,
 			o.ProposalID,
@@ -123,7 +124,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			chainHeight)
 
 	case *core.TxRepoProposalFeeSend:
-		return t.execRepoProposalSendFee(
+		return t.execRepoProposalFeeDeposit(
 			spk,
 			o.RepoName,
 			o.ProposalID,
@@ -137,6 +138,19 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.RepoName,
 			o.ProposalID,
 			o.Config,
+			o.Value,
+			o.Fee,
+			chainHeight)
+
+	case *core.TxRepoProposalRegisterGPGKey:
+		return t.execRepoProposalRegisterGPGKeys(
+			spk,
+			o.RepoName,
+			o.ProposalID,
+			o.KeyIDs,
+			o.FeeMode,
+			o.FeeCap,
+			o.Policies,
 			o.Value,
 			o.Fee,
 			chainHeight)

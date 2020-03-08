@@ -9,7 +9,7 @@ type Params map[string]interface{}
 
 // Scan attempts to convert the params to a struct or map type
 func (p *Params) Scan(dest interface{}) error {
-	return util.MapDecode(p, &dest)
+	return util.DecodeMap(p, &dest)
 }
 
 // APIInfo defines a standard API function type

@@ -2,8 +2,9 @@ package ticket
 
 import (
 	"bytes"
-	types2 "gitlab.com/makeos/mosdef/ticket/types"
 	"sort"
+
+	types2 "gitlab.com/makeos/mosdef/ticket/types"
 
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/util"
@@ -87,7 +88,7 @@ func getQueryOptions(queryOptions ...interface{}) types2.QueryOptions {
 func (s *Store) Add(tickets ...*types2.Ticket) error {
 	for _, ticket := range tickets {
 		key := MakeKey(ticket.Hash.Bytes(), ticket.Height, ticket.Index)
-		rec := storage.NewRecord(key, util.ObjectToBytes(ticket))
+		rec := storage.NewRecord(key, util.ToBytes(ticket))
 		if err := s.db.Put(rec); err != nil {
 			return err
 		}

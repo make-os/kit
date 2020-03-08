@@ -87,7 +87,7 @@ func New(historyPath string, cfg *config.AppConfig, log logger.Logger) *Console 
 	var history []string
 	data, _ := ioutil.ReadFile(historyPath)
 	if len(data) > 0 {
-		util.BytesToObject(data, &history)
+		util.ToObject(data, &history)
 	}
 
 	c.history = append(c.history, history...)
@@ -237,7 +237,7 @@ func (c *Console) saveHistory() {
 		return
 	}
 
-	bs := util.ObjectToBytes(c.history)
+	bs := util.ToBytes(c.history)
 	err := ioutil.WriteFile(c.historyFile, bs, 0644)
 	if err != nil {
 		panic(err)

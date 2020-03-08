@@ -7,7 +7,6 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-
 // ObjectFinder describes an interface for finding objects
 type ObjectFinder interface {
 	// FindObject finds objects corresponding to the given key.
@@ -53,7 +52,7 @@ type DHTObjectQuery struct {
 
 // Bytes serializes the object
 func (q *DHTObjectQuery) Bytes() []byte {
-	return util.ObjectToBytes(q)
+	return util.ToBytes(q)
 }
 
 // DHTObjectResponse represents a response containing an object

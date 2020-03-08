@@ -404,10 +404,6 @@ func (n *Node) Stop() {
 		n.stateTreeDB.Close()
 	}
 
-	if n.rpcServer != nil {
-		n.rpcServer.Stop()
-	}
-
 	if !n.cfg.ConsoleOnly() {
 		n.log.Info("Databases have been closed")
 	}

@@ -15,6 +15,19 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
+const (
+	StatusCodeAppErr                = "app_err"
+	StatusCodeInvalidPass           = "invalid_passphrase"
+	StatusCodeAddressRequire        = "addr_required"
+	StatusCodeAccountNotFound       = "account_not_found"
+	StatusCodeInvalidParams         = "invalid_params"
+	StatusCodeInvalidProposerPubKey = "invalid_proposer_pub_key"
+	StatusCodeMempoolAddFail        = "mempool_add_fail"
+	StatusCodeGPGPubKeyNotFound     = "gpg_pk_not_found"
+	StatusCodeRepoNotFound          = "repo_not_found"
+	StatusCodeTxNotFound            = "tx_not_found"
+)
+
 // finalizeTx sets the public key, timestamp and signs the transaction.
 //
 // options[0] is expected to be a base58 private key
@@ -85,24 +98,33 @@ func checkAndGetKey(options ...interface{}) string {
 	return key
 }
 
+func isMapOrStruct(o interface{}) bool {
+	if structs.IsStruct(o) {
+		return true
+	}
+	if reflect.TypeOf(o).Kind() == reflect.Map {
+		return true
+	}
+	return false
+}
+
 // EncodeForJS takes a struct and converts
 // selected types to values that are compatible in the
 // JS environment. It returns a map and will panic
 // if obj is not a map/struct.
 // Set fieldToIgnore to ignore matching fields
 func EncodeForJS(obj interface{}, fieldToIgnore ...string) util.Map {
-
 	if obj == nil {
 		return nil
 	}
 
-	var m map[string]interface{}
-	structs.DefaultTagName = "json"
 	if structs.IsStruct(obj) {
-		st := structs.New(obj)
-		m = st.Map()
-	} else {
-		m = obj.(map[string]interface{})
+		return EncodeForJS(util.StructToMap(obj, "json"))
+	}
+
+	m, ok := obj.(map[string]interface{})
+	if !ok {
+		panic("only struct or map are allowed")
 	}
 
 	for k, v := range m {
@@ -119,11 +141,15 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) util.Map {
 			m[k] = fmt.Sprintf("%f", o)
 		case map[string]interface{}:
 			if len(o) > 0 { // no need adding empty maps
-				m[k] = EncodeForJS(o)
+				if isMapOrStruct(o) {
+					m[k] = EncodeForJS(o)
+				}
 			}
 		case []interface{}:
 			for i, item := range o {
-				o[i] = EncodeForJS(item)
+				if isMapOrStruct(item) {
+					o[i] = EncodeForJS(item)
+				}
 			}
 
 		// byte types
@@ -177,16 +203,3 @@ func EncodeManyForJS(objs interface{}, fieldToIgnore ...string) []util.Map {
 
 	return many
 }
-
-const (
-	StatusCodeAppErr                = "app_err"
-	StatusCodeInvalidPass           = "invalid_passphrase"
-	StatusCodeAddressRequire        = "addr_required"
-	StatusCodeAccountNotFound       = "account_not_found"
-	StatusCodeInvalidParams         = "invalid_params"
-	StatusCodeInvalidProposerPubKey = "invalid_proposer_pub_key"
-	StatusCodeMempoolAddFail        = "mempool_add_fail"
-	StatusCodeGPGPubKeyNotFound     = "gpg_pk_not_found"
-	StatusCodeRepoNotFound          = "repo_not_found"
-	StatusCodeTxNotFound            = "tx_not_found"
-)

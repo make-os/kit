@@ -11,10 +11,11 @@ import (
 
 	humanize "github.com/dustin/go-humanize"
 	"github.com/fatih/color"
+	"gitlab.com/makeos/mosdef/types/core"
 )
 
 // ListAccounts returns the accounts stored on disk.
-func (am *AccountManager) ListAccounts() (accounts []*StoredAccount, err error) {
+func (am *AccountManager) ListAccounts() (accounts []core.StoredAccount, err error) {
 
 	files, err := ioutil.ReadDir(am.accountDir)
 	if err != nil {
@@ -67,12 +68,12 @@ func (am *AccountManager) ListCmd() error {
 
 	for i, a := range accts {
 		tagStr := ""
-		if a.Default {
+		if a.IsDefault() {
 			tagStr = "[default]"
 		}
 		fmt.Println(fmt.Sprintf("[%d]\t%s     %s\t     %s", i,
-			color.CyanString(a.Address),
-			humanize.Time(a.CreatedAt),
+			color.CyanString(a.GetAddress()),
+			humanize.Time(a.GetCreatedAt()),
 			tagStr))
 	}
 

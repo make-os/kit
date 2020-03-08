@@ -90,7 +90,7 @@ func (v *ValidatorKeeper) Index(height int64, validators []*core.Validator) erro
 	}
 
 	key := MakeBlockValidatorsKey(height)
-	rec := storage.NewFromKeyValue(key, util.ObjectToBytes(data))
+	rec := storage.NewFromKeyValue(key, util.ToBytes(data))
 	if err := v.db.Put(rec); err != nil {
 		return errors.Wrap(err, "failed to index validators")
 	}

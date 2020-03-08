@@ -512,7 +512,7 @@ func updateReferencesTree(
 			tree.Set([]byte(pushedRef.Name), bytes.Join([][]byte{
 				util.MustFromHex(pushedRef.OldHash),
 				util.MustFromHex(pushedRef.NewHash),
-				util.ObjectToBytes(pushedRef.Objects)}, nil))
+				util.ToBytes(pushedRef.Objects)}, nil))
 			return nil
 		})
 		if err != nil {

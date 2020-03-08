@@ -6,13 +6,14 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
+	"gitlab.com/makeos/mosdef/types/core"
 )
 
 // UIUnlockAccount renders a CLI UI to unlock a target account.
 // addressOrIndex: The address or index of the account.
 // passphrase: The user supplied passphrase. If not provided, an
 // interactive session will be started to collect the passphrase
-func (am *AccountManager) UIUnlockAccount(addressOrIndex, passphrase string) (*StoredAccount, error) {
+func (am *AccountManager) UIUnlockAccount(addressOrIndex, passphrase string) (core.StoredAccount, error) {
 
 	var err error
 
@@ -22,7 +23,7 @@ func (am *AccountManager) UIUnlockAccount(addressOrIndex, passphrase string) (*S
 		return nil, err
 	}
 
-	fmt.Println(color.HiBlackString("Chosen Account: ") + storedAcct.Address)
+	fmt.Println(color.HiBlackString("Chosen Account: ") + storedAcct.GetAddress())
 
 	// Ask for passphrase is not provided
 	if passphrase == "" {

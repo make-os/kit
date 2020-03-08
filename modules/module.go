@@ -31,7 +31,7 @@ type Module struct {
 	Modules        *modules.Modules
 }
 
-// New creates an instance of Module which aggregates and
+// new creates an instance of Module which aggregates and
 // provides functionality of configuring supported modules
 func New(
 	cfg *config.AppConfig,

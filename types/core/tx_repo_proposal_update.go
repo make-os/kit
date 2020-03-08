@@ -60,7 +60,7 @@ func (tx *TxRepoProposalUpdate) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 // Bytes returns the serialized transaction
 func (tx *TxRepoProposalUpdate) Bytes() []byte {
-	return util.ObjectToBytes(tx)
+	return util.ToBytes(tx)
 }
 
 // GetBytesNoSig returns the serialized the transaction excluding the signature

@@ -59,13 +59,13 @@ func (ns *Namespace) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 // Bytes return the bytes equivalent of the account
 func (ns *Namespace) Bytes() []byte {
-	return util.ObjectToBytes(ns)
+	return util.ToBytes(ns)
 }
 
 // NewNamespaceFromBytes decodes bz to Namespace
 func NewNamespaceFromBytes(bz []byte) (*Namespace, error) {
 	var ns = BareNamespace()
-	if err := util.BytesToObject(bz, ns); err != nil {
+	if err := util.ToObject(bz, ns); err != nil {
 		return nil, err
 	}
 	return ns, nil

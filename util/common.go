@@ -105,8 +105,8 @@ func (s String) IsDecimal() bool {
 	return govalidator.IsFloat(string(s))
 }
 
-// ObjectToBytes returns msgpack encoded representation of s.
-func ObjectToBytes(s interface{}) []byte {
+// ToBytes returns msgpack encoded representation of s.
+func ToBytes(s interface{}) []byte {
 	var buf bytes.Buffer
 	if err := msgpack.NewEncoder(&buf).
 		SortMapKeys(true).
@@ -117,9 +117,9 @@ func ObjectToBytes(s interface{}) []byte {
 	return buf.Bytes()
 }
 
-// BytesToObject decodes bytes produced
-// by BytesToObject to the given dest object
-func BytesToObject(bs []byte, dest interface{}) error {
+// ToObject decodes bytes produced
+// by ToObject to the given dest object
+func ToObject(bs []byte, dest interface{}) error {
 	return msgpack.NewDecoder(bytes.NewBuffer(bs)).Decode(dest)
 }
 
@@ -254,6 +254,38 @@ func StructToMap(s interface{}, tagName ...string) map[string]interface{} {
 	return st.Map()
 }
 
+// StructSliceToMapSlice converts a slice of map or struct into a slice of map[string]interface{}
+func StructSliceToMapSlice(ss interface{}, tagName ...string) []map[string]interface{} {
+	val := reflect.ValueOf(ss)
+
+	if val.Kind() != reflect.Slice {
+		panic("arg is not a slice")
+	}
+
+	sliceKind := val.Type().Elem().Kind()
+	if sliceKind == reflect.Ptr {
+		sliceKind = val.Type().Elem().Elem().Kind()
+	}
+	if sliceKind != reflect.Map && sliceKind != reflect.Struct {
+		panic("slice must contain map or struct")
+	}
+
+	if val.Len() == 0 {
+		return []map[string]interface{}{}
+	}
+
+	res := make([]map[string]interface{}, val.Len())
+	for i := 0; i < val.Len(); i++ {
+		if sliceKind == reflect.Map {
+			res[i] = ToMapSI(val.Index(i).Interface(), true)
+			continue
+		}
+		res[i] = StructToMap(val.Index(i).Interface(), tagName...)
+	}
+
+	return res
+}
+
 // GetPtrAddr takes a pointer and returns the address
 func GetPtrAddr(ptrAddr interface{}) *big.Int {
 	ptrAddrInt, ok := new(big.Int).SetString(fmt.Sprintf("%d", &ptrAddr), 10)
@@ -263,10 +295,10 @@ func GetPtrAddr(ptrAddr interface{}) *big.Int {
 	return ptrAddrInt
 }
 
-// MapDecode decodes a map to a struct.
+// DecodeMap decodes a map to a struct.
 // It uses mapstructure.Decode internally but
 // with 'json' TagName.
-func MapDecode(srcMap interface{}, dest interface{}) error {
+func DecodeMap(srcMap interface{}, dest interface{}) error {
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Metadata: nil,
 		Result:   dest,
@@ -538,15 +570,29 @@ func GetIndexFromUInt64Slice(index int, opts ...uint64) uint64 {
 	return opts[index]
 }
 
-// ToMapSI converts a map to map[string]interface{}
-func ToMapSI(mapType interface{}) map[string]interface{} {
-	v := reflect.ValueOf(mapType)
-	if v.Kind() != reflect.Map {
-		panic("not a map type")
+// ToMapSI converts a map to map[string]interface{}.
+// If structToMap is true, struct element is converted to map.
+// Panics if m is not a map with string key.
+// Returns m if m is already a map[string]interface{}.
+func ToMapSI(m interface{}, structToMap ...bool) map[string]interface{} {
+	v := reflect.ValueOf(m)
+	if v.Kind() != reflect.Map || v.Type().Key().Kind() != reflect.String {
+		panic("not a map with string key")
+	}
+
+	if v.Type().Elem().Kind() == reflect.Interface {
+		return m.(map[string]interface{})
 	}
 
 	res := make(map[string]interface{})
 	for _, k := range v.MapKeys() {
+		mapVal := v.MapIndex(k)
+		if len(structToMap) > 0 && structToMap[0] &&
+			(mapVal.Kind() == reflect.Struct ||
+				(mapVal.Kind() == reflect.Ptr && mapVal.Elem().Kind() == reflect.Struct)) {
+			res[k.String()] = StructToMap(mapVal.Interface())
+			continue
+		}
 		res[k.String()] = v.MapIndex(k).Interface()
 	}
 

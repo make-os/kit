@@ -353,9 +353,9 @@ func CheckTxNamespaceDomainUpdateConsistency(
 	return nil
 }
 
-// checkProposalCommonConsistency includes common consistency checks for
+// CheckProposalCommonConsistency includes common consistency checks for
 // proposal transactions.
-func checkProposalCommonConsistency(
+func CheckProposalCommonConsistency(
 	txProposal *core.TxProposalCommon,
 	txCommon *core.TxCommon,
 	index int,
@@ -376,11 +376,16 @@ func checkProposalCommonConsistency(
 	}
 
 	repoPropFee := decimal.NewFromFloat(targetRepo.Config.Governance.ProposalFee)
+
+	// When the repo does not require a proposal deposit,
+	// ensure a proposal fee is not set.
 	if repoPropFee.Equal(decimal.Zero) &&
 		!txProposal.Value.Decimal().Equal(decimal.Zero) {
 		return nil, feI(index, "value", "proposal fee is not required but was provided")
 	}
 
+	// When the repo does not support a fee deposit duration period,
+	// ensure the minimum fee was paid in the current transaction.
 	if targetRepo.Config.Governance.ProposalFeeDepDur == 0 {
 		if repoPropFee.GreaterThan(decimal.Zero) &&
 			txProposal.Value.Decimal().LessThan(repoPropFee) {
@@ -410,7 +415,7 @@ func CheckTxRepoProposalUpsertOwnerConsistency(
 	index int,
 	logic core.Logic) error {
 
-	_, err := checkProposalCommonConsistency(
+	_, err := CheckProposalCommonConsistency(
 		tx.TxProposalCommon,
 		tx.TxCommon,
 		index,
@@ -461,7 +466,7 @@ func CheckTxVoteConsistency(
 		return feI(index, "id", "total deposited proposal fee is insufficient")
 	}
 
-	// If the proposal is targetted at repo owners, then
+	// If the proposal is targeted at repo owners, then
 	// the sender must be an owner
 	senderOwner := repo.Owners.Get(tx.GetFrom().String())
 	if proposal.GetProposeeType() == state.ProposeeOwner && senderOwner == nil {
@@ -548,7 +553,7 @@ func CheckTxRepoProposalMergeRequestConsistency(
 	index int,
 	logic core.Logic) error {
 
-	_, err := checkProposalCommonConsistency(
+	_, err := CheckProposalCommonConsistency(
 		tx.TxProposalCommon,
 		tx.TxCommon,
 		index,
@@ -566,7 +571,25 @@ func CheckTxRepoProposalUpdateConsistency(
 	index int,
 	logic core.Logic) error {
 
-	_, err := checkProposalCommonConsistency(
+	_, err := CheckProposalCommonConsistency(
+		tx.TxProposalCommon,
+		tx.TxCommon,
+		index,
+		logic)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CheckTxRepoProposalRegisterGPGKeyConsistency performs consistency checks on TxRepoProposalRegisterGPGKey
+func CheckTxRepoProposalRegisterGPGKeyConsistency(
+	tx *core.TxRepoProposalRegisterGPGKey,
+	index int,
+	logic core.Logic) error {
+
+	_, err := CheckProposalCommonConsistency(
 		tx.TxProposalCommon,
 		tx.TxCommon,
 		index,

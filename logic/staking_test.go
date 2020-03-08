@@ -1,10 +1,11 @@
 package logic
 
 import (
+	"os"
+
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"os"
 
 	"gitlab.com/makeos/mosdef/params"
 
@@ -66,7 +67,7 @@ var _ = Describe("Staking", func() {
 			Context("when [current block height]=1; an account balance is 100 with validator stake entry of value=50, unbondHeight=1", func() {
 				BeforeEach(func() {
 					stakes := state.BareAccountStakes()
-					stakes.Add(state.StakeTypeValidator, util.String("50"), 1)
+					stakes.Add(state.StakeTypeValidator, "50", 1)
 					acct := &state.Account{
 						Balance: util.String("100"),
 						Stakes:  stakes,
@@ -78,7 +79,7 @@ var _ = Describe("Staking", func() {
 
 				Specify("that when another stake entry value=10, unbondHeight=100 is added with fee=1 then spendable balance = 89", func() {
 					senderPubKey := sender.PubKey().MustBytes32()
-					err := txLogic.addStake(core.TxTypeValidatorTicket, senderPubKey, util.String("10"), util.String("1"), 0)
+					err := txLogic.addStake(core.TxTypeValidatorTicket, senderPubKey, "10", "1", 0)
 					Expect(err).To(BeNil())
 					acct := logic.AccountKeeper().GetAccount(sender.Addr())
 					Expect(acct.GetBalance()).To(Equal(util.String("99")))
@@ -89,7 +90,7 @@ var _ = Describe("Staking", func() {
 			Context("when [current block height]=1; an account balance is 100 with validator stake entry of value=50, unbondHeight=100", func() {
 				BeforeEach(func() {
 					stakes := state.BareAccountStakes()
-					stakes.Add(state.StakeTypeValidator, util.String("50"), 100)
+					stakes.Add(state.StakeTypeValidator, "50", 100)
 					acct := &state.Account{
 						Balance: util.String("100"),
 						Stakes:  stakes,
@@ -101,7 +102,7 @@ var _ = Describe("Staking", func() {
 
 				Specify("that when another stake entry value=10, unbondHeight=100 is added with fee=1 then spendable balance = 39", func() {
 					senderPubKey := sender.PubKey().MustBytes32()
-					err := txLogic.addStake(core.TxTypeValidatorTicket, senderPubKey, util.String("10"), util.String("1"), 0)
+					err := txLogic.addStake(core.TxTypeValidatorTicket, senderPubKey, "10", "1", 0)
 					Expect(err).To(BeNil())
 					acct := logic.AccountKeeper().GetAccount(sender.Addr())
 					Expect(acct.GetBalance()).To(Equal(util.String("99")))
@@ -121,7 +122,7 @@ var _ = Describe("Staking", func() {
 					Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("100")))
 
 					senderPubKey = sender.PubKey().MustBytes32()
-					err := txLogic.addStake(core.TxTypeHostTicket, senderPubKey, util.String("10"), util.String("1"), 0)
+					err := txLogic.addStake(core.TxTypeHostTicket, senderPubKey, "10", "1", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -129,7 +130,7 @@ var _ = Describe("Staking", func() {
 					acct := logic.AccountKeeper().GetAccount(sender.Addr())
 					Expect(acct.Stakes).To(HaveLen(1))
 					Expect(acct.Stakes.TotalStaked(1)).To(Equal(util.String("10")))
-					Expect(acct.Stakes[state.StakeTypeHost+"0"].(*state.StakeInfo).UnbondHeight).To(Equal(uint64(0)))
+					Expect(acct.Stakes[state.StakeTypeHost+"0"].UnbondHeight).To(Equal(uint64(0)))
 				})
 			})
 		})
@@ -171,7 +172,7 @@ var _ = Describe("Staking", func() {
 				txLogic.logic = mockLogic.Logic
 
 				acct = state.BareAccount()
-				acct.Balance = util.String("1000")
+				acct.Balance = "1000"
 				acct.Stakes.Add(state.StakeTypeHost, "100", 0)
 
 				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), uint64(1)).Return(acct)
@@ -182,7 +183,7 @@ var _ = Describe("Staking", func() {
 				mockLogic.AccountKeeper.EXPECT().Update(sender.Addr(), acct)
 
 				senderPubKey = sender.PubKey().MustBytes32()
-				err = txLogic.execUnbond(senderPubKey, returnTicket.Hash, util.String("1"), 1)
+				err = txLogic.execUnbond(senderPubKey, returnTicket.Hash, "1", 1)
 				Expect(err).To(BeNil())
 			})
 

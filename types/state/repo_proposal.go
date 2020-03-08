@@ -82,6 +82,7 @@ const (
 	ProposalActionAddOwner ProposalAction = iota + 1
 	ProposalActionRepoUpdate
 	ProposalActionMergeRequest
+	ProposalActionRegisterGPGID
 )
 
 // Proposal vote choices
@@ -101,7 +102,7 @@ type Proposal interface {
 	GetQuorum() float64
 	GetTallyMethod() ProposalTallyMethod
 	GetAction() ProposalAction
-	GetActionData() map[string]interface{}
+	GetActionData() map[string][]byte
 	GetThreshold() float64
 	GetVetoQuorum() float64
 	GetVetoOwnersQuorum() float64
@@ -138,7 +139,7 @@ const (
 type RepoProposal struct {
 	ID                    string                `json:"-" mapstructure:"-" msgpack:"-"`
 	Action                ProposalAction        `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
-	ActionData            ProposalActionData    `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
+	ActionData            map[string][]byte     `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
 	Creator               string                `json:"creator" mapstructure:"creator" msgpack:"creator"`                                           // The creator is the address of the proposal creator.
 	Height                uint64                `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
 	Config                *RepoConfigGovernance `json:"config" mapstructure:"config" msgpack:"-"`                                                   // The repo config to used to evaluate the proposal
@@ -157,11 +158,6 @@ type RepoProposal struct {
 // ProposalActionData represents action data of a proposal
 type ProposalActionData map[string]interface{}
 
-// Add adds an action data
-func (d *ProposalActionData) Add(actionName string, data interface{}) {
-	(*d)[actionName] = data
-}
-
 // Get returns the data corresponding to the given action name
 func (d *ProposalActionData) Get(actionName string) map[string]interface{} {
 	data := (*d)[actionName]
@@ -175,7 +171,7 @@ func (d *ProposalActionData) Get(actionName string) map[string]interface{} {
 func BareRepoProposal() *RepoProposal {
 	return &RepoProposal{
 		Config:     BareRepoConfig().Governance,
-		ActionData: make(map[string]interface{}),
+		ActionData: make(map[string][]byte),
 		Fees:       make(map[string]string),
 	}
 }
@@ -258,7 +254,7 @@ func (p *RepoProposal) GetAction() ProposalAction {
 }
 
 // GetActionData implements Proposal
-func (p *RepoProposal) GetActionData() map[string]interface{} {
+func (p *RepoProposal) GetActionData() map[string][]byte {
 	return p.ActionData
 }
 

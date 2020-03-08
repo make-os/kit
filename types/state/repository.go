@@ -7,6 +7,14 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
+type FeeMode int
+
+const (
+	FeeModePusherPays = iota
+	FeeModeRepoPays
+	FeeModeRepoPaysCapped
+)
+
 // BareReference returns an empty reference object
 func BareReference() *Reference {
 	return &Reference{}
@@ -77,34 +85,34 @@ type RepoConfigGovernance struct {
 	ProposalFeeRefundType            ProposalFeeRefundType `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType"`
 }
 
-// RepoACLPolicy describes an ACL policy
+// RepoACLPolicy describes an Policies policy
 type RepoACLPolicy struct {
 	Object  string `json:"obj,omitempty" mapstructure:"obj,omitempty" msgpack:"obj,omitempty"`
 	Subject string `json:"sub,omitempty" mapstructure:"sub,omitempty" msgpack:"sub,omitempty"`
 	Action  string `json:"act,omitempty" mapstructure:"act,omitempty" msgpack:"act,omitempty"`
 }
 
-// RepoACLPolicies represents an index of repo ACL policies
+// RepoACLPolicies represents an index of repo Policies policies
 // key is policy id
 type RepoACLPolicies map[string]*RepoACLPolicy
 
 // RepoConfig contains repo-specific configuration settings
 type RepoConfig struct {
 	util.SerializerHelper
-	Governance *RepoConfigGovernance `json:"gov" mapstructure:"gov" msgpack:"gov"`
-	ACL        RepoACLPolicies       `json:"acl" mapstructure:"acl" msgpack:"acl"`
+	Governance *RepoConfigGovernance `json:"governance" mapstructure:"governance" msgpack:"governance"`
+	Policies   RepoACLPolicies       `json:"policies" mapstructure:"policies" msgpack:"policies"`
 }
 
 func (c *RepoConfig) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return c.EncodeMulti(enc,
 		c.Governance,
-		c.ACL)
+		c.Policies)
 }
 
 func (c *RepoConfig) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return c.DecodeMulti(dec,
 		&c.Governance,
-		&c.ACL)
+		&c.Policies)
 }
 
 // Clone clones c
@@ -125,7 +133,7 @@ func (c *RepoConfig) MergeMap(o map[string]interface{}) {
 // IsNil checks if the object's field all have zero value
 func (c *RepoConfig) IsNil() bool {
 	return (c.Governance == nil || *c.Governance == RepoConfigGovernance{}) &&
-		len(c.ACL) == 0
+		len(c.Policies) == 0
 }
 
 // ToMap converts the object to map
@@ -154,7 +162,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			ProposalFeeRefundType:            0,
 			ProposalFeeDepDur:                0,
 		},
-		ACL: map[string]*RepoACLPolicy{},
+		Policies: map[string]*RepoACLPolicy{},
 	}
 }
 
@@ -162,18 +170,30 @@ func MakeDefaultRepoConfig() *RepoConfig {
 func BareRepoConfig() *RepoConfig {
 	return &RepoConfig{
 		Governance: &RepoConfigGovernance{},
-		ACL:        RepoACLPolicies{},
+		Policies:   RepoACLPolicies{},
 	}
 }
+
+// Contributor represents a repository contributor
+type Contributor struct {
+	FeeMode  FeeMode          `json:"feeMode" mapstructure:"feeMode" msgpack:"feeMode"`
+	FeeCap   util.String      `json:"feeCap" mapstructure:"feeCap" msgpack:"feeCap"`
+	FeeUsed  util.String      `json:"feeUsed" mapstructure:"feeUsed" msgpack:"feeUsed"`
+	Policies []*RepoACLPolicy `json:"policies" mapstructure:"policies" msgpack:"policies"`
+}
+
+// Contributors is a collection of repo contributors
+type Contributors map[string]*Contributor
 
 // BareRepository returns an empty repository object
 func BareRepository() *Repository {
 	return &Repository{
-		Balance:    "0",
-		References: make(map[string]*Reference),
-		Owners:     make(map[string]*RepoOwner),
-		Proposals:  make(map[string]*RepoProposal),
-		Config:     BareRepoConfig(),
+		Balance:      "0",
+		References:   make(map[string]*Reference),
+		Owners:       make(map[string]*RepoOwner),
+		Proposals:    make(map[string]*RepoProposal),
+		Config:       BareRepoConfig(),
+		Contributors: make(map[string]*Contributor),
 	}
 }
 
@@ -184,6 +204,7 @@ type Repository struct {
 	References            References    `json:"references" msgpack:"references" mapstructure:"references"`
 	Owners                RepoOwners    `json:"owners" msgpack:"owners" mapstructure:"owners"`
 	Proposals             RepoProposals `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
+	Contributors          Contributors  `json:"contributors" msgpack:"contributors" mapstructure:"contributors"`
 	Config                *RepoConfig   `json:"config" msgpack:"config" mapstructure:"config"`
 }
 
@@ -221,7 +242,8 @@ func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 		r.Owners,
 		r.References,
 		r.Proposals,
-		r.Config)
+		r.Config,
+		r.Contributors)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -231,41 +253,20 @@ func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&r.Owners,
 		&r.References,
 		&r.Proposals,
-		&r.Config)
+		&r.Config,
+		&r.Contributors)
 }
 
 // Bytes return the bytes equivalent of the account
 func (r *Repository) Bytes() []byte {
-	return util.ObjectToBytes(r)
+	return util.ToBytes(r)
 }
 
 // NewRepositoryFromBytes decodes bz to Repository
 func NewRepositoryFromBytes(bz []byte) (*Repository, error) {
-
 	var repo = BareRepository()
-	if err := util.BytesToObject(bz, repo); err != nil {
+	if err := util.ToObject(bz, repo); err != nil {
 		return nil, err
 	}
-
-	for k, v := range repo.Owners {
-		var owner RepoOwner
-		_ = mapstructure.Decode(v, &owner)
-		repo.AddOwner(k, &owner)
-	}
-
-	for k, v := range repo.Proposals {
-		var prop RepoProposal
-		_ = mapstructure.Decode(v, &prop)
-		repo.Proposals.Add(k, &prop)
-	}
-
-	if len(repo.Config.ACL) > 0 {
-		for k, v := range repo.Config.ACL {
-			var po RepoACLPolicy
-			_ = mapstructure.Decode(v, &po)
-			repo.Config.ACL[k] = &po
-		}
-	}
-
 	return repo, nil
 }

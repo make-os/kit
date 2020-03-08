@@ -8,8 +8,8 @@ import (
 	go_prompt "github.com/c-bata/go-prompt"
 	gomock "github.com/golang/mock/gomock"
 	otto "github.com/robertkrimen/otto"
-	account "gitlab.com/makeos/mosdef/account"
 	crypto "gitlab.com/makeos/mosdef/crypto"
+	core "gitlab.com/makeos/mosdef/types/core"
 	modules "gitlab.com/makeos/mosdef/types/modules"
 	util "gitlab.com/makeos/mosdef/util"
 	reflect "reflect"
@@ -132,10 +132,10 @@ func (mr *MockAccountManagerMockRecorder) RevealCmd(addrOrIdx, pass interface{})
 }
 
 // ListAccounts mocks base method
-func (m *MockAccountManager) ListAccounts() ([]*account.StoredAccount, error) {
+func (m *MockAccountManager) ListAccounts() ([]core.StoredAccount, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListAccounts")
-	ret0, _ := ret[0].([]*account.StoredAccount)
+	ret0, _ := ret[0].([]core.StoredAccount)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -248,10 +248,10 @@ func (mr *MockAccountManagerMockRecorder) AccountExist(address interface{}) *gom
 }
 
 // GetDefault mocks base method
-func (m *MockAccountManager) GetDefault() (*account.StoredAccount, error) {
+func (m *MockAccountManager) GetDefault() (core.StoredAccount, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDefault")
-	ret0, _ := ret[0].(*account.StoredAccount)
+	ret0, _ := ret[0].(core.StoredAccount)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -263,10 +263,10 @@ func (mr *MockAccountManagerMockRecorder) GetDefault() *gomock.Call {
 }
 
 // GetByIndex mocks base method
-func (m *MockAccountManager) GetByIndex(i int) (*account.StoredAccount, error) {
+func (m *MockAccountManager) GetByIndex(i int) (core.StoredAccount, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByIndex", i)
-	ret0, _ := ret[0].(*account.StoredAccount)
+	ret0, _ := ret[0].(core.StoredAccount)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -278,10 +278,10 @@ func (mr *MockAccountManagerMockRecorder) GetByIndex(i interface{}) *gomock.Call
 }
 
 // GetByIndexOrAddress mocks base method
-func (m *MockAccountManager) GetByIndexOrAddress(idxOrAddr string) (*account.StoredAccount, error) {
+func (m *MockAccountManager) GetByIndexOrAddress(idxOrAddr string) (core.StoredAccount, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByIndexOrAddress", idxOrAddr)
-	ret0, _ := ret[0].(*account.StoredAccount)
+	ret0, _ := ret[0].(core.StoredAccount)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -293,10 +293,10 @@ func (mr *MockAccountManagerMockRecorder) GetByIndexOrAddress(idxOrAddr interfac
 }
 
 // GetByAddress mocks base method
-func (m *MockAccountManager) GetByAddress(addr string) (*account.StoredAccount, error) {
+func (m *MockAccountManager) GetByAddress(addr string) (core.StoredAccount, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByAddress", addr)
-	ret0, _ := ret[0].(*account.StoredAccount)
+	ret0, _ := ret[0].(core.StoredAccount)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -308,10 +308,10 @@ func (mr *MockAccountManagerMockRecorder) GetByAddress(addr interface{}) *gomock
 }
 
 // UIUnlockAccount mocks base method
-func (m *MockAccountManager) UIUnlockAccount(addressOrIndex, passphrase string) (*account.StoredAccount, error) {
+func (m *MockAccountManager) UIUnlockAccount(addressOrIndex, passphrase string) (core.StoredAccount, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UIUnlockAccount", addressOrIndex, passphrase)
-	ret0, _ := ret[0].(*account.StoredAccount)
+	ret0, _ := ret[0].(core.StoredAccount)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

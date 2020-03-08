@@ -74,8 +74,8 @@ var _ = Describe("Push", func() {
 				})
 
 				logic.RepoKeeper().Update(repo, &state.Repository{
-					References: map[string]interface{}{
-						"refs/heads/master": &state.Reference{Nonce: 1},
+					References: map[string]*state.Reference{
+						"refs/heads/master": {Nonce: 1},
 					},
 				})
 

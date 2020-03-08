@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+
 	"github.com/fatih/structs"
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
@@ -71,7 +72,7 @@ func (tx *TxRepoProposalMergeRequest) DecodeMsgpack(dec *msgpack.Decoder) error 
 
 // Bytes returns the serialized transaction
 func (tx *TxRepoProposalMergeRequest) Bytes() []byte {
-	return util.ObjectToBytes(tx)
+	return util.ToBytes(tx)
 }
 
 // GetBytesNoSig returns the serialized the transaction excluding the signature

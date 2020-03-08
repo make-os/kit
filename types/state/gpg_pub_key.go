@@ -29,7 +29,7 @@ func (g *GPGPubKey) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 // Bytes return the serialized equivalent
 func (g *GPGPubKey) Bytes() []byte {
-	return util.ObjectToBytes(g)
+	return util.ToBytes(g)
 }
 
 // IsNil returns true if g fields have zero values
@@ -40,5 +40,5 @@ func (g *GPGPubKey) IsNil() bool {
 // NewGPGPubKeyFromBytes deserialize bz to GPGPubKey
 func NewGPGPubKeyFromBytes(bz []byte) (*GPGPubKey, error) {
 	var o = &GPGPubKey{}
-	return o, util.BytesToObject(bz, o)
+	return o, util.ToObject(bz, o)
 }

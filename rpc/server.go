@@ -38,14 +38,14 @@ type Server struct {
 	interrupt *util.Interrupt
 }
 
-// NewServer creates a new RPC server
+// NewServer creates a newRPCServer RPC server
 func NewServer(cfg *config.AppConfig, log logger.Logger,
 	interrupt *util.Interrupt) *Server {
 	srv := &Server{
 		addr:      cfg.RPC.Address,
 		log:       log,
 		cfg:       cfg,
-		rpc:       New(cfg.RPC.Address, cfg, log),
+		rpc:       newRPCServer(cfg.RPC.Address, cfg, log),
 		interrupt: interrupt,
 	}
 	return srv
@@ -89,7 +89,7 @@ func (s *Server) Stop() {
 	if !s.started {
 		return
 	}
-	s.rpc.Stop()
+	s.rpc.stop()
 	s.started = false
 	s.log.Info("RPC service has stopped")
 }

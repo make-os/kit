@@ -73,7 +73,7 @@ var _ = Describe("Account", func() {
 	})
 
 	Describe(".TxSendPayloadUsingClients", func() {
-		respData := &types.TxSendPayloadResponse{"0x123"}
+		respData := &types.TxSendPayloadResponse{Hash: "0x123"}
 
 		When("two clients are provided but the first one succeeds, the second should not be used", func() {
 			It("should return the response after first client success", func() {

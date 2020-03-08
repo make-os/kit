@@ -128,7 +128,7 @@ func (a *Account) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 // Bytes return the serialized equivalent of the account
 func (a *Account) Bytes() []byte {
-	return util.ObjectToBytes(a)
+	return util.ToBytes(a)
 }
 
 // Clean implements types.BalanceAccount; it removes old, unused data stored in
@@ -252,7 +252,7 @@ func (s *AccountStakes) TotalStaked(curHeight uint64) util.String {
 // NewAccountFromBytes decodes bz to Account
 func NewAccountFromBytes(bz []byte) (*Account, error) {
 	var a = &Account{}
-	if err := util.BytesToObject(bz, a); err != nil {
+	if err := util.ToObject(bz, a); err != nil {
 		return nil, err
 	}
 	return a, nil

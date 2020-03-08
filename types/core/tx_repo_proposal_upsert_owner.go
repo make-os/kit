@@ -2,6 +2,8 @@ package core
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/fatih/structs"
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
@@ -14,8 +16,8 @@ type TxRepoProposalUpsertOwner struct {
 	*TxCommon         `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxProposalCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Addresses         string `json:"addresses" msgpack:"addresses"`
-	Veto              bool   `json:"veto" msgpack:"veto"`
+	Addresses         []string `json:"addresses" msgpack:"addresses"`
+	Veto              bool     `json:"veto" msgpack:"veto"`
 }
 
 // NewBareRepoProposalUpsertOwner returns an instance of TxRepoProposalUpsertOwner with zero values
@@ -24,7 +26,7 @@ func NewBareRepoProposalUpsertOwner() *TxRepoProposalUpsertOwner {
 		TxCommon:         NewBareTxCommon(),
 		TxType:           &TxType{Type: TxTypeRepoProposalUpsertOwner},
 		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: "", ProposalID: ""},
-		Addresses:        "",
+		Addresses:        []string{},
 		Veto:             false,
 	}
 }
@@ -63,7 +65,7 @@ func (tx *TxRepoProposalUpsertOwner) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 // Bytes returns the serialized transaction
 func (tx *TxRepoProposalUpsertOwner) Bytes() []byte {
-	return util.ObjectToBytes(tx)
+	return util.ToBytes(tx)
 }
 
 // GetBytesNoSig returns the serialized the transaction excluding the signature
@@ -123,13 +125,15 @@ func (tx *TxRepoProposalUpsertOwner) FromMap(data map[string]interface{}) error 
 
 	o := objx.New(data)
 
-	// Addresses: expects string type in map
-	if addrsVal := o.Get("addresses"); !addrsVal.IsNil() {
-		if addrsVal.IsStr() {
-			tx.Addresses = addrsVal.Str()
+	// Addresses: expects string or slice of string types in map
+	if addrVal := o.Get("addresses"); !addrVal.IsNil() {
+		if addrVal.IsStr() {
+			tx.Addresses = strings.Split(addrVal.Str(), ",")
+		} else if addrVal.IsStrSlice() {
+			tx.Addresses = addrVal.StrSlice()
 		} else {
 			return util.FieldError("addresses", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string", addrsVal.Inter()))
+				"wants string|[]string", addrVal.Inter()))
 		}
 	}
 

@@ -2,8 +2,9 @@ package keepers
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"sync"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/util"
@@ -30,7 +31,7 @@ func NewSystemKeeper(db storage.Tx) *SystemKeeper {
 // Indexes the saved block info for faster future retrieval so
 // that GetLastBlockInfo will not refetch
 func (s *SystemKeeper) SaveBlockInfo(info *core.BlockInfo) error {
-	data := util.ObjectToBytes(info)
+	data := util.ToBytes(info)
 	record := storage.NewFromKeyValue(MakeKeyBlockInfo(info.Height), data)
 
 	s.gmx.Lock()
@@ -89,7 +90,7 @@ func (s *SystemKeeper) GetBlockInfo(height int64) (*core.BlockInfo, error) {
 // SetLastRepoObjectsSyncHeight sets the last block that was processed by the repo
 // object synchronizer
 func (s *SystemKeeper) SetLastRepoObjectsSyncHeight(height uint64) error {
-	data := util.ObjectToBytes(height)
+	data := util.ToBytes(height)
 	record := storage.NewFromKeyValue(MakeKeyRepoSyncherHeight(), data)
 	return s.db.Put(record)
 }

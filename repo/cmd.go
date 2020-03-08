@@ -340,7 +340,7 @@ func CreateAndSendMergeRequestCmd(
 
 	// Determine the next nonce, if unset from flag
 	if util.IsZeroString(nextNonce) {
-		nextNonce, err = api.DetermineNextNonceOfAccount(unlocked.Address, rpcClient, remoteClients)
+		nextNonce, err = api.DetermineNextNonceOfAccount(unlocked.GetAddress(), rpcClient, remoteClients)
 		if err != nil {
 			return err
 		}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime/debug"
+	"sync"
 
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
@@ -29,7 +30,7 @@ type MethodInfo struct {
 }
 
 // OnRequestFunc is the type of function to use
-// as a callback when new requests are received
+// as a callback when newRPCServer requests are received
 type OnRequestFunc func(r *http.Request) error
 
 // Request represent a JSON RPC request
@@ -106,6 +107,8 @@ type JSONRPC struct {
 	// handlerSet lets us know when the request handler has been configured
 	handlerSet bool
 
+	lck *sync.Mutex
+
 	// server is the rpc server
 	server *http.Server
 }
@@ -123,13 +126,15 @@ func Success(result util.Map) *Response {
 	return &Response{JSONRPCVersion: "2.0", Result: result}
 }
 
-// New creates a JSON-RPC 2.0 server
-func New(addr string, cfg *config.AppConfig, log logger.Logger) *JSONRPC {
+// newRPCServer creates a JSON-RPC 2.0 server
+func newRPCServer(addr string, cfg *config.AppConfig, log logger.Logger) *JSONRPC {
 	jsonrpc := &JSONRPC{
 		cfg:    cfg,
 		addr:   addr,
 		apiSet: APISet{},
 		log:    log.Module("json-rpc"),
+		lck:    &sync.Mutex{},
+		server: &http.Server{Addr: addr},
 	}
 	jsonrpc.MergeAPISet(jsonrpc.APIs())
 	return jsonrpc
@@ -173,7 +178,6 @@ func (s *JSONRPC) methodWithInterVal() map[string]interface{} {
 // Serve starts the server
 func (s *JSONRPC) Serve() {
 	mux := http.NewServeMux()
-	s.server = &http.Server{Addr: s.addr}
 	s.registerHandler(mux, "/")
 	s.server.Handler = mux
 	if err := s.server.ListenAndServe(); err != nil {
@@ -208,13 +212,17 @@ func (s *JSONRPC) registerHandler(mux *http.ServeMux, path string) {
 	}))
 }
 
-// Stop stops the RPC server
-func (s *JSONRPC) Stop() {
+// stop stops the RPC server
+func (s *JSONRPC) stop() {
+	s.lck.Lock()
+	defer s.lck.Unlock()
+
 	if s.server == nil {
 		return
 	}
+
 	s.log.Debug("Server is shutting down...")
-	s.server.Shutdown(context.Background())
+	_ = s.server.Shutdown(context.Background())
 	s.log.Debug("Server has shutdown")
 }
 

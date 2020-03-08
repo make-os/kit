@@ -961,155 +961,6 @@ var _ = Describe("TxValidator", func() {
 
 	})
 
-	Describe(".CheckTxRepoProposalUpsertOwnerConsistency", func() {
-
-		When("unable to get current block information", func() {
-			BeforeEach(func() {
-				tx := core.NewBareRepoProposalUpsertOwner()
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to fetch current block info: error"))
-			})
-		})
-
-		When("repo is unknown", func() {
-			BeforeEach(func() {
-				tx := core.NewBareRepoProposalUpsertOwner()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				repo := state.BareRepository()
-
-				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:name, msg:repo not found"))
-			})
-		})
-
-		When("proposal id has been used", func() {
-			BeforeEach(func() {
-				tx := core.NewBareRepoProposalUpsertOwner()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Value = "10"
-				tx.ProposalID = "0001"
-				repo := state.BareRepository()
-				repo.AddOwner("addr", &state.RepoOwner{})
-				repo.Proposals.Add(tx.ProposalID, state.BareRepoProposal())
-
-				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:id, msg:proposal id has been used, choose another"))
-			})
-		})
-
-		When("repo proposal fee is zero but tx include a proposal fee", func() {
-			BeforeEach(func() {
-				tx := core.NewBareRepoProposalUpsertOwner()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Value = "10"
-				repo := state.BareRepository()
-				repo.AddOwner("addr", &state.RepoOwner{})
-				repo.Config.Governance.ProposalFee = 0
-
-				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:value, msg:proposal fee is not required but was provided"))
-			})
-		})
-
-		When("proposal fee is less than repo minimum", func() {
-			BeforeEach(func() {
-				tx := core.NewBareRepoProposalUpsertOwner()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Value = "10"
-				repo := state.BareRepository()
-				repo.Config.Governance.ProposalFee = 100
-
-				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:value, msg:proposal fee cannot be less than repo minimum"))
-			})
-		})
-
-		When("sender is not one of the repo owners", func() {
-			BeforeEach(func() {
-				tx := core.NewBareRepoProposalUpsertOwner()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Value = "101"
-				repo := state.BareRepository()
-				repo.Config.Governance.ProposalFee = 100
-				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
-
-				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:senderPubKey, msg:sender is not one of the repo owners"))
-			})
-		})
-
-		When("failed value transfer dry-run", func() {
-			BeforeEach(func() {
-				tx := core.NewBareRepoProposalUpsertOwner()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Value = "101"
-				repo := state.BareRepository()
-				repo.Config.Governance.ProposalFee = 100
-				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
-				repo.Owners[key.Addr().String()] = &state.RepoOwner{}
-
-				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
-					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
-
-				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("error"))
-			})
-		})
-	})
-
 	Describe(".CheckTxVoteConsistency", func() {
 		When("repo is unknown", func() {
 			BeforeEach(func() {
@@ -1496,13 +1347,13 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	Describe(".CheckTxRepoProposalUpdateConsistency", func() {
-
+	Describe(".CheckProposalCommonConsistency", func() {
 		When("unable to get current block information", func() {
 			BeforeEach(func() {
-				tx := core.NewBareRepoProposalUpdate()
+				txProposal := &core.TxProposalCommon{}
+				txCommon := &core.TxCommon{}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-				err = validators.CheckTxRepoProposalUpdateConsistency(tx, -1, mockLogic)
+				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -1513,15 +1364,16 @@ var _ = Describe("TxValidator", func() {
 
 		When("repo is unknown", func() {
 			BeforeEach(func() {
-				tx := core.NewBareRepoProposalUpdate()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
+				txProposal := &core.TxProposalCommon{RepoName: "repo1"}
+				txCommon := &core.TxCommon{}
+				txProposal.RepoName = "repo1"
+				txCommon.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := state.BareRepository()
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				err = validators.CheckTxRepoProposalUpdateConsistency(tx, -1, mockLogic)
+				mockRepoKeeper.EXPECT().GetRepo(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -1532,17 +1384,18 @@ var _ = Describe("TxValidator", func() {
 
 		When("proposal fee is less than repo minimum", func() {
 			BeforeEach(func() {
-				tx := core.NewBareRepoProposalUpdate()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Value = "10"
+				txProposal := &core.TxProposalCommon{RepoName: "repo1"}
+				txCommon := &core.TxCommon{}
+				txProposal.RepoName = "repo1"
+				txCommon.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
+				txProposal.Value = "10"
 				repo := state.BareRepository()
 				repo.Config.Governance.ProposalFee = 100
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				err = validators.CheckTxRepoProposalUpdateConsistency(tx, -1, mockLogic)
+				mockRepoKeeper.EXPECT().GetRepo(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -1553,18 +1406,19 @@ var _ = Describe("TxValidator", func() {
 
 		When("sender is not one of the repo owners", func() {
 			BeforeEach(func() {
-				tx := core.NewBareRepoProposalUpdate()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Value = "101"
+				txProposal := &core.TxProposalCommon{RepoName: "repo1"}
+				txCommon := &core.TxCommon{}
+				txProposal.RepoName = "repo1"
+				txCommon.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
+				txProposal.Value = "101"
 				repo := state.BareRepository()
 				repo.Config.Governance.ProposalFee = 100
 				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				err = validators.CheckTxRepoProposalUpdateConsistency(tx, -1, mockLogic)
+				mockRepoKeeper.EXPECT().GetRepo(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -1575,10 +1429,11 @@ var _ = Describe("TxValidator", func() {
 
 		When("failed value transfer dry-run", func() {
 			BeforeEach(func() {
-				tx := core.NewBareRepoProposalUpdate()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Value = "101"
+				txProposal := &core.TxProposalCommon{RepoName: "repo1"}
+				txCommon := &core.TxCommon{}
+				txProposal.RepoName = "repo1"
+				txCommon.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
+				txProposal.Value = "101"
 				repo := state.BareRepository()
 				repo.Config.Governance.ProposalFee = 100
 				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
@@ -1586,11 +1441,11 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
+				mockRepoKeeper.EXPECT().GetRepo(txProposal.RepoName, uint64(bi.Height)).Return(repo)
 				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
-					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
+					txProposal.Value, txCommon.Fee, txCommon.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
-				err = validators.CheckTxRepoProposalUpdateConsistency(tx, -1, mockLogic)
+				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -1600,107 +1455,7 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	Describe(".CheckTxRepoProposalMergeRequestConsistency", func() {
+	Describe(".CheckTxRepoProposalRegisterGPGKeyConsistency()", func() {
 
-		When("unable to get current block information", func() {
-			BeforeEach(func() {
-				tx := core.NewBareRepoProposalMergeRequest()
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to fetch current block info: error"))
-			})
-		})
-
-		When("repo is unknown", func() {
-			BeforeEach(func() {
-				tx := core.NewBareRepoProposalMergeRequest()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				repo := state.BareRepository()
-
-				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:name, msg:repo not found"))
-			})
-		})
-
-		When("proposal fee is less than repo minimum", func() {
-			BeforeEach(func() {
-				tx := core.NewBareRepoProposalMergeRequest()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Value = "10"
-				repo := state.BareRepository()
-				repo.Config.Governance.ProposalFee = 100
-
-				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:value, msg:proposal fee cannot be less than repo minimum"))
-			})
-		})
-
-		When("sender is not one of the repo owners", func() {
-			BeforeEach(func() {
-				tx := core.NewBareRepoProposalMergeRequest()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Value = "101"
-				repo := state.BareRepository()
-				repo.Config.Governance.ProposalFee = 100
-				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
-
-				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:senderPubKey, msg:sender is not one of the repo owners"))
-			})
-		})
-
-		When("failed value transfer dry-run", func() {
-			BeforeEach(func() {
-				tx := core.NewBareRepoProposalMergeRequest()
-				tx.RepoName = "repo1"
-				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				tx.Value = "101"
-				repo := state.BareRepository()
-				repo.Config.Governance.ProposalFee = 100
-				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
-				repo.Owners[key.Addr().String()] = &state.RepoOwner{}
-
-				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName, uint64(bi.Height)).Return(repo)
-				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
-					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
-
-				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("error"))
-			})
-		})
 	})
 })

@@ -128,9 +128,9 @@ var _ = Describe("Validation", func() {
 				_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
 			})
 
-			It("should return err='public key id is invalid'", func() {
+			It("should return err='field:gpgID, msg:gpg key id is invalid'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("public key id is invalid"))
+				Expect(err.Error()).To(ContainSubstring("field:gpgID, msg:gpg key id is invalid"))
 			})
 		})
 
@@ -231,9 +231,9 @@ var _ = Describe("Validation", func() {
 				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
 			})
 
-			It("should return err='public key id is invalid'", func() {
+			It("should return err='field:gpgID, msg:gpg key id is invalid'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("public key id is invalid"))
+				Expect(err.Error()).To(ContainSubstring("field:gpgID, msg:gpg key id is invalid"))
 			})
 		})
 
@@ -554,8 +554,8 @@ var _ = Describe("Validation", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
-				prop.ActionData[core.ProposalActionDataMergeRequest] = map[string]interface{}{
-					"base": "release",
+				prop.ActionData = map[string][]byte{
+					"base": util.ToBytes("release"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
@@ -582,8 +582,8 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
-				prop.ActionData[core.ProposalActionDataMergeRequest] = map[string]interface{}{
-					"base": "master",
+				prop.ActionData = map[string][]byte{
+					"base": util.ToBytes("master"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
@@ -611,8 +611,8 @@ var _ = Describe("Validation", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
-				prop.ActionData[core.ProposalActionDataMergeRequest] = map[string]interface{}{
-					"base": "master",
+				prop.ActionData = map[string][]byte{
+					"base": util.ToBytes("master"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
@@ -641,8 +641,8 @@ var _ = Describe("Validation", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
-				prop.ActionData[core.ProposalActionDataMergeRequest] = map[string]interface{}{
-					"base": "master",
+				prop.ActionData = map[string][]byte{
+					"base": util.ToBytes("master"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
@@ -674,8 +674,8 @@ var _ = Describe("Validation", func() {
 					repoState := state.BareRepository()
 					prop := state.BareRepoProposal()
 					prop.Outcome = state.ProposalOutcomeAccepted
-					prop.ActionData[core.ProposalActionDataMergeRequest] = map[string]interface{}{
-						"base": "master",
+					prop.ActionData = map[string][]byte{
+						"base": util.ToBytes("master"),
 					}
 					repoState.Proposals.Add("0001", prop)
 					repo.EXPECT().State().Return(repoState)
@@ -715,8 +715,8 @@ var _ = Describe("Validation", func() {
 					repoState := state.BareRepository()
 					prop := state.BareRepoProposal()
 					prop.Outcome = state.ProposalOutcomeAccepted
-					prop.ActionData[core.ProposalActionDataMergeRequest] = map[string]interface{}{
-						"base": "master",
+					prop.ActionData = map[string][]byte{
+						"base": util.ToBytes("master"),
 					}
 					repoState.Proposals.Add("0001", prop)
 					repo.EXPECT().State().Return(repoState)
@@ -760,8 +760,8 @@ var _ = Describe("Validation", func() {
 					repoState := state.BareRepository()
 					prop := state.BareRepoProposal()
 					prop.Outcome = state.ProposalOutcomeAccepted
-					prop.ActionData[core.ProposalActionDataMergeRequest] = map[string]interface{}{
-						"base": "master",
+					prop.ActionData = map[string][]byte{
+						"base": util.ToBytes("master"),
 					}
 					repoState.Proposals.Add("0001", prop)
 					repo.EXPECT().State().Return(repoState)
@@ -810,9 +810,9 @@ var _ = Describe("Validation", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
-				prop.ActionData[core.ProposalActionDataMergeRequest] = map[string]interface{}{
-					"base":     "master",
-					"baseHash": "xyz",
+				prop.ActionData = map[string][]byte{
+					"base":     util.ToBytes("master"),
+					"baseHash": util.ToBytes("xyz"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
@@ -860,10 +860,10 @@ var _ = Describe("Validation", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
-				prop.ActionData[core.ProposalActionDataMergeRequest] = map[string]interface{}{
-					"base":       "master",
-					"baseHash":   "abc",
-					"targetHash": "target_xyz",
+				prop.ActionData = map[string][]byte{
+					"base":       util.ToBytes("master"),
+					"baseHash":   util.ToBytes("abc"),
+					"targetHash": util.ToBytes("target_xyz"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
@@ -1184,7 +1184,7 @@ var _ = Describe("Validation", func() {
 					{Name: "refs/heads/master", OldHash: oldHash},
 				}
 				repository := &state.Repository{
-					References: state.References(map[string]interface{}{}),
+					References: map[string]*state.Reference{},
 				}
 				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
 			})
@@ -1201,7 +1201,7 @@ var _ = Describe("Validation", func() {
 					{Name: "refs/heads/master", OldHash: strings.Repeat("0", 40)},
 				}
 				repository := &state.Repository{
-					References: state.References(map[string]interface{}{}),
+					References: map[string]*state.Reference{},
 				}
 				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
 			})
@@ -1219,9 +1219,9 @@ var _ = Describe("Validation", func() {
 					{Name: refName, OldHash: oldHash},
 				}
 				repository := &state.Repository{
-					References: state.References(map[string]interface{}{
-						refName: &state.Reference{Nonce: 0},
-					}),
+					References: map[string]*state.Reference{
+						refName: {Nonce: 0},
+					},
 				}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
 					Return(plumbing.NewReferenceFromStrings("", util.RandString(40)), nil)
@@ -1242,9 +1242,9 @@ var _ = Describe("Validation", func() {
 					{Name: refName, OldHash: oldHash},
 				}
 				repository := &state.Repository{
-					References: state.References(map[string]interface{}{
-						refName: &state.Reference{Nonce: 0},
-					}),
+					References: map[string]*state.Reference{
+						refName: {Nonce: 0},
+					},
 				}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
 					Return(nil, plumbing.ErrReferenceNotFound)
@@ -1265,9 +1265,9 @@ var _ = Describe("Validation", func() {
 					{Name: refName, OldHash: oldHash},
 				}
 				repository := &state.Repository{
-					References: state.References(map[string]interface{}{
-						refName: &state.Reference{Nonce: 0},
-					}),
+					References: map[string]*state.Reference{
+						refName: {Nonce: 0},
+					},
 				}
 
 				err = checkPushedReference(nil, refs, repository, mockKeepers)
@@ -1286,9 +1286,9 @@ var _ = Describe("Validation", func() {
 					{Name: refName, OldHash: oldHash},
 				}
 				repository := &state.Repository{
-					References: state.References(map[string]interface{}{
-						refName: &state.Reference{Nonce: 0},
-					}),
+					References: map[string]*state.Reference{
+						refName: {Nonce: 0},
+					},
 				}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
 					Return(plumbing.NewReferenceFromStrings("", util.RandString(40)), nil)
@@ -1317,9 +1317,9 @@ var _ = Describe("Validation", func() {
 				}
 
 				repository := &state.Repository{
-					References: state.References(map[string]interface{}{
-						refName: &state.Reference{Nonce: 0},
-					}),
+					References: map[string]*state.Reference{
+						refName: {Nonce: 0},
+					},
 				}
 
 				mockRepo.EXPECT().
@@ -1350,9 +1350,9 @@ var _ = Describe("Validation", func() {
 				}
 
 				repository := &state.Repository{
-					References: state.References(map[string]interface{}{
-						refName: &state.Reference{Nonce: 0},
-					}),
+					References: map[string]*state.Reference{
+						refName: {Nonce: 0},
+					},
 				}
 
 				mockRepo.EXPECT().

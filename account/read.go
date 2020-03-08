@@ -11,11 +11,9 @@ import (
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
-
-// StoredAccountMeta represents additional meta data of an account
-type StoredAccountMeta map[string]interface{}
 
 // StoredAccount represents an encrypted account stored on disk
 type StoredAccount struct {
@@ -26,9 +24,9 @@ type StoredAccount struct {
 	// Cipher includes the encryption data
 	Cipher []byte
 
-	// DecryptedCipher contains the decrypted data.
+	// Data contains the decrypted data.
 	// Only available after account is unlocked.
-	DecryptedCipher []byte
+	Data []byte
 
 	// key stores the instantiated equivalent of the stored account key
 	key *crypto.Key
@@ -40,110 +38,38 @@ type StoredAccount struct {
 	Default bool
 
 	// Store other information about the account here
-	meta StoredAccountMeta
-}
-
-// AccountExist checks if an account with a matching address exists
-func (am *AccountManager) AccountExist(address string) (bool, error) {
-
-	accounts, err := am.ListAccounts()
-	if err != nil {
-		return false, err
-	}
-
-	for _, acct := range accounts {
-		if acct.Address == address {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-// GetDefault gets the default account
-func (am *AccountManager) GetDefault() (*StoredAccount, error) {
-
-	accounts, err := am.ListAccounts()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, a := range accounts {
-		if a.Default {
-			return a, nil
-		}
-	}
-
-	return nil, types.ErrAccountUnknown
-}
-
-// GetByIndex returns an account by its current position in the
-// list of accounts which is ordered by the time of creation.
-func (am *AccountManager) GetByIndex(i int) (*StoredAccount, error) {
-
-	accounts, err := am.ListAccounts()
-	if err != nil {
-		return nil, err
-	}
-
-	if acctLen := len(accounts); acctLen-1 < i {
-		return nil, types.ErrAccountUnknown
-	}
-
-	return accounts[i], nil
-}
-
-// GetByIndexOrAddress gets an account by either its address or index
-func (am *AccountManager) GetByIndexOrAddress(idxOrAddr string) (*StoredAccount, error) {
-	if crypto.IsValidAddr(idxOrAddr) == nil {
-		return am.GetByAddress(idxOrAddr)
-	}
-	if govalidator.IsNumeric(idxOrAddr) {
-		idx, _ := strconv.Atoi(idxOrAddr)
-		return am.GetByIndex(idx)
-	}
-	return nil, types.ErrAccountUnknown
-}
-
-// GetByAddress gets an account by its address in the list of accounts.
-func (am *AccountManager) GetByAddress(addr string) (*StoredAccount, error) {
-
-	accounts, err := am.ListAccounts()
-	if err != nil {
-		return nil, err
-	}
-
-	account := funk.Find(accounts, func(x *StoredAccount) bool {
-		return x.Address == addr
-	})
-
-	if account == nil {
-		return nil, types.ErrAccountUnknown
-	}
-
-	return account.(*StoredAccount), nil
-}
-
-// HasKey checks whether a key exist
-func (sm StoredAccountMeta) HasKey(key string) bool {
-	_, ok := sm[key]
-	return ok
-}
-
-// Get returns a value
-func (sm StoredAccountMeta) Get(key string) interface{} {
-	return sm[key]
+	meta core.StoredAccountMeta
 }
 
 // GetMeta returns the meta information of the account
-func (sa *StoredAccount) GetMeta() StoredAccountMeta {
+func (sa *StoredAccount) GetMeta() core.StoredAccountMeta {
 	return sa.meta
+}
+
+// IsDefault checks whether an account is the default
+func (sa *StoredAccount) IsDefault() bool {
+	return sa.Default
+}
+
+// GetAddress returns the address of the account
+func (sa *StoredAccount) GetAddress() string {
+	return sa.Address
 }
 
 // GetKey gets an instance of the decrypted account's key.
 // Unlock() must be called first.
 func (sa *StoredAccount) GetKey() *crypto.Key {
 	return sa.key
+}
+
+// GetUnlockedData returns the locked data. Only available when account is unlocked.
+func (sa *StoredAccount) GetUnlockedData() []byte {
+	return sa.Data
+}
+
+// GetUnlockedData returns the locked data. Only available when account is unlocked.
+func (sa *StoredAccount) GetCreatedAt() time.Time {
+	return sa.CreatedAt
 }
 
 // Unlock decrypts the account using the given passphrase.
@@ -158,7 +84,7 @@ func (sa *StoredAccount) Unlock(passphrase string) error {
 		}
 		return err
 	}
-	sa.DecryptedCipher = acctBytes
+	sa.Data = acctBytes
 
 	// Decode from base58
 	acctData, _, err := base58.CheckDecode(string(acctBytes))
@@ -180,4 +106,85 @@ func (sa *StoredAccount) Unlock(passphrase string) error {
 	sa.key = crypto.NewKeyFromPrivKey(privKey)
 
 	return nil
+}
+
+// AccountExist checks if an account with a matching address exists
+func (am *AccountManager) AccountExist(address string) (bool, error) {
+
+	accounts, err := am.ListAccounts()
+	if err != nil {
+		return false, err
+	}
+
+	for _, acct := range accounts {
+		if acct.GetAddress() == address {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+// GetDefault gets the default account
+func (am *AccountManager) GetDefault() (core.StoredAccount, error) {
+
+	accounts, err := am.ListAccounts()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, a := range accounts {
+		if a.IsDefault() {
+			return a, nil
+		}
+	}
+
+	return nil, types.ErrAccountUnknown
+}
+
+// GetByIndex returns an account by its current position in the
+// list of accounts which is ordered by the time of creation.
+func (am *AccountManager) GetByIndex(i int) (core.StoredAccount, error) {
+
+	accounts, err := am.ListAccounts()
+	if err != nil {
+		return nil, err
+	}
+
+	if acctLen := len(accounts); acctLen-1 < i {
+		return nil, types.ErrAccountUnknown
+	}
+
+	return accounts[i], nil
+}
+
+// GetByIndexOrAddress gets an account by either its address or index
+func (am *AccountManager) GetByIndexOrAddress(idxOrAddr string) (core.StoredAccount, error) {
+	if crypto.IsValidAddr(idxOrAddr) == nil {
+		return am.GetByAddress(idxOrAddr)
+	}
+	if govalidator.IsNumeric(idxOrAddr) {
+		idx, _ := strconv.Atoi(idxOrAddr)
+		return am.GetByIndex(idx)
+	}
+	return nil, types.ErrAccountUnknown
+}
+
+// GetByAddress gets an account by its address in the list of accounts.
+func (am *AccountManager) GetByAddress(addr string) (core.StoredAccount, error) {
+
+	accounts, err := am.ListAccounts()
+	if err != nil {
+		return nil, err
+	}
+
+	account := funk.Find(accounts, func(x core.StoredAccount) bool {
+		return x.GetAddress() == addr
+	})
+
+	if account == nil {
+		return nil, types.ErrAccountUnknown
+	}
+
+	return account.(*StoredAccount), nil
 }

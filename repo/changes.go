@@ -1,8 +1,9 @@
 package repo
 
 import (
-	"gitlab.com/makeos/mosdef/types/core"
 	"strings"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -94,12 +95,12 @@ func (oc *ObjCol) ForEach(iteratee func(i core.Item) bool) {
 // Bytes serializes the collection
 func (oc *ObjCol) Bytes() []byte {
 	// Convert items type to map[string]interface{} to enable
-	// util.ObjectToBytes apply map key sorting
+	// util.ToBytes apply map key sorting
 	var mapI = make(map[string]interface{}, len(oc.items))
 	for k, v := range oc.items {
 		mapI[k] = v
 	}
-	return util.ObjectToBytes(mapI)
+	return util.ToBytes(mapI)
 }
 
 // Hash returns 32-bytes blake2b hash of the collection
@@ -226,7 +227,7 @@ func (s *State) IsEmpty() bool {
 
 // Hash returns the 32-bytes hash of the state
 func (s *State) Hash() util.Bytes32 {
-	bz := util.ObjectToBytes([]interface{}{
+	bz := util.ToBytes([]interface{}{
 		s.References.Bytes(),
 	})
 	return util.BytesToBytes32(util.Blake2b256(bz))

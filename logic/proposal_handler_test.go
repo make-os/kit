@@ -180,9 +180,9 @@ var _ = Describe("ProposalHandler", func() {
 				proposal.Config.ProposalProposee = state.ProposeeOwner
 				proposal.Creator = key.Addr().String()
 				proposal.Action = state.ProposalActionAddOwner
-				proposal.ActionData = map[string]interface{}{
-					"addresses": "addr",
-					"veto":      false,
+				proposal.ActionData = map[string][]byte{
+					"addresses": util.ToBytes("addr"),
+					"veto":      util.ToBytes(false),
 				}
 				repo = state.BareRepository()
 				repo.AddOwner(key.Addr().String(), &state.RepoOwner{})
@@ -229,9 +229,9 @@ var _ = Describe("ProposalHandler", func() {
 						"addr":  "100",
 						"addr2": "50",
 					}
-					proposal.ActionData = map[string]interface{}{
-						"addresses": "addr",
-						"veto":      false,
+					proposal.ActionData = map[string][]byte{
+						"addresses": util.ToBytes("addr"),
+						"veto":      util.ToBytes(false),
 					}
 					repo = state.BareRepository()
 					repo.AddOwner(key.Addr().String(), &state.RepoOwner{})
@@ -269,9 +269,9 @@ var _ = Describe("ProposalHandler", func() {
 						"addr":  "100",
 						"addr2": "50",
 					}
-					proposal.ActionData = map[string]interface{}{
-						"addresses": "addr",
-						"veto":      false,
+					proposal.ActionData = map[string][]byte{
+						"addresses": util.ToBytes("addr"),
+						"veto":      util.ToBytes(false),
 					}
 					proposal.Config.ProposalFeeRefundType = state.ProposalFeeRefundOnAccept
 

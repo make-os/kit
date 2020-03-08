@@ -60,7 +60,7 @@ func (c *Cache) Add(key, val interface{}) {
 // The values are serialized and used as the key.
 func (c *Cache) AddValues(exp time.Time, values ...interface{}) {
 	c.removeExpired()
-	valueHex := util.ToHex(util.ObjectToBytes(values))
+	valueHex := util.ToHex(util.ToBytes(values))
 	c.AddWithExp(valueHex, values, exp)
 }
 
@@ -69,7 +69,7 @@ func (c *Cache) AddValues(exp time.Time, values ...interface{}) {
 // cache item added via AddValues
 func (c *Cache) HasMulti(values ...interface{}) bool {
 	c.removeExpired()
-	valueHex := util.ToHex(util.ObjectToBytes(values))
+	valueHex := util.ToHex(util.ToBytes(values))
 	return c.Has(valueHex)
 }
 

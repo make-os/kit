@@ -86,7 +86,7 @@ var _ = Describe("Repository", func() {
 				r.Balance = "100"
 				config := BareRepoConfig()
 				config.Governance = &RepoConfigGovernance{ProposalDur: 100}
-				config.ACL = RepoACLPolicies{"obj": &RepoACLPolicy{"obj", "sub", "deny"}}
+				config.Policies = RepoACLPolicies{"obj": &RepoACLPolicy{"obj", "sub", "deny"}}
 				r.Config = config
 				expectedBz = r.Bytes()
 			})
@@ -210,7 +210,7 @@ var _ = Describe("Repository", func() {
 						ProposalProposee:                 1,
 						ProposalProposeeLimitToCurHeight: true,
 					},
-					ACL: RepoACLPolicies{
+					Policies: RepoACLPolicies{
 						"user1_dev": &RepoACLPolicy{Subject: "user1", Object: "dev", Action: "deny"},
 					},
 				}
@@ -228,47 +228,47 @@ var _ = Describe("Repository", func() {
 				})
 			})
 
-			Context("ACL merge", func() {
-				When("ACL includes one policy named `user1_dev`", func() {
+			Context("Policies merge", func() {
+				When("Policies includes one policy named `user1_dev`", func() {
 					base := &RepoConfig{
-						ACL: RepoACLPolicies{
+						Policies: RepoACLPolicies{
 							"user1_dev": &RepoACLPolicy{Subject: "user1", Object: "dev", Action: "deny"},
 						},
 					}
 
 					It("should replace existing policy if their name matches", func() {
 						base.MergeMap(map[string]interface{}{
-							"acl": map[string]interface{}{
+							"policies": map[string]interface{}{
 								"user1_dev": map[string]interface{}{"sub": "sub2", "obj": "branch_dev", "act": "delete"},
 							},
 						})
-						Expect(base.ACL).To(HaveLen(1))
-						Expect(base.ACL).To(HaveKey("user1_dev"))
-						Expect(base.ACL["user1_dev"].Subject).To(Equal("sub2"))
-						Expect(base.ACL["user1_dev"].Object).To(Equal("branch_dev"))
-						Expect(base.ACL["user1_dev"].Action).To(Equal("delete"))
+						Expect(base.Policies).To(HaveLen(1))
+						Expect(base.Policies).To(HaveKey("user1_dev"))
+						Expect(base.Policies["user1_dev"].Subject).To(Equal("sub2"))
+						Expect(base.Policies["user1_dev"].Object).To(Equal("branch_dev"))
+						Expect(base.Policies["user1_dev"].Action).To(Equal("delete"))
 					})
 				})
 
-				When("ACL includes one policy named `user1_dev`", func() {
+				When("Policies includes one policy named `user1_dev`", func() {
 					base := &RepoConfig{
-						ACL: RepoACLPolicies{
+						Policies: RepoACLPolicies{
 							"user1_dev": &RepoACLPolicy{Subject: "user1", Object: "dev", Action: "deny"},
 						},
 					}
 
 					It("should add policy if it does not already exist", func() {
 						base.MergeMap(map[string]interface{}{
-							"acl": map[string]interface{}{
+							"policies": map[string]interface{}{
 								"user2_dev": map[string]interface{}{"sub": "sub2", "obj": "branch_dev", "act": "delete"},
 							},
 						})
-						Expect(base.ACL).To(HaveLen(2))
-						Expect(base.ACL).To(HaveKey("user1_dev"))
-						Expect(base.ACL).To(HaveKey("user2_dev"))
-						Expect(base.ACL["user2_dev"].Subject).To(Equal("sub2"))
-						Expect(base.ACL["user2_dev"].Object).To(Equal("branch_dev"))
-						Expect(base.ACL["user2_dev"].Action).To(Equal("delete"))
+						Expect(base.Policies).To(HaveLen(2))
+						Expect(base.Policies).To(HaveKey("user1_dev"))
+						Expect(base.Policies).To(HaveKey("user2_dev"))
+						Expect(base.Policies["user2_dev"].Subject).To(Equal("sub2"))
+						Expect(base.Policies["user2_dev"].Object).To(Equal("branch_dev"))
+						Expect(base.Policies["user2_dev"].Action).To(Equal("delete"))
 					})
 				})
 			})
@@ -280,7 +280,7 @@ var _ = Describe("Repository", func() {
 					ProposalProposee:                 1,
 					ProposalProposeeLimitToCurHeight: true,
 				},
-				ACL: map[string]*RepoACLPolicy{},
+				Policies: map[string]*RepoACLPolicy{},
 			}
 
 			It("should clone into a different RepoConfig object", func() {

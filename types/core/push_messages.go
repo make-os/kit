@@ -69,7 +69,7 @@ func (pt *PushNote) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 // Bytes returns a serialized version of the object
 func (pt *PushNote) Bytes() []byte {
-	return util.ObjectToBytes(pt)
+	return util.ToBytes(pt)
 }
 
 // BytesNoSig returns a serialized version of the object without the signature
@@ -159,7 +159,7 @@ type ReferenceHashes []*ReferenceHash
 
 // ID returns the id of the collection
 func (r *ReferenceHashes) ID() util.Bytes32 {
-	bz := util.ObjectToBytes(r)
+	bz := util.ToBytes(r)
 	return util.BytesToBytes32(util.Blake2b256(bz))
 }
 
@@ -189,7 +189,7 @@ func (po *PushOK) ID() util.Bytes32 {
 
 // Bytes returns a serialized version of the object
 func (po *PushOK) Bytes() []byte {
-	return util.ObjectToBytes(po)
+	return util.ToBytes(po)
 }
 
 // BytesNoSig returns the serialized version of
