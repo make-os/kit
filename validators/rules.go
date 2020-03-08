@@ -1,10 +1,10 @@
 package validators
 
 import (
-	"gitlab.com/makeos/mosdef/types"
 	"time"
 
-	govalidator "github.com/asaskevich/govalidator"
+	"gitlab.com/makeos/mosdef/types"
+
 	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
@@ -101,15 +101,9 @@ var validValueRule = func(field string, index int) func(interface{}) error {
 var validObjectNameRule = func(field string, index int) func(interface{}) error {
 	return func(val interface{}) error {
 		name := val.(string)
-		if !govalidator.Matches(name, "^[a-zA-Z0-9_-]+$") {
-			msg := "invalid characters in name. Only alphanumeric, _ and - characters are allowed"
-			return util.FieldErrorWithIndex(index, field, msg)
-		} else if len(name) > 128 {
-			msg := "name is too long. Maximum character length is 128"
-			return util.FieldErrorWithIndex(index, field, msg)
-		} else if len(name) <= 2 {
-			msg := "name is too short. Must be at least 3 characters long"
-			return util.FieldErrorWithIndex(index, field, msg)
+		err := util.IsValidIdentifierName(name)
+		if err != nil {
+			return util.FieldErrorWithIndex(index, field, err.Error())
 		}
 		return nil
 	}

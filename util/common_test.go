@@ -597,6 +597,39 @@ var _ = Describe("Common", func() {
 		})
 	})
 
+	Describe(".IsValidIdentifierName", func() {
+		When("name contains unexpected character(s)", func() {
+			It("should return err", func() {
+				err := IsValidIdentifierName("abc&*")
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+			})
+		})
+
+		When("name exceeds max length", func() {
+			It("should return err", func() {
+				err := IsValidIdentifierName(strings.Repeat("a", 129))
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("name is too long. Maximum character length is 128"))
+			})
+		})
+
+		When("name is below min length", func() {
+			It("should return err", func() {
+				err := IsValidIdentifierName("a")
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("name is too short. Must be at least 3 characters long"))
+			})
+		})
+
+		When("name is valid", func() {
+			It("should return no err", func() {
+				err := IsValidIdentifierName("abcdef_-")
+				Expect(err).To(BeNil())
+			})
+		})
+	})
+
 	Describe(".XorBytes", func() {
 		It("should return '4' for '6' and '2'", func() {
 			r := XorBytes([]byte("6"), []byte("2"))

@@ -501,12 +501,12 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	Describe(".CheckTxAddGPGPubKeyConsistency", func() {
+	Describe(".CheckTxRegisterGPGPubKeyConsistency", func() {
 		When("unable to get last block information", func() {
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
 				tx := core.NewBareTxRegisterGPGPubKey()
-				err = validators.CheckTxAddGPGPubKeyConsistency(tx, -1, mockLogic)
+				err = validators.CheckTxRegisterGPGPubKeyConsistency(tx, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -528,7 +528,7 @@ var _ = Describe("TxValidator", func() {
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 
-				err = validators.CheckTxAddGPGPubKeyConsistency(tx, -1, mockLogic)
+				err = validators.CheckTxRegisterGPGPubKeyConsistency(tx, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -554,7 +554,7 @@ var _ = Describe("TxValidator", func() {
 				gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
 				mockGPGPubKeyKeeper.EXPECT().GetGPGPubKey(gpgID).Return(&state.GPGPubKey{PubKey: tx.PublicKey})
 
-				err = validators.CheckTxAddGPGPubKeyConsistency(tx, -1, mockLogic)
+				err = validators.CheckTxRegisterGPGPubKeyConsistency(tx, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -583,7 +583,7 @@ var _ = Describe("TxValidator", func() {
 				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					util.String("0"), tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
-				err = validators.CheckTxAddGPGPubKeyConsistency(tx, -1, mockLogic)
+				err = validators.CheckTxRegisterGPGPubKeyConsistency(tx, -1, mockLogic)
 
 			})
 

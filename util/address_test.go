@@ -49,6 +49,7 @@ var _ = Describe("Address", func() {
 			Expect(IsNamespaceURI("a/abcde")).To(BeFalse())
 			Expect(IsNamespaceURI("z/abcde")).To(BeFalse())
 			Expect(IsNamespaceURI("namespace/abcde")).To(BeTrue())
+			Expect(IsNamespaceURI("namespace/")).To(BeTrue())
 		})
 	})
 
@@ -68,7 +69,7 @@ var _ = Describe("Address", func() {
 
 		Describe(".IsNamespaceURI", func() {
 			It("should return true when address is a namespace URI and false when not", func() {
-				Expect(Address("ns/abcdef").IsNamespaceURI()).To(BeTrue())
+				Expect(Address("ns1/abcdef").IsNamespaceURI()).To(BeTrue())
 				Expect(Address("abcdef").IsNamespaceURI()).To(BeFalse())
 			})
 		})

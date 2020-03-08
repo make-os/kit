@@ -57,13 +57,13 @@ var _ = Describe("GPG", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".execAddGPGKey", func() {
+	Describe(".execRegisterGPGKey", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-				Balance:             util.String("10"),
+				Balance:             "10",
 				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
@@ -71,11 +71,13 @@ var _ = Describe("GPG", func() {
 
 		When("successful", func() {
 			var gpgPubKey string
+			var scopes = []string{"repo1", "repo2"}
+			var feeCap = util.String("10")
 
 			BeforeEach(func() {
 				gpgPubKey = string(getTestFile("gpgpubkey.pub"))
 				senderPubKey := sender.PubKey().MustBytes32()
-				err = txLogic.execAddGPGKey(senderPubKey, gpgPubKey, "1.5", 0)
+				err = txLogic.execRegisterGPGKey(senderPubKey, gpgPubKey, scopes, feeCap, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -86,6 +88,8 @@ var _ = Describe("GPG", func() {
 				Expect(gpgKey.IsNil()).To(BeFalse())
 				Expect(gpgKey.Address).To(Equal(sender.Addr()))
 				Expect(gpgKey.PubKey).To(Equal(gpgPubKey))
+				Expect(gpgKey.Scopes).To(Equal(scopes))
+				Expect(gpgKey.FeeCap).To(Equal(feeCap))
 			})
 
 			Specify("that fee is deducted from sender account", func() {

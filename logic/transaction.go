@@ -169,9 +169,11 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			chainHeight)
 
 	case *core.TxRegisterGPGPubKey:
-		return t.execAddGPGKey(
+		return t.execRegisterGPGKey(
 			spk,
 			o.PublicKey,
+			o.Scopes,
+			o.FeeCap,
 			o.Fee,
 			chainHeight)
 

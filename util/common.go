@@ -603,3 +603,15 @@ func ToMapSI(m interface{}, structToMap ...bool) map[string]interface{} {
 func IsZeroString(str string) bool {
 	return str == "" || str == "0"
 }
+
+// IsValidIdentifierName
+func IsValidIdentifierName(name string) error {
+	if !govalidator.Matches(name, "^[a-zA-Z0-9_-]+$") {
+		return fmt.Errorf("invalid characters in name. Only alphanumeric, _ and - characters are allowed")
+	} else if len(name) > 128 {
+		return fmt.Errorf("name is too long. Maximum character length is 128")
+	} else if len(name) <= 2 {
+		return fmt.Errorf("name is too short. Must be at least 3 characters long")
+	}
+	return nil
+}

@@ -1,9 +1,11 @@
 package modules
 
 import (
+	"crypto/rsa"
 	"fmt"
 
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -107,7 +109,8 @@ func (m *GPGModule) Configure() []prompt.Suggest {
 // options[1] payloadOnly 	<bool>: 	When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>:
-// object.hash <string>: The transaction hash
+// object.hash <string>: 				The transaction hash
+// object.gpgID <string>: 				The unique network ID of the GPG key
 func (m *GPGModule) AddPK(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
@@ -128,8 +131,12 @@ func (m *GPGModule) AddPK(params map[string]interface{}, options ...interface{})
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
+	entity, _ := crypto.PGPEntityFromPubKey(tx.PublicKey)
+	gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+
 	return EncodeForJS(map[string]interface{}{
-		"hash": hash,
+		"hash":  hash,
+		"gpgID": gpgID,
 	})
 }
 

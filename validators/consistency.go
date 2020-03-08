@@ -190,8 +190,8 @@ func CheckTxSetDelegateCommissionConsistency(
 	return nil
 }
 
-// CheckTxAddGPGPubKeyConsistency performs consistency checks on TxRegisterGPGPubKey
-func CheckTxAddGPGPubKeyConsistency(
+// CheckTxRegisterGPGPubKeyConsistency performs consistency checks on TxRegisterGPGPubKey
+func CheckTxRegisterGPGPubKeyConsistency(
 	tx *core.TxRegisterGPGPubKey,
 	index int,
 	logic core.Logic) error {

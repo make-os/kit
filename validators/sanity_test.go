@@ -859,7 +859,7 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	Describe(".CheckTxAddGPGPubKey", func() {
+	Describe(".CheckTxRegisterGPGPubKey", func() {
 		var tx *core.TxRegisterGPGPubKey
 		var gpgKey []byte
 
@@ -874,27 +874,50 @@ var _ = Describe("TxValidator", func() {
 		When("it has invalid fields, it should return error when", func() {
 			It("should return error='type is invalid'", func() {
 				tx.Type = -10
-				err := validators.CheckTxAddGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 			})
 
 			It("has no gpg public key", func() {
 				tx.PublicKey = ""
-				err := validators.CheckTxAddGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:pubKey, msg:public key is required"))
 			})
 
 			It("has invalid gpg public key", func() {
 				tx.PublicKey = "invalid"
-				err := validators.CheckTxAddGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:pubKey, msg:invalid gpg public key"))
 			})
 
+			It("has invalid scopes", func() {
+				scopes := []string{
+					"r/repo",
+					"maker13463exprf3fdq44eth4lkf99dy6z5ajuk4ln4z",
+					"a/maker13463exprf3fdq44eth4lkf99dy6z5ajuk4ln4z",
+					"repo_&*",
+				}
+				for _, s := range scopes {
+					tx.Scopes = []string{s}
+					err := validators.CheckTxRegisterGPGPubKey(tx, -1)
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("field:scopes[0], msg:not an acceptable scope. " +
+						"Expects a namespace URI or repository name"))
+				}
+			})
+
+			It("has invalid fee cap", func() {
+				tx.FeeCap = "1a"
+				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:feeCap, msg:invalid number; must be numeric"))
+			})
+
 			It("has no nonce", func() {
-				err := validators.CheckTxAddGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 			})
@@ -902,14 +925,14 @@ var _ = Describe("TxValidator", func() {
 			It("has invalid fee", func() {
 				tx.Nonce = 1
 				tx.Fee = "invalid"
-				err := validators.CheckTxAddGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
 			})
 
 			It("has no timestamp", func() {
 				tx.Nonce = 1
-				err := validators.CheckTxAddGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
 			})
@@ -917,7 +940,7 @@ var _ = Describe("TxValidator", func() {
 			It("has no public key", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				err := validators.CheckTxAddGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
 			})
@@ -926,7 +949,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
-				err := validators.CheckTxAddGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
 			})
@@ -936,7 +959,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Timestamp = time.Now().Unix()
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Sig = []byte("invalid")
-				err := validators.CheckTxAddGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
@@ -950,7 +973,7 @@ var _ = Describe("TxValidator", func() {
 				sig, err := tx.Sign(key.PrivKey().Base58())
 				Expect(err).To(BeNil())
 				tx.Sig = sig
-				err = validators.CheckTxAddGPGPubKey(tx, -1)
+				err = validators.CheckTxRegisterGPGPubKey(tx, -1)
 				Expect(err).To(BeNil())
 			})
 		})
@@ -1642,7 +1665,7 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	FDescribe(".CheckTxRepoProposalRegisterGPGKey", func() {
+	Describe(".CheckTxRepoProposalRegisterGPGKey", func() {
 		var tx *core.TxRepoProposalRegisterGPGKey
 
 		BeforeEach(func() {
@@ -1717,7 +1740,7 @@ var _ = Describe("TxValidator", func() {
 			tx.KeyIDs = append(tx.KeyIDs, "gpg1_abc")
 			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:gpgId, msg:GPG id (gpg1_abc) is not valid"))
+			Expect(err).To(MatchError("field:ids, msg:GPG id (gpg1_abc) is not valid"))
 		})
 
 		It("should return error when a gpg id is a duplicate", func() {
@@ -1727,7 +1750,7 @@ var _ = Describe("TxValidator", func() {
 			tx.KeyIDs = append(tx.KeyIDs, "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
 			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:gpgId, msg:GPG id " +
+			Expect(err).To(MatchError("field:ids, msg:GPG id " +
 				"(gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd) is a duplicate"))
 		})
 

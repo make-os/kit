@@ -308,8 +308,8 @@ func CheckTxRepoCreate(tx *core.TxRepoCreate, index int) error {
 	return nil
 }
 
-// CheckTxAddGPGPubKey performs sanity checks on TxRegisterGPGPubKey
-func CheckTxAddGPGPubKey(tx *core.TxRegisterGPGPubKey, index int) error {
+// CheckTxRegisterGPGPubKey performs sanity checks on TxRegisterGPGPubKey
+func CheckTxRegisterGPGPubKey(tx *core.TxRegisterGPGPubKey, index int) error {
 
 	if err := checkType(tx.TxType, core.TxTypeRegisterGPGPubKey, index); err != nil {
 		return err
@@ -320,6 +320,22 @@ func CheckTxAddGPGPubKey(tx *core.TxRegisterGPGPubKey, index int) error {
 		v.By(validGPGPubKeyRule("pubKey", index)),
 	); err != nil {
 		return err
+	}
+
+	// If there are scope entries, ensure only namespaces URI,
+	// repo names and non-address entries are contained in the list
+	for i, s := range tx.Scopes {
+		if (!util.IsNamespaceURI(s) && util.IsValidIdentifierName(s) != nil) || util.IsValidAddr(s) == nil {
+			return feI(index, fmt.Sprintf("scopes[%d]", i), "not an acceptable scope. "+
+				"Expects a namespace URI or repository name")
+		}
+	}
+
+	// If fee cap is set, validate it
+	if !tx.FeeCap.Empty() {
+		if err := checkFeeCap(tx.FeeCap, index); err != nil {
+			return err
+		}
 	}
 
 	if err := checkCommon(tx, index); err != nil {
@@ -640,6 +656,21 @@ func checkProposalFee(fee util.String, index int) error {
 	return nil
 }
 
+// checkFeeCap performs sanity checks on a fee cap
+func checkFeeCap(fee util.String, index int) error {
+	field := "feeCap"
+	if err := v.Validate(fee,
+		v.Required.Error(feI(index, field, "value is required").Error()),
+		v.By(validValueRule(field, index)),
+	); err != nil {
+		return err
+	}
+	if fee.Decimal().LessThanOrEqual(decimal.Zero) {
+		return feI(index, field, "value must be a positive number")
+	}
+	return nil
+}
+
 // CheckTxRepoProposalMergeRequest performs sanity checks on TxRepoProposalMergeRequest
 func CheckTxRepoProposalMergeRequest(tx *core.TxRepoProposalMergeRequest, index int) error {
 
@@ -751,16 +782,10 @@ func CheckTxRepoProposalRegisterGPGKey(tx *core.TxRepoProposalRegisterGPGKey, in
 		return feI(index, "feeMode", "fee mode is unknown")
 	}
 
-	// If fee mode is FeeModeRepoPaysCapped, ensure FeeCappedAt is set and non-zero.
+	// If fee mode is FeeModeRepoPaysCapped, ensure FeeCap is set and non-zero.
 	if tx.FeeMode == state.FeeModeRepoPaysCapped {
-		if err := v.Validate(tx.FeeCap,
-			v.Required.Error(feI(index, "feeCap", "value is required").Error()),
-			v.By(validValueRule("feeCap", index)),
-		); err != nil {
+		if err := checkFeeCap(tx.FeeCap, index); err != nil {
 			return err
-		}
-		if tx.FeeCap.Decimal().LessThanOrEqual(decimal.Zero) {
-			return feI(index, "feeCap", "value must be a positive number")
 		}
 	} else {
 		if tx.FeeCap != "" {

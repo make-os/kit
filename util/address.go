@@ -8,9 +8,9 @@ import (
 const (
 	addressPrefixRepo                = "r/"
 	addressPrefixAddressUser         = "a/"
-	addressPrefixedIdentifierRegexp  = "^[ar]{1}/[a-zA-Z0-9_-]+$"           // e.g r/abc-xyz
-	AddressNamespaceDomainNameRegexp = "^[a-zA-Z0-9_-]+$"                   // e.g r/abc-xyz
-	addressNamespaceRegexp           = "^[a-zA-Z0-9_-]{2,}/[a-zA-Z0-9_-]+$" // e.g r/abc-xyz
+	addressPrefixedIdentifierRegexp  = "^[ar]{1}/[a-zA-Z0-9_-]+$"              // e.g r/abc-xyz or a/abc-xyz
+	AddressNamespaceDomainNameRegexp = "^[a-zA-Z0-9_-]+$"                      // e.g abc-xyz_
+	addressNamespaceRegexp           = "^[a-zA-Z0-9_-]{3,}/[a-zA-Z0-9_-]{0,}$" // e.g namespace/abc-xyz_
 )
 
 // GetPrefixedAddressValue returns the address without the prefix

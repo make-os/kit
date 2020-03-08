@@ -17,17 +17,6 @@ var feI = util.FieldErrorWithIndex
 // ValidateTxFunc represents a function for validating a transaction
 type ValidateTxFunc func(tx types.BaseTx, i int, logic core.Logic) error
 
-// ValidateTxs performs both syntactic and consistency
-// validation on the given transactions.
-func ValidateTxs(txs []types.BaseTx, logic core.Logic) error {
-	for i, tx := range txs {
-		if err := ValidateTx(tx, i, logic); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // ValidateTx validates a transaction
 func ValidateTx(tx types.BaseTx, i int, logic core.Logic) error {
 
@@ -65,7 +54,7 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 	case *core.TxRepoCreate:
 		return CheckTxRepoCreate(o, index)
 	case *core.TxRegisterGPGPubKey:
-		return CheckTxAddGPGPubKey(o, index)
+		return CheckTxRegisterGPGPubKey(o, index)
 	case *core.TxPush:
 		return CheckTxPush(o, index)
 	case *core.TxNamespaceAcquire:
@@ -106,7 +95,7 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 	case *core.TxRepoCreate:
 		return CheckTxRepoCreateConsistency(o, index, logic)
 	case *core.TxRegisterGPGPubKey:
-		return CheckTxAddGPGPubKeyConsistency(o, index, logic)
+		return CheckTxRegisterGPGPubKeyConsistency(o, index, logic)
 	case *core.TxPush:
 		return CheckTxPushConsistency(o, index, logic, func(name string) (core.BareRepo, error) {
 			return repo.GetRepo(filepath.Join(logic.Cfg().GetRepoRoot(), name))

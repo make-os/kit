@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fatih/structs"
 	"github.com/stretchr/objx"
@@ -14,7 +15,9 @@ import (
 type TxRegisterGPGPubKey struct {
 	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
-	PublicKey string `json:"pubKey" msgpack:"pubKey" mapstructure:"pubKey"`
+	PublicKey string      `json:"pubKey" msgpack:"pubKey" mapstructure:"pubKey"`
+	Scopes    []string    `json:"scopes" msgpack:"scopes" mapstructure:"scopes"`
+	FeeCap    util.String `json:"feeCap" msgpack:"feeCap" mapstructure:"feeCap"`
 }
 
 // NewBareTxRegisterGPGPubKey returns an instance of TxRegisterGPGPubKey with zero values
@@ -35,7 +38,9 @@ func (tx *TxRegisterGPGPubKey) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.Sig,
 		tx.Timestamp,
 		tx.SenderPubKey,
-		tx.PublicKey)
+		tx.PublicKey,
+		tx.Scopes,
+		tx.FeeCap)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -47,7 +52,9 @@ func (tx *TxRegisterGPGPubKey) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.Sig,
 		&tx.Timestamp,
 		&tx.SenderPubKey,
-		&tx.PublicKey)
+		&tx.PublicKey,
+		&tx.Scopes,
+		&tx.FeeCap)
 }
 
 // Bytes returns the serialized transaction
@@ -118,6 +125,30 @@ func (tx *TxRegisterGPGPubKey) FromMap(data map[string]interface{}) error {
 		} else {
 			return util.FieldError("pubKey", fmt.Sprintf("invalid value type: has %T, "+
 				"wants string", pubKeyVal.Inter()))
+		}
+	}
+
+	// Scopes: expects string or slice of string types in map
+	if scopesVal := o.Get("scopes"); !scopesVal.IsNil() {
+		if scopesVal.IsStr() {
+			tx.Scopes = strings.Split(scopesVal.Str(), ",")
+		} else if scopesVal.IsStrSlice() {
+			tx.Scopes = scopesVal.StrSlice()
+		} else {
+			return util.FieldError("scopes", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string|[]string", scopesVal.Inter()))
+		}
+	}
+
+	// FeeCap: expects int64, float64 or string types in map
+	if feeCap := o.Get("feeCap"); !feeCap.IsNil() {
+		if feeCap.IsInt64() || feeCap.IsFloat64() {
+			tx.FeeCap = util.String(fmt.Sprintf("%v", feeCap.Inter()))
+		} else if feeCap.IsStr() {
+			tx.FeeCap = util.String(feeCap.Str())
+		} else {
+			return util.FieldError("feeCap", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string|int64|float", feeCap.Inter()))
 		}
 	}
 

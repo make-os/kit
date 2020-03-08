@@ -9,7 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// execAddGPGKey associates a GPG key to an account
+// execRegisterGPGKey associates a GPG key to an account
 //
 // ARGS:
 // senderPubKey: The account public key of the sender.
@@ -20,9 +20,11 @@ import (
 // CONTRACT:
 // - Sender's public key must be valid public key
 // - The gpg public key must be valid
-func (t *Transaction) execAddGPGKey(
+func (t *Transaction) execRegisterGPGKey(
 	senderPubKey util.Bytes32,
 	gpgPublicKey string,
+	scopes []string,
+	feeCap,
 	fee util.String,
 	chainHeight uint64) error {
 
@@ -30,14 +32,16 @@ func (t *Transaction) execAddGPGKey(
 	acctKeeper := t.logic.AccountKeeper()
 
 	// Create a new GPGPubKey
-	gpgPubKey := state.BareGPGPubKey()
-	gpgPubKey.PubKey = gpgPublicKey
-	gpgPubKey.Address = spk.Addr()
+	key := state.BareGPGPubKey()
+	key.PubKey = gpgPublicKey
+	key.Address = spk.Addr()
+	key.Scopes = scopes
+	key.FeeCap = feeCap
 
 	// Store the new public key
 	entity, _ := crypto.PGPEntityFromPubKey(gpgPublicKey)
 	gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-	if err := t.logic.GPGPubKeyKeeper().Update(gpgID, gpgPubKey); err != nil {
+	if err := t.logic.GPGPubKeyKeeper().Update(gpgID, key); err != nil {
 		return err
 	}
 
