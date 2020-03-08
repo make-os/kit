@@ -860,13 +860,13 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxAddGPGPubKey", func() {
-		var tx *core.TxAddGPGPubKey
+		var tx *core.TxRegisterGPGPubKey
 		var gpgKey []byte
 
 		BeforeEach(func() {
 			gpgKey, err = ioutil.ReadFile("testdata/gpgkey.pub")
 			Expect(err).To(BeNil())
-			tx = core.NewBareTxAddGPGPubKey()
+			tx = core.NewBareTxRegisterGPGPubKey()
 			tx.PublicKey = string(gpgKey)
 			tx.Fee = "2"
 		})
@@ -1416,7 +1416,7 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxRepoProposalSendFee", func() {
-		var tx *core.TxRepoProposalFeeSend
+		var tx *core.TxRepoProposalSendFee
 
 		BeforeEach(func() {
 			tx = core.NewBareRepoProposalFeeSend()

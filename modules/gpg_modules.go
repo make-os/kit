@@ -112,7 +112,7 @@ func (m *GPGModule) AddPK(params map[string]interface{}, options ...interface{})
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx = core.NewBareTxAddGPGPubKey()
+	var tx = core.NewBareTxRegisterGPGPubKey()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}

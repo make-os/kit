@@ -22,14 +22,14 @@ var (
 	TxTypeHostTicket                 = 4  // For purchasing host ticket
 	TxTypeUnbondHostTicket           = 5  // For unbonding host ticket
 	TxTypeRepoCreate                 = 6  // For creating a repository
-	TxTypeAddGPGPubKey               = 7  // For adding a GPG public key
+	TxTypeRegisterGPGPubKey          = 7  // For adding a GPG public key
 	TxTypePush                       = 8  // For pushing updates to a repository
 	TxTypeNSAcquire                  = 9  // For namespace purchase
 	TxTypeNSDomainUpdate             = 10 // For setting namespace domains
 	TxTypeRepoProposalUpsertOwner    = 11 // For creating a proposal to add repo owner
 	TxTypeRepoProposalVote           = 12 // For voting on a repo proposal
 	TxTypeRepoProposalUpdate         = 13 // For creating a repo update proposal
-	TxTypeRepoProposalFeeSend        = 14 // For native coin transfer to repo as proposal fee
+	TxTypeRepoProposalSendFee        = 14 // For native coin transfer to repo as proposal fee
 	TxTypeRepoProposalMergeRequest   = 15 // For merge request
 	TxTypeRepoProposalRegisterGPGKey = 16 // For adding GPG key to a repo
 )
@@ -423,8 +423,8 @@ func getBareTxObject(txType int) (types.BaseTx, error) {
 		tx = NewBareTxTicketUnbond(TxTypeUnbondHostTicket)
 	case TxTypeRepoCreate:
 		tx = NewBareTxRepoCreate()
-	case TxTypeAddGPGPubKey:
-		tx = NewBareTxAddGPGPubKey()
+	case TxTypeRegisterGPGPubKey:
+		tx = NewBareTxRegisterGPGPubKey()
 	case TxTypePush:
 		tx = NewBareTxPush()
 	case TxTypeNSAcquire:
@@ -437,7 +437,7 @@ func getBareTxObject(txType int) (types.BaseTx, error) {
 		tx = NewBareRepoProposalVote()
 	case TxTypeRepoProposalUpdate:
 		tx = NewBareRepoProposalUpdate()
-	case TxTypeRepoProposalFeeSend:
+	case TxTypeRepoProposalSendFee:
 		tx = NewBareRepoProposalFeeSend()
 	case TxTypeRepoProposalMergeRequest:
 		tx = NewBareRepoProposalMergeRequest()
@@ -484,8 +484,8 @@ func NewBaseTx(txType int,
 		tx := NewBareTxRepoCreate()
 		tx.SetValue(value)
 		baseTx = tx
-	case TxTypeAddGPGPubKey:
-		tx := NewBareTxAddGPGPubKey()
+	case TxTypeRegisterGPGPubKey:
+		tx := NewBareTxRegisterGPGPubKey()
 		baseTx = tx
 	default:
 		panic("unsupported tx type")

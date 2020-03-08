@@ -9,9 +9,9 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// TxRepoProposalFeeSend implements BaseTx, it describes a transaction for
+// TxRepoProposalSendFee implements BaseTx, it describes a transaction for
 // sending units of the native coin as proposal fee.
-type TxRepoProposalFeeSend struct {
+type TxRepoProposalSendFee struct {
 	*TxCommon  `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType    `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxValue   `json:",flatten" msgpack:"-" mapstructure:"-"`
@@ -19,11 +19,11 @@ type TxRepoProposalFeeSend struct {
 	ProposalID string `json:"id" msgpack:"id"`
 }
 
-// NewBareRepoProposalFeeSend returns an instance of TxRepoProposalFeeSend with zero values
-func NewBareRepoProposalFeeSend() *TxRepoProposalFeeSend {
-	return &TxRepoProposalFeeSend{
+// NewBareRepoProposalFeeSend returns an instance of TxRepoProposalSendFee with zero values
+func NewBareRepoProposalFeeSend() *TxRepoProposalSendFee {
+	return &TxRepoProposalSendFee{
 		TxCommon:   NewBareTxCommon(),
-		TxType:     &TxType{Type: TxTypeRepoProposalFeeSend},
+		TxType:     &TxType{Type: TxTypeRepoProposalSendFee},
 		TxValue:    &TxValue{Value: "0"},
 		RepoName:   "",
 		ProposalID: "",
@@ -31,7 +31,7 @@ func NewBareRepoProposalFeeSend() *TxRepoProposalFeeSend {
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
-func (tx *TxRepoProposalFeeSend) EncodeMsgpack(enc *msgpack.Encoder) error {
+func (tx *TxRepoProposalSendFee) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(
 		tx.Type,
 		tx.Nonce,
@@ -45,7 +45,7 @@ func (tx *TxRepoProposalFeeSend) EncodeMsgpack(enc *msgpack.Encoder) error {
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
-func (tx *TxRepoProposalFeeSend) DecodeMsgpack(dec *msgpack.Decoder) error {
+func (tx *TxRepoProposalSendFee) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return tx.DecodeMulti(dec,
 		&tx.Type,
 		&tx.Nonce,
@@ -59,12 +59,12 @@ func (tx *TxRepoProposalFeeSend) DecodeMsgpack(dec *msgpack.Decoder) error {
 }
 
 // Bytes returns the serialized transaction
-func (tx *TxRepoProposalFeeSend) Bytes() []byte {
+func (tx *TxRepoProposalSendFee) Bytes() []byte {
 	return util.ToBytes(tx)
 }
 
 // GetBytesNoSig returns the serialized the transaction excluding the signature
-func (tx *TxRepoProposalFeeSend) GetBytesNoSig() []byte {
+func (tx *TxRepoProposalSendFee) GetBytesNoSig() []byte {
 	sig := tx.Sig
 	tx.Sig = nil
 	bz := tx.Bytes()
@@ -73,37 +73,37 @@ func (tx *TxRepoProposalFeeSend) GetBytesNoSig() []byte {
 }
 
 // ComputeHash computes the hash of the transaction
-func (tx *TxRepoProposalFeeSend) ComputeHash() util.Bytes32 {
+func (tx *TxRepoProposalSendFee) ComputeHash() util.Bytes32 {
 	return util.BytesToBytes32(util.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction
-func (tx *TxRepoProposalFeeSend) GetHash() util.Bytes32 {
+func (tx *TxRepoProposalSendFee) GetHash() util.Bytes32 {
 	return tx.ComputeHash()
 }
 
 // GetID returns the id of the transaction (also the hash)
-func (tx *TxRepoProposalFeeSend) GetID() string {
+func (tx *TxRepoProposalSendFee) GetID() string {
 	return tx.ComputeHash().HexStr()
 }
 
 // GetEcoSize returns the size of the transaction for use in protocol economics
-func (tx *TxRepoProposalFeeSend) GetEcoSize() int64 {
+func (tx *TxRepoProposalSendFee) GetEcoSize() int64 {
 	return tx.GetSize()
 }
 
 // GetSize returns the size of the tx object (excluding nothing)
-func (tx *TxRepoProposalFeeSend) GetSize() int64 {
+func (tx *TxRepoProposalSendFee) GetSize() int64 {
 	return int64(len(tx.Bytes()))
 }
 
 // Sign signs the transaction
-func (tx *TxRepoProposalFeeSend) Sign(privKey string) ([]byte, error) {
+func (tx *TxRepoProposalSendFee) Sign(privKey string) ([]byte, error) {
 	return SignTransaction(tx, privKey)
 }
 
 // ToMap returns a map equivalent of the transaction
-func (tx *TxRepoProposalFeeSend) ToMap() map[string]interface{} {
+func (tx *TxRepoProposalSendFee) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
@@ -113,7 +113,7 @@ func (tx *TxRepoProposalFeeSend) ToMap() map[string]interface{} {
 // Note: Default or zero values may be set for fields that aren't present in the
 // map. Also, an error will be returned when unable to convert types in map to
 // actual types in the object.
-func (tx *TxRepoProposalFeeSend) FromMap(data map[string]interface{}) error {
+func (tx *TxRepoProposalSendFee) FromMap(data map[string]interface{}) error {
 	err := tx.TxCommon.FromMap(data)
 	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
 	err = util.CallOnNilErr(err, func() error { return tx.TxValue.FromMap(data) })

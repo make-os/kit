@@ -9,25 +9,25 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// TxAddGPGPubKey implements BaseTx, it describes a transaction that registers a
+// TxRegisterGPGPubKey implements BaseTx, it describes a transaction that registers a
 // gpg key to the transaction signer
-type TxAddGPGPubKey struct {
+type TxRegisterGPGPubKey struct {
 	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
 	PublicKey string `json:"pubKey" msgpack:"pubKey" mapstructure:"pubKey"`
 }
 
-// NewBareTxAddGPGPubKey returns an instance of TxAddGPGPubKey with zero values
-func NewBareTxAddGPGPubKey() *TxAddGPGPubKey {
-	return &TxAddGPGPubKey{
-		TxType:    &TxType{Type: TxTypeAddGPGPubKey},
+// NewBareTxRegisterGPGPubKey returns an instance of TxRegisterGPGPubKey with zero values
+func NewBareTxRegisterGPGPubKey() *TxRegisterGPGPubKey {
+	return &TxRegisterGPGPubKey{
+		TxType:    &TxType{Type: TxTypeRegisterGPGPubKey},
 		TxCommon:  NewBareTxCommon(),
 		PublicKey: "",
 	}
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
-func (tx *TxAddGPGPubKey) EncodeMsgpack(enc *msgpack.Encoder) error {
+func (tx *TxRegisterGPGPubKey) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(
 		tx.Type,
 		tx.Nonce,
@@ -39,7 +39,7 @@ func (tx *TxAddGPGPubKey) EncodeMsgpack(enc *msgpack.Encoder) error {
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
-func (tx *TxAddGPGPubKey) DecodeMsgpack(dec *msgpack.Decoder) error {
+func (tx *TxRegisterGPGPubKey) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return tx.DecodeMulti(dec,
 		&tx.Type,
 		&tx.Nonce,
@@ -51,12 +51,12 @@ func (tx *TxAddGPGPubKey) DecodeMsgpack(dec *msgpack.Decoder) error {
 }
 
 // Bytes returns the serialized transaction
-func (tx *TxAddGPGPubKey) Bytes() []byte {
+func (tx *TxRegisterGPGPubKey) Bytes() []byte {
 	return util.ToBytes(tx)
 }
 
 // GetBytesNoSig returns the serialized the transaction excluding the signature
-func (tx *TxAddGPGPubKey) GetBytesNoSig() []byte {
+func (tx *TxRegisterGPGPubKey) GetBytesNoSig() []byte {
 	sig := tx.Sig
 	tx.Sig = nil
 	bz := tx.Bytes()
@@ -65,37 +65,37 @@ func (tx *TxAddGPGPubKey) GetBytesNoSig() []byte {
 }
 
 // ComputeHash computes the hash of the transaction
-func (tx *TxAddGPGPubKey) ComputeHash() util.Bytes32 {
+func (tx *TxRegisterGPGPubKey) ComputeHash() util.Bytes32 {
 	return util.BytesToBytes32(util.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction
-func (tx *TxAddGPGPubKey) GetHash() util.Bytes32 {
+func (tx *TxRegisterGPGPubKey) GetHash() util.Bytes32 {
 	return tx.ComputeHash()
 }
 
 // GetID returns the id of the transaction (also the hash)
-func (tx *TxAddGPGPubKey) GetID() string {
+func (tx *TxRegisterGPGPubKey) GetID() string {
 	return tx.ComputeHash().HexStr()
 }
 
 // GetEcoSize returns the size of the transaction for use in protocol economics
-func (tx *TxAddGPGPubKey) GetEcoSize() int64 {
+func (tx *TxRegisterGPGPubKey) GetEcoSize() int64 {
 	return tx.GetSize()
 }
 
 // GetSize returns the size of the tx object (excluding nothing)
-func (tx *TxAddGPGPubKey) GetSize() int64 {
+func (tx *TxRegisterGPGPubKey) GetSize() int64 {
 	return int64(len(tx.Bytes()))
 }
 
 // Sign signs the transaction
-func (tx *TxAddGPGPubKey) Sign(privKey string) ([]byte, error) {
+func (tx *TxRegisterGPGPubKey) Sign(privKey string) ([]byte, error) {
 	return SignTransaction(tx, privKey)
 }
 
 // ToMap returns a map equivalent of the transaction
-func (tx *TxAddGPGPubKey) ToMap() map[string]interface{} {
+func (tx *TxRegisterGPGPubKey) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
@@ -105,7 +105,7 @@ func (tx *TxAddGPGPubKey) ToMap() map[string]interface{} {
 // Note: Default or zero values may be set for fields that aren't present in the
 // map. Also, an error will be returned when unable to convert types in map to
 // actual types in the object.
-func (tx *TxAddGPGPubKey) FromMap(data map[string]interface{}) error {
+func (tx *TxRegisterGPGPubKey) FromMap(data map[string]interface{}) error {
 	err := tx.TxCommon.FromMap(data)
 	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
 

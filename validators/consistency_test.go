@@ -505,7 +505,7 @@ var _ = Describe("TxValidator", func() {
 		When("unable to get last block information", func() {
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-				tx := core.NewBareTxAddGPGPubKey()
+				tx := core.NewBareTxRegisterGPGPubKey()
 				err = validators.CheckTxAddGPGPubKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -517,7 +517,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("gpg public key is less than 2048 bits", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxAddGPGPubKey()
+				tx := core.NewBareTxRegisterGPGPubKey()
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				var bz []byte
@@ -539,7 +539,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("gpg public key has already been registered", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxAddGPGPubKey()
+				tx := core.NewBareTxRegisterGPGPubKey()
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				var bz []byte
@@ -565,7 +565,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("coin transfer dry-run fails", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxAddGPGPubKey()
+				tx := core.NewBareTxRegisterGPGPubKey()
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				var bz []byte

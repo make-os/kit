@@ -123,7 +123,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *core.TxRepoProposalFeeSend:
+	case *core.TxRepoProposalSendFee:
 		return t.execRepoProposalFeeDeposit(
 			spk,
 			o.RepoName,
@@ -168,7 +168,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.Fee,
 			chainHeight)
 
-	case *core.TxAddGPGPubKey:
+	case *core.TxRegisterGPGPubKey:
 		return t.execAddGPGKey(
 			spk,
 			o.PublicKey,

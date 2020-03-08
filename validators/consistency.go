@@ -190,9 +190,9 @@ func CheckTxSetDelegateCommissionConsistency(
 	return nil
 }
 
-// CheckTxAddGPGPubKeyConsistency performs consistency checks on TxAddGPGPubKey
+// CheckTxAddGPGPubKeyConsistency performs consistency checks on TxRegisterGPGPubKey
 func CheckTxAddGPGPubKeyConsistency(
-	tx *core.TxAddGPGPubKey,
+	tx *core.TxRegisterGPGPubKey,
 	index int,
 	logic core.Logic) error {
 
@@ -499,9 +499,9 @@ func CheckTxVoteConsistency(
 	return nil
 }
 
-// CheckTxRepoProposalSendFeeConsistency performs consistency checks on TxRepoProposalFeeSend
+// CheckTxRepoProposalSendFeeConsistency performs consistency checks on TxRepoProposalSendFee
 func CheckTxRepoProposalSendFeeConsistency(
-	tx *core.TxRepoProposalFeeSend,
+	tx *core.TxRepoProposalSendFee,
 	index int,
 	logic core.Logic) error {
 

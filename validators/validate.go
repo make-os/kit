@@ -64,7 +64,7 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxUnbondTicket(o, index)
 	case *core.TxRepoCreate:
 		return CheckTxRepoCreate(o, index)
-	case *core.TxAddGPGPubKey:
+	case *core.TxRegisterGPGPubKey:
 		return CheckTxAddGPGPubKey(o, index)
 	case *core.TxPush:
 		return CheckTxPush(o, index)
@@ -78,7 +78,7 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxVote(o, index)
 	case *core.TxRepoProposalUpdate:
 		return CheckTxRepoProposalUpdate(o, index)
-	case *core.TxRepoProposalFeeSend:
+	case *core.TxRepoProposalSendFee:
 		return CheckTxRepoProposalSendFee(o, index)
 	case *core.TxRepoProposalMergeRequest:
 		return CheckTxRepoProposalMergeRequest(o, index)
@@ -105,7 +105,7 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 		return CheckTxUnbondTicketConsistency(o, index, logic)
 	case *core.TxRepoCreate:
 		return CheckTxRepoCreateConsistency(o, index, logic)
-	case *core.TxAddGPGPubKey:
+	case *core.TxRegisterGPGPubKey:
 		return CheckTxAddGPGPubKeyConsistency(o, index, logic)
 	case *core.TxPush:
 		return CheckTxPushConsistency(o, index, logic, func(name string) (core.BareRepo, error) {
@@ -121,7 +121,7 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 		return CheckTxVoteConsistency(o, index, logic)
 	case *core.TxRepoProposalUpdate:
 		return CheckTxRepoProposalUpdateConsistency(o, index, logic)
-	case *core.TxRepoProposalFeeSend:
+	case *core.TxRepoProposalSendFee:
 		return CheckTxRepoProposalSendFeeConsistency(o, index, logic)
 	case *core.TxRepoProposalMergeRequest:
 		return CheckTxRepoProposalMergeRequestConsistency(o, index, logic)

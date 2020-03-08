@@ -308,10 +308,10 @@ func CheckTxRepoCreate(tx *core.TxRepoCreate, index int) error {
 	return nil
 }
 
-// CheckTxAddGPGPubKey performs sanity checks on TxAddGPGPubKey
-func CheckTxAddGPGPubKey(tx *core.TxAddGPGPubKey, index int) error {
+// CheckTxAddGPGPubKey performs sanity checks on TxRegisterGPGPubKey
+func CheckTxAddGPGPubKey(tx *core.TxRegisterGPGPubKey, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeAddGPGPubKey, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeRegisterGPGPubKey, index); err != nil {
 		return err
 	}
 
@@ -583,10 +583,10 @@ func CheckTxVote(tx *core.TxRepoProposalVote, index int) error {
 	return nil
 }
 
-// CheckTxRepoProposalSendFee performs sanity checks on TxRepoProposalFeeSend
-func CheckTxRepoProposalSendFee(tx *core.TxRepoProposalFeeSend, index int) error {
+// CheckTxRepoProposalSendFee performs sanity checks on TxRepoProposalSendFee
+func CheckTxRepoProposalSendFee(tx *core.TxRepoProposalSendFee, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeRepoProposalFeeSend, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeRepoProposalSendFee, index); err != nil {
 		return err
 	}
 
