@@ -12,7 +12,7 @@ import (
 )
 
 // TxRepoProposalRegisterGPGKey implements BaseTx, it describes a repository proposal
-// transaction for adding a new owner to a repository
+// transaction for adding one or more contributors to a repository
 type TxRepoProposalRegisterGPGKey struct {
 	*TxCommon         `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`
@@ -21,6 +21,8 @@ type TxRepoProposalRegisterGPGKey struct {
 	Policies          []*state.RepoACLPolicy `json:"policies" msgpack:"policies,omitempty" mapstructure:"policies,omitempty"`
 	FeeMode           state.FeeMode          `json:"feeMode" msgpack:"feeMode,omitempty" mapstructure:"feeMode,omitempty"`
 	FeeCap            util.String            `json:"feeCap" msgpack:"feeCap,omitempty" mapstructure:"feeCap,omitempty"`
+	Namespace         string                 `json:"namespace" msgpack:"namespace,omitempty" mapstructure:"namespace"`
+	NamespaceOnly     string                 `json:"namespaceOnly" msgpack:"namespaceOnly,omitempty" mapstructure:"namespaceOnly"`
 }
 
 // NewBareRepoProposalRegisterGPGKey returns an instance of TxRepoProposalRegisterGPGKey with zero values
@@ -31,6 +33,7 @@ func NewBareRepoProposalRegisterGPGKey() *TxRepoProposalRegisterGPGKey {
 		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: "", ProposalID: ""},
 		KeyIDs:           []string{},
 		Policies:         []*state.RepoACLPolicy{},
+		FeeMode:          state.FeeModePusherPays,
 	}
 }
 
@@ -49,7 +52,9 @@ func (tx *TxRepoProposalRegisterGPGKey) EncodeMsgpack(enc *msgpack.Encoder) erro
 		tx.KeyIDs,
 		tx.Policies,
 		tx.FeeMode,
-		tx.FeeCap)
+		tx.FeeCap,
+		tx.Namespace,
+		tx.NamespaceOnly)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -67,7 +72,9 @@ func (tx *TxRepoProposalRegisterGPGKey) DecodeMsgpack(dec *msgpack.Decoder) erro
 		&tx.KeyIDs,
 		&tx.Policies,
 		&tx.FeeMode,
-		&tx.FeeCap)
+		&tx.FeeCap,
+		&tx.Namespace,
+		&tx.NamespaceOnly)
 }
 
 // Bytes returns the serialized transaction
@@ -177,6 +184,26 @@ func (tx *TxRepoProposalRegisterGPGKey) FromMap(data map[string]interface{}) err
 		} else {
 			return util.FieldError("feeCap", fmt.Sprintf("invalid value type: has %T, "+
 				"wants string|int64|float", feeCap.Inter()))
+		}
+	}
+
+	// Namespace: expects string type in map
+	if namespace := o.Get("namespace"); !namespace.IsNil() {
+		if namespace.IsStr() {
+			tx.Namespace = namespace.Str()
+		} else {
+			return util.FieldError("namespace", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string|[]string", namespace.Inter()))
+		}
+	}
+
+	// NamespaceOnly: expects string type in map
+	if namespaceOnly := o.Get("namespaceOnly"); !namespaceOnly.IsNil() {
+		if namespaceOnly.IsStr() {
+			tx.NamespaceOnly = namespaceOnly.Str()
+		} else {
+			return util.FieldError("namespaceOnly", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string|[]string", namespaceOnly.Inter()))
 		}
 	}
 

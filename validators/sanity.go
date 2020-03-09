@@ -793,6 +793,24 @@ func CheckTxRepoProposalRegisterGPGKey(tx *core.TxRepoProposalRegisterGPGKey, in
 		}
 	}
 
+	// When namespace target is set, ensure a valid namespace name is provided.
+	// If valid and NamespaceOnly is set, return an error
+	if tx.Namespace != "" {
+		if util.IsValidIdentifierName(tx.Namespace) != nil {
+			return feI(index, "namespace", "value format is not valid")
+		}
+		if tx.NamespaceOnly != "" {
+			return feI(index, "namespaceOnly", "field is not expected because 'namespace' is set")
+		}
+	}
+
+	// When namespaceOnly target is set, ensure a valid namespace name is provided.
+	if tx.NamespaceOnly != "" {
+		if util.IsValidIdentifierName(tx.NamespaceOnly) != nil {
+			return feI(index, "namespaceOnly", "value format is not valid")
+		}
+	}
+
 	if err := checkCommon(tx, index); err != nil {
 		return err
 	}

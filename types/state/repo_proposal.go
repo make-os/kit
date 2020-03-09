@@ -82,7 +82,7 @@ const (
 	ProposalActionAddOwner ProposalAction = iota + 1
 	ProposalActionRepoUpdate
 	ProposalActionMergeRequest
-	ProposalActionRegisterGPGID
+	ProposalActionRegisterGPGIDs
 )
 
 // Proposal vote choices

@@ -151,6 +151,8 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 			o.FeeMode,
 			o.FeeCap,
 			o.Policies,
+			o.Namespace,
+			o.NamespaceOnly,
 			o.Value,
 			o.Fee,
 			chainHeight)

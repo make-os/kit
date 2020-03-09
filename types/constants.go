@@ -23,3 +23,20 @@ const (
 const (
 	EvtABCICommittedTx = "abci_delivered_valid_tx"
 )
+
+// Proposal action data keys
+const (
+	ActionDataKeyBaseBranch    = "b"
+	ActionDataKeyBaseHash      = "bh"
+	ActionDataKeyTargetBranch  = "t"
+	ActionDataKeyTargetHash    = "th"
+	ActionDataKeyAddrs         = "ads"
+	ActionDataKeyVeto          = "vet"
+	ActionDataKeyIDs           = "ids"
+	ActionDataKeyPolicies      = "pol"
+	ActionDataKeyFeeMode       = "fm"
+	ActionDataKeyFeeCap        = "fc"
+	ActionDataKeyCFG           = "cfg"
+	ActionDataKeyNamespace     = "ns"
+	ActionDataKeyNamespaceOnly = "nso"
+)

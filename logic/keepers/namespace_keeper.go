@@ -2,6 +2,7 @@ package keepers
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/pkgs/tree"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -18,13 +19,13 @@ func NewNamespaceKeeper(state *tree.SafeTree) *NamespaceKeeper {
 	return &NamespaceKeeper{state: state}
 }
 
-// GetNamespace finds a namespace by name.
+// Get finds a namespace by name.
 // ARGS:
 // name: The name of the namespace to find.
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Namespace if no matching namespace is found.
-func (a *NamespaceKeeper) GetNamespace(name string, blockNum ...uint64) *state.Namespace {
+func (a *NamespaceKeeper) Get(name string, blockNum ...uint64) *state.Namespace {
 
 	// Get version is provided
 	var version uint64
@@ -74,7 +75,7 @@ func (a *NamespaceKeeper) GetTarget(path string, blockNum ...uint64) (string, er
 	}
 
 	actualName := util.Hash20Hex([]byte(namespace))
-	ns := a.GetNamespace(actualName, version)
+	ns := a.Get(actualName, version)
 	if ns.IsNil() {
 		return "", fmt.Errorf("namespace not found")
 	}

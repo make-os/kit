@@ -273,7 +273,7 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	if namespace != "r" {
 
 		// Get the namespace, return 404 if not found
-		ns := m.logic.NamespaceKeeper().GetNamespace(util.Hash20Hex([]byte(namespace)))
+		ns := m.logic.NamespaceKeeper().Get(util.Hash20Hex([]byte(namespace)))
 		if ns.IsNil() {
 			w.WriteHeader(http.StatusNotFound)
 			m.log.Debug("Unknown repository", "Name", repoName, "StatusCode", http.StatusNotFound,

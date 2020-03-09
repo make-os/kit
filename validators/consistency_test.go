@@ -1348,20 +1348,6 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckProposalCommonConsistency", func() {
-		When("unable to get current block information", func() {
-			BeforeEach(func() {
-				txProposal := &core.TxProposalCommon{}
-				txCommon := &core.TxCommon{}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to fetch current block info: error"))
-			})
-		})
-
 		When("repo is unknown", func() {
 			BeforeEach(func() {
 				txProposal := &core.TxProposalCommon{RepoName: "repo1"}
@@ -1371,9 +1357,8 @@ var _ = Describe("TxValidator", func() {
 				repo := state.BareRepository()
 
 				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mockRepoKeeper.EXPECT().GetRepo(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
+				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {
@@ -1393,9 +1378,8 @@ var _ = Describe("TxValidator", func() {
 				repo.Config.Governance.ProposalFee = 100
 
 				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mockRepoKeeper.EXPECT().GetRepo(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
+				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {
@@ -1416,9 +1400,8 @@ var _ = Describe("TxValidator", func() {
 				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
 
 				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mockRepoKeeper.EXPECT().GetRepo(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
+				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {
@@ -1440,12 +1423,11 @@ var _ = Describe("TxValidator", func() {
 				repo.Owners[key.Addr().String()] = &state.RepoOwner{}
 
 				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mockRepoKeeper.EXPECT().GetRepo(txProposal.RepoName, uint64(bi.Height)).Return(repo)
 				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					txProposal.Value, txCommon.Fee, txCommon.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
-				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic)
+				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {
@@ -1456,6 +1438,84 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxRepoProposalRegisterGPGKeyConsistency()", func() {
+		When("unable to get current block info", func() {
+			BeforeEach(func() {
+				tx := core.NewBareRepoProposalRegisterGPGKey()
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
+				err = validators.CheckTxRepoProposalRegisterGPGKeyConsistency(tx, -1, mockLogic)
+			})
 
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to fetch current block info: error"))
+			})
+		})
+
+		When("namespace is set but does not exist", func() {
+			BeforeEach(func() {
+				tx := core.NewBareRepoProposalRegisterGPGKey()
+				tx.Namespace = "ns1"
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
+				mockNSKeeper.EXPECT().GetNamespace(tx.Namespace, uint64(1)).Return(state.BareNamespace())
+				err = validators.CheckTxRepoProposalRegisterGPGKeyConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:namespace, msg:namespace not found"))
+			})
+		})
+
+		When("namespaceOnly is set but does not exist", func() {
+			BeforeEach(func() {
+				tx := core.NewBareRepoProposalRegisterGPGKey()
+				tx.NamespaceOnly = "ns1"
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
+				mockNSKeeper.EXPECT().GetNamespace(tx.NamespaceOnly, uint64(1)).Return(state.BareNamespace())
+				err = validators.CheckTxRepoProposalRegisterGPGKeyConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:namespaceOnly, msg:namespace not found"))
+			})
+		})
+
+		When("namespace is not owned by the target repo", func() {
+			BeforeEach(func() {
+				tx := core.NewBareRepoProposalRegisterGPGKey()
+				tx.RepoName = "repo1"
+				tx.Namespace = "ns1"
+				ns := state.BareNamespace()
+				ns.Owner = "repo2"
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
+				mockNSKeeper.EXPECT().GetNamespace(tx.Namespace, uint64(1)).Return(ns)
+				err = validators.CheckTxRepoProposalRegisterGPGKeyConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("field:namespace, msg:namespace not owned by the target repository"))
+			})
+		})
+
+		When("namespace is not owned by the target repo", func() {
+			BeforeEach(func() {
+				tx := core.NewBareRepoProposalRegisterGPGKey()
+				tx.RepoName = "repo1"
+				tx.Namespace = "ns1"
+				ns := state.BareNamespace()
+				ns.Owner = "repo1"
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
+				mockNSKeeper.EXPECT().GetNamespace(tx.Namespace, uint64(1)).Return(ns)
+				mockRepoKeeper.EXPECT().GetRepo(gomock.Any(), gomock.Any()).Return(state.BareRepository())
+				err = validators.CheckTxRepoProposalRegisterGPGKeyConsistency(tx, -1, mockLogic)
+			})
+
+			It("should not return err='namespace not owned by the target repository'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).ToNot(MatchError("field:namespace, msg:namespace not owned by the target repository"))
+			})
+		})
 	})
 })

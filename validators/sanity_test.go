@@ -1807,5 +1807,39 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:feeCap, msg:value not expected for the chosen fee mode"))
 		})
+
+		It("should return error when namespace value format is invalid", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = "10"
+			tx.KeyIDs = append(tx.KeyIDs, "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
+			tx.FeeMode = state.FeeModeRepoPays
+			tx.Namespace = "inv&alid"
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:namespace, msg:value format is not valid"))
+		})
+
+		It("should return error when namespace is set but namespaceOnly is also set", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = "10"
+			tx.KeyIDs = append(tx.KeyIDs, "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
+			tx.FeeMode = state.FeeModeRepoPays
+			tx.Namespace = "ns1"
+			tx.NamespaceOnly = "ns2"
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:namespaceOnly, msg:field is not expected because 'namespace' is set"))
+		})
+
+		It("should return error when namespaceOnly value format is invalid", func() {
+			tx.RepoName = "good-repo"
+			tx.Value = "10"
+			tx.KeyIDs = append(tx.KeyIDs, "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
+			tx.FeeMode = state.FeeModeRepoPays
+			tx.NamespaceOnly = "inv&alid"
+			err := validators.CheckTxRepoProposalRegisterGPGKey(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("field:namespaceOnly, msg:value format is not valid"))
+		})
 	})
 })

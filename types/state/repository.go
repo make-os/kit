@@ -174,16 +174,26 @@ func BareRepoConfig() *RepoConfig {
 	}
 }
 
-// Contributor represents a repository contributor
-type Contributor struct {
+// BaseContributor represents the basic information of a contributor
+type BaseContributor struct {
+	FeeCap   util.String      `json:"feeCap" mapstructure:"feeCap" msgpack:"feeCap"`
+	FeeUsed  util.String      `json:"feeUsed" mapstructure:"feeUsed" msgpack:"feeUsed"`
+	Policies []*RepoACLPolicy `json:"policies" mapstructure:"policies" msgpack:"policies"`
+}
+
+// BaseContributors is a collection of repo contributors
+type BaseContributors map[string]*BaseContributor
+
+// RepoContributor represents a repository contributor
+type RepoContributor struct {
 	FeeMode  FeeMode          `json:"feeMode" mapstructure:"feeMode" msgpack:"feeMode"`
 	FeeCap   util.String      `json:"feeCap" mapstructure:"feeCap" msgpack:"feeCap"`
 	FeeUsed  util.String      `json:"feeUsed" mapstructure:"feeUsed" msgpack:"feeUsed"`
 	Policies []*RepoACLPolicy `json:"policies" mapstructure:"policies" msgpack:"policies"`
 }
 
-// Contributors is a collection of repo contributors
-type Contributors map[string]*Contributor
+// RepoContributors is a collection of repo contributors
+type RepoContributors map[string]*RepoContributor
 
 // BareRepository returns an empty repository object
 func BareRepository() *Repository {
@@ -193,19 +203,19 @@ func BareRepository() *Repository {
 		Owners:       make(map[string]*RepoOwner),
 		Proposals:    make(map[string]*RepoProposal),
 		Config:       BareRepoConfig(),
-		Contributors: make(map[string]*Contributor),
+		Contributors: make(map[string]*RepoContributor),
 	}
 }
 
 // Repository represents a git repository.
 type Repository struct {
 	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	Balance               util.String   `json:"balance" msgpack:"balance" mapstructure:"balance"`
-	References            References    `json:"references" msgpack:"references" mapstructure:"references"`
-	Owners                RepoOwners    `json:"owners" msgpack:"owners" mapstructure:"owners"`
-	Proposals             RepoProposals `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
-	Contributors          Contributors  `json:"contributors" msgpack:"contributors" mapstructure:"contributors"`
-	Config                *RepoConfig   `json:"config" msgpack:"config" mapstructure:"config"`
+	Balance               util.String      `json:"balance" msgpack:"balance" mapstructure:"balance"`
+	References            References       `json:"references" msgpack:"references" mapstructure:"references"`
+	Owners                RepoOwners       `json:"owners" msgpack:"owners" mapstructure:"owners"`
+	Proposals             RepoProposals    `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
+	Contributors          RepoContributors `json:"contributors" msgpack:"contributors" mapstructure:"contributors"`
+	Config                *RepoConfig      `json:"config" msgpack:"config" mapstructure:"config"`
 }
 
 // GetBalance implements types.BalanceAccount

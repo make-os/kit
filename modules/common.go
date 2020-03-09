@@ -122,10 +122,11 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) util.Map {
 		return EncodeForJS(util.StructToMap(obj, "json"))
 	}
 
-	m, ok := obj.(map[string]interface{})
-	if !ok {
+	vObj := reflect.ValueOf(obj)
+	if vObj.Kind() != reflect.Map {
 		panic("only struct or map are allowed")
 	}
+	m := util.ToMapSI(obj)
 
 	for k, v := range m {
 		if funk.InStrings(fieldToIgnore, k) {
@@ -139,6 +140,8 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) util.Map {
 			m[k] = fmt.Sprintf("%d", o)
 		case float64:
 			m[k] = fmt.Sprintf("%f", o)
+		case map[string][]byte:
+			m[k] = EncodeForJS(v)
 		case map[string]interface{}:
 			if len(o) > 0 { // no need adding empty maps
 				if isMapOrStruct(o) {

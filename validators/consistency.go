@@ -307,7 +307,7 @@ func CheckTxNSAcquireConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	ns := logic.NamespaceKeeper().GetNamespace(tx.Name)
+	ns := logic.NamespaceKeeper().Get(tx.Name)
 	if !ns.IsNil() && ns.GraceEndAt > uint64(bi.Height) {
 		return feI(index, "name", "chosen name is not currently available")
 	}
@@ -336,7 +336,7 @@ func CheckTxNamespaceDomainUpdateConsistency(
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 
 	// Ensure the sender of the transaction is the owner of the namespace
-	ns := logic.NamespaceKeeper().GetNamespace(tx.Name)
+	ns := logic.NamespaceKeeper().Get(tx.Name)
 	if ns.IsNil() {
 		return feI(index, "name", "namespace not found")
 	}
@@ -359,14 +359,10 @@ func CheckProposalCommonConsistency(
 	txProposal *core.TxProposalCommon,
 	txCommon *core.TxCommon,
 	index int,
-	logic core.Logic) (*state.Repository, error) {
+	logic core.Logic,
+	currentHeight int64) (*state.Repository, error) {
 
-	bi, err := logic.SysKeeper().GetLastBlockInfo()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch current block info")
-	}
-
-	targetRepo := logic.RepoKeeper().GetRepo(txProposal.RepoName, uint64(bi.Height))
+	targetRepo := logic.RepoKeeper().GetRepo(txProposal.RepoName, uint64(currentHeight))
 	if targetRepo.IsNil() {
 		return nil, feI(index, "name", "repo not found")
 	}
@@ -401,7 +397,7 @@ func CheckProposalCommonConsistency(
 
 	pubKey, _ := crypto.PubKeyFromBytes(txCommon.GetSenderPubKey().Bytes())
 	if err := logic.Tx().CanExecCoinTransfer(pubKey, txProposal.Value, txCommon.Fee,
-		txCommon.GetNonce(), uint64(bi.Height)); err != nil {
+		txCommon.GetNonce(), uint64(currentHeight)); err != nil {
 		return nil, err
 	}
 
@@ -415,11 +411,12 @@ func CheckTxRepoProposalUpsertOwnerConsistency(
 	index int,
 	logic core.Logic) error {
 
-	_, err := CheckProposalCommonConsistency(
-		tx.TxProposalCommon,
-		tx.TxCommon,
-		index,
-		logic)
+	bi, err := logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch current block info")
+	}
+
+	_, err = CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
 	if err != nil {
 		return err
 	}
@@ -553,11 +550,12 @@ func CheckTxRepoProposalMergeRequestConsistency(
 	index int,
 	logic core.Logic) error {
 
-	_, err := CheckProposalCommonConsistency(
-		tx.TxProposalCommon,
-		tx.TxCommon,
-		index,
-		logic)
+	bi, err := logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch current block info")
+	}
+
+	_, err = CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
 	if err != nil {
 		return err
 	}
@@ -571,11 +569,12 @@ func CheckTxRepoProposalUpdateConsistency(
 	index int,
 	logic core.Logic) error {
 
-	_, err := CheckProposalCommonConsistency(
-		tx.TxProposalCommon,
-		tx.TxCommon,
-		index,
-		logic)
+	bi, err := logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch current block info")
+	}
+
+	_, err = CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
 	if err != nil {
 		return err
 	}
@@ -589,11 +588,30 @@ func CheckTxRepoProposalRegisterGPGKeyConsistency(
 	index int,
 	logic core.Logic) error {
 
-	_, err := CheckProposalCommonConsistency(
-		tx.TxProposalCommon,
-		tx.TxCommon,
-		index,
-		logic)
+	bi, err := logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch current block info")
+	}
+
+	// Check whether the namespace provided in both Namespace or NamespaceOnly
+	// fields exist and are owned by the target repository.
+	ns, nsField := tx.Namespace, "namespace"
+	if tx.NamespaceOnly != "" {
+		ns = tx.NamespaceOnly
+		nsField = "namespaceOnly"
+	}
+	if ns != "" {
+		ns = util.Hash20Hex([]byte(ns))
+		found := logic.NamespaceKeeper().Get(ns, uint64(bi.Height))
+		if found.IsNil() {
+			return feI(index, nsField, "namespace not found")
+		}
+		if found.Owner != tx.RepoName {
+			return feI(index, nsField, "namespace not owned by the target repository")
+		}
+	}
+
+	_, err = CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
 	if err != nil {
 		return err
 	}

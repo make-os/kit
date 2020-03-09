@@ -45,7 +45,7 @@ func (m *NamespaceModule) funcs() []*modules.ModuleFunc {
 		{
 			Name:        "getTarget",
 			Value:       m.GetTarget,
-			Description: "Lookup the target of a full namespace path",
+			Description: "Lookup the target of a full namespace URI",
 		},
 		{
 			Name:        "updateDomain",
@@ -102,7 +102,7 @@ func (m *NamespaceModule) Lookup(name string, height ...uint64) interface{} {
 		targetHeight = uint64(height[0])
 	}
 
-	ns := m.logic.NamespaceKeeper().GetNamespace(util.Hash20Hex([]byte(name)), targetHeight)
+	ns := m.logic.NamespaceKeeper().Get(util.Hash20Hex([]byte(name)), targetHeight)
 	if ns.IsNil() {
 		return nil
 	}

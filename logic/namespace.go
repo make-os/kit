@@ -34,7 +34,7 @@ func (t *Transaction) execAcquireNamespace(
 	spk := crypto.MustPubKeyFromBytes(creatorPubKey.Bytes())
 
 	// Get the current namespace object and re-populate it
-	ns := t.logic.NamespaceKeeper().GetNamespace(name)
+	ns := t.logic.NamespaceKeeper().Get(name)
 	ns.Owner = spk.Addr().String()
 	ns.ExpiresAt = chainHeight + uint64(params.NamespaceTTL)
 	ns.GraceEndAt = ns.ExpiresAt + uint64(params.NamespaceGraceDur)
@@ -99,7 +99,7 @@ func (t *Transaction) execUpdateNamespaceDomains(
 
 	// Get the current namespace object and update.
 	// Remove existing domain if it is referenced in the update and has not target.
-	ns := t.logic.NamespaceKeeper().GetNamespace(name)
+	ns := t.logic.NamespaceKeeper().Get(name)
 	for domain, target := range domain {
 		if _, ok := ns.Domains[domain]; !ok {
 			ns.Domains[domain] = target

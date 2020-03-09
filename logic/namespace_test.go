@@ -1,9 +1,10 @@
 package logic
 
 import (
+	"os"
+
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"os"
 
 	"github.com/golang/mock/gomock"
 
@@ -66,18 +67,18 @@ var _ = Describe("Namespace", func() {
 			})
 
 			Specify("that namespace was created", func() {
-				ns := logic.NamespaceKeeper().GetNamespace(nsName)
+				ns := logic.NamespaceKeeper().Get(nsName)
 				Expect(ns.IsNil()).To(BeFalse())
 			})
 
 			Specify("that expireAt is set 10", func() {
-				ns := logic.NamespaceKeeper().GetNamespace(nsName)
+				ns := logic.NamespaceKeeper().Get(nsName)
 				Expect(ns.IsNil()).To(BeFalse())
 				Expect(ns.ExpiresAt).To(Equal(uint64(10)))
 			})
 
 			Specify("that graceEndAt is set 20", func() {
-				ns := logic.NamespaceKeeper().GetNamespace(nsName)
+				ns := logic.NamespaceKeeper().Get(nsName)
 				Expect(ns.IsNil()).To(BeFalse())
 				Expect(ns.GraceEndAt).To(Equal(uint64(20)))
 			})
@@ -111,7 +112,7 @@ var _ = Describe("Namespace", func() {
 			})
 
 			Specify("that owner is set to the value of transferToAccount", func() {
-				ns := logic.NamespaceKeeper().GetNamespace(nsName)
+				ns := logic.NamespaceKeeper().Get(nsName)
 				Expect(ns.IsNil()).To(BeFalse())
 				Expect(ns.Owner).To(Equal(transferAcct))
 			})
@@ -135,7 +136,7 @@ var _ = Describe("Namespace", func() {
 			})
 
 			Specify("that owner is set to the value of transferToRepo", func() {
-				ns := logic.NamespaceKeeper().GetNamespace(nsName)
+				ns := logic.NamespaceKeeper().Get(nsName)
 				Expect(ns.IsNil()).To(BeFalse())
 				Expect(ns.Owner).To(Equal(transferToRepo))
 			})
@@ -170,7 +171,7 @@ var _ = Describe("Namespace", func() {
 			})
 
 			Specify("that domain 'domain1' has changed", func() {
-				ns := logic.NamespaceKeeper().GetNamespace(nsName)
+				ns := logic.NamespaceKeeper().Get(nsName)
 				Expect(ns.IsNil()).To(BeFalse())
 				Expect(ns.Domains["domain1"]).To(Equal("target_update"))
 			})
@@ -198,7 +199,7 @@ var _ = Describe("Namespace", func() {
 			})
 
 			Specify("that domain 'domain1' was added", func() {
-				ns := logic.NamespaceKeeper().GetNamespace(nsName)
+				ns := logic.NamespaceKeeper().Get(nsName)
 				Expect(ns.IsNil()).To(BeFalse())
 				Expect(ns.Domains["domain1"]).To(Equal("target_update"))
 			})
@@ -233,7 +234,7 @@ var _ = Describe("Namespace", func() {
 			})
 
 			Specify("that domain 'domain1' has been removed", func() {
-				ns := logic.NamespaceKeeper().GetNamespace(nsName)
+				ns := logic.NamespaceKeeper().Get(nsName)
 				Expect(ns.IsNil()).To(BeFalse())
 				Expect(ns.Domains).ToNot(HaveKey("domain1"))
 			})

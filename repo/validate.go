@@ -10,6 +10,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/dht/types"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
+	types2 "gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 
@@ -273,7 +274,7 @@ func checkMergeCompliance(
 
 	// Ensure the proposal's base branch matches the pushed branch
 	var propBaseBranch string
-	_ = util.ToObject(prop.ActionData["base"], &propBaseBranch)
+	_ = util.ToObject(prop.ActionData[types2.ActionDataKeyBaseBranch], &propBaseBranch)
 	if ref.Short() != propBaseBranch {
 		return fmt.Errorf("merge compliance error: pushed branch name and " +
 			"merge proposal base branch name must match")
@@ -320,7 +321,7 @@ func checkMergeCompliance(
 
 	// When no base hash is given, set default hash value to zero hash
 	var propBaseHash string
-	_ = util.ToObject(prop.ActionData["baseHash"], &propBaseHash)
+	_ = util.ToObject(prop.ActionData[types2.ActionDataKeyBaseHash], &propBaseHash)
 	propBaseHashStr := plumbing.ZeroHash.String()
 	if propBaseHash != "" {
 		propBaseHashStr = propBaseHash
@@ -335,7 +336,7 @@ func checkMergeCompliance(
 
 	// Ensure the target commit and the proposal target match
 	var propTargetHash string
-	_ = util.ToObject(prop.ActionData["targetHash"], &propTargetHash)
+	_ = util.ToObject(prop.ActionData[types2.ActionDataKeyTargetHash], &propTargetHash)
 	if targetCommit.GetHash().String() != propTargetHash {
 		return fmt.Errorf("merge compliance error: target commit hash and " +
 			"the merge proposal target hash must match")

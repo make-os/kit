@@ -417,17 +417,19 @@ func (m *RepoModule) CreateMergeRequest(
 //
 // ARGS:
 // params <map>
-// params.name 		<string>: 						The name of the repository
-// params.id 		<string>: 						A unique proposal ID
-// params.gpgId 	<string|[]string>: 				A list or comma separated list of GPG IDs to add
-// params.policies 	<[]map[string]interface{}>: 	A list of policies
-//	- sub 			<string>:						The policy's subject
-//	- obj 			<string>:						The policy's object
-//	- act 			<string>:						The policy's action
-// params.value 	<string|number>:				The proposal fee to pay
-// params.nonce 	<number|string>: 				The senders next account nonce
-// params.fee 		<number|string>: 				The transaction fee to pay
-// params.timestamp <number>: 						The unix timestamp
+// params.name 					<string>: 						The name of the repository
+// params.id 					<string>: 						A unique proposal ID
+// params.ids 					<string|[]string>: 				A list or comma separated list of GPG IDs to add
+// params.policies 				<[]map[string]interface{}>: 	A list of policies
+//	- sub 						<string>:						The policy's subject
+//	- obj 						<string>:						The policy's object
+//	- act 						<string>:						The policy's action
+// params.value 				<string|number>:				The proposal fee to pay
+// params.nonce 				<number|string>: 				The senders next account nonce
+// params.fee 					<number|string>: 				The transaction fee to pay
+// params.timestamp 			<number>: 						The unix timestamp
+// params.namespace 			<string>: 						A namespace to also register the key to
+// params.namespaceOnly 		<string>: 						Like namespace but key will not be registered to the repo.
 //
 // options 			<[]interface{}>
 // options[0] 		key <string>: 					The signer's private key

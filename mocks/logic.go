@@ -493,23 +493,23 @@ func (m *MockNamespaceKeeper) EXPECT() *MockNamespaceKeeperMockRecorder {
 	return m.recorder
 }
 
-// GetNamespace mocks base method
-func (m *MockNamespaceKeeper) GetNamespace(name string, blockNum ...uint64) *state.Namespace {
+// Get mocks base method
+func (m *MockNamespaceKeeper) Get(name string, blockNum ...uint64) *state.Namespace {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{name}
 	for _, a := range blockNum {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetNamespace", varargs...)
+	ret := m.ctrl.Call(m, "Get", varargs...)
 	ret0, _ := ret[0].(*state.Namespace)
 	return ret0
 }
 
-// GetNamespace indicates an expected call of GetNamespace
+// Get indicates an expected call of Get
 func (mr *MockNamespaceKeeperMockRecorder) GetNamespace(name interface{}, blockNum ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{name}, blockNum...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockNamespaceKeeper)(nil).GetNamespace), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockNamespaceKeeper)(nil).Get), varargs...)
 }
 
 // GetTarget mocks base method

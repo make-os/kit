@@ -40,7 +40,7 @@ func IsPrefixedAddr(addr string) bool {
 	return regexp.MustCompile(addressPrefixedIdentifierRegexp).MatchString(addr)
 }
 
-// IsNamespaceURI checks whether the given address is a namespaced URI
+// IsNamespaceURI checks whether the given address is a namespace URI
 func IsNamespaceURI(addr string) bool {
 	return regexp.MustCompile(addressNamespaceRegexp).MatchString(addr)
 }

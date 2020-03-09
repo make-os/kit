@@ -18,10 +18,10 @@ var _ = Describe("NamespaceKeeper", func() {
 		nsKp = NewNamespaceKeeper(state)
 	})
 
-	Describe(".GetNamespace", func() {
+	Describe(".Get", func() {
 		When("namespace does not exist", func() {
 			It("should return a bare namespace", func() {
-				ns := nsKp.GetNamespace("unknown", 0)
+				ns := nsKp.Get("unknown", 0)
 				Expect(ns).To(Equal(state2.BareNamespace()))
 			})
 		})
@@ -38,7 +38,7 @@ var _ = Describe("NamespaceKeeper", func() {
 			})
 
 			It("should successfully return the expected namespace object", func() {
-				ns := nsKp.GetNamespace("ns1", 0)
+				ns := nsKp.Get("ns1", 0)
 				Expect(ns).To(BeEquivalentTo(testNS))
 			})
 		})
@@ -47,13 +47,13 @@ var _ = Describe("NamespaceKeeper", func() {
 	Describe(".Update", func() {
 		It("should update namespace object", func() {
 			key := "repo1"
-			ns := nsKp.GetNamespace(key)
+			ns := nsKp.Get(key)
 			Expect(ns.Owner).To(Equal(""))
 
 			ns.Owner = "creator_addr"
 			nsKp.Update(key, ns)
 
-			ns2 := nsKp.GetNamespace(key)
+			ns2 := nsKp.Get(key)
 			Expect(ns2).To(Equal(ns))
 		})
 	})
