@@ -19,10 +19,10 @@ var _ = Describe("Account", func() {
 		ak = NewAccountKeeper(state)
 	})
 
-	Describe(".GetAccount", func() {
+	Describe(".Get", func() {
 		When("account does not exist", func() {
 			It("should return a bare account", func() {
-				acct := ak.GetAccount(util.String("unknown"), 0)
+				acct := ak.Get(util.String("unknown"), 0)
 				Expect(acct).To(Equal(state2.BareAccount()))
 			})
 		})
@@ -40,7 +40,7 @@ var _ = Describe("Account", func() {
 			})
 
 			It("should successfully return the expected account object", func() {
-				acct := ak.GetAccount("addr1", 0)
+				acct := ak.Get("addr1", 0)
 				Expect(acct).To(BeEquivalentTo(testAcct))
 			})
 		})
@@ -49,13 +49,13 @@ var _ = Describe("Account", func() {
 	Describe(".Update", func() {
 		It("should update balance", func() {
 			key := util.String("addr1")
-			acct := ak.GetAccount(key)
+			acct := ak.Get(key)
 			Expect(acct.Balance).To(Equal(util.String("0")))
 			Expect(acct.Nonce).To(Equal(uint64(0)))
 			acct.Balance = util.String("10000")
 			acct.Nonce = 2
 			ak.Update(key, acct)
-			acct = ak.GetAccount(key)
+			acct = ak.Get(key)
 			Expect(acct.Balance).To(Equal(util.String("10000")))
 			Expect(acct.Nonce).To(Equal(uint64(2)))
 		})

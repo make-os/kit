@@ -212,7 +212,7 @@ type PoolGetter interface {
 // RepoGetter describes an interface for getting a local repository
 type RepoGetter interface {
 
-	// GetRepo returns a repo handle
+	// Get returns a repo handle
 	GetRepo(name string) (BareRepo, error)
 }
 

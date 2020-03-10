@@ -18,14 +18,14 @@ func NewAccountKeeper(state *tree.SafeTree) *AccountKeeper {
 	return &AccountKeeper{state: state}
 }
 
-// GetAccount returns an account by address.
+// Get returns an account by address.
 //
 // ARGS:
 // address: The address of the account
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Account if no account is found.
-func (a *AccountKeeper) GetAccount(address util.String, blockNum ...uint64) *state.Account {
+func (a *AccountKeeper) Get(address util.String, blockNum ...uint64) *state.Account {
 
 	// Get version is provided
 	var version uint64

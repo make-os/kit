@@ -5,11 +5,11 @@ import (
 
 	"gitlab.com/makeos/mosdef/util"
 
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 
 	l "gitlab.com/makeos/mosdef/logic"
 )
@@ -51,7 +51,7 @@ var _ = Describe("Logic", func() {
 			cfg.GenesisFileEntries = testGenData
 			for _, a := range testGenData {
 				if a.Type == "account" {
-					res := logic.AccountKeeper().GetAccount(util.String(a.Address))
+					res := logic.AccountKeeper().Get(util.String(a.Address))
 					Expect(res.Balance).To(Equal(util.String("0")))
 					Expect(res.Nonce).To(Equal(uint64(0)))
 				}
@@ -61,14 +61,14 @@ var _ = Describe("Logic", func() {
 		})
 
 		It("should successfully add all accounts with expected balance", func() {
-			addr1Res := logic.AccountKeeper().GetAccount(util.String(testGenData[0].Address))
+			addr1Res := logic.AccountKeeper().Get(util.String(testGenData[0].Address))
 			Expect(addr1Res.Balance).To(Equal(util.String("100")))
-			addr2Res := logic.AccountKeeper().GetAccount(util.String(testGenData[1].Address))
+			addr2Res := logic.AccountKeeper().Get(util.String(testGenData[1].Address))
 			Expect(addr2Res.Balance).To(Equal(util.String("200")))
 		})
 
 		It("should successfully add all repos", func() {
-			repo := logic.RepoKeeper().GetRepo("my-repo")
+			repo := logic.RepoKeeper().Get("my-repo")
 			Expect(repo.IsNil()).To(BeFalse())
 			helmRepo, err := logic.SysKeeper().GetHelmRepo()
 			Expect(err).To(BeNil())

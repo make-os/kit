@@ -31,7 +31,7 @@ func CheckTxCoinTransferConsistency(
 check:
 	// If recipient address is a prefixed repo address, ensure repo exist
 	if recipient.IsPrefixedRepoAddress() {
-		targetRepo := logic.RepoKeeper().GetRepo(recipient.String()[2:], uint64(bi.Height))
+		targetRepo := logic.RepoKeeper().Get(recipient.String()[2:], uint64(bi.Height))
 		if targetRepo.IsNil() {
 			return feI(index, "to", "recipient repo not found")
 		}
@@ -155,7 +155,7 @@ func CheckTxRepoCreateConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	repo := logic.RepoKeeper().GetRepo(tx.Name)
+	repo := logic.RepoKeeper().Get(tx.Name)
 	if !repo.IsNil() {
 		msg := "name is not available. choose another"
 		return feI(index, "name", msg)
@@ -312,6 +312,14 @@ func CheckTxNSAcquireConsistency(
 		return feI(index, "name", "chosen name is not currently available")
 	}
 
+	if tx.TransferToRepo != "" && logic.RepoKeeper().Get(tx.TransferToRepo).IsNil() {
+		return feI(index, "toRepo", "repo does not exist")
+	}
+
+	if tx.TransferToAccount != "" && logic.AccountKeeper().Get(util.String(tx.TransferToAccount)).IsNil() {
+		return feI(index, "toAccount", "account does not exist")
+	}
+
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
 	if err = logic.Tx().CanExecCoinTransfer(pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
@@ -362,7 +370,7 @@ func CheckProposalCommonConsistency(
 	logic core.Logic,
 	currentHeight int64) (*state.Repository, error) {
 
-	targetRepo := logic.RepoKeeper().GetRepo(txProposal.RepoName, uint64(currentHeight))
+	targetRepo := logic.RepoKeeper().Get(txProposal.RepoName, uint64(currentHeight))
 	if targetRepo.IsNil() {
 		return nil, feI(index, "name", "repo not found")
 	}
@@ -431,7 +439,7 @@ func CheckTxVoteConsistency(
 	logic core.Logic) error {
 
 	// The repo must exist
-	repo := logic.RepoKeeper().GetRepo(tx.RepoName)
+	repo := logic.RepoKeeper().Get(tx.RepoName)
 	if repo.IsNil() {
 		return feI(index, "name", "repo not found")
 	}
@@ -503,7 +511,7 @@ func CheckTxRepoProposalSendFeeConsistency(
 	logic core.Logic) error {
 
 	// The repo must exist
-	repo := logic.RepoKeeper().GetRepo(tx.RepoName)
+	repo := logic.RepoKeeper().Get(tx.RepoName)
 	if repo.IsNil() {
 		return feI(index, "name", "repo not found")
 	}
@@ -601,7 +609,7 @@ func CheckTxRepoProposalRegisterGPGKeyConsistency(
 		nsField = "namespaceOnly"
 	}
 	if ns != "" {
-		ns = util.Hash20Hex([]byte(ns))
+		ns = util.HashNamespace(ns)
 		found := logic.NamespaceKeeper().Get(ns, uint64(bi.Height))
 		if found.IsNil() {
 			return feI(index, nsField, "namespace not found")

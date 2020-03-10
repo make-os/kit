@@ -279,23 +279,23 @@ func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
 	return m.recorder
 }
 
-// GetAccount mocks base method
-func (m *MockAccountKeeper) GetAccount(address util.String, blockNum ...uint64) *state.Account {
+// Get mocks base method
+func (m *MockAccountKeeper) Get(address util.String, blockNum ...uint64) *state.Account {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockNum {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetAccount", varargs...)
+	ret := m.ctrl.Call(m, "Get", varargs...)
 	ret0, _ := ret[0].(*state.Account)
 	return ret0
 }
 
-// GetAccount indicates an expected call of GetAccount
-func (mr *MockAccountKeeperMockRecorder) GetAccount(address interface{}, blockNum ...interface{}) *gomock.Call {
+// Get indicates an expected call of Get
+func (mr *MockAccountKeeperMockRecorder) Get(address interface{}, blockNum ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address}, blockNum...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockAccountKeeper)(nil).GetAccount), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockAccountKeeper)(nil).Get), varargs...)
 }
 
 // Update mocks base method
@@ -333,42 +333,42 @@ func (m *MockRepoKeeper) EXPECT() *MockRepoKeeperMockRecorder {
 	return m.recorder
 }
 
-// GetRepo mocks base method
-func (m *MockRepoKeeper) GetRepo(name string, blockNum ...uint64) *state.Repository {
+// Get mocks base method
+func (m *MockRepoKeeper) Get(name string, blockNum ...uint64) *state.Repository {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{name}
 	for _, a := range blockNum {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetRepo", varargs...)
+	ret := m.ctrl.Call(m, "Get", varargs...)
 	ret0, _ := ret[0].(*state.Repository)
 	return ret0
 }
 
-// GetRepo indicates an expected call of GetRepo
-func (mr *MockRepoKeeperMockRecorder) GetRepo(name interface{}, blockNum ...interface{}) *gomock.Call {
+// Get indicates an expected call of Get
+func (mr *MockRepoKeeperMockRecorder) Get(name interface{}, blockNum ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{name}, blockNum...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockRepoKeeper)(nil).GetRepo), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRepoKeeper)(nil).Get), varargs...)
 }
 
-// GetRepoOnly mocks base method
-func (m *MockRepoKeeper) GetRepoOnly(name string, blockNum ...uint64) *state.Repository {
+// GetWithNoPopulation mocks base method
+func (m *MockRepoKeeper) GetWithNoPopulation(name string, blockNum ...uint64) *state.Repository {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{name}
 	for _, a := range blockNum {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetRepoOnly", varargs...)
+	ret := m.ctrl.Call(m, "GetWithNoPopulation", varargs...)
 	ret0, _ := ret[0].(*state.Repository)
 	return ret0
 }
 
-// GetRepoOnly indicates an expected call of GetRepoOnly
-func (mr *MockRepoKeeperMockRecorder) GetRepoOnly(name interface{}, blockNum ...interface{}) *gomock.Call {
+// GetWithNoPopulation indicates an expected call of GetWithNoPopulation
+func (mr *MockRepoKeeperMockRecorder) GetWithNoPopulation(name interface{}, blockNum ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{name}, blockNum...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoOnly", reflect.TypeOf((*MockRepoKeeper)(nil).GetRepoOnly), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithNoPopulation", reflect.TypeOf((*MockRepoKeeper)(nil).GetWithNoPopulation), varargs...)
 }
 
 // Update mocks base method
@@ -506,7 +506,7 @@ func (m *MockNamespaceKeeper) Get(name string, blockNum ...uint64) *state.Namesp
 }
 
 // Get indicates an expected call of Get
-func (mr *MockNamespaceKeeperMockRecorder) GetNamespace(name interface{}, blockNum ...interface{}) *gomock.Call {
+func (mr *MockNamespaceKeeperMockRecorder) Get(name interface{}, blockNum ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{name}, blockNum...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockNamespaceKeeper)(nil).Get), varargs...)

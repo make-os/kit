@@ -77,17 +77,17 @@ var _ = Describe("Repo", func() {
 			})
 
 			Specify("that repo config is the default", func() {
-				repo := txLogic.logic.RepoKeeper().GetRepo("repo")
+				repo := txLogic.logic.RepoKeeper().Get("repo")
 				Expect(repo.Config).To(Equal(state.DefaultRepoConfig))
 			})
 
 			Specify("that fee is deducted from sender account", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr())
+				acct := logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.GetBalance()).To(Equal(util.String("8.5")))
 			})
 
 			Specify("that sender account nonce increased", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr())
+				acct := logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.Nonce).To(Equal(uint64(1)))
 			})
 
@@ -100,7 +100,7 @@ var _ = Describe("Repo", func() {
 				})
 
 				Specify("that the repo was added to the tree", func() {
-					repo := txLogic.logic.RepoKeeper().GetRepo("repo")
+					repo := txLogic.logic.RepoKeeper().Get("repo")
 					Expect(repo.IsNil()).To(BeFalse())
 					Expect(repo.Owners).To(HaveKey(sender.Addr().String()))
 				})
@@ -115,7 +115,7 @@ var _ = Describe("Repo", func() {
 				})
 
 				It("should not add the sender as an owner", func() {
-					repo := txLogic.logic.RepoKeeper().GetRepo("repo")
+					repo := txLogic.logic.RepoKeeper().Get("repo")
 					Expect(repo.Owners).To(BeEmpty())
 				})
 			})
@@ -129,7 +129,7 @@ var _ = Describe("Repo", func() {
 				})
 
 				Specify("that repo config is not the default", func() {
-					repo := txLogic.logic.RepoKeeper().GetRepo("repo")
+					repo := txLogic.logic.RepoKeeper().Get("repo")
 					Expect(repo.Config).ToNot(Equal(state.DefaultRepoConfig))
 					Expect(repo.Config.Governance.ProposalDur).To(Equal(uint64(1000)))
 				})
@@ -172,7 +172,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should increment proposal.Yes by 1", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(2)))
 			})
 
@@ -199,7 +199,7 @@ var _ = Describe("Repo", func() {
 				})
 
 				It("should increment proposal.Yes by 1 and proposal.NoWithVeto by 1", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
+					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.Proposals.Get(propID).NoWithVeto).To(Equal(float64(1)))
 					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(1)))
 				})
@@ -224,7 +224,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should increment proposal.Yes by 10", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(11)))
 			})
 		})
@@ -250,7 +250,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should increment proposal.Yes by 100", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(100)))
 			})
 		})
@@ -276,7 +276,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should increment proposal.Yes by 100", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(100)))
 			})
 		})
@@ -310,7 +310,7 @@ var _ = Describe("Repo", func() {
 					It("should increment proposal.Yes by 30", func() {
 						err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteYes, "1.5", 0)
 						Expect(err).To(BeNil())
-						repo := logic.RepoKeeper().GetRepo(repoName)
+						repo := logic.RepoKeeper().Get(repoName)
 						Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(30)))
 					})
 				})
@@ -319,7 +319,7 @@ var _ = Describe("Repo", func() {
 					It("should increment proposal.Yes by 30", func() {
 						err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteNo, "1.5", 0)
 						Expect(err).To(BeNil())
-						repo := logic.RepoKeeper().GetRepo(repoName)
+						repo := logic.RepoKeeper().Get(repoName)
 						Expect(repo.Proposals.Get(propID).No).To(Equal(float64(30)))
 					})
 				})
@@ -328,7 +328,7 @@ var _ = Describe("Repo", func() {
 					It("should increment proposal.Yes by 30", func() {
 						err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteAbstain, "1.5", 0)
 						Expect(err).To(BeNil())
-						repo := logic.RepoKeeper().GetRepo(repoName)
+						repo := logic.RepoKeeper().Get(repoName)
 						Expect(repo.Proposals.Get(propID).Abstain).To(Equal(float64(30)))
 					})
 				})
@@ -337,7 +337,7 @@ var _ = Describe("Repo", func() {
 					It("should increment proposal.Yes by 30", func() {
 						err = txLogic.execRepoProposalVote(spk, repoName, propID, state.ProposalVoteNoWithVeto, "1.5", 0)
 						Expect(err).To(BeNil())
-						repo := logic.RepoKeeper().GetRepo(repoName)
+						repo := logic.RepoKeeper().Get(repoName)
 						Expect(repo.Proposals.Get(propID).NoWithVeto).To(Equal(float64(30)))
 					})
 				})
@@ -374,7 +374,7 @@ var _ = Describe("Repo", func() {
 				})
 
 				It("should increment proposal.Yes by 30", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
+					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(30)))
 				})
 			})
@@ -412,7 +412,7 @@ var _ = Describe("Repo", func() {
 				})
 
 				It("should increment proposal.Yes by 30", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
+					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(30)))
 				})
 			})
@@ -453,7 +453,7 @@ var _ = Describe("Repo", func() {
 				})
 
 				It("should increment proposal.Yes by 10", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
+					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(10)))
 				})
 			})
@@ -491,7 +491,7 @@ var _ = Describe("Repo", func() {
 				})
 
 				It("should increment proposal.Yes by 30", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
+					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(30)))
 				})
 			})
@@ -531,12 +531,12 @@ var _ = Describe("Repo", func() {
 				})
 
 				It("should increment proposal.No by 30", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
+					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.Proposals.Get(propID).No).To(Equal(float64(30)))
 				})
 
 				Specify("that proposal.Yes is now 80", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
+					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(80)))
 				})
 			})
@@ -571,12 +571,12 @@ var _ = Describe("Repo", func() {
 
 			When("vote is NoWithVeto", func() {
 				It("should increment proposal.NoWithVeto by 30", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
+					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.Proposals.Get(propID).NoWithVeto).To(Equal(float64(30)))
 				})
 
 				It("should increment NoWithVetoByOwners by 1", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
+					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.Proposals.Get(propID).NoWithVetoByOwners).To(Equal(float64(1)))
 				})
 			})
@@ -618,29 +618,29 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add the new proposal to the repo", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 			})
 
 			Specify("that the proposal is finalized and self accepted", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
 				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(1)))
 			})
 
 			Specify("that new owner was added", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Owners).To(HaveLen(2))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				acct := logic.AccountKeeper().Get(sender.Addr(), 0)
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
 			Specify("that the proposal fee by the sender is registered on the proposal", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
 				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
@@ -663,12 +663,12 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add the new proposal to the repo", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 			})
 
 			Specify("that the proposal is finalized and self accepted", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
 				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(1)))
@@ -676,17 +676,17 @@ var _ = Describe("Repo", func() {
 			})
 
 			Specify("that three owners were added", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Owners).To(HaveLen(3))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				acct := logic.AccountKeeper().Get(sender.Addr(), 0)
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
 			Specify("that the proposal fee by the sender is registered on the proposal", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
 				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
@@ -711,24 +711,24 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add the new proposal to the repo", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 			})
 
 			Specify("that the proposal is not finalized or self accepted", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeFalse())
 				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(0)))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr(), curHeight)
+				acct := logic.AccountKeeper().Get(sender.Addr(), curHeight)
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
 			Specify("that the proposal fee by the sender is registered on the proposal", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
 				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
@@ -758,7 +758,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add the new proposal with expected `endAt` and `feeDepEndAt` values", func() {
-				repo := logic.RepoKeeper().GetRepoOnly(repoName)
+				repo := logic.RepoKeeper().GetWithNoPopulation(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").FeeDepositEndAt).To(Equal(uint64(301)))
 				Expect(repo.Proposals.Get("1").EndAt).To(Equal(uint64(1301)))
@@ -855,14 +855,14 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add fee to proposal", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees.Get(sender.Addr().String())).To(Equal(proposalFee))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				acct := logic.AccountKeeper().Get(sender.Addr(), 0)
 				Expect(acct.Balance.String()).To(Equal("8.5"))
 			})
 
@@ -876,14 +876,14 @@ var _ = Describe("Repo", func() {
 				})
 
 				It("should add fee to existing senders deposited proposal fee", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
+					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.Proposals).To(HaveLen(1))
 					Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 					Expect(repo.Proposals.Get("1").Fees.Get(sender.Addr().String())).To(Equal(util.String("12")))
 				})
 
 				Specify("that network fee + proposal fee was deducted", func() {
-					acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+					acct := logic.AccountKeeper().Get(sender.Addr(), 0)
 					Expect(acct.Balance.String()).To(Equal("5"))
 				})
 			})
@@ -908,7 +908,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			Specify("that the proposal has 2 entries from both depositors", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(2))
 				Expect(repo.Proposals.Get("1").Fees.Get(sender.Addr().String())).To(Equal(proposalFee))
@@ -954,30 +954,30 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add the new proposal to the repo", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 			})
 
 			Specify("that the proposal is finalized and self accepted", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
 				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(1)))
 			})
 
 			Specify("that config is updated", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Config).ToNot(Equal(repoUpd.Config))
 				Expect(repo.Config.Governance.ProposalDur).To(Equal(uint64(1000)))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				acct := logic.AccountKeeper().Get(sender.Addr(), 0)
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
 			Specify("that the proposal fee by the sender is registered on the proposal", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
 				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
@@ -1004,24 +1004,24 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add the new proposal to the repo", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 			})
 
 			Specify("that the proposal is not finalized or self accepted", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeFalse())
 				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(0)))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr(), curHeight)
+				acct := logic.AccountKeeper().Get(sender.Addr(), curHeight)
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
 			Specify("that the proposal fee by the sender is registered on the proposal", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
 				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
@@ -1057,7 +1057,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add the new proposal with expected `endAt` and `feeDepEndAt` values", func() {
-				repo := logic.RepoKeeper().GetRepoOnly(repoName)
+				repo := logic.RepoKeeper().GetWithNoPopulation(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").FeeDepositEndAt).To(Equal(uint64(301)))
 				Expect(repo.Proposals.Get("1").EndAt).To(Equal(uint64(1301)))
@@ -1133,24 +1133,24 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add the new proposal to the repo", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 			})
 
 			Specify("that the proposal is finalized and self accepted", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
 				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(1)))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				acct := logic.AccountKeeper().Get(sender.Addr(), 0)
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
 			Specify("that the proposal fee by the sender is registered on the proposal", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
 				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
@@ -1174,24 +1174,24 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add the new proposal to the repo", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 			})
 
 			Specify("that the proposal is not finalized or self accepted", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeFalse())
 				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(0)))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr(), curHeight)
+				acct := logic.AccountKeeper().Get(sender.Addr(), curHeight)
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
 			Specify("that the proposal fee by the sender is registered on the proposal", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
 				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
@@ -1241,24 +1241,24 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add the new proposal to the repo", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 			})
 
 			Specify("that the proposal is finalized and self accepted", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").IsFinalized()).To(BeTrue())
 				Expect(repo.Proposals.Get("1").Yes).To(Equal(float64(1)))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr(), 0)
+				acct := logic.AccountKeeper().Get(sender.Addr(), 0)
 				Expect(acct.Balance.String()).To(Equal("7.5"))
 			})
 
 			Specify("that the proposal fee by the sender is registered on the proposal", func() {
-				repo := logic.RepoKeeper().GetRepo(repoName)
+				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Proposals.Get("1").Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Fees).To(HaveKey(sender.Addr().String()))
 				Expect(repo.Proposals.Get("1").Fees[sender.Addr().String()]).To(Equal("1"))
@@ -1354,7 +1354,7 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					nsObj = state.BareNamespace()
 					nsObj.Owner = "repo1"
-					logic.NamespaceKeeper().Update(util.Hash20Hex([]byte(ns)), nsObj)
+					logic.NamespaceKeeper().Update(util.HashNamespace(ns), nsObj)
 					proposal = &state.RepoProposal{ActionData: map[string][]byte{
 						types.ActionDataKeyPolicies:  util.ToBytes([]*state.RepoACLPolicy{}),
 						types.ActionDataKeyIDs:       util.ToBytes([]string{"gpg1_abc"}),
@@ -1370,7 +1370,7 @@ var _ = Describe("Repo", func() {
 				})
 
 				It("should add 1 contributor to the namespace", func() {
-					nsKey := util.Hash20Hex([]byte(ns))
+					nsKey := util.HashNamespace(ns)
 					nsObj := logic.NamespaceKeeper().Get(nsKey)
 					Expect(nsObj.Contributors).To(HaveLen(1))
 					Expect(nsObj.Contributors["gpg1_abc"]).ToNot(BeNil())
@@ -1405,7 +1405,7 @@ var _ = Describe("Repo", func() {
 				BeforeEach(func() {
 					nsObj = state.BareNamespace()
 					nsObj.Owner = "repo1"
-					logic.NamespaceKeeper().Update(util.Hash20Hex([]byte(ns)), nsObj)
+					logic.NamespaceKeeper().Update(util.HashNamespace(ns), nsObj)
 					proposal = &state.RepoProposal{ActionData: map[string][]byte{
 						types.ActionDataKeyPolicies:      util.ToBytes([]*state.RepoACLPolicy{}),
 						types.ActionDataKeyIDs:           util.ToBytes([]string{"gpg1_abc"}),
@@ -1421,7 +1421,7 @@ var _ = Describe("Repo", func() {
 				})
 
 				It("should add 1 contributor to the namespace", func() {
-					nsKey := util.Hash20Hex([]byte(ns))
+					nsKey := util.HashNamespace(ns)
 					nsObj := logic.NamespaceKeeper().Get(nsKey)
 					Expect(nsObj.Contributors).To(HaveLen(1))
 					Expect(nsObj.Contributors["gpg1_abc"]).ToNot(BeNil())

@@ -2,10 +2,11 @@ package repo
 
 import (
 	"fmt"
+	"os"
+
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"os"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
@@ -79,7 +80,7 @@ var _ = Describe("Reactor", func() {
 		When("repo referenced in PushNote is not found", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
-				mockRepoKeeper.EXPECT().GetRepo("unknown").Return(state.BareRepository())
+				mockRepoKeeper.EXPECT().Get("unknown").Return(state.BareRepository())
 				pn := &core.PushNote{RepoName: "unknown"}
 				err = mgr.onPushNote(mockPeer, pn.Bytes())
 			})
@@ -93,7 +94,7 @@ var _ = Describe("Reactor", func() {
 		When("unable to open the target repo", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
-				mockRepoKeeper.EXPECT().GetRepo("unknown").Return(&state.Repository{
+				mockRepoKeeper.EXPECT().Get("unknown").Return(&state.Repository{
 					Balance: "10",
 				})
 				pn := &core.PushNote{RepoName: "unknown"}

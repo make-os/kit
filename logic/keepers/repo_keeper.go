@@ -23,7 +23,7 @@ func NewRepoKeeper(state *tree.SafeTree, db storage.Tx) *RepoKeeper {
 	return &RepoKeeper{state: state, db: db}
 }
 
-// GetRepo finds a repository by name.
+// Get finds a repository by name.
 //
 // It will populate the proposals in the repo with their correct config
 // source from the version the repo that they where first appeared in.
@@ -33,9 +33,9 @@ func NewRepoKeeper(state *tree.SafeTree, db storage.Tx) *RepoKeeper {
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Repository if no repo is found.
-func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *state.Repository {
+func (a *RepoKeeper) Get(name string, blockNum ...uint64) *state.Repository {
 
-	repo := a.GetRepoOnly(name, blockNum...)
+	repo := a.GetWithNoPopulation(name, blockNum...)
 
 	// For each proposal in the repo, fetch their config from the version of the
 	// repo where they first appeared.
@@ -45,7 +45,7 @@ func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *state.Repository 
 			prop.Config = repo.Config.Governance
 			return nil
 		}
-		propParent := a.GetRepoOnly(name, prop.Height)
+		propParent := a.GetWithNoPopulation(name, prop.Height)
 		if propParent.IsNil() {
 			return fmt.Errorf("failed to get repo version of proposal (%s)", id)
 		}
@@ -59,7 +59,7 @@ func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *state.Repository 
 	return repo
 }
 
-// GetRepoOnly fetches a repository by the given name without making additional
+// GetWithNoPopulation fetches a repository by the given name without making additional
 // queries to populate the repo with associated objects.
 //
 // ARGS:
@@ -67,7 +67,7 @@ func (a *RepoKeeper) GetRepo(name string, blockNum ...uint64) *state.Repository 
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Repository if no repo is found.
-func (a *RepoKeeper) GetRepoOnly(name string, blockNum ...uint64) *state.Repository {
+func (a *RepoKeeper) GetWithNoPopulation(name string, blockNum ...uint64) *state.Repository {
 
 	// Get version is provided
 	var version uint64

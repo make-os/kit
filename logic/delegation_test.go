@@ -1,9 +1,10 @@
 package logic
 
 import (
+	"os"
+
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"os"
 
 	"github.com/golang/mock/gomock"
 
@@ -67,7 +68,7 @@ var _ = Describe("Delegation", func() {
 				spk := sender.PubKey().MustBytes32()
 				err := txLogic.execSetDelegatorCommission(spk, util.String("23.5"), util.String("2"), 0)
 				Expect(err).To(BeNil())
-				senderAcct = logic.AccountKeeper().GetAccount(sender.Addr())
+				senderAcct = logic.AccountKeeper().Get(sender.Addr())
 			})
 
 			It("should successfully set new commission", func() {

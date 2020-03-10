@@ -121,13 +121,13 @@ var _ = Describe("Transfers", func() {
 				})
 
 				Specify("that sender balance is equal to 89 and nonce=1", func() {
-					senderAcct := logic.AccountKeeper().GetAccount(sender.Addr())
+					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("89")))
 					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
 				})
 
 				Specify("that recipient balance is equal to 20 and nonce=0", func() {
-					recipientAcct := logic.AccountKeeper().GetAccount(recipientKey.Addr())
+					recipientAcct := logic.AccountKeeper().Get(recipientKey.Addr())
 					Expect(recipientAcct.Balance).To(Equal(util.String("20")))
 					Expect(recipientAcct.Nonce).To(Equal(uint64(0)))
 				})
@@ -150,7 +150,7 @@ var _ = Describe("Transfers", func() {
 				})
 
 				Specify("that sender balance is equal to 99 and nonce=1", func() {
-					senderAcct := logic.AccountKeeper().GetAccount(sender.Addr())
+					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("99")))
 					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
 				})
@@ -167,7 +167,7 @@ var _ = Describe("Transfers", func() {
 					Stakes:  state.BareAccountStakes(),
 				})
 
-				logic.NamespaceKeeper().Update(util.Hash20Hex([]byte(ns)), &state.Namespace{
+				logic.NamespaceKeeper().Update(util.HashNamespace(ns), &state.Namespace{
 					Domains: map[string]string{
 						"domain": "a/" + sender.Addr().String(),
 					},
@@ -182,7 +182,7 @@ var _ = Describe("Transfers", func() {
 				})
 
 				Specify("that sender balance is equal to 99 and nonce=1", func() {
-					senderAcct := logic.AccountKeeper().GetAccount(sender.Addr())
+					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("99")))
 					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
 				})
@@ -206,7 +206,7 @@ var _ = Describe("Transfers", func() {
 				})
 
 				Specify("that sender balance is equal to 99 and nonce=1", func() {
-					senderAcct := logic.AccountKeeper().GetAccount(sender.Addr())
+					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("99")))
 					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
 				})
@@ -224,7 +224,7 @@ var _ = Describe("Transfers", func() {
 					Stakes:  state.BareAccountStakes(),
 				})
 
-				logic.NamespaceKeeper().Update(util.Hash20Hex([]byte(ns)), &state.Namespace{
+				logic.NamespaceKeeper().Update(util.HashNamespace(ns), &state.Namespace{
 					Domains: map[string]string{
 						"domain": "r/" + repoName,
 					},
@@ -239,13 +239,13 @@ var _ = Describe("Transfers", func() {
 				})
 
 				Specify("that sender balance is equal to 89 and nonce=1", func() {
-					senderAcct := logic.AccountKeeper().GetAccount(sender.Addr())
+					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("89")))
 					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
 				})
 
 				Specify("that the repo has a balance=10", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
+					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.GetBalance()).To(Equal(util.String("10")))
 				})
 			})
@@ -270,13 +270,13 @@ var _ = Describe("Transfers", func() {
 				})
 
 				Specify("that sender balance is equal to 89 and nonce=1", func() {
-					senderAcct := logic.AccountKeeper().GetAccount(sender.Addr())
+					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("89")))
 					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
 				})
 
 				Specify("that the repo has a balance=10", func() {
-					repo := logic.RepoKeeper().GetRepo(repoName)
+					repo := logic.RepoKeeper().Get(repoName)
 					Expect(repo.GetBalance()).To(Equal(util.String("10")))
 				})
 			})

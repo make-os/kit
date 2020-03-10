@@ -561,7 +561,7 @@ func checkPushedReference(
 func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
 
 	// Ensure the repository exist
-	repo := logic.RepoKeeper().GetRepo(tx.GetRepoName())
+	repo := logic.RepoKeeper().Get(tx.GetRepoName())
 	if repo.IsNil() {
 		msg := fmt.Sprintf("repository named '%s' is unknown", tx.GetRepoName())
 		return util.FieldError("repoName", msg)
@@ -580,7 +580,7 @@ func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
 	}
 
 	// Ensure next pusher account nonce matches the pushed note's account nonce
-	pusherAcct := logic.AccountKeeper().GetAccount(tx.PusherAddress)
+	pusherAcct := logic.AccountKeeper().Get(tx.PusherAddress)
 	if pusherAcct.IsNil() {
 		return util.FieldError("pusherAddr", "pusher account not found")
 	}

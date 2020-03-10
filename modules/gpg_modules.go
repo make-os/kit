@@ -191,7 +191,7 @@ func (m *GPGModule) GetAccountOfOwner(gpgID string, blockHeight ...uint64) util.
 		targetHeight = blockHeight[0]
 	}
 
-	acct := m.logic.AccountKeeper().GetAccount(
+	acct := m.logic.AccountKeeper().Get(
 		gpgKey["address"].(util.String),
 		targetHeight)
 	if acct.IsNil() {

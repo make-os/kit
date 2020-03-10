@@ -230,7 +230,7 @@ func (m *AccountModule) GetPublicKey(address string, passphrase ...string) strin
 // [passphrase]: The target block height to query (default: latest)
 // [height]: The target block height to query (default: latest)
 func (m *AccountModule) GetNonce(address string, height ...uint64) string {
-	acct := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
+	acct := m.logic.AccountKeeper().Get(util.String(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
 			"address", apptypes.ErrAccountUnknown.Error()))
@@ -238,11 +238,11 @@ func (m *AccountModule) GetNonce(address string, height ...uint64) string {
 	return fmt.Sprintf("%d", acct.Nonce)
 }
 
-// GetAccount returns the account of the given address
+// Get returns the account of the given address
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
 func (m *AccountModule) GetAccount(address string, height ...uint64) util.Map {
-	acct := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
+	acct := m.logic.AccountKeeper().Get(util.String(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
 			"address", apptypes.ErrAccountUnknown.Error()))
@@ -257,7 +257,7 @@ func (m *AccountModule) GetAccount(address string, height ...uint64) util.Map {
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
 func (m *AccountModule) GetSpendableBalance(address string, height ...uint64) string {
-	acct := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
+	acct := m.logic.AccountKeeper().Get(util.String(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
 			"address", apptypes.ErrAccountUnknown.Error()))
@@ -279,7 +279,7 @@ func (m *AccountModule) GetSpendableBalance(address string, height ...uint64) st
 //
 // RETURNS <string>: numeric value
 func (m *AccountModule) GetStakedBalance(address string, height ...uint64) string {
-	acct := m.logic.AccountKeeper().GetAccount(util.String(address), height...)
+	acct := m.logic.AccountKeeper().Get(util.String(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
 			"address", apptypes.ErrAccountUnknown.Error()))

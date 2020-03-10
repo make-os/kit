@@ -259,7 +259,14 @@ var _ = Describe("TxValidator", func() {
 				tx.TransferToAccount = "account"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:transferToAccount, msg:address is not valid"))
+				Expect(err.Error()).To(Equal("field:toAccount, msg:address is not valid"))
+			})
+
+			It("has invalid transfer account", func() {
+				tx.TransferToRepo = "re&&^po"
+				err := validators.CheckTxNSAcquire(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:toRepo, msg:repo name is not valid"))
 			})
 
 			It("has value not equal to namespace price", func() {

@@ -1,10 +1,11 @@
 package ticket
 
 import (
+	"sort"
+
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
-	"sort"
 
 	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/storage"
@@ -62,7 +63,7 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 		// commission rate from their account, write it to the ticket so that it
 		// is locked and immutable by a future commission rate update.
 		pk := crypto.MustPubKeyFromBytes(ticket.ProposerPubKey.Bytes())
-		proposerAcct := m.logic.AccountKeeper().GetAccount(pk.Addr())
+		proposerAcct := m.logic.AccountKeeper().Get(pk.Addr())
 		ticket.CommissionRate = proposerAcct.DelegatorCommission
 	}
 

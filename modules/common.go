@@ -58,7 +58,7 @@ func finalizeTx(tx types.BaseTx, keepers core.Keepers, options ...interface{}) (
 
 		// Set nonce if nonce is not provided
 		if tx.GetNonce() == 0 {
-			senderAcct := keepers.AccountKeeper().GetAccount(tx.GetFrom())
+			senderAcct := keepers.AccountKeeper().Get(tx.GetFrom())
 			if senderAcct.IsNil() {
 				panic(fmt.Errorf("sender account not found"))
 			}

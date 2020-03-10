@@ -77,6 +77,11 @@ func Hash20Hex(v []byte) string {
 	return hex.EncodeToString(Hash20(v))
 }
 
+// HashNamespace creates a hash of a namespace name
+func HashNamespace(ns string) string {
+	return Hash20Hex([]byte(ns))
+}
+
 // RIPEMD160 returns RIPEMD160 (20 bytes) hash of v
 func RIPEMD160(v []byte) []byte {
 	h := ripemd160.New()

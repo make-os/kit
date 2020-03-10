@@ -110,7 +110,7 @@ func determineProposalOutcome(
 func refundProposalFees(keepers core.Keepers, proposal state.Proposal) error {
 	for senderAddr, fee := range proposal.GetFees() {
 		sender := util.String(senderAddr)
-		acct := keepers.AccountKeeper().GetAccount(sender)
+		acct := keepers.AccountKeeper().Get(sender)
 		acct.Balance = util.String(acct.Balance.Decimal().Add(util.String(fee).Decimal()).String())
 		keepers.AccountKeeper().Update(sender, acct)
 	}
@@ -199,7 +199,7 @@ func maybeProcessProposalFee(
 dist: // Distribute to repo and helm accounts
 	totalFees := proposal.GetFees().Total()
 	helmRepoName, _ := keepers.SysKeeper().GetHelmRepo()
-	helmRepo := keepers.RepoKeeper().GetRepo(helmRepoName)
+	helmRepo := keepers.RepoKeeper().Get(helmRepoName)
 	helmCut := decimal.NewFromFloat(params.HelmProposalFeeSplit).Mul(totalFees)
 	helmRepo.SetBalance(helmRepo.Balance.Decimal().Add(helmCut).String())
 	repoCut := decimal.NewFromFloat(params.TargetRepoProposalFeeSplit).Mul(totalFees)
@@ -297,7 +297,7 @@ func maybeApplyEndedProposals(
 
 	// Attempt to apply and close the proposal
 	for _, ep := range endingProps {
-		repo := repoKeeper.GetRepo(ep.RepoName)
+		repo := repoKeeper.Get(ep.RepoName)
 		if repo.IsNil() {
 			return fmt.Errorf("repo not found") // should never happen
 		}

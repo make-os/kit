@@ -77,14 +77,14 @@ type BalanceAccount interface {
 
 // AccountKeeper describes an interface for accessing account data
 type AccountKeeper interface {
-	// GetAccount returns an account by address.
+	// Get returns an account by address.
 	//
 	// ARGS:
 	// address: The address of the account
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
-	GetAccount(address util.String, blockNum ...uint64) *state.Account
+	Get(address util.String, blockNum ...uint64) *state.Account
 
 	// Update sets a new object at the given address.
 	//
@@ -96,7 +96,7 @@ type AccountKeeper interface {
 
 // RepoKeeper describes an interface for accessing repository data
 type RepoKeeper interface {
-	// GetRepo finds a repository by name.
+	// Get finds a repository by name.
 	//
 	// It will populate the proposals in the repo with their correct config
 	// source from the version the repo that they where first appeared in.
@@ -106,9 +106,9 @@ type RepoKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Repository if no repo is found.
-	GetRepo(name string, blockNum ...uint64) *state.Repository
+	Get(name string, blockNum ...uint64) *state.Repository
 
-	// GetRepoOnly fetches a repository by the given name without making additional
+	// GetWithNoPopulation fetches a repository by the given name without making additional
 	// queries to populate the repo with associated objects.
 	//
 	// ARGS:
@@ -116,7 +116,7 @@ type RepoKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Repository if no repo is found.
-	GetRepoOnly(name string, blockNum ...uint64) *state.Repository
+	GetWithNoPopulation(name string, blockNum ...uint64) *state.Repository
 
 	// Update sets a new object at the given name.
 	//

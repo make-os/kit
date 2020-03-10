@@ -190,6 +190,12 @@ var _ = Describe("Crypto", func() {
 		})
 	})
 
+	Describe(".HashNamespace", func() {
+		It("should produce a 40 byte string", func() {
+			Expect(HashNamespace("name1")).To(HaveLen(40))
+		})
+	})
+
 	Describe(".MustCreateGPGID", func() {
 		It("should create a 42 bytes ID from a 20 bytes input", func() {
 			bz := []uint8{

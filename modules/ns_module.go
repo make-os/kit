@@ -102,7 +102,7 @@ func (m *NamespaceModule) Lookup(name string, height ...uint64) interface{} {
 		targetHeight = uint64(height[0])
 	}
 
-	ns := m.logic.NamespaceKeeper().Get(util.Hash20Hex([]byte(name)), targetHeight)
+	ns := m.logic.NamespaceKeeper().Get(util.HashNamespace(name), targetHeight)
 	if ns.IsNil() {
 		return nil
 	}
@@ -179,7 +179,7 @@ func (m *NamespaceModule) Register(
 	}
 
 	// Hash the name
-	tx.Name = util.Hash20Hex([]byte(tx.Name))
+	tx.Name = util.HashNamespace(tx.Name)
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {
@@ -223,7 +223,7 @@ func (m *NamespaceModule) UpdateDomain(
 	}
 
 	// Hash the name
-	tx.Name = util.Hash20Hex([]byte(tx.Name))
+	tx.Name = util.HashNamespace(tx.Name)
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
 	if payloadOnly {

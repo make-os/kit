@@ -2,6 +2,7 @@ package logic
 
 import (
 	"fmt"
+
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -27,7 +28,7 @@ func (t *Transaction) execUnbond(
 	// Get sender account
 	acctKeeper := t.logic.AccountKeeper()
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
-	senderAcct := acctKeeper.GetAccount(spk.Addr(), chainHeight)
+	senderAcct := acctKeeper.Get(spk.Addr(), chainHeight)
 	senderBal := senderAcct.Balance.Decimal()
 
 	// Get the ticket
@@ -124,7 +125,7 @@ func (t *Transaction) addStake(
 
 	// Get sender accounts
 	sender := spk.Addr()
-	senderAcct := acctKeeper.GetAccount(sender)
+	senderAcct := acctKeeper.Get(sender)
 
 	// Deduct the transaction fee and increment nonce
 	senderBal := senderAcct.Balance.Decimal()

@@ -62,7 +62,7 @@ func (t *Transaction) deductValue(spk *crypto.PubKey, fee decimal.Decimal, chain
 
 	// Get the sender account and balance
 	acctKeeper := t.logic.AccountKeeper()
-	senderAcct := acctKeeper.GetAccount(spk.Addr())
+	senderAcct := acctKeeper.Get(spk.Addr())
 	senderBal := senderAcct.Balance.Decimal()
 
 	// Deduct the fee from the sender's account
@@ -133,7 +133,7 @@ func (t *Transaction) execRepoProposalUpsertOwner(
 
 	// Get the repo
 	repoKeeper := t.logic.RepoKeeper()
-	repo := repoKeeper.GetRepo(repoName)
+	repo := repoKeeper.Get(repoName)
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
@@ -218,7 +218,7 @@ func (t *Transaction) execRepoProposalUpdate(
 
 	// Get the repo
 	repoKeeper := t.logic.RepoKeeper()
-	repo := repoKeeper.GetRepo(repoName)
+	repo := repoKeeper.Get(repoName)
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
@@ -272,7 +272,7 @@ func (t *Transaction) execRepoProposalFeeDeposit(
 
 	// Get the repo and proposal
 	repoKeeper := t.logic.RepoKeeper()
-	repo := repoKeeper.GetRepo(repoName)
+	repo := repoKeeper.Get(repoName)
 	prop := repo.Proposals.Get(proposalID)
 
 	// Add proposal fee if set.
@@ -365,7 +365,7 @@ func (t *Transaction) execRepoProposalMergeRequest(
 
 	// Get the repo
 	repoKeeper := t.logic.RepoKeeper()
-	repo := repoKeeper.GetRepo(repoName)
+	repo := repoKeeper.Get(repoName)
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
@@ -438,7 +438,7 @@ func applyProposalRegisterGPGKeys(
 		targetNS = namespaceOnly
 	}
 	if targetNS != "" {
-		ns = keepers.NamespaceKeeper().Get(util.Hash20Hex([]byte(targetNS)))
+		ns = keepers.NamespaceKeeper().Get(util.HashNamespace(targetNS))
 		if ns.IsNil() {
 			panic("namespace must exist")
 		}
@@ -470,7 +470,7 @@ func applyProposalRegisterGPGKeys(
 	}
 
 	if ns != nil {
-		keepers.NamespaceKeeper().Update(util.Hash20Hex([]byte(targetNS)), ns)
+		keepers.NamespaceKeeper().Update(util.HashNamespace(targetNS), ns)
 	}
 
 	return nil
@@ -508,7 +508,7 @@ func (t *Transaction) execRepoProposalRegisterGPGKeys(
 
 	// Get the repo
 	repoKeeper := t.logic.RepoKeeper()
-	repo := repoKeeper.GetRepo(repoName)
+	repo := repoKeeper.Get(repoName)
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
@@ -574,7 +574,7 @@ func (t *Transaction) execRepoProposalVote(
 
 	// Get the repo
 	repoKeeper := t.logic.RepoKeeper()
-	repo := repoKeeper.GetRepo(repoName)
+	repo := repoKeeper.Get(repoName)
 	prop := repo.Proposals.Get(proposalID)
 
 	increments := float64(0)
@@ -591,7 +591,7 @@ func (t *Transaction) execRepoProposalVote(
 	// as their voting power.
 	if prop.Config.ProposalProposee == state.ProposeeOwner &&
 		prop.Config.ProposalTallyMethod == state.ProposalTallyMethodCoinWeighted {
-		senderAcct := t.logic.AccountKeeper().GetAccount(spk.Addr())
+		senderAcct := t.logic.AccountKeeper().Get(spk.Addr())
 		increments = senderAcct.GetSpendableBalance(chainHeight).Float()
 	}
 

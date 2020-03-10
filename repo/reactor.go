@@ -55,7 +55,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	repoPath := m.getRepoPath(repoName)
 
 	// Get the repository's state object
-	repoState := m.logic.RepoKeeper().GetRepo(repoName)
+	repoState := m.logic.RepoKeeper().Get(repoName)
 	if repoState.IsNil() {
 		return fmt.Errorf("repo '%s' not found", repoName)
 	}

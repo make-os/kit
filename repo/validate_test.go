@@ -9,8 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.com/makeos/mosdef/dht/types"
-	types5 "gitlab.com/makeos/mosdef/ticket/types"
+	dhttypes "gitlab.com/makeos/mosdef/dht/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 
@@ -555,7 +556,7 @@ var _ = Describe("Validation", func() {
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
 				prop.ActionData = map[string][]byte{
-					"base": util.ToBytes("release"),
+					types.ActionDataKeyBaseBranch: util.ToBytes("release"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
@@ -583,7 +584,7 @@ var _ = Describe("Validation", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.ActionData = map[string][]byte{
-					"base": util.ToBytes("master"),
+					types.ActionDataKeyBaseBranch: util.ToBytes("master"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
@@ -612,7 +613,7 @@ var _ = Describe("Validation", func() {
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
 				prop.ActionData = map[string][]byte{
-					"base": util.ToBytes("master"),
+					types.ActionDataKeyBaseBranch: util.ToBytes("master"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
@@ -642,7 +643,7 @@ var _ = Describe("Validation", func() {
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
 				prop.ActionData = map[string][]byte{
-					"base": util.ToBytes("master"),
+					types.ActionDataKeyBaseBranch: util.ToBytes("master"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
@@ -675,7 +676,7 @@ var _ = Describe("Validation", func() {
 					prop := state.BareRepoProposal()
 					prop.Outcome = state.ProposalOutcomeAccepted
 					prop.ActionData = map[string][]byte{
-						"base": util.ToBytes("master"),
+						types.ActionDataKeyBaseBranch: util.ToBytes("master"),
 					}
 					repoState.Proposals.Add("0001", prop)
 					repo.EXPECT().State().Return(repoState)
@@ -716,7 +717,7 @@ var _ = Describe("Validation", func() {
 					prop := state.BareRepoProposal()
 					prop.Outcome = state.ProposalOutcomeAccepted
 					prop.ActionData = map[string][]byte{
-						"base": util.ToBytes("master"),
+						types.ActionDataKeyBaseBranch: util.ToBytes("master"),
 					}
 					repoState.Proposals.Add("0001", prop)
 					repo.EXPECT().State().Return(repoState)
@@ -761,7 +762,7 @@ var _ = Describe("Validation", func() {
 					prop := state.BareRepoProposal()
 					prop.Outcome = state.ProposalOutcomeAccepted
 					prop.ActionData = map[string][]byte{
-						"base": util.ToBytes("master"),
+						types.ActionDataKeyBaseBranch: util.ToBytes("master"),
 					}
 					repoState.Proposals.Add("0001", prop)
 					repo.EXPECT().State().Return(repoState)
@@ -811,8 +812,8 @@ var _ = Describe("Validation", func() {
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
 				prop.ActionData = map[string][]byte{
-					"base":     util.ToBytes("master"),
-					"baseHash": util.ToBytes("xyz"),
+					types.ActionDataKeyBaseBranch: util.ToBytes("master"),
+					types.ActionDataKeyBaseHash:   util.ToBytes("xyz"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
@@ -861,9 +862,9 @@ var _ = Describe("Validation", func() {
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
 				prop.ActionData = map[string][]byte{
-					"base":       util.ToBytes("master"),
-					"baseHash":   util.ToBytes("abc"),
-					"targetHash": util.ToBytes("target_xyz"),
+					types.ActionDataKeyBaseBranch: util.ToBytes("master"),
+					types.ActionDataKeyBaseHash:   util.ToBytes("abc"),
+					types.ActionDataKeyTargetHash: util.ToBytes("target_xyz"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
@@ -1045,7 +1046,7 @@ var _ = Describe("Validation", func() {
 		When("sender is not a host", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
-				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types5.SelectedTicket{}, nil)
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{}, nil)
 				err = CheckPushOKConsistency(&core.PushOK{
 					PushNoteID:   util.StrToBytes32("id"),
 					SenderPubKey: key.PubKey().MustBytes32(),
@@ -1061,9 +1062,9 @@ var _ = Describe("Validation", func() {
 		When("unable to decode host's BLS public key", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
-				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types5.SelectedTicket{
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{
 					{
-						Ticket: &types5.Ticket{
+						Ticket: &tickettypes.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      util.RandBytes(128),
 						},
@@ -1085,9 +1086,9 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
 				key2 := crypto.NewKeyFromIntSeed(2)
-				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types5.SelectedTicket{
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{
 					{
-						Ticket: &types5.Ticket{
+						Ticket: &tickettypes.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      key2.PrivKey().BLSKey().Public().Bytes(),
 						},
@@ -1109,9 +1110,9 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
 				key2 := crypto.NewKeyFromIntSeed(2)
-				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types5.SelectedTicket{
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{
 					{
-						Ticket: &types5.Ticket{
+						Ticket: &tickettypes.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      key2.PrivKey().BLSKey().Public().Bytes(),
 						},
@@ -1373,7 +1374,7 @@ var _ = Describe("Validation", func() {
 		When("no repository with matching name exist", func() {
 			BeforeEach(func() {
 				tx := &core.PushNote{RepoName: "unknown"}
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(state.BareRepository())
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(state.BareRepository())
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -1386,7 +1387,7 @@ var _ = Describe("Validation", func() {
 		When("pusher public key id is unknown", func() {
 			BeforeEach(func() {
 				tx := &core.PushNote{RepoName: "repo1", PusherKeyID: util.RandBytes(20)}
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&state.Repository{Balance: "10"})
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustCreateGPGID(tx.PusherKeyID)).Return(state.BareGPGPubKey())
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
@@ -1404,7 +1405,7 @@ var _ = Describe("Validation", func() {
 					PusherKeyID:   util.RandBytes(20),
 					PusherAddress: "address1",
 				}
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&state.Repository{Balance: "10"})
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				gpgKey := state.BareGPGPubKey()
 				gpgKey.Address = util.String("address2")
@@ -1425,13 +1426,13 @@ var _ = Describe("Validation", func() {
 					PusherKeyID:   util.RandBytes(20),
 					PusherAddress: "address1",
 				}
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&state.Repository{Balance: "10"})
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				gpgKey := state.BareGPGPubKey()
 				gpgKey.Address = util.String("address1")
 				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustCreateGPGID(tx.PusherKeyID)).Return(gpgKey)
 
-				mockAcctKeeper.EXPECT().GetAccount(tx.PusherAddress).Return(state.BareAccount())
+				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(state.BareAccount())
 
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
@@ -1450,7 +1451,7 @@ var _ = Describe("Validation", func() {
 					PusherAddress: "address1",
 					AccountNonce:  3,
 				}
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&state.Repository{Balance: "10"})
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				gpgKey := state.BareGPGPubKey()
 				gpgKey.Address = util.String("address1")
@@ -1458,7 +1459,7 @@ var _ = Describe("Validation", func() {
 
 				acct := state.BareAccount()
 				acct.Nonce = 1
-				mockAcctKeeper.EXPECT().GetAccount(tx.PusherAddress).Return(acct)
+				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(acct)
 
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
@@ -1480,7 +1481,7 @@ var _ = Describe("Validation", func() {
 					Fee:           "10",
 				}
 
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(&state.Repository{Balance: "10"})
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				gpgKey := state.BareGPGPubKey()
 				gpgKey.Address = util.String("address1")
@@ -1488,7 +1489,7 @@ var _ = Describe("Validation", func() {
 
 				acct := state.BareAccount()
 				acct.Nonce = 1
-				mockAcctKeeper.EXPECT().GetAccount(tx.PusherAddress).Return(acct)
+				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(acct)
 
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mockTxLogic.EXPECT().
@@ -1520,7 +1521,7 @@ var _ = Describe("Validation", func() {
 
 				mockDHT := mocks.NewMockDHTNode(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
-				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
+				mockDHT.EXPECT().GetObject(gomock.Any(), &dhttypes.DHTObjectQuery{
 					Module:    core.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(nil, fmt.Errorf("object not found"))
@@ -1549,7 +1550,7 @@ var _ = Describe("Validation", func() {
 				mockDHT := mocks.NewMockDHTNode(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 				content := []byte("content")
-				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
+				mockDHT.EXPECT().GetObject(gomock.Any(), &dhttypes.DHTObjectQuery{
 					Module:    core.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(content, nil)
@@ -1580,7 +1581,7 @@ var _ = Describe("Validation", func() {
 				mockDHT := mocks.NewMockDHTNode(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 				content := []byte("content")
-				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
+				mockDHT.EXPECT().GetObject(gomock.Any(), &dhttypes.DHTObjectQuery{
 					Module:    core.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(content, nil)
@@ -1611,7 +1612,7 @@ var _ = Describe("Validation", func() {
 				mockDHT := mocks.NewMockDHTNode(ctrl)
 				dhtKey := MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 				content := []byte("content")
-				mockDHT.EXPECT().GetObject(gomock.Any(), &types.DHTObjectQuery{
+				mockDHT.EXPECT().GetObject(gomock.Any(), &dhttypes.DHTObjectQuery{
 					Module:    core.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(content, nil)

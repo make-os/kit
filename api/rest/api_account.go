@@ -36,7 +36,7 @@ func (r *RESTApi) GetAccountNonce(w http.ResponseWriter, req *http.Request) {
 	})
 }
 
-// GetAccount handles request for getting an account
+// Get handles request for getting an account
 // QueryParams:
 // - address <string>: The address of the account
 // - [blockHeight] <string>: The target query block height (default: latest).

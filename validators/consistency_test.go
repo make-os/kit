@@ -34,6 +34,7 @@ var _ = Describe("TxValidator", func() {
 	var mockObjects *testutil.MockObjects
 	var mockLogic *mocks.MockLogic
 	var mockSysKeeper *mocks.MockSystemKeeper
+	var mockAcctKeeper *mocks.MockAccountKeeper
 	var mockTxLogic *mocks.MockTxLogic
 	var mockTickMgr *mocks.MockTicketManager
 	var mockSysLogic *mocks.MockSysLogic
@@ -56,6 +57,7 @@ var _ = Describe("TxValidator", func() {
 		mockRepoKeeper = mockObjects.RepoKeeper
 		mockGPGPubKeyKeeper = mockObjects.GPGPubKeyKeeper
 		mockNSKeeper = mockObjects.NamespaceKeeper
+		mockAcctKeeper = mockObjects.AccountKeeper
 	})
 
 	AfterEach(func() {
@@ -86,7 +88,7 @@ var _ = Describe("TxValidator", func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				tx := core.NewBareTxCoinTransfer()
 				tx.To = "r/repo"
-				mockRepoKeeper.EXPECT().GetRepo("repo", uint64(1)).Return(state.BareRepository())
+				mockRepoKeeper.EXPECT().Get("repo", uint64(1)).Return(state.BareRepository())
 				err = validators.CheckTxCoinTransferConsistency(tx, -1, mockLogic)
 			})
 
@@ -105,7 +107,7 @@ var _ = Describe("TxValidator", func() {
 
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				mockNSKeeper.EXPECT().GetTarget(tx.To.String(), uint64(1)).Return("r/repo", nil)
-				mockRepoKeeper.EXPECT().GetRepo("repo", uint64(1)).Return(state.BareRepository())
+				mockRepoKeeper.EXPECT().Get("repo", uint64(1)).Return(state.BareRepository())
 
 				err = validators.CheckTxCoinTransferConsistency(tx, -1, mockLogic)
 			})
@@ -431,7 +433,7 @@ var _ = Describe("TxValidator", func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				repo := state.BareRepository()
 				repo.AddOwner("some_address", &state.RepoOwner{})
-				mockRepoKeeper.EXPECT().GetRepo(tx.Name).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.Name).Return(repo)
 
 				err = validators.CheckTxRepoCreateConsistency(tx, -1, mockLogic)
 			})
@@ -451,7 +453,7 @@ var _ = Describe("TxValidator", func() {
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				repo := state.BareRepository()
-				mockRepoKeeper.EXPECT().GetRepo(tx.Name).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.Name).Return(repo)
 
 				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
@@ -618,15 +620,55 @@ var _ = Describe("TxValidator", func() {
 				bi := &core.BlockInfo{Height: 9}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 
-				mockNSKeeper.EXPECT().GetNamespace(tx.Name).Return(&state.Namespace{
-					GraceEndAt: 10,
-				})
+				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{GraceEndAt: 10})
 				err = validators.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
 			})
 
 			It("should return err='field:name, msg:chosen name is not currently available'", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:name, msg:chosen name is not currently available"))
+			})
+		})
+
+		When("target repo does not exist", func() {
+			BeforeEach(func() {
+				name := "name1"
+				tx := core.NewBareTxNamespaceAcquire()
+				tx.Name = name
+				tx.TransferToRepo = "repo1"
+
+				bi := &core.BlockInfo{Height: 9}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+				mockRepoKeeper.EXPECT().Get(tx.TransferToRepo).Return(state.BareRepository())
+
+				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{GraceEndAt: 0})
+				err = validators.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err='field:toRepo, msg:repo does not exist'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:toRepo, msg:repo does not exist"))
+			})
+		})
+
+		When("target account does not exist", func() {
+			BeforeEach(func() {
+				name := "name1"
+				tx := core.NewBareTxNamespaceAcquire()
+				tx.Name = name
+				tx.TransferToAccount = "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc"
+
+				bi := &core.BlockInfo{Height: 9}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+				mockAcctKeeper.EXPECT().Get(util.String(tx.TransferToAccount)).Return(state.BareAccount())
+
+				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{GraceEndAt: 0})
+				err = validators.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err='field:toAccount, msg:account does not exist'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:toAccount, msg:account does not exist"))
 			})
 		})
 
@@ -640,9 +682,7 @@ var _ = Describe("TxValidator", func() {
 				bi := &core.BlockInfo{Height: 10}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 
-				mockNSKeeper.EXPECT().GetNamespace(tx.Name).Return(&state.Namespace{
-					GraceEndAt: 9,
-				})
+				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{GraceEndAt: 9})
 
 				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					tx.Value, tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
@@ -681,7 +721,7 @@ var _ = Describe("TxValidator", func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 
 				key2 := crypto.NewKeyFromIntSeed(2)
-				mockNSKeeper.EXPECT().GetNamespace(tx.Name).Return(&state.Namespace{
+				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{
 					GraceEndAt: 10,
 					Owner:      key2.Addr().String(),
 				})
@@ -705,7 +745,7 @@ var _ = Describe("TxValidator", func() {
 				bi := &core.BlockInfo{Height: 10}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 
-				mockNSKeeper.EXPECT().GetNamespace(tx.Name).Return(&state.Namespace{
+				mockNSKeeper.EXPECT().Get(tx.Name).Return(&state.Namespace{
 					GraceEndAt: 9,
 					Owner:      key.Addr().String(),
 				})
@@ -968,7 +1008,7 @@ var _ = Describe("TxValidator", func() {
 				tx.RepoName = "repo1"
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := state.BareRepository()
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
 			})
 
@@ -987,7 +1027,7 @@ var _ = Describe("TxValidator", func() {
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
 			})
 
@@ -1006,7 +1046,7 @@ var _ = Describe("TxValidator", func() {
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{Outcome: 1})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
 			})
 
@@ -1027,7 +1067,7 @@ var _ = Describe("TxValidator", func() {
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
 					Config: repo.Config.Governance,
 				})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
 
 				err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
@@ -1051,7 +1091,7 @@ var _ = Describe("TxValidator", func() {
 					Config:          repo.Config.Governance,
 					FeeDepositEndAt: 100,
 				})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
 
 				err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
@@ -1077,7 +1117,7 @@ var _ = Describe("TxValidator", func() {
 					FeeDepositEndAt: 100,
 					Fees:            map[string]string{},
 				})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 101}, nil)
 
 				err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
@@ -1100,7 +1140,7 @@ var _ = Describe("TxValidator", func() {
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
 					Config: repo.Config.Governance,
 				})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
 
 				mockRepoKeeper.EXPECT().GetProposalVote(tx.RepoName, tx.ProposalID,
@@ -1125,7 +1165,7 @@ var _ = Describe("TxValidator", func() {
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
 					Config: repo.Config.Governance,
 				})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
 
 				mockRepoKeeper.EXPECT().GetProposalVote(tx.RepoName, tx.ProposalID,
@@ -1151,7 +1191,7 @@ var _ = Describe("TxValidator", func() {
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
 					Config: repo.Config.Governance,
 				})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
 
 				err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
@@ -1178,7 +1218,7 @@ var _ = Describe("TxValidator", func() {
 					repo.Proposals.Add("proposal1", &state.RepoProposal{
 						Config: repo.Config.Governance,
 					})
-					mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+					mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
 
 					err = validators.CheckTxVoteConsistency(tx, -1, mockLogic)
@@ -1199,7 +1239,7 @@ var _ = Describe("TxValidator", func() {
 				tx.RepoName = "repo1"
 				tx.SenderPubKey = util.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := state.BareRepository()
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
 			})
 
@@ -1218,7 +1258,7 @@ var _ = Describe("TxValidator", func() {
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
 			})
 
@@ -1237,7 +1277,7 @@ var _ = Describe("TxValidator", func() {
 
 				repo := state.BareRepository()
 				repo.Proposals.Add("proposal1", &state.RepoProposal{Outcome: 1})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
 			})
 
@@ -1258,7 +1298,7 @@ var _ = Describe("TxValidator", func() {
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
 					Config: repo.Config.Governance,
 				})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
 
 				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
@@ -1282,7 +1322,7 @@ var _ = Describe("TxValidator", func() {
 					Config:          repo.Config.Governance,
 					FeeDepositEndAt: 0,
 				})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 50}, nil)
 
 				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
@@ -1306,7 +1346,7 @@ var _ = Describe("TxValidator", func() {
 					Config:          repo.Config.Governance,
 					FeeDepositEndAt: 100,
 				})
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 100}, nil)
 
 				err = validators.CheckTxRepoProposalSendFeeConsistency(tx, -1, mockLogic)
@@ -1331,7 +1371,7 @@ var _ = Describe("TxValidator", func() {
 					FeeDepositEndAt: 100,
 				})
 
-				mockRepoKeeper.EXPECT().GetRepo(tx.RepoName).Return(repo)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(repo)
 				bi := &core.BlockInfo{Height: 10}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
@@ -1357,7 +1397,7 @@ var _ = Describe("TxValidator", func() {
 				repo := state.BareRepository()
 
 				bi := &core.BlockInfo{Height: 1}
-				mockRepoKeeper.EXPECT().GetRepo(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
 				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 			})
 
@@ -1378,7 +1418,7 @@ var _ = Describe("TxValidator", func() {
 				repo.Config.Governance.ProposalFee = 100
 
 				bi := &core.BlockInfo{Height: 1}
-				mockRepoKeeper.EXPECT().GetRepo(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
 				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 			})
 
@@ -1400,7 +1440,7 @@ var _ = Describe("TxValidator", func() {
 				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
 
 				bi := &core.BlockInfo{Height: 1}
-				mockRepoKeeper.EXPECT().GetRepo(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
 				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
 			})
 
@@ -1423,7 +1463,7 @@ var _ = Describe("TxValidator", func() {
 				repo.Owners[key.Addr().String()] = &state.RepoOwner{}
 
 				bi := &core.BlockInfo{Height: 1}
-				mockRepoKeeper.EXPECT().GetRepo(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
 				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					txProposal.Value, txCommon.Fee, txCommon.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
@@ -1456,7 +1496,7 @@ var _ = Describe("TxValidator", func() {
 				tx := core.NewBareRepoProposalRegisterGPGKey()
 				tx.Namespace = "ns1"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockNSKeeper.EXPECT().GetNamespace(tx.Namespace, uint64(1)).Return(state.BareNamespace())
+				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.Namespace), uint64(1)).Return(state.BareNamespace())
 				err = validators.CheckTxRepoProposalRegisterGPGKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -1471,7 +1511,7 @@ var _ = Describe("TxValidator", func() {
 				tx := core.NewBareRepoProposalRegisterGPGKey()
 				tx.NamespaceOnly = "ns1"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockNSKeeper.EXPECT().GetNamespace(tx.NamespaceOnly, uint64(1)).Return(state.BareNamespace())
+				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.NamespaceOnly), uint64(1)).Return(state.BareNamespace())
 				err = validators.CheckTxRepoProposalRegisterGPGKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -1489,7 +1529,7 @@ var _ = Describe("TxValidator", func() {
 				ns := state.BareNamespace()
 				ns.Owner = "repo2"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockNSKeeper.EXPECT().GetNamespace(tx.Namespace, uint64(1)).Return(ns)
+				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.Namespace), uint64(1)).Return(ns)
 				err = validators.CheckTxRepoProposalRegisterGPGKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -1507,8 +1547,8 @@ var _ = Describe("TxValidator", func() {
 				ns := state.BareNamespace()
 				ns.Owner = "repo1"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockNSKeeper.EXPECT().GetNamespace(tx.Namespace, uint64(1)).Return(ns)
-				mockRepoKeeper.EXPECT().GetRepo(gomock.Any(), gomock.Any()).Return(state.BareRepository())
+				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.Namespace), uint64(1)).Return(ns)
+				mockRepoKeeper.EXPECT().Get(gomock.Any(), gomock.Any()).Return(state.BareRepository())
 				err = validators.CheckTxRepoProposalRegisterGPGKeyConsistency(tx, -1, mockLogic)
 			})
 

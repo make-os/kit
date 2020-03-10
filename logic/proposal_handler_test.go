@@ -245,7 +245,7 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				Specify("that the helm repo has balance=60", func() {
-					repo := logic.RepoKeeper().GetRepo(helmRepo)
+					repo := logic.RepoKeeper().Get(helmRepo)
 					Expect(repo.Balance).To(Equal(util.String("30")))
 				})
 			})
@@ -287,7 +287,7 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				Specify("that the helm repo has balance=0", func() {
-					repo := logic.RepoKeeper().GetRepo(helmRepo)
+					repo := logic.RepoKeeper().Get(helmRepo)
 					Expect(repo.Balance).To(Equal(util.String("0")))
 				})
 			})
@@ -517,8 +517,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 
@@ -532,13 +532,13 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should not add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("0"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("0"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("0"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("0"))
 				})
 
 				It("should distribute fees to target repo and helm", func() {
 					Expect(repo.Balance.String()).To(Equal("240"))
-					helmRepo := logic.RepoKeeper().GetRepo(helmRepoName)
+					helmRepo := logic.RepoKeeper().Get(helmRepoName)
 					Expect(helmRepo.Balance.String()).To(Equal("60"))
 				})
 			})
@@ -555,8 +555,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 		})
@@ -572,8 +572,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 
@@ -587,8 +587,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 		})
@@ -604,8 +604,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 		})
@@ -621,8 +621,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 
@@ -636,8 +636,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 		})
@@ -653,8 +653,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 
@@ -668,8 +668,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 
@@ -683,8 +683,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 
@@ -698,8 +698,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should not add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("0"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("0"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("0"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("0"))
 				})
 			})
 		})
@@ -715,8 +715,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 
@@ -730,8 +730,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 
@@ -745,8 +745,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 
@@ -760,8 +760,8 @@ var _ = Describe("ProposalHandler", func() {
 				})
 
 				It("should add fees back to senders accounts", func() {
-					Expect(logic.AccountKeeper().GetAccount(addr).Balance.String()).To(Equal("100"))
-					Expect(logic.AccountKeeper().GetAccount(addr2).Balance.String()).To(Equal("200"))
+					Expect(logic.AccountKeeper().Get(addr).Balance.String()).To(Equal("100"))
+					Expect(logic.AccountKeeper().Get(addr2).Balance.String()).To(Equal("200"))
 				})
 			})
 		})

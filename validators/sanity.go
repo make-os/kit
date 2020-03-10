@@ -477,10 +477,14 @@ func CheckTxNSAcquire(tx *core.TxNamespaceAcquire, index int) error {
 
 	if tx.TransferToAccount != "" {
 		if err := v.Validate(tx.TransferToAccount,
-			v.By(validAddrRule(feI(index, "transferToAccount", "address is not valid"))),
+			v.By(validAddrRule(feI(index, "toAccount", "address is not valid"))),
 		); err != nil {
 			return err
 		}
+	}
+
+	if tx.TransferToRepo != "" && util.IsValidIdentifierName(tx.TransferToRepo) != nil {
+		return feI(index, "toRepo", "repo name is not valid")
 	}
 
 	if !tx.Value.Decimal().Equal(params.CostOfNamespace) {

@@ -93,7 +93,7 @@ var _ = Describe("GPG", func() {
 			})
 
 			Specify("that fee is deducted from sender account", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr())
+				acct := logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.GetBalance()).To(Equal(util.String("8.5")))
 			})
 		})

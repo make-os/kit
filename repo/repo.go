@@ -392,7 +392,7 @@ func (r *Repo) TryMergeBranch(base, target, targetRepoDir string) error {
 	return r.ops.TryMergeBranch(base, target, targetRepoDir)
 }
 
-// GetRepo returns a repository
+// Get returns a repository
 func GetRepo(path string) (core.BareRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {

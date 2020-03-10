@@ -47,7 +47,7 @@ func (t *Transaction) execRegisterGPGKey(
 
 	// Get sender accounts
 	sender := spk.Addr()
-	senderAcct := acctKeeper.GetAccount(sender)
+	senderAcct := acctKeeper.Get(sender)
 	senderBal := senderAcct.Balance.Decimal()
 
 	// Deduct the fee from the sender's account

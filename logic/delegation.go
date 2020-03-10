@@ -25,7 +25,7 @@ func (t *Transaction) execSetDelegatorCommission(
 
 	// Get sender accounts
 	sender := spk.Addr()
-	senderAcct := acctKeeper.GetAccount(sender)
+	senderAcct := acctKeeper.Get(sender)
 	senderBal := senderAcct.Balance.Decimal()
 
 	// Set the new commission

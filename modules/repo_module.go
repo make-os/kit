@@ -274,9 +274,9 @@ func (m *RepoModule) Get(name string, opts ...map[string]interface{}) util.Map {
 
 	var repo *state.Repository
 	if !noProposals {
-		repo = m.logic.RepoKeeper().GetRepo(name, targetHeight)
+		repo = m.logic.RepoKeeper().Get(name, targetHeight)
 	} else {
-		repo = m.logic.RepoKeeper().GetRepoOnly(name, targetHeight)
+		repo = m.logic.RepoKeeper().GetWithNoPopulation(name, targetHeight)
 		repo.Proposals = state.RepoProposals{}
 	}
 

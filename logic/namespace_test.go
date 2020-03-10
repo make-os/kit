@@ -84,12 +84,12 @@ var _ = Describe("Namespace", func() {
 			})
 
 			Specify("that sender account is deduct of fee+value", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr())
+				acct := logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.Balance).To(Equal(util.String("8")))
 			})
 
 			Specify("that value is paid to the treasury address", func() {
-				acct := logic.AccountKeeper().GetAccount(util.String(params.TreasuryAddress))
+				acct := logic.AccountKeeper().Get(util.String(params.TreasuryAddress))
 				Expect(acct.Balance).To(Equal(util.String("1")))
 			})
 		})
@@ -177,7 +177,7 @@ var _ = Describe("Namespace", func() {
 			})
 
 			Specify("that sender account is deduct of fee", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr())
+				acct := logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.Balance).To(Equal(util.String("9")))
 			})
 		})
@@ -205,7 +205,7 @@ var _ = Describe("Namespace", func() {
 			})
 
 			Specify("that sender account is deduct of fee", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr())
+				acct := logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.Balance).To(Equal(util.String("9")))
 			})
 		})
@@ -240,7 +240,7 @@ var _ = Describe("Namespace", func() {
 			})
 
 			Specify("that sender account is deduct of fee", func() {
-				acct := logic.AccountKeeper().GetAccount(sender.Addr())
+				acct := logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.Balance).To(Equal(util.String("9")))
 			})
 		})

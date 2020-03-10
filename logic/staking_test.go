@@ -81,7 +81,7 @@ var _ = Describe("Staking", func() {
 					senderPubKey := sender.PubKey().MustBytes32()
 					err := txLogic.addStake(core.TxTypeValidatorTicket, senderPubKey, "10", "1", 0)
 					Expect(err).To(BeNil())
-					acct := logic.AccountKeeper().GetAccount(sender.Addr())
+					acct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(acct.GetBalance()).To(Equal(util.String("99")))
 					Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("89")))
 				})
@@ -104,7 +104,7 @@ var _ = Describe("Staking", func() {
 					senderPubKey := sender.PubKey().MustBytes32()
 					err := txLogic.addStake(core.TxTypeValidatorTicket, senderPubKey, "10", "1", 0)
 					Expect(err).To(BeNil())
-					acct := logic.AccountKeeper().GetAccount(sender.Addr())
+					acct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(acct.GetBalance()).To(Equal(util.String("99")))
 					Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("39")))
 				})
@@ -127,7 +127,7 @@ var _ = Describe("Staking", func() {
 				})
 
 				It("should add a stake entry with unbond height set to 0", func() {
-					acct := logic.AccountKeeper().GetAccount(sender.Addr())
+					acct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(acct.Stakes).To(HaveLen(1))
 					Expect(acct.Stakes.TotalStaked(1)).To(Equal(util.String("10")))
 					Expect(acct.Stakes[state.StakeTypeHost+"0"].UnbondHeight).To(Equal(uint64(0)))
@@ -148,7 +148,7 @@ var _ = Describe("Staking", func() {
 
 				txLogic.logic = mockLogic.Logic
 
-				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), uint64(0)).Return(acct)
+				mockLogic.AccountKeeper.EXPECT().Get(sender.Addr(), uint64(0)).Return(acct)
 				mockLogic.TicketManager.EXPECT().GetByHash(gomock.Any()).Return(nil)
 
 				senderPubKey = sender.PubKey().MustBytes32()
@@ -175,7 +175,7 @@ var _ = Describe("Staking", func() {
 				acct.Balance = "1000"
 				acct.Stakes.Add(state.StakeTypeHost, "100", 0)
 
-				mockLogic.AccountKeeper.EXPECT().GetAccount(sender.Addr(), uint64(1)).Return(acct)
+				mockLogic.AccountKeeper.EXPECT().Get(sender.Addr(), uint64(1)).Return(acct)
 
 				returnTicket := &types3.Ticket{Hash: util.StrToBytes32("ticket_id"), Value: "100"}
 				mockLogic.TicketManager.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)

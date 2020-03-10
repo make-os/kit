@@ -74,7 +74,7 @@ func (a *NamespaceKeeper) GetTarget(path string, blockNum ...uint64) (string, er
 		return "", err
 	}
 
-	actualName := util.Hash20Hex([]byte(namespace))
+	actualName := util.HashNamespace(namespace)
 	ns := a.Get(actualName, version)
 	if ns.IsNil() {
 		return "", fmt.Errorf("namespace not found")

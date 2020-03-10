@@ -48,7 +48,7 @@ func (t *Transaction) execAcquireNamespace(
 
 	// Get the account of the sender
 	acctKeeper := t.logic.AccountKeeper()
-	senderAcct := acctKeeper.GetAccount(spk.Addr())
+	senderAcct := acctKeeper.Get(spk.Addr())
 
 	// Deduct the fee + value
 	senderAcctBal := senderAcct.Balance.Decimal()
@@ -61,7 +61,7 @@ func (t *Transaction) execAcquireNamespace(
 	acctKeeper.Update(spk.Addr(), senderAcct)
 
 	// Send the value to the treasury
-	treasuryAcct := acctKeeper.GetAccount(util.String(params.TreasuryAddress), chainHeight)
+	treasuryAcct := acctKeeper.Get(util.String(params.TreasuryAddress), chainHeight)
 	treasuryBal := treasuryAcct.Balance.Decimal()
 	treasuryAcct.Balance = util.String(treasuryBal.Add(value.Decimal()).String())
 	treasuryAcct.Clean(chainHeight)
@@ -117,7 +117,7 @@ func (t *Transaction) execUpdateNamespaceDomains(
 
 	// Get the account of the sender
 	acctKeeper := t.logic.AccountKeeper()
-	senderAcct := acctKeeper.GetAccount(spk.Addr())
+	senderAcct := acctKeeper.Get(spk.Addr())
 
 	// Deduct the fee + value
 	senderAcctBal := senderAcct.Balance.Decimal()

@@ -2,6 +2,7 @@ package logic
 
 import (
 	"fmt"
+
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -50,22 +51,22 @@ func (t *Transaction) execCoinTransfer(
 		resourceName := util.GetPrefixedAddressValue(recvAddr.String())
 		recipientAddr = util.String(resourceName)
 		if util.IsPrefixedAddressRepo(recvAddr.String()) {
-			recvAcct = repoKeeper.GetRepo(resourceName)
+			recvAcct = repoKeeper.Get(resourceName)
 		} else {
-			recvAcct = acctKeeper.GetAccount(util.String(resourceName))
+			recvAcct = acctKeeper.Get(util.String(resourceName))
 		}
 	}
 
 	// Check if the recipient address is a bech32 address.
 	// If so, get the account object corresponding to the address.
 	if recvAddr.IsBech32MakerAddress() {
-		recvAcct = acctKeeper.GetAccount(recipientAddr)
+		recvAcct = acctKeeper.Get(recipientAddr)
 	}
 
 	// Get the sender account and balance
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	sender := spk.Addr()
-	senderAcct := acctKeeper.GetAccount(sender)
+	senderAcct := acctKeeper.Get(sender)
 	senderBal := senderAcct.Balance.Decimal()
 
 	// When the sender is also the recipient, use sender
@@ -133,7 +134,7 @@ func (t *Transaction) CanExecCoinTransfer(
 
 	// Get sender and recipient accounts
 	acctKeeper := t.logic.AccountKeeper()
-	senderAcct := acctKeeper.GetAccount(util.String(senderAddr))
+	senderAcct := acctKeeper.Get(util.String(senderAddr))
 
 	field := "value"
 	if value == "0" && fee != "0" {

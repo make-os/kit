@@ -273,7 +273,7 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	if namespace != "r" {
 
 		// Get the namespace, return 404 if not found
-		ns := m.logic.NamespaceKeeper().Get(util.Hash20Hex([]byte(namespace)))
+		ns := m.logic.NamespaceKeeper().Get(util.HashNamespace(namespace))
 		if ns.IsNil() {
 			w.WriteHeader(http.StatusNotFound)
 			m.log.Debug("Unknown repository", "Name", repoName, "StatusCode", http.StatusNotFound,
@@ -296,7 +296,7 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the repository exist
 	fullRepoDir := m.getRepoPath(repoName)
-	repoState := m.logic.RepoKeeper().GetRepo(repoName)
+	repoState := m.logic.RepoKeeper().Get(repoName)
 	if repoState.IsNil() {
 		w.WriteHeader(http.StatusNotFound)
 		m.log.Debug("Unknown repository", "Name", repoName, "StatusCode", http.StatusNotFound,
@@ -412,7 +412,7 @@ func (m *Manager) FindObject(key []byte) ([]byte, error) {
 	return bz, nil
 }
 
-// GetRepo returns a repo handle
+// Get returns a repo handle
 func (m *Manager) GetRepo(name string) (core.BareRepo, error) {
 	return getRepoWithGitOpt(m.gitBinPath, m.getRepoPath(name))
 }

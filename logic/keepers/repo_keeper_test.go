@@ -34,10 +34,10 @@ var _ = Describe("RepoKeeper", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".GetRepo", func() {
+	Describe(".Get", func() {
 		When("repository does not exist", func() {
 			It("should return a bare repository", func() {
-				repo := rk.GetRepo("unknown", 0)
+				repo := rk.Get("unknown", 0)
 				Expect(repo).To(Equal(state2.BareRepository()))
 			})
 		})
@@ -55,7 +55,7 @@ var _ = Describe("RepoKeeper", func() {
 			})
 
 			It("should successfully return the expected repo object", func() {
-				repo := rk.GetRepo("repo1", 0)
+				repo := rk.Get("repo1", 0)
 				Expect(repo).To(BeEquivalentTo(testRepo))
 			})
 		})
@@ -80,7 +80,7 @@ var _ = Describe("RepoKeeper", func() {
 			})
 
 			It("should set proposal config to the config of the repo at height/stateVersion=1", func() {
-				repo := rk.GetRepo("repo1", 0)
+				repo := rk.Get("repo1", 0)
 				Expect(repo).ToNot(BeEquivalentTo(testRepo))
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Config).To(Equal(repoAtVersion1.Config.Governance))
@@ -112,7 +112,7 @@ var _ = Describe("RepoKeeper", func() {
 			})
 
 			It("should set proposal config to the config of the repo at", func() {
-				repo := rk.GetRepo("repo1", 0)
+				repo := rk.Get("repo1", 0)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").Config).To(Equal(repo.Config.Governance))
 			})
@@ -122,13 +122,13 @@ var _ = Describe("RepoKeeper", func() {
 	Describe(".Update", func() {
 		It("should update repo object", func() {
 			key := "repo1"
-			repo := rk.GetRepo(key)
+			repo := rk.Get(key)
 			Expect(repo.Owners).To(BeEmpty())
 
 			repo.AddOwner("owner", &state2.RepoOwner{})
 			rk.Update(key, repo)
 
-			repo2 := rk.GetRepo(key)
+			repo2 := rk.Get(key)
 			Expect(repo2).To(Equal(repo))
 		})
 	})
