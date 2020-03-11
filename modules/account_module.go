@@ -118,7 +118,7 @@ func (m *AccountModule) Configure() []prompt.Suggest {
 			Description: f.Description})
 	}
 
-	// Add global functions
+	// Register global functions
 	for _, f := range m.globals() {
 		_ = m.vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
@@ -157,7 +157,7 @@ func (m *AccountModule) GetKey(address string, passphrase ...string) string {
 		panic(util.NewStatusError(400, StatusCodeAddressRequire, "address", "address is required"))
 	}
 
-	// Find the address
+	// Get the address
 	acct, err := m.acctMgr.GetByAddress(address)
 	if err != nil {
 		if err != apptypes.ErrAccountUnknown {
@@ -198,7 +198,7 @@ func (m *AccountModule) GetPublicKey(address string, passphrase ...string) strin
 		panic(util.NewStatusError(400, StatusCodeAddressRequire, "address", "address is required"))
 	}
 
-	// Find the address
+	// Get the address
 	acct, err := m.acctMgr.GetByAddress(address)
 	if err != nil {
 		if err == apptypes.ErrAccountUnknown {
@@ -230,7 +230,7 @@ func (m *AccountModule) GetPublicKey(address string, passphrase ...string) strin
 // [passphrase]: The target block height to query (default: latest)
 // [height]: The target block height to query (default: latest)
 func (m *AccountModule) GetNonce(address string, height ...uint64) string {
-	acct := m.logic.AccountKeeper().Get(util.String(address), height...)
+	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
 			"address", apptypes.ErrAccountUnknown.Error()))
@@ -242,7 +242,7 @@ func (m *AccountModule) GetNonce(address string, height ...uint64) string {
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
 func (m *AccountModule) GetAccount(address string, height ...uint64) util.Map {
-	acct := m.logic.AccountKeeper().Get(util.String(address), height...)
+	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
 			"address", apptypes.ErrAccountUnknown.Error()))
@@ -257,7 +257,7 @@ func (m *AccountModule) GetAccount(address string, height ...uint64) util.Map {
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
 func (m *AccountModule) GetSpendableBalance(address string, height ...uint64) string {
-	acct := m.logic.AccountKeeper().Get(util.String(address), height...)
+	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
 			"address", apptypes.ErrAccountUnknown.Error()))
@@ -279,7 +279,7 @@ func (m *AccountModule) GetSpendableBalance(address string, height ...uint64) st
 //
 // RETURNS <string>: numeric value
 func (m *AccountModule) GetStakedBalance(address string, height ...uint64) string {
-	acct := m.logic.AccountKeeper().Get(util.String(address), height...)
+	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
 			"address", apptypes.ErrAccountUnknown.Error()))

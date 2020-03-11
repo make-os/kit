@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -12,7 +13,7 @@ type BaseTx interface {
 	GetType() int                         // Returns the type of the transaction
 	GetSignature() []byte                 // Returns the transaction signature
 	SetSignature(s []byte)                // Sets the transaction signature
-	GetSenderPubKey() util.PublicKey      // Returns the transaction sender public key
+	GetSenderPubKey() crypto.PublicKey    // Returns the transaction sender public key
 	SetSenderPubKey(pk []byte)            // Set the transaction sender public key
 	GetTimestamp() int64                  // Return the transaction creation unix timestamp
 	SetTimestamp(t int64)                 // Set the transaction creation unix timestamp
@@ -20,7 +21,7 @@ type BaseTx interface {
 	SetNonce(nonce uint64)                // Set the transaction nonce
 	SetFee(fee util.String)               // Set the fee
 	GetFee() util.String                  // Returns the transaction fee
-	GetFrom() util.String                 // Returns the address of the transaction sender
+	GetFrom() util.Address                // Returns the address of the transaction sender
 	GetHash() util.Bytes32                // Returns the hash of the transaction
 	GetBytesNoSig() []byte                // Returns the serialized the tx excluding the signature
 	Bytes() []byte                        // Returns the serialized transaction
@@ -34,4 +35,3 @@ type BaseTx interface {
 	GetMeta() map[string]interface{}      // Returns the meta information of the transaction
 	Is(txType int) bool                   // Checks if the tx is a given type
 }
-

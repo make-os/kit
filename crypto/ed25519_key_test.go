@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"gitlab.com/makeos/mosdef/util"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Key", func() {
@@ -110,7 +110,7 @@ var _ = Describe("Key", func() {
 			a, err := NewKey(&seed)
 			Expect(err).To(BeNil())
 			addr := a.Addr()
-			Expect(addr).To(Equal(util.String("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")))
+			Expect(addr).To(Equal(util.Address("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")))
 		})
 	})
 

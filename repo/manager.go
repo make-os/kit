@@ -129,7 +129,7 @@ func (m *Manager) RegisterAPIHandlers(agg modules.ModuleHub) {
 }
 
 func (m *Manager) defaultGPGPubKeyGetter(gpgID string) (string, error) {
-	gpgPK := m.logic.GPGPubKeyKeeper().GetGPGPubKey(gpgID)
+	gpgPK := m.logic.GPGPubKeyKeeper().Get(gpgID)
 	if gpgPK.IsNil() {
 		return "", fmt.Errorf("gpg public key not found for the given ID")
 	}

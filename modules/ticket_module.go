@@ -125,7 +125,7 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 			Description: f.Description})
 	}
 
-	// Add global functions
+	// Register global functions
 	for _, f := range m.globals() {
 		_ = m.vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,

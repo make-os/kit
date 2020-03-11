@@ -29,7 +29,7 @@ get:
 		lastEpochEndBlockHeight = 1
 	}
 
-	// Find the validator set attached to the height.
+	// Get the validator set attached to the height.
 	res := make(map[util.Bytes32]*core.Validator)
 	key := MakeBlockValidatorsKey(lastEpochEndBlockHeight)
 	rec, err := v.db.Get(key)

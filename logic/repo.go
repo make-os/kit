@@ -38,8 +38,8 @@ func (t *Transaction) execRepoCreate(
 
 	proposee := newRepo.Config.Governance.ProposalProposee
 
-	// Add sender as owner only if proposee type is ProposeeOwner
-	// Add sender as a veto owner if proposee type is ProposeeNetStakeholdersAndVetoOwner
+	// Register sender as owner only if proposee type is ProposeeOwner
+	// Register sender as a veto owner if proposee type is ProposeeNetStakeholdersAndVetoOwner
 	if proposee == state.ProposeeOwner || proposee == state.ProposeeNetStakeholdersAndVetoOwner {
 		newRepo.AddOwner(spk.Addr().String(), &state.RepoOwner{
 			Creator:  true,
@@ -51,29 +51,33 @@ func (t *Transaction) execRepoCreate(
 	t.logic.RepoKeeper().Update(name, newRepo)
 
 	// Deduct fee from sender
-	t.deductValue(spk, fee.Decimal(), chainHeight)
+	t.debitAccount(spk, fee.Decimal(), chainHeight)
 
 	return nil
 }
 
-// deductValue deducts the given fee from the account corresponding to the sender
-// public key; It also increments the senders account nonce by 1.
-func (t *Transaction) deductValue(spk *crypto.PubKey, fee decimal.Decimal, chainHeight uint64) {
+// debitAccount deducts the given amount from an account,
+// increments its nonce and saves the updates.
+// ARGS:
+// spk: The public key of the target account
+// debitAmt: The amount to be debited
+// chainHeight: The current chain height
+func (t *Transaction) debitAccount(acctPubKey *crypto.PubKey, debitAmt decimal.Decimal, chainHeight uint64) {
 
 	// Get the sender account and balance
 	acctKeeper := t.logic.AccountKeeper()
-	senderAcct := acctKeeper.Get(spk.Addr())
+	senderAcct := acctKeeper.Get(acctPubKey.Addr())
 	senderBal := senderAcct.Balance.Decimal()
 
-	// Deduct the fee from the sender's account
-	senderAcct.Balance = util.String(senderBal.Sub(fee).String())
+	// Deduct the debitAmt from the sender's account
+	senderAcct.Balance = util.String(senderBal.Sub(debitAmt).String())
 
 	// Increment nonce
 	senderAcct.Nonce = senderAcct.Nonce + 1
 
 	// Update the sender account
 	senderAcct.Clean(chainHeight)
-	acctKeeper.Update(spk.Addr(), senderAcct)
+	acctKeeper.Update(acctPubKey.Addr(), senderAcct)
 }
 
 // applyProposalUpsertOwner adds the address described in the proposal as a repo owner.
@@ -90,7 +94,7 @@ func applyProposalUpsertOwner(
 	var veto bool
 	util.ToObject(ad[types.ActionDataKeyVeto], &veto)
 
-	// Add new repo owner iif the target address does not
+	// Register new repo owner iif the target address does not
 	// already exist as an owner. If it exists, just update select fields.
 	for _, address := range targetAddrs {
 		existingOwner := repo.Owners.Get(address)
@@ -146,7 +150,7 @@ func (t *Transaction) execRepoProposalUpsertOwner(
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
-	t.deductValue(spk, totalFee, chainHeight)
+	t.debitAccount(spk, totalFee, chainHeight)
 
 	// Attempt to apply the proposal action
 	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)
@@ -228,7 +232,7 @@ func (t *Transaction) execRepoProposalUpdate(
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
-	t.deductValue(spk, totalFee, chainHeight)
+	t.debitAccount(spk, totalFee, chainHeight)
 
 	// Attempt to apply the proposal action
 	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)
@@ -275,7 +279,7 @@ func (t *Transaction) execRepoProposalFeeDeposit(
 	repo := repoKeeper.Get(repoName)
 	prop := repo.Proposals.Get(proposalID)
 
-	// Add proposal fee if set.
+	// Register proposal fee if set.
 	// If the sender already deposited, update their deposit.
 	if proposalFee != "0" {
 		addr := spk.Addr().String()
@@ -290,7 +294,7 @@ func (t *Transaction) execRepoProposalFeeDeposit(
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
-	t.deductValue(spk, totalFee, chainHeight)
+	t.debitAccount(spk, totalFee, chainHeight)
 
 	repoKeeper.Update(repoName, repo)
 
@@ -314,7 +318,7 @@ func makeProposal(
 		ActionData: map[string][]byte{},
 	}
 
-	// Add proposal fee if set
+	// Register proposal fee if set
 	if proposalFee != "0" {
 		proposal.Fees.Add(spk.Addr().String(), proposalFee.String())
 	}
@@ -331,7 +335,7 @@ func makeProposal(
 		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governance.ProposalDur
 	}
 
-	// Add the proposal to the repo
+	// Register the proposal to the repo
 	repo.Proposals.Add(proposal.ID, proposal)
 
 	return proposal
@@ -380,7 +384,7 @@ func (t *Transaction) execRepoProposalMergeRequest(
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
-	t.deductValue(spk, totalFee, chainHeight)
+	t.debitAccount(spk, totalFee, chainHeight)
 
 	// Attempt to apply the proposal action
 	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)
@@ -448,7 +452,7 @@ func applyProposalRegisterGPGKeys(
 	// This will replace any existing contributor with matching GPG ID.
 	for _, gpgID := range gpgIDs {
 
-		contributor := &state.BaseContributor{feeCap, "0", policies}
+		contributor := &state.BaseContributor{FeeCap: feeCap, FeeUsed: "0", Policies: policies}
 
 		// If namespace is set, add the contributor to the the namespace and
 		// then if namespaceOnly is set, continue  to the next gpg
@@ -460,12 +464,12 @@ func applyProposalRegisterGPGKeys(
 			}
 		}
 
-		// Add contributor to the repo
+		// Register contributor to the repo
 		repo.Contributors[gpgID] = &state.RepoContributor{
-			feeMode,
-			contributor.FeeCap,
-			contributor.FeeUsed,
-			contributor.Policies,
+			FeeMode:  feeMode,
+			FeeCap:   contributor.FeeCap,
+			FeeUsed:  contributor.FeeUsed,
+			Policies: contributor.Policies,
 		}
 	}
 
@@ -529,7 +533,7 @@ func (t *Transaction) execRepoProposalRegisterGPGKeys(
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
-	t.deductValue(spk, totalFee, chainHeight)
+	t.debitAccount(spk, totalFee, chainHeight)
 
 	// Attempt to apply the proposal action
 	applied, err := maybeApplyProposal(t.logic, proposal, repo, chainHeight)
@@ -719,7 +723,7 @@ func (t *Transaction) execRepoProposalVote(
 	repoKeeper.Update(repoName, repo)
 
 	// Deduct fee from sender
-	t.deductValue(spk, fee.Decimal(), chainHeight)
+	t.debitAccount(spk, fee.Decimal(), chainHeight)
 
 	return nil
 }

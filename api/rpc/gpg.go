@@ -35,7 +35,7 @@ func (a *GPGAPI) find(params interface{}) (resp *rpc.Response) {
 		return errResp
 	}
 
-	key := a.mods.GPG.Find(keyId, blockHeight)
+	key := a.mods.GPG.Get(keyId, blockHeight)
 	return rpc.Success(key)
 }
 
@@ -66,7 +66,7 @@ func (a *GPGAPI) APIs() rpc.APISet {
 	return map[string]rpc.APIInfo{
 		"find": {
 			Namespace:   types.NamespaceGPG,
-			Description: "Find a GPG key by its key ID",
+			Description: "Get a GPG key by its key ID",
 			Func:        a.find,
 		},
 		"getAccountOfOwner": {

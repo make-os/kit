@@ -128,7 +128,7 @@ func (tx *TxRegisterGPGPubKey) FromMap(data map[string]interface{}) error {
 		}
 	}
 
-	// Scopes: expects string or slice of string types in map
+	// AddScopes: expects string or slice of string types in map
 	if scopesVal := o.Get("scopes"); !scopesVal.IsNil() {
 		if scopesVal.IsStr() {
 			tx.Scopes = strings.Split(scopesVal.Str(), ",")

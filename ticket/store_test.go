@@ -1,15 +1,16 @@
 package ticket
 
 import (
-	types2 "gitlab.com/makeos/mosdef/ticket/types"
 	"os"
 
+	types2 "gitlab.com/makeos/mosdef/ticket/types"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Store", func() {
@@ -30,7 +31,7 @@ var _ = Describe("Store", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".Add", func() {
+	Describe(".Register", func() {
 		var err error
 		var ticket = &types2.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
 		var ticket2 = &types2.Ticket{Hash: util.StrToBytes32("hash2"), DecayBy: 101, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 11, Index: 4}

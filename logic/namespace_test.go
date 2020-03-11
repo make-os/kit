@@ -62,7 +62,8 @@ var _ = Describe("Namespace", func() {
 					Nonce:   1,
 				})
 
-				err = txLogic.execAcquireNamespace(sender.PubKey().MustBytes32(), nsName, "1", "1", "", "", nil, 0)
+				err = txLogic.execAcquireNamespace(sender.PubKey().MustBytes32(), nsName,
+					"1", "1", "", nil, 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -89,7 +90,7 @@ var _ = Describe("Namespace", func() {
 			})
 
 			Specify("that value is paid to the treasury address", func() {
-				acct := logic.AccountKeeper().Get(util.String(params.TreasuryAddress))
+				acct := logic.AccountKeeper().Get(util.Address(params.TreasuryAddress))
 				Expect(acct.Balance).To(Equal(util.String("1")))
 			})
 		})
@@ -107,7 +108,7 @@ var _ = Describe("Namespace", func() {
 				})
 
 				err = txLogic.execAcquireNamespace(sender.PubKey().MustBytes32(),
-					nsName, "1", "1", "", transferAcct, nil, 0)
+					nsName, "1", "1", transferAcct, nil, 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -131,7 +132,7 @@ var _ = Describe("Namespace", func() {
 				})
 
 				err = txLogic.execAcquireNamespace(sender.PubKey().MustBytes32(),
-					nsName, "1", "1", transferToRepo, "", nil, 0)
+					nsName, "1", "1", transferToRepo, nil, 0)
 				Expect(err).To(BeNil())
 			})
 

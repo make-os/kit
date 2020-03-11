@@ -486,8 +486,8 @@ var _ = Describe("ProposalHandler", func() {
 
 	Describe(".maybeProcessProposalFee", func() {
 		var proposal *state.RepoProposal
-		var addr = util.String("addr1")
-		var addr2 = util.String("addr2")
+		var addr = util.Address("addr1")
+		var addr2 = util.Address("addr2")
 		var repo *state.Repository
 		var helmRepoName = "helm"
 

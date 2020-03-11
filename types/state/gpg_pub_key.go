@@ -17,11 +17,11 @@ func BareGPGPubKey() *GPGPubKey {
 // GPGPubKey represents a GPG public key
 type GPGPubKey struct {
 	util.SerializerHelper `json:"-" msgpack:"-"`
-	PubKey                string      `json:"pubKey" mapstructure:"pubKey" msgpack:"pubKey"`
-	Address               util.String `json:"address" mapstructure:"address" msgpack:"address"`
-	Scopes                []string    `json:"scopes" mapstructure:"scopes" msgpack:"scopes"`
-	FeeCap                util.String `json:"feeCap" mapstructure:"feeCap" msgpack:"feeCap"`
-	FeeUsed               util.String `json:"feeUsed" mapstructure:"feeUsed" msgpack:"feeUsed"`
+	PubKey                string       `json:"pubKey" mapstructure:"pubKey" msgpack:"pubKey"`
+	Address               util.Address `json:"address" mapstructure:"address" msgpack:"address"`
+	Scopes                []string     `json:"scopes" mapstructure:"scopes" msgpack:"scopes"`
+	FeeCap                util.String  `json:"feeCap" mapstructure:"feeCap" msgpack:"feeCap"`
+	FeeUsed               util.String  `json:"feeUsed" mapstructure:"feeUsed" msgpack:"feeUsed"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

@@ -32,6 +32,7 @@ var (
 	TxTypeRepoProposalSendFee        = 14 // For native coin transfer to repo as proposal fee
 	TxTypeRepoProposalMergeRequest   = 15 // For merge request
 	TxTypeRepoProposalRegisterGPGKey = 16 // For adding GPG key to a repo
+	TxTypeUpDelGPGPubKey             = 17 // For updating or deleting a GPG public key
 )
 
 // TxMeta stores arbitrary, self-contained state information for a transaction
@@ -87,11 +88,11 @@ func (tx *TxType) FromMap(data map[string]interface{}) (err error) {
 type TxCommon struct {
 	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
 	*TxMeta               `json:"-" msgpack:"-" mapstructure:"-"`
-	Nonce                 uint64         `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`
-	Fee                   util.String    `json:"fee" msgpack:"fee" mapstructure:"fee"`
-	Sig                   []byte         `json:"sig" msgpack:"sig" mapstructure:"sig"`
-	Timestamp             int64          `json:"timestamp" msgpack:"timestamp" mapstructure:"timestamp"`
-	SenderPubKey          util.PublicKey `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
+	Nonce                 uint64           `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`
+	Fee                   util.String      `json:"fee" msgpack:"fee" mapstructure:"fee"`
+	Sig                   []byte           `json:"sig" msgpack:"sig" mapstructure:"sig"`
+	Timestamp             int64            `json:"timestamp" msgpack:"timestamp" mapstructure:"timestamp"`
+	SenderPubKey          crypto.PublicKey `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
 }
 
 // NewBareTxCommon returns an instance of TxCommon with zero values
@@ -101,7 +102,7 @@ func NewBareTxCommon() *TxCommon {
 		Nonce:        0,
 		Fee:          "0",
 		Timestamp:    0,
-		SenderPubKey: util.EmptyPublicKey,
+		SenderPubKey: crypto.EmptyPublicKey,
 	}
 }
 
@@ -180,7 +181,7 @@ func (tx *TxCommon) FromMap(data map[string]interface{}) (err error) {
 			if err != nil {
 				return util.FieldError("senderPubKey", "unable to decode from base58")
 			}
-			tx.SenderPubKey = util.BytesToPublicKey(pubKey.MustBytes())
+			tx.SenderPubKey = crypto.BytesToPublicKey(pubKey.MustBytes())
 		} else {
 			return util.FieldError("senderPubKey", fmt.Sprintf("invalid value type: has %T, "+
 				"wants base58 string", spkVal.Inter()))
@@ -231,18 +232,18 @@ func (tx *TxCommon) SetTimestamp(t int64) {
 }
 
 // GetSenderPubKey returns the transaction sender public key
-func (tx *TxCommon) GetSenderPubKey() util.PublicKey {
+func (tx *TxCommon) GetSenderPubKey() crypto.PublicKey {
 	return tx.SenderPubKey
 }
 
 // SetSenderPubKey set the transaction sender public key
 func (tx *TxCommon) SetSenderPubKey(pk []byte) {
-	tx.SenderPubKey = util.BytesToPublicKey(pk)
+	tx.SenderPubKey = crypto.BytesToPublicKey(pk)
 }
 
 // GetFrom returns the address of the transaction sender
 // Panics if sender's public key is invalid
-func (tx *TxCommon) GetFrom() util.String {
+func (tx *TxCommon) GetFrom() util.Address {
 	pk, err := crypto.PubKeyFromBytes(tx.SenderPubKey.Bytes())
 	if err != nil {
 		panic(err)
@@ -268,11 +269,11 @@ func SignTransaction(tx types.BaseTx, privKey string) ([]byte, error) {
 
 // TxRecipient describes a transaction receiver
 type TxRecipient struct {
-	To util.String `json:"to" msgpack:"to" mapstructure:"to"`
+	To util.Address `json:"to" msgpack:"to" mapstructure:"to"`
 }
 
 // SetRecipient sets the recipient
-func (tx *TxRecipient) SetRecipient(to util.String) {
+func (tx *TxRecipient) SetRecipient(to util.Address) {
 	tx.To = to
 }
 
@@ -286,7 +287,7 @@ func (tx *TxRecipient) FromMap(data map[string]interface{}) (err error) {
 	// To: expects string type in map
 	if toVal := o.Get("to"); !toVal.IsNil() {
 		if toVal.IsStr() {
-			tx.To = util.String(toVal.Str())
+			tx.To = util.Address(toVal.Str())
 		} else {
 			return util.FieldError("to", fmt.Sprintf("invalid value type: has %T, "+
 				"wants string", toVal.Inter()))
@@ -443,6 +444,8 @@ func getBareTxObject(txType int) (types.BaseTx, error) {
 		tx = NewBareRepoProposalMergeRequest()
 	case TxTypeRepoProposalRegisterGPGKey:
 		tx = NewBareRepoProposalRegisterGPGKey()
+	case TxTypeUpDelGPGPubKey:
+		tx = NewBareTxUpDelGPGPubKey()
 	default:
 		return nil, fmt.Errorf("unsupported tx type")
 	}
@@ -454,7 +457,7 @@ func getBareTxObject(txType int) (types.BaseTx, error) {
 // tests.
 func NewBaseTx(txType int,
 	nonce uint64,
-	to util.String,
+	to util.Address,
 	senderKey *crypto.Key,
 	value util.String,
 	fee util.String,

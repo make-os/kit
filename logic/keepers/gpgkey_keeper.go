@@ -18,14 +18,14 @@ func NewGPGPubKeyKeeper(state *tree.SafeTree, db storage.Tx) *GPGPubKeyKeeper {
 	return &GPGPubKeyKeeper{state: state, db: db}
 }
 
-// GetGPGPubKey returns a GPG public key
+// Get returns a GPG public key
 //
 // ARGS:
 // gpgID: The unique ID of the public key
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Account if no account is found.
-func (g *GPGPubKeyKeeper) GetGPGPubKey(gpgID string, blockNum ...uint64) *state.GPGPubKey {
+func (g *GPGPubKeyKeeper) Get(gpgID string, blockNum ...uint64) *state.GPGPubKey {
 
 	// Get version is provided
 	var version uint64
@@ -69,11 +69,20 @@ func (g *GPGPubKeyKeeper) Update(gpgID string, upd *state.GPGPubKey) error {
 	return g.db.Put(idx)
 }
 
-// GetPubKeyIDs returns all public keys associated with the given address
+// Remove removes a gpg key by id
+//
+// ARGS:
+// gpgID: The public key unique ID
+func (g *GPGPubKeyKeeper) Remove(gpgID string) bool {
+	key := MakeGPGPubKeyKey(gpgID)
+	return g.state.Remove(key)
+}
+
+// GetByAddress returns all public keys associated with the given address
 //
 // ARGS:
 // address: The target address
-func (g *GPGPubKeyKeeper) GetPubKeyIDs(address string) []string {
+func (g *GPGPubKeyKeeper) GetByAddress(address string) []string {
 	gpgIDs := []string{}
 	g.db.Iterate(MakeQueryPkIDs(address), true, func(rec *storage.Record) bool {
 		parts := storage.SplitPrefix(rec.Key)

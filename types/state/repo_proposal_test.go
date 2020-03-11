@@ -8,7 +8,7 @@ import (
 )
 
 var _ = Describe("RepoProposals", func() {
-	Describe(".Add", func() {
+	Describe(".Register", func() {
 		It("should add new proposal successfully", func() {
 			rp := RepoProposals(map[string]*RepoProposal{})
 			rp.Add("1", &RepoProposal{Creator: "address1"})

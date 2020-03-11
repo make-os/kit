@@ -37,12 +37,12 @@ func (m *DHTModule) namespacedFuncs() []*modules.ModuleFunc {
 		{
 			Name:        "store",
 			Value:       m.Store,
-			Description: "Add a value that correspond to a given key",
+			Description: "Register a value that correspond to a given key",
 		},
 		{
 			Name:        "lookup",
 			Value:       m.Lookup,
-			Description: "Find a record that correspond to a given key",
+			Description: "Get a record that correspond to a given key",
 		},
 		{
 			Name:        "announce",
@@ -57,7 +57,7 @@ func (m *DHTModule) namespacedFuncs() []*modules.ModuleFunc {
 		{
 			Name:        "getRepoObject",
 			Value:       m.GetRepoObject,
-			Description: "Find and return a repo object",
+			Description: "Get and return a repo object",
 		},
 		{
 			Name:        "getPeers",
@@ -88,7 +88,7 @@ func (m *DHTModule) Configure() []prompt.Suggest {
 			Description: f.Description})
 	}
 
-	// Add global functions
+	// Register global functions
 	for _, f := range m.globals() {
 		m.vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,

@@ -214,7 +214,7 @@ func (n *Node) Start() error {
 		return errors.Wrap(err, "failed to fully create node")
 	}
 
-	// Add the custom reactors
+	// Register the custom reactors
 	tmNode.Switch().AddReactor("PushReactor", repoMgr)
 
 	// Pass the proxy app to the mempool

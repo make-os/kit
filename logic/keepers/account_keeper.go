@@ -25,7 +25,7 @@ func NewAccountKeeper(state *tree.SafeTree) *AccountKeeper {
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Account if no account is found.
-func (a *AccountKeeper) Get(address util.String, blockNum ...uint64) *state.Account {
+func (a *AccountKeeper) Get(address util.Address, blockNum ...uint64) *state.Account {
 
 	// Get version is provided
 	var version uint64
@@ -62,6 +62,6 @@ func (a *AccountKeeper) Get(address util.String, blockNum ...uint64) *state.Acco
 // ARGS:
 // address: The address of the account to update
 // udp: The updated account object to replace the existing object.
-func (a *AccountKeeper) Update(address util.String, upd *state.Account) {
+func (a *AccountKeeper) Update(address util.Address, upd *state.Account) {
 	a.state.Set(MakeAccountKey(address.String()), upd.Bytes())
 }

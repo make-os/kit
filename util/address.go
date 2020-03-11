@@ -52,6 +52,11 @@ func (a Address) String() string {
 	return string(a)
 }
 
+// Equals checks whether a is equal to addr
+func (a Address) Equal(addr Address) bool {
+	return a == addr
+}
+
 // Empty checks whether the address is empty
 func (a Address) Empty() bool {
 	return a.String() == ""

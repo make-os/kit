@@ -129,13 +129,13 @@ and organizations without a centralized authority.`,
 // initialize setups the environment and returns a Config object
 func initialize() {
 
-	// Add commands
+	// Register commands
 	rootCmd.AddCommand(initCmd)
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(consoleCmd)
 	rootCmd.AddCommand(mergeReqCmd)
 
-	// Add flags
+	// Register flags
 	rootCmd.PersistentFlags().Bool("dev", false, "Enables development mode")
 	rootCmd.PersistentFlags().String("home", config.DefaultDataDir, "Set the path to the home directory")
 	rootCmd.PersistentFlags().String("home.prefix", "", "Adds a prefix to the home directory in dev mode")

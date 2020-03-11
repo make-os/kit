@@ -31,9 +31,9 @@ func (t *Transaction) execPush(
 
 	// Get the GPG public key of the pusher
 	gpgID := util.MustCreateGPGID(pusherKeyID)
-	gpgPK := t.logic.GPGPubKeyKeeper().GetGPGPubKey(gpgID, chainHeight)
+	gpgPK := t.logic.GPGPubKeyKeeper().Get(gpgID, chainHeight)
 
-	// Add the references to the repo and update their nonce
+	// Register the references to the repo and update their nonce
 	for _, ref := range references {
 		curRef := repo.References.Get(ref.Name)
 		curRef.Nonce = curRef.Nonce + 1

@@ -458,7 +458,7 @@ func getCommitHistory(repo core.BareRepo, commit *object.Commit, stopCommitHash 
 		return hashes, nil
 	}
 
-	// Add the commit and the tree hash
+	// Register the commit and the tree hash
 	hashes = append(hashes, commit.Hash.String())
 	hashes = append(hashes, commit.TreeHash.String())
 

@@ -23,7 +23,7 @@ import (
 // CheckRecipient validates the recipient address
 func CheckRecipient(tx *core.TxRecipient, index int) error {
 
-	recipient := tx.To.Address()
+	recipient := tx.To
 
 	if tx.To.Empty() {
 		return feI(index, "to", "recipient address is required")
@@ -324,11 +324,51 @@ func CheckTxRegisterGPGPubKey(tx *core.TxRegisterGPGPubKey, index int) error {
 
 	// If there are scope entries, ensure only namespaces URI,
 	// repo names and non-address entries are contained in the list
-	for i, s := range tx.Scopes {
+	if err := checkScopes(tx.Scopes, index); err != nil {
+		return err
+	}
+
+	// If fee cap is set, validate it
+	if !tx.FeeCap.Empty() {
+		if err := checkFeeCap(tx.FeeCap, index); err != nil {
+			return err
+		}
+	}
+
+	if err := checkCommon(tx, index); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func checkScopes(scopes []string, index int) error {
+	for i, s := range scopes {
 		if (!util.IsNamespaceURI(s) && util.IsValidIdentifierName(s) != nil) || util.IsValidAddr(s) == nil {
 			return feI(index, fmt.Sprintf("scopes[%d]", i), "not an acceptable scope. "+
 				"Expects a namespace URI or repository name")
 		}
+	}
+	return nil
+}
+
+// CheckTxUpDelGPGPubKey performs sanity checks on TxRegisterGPGPubKey
+func CheckTxUpDelGPGPubKey(tx *core.TxUpDelGPGPubKey, index int) error {
+
+	if err := checkType(tx.TxType, core.TxTypeUpDelGPGPubKey, index); err != nil {
+		return err
+	}
+
+	if tx.ID == "" {
+		return feI(index, "id", "gpg id is required")
+	} else if !util.IsValidGPGID(tx.ID) {
+		return feI(index, "id", "gpg id is not valid")
+	}
+
+	// If there are scope entries, ensure only namespaces URI,
+	// repo names and non-address entries are contained in the list
+	if err := checkScopes(tx.AddScopes, index); err != nil {
+		return err
 	}
 
 	// If fee cap is set, validate it
@@ -471,20 +511,10 @@ func CheckTxNSAcquire(tx *core.TxNamespaceAcquire, index int) error {
 		return err
 	}
 
-	if tx.TransferToRepo != "" && tx.TransferToAccount != "" {
-		return feI(index, "", "can only transfer ownership to either an account or a repo")
-	}
-
-	if tx.TransferToAccount != "" {
-		if err := v.Validate(tx.TransferToAccount,
-			v.By(validAddrRule(feI(index, "toAccount", "address is not valid"))),
-		); err != nil {
-			return err
+	if tx.TransferTo != "" {
+		if crypto.IsValidAddr(tx.TransferTo) != nil && util.IsValidIdentifierName(tx.TransferTo) != nil {
+			return feI(index, "to", "invalid value. Expected an address or a repository name")
 		}
-	}
-
-	if tx.TransferToRepo != "" && util.IsValidIdentifierName(tx.TransferToRepo) != nil {
-		return feI(index, "toRepo", "repo name is not valid")
 	}
 
 	if !tx.Value.Decimal().Equal(params.CostOfNamespace) {

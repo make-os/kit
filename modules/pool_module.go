@@ -55,7 +55,7 @@ func (m *PoolModule) funcs() []*modules.ModuleFunc {
 func (m *PoolModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
-	// Add the main namespace
+	// Register the main namespace
 	obj := map[string]interface{}{}
 	util.VMSet(m.vm, types.NamespacePool, obj)
 
@@ -66,7 +66,7 @@ func (m *PoolModule) Configure() []prompt.Suggest {
 			Description: f.Description})
 	}
 
-	// Add global functions
+	// Register global functions
 	for _, f := range m.globals() {
 		m.vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,

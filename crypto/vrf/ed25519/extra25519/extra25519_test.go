@@ -8,8 +8,9 @@ import (
 	"bytes"
 	"crypto/rand"
 	"crypto/sha512"
-	"gitlab.com/makeos/mosdef/crypto/vrf/ed25519/edwards25519"
 	"testing"
+
+	"gitlab.com/makeos/mosdef/crypto/vrf/ed25519/edwards25519"
 
 	"golang.org/x/crypto/curve25519"
 	"golang.org/x/crypto/ed25519"
@@ -99,7 +100,7 @@ func TestElligator(t *testing.T) {
 func BenchmarkKeyGeneration(b *testing.B) {
 	var publicKey, representative, privateKey [32]byte
 
-	// Find the private key that results in a point that's in the image of the map.
+	// Get the private key that results in a point that's in the image of the map.
 	for {
 		rand.Reader.Read(privateKey[:])
 		if ScalarBaseMult(&publicKey, &representative, &privateKey) {

@@ -109,7 +109,7 @@ func determineProposalOutcome(
 // refundProposalFees refunds all fees back to their senders
 func refundProposalFees(keepers core.Keepers, proposal state.Proposal) error {
 	for senderAddr, fee := range proposal.GetFees() {
-		sender := util.String(senderAddr)
+		sender := util.Address(senderAddr)
 		acct := keepers.AccountKeeper().Get(sender)
 		acct.Balance = util.String(acct.Balance.Decimal().Add(util.String(fee).Decimal()).String())
 		keepers.AccountKeeper().Update(sender, acct)
@@ -292,7 +292,7 @@ func maybeApplyEndedProposals(
 
 	repoKeeper := keepers.RepoKeeper()
 
-	// Find proposals ending at the given height
+	// Get proposals ending at the given height
 	endingProps := repoKeeper.GetProposalsEndingAt(nextChainHeight)
 
 	// Attempt to apply and close the proposal

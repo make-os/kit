@@ -50,7 +50,7 @@ func NewActiveCache(capacity int) *Cache {
 	return cache
 }
 
-// Add adds an item. It the cache becomes full, the oldest
+// Register adds an item. It the cache becomes full, the oldest
 // item is deleted to make room for the new item.
 func (c *Cache) Add(key, val interface{}) {
 	c.add(key, val, time.Time{})
@@ -82,7 +82,7 @@ func (c *Cache) add(key, val interface{}, expTime time.Time) {
 }
 
 // AddWithExp adds an item with an expiration time.
-// Expired items are removed lazily - Whenever Add or AddWithExp are called.
+// Expired items are removed lazily - Whenever Register or AddWithExp are called.
 // An item with an expiry time does not need to be the oldest in the cache before it is removed.
 func (c *Cache) AddWithExp(key, val interface{}, expTime time.Time) {
 	c.add(key, val, expTime)

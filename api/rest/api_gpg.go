@@ -23,7 +23,7 @@ func (r *RESTApi) GPGFind(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	gpgKey := r.Modules().GPG.Find(id, blockHeight)
+	gpgKey := r.Modules().GPG.Get(id, blockHeight)
 	util.WriteJSON(w, 200, util.StructToMap(gpgKey))
 }
 

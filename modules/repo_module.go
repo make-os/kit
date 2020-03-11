@@ -41,7 +41,7 @@ func (m *RepoModule) funcs() []*modules.ModuleFunc {
 		{
 			Name:        "get",
 			Value:       m.Get,
-			Description: "Find and return a repository",
+			Description: "Get and return a repository",
 		},
 		{
 			Name:        "update",
@@ -66,7 +66,7 @@ func (m *RepoModule) funcs() []*modules.ModuleFunc {
 		{
 			Name:        "depositFee",
 			Value:       m.DepositFee,
-			Description: "Add fees to a deposit-enabled repository proposal",
+			Description: "Register fees to a deposit-enabled repository proposal",
 		},
 		{
 			Name:        "createMergeRequest",
@@ -90,7 +90,7 @@ func (m *RepoModule) globals() []*modules.ModuleFunc {
 func (m *RepoModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
-	// Add the main namespace
+	// Register the main namespace
 	obj := map[string]interface{}{}
 	util.VMSet(m.vm, types.NamespaceRepo, obj)
 
@@ -101,7 +101,7 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 			Description: f.Description})
 	}
 
-	// Add global functions
+	// Register global functions
 	for _, f := range m.globals() {
 		m.vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,

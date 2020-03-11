@@ -33,22 +33,22 @@ func (m *MockHost) EXPECT() *MockHostMockRecorder {
 	return m.recorder
 }
 
-// Add mocks base method
+// Register mocks base method
 func (m *MockHost) Add(tickets ...*types2.Ticket) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{}
 	for _, a := range tickets {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "Add", varargs...)
+	ret := m.ctrl.Call(m, "Register", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Add indicates an expected call of Add
+// Register indicates an expected call of Register
 func (mr *MockHostMockRecorder) Add(tickets ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockHost)(nil).Add), tickets...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockHost)(nil).Add), tickets...)
 }
 
 // GetByHash mocks base method

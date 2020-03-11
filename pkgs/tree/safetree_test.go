@@ -75,7 +75,7 @@ var _ = Describe("TMDBAdapter", func() {
 			})
 		})
 
-		When("key does exists", func() {
+		When("key exists", func() {
 			BeforeEach(func() {
 				res := tree.Set(key, []byte("val"))
 				Expect(res).To(BeFalse())
@@ -86,6 +86,25 @@ var _ = Describe("TMDBAdapter", func() {
 				Expect(val).ToNot(BeNil())
 				Expect(val).To(Equal([]byte("val")))
 				Expect(idx).To(Equal(int64(0)))
+			})
+		})
+	})
+
+	Describe(".Remove", func() {
+		key := []byte("key")
+		When("key does not exist", func() {
+			It("should return false", func() {
+				removed := tree.Remove(key)
+				Expect(removed).To(BeFalse())
+			})
+		})
+
+		When("key exists", func() {
+			It("should return true", func() {
+				res := tree.Set(key, []byte("val"))
+				Expect(res).To(BeFalse())
+				removed := tree.Remove(key)
+				Expect(removed).To(BeTrue())
 			})
 		})
 	})

@@ -1,8 +1,9 @@
 package keepers
 
 import (
-	state2 "gitlab.com/makeos/mosdef/types/state"
 	"os"
+
+	state2 "gitlab.com/makeos/mosdef/types/state"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -57,14 +58,14 @@ var _ = Describe("GPGKeeper", func() {
 		})
 	})
 
-	Describe(".GetGPGPubKey", func() {
+	Describe(".Get", func() {
 		var gpgPK, gpgPK2 *state2.GPGPubKey
 
 		BeforeEach(func() {
 			gpgPK = &state2.GPGPubKey{PubKey: "pub_key", Address: "addr"}
 			err = gpgKeeper.Update("pk_id", gpgPK)
 			Expect(err).To(BeNil())
-			gpgPK2 = gpgKeeper.GetGPGPubKey("pk_id")
+			gpgPK2 = gpgKeeper.Get("pk_id")
 		})
 
 		Specify("that it returned the expected public key", func() {
@@ -72,7 +73,24 @@ var _ = Describe("GPGKeeper", func() {
 		})
 	})
 
-	Describe(".GetPubKeyIDs", func() {
+	Describe(".Remove", func() {
+		var removed bool
+
+		BeforeEach(func() {
+			gpgPK := &state2.GPGPubKey{PubKey: "pub_key", Address: "addr"}
+			err = gpgKeeper.Update("pk_id", gpgPK)
+			Expect(err).To(BeNil())
+			Expect(gpgKeeper.Get("pk_id").IsNil()).To(BeFalse())
+		})
+
+		It("should remove key", func() {
+			removed = gpgKeeper.Remove("pk_id")
+			Expect(removed).To(BeTrue())
+			Expect(gpgKeeper.Get("pk_id").IsNil()).To(BeTrue())
+		})
+	})
+
+	Describe(".GetByAddress", func() {
 		BeforeEach(func() {
 			err = gpgKeeper.Update("pk_id", &state2.GPGPubKey{PubKey: "pub_key", Address: "addr"})
 			Expect(err).To(BeNil())
@@ -81,7 +99,7 @@ var _ = Describe("GPGKeeper", func() {
 		})
 
 		It("should return expected pk ids", func() {
-			gpgIDs := gpgKeeper.GetPubKeyIDs("addr")
+			gpgIDs := gpgKeeper.GetByAddress("addr")
 			Expect(gpgIDs).To(HaveLen(2))
 			Expect(gpgIDs).To(ConsistOf("pk_id", "pk_id2"))
 		})

@@ -15,7 +15,7 @@ var _ = Describe("Cache", func() {
 		cache = NewCache(10)
 	})
 
-	Describe(".Add", func() {
+	Describe(".Register", func() {
 		It("should successfully add an item", func() {
 			key := "myKey"
 			val := "myVal"

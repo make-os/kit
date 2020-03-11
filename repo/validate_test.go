@@ -486,7 +486,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&state.GPGPubKey{Address: "address_xyz"})
+				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.GPGPubKey{Address: "address_xyz"})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -508,7 +508,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", state.BareRepoProposal())
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&state.GPGPubKey{})
+				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.GPGPubKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -532,7 +532,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", state.BareRepoProposal())
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&state.GPGPubKey{})
+				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.GPGPubKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -561,7 +561,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&state.GPGPubKey{})
+				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.GPGPubKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -589,7 +589,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&state.GPGPubKey{})
+				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.GPGPubKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -618,7 +618,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&state.GPGPubKey{})
+				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.GPGPubKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -648,7 +648,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&state.GPGPubKey{})
+				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.GPGPubKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -681,7 +681,7 @@ var _ = Describe("Validation", func() {
 					repoState.Proposals.Add("0001", prop)
 					repo.EXPECT().State().Return(repoState)
 
-					mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&state.GPGPubKey{})
+					mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.GPGPubKey{})
 
 					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -722,7 +722,7 @@ var _ = Describe("Validation", func() {
 					repoState.Proposals.Add("0001", prop)
 					repo.EXPECT().State().Return(repoState)
 
-					mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&state.GPGPubKey{})
+					mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.GPGPubKey{})
 
 					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -767,7 +767,7 @@ var _ = Describe("Validation", func() {
 					repoState.Proposals.Add("0001", prop)
 					repo.EXPECT().State().Return(repoState)
 
-					mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&state.GPGPubKey{})
+					mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.GPGPubKey{})
 
 					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -818,7 +818,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&state.GPGPubKey{})
+				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.GPGPubKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "abc"}
@@ -869,7 +869,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().GetGPGPubKey("gpg_key_id").Return(&state.GPGPubKey{})
+				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.GPGPubKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "abc"}
@@ -1388,7 +1388,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				tx := &core.PushNote{RepoName: "repo1", PusherKeyID: util.RandBytes(20)}
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
-				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustCreateGPGID(tx.PusherKeyID)).Return(state.BareGPGPubKey())
+				mockGPGKeeper.EXPECT().Get(util.MustCreateGPGID(tx.PusherKeyID)).Return(state.BareGPGPubKey())
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -1408,8 +1408,8 @@ var _ = Describe("Validation", func() {
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				gpgKey := state.BareGPGPubKey()
-				gpgKey.Address = util.String("address2")
-				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustCreateGPGID(tx.PusherKeyID)).Return(gpgKey)
+				gpgKey.Address = util.Address("address2")
+				mockGPGKeeper.EXPECT().Get(util.MustCreateGPGID(tx.PusherKeyID)).Return(gpgKey)
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -1429,8 +1429,8 @@ var _ = Describe("Validation", func() {
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				gpgKey := state.BareGPGPubKey()
-				gpgKey.Address = util.String("address1")
-				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustCreateGPGID(tx.PusherKeyID)).Return(gpgKey)
+				gpgKey.Address = util.Address("address1")
+				mockGPGKeeper.EXPECT().Get(util.MustCreateGPGID(tx.PusherKeyID)).Return(gpgKey)
 
 				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(state.BareAccount())
 
@@ -1454,8 +1454,8 @@ var _ = Describe("Validation", func() {
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				gpgKey := state.BareGPGPubKey()
-				gpgKey.Address = util.String("address1")
-				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustCreateGPGID(tx.PusherKeyID)).Return(gpgKey)
+				gpgKey.Address = util.Address("address1")
+				mockGPGKeeper.EXPECT().Get(util.MustCreateGPGID(tx.PusherKeyID)).Return(gpgKey)
 
 				acct := state.BareAccount()
 				acct.Nonce = 1
@@ -1484,8 +1484,8 @@ var _ = Describe("Validation", func() {
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				gpgKey := state.BareGPGPubKey()
-				gpgKey.Address = util.String("address1")
-				mockGPGKeeper.EXPECT().GetGPGPubKey(util.MustCreateGPGID(tx.PusherKeyID)).Return(gpgKey)
+				gpgKey.Address = util.Address("address1")
+				mockGPGKeeper.EXPECT().Get(util.MustCreateGPGID(tx.PusherKeyID)).Return(gpgKey)
 
 				acct := state.BareAccount()
 				acct.Nonce = 1

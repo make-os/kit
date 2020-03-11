@@ -12,7 +12,7 @@ type PushNote struct {
 	RepoName              string           `json:"repoName" msgpack:"repoName"`         // The name of the repo
 	References            PushedReferences `json:"references" msgpack:"references"`     // A list of references pushed
 	PusherKeyID           []byte           `json:"pusherKeyId" msgpack:"pusherKeyId"`   // The PGP key of the pusher
-	PusherAddress         util.String      `json:"pusherAddr" msgpack:"pusherAddr"`     // The Address of the pusher
+	PusherAddress         util.Address     `json:"pusherAddr" msgpack:"pusherAddr"`     // The Address of the pusher
 	Size                  uint64           `json:"size" msgpack:"size"`                 // Total size of all objects pushed
 	Timestamp             int64            `json:"timestamp" msgpack:"timestamp"`       // Unix timestamp
 	AccountNonce          uint64           `json:"accountNonce" msgpack:"accountNonce"` // Next nonce of the pusher's account

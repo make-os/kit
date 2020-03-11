@@ -36,7 +36,7 @@ func MakeHashKey(hash []byte) []byte {
 // Host describes the functions of a ticker store
 type Host interface {
 
-	// Add adds one or more tickets to the store
+	// Register adds one or more tickets to the store
 	Add(tickets ...*types2.Ticket) error
 
 	// GetByHash queries a ticket by its hash
@@ -84,7 +84,7 @@ func getQueryOptions(queryOptions ...interface{}) types2.QueryOptions {
 	return types2.QueryOptions{}
 }
 
-// Add adds one or more tickets to the store
+// Register adds one or more tickets to the store
 func (s *Store) Add(tickets ...*types2.Ticket) error {
 	for _, ticket := range tickets {
 		key := MakeKey(ticket.Hash.Bytes(), ticket.Height, ticket.Index)

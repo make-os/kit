@@ -74,9 +74,9 @@ type AccountModule interface {
 
 type GPGModule interface {
 	Configure() []prompt.Suggest
-	AddPK(params map[string]interface{}, options ...interface{}) util.Map
-	Find(id string, blockHeight ...uint64) util.Map
-	OwnedBy(address string) []string
+	Register(params map[string]interface{}, options ...interface{}) util.Map
+	Get(id string, blockHeight ...uint64) util.Map
+	GetByAddress(address string) []string
 	GetAccountOfOwner(gpgID string, blockHeight ...uint64) util.Map
 }
 

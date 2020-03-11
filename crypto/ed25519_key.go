@@ -87,7 +87,7 @@ func (k *Key) PeerID() string {
 }
 
 // Addr returns the transaction address
-func (k *Key) Addr() util.String {
+func (k *Key) Addr() util.Address {
 	return k.PubKey().Addr()
 }
 
@@ -255,12 +255,12 @@ func (p *PubKey) AddrRaw() []byte {
 }
 
 // Addr returns the bech32 address
-func (p *PubKey) Addr() util.String {
+func (p *PubKey) Addr() util.Address {
 	encoded, err := bech32.ConvertAndEncode(AddrHRP, p.AddrRaw())
 	if err != nil {
 		panic(err)
 	}
-	return util.String(encoded)
+	return util.Address(encoded)
 }
 
 // IsValidAddr checks whether an address is valid

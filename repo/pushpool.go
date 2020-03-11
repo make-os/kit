@@ -2,10 +2,11 @@ package repo
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/dht/types"
-	"gitlab.com/makeos/mosdef/types/core"
 	"sync"
 	"time"
+
+	"gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
@@ -165,7 +166,7 @@ func (p *PushPool) Full() bool {
 	return isFull
 }
 
-// Add a push transaction to the pool.
+// Register a push transaction to the pool.
 //
 // Check all the references to ensure there are no identical (same repo,
 // reference and nonce) references with same nonce in the pool. A valid
@@ -252,10 +253,10 @@ func (p *PushPool) Add(note core.RepoPushNote, noValidation ...bool) error {
 		}
 	}
 
-	// Add new note item to container
+	// Register new note item to container
 	p.container = append(p.container, item)
 
-	// Add indexes for faster queries
+	// Register indexes for faster queries
 	p.index.add(id.HexStr(), item)
 	p.repoNotesIdx.add(note.GetRepoName(), item)
 	for _, ref := range item.Note.References {

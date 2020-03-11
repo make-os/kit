@@ -559,56 +559,56 @@ func (mr *MockGPGModuleMockRecorder) Configure() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockGPGModule)(nil).Configure))
 }
 
-// AddPK mocks base method
-func (m *MockGPGModule) AddPK(params map[string]interface{}, options ...interface{}) util.Map {
+// Register mocks base method
+func (m *MockGPGModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{params}
 	for _, a := range options {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "AddPK", varargs...)
+	ret := m.ctrl.Call(m, "Register", varargs...)
 	ret0, _ := ret[0].(util.Map)
 	return ret0
 }
 
-// AddPK indicates an expected call of AddPK
-func (mr *MockGPGModuleMockRecorder) AddPK(params interface{}, options ...interface{}) *gomock.Call {
+// Register indicates an expected call of Register
+func (mr *MockGPGModuleMockRecorder) Add(params interface{}, options ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{params}, options...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPK", reflect.TypeOf((*MockGPGModule)(nil).AddPK), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockGPGModule)(nil).Register), varargs...)
 }
 
-// Find mocks base method
-func (m *MockGPGModule) Find(id string, blockHeight ...uint64) util.Map {
+// Get mocks base method
+func (m *MockGPGModule) Get(id string, blockHeight ...uint64) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{id}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "Find", varargs...)
+	ret := m.ctrl.Call(m, "Get", varargs...)
 	ret0, _ := ret[0].(util.Map)
 	return ret0
 }
 
-// Find indicates an expected call of Find
+// Get indicates an expected call of Get
 func (mr *MockGPGModuleMockRecorder) Find(id interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{id}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Find", reflect.TypeOf((*MockGPGModule)(nil).Find), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockGPGModule)(nil).Get), varargs...)
 }
 
-// OwnedBy mocks base method
-func (m *MockGPGModule) OwnedBy(address string) []string {
+// GetByAddress mocks base method
+func (m *MockGPGModule) GetByAddress(address string) []string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OwnedBy", address)
+	ret := m.ctrl.Call(m, "GetByAddress", address)
 	ret0, _ := ret[0].([]string)
 	return ret0
 }
 
-// OwnedBy indicates an expected call of OwnedBy
+// GetByAddress indicates an expected call of GetByAddress
 func (mr *MockGPGModuleMockRecorder) OwnedBy(address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OwnedBy", reflect.TypeOf((*MockGPGModule)(nil).OwnedBy), address)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAddress", reflect.TypeOf((*MockGPGModule)(nil).GetByAddress), address)
 }
 
 // GetAccountOfOwner mocks base method

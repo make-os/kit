@@ -55,6 +55,8 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxRepoCreate(o, index)
 	case *core.TxRegisterGPGPubKey:
 		return CheckTxRegisterGPGPubKey(o, index)
+	case *core.TxUpDelGPGPubKey:
+		return CheckTxUpDelGPGPubKey(o, index)
 	case *core.TxPush:
 		return CheckTxPush(o, index)
 	case *core.TxNamespaceAcquire:
@@ -96,6 +98,8 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 		return CheckTxRepoCreateConsistency(o, index, logic)
 	case *core.TxRegisterGPGPubKey:
 		return CheckTxRegisterGPGPubKeyConsistency(o, index, logic)
+	case *core.TxUpDelGPGPubKey:
+		return CheckTxUpDelGPGPubKeyConsistency(o, index, logic)
 	case *core.TxPush:
 		return CheckTxPushConsistency(o, index, logic, func(name string) (core.BareRepo, error) {
 			return repo.GetRepo(filepath.Join(logic.Cfg().GetRepoRoot(), name))

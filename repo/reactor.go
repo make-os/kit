@@ -66,7 +66,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		return errors.Wrap(err, fmt.Sprintf("failed to open repo '%s'", repoName))
 	}
 
-	// Add a cache entry that indicates the sender of the push note
+	// Register a cache entry that indicates the sender of the push note
 	m.cachePushNoteSender(string(peer.ID()), pn.ID().String())
 
 	// Set the target repository object
@@ -387,7 +387,7 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 	}
 	pushTx.AggPushOKsSig = aggSig
 
-	// Add push to mempool
+	// Register push to mempool
 	if err := m.GetMempool().Add(pushTx); err != nil {
 		return errors.Wrap(err, "failed to add push tx to mempool")
 	}

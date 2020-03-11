@@ -236,18 +236,18 @@ func (mr *MockMempoolMockRecorder) CloseWAL() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CloseWAL", reflect.TypeOf((*MockMempool)(nil).CloseWAL))
 }
 
-// Add mocks base method
+// Register mocks base method
 func (m *MockMempool) Add(tx types1.BaseTx) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Add", tx)
+	ret := m.ctrl.Call(m, "Register", tx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Add indicates an expected call of Add
+// Register indicates an expected call of Register
 func (mr *MockMempoolMockRecorder) Add(tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockMempool)(nil).Add), tx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockMempool)(nil).Add), tx)
 }
 
 // MockMempoolReactor is a mock of MempoolReactor interface

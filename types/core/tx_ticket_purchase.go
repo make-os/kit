@@ -16,8 +16,8 @@ type TxTicketPurchase struct {
 	*TxType   `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxValue  `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Delegate  util.PublicKey `json:"delegate" msgpack:"delegate"`
-	BLSPubKey []byte         `json:"blsPubKey" msgpack:"blsPubKey"`
+	Delegate  crypto.PublicKey `json:"delegate" msgpack:"delegate"`
+	BLSPubKey []byte           `json:"blsPubKey" msgpack:"blsPubKey"`
 }
 
 // NewBareTxTicketPurchase returns an instance of TxTicketPurchase with zero values
@@ -26,7 +26,7 @@ func NewBareTxTicketPurchase(ticketType int) *TxTicketPurchase {
 		TxType:    &TxType{Type: ticketType},
 		TxCommon:  NewBareTxCommon(),
 		TxValue:   &TxValue{Value: "0"},
-		Delegate:  util.EmptyPublicKey,
+		Delegate:  crypto.EmptyPublicKey,
 		BLSPubKey: []byte{},
 	}
 }
@@ -128,7 +128,7 @@ func (tx *TxTicketPurchase) FromMap(data map[string]interface{}) error {
 			if err != nil {
 				return util.FieldError("delegate", "unable to decode from base58")
 			}
-			tx.Delegate = util.BytesToPublicKey(pubKey.MustBytes())
+			tx.Delegate = crypto.BytesToPublicKey(pubKey.MustBytes())
 		} else {
 			return util.FieldError("name", fmt.Sprintf("invalid value type: has %T, "+
 				"wants string", delVal.Inter()))

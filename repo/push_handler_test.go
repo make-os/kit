@@ -162,7 +162,7 @@ var _ = Describe("PushHandler", func() {
 				handler.oldState = oldState
 
 				gpgPubKeyKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
-				gpgPubKeyKeeper.EXPECT().GetGPGPubKey(gpgID).Return(&state.GPGPubKey{PubKey: pubKey})
+				gpgPubKeyKeeper.EXPECT().Get(gpgID).Return(&state.GPGPubKey{PubKey: pubKey})
 				mockLogic.EXPECT().GPGPubKeyKeeper().Return(gpgPubKeyKeeper)
 
 				err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
@@ -201,8 +201,8 @@ var _ = Describe("PushHandler", func() {
 					handler.oldState = oldState
 
 					gpgPubKeyKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
-					gpgPubKeyKeeper.EXPECT().GetGPGPubKey(gpgID).Return(&state.GPGPubKey{PubKey: pubKey})
-					gpgPubKeyKeeper.EXPECT().GetGPGPubKey(gpgID2).Return(&state.GPGPubKey{PubKey: pubKey2})
+					gpgPubKeyKeeper.EXPECT().Get(gpgID).Return(&state.GPGPubKey{PubKey: pubKey})
+					gpgPubKeyKeeper.EXPECT().Get(gpgID2).Return(&state.GPGPubKey{PubKey: pubKey2})
 					mockLogic.EXPECT().GPGPubKeyKeeper().Return(gpgPubKeyKeeper).Times(2)
 
 					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})

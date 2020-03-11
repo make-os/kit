@@ -83,7 +83,7 @@ func setStartFlags(cmds ...*cobra.Command) {
 		f.String("repoman.address", config.DefaultRepoManagerAddress, "Set the repository manager listening address")
 		f.String("node.addpeer", "", "Connect to one or more persistent node")
 		f.Bool("dht.on", true, "Run the DHT service and join the network")
-		f.String("dht.addpeer", "", "Add bootstrap peers for joining the DHT network")
+		f.String("dht.addpeer", "", "Register bootstrap peers for joining the DHT network")
 		f.StringSlice("node.exts", []string{}, "Specify an extension to run on startup")
 		extArgsMap := map[string]string{}
 		f.StringToStringVar(&extArgsMap, "node.extsargs", map[string]string{}, "Specify arguments for extensions")

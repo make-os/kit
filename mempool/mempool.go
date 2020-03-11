@@ -76,7 +76,7 @@ func (mp *Mempool) CheckTx(tx types.Tx, callback func(*abci.Response)) error {
 	return mp.CheckTxWithInfo(tx, callback, mempool.TxInfo{SenderID: mempool.UnknownPeerID})
 }
 
-// Add attempts to add a transaction to the pool
+// Register attempts to add a transaction to the pool
 func (mp *Mempool) Add(tx t.BaseTx) error {
 	var errCh = make(chan error, 1)
 	_ = mp.CheckTx(tx.Bytes(), func(res *abci.Response) {
@@ -143,7 +143,7 @@ func (mp *Mempool) onTxCheckFinished(tx []byte, peerID uint16,
 	externalCb func(*abci.Response)) func(res *abci.Response) {
 	return func(res *abci.Response) {
 
-		// Add the transaction to the pool
+		// Register the transaction to the pool
 		mp.addTx(tx, res)
 
 		// passed in by the caller of CheckTx, eg. the RPC

@@ -238,7 +238,7 @@ type UnfinalizedObjectCache interface {
 // PushPool represents a pool for holding and ordering git push transactions
 type PushPool interface {
 
-	// Add a push transaction to the pool.
+	// Register a push transaction to the pool.
 	//
 	// Check all the references to ensure there are no identical (same repo,
 	// reference and nonce) references with same nonce in the pool. A valid

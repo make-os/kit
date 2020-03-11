@@ -45,7 +45,7 @@ const (
 // ProposalFees contains address and fees paid by proposal creators
 type ProposalFees map[string]string
 
-// Add adds an entry
+// Register adds an entry
 func (pf ProposalFees) Add(address string, fee string) {
 	pf[address] = fee
 }
@@ -296,7 +296,7 @@ func (p *RepoProposal) GetRejectedWithVetoByOwners() float64 {
 // RepoProposals represents an index of proposals for a repo.
 type RepoProposals map[string]*RepoProposal
 
-// Add adds a proposal map to the give id
+// Register adds a proposal map to the give id
 func (p *RepoProposals) Add(id string, rp *RepoProposal) {
 	(*p)[id] = rp
 }

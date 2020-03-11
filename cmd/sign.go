@@ -135,7 +135,7 @@ func initSign() {
 
 	pf := signCmd.PersistentFlags()
 
-	pf.BoolP("delete", "d", false, "Add a directive to delete the target reference")
+	pf.BoolP("delete", "d", false, "Register a directive to delete the target reference")
 	signCommitCmd.Flags().StringP("merge-id", "m", "", "Provide a merge proposal ID for merge fulfilment")
 	signCommitCmd.Flags().BoolP("amend", "a", false, "Amend and sign the recent comment instead of a new one")
 

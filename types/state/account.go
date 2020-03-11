@@ -166,7 +166,7 @@ type StakeInfo struct {
 // AccountStakes holds staked balances
 type AccountStakes map[string]*StakeInfo
 
-// Add adds a staked balance
+// Register adds a staked balance
 // stakeType: The unique stake identifier
 // value: The value staked
 // unbondHeight: The height where the stake is unbonded

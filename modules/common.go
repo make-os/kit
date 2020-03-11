@@ -162,7 +162,7 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) util.Map {
 			m[k] = o.HexStr()
 		case util.Bytes64:
 			m[k] = o.HexStr()
-		case util.PublicKey:
+		case crypto.PublicKey:
 			m[k] = crypto.MustPubKeyFromBytes(o[:]).Base58()
 
 		// custom wrapped map[string]struct

@@ -2,10 +2,11 @@ package pool
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types"
 	"math/big"
 	"sort"
 	"sync"
+
+	"gitlab.com/makeos/mosdef/types"
 
 	"github.com/thoas/go-funk"
 
@@ -85,12 +86,12 @@ func (c *nonceCollection) remove(nonce uint64) {
 	delete(c.nonces, nonce)
 }
 
-type senderNonces map[util.String]*nonceCollection
+type senderNonces map[util.Address]*nonceCollection
 
 // remove removes a nonce associated with a sender address.
 // The entire map entry for the sender is removed if no other
 // nonce exist after the operation
-func (sn *senderNonces) remove(senderAddr util.String, nonce uint64) {
+func (sn *senderNonces) remove(senderAddr util.Address, nonce uint64) {
 	nc, ok := (*sn)[senderAddr]
 	if !ok {
 		return
@@ -133,7 +134,7 @@ func newTxContainer(cap int64) *TxContainer {
 	q.cap = cap
 	q.gmx = &sync.RWMutex{}
 	q.hashIndex = map[string]interface{}{}
-	q.senderNonceIndex = map[util.String]*nonceCollection{}
+	q.senderNonceIndex = map[util.Address]*nonceCollection{}
 	return q
 }
 
@@ -146,7 +147,7 @@ func NewQueueNoSort(cap int64) *TxContainer {
 	q.gmx = &sync.RWMutex{}
 	q.hashIndex = map[string]interface{}{}
 	q.noSorting = true
-	q.senderNonceIndex = map[util.String]*nonceCollection{}
+	q.senderNonceIndex = map[util.Address]*nonceCollection{}
 	return q
 }
 
@@ -331,7 +332,7 @@ func (q *TxContainer) Sort() {
 	})
 }
 
-// Find iterates over the transactions and invokes iteratee for
+// Get iterates over the transactions and invokes iteratee for
 // each transaction. The iteratee is invoked the transaction as the
 // only argument. It immediately stops and returns the last retrieved
 // transaction when the iteratee returns true.

@@ -258,14 +258,14 @@ func (l *Logic) WriteGenesisState() error {
 		genesisData = config.GenesisData()
 	}
 
-	// Add all genesis data entries to the state
+	// Register all genesis data entries to the state
 	for _, ga := range genesisData {
 
 		// Create account
 		if ga.Type == config.GenDataTypeAccount {
 			newAcct := state.BareAccount()
 			newAcct.Balance = util.String(ga.Balance)
-			l.accountKeeper.Update(util.String(ga.Address), newAcct)
+			l.accountKeeper.Update(util.Address(ga.Address), newAcct)
 		}
 
 		// Create repository

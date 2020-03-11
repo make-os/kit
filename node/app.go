@@ -3,6 +3,7 @@ package node
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	abcitypes "github.com/tendermint/tendermint/abci/types"
@@ -237,7 +238,7 @@ func (a *App) postExecChecks(
 		}
 	}
 
-	// Add the successfully processed tx to the un-indexed tx cache.
+	// Register the successfully processed tx to the un-indexed tx cache.
 	// They will be committed in the COMMIT phase
 	a.unIdxTxs = append(a.unIdxTxs, tx)
 

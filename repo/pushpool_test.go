@@ -93,7 +93,7 @@ var _ = Describe("PushPool", func() {
 		})
 	})
 
-	Describe(".Add", func() {
+	Describe(".Register", func() {
 		var err error
 
 		When("pool has reached capacity", func() {

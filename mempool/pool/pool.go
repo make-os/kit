@@ -1,9 +1,10 @@
 package pool
 
 import (
-	"gitlab.com/makeos/mosdef/types"
 	"sync"
 	"time"
+
+	"gitlab.com/makeos/mosdef/types"
 
 	"gitlab.com/makeos/mosdef/util"
 
@@ -95,7 +96,7 @@ func (tp *Pool) HasByHash(hash string) bool {
 	return tp.container.HasByHash(hash)
 }
 
-// Find iterates over the transactions and invokes iteratee for
+// Get iterates over the transactions and invokes iteratee for
 // each transaction. The iteratee is invoked the transaction as the
 // only argument. It immediately stops and returns the last retrieved
 // transaction when the iteratee returns true.
@@ -128,7 +129,7 @@ func (tp *Pool) GetByHash(hash string) types.BaseTx {
 
 // GetByFrom fetches transactions where the sender
 // or `from` field match the given address
-func (tp *Pool) GetByFrom(address util.String) []types.BaseTx {
+func (tp *Pool) GetByFrom(address util.Address) []types.BaseTx {
 	var txs []types.BaseTx
 	tp.container.Find(func(tx types.BaseTx) bool {
 		if tx.GetFrom().Equal(address) {

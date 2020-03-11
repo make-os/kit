@@ -13,8 +13,7 @@ import (
 // name: The hashed name
 // value: The value to be paid for the namespace
 // fee: The fee to be paid by the sender.
-// transferToRepo: A target repository to transfer ownership of the namespace.
-// transferToAccount: An address of an account to transfer ownership to.
+// transferTo: A target account address or repo to own the namespace
 // domain: The namespace domains
 // chainHeight: The chain height to limit query to.
 //
@@ -26,8 +25,7 @@ func (t *Transaction) execAcquireNamespace(
 	name string,
 	value util.String,
 	fee util.String,
-	transferToRepo string,
-	transferToAccount string,
+	transferTo string,
 	domains map[string]string,
 	chainHeight uint64) error {
 
@@ -39,12 +37,7 @@ func (t *Transaction) execAcquireNamespace(
 	ns.ExpiresAt = chainHeight + uint64(params.NamespaceTTL)
 	ns.GraceEndAt = ns.ExpiresAt + uint64(params.NamespaceGraceDur)
 	ns.Domains = domains
-	if transferToAccount != "" {
-		ns.Owner = transferToAccount
-	}
-	if transferToRepo != "" {
-		ns.Owner = transferToRepo
-	}
+	ns.Owner = transferTo
 
 	// Get the account of the sender
 	acctKeeper := t.logic.AccountKeeper()
@@ -61,11 +54,11 @@ func (t *Transaction) execAcquireNamespace(
 	acctKeeper.Update(spk.Addr(), senderAcct)
 
 	// Send the value to the treasury
-	treasuryAcct := acctKeeper.Get(util.String(params.TreasuryAddress), chainHeight)
+	treasuryAcct := acctKeeper.Get(util.Address(params.TreasuryAddress), chainHeight)
 	treasuryBal := treasuryAcct.Balance.Decimal()
 	treasuryAcct.Balance = util.String(treasuryBal.Add(value.Decimal()).String())
 	treasuryAcct.Clean(chainHeight)
-	acctKeeper.Update(util.String(params.TreasuryAddress), treasuryAcct)
+	acctKeeper.Update(util.Address(params.TreasuryAddress), treasuryAcct)
 
 	// Update the namespace
 	t.logic.NamespaceKeeper().Update(name, ns)

@@ -63,11 +63,11 @@ func (m *TxModule) globals() []*modules.ModuleFunc {
 func (m *TxModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
-	// Add the main tx namespace
+	// Register the main tx namespace
 	txMap := map[string]interface{}{}
 	util.VMSet(m.vm, types.NamespaceTx, txMap)
 
-	// Add 'coin' namespaced functions
+	// Register 'coin' namespaced functions
 	coinMap := map[string]interface{}{}
 	txMap[types.NamespaceCoin] = coinMap
 	for _, f := range m.txCoinFuncs() {
@@ -77,7 +77,7 @@ func (m *TxModule) Configure() []prompt.Suggest {
 			Description: f.Description})
 	}
 
-	// Add other funcs to `tx` namespace
+	// Register other funcs to `tx` namespace
 	for _, f := range m.funcs() {
 		txMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceTx, f.Name)
@@ -85,7 +85,7 @@ func (m *TxModule) Configure() []prompt.Suggest {
 			Description: f.Description})
 	}
 
-	// Add global functions
+	// Register global functions
 	for _, f := range m.globals() {
 		m.vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,

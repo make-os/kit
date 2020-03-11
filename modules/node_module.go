@@ -66,7 +66,7 @@ func (m *ChainModule) funcs() []*modules.ModuleFunc {
 func (m *ChainModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
-	// Add the main namespace
+	// Register the main namespace
 	obj := map[string]interface{}{}
 	util.VMSet(m.vm, types.NamespaceNode, obj)
 
@@ -77,7 +77,7 @@ func (m *ChainModule) Configure() []prompt.Suggest {
 			Description: f.Description})
 	}
 
-	// Add global functions
+	// Register global functions
 	for _, f := range m.globals() {
 		m.vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,

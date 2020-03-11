@@ -135,7 +135,7 @@ func (h *PushHandler) HandleUpdate() error {
 
 	h.pushNoteID = pushNote.ID().String()
 
-	// Add the push transaction to the push pool. If an error is returned
+	// Register the push transaction to the push pool. If an error is returned
 	// schedule the repository for pruning
 	if err := h.rMgr.GetPushPool().Add(pushNote); err != nil {
 		h.rMgr.GetPruner().Schedule(h.repo.GetName())
@@ -161,7 +161,7 @@ func (h *PushHandler) createPushNote(
 		TargetRepo:    h.repo,
 		RepoName:      h.repo.GetName(),
 		PusherKeyID:   util.MustDecodeGPGIDToRSAHash(gpgID),
-		PusherAddress: h.rMgr.GetLogic().GPGPubKeyKeeper().GetGPGPubKey(gpgID).Address,
+		PusherAddress: h.rMgr.GetLogic().GPGPubKeyKeeper().Get(gpgID).Address,
 		Timestamp:     time.Now().Unix(),
 		References:    core.PushedReferences([]*core.PushedReference{}),
 		NodePubKey:    h.rMgr.GetPrivateValidatorKey().PubKey().MustBytes32(),
@@ -231,7 +231,7 @@ func (h *PushHandler) handleReference(ref string) (*util.TxParams, []error) {
 
 	var errs = []error{}
 
-	// Find the old version of the reference prior to the push
+	// Get the old version of the reference prior to the push
 	// and create a lone state object of the old state
 	oldRef := h.oldState.GetReferences().Get(ref)
 	oldRefState := StateFromItem(oldRef)

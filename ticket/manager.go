@@ -74,7 +74,7 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 		ticket.DecayBy = ticket.MatureBy + uint64(params.MaxTicketActiveDur)
 	}
 
-	// Add all tickets to the store
+	// Register all tickets to the store
 	if err := m.s.Add(ticket); err != nil {
 		return err
 	}

@@ -141,7 +141,7 @@ var _ = Describe("Account", func() {
 })
 
 var _ = Describe("AccountStakes", func() {
-	Describe(".Add", func() {
+	Describe(".Register", func() {
 		It("should add two stake balances", func() {
 			stakes := AccountStakes(map[string]*StakeInfo{})
 			stakes.Add(StakeTypeValidator, util.String("10"), 0)

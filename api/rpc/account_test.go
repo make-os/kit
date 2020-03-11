@@ -74,7 +74,7 @@ var _ = Describe("Account", func() {
 				result: map[string]interface{}{"balance": "100"},
 				mocker: func(tp testCase) {
 					mockAcctMod := mocks.NewMockAccountModule(ctrl)
-					mockAcctMod.EXPECT().Get("addr1", uint64(0)).Return(util.Map{
+					mockAcctMod.EXPECT().GetAccount("addr1", uint64(0)).Return(util.Map{
 						"balance": "100",
 					})
 					mods.Account = mockAcctMod

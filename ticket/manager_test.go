@@ -1,11 +1,12 @@
 package ticket
 
 import (
+	"os"
+
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"os"
 
 	"github.com/golang/mock/gomock"
 
@@ -56,7 +57,7 @@ var _ = Describe("Manager", func() {
 
 	Describe(".GetByProposer", func() {
 		When("ticket of matching type exist", func() {
-			ticket := &types3.Ticket{ProposerPubKey: util.StrToPublicKey("pub_key").ToBytes32(), Type: core.TxTypeValidatorTicket}
+			ticket := &types3.Ticket{ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), Type: core.TxTypeValidatorTicket}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mgr.logic = mockLogic
@@ -65,7 +66,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return 1 ticket", func() {
-				tickets, err := mgr.GetByProposer(core.TxTypeValidatorTicket, util.StrToPublicKey("pub_key").ToBytes32())
+				tickets, err := mgr.GetByProposer(core.TxTypeValidatorTicket, crypto.StrToPublicKey("pub_key").ToBytes32())
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(1))
 				Expect(tickets[0]).To(Equal(ticket))
@@ -73,7 +74,7 @@ var _ = Describe("Manager", func() {
 		})
 
 		When("matching unable to find ticket with matching type", func() {
-			ticket := &types3.Ticket{ProposerPubKey: util.StrToPublicKey("pub_key").ToBytes32(), Type: core.TxTypeValidatorTicket}
+			ticket := &types3.Ticket{ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), Type: core.TxTypeValidatorTicket}
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mgr.logic = mockLogic
@@ -82,7 +83,7 @@ var _ = Describe("Manager", func() {
 			})
 
 			It("should return 0 ticket", func() {
-				tickets, err := mgr.GetByProposer(1000, util.StrToPublicKey("pub_key").ToBytes32())
+				tickets, err := mgr.GetByProposer(1000, crypto.StrToPublicKey("pub_key").ToBytes32())
 				Expect(err).To(BeNil())
 				Expect(tickets).To(HaveLen(0))
 			})
@@ -90,28 +91,28 @@ var _ = Describe("Manager", func() {
 
 		When("with query options", func() {
 			ticket := &types3.Ticket{
-				ProposerPubKey: util.StrToPublicKey("pub_key").ToBytes32(),
+				ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(),
 				Hash:           util.BytesToBytes32(util.RandBytes(32)),
 				Type:           core.TxTypeValidatorTicket,
 				MatureBy:       50,
 				DecayBy:        1000,
 			}
 			ticketB := &types3.Ticket{
-				ProposerPubKey: util.StrToPublicKey("pub_key").ToBytes32(),
+				ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(),
 				Hash:           util.BytesToBytes32(util.RandBytes(32)),
 				Type:           core.TxTypeValidatorTicket,
 				MatureBy:       101,
 				DecayBy:        1000,
 			}
 			ticketC := &types3.Ticket{
-				ProposerPubKey: util.StrToPublicKey("pub_key").ToBytes32(),
+				ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(),
 				Hash:           util.BytesToBytes32(util.RandBytes(32)),
 				Type:           core.TxTypeValidatorTicket,
 				MatureBy:       50,
 				DecayBy:        1000,
 			}
 			ticketD := &types3.Ticket{
-				ProposerPubKey: util.StrToPublicKey("pub_key").ToBytes32(),
+				ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(),
 				Hash:           util.BytesToBytes32(util.RandBytes(32)),
 				Type:           core.TxTypeValidatorTicket,
 				MatureBy:       101,
@@ -127,7 +128,7 @@ var _ = Describe("Manager", func() {
 				})
 
 				Specify("that only immature tickets are returned", func() {
-					tickets, err := mgr.GetByProposer(core.TxTypeValidatorTicket, util.StrToPublicKey("pub_key").ToBytes32(), types3.QueryOptions{
+					tickets, err := mgr.GetByProposer(core.TxTypeValidatorTicket, crypto.StrToPublicKey("pub_key").ToBytes32(), types3.QueryOptions{
 						ImmatureOnly: true,
 					})
 					Expect(err).To(BeNil())
@@ -262,8 +263,8 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe(".CountActiveValidatorTickets", func() {
-		ticket := &types3.Ticket{Hash: util.StrToBytes32("h1"), Type: core.TxTypeValidatorTicket, ProposerPubKey: util.StrToPublicKey("pub_key").ToBytes32(), MatureBy: 100, DecayBy: 200}
-		ticket2 := &types3.Ticket{Hash: util.StrToBytes32("h2"), Type: core.TxTypeValidatorTicket, ProposerPubKey: util.StrToPublicKey("pub_key").ToBytes32(), MatureBy: 100, DecayBy: 150}
+		ticket := &types3.Ticket{Hash: util.StrToBytes32("h1"), Type: core.TxTypeValidatorTicket, ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), MatureBy: 100, DecayBy: 200}
+		ticket2 := &types3.Ticket{Hash: util.StrToBytes32("h2"), Type: core.TxTypeValidatorTicket, ProposerPubKey: crypto.StrToPublicKey("pub_key").ToBytes32(), MatureBy: 100, DecayBy: 150}
 
 		When("only one live ticket exist", func() {
 			BeforeEach(func() {
@@ -356,8 +357,8 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				txn := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
 				txn.Value = util.String("35")
-				txn.SenderPubKey = util.BytesToPublicKey(delegator.PubKey().MustBytes())
-				txn.Delegate = util.BytesToPublicKey(proposer.PubKey().MustBytes())
+				txn.SenderPubKey = crypto.BytesToPublicKey(delegator.PubKey().MustBytes())
+				txn.Delegate = crypto.BytesToPublicKey(proposer.PubKey().MustBytes())
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
@@ -395,8 +396,8 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				txn := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
 				txn.Value = util.String("35")
-				txn.SenderPubKey = util.BytesToPublicKey(delegator.PubKey().MustBytes())
-				txn.Delegate = util.BytesToPublicKey(proposer.PubKey().MustBytes())
+				txn.SenderPubKey = crypto.BytesToPublicKey(delegator.PubKey().MustBytes())
+				txn.Delegate = crypto.BytesToPublicKey(proposer.PubKey().MustBytes())
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
@@ -417,7 +418,7 @@ var _ = Describe("Manager", func() {
 			BeforeEach(func() {
 				txn := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
 				txn.Value = util.String("35")
-				txn.SenderPubKey = util.StrToPublicKey("pub_key")
+				txn.SenderPubKey = crypto.StrToPublicKey("pub_key")
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())
@@ -444,7 +445,7 @@ var _ = Describe("Manager", func() {
 				params.MaxTicketActiveDur = 40
 				txn := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
 				txn.Value = util.String("35")
-				txn.SenderPubKey = util.StrToPublicKey("pub_key")
+				txn.SenderPubKey = crypto.StrToPublicKey("pub_key")
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
 				Expect(err).To(BeNil())

@@ -159,7 +159,7 @@ var _ = Describe("Transfers", func() {
 
 		When("recipient address is a namespaced URI with a user account target", func() {
 			ns := "namespace"
-			var senderNamespaceURI = util.String(ns + "/domain")
+			var senderNamespaceURI = util.Address(ns + "/domain")
 
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
@@ -215,7 +215,7 @@ var _ = Describe("Transfers", func() {
 
 		When("recipient address is a namespaced URI with a repo account target", func() {
 			ns := "namespace"
-			var senderNamespaceURI = util.String(ns + "/domain")
+			var senderNamespaceURI = util.Address(ns + "/domain")
 			var repoName = "repo1"
 
 			BeforeEach(func() {
@@ -263,7 +263,7 @@ var _ = Describe("Transfers", func() {
 				var repoName = "repo1"
 
 				BeforeEach(func() {
-					recipient := util.String("r/" + repoName)
+					recipient := util.Address("r/" + repoName)
 					senderPubKey := sender.PubKey().MustBytes32()
 					err := txLogic.execCoinTransfer(senderPubKey, recipient, util.String("10"), util.String("1"), 0)
 					Expect(err).To(BeNil())

@@ -104,7 +104,7 @@ func checkNote(
 	noteName string,
 	gpgPubKeyGetter core.PGPPubKeyGetter) (*util.TxParams, error) {
 
-	// Find a all notes entries
+	// Get a all notes entries
 	noteEntries, err := repo.ListTreeObjects(noteName, false)
 	if err != nil {
 		msg := fmt.Sprintf("unable to fetch note entries (%s)", noteName)
@@ -257,7 +257,7 @@ func checkMergeCompliance(
 	}
 
 	// Ensure the signer is the creator of the proposal
-	gpgKey := keepers.GPGPubKeyKeeper().GetGPGPubKey(gpgID)
+	gpgKey := keepers.GPGPubKeyKeeper().Get(gpgID)
 	if gpgKey.Address.String() != prop.Creator {
 		return fmt.Errorf("merge compliance error: "+
 			"signer must be the creator of the merge proposal (%s)", mergeProposalID)
@@ -568,7 +568,7 @@ func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
 	}
 
 	// Get gpg key of the pusher
-	gpgKey := logic.GPGPubKeyKeeper().GetGPGPubKey(util.MustCreateGPGID(tx.PusherKeyID))
+	gpgKey := logic.GPGPubKeyKeeper().Get(util.MustCreateGPGID(tx.PusherKeyID))
 	if gpgKey.IsNil() {
 		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", tx.PusherKeyID)
 		return util.FieldError("pusherKeyId", msg)

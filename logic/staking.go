@@ -134,7 +134,7 @@ func (t *Transaction) addStake(
 
 	unbondHeight := uint64(0)
 
-	// Add a stake entry
+	// Register a stake entry
 	switch txType {
 	case core.TxTypeValidatorTicket:
 		// Determine unbond height. The unbond height is height of the next block

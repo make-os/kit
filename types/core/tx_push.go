@@ -100,7 +100,7 @@ func (tx *TxPush) GetNonce() uint64 {
 
 // GetFrom returns the address of the transaction sender
 // Because TxPush is a wrapper transaction, we use the pusher's address.
-func (tx *TxPush) GetFrom() util.String {
+func (tx *TxPush) GetFrom() util.Address {
 	return tx.PushNote.PusherAddress
 }
 

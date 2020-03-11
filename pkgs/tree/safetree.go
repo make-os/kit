@@ -58,6 +58,14 @@ func (s *SafeTree) Set(key, value []byte) bool {
 	return s.state.Set(key, value)
 }
 
+// Remove removes a key and returns 'true' if successful
+func (s *SafeTree) Remove(key []byte) bool {
+	s.Lock()
+	defer s.Unlock()
+	_, removed := s.state.Remove(key)
+	return removed
+}
+
 // SaveVersion saves a new tree version to disk, based on the current state of
 // the tree. Returns the hash and new version number.
 func (s *SafeTree) SaveVersion() ([]byte, int64, error) {

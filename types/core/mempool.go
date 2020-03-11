@@ -75,7 +75,7 @@ type Mempool interface {
 	// Any further writes will not be relayed to disk.
 	CloseWAL()
 
-	// Add attempts to add a transaction to the pool
+	// Register attempts to add a transaction to the pool
 	Add(tx types.BaseTx) error
 }
 

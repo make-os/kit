@@ -23,13 +23,13 @@ import (
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 func (t *Transaction) execCoinTransfer(
 	senderPubKey util.Bytes32,
-	recipientAddr,
+	recipientAddr util.Address,
 	value util.String,
 	fee util.String,
 	chainHeight uint64) error {
 
 	var recvAcct core.BalanceAccount
-	recvAddr := recipientAddr.Address()
+	recvAddr := recipientAddr
 	acctKeeper := t.logic.AccountKeeper()
 	repoKeeper := t.logic.RepoKeeper()
 
@@ -49,11 +49,11 @@ func (t *Transaction) execCoinTransfer(
 	// to the actual resource name.
 	if recvAddr.IsPrefixed() {
 		resourceName := util.GetPrefixedAddressValue(recvAddr.String())
-		recipientAddr = util.String(resourceName)
+		recipientAddr = util.Address(resourceName)
 		if util.IsPrefixedAddressRepo(recvAddr.String()) {
 			recvAcct = repoKeeper.Get(resourceName)
 		} else {
-			recvAcct = acctKeeper.Get(util.String(resourceName))
+			recvAcct = acctKeeper.Get(util.Address(resourceName))
 		}
 	}
 
@@ -85,7 +85,7 @@ func (t *Transaction) execCoinTransfer(
 	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(sender, senderAcct)
 
-	// Add the transaction value to the recipient balance
+	// Register the transaction value to the recipient balance
 	recipientBal := recvAcct.GetBalance().Decimal()
 	recvAcct.SetBalance(recipientBal.Add(value.Decimal()).String())
 
@@ -126,7 +126,7 @@ func (t *Transaction) CanExecCoinTransfer(
 		senderAddr = o.Addr().String()
 	case string:
 		senderAddr = o
-	case util.String:
+	case util.Address:
 		senderAddr = o.String()
 	default:
 		panic("unsupported type")
@@ -134,7 +134,7 @@ func (t *Transaction) CanExecCoinTransfer(
 
 	// Get sender and recipient accounts
 	acctKeeper := t.logic.AccountKeeper()
-	senderAcct := acctKeeper.Get(util.String(senderAddr))
+	senderAcct := acctKeeper.Get(util.Address(senderAddr))
 
 	field := "value"
 	if value == "0" && fee != "0" {

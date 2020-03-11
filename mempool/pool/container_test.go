@@ -1,9 +1,10 @@
 package pool
 
 import (
+	"time"
+
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
-	"time"
 
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
@@ -17,7 +18,7 @@ var _ = Describe("TxContainer", func() {
 	var sender = crypto.NewKeyFromIntSeed(1)
 	var sender2 = crypto.NewKeyFromIntSeed(2)
 
-	Describe(".Add", func() {
+	Describe(".Register", func() {
 		It("should return ErrContainerFull when capacity is reached", func() {
 			tx := core.NewBaseTx(core.TxTypeCoinTransfer, 1, "something", sender, "0", "0", time.Now().Unix())
 			q := newTxContainer(0)
@@ -304,7 +305,7 @@ var _ = Describe("TxContainer", func() {
 		})
 	})
 
-	Describe(".Find", func() {
+	Describe(".Get", func() {
 
 		var q *TxContainer
 		var tx1, tx2, tx3 types.BaseTx
@@ -380,7 +381,7 @@ var _ = Describe("senderNonces", func() {
 
 	BeforeEach(func() {
 		nc = defaultNonceCollection()
-		sn = senderNonces(map[util.String]*nonceCollection{})
+		sn = senderNonces(map[util.Address]*nonceCollection{})
 	})
 
 	Describe(".remove", func() {

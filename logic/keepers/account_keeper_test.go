@@ -22,7 +22,7 @@ var _ = Describe("Account", func() {
 	Describe(".Get", func() {
 		When("account does not exist", func() {
 			It("should return a bare account", func() {
-				acct := ak.Get(util.String("unknown"), 0)
+				acct := ak.Get(util.Address("unknown"), 0)
 				Expect(acct).To(Equal(state2.BareAccount()))
 			})
 		})
@@ -48,7 +48,7 @@ var _ = Describe("Account", func() {
 
 	Describe(".Update", func() {
 		It("should update balance", func() {
-			key := util.String("addr1")
+			key := util.Address("addr1")
 			acct := ak.Get(key)
 			Expect(acct.Balance).To(Equal(util.String("0")))
 			Expect(acct.Nonce).To(Equal(uint64(0)))

@@ -26,7 +26,7 @@ func CheckTxCoinTransferConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	recipient := tx.To.Address()
+	recipient := tx.To
 
 check:
 	// If recipient address is a prefixed repo address, ensure repo exist
@@ -212,9 +212,48 @@ func CheckTxRegisterGPGPubKeyConsistency(
 
 	// Check whether there is a matching gpg key already existing
 	gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-	gpgPubKey := logic.GPGPubKeyKeeper().GetGPGPubKey(gpgID)
+	gpgPubKey := logic.GPGPubKeyKeeper().Get(gpgID)
 	if !gpgPubKey.IsNil() {
 		return feI(index, "pubKey", "gpg public key already registered")
+	}
+
+	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
+	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
+		tx.GetNonce(), uint64(bi.Height)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CheckTxRegisterGPGPubKeyConsistency performs consistency checks on TxUpDelGPGPubKey
+func CheckTxUpDelGPGPubKeyConsistency(
+	tx *core.TxUpDelGPGPubKey,
+	index int,
+	logic core.Logic) error {
+
+	bi, err := logic.SysKeeper().GetLastBlockInfo()
+	if err != nil {
+		return errors.Wrap(err, "failed to fetch current block info")
+	}
+
+	key := logic.GPGPubKeyKeeper().Get(tx.ID)
+	if key.IsNil() {
+		return feI(index, "id", "gpg public key not found")
+	}
+
+	// Ensure sender is the owner of the key
+	if !tx.SenderPubKey.MustAddress().Equal(key.Address) {
+		return feI(index, "senderPubKey", "sender is not the owner of the key")
+	}
+
+	// Ensure the index of scopes to be removed are not out of range
+	if len(tx.RemoveScopes) > 0 {
+		for i, si := range tx.RemoveScopes {
+			if si >= len(key.Scopes) {
+				return feI(index, fmt.Sprintf("removeScopes[%d]", i), "index out of range")
+			}
+		}
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
@@ -312,12 +351,20 @@ func CheckTxNSAcquireConsistency(
 		return feI(index, "name", "chosen name is not currently available")
 	}
 
-	if tx.TransferToRepo != "" && logic.RepoKeeper().Get(tx.TransferToRepo).IsNil() {
-		return feI(index, "toRepo", "repo does not exist")
+	// If transfer recipient is a repo name
+	if tx.TransferTo != "" &&
+		util.IsValidIdentifierName(tx.TransferTo) == nil &&
+		crypto.IsValidAddr(tx.TransferTo) != nil {
+		if logic.RepoKeeper().Get(tx.TransferTo).IsNil() {
+			return feI(index, "to", "repo does not exist")
+		}
 	}
 
-	if tx.TransferToAccount != "" && logic.AccountKeeper().Get(util.String(tx.TransferToAccount)).IsNil() {
-		return feI(index, "toAccount", "account does not exist")
+	// If transfer recipient is an address of an account
+	if tx.TransferTo != "" && util.IsValidAddr(tx.TransferTo) == nil {
+		if logic.AccountKeeper().Get(util.Address(tx.TransferTo)).IsNil() {
+			return feI(index, "to", "account does not exist")
+		}
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())

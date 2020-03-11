@@ -11,25 +11,23 @@ import (
 
 // TxNamespaceAcquire implements BaseTx, it describes a transaction for acquiring a namespace
 type TxNamespaceAcquire struct {
-	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`
-	*TxCommon         `json:",flatten" msgpack:"-" mapstructure:"-"`
-	*TxValue          `json:",flatten" msgpack:"-" mapstructure:"-"`
-	Name              string            `json:"name" msgpack:"name" mapstructure:"name"`                // The name of the namespace
-	TransferToRepo    string            `json:"toRepo" msgpack:"toRepo" mapstructure:"toRepo"`          // Name of repo that will own the name.
-	TransferToAccount string            `json:"toAccount" msgpack:"toAccount" mapstructure:"toAccount"` // Name of the account that will own the name.
-	Domains           map[string]string `json:"domains" msgpack:"domains" mapstructure:"domains"`       // Dictionary of namespace domains and their target
+	*TxType    `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxCommon  `json:",flatten" msgpack:"-" mapstructure:"-"`
+	*TxValue   `json:",flatten" msgpack:"-" mapstructure:"-"`
+	Name       string            `json:"name" msgpack:"name" mapstructure:"name"`          // The name of the namespace
+	TransferTo string            `json:"to" msgpack:"to" mapstructure:"to"`                // Name of repo or address that will own the name.
+	Domains    map[string]string `json:"domains" msgpack:"domains" mapstructure:"domains"` // Dictionary of namespace domains and their target
 }
 
 // NewBareTxNamespaceAcquire returns an instance of TxNamespaceAcquire with zero values
 func NewBareTxNamespaceAcquire() *TxNamespaceAcquire {
 	return &TxNamespaceAcquire{
-		TxType:            &TxType{Type: TxTypeNSAcquire},
-		TxCommon:          NewBareTxCommon(),
-		TxValue:           &TxValue{Value: "0"},
-		Name:              "",
-		TransferToRepo:    "",
-		TransferToAccount: "",
-		Domains:           make(map[string]string),
+		TxType:     &TxType{Type: TxTypeNSAcquire},
+		TxCommon:   NewBareTxCommon(),
+		TxValue:    &TxValue{Value: "0"},
+		Name:       "",
+		TransferTo: "",
+		Domains:    make(map[string]string),
 	}
 }
 
@@ -44,8 +42,7 @@ func (tx *TxNamespaceAcquire) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.SenderPubKey,
 		tx.Name,
 		tx.Value,
-		tx.TransferToRepo,
-		tx.TransferToAccount,
+		tx.TransferTo,
 		tx.Domains)
 }
 
@@ -60,8 +57,7 @@ func (tx *TxNamespaceAcquire) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.SenderPubKey,
 		&tx.Name,
 		&tx.Value,
-		&tx.TransferToRepo,
-		&tx.TransferToAccount,
+		&tx.TransferTo,
 		&tx.Domains)
 }
 
@@ -137,25 +133,16 @@ func (tx *TxNamespaceAcquire) FromMap(data map[string]interface{}) error {
 		}
 	}
 
-	// TransferToRepo: expects string type in map
-	if toRepoVal := o.Get("toRepo"); !toRepoVal.IsNil() {
-		if toRepoVal.IsStr() {
-			tx.TransferToRepo = toRepoVal.Str()
+	// TransferTo: expects string type in map
+	if transferTo := o.Get("to"); !transferTo.IsNil() {
+		if transferTo.IsStr() {
+			tx.TransferTo = transferTo.Str()
 		} else {
-			return util.FieldError("toRepo", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string", toRepoVal.Inter()))
+			return util.FieldError("to", fmt.Sprintf("invalid value type: has %T, "+
+				"wants string", transferTo.Inter()))
 		}
 	}
 
-	// TransferToAccount: expects string type in map
-	if toAccountVal := o.Get("toAccount"); !toAccountVal.IsNil() {
-		if toAccountVal.IsStr() {
-			tx.TransferToAccount = toAccountVal.Str()
-		} else {
-			return util.FieldError("toAccount", fmt.Sprintf("invalid value type: has %T, "+
-				"wants string", toAccountVal.Inter()))
-		}
-	}
 	// Domains: expects map[string]string type in map
 	if domainsVal := o.Get("domains"); !domainsVal.IsNil() {
 		if domainsVal.IsObjxMap() {

@@ -90,6 +90,20 @@ func (mr *MockTreeMockRecorder) Set(key, value interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Set", reflect.TypeOf((*MockTree)(nil).Set), key, value)
 }
 
+// Remove mocks base method
+func (m *MockTree) Remove(key []byte) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Remove", key)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Remove indicates an expected call of Remove
+func (mr *MockTreeMockRecorder) Remove(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockTree)(nil).Remove), key)
+}
+
 // SaveVersion mocks base method
 func (m *MockTree) SaveVersion() ([]byte, int64, error) {
 	m.ctrl.T.Helper()

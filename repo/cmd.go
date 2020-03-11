@@ -220,7 +220,7 @@ func SignNoteCmd(
 		note = "refs/notes/" + note
 	}
 
-	// Find a list of all notes entries in the note
+	// Get a list of all notes entries in the note
 	noteEntries, err := targetRepo.ListTreeObjects(note, false)
 	if err != nil {
 		msg := fmt.Sprintf("unable to fetch note entries for tree object (%s)", note)

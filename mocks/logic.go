@@ -280,7 +280,7 @@ func (m *MockAccountKeeper) EXPECT() *MockAccountKeeperMockRecorder {
 }
 
 // Get mocks base method
-func (m *MockAccountKeeper) Get(address util.String, blockNum ...uint64) *state.Account {
+func (m *MockAccountKeeper) Get(address util.Address, blockNum ...uint64) *state.Account {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockNum {
@@ -299,7 +299,7 @@ func (mr *MockAccountKeeperMockRecorder) Get(address interface{}, blockNum ...in
 }
 
 // Update mocks base method
-func (m *MockAccountKeeper) Update(address util.String, upd *state.Account) {
+func (m *MockAccountKeeper) Update(address util.Address, upd *state.Account) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Update", address, upd)
 }
@@ -581,37 +581,51 @@ func (mr *MockGPGPubKeyKeeperMockRecorder) Update(gpgID, upd interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).Update), gpgID, upd)
 }
 
-// GetGPGPubKey mocks base method
-func (m *MockGPGPubKeyKeeper) GetGPGPubKey(gpgID string, blockNum ...uint64) *state.GPGPubKey {
+// Get mocks base method
+func (m *MockGPGPubKeyKeeper) Get(gpgID string, blockNum ...uint64) *state.GPGPubKey {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{gpgID}
 	for _, a := range blockNum {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetGPGPubKey", varargs...)
+	ret := m.ctrl.Call(m, "Get", varargs...)
 	ret0, _ := ret[0].(*state.GPGPubKey)
 	return ret0
 }
 
-// GetGPGPubKey indicates an expected call of GetGPGPubKey
-func (mr *MockGPGPubKeyKeeperMockRecorder) GetGPGPubKey(gpgID interface{}, blockNum ...interface{}) *gomock.Call {
+// Get indicates an expected call of Get
+func (mr *MockGPGPubKeyKeeperMockRecorder) Get(gpgID interface{}, blockNum ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{gpgID}, blockNum...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGPGPubKey", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).GetGPGPubKey), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).Get), varargs...)
 }
 
-// GetPubKeyIDs mocks base method
-func (m *MockGPGPubKeyKeeper) GetPubKeyIDs(address string) []string {
+// GetByAddress mocks base method
+func (m *MockGPGPubKeyKeeper) GetByAddress(address string) []string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPubKeyIDs", address)
+	ret := m.ctrl.Call(m, "GetByAddress", address)
 	ret0, _ := ret[0].([]string)
 	return ret0
 }
 
-// GetPubKeyIDs indicates an expected call of GetPubKeyIDs
-func (mr *MockGPGPubKeyKeeperMockRecorder) GetPubKeyIDs(address interface{}) *gomock.Call {
+// GetByAddress indicates an expected call of GetByAddress
+func (mr *MockGPGPubKeyKeeperMockRecorder) GetByAddress(address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPubKeyIDs", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).GetPubKeyIDs), address)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAddress", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).GetByAddress), address)
+}
+
+// Remove mocks base method
+func (m *MockGPGPubKeyKeeper) Remove(gpgID string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Remove", gpgID)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// Remove indicates an expected call of Remove
+func (mr *MockGPGPubKeyKeeperMockRecorder) Remove(gpgID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Remove", reflect.TypeOf((*MockGPGPubKeyKeeper)(nil).Remove), gpgID)
 }
 
 // MockAtomicLogic is a mock of AtomicLogic interface

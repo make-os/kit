@@ -38,7 +38,7 @@ var consoleCmd = &cobra.Command{
 				itr.Close()
 			})
 
-			// Add JS module
+			// Register JS module
 			console.AddModulesAggregator(n.GetModulesAggregator())
 
 			// Run the console

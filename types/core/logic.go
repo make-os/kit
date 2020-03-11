@@ -84,14 +84,14 @@ type AccountKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
-	Get(address util.String, blockNum ...uint64) *state.Account
+	Get(address util.Address, blockNum ...uint64) *state.Account
 
 	// Update sets a new object at the given address.
 	//
 	// ARGS:
 	// address: The address of the account to update
 	// udp: The updated account object to replace the existing object.
-	Update(address util.String, upd *state.Account)
+	Update(address util.Address, upd *state.Account)
 }
 
 // RepoKeeper describes an interface for accessing repository data
@@ -213,20 +213,26 @@ type GPGPubKeyKeeper interface {
 	// udp: The updated object to replace the existing object.
 	Update(gpgID string, upd *state.GPGPubKey) error
 
-	// GetGPGPubKey returns a GPG public key
+	// Get returns a GPG public key
 	//
 	// ARGS:
 	// gpgID: The unique ID of the public key
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
-	GetGPGPubKey(gpgID string, blockNum ...uint64) *state.GPGPubKey
+	Get(gpgID string, blockNum ...uint64) *state.GPGPubKey
 
-	// GetPubKeyIDs returns all public keys associated with the given address
+	// GetByAddress returns all public keys associated with the given address
 	//
 	// ARGS:
 	// address: The target address
-	GetPubKeyIDs(address string) (gpgIDs []string)
+	GetByAddress(address string) (gpgIDs []string)
+
+	// Remove removes a gpg key by id
+	//
+	// ARGS:
+	// gpgID: The public key unique ID
+	Remove(gpgID string) bool
 }
 
 // AtomicLogic is like Logic but allows all operations

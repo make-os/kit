@@ -37,7 +37,7 @@ var _ = Describe("GPG", func() {
 		var w *httptest.ResponseRecorder
 		var req *http.Request
 		var testCases = map[string]TestCase{
-			"id and blockHeight should be passed to GPGModule#Find": {
+			"id and blockHeight should be passed to GPGModule#Get": {
 				params:     map[string]string{"id": "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd", "blockHeight": "1"},
 				body:       `{"address":"maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc","pubKey":"-----BEGIN PGP PUBLIC KEY BLOCK..."}`,
 				statusCode: 200,

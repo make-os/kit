@@ -2,10 +2,11 @@ package repo
 
 import (
 	"bytes"
-	"gitlab.com/makeos/mosdef/types/core"
 	"io"
 	"io/ioutil"
 	"strings"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4"
@@ -130,7 +131,7 @@ func makePushNoteFromStateChange(
 					return nil, err
 				}
 
-				// Add the tag object as part of the objects updates
+				// Register the tag object as part of the objects updates
 				objHashes = append(objHashes, to.Hash.String())
 
 				// If the changed reference has an old version, we also need to
