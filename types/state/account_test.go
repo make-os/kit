@@ -22,7 +22,7 @@ var _ = Describe("Account", func() {
 	})
 
 	Describe(".IsNil", func() {
-		It("should return true for bare account", func() {
+		It("should return true for bare keystore", func() {
 			acct := BareAccount()
 			Expect(acct.IsNil()).To(BeTrue())
 		})
@@ -36,7 +36,7 @@ var _ = Describe("Account", func() {
 	})
 
 	Describe(".NewAccountFromBytes", func() {
-		It("should return expected account", func() {
+		It("should return expected keystore", func() {
 			res, err := NewAccountFromBytes(acctBs)
 			Expect(err).To(BeNil())
 			Expect(res).To(BeEquivalentTo(acct))
@@ -50,7 +50,7 @@ var _ = Describe("Account", func() {
 	})
 
 	Describe(".GetSpendableBalance", func() {
-		When("account has a stake entry of value=10 and unbond height=1", func() {
+		When("keystore has a stake entry of value=10 and unbond height=1", func() {
 			BeforeEach(func() {
 				acct.Stakes = AccountStakes(map[string]*StakeInfo{"s1": &StakeInfo{
 					Value:        util.String("10"),
@@ -63,7 +63,7 @@ var _ = Describe("Account", func() {
 			})
 		})
 
-		When("account has a stake entry of value=10 and unbond height=100", func() {
+		When("keystore has a stake entry of value=10 and unbond height=100", func() {
 			BeforeEach(func() {
 				acct.Stakes = AccountStakes(map[string]*StakeInfo{"s1": &StakeInfo{
 					Value:        util.String("10"),
@@ -76,7 +76,7 @@ var _ = Describe("Account", func() {
 			})
 		})
 
-		When("account has no stake entry", func() {
+		When("keystore has no stake entry", func() {
 			BeforeEach(func() {
 				acct.Stakes = BareAccountStakes()
 			})
@@ -89,7 +89,7 @@ var _ = Describe("Account", func() {
 	})
 
 	Describe(".Clean", func() {
-		When("account's unbond height is 1000", func() {
+		When("keystore's unbond height is 1000", func() {
 			var stake *StakeInfo
 			BeforeEach(func() {
 				stake = &StakeInfo{Value: util.String("10"), UnbondHeight: 1000}
@@ -106,7 +106,7 @@ var _ = Describe("Account", func() {
 			})
 		})
 
-		When("account's unbond height is 0", func() {
+		When("keystore's unbond height is 0", func() {
 			var stake *StakeInfo
 			BeforeEach(func() {
 				stake = &StakeInfo{Value: util.String("10"), UnbondHeight: 0}
@@ -121,7 +121,7 @@ var _ = Describe("Account", func() {
 			})
 		})
 
-		When("account's unbond height is 1000", func() {
+		When("keystore's unbond height is 1000", func() {
 			var stake *StakeInfo
 			BeforeEach(func() {
 				stake = &StakeInfo{Value: util.String("10"), UnbondHeight: 1000}

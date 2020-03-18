@@ -572,7 +572,7 @@ func (m *MockGPGModule) Register(params map[string]interface{}, options ...inter
 }
 
 // Register indicates an expected call of Register
-func (mr *MockGPGModuleMockRecorder) Add(params interface{}, options ...interface{}) *gomock.Call {
+func (mr *MockGPGModuleMockRecorder) Register(params interface{}, options ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{params}, options...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockGPGModule)(nil).Register), varargs...)
@@ -591,7 +591,7 @@ func (m *MockGPGModule) Get(id string, blockHeight ...uint64) util.Map {
 }
 
 // Get indicates an expected call of Get
-func (mr *MockGPGModuleMockRecorder) Find(id interface{}, blockHeight ...interface{}) *gomock.Call {
+func (mr *MockGPGModuleMockRecorder) Get(id interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{id}, blockHeight...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockGPGModule)(nil).Get), varargs...)
@@ -606,7 +606,7 @@ func (m *MockGPGModule) GetByAddress(address string) []string {
 }
 
 // GetByAddress indicates an expected call of GetByAddress
-func (mr *MockGPGModuleMockRecorder) OwnedBy(address interface{}) *gomock.Call {
+func (mr *MockGPGModuleMockRecorder) GetByAddress(address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAddress", reflect.TypeOf((*MockGPGModule)(nil).GetByAddress), address)
 }

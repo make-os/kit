@@ -40,7 +40,7 @@ func (t *Transaction) execPush(
 		repo.References[ref.Name] = curRef
 	}
 
-	// Get the account of the pusher
+	// Get the keystore of the pusher
 	acctKeeper := t.logic.AccountKeeper()
 	pusherAcct := acctKeeper.Get(gpgPK.Address)
 
@@ -50,7 +50,7 @@ func (t *Transaction) execPush(
 	pusherAcct.Balance = util.String(pusherAcctBal.Sub(spendAmt).String())
 	pusherAcct.Nonce = pusherAcct.Nonce + 1
 
-	// Clean up unbonded stakes and update sender account
+	// Clean up unbonded stakes and update sender keystore
 	pusherAcct.Clean(chainHeight)
 	acctKeeper.Update(gpgPK.Address, pusherAcct)
 

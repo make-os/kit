@@ -33,8 +33,8 @@ var (
 	// DefaultDevDataDir is the path to the data directory in development mode
 	DefaultDevDataDir = os.ExpandEnv("$HOME/." + AppName + "_dev")
 
-	// AccountDirName is the name of the directory where accounts are stored
-	AccountDirName = "accounts"
+	// KeystoreDirName is the name of the directory where accounts are stored
+	KeystoreDirName = "accounts"
 
 	// AppEnvPrefix is used as the prefix for environment variables
 	AppEnvPrefix = "MD"
@@ -143,7 +143,7 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 
 	// Create the data directory and other sub directories
 	os.MkdirAll(dataDir, 0700)
-	os.MkdirAll(path.Join(dataDir, AccountDirName), 0700)
+	os.MkdirAll(path.Join(dataDir, KeystoreDirName), 0700)
 
 	// Read tendermint config file into tmcfg
 	readTendermintConfig(tmcfg, dataDir)
@@ -185,7 +185,7 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 	// Set data and network directories
 	c.dataDir = dataDir
 	c.netDataDir = path.Join(dataDir, viper.GetString("net.version"))
-	c.accountDir = path.Join(c.DataDir(), AccountDirName)
+	c.accountDir = path.Join(c.DataDir(), KeystoreDirName)
 	c.consoleHistoryPath = path.Join(c.DataDir(), ".console_history")
 	c.repoDir = path.Join(c.NetDataDir(), "data", "repos")
 	c.extensionDir = path.Join(c.DataDir(), "extensions")

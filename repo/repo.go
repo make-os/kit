@@ -33,11 +33,12 @@ import (
 
 // Repo represents a git repository
 type Repo struct {
-	git   *git.Repository
-	path  string
-	name  string
-	ops   *GitOps
-	state *state2.Repository
+	git       *git.Repository
+	path      string
+	name      string
+	namespace string
+	ops       *GitOps
+	state     *state2.Repository
 }
 
 func getReferenceTree(path, ref string) (*tree.SafeTree, func() error, error) {
@@ -198,6 +199,31 @@ func (r *Repo) Tag(name string) (*plumbing.Reference, error) {
 	return r.git.Tag(name)
 }
 
+// Get a list of remotes
+func (r *Repo) GetRemotes() ([]*core.Remote, error) {
+	remotes, err := r.git.Remotes()
+	if err != nil {
+		return nil, err
+	}
+
+	res := []*core.Remote{}
+	for _, remote := range remotes {
+		res = append(res, &core.Remote{Name: remote.Config().Name, URLs: remote.Config().URLs})
+	}
+
+	return res, nil
+}
+
+// SetRemoteURL updates the URL of a remote
+func (r *Repo) SetRemoteURL(name, newURL string) error {
+	return r.ops.SetRemoteURL(name, newURL)
+}
+
+// DeleteRemoteURLs deletes a remote URLs
+func (r *Repo) DeleteRemoteURLs(name string) error {
+	return r.ops.DeleteRemoteURLs(name)
+}
+
 // Config return the repository config
 func (r *Repo) Config() (*config.Config, error) {
 	return r.git.Config()
@@ -255,6 +281,11 @@ func (r *Repo) ListTreeObjectsSlice(treename string, recursive, showTrees bool,
 // GetName returns the name of the repo
 func (r *Repo) GetName() string {
 	return r.name
+}
+
+// GetNamespace returns the namespace this repo is associated to.
+func (r *Repo) GetNamespace() string {
+	return r.namespace
 }
 
 // UpdateRecentCommitMsg updates the recent commit message.

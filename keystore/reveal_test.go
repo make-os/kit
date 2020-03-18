@@ -1,4 +1,4 @@
-package account
+package keystore
 
 import (
 	"io/ioutil"
@@ -26,12 +26,12 @@ var _ = Describe("Reveal", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".ReadPassFromFile", func() {
+	Describe(".readPassFromFile", func() {
 		When("path to file is unknown", func() {
 			It("should return error", func() {
-				_, err := ReadPassFromFile("unknown/file.txt")
+				_, err := readPassFromFile("unknown/file.txt")
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("password file not found"))
+				Expect(err.Error()).To(ContainSubstring("passphrase file not found"))
 			})
 		})
 
@@ -39,7 +39,7 @@ var _ = Describe("Reveal", func() {
 			It("should return error", func() {
 				dirPath := filepath.Join(cfg.DataDir(), util.RandString(5))
 				os.MkdirAll(dirPath, 0700)
-				_, err := ReadPassFromFile(dirPath)
+				_, err := readPassFromFile(dirPath)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("path is a directory. Expected a file"))
 			})
@@ -50,7 +50,7 @@ var _ = Describe("Reveal", func() {
 				filePath := filepath.Join(cfg.DataDir(), util.RandString(5))
 				err = ioutil.WriteFile(filePath, []byte("passphrase"), 0644)
 				Expect(err).To(BeNil())
-				pass, err := ReadPassFromFile(filePath)
+				pass, err := readPassFromFile(filePath)
 				Expect(err).To(BeNil())
 				Expect(pass).To(Equal("passphrase"))
 			})

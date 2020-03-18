@@ -15,10 +15,10 @@ import (
 
 // AccountGetNonce returns the nonce of the given address
 // Body:
-// - address <string>: The address of the account
+// - address <string>: The address of the keystore
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
-// - resp <state.Account -> map> - The account object
+// - resp <state.Account -> map> - The keystore object
 func (c *Client) AccountGetNonce(address string, blockHeight ...uint64) (*apitypes.AccountGetNonceResponse, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
@@ -35,12 +35,12 @@ func (c *Client) AccountGetNonce(address string, blockHeight ...uint64) (*apityp
 	return &result, resp.ToJSON(&result)
 }
 
-// AccountGet returns the account corresponding to the given address
+// AccountGet returns the keystore corresponding to the given address
 // Body:
-// - address <string>: The address of the account
+// - address <string>: The address of the keystore
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
-// - resp <state.Account -> map> - The account object
+// - resp <state.Account -> map> - The keystore object
 func (c *Client) AccountGet(address string, blockHeight ...uint64) (*state.Account, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
@@ -62,7 +62,7 @@ func (c *Client) AccountGet(address string, blockHeight ...uint64) (*state.Accou
 	return acct, nil
 }
 
-// AccountGetNextNonceUsingClients gets the next nonce of an account by
+// AccountGetNextNonceUsingClients gets the next nonce of an keystore by
 // querying the given Remote API clients until one succeeds.
 func AccountGetNextNonceUsingClients(clients []RestClient, address string) (string, error) {
 	var errs = []string{}

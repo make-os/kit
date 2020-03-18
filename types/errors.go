@@ -19,7 +19,7 @@ const (
 
 // General
 var (
-	ErrAccountUnknown   = fmt.Errorf("account not found")
+	ErrAccountUnknown   = fmt.Errorf("keystore not found")
 	ErrGPGPubKeyUnknown = fmt.Errorf("gpg public key not found")
 	ErrInvalidPrivKey   = fmt.Errorf("private key is invalid")
 	ErrRepoNotFound     = fmt.Errorf("repo not found")

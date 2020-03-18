@@ -1,4 +1,4 @@
-package account
+package keystore
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestAccount(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Accountmgr Suite")
+	RunSpecs(t, "Keystore Suite")
 }

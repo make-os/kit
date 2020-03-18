@@ -2,11 +2,12 @@ package repo
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"io"
 	"io/ioutil"
 	"os"
 	"time"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
@@ -34,19 +35,6 @@ func (p *packedReferences) names() (refs []string) {
 	return
 }
 
-// PushReader inspects push data from git client, extracting data such as the
-// pushed references, objects and object to reference mapping. It also pipes the
-// pushed stream to a destination (git-receive-pack) when finished.
-type PushReader struct {
-	dst         io.WriteCloser
-	packFile    *os.File
-	buf         []byte
-	references  packedReferences
-	objects     []*packObject
-	objectsRefs objRefMap
-	repo        core.BareRepo
-}
-
 type packObject struct {
 	Type plumbing.ObjectType
 	Hash plumbing.Hash
@@ -72,6 +60,20 @@ func (o *objectObserver) OnInflatedObjectContent(h plumbing.Hash, pos int64,
 func (o *objectObserver) OnHeader(count uint32) error    { return nil }
 func (o *objectObserver) OnFooter(h plumbing.Hash) error { return nil }
 
+// PushReader inspects push data from git client, extracting data such as the
+// pushed references, objects and object to reference mapping. It also pipes the
+// pushed stream to a destination (git-receive-pack) when finished.
+type PushReader struct {
+	dst         io.WriteCloser
+	packFile    *os.File
+	buf         []byte
+	references  packedReferences
+	objects     []*packObject
+	objectsRefs objRefMap
+	repo        core.BareRepo
+	updateReqCB func(ur *packp.ReferenceUpdateRequest) error
+}
+
 // newPushReader creates an instance of PushReader, and after inspection, the
 // written content will be copied to dst.
 func newPushReader(dst io.WriteCloser, repo core.BareRepo) (*PushReader, error) {
@@ -95,13 +97,11 @@ func (r *PushReader) Write(p []byte) (int, error) {
 	return r.packFile.Write(p)
 }
 
-// Copy writes from the content of a reader
-func (r *PushReader) Copy(rd io.Reader) (int, error) {
-	bz, err := ioutil.ReadAll(rd)
-	if err != nil {
-		return 0, err
-	}
-	return r.Write(bz)
+// OnReferenceUpdateRequestRead sets a callback that is called after the
+// push requested has been decoded but yet to be written to git.
+// If the callback returns an error, the push request is aborted.
+func (r *PushReader) OnReferenceUpdateRequestRead(cb func(ur *packp.ReferenceUpdateRequest) error) {
+	r.updateReqCB = cb
 }
 
 // Read reads the packfile, extracting object and reference information
@@ -110,16 +110,27 @@ func (r *PushReader) Read() error {
 
 	var err error
 
+	// Seek to the beginning of the packfile
 	r.packFile.Seek(0, 0)
 
+	// Decode the packfile into a ReferenceUpdateRequest
 	ur := packp.NewReferenceUpdateRequest()
 	if err = ur.Decode(r.packFile); err != nil {
 		return err
 	}
 
+	// Call OnReferenceUpdateRequestRead callback method
+	if r.updateReqCB != nil {
+		if err = r.updateReqCB(ur); err != nil {
+			return err
+		}
+	}
+
+	// Extract references from the packfile
 	r.references = append(r.references, r.getReferences(ur)...)
 
-	// Confirm if the next 4 bytes are indeed 'PACK', otherwise, no packfile
+	// Scan the packfile and extract objects hashes.
+	// Confirm if the next 4 bytes are indeed 'PACK', otherwise, the packfile is invalid
 	packSig := make([]byte, 4)
 	r.packFile.Read(packSig)
 	if string(packSig) != "PACK" {

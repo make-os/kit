@@ -51,7 +51,7 @@ type VersionInfo struct {
 
 // Genesis data type
 const (
-	GenDataTypeAccount = "account"
+	GenDataTypeAccount = "keystore"
 	GenDataTypeRepo    = "repo"
 )
 

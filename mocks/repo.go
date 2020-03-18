@@ -62,6 +62,20 @@ func (mr *MockBareRepoMockRecorder) GetName() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetName", reflect.TypeOf((*MockBareRepo)(nil).GetName))
 }
 
+// GetNamespace mocks base method
+func (m *MockBareRepo) GetNamespace() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNamespace")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetNamespace indicates an expected call of GetNamespace
+func (mr *MockBareRepoMockRecorder) GetNamespace() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespace", reflect.TypeOf((*MockBareRepo)(nil).GetNamespace))
+}
+
 // References mocks base method
 func (m *MockBareRepo) References() (storer.ReferenceIter, error) {
 	m.ctrl.T.Helper()
@@ -343,6 +357,49 @@ func (m *MockBareRepo) Tag(name string) (*plumbing.Reference, error) {
 func (mr *MockBareRepoMockRecorder) Tag(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tag", reflect.TypeOf((*MockBareRepo)(nil).Tag), name)
+}
+
+// GetRemotes mocks base method
+func (m *MockBareRepo) GetRemotes() ([]*core.Remote, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRemotes")
+	ret0, _ := ret[0].([]*core.Remote)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRemotes indicates an expected call of GetRemotes
+func (mr *MockBareRepoMockRecorder) GetRemotes() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemotes", reflect.TypeOf((*MockBareRepo)(nil).GetRemotes))
+}
+
+// SetRemoteURL mocks base method
+func (m *MockBareRepo) SetRemoteURL(name, newURL string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetRemoteURL", name, newURL)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetRemoteURL indicates an expected call of SetRemoteURL
+func (mr *MockBareRepoMockRecorder) SetRemoteURL(name, newURL interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRemoteURL", reflect.TypeOf((*MockBareRepo)(nil).SetRemoteURL), name, newURL)
+}
+
+// DeleteRemoteURLs mocks base method
+func (m *MockBareRepo) DeleteRemoteURLs(name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteRemoteURLs", name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteRemoteURLs indicates an expected call of DeleteRemoteURLs
+func (mr *MockBareRepoMockRecorder) DeleteRemote(name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRemoteURLs", reflect.TypeOf((*MockBareRepo)(nil).DeleteRemoteURLs), name)
 }
 
 // Config mocks base method
@@ -1039,23 +1096,23 @@ func (m *MockPushPool) EXPECT() *MockPushPoolMockRecorder {
 	return m.recorder
 }
 
-// Register mocks base method
+// Add mocks base method
 func (m *MockPushPool) Add(tx core.RepoPushNote, noValidation ...bool) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{tx}
 	for _, a := range noValidation {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "Register", varargs...)
+	ret := m.ctrl.Call(m, "Add", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Register indicates an expected call of Register
+// Add indicates an expected call of Add
 func (mr *MockPushPoolMockRecorder) Add(tx interface{}, noValidation ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{tx}, noValidation...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockPushPool)(nil).Add), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Add", reflect.TypeOf((*MockPushPool)(nil).Add), varargs...)
 }
 
 // Full mocks base method

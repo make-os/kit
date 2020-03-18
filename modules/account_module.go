@@ -3,8 +3,8 @@ package modules
 import (
 	"fmt"
 
-	"gitlab.com/makeos/mosdef/account"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/keystore"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
@@ -19,7 +19,7 @@ import (
 // that are accessed through the javascript console environment
 type AccountModule struct {
 	cfg     *config.AppConfig
-	acctMgr *account.AccountManager
+	acctMgr *keystore.Keystore
 	vm      *otto.Otto
 	service services.Service
 	logic   core.Logic
@@ -29,7 +29,7 @@ type AccountModule struct {
 func NewAccountModule(
 	cfg *config.AppConfig,
 	vm *otto.Otto,
-	acctmgr *account.AccountManager,
+	acctmgr *keystore.Keystore,
 	service services.Service,
 	logic core.Logic) *AccountModule {
 	return &AccountModule{
@@ -130,7 +130,7 @@ func (m *AccountModule) Configure() []prompt.Suggest {
 
 // listAccounts lists all accounts on this node
 func (m *AccountModule) ListLocalAccounts() []string {
-	accounts, err := m.acctMgr.ListAccounts()
+	accounts, err := m.acctMgr.List()
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
@@ -148,8 +148,8 @@ func (m *AccountModule) ListLocalAccounts() []string {
 // If passphrase is not set, an interactive prompt will be started
 // to collect the passphrase without revealing it in the terminal.
 //
-// address: The address corresponding the the local account
-// [passphrase]: The passphrase of the local account
+// address: The address corresponding the the local key
+// [passphrase]: The passphrase of the local key
 func (m *AccountModule) GetKey(address string, passphrase ...string) string {
 	var pass string
 
@@ -173,7 +173,7 @@ func (m *AccountModule) GetKey(address string, passphrase ...string) string {
 		pass = passphrase[0]
 	}
 
-	// Unlock the account using the passphrase
+	// Unlock the key using the passphrase
 	if err := acct.Unlock(pass); err != nil {
 		if err == apptypes.ErrInvalidPassprase {
 			panic(util.NewStatusError(401, StatusCodeInvalidPass, "passphrase", err.Error()))
@@ -184,13 +184,13 @@ func (m *AccountModule) GetKey(address string, passphrase ...string) string {
 	return acct.GetKey().PrivKey().Base58()
 }
 
-// getPublicKey returns the public key of an account.
-// The passphrase argument is used to unlock the account.
+// getPublicKey returns the public key of a key.
+// The passphrase argument is used to unlock the key.
 // If passphrase is not set, an interactive prompt will be started
 // to collect the passphrase without revealing it in the terminal.
 //
-// address: The address corresponding the the local account
-// [passphrase]: The passphrase of the local account
+// address: The address corresponding the the local key
+// [passphrase]: The passphrase of the local key
 func (m *AccountModule) GetPublicKey(address string, passphrase ...string) string {
 	var pass string
 
@@ -214,7 +214,7 @@ func (m *AccountModule) GetPublicKey(address string, passphrase ...string) strin
 		pass = passphrase[0]
 	}
 
-	// Unlock the account using the passphrase
+	// Unlock the key using the passphrase
 	if err := acct.Unlock(pass); err != nil {
 		if err == apptypes.ErrInvalidPassprase {
 			panic(util.NewStatusError(401, StatusCodeInvalidPass, "passphrase", err.Error()))
@@ -271,7 +271,7 @@ func (m *AccountModule) GetSpendableBalance(address string, height ...uint64) st
 	return acct.GetSpendableBalance(uint64(curBlockInfo.Height)).String()
 }
 
-// getStakedBalance returns the total staked coins of an account
+// getStakedBalance returns the total staked coins of an keystore
 //
 // ARGS:
 // address: The address corresponding the account
@@ -317,7 +317,7 @@ func (m *AccountModule) GetPrivateValidator(includePrivKey ...bool) util.Map {
 	return info
 }
 
-// setCommission sets the delegator commission for an account
+// setCommission sets the delegator commission for an keystore
 //
 // ARGS:
 // params <map>

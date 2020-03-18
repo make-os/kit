@@ -68,29 +68,29 @@ type TxKeeper interface {
 	GetTx(hash []byte) (types.BaseTx, error)
 }
 
-// BalanceAccount represents an account that maintains a balance
+// BalanceAccount represents an keystore that maintains a balance
 type BalanceAccount interface {
 	GetBalance() util.String
 	SetBalance(bal string)
 	Clean(chainHeight uint64)
 }
 
-// AccountKeeper describes an interface for accessing account data
+// AccountKeeper describes an interface for accessing keystore data
 type AccountKeeper interface {
-	// Get returns an account by address.
+	// Get returns an keystore by address.
 	//
 	// ARGS:
-	// address: The address of the account
+	// address: The address of the keystore
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
-	// CONTRACT: It returns an empty Account if no account is found.
+	// CONTRACT: It returns an empty Account if no keystore is found.
 	Get(address util.Address, blockNum ...uint64) *state.Account
 
 	// Update sets a new object at the given address.
 	//
 	// ARGS:
-	// address: The address of the account to update
-	// udp: The updated account object to replace the existing object.
+	// address: The address of the keystore to update
+	// udp: The updated keystore object to replace the existing object.
 	Update(address util.Address, upd *state.Account)
 }
 
@@ -219,7 +219,7 @@ type GPGPubKeyKeeper interface {
 	// gpgID: The unique ID of the public key
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
-	// CONTRACT: It returns an empty Account if no account is found.
+	// CONTRACT: It returns an empty Account if no keystore is found.
 	Get(gpgID string, blockNum ...uint64) *state.GPGPubKey
 
 	// GetByAddress returns all public keys associated with the given address
@@ -312,7 +312,7 @@ type Keepers interface {
 	// ManagedSysKeeper returns a SystemKeeper initialized with a managed database
 	ManagedSysKeeper() SystemKeeper
 
-	// AccountKeeper manages account state
+	// AccountKeeper manages keystore state
 	AccountKeeper() AccountKeeper
 
 	// ValidatorKeeper returns the validator keeper
@@ -369,7 +369,7 @@ type TxLogic interface {
 
 	// CanExecCoinTransfer checks whether the sender can transfer the value
 	// and fee of the transaction based on the current state of their
-	// account. It also ensures that the transaction's nonce is the
+	// keystore. It also ensures that the transaction's nonce is the
 	// next/expected nonce value.
 	//
 	// ARGS:

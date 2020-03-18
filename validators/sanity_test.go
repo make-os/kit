@@ -78,7 +78,7 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("recipient address is not base58 encoded but a prefixed account address", func() {
+		When("recipient address is not base58 encoded but a prefixed keystore address", func() {
 			It("should return err", func() {
 				tx := core.NewBareTxCoinTransfer()
 				tx.To = "a/abcdef"
@@ -277,7 +277,7 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:domains, msg:domains.domain: target is invalid"))
 			})
 
-			It("has domain target with account target type that has an invalid address", func() {
+			It("has domain target with keystore target type that has an invalid address", func() {
 				tx.Value = "5"
 				tx.Domains["domain"] = "a/invalid_addr"
 				err := validators.CheckTxNSAcquire(tx, -1)
@@ -1193,9 +1193,9 @@ var _ = Describe("TxValidator", func() {
 			tx = core.NewBareTxPush()
 			tx.Timestamp = time.Now().Unix()
 			tx.PushNote.RepoName = "repo1"
-			tx.PushNote.PusherKeyID = util.RandBytes(20)
+			tx.PushNote.PusherGPGID = util.RandBytes(20)
 			tx.PushNote.Timestamp = time.Now().Unix()
-			tx.PushNote.AccountNonce = 1
+			tx.PushNote.PusherAcctNonce = 1
 			tx.PushNote.Fee = "1"
 			tx.PushNote.NodePubKey = key.PubKey().MustBytes32()
 			tx.PushNote.NodeSig = key.PrivKey().MustSign(tx.PushNote.Bytes())

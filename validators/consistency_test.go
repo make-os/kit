@@ -748,7 +748,7 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("target account does not exist", func() {
+		When("target keystore does not exist", func() {
 			BeforeEach(func() {
 				name := "name1"
 				tx := core.NewBareTxNamespaceAcquire()
@@ -763,9 +763,9 @@ var _ = Describe("TxValidator", func() {
 				err = validators.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
 			})
 
-			It("should return err='field:toAccount, msg:account does not exist'", func() {
+			It("should return err='field:toAccount, msg:keystore does not exist'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:to, msg:account does not exist"))
+				Expect(err.Error()).To(Equal("field:to, msg:keystore does not exist"))
 			})
 		})
 

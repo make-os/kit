@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/libs/bech32"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -105,12 +106,22 @@ var _ = Describe("Key", func() {
 	})
 
 	Describe(".Addr", func() {
-		It("should return 'eLPbkwui7eymQFLo8GRa7jgTJrhrXS6a8c'", func() {
+		It("should return 'maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5'", func() {
 			seed := int64(1)
 			a, err := NewKey(&seed)
 			Expect(err).To(BeNil())
 			addr := a.Addr()
 			Expect(addr).To(Equal(util.Address("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")))
+		})
+	})
+
+	Describe(".PushAddr", func() {
+		It("should return 'push1dmqxfznwyhmkcgcfthlvvt88vajyhnxqw65khm'", func() {
+			seed := int64(1)
+			a, err := NewKey(&seed)
+			Expect(err).To(BeNil())
+			addr := a.PushAddr()
+			Expect(addr).To(Equal(util.Address("push1dmqxfznwyhmkcgcfthlvvt88vajyhnxqw65khm")))
 		})
 	})
 
@@ -256,32 +267,84 @@ var _ = Describe("Key", func() {
 		})
 	})
 
-	Describe(".IsValidAddr", func() {
-		It("should return error.Error(empty address)", func() {
-			err := IsValidAddr("")
+	Describe(".IsValidAccountAddr", func() {
+		It("should return err when address is unset", func() {
+			err := IsValidAccountAddr("")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("empty address"))
 		})
 
-		It("should return err.Error(checksum error)", func() {
-			err := IsValidAddr("hh23887dhhw88su")
+		It("should return checksum error if address could not be decoded", func() {
+			err := IsValidAccountAddr("hh23887dhhw88su")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("decoding bech32 failed"))
 		})
 
-		It("should return err.Error(invalid version)", func() {
-			err := IsValidAddr("E1juuqo9XEfKhGHSwExMxGry54h4JzoRkr")
+		It("should return err when address could not be bech32 decoded", func() {
+			err := IsValidAccountAddr("E1juuqo9XEfKhGHSwExMxGry54h4JzoRkr")
 			Expect(err).ToNot(BeNil())
 		})
 
-		It("should return nil", func() {
-			err := IsValidAddr("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")
+		It("should return nil when address is ok", func() {
+			err := IsValidAccountAddr("maker1dmqxfznwyhmkcgcfthlvvt88vajyhnxqd2w4s5")
 			Expect(err).To(BeNil())
+		})
+
+		It("should return err when address has invalid hrp", func() {
+			addr, _ := bech32.ConvertAndEncode("xyz", []byte("address"))
+			err := IsValidAccountAddr(addr)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("invalid hrp"))
+		})
+
+		It("should return err when address raw data is not 20 bytes", func() {
+			addr, _ := bech32.ConvertAndEncode(AddrHRP, []byte("address"))
+			err := IsValidAccountAddr(addr)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("invalid raw address length"))
+		})
+	})
+
+	Describe(".IsValidPushAddr()", func() {
+		It("should return err when address is unset", func() {
+			err := IsValidPushAddr("")
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("empty address"))
+		})
+
+		It("should return checksum error if address could not be decoded", func() {
+			err := IsValidPushAddr("hh23887dhhw88su")
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("decoding bech32 failed"))
+		})
+
+		It("should return err when address could not be bech32 decoded", func() {
+			err := IsValidPushAddr("E1juuqo9XEfKhGHSwExMxGry54h4JzoRkr")
+			Expect(err).ToNot(BeNil())
+		})
+
+		It("should return nil when address is ok", func() {
+			err := IsValidPushAddr("push12xuf6f8qeux402da4vea2ds8ssvzqjg8quhrrg")
+			Expect(err).To(BeNil())
+		})
+
+		It("should return err when address has invalid hrp", func() {
+			addr, _ := bech32.ConvertAndEncode("xyz", []byte("address"))
+			err := IsValidPushAddr(addr)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("invalid hrp"))
+		})
+
+		It("should return err when address raw data is not 20 bytes", func() {
+			addr, _ := bech32.ConvertAndEncode(PushAddrHRP, []byte("address"))
+			err := IsValidPushAddr(addr)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("invalid raw address length"))
 		})
 	})
 
 	Describe(".DecodeAddr", func() {
-		It("should return error.Error(empty address)", func() {
+		It("should return err when address is unset", func() {
 			_, err := DecodeAddr("")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("empty address"))
@@ -376,7 +439,7 @@ var _ = Describe("Key", func() {
 			Expect(err.Error()).To(Equal("empty priv key"))
 		})
 
-		It("should return err.Error(checksum error)", func() {
+		It("should return checksum error if address could not be decoded", func() {
 			err := IsValidPrivKey("hh23887dhhw88su")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("checksum error"))
@@ -396,7 +459,7 @@ var _ = Describe("Key", func() {
 	})
 
 	Describe(".PrivKeyFromBase58", func() {
-		It("should return err.Error(checksum error)", func() {
+		It("should return checksum error if address could not be decoded", func() {
 			_, err := PrivKeyFromBase58("hh23887dhhw88su")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("checksum error"))

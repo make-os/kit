@@ -14,11 +14,11 @@ var validAddrRule = func(err error) func(interface{}) error {
 	return func(val interface{}) error {
 		switch v := val.(type) {
 		case util.String:
-			if _err := crypto.IsValidAddr(v.String()); _err != nil {
+			if _err := crypto.IsValidAccountAddr(v.String()); _err != nil {
 				return err
 			}
 		case string:
-			if _err := crypto.IsValidAddr(v); _err != nil {
+			if _err := crypto.IsValidAccountAddr(v); _err != nil {
 				return err
 			}
 		default:

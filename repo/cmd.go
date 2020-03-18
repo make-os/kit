@@ -1,35 +1,35 @@
 package repo
 
 import (
+	"bytes"
 	"crypto/rsa"
+	"encoding/pem"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/account"
 	"gitlab.com/makeos/mosdef/api"
 	restclient "gitlab.com/makeos/mosdef/api/rest/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/keystore"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-// DetermineNextNonceOfAccount is used to determine the next nonce of the account
-//
-// It will use the rpc and remote clients as source to request for
-// the current account nonce.
-
-// SignCommitCmd adds transaction information to the recent commit and signs it.
-// If rpcClient is set, the transaction nonce of the signing account is fetched
-// from the rpc server.
+// SignCommitCmd adds transaction information to a new or recent commit and signs it.
 func SignCommitCmd(
 	targetRepo core.BareRepo,
 	txFee,
@@ -44,7 +44,7 @@ func SignCommitCmd(
 	if !govalidator.IsNumeric(mergeID) {
 		return fmt.Errorf("merge id must be numeric")
 	} else if len(mergeID) > 8 {
-		return fmt.Errorf("merge id limit of 8 bytes exceeded")
+		return fmt.Errorf("merge proposal id exceeded 8 bytes limit")
 	}
 
 	// Get the signing key id from the git config if not passed as an argument
@@ -85,17 +85,20 @@ func SignCommitCmd(
 		return err
 	}
 
+	var commit *object.Commit
+	var hash, msg string
+
 	// Create a new commit if recent commit amendment is not required
 	if !amendRecent {
-		if err := targetRepo.MakeSignableCommit(string(txParams), signingKey); err != nil {
+		if err := targetRepo.MakeSignableCommit(txParams.String(), signingKey); err != nil {
 			return err
 		}
-		return nil
+		goto add_req_token
 	}
 
 	// Otherwise, amend the recent commit.
 	// Get recent commit hash of the current branch.
-	hash, err := targetRepo.GetRecentCommit()
+	hash, err = targetRepo.GetRecentCommit()
 	if err != nil {
 		if err == ErrNoCommits {
 			return errors.New("no commits have been created yet")
@@ -104,12 +107,19 @@ func SignCommitCmd(
 	}
 
 	// Remove any existing txparams and append the new one
-	commit, _ := targetRepo.CommitObject(plumbing.NewHash(hash))
-	msg := util.RemoveTxParams(commit.Message)
-	msg += "\n\n" + txParams
+	commit, _ = targetRepo.CommitObject(plumbing.NewHash(hash))
+	msg = util.RemoveTxParams(commit.Message)
+	msg += "\n\n" + txParams.String()
 
 	// Update the recent commit message
 	if err = targetRepo.UpdateRecentCommitMsg(msg, signingKey); err != nil {
+		return err
+	}
+
+add_req_token:
+
+	// Create & set request token to remote URLs
+	if err = createAndSetRequestTokenToRemoteURLs(signingKey, targetRepo, txParams); err != nil {
 		return err
 	}
 
@@ -118,7 +128,7 @@ func SignCommitCmd(
 
 // SignTagCmd creates an annotated tag, appends transaction information to its
 // message and signs it.
-// If rpcClient is set, the transaction nonce of the signing account is fetched
+// If rpcClient is set, the transaction nonce of the signing keystore is fetched
 // from the rpc server.
 func SignTagCmd(
 	args []string,
@@ -185,8 +195,13 @@ func SignTagCmd(
 	}
 
 	// Create the tag
-	msg += "\n\n" + txParams
+	msg += "\n\n" + txParams.String()
 	if err = targetRepo.CreateTagWithMsg(args, msg, signingKey); err != nil {
+		return err
+	}
+
+	// Create & set request token to remote URLs
+	if err = createAndSetRequestTokenToRemoteURLs(signingKey, targetRepo, txParams); err != nil {
 		return err
 	}
 
@@ -194,7 +209,7 @@ func SignTagCmd(
 }
 
 // SignNoteCmd creates adds transaction information to a note and signs it.
-// If rpcClient is set, the transaction nonce of the signing account is fetched
+// If rpcClient is set, the transaction nonce of the signing keystore is fetched
 // from the rpc server.
 func SignNoteCmd(
 	targetRepo core.BareRepo,
@@ -304,8 +319,13 @@ func SignNoteCmd(
 	}
 
 	// Next we add the tx blob to the note
-	if err = targetRepo.AddEntryToNote(note, blobHash, txParams); err != nil {
+	if err = targetRepo.AddEntryToNote(note, blobHash, txParams.String()); err != nil {
 		return errors.Wrap(err, "failed to add tx blob")
+	}
+
+	// Create & set request token to remote URLs
+	if err = createAndSetRequestTokenToRemoteURLs(signingKey, targetRepo, txParams); err != nil {
+		return err
 	}
 
 	return nil
@@ -314,8 +334,8 @@ func SignNoteCmd(
 // CreateAndSendMergeRequestCmd creates merge request proposal
 // and sends it to the network
 // cfg: App config object
-// addrOrIdx: Address or index of account
-// passphrase: Passphrase of account
+// addrOrIdx: Address or index of keystore
+// passphrase: Passphrase of keystore
 func CreateAndSendMergeRequestCmd(
 	cfg *config.AppConfig,
 	accountAddrOrIdx,
@@ -331,8 +351,8 @@ func CreateAndSendMergeRequestCmd(
 	rpcClient *client.RPCClient,
 	remoteClients []restclient.RestClient) error {
 
-	// Get the signer account
-	am := account.New(path.Join(cfg.DataDir(), config.AccountDirName))
+	// Get the signer keystore
+	am := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
 	unlocked, err := am.UIUnlockAccount(accountAddrOrIdx, passphrase)
 	if err != nil {
 		return errors.Wrap(err, "unable to unlock")
@@ -384,4 +404,69 @@ func CreateAndSendMergeRequestCmd(
 	fmt.Println("Hash:", txHash)
 
 	return nil
+}
+
+// GitSignCmd mocks gpg signing interface allowing this program to
+// be used in place of gpg program
+func GitSignCmd(args []string, data io.Reader) {
+
+	// Get the data to be signed and the key id to use
+	// dataBz, _ := ioutil.ReadAll(data)
+	// keyID := os.Args[3]
+
+	w := bytes.NewBuffer(nil)
+	pem.Encode(w, &pem.Block{Bytes: []byte("some sig"), Type: "PGP SIGNATURE", Headers: map[string]string{
+		"time":   fmt.Sprintf("%d", time.Now().Unix()),
+		"signer": "maker1abc",
+	}})
+
+	fmt.Fprintf(os.Stderr, "[GNUPG:] BEGIN_SIGNING\n")
+	fmt.Fprintf(os.Stderr, "[GNUPG:] SIG_CREATED C 1 8 00 1584390372 690B4F273B5A8C04AFD41E1DE14EE57A45993CDF\n")
+	fmt.Fprintf(os.Stdout, "%s\n", w.Bytes())
+
+	os.Exit(0)
+}
+
+// GitVerifyCmd mocks gpg signature verification interface allowing this
+// program to be used in place of gpg program
+func GitVerifyCmd(args []string) {
+
+	sig, err := ioutil.ReadFile(args[4])
+	if err != nil {
+		log.Fatalf("failed to read sig file: %s", err)
+	}
+
+	p, _ := pem.Decode(sig)
+	if p == nil {
+		os.Stderr.Write([]byte("malformed signature"))
+		os.Exit(1)
+	}
+
+	fmt.Fprintf(os.Stdout, "[GNUPG:] NEWSIG\n")
+
+	var signedAt int64
+	if ts, ok := p.Headers["time"]; ok {
+		signedAt, err = strconv.ParseInt(ts, 10, 64)
+		if err != nil {
+			fmt.Fprintf(os.Stdout, "[GNUPG:] BADSIG 0\n")
+			fmt.Fprintf(os.Stderr, "headers.time is invalid")
+			os.Exit(1)
+		}
+	}
+
+	signer, ok := p.Headers["signer"]
+	if !ok {
+		fmt.Fprintf(os.Stdout, "[GNUPG:] BADSIG 0\n")
+		fmt.Fprintf(os.Stderr, "headers.signer is required")
+		os.Exit(1)
+	}
+
+	fmt.Fprintf(os.Stdout, "[GNUPG:] GOODSIG 0\n")
+	fmt.Fprintf(os.Stdout, "[GNUPG:] TRUST_FULLY 0 shell\n")
+	fmt.Fprintf(os.Stderr, "%s\n", color.GreenString("sig: signature is ok"))
+	fmt.Fprintf(os.Stderr, "%s\n", color.GreenString("sig: signed on %s",
+		time.Unix(signedAt, 0).String()))
+	fmt.Fprintf(os.Stderr, "%s\n", color.GreenString("sig: signed by %s", signer))
+
+	os.Exit(0)
 }

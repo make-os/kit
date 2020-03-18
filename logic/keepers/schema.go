@@ -22,7 +22,7 @@ const (
 	tagTx                    = "t"
 )
 
-// MakeAccountKey creates a key for accessing an account
+// MakeAccountKey creates a key for accessing an keystore
 func MakeAccountKey(address string) []byte {
 	return storage.MakePrefix([]byte(tagAccount), []byte(address))
 }

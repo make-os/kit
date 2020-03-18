@@ -145,13 +145,13 @@ func checkNote(
 	if err != nil {
 		return nil, err
 	}
-	txParams, err := util.ParseTxParams(string(bz))
+	txParams, err := util.ExtractTxParams(string(bz))
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("note (%s)", noteName))
 	}
 
 	// Get the public key
-	pubKeyStr, err := gpgPubKeyGetter(txParams.PubKeyID)
+	pubKeyStr, err := gpgPubKeyGetter(txParams.GPGID)
 	if err != nil {
 		msg := "unable to verify note (%s). public key was not found"
 		return nil, errors.Errorf(msg, noteName)
@@ -183,7 +183,7 @@ func checkNote(
 
 	// Now, verify the signature
 	// TODO: use MakeNoteSigMsg
-	msg := []byte(txParams.Fee.String() + txParams.GetNonceAsString() + txParams.PubKeyID + noteHash +
+	msg := []byte(txParams.Fee.String() + txParams.GetNonceAsString() + txParams.GPGID + noteHash +
 		fmt.Sprintf("%v", txParams.DeleteRef))
 	_, err = crypto.VerifyGPGSignature(pubKey, []byte(txParams.Signature), msg)
 	if err != nil {
@@ -204,7 +204,7 @@ func checkAnnotatedTag(
 	gpgPubKeyGetter core.PGPPubKeyGetter) (*util.TxParams, error) {
 
 	// Get and parse txparams from the commit message
-	txParams, err := util.ParseTxParams(tag.Message)
+	txParams, err := util.ExtractTxParams(tag.Message)
 	if err != nil {
 		msg := fmt.Sprintf("tag (%s)", tag.Hash.String())
 		return nil, errors.Wrap(err, msg)
@@ -216,10 +216,10 @@ func checkAnnotatedTag(
 	}
 
 	// Get the public key
-	pubKey, err := gpgPubKeyGetter(txParams.PubKeyID)
+	pubKey, err := gpgPubKeyGetter(txParams.GPGID)
 	if err != nil {
 		msg := "unable to verify tag (%s). public key (id:%s) was not found"
-		return nil, errors.Errorf(msg, tag.Hash.String(), txParams.PubKeyID)
+		return nil, errors.Errorf(msg, tag.Hash.String(), txParams.GPGID)
 	}
 
 	// Verify tag signature
@@ -362,7 +362,7 @@ func checkCommit(
 	}
 
 	// Get and parse txparams from the commit message
-	txParams, err := util.ParseTxParams(commit.Message)
+	txParams, err := util.ExtractTxParams(commit.Message)
 	if err != nil {
 		msg := fmt.Sprintf("%scommit (%s)", referencedStr, commit.Hash.String())
 		return nil, errors.Wrap(err, msg)
@@ -374,10 +374,10 @@ func checkCommit(
 	}
 
 	// Get the public key
-	pubKey, err := gpgPubKeyGetter(txParams.PubKeyID)
+	pubKey, err := gpgPubKeyGetter(txParams.GPGID)
 	if err != nil {
 		msg := "unable to verify %scommit (%s). public key (id:%s) was not found"
-		return nil, errors.Errorf(msg, referencedStr, commit.Hash.String(), txParams.PubKeyID)
+		return nil, errors.Errorf(msg, referencedStr, commit.Hash.String(), txParams.GPGID)
 	}
 
 	// Verify commit signature
@@ -389,30 +389,30 @@ func checkCommit(
 	return txParams, nil
 }
 
-// checkPushNoteAgainstTxParamss checks compares the value of fields in the push
-// note against the values of same fields in the txparamss.
-func checkPushNoteAgainstTxParamss(pn *core.PushNote, txParamss map[string]*util.TxParams) error {
+// checkPushNoteAgainstTxParams checks compares the value of fields in the push
+// note against the values of same fields in the txparams.
+func checkPushNoteAgainstTxParams(pn *core.PushNote, txParams map[string]*util.TxParams) error {
 
 	// Push note pusher public key must match txparams key
-	txParamssObjs := funk.Values(txParamss).([]*util.TxParams)
-	if !bytes.Equal(pn.PusherKeyID, util.MustDecodeGPGIDToRSAHash(txParamssObjs[0].PubKeyID)) {
+	txParamssObjs := funk.Values(txParams).([]*util.TxParams)
+	if !bytes.Equal(pn.PusherGPGID, util.MustDecodeGPGIDToRSAHash(txParamssObjs[0].GPGID)) {
 		return fmt.Errorf("push note pusher public key id does not match " +
-			"txparamss pusher public key id")
+			"txparams pusher public key id")
 	}
 
 	totalFees := decimal.Zero
-	for _, txparams := range txParamss {
+	for _, txparams := range txParams {
 		totalFees = totalFees.Add(txparams.Fee.Decimal())
 	}
 
-	// Push note total fee must matches the total fees computed from all txparamss
+	// Push note total fee must matches the total fees computed from all txparams
 	if !pn.GetFee().Decimal().Equal(totalFees) {
-		return fmt.Errorf("push note fees does not match total txparamss fees")
+		return fmt.Errorf("push note fees does not match total txparams fees")
 	}
 
 	// Check pushed references for consistency with their txparams
 	for _, ref := range pn.GetPushedReferences() {
-		txparams, ok := txParamss[ref.Name]
+		txparams, ok := txParams[ref.Name]
 		if !ok {
 			return fmt.Errorf("push note has unexpected pushed reference (%s)", ref.Name)
 		}
@@ -431,6 +431,12 @@ func CheckPushNoteSyntax(tx *core.PushNote) error {
 
 	if tx.RepoName == "" {
 		return util.FieldError("repoName", "repo name is required")
+	} else if util.IsValidIdentifierName(tx.RepoName) != nil {
+		return util.FieldError("repoName", "repo name is not valid")
+	}
+
+	if tx.Namespace != "" && util.IsValidIdentifierName(tx.Namespace) != nil {
+		return util.FieldError("namespace", "namespace is not valid")
 	}
 
 	fe := util.FieldErrorWithIndex
@@ -460,10 +466,10 @@ func CheckPushNoteSyntax(tx *core.PushNote) error {
 		}
 	}
 
-	if len(tx.PusherKeyID) == 0 {
+	if len(tx.PusherGPGID) == 0 {
 		return util.FieldError("pusherKeyId", "pusher gpg key id is required")
 	}
-	if len(tx.PusherKeyID) != 20 {
+	if len(tx.PusherGPGID) != 20 {
 		return util.FieldError("pusherKeyId", "pusher gpg key is not valid")
 	}
 
@@ -474,8 +480,8 @@ func CheckPushNoteSyntax(tx *core.PushNote) error {
 		return util.FieldError("timestamp", "timestamp cannot be a future time")
 	}
 
-	if tx.AccountNonce == 0 {
-		return util.FieldError("accountNonce", "account nonce must be greater than zero")
+	if tx.PusherAcctNonce == 0 {
+		return util.FieldError("accountNonce", "keystore nonce must be greater than zero")
 	}
 
 	if tx.Fee == "" {
@@ -567,10 +573,17 @@ func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
 		return util.FieldError("repoName", msg)
 	}
 
+	// If namespace is provide, ensure it exists
+	if tx.Namespace != "" {
+		if logic.NamespaceKeeper().Get(util.HashNamespace(tx.Namespace)).IsNil() {
+			return util.FieldError("namespace", fmt.Sprintf("namespace '%s' is unknown", tx.Namespace))
+		}
+	}
+
 	// Get gpg key of the pusher
-	gpgKey := logic.GPGPubKeyKeeper().Get(util.MustCreateGPGID(tx.PusherKeyID))
+	gpgKey := logic.GPGPubKeyKeeper().Get(util.MustCreateGPGID(tx.PusherGPGID))
 	if gpgKey.IsNil() {
-		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", tx.PusherKeyID)
+		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", tx.PusherGPGID)
 		return util.FieldError("pusherKeyId", msg)
 	}
 
@@ -579,15 +592,15 @@ func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
 		return util.FieldError("pusherAddr", "gpg key is not associated with the pusher address")
 	}
 
-	// Ensure next pusher account nonce matches the pushed note's account nonce
+	// Ensure next pusher keystore nonce matches the pushed note's keystore nonce
 	pusherAcct := logic.AccountKeeper().Get(tx.PusherAddress)
 	if pusherAcct.IsNil() {
-		return util.FieldError("pusherAddr", "pusher account not found")
+		return util.FieldError("pusherAddr", "pusher keystore not found")
 	}
 	nextNonce := pusherAcct.Nonce + 1
-	if tx.AccountNonce != nextNonce {
-		msg := fmt.Sprintf("wrong account nonce '%d', expecting '%d'", tx.AccountNonce, nextNonce)
-		return util.FieldError("pusherAddr", msg)
+	if tx.PusherAcctNonce != nextNonce {
+		msg := fmt.Sprintf("wrong keystore nonce '%d', expecting '%d'", tx.PusherAcctNonce, nextNonce)
+		return util.FieldError("accountNonce", msg)
 	}
 
 	// Check each references against the state version
@@ -608,7 +621,7 @@ func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
 		tx.PusherAddress,
 		"0",
 		tx.GetFee(),
-		tx.AccountNonce,
+		tx.PusherAcctNonce,
 		uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -617,8 +630,7 @@ func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
 }
 
 // checkPushNote performs validation checks on a push transaction
-func checkPushNote(tx core.RepoPushNote, dht types.DHTNode,
-	logic core.Logic) error {
+func checkPushNote(tx core.RepoPushNote, dht types.DHTNode, logic core.Logic) error {
 
 	if err := CheckPushNoteSyntax(tx.(*core.PushNote)); err != nil {
 		return err
@@ -744,6 +756,48 @@ func fetchAndCheckReferenceObjects(tx core.RepoPushNote, dhtnode types.DHTNode) 
 		msg := fmt.Sprintf("invalid size (%d bytes). "+
 			"actual object size (%d bytes) is different", tx.GetSize(), objectsSize)
 		return util.FieldError("size", msg)
+	}
+
+	return nil
+}
+
+// checkPushRequestTokenData performs sanity and consistency checks on a push request token
+func checkPushRequestTokenData(prt *PushRequestTokenData, keepers core.Keepers) error {
+	if err := checkPushRequestTokenDataSanity(prt); err != nil {
+		return err
+	}
+	return checkPushRequestTokenDataConsistency(prt, keepers)
+}
+
+// checkPushRequestTokenDataSanity performs sanity checks on push request token data
+func checkPushRequestTokenDataSanity(prt *PushRequestTokenData) error {
+
+	if prt.GPGID == "" {
+		return util.FieldError("gpgID", "gpg id is required")
+	} else if !util.IsValidGPGID(prt.GPGID) {
+		return util.FieldError("gpgID", "gpg id is not valid")
+	}
+
+	if prt.Nonce == 0 {
+		return util.FieldError("gpgOwnerNextNonce", "nonce must be a positive number")
+	}
+
+	return nil
+}
+
+// checkPushRequestTokenDataConsistency performs consistency checks on the transaction parameter
+// against the current state of the system
+func checkPushRequestTokenDataConsistency(prt *PushRequestTokenData, keepers core.Keepers) error {
+
+	gpgKey := keepers.GPGPubKeyKeeper().Get(prt.GPGID)
+	if gpgKey.IsNil() {
+		return util.FieldError("gpgID", "gpg id is required")
+	}
+
+	keyOwner := keepers.AccountKeeper().Get(gpgKey.Address)
+	if prt.Nonce <= keyOwner.Nonce {
+		return util.FieldError("nonce", "nonce cannot be less or equal to the current "+
+			"nonce of the gpg key owner's keystore")
 	}
 
 	return nil

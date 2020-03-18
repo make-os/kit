@@ -106,7 +106,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 
 	case *core.TxPush:
 		pn := o.PushNote
-		err := t.execPush(pn.RepoName, pn.References, pn.GetFee(), pn.PusherKeyID, chainHeight)
+		err := t.execPush(pn.RepoName, pn.References, pn.GetFee(), pn.PusherGPGID, chainHeight)
 		if err == nil {
 			// Execute the tx against the repository's local state
 			return t.logic.GetRepoManager().ExecTxPush(o)

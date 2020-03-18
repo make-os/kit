@@ -44,7 +44,7 @@ type Logic struct {
 	// systemKeeper provides functionalities for managing system data
 	systemKeeper *keepers.SystemKeeper
 
-	// accountKeeper provides functionalities for managing account data
+	// accountKeeper provides functionalities for managing keystore data
 	accountKeeper *keepers.AccountKeeper
 
 	// repoKeeper provides functionalities for managing repository data
@@ -230,7 +230,7 @@ func (l *Logic) ValidatorKeeper() core.ValidatorKeeper {
 	return l.validatorKeeper
 }
 
-// AccountKeeper returns the account keeper
+// AccountKeeper returns the keystore keeper
 func (l *Logic) AccountKeeper() core.AccountKeeper {
 	return l.accountKeeper
 }
@@ -261,7 +261,7 @@ func (l *Logic) WriteGenesisState() error {
 	// Register all genesis data entries to the state
 	for _, ga := range genesisData {
 
-		// Create account
+		// Create keystore
 		if ga.Type == config.GenDataTypeAccount {
 			newAcct := state.BareAccount()
 			newAcct.Balance = util.String(ga.Balance)

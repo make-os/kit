@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/vmihailenco/msgpack"
 )
 
 const TxParamsPrefix = "tx:"
@@ -36,22 +37,45 @@ func RemoveTxParams(msg string) string {
 // TxParams represents transaction information usually included in commits, notes
 // and tag objects
 type TxParams struct {
-	Fee             String // Network fee to be paid for update to the target ref
-	Nonce           uint64 // Nonce of the account paying the network fee and signing the update.
-	PubKeyID        string // The GPG public key ID of the reference updater.
-	Signature       string // The signature of the update (only used in note signing for now)
-	DeleteRef       bool   // A directive to delete the current/pushed reference.
-	MergeProposalID string // A directive to handle a pushed branch based on the constraints defined in a merge proposal
+	SerializerHelper
+	Fee             String `json:"fee" msgpack:"fee" mapstructure:"fee"`                   // Network fee to be paid for update to the target ref
+	Nonce           uint64 `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`             // Nonce of the keystore paying the network fee and signing the update.
+	GPGID           string `json:"gpgID" msgpack:"gpgID" mapstructure:"gpgID"`             // The GPG public key ID of the reference updater.
+	Signature       string `json:"sig" msgpack:"sig" mapstructure:"sig"`                   // The signature of the update (only used in note signing for now)
+	DeleteRef       bool   `json:"deleteRef" msgpack:"deleteRef" mapstructure:"deleteRef"` // A directive to delete the current/pushed reference.
+	MergeProposalID string `json:"mergeID" msgpack:"mergeID" mapstructure:"mergeID"`       // A directive to handle a pushed branch based on the constraints defined in a merge proposal
+}
+
+// Bytes returns the serialized equivalent of tp
+func (tp *TxParams) Bytes() []byte {
+	return ToBytes(tp)
+}
+
+// Bytes returns the serialized equivalent of tp
+func (tp *TxParams) BytesNoSig() []byte {
+	sig := tp.Signature
+	tp.Signature = ""
+	bz := ToBytes(tp)
+	tp.Signature = sig
+	return bz
+}
+
+func (tp *TxParams) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return tp.EncodeMulti(enc, tp.Fee, tp.Nonce, tp.GPGID, tp.Signature, tp.DeleteRef, tp.MergeProposalID)
+}
+
+func (tp *TxParams) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return tp.DecodeMulti(dec, &tp.Fee, &tp.Nonce, &tp.GPGID, &tp.Signature, &tp.DeleteRef, &tp.MergeProposalID)
 }
 
 // GetNonceAsString returns the nonce as a string
-func (tl *TxParams) GetNonceAsString() string {
-	return strconv.FormatUint(tl.Nonce, 10)
+func (tp *TxParams) GetNonceAsString() string {
+	return strconv.FormatUint(tp.Nonce, 10)
 }
 
-func (tl *TxParams) String() string {
-	nonceStr := strconv.FormatUint(tl.Nonce, 10)
-	return MakeTxParams(tl.Fee.String(), nonceStr, tl.PubKeyID, []byte(tl.Signature))
+func (tp *TxParams) String() string {
+	nonceStr := strconv.FormatUint(tp.Nonce, 10)
+	return MakeTxParams(tp.Fee.String(), nonceStr, tp.GPGID, []byte(tp.Signature))
 }
 
 // MakeTxParams returns a well formatted txparams string
@@ -60,7 +84,7 @@ func MakeTxParams(txFee, txNonce, gpgID string, sig []byte, directives ...string
 	for _, a := range directives {
 		str = str + fmt.Sprintf(", %s", a)
 	}
-	if sig != nil {
+	if len(sig) > 0 {
 		str = str + fmt.Sprintf(", sig=%s", ToHex(sig))
 	}
 	return str
@@ -72,7 +96,7 @@ func MakeAndValidateTxParams(
 	txNonce,
 	gpgID string,
 	sig []byte,
-	directives ...string) (string, error) {
+	directives ...string) (*TxParams, error) {
 	str := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", txFee, txNonce, gpgID)
 	for _, a := range directives {
 		str = str + fmt.Sprintf(", %s", a)
@@ -81,16 +105,17 @@ func MakeAndValidateTxParams(
 		str = str + fmt.Sprintf(", sig=%s", ToHex(sig))
 	}
 
-	if _, err := ParseTxParams(str); err != nil {
-		return "", err
+	txParams, err := ExtractTxParams(str)
+	if err != nil {
+		return nil, err
 	}
 
-	return str, nil
+	return txParams, nil
 }
 
-// ParseTxParams finds, parses and returns the txparams found in the given msg.
+// ExtractTxParams finds, parses and returns the txparams found in the given msg.
 // Returns ErrTxParamsNotFound if no txparams in the message
-func ParseTxParams(msg string) (*TxParams, error) {
+func ExtractTxParams(msg string) (*TxParams, error) {
 	lines := strings.Split(msg, "\n")
 	txparams := ""
 
@@ -137,7 +162,7 @@ func ParseTxParams(msg string) (*TxParams, error) {
 			if len(kvParts[1]) != 42 || !IsValidGPGID(kvParts[1]) {
 				return nil, fieldError("gpgID", "gpg key id is invalid")
 			}
-			txParams.PubKeyID = kvParts[1]
+			txParams.GPGID = kvParts[1]
 			continue
 		}
 
@@ -166,10 +191,10 @@ func ParseTxParams(msg string) (*TxParams, error) {
 				return nil, fieldError("mergeID", "merge proposal id is required")
 			}
 			if !govalidator.IsNumeric(kvParts[1]) {
-				return nil, fieldError("mergeID", "merge proposal id format is not valid")
+				return nil, fieldError("mergeID", "merge proposal id must be numeric")
 			}
 			if len(kvParts[1]) > 8 {
-				return nil, fieldError("mergeID", "merge id limit of 8 bytes exceeded")
+				return nil, fieldError("mergeID", "merge proposal id exceeded 8 bytes limit")
 			}
 			txParams.MergeProposalID = kvParts[1]
 			continue

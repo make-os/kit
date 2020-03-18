@@ -24,7 +24,7 @@ func NewGPGPubKeyKeeper(state *tree.SafeTree, db storage.Tx) *GPGPubKeyKeeper {
 // gpgID: The unique ID of the public key
 // blockNum: The target block to query (Optional. Default: latest)
 //
-// CONTRACT: It returns an empty Account if no account is found.
+// CONTRACT: It returns an empty Account if no keystore is found.
 func (g *GPGPubKeyKeeper) Get(gpgID string, blockNum ...uint64) *state.GPGPubKey {
 
 	// Get version is provided

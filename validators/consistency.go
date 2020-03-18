@@ -354,16 +354,16 @@ func CheckTxNSAcquireConsistency(
 	// If transfer recipient is a repo name
 	if tx.TransferTo != "" &&
 		util.IsValidIdentifierName(tx.TransferTo) == nil &&
-		crypto.IsValidAddr(tx.TransferTo) != nil {
+		crypto.IsValidAccountAddr(tx.TransferTo) != nil {
 		if logic.RepoKeeper().Get(tx.TransferTo).IsNil() {
 			return feI(index, "to", "repo does not exist")
 		}
 	}
 
-	// If transfer recipient is an address of an account
+	// If transfer recipient is an address of an keystore
 	if tx.TransferTo != "" && util.IsValidAddr(tx.TransferTo) == nil {
 		if logic.AccountKeeper().Get(util.Address(tx.TransferTo)).IsNil() {
-			return feI(index, "to", "account does not exist")
+			return feI(index, "to", "keystore does not exist")
 		}
 	}
 

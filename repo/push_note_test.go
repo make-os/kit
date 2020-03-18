@@ -2,10 +2,11 @@ package repo
 
 import (
 	"bytes"
-	"gitlab.com/makeos/mosdef/types/core"
 	"io"
 	"os"
 	"path/filepath"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -42,11 +43,11 @@ var _ = Describe("PushNote", func() {
 	BeforeEach(func() {
 		var gpgID = []byte("pk_id")
 		pushNote = &core.PushNote{
-			RepoName:     "repo",
-			NodeSig:      []byte("node_signer_sig"),
-			PusherKeyID:  gpgID,
-			Fee:          "0.2",
-			AccountNonce: 2,
+			RepoName:        "repo",
+			NodeSig:         []byte("node_signer_sig"),
+			PusherGPGID:     gpgID,
+			Fee:             "0.2",
+			PusherAcctNonce: 2,
 			References: []*core.PushedReference{
 				{
 					Nonce:   1,

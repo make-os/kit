@@ -42,8 +42,8 @@ func makePackfileFromPushNote(repo core.BareRepo, tx *core.PushNote) (io.ReadSee
 // transaction. This is what git push sends to the git-receive-pack.
 func makeReferenceUpdateRequest(repo core.BareRepo, tx *core.PushNote) (io.ReadSeeker, error) {
 
-	// Generate a packfile
-	packfile, err := makePackfileFromPushNote(repo, tx)
+	// Generate a packFile
+	packFile, err := makePackfileFromPushNote(repo, tx)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func makeReferenceUpdateRequest(repo core.BareRepo, tx *core.PushNote) (io.ReadS
 	caps.Add(capability.DeleteRefs)
 
 	ru := packp.NewReferenceUpdateRequestFromCapabilities(caps)
-	ru.Packfile = ioutil.NopCloser(packfile)
+	ru.Packfile = ioutil.NopCloser(packFile)
 	for _, ref := range tx.References {
 		ru.Commands = append(ru.Commands, &packp.Command{
 			Name: plumbing.ReferenceName(ref.Name),

@@ -59,7 +59,7 @@ func GetGPGPublicKey(keyID string, gpgProgram, gpgHome string) (*openpgp.Entity,
 
 // GetGPGPrivateKey finds the GPG private key on the machine
 // keyID: The id of the key
-// gpgProgram: The path to the gpg executeable
+// gpgProgram: The path to the gpg executable
 func GetGPGPrivateKey(keyID string, gpgProgram, gpgHome string) (*openpgp.Entity, error) {
 
 	// Run the command to fetch the public key

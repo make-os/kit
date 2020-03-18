@@ -48,7 +48,7 @@ var _ = Describe("GPG", func() {
 				},
 				mocker: func(tp testCase) {
 					mockGPGMod := mocks.NewMockGPGModule(ctrl)
-					mockGPGMod.EXPECT().Find("gpg1_abc", uint64(0)).Return(util.Map{
+					mockGPGMod.EXPECT().Get("gpg1_abc", uint64(0)).Return(util.Map{
 						"pubKey":  "---BEGIN PUBLIC KEY...",
 						"address": "addr1",
 					})

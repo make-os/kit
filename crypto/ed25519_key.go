@@ -27,7 +27,8 @@ import (
 
 // Constants
 const (
-	AddrHRP = "maker"
+	AddrHRP     = "maker"
+	PushAddrHRP = "push"
 )
 
 // Key includes a wrapped Ed25519 private key and
@@ -86,9 +87,14 @@ func (k *Key) PeerID() string {
 	return pid
 }
 
-// Addr returns the transaction address
+// Addr returns the network account address corresponding the key
 func (k *Key) Addr() util.Address {
 	return k.PubKey().Addr()
+}
+
+// PushAddr returns the network pusher address corresponding the key
+func (k *Key) PushAddr() util.Address {
+	return k.PubKey().PushAddr()
 }
 
 // PubKey returns the public key
@@ -254,7 +260,7 @@ func (p *PubKey) AddrRaw() []byte {
 	return hash20
 }
 
-// Addr returns the bech32 address
+// Addr returns the bech32 account address
 func (p *PubKey) Addr() util.Address {
 	encoded, err := bech32.ConvertAndEncode(AddrHRP, p.AddrRaw())
 	if err != nil {
@@ -263,15 +269,54 @@ func (p *PubKey) Addr() util.Address {
 	return util.Address(encoded)
 }
 
-// IsValidAddr checks whether an address is valid
-func IsValidAddr(addr string) error {
+// PushAddr returns a bech32 pusher address
+func (p *PubKey) PushAddr() util.Address {
+	encoded, err := bech32.ConvertAndEncode(PushAddrHRP, p.AddrRaw())
+	if err != nil {
+		panic(err)
+	}
+	return util.Address(encoded)
+}
+
+// IsValidAccountAddr checks whether addr is a valid network account address
+func IsValidAccountAddr(addr string) error {
 	if addr == "" {
 		return fmt.Errorf("empty address")
 	}
 
-	_, _, err := bech32.DecodeAndConvert(addr)
+	hrp, bz, err := bech32.DecodeAndConvert(addr)
 	if err != nil {
 		return err
+	}
+
+	if hrp != AddrHRP {
+		return fmt.Errorf("invalid hrp")
+	}
+
+	if len(bz) != 20 {
+		return fmt.Errorf("invalid raw address length")
+	}
+
+	return nil
+}
+
+// IsValidPushAddr checks whether addr is a valid network push address
+func IsValidPushAddr(addr string) error {
+	if addr == "" {
+		return fmt.Errorf("empty address")
+	}
+
+	hrp, bz, err := bech32.DecodeAndConvert(addr)
+	if err != nil {
+		return err
+	}
+
+	if hrp != PushAddrHRP {
+		return fmt.Errorf("invalid hrp")
+	}
+
+	if len(bz) != 20 {
+		return fmt.Errorf("invalid raw address length")
 	}
 
 	return nil
@@ -288,7 +333,7 @@ func DecodeAddr(addr string) ([20]byte, error) {
 
 	var b [20]byte
 
-	if err := IsValidAddr(addr); err != nil {
+	if err := IsValidAccountAddr(addr); err != nil {
 		return b, err
 	}
 

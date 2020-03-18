@@ -31,13 +31,13 @@ var _ = Describe("Address", func() {
 	})
 
 	Describe(".IsPrefixedAddressBalanceAccount", func() {
-		It("should return false when not a prefixed user account address", func() {
+		It("should return false when not a prefixed user keystore address", func() {
 			Expect(IsPrefixedAddressUserAccount("abcdef")).To(BeFalse())
 		})
 		It("should return false when address has the correct prefix but invalid address", func() {
 			Expect(IsPrefixedAddressUserAccount("a/invalid")).To(BeFalse())
 		})
-		It("should return true when address is a valid prefixed balance account address", func() {
+		It("should return true when address is a valid prefixed balance keystore address", func() {
 			Expect(IsPrefixedAddressUserAccount("a/" + bech32Addr)).To(BeTrue())
 		})
 	})

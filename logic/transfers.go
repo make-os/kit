@@ -9,8 +9,8 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// execCoinTransfer transfers units of the native currency from a sender account
-// to another account.
+// execCoinTransfer transfers units of the native currency from a sender keystore
+// to another keystore.
 // EXPECT: Syntactic and consistency validation to have been performed by caller.
 //
 // ARGS:
@@ -45,7 +45,7 @@ func (t *Transaction) execCoinTransfer(
 	}
 
 	// Check if recipient address is a prefixed address (e.g r/repo or a/repo).
-	// If so, we need to get the balance account object corresponding
+	// If so, we need to get the balance keystore object corresponding
 	// to the actual resource name.
 	if recvAddr.IsPrefixed() {
 		resourceName := util.GetPrefixedAddressValue(recvAddr.String())
@@ -58,30 +58,30 @@ func (t *Transaction) execCoinTransfer(
 	}
 
 	// Check if the recipient address is a bech32 address.
-	// If so, get the account object corresponding to the address.
+	// If so, get the keystore object corresponding to the address.
 	if recvAddr.IsBech32MakerAddress() {
 		recvAcct = acctKeeper.Get(recipientAddr)
 	}
 
-	// Get the sender account and balance
+	// Get the sender keystore and balance
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	sender := spk.Addr()
 	senderAcct := acctKeeper.Get(sender)
 	senderBal := senderAcct.Balance.Decimal()
 
 	// When the sender is also the recipient, use sender
-	// account as recipient account
+	// keystore as recipient keystore
 	if sender.Equal(recipientAddr) {
 		recvAcct = senderAcct
 	}
 
 	// Calculate the spend amount and deduct the spend amount from
-	// the sender's account, then increment sender's nonce
+	// the sender's keystore, then increment sender's nonce
 	spendAmt := value.Decimal().Add(fee.Decimal())
 	senderAcct.Balance = util.String(senderBal.Sub(spendAmt).String())
 	senderAcct.Nonce = senderAcct.Nonce + 1
 
-	// Clean up and update the sender account
+	// Clean up and update the sender keystore
 	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(sender, senderAcct)
 
@@ -105,7 +105,7 @@ func (t *Transaction) execCoinTransfer(
 
 // CanExecCoinTransfer checks whether the sender can transfer the value
 // and fee of the transaction based on the current state of their
-// account. It also ensures that the transaction's nonce is the
+// keystore. It also ensures that the transaction's nonce is the
 // next/expected nonce value.
 //
 // ARGS:
@@ -152,7 +152,7 @@ func (t *Transaction) CanExecCoinTransfer(
 	spendAmt := value.Decimal().Add(fee.Decimal())
 	senderBal := senderAcct.GetSpendableBalance(chainHeight).Decimal()
 	if !senderBal.GreaterThanOrEqual(spendAmt) {
-		return util.FieldError(field, fmt.Sprintf("sender's spendable account "+
+		return util.FieldError(field, fmt.Sprintf("sender's spendable keystore "+
 			"balance is insufficient"))
 	}
 

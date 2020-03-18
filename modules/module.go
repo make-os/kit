@@ -3,10 +3,10 @@ package modules
 import (
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/account"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/extensions"
+	"gitlab.com/makeos/mosdef/keystore"
 	"gitlab.com/makeos/mosdef/mempool"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/rpc"
@@ -22,7 +22,7 @@ type Module struct {
 	service        services.Service
 	logic          core.Logic
 	mempoolReactor *mempool.Reactor
-	acctmgr        *account.AccountManager
+	acctmgr        *keystore.Keystore
 	ticketmgr      types2.TicketManager
 	dht            types.DHTNode
 	extMgr         modules.ExtManager
@@ -35,7 +35,7 @@ type Module struct {
 // provides functionality of configuring supported modules
 func New(
 	cfg *config.AppConfig,
-	acctmgr *account.AccountManager,
+	acctmgr *keystore.Keystore,
 	service services.Service,
 	logic core.Logic,
 	mempoolReactor *mempool.Reactor,

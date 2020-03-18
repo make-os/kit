@@ -412,4 +412,44 @@ var _ = Describe("Gitops", func() {
 		})
 	})
 
+	Describe(".SetRemoteURL", func() {
+
+		BeforeEach(func() {
+			_, err := script.ExecInDir(`git remote add origin http://xyz.com`, path).String()
+			Expect(err).To(BeNil())
+			Expect(script.ExecInDir(`git remote -v`, path).CountLines()).To(Equal(2))
+			out, _ := script.ExecInDir(`git remote -v`, path).String()
+			remotes := strings.Split(out, "\n")
+			Expect(remotes).To(ContainElement("origin\thttp://xyz.com (fetch)"))
+			Expect(remotes).To(ContainElement("origin\thttp://xyz.com (push)"))
+			err = gitOps.SetRemoteURL("origin", "http://abc.com")
+			Expect(err).To(BeNil())
+		})
+
+		It("should update remote URL", func() {
+			out, _ := script.ExecInDir(`git remote -v`, path).String()
+			remotes := strings.Split(out, "\n")
+			Expect(remotes).To(ContainElement("origin\thttp://abc.com (fetch)"))
+			Expect(remotes).To(ContainElement("origin\thttp://abc.com (push)"))
+		})
+	})
+
+	FDescribe(".DeleteRemoteURLs", func() {
+		BeforeEach(func() {
+			_, err := script.ExecInDir(`git remote add origin http://xyz.com`, path).String()
+			Expect(err).To(BeNil())
+			Expect(script.ExecInDir(`git remote -v`, path).CountLines()).To(Equal(2))
+			out, _ := script.ExecInDir(`git remote -v`, path).String()
+			remotes := strings.Split(out, "\n")
+			Expect(remotes).To(ContainElement("origin\thttp://xyz.com (fetch)"))
+			Expect(remotes).To(ContainElement("origin\thttp://xyz.com (push)"))
+			err = gitOps.DeleteRemoteURLs("origin")
+			Expect(err).To(BeNil())
+		})
+
+		It("should delete the remote urls", func() {
+			out, _ := script.ExecInDir(`git remote -v`, path).String()
+			Expect(strings.TrimSpace(out)).To(Equal("origin"))
+		})
+	})
 })

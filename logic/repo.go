@@ -56,26 +56,26 @@ func (t *Transaction) execRepoCreate(
 	return nil
 }
 
-// debitAccount deducts the given amount from an account,
+// debitAccount deducts the given amount from an keystore,
 // increments its nonce and saves the updates.
 // ARGS:
-// spk: The public key of the target account
+// spk: The public key of the target keystore
 // debitAmt: The amount to be debited
 // chainHeight: The current chain height
 func (t *Transaction) debitAccount(acctPubKey *crypto.PubKey, debitAmt decimal.Decimal, chainHeight uint64) {
 
-	// Get the sender account and balance
+	// Get the sender keystore and balance
 	acctKeeper := t.logic.AccountKeeper()
 	senderAcct := acctKeeper.Get(acctPubKey.Addr())
 	senderBal := senderAcct.Balance.Decimal()
 
-	// Deduct the debitAmt from the sender's account
+	// Deduct the debitAmt from the sender's keystore
 	senderAcct.Balance = util.String(senderBal.Sub(debitAmt).String())
 
 	// Increment nonce
 	senderAcct.Nonce = senderAcct.Nonce + 1
 
-	// Update the sender account
+	// Update the sender keystore
 	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(acctPubKey.Addr(), senderAcct)
 }
@@ -591,7 +591,7 @@ func (t *Transaction) execRepoProposalVote(
 	}
 
 	// When proposees are the owners, and tally method is ProposalTallyMethodCoinWeighted
-	// each proposee will use the value of the voter's account spendable balance
+	// each proposee will use the value of the voter's keystore spendable balance
 	// as their voting power.
 	if prop.Config.ProposalProposee == state.ProposeeOwner &&
 		prop.Config.ProposalTallyMethod == state.ProposalTallyMethodCoinWeighted {

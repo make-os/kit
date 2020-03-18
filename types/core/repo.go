@@ -32,6 +32,9 @@ type BareRepo interface {
 	// GetName returns the name of the repo
 	GetName() string
 
+	// GetNamespace returns the namespace this repo is associated to.
+	GetNamespace() string
+
 	// References returns an unsorted ReferenceIter for all references.
 	References() (storer.ReferenceIter, error)
 
@@ -88,6 +91,15 @@ type BareRepo interface {
 
 	// Tag returns a tag from the repository.
 	Tag(name string) (*plumbing.Reference, error)
+
+	// Get a list of remotes
+	GetRemotes() ([]*Remote, error)
+
+	// SetRemoteURL updates the URL of a remote
+	SetRemoteURL(name, newURL string) error
+
+	// DeleteRemoteURLs deletes a remote
+	DeleteRemoteURLs(name string) error
 
 	// Config return the repository config
 	Config() (*config.Config, error)
@@ -194,6 +206,11 @@ type Commit interface {
 
 	// GetHash returns the hash of the commit object
 	GetHash() plumbing.Hash
+}
+
+type Remote struct {
+	Name string
+	URLs []string
 }
 
 // PGPPubKeyGetter represents a function for fetching PGP public key
@@ -342,7 +359,7 @@ type Pruner interface {
 
 // PushedReference represents a reference that was pushed by git client
 type PushedReference struct {
-	util.SerializerHelper `json:",flatten" msgpack:"-" mapstructure:"-"`
+	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
 	Name                  string   `json:"name" msgpack:"name"`       // The full name of the reference
 	OldHash               string   `json:"oldHash" msgpack:"oldHash"` // The hash of the reference before the push
 	NewHash               string   `json:"newHash" msgpack:"newHash"` // The hash of the reference after the push

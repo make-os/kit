@@ -14,6 +14,7 @@ import (
 	"gitlab.com/makeos/mosdef/node/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
+	"gitlab.com/makeos/mosdef/types/state"
 
 	"gitlab.com/makeos/mosdef/api/rest"
 	"gitlab.com/makeos/mosdef/pkgs/cache"
@@ -32,6 +33,9 @@ const (
 	PushNoteReactorChannel = byte(0x32)
 	// PushOKReactorChannel is the channel id for sending/receiving push okays
 	PushOKReactorChannel = byte(0x33)
+
+	// DefaultNS is the default repo namespace
+	DefaultNS = "r"
 )
 
 // Constants
@@ -234,16 +238,6 @@ func (m *Manager) Cfg() *config.AppConfig {
 	return m.cfg
 }
 
-// TODO: Authorization
-func (m *Manager) handleAuth(r *http.Request) error {
-	// username, password, _ := r.BasicAuth()
-	// pp.Println(username, password)
-	// if username != "username" || password != "password" {
-	// 	return fmt.Errorf("unauthorized")
-	// }
-	return nil
-}
-
 func (m *Manager) getRepoPath(name string) string {
 	return filepath.Join(m.rootDir, name)
 }
@@ -251,17 +245,7 @@ func (m *Manager) getRepoPath(name string) string {
 // gitRequestsHandler handles incoming http request from a git client
 func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
-	m.log.Debug("NewAPI request",
-		"Method", r.Method,
-		"URL", r.URL.String(),
-		"ProtocolVersion", r.Proto)
-
-	if err := m.handleAuth(r); err != nil {
-		w.Header().Set("WWW-Authenticate", "Basic")
-		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprint(w, http.StatusText(http.StatusUnauthorized))
-		return
-	}
+	m.log.Debug("NewAPI request", "Method", r.Method, "URL", r.URL.String(), "ProtocolVersion", r.Proto)
 
 	// De-construct the URL to get the repo name and operation
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
@@ -270,10 +254,11 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	op := pathParts[2]
 
 	// Resolve the namespace if the given namespace is not the default
-	if namespace != "r" {
+	var ns *state.Namespace
+	if namespace != DefaultNS {
 
 		// Get the namespace, return 404 if not found
-		ns := m.logic.NamespaceKeeper().Get(util.HashNamespace(namespace))
+		ns = m.logic.NamespaceKeeper().Get(util.HashNamespace(namespace))
 		if ns.IsNil() {
 			w.WriteHeader(http.StatusNotFound)
 			m.log.Debug("Unknown repository", "Name", repoName, "StatusCode", http.StatusNotFound,
@@ -304,6 +289,15 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Authenticate pusher
+	pushReqTokenData, polEnforcer, err := m.handleAuth(r, repoState, ns)
+	if err != nil {
+		w.Header().Set("WWW-Authenticate", "Basic")
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, err.Error())
+		return
+	}
+
 	// Attempt to load the repository at the given path
 	repo, err := git.PlainOpen(fullRepoDir)
 	if err != nil {
@@ -319,23 +313,29 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	srvParams := &serviceParams{
-		w:  w,
-		r:  r,
-		op: op,
-		repo: &Repo{
-			name:  repoName,
-			git:   repo,
-			ops:   NewGitOps(m.gitBinPath, fullRepoDir),
-			path:  fullRepoDir,
-			state: repoState,
-		},
-		repoDir:    fullRepoDir,
-		srvName:    getService(r),
-		gitBinPath: m.gitBinPath,
+	targetRepo := &Repo{
+		name:  repoName,
+		git:   repo,
+		ops:   NewGitOps(m.gitBinPath, fullRepoDir),
+		path:  fullRepoDir,
+		state: repoState,
 	}
 
-	srvParams.pushHandler = newPushHandler(srvParams.repo, m)
+	if namespace != DefaultNS {
+		targetRepo.namespace = namespace
+	}
+
+	reqInfo := &requestInfo{
+		w:                w,
+		r:                r,
+		op:               op,
+		pushReqTokenData: pushReqTokenData,
+		repo:             targetRepo,
+		repoDir:          fullRepoDir,
+		srvName:          getService(r),
+		gitBinPath:       m.gitBinPath,
+		pushHandler:      newPushHandler(targetRepo, pushReqTokenData, polEnforcer, m),
+	}
 
 	for _, s := range services {
 		srvPattern := s[0].(string)
@@ -351,7 +351,7 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err := srv.handle(srvParams)
+		err := srv.handle(reqInfo)
 		if err != nil {
 			m.log.Error("failed to handle request", "Req", srvPattern, "Err", err)
 		}

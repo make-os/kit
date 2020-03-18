@@ -117,7 +117,7 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 // params <map>
 // params.name <string>:				The name of the namespace
 // params.value <string>:				The amount to pay for initial resources
-// params.nonce <number|string>: 		The senders next account nonce
+// params.nonce <number|string>: 		The senders next keystore nonce
 // params.fee <number|string>: 			The transaction fee to pay
 // params.timestamp <number>: 			The unix timestamp
 //
@@ -158,7 +158,7 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 // params <map>
 // params.id 		<string>: 					A unique proposal id
 // params.addresses <string>: 					A comma separated list of addresses
-// params.veto 		<bool>: 					The senders next account nonce
+// params.veto 		<bool>: 					The senders next keystore nonce
 // params.fee 		<number|string>: 			The transaction fee to pay
 // params.timestamp <number>: 					The unix timestamp
 //
@@ -200,7 +200,7 @@ func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...inter
 // params.id 		<string>: 			The proposal ID to vote on
 // params.name 		<string>: 			The name of the repository
 // params.vote 		<uint>: 			The vote choice (1) yes (0) no (-1) vote no with veto (-2) abstain
-// params.nonce 	<number|string>: 	The senders next account nonce
+// params.nonce 	<number|string>: 	The senders next keystore nonce
 // params.fee 		<number|string>: 	The transaction fee to pay
 // params.timestamp <number>: 			The unix timestamp
 //
@@ -295,7 +295,7 @@ func (m *RepoModule) Get(name string, opts ...map[string]interface{}) util.Map {
 // params.id 		<string>: 				A unique proposal ID
 // params.value 	<string|number>:		The proposal fee
 // params.config 	<map[string]string>: 	The updated repository config
-// params.nonce 	<number|string>: 		The senders next account nonce
+// params.nonce 	<number|string>: 		The senders next keystore nonce
 // params.fee 		<number|string>: 		The transaction fee to pay
 // params.timestamp <number>: 				The unix timestamp
 //
@@ -335,7 +335,7 @@ func (m *RepoModule) Update(params map[string]interface{}, options ...interface{
 // params.name 		<string>: 				The name of the repository
 // params.id 		<string>: 				A unique proposal ID
 // params.value 	<string|number>:		The amount to add
-// params.nonce 	<number|string>: 		The senders next account nonce
+// params.nonce 	<number|string>: 		The senders next keystore nonce
 // params.fee 		<number|string>: 		The transaction fee to pay
 // params.timestamp <number>: 				The unix timestamp
 //
@@ -378,7 +378,7 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 // params.baseHash 		<string>:				The base branch pre-merge hash
 // params.target 		<string>:				The target branch name
 // params.targetHash	<string>:				The target branch hash
-// params.nonce 		<number|string>: 		The senders next account nonce
+// params.nonce 		<number|string>: 		The senders next keystore nonce
 // params.fee 			<number|string>: 		The transaction fee to pay
 // params.timestamp 	<number>: 				The unix timestamp
 //
@@ -425,7 +425,7 @@ func (m *RepoModule) CreateMergeRequest(
 //	- obj 						<string>:						The policy's object
 //	- act 						<string>:						The policy's action
 // params.value 				<string|number>:				The proposal fee to pay
-// params.nonce 				<number|string>: 				The senders next account nonce
+// params.nonce 				<number|string>: 				The senders next keystore nonce
 // params.fee 					<number|string>: 				The transaction fee to pay
 // params.timestamp 			<number>: 						The unix timestamp
 // params.namespace 			<string>: 						A namespace to also register the key to

@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	path "path/filepath"
 	"regexp"
 
 	"github.com/golang/mock/gomock"
@@ -17,8 +18,6 @@ import (
 	"github.com/spf13/viper"
 	tmconfig "github.com/tendermint/tendermint/config"
 	"gitlab.com/makeos/mosdef/util"
-
-	path "path/filepath"
 
 	"github.com/mitchellh/go-homedir"
 	"gitlab.com/makeos/mosdef/config"
@@ -64,7 +63,7 @@ func SetTestCfg(opts ...string) (*config.AppConfig, error) {
 	commands.SetConfig(tmcfg)
 	commands.InitFilesCmd.RunE(nil, nil)
 	tmconfig.EnsureRoot(tmcfg.RootDir)
-	cfg.PrepareNodeValKeys(tmcfg.NodeKeyFile(), tmcfg.PrivValidatorKeyFile(),
+	cfg.LoadKeys(tmcfg.NodeKeyFile(), tmcfg.PrivValidatorKeyFile(),
 		tmcfg.PrivValidatorStateFile())
 
 	// Replace logger with Noop logger

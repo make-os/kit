@@ -30,7 +30,7 @@ func CheckRecipient(tx *core.TxRecipient, index int) error {
 	}
 
 	if strings.Index(recipient.String(), "/") == -1 {
-		if crypto.IsValidAddr(recipient.String()) != nil {
+		if crypto.IsValidAccountAddr(recipient.String()) != nil {
 			goto bad
 		}
 		return nil
@@ -485,7 +485,7 @@ func CheckNamespaceDomains(domains map[string]string, index int) error {
 		if !util.IsPrefixedAddr(target) {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: target is invalid", domain))
 		}
-		if target[:2] == "a/" && crypto.IsValidAddr(target[2:]) != nil {
+		if target[:2] == "a/" && crypto.IsValidAccountAddr(target[2:]) != nil {
 			return feI(index, "domains", fmt.Sprintf("domains.%s: target is not a valid address",
 				domain))
 		}
@@ -512,7 +512,7 @@ func CheckTxNSAcquire(tx *core.TxNamespaceAcquire, index int) error {
 	}
 
 	if tx.TransferTo != "" {
-		if crypto.IsValidAddr(tx.TransferTo) != nil && util.IsValidIdentifierName(tx.TransferTo) != nil {
+		if crypto.IsValidAccountAddr(tx.TransferTo) != nil && util.IsValidIdentifierName(tx.TransferTo) != nil {
 			return feI(index, "to", "invalid value. Expected an address or a repository name")
 		}
 	}

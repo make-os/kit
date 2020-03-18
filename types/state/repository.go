@@ -98,9 +98,9 @@ type RepoACLPolicies map[string]*RepoACLPolicy
 
 // RepoConfig contains repo-specific configuration settings
 type RepoConfig struct {
-	util.SerializerHelper
-	Governance *RepoConfigGovernance `json:"governance" mapstructure:"governance" msgpack:"governance"`
-	Policies   RepoACLPolicies       `json:"policies" mapstructure:"policies" msgpack:"policies"`
+	util.SerializerHelper `json:"-" mapstructure:"-" msgpack:"-"`
+	Governance            *RepoConfigGovernance `json:"governance" mapstructure:"governance" msgpack:"governance"`
+	Policies              RepoACLPolicies       `json:"policies" mapstructure:"policies" msgpack:"policies"`
 }
 
 func (c *RepoConfig) EncodeMsgpack(enc *msgpack.Encoder) error {
@@ -184,6 +184,12 @@ type BaseContributor struct {
 // BaseContributors is a collection of repo contributors
 type BaseContributors map[string]*BaseContributor
 
+// Has checks whether a gpg id exists
+func (rc *BaseContributors) Has(gpgID string) bool {
+	_, ok := (*rc)[gpgID]
+	return ok
+}
+
 // RepoContributor represents a repository contributor
 type RepoContributor struct {
 	FeeMode  FeeMode          `json:"feeMode" mapstructure:"feeMode" msgpack:"feeMode"`
@@ -194,6 +200,12 @@ type RepoContributor struct {
 
 // RepoContributors is a collection of repo contributors
 type RepoContributors map[string]*RepoContributor
+
+// Has checks whether a gpg id exists
+func (rc *RepoContributors) Has(gpgID string) bool {
+	_, ok := (*rc)[gpgID]
+	return ok
+}
 
 // BareRepository returns an empty repository object
 func BareRepository() *Repository {

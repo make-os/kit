@@ -9,7 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// execRegisterGPGKey associates a GPG key to an account
+// execRegisterGPGKey registers a GPG key to the network
 //
 // ARGS:
 // senderPubKey: The account public key of the sender.
@@ -51,7 +51,7 @@ func (t *Transaction) execRegisterGPGKey(
 // execUpDelGPGKey updates or deletes a registered gpg public key
 //
 // ARGS:
-// senderPubKey: The account public key of the sender.
+// senderPubKey: The keystore public key of the sender.
 // gpgID: The gpg public key ID
 // addScopes: A list of scopes to add
 // removeScopes: A list of indices pointing to scopes to be deleted.

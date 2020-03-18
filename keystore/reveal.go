@@ -1,4 +1,4 @@
-package account
+package keystore
 
 import (
 	"fmt"
@@ -8,18 +8,17 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
-
 	funk "github.com/thoas/go-funk"
 )
 
-// ReadPassFromFile reads a passphrase from a file path; prints
+// readPassFromFile reads a passphrase from a file path; prints
 // error messages to stdout
-func ReadPassFromFile(path string) (string, error) {
+func readPassFromFile(path string) (string, error) {
 	fullPath, _ := filepath.Abs(path)
 	content, err := ioutil.ReadFile(fullPath)
 	if err != nil {
 		if funk.Contains(err.Error(), "no such file") {
-			err = errors.Wrap(err, "password file not found")
+			err = errors.Wrap(err, "passphrase file not found")
 		}
 		if funk.Contains(err.Error(), "is a directory") {
 			err = errors.Wrapf(err, "path is a directory. Expected a file")
@@ -29,28 +28,30 @@ func ReadPassFromFile(path string) (string, error) {
 	return strings.TrimSpace(strings.Trim(string(content), "/n")), nil
 }
 
-// RevealCmd decrypts an account and outputs the private key.
+// RevealCmd decrypts a privKey and outputs the private privKey.
 // If pass is provide and it is not a file path, it is used as
-// the password. Otherwise, the file is read, trimmed of newline
-// characters (left and right) and used as the password. When pass
-// is set, interactive password collection is not used.
-func (am *AccountManager) RevealCmd(addrOrIdx, pass string) error {
+// the passphrase. Otherwise, the file contentis used as the
+// passphrase. When pass is not set, the user is promoted to
+// provide their passphrase.
+func (ks *Keystore) RevealCmd(addrOrIdx, pass string) error {
 
 	if addrOrIdx == "" {
 		return fmt.Errorf("address is required")
 	}
 
-	storedAcct, err := am.GetByIndexOrAddress(addrOrIdx)
+	storedAcct, err := ks.GetByIndexOrAddress(addrOrIdx)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(color.HiBlackString("Account: ") + storedAcct.GetAddress())
-
-	// if no password or password file is provided, ask for password
 	var passphrase string
+	if storedAcct.IsUnsafe() {
+		pass = DefaultPassphrase
+	}
+
+	// if no passphrase or passphrase file is provided, ask for passphrase
 	if len(pass) == 0 {
-		passphrase = am.AskForPasswordOnce()
+		passphrase = ks.AskForPasswordOnce()
 		goto unlock
 	}
 
@@ -60,8 +61,8 @@ func (am *AccountManager) RevealCmd(addrOrIdx, pass string) error {
 		goto unlock
 	}
 
-	// So, 'pass' contains a file path, read the password from it
-	passphrase, err = ReadPassFromFile(pass)
+	// So, 'pass' contains a file path, read the passphrase from it
+	passphrase, err = readPassFromFile(pass)
 	if err != nil {
 		return err
 	}
@@ -69,9 +70,10 @@ func (am *AccountManager) RevealCmd(addrOrIdx, pass string) error {
 unlock:
 
 	if err = storedAcct.Unlock(passphrase); err != nil {
-		return errors.Wrap(err, "could not unlock account")
+		return errors.Wrap(err, "could not unlock key")
 	}
 
+	fmt.Println(color.HiBlackString("Address: ") + storedAcct.GetAddress())
 	fmt.Println(color.HiCyanString("Private Key:"), storedAcct.GetKey().PrivKey().Base58())
 
 	return nil

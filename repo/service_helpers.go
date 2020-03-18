@@ -20,7 +20,7 @@ import (
 // path: the path to the file in the repository
 // contentType: The response content type to use
 // p: service parameter of the request
-func sendFile(path, contentType string, p *serviceParams) error {
+func sendFile(path, contentType string, p *requestInfo) error {
 	w, r := p.w, p.r
 	reqFile := filepath.Join(p.repoDir, path)
 
@@ -135,30 +135,30 @@ func updateServerInfo(gitBinDir, dir string) ([]byte, error) {
 }
 
 // getTextFile sends a text file
-func getTextFile(s *serviceParams) error {
+func getTextFile(s *requestInfo) error {
 	return sendFile(s.op, "text/plain; charset=utf-8", s)
 }
 
 // getLooseObject sends a loose object
-func getLooseObject(s *serviceParams) error {
+func getLooseObject(s *requestInfo) error {
 	hdrCacheForever(s.w)
 	return sendFile(s.op, "application/x-git-loose-object", s)
 }
 
 // getInfoPacks sends a pack info
-func getInfoPacks(s *serviceParams) error {
+func getInfoPacks(s *requestInfo) error {
 	hdrCacheForever(s.w)
 	return sendFile(s.op, "text/plain; charset=utf-8", s)
 }
 
 // getPackFile sends a pack file
-func getPackFile(s *serviceParams) error {
+func getPackFile(s *requestInfo) error {
 	hdrCacheForever(s.w)
 	return sendFile(s.op, "application/x-git-packed-objects", s)
 }
 
 // getIdxFile sends a pack index file
-func getIdxFile(s *serviceParams) error {
+func getIdxFile(s *requestInfo) error {
 	hdrCacheForever(s.w)
 	return sendFile(s.op, "application/x-git-packed-objects-toc", s)
 }

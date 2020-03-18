@@ -20,14 +20,14 @@ var _ = Describe("Account", func() {
 	})
 
 	Describe(".Get", func() {
-		When("account does not exist", func() {
-			It("should return a bare account", func() {
+		When("keystore does not exist", func() {
+			It("should return a bare keystore", func() {
 				acct := ak.Get(util.Address("unknown"), 0)
 				Expect(acct).To(Equal(state2.BareAccount()))
 			})
 		})
 
-		When("account exists on the latest block", func() {
+		When("keystore exists on the latest block", func() {
 			var testAcct = state2.BareAccount()
 
 			BeforeEach(func() {
@@ -39,7 +39,7 @@ var _ = Describe("Account", func() {
 				Expect(err).To(BeNil())
 			})
 
-			It("should successfully return the expected account object", func() {
+			It("should successfully return the expected keystore object", func() {
 				acct := ak.Get("addr1", 0)
 				Expect(acct).To(BeEquivalentTo(testAcct))
 			})

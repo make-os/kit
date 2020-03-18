@@ -13,7 +13,7 @@ var mergeReqCmd = &cobra.Command{
 	Short: "Create and send a merge request proposal",
 	Long:  `Create and send a merge request proposal`,
 	Run: func(cmd *cobra.Command, args []string) {
-		account, _ := cmd.Flags().GetString("account")
+		account, _ := cmd.Flags().GetString("keystore")
 		passphrase, _ := cmd.Flags().GetString("pass")
 		repoName, _ := cmd.Flags().GetString("name")
 		propID, _ := cmd.Flags().GetString("id")
@@ -60,10 +60,10 @@ func initMerge() {
 	pf.SortFlags = false
 	mergeReqCmd.Flags().SortFlags = false
 
-	// Signer account information
-	pf.StringP("account", "a", "", "Specify the sending account")
-	_ = mergeReqCmd.MarkPersistentFlagRequired("account")
-	pf.StringP("pass", "p", "", "Password to unlock signer account and skip interactive mode")
+	// Signer keystore information
+	pf.StringP("keystore", "a", "", "Specify the sending keystore")
+	_ = mergeReqCmd.MarkPersistentFlagRequired("keystore")
+	pf.StringP("pass", "p", "", "Password to unlock signer keystore and skip interactive mode")
 
 	// Merge request information
 	pf.String("name", "", "Specify the name of the target repository")

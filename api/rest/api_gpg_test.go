@@ -44,7 +44,7 @@ var _ = Describe("GPG", func() {
 				mocker: func(tc *TestCase) {
 					mockGPGModule := mocks.NewMockGPGModule(ctrl)
 					mockGPGModule.EXPECT().
-						Find("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd", uint64(1)).
+						Get("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd", uint64(1)).
 						Return(&state.GPGPubKey{
 							PubKey:  "-----BEGIN PGP PUBLIC KEY BLOCK...",
 							Address: "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc"})

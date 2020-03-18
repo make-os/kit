@@ -27,12 +27,12 @@ func (r *RESTApi) GPGFind(w http.ResponseWriter, req *http.Request) {
 	util.WriteJSON(w, 200, util.StructToMap(gpgKey))
 }
 
-// GPGGetNonceOfOwner gets the account nonce of the gpg key owner
+// GPGGetNonceOfOwner gets the keystore nonce of the gpg key owner
 // QueryParams:
 // - id: The gpg key bech32 unique ID
 // - [blockHeight]: The height of the block to query (default: latest)
 // Response <map>
-// - nonce <string> The key owner account nonce
+// - nonce <string> The key owner keystore nonce
 func (r *RESTApi) GPGGetOwnerNonce(w http.ResponseWriter, req *http.Request) {
 	query := objx.MustFromURLQuery(req.URL.Query().Encode())
 	id := query.Get("id").String()

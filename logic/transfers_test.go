@@ -66,11 +66,11 @@ var _ = Describe("Transfers", func() {
 			})
 		})
 
-		Context("when sender account has insufficient spendable balance", func() {
-			It("should not return err='sender's spendable account balance is insufficient'", func() {
+		Context("when sender keystore has insufficient spendable balance", func() {
+			It("should not return err='sender's spendable keystore balance is insufficient'", func() {
 				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 1, 1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, msg:sender's spendable account balance is insufficient"))
+				Expect(err.Error()).To(Equal("field:value, msg:sender's spendable keystore balance is insufficient"))
 			})
 		})
 
@@ -82,7 +82,7 @@ var _ = Describe("Transfers", func() {
 			})
 		})
 
-		Context("when sender account has sufficient spendable balance", func() {
+		Context("when sender keystore has sufficient spendable balance", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("1000"),
@@ -157,7 +157,7 @@ var _ = Describe("Transfers", func() {
 			})
 		})
 
-		When("recipient address is a namespaced URI with a user account target", func() {
+		When("recipient address is a namespaced URI with a user keystore target", func() {
 			ns := "namespace"
 			var senderNamespaceURI = util.Address(ns + "/domain")
 
@@ -189,7 +189,7 @@ var _ = Describe("Transfers", func() {
 			})
 		})
 
-		When("recipient address is a prefixed user account address", func() {
+		When("recipient address is a prefixed user keystore address", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("100"),
@@ -213,7 +213,7 @@ var _ = Describe("Transfers", func() {
 			})
 		})
 
-		When("recipient address is a namespaced URI with a repo account target", func() {
+		When("recipient address is a namespaced URI with a repo keystore target", func() {
 			ns := "namespace"
 			var senderNamespaceURI = util.Address(ns + "/domain")
 			var repoName = "repo1"
@@ -251,7 +251,7 @@ var _ = Describe("Transfers", func() {
 			})
 		})
 
-		When("recipient address is a prefixed user account address", func() {
+		When("recipient address is a prefixed user keystore address", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("100"),

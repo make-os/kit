@@ -3,7 +3,6 @@ package repo
 import (
 	"compress/gzip"
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"io"
 	"net/http"
 	"os"
@@ -11,28 +10,30 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 )
 
 // service describes a git service and its handler
 type service struct {
 	method string
-	handle func(*serviceParams) error
+	handle func(*requestInfo) error
 }
 
-type serviceParams struct {
-	w           http.ResponseWriter
-	r           *http.Request
-	pushHandler *PushHandler
-	repo        core.BareRepo
-	repoDir     string
-	op          string
-	srvName     string
-	gitBinPath  string
+type requestInfo struct {
+	w                http.ResponseWriter
+	r                *http.Request
+	pushReqTokenData *PushRequestTokenData
+	pushHandler      *PushHandler
+	repo             core.BareRepo
+	repoDir          string
+	op               string
+	srvName          string
+	gitBinPath       string
 }
 
 // getInfoRefs Handle incoming request for a repository's references
-func getInfoRefs(s *serviceParams) error {
+func getInfoRefs(s *requestInfo) error {
 
 	var err error
 	var refs []byte
@@ -84,7 +85,7 @@ dumbReq:
 }
 
 // serveService handles git-upload & fetch-pack requests
-func serveService(s *serviceParams) error {
+func serveService(s *requestInfo) error {
 	w, r, op, dir := s.w, s.r, s.op, s.repoDir
 	op = strings.ReplaceAll(op, "git-", "")
 

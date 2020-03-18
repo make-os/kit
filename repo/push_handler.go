@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"gitlab.com/makeos/mosdef/types/core"
+	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
@@ -16,28 +17,34 @@ import (
 
 // PushHandler provides handles all phases of a push operation
 type PushHandler struct {
-	op         string
-	repo       core.BareRepo
-	rMgr       core.RepoManager
-	oldState   core.BareRepoState
-	log        logger.Logger
-	pushReader *PushReader
-	pushNoteID string
+	op               string
+	repo             core.BareRepo
+	rMgr             core.RepoManager
+	oldState         core.BareRepoState
+	log              logger.Logger
+	pushReader       *PushReader
+	pushNoteID       string
+	polEnforcer      policyEnforcer
+	pushReqTokenData *PushRequestTokenData
 }
 
 // newPushHandler returns an instance of PushHandler
-func newPushHandler(repo core.BareRepo, rMgr core.RepoManager) *PushHandler {
+func newPushHandler(
+	repo core.BareRepo,
+	pushReqTokenData *PushRequestTokenData,
+	polEnforcer policyEnforcer,
+	rMgr core.RepoManager) *PushHandler {
 	return &PushHandler{
-		repo: repo,
-		rMgr: rMgr,
-		log:  rMgr.Log().Module("push-handler"),
+		repo:             repo,
+		rMgr:             rMgr,
+		log:              rMgr.Log().Module("push-handler"),
+		polEnforcer:      polEnforcer,
+		pushReqTokenData: pushReqTokenData,
 	}
 }
 
 // HandleStream processes git push request stream
-func (h *PushHandler) HandleStream(
-	packfile io.Reader,
-	gitReceivePack io.WriteCloser) error {
+func (h *PushHandler) HandleStream(packfile io.Reader, gitReceivePack io.WriteCloser) error {
 
 	var err error
 
@@ -56,10 +63,30 @@ func (h *PushHandler) HandleStream(
 		return errors.Wrap(err, "unable to create push reader")
 	}
 
+	// Perform actions that should happen before git consumes the stream.
+	h.pushReader.OnReferenceUpdateRequestRead(func(ur *packp.ReferenceUpdateRequest) error {
+		return h.HandleAuthorization(ur)
+	})
+
 	// Write the packfile to the push reader and read it
 	io.Copy(h.pushReader, packfile)
 	if err = h.pushReader.Read(); err != nil {
 		return errors.Wrap(err, "failed to read pushed update")
+	}
+
+	return nil
+}
+
+// HandleAuthorization performs authorization checks
+func (h *PushHandler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
+	for _, cmd := range ur.Commands {
+
+		// Pusher wants to delete the reference, can they?
+		if cmd.New.IsZero() {
+			if err := aclCheckCanDelete(h.pushReqTokenData.GPGID, h.polEnforcer); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -97,10 +124,10 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, stri
 	// When we have more than one pushed references, we need to ensure they both
 	// were signed using same public key id, if not, we return an error and also
 	// remove the pushed objects from the references and repository
-	var gpgID = funk.Values(refsTxParams).([]*util.TxParams)[0].PubKeyID
+	var gpgID = funk.Values(refsTxParams).([]*util.TxParams)[0].GPGID
 	if len(refsTxParams) > 1 {
 		for _, txParams := range refsTxParams {
-			if gpgID != txParams.PubKeyID {
+			if gpgID != txParams.GPGID {
 				errs = append(errs, fmt.Errorf("rejected because the pushed references "+
 					"were signed with multiple pgp keys"))
 				h.rMgr.GetPruner().Schedule(h.repo.GetName())
@@ -132,7 +159,6 @@ func (h *PushHandler) HandleUpdate() error {
 	if err != nil {
 		return err
 	}
-
 	h.pushNoteID = pushNote.ID().String()
 
 	// Register the push transaction to the push pool. If an error is returned
@@ -153,19 +179,23 @@ func (h *PushHandler) HandleUpdate() error {
 	return nil
 }
 
+// createPushNote creates a note that describes a push operation.
 func (h *PushHandler) createPushNote(
 	gpgID string,
 	refsTxParams map[string]*util.TxParams) (*core.PushNote, error) {
 
 	var pushNote = &core.PushNote{
-		TargetRepo:    h.repo,
-		RepoName:      h.repo.GetName(),
-		PusherKeyID:   util.MustDecodeGPGIDToRSAHash(gpgID),
-		PusherAddress: h.rMgr.GetLogic().GPGPubKeyKeeper().Get(gpgID).Address,
-		Timestamp:     time.Now().Unix(),
-		References:    core.PushedReferences([]*core.PushedReference{}),
-		NodePubKey:    h.rMgr.GetPrivateValidatorKey().PubKey().MustBytes32(),
-		Fee:           util.ZeroString,
+		TargetRepo:      h.repo,
+		RepoName:        h.repo.GetName(),
+		Namespace:       h.repo.GetNamespace(),
+		PushRequestSig:  h.pushReqTokenData.Sig,
+		PusherAcctNonce: h.pushReqTokenData.Nonce,
+		Fee:             util.String(h.pushReqTokenData.Fee),
+		PusherGPGID:     util.MustDecodeGPGIDToRSAHash(gpgID),
+		PusherAddress:   h.rMgr.GetLogic().GPGPubKeyKeeper().Get(gpgID).Address,
+		Timestamp:       time.Now().Unix(),
+		References:      core.PushedReferences{},
+		NodePubKey:      h.rMgr.GetPrivateValidatorKey().PubKey().MustBytes32(),
 	}
 
 	// Get the total size of the pushed objects
@@ -175,20 +205,9 @@ func (h *PushHandler) createPushNote(
 		return nil, errors.Wrap(err, "failed to get pushed objects size")
 	}
 
-	accountNonce := uint64(0)
+	// Add references
 	for _, ref := range h.pushReader.references {
-
-		if accountNonce == 0 {
-			accountNonce = refsTxParams[ref.name].Nonce
-			pushNote.AccountNonce = accountNonce
-		} else if accountNonce != refsTxParams[ref.name].Nonce {
-			return nil, fmt.Errorf("varying account nonce in references txparams are not allowed")
-		}
-
-		accountNonce = refsTxParams[ref.name].Nonce
-		fee := pushNote.Fee.Decimal().Add(refsTxParams[ref.name].Fee.Decimal()).String()
-		pushNote.Fee = util.String(fee)
-		pushedRef := &core.PushedReference{
+		pushNote.References = append(pushNote.References, &core.PushedReference{
 			Name:            ref.name,
 			OldHash:         ref.oldHash,
 			NewHash:         ref.newHash,
@@ -196,9 +215,7 @@ func (h *PushHandler) createPushNote(
 			Objects:         h.pushReader.objectsRefs.getObjectsOf(ref.name),
 			Delete:          refsTxParams[ref.name].DeleteRef,
 			MergeProposalID: refsTxParams[ref.name].MergeProposalID,
-		}
-
-		pushNote.References = append(pushNote.References, pushedRef)
+		})
 	}
 
 	// Sign the push transaction
@@ -265,7 +282,7 @@ func (h *PushHandler) handleReference(ref string) (*util.TxParams, []error) {
 			change,
 			oldRef,
 			txParams.MergeProposalID,
-			txParams.PubKeyID,
+			txParams.GPGID,
 			h.rMgr.GetLogic()); err != nil {
 			errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
 		}

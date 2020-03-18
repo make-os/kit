@@ -350,3 +350,26 @@ func (g *GitOps) TryMergeBranch(base, target, targetRepoDir string) error {
 
 	return errors.Wrap(err, "failed to merge")
 }
+
+// SetRemoteURL adds a URL to a remote
+func (g *GitOps) SetRemoteURL(remoteName, newURL string) error {
+	_, err := execGitCmd(g.gitBinPath, g.path, "remote", "set-url", "--add", remoteName, newURL)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// DeleteRemoteURL deletes a URL to a remote
+func (g *GitOps) DeleteRemoteURLs(remoteName string) error {
+	_, err := execGitCmd(
+		g.gitBinPath,
+		g.path,
+		"config",
+		"--unset-all",
+		fmt.Sprintf("remote.%s.url", remoteName))
+	if err != nil {
+		return err
+	}
+	return nil
+}

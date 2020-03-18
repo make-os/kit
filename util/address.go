@@ -68,7 +68,7 @@ func (a Address) IsNamespaceURI() bool {
 }
 
 // IsPrefixed checks whether the address is prefixed with a/ or /r which
-// indicates a repo and account address respectively
+// indicates a repo and keystore address respectively
 func (a Address) IsPrefixed() bool {
 	return IsPrefixedAddr(string(a))
 }
@@ -83,7 +83,7 @@ func (a Address) IsPrefixedRepoAddress() bool {
 }
 
 // IsPrefixedUserAddress checks if the address is prefixed by
-// `a/` which is used to identity an account address
+// `a/` which is used to identity an keystore address
 func (a Address) IsPrefixedUserAddress() bool {
 	if !a.IsPrefixed() {
 		return false

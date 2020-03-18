@@ -95,7 +95,7 @@ func (tx *TxPush) GetTimestamp() int64 {
 // Because TxPush is a wrapper transaction, we use the Account nonce of the pusher
 // which is found in anyone of the pushed reference
 func (tx *TxPush) GetNonce() uint64 {
-	return tx.PushNote.AccountNonce
+	return tx.PushNote.PusherAcctNonce
 }
 
 // GetFrom returns the address of the transaction sender

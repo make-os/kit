@@ -10,7 +10,7 @@ const (
 	NamespaceUser      = "user"
 	NamespaceRepo      = "repo"
 	NamespaceNS        = "ns"
-	NamespaceAccount   = "account"
+	NamespaceAccount   = "keystore"
 	NamespaceGPG       = "gpg"
 	NamespaceExtension = "ext"
 	NamespaceDHT       = "dht"

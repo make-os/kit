@@ -92,12 +92,12 @@ var _ = Describe("Push", func() {
 				Expect(repo.References.Get("refs/heads/master").Nonce).To(Equal(uint64(2)))
 			})
 
-			Specify("that fee was deducted from pusher account", func() {
+			Specify("that fee was deducted from pusher keystore", func() {
 				acct := txLogic.logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.Balance).To(Equal(util.String("9")))
 			})
 
-			Specify("that sender account nonce was incremented", func() {
+			Specify("that sender keystore nonce was incremented", func() {
 				acct := txLogic.logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.Nonce).To(Equal(uint64(2)))
 			})

@@ -62,7 +62,8 @@ var _ = Describe("PushHandler", func() {
 		mockMgr = mocks.NewMockRepoManager(ctrl)
 
 		mockMgr.EXPECT().Log().Return(cfg.G().Log)
-		handler = newPushHandler(repo, mockMgr)
+		// TODO: Use real &TxParams{} and polEnforcer
+		handler = newPushHandler(repo, &PushRequestTokenData{}, nil, mockMgr)
 
 		gpgKeyID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
 		pubKey, err = crypto.GetGPGPublicKeyStr(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())

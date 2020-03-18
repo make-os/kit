@@ -9,6 +9,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto/bls"
@@ -58,6 +59,22 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	repoState := m.logic.RepoKeeper().Get(repoName)
 	if repoState.IsNil() {
 		return fmt.Errorf("repo '%s' not found", repoName)
+	}
+
+	// Get the namespace
+	var namespace *state.Namespace
+	if pn.Namespace != "" {
+		namespace = m.logic.NamespaceKeeper().Get(pn.Namespace)
+		if namespace.IsNil() {
+			return fmt.Errorf("namespace '%s' not found", pn.Namespace)
+		}
+	}
+
+	// Perform authorization check
+	// TODO use real PushRequestTokenData
+	polEnforcer, err := authorize(&PushRequestTokenData{}, repoState, namespace, m.logic)
+	if err != nil {
+		return errors.Wrap(err, "authorization failed")
 	}
 
 	// Open the repo
@@ -130,7 +147,8 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Read, analyse and pass the packfile to git
-	pushHandler := newPushHandler(pn.TargetRepo, m)
+	// TODO use real TxParams
+	pushHandler := newPushHandler(pn.TargetRepo, &PushRequestTokenData{}, polEnforcer, m)
 	if err := pushHandler.HandleStream(packfile, in); err != nil {
 		return errors.Wrap(err, "HandleStream error")
 	}
@@ -145,8 +163,8 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		return errors.Wrap(err, "failed to process packfile derived from push note")
 	}
 
-	// Verify that push note is consistent with the txparamss
-	if err := checkPushNoteAgainstTxParamss(&pn, refsTxParams); err != nil {
+	// Verify that push note is consistent with the txparams
+	if err := checkPushNoteAgainstTxParams(&pn, refsTxParams); err != nil {
 		return errors.Wrapf(err, "push note and txparams conflict")
 	}
 

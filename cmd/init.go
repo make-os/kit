@@ -15,8 +15,38 @@
 package cmd
 
 import (
+	golog "log"
+
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/tendermint/tendermint/cmd/tendermint/commands"
+	tmcfg "github.com/tendermint/tendermint/config"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
+
+// initializeTendermint initializes tendermint
+func initializeTendermint() error {
+	commands.SetConfig(tmconfig)
+	commands.InitFilesCmd.RunE(nil, nil)
+	reconfigureTendermint()
+	tmcfg.EnsureRoot(tmconfig.RootDir)
+	return nil
+}
+
+func reconfigureTendermint() {
+
+	// Read the genesis file
+	genDoc, err := tmtypes.GenesisDocFromFile(tmconfig.GenesisFile())
+	if err != nil {
+		golog.Fatalf("Failed to read genesis file: %s", err)
+	}
+
+	// Set the chain id
+	genDoc.ChainID = viper.GetString("net.version")
+	if err = genDoc.SaveAs(tmconfig.GenesisFile()); err != nil {
+		golog.Fatalf("Failed set chain id: %s", err)
+	}
+}
 
 // initCmd represents the init command
 var initCmd = &cobra.Command{
