@@ -31,7 +31,7 @@ var _ = Describe("Reveal", func() {
 			It("should return error", func() {
 				_, err := readPassFromFile("unknown/file.txt")
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("passphrase file not found"))
+				Expect(err.Error()).To(ContainSubstring("unable to read passphrase file"))
 			})
 		})
 
@@ -41,7 +41,7 @@ var _ = Describe("Reveal", func() {
 				os.MkdirAll(dirPath, 0700)
 				_, err := readPassFromFile(dirPath)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("path is a directory. Expected a file"))
+				Expect(err.Error()).To(ContainSubstring("unable to read passphrase file"))
 			})
 		})
 

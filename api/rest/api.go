@@ -15,7 +15,7 @@ import (
 
 const (
 	MethodNameGetNonce    = "get-nonce"
-	MethodNameGetAccount  = "get-keystore"
+	MethodNameGetAccount  = "get-account"
 	MethodNameSendPayload = "send-payload"
 	MethodNameOwnerNonce  = "owner-nonce"
 	MethodNameGPGFind     = "find"

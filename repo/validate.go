@@ -481,7 +481,7 @@ func CheckPushNoteSyntax(tx *core.PushNote) error {
 	}
 
 	if tx.PusherAcctNonce == 0 {
-		return util.FieldError("accountNonce", "keystore nonce must be greater than zero")
+		return util.FieldError("accountNonce", "account nonce must be greater than zero")
 	}
 
 	if tx.Fee == "" {

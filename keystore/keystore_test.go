@@ -27,23 +27,29 @@ func testPrompt2(count *int, responses []string) promptFunc {
 
 var _ = Describe("AccountMgr", func() {
 
+	var oldStdout = os.Stdout
 	path := filepath.Join("./", "test_cfg")
 	accountPath := filepath.Join(path, config.KeystoreDirName)
 
 	BeforeEach(func() {
 		err := os.MkdirAll(accountPath, 0700)
 		Expect(err).To(BeNil())
+		_, w, _ := os.Pipe()
+		os.Stdout = w
 	})
 
 	AfterEach(func() {
+		os.Stdout = oldStdout
 		err := os.RemoveAll(path)
 		Expect(err).To(BeNil())
 	})
 
 	Describe(".hardenPassword", func() {
-		It("should return [215, 59, 34, 12, 157, 105, 253, 31, 243, 128, 41, 222, 216, 93, 165, 77, 67, 179, 85, 192, 127, 47, 171, 121, 32, 117, 125, 119, 109, 243, 32, 95]", func() {
+		It("should return [215, 59, 34, 12, 157, 105, 253, 31, 243, 128, 41, 222, 216, 93, "+
+			"165, 77, 67, 179, 85, 192, 127, 47, 171, 121, 32, 117, 125, 119, 109, 243, 32, 95]", func() {
 			bs := hardenPassword([]byte("abc"))
-			Expect(bs).To(Equal([]byte{215, 59, 34, 12, 157, 105, 253, 31, 243, 128, 41, 222, 216, 93, 165, 77, 67, 179, 85, 192, 127, 47, 171, 121, 32, 117, 125, 119, 109, 243, 32, 95}))
+			Expect(bs).To(Equal([]byte{215, 59, 34, 12, 157, 105, 253, 31, 243, 128, 41, 222,
+				216, 93, 165, 77, 67, 179, 85, 192, 127, 47, 171, 121, 32, 117, 125, 119, 109, 243, 32, 95}))
 		})
 	})
 

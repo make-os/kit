@@ -81,10 +81,10 @@ var _ = Describe("Read", func() {
 				Expect(act.GetAddress()).To(Equal(address2.Addr().String()))
 			})
 
-			It("should return err = 'keystore not found' when no keystore is found", func() {
+			It("should return err = 'key not found' when no key is found", func() {
 				_, err := am.GetByIndex(2)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(types.ErrAccountUnknown))
+				Expect(err).To(Equal(types.ErrKeyUnknown))
 			})
 		})
 
@@ -101,16 +101,16 @@ var _ = Describe("Read", func() {
 				Expect(err).To(BeNil())
 			})
 
-			It("should successfully get keystore with address", func() {
+			It("should successfully get key with address", func() {
 				act, err := am.GetByAddress(address.Addr().String())
 				Expect(err).To(BeNil())
 				Expect(act.GetAddress()).To(Equal(address.Addr().String()))
 			})
 
-			It("should return err = 'keystore not found' when address does not exist", func() {
+			It("should return err = 'key not found' when address does not exist", func() {
 				_, err := am.GetByAddress("unknown_address")
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(types.ErrAccountUnknown))
+				Expect(err).To(Equal(types.ErrKeyUnknown))
 			})
 		})
 
@@ -127,13 +127,13 @@ var _ = Describe("Read", func() {
 				Expect(err).To(BeNil())
 			})
 
-			It("should successfully get keystore by its address", func() {
+			It("should successfully get key by its address", func() {
 				act, err := am.GetByIndexOrAddress(address.Addr().String())
 				Expect(err).To(BeNil())
 				Expect(act.GetAddress()).To(Equal(address.Addr().String()))
 			})
 
-			It("should successfully get keystore by its index", func() {
+			It("should successfully get key by its index", func() {
 				act, err := am.GetByIndexOrAddress("0")
 				Expect(err).To(BeNil())
 				Expect(act.GetAddress()).To(Equal(address.Addr().String()))
@@ -143,65 +143,65 @@ var _ = Describe("Read", func() {
 
 	Describe("StoredKey", func() {
 
-		// Describe(".Unlock", func() {
-		//
-		// 	var account core.StoredKey
-		// 	var passphrase string
-		// 	am := New(accountPath)
-		//
-		// 	BeforeEach(func() {
-		// 		var err error
-		// 		seed := int64(1)
-		//
-		// 		address, _ := crypto.NewKey(&seed)
-		// 		passphrase = "edge123"
-		// 		err = am.CreateKey(address, core.KeyTypeAccount, passphrase)
-		// 		Expect(err).To(BeNil())
-		//
-		// 		account, err = am.GetDefault()
-		// 		Expect(err).To(BeNil())
-		// 		Expect(account).ToNot(BeNil())
-		// 	})
-		//
-		// 	It("should return err = 'invalid passphrase' when passphrase is invalid", func() {
-		// 		err := account.Unlock("invalid")
-		// 		Expect(err).ToNot(BeNil())
-		// 		Expect(err).To(Equal(types.ErrInvalidPassprase))
-		// 	})
-		//
-		// 	It("should return nil when decryption is successful. keystore.address must not be nil.", func() {
-		// 		err := account.Unlock(passphrase)
-		// 		Expect(err).To(BeNil())
-		// 		Expect(account.GetKey()).ToNot(BeNil())
-		// 	})
-		// })
+		Describe(".Unlock", func() {
+			var account core.StoredKey
+			var passphrase string
+			am := New(accountPath)
+
+			BeforeEach(func() {
+				var err error
+				seed := int64(1)
+
+				address, _ := crypto.NewKey(&seed)
+				passphrase = "edge123"
+				err = am.CreateKey(address, core.KeyTypeAccount, passphrase)
+				Expect(err).To(BeNil())
+
+				accounts, err := am.List()
+				Expect(err).To(BeNil())
+				Expect(accounts).To(HaveLen(1))
+				account = accounts[0]
+			})
+
+			It("should return err = 'invalid passphrase' when passphrase is invalid", func() {
+				err := account.Unlock("invalid")
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(Equal(types.ErrInvalidPassprase))
+			})
+
+			It("should return nil when decryption is successful", func() {
+				err := account.Unlock(passphrase)
+				Expect(err).To(BeNil())
+				Expect(account.GetKey()).ToNot(BeNil())
+			})
+		})
 	})
 
 	Describe("StoredKeyMeta", func() {
 		Describe(".HasKey", func() {
-			It("should return false when privKey does not exist", func() {
+			It("should return false when key does not exist", func() {
 				sa := StoredKey{meta: map[string]interface{}{}}
-				r := sa.meta.HasKey("privKey")
+				r := sa.meta.HasKey("key")
 				Expect(r).To(BeFalse())
 			})
 
-			It("should return true when privKey exist", func() {
-				sa := StoredKey{meta: map[string]interface{}{"privKey": 2}}
-				r := sa.meta.HasKey("privKey")
+			It("should return true when key exist", func() {
+				sa := StoredKey{meta: map[string]interface{}{"key": 2}}
+				r := sa.meta.HasKey("key")
 				Expect(r).To(BeTrue())
 			})
 		})
 
 		Describe(".Get", func() {
-			It("should return nil when privKey does not exist", func() {
+			It("should return nil when key does not exist", func() {
 				sa := StoredKey{meta: map[string]interface{}{}}
-				r := sa.meta.Get("privKey")
+				r := sa.meta.Get("key")
 				Expect(r).To(BeNil())
 			})
 
-			It("should return expected value when privKey exist", func() {
-				sa := StoredKey{meta: map[string]interface{}{"privKey": 2}}
-				r := sa.meta.Get("privKey")
+			It("should return expected value when key exist", func() {
+				sa := StoredKey{meta: map[string]interface{}{"key": 2}}
+				r := sa.meta.Get("key")
 				Expect(r).To(Equal(2))
 			})
 		})

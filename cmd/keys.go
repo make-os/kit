@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"os"
 	path "path/filepath"
 
 	"github.com/spf13/cobra"
@@ -35,7 +36,7 @@ Please understand that if you forget the password, it is IMPOSSIBLE to
 unlock your key. 
 
 During creation, if a passphrase is not provided, the key is still encrypted using
-a default (unsafe) passphrase and marked as 'unsafe'. You can change the passphrase 
+a default (unprotected) passphrase and marked as 'unprotected'. You can change the passphrase 
 at any time. (not recommended)
 
 Keys are stored under <DATADIR>/` + config.KeystoreDirName + `. It is safe to transfer the 
@@ -47,7 +48,7 @@ Always backup your keeps regularly.`,
 	},
 }
 
-// keyCreateCmd represents the keystore command
+// keyCreateCmd represents key creation command
 var keyCreateCmd = &cobra.Command{
 	Use:   "create [flags]",
 	Short: "Create an key.",
@@ -74,7 +75,7 @@ Always backup your keeps regularly.`,
 		if pushType {
 			kt = core.KeyTypePush
 		}
-		_, err := ks.CreateCmd(kt, seed, pass, nopass)
+		_, err := ks.CreateCmd(kt, seed, pass, nopass, os.Stdout)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
@@ -92,7 +93,7 @@ list is lexicographically sorted such that the oldest keystore will be at the to
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		ks := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
-		if err := ks.ListCmd(); err != nil {
+		if err := ks.ListCmd(os.Stdout); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -151,7 +152,7 @@ key.
 		}
 
 		ks := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
-		if err := ks.ImportCmd(keyFile, kt, pass); err != nil {
+		if err := ks.ImportCmd(keyFile, kt, pass, os.Stdout); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -178,7 +179,7 @@ Also, the flag accepts a path to a file containing a password.
 		pass := viper.GetString("node.passphrase")
 
 		ks := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
-		if err := ks.RevealCmd(address, pass); err != nil {
+		if err := ks.RevealCmd(address, pass, os.Stdout); err != nil {
 			log.Fatal(err.Error())
 		}
 	},

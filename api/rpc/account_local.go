@@ -7,7 +7,8 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// LocalAccountAPI provides RPC methods for various local keystore management functionality.
+// LocalAccountAPI provides RPC methods for
+// various local key management functionality.
 type LocalAccountAPI struct {
 	mods *modules.Modules
 }
@@ -17,7 +18,7 @@ func NewLocalAccountAPI(mods *modules.Modules) *LocalAccountAPI {
 	return &LocalAccountAPI{mods: mods}
 }
 
-// getAccount returns the keystore corresponding to the given address
+// getAccount returns the account corresponding to the given address
 // Response <map>:
 // - accounts <[]string>: list of addresses
 func (l *LocalAccountAPI) listAccounts(interface{}) (resp *rpc.Response) {

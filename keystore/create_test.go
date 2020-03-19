@@ -39,15 +39,30 @@ var _ = Describe("Create", func() {
 				Expect(err).To(BeNil())
 			})
 
-			It("should create file in the privKey directory", func() {
+			It("should create file in the keystore directory", func() {
 				entries, err := ioutil.ReadDir(keyDir)
 				Expect(err).To(BeNil())
 				Expect(entries).To(HaveLen(1))
 			})
 
-			Specify("that the created file has '_unsafe' in its name", func() {
+			Specify("that the created file has '_unprotected' in its name", func() {
 				entries, _ := ioutil.ReadDir(keyDir)
-				Expect(entries[0].Name()).To(ContainSubstring("_unsafe"))
+				Expect(entries[0].Name()).To(ContainSubstring("_unprotected"))
+			})
+		})
+
+		When("key already exist", func() {
+			BeforeEach(func() {
+				ks := New(keyDir)
+				key := crypto.NewKeyFromIntSeed(1)
+				err = ks.CreateKey(key, core.KeyTypeAccount, "")
+				Expect(err).To(BeNil())
+				err = ks.CreateKey(key, core.KeyTypeAccount, "")
+			})
+
+			It("should return error about an existing key", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("key already exists"))
 			})
 		})
 
@@ -61,7 +76,7 @@ var _ = Describe("Create", func() {
 				Expect(err).To(BeNil())
 			})
 
-			It("should create file in the privKey directory", func() {
+			It("should create file in the key directory", func() {
 				entries, err := ioutil.ReadDir(keyDir)
 				Expect(err).To(BeNil())
 				Expect(entries).To(HaveLen(1))
@@ -77,9 +92,9 @@ var _ = Describe("Create", func() {
 				Expect(err).To(BeNil())
 			})
 
-			Specify("that the created file does not have '_unsafe' in its name", func() {
+			Specify("that the created file does not have '_unprotected' in its name", func() {
 				entries, _ := ioutil.ReadDir(keyDir)
-				Expect(entries[0].Name()).ToNot(ContainSubstring("_unsafe"))
+				Expect(entries[0].Name()).ToNot(ContainSubstring("_unprotected"))
 			})
 		})
 	})

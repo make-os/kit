@@ -2,13 +2,13 @@ package keystore
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	funk "github.com/thoas/go-funk"
 )
 
 // readPassFromFile reads a passphrase from a file path; prints
@@ -17,23 +17,17 @@ func readPassFromFile(path string) (string, error) {
 	fullPath, _ := filepath.Abs(path)
 	content, err := ioutil.ReadFile(fullPath)
 	if err != nil {
-		if funk.Contains(err.Error(), "no such file") {
-			err = errors.Wrap(err, "passphrase file not found")
-		}
-		if funk.Contains(err.Error(), "is a directory") {
-			err = errors.Wrapf(err, "path is a directory. Expected a file")
-		}
-		return "", err
+		return "", errors.Wrap(err, "unable to read passphrase file")
 	}
 	return strings.TrimSpace(strings.Trim(string(content), "/n")), nil
 }
 
-// RevealCmd decrypts a privKey and outputs the private privKey.
+// RevealCmd decrypts a key and prints the private key.
 // If pass is provide and it is not a file path, it is used as
-// the passphrase. Otherwise, the file contentis used as the
-// passphrase. When pass is not set, the user is promoted to
+// the passphrase. Otherwise, the file content is used as the
+// passphrase. When pass is not set, the user is prompted to
 // provide their passphrase.
-func (ks *Keystore) RevealCmd(addrOrIdx, pass string) error {
+func (ks *Keystore) RevealCmd(addrOrIdx, pass string, out io.Writer) error {
 
 	if addrOrIdx == "" {
 		return fmt.Errorf("address is required")
@@ -45,7 +39,7 @@ func (ks *Keystore) RevealCmd(addrOrIdx, pass string) error {
 	}
 
 	var passphrase string
-	if storedAcct.IsUnsafe() {
+	if storedAcct.IsUnprotected() {
 		pass = DefaultPassphrase
 	}
 
@@ -73,8 +67,8 @@ unlock:
 		return errors.Wrap(err, "could not unlock key")
 	}
 
-	fmt.Println(color.HiBlackString("Address: ") + storedAcct.GetAddress())
-	fmt.Println(color.HiCyanString("Private Key:"), storedAcct.GetKey().PrivKey().Base58())
+	fmt.Fprintln(out, color.HiBlackString("Address: ")+storedAcct.GetAddress())
+	fmt.Fprintln(out, color.HiCyanString("Private Key:"), storedAcct.GetKey().PrivKey().Base58())
 
 	return nil
 }

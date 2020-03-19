@@ -6,7 +6,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// RPCManagerAPI provides RPC methods for various local keystore management functionality.
+// RPCManagerAPI provides RPC service management functionality.
 type RPCManagerAPI struct {
 	server *rpc.Server
 }

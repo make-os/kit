@@ -353,7 +353,7 @@ func CreateAndSendMergeRequestCmd(
 
 	// Get the signer keystore
 	am := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
-	unlocked, err := am.UIUnlockAccount(accountAddrOrIdx, passphrase)
+	unlocked, err := am.UIUnlockKey(accountAddrOrIdx, passphrase)
 	if err != nil {
 		return errors.Wrap(err, "unable to unlock")
 	}

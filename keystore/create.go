@@ -2,6 +2,7 @@ package keystore
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -20,10 +21,10 @@ const (
 	DefaultPassphrase = "passphrase"
 )
 
-// CreateKey creates a new privKey
+// CreateKey creates a new key
 func (ks *Keystore) CreateKey(key *crypto.Key, keyType core.KeyType, passphrase string) error {
 
-	// Check whether the privKey already exists. Return error if true.
+	// Check whether the key already exists. Return error if true.
 	exist, err := ks.Exist(key.Addr().String())
 	if err != nil {
 		return err
@@ -31,9 +32,8 @@ func (ks *Keystore) CreateKey(key *crypto.Key, keyType core.KeyType, passphrase 
 		return fmt.Errorf("key already exists")
 	}
 
-	// When no passphrase is provided, we use a default, publicly known
-	// and completely unsafe passphrase just so we don't leave the keys
-	// in a non-encrypted state and be forced to write special logic.
+	// When no passphrase is provided, we use a default passphrase
+	// which will cause the key to be flagged as 'unprotected'.
 	if passphrase == "" {
 		passphrase = DefaultPassphrase
 	}
@@ -41,18 +41,18 @@ func (ks *Keystore) CreateKey(key *crypto.Key, keyType core.KeyType, passphrase 
 	// Harden the passphrase
 	passphraseHardened := hardenPassword([]byte(passphrase))
 
-	// Create the serialized privKey data
+	// Create the serialized key payload
 	keyData := util.ToBytes(core.KeyPayload{
 		SecretKey:     key.PrivKey().Base58(),
 		Type:          int(keyType),
 		FormatVersion: Version,
 	})
 
-	// Encode the privKey data with base58 checksum enabled and encrypt
+	// Encode the key payload with base58 checksum enabled and encrypt
 	b58AcctBs := base58.CheckEncode(keyData, 1)
 	ct, err := util.Encrypt([]byte(b58AcctBs), passphraseHardened[:])
 	if err != nil {
-		return errors.Wrap(err, "privKey encryption failed")
+		return errors.Wrap(err, "key encryption failed")
 	}
 
 	addr := key.Addr()
@@ -60,7 +60,7 @@ func (ks *Keystore) CreateKey(key *crypto.Key, keyType core.KeyType, passphrase 
 		addr = key.PushAddr()
 	}
 
-	// Save the privKey to disk
+	// Save the key
 	now := time.Now().Unix()
 	fileName := createKeyFileName(now, addr.String(), passphrase)
 	err = ioutil.WriteFile(filepath.Join(ks.dir, fileName), ct, 0644)
@@ -74,19 +74,25 @@ func (ks *Keystore) CreateKey(key *crypto.Key, keyType core.KeyType, passphrase 
 func createKeyFileName(timeNow int64, addr, passphrase string) string {
 	fn := fmt.Sprintf("%d_%s", timeNow, addr)
 	if passphrase == DefaultPassphrase {
-		fn = fn + "_unsafe"
+		fn = fn + "_unprotected"
 	}
 	return fn
 }
 
-// CreateCmd creates a new privKey in the keystore.
+// CreateCmd creates a new key in the keystore.
 // It will prompt the user to obtain encryption passphrase if one is not provided.
-// If seed is non-zero, it is used as the seed for privKey generation, otherwise,
+// If seed is non-zero, it is used as the seed for key generation, otherwise,
 // one will be randomly generated.
 // If passphrase is a file path, the file is read and its content is used as the
 // passphrase.
-// If nopass is true, the default encryption passphrase is used and the privKey will be marked 'unsafe'
-func (ks *Keystore) CreateCmd(keyType core.KeyType, seed int64, passphrase string, nopass bool) (*crypto.Key, error) {
+// If nopass is true, the default encryption passphrase is
+// used and the key will be marked 'unprotected'
+func (ks *Keystore) CreateCmd(
+	keyType core.KeyType,
+	seed int64,
+	passphrase string,
+	nopass bool,
+	out io.Writer) (*crypto.Key, error) {
 
 	var passFromPrompt string
 	var err error
@@ -94,7 +100,7 @@ func (ks *Keystore) CreateCmd(keyType core.KeyType, seed int64, passphrase strin
 	// If no passphrase is provided, start an interactive session to
 	// collect the passphrase
 	if !nopass && strings.TrimSpace(passphrase) == "" {
-		fmt.Println("Your new privKey needs to be locked with a passphrase. Please enter a passphrase.")
+		fmt.Println("Your new key needs to be locked with a passphrase. Please enter a passphrase.")
 		passFromPrompt, err = ks.AskForPassword()
 		if err != nil {
 			return nil, err
@@ -112,7 +118,7 @@ func (ks *Keystore) CreateCmd(keyType core.KeyType, seed int64, passphrase strin
 		passFromPrompt = passphrase
 	}
 
-	// Generate a privKey
+	// Generate a key
 	key, err := crypto.NewKey(nil)
 	if seed != 0 {
 		key, err = crypto.NewKey(&seed)
@@ -121,16 +127,16 @@ func (ks *Keystore) CreateCmd(keyType core.KeyType, seed int64, passphrase strin
 		return nil, err
 	}
 
-	// Create the privKey
+	// Create the key
 	if err := ks.CreateKey(key, keyType, passFromPrompt); err != nil {
 		return nil, err
 	}
 
-	fmt.Println("New privKey created, encrypted and stored.")
+	fmt.Fprintln(out, "New key created, encrypted and stored.")
 	if keyType == core.KeyTypeAccount {
-		fmt.Println("Address:", color.CyanString(key.Addr().String()))
+		fmt.Fprintln(out, "Address:", color.CyanString(key.Addr().String()))
 	} else if keyType == core.KeyTypePush {
-		fmt.Println("Address:", color.CyanString(key.PushAddr().String()))
+		fmt.Fprintln(out, "Address:", color.CyanString(key.PushAddr().String()))
 	}
 
 	return key, nil

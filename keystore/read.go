@@ -17,7 +17,7 @@ import (
 // StoredKey represents an encrypted key stored on disk
 type StoredKey struct {
 
-	// Type indicates the privKey type
+	// Type indicates the key type
 	Type core.KeyType
 
 	// Address is the key's address
@@ -30,33 +30,34 @@ type StoredKey struct {
 	// Only available after account is unlocked.
 	Data []byte
 
-	// privKey stores the instantiated equivalent of the stored keystore privKey
+	// privKey is the actual ed25519 key
 	privKey *crypto.Key
 
 	// key is the actual key content stored on disk
 	key *core.KeyPayload
 
-	// CreatedAt represents the time the keystore was created and stored on disk
+	// CreatedAt represents the time the key was created and stored on disk
 	CreatedAt time.Time
 
-	// Unsafe indicates that the privKey is encrypted with a default passphrase
-	Unsafe bool
+	// Unprotected indicates that the key is encrypted with a default passphrase.
+	// An unprotected key is equivalent to a key that has no passphrase.
+	Unprotected bool
 
 	// The filename of the key file
 	Filename string
 
-	// Store other information about the keystore here
+	// Store arbitrary, non-persistent information about the key
 	meta core.StoredKeyMeta
 }
 
-// GetMeta returns the meta information of the keystore
+// GetMeta returns the meta information of the key
 func (sk *StoredKey) GetMeta() core.StoredKeyMeta {
 	return sk.meta
 }
 
-// IsUnsafe checks whether the privKey is encrypted using the default passphrase
-func (sk *StoredKey) IsUnsafe() bool {
-	return sk.Unsafe
+// IsUnprotected checks whether the key is encrypted using the default passphrase
+func (sk *StoredKey) IsUnprotected() bool {
+	return sk.Unprotected
 }
 
 // GetFilename returns the filename of the key file
@@ -64,12 +65,12 @@ func (sk *StoredKey) GetFilename() string {
 	return sk.Filename
 }
 
-// GetType returns the privKey type
+// GetType returns the key type
 func (sk *StoredKey) GetType() core.KeyType {
 	return sk.Type
 }
 
-// GetAddress returns the address of the keystore
+// GetAddress returns the address of the key
 func (sk *StoredKey) GetAddress() string {
 	return sk.Address
 }
@@ -85,24 +86,25 @@ func (sk *StoredKey) GetPayload() *core.KeyPayload {
 	return sk.key
 }
 
-// GetUnlockedData returns the locked data. Only available when keystore is unlocked.
+// GetUnlockedData returns the locked data.
+// Only available when key is unlocked.
 func (sk *StoredKey) GetUnlockedData() []byte {
 	return sk.Data
 }
 
-// GetUnlockedData returns the locked data. Only available when keystore is unlocked.
+// GetUnlockedData returns the locked data.
+// Only available when key is unlocked.
 func (sk *StoredKey) GetCreatedAt() time.Time {
 	return sk.CreatedAt
 }
 
-// Unlock decrypts the keystore using the given passphrase.
-// It populates the decrypted cipher and private privKey fields.
+// Unlock decrypts the key using the given passphrase.
 func (sk *StoredKey) Unlock(passphrase string) error {
 
 	passphraseBs := hardenPassword([]byte(passphrase))
 	decData, err := util.Decrypt(sk.Cipher, passphraseBs[:])
 	if err != nil {
-		if funk.Contains(err.Error(), "invalid privKey") {
+		if funk.Contains(err.Error(), "invalid key") {
 			return types.ErrInvalidPassprase
 		}
 		return err
@@ -118,11 +120,11 @@ func (sk *StoredKey) Unlock(passphrase string) error {
 	// Decode from msgpack
 	var key core.KeyPayload
 	if err := util.ToObject(keyData, &key); err != nil {
-		return fmt.Errorf("unable to parse keystore data")
+		return fmt.Errorf("unable to parse key payload")
 	}
 	sk.key = &key
 
-	// Convert the secret privKey to PrivKey object
+	// Convert the secret key to PrivKey object
 	privKey, err := crypto.PrivKeyFromBase58(key.SecretKey)
 	if err != nil {
 		return err
@@ -132,7 +134,7 @@ func (sk *StoredKey) Unlock(passphrase string) error {
 	return nil
 }
 
-// Exist checks if an privKey that matches the given address exists
+// Exist checks if a key that matches the given address exists
 func (ks *Keystore) Exist(address string) (bool, error) {
 
 	accounts, err := ks.List()
@@ -149,7 +151,7 @@ func (ks *Keystore) Exist(address string) (bool, error) {
 	return false, nil
 }
 
-// GetByIndex returns an keystore by its current position in the
+// GetByIndex returns a key by its current position in the
 // list of accounts which is ordered by the time of creation.
 func (ks *Keystore) GetByIndex(i int) (core.StoredKey, error) {
 
@@ -159,13 +161,13 @@ func (ks *Keystore) GetByIndex(i int) (core.StoredKey, error) {
 	}
 
 	if acctLen := len(accounts); acctLen-1 < i {
-		return nil, types.ErrAccountUnknown
+		return nil, types.ErrKeyUnknown
 	}
 
 	return accounts[i], nil
 }
 
-// GetByIndexOrAddress gets an keystore by either its address or index
+// GetByIndexOrAddress gets a key by either its address or index
 func (ks *Keystore) GetByIndexOrAddress(idxOrAddr string) (core.StoredKey, error) {
 	if crypto.IsValidAccountAddr(idxOrAddr) == nil {
 		return ks.GetByAddress(idxOrAddr)
@@ -174,10 +176,10 @@ func (ks *Keystore) GetByIndexOrAddress(idxOrAddr string) (core.StoredKey, error
 		idx, _ := strconv.Atoi(idxOrAddr)
 		return ks.GetByIndex(idx)
 	}
-	return nil, types.ErrAccountUnknown
+	return nil, types.ErrKeyUnknown
 }
 
-// GetByAddress gets an keystore by its address in the list of accounts.
+// GetByAddress gets a key by its address in the list of accounts.
 func (ks *Keystore) GetByAddress(addr string) (core.StoredKey, error) {
 
 	accounts, err := ks.List()
@@ -190,7 +192,7 @@ func (ks *Keystore) GetByAddress(addr string) (core.StoredKey, error) {
 	})
 
 	if account == nil {
-		return nil, types.ErrAccountUnknown
+		return nil, types.ErrKeyUnknown
 	}
 
 	return account.(*StoredKey), nil

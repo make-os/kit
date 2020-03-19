@@ -2,8 +2,8 @@ package keystore
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -30,7 +30,7 @@ func (ks *Keystore) List() (accounts []core.StoredKey, err error) {
 			continue
 		}
 
-		m, _ := regexp.Match("^[0-9]{10}_[a-zA-Z0-9]{43,}(_unsafe)?$", []byte(f.Name()))
+		m, _ := regexp.Match("^[0-9]{10}_[a-zA-Z0-9]{43,}(_unprotected)?$", []byte(f.Name()))
 		if !m {
 			continue
 		}
@@ -46,12 +46,12 @@ func (ks *Keystore) List() (accounts []core.StoredKey, err error) {
 		}
 
 		accounts = append(accounts, &StoredKey{
-			Type:      keyType,
-			Address:   address,
-			Cipher:    cipher,
-			CreatedAt: timeCreated,
-			Filename:  f.Name(),
-			Unsafe:    strings.HasSuffix(f.Name(), "_unsafe"),
+			Type:        keyType,
+			Address:     address,
+			Cipher:      cipher,
+			CreatedAt:   timeCreated,
+			Filename:    f.Name(),
+			Unprotected: strings.HasSuffix(f.Name(), "_unprotected"),
 		})
 	}
 
@@ -59,14 +59,14 @@ func (ks *Keystore) List() (accounts []core.StoredKey, err error) {
 }
 
 // ListCmd fetches and lists all accounts
-func (ks *Keystore) ListCmd() error {
+func (ks *Keystore) ListCmd(out io.Writer) error {
 
 	accts, err := ks.List()
 	if err != nil {
 		return err
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
+	table := tablewriter.NewWriter(out)
 	table.SetHeader([]string{"", "Address", "Date Created", "Tag(s)"})
 	table.SetBorder(false)
 	table.SetAutoFormatHeaders(false)
@@ -78,8 +78,8 @@ func (ks *Keystore) ListCmd() error {
 
 	for i, a := range accts {
 		tagStr := ""
-		if a.IsUnsafe() {
-			tagStr = color.RedString("unsafe")
+		if a.IsUnprotected() {
+			tagStr = color.RedString("unprotected")
 		}
 		table.Append([]string{
 			fmt.Sprintf("[%d]", i),

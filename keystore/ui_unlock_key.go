@@ -9,11 +9,11 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 )
 
-// UIUnlockAccount renders a CLI UI to unlock a target keystore.
-// addressOrIndex: The address or index of the keystore.
+// UIUnlockKey renders a CLI UI to unlock a target key..
+// addressOrIndex: The address or index of the key.
 // passphrase: The user supplied passphrase. If not provided, an
 // interactive session will be started to collect the passphrase
-func (ks *Keystore) UIUnlockAccount(addressOrIndex, passphrase string) (core.StoredKey, error) {
+func (ks *Keystore) UIUnlockKey(addressOrIndex, passphrase string) (core.StoredKey, error) {
 
 	var err error
 
@@ -26,8 +26,8 @@ func (ks *Keystore) UIUnlockAccount(addressOrIndex, passphrase string) (core.Sto
 	fmt.Println(color.HiBlackString("Chosen Account: ") + storedAcct.GetAddress())
 
 	// Set the passphrase to the default passphrase if account
-	// is encrypted with unsafe passphrase
-	if storedAcct.IsUnsafe() {
+	// is encrypted with unprotected passphrase
+	if storedAcct.IsUnprotected() {
 		passphrase = DefaultPassphrase
 	}
 
@@ -36,7 +36,7 @@ func (ks *Keystore) UIUnlockAccount(addressOrIndex, passphrase string) (core.Sto
 		passphrase = ks.AskForPasswordOnce()
 	}
 
-	// If passphrase is not a path to a file, proceed to unlock the keystore
+	// If passphrase is not a path to a file, proceed to unlock the key.
 	if !strings.HasPrefix(passphrase, "./") &&
 		!strings.HasPrefix(passphrase, "/") &&
 		filepath.Ext(passphrase) == "" {

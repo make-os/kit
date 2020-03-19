@@ -22,7 +22,7 @@ type StoredKey interface {
 	Unlock(passphrase string) error
 	GetFilename() string
 	GetAddress() string
-	IsUnsafe() bool
+	IsUnprotected() bool
 	GetType() KeyType
 	GetUnlockedData() []byte
 	GetCreatedAt() time.Time
@@ -61,7 +61,7 @@ func (sm StoredKeyMeta) Get(key string) interface{} {
 	return sm[key]
 }
 
-// KeyPayload contains the content of privKey stored on disk
+// KeyPayload contains key data that will  be stored on disk
 type KeyPayload struct {
 	SecretKey     string `json:"secretKey" msgpack:"secretKey"`
 	Type          int    `json:"type" msgpack:"type"`
