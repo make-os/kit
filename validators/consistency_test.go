@@ -1,9 +1,7 @@
 package validators_test
 
 import (
-	"crypto/rsa"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	types4 "gitlab.com/makeos/mosdef/ticket/types"
@@ -503,12 +501,12 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	Describe(".CheckTxRegisterGPGPubKeyConsistency", func() {
+	Describe(".CheckTxRegisterPushKeyConsistency", func() {
 		When("unable to get last block information", func() {
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-				tx := core.NewBareTxRegisterGPGPubKey()
-				err = validators.CheckTxRegisterGPGPubKeyConsistency(tx, -1, mockLogic)
+				tx := core.NewBareTxRegisterPushKey()
+				err = validators.CheckTxRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -517,46 +515,21 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("gpg public key is less than 2048 bits", func() {
+		When("push public key has already been registered", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxRegisterGPGPubKey()
+				tx := core.NewBareTxRegisterPushKey()
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
-				var bz []byte
-				bz, err = ioutil.ReadFile("./testdata/gpgkey1024.pub")
-				Expect(err).To(BeNil())
-				tx.PublicKey = string(bz)
+				pushKey := crypto.NewKeyFromIntSeed(1)
+				tx.PublicKey = crypto.BytesToPublicKey(pushKey.PubKey().MustBytes())
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 
-				err = validators.CheckTxRegisterGPGPubKeyConsistency(tx, -1, mockLogic)
-			})
+				gpgID := crypto.CreatePushKeyID(tx.PublicKey)
+				mockGPGPubKeyKeeper.EXPECT().Get(gpgID).Return(&state.PushKey{PubKey: pushKey.PubKey().ToPublicKey()})
 
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pubKey, msg:gpg public key bit length must be at least 2048 bits"))
-			})
-		})
-
-		When("gpg public key has already been registered", func() {
-			BeforeEach(func() {
-				tx := core.NewBareTxRegisterGPGPubKey()
-				tx.SetSenderPubKey(key.PubKey().MustBytes())
-
-				var bz []byte
-				bz, err = ioutil.ReadFile("./testdata/gpgkey.pub")
-				Expect(err).To(BeNil())
-				tx.PublicKey = string(bz)
-
-				bi := &core.BlockInfo{Height: 1}
-				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-
-				entity, _ := crypto.PGPEntityFromPubKey(tx.PublicKey)
-				gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				mockGPGPubKeyKeeper.EXPECT().Get(gpgID).Return(&state.GPGPubKey{PubKey: tx.PublicKey})
-
-				err = validators.CheckTxRegisterGPGPubKeyConsistency(tx, -1, mockLogic)
+				err = validators.CheckTxRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -567,25 +540,22 @@ var _ = Describe("TxValidator", func() {
 
 		When("coin transfer dry-run fails", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxRegisterGPGPubKey()
+				tx := core.NewBareTxRegisterPushKey()
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
-				var bz []byte
-				bz, err = ioutil.ReadFile("./testdata/gpgkey.pub")
-				Expect(err).To(BeNil())
-				tx.PublicKey = string(bz)
+				pushKey := crypto.NewKeyFromIntSeed(1)
+				tx.PublicKey = crypto.BytesToPublicKey(pushKey.PubKey().MustBytes())
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 
-				entity, _ := crypto.PGPEntityFromPubKey(tx.PublicKey)
-				gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				mockGPGPubKeyKeeper.EXPECT().Get(gpgID).Return(&state.GPGPubKey{})
+				gpgID := crypto.CreatePushKeyID(tx.PublicKey)
+				mockGPGPubKeyKeeper.EXPECT().Get(gpgID).Return(&state.PushKey{})
 
 				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					util.String("0"), tx.Fee, tx.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
-				err = validators.CheckTxRegisterGPGPubKeyConsistency(tx, -1, mockLogic)
+				err = validators.CheckTxRegisterPushKeyConsistency(tx, -1, mockLogic)
 
 			})
 
@@ -600,7 +570,7 @@ var _ = Describe("TxValidator", func() {
 		When("unable to get last block information", func() {
 			BeforeEach(func() {
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
-				tx := core.NewBareTxUpDelGPGPubKey()
+				tx := core.NewBareTxUpDelPushKey()
 				err = validators.CheckTxUpDelGPGPubKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -612,10 +582,10 @@ var _ = Describe("TxValidator", func() {
 
 		When("gpg key does not exist", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxUpDelGPGPubKey()
+				tx := core.NewBareTxUpDelPushKey()
 				tx.ID = "gpg1_abc"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 9}, nil)
-				mockGPGPubKeyKeeper.EXPECT().Get(tx.ID).Return(state.BareGPGPubKey())
+				mockGPGPubKeyKeeper.EXPECT().Get(tx.ID).Return(state.BarePushKey())
 				err = validators.CheckTxUpDelGPGPubKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -627,12 +597,12 @@ var _ = Describe("TxValidator", func() {
 
 		When("sender is not the owner of the target gpg key", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxUpDelGPGPubKey()
+				tx := core.NewBareTxUpDelPushKey()
 				tx.ID = "gpg1_abc"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 9}, nil)
 
-				gpgKey := state.BareGPGPubKey()
+				gpgKey := state.BarePushKey()
 				gpgKey.Address = "addr1"
 				mockGPGPubKeyKeeper.EXPECT().Get(tx.ID).Return(gpgKey)
 
@@ -647,13 +617,13 @@ var _ = Describe("TxValidator", func() {
 
 		When("an index in removeScopes is out of bound/range", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxUpDelGPGPubKey()
+				tx := core.NewBareTxUpDelPushKey()
 				tx.ID = "gpg1_abc"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.RemoveScopes = []int{1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 9}, nil)
 
-				gpgKey := state.BareGPGPubKey()
+				gpgKey := state.BarePushKey()
 				gpgKey.Address = key.Addr()
 				gpgKey.Scopes = []string{"scope1"}
 				mockGPGPubKeyKeeper.EXPECT().Get(tx.ID).Return(gpgKey)
@@ -669,7 +639,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("balance sufficiency dry-run fails", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxUpDelGPGPubKey()
+				tx := core.NewBareTxUpDelPushKey()
 				tx.ID = "gpg1_abc"
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.RemoveScopes = []int{0}
@@ -677,7 +647,7 @@ var _ = Describe("TxValidator", func() {
 				bi := &core.BlockInfo{Height: 9}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 
-				gpgKey := state.BareGPGPubKey()
+				gpgKey := state.BarePushKey()
 				gpgKey.Address = key.Addr()
 				gpgKey.Scopes = []string{"scope1"}
 				mockGPGPubKeyKeeper.EXPECT().Get(tx.ID).Return(gpgKey)
@@ -748,7 +718,7 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("target keystore does not exist", func() {
+		When("target account does not exist", func() {
 			BeforeEach(func() {
 				name := "name1"
 				tx := core.NewBareTxNamespaceAcquire()
@@ -763,9 +733,9 @@ var _ = Describe("TxValidator", func() {
 				err = validators.CheckTxNSAcquireConsistency(tx, -1, mockLogic)
 			})
 
-			It("should return err='field:toAccount, msg:keystore does not exist'", func() {
+			It("should return err='field:toAccount, msg:account does not exist'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:to, msg:keystore does not exist"))
+				Expect(err.Error()).To(Equal("field:to, msg:account does not exist"))
 			})
 		})
 
@@ -1577,7 +1547,7 @@ var _ = Describe("TxValidator", func() {
 	Describe(".CheckTxRepoProposalRegisterGPGKeyConsistency()", func() {
 		When("unable to get current block info", func() {
 			BeforeEach(func() {
-				tx := core.NewBareRepoProposalRegisterGPGKey()
+				tx := core.NewBareRepoProposalRegisterPushKey()
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
 				err = validators.CheckTxRepoProposalRegisterGPGKeyConsistency(tx, -1, mockLogic)
 			})
@@ -1590,7 +1560,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("namespace is set but does not exist", func() {
 			BeforeEach(func() {
-				tx := core.NewBareRepoProposalRegisterGPGKey()
+				tx := core.NewBareRepoProposalRegisterPushKey()
 				tx.Namespace = "ns1"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.Namespace), uint64(1)).Return(state.BareNamespace())
@@ -1605,7 +1575,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("namespaceOnly is set but does not exist", func() {
 			BeforeEach(func() {
-				tx := core.NewBareRepoProposalRegisterGPGKey()
+				tx := core.NewBareRepoProposalRegisterPushKey()
 				tx.NamespaceOnly = "ns1"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.NamespaceOnly), uint64(1)).Return(state.BareNamespace())
@@ -1620,7 +1590,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("namespace is not owned by the target repo", func() {
 			BeforeEach(func() {
-				tx := core.NewBareRepoProposalRegisterGPGKey()
+				tx := core.NewBareRepoProposalRegisterPushKey()
 				tx.RepoName = "repo1"
 				tx.Namespace = "ns1"
 				ns := state.BareNamespace()
@@ -1638,7 +1608,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("namespace is not owned by the target repo", func() {
 			BeforeEach(func() {
-				tx := core.NewBareRepoProposalRegisterGPGKey()
+				tx := core.NewBareRepoProposalRegisterPushKey()
 				tx.RepoName = "repo1"
 				tx.Namespace = "ns1"
 				ns := state.BareNamespace()

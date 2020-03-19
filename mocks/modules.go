@@ -522,7 +522,7 @@ func (mr *MockAccountModuleMockRecorder) SetCommission(params interface{}, optio
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCommission", reflect.TypeOf((*MockAccountModule)(nil).SetCommission), varargs...)
 }
 
-// MockGPGModule is a mock of GPGModule interface
+// MockGPGModule is a mock of PushKeyModule interface
 type MockGPGModule struct {
 	ctrl     *gomock.Controller
 	recorder *MockGPGModuleMockRecorder

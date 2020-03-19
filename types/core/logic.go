@@ -68,29 +68,29 @@ type TxKeeper interface {
 	GetTx(hash []byte) (types.BaseTx, error)
 }
 
-// BalanceAccount represents an keystore that maintains a balance
+// BalanceAccount represents an account that maintains currency balance
 type BalanceAccount interface {
 	GetBalance() util.String
 	SetBalance(bal string)
 	Clean(chainHeight uint64)
 }
 
-// AccountKeeper describes an interface for accessing keystore data
+// AccountKeeper describes an interface for accessing account data
 type AccountKeeper interface {
-	// Get returns an keystore by address.
+	// Get returns an account by address.
 	//
 	// ARGS:
-	// address: The address of the keystore
+	// address: The address of the account
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
-	// CONTRACT: It returns an empty Account if no keystore is found.
+	// CONTRACT: It returns an empty Account if no account is found.
 	Get(address util.Address, blockNum ...uint64) *state.Account
 
 	// Update sets a new object at the given address.
 	//
 	// ARGS:
-	// address: The address of the keystore to update
-	// udp: The updated keystore object to replace the existing object.
+	// address: The address of the account to update
+	// udp: The updated account object to replace the existing object.
 	Update(address util.Address, upd *state.Account)
 }
 
@@ -203,15 +203,15 @@ type NamespaceKeeper interface {
 	Update(name string, upd *state.Namespace)
 }
 
-// GPGPubKeyKeeper describes an interface for accessing gpg public key data
-type GPGPubKeyKeeper interface {
+// PushKeyKeeper describes an interface for accessing push public key information
+type PushKeyKeeper interface {
 
 	// Update sets a new value for the given public key id
 	//
 	// ARGS:
 	// gpgID: The public key unique ID
 	// udp: The updated object to replace the existing object.
-	Update(gpgID string, upd *state.GPGPubKey) error
+	Update(gpgID string, upd *state.PushKey) error
 
 	// Get returns a GPG public key
 	//
@@ -219,8 +219,8 @@ type GPGPubKeyKeeper interface {
 	// gpgID: The unique ID of the public key
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
-	// CONTRACT: It returns an empty Account if no keystore is found.
-	Get(gpgID string, blockNum ...uint64) *state.GPGPubKey
+	// CONTRACT: It returns an empty Account if no account is found.
+	Get(gpgID string, blockNum ...uint64) *state.PushKey
 
 	// GetByAddress returns all public keys associated with the given address
 	//
@@ -306,31 +306,31 @@ type Logic interface {
 // of various application components
 type Keepers interface {
 
-	// SysKeeper manages system state
+	// SysKeeper provides access to system or operation information.
 	SysKeeper() SystemKeeper
 
 	// ManagedSysKeeper returns a SystemKeeper initialized with a managed database
 	ManagedSysKeeper() SystemKeeper
 
-	// AccountKeeper manages keystore state
+	// AccountKeeper manages and provides access to network accounts
 	AccountKeeper() AccountKeeper
 
-	// ValidatorKeeper returns the validator keeper
+	// ValidatorKeeper manages and provides access to validators information
 	ValidatorKeeper() ValidatorKeeper
 
-	// TxKeeper returns the transaction keeper
+	// TxKeeper manages and provides access to transaction information
 	TxKeeper() TxKeeper
 
-	// RepoKeeper returns the repository keeper
+	// RepoKeeper manages and provides access to repository information
 	RepoKeeper() RepoKeeper
 
-	// GPGPubKeyKeeper returns the gpg public key keeper
-	GPGPubKeyKeeper() GPGPubKeyKeeper
+	// PushKeyKeeper manages and provides access to registered push keys
+	PushKeyKeeper() PushKeyKeeper
 
-	// GetTicketManager returns the ticket manager
+	// GetTicketManager manages and provides access to ticket information
 	GetTicketManager() types2.TicketManager
 
-	// NamespaceKeeper returns the namespace keeper
+	// NamespaceKeeper manages and provides access to namespace information
 	NamespaceKeeper() NamespaceKeeper
 }
 

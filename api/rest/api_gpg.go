@@ -12,7 +12,7 @@ import (
 // QueryParams:
 // - id: The gpg key bech32 unique ID
 // - [blockHeight]: The height of the block to query (default: latest)
-// Response <map> - state.GPGPubKey
+// Response <map> - state.PushKey
 func (r *RESTApi) GPGFind(w http.ResponseWriter, req *http.Request) {
 	query := objx.MustFromURLQuery(req.URL.Query().Encode())
 	id := query.Get("id").String()
@@ -23,7 +23,7 @@ func (r *RESTApi) GPGFind(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	gpgKey := r.Modules().GPG.Get(id, blockHeight)
+	gpgKey := r.Modules().PushKey.Get(id, blockHeight)
 	util.WriteJSON(w, 200, util.StructToMap(gpgKey))
 }
 
@@ -43,7 +43,7 @@ func (r *RESTApi) GPGGetOwnerNonce(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	acct := r.Modules().GPG.GetAccountOfOwner(id, blockHeight)
+	acct := r.Modules().PushKey.GetAccountOfOwner(id, blockHeight)
 
 	util.WriteJSON(w, 200, map[string]interface{}{
 		"nonce": acct["nonce"].(string),

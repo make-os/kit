@@ -5,7 +5,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// execSetDelegatorCommission sets the delegator commission of an keystore
+// execSetDelegatorCommission sets the delegator commission of an account
 //
 // ARGS:
 // senderPubKey: The sender's public key
@@ -31,13 +31,13 @@ func (t *Transaction) execSetDelegatorCommission(
 	// Set the new commission
 	senderAcct.DelegatorCommission, _ = value.Decimal().Float64()
 
-	// Deduct the fee from the sender's keystore
+	// Deduct the fee from the sender's account
 	senderAcct.Balance = util.String(senderBal.Sub(fee.Decimal()).String())
 
 	// Increment nonce
 	senderAcct.Nonce = senderAcct.Nonce + 1
 
-	// Update the sender keystore
+	// Update the sender account
 	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(sender, senderAcct)
 

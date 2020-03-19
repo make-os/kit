@@ -17,7 +17,7 @@ func (ks *Keystore) UIUnlockKey(addressOrIndex, passphrase string) (core.StoredK
 
 	var err error
 
-	// Get the keystore.
+	// Get the key
 	storedAcct, err := ks.GetByIndexOrAddress(addressOrIndex)
 	if err != nil {
 		return nil, err

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/modules"
 
 	"github.com/c-bata/go-prompt"
@@ -115,11 +115,11 @@ func (m *UtilModule) Configure() []prompt.Suggest {
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
-	util.VMSet(m.vm, types.NamespaceUtil, obj)
+	util.VMSet(m.vm, constants.NamespaceUtil, obj)
 
 	for _, f := range m.funcs() {
 		obj[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceUtil, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceUtil, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/api/rest"
 	apitypes "gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -25,7 +25,7 @@ func (c *Client) AccountGetNonce(address string, blockHeight ...uint64) (*apityp
 		height = blockHeight[0]
 	}
 
-	path := rest.RestV1Path(types.NamespaceUser, rest.MethodNameGetNonce)
+	path := rest.RestV1Path(constants.NamespaceUser, rest.MethodNameGetNonce)
 	resp, err := c.get(path, M{"address": address, "blockHeight": height})
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (c *Client) AccountGet(address string, blockHeight ...uint64) (*state.Accou
 		height = blockHeight[0]
 	}
 
-	path := rest.RestV1Path(types.NamespaceUser, rest.MethodNameGetAccount)
+	path := rest.RestV1Path(constants.NamespaceUser, rest.MethodNameGetAccount)
 	resp, err := c.get(path, M{"address": address, "blockHeight": height})
 	if err != nil {
 		return nil, err

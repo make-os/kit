@@ -39,7 +39,7 @@ func RemoveTxParams(msg string) string {
 type TxParams struct {
 	SerializerHelper
 	Fee             String `json:"fee" msgpack:"fee" mapstructure:"fee"`                   // Network fee to be paid for update to the target ref
-	Nonce           uint64 `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`             // Nonce of the keystore paying the network fee and signing the update.
+	Nonce           uint64 `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`             // Nonce of the account paying the network fee and signing the update.
 	GPGID           string `json:"gpgID" msgpack:"gpgID" mapstructure:"gpgID"`             // The GPG public key ID of the reference updater.
 	Signature       string `json:"sig" msgpack:"sig" mapstructure:"sig"`                   // The signature of the update (only used in note signing for now)
 	DeleteRef       bool   `json:"deleteRef" msgpack:"deleteRef" mapstructure:"deleteRef"` // A directive to delete the current/pushed reference.
@@ -159,7 +159,7 @@ func ExtractTxParams(msg string) (*TxParams, error) {
 			if kvParts[1] == "" {
 				return nil, fieldError("gpgID", "gpg key id is required")
 			}
-			if len(kvParts[1]) != 42 || !IsValidGPGID(kvParts[1]) {
+			if len(kvParts[1]) != 42 || !IsValidPushKeyID(kvParts[1]) {
 				return nil, fieldError("gpgID", "gpg key id is invalid")
 			}
 			txParams.GPGID = kvParts[1]

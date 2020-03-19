@@ -19,13 +19,13 @@ const (
 
 // General
 var (
-	ErrKeyUnknown       = fmt.Errorf("key not found")
-	ErrAccountUnknown   = fmt.Errorf("account not found")
-	ErrGPGPubKeyUnknown = fmt.Errorf("gpg public key not found")
-	ErrInvalidPrivKey   = fmt.Errorf("private key is invalid")
-	ErrRepoNotFound     = fmt.Errorf("repo not found")
-	ErrTxNotFound       = fmt.Errorf("transaction not found")
-	ErrInvalidPassprase = fmt.Errorf("invalid passphrase")
+	ErrKeyUnknown        = fmt.Errorf("key not found")
+	ErrAccountUnknown    = fmt.Errorf("account not found")
+	ErrPushKeyUnknown    = fmt.Errorf("gpg public key not found")
+	ErrInvalidPrivKey    = fmt.Errorf("private key is invalid")
+	ErrRepoNotFound      = fmt.Errorf("repo not found")
+	ErrTxNotFound        = fmt.Errorf("transaction not found")
+	ErrInvalidPassphrase = fmt.Errorf("invalid passphrase")
 )
 
 // Decode/Cast Error

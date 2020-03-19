@@ -3,6 +3,7 @@ package rpc
 import (
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -34,7 +35,7 @@ func (t *TransactionAPI) sendPayload(params interface{}) (resp *rpc.Response) {
 func (l *TransactionAPI) APIs() rpc.APISet {
 	return map[string]rpc.APIInfo{
 		"sendPayload": {
-			Namespace:   types.NamespaceTx,
+			Namespace:   constants.NamespaceTx,
 			Description: "Sends a signed transaction object to the mempool",
 			Func:        l.sendPayload,
 		},

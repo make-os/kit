@@ -6,6 +6,7 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/keystore"
 	"gitlab.com/makeos/mosdef/node/services"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
@@ -108,12 +109,12 @@ func (m *AccountModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
 	// Set the namespace object
-	util.VMSet(m.vm, apptypes.NamespaceUser, fMap)
+	util.VMSet(m.vm, constants.NamespaceUser, fMap)
 
 	// add namespaced functions
 	for _, f := range m.namespacedFuncs() {
 		fMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", apptypes.NamespaceUser, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceUser, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
@@ -175,7 +176,7 @@ func (m *AccountModule) GetKey(address string, passphrase ...string) string {
 
 	// Unlock the key using the passphrase
 	if err := acct.Unlock(pass); err != nil {
-		if err == apptypes.ErrInvalidPassprase {
+		if err == apptypes.ErrInvalidPassphrase {
 			panic(util.NewStatusError(401, StatusCodeInvalidPass, "passphrase", err.Error()))
 		}
 		panic(util.NewStatusError(500, StatusCodeAppErr, "passphrase", err.Error()))
@@ -216,7 +217,7 @@ func (m *AccountModule) GetPublicKey(address string, passphrase ...string) strin
 
 	// Unlock the key using the passphrase
 	if err := acct.Unlock(pass); err != nil {
-		if err == apptypes.ErrInvalidPassprase {
+		if err == apptypes.ErrInvalidPassphrase {
 			panic(util.NewStatusError(401, StatusCodeInvalidPass, "passphrase", err.Error()))
 		}
 		panic(util.NewStatusError(500, StatusCodeAppErr, "passphrase", err.Error()))
@@ -271,7 +272,7 @@ func (m *AccountModule) GetSpendableBalance(address string, height ...uint64) st
 	return acct.GetSpendableBalance(uint64(curBlockInfo.Height)).String()
 }
 
-// getStakedBalance returns the total staked coins of an keystore
+// getStakedBalance returns the total staked coins of an account
 //
 // ARGS:
 // address: The address corresponding the account
@@ -317,7 +318,7 @@ func (m *AccountModule) GetPrivateValidator(includePrivKey ...bool) util.Map {
 	return info
 }
 
-// setCommission sets the delegator commission for an keystore
+// setCommission sets the delegator commission for an account
 //
 // ARGS:
 // params <map>

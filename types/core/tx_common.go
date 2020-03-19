@@ -16,23 +16,23 @@ import (
 
 // All Transaction type
 var (
-	TxTypeCoinTransfer               = 1  // For native coin transfer to/between accounts
-	TxTypeValidatorTicket            = 2  // For validator ticket purchase
-	TxTypeSetDelegatorCommission     = 3  // For setting delegator commission
-	TxTypeHostTicket                 = 4  // For purchasing host ticket
-	TxTypeUnbondHostTicket           = 5  // For unbonding host ticket
-	TxTypeRepoCreate                 = 6  // For creating a repository
-	TxTypeRegisterGPGPubKey          = 7  // For adding a GPG public key
-	TxTypePush                       = 8  // For pushing updates to a repository
-	TxTypeNSAcquire                  = 9  // For namespace purchase
-	TxTypeNSDomainUpdate             = 10 // For setting namespace domains
-	TxTypeRepoProposalUpsertOwner    = 11 // For creating a proposal to add repo owner
-	TxTypeRepoProposalVote           = 12 // For voting on a repo proposal
-	TxTypeRepoProposalUpdate         = 13 // For creating a repo update proposal
-	TxTypeRepoProposalSendFee        = 14 // For native coin transfer to repo as proposal fee
-	TxTypeRepoProposalMergeRequest   = 15 // For merge request
-	TxTypeRepoProposalRegisterGPGKey = 16 // For adding GPG key to a repo
-	TxTypeUpDelGPGPubKey             = 17 // For updating or deleting a GPG public key
+	TxTypeCoinTransfer                = 1  // For native coin transfer to/between accounts
+	TxTypeValidatorTicket             = 2  // For validator ticket purchase
+	TxTypeSetDelegatorCommission      = 3  // For setting delegator commission
+	TxTypeHostTicket                  = 4  // For purchasing host ticket
+	TxTypeUnbondHostTicket            = 5  // For unbonding host ticket
+	TxTypeRepoCreate                  = 6  // For creating a repository
+	TxTypeRegisterPushKey             = 7  // For adding a GPG public key
+	TxTypePush                        = 8  // For pushing updates to a repository
+	TxTypeNSAcquire                   = 9  // For namespace purchase
+	TxTypeNSDomainUpdate              = 10 // For setting namespace domains
+	TxTypeRepoProposalUpsertOwner     = 11 // For creating a proposal to add repo owner
+	TxTypeRepoProposalVote            = 12 // For voting on a repo proposal
+	TxTypeRepoProposalUpdate          = 13 // For creating a repo update proposal
+	TxTypeRepoProposalSendFee         = 14 // For native coin transfer to repo as proposal fee
+	TxTypeRepoProposalMergeRequest    = 15 // For merge request
+	TxTypeRepoProposalRegisterPushKey = 16 // For adding push keys to a repo
+	TxTypeUpDelPushKey                = 17 // For updating or deleting a push key
 )
 
 // TxMeta stores arbitrary, self-contained state information for a transaction
@@ -424,8 +424,8 @@ func getBareTxObject(txType int) (types.BaseTx, error) {
 		tx = NewBareTxTicketUnbond(TxTypeUnbondHostTicket)
 	case TxTypeRepoCreate:
 		tx = NewBareTxRepoCreate()
-	case TxTypeRegisterGPGPubKey:
-		tx = NewBareTxRegisterGPGPubKey()
+	case TxTypeRegisterPushKey:
+		tx = NewBareTxRegisterPushKey()
 	case TxTypePush:
 		tx = NewBareTxPush()
 	case TxTypeNSAcquire:
@@ -442,10 +442,10 @@ func getBareTxObject(txType int) (types.BaseTx, error) {
 		tx = NewBareRepoProposalFeeSend()
 	case TxTypeRepoProposalMergeRequest:
 		tx = NewBareRepoProposalMergeRequest()
-	case TxTypeRepoProposalRegisterGPGKey:
-		tx = NewBareRepoProposalRegisterGPGKey()
-	case TxTypeUpDelGPGPubKey:
-		tx = NewBareTxUpDelGPGPubKey()
+	case TxTypeRepoProposalRegisterPushKey:
+		tx = NewBareRepoProposalRegisterPushKey()
+	case TxTypeUpDelPushKey:
+		tx = NewBareTxUpDelPushKey()
 	default:
 		return nil, fmt.Errorf("unsupported tx type")
 	}
@@ -487,8 +487,8 @@ func NewBaseTx(txType int,
 		tx := NewBareTxRepoCreate()
 		tx.SetValue(value)
 		baseTx = tx
-	case TxTypeRegisterGPGPubKey:
-		tx := NewBareTxRegisterGPGPubKey()
+	case TxTypeRegisterPushKey:
+		tx := NewBareTxRegisterPushKey()
 		baseTx = tx
 	default:
 		panic("unsupported tx type")

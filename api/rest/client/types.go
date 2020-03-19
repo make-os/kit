@@ -14,5 +14,5 @@ type RestClient interface {
 	GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error)
 	PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error)
 	GPGGetNonceOfOwner(gpgID string, blockHeight ...uint64) (*types.AccountGetNonceResponse, error)
-	GPGFind(gpgID string, blockHeight ...uint64) (*state.GPGPubKey, error)
+	GPGFind(gpgID string, blockHeight ...uint64) (*state.PushKey, error)
 }

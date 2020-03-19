@@ -141,14 +141,14 @@ func (mr *MockRestClientMockRecorder) GPGGetNonceOfOwner(gpgID interface{}, bloc
 }
 
 // GPGFind mocks base method
-func (m *MockRestClient) GPGFind(gpgID string, blockHeight ...uint64) (*state.GPGPubKey, error) {
+func (m *MockRestClient) GPGFind(gpgID string, blockHeight ...uint64) (*state.PushKey, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{gpgID}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GPGFind", varargs...)
-	ret0, _ := ret[0].(*state.GPGPubKey)
+	ret0, _ := ret[0].(*state.PushKey)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

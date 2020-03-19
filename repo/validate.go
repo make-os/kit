@@ -10,7 +10,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/dht/types"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	types2 "gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 
@@ -257,7 +257,7 @@ func checkMergeCompliance(
 	}
 
 	// Ensure the signer is the creator of the proposal
-	gpgKey := keepers.GPGPubKeyKeeper().Get(gpgID)
+	gpgKey := keepers.PushKeyKeeper().Get(gpgID)
 	if gpgKey.Address.String() != prop.Creator {
 		return fmt.Errorf("merge compliance error: "+
 			"signer must be the creator of the merge proposal (%s)", mergeProposalID)
@@ -274,7 +274,7 @@ func checkMergeCompliance(
 
 	// Ensure the proposal's base branch matches the pushed branch
 	var propBaseBranch string
-	_ = util.ToObject(prop.ActionData[types2.ActionDataKeyBaseBranch], &propBaseBranch)
+	_ = util.ToObject(prop.ActionData[constants.ActionDataKeyBaseBranch], &propBaseBranch)
 	if ref.Short() != propBaseBranch {
 		return fmt.Errorf("merge compliance error: pushed branch name and " +
 			"merge proposal base branch name must match")
@@ -321,7 +321,7 @@ func checkMergeCompliance(
 
 	// When no base hash is given, set default hash value to zero hash
 	var propBaseHash string
-	_ = util.ToObject(prop.ActionData[types2.ActionDataKeyBaseHash], &propBaseHash)
+	_ = util.ToObject(prop.ActionData[constants.ActionDataKeyBaseHash], &propBaseHash)
 	propBaseHashStr := plumbing.ZeroHash.String()
 	if propBaseHash != "" {
 		propBaseHashStr = propBaseHash
@@ -336,7 +336,7 @@ func checkMergeCompliance(
 
 	// Ensure the target commit and the proposal target match
 	var propTargetHash string
-	_ = util.ToObject(prop.ActionData[types2.ActionDataKeyTargetHash], &propTargetHash)
+	_ = util.ToObject(prop.ActionData[constants.ActionDataKeyTargetHash], &propTargetHash)
 	if targetCommit.GetHash().String() != propTargetHash {
 		return fmt.Errorf("merge compliance error: target commit hash and " +
 			"the merge proposal target hash must match")
@@ -395,7 +395,7 @@ func checkPushNoteAgainstTxParams(pn *core.PushNote, txParams map[string]*util.T
 
 	// Push note pusher public key must match txparams key
 	txParamssObjs := funk.Values(txParams).([]*util.TxParams)
-	if !bytes.Equal(pn.PusherGPGID, util.MustDecodeGPGIDToRSAHash(txParamssObjs[0].GPGID)) {
+	if !bytes.Equal(pn.PushKeyID, util.MustDecodeGPGIDToRSAHash(txParamssObjs[0].GPGID)) {
 		return fmt.Errorf("push note pusher public key id does not match " +
 			"txparams pusher public key id")
 	}
@@ -466,10 +466,10 @@ func CheckPushNoteSyntax(tx *core.PushNote) error {
 		}
 	}
 
-	if len(tx.PusherGPGID) == 0 {
+	if len(tx.PushKeyID) == 0 {
 		return util.FieldError("pusherKeyId", "pusher gpg key id is required")
 	}
-	if len(tx.PusherGPGID) != 20 {
+	if len(tx.PushKeyID) != 20 {
 		return util.FieldError("pusherKeyId", "pusher gpg key is not valid")
 	}
 
@@ -581,9 +581,9 @@ func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
 	}
 
 	// Get gpg key of the pusher
-	gpgKey := logic.GPGPubKeyKeeper().Get(util.MustCreateGPGID(tx.PusherGPGID))
+	gpgKey := logic.PushKeyKeeper().Get(util.MustCreateGPGID(tx.PushKeyID))
 	if gpgKey.IsNil() {
-		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", tx.PusherGPGID)
+		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", tx.PushKeyID)
 		return util.FieldError("pusherKeyId", msg)
 	}
 
@@ -592,14 +592,14 @@ func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
 		return util.FieldError("pusherAddr", "gpg key is not associated with the pusher address")
 	}
 
-	// Ensure next pusher keystore nonce matches the pushed note's keystore nonce
+	// Ensure next pusher account nonce matches the pushed note's keystore nonce
 	pusherAcct := logic.AccountKeeper().Get(tx.PusherAddress)
 	if pusherAcct.IsNil() {
-		return util.FieldError("pusherAddr", "pusher keystore not found")
+		return util.FieldError("pusherAddr", "pusher account not found")
 	}
 	nextNonce := pusherAcct.Nonce + 1
 	if tx.PusherAcctNonce != nextNonce {
-		msg := fmt.Sprintf("wrong keystore nonce '%d', expecting '%d'", tx.PusherAcctNonce, nextNonce)
+		msg := fmt.Sprintf("wrong account nonce '%d', expecting '%d'", tx.PusherAcctNonce, nextNonce)
 		return util.FieldError("accountNonce", msg)
 	}
 
@@ -773,9 +773,9 @@ func checkPushRequestTokenData(prt *PushRequestTokenData, keepers core.Keepers) 
 func checkPushRequestTokenDataSanity(prt *PushRequestTokenData) error {
 
 	if prt.GPGID == "" {
-		return util.FieldError("gpgID", "gpg id is required")
-	} else if !util.IsValidGPGID(prt.GPGID) {
-		return util.FieldError("gpgID", "gpg id is not valid")
+		return util.FieldError("gpgID", "push key id is required")
+	} else if !util.IsValidPushKeyID(prt.GPGID) {
+		return util.FieldError("gpgID", "push key id is not valid")
 	}
 
 	if prt.Nonce == 0 {
@@ -789,7 +789,7 @@ func checkPushRequestTokenDataSanity(prt *PushRequestTokenData) error {
 // against the current state of the system
 func checkPushRequestTokenDataConsistency(prt *PushRequestTokenData, keepers core.Keepers) error {
 
-	gpgKey := keepers.GPGPubKeyKeeper().Get(prt.GPGID)
+	gpgKey := keepers.PushKeyKeeper().Get(prt.GPGID)
 	if gpgKey.IsNil() {
 		return util.FieldError("gpgID", "gpg id is required")
 	}
@@ -797,7 +797,7 @@ func checkPushRequestTokenDataConsistency(prt *PushRequestTokenData, keepers cor
 	keyOwner := keepers.AccountKeeper().Get(gpgKey.Address)
 	if prt.Nonce <= keyOwner.Nonce {
 		return util.FieldError("nonce", "nonce cannot be less or equal to the current "+
-			"nonce of the gpg key owner's keystore")
+			"nonce of the gpg key owner's account")
 	}
 
 	return nil

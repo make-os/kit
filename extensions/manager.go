@@ -12,13 +12,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/modules"
 
 	"gitlab.com/makeos/mosdef/util"
 
 	prompt "github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
-	"gitlab.com/makeos/mosdef/types"
 )
 
 // Manager provides extension management capabilities
@@ -74,12 +74,12 @@ func (m *Manager) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
 	// Set the namespace object
-	util.VMSet(m.vm, types.NamespaceExtension, fMap)
+	util.VMSet(m.vm, constants.NamespaceExtension, fMap)
 
 	// add namespaced functions
 	for _, f := range m.namespacedFuncs() {
 		fMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceExtension, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceExtension, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}

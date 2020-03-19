@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 
@@ -56,26 +56,26 @@ func (t *Transaction) execRepoCreate(
 	return nil
 }
 
-// debitAccount deducts the given amount from an keystore,
+// debitAccount deducts the given amount from an account,
 // increments its nonce and saves the updates.
 // ARGS:
-// spk: The public key of the target keystore
+// spk: The public key of the target account
 // debitAmt: The amount to be debited
 // chainHeight: The current chain height
 func (t *Transaction) debitAccount(acctPubKey *crypto.PubKey, debitAmt decimal.Decimal, chainHeight uint64) {
 
-	// Get the sender keystore and balance
+	// Get the sender account and balance
 	acctKeeper := t.logic.AccountKeeper()
 	senderAcct := acctKeeper.Get(acctPubKey.Addr())
 	senderBal := senderAcct.Balance.Decimal()
 
-	// Deduct the debitAmt from the sender's keystore
+	// Deduct the debitAmt from the sender's account
 	senderAcct.Balance = util.String(senderBal.Sub(debitAmt).String())
 
 	// Increment nonce
 	senderAcct.Nonce = senderAcct.Nonce + 1
 
-	// Update the sender keystore
+	// Update the sender's account
 	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(acctPubKey.Addr(), senderAcct)
 }
@@ -90,9 +90,9 @@ func applyProposalUpsertOwner(
 	// Get the action data
 	ad := proposal.GetActionData()
 	var targetAddrs []string
-	util.ToObject(ad[types.ActionDataKeyAddrs], &targetAddrs)
+	util.ToObject(ad[constants.ActionDataKeyAddrs], &targetAddrs)
 	var veto bool
-	util.ToObject(ad[types.ActionDataKeyVeto], &veto)
+	util.ToObject(ad[constants.ActionDataKeyVeto], &veto)
 
 	// Register new repo owner iif the target address does not
 	// already exist as an owner. If it exists, just update select fields.
@@ -144,8 +144,8 @@ func (t *Transaction) execRepoProposalUpsertOwner(
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = state.ProposalActionAddOwner
 	proposal.ActionData = map[string][]byte{
-		types.ActionDataKeyAddrs: util.ToBytes(addresses),
-		types.ActionDataKeyVeto:  util.ToBytes(veto),
+		constants.ActionDataKeyAddrs: util.ToBytes(addresses),
+		constants.ActionDataKeyVeto:  util.ToBytes(veto),
 	}
 
 	// Deduct network fee + proposal fee from sender
@@ -178,7 +178,7 @@ func applyProposalRepoUpdate(
 	chainHeight uint64) error {
 
 	var cfgUpd map[string]interface{}
-	util.ToObject(proposal.GetActionData()[types.ActionDataKeyCFG], &cfgUpd)
+	util.ToObject(proposal.GetActionData()[constants.ActionDataKeyCFG], &cfgUpd)
 
 	// Merge update with existing config
 	repo.Config.MergeMap(cfgUpd)
@@ -228,7 +228,7 @@ func (t *Transaction) execRepoProposalUpdate(
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = state.ProposalActionRepoUpdate
-	proposal.ActionData[types.ActionDataKeyCFG] = util.ToBytes(config)
+	proposal.ActionData[constants.ActionDataKeyCFG] = util.ToBytes(config)
 
 	// Deduct network fee + proposal fee from sender
 	totalFee := fee.Decimal().Add(proposalFee.Decimal())
@@ -376,10 +376,10 @@ func (t *Transaction) execRepoProposalMergeRequest(
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = state.ProposalActionMergeRequest
 	proposal.ActionData = map[string][]byte{
-		types.ActionDataKeyBaseBranch:   util.ToBytes(baseBranch),
-		types.ActionDataKeyBaseHash:     util.ToBytes(baseBranchHash),
-		types.ActionDataKeyTargetBranch: util.ToBytes(targetBranch),
-		types.ActionDataKeyTargetHash:   util.ToBytes(targetBranchHash),
+		constants.ActionDataKeyBaseBranch:   util.ToBytes(baseBranch),
+		constants.ActionDataKeyBaseHash:     util.ToBytes(baseBranchHash),
+		constants.ActionDataKeyTargetBranch: util.ToBytes(targetBranch),
+		constants.ActionDataKeyTargetHash:   util.ToBytes(targetBranchHash),
 	}
 
 	// Deduct network fee + proposal fee from sender
@@ -416,29 +416,29 @@ func applyProposalRegisterGPGKeys(
 
 	// Extract the policies.
 	var policies []*state.RepoACLPolicy
-	_ = util.ToObject(ad[types.ActionDataKeyPolicies], &policies)
+	_ = util.ToObject(ad[constants.ActionDataKeyPolicies], &policies)
 
-	// Extract the gpg IDs.
-	var gpgIDs []string
-	_ = util.ToObject(ad[types.ActionDataKeyIDs], &gpgIDs)
+	// Extract the push key IDs.
+	var pushKeyIDs []string
+	_ = util.ToObject(ad[constants.ActionDataKeyIDs], &pushKeyIDs)
 
 	// Extract fee mode and fee cap
 	var feeMode state.FeeMode
-	_ = util.ToObject(ad[types.ActionDataKeyFeeMode], &feeMode)
+	_ = util.ToObject(ad[constants.ActionDataKeyFeeMode], &feeMode)
 	var feeCap = util.String("0")
 	if feeMode == state.FeeModeRepoPaysCapped {
-		_ = util.ToObject(ad[types.ActionDataKeyFeeCap], &feeCap)
+		_ = util.ToObject(ad[constants.ActionDataKeyFeeCap], &feeCap)
 	}
 
 	// Get any target namespace.
 	var namespace, namespaceOnly, targetNS string
 	var ns *state.Namespace
-	if _, ok := ad[types.ActionDataKeyNamespace]; ok {
-		util.ToObject(ad[types.ActionDataKeyNamespace], &namespace)
+	if _, ok := ad[constants.ActionDataKeyNamespace]; ok {
+		util.ToObject(ad[constants.ActionDataKeyNamespace], &namespace)
 		targetNS = namespace
 	}
-	if _, ok := ad[types.ActionDataKeyNamespaceOnly]; ok {
-		util.ToObject(ad[types.ActionDataKeyNamespaceOnly], &namespaceOnly)
+	if _, ok := ad[constants.ActionDataKeyNamespaceOnly]; ok {
+		util.ToObject(ad[constants.ActionDataKeyNamespaceOnly], &namespaceOnly)
 		targetNS = namespaceOnly
 	}
 	if targetNS != "" {
@@ -448,24 +448,24 @@ func applyProposalRegisterGPGKeys(
 		}
 	}
 
-	// For each gpg ID, add a contributor.
+	// For each push key ID, add a contributor.
 	// This will replace any existing contributor with matching GPG ID.
-	for _, gpgID := range gpgIDs {
+	for _, pushKeyID := range pushKeyIDs {
 
 		contributor := &state.BaseContributor{FeeCap: feeCap, FeeUsed: "0", Policies: policies}
 
 		// If namespace is set, add the contributor to the the namespace and
-		// then if namespaceOnly is set, continue  to the next gpg
+		// then if namespaceOnly is set, continue  to the next push key
 		// id after adding a contributor to the namespace
 		if namespace != "" || namespaceOnly != "" {
-			ns.Contributors[gpgID] = contributor
+			ns.Contributors[pushKeyID] = contributor
 			if namespaceOnly != "" {
 				continue
 			}
 		}
 
 		// Register contributor to the repo
-		repo.Contributors[gpgID] = &state.RepoContributor{
+		repo.Contributors[pushKeyID] = &state.RepoContributor{
 			FeeMode:  feeMode,
 			FeeCap:   contributor.FeeCap,
 			FeeUsed:  contributor.FeeUsed,
@@ -485,7 +485,7 @@ func applyProposalRegisterGPGKeys(
 // ARGS:
 // senderPubKey: The public key of the transaction sender.
 // repoName: The name of the target repository.
-// gpgIDs: The list of GPG IDs to register
+// pushKeyIDs: The list of GPG IDs to register
 // feeMode: The fee mode for the GPG IDs
 // feeCap: The max fee the GPG IDs can spend
 // aclPolicies: Access control policies for the GPG IDs
@@ -500,7 +500,7 @@ func (t *Transaction) execRepoProposalRegisterGPGKeys(
 	senderPubKey util.Bytes32,
 	repoName,
 	proposalID string,
-	gpgIDs []string,
+	pushKeyIDs []string,
 	feeMode state.FeeMode,
 	feeCap util.String,
 	aclPolicies []*state.RepoACLPolicy,
@@ -519,16 +519,16 @@ func (t *Transaction) execRepoProposalRegisterGPGKeys(
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
 	proposal.Action = state.ProposalActionRegisterGPGIDs
 	proposal.ActionData = map[string][]byte{
-		types.ActionDataKeyIDs:      util.ToBytes(gpgIDs),
-		types.ActionDataKeyPolicies: util.ToBytes(aclPolicies),
-		types.ActionDataKeyFeeMode:  util.ToBytes(feeMode),
-		types.ActionDataKeyFeeCap:   util.ToBytes(feeCap.String()),
+		constants.ActionDataKeyIDs:      util.ToBytes(pushKeyIDs),
+		constants.ActionDataKeyPolicies: util.ToBytes(aclPolicies),
+		constants.ActionDataKeyFeeMode:  util.ToBytes(feeMode),
+		constants.ActionDataKeyFeeCap:   util.ToBytes(feeCap.String()),
 	}
 	if namespace != "" {
-		proposal.ActionData[types.ActionDataKeyNamespace] = util.ToBytes(namespace)
+		proposal.ActionData[constants.ActionDataKeyNamespace] = util.ToBytes(namespace)
 	}
 	if namespaceOnly != "" {
-		proposal.ActionData[types.ActionDataKeyNamespaceOnly] = util.ToBytes(namespaceOnly)
+		proposal.ActionData[constants.ActionDataKeyNamespaceOnly] = util.ToBytes(namespaceOnly)
 	}
 
 	// Deduct network fee + proposal fee from sender
@@ -591,7 +591,7 @@ func (t *Transaction) execRepoProposalVote(
 	}
 
 	// When proposees are the owners, and tally method is ProposalTallyMethodCoinWeighted
-	// each proposee will use the value of the voter's keystore spendable balance
+	// each proposee will use the value of the voter's spendable account balance
 	// as their voting power.
 	if prop.Config.ProposalProposee == state.ProposeeOwner &&
 		prop.Config.ProposalTallyMethod == state.ProposalTallyMethodCoinWeighted {

@@ -44,7 +44,7 @@ type Logic struct {
 	// systemKeeper provides functionalities for managing system data
 	systemKeeper *keepers.SystemKeeper
 
-	// accountKeeper provides functionalities for managing keystore data
+	// accountKeeper provides functionalities for managing network accounts
 	accountKeeper *keepers.AccountKeeper
 
 	// repoKeeper provides functionalities for managing repository data
@@ -59,8 +59,8 @@ type Logic struct {
 	// txKeeper provides operations for managing transaction data
 	txKeeper *keepers.TxKeeper
 
-	// gpgPubKeyKeeper provides functionalities for managing gpg public keys
-	gpgPubKeyKeeper *keepers.GPGPubKeyKeeper
+	// pushKeyKeeper provides functionalities for managing push public keys
+	pushKeyKeeper *keepers.PushKeyKeeper
 
 	// repoMgr provides access to the git repository manager
 	repoMgr core.RepoManager
@@ -91,13 +91,13 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 
 	// Load the state tree
 	dbAdapter := storage.NewTMDBAdapter(stateTreeDBTx)
-	tree := tree.NewSafeTree(dbAdapter, 5000)
-	if _, err := tree.Load(); err != nil {
+	safeTree := tree.NewSafeTree(dbAdapter, 5000)
+	if _, err := safeTree.Load(); err != nil {
 		panic(errors.Wrap(err, "failed to load state tree"))
 	}
 
 	// Create the logic instances
-	l := &Logic{stateTree: tree, cfg: cfg, db: dbTx}
+	l := &Logic{stateTree: safeTree, cfg: cfg, db: dbTx}
 	l.sys = &System{logic: l}
 	l.tx = &Transaction{logic: l}
 	l.validator = &Validator{logic: l}
@@ -105,11 +105,11 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 	// Create the keepers
 	l.systemKeeper = keepers.NewSystemKeeper(dbTx)
 	l.txKeeper = keepers.NewTxKeeper(dbTx)
-	l.accountKeeper = keepers.NewAccountKeeper(tree)
+	l.accountKeeper = keepers.NewAccountKeeper(safeTree)
 	l.validatorKeeper = keepers.NewValidatorKeeper(dbTx)
-	l.repoKeeper = keepers.NewRepoKeeper(tree, dbTx)
-	l.gpgPubKeyKeeper = keepers.NewGPGPubKeyKeeper(tree, dbTx)
-	l.nsKeeper = keepers.NewNamespaceKeeper(tree)
+	l.repoKeeper = keepers.NewRepoKeeper(safeTree, dbTx)
+	l.pushKeyKeeper = keepers.NewGPGPubKeyKeeper(safeTree, dbTx)
+	l.nsKeeper = keepers.NewNamespaceKeeper(safeTree)
 
 	return l
 }
@@ -230,7 +230,7 @@ func (l *Logic) ValidatorKeeper() core.ValidatorKeeper {
 	return l.validatorKeeper
 }
 
-// AccountKeeper returns the keystore keeper
+// AccountKeeper returns the account keeper
 func (l *Logic) AccountKeeper() core.AccountKeeper {
 	return l.accountKeeper
 }
@@ -240,9 +240,9 @@ func (l *Logic) RepoKeeper() core.RepoKeeper {
 	return l.repoKeeper
 }
 
-// GPGPubKeyKeeper returns the gpg public key keeper
-func (l *Logic) GPGPubKeyKeeper() core.GPGPubKeyKeeper {
-	return l.gpgPubKeyKeeper
+// PushKeyKeeper returns the push key keeper
+func (l *Logic) PushKeyKeeper() core.PushKeyKeeper {
+	return l.pushKeyKeeper
 }
 
 // Validator returns the validator logic
@@ -261,7 +261,7 @@ func (l *Logic) WriteGenesisState() error {
 	// Register all genesis data entries to the state
 	for _, ga := range genesisData {
 
-		// Create keystore
+		// Create account
 		if ga.Type == config.GenDataTypeAccount {
 			newAcct := state.BareAccount()
 			newAcct.Balance = util.String(ga.Balance)

@@ -23,7 +23,7 @@ const (
 	StatusCodeInvalidParams         = "invalid_params"
 	StatusCodeInvalidProposerPubKey = "invalid_proposer_pub_key"
 	StatusCodeMempoolAddFail        = "mempool_add_fail"
-	StatusCodeGPGPubKeyNotFound     = "gpg_pk_not_found"
+	StatusCodePushKeyNotFound       = "push_key_not_found"
 	StatusCodeRepoNotFound          = "repo_not_found"
 	StatusCodeTxNotFound            = "tx_not_found"
 )

@@ -8,7 +8,7 @@ import (
 const (
 	tagAccount               = "a"
 	tagGPGPubKey             = "g"
-	tagAddressGPGPkID        = "ag"
+	tagAddressPushKeyID      = "ag"
 	tagRepo                  = "r"
 	tagRepoPropVote          = "rpv"
 	tagRepoPropEndIndex      = "rei"
@@ -22,25 +22,24 @@ const (
 	tagTx                    = "t"
 )
 
-// MakeAccountKey creates a key for accessing an keystore
+// MakeAccountKey creates a key for accessing an account
 func MakeAccountKey(address string) []byte {
 	return storage.MakePrefix([]byte(tagAccount), []byte(address))
 }
 
-// MakeGPGPubKeyKey creates a key for storing GPG public key
-func MakeGPGPubKeyKey(gpgID string) []byte {
-	return storage.MakePrefix([]byte(tagGPGPubKey), []byte(gpgID))
+// MakePushKeyKey creates a key for storing GPG public key
+func MakePushKeyKey(pushKeyID string) []byte {
+	return storage.MakePrefix([]byte(tagGPGPubKey), []byte(pushKeyID))
 }
 
-// MakeAddrGPGPkIDIndexKey creates a key for address to gpg pub key index
-func MakeAddrGPGPkIDIndexKey(address, gpgID string) []byte {
-	return storage.MakePrefix([]byte(tagAddressGPGPkID), []byte(address), []byte(gpgID))
+// MakeAddrPushKeyIDIndexKey creates a key for address to push key index
+func MakeAddrPushKeyIDIndexKey(address, pushKeyID string) []byte {
+	return storage.MakePrefix([]byte(tagAddressPushKeyID), []byte(address), []byte(pushKeyID))
 }
 
-// MakeQueryPkIDs creates a key for querying public key ids belonging
-// to an address
-func MakeQueryPkIDs(address string) []byte {
-	return storage.MakePrefix([]byte(tagAddressGPGPkID), []byte(address))
+// MakeQueryPushKeyIDsOfAddress creates a key for querying push key ids belonging to an address
+func MakeQueryPushKeyIDsOfAddress(address string) []byte {
+	return storage.MakePrefix([]byte(tagAddressPushKeyID), []byte(address))
 }
 
 // MakeRepoKey creates a key for accessing a repository object

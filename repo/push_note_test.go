@@ -45,7 +45,7 @@ var _ = Describe("PushNote", func() {
 		pushNote = &core.PushNote{
 			RepoName:        "repo",
 			NodeSig:         []byte("node_signer_sig"),
-			PusherGPGID:     gpgID,
+			PushKeyID:       gpgID,
 			Fee:             "0.2",
 			PusherAcctNonce: 2,
 			References: []*core.PushedReference{

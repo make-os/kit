@@ -1,8 +1,6 @@
 package util
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
 	"encoding/hex"
 
 	. "github.com/onsi/ginkgo"
@@ -67,16 +65,6 @@ var _ = Describe("Crypto", func() {
 			var bz = []byte("hello")
 			out := RIPEMD160(bz)
 			Expect(out).To(HaveLen(20))
-		})
-	})
-
-	Describe(".CreateGPGIDFromRSA", func() {
-		It("should return a 42 character string", func() {
-			key, err := rsa.GenerateKey(rand.Reader, 2048)
-			Expect(err).To(BeNil())
-			out := CreateGPGIDFromRSA(key.Public().(*rsa.PublicKey))
-			Expect(len(out)).To(Equal(42))
-			Expect(out[:3]).To(Equal(GPGAddrHRP))
 		})
 	})
 
@@ -146,15 +134,6 @@ var _ = Describe("Crypto", func() {
 		})
 	})
 
-	Describe(".CreateGPGIDFromRSA", func() {
-		It("should return gpg id", func() {
-			sk, err := rsa.GenerateKey(rand.Reader, 1024)
-			Expect(err).To(BeNil())
-			id := CreateGPGIDFromRSA(&sk.PublicKey)
-			Expect(id).To(HaveLen(42))
-		})
-	})
-
 	Describe(".MustDecodeGPGIDToRSAHash", func() {
 		It("should return a 20 bytes slice when successful", func() {
 			bz := MustDecodeGPGIDToRSAHash("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
@@ -166,21 +145,21 @@ var _ = Describe("Crypto", func() {
 		})
 	})
 
-	Describe(".IsValidGPGID", func() {
+	Describe(".IsValidPushKeyID", func() {
 		It("should return false id could not be decoded", func() {
 			// id := bech32.ConvertAndEncode("abc", []byte("abc"))
 			id := "bad_id"
-			Expect(IsValidGPGID(id)).To(BeFalse())
+			Expect(IsValidPushKeyID(id)).To(BeFalse())
 		})
 
 		It("should return false id has wrong hrp", func() {
 			id, _ := bech32.ConvertAndEncode("abc", []byte("abc"))
-			Expect(IsValidGPGID(id)).To(BeFalse())
+			Expect(IsValidPushKeyID(id)).To(BeFalse())
 		})
 
 		It("should return false id actual data is not 20-bytes", func() {
 			id, _ := bech32.ConvertAndEncode(GPGAddrHRP, []byte("abc"))
-			Expect(IsValidGPGID(id)).To(BeFalse())
+			Expect(IsValidPushKeyID(id)).To(BeFalse())
 		})
 	})
 

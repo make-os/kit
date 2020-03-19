@@ -1,7 +1,6 @@
 package validators
 
 import (
-	"crypto/rsa"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -190,9 +189,9 @@ func CheckTxSetDelegateCommissionConsistency(
 	return nil
 }
 
-// CheckTxRegisterGPGPubKeyConsistency performs consistency checks on TxRegisterGPGPubKey
-func CheckTxRegisterGPGPubKeyConsistency(
-	tx *core.TxRegisterGPGPubKey,
+// CheckTxRegisterPushKeyConsistency performs consistency checks on TxRegisterPushKey
+func CheckTxRegisterPushKeyConsistency(
+	tx *core.TxRegisterPushKey,
 	index int,
 	logic core.Logic) error {
 
@@ -201,18 +200,9 @@ func CheckTxRegisterGPGPubKeyConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	entity, _ := crypto.PGPEntityFromPubKey(tx.PublicKey)
-	pk := entity.PrimaryKey.PublicKey.(*rsa.PublicKey)
-
-	// Ensure bit length is not less than 256
-	if pk.Size() < 256 {
-		msg := "gpg public key bit length must be at least 2048 bits"
-		return feI(index, "pubKey", msg)
-	}
-
-	// Check whether there is a matching gpg key already existing
-	gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-	gpgPubKey := logic.GPGPubKeyKeeper().Get(gpgID)
+	// Check whether there is a matching push key already existing
+	pushKeyID := crypto.CreatePushKeyID(tx.PublicKey)
+	gpgPubKey := logic.PushKeyKeeper().Get(pushKeyID)
 	if !gpgPubKey.IsNil() {
 		return feI(index, "pubKey", "gpg public key already registered")
 	}
@@ -226,7 +216,7 @@ func CheckTxRegisterGPGPubKeyConsistency(
 	return nil
 }
 
-// CheckTxRegisterGPGPubKeyConsistency performs consistency checks on TxUpDelGPGPubKey
+// CheckTxRegisterPushKeyConsistency performs consistency checks on TxUpDelGPGPubKey
 func CheckTxUpDelGPGPubKeyConsistency(
 	tx *core.TxUpDelGPGPubKey,
 	index int,
@@ -237,7 +227,7 @@ func CheckTxUpDelGPGPubKeyConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	key := logic.GPGPubKeyKeeper().Get(tx.ID)
+	key := logic.PushKeyKeeper().Get(tx.ID)
 	if key.IsNil() {
 		return feI(index, "id", "gpg public key not found")
 	}
@@ -360,10 +350,10 @@ func CheckTxNSAcquireConsistency(
 		}
 	}
 
-	// If transfer recipient is an address of an keystore
+	// If transfer recipient is an address of an account
 	if tx.TransferTo != "" && util.IsValidAddr(tx.TransferTo) == nil {
 		if logic.AccountKeeper().Get(util.Address(tx.TransferTo)).IsNil() {
-			return feI(index, "to", "keystore does not exist")
+			return feI(index, "to", "account does not exist")
 		}
 	}
 
@@ -637,9 +627,9 @@ func CheckTxRepoProposalUpdateConsistency(
 	return nil
 }
 
-// CheckTxRepoProposalRegisterGPGKeyConsistency performs consistency checks on TxRepoProposalRegisterGPGKey
+// CheckTxRepoProposalRegisterGPGKeyConsistency performs consistency checks on TxRepoProposalRegisterPushKey
 func CheckTxRepoProposalRegisterGPGKeyConsistency(
-	tx *core.TxRepoProposalRegisterGPGKey,
+	tx *core.TxRepoProposalRegisterPushKey,
 	index int,
 	logic core.Logic) error {
 

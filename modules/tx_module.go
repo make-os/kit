@@ -7,6 +7,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
 
@@ -65,14 +66,14 @@ func (m *TxModule) Configure() []prompt.Suggest {
 
 	// Register the main tx namespace
 	txMap := map[string]interface{}{}
-	util.VMSet(m.vm, types.NamespaceTx, txMap)
+	util.VMSet(m.vm, constants.NamespaceTx, txMap)
 
 	// Register 'coin' namespaced functions
 	coinMap := map[string]interface{}{}
-	txMap[types.NamespaceCoin] = coinMap
+	txMap[constants.NamespaceCoin] = coinMap
 	for _, f := range m.txCoinFuncs() {
 		coinMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s.%s", types.NamespaceTx, types.NamespaceCoin, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s.%s", constants.NamespaceTx, constants.NamespaceCoin, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
@@ -80,7 +81,7 @@ func (m *TxModule) Configure() []prompt.Suggest {
 	// Register other funcs to `tx` namespace
 	for _, f := range m.funcs() {
 		txMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceTx, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceTx, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}

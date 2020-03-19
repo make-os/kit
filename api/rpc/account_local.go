@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -31,7 +31,7 @@ func (l *LocalAccountAPI) listAccounts(interface{}) (resp *rpc.Response) {
 func (l *LocalAccountAPI) APIs() rpc.APISet {
 	return map[string]rpc.APIInfo{
 		"listAccounts": {
-			Namespace:   types.NamespaceUser,
+			Namespace:   constants.NamespaceUser,
 			Private:     true,
 			Description: "List all accounts that exist on the node",
 			Func:        l.listAccounts,

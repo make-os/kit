@@ -27,7 +27,7 @@ type Modules struct {
 	Chain   ChainModule
 	Pool    PoolModule
 	Account AccountModule
-	GPG     GPGModule
+	PushKey GPGModule
 	Util    UtilModule
 	Ticket  TicketModule
 	Repo    RepoModule

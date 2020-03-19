@@ -1,4 +1,4 @@
-package types
+package constants
 
 // Namespace for JS Module and RPC methods
 const (
@@ -10,8 +10,7 @@ const (
 	NamespaceUser      = "user"
 	NamespaceRepo      = "repo"
 	NamespaceNS        = "ns"
-	NamespaceAccount   = "keystore"
-	NamespaceGPG       = "gpg"
+	NamespacePushKey   = "pk"
 	NamespaceExtension = "ext"
 	NamespaceDHT       = "dht"
 	NamespaceUtil      = "util"
@@ -39,4 +38,10 @@ const (
 	ActionDataKeyCFG           = "cfg"
 	ActionDataKeyNamespace     = "ns"
 	ActionDataKeyNamespaceOnly = "nso"
+)
+
+// Constants
+const (
+	AddrHRP     = "maker"
+	PushAddrHRP = "push"
 )

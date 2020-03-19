@@ -3,7 +3,7 @@ package rpc
 import (
 	"github.com/stretchr/objx"
 	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/modules"
 )
 
@@ -21,7 +21,7 @@ func NewGPGAPI(mods *modules.Modules) *GPGAPI {
 // Body:
 // - id <string>: The GPG key unique ID
 // - [blockHeight] <string>: The target query block height (default: latest).
-// Response <state.GPGPubKey -> map>
+// Response <state.PushKey -> map>
 func (a *GPGAPI) find(params interface{}) (resp *rpc.Response) {
 	o := objx.New(params)
 
@@ -35,7 +35,7 @@ func (a *GPGAPI) find(params interface{}) (resp *rpc.Response) {
 		return errResp
 	}
 
-	key := a.mods.GPG.Get(keyId, blockHeight)
+	key := a.mods.PushKey.Get(keyId, blockHeight)
 	return rpc.Success(key)
 }
 
@@ -57,7 +57,7 @@ func (a *GPGAPI) getAccountOfOwner(params interface{}) (resp *rpc.Response) {
 		return errResp
 	}
 
-	account := a.mods.GPG.GetAccountOfOwner(keyId, blockHeight)
+	account := a.mods.PushKey.GetAccountOfOwner(keyId, blockHeight)
 	return rpc.Success(account)
 }
 
@@ -65,12 +65,12 @@ func (a *GPGAPI) getAccountOfOwner(params interface{}) (resp *rpc.Response) {
 func (a *GPGAPI) APIs() rpc.APISet {
 	return map[string]rpc.APIInfo{
 		"find": {
-			Namespace:   types.NamespaceGPG,
+			Namespace:   constants.NamespacePushKey,
 			Description: "Get a GPG key by its key ID",
 			Func:        a.find,
 		},
 		"getAccountOfOwner": {
-			Namespace:   types.NamespaceGPG,
+			Namespace:   constants.NamespacePushKey,
 			Description: "Get the account of the owner of a gpg public key",
 			Func:        a.getAccountOfOwner,
 		},

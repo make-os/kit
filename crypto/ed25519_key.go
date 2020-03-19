@@ -8,6 +8,7 @@ import (
 	mrand "math/rand"
 
 	"github.com/tendermint/tendermint/libs/bech32"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"golang.org/x/crypto/ripemd160"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -23,12 +24,6 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/libp2p/go-libp2p-core/peer"
-)
-
-// Constants
-const (
-	AddrHRP     = "maker"
-	PushAddrHRP = "push"
 )
 
 // Key includes a wrapped Ed25519 private key and
@@ -234,6 +229,11 @@ func (p *PubKey) MustBytes32() util.Bytes32 {
 	return util.BytesToBytes32(bz)
 }
 
+// ToPublicKey returns the public key wrap in PublicKey
+func (p *PubKey) ToPublicKey() PublicKey {
+	return BytesToPublicKey(p.MustBytes())
+}
+
 // Hex returns the public key in hex encoding
 func (p *PubKey) Hex() string {
 	bs, _ := p.Bytes()
@@ -262,7 +262,7 @@ func (p *PubKey) AddrRaw() []byte {
 
 // Addr returns the bech32 account address
 func (p *PubKey) Addr() util.Address {
-	encoded, err := bech32.ConvertAndEncode(AddrHRP, p.AddrRaw())
+	encoded, err := bech32.ConvertAndEncode(constants.AddrHRP, p.AddrRaw())
 	if err != nil {
 		panic(err)
 	}
@@ -271,7 +271,7 @@ func (p *PubKey) Addr() util.Address {
 
 // PushAddr returns a bech32 pusher address
 func (p *PubKey) PushAddr() util.Address {
-	encoded, err := bech32.ConvertAndEncode(PushAddrHRP, p.AddrRaw())
+	encoded, err := bech32.ConvertAndEncode(constants.PushAddrHRP, p.AddrRaw())
 	if err != nil {
 		panic(err)
 	}
@@ -289,7 +289,7 @@ func IsValidAccountAddr(addr string) error {
 		return err
 	}
 
-	if hrp != AddrHRP {
+	if hrp != constants.AddrHRP {
 		return fmt.Errorf("invalid hrp")
 	}
 
@@ -311,7 +311,7 @@ func IsValidPushAddr(addr string) error {
 		return err
 	}
 
-	if hrp != PushAddrHRP {
+	if hrp != constants.PushAddrHRP {
 		return fmt.Errorf("invalid hrp")
 	}
 

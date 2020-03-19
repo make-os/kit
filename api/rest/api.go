@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -47,11 +47,11 @@ func (r *RESTApi) post(handler func(w http.ResponseWriter, r *http.Request)) fun
 
 // RegisterEndpoints registers handlers to endpoints
 func (r *RESTApi) RegisterEndpoints(s *http.ServeMux) {
-	s.HandleFunc(RestV1Path(types.NamespaceUser, MethodNameGetNonce), r.get(r.GetAccountNonce))
-	s.HandleFunc(RestV1Path(types.NamespaceUser, MethodNameGetAccount), r.get(r.GetAccount))
-	s.HandleFunc(RestV1Path(types.NamespaceTx, MethodNameSendPayload), r.post(r.TxSendPayload))
-	s.HandleFunc(RestV1Path(types.NamespaceGPG, MethodNameOwnerNonce), r.get(r.GPGGetOwnerNonce))
-	s.HandleFunc(RestV1Path(types.NamespaceGPG, MethodNameGPGFind), r.get(r.GPGFind))
+	s.HandleFunc(RestV1Path(constants.NamespaceUser, MethodNameGetNonce), r.get(r.GetAccountNonce))
+	s.HandleFunc(RestV1Path(constants.NamespaceUser, MethodNameGetAccount), r.get(r.GetAccount))
+	s.HandleFunc(RestV1Path(constants.NamespaceTx, MethodNameSendPayload), r.post(r.TxSendPayload))
+	s.HandleFunc(RestV1Path(constants.NamespacePushKey, MethodNameOwnerNonce), r.get(r.GPGGetOwnerNonce))
+	s.HandleFunc(RestV1Path(constants.NamespacePushKey, MethodNameGPGFind), r.get(r.GPGFind))
 }
 
 // RestV1Path creates a REST API v1 path

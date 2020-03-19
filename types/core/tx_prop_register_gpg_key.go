@@ -11,9 +11,9 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// TxRepoProposalRegisterGPGKey implements BaseTx, it describes a repository proposal
+// TxRepoProposalRegisterPushKey implements BaseTx, it describes a repository proposal
 // transaction for adding one or more contributors to a repository
-type TxRepoProposalRegisterGPGKey struct {
+type TxRepoProposalRegisterPushKey struct {
 	*TxCommon         `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxProposalCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
@@ -25,11 +25,11 @@ type TxRepoProposalRegisterGPGKey struct {
 	NamespaceOnly     string                 `json:"namespaceOnly" msgpack:"namespaceOnly,omitempty" mapstructure:"namespaceOnly"`
 }
 
-// NewBareRepoProposalRegisterGPGKey returns an instance of TxRepoProposalRegisterGPGKey with zero values
-func NewBareRepoProposalRegisterGPGKey() *TxRepoProposalRegisterGPGKey {
-	return &TxRepoProposalRegisterGPGKey{
+// NewBareRepoProposalRegisterPushKey returns an instance of TxRepoProposalRegisterPushKey with zero values
+func NewBareRepoProposalRegisterPushKey() *TxRepoProposalRegisterPushKey {
+	return &TxRepoProposalRegisterPushKey{
 		TxCommon:         NewBareTxCommon(),
-		TxType:           &TxType{Type: TxTypeRepoProposalRegisterGPGKey},
+		TxType:           &TxType{Type: TxTypeRepoProposalRegisterPushKey},
 		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: "", ProposalID: ""},
 		KeyIDs:           []string{},
 		Policies:         []*state.RepoACLPolicy{},
@@ -38,7 +38,7 @@ func NewBareRepoProposalRegisterGPGKey() *TxRepoProposalRegisterGPGKey {
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
-func (tx *TxRepoProposalRegisterGPGKey) EncodeMsgpack(enc *msgpack.Encoder) error {
+func (tx *TxRepoProposalRegisterPushKey) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(
 		tx.Type,
 		tx.Nonce,
@@ -58,7 +58,7 @@ func (tx *TxRepoProposalRegisterGPGKey) EncodeMsgpack(enc *msgpack.Encoder) erro
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
-func (tx *TxRepoProposalRegisterGPGKey) DecodeMsgpack(dec *msgpack.Decoder) error {
+func (tx *TxRepoProposalRegisterPushKey) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return tx.DecodeMulti(dec,
 		&tx.Type,
 		&tx.Nonce,
@@ -78,12 +78,12 @@ func (tx *TxRepoProposalRegisterGPGKey) DecodeMsgpack(dec *msgpack.Decoder) erro
 }
 
 // Bytes returns the serialized transaction
-func (tx *TxRepoProposalRegisterGPGKey) Bytes() []byte {
+func (tx *TxRepoProposalRegisterPushKey) Bytes() []byte {
 	return util.ToBytes(tx)
 }
 
 // GetBytesNoSig returns the serialized the transaction excluding the signature
-func (tx *TxRepoProposalRegisterGPGKey) GetBytesNoSig() []byte {
+func (tx *TxRepoProposalRegisterPushKey) GetBytesNoSig() []byte {
 	sig := tx.Sig
 	tx.Sig = nil
 	bz := tx.Bytes()
@@ -92,37 +92,37 @@ func (tx *TxRepoProposalRegisterGPGKey) GetBytesNoSig() []byte {
 }
 
 // ComputeHash computes the hash of the transaction
-func (tx *TxRepoProposalRegisterGPGKey) ComputeHash() util.Bytes32 {
+func (tx *TxRepoProposalRegisterPushKey) ComputeHash() util.Bytes32 {
 	return util.BytesToBytes32(util.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction
-func (tx *TxRepoProposalRegisterGPGKey) GetHash() util.Bytes32 {
+func (tx *TxRepoProposalRegisterPushKey) GetHash() util.Bytes32 {
 	return tx.ComputeHash()
 }
 
 // GetID returns the id of the transaction (also the hash)
-func (tx *TxRepoProposalRegisterGPGKey) GetID() string {
+func (tx *TxRepoProposalRegisterPushKey) GetID() string {
 	return tx.ComputeHash().HexStr()
 }
 
 // GetEcoSize returns the size of the transaction for use in protocol economics
-func (tx *TxRepoProposalRegisterGPGKey) GetEcoSize() int64 {
+func (tx *TxRepoProposalRegisterPushKey) GetEcoSize() int64 {
 	return tx.GetSize()
 }
 
 // GetSize returns the size of the tx object (excluding nothing)
-func (tx *TxRepoProposalRegisterGPGKey) GetSize() int64 {
+func (tx *TxRepoProposalRegisterPushKey) GetSize() int64 {
 	return int64(len(tx.Bytes()))
 }
 
 // Sign signs the transaction
-func (tx *TxRepoProposalRegisterGPGKey) Sign(privKey string) ([]byte, error) {
+func (tx *TxRepoProposalRegisterPushKey) Sign(privKey string) ([]byte, error) {
 	return SignTransaction(tx, privKey)
 }
 
 // ToMap returns a map equivalent of the transaction
-func (tx *TxRepoProposalRegisterGPGKey) ToMap() map[string]interface{} {
+func (tx *TxRepoProposalRegisterPushKey) ToMap() map[string]interface{} {
 	s := structs.New(tx)
 	s.TagName = "json"
 	return s.Map()
@@ -130,7 +130,7 @@ func (tx *TxRepoProposalRegisterGPGKey) ToMap() map[string]interface{} {
 
 // FromMap populates fields from a map.
 // An error will be returned when unable to convert types in map to expected types in the object.
-func (tx *TxRepoProposalRegisterGPGKey) FromMap(data map[string]interface{}) error {
+func (tx *TxRepoProposalRegisterPushKey) FromMap(data map[string]interface{}) error {
 	err := tx.TxCommon.FromMap(data)
 	err = util.CallOnNilErr(err, func() error { return tx.TxType.FromMap(data) })
 	err = util.CallOnNilErr(err, func() error { return tx.TxProposalCommon.FromMap(data) })

@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/api/rest"
 	types2 "gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/state"
 )
 
@@ -24,7 +24,7 @@ func (c *Client) GPGGetNonceOfOwner(gpgID string, blockHeight ...uint64) (*types
 		height = blockHeight[0]
 	}
 
-	resp, err := c.get(rest.RestV1Path(types.NamespaceGPG, rest.MethodNameOwnerNonce), M{
+	resp, err := c.get(rest.RestV1Path(constants.NamespacePushKey, rest.MethodNameOwnerNonce), M{
 		"id":          gpgID,
 		"blockHeight": height,
 	})
@@ -41,14 +41,14 @@ func (c *Client) GPGGetNonceOfOwner(gpgID string, blockHeight ...uint64) (*types
 // - gpgID <string>: The GPG public key ID
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
-// - resp <state.GPGPubKey>
-func (c *Client) GPGFind(gpgID string, blockHeight ...uint64) (*state.GPGPubKey, error) {
+// - resp <state.PushKey>
+func (c *Client) GPGFind(gpgID string, blockHeight ...uint64) (*state.PushKey, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
 	}
 
-	resp, err := c.get(rest.RestV1Path(types.NamespaceGPG, rest.MethodNameGPGFind), M{
+	resp, err := c.get(rest.RestV1Path(constants.NamespacePushKey, rest.MethodNameGPGFind), M{
 		"id":          gpgID,
 		"blockHeight": height,
 	})
@@ -56,7 +56,7 @@ func (c *Client) GPGFind(gpgID string, blockHeight ...uint64) (*state.GPGPubKey,
 		return nil, err
 	}
 
-	var result state.GPGPubKey
+	var result state.PushKey
 	return &result, resp.ToJSON(&result)
 }
 

@@ -52,7 +52,7 @@ var _ = Describe("GPG", func() {
 						"pubKey":  "---BEGIN PUBLIC KEY...",
 						"address": "addr1",
 					})
-					mods.GPG = mockGPGMod
+					mods.PushKey = mockGPGMod
 				},
 			},
 		}
@@ -95,7 +95,7 @@ var _ = Describe("GPG", func() {
 						"nonce":               10,
 						"delegatorCommission": 23,
 					})
-					mods.GPG = mockGPGMod
+					mods.PushKey = mockGPGMod
 				},
 			},
 		}

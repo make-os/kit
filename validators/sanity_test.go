@@ -1,7 +1,6 @@
 package validators_test
 
 import (
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -78,7 +77,7 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("recipient address is not base58 encoded but a prefixed keystore address", func() {
+		When("recipient address is not base58 encoded but a prefixed account address", func() {
 			It("should return err", func() {
 				tx := core.NewBareTxCoinTransfer()
 				tx.To = "a/abcdef"
@@ -277,7 +276,7 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:domains, msg:domains.domain: target is invalid"))
 			})
 
-			It("has domain target with keystore target type that has an invalid address", func() {
+			It("has domain target with account target type that has an invalid address", func() {
 				tx.Value = "5"
 				tx.Domains["domain"] = "a/invalid_addr"
 				err := validators.CheckTxNSAcquire(tx, -1)
@@ -851,38 +850,30 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	Describe(".CheckTxRegisterGPGPubKey", func() {
-		var tx *core.TxRegisterGPGPubKey
-		var gpgKey []byte
+	Describe(".CheckTxRegisterPushKey", func() {
+		var tx *core.TxRegisterPushKey
 
 		BeforeEach(func() {
-			gpgKey, err = ioutil.ReadFile("testdata/gpgkey.pub")
+			gpgKey, err := crypto.NewKey(nil)
 			Expect(err).To(BeNil())
-			tx = core.NewBareTxRegisterGPGPubKey()
-			tx.PublicKey = string(gpgKey)
+			tx = core.NewBareTxRegisterPushKey()
+			tx.PublicKey = crypto.BytesToPublicKey(gpgKey.PubKey().MustBytes())
 			tx.Fee = "2"
 		})
 
 		When("it has invalid fields, it should return error when", func() {
 			It("should return error='type is invalid'", func() {
 				tx.Type = -10
-				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterPushKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 			})
 
-			It("has no gpg public key", func() {
-				tx.PublicKey = ""
-				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
+			It("has no public key", func() {
+				tx.PublicKey = crypto.EmptyPublicKey
+				err := validators.CheckTxRegisterPushKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:pubKey, msg:public key is required"))
-			})
-
-			It("has invalid gpg public key", func() {
-				tx.PublicKey = "invalid"
-				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pubKey, msg:invalid gpg public key"))
 			})
 
 			It("has invalid scopes", func() {
@@ -894,7 +885,7 @@ var _ = Describe("TxValidator", func() {
 				}
 				for _, s := range scopes {
 					tx.Scopes = []string{s}
-					err := validators.CheckTxRegisterGPGPubKey(tx, -1)
+					err := validators.CheckTxRegisterPushKey(tx, -1)
 					Expect(err).ToNot(BeNil())
 					Expect(err).To(MatchError("field:scopes[0], msg:not an acceptable scope. " +
 						"Expects a namespace URI or repository name"))
@@ -903,13 +894,13 @@ var _ = Describe("TxValidator", func() {
 
 			It("has invalid fee cap", func() {
 				tx.FeeCap = "1a"
-				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterPushKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:feeCap, msg:invalid number; must be numeric"))
 			})
 
 			It("has no nonce", func() {
-				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterPushKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 			})
@@ -917,14 +908,14 @@ var _ = Describe("TxValidator", func() {
 			It("has invalid fee", func() {
 				tx.Nonce = 1
 				tx.Fee = "invalid"
-				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterPushKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
 			})
 
 			It("has no timestamp", func() {
 				tx.Nonce = 1
-				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterPushKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
 			})
@@ -932,7 +923,7 @@ var _ = Describe("TxValidator", func() {
 			It("has no public key", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterPushKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
 			})
@@ -941,7 +932,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterPushKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
 			})
@@ -951,7 +942,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Timestamp = time.Now().Unix()
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Sig = []byte("invalid")
-				err := validators.CheckTxRegisterGPGPubKey(tx, -1)
+				err := validators.CheckTxRegisterPushKey(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
@@ -965,7 +956,7 @@ var _ = Describe("TxValidator", func() {
 				sig, err := tx.Sign(key.PrivKey().Base58())
 				Expect(err).To(BeNil())
 				tx.Sig = sig
-				err = validators.CheckTxRegisterGPGPubKey(tx, -1)
+				err = validators.CheckTxRegisterPushKey(tx, -1)
 				Expect(err).To(BeNil())
 			})
 		})
@@ -975,7 +966,7 @@ var _ = Describe("TxValidator", func() {
 		var tx *core.TxUpDelGPGPubKey
 
 		BeforeEach(func() {
-			tx = core.NewBareTxUpDelGPGPubKey()
+			tx = core.NewBareTxUpDelPushKey()
 			tx.Fee = "2"
 			tx.ID = "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
 		})
@@ -999,7 +990,7 @@ var _ = Describe("TxValidator", func() {
 				tx.ID = "gpg_abc_invalid"
 				err := validators.CheckTxUpDelGPGPubKey(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:id, msg:gpg id is not valid"))
+				Expect(err.Error()).To(Equal("field:id, msg:push key id is not valid"))
 			})
 
 			It("has invalid entry in addScopes", func() {
@@ -1193,7 +1184,7 @@ var _ = Describe("TxValidator", func() {
 			tx = core.NewBareTxPush()
 			tx.Timestamp = time.Now().Unix()
 			tx.PushNote.RepoName = "repo1"
-			tx.PushNote.PusherGPGID = util.RandBytes(20)
+			tx.PushNote.PushKeyID = util.RandBytes(20)
 			tx.PushNote.Timestamp = time.Now().Unix()
 			tx.PushNote.PusherAcctNonce = 1
 			tx.PushNote.Fee = "1"
@@ -1726,10 +1717,10 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckTxRepoProposalRegisterGPGKey", func() {
-		var tx *core.TxRepoProposalRegisterGPGKey
+		var tx *core.TxRepoProposalRegisterPushKey
 
 		BeforeEach(func() {
-			tx = core.NewBareRepoProposalRegisterGPGKey()
+			tx = core.NewBareRepoProposalRegisterPushKey()
 			tx.Timestamp = time.Now().Unix()
 			tx.ProposalID = "123"
 		})
@@ -1794,7 +1785,7 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).ToNot(BeNil())
 		})
 
-		It("should return error when a gpg id is not valid", func() {
+		It("should return error when a push key id is not valid", func() {
 			tx.RepoName = "good-repo"
 			tx.Value = "1"
 			tx.KeyIDs = append(tx.KeyIDs, "gpg1_abc")

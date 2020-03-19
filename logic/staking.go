@@ -103,7 +103,7 @@ func (t *Transaction) execValidatorStake(
 	)
 }
 
-// addStake adds a stake entry to an keystore
+// addStake adds a stake entry to an account
 //
 // ARGS:
 // txType: The transaction type
@@ -149,7 +149,7 @@ func (t *Transaction) addStake(
 		senderAcct.Stakes.Add(state.StakeTypeHost, value, unbondHeight)
 	}
 
-	// Update the sender keystore
+	// Update the sender's account
 	senderAcct.Clean(chainHeight)
 	acctKeeper.Update(sender, senderAcct)
 

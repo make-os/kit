@@ -84,18 +84,18 @@ var _ = Describe("Transaction", func() {
 	Describe("CanExecCoinTransfer", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 
-		Context("when sender keystore has insufficient spendable balance", func() {
-			It("should not return err='sender's spendable keystore balance is insufficient'", func() {
+		Context("when sender account has insufficient spendable balance", func() {
+			It("should not return err='sender's spendable account balance is insufficient'", func() {
 				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 1, 1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, msg:sender's spendable keystore balance is insufficient"))
+				Expect(err.Error()).To(Equal("field:value, msg:sender's spendable account balance is insufficient"))
 			})
 
 			When("value=0 and fee is non-zero", func() {
-				It("should not return err='sender's spendable keystore balance is insufficient' with field=fee", func() {
+				It("should not return err='sender's spendable account balance is insufficient' with field=fee", func() {
 					err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("0"), util.String("10"), 1, 1)
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("field:fee, msg:sender's spendable keystore balance is insufficient"))
+					Expect(err.Error()).To(Equal("field:fee, msg:sender's spendable account balance is insufficient"))
 				})
 			})
 		})
@@ -108,7 +108,7 @@ var _ = Describe("Transaction", func() {
 			})
 		})
 
-		Context("when sender keystore has sufficient spendable balance", func() {
+		Context("when sender account has sufficient spendable balance", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
 					Balance: util.String("1000"),

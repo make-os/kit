@@ -53,8 +53,8 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxUnbondTicket(o, index)
 	case *core.TxRepoCreate:
 		return CheckTxRepoCreate(o, index)
-	case *core.TxRegisterGPGPubKey:
-		return CheckTxRegisterGPGPubKey(o, index)
+	case *core.TxRegisterPushKey:
+		return CheckTxRegisterPushKey(o, index)
 	case *core.TxUpDelGPGPubKey:
 		return CheckTxUpDelGPGPubKey(o, index)
 	case *core.TxPush:
@@ -73,7 +73,7 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxRepoProposalSendFee(o, index)
 	case *core.TxRepoProposalMergeRequest:
 		return CheckTxRepoProposalMergeRequest(o, index)
-	case *core.TxRepoProposalRegisterGPGKey:
+	case *core.TxRepoProposalRegisterPushKey:
 		return CheckTxRepoProposalRegisterGPGKey(o, index)
 	default:
 		return feI(index, "type", "unsupported transaction type")
@@ -96,8 +96,8 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 		return CheckTxUnbondTicketConsistency(o, index, logic)
 	case *core.TxRepoCreate:
 		return CheckTxRepoCreateConsistency(o, index, logic)
-	case *core.TxRegisterGPGPubKey:
-		return CheckTxRegisterGPGPubKeyConsistency(o, index, logic)
+	case *core.TxRegisterPushKey:
+		return CheckTxRegisterPushKeyConsistency(o, index, logic)
 	case *core.TxUpDelGPGPubKey:
 		return CheckTxUpDelGPGPubKeyConsistency(o, index, logic)
 	case *core.TxPush:
@@ -118,7 +118,7 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 		return CheckTxRepoProposalSendFeeConsistency(o, index, logic)
 	case *core.TxRepoProposalMergeRequest:
 		return CheckTxRepoProposalMergeRequestConsistency(o, index, logic)
-	case *core.TxRepoProposalRegisterGPGKey:
+	case *core.TxRepoProposalRegisterPushKey:
 		return CheckTxRepoProposalRegisterGPGKeyConsistency(o, index, logic)
 	default:
 		return feI(index, "type", "unsupported transaction type")

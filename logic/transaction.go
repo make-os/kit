@@ -90,7 +90,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 	case *core.TxRepoProposalUpdate:
 		return t.execRepoProposalUpdate(spk, o.RepoName, o.ProposalID, o.Config, o.Value, o.Fee, chainHeight)
 
-	case *core.TxRepoProposalRegisterGPGKey:
+	case *core.TxRepoProposalRegisterPushKey:
 		return t.execRepoProposalRegisterGPGKeys(spk, o.RepoName, o.ProposalID, o.KeyIDs, o.FeeMode, o.FeeCap,
 			o.Policies, o.Namespace, o.NamespaceOnly, o.Value, o.Fee, chainHeight)
 
@@ -98,15 +98,15 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.execRepoProposalMergeRequest(spk, o.RepoName, o.ProposalID, o.BaseBranch, o.BaseBranchHash,
 			o.TargetBranch, o.TargetBranchHash, o.Value, o.Fee, chainHeight)
 
-	case *core.TxRegisterGPGPubKey:
-		return t.execRegisterGPGKey(spk, o.PublicKey, o.Scopes, o.FeeCap, o.Fee, chainHeight)
+	case *core.TxRegisterPushKey:
+		return t.execRegisterPushKey(spk, o.PublicKey, o.Scopes, o.FeeCap, o.Fee, chainHeight)
 
 	case *core.TxUpDelGPGPubKey:
-		return t.execUpDelGPGKey(spk, o.ID, o.AddScopes, o.RemoveScopes, o.Delete, o.FeeCap, o.Fee, chainHeight)
+		return t.execUpDelPushKey(spk, o.ID, o.AddScopes, o.RemoveScopes, o.Delete, o.FeeCap, o.Fee, chainHeight)
 
 	case *core.TxPush:
 		pn := o.PushNote
-		err := t.execPush(pn.RepoName, pn.References, pn.GetFee(), pn.PusherGPGID, chainHeight)
+		err := t.execPush(pn.RepoName, pn.References, pn.GetFee(), pn.PushKeyID, chainHeight)
 		if err == nil {
 			// Execute the tx against the repository's local state
 			return t.logic.GetRepoManager().ExecTxPush(o)

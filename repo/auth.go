@@ -36,13 +36,13 @@ func authorize(
 	}
 
 	// Get the GPG key that signed the transaction params object
-	signer := keepers.GPGPubKeyKeeper().Get(pushReqToken.GPGID)
+	signer := keepers.PushKeyKeeper().Get(pushReqToken.GPGID)
 	if signer.IsNil() {
 		return nil, fmt.Errorf("pusher gpg key is unknown")
 	}
 
 	// Using the GPG key, verify the transaction parameters signature
-	entity, err := crypto.PGPEntityFromPubKey(signer.PubKey)
+	entity, err := crypto.PGPEntityFromPubKey("") // TODO: provide pub key
 	if err != nil {
 		return nil, fmt.Errorf("signer public key from network is invalid") // should never happen
 	}
@@ -80,7 +80,7 @@ func authorize(
 
 // handleAuth validates a request using the request token provided in the url username.
 // The request token is a base58 encode of the serialized transaction information which
-// contains the fee, keystore nonce and request signature.
+// contains the fee, account nonce and request signature.
 //
 // ARGS:
 // - r: The http request

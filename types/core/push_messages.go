@@ -12,12 +12,12 @@ type PushNote struct {
 	RepoName              string           `json:"repoName" msgpack:"repoName"`             // The name of the repo
 	Namespace             string           `json:"namespace" msgpack:"namespace"`           // The namespace which the repo is under.
 	References            PushedReferences `json:"references" msgpack:"references"`         // A list of references pushed
-	PusherGPGID           []byte           `json:"pusherKeyId" msgpack:"pusherKeyId"`       // The PGP key of the pusher
+	PushKeyID             []byte           `json:"pusherKeyId" msgpack:"pusherKeyId"`       // The PGP key of the pusher
 	PusherAddress         util.Address     `json:"pusherAddr" msgpack:"pusherAddr"`         // The Address of the pusher
 	PushRequestSig        []byte           `json:"pushRequestSig" msgpack:"pushRequestSig"` // The request token of the pusher
 	Size                  uint64           `json:"size" msgpack:"size"`                     // Total size of all objects pushed
 	Timestamp             int64            `json:"timestamp" msgpack:"timestamp"`           // Unix timestamp
-	PusherAcctNonce       uint64           `json:"accountNonce" msgpack:"accountNonce"`     // Next nonce of the pusher's keystore
+	PusherAcctNonce       uint64           `json:"accountNonce" msgpack:"accountNonce"`     // Next nonce of the pusher's account
 	Fee                   util.String      `json:"fee" msgpack:"fee"`                       // Total fees to pay for the pushed references
 	NodeSig               []byte           `json:"nodeSig" msgpack:"nodeSig"`               // The signature of the node that created the PushNote
 	NodePubKey            util.Bytes32     `json:"nodePubKey" msgpack:"nodePubKey"`         // The public key of the push note signer
@@ -30,13 +30,13 @@ func (pt *PushNote) GetTargetRepo() BareRepo {
 
 // GetPusherKeyID returns the pusher gpg key ID
 func (pt *PushNote) GetPusherKeyID() []byte {
-	return pt.PusherGPGID
+	return pt.PushKeyID
 }
 
 // GetPusherKeyIDString is like GetPusherKeyID but returns hex string, prefixed
 // with 0x
 func (pt *PushNote) GetPusherKeyIDString() string {
-	return util.MustCreateGPGID(pt.PusherGPGID)
+	return util.MustCreateGPGID(pt.PushKeyID)
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -45,7 +45,7 @@ func (pt *PushNote) EncodeMsgpack(enc *msgpack.Encoder) error {
 		pt.RepoName,
 		pt.Namespace,
 		pt.References,
-		pt.PusherGPGID,
+		pt.PushKeyID,
 		pt.PusherAddress,
 		pt.PushRequestSig,
 		pt.Size,
@@ -62,7 +62,7 @@ func (pt *PushNote) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&pt.RepoName,
 		&pt.Namespace,
 		&pt.References,
-		&pt.PusherGPGID,
+		&pt.PushKeyID,
 		&pt.PusherAddress,
 		&pt.PushRequestSig,
 		&pt.Size,

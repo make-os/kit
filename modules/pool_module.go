@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"gitlab.com/makeos/mosdef/mempool"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
 
@@ -57,11 +57,11 @@ func (m *PoolModule) Configure() []prompt.Suggest {
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
-	util.VMSet(m.vm, types.NamespacePool, obj)
+	util.VMSet(m.vm, constants.NamespacePool, obj)
 
 	for _, f := range m.funcs() {
 		obj[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", types.NamespacePool, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", constants.NamespacePool, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}

@@ -10,7 +10,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/node/services"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
@@ -108,12 +108,12 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 
 	// Set the namespaces
 	ticketObj := map[string]interface{}{"host": m.hostObj}
-	util.VMSet(m.vm, types.NamespaceTicket, ticketObj)
-	hostNS := fmt.Sprintf("%s.%s", types.NamespaceTicket, types.NamespaceHost)
+	util.VMSet(m.vm, constants.NamespaceTicket, ticketObj)
+	hostNS := fmt.Sprintf("%s.%s", constants.NamespaceTicket, constants.NamespaceHost)
 
 	for _, f := range m.funcs() {
 		ticketObj[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceTicket, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceTicket, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}

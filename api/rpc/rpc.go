@@ -2,7 +2,7 @@ package rpc
 
 import (
 	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -29,7 +29,7 @@ func (l *RPCManagerAPI) echo(params interface{}) (resp *rpc.Response) {
 func (l *RPCManagerAPI) APIs() rpc.APISet {
 	return map[string]rpc.APIInfo{
 		"echo": {
-			Namespace:   types.NamespaceRPC,
+			Namespace:   constants.NamespaceRPC,
 			Description: "Returns echos back any parameter sent in the request",
 			Func:        l.echo,
 		},

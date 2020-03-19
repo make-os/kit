@@ -132,12 +132,13 @@ func (m *Manager) RegisterAPIHandlers(agg modules.ModuleHub) {
 	m.registerAPIHandlers(m.srv.Handler.(*http.ServeMux))
 }
 
+// TODO: return correct public key
 func (m *Manager) defaultGPGPubKeyGetter(gpgID string) (string, error) {
-	gpgPK := m.logic.GPGPubKeyKeeper().Get(gpgID)
+	gpgPK := m.logic.PushKeyKeeper().Get(gpgID)
 	if gpgPK.IsNil() {
 		return "", fmt.Errorf("gpg public key not found for the given ID")
 	}
-	return gpgPK.PubKey, nil
+	return "", nil
 }
 
 // cachePushNoteSender caches a push note sender

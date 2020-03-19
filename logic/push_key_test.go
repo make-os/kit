@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"crypto/rsa"
 	"io/ioutil"
 	"os"
 
@@ -57,7 +56,7 @@ var _ = Describe("GPG", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".execRegisterGPGKey", func() {
+	Describe(".execRegisterPushKey", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 
@@ -70,26 +69,25 @@ var _ = Describe("GPG", func() {
 		})
 
 		When("successful", func() {
-			var gpgPubKey string
+			var pushKey *crypto.PubKey
 			var scopes = []string{"repo1", "repo2"}
 			var feeCap = util.String("10")
 
 			BeforeEach(func() {
-				gpgPubKey = string(getTestFile("gpgpubkey.pub"))
+				pushKey = crypto.NewKeyFromIntSeed(1).PubKey()
 				senderPubKey := sender.PubKey().MustBytes32()
-				err = txLogic.execRegisterGPGKey(senderPubKey, gpgPubKey, scopes, feeCap, "1.5", 0)
+				err = txLogic.execRegisterPushKey(senderPubKey, pushKey.ToPublicKey(), scopes, feeCap, "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
-			Specify("that the gpg public key was added to the tree", func() {
-				entity, _ := crypto.PGPEntityFromPubKey(gpgPubKey)
-				gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-				gpgKey := logic.gpgPubKeyKeeper.Get(gpgID, 0)
-				Expect(gpgKey.IsNil()).To(BeFalse())
-				Expect(gpgKey.Address).To(Equal(sender.Addr()))
-				Expect(gpgKey.PubKey).To(Equal(gpgPubKey))
-				Expect(gpgKey.Scopes).To(Equal(scopes))
-				Expect(gpgKey.FeeCap).To(Equal(feeCap))
+			Specify("that the push key was added to the tree", func() {
+				pushKeyID := crypto.CreatePushKeyID(pushKey.ToPublicKey())
+				pk := logic.pushKeyKeeper.Get(pushKeyID, 0)
+				Expect(pk.IsNil()).To(BeFalse())
+				Expect(pk.Address).To(Equal(sender.Addr()))
+				Expect(pk.PubKey).To(Equal(pushKey.ToPublicKey()))
+				Expect(pk.Scopes).To(Equal(scopes))
+				Expect(pk.FeeCap).To(Equal(feeCap))
 			})
 
 			Specify("that fee is deducted from sender account", func() {
@@ -99,7 +97,7 @@ var _ = Describe("GPG", func() {
 		})
 	})
 
-	Describe(".execUpDelGPGKey", func() {
+	Describe(".execUpDelPushKey", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 
@@ -112,21 +110,21 @@ var _ = Describe("GPG", func() {
 		})
 
 		When("delete is set to true", func() {
-			var gpgKeyID = "gpg1_abc"
+			var pushKeyID = "push1_abc"
 			BeforeEach(func() {
-				key := state.BareGPGPubKey()
+				key := state.BarePushKey()
 				key.Address = "addr1"
-				logic.GPGPubKeyKeeper().Update(gpgKeyID, key)
-				Expect(logic.GPGPubKeyKeeper().Get(gpgKeyID).IsNil()).To(BeFalse())
+				logic.PushKeyKeeper().Update(pushKeyID, key)
+				Expect(logic.PushKeyKeeper().Get(pushKeyID).IsNil()).To(BeFalse())
 
 				senderPubKey := sender.PubKey().MustBytes32()
-				err = txLogic.execUpDelGPGKey(senderPubKey, gpgKeyID, nil,
+				err = txLogic.execUpDelPushKey(senderPubKey, pushKeyID, nil,
 					nil, true, "", "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
 			It("should delete key", func() {
-				Expect(logic.GPGPubKeyKeeper().Get(gpgKeyID).IsNil()).To(BeTrue())
+				Expect(logic.PushKeyKeeper().Get(pushKeyID).IsNil()).To(BeTrue())
 			})
 
 			Specify("that fee is deducted from sender account", func() {
@@ -136,47 +134,47 @@ var _ = Describe("GPG", func() {
 		})
 
 		When("removeScope includes indices 0,2", func() {
-			var gpgKeyID = "gpg1_abc"
+			var pushKeyID = "push1_abc"
 			BeforeEach(func() {
-				key := state.BareGPGPubKey()
+				key := state.BarePushKey()
 				key.Address = "addr1"
 				key.Scopes = []string{"scope1", "scope2", "scope3"}
-				logic.GPGPubKeyKeeper().Update(gpgKeyID, key)
-				Expect(logic.GPGPubKeyKeeper().Get(gpgKeyID).IsNil()).To(BeFalse())
+				logic.PushKeyKeeper().Update(pushKeyID, key)
+				Expect(logic.PushKeyKeeper().Get(pushKeyID).IsNil()).To(BeFalse())
 
 				senderPubKey := sender.PubKey().MustBytes32()
 				rmScopes := []int{0, 2}
-				err = txLogic.execUpDelGPGKey(senderPubKey, gpgKeyID, nil,
+				err = txLogic.execUpDelPushKey(senderPubKey, pushKeyID, nil,
 					rmScopes, false, "", "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
 			It("should remove scopes at indices 0,2", func() {
-				key := logic.GPGPubKeyKeeper().Get(gpgKeyID)
+				key := logic.PushKeyKeeper().Get(pushKeyID)
 				Expect(key.Scopes).To(HaveLen(1))
 				Expect(key.Scopes).To(ContainElement("scope2"))
 			})
 		})
 
 		When("removeScope includes indices 0,5,2 or 0,2,5", func() {
-			var gpgKeyID = "gpg1_abc"
+			var pushKeyID = "push1_abc"
 			for _, indicesSlice := range [][]int{{0, 5, 2}, {0, 2, 5}} {
 				BeforeEach(func() {
-					key := state.BareGPGPubKey()
+					key := state.BarePushKey()
 					key.Address = "addr1"
 					key.Scopes = []string{"scope1", "scope2", "scope3", "scope4", "scope5", "scope6", "scope7"}
-					logic.GPGPubKeyKeeper().Update(gpgKeyID, key)
-					Expect(logic.GPGPubKeyKeeper().Get(gpgKeyID).IsNil()).To(BeFalse())
+					logic.PushKeyKeeper().Update(pushKeyID, key)
+					Expect(logic.PushKeyKeeper().Get(pushKeyID).IsNil()).To(BeFalse())
 
 					senderPubKey := sender.PubKey().MustBytes32()
 					rmScopes := indicesSlice
-					err = txLogic.execUpDelGPGKey(senderPubKey, gpgKeyID, nil,
+					err = txLogic.execUpDelPushKey(senderPubKey, pushKeyID, nil,
 						rmScopes, false, "", "1.5", 0)
 					Expect(err).To(BeNil())
 				})
 
 				It("should remove scopes at indices 0,2", func() {
-					key := logic.GPGPubKeyKeeper().Get(gpgKeyID)
+					key := logic.PushKeyKeeper().Get(pushKeyID)
 					Expect(key.Scopes).To(HaveLen(4))
 					Expect(key.Scopes).ToNot(ContainElement("scope1"))
 					Expect(key.Scopes).ToNot(ContainElement("scope3"))
@@ -186,23 +184,23 @@ var _ = Describe("GPG", func() {
 		})
 
 		When("addScopes includes scope10, scope11", func() {
-			var gpgKeyID = "gpg1_abc"
+			var pushKeyID = "push1_abc"
 			BeforeEach(func() {
-				key := state.BareGPGPubKey()
+				key := state.BarePushKey()
 				key.Address = "addr1"
 				key.Scopes = []string{"scope1", "scope2", "scope3"}
-				logic.GPGPubKeyKeeper().Update(gpgKeyID, key)
-				Expect(logic.GPGPubKeyKeeper().Get(gpgKeyID).IsNil()).To(BeFalse())
+				logic.PushKeyKeeper().Update(pushKeyID, key)
+				Expect(logic.PushKeyKeeper().Get(pushKeyID).IsNil()).To(BeFalse())
 
 				senderPubKey := sender.PubKey().MustBytes32()
 				addScopes := []string{"scope10", "scope11"}
-				err = txLogic.execUpDelGPGKey(senderPubKey, gpgKeyID, addScopes,
+				err = txLogic.execUpDelPushKey(senderPubKey, pushKeyID, addScopes,
 					nil, false, "", "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
 			It("should add scopes scope10, scope11", func() {
-				key := logic.GPGPubKeyKeeper().Get(gpgKeyID)
+				key := logic.PushKeyKeeper().Get(pushKeyID)
 				Expect(key.Scopes).To(HaveLen(5))
 				Expect(key.Scopes).To(ContainElement("scope10"))
 				Expect(key.Scopes).To(ContainElement("scope11"))
@@ -210,21 +208,21 @@ var _ = Describe("GPG", func() {
 		})
 
 		When("feeCap is set", func() {
-			var gpgKeyID = "gpg1_abc"
+			var pushKeyID = "push1_abc"
 			BeforeEach(func() {
-				key := state.BareGPGPubKey()
+				key := state.BarePushKey()
 				key.Address = "addr1"
-				logic.GPGPubKeyKeeper().Update(gpgKeyID, key)
-				Expect(logic.GPGPubKeyKeeper().Get(gpgKeyID).IsNil()).To(BeFalse())
+				logic.PushKeyKeeper().Update(pushKeyID, key)
+				Expect(logic.PushKeyKeeper().Get(pushKeyID).IsNil()).To(BeFalse())
 
 				senderPubKey := sender.PubKey().MustBytes32()
-				err = txLogic.execUpDelGPGKey(senderPubKey, gpgKeyID, nil,
+				err = txLogic.execUpDelPushKey(senderPubKey, pushKeyID, nil,
 					nil, false, "100", "1.5", 0)
 				Expect(err).To(BeNil())
 			})
 
 			It("should update fee cap", func() {
-				key := logic.GPGPubKeyKeeper().Get(gpgKeyID)
+				key := logic.PushKeyKeeper().Get(pushKeyID)
 				Expect(key.FeeCap).To(Equal(util.String("100")))
 			})
 		})

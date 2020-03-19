@@ -17,7 +17,7 @@ const (
 	StakeTypeHost      = "s"
 )
 
-// BareAccount returns an empty keystore
+// BareAccount returns an empty account
 func BareAccount() *Account {
 	return &Account{
 		Balance: util.String("0"),
@@ -96,7 +96,7 @@ func (a *Account) SetBalance(bal string) {
 	a.Balance = util.String(bal)
 }
 
-// IsNil checks whether an keystore is empty/unset
+// IsNil checks whether an account is empty/unset
 func (a *Account) IsNil() bool {
 	return a.Balance.Empty() || a.Balance.Equal("0") &&
 		a.Nonce == uint64(0) &&
@@ -104,7 +104,7 @@ func (a *Account) IsNil() bool {
 		a.DelegatorCommission == float64(0)
 }
 
-// GetSpendableBalance returns the spendable balance of the keystore.
+// GetSpendableBalance returns the spendable balance of the account.
 // Formula: balance - total staked.
 // curHeight: The current blockchain height; Used to determine which stakes are unbonded.
 func (a *Account) GetSpendableBalance(curHeight uint64) util.String {
@@ -126,13 +126,13 @@ func (a *Account) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return a.DecodeMulti(dec, &a.Balance, &a.Nonce, &a.Stakes, &a.DelegatorCommission)
 }
 
-// Bytes return the serialized equivalent of the keystore
+// Bytes return the serialized equivalent of the account
 func (a *Account) Bytes() []byte {
 	return util.ToBytes(a)
 }
 
 // Clean implements types.BalanceAccount; it removes old, unused data stored in
-// the keystore such as unbonded stakes.
+// the account such as unbonded stakes.
 // Ignores stakes with unbond height set to 0.
 // curHeight: The current blockchain height
 func (a *Account) Clean(curHeight uint64) {

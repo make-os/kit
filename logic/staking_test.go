@@ -64,7 +64,7 @@ var _ = Describe("Staking", func() {
 	Describe(".addStake", func() {
 
 		Context("for tx of type TxTypeValidatorTicket & TxTypeHostTicket", func() {
-			Context("when [current block height]=1; an keystore balance is 100 with validator stake entry of value=50, unbondHeight=1", func() {
+			Context("when [current block height]=1; an account balance is 100 with validator stake entry of value=50, unbondHeight=1", func() {
 				BeforeEach(func() {
 					stakes := state.BareAccountStakes()
 					stakes.Add(state.StakeTypeValidator, "50", 1)
@@ -87,7 +87,7 @@ var _ = Describe("Staking", func() {
 				})
 			})
 
-			Context("when [current block height]=1; an keystore balance is 100 with validator stake entry of value=50, unbondHeight=100", func() {
+			Context("when [current block height]=1; an account balance is 100 with validator stake entry of value=50, unbondHeight=100", func() {
 				BeforeEach(func() {
 					stakes := state.BareAccountStakes()
 					stakes.Add(state.StakeTypeValidator, "50", 100)

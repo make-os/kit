@@ -105,7 +105,7 @@ func (sk *StoredKey) Unlock(passphrase string) error {
 	decData, err := util.Decrypt(sk.Cipher, passphraseBs[:])
 	if err != nil {
 		if funk.Contains(err.Error(), "invalid key") {
-			return types.ErrInvalidPassprase
+			return types.ErrInvalidPassphrase
 		}
 		return err
 	}
@@ -114,7 +114,7 @@ func (sk *StoredKey) Unlock(passphrase string) error {
 	// Decode from base58
 	keyData, _, err := base58.CheckDecode(string(decData))
 	if err != nil {
-		return types.ErrInvalidPassprase
+		return types.ErrInvalidPassphrase
 	}
 
 	// Decode from msgpack

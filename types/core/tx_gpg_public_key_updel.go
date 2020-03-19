@@ -22,10 +22,10 @@ type TxUpDelGPGPubKey struct {
 	Delete       bool        `json:"delete" msgpack:"delete" mapstructure:"delete"`
 }
 
-// NewBareTxUpDelGPGPubKey returns an instance of TxUpDelGPGPubKey with zero values
-func NewBareTxUpDelGPGPubKey() *TxUpDelGPGPubKey {
+// NewBareTxUpDelPushKey returns an instance of TxUpDelGPGPubKey with zero values
+func NewBareTxUpDelPushKey() *TxUpDelGPGPubKey {
 	return &TxUpDelGPGPubKey{
-		TxType:   &TxType{Type: TxTypeUpDelGPGPubKey},
+		TxType:   &TxType{Type: TxTypeUpDelPushKey},
 		TxCommon: NewBareTxCommon(),
 	}
 }

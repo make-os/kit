@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"io"
 
+	"gitlab.com/makeos/mosdef/types/constants"
 	"golang.org/x/crypto/ripemd160"
 
 	"golang.org/x/crypto/blake2b"
@@ -91,14 +92,14 @@ func RIPEMD160(v []byte) []byte {
 
 // CreateGPGIDFromRSA returns bech32 encoding of the given RSA
 // public key with HRP=gpg, for use as a GPG public key identifier
-func CreateGPGIDFromRSA(pk *rsa.PublicKey) string {
-	hash20 := HashRSAForGPGID(pk)
-	id, err := bech32.ConvertAndEncode(GPGAddrHRP, hash20)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
+// func CreateGPGIDFromRSA(pk *rsa.PublicKey) string {
+// 	hash20 := HashRSAForGPGID(pk)
+// 	id, err := bech32.ConvertAndEncode(GPGAddrHRP, hash20)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	return id
+// }
 
 // MustDecodeGPGIDToRSAHash decodes a GPG ID to RSA public key hash.
 // Panics if decoding fails.
@@ -110,14 +111,14 @@ func MustDecodeGPGIDToRSAHash(id string) []byte {
 	return bz
 }
 
-// IsValidGPGID checks whether the given id is a valid bech32 encoded string
-// used for representing GPG public key
-func IsValidGPGID(id string) bool {
+// IsValidPushKeyID checks whether the given id is a valid bech32 encoded string
+// used for representing a push key
+func IsValidPushKeyID(id string) bool {
 	hrp, bz, err := bech32.DecodeAndConvert(id)
 	if err != nil {
 		return false
 	}
-	if hrp != GPGAddrHRP {
+	if hrp != constants.PushAddrHRP {
 		return false
 	}
 	if len(bz) != 20 {

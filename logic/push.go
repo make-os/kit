@@ -30,8 +30,8 @@ func (t *Transaction) execPush(
 	repo := repoKeeper.Get(repoName)
 
 	// Get the GPG public key of the pusher
-	gpgID := util.MustCreateGPGID(pusherKeyID)
-	gpgPK := t.logic.GPGPubKeyKeeper().Get(gpgID, chainHeight)
+	pushKeyID := util.MustCreateGPGID(pusherKeyID)
+	pushKey := t.logic.PushKeyKeeper().Get(pushKeyID, chainHeight)
 
 	// Register the references to the repo and update their nonce
 	for _, ref := range references {
@@ -40,9 +40,9 @@ func (t *Transaction) execPush(
 		repo.References[ref.Name] = curRef
 	}
 
-	// Get the keystore of the pusher
+	// Get the account of the pusher
 	acctKeeper := t.logic.AccountKeeper()
-	pusherAcct := acctKeeper.Get(gpgPK.Address)
+	pusherAcct := acctKeeper.Get(pushKey.Address)
 
 	// Deduct the fee
 	pusherAcctBal := pusherAcct.Balance.Decimal()
@@ -50,9 +50,9 @@ func (t *Transaction) execPush(
 	pusherAcct.Balance = util.String(pusherAcctBal.Sub(spendAmt).String())
 	pusherAcct.Nonce = pusherAcct.Nonce + 1
 
-	// Clean up unbonded stakes and update sender keystore
+	// Clean up unbonded stakes and update sender account
 	pusherAcct.Clean(chainHeight)
-	acctKeeper.Update(gpgPK.Address, pusherAcct)
+	acctKeeper.Update(pushKey.Address, pusherAcct)
 
 	// Update the repo
 	repoKeeper.Update(repoName, repo)

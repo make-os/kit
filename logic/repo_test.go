@@ -4,7 +4,7 @@ import (
 	"os"
 
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 
@@ -777,7 +777,7 @@ var _ = Describe("Repo", func() {
 		When("proposal includes 2 addresses", func() {
 			BeforeEach(func() {
 				proposal := &state.RepoProposal{ActionData: map[string][]byte{
-					types.ActionDataKeyAddrs: util.ToBytes([]string{"addr1", "addr2"}),
+					constants.ActionDataKeyAddrs: util.ToBytes([]string{"addr1", "addr2"}),
 				}}
 				err = applyProposalUpsertOwner(proposal, repoUpd, 0)
 			})
@@ -796,8 +796,8 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				repoUpd.AddOwner("addr1", existing)
 				proposal := &state.RepoProposal{ActionData: map[string][]byte{
-					types.ActionDataKeyAddrs: util.ToBytes([]string{"addr1", "addr2"}),
-					types.ActionDataKeyVeto:  util.ToBytes(true),
+					constants.ActionDataKeyAddrs: util.ToBytes([]string{"addr1", "addr2"}),
+					constants.ActionDataKeyVeto:  util.ToBytes(true),
 				}}
 				err = applyProposalUpsertOwner(proposal, repoUpd, 200)
 			})
@@ -1077,7 +1077,7 @@ var _ = Describe("Repo", func() {
 		When("update config object is empty", func() {
 			It("should not change the config", func() {
 				proposal := &state.RepoProposal{
-					ActionData: map[string][]byte{types.ActionDataKeyCFG: util.ToBytes((&state.RepoConfig{}).ToMap())},
+					ActionData: map[string][]byte{constants.ActionDataKeyCFG: util.ToBytes((&state.RepoConfig{}).ToMap())},
 				}
 				err = applyProposalRepoUpdate(proposal, repo, 0)
 				Expect(err).To(BeNil())
@@ -1090,7 +1090,7 @@ var _ = Describe("Repo", func() {
 				cfg := &state.RepoConfig{Governance: &state.RepoConfigGovernance{ProposalQuorum: 120, ProposalDur: 100}}
 				proposal := &state.RepoProposal{
 					ActionData: map[string][]byte{
-						types.ActionDataKeyCFG: util.ToBytes(cfg.ToMap()),
+						constants.ActionDataKeyCFG: util.ToBytes(cfg.ToMap()),
 					},
 				}
 				err = applyProposalRepoUpdate(proposal, repo, 0)
@@ -1231,7 +1231,7 @@ var _ = Describe("Repo", func() {
 
 				spk = sender.PubKey().MustBytes32()
 				err = txLogic.execRepoProposalRegisterGPGKeys(spk, repoName, "1",
-					[]string{"gpg1_abc"}, state.FeeModePusherPays,
+					[]string{"push1_abc"}, state.FeeModePusherPays,
 					"0",
 					[]*state.RepoACLPolicy{},
 					"",
@@ -1277,9 +1277,9 @@ var _ = Describe("Repo", func() {
 		When("2 ids were provided in action data", func() {
 			BeforeEach(func() {
 				proposal := &state.RepoProposal{ActionData: map[string][]byte{
-					types.ActionDataKeyPolicies: util.ToBytes([]*state.RepoACLPolicy{{Action: "act", Subject: "sub", Object: "obj"}}),
-					types.ActionDataKeyIDs:      util.ToBytes([]string{"gpg1_abc", "gpg1_xyz"}),
-					types.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModePusherPays),
+					constants.ActionDataKeyPolicies: util.ToBytes([]*state.RepoACLPolicy{{Action: "act", Subject: "sub", Object: "obj"}}),
+					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc", "push1_xyz"}),
+					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModePusherPays),
 				}}
 				err = applyProposalRegisterGPGKeys(logic, proposal, repoUpd, 0)
 				Expect(err).To(BeNil())
@@ -1287,17 +1287,17 @@ var _ = Describe("Repo", func() {
 
 			It("should add 2 contributors with same policies, feeMode, feeCap, feeUsed fields", func() {
 				Expect(repoUpd.Contributors).To(HaveLen(2))
-				Expect(repoUpd.Contributors["gpg1_abc"]).To(Equal(repoUpd.Contributors["gpg1_xyz"]))
+				Expect(repoUpd.Contributors["push1_abc"]).To(Equal(repoUpd.Contributors["push1_xyz"]))
 			})
 		})
 
 		When("feeMode is FeeModeRepoPaysCapped", func() {
 			BeforeEach(func() {
 				proposal := &state.RepoProposal{ActionData: map[string][]byte{
-					types.ActionDataKeyPolicies: util.ToBytes([]*state.RepoACLPolicy{{Action: "act", Subject: "sub", Object: "obj"}}),
-					types.ActionDataKeyIDs:      util.ToBytes([]string{"gpg1_abc"}),
-					types.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModeRepoPaysCapped),
-					types.ActionDataKeyFeeCap:   util.ToBytes(util.String("100")),
+					constants.ActionDataKeyPolicies: util.ToBytes([]*state.RepoACLPolicy{{Action: "act", Subject: "sub", Object: "obj"}}),
+					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc"}),
+					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModeRepoPaysCapped),
+					constants.ActionDataKeyFeeCap:   util.ToBytes(util.String("100")),
 				}}
 				err = applyProposalRegisterGPGKeys(logic, proposal, repoUpd, 0)
 				Expect(err).To(BeNil())
@@ -1305,17 +1305,17 @@ var _ = Describe("Repo", func() {
 
 			It("should set feeCap field", func() {
 				Expect(repoUpd.Contributors).To(HaveLen(1))
-				Expect(repoUpd.Contributors["gpg1_abc"].FeeCap).To(Equal(util.String("100")))
+				Expect(repoUpd.Contributors["push1_abc"].FeeCap).To(Equal(util.String("100")))
 			})
 		})
 
 		When("feeMode is not FeeModeRepoPaysCapped", func() {
 			BeforeEach(func() {
 				proposal := &state.RepoProposal{ActionData: map[string][]byte{
-					types.ActionDataKeyPolicies: util.ToBytes([]*state.RepoACLPolicy{{Action: "act", Subject: "sub", Object: "obj"}}),
-					types.ActionDataKeyIDs:      util.ToBytes([]string{"gpg1_abc"}),
-					types.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModeRepoPays),
-					types.ActionDataKeyFeeCap:   util.ToBytes(util.String("100")),
+					constants.ActionDataKeyPolicies: util.ToBytes([]*state.RepoACLPolicy{{Action: "act", Subject: "sub", Object: "obj"}}),
+					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc"}),
+					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModeRepoPays),
+					constants.ActionDataKeyFeeCap:   util.ToBytes(util.String("100")),
 				}}
 				err = applyProposalRegisterGPGKeys(logic, proposal, repoUpd, 0)
 				Expect(err).To(BeNil())
@@ -1323,7 +1323,7 @@ var _ = Describe("Repo", func() {
 
 			Specify("that feeCap field is zero", func() {
 				Expect(repoUpd.Contributors).To(HaveLen(1))
-				Expect(repoUpd.Contributors["gpg1_abc"].FeeCap).To(Equal(util.String("0")))
+				Expect(repoUpd.Contributors["push1_abc"].FeeCap).To(Equal(util.String("0")))
 			})
 		})
 
@@ -1335,11 +1335,11 @@ var _ = Describe("Repo", func() {
 			When("the target namespace does not exist", func() {
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{ActionData: map[string][]byte{
-						types.ActionDataKeyPolicies:  util.ToBytes([]*state.RepoACLPolicy{}),
-						types.ActionDataKeyIDs:       util.ToBytes([]string{"gpg1_abc"}),
-						types.ActionDataKeyFeeMode:   util.ToBytes(state.FeeModeRepoPays),
-						types.ActionDataKeyFeeCap:    util.ToBytes(util.String("100")),
-						types.ActionDataKeyNamespace: util.ToBytes("other_namespace"),
+						constants.ActionDataKeyPolicies:  util.ToBytes([]*state.RepoACLPolicy{}),
+						constants.ActionDataKeyIDs:       util.ToBytes([]string{"push1_abc"}),
+						constants.ActionDataKeyFeeMode:   util.ToBytes(state.FeeModeRepoPays),
+						constants.ActionDataKeyFeeCap:    util.ToBytes(util.String("100")),
+						constants.ActionDataKeyNamespace: util.ToBytes("other_namespace"),
 					}}
 				})
 
@@ -1356,10 +1356,10 @@ var _ = Describe("Repo", func() {
 					nsObj.Owner = "repo1"
 					logic.NamespaceKeeper().Update(util.HashNamespace(ns), nsObj)
 					proposal = &state.RepoProposal{ActionData: map[string][]byte{
-						types.ActionDataKeyPolicies:  util.ToBytes([]*state.RepoACLPolicy{}),
-						types.ActionDataKeyIDs:       util.ToBytes([]string{"gpg1_abc"}),
-						types.ActionDataKeyFeeMode:   util.ToBytes(state.FeeModeRepoPays),
-						types.ActionDataKeyNamespace: util.ToBytes(ns),
+						constants.ActionDataKeyPolicies:  util.ToBytes([]*state.RepoACLPolicy{}),
+						constants.ActionDataKeyIDs:       util.ToBytes([]string{"push1_abc"}),
+						constants.ActionDataKeyFeeMode:   util.ToBytes(state.FeeModeRepoPays),
+						constants.ActionDataKeyNamespace: util.ToBytes(ns),
 					}}
 					err := applyProposalRegisterGPGKeys(logic, proposal, repoUpd, 0)
 					Expect(err).To(BeNil())
@@ -1373,7 +1373,7 @@ var _ = Describe("Repo", func() {
 					nsKey := util.HashNamespace(ns)
 					nsObj := logic.NamespaceKeeper().Get(nsKey)
 					Expect(nsObj.Contributors).To(HaveLen(1))
-					Expect(nsObj.Contributors["gpg1_abc"]).ToNot(BeNil())
+					Expect(nsObj.Contributors["push1_abc"]).ToNot(BeNil())
 				})
 			})
 		})
@@ -1386,11 +1386,11 @@ var _ = Describe("Repo", func() {
 			When("the target namespace does not exist", func() {
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{ActionData: map[string][]byte{
-						types.ActionDataKeyPolicies:      util.ToBytes([]*state.RepoACLPolicy{}),
-						types.ActionDataKeyIDs:           util.ToBytes([]string{"gpg1_abc"}),
-						types.ActionDataKeyFeeMode:       util.ToBytes(state.FeeModeRepoPays),
-						types.ActionDataKeyFeeCap:        util.ToBytes(util.String("100")),
-						types.ActionDataKeyNamespaceOnly: util.ToBytes("other_namespace"),
+						constants.ActionDataKeyPolicies:      util.ToBytes([]*state.RepoACLPolicy{}),
+						constants.ActionDataKeyIDs:           util.ToBytes([]string{"push1_abc"}),
+						constants.ActionDataKeyFeeMode:       util.ToBytes(state.FeeModeRepoPays),
+						constants.ActionDataKeyFeeCap:        util.ToBytes(util.String("100")),
+						constants.ActionDataKeyNamespaceOnly: util.ToBytes("other_namespace"),
 					}}
 				})
 
@@ -1407,10 +1407,10 @@ var _ = Describe("Repo", func() {
 					nsObj.Owner = "repo1"
 					logic.NamespaceKeeper().Update(util.HashNamespace(ns), nsObj)
 					proposal = &state.RepoProposal{ActionData: map[string][]byte{
-						types.ActionDataKeyPolicies:      util.ToBytes([]*state.RepoACLPolicy{}),
-						types.ActionDataKeyIDs:           util.ToBytes([]string{"gpg1_abc"}),
-						types.ActionDataKeyFeeMode:       util.ToBytes(state.FeeModeRepoPays),
-						types.ActionDataKeyNamespaceOnly: util.ToBytes(ns),
+						constants.ActionDataKeyPolicies:      util.ToBytes([]*state.RepoACLPolicy{}),
+						constants.ActionDataKeyIDs:           util.ToBytes([]string{"push1_abc"}),
+						constants.ActionDataKeyFeeMode:       util.ToBytes(state.FeeModeRepoPays),
+						constants.ActionDataKeyNamespaceOnly: util.ToBytes(ns),
 					}}
 					err := applyProposalRegisterGPGKeys(logic, proposal, repoUpd, 0)
 					Expect(err).To(BeNil())
@@ -1424,7 +1424,7 @@ var _ = Describe("Repo", func() {
 					nsKey := util.HashNamespace(ns)
 					nsObj := logic.NamespaceKeeper().Get(nsKey)
 					Expect(nsObj.Contributors).To(HaveLen(1))
-					Expect(nsObj.Contributors["gpg1_abc"]).ToNot(BeNil())
+					Expect(nsObj.Contributors["push1_abc"]).ToNot(BeNil())
 				})
 			})
 		})

@@ -15,6 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/storage"
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gitlab.com/makeos/mosdef/validators"
@@ -75,7 +76,7 @@ func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitCh
 	stateTree := a.logic.StateTree()
 
 	a.log.Info("Initializing for the first time")
-	a.log.Info("Creating the chain and generaring initial state")
+	a.log.Info("Creating the chain and generating initial state")
 
 	// Write genesis state as long as the state tree is empty
 	if stateTree.WorkingHash() == nil {
@@ -455,7 +456,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	// Emit events about the committed transactions
 	committedTxs := make([]types.BaseTx, len(a.unIdxTxs))
 	copy(committedTxs, a.unIdxTxs)
-	a.cfg.G().Bus.Emit(types.EvtABCICommittedTx, nil, committedTxs)
+	a.cfg.G().Bus.Emit(constants.EvtABCICommittedTx, nil, committedTxs)
 
 	return abcitypes.ResponseCommit{
 		Data: bi.AppHash,

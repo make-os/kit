@@ -2,60 +2,61 @@ package state
 
 import (
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// BareGPGPubKey returns a GPGPubKey object with zero values
-func BareGPGPubKey() *GPGPubKey {
-	return &GPGPubKey{
+// BarePushKey returns a PushKey object with zero values
+func BarePushKey() *PushKey {
+	return &PushKey{
 		Scopes:  []string{},
 		FeeCap:  "0",
 		FeeUsed: "0",
 	}
 }
 
-// GPGPubKey represents a GPG public key
-type GPGPubKey struct {
+// PushKey represents a push key
+type PushKey struct {
 	util.SerializerHelper `json:"-" msgpack:"-"`
-	PubKey                string       `json:"pubKey" mapstructure:"pubKey" msgpack:"pubKey"`
-	Address               util.Address `json:"address" mapstructure:"address" msgpack:"address"`
-	Scopes                []string     `json:"scopes" mapstructure:"scopes" msgpack:"scopes"`
-	FeeCap                util.String  `json:"feeCap" mapstructure:"feeCap" msgpack:"feeCap"`
-	FeeUsed               util.String  `json:"feeUsed" mapstructure:"feeUsed" msgpack:"feeUsed"`
+	PubKey                crypto.PublicKey `json:"pubKey" mapstructure:"pubKey" msgpack:"pubKey"`
+	Address               util.Address     `json:"address" mapstructure:"address" msgpack:"address"`
+	Scopes                []string         `json:"scopes" mapstructure:"scopes" msgpack:"scopes"`
+	FeeCap                util.String      `json:"feeCap" mapstructure:"feeCap" msgpack:"feeCap"`
+	FeeUsed               util.String      `json:"feeUsed" mapstructure:"feeUsed" msgpack:"feeUsed"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
-func (g *GPGPubKey) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return g.EncodeMulti(enc,
-		g.PubKey,
-		g.Address,
-		g.Scopes,
-		g.FeeCap,
-		g.FeeUsed)
+func (pk *PushKey) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return pk.EncodeMulti(enc,
+		pk.PubKey,
+		pk.Address,
+		pk.Scopes,
+		pk.FeeCap,
+		pk.FeeUsed)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
-func (g *GPGPubKey) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return g.DecodeMulti(dec,
-		&g.PubKey,
-		&g.Address,
-		&g.Scopes,
-		&g.FeeCap,
-		&g.FeeUsed)
+func (pk *PushKey) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return pk.DecodeMulti(dec,
+		&pk.PubKey,
+		&pk.Address,
+		&pk.Scopes,
+		&pk.FeeCap,
+		&pk.FeeUsed)
 }
 
 // Bytes return the serialized equivalent
-func (g *GPGPubKey) Bytes() []byte {
-	return util.ToBytes(g)
+func (pk *PushKey) Bytes() []byte {
+	return util.ToBytes(pk)
 }
 
 // IsNil returns true if g fields have zero values
-func (g *GPGPubKey) IsNil() bool {
-	return g.PubKey == "" && g.Address.Empty()
+func (pk *PushKey) IsNil() bool {
+	return pk.PubKey.IsEmpty() && pk.Address.IsEmpty()
 }
 
-// NewGPGPubKeyFromBytes deserialize bz to GPGPubKey
-func NewGPGPubKeyFromBytes(bz []byte) (*GPGPubKey, error) {
-	var o = &GPGPubKey{}
+// NewGPGPubKeyFromBytes deserialize bz to PushKey
+func NewGPGPubKeyFromBytes(bz []byte) (*PushKey, error) {
+	var o = &PushKey{}
 	return o, util.ToObject(bz, o)
 }

@@ -1,28 +1,26 @@
 package logic
 
 import (
-	"crypto/rsa"
-
 	"gitlab.com/makeos/mosdef/types/state"
 
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// execRegisterGPGKey registers a GPG key to the network
+// execRegisterPushKey registers a Push key
 //
 // ARGS:
 // senderPubKey: The account public key of the sender.
-// publicKey: The gpg public key
+// pushPubKey: The push public key
 // fee: The fee paid by the sender
 // chainHeight: The chain height to limit query to
 //
 // CONTRACT:
 // - Sender's public key must be valid public key
-// - The gpg public key must be valid
-func (t *Transaction) execRegisterGPGKey(
+// - The push key public key must be valid
+func (t *Transaction) execRegisterPushKey(
 	senderPubKey util.Bytes32,
-	gpgPublicKey string,
+	pushPubKey crypto.PublicKey,
 	scopes []string,
 	feeCap,
 	fee util.String,
@@ -30,17 +28,16 @@ func (t *Transaction) execRegisterGPGKey(
 
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 
-	// Create a new GPGPubKey
-	key := state.BareGPGPubKey()
-	key.PubKey = gpgPublicKey
+	// Create a new PushKey
+	key := state.BarePushKey()
+	key.PubKey = pushPubKey
 	key.Address = spk.Addr()
 	key.Scopes = scopes
 	key.FeeCap = feeCap
 
 	// Store the new public key
-	entity, _ := crypto.PGPEntityFromPubKey(gpgPublicKey)
-	gpgID := util.CreateGPGIDFromRSA(entity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-	t.logic.GPGPubKeyKeeper().Update(gpgID, key)
+	pushKeyID := crypto.CreatePushKeyID(pushPubKey)
+	t.logic.PushKeyKeeper().Update(pushKeyID, key)
 
 	// Deduct fee and update account
 	t.debitAccount(spk, fee.Decimal(), chainHeight)
@@ -48,25 +45,25 @@ func (t *Transaction) execRegisterGPGKey(
 	return nil
 }
 
-// execUpDelGPGKey updates or deletes a registered gpg public key
+// execUpDelPushKey updates or deletes a registered push key
 //
 // ARGS:
-// senderPubKey: The keystore public key of the sender.
-// gpgID: The gpg public key ID
+// senderPubKey: The public key of the sender.
+// pushKeyID: The push key ID
 // addScopes: A list of scopes to add
 // removeScopes: A list of indices pointing to scopes to be deleted.
-// deleteKey: Indicates that the gpg public key should be deleted.
-// feeCap: The amount of fee the gpg key can spend.
+// deleteKey: Indicates that the push key should be deleted.
+// feeCap: The amount of fee the push key can spend.
 // fee: The fee paid by the sender
 // chainHeight: The chain height to limit query to
 //
 // CONTRACT:
 // - Expect sender public key to be valid.
-// - Expect the gpg key to exist.
+// - Expect the push key to exist.
 // - Expect indices in removeScopes are within range of key scopes
-func (t *Transaction) execUpDelGPGKey(
+func (t *Transaction) execUpDelPushKey(
 	senderPubKey util.Bytes32,
-	gpgID string,
+	pushKeyID string,
 	addScopes []string,
 	removeScopes []int,
 	deleteKey bool,
@@ -74,12 +71,12 @@ func (t *Transaction) execUpDelGPGKey(
 	fee util.String,
 	chainHeight uint64) error {
 
-	gpgKeeper := t.logic.GPGPubKeyKeeper()
-	key := gpgKeeper.Get(gpgID)
+	pushKeyKeeper := t.logic.PushKeyKeeper()
+	key := pushKeyKeeper.Get(pushKeyID)
 
 	// If delete is requested, delete immediately and return.
 	if deleteKey {
-		gpgKeeper.Remove(gpgID)
+		pushKeyKeeper.Remove(pushKeyID)
 		goto debit_fee
 	}
 
@@ -99,8 +96,8 @@ func (t *Transaction) execUpDelGPGKey(
 		key.FeeCap = feeCap
 	}
 
-	// Update GPG key
-	gpgKeeper.Update(gpgID, key)
+	// Update push key
+	pushKeyKeeper.Update(pushKeyID, key)
 
 debit_fee:
 

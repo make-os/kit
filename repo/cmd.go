@@ -2,7 +2,6 @@ package repo
 
 import (
 	"bytes"
-	"crypto/rsa"
 	"encoding/pem"
 	"fmt"
 	"io"
@@ -56,13 +55,14 @@ func SignCommitCmd(
 	}
 
 	// Get the public key of the signing key
-	pkEntity, err := crypto.GetGPGPublicKey(signingKey, targetRepo.GetConfig("gpg.program"), "")
-	if err != nil {
-		return errors.Wrap(err, "failed to get gpg public key")
-	}
+	// pkEntity, err := crypto.GetGPGPublicKey(signingKey, targetRepo.GetConfig("gpg.program"), "")
+	// if err != nil {
+	// 	return errors.Wrap(err, "failed to get gpg public key")
+	// }
 
+	var err error
 	// Get the public key network ID
-	gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+	gpgID := "" // TODO: get gpg ID
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
@@ -128,7 +128,7 @@ add_req_token:
 
 // SignTagCmd creates an annotated tag, appends transaction information to its
 // message and signs it.
-// If rpcClient is set, the transaction nonce of the signing keystore is fetched
+// If rpcClient is set, the transaction nonce of the signing account is fetched
 // from the rpc server.
 func SignTagCmd(
 	args []string,
@@ -166,14 +166,15 @@ func SignTagCmd(
 	// Remove -m or --message flag from args
 	args = util.RemoveFlagVal(args, []string{"m", "message", "u"})
 
+	var err error
 	// Get the public key of the signing key
-	pkEntity, err := crypto.GetGPGPublicKey(signingKey, targetRepo.GetConfig("gpg.program"), "")
-	if err != nil {
-		return errors.Wrap(err, "failed to get gpg public key")
-	}
+	// pkEntity, err := crypto.GetGPGPublicKey(signingKey, targetRepo.GetConfig("gpg.program"), "")
+	// if err != nil {
+	// 	return errors.Wrap(err, "failed to get gpg public key")
+	// }
 
 	// Get the public key network ID
-	gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+	gpgID := "" // TODO: set gpg id
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
@@ -209,7 +210,7 @@ func SignTagCmd(
 }
 
 // SignNoteCmd creates adds transaction information to a note and signs it.
-// If rpcClient is set, the transaction nonce of the signing keystore is fetched
+// If rpcClient is set, the transaction nonce of the signing account is fetched
 // from the rpc server.
 func SignNoteCmd(
 	targetRepo core.BareRepo,
@@ -284,7 +285,7 @@ func SignNoteCmd(
 	}
 
 	// Get the public key network ID
-	gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
+	gpgID := "" // TODO: set gpg id
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
@@ -334,11 +335,11 @@ func SignNoteCmd(
 // CreateAndSendMergeRequestCmd creates merge request proposal
 // and sends it to the network
 // cfg: App config object
-// addrOrIdx: Address or index of keystore
-// passphrase: Passphrase of keystore
+// keyAddrOrIdx: Address or index of key
+// passphrase: Passphrase of the key
 func CreateAndSendMergeRequestCmd(
 	cfg *config.AppConfig,
-	accountAddrOrIdx,
+	keyAddrOrIdx,
 	passphrase,
 	repoName,
 	proposalID,
@@ -351,9 +352,9 @@ func CreateAndSendMergeRequestCmd(
 	rpcClient *client.RPCClient,
 	remoteClients []restclient.RestClient) error {
 
-	// Get the signer keystore
+	// Get the signer key
 	am := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
-	unlocked, err := am.UIUnlockKey(accountAddrOrIdx, passphrase)
+	unlocked, err := am.UIUnlockKey(keyAddrOrIdx, passphrase)
 	if err != nil {
 		return errors.Wrap(err, "unable to unlock")
 	}

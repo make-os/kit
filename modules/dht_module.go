@@ -6,7 +6,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/config"
 	types2 "gitlab.com/makeos/mosdef/dht/types"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
 
@@ -16,7 +16,7 @@ import (
 	"github.com/robertkrimen/otto"
 )
 
-// DHTModule provides gpg key management functionality
+// DHTModule provides access to the DHT service
 type DHTModule struct {
 	cfg *config.AppConfig
 	vm  *otto.Otto
@@ -78,12 +78,12 @@ func (m *DHTModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
 	// Set the namespace object
-	util.VMSet(m.vm, types.NamespaceDHT, fMap)
+	util.VMSet(m.vm, constants.NamespaceDHT, fMap)
 
 	// add namespaced functions
 	for _, f := range m.namespacedFuncs() {
 		fMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceDHT, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceDHT, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}

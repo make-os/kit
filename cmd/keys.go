@@ -27,7 +27,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 )
 
-// keysCmd represents the keystore command
+// keysCmd represents the parent command for all key related commands
 var keysCmd = &cobra.Command{
 	Use:   "key command [flags]",
 	Short: "Create and manage your account and push keys.",

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/modules"
 
 	"gitlab.com/makeos/mosdef/api/rpc/client"
@@ -74,12 +74,12 @@ func (m *RPCModule) Configure() []prompt.Suggest {
 	suggestions := []prompt.Suggest{}
 
 	// Set the namespace object
-	util.VMSet(m.vm, types.NamespaceRPC, fMap)
+	util.VMSet(m.vm, constants.NamespaceRPC, fMap)
 
 	// add namespaced functions
 	for _, f := range m.namespacedFuncs() {
 		fMap[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceRPC, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceRPC, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
@@ -97,7 +97,7 @@ func (m *RPCModule) Configure() []prompt.Suggest {
 	// get the supported methods and use them to create rpc suggestions under 'local' namespace
 	if m.rpcServer != nil && !m.cfg.ConsoleOnly() {
 		for _, method := range m.rpcServer.GetMethods() {
-			funcFullName := fmt.Sprintf("%s.local.%s", types.NamespaceRPC,
+			funcFullName := fmt.Sprintf("%s.local.%s", constants.NamespaceRPC,
 				strings.ReplaceAll(method.Name, "_", "."))
 			suggestions = append(suggestions, prompt.Suggest{
 				Text:        funcFullName,

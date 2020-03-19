@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/bech32"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -298,7 +299,7 @@ var _ = Describe("Key", func() {
 		})
 
 		It("should return err when address raw data is not 20 bytes", func() {
-			addr, _ := bech32.ConvertAndEncode(AddrHRP, []byte("address"))
+			addr, _ := bech32.ConvertAndEncode(constants.AddrHRP, []byte("address"))
 			err := IsValidAccountAddr(addr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("invalid raw address length"))
@@ -336,7 +337,7 @@ var _ = Describe("Key", func() {
 		})
 
 		It("should return err when address raw data is not 20 bytes", func() {
-			addr, _ := bech32.ConvertAndEncode(PushAddrHRP, []byte("address"))
+			addr, _ := bech32.ConvertAndEncode(constants.PushAddrHRP, []byte("address"))
 			err := IsValidPushAddr(addr)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("invalid raw address length"))

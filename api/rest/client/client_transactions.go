@@ -8,12 +8,12 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/api/rest"
 	apitypes "gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 )
 
 // TxSendPayload sends a signed transaction to the mempool
 func (c *Client) TxSendPayload(data map[string]interface{}) (*apitypes.TxSendPayloadResponse, error) {
-	resp, err := c.post(rest.RestV1Path(types.NamespaceTx, rest.MethodNameSendPayload), data)
+	resp, err := c.post(rest.RestV1Path(constants.NamespaceTx, rest.MethodNameSendPayload), data)
 	if err != nil {
 		return nil, err
 	}

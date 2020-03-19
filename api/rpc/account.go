@@ -3,7 +3,7 @@ package rpc
 import (
 	"github.com/stretchr/objx"
 	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -70,12 +70,12 @@ func (a *AccountAPI) getAccount(params interface{}) (resp *rpc.Response) {
 func (a *AccountAPI) APIs() rpc.APISet {
 	return map[string]rpc.APIInfo{
 		"getNonce": {
-			Namespace:   types.NamespaceUser,
+			Namespace:   constants.NamespaceUser,
 			Description: "Get the nonce of an account",
 			Func:        a.getNonce,
 		},
 		"get": {
-			Namespace:   types.NamespaceUser,
+			Namespace:   constants.NamespaceUser,
 			Description: "Get the account corresponding to an address",
 			Func:        a.getAccount,
 		},

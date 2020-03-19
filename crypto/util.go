@@ -65,3 +65,9 @@ func BytesToPublicKey(b []byte) PublicKey {
 func StrToPublicKey(s string) PublicKey {
 	return BytesToPublicKey([]byte(s))
 }
+
+// CreatePushKeyID returns bech32 address corresponding to a push key.
+// Panics if pk is not a valid ed25519 public key
+func CreatePushKeyID(pk PublicKey) string {
+	return MustPubKeyFromBytes(pk.Bytes()).PushAddr().String()
+}

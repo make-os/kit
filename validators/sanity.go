@@ -25,7 +25,7 @@ func CheckRecipient(tx *core.TxRecipient, index int) error {
 
 	recipient := tx.To
 
-	if tx.To.Empty() {
+	if tx.To.IsEmpty() {
 		return feI(index, "to", "recipient address is required")
 	}
 
@@ -308,16 +308,16 @@ func CheckTxRepoCreate(tx *core.TxRepoCreate, index int) error {
 	return nil
 }
 
-// CheckTxRegisterGPGPubKey performs sanity checks on TxRegisterGPGPubKey
-func CheckTxRegisterGPGPubKey(tx *core.TxRegisterGPGPubKey, index int) error {
+// CheckTxRegisterPushKey performs sanity checks on TxRegisterPushKey
+func CheckTxRegisterPushKey(tx *core.TxRegisterPushKey, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeRegisterGPGPubKey, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeRegisterPushKey, index); err != nil {
 		return err
 	}
 
 	if err := v.Validate(tx.PublicKey,
-		v.Required.Error(feI(index, "pubKey", "public key is required").Error()),
-		v.By(validGPGPubKeyRule("pubKey", index)),
+		v.By(isEmptyByte32(feI(index, "pubKey", "public key is required"))),
+		v.By(validPubKeyRule(feI(index, "pubKey", "invalid public key"))),
 	); err != nil {
 		return err
 	}
@@ -352,17 +352,17 @@ func checkScopes(scopes []string, index int) error {
 	return nil
 }
 
-// CheckTxUpDelGPGPubKey performs sanity checks on TxRegisterGPGPubKey
+// CheckTxUpDelGPGPubKey performs sanity checks on TxRegisterPushKey
 func CheckTxUpDelGPGPubKey(tx *core.TxUpDelGPGPubKey, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeUpDelGPGPubKey, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeUpDelPushKey, index); err != nil {
 		return err
 	}
 
 	if tx.ID == "" {
-		return feI(index, "id", "gpg id is required")
-	} else if !util.IsValidGPGID(tx.ID) {
-		return feI(index, "id", "gpg id is not valid")
+		return feI(index, "id", "push key id is required")
+	} else if !util.IsValidPushKeyID(tx.ID) {
+		return feI(index, "id", "push key id is not valid")
 	}
 
 	// If there are scope entries, ensure only namespaces URI,
@@ -779,10 +779,10 @@ func CheckTxRepoProposalUpdate(tx *core.TxRepoProposalUpdate, index int) error {
 	return nil
 }
 
-// CheckTxRepoProposalRegisterGPGKey performs sanity checks on TxRepoProposalRegisterGPGKey
-func CheckTxRepoProposalRegisterGPGKey(tx *core.TxRepoProposalRegisterGPGKey, index int) error {
+// CheckTxRepoProposalRegisterGPGKey performs sanity checks on TxRepoProposalRegisterPushKey
+func CheckTxRepoProposalRegisterGPGKey(tx *core.TxRepoProposalRegisterPushKey, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeRepoProposalRegisterGPGKey, index); err != nil {
+	if err := checkType(tx.TxType, core.TxTypeRepoProposalRegisterPushKey, index); err != nil {
 		return err
 	}
 
@@ -801,7 +801,7 @@ func CheckTxRepoProposalRegisterGPGKey(tx *core.TxRepoProposalRegisterGPGKey, in
 	// Ensure all gpg key ids are unique and valid
 	found := map[string]struct{}{}
 	for _, gpgID := range tx.KeyIDs {
-		if !util.IsValidGPGID(gpgID) {
+		if !util.IsValidPushKeyID(gpgID) {
 			return feI(index, "ids", fmt.Sprintf("GPG id (%s) is not valid", gpgID))
 		}
 		if _, ok := found[gpgID]; ok {

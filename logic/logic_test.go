@@ -36,13 +36,13 @@ var _ = Describe("Logic", func() {
 
 	Describe(".WriteGenesisState", func() {
 		var testGenData = []*config.GenDataEntry{
-			&config.GenDataEntry{Type: "keystore", Address: "addr1", Balance: "100"},
-			&config.GenDataEntry{Type: "keystore", Address: "addr2", Balance: "200"},
-			&config.GenDataEntry{
+			{Type: config.GenDataTypeAccount, Address: "addr1", Balance: "100"},
+			{Type: config.GenDataTypeAccount, Address: "addr2", Balance: "200"},
+			{
 				Type: "repo",
 				Name: "my-repo",
 				Owners: map[string]*config.RepoOwner{
-					"addr": &config.RepoOwner{Creator: true, JoinedAt: 1, Veto: true},
+					"addr": {Creator: true, JoinedAt: 1, Veto: true},
 				},
 			},
 		}
@@ -50,7 +50,7 @@ var _ = Describe("Logic", func() {
 		BeforeEach(func() {
 			cfg.GenesisFileEntries = testGenData
 			for _, a := range testGenData {
-				if a.Type == "keystore" {
+				if a.Type == config.GenDataTypeAccount {
 					res := logic.AccountKeeper().Get(util.Address(a.Address))
 					Expect(res.Balance).To(Equal(util.String("0")))
 					Expect(res.Nonce).To(Equal(uint64(0)))

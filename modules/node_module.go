@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"gitlab.com/makeos/mosdef/node/services"
-	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
 
@@ -68,11 +68,11 @@ func (m *ChainModule) Configure() []prompt.Suggest {
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
-	util.VMSet(m.vm, types.NamespaceNode, obj)
+	util.VMSet(m.vm, constants.NamespaceNode, obj)
 
 	for _, f := range m.funcs() {
 		obj[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", types.NamespaceNode, f.Name)
+		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceNode, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
