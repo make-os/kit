@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -17,7 +18,7 @@ import (
 //
 // CONTRACT (caller must have met the following expectations):
 // - Repo must exist
-// - Pusher GPG key must exist
+// - Pusher's push key key must exist
 func (t *Transaction) execPush(
 	repoName string,
 	references core.PushedReferences,
@@ -29,8 +30,8 @@ func (t *Transaction) execPush(
 	repoKeeper := t.logic.RepoKeeper()
 	repo := repoKeeper.Get(repoName)
 
-	// Get the GPG public key of the pusher
-	pushKeyID := util.MustCreateGPGID(pusherKeyID)
+	// Get the push key of the pusher
+	pushKeyID := crypto.BytesToPushKeyID(pusherKeyID)
 	pushKey := t.logic.PushKeyKeeper().Get(pushKeyID, chainHeight)
 
 	// Register the references to the repo and update their nonce

@@ -138,11 +138,11 @@ func (g *GitOps) GetConfig(path string) string {
 	return strings.TrimSpace(string(out))
 }
 
-// MakeSignableCommit creates a commit that may be signed
+// CreateAndOrSignQuietCommit creates and optionally sign a quiet commit.
 // msg: The commit message.
-// signingKey: The signing key (optional)
+// signingKey: The optional signing key. If provided, the commit is signed
 // env: Optional environment variables to pass to the command.
-func (g *GitOps) MakeSignableCommit(msg, signingKey string, env ...string) error {
+func (g *GitOps) CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error {
 	args := []string{"commit", "--quiet", "--allow-empty", "--file", "-"}
 	if signingKey != "" {
 		args = append(args, "--gpg-sign="+signingKey)

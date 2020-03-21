@@ -4,7 +4,6 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"crypto/rsa"
 	"crypto/sha512"
 	"encoding/hex"
 	"io"
@@ -15,11 +14,6 @@ import (
 	"golang.org/x/crypto/blake2b"
 
 	"github.com/tendermint/tendermint/libs/bech32"
-)
-
-// Constants
-const (
-	GPGAddrHRP = "gpg"
 )
 
 // Encrypt encrypts a plaintext
@@ -90,20 +84,9 @@ func RIPEMD160(v []byte) []byte {
 	return h.Sum(nil)
 }
 
-// CreateGPGIDFromRSA returns bech32 encoding of the given RSA
-// public key with HRP=gpg, for use as a GPG public key identifier
-// func CreateGPGIDFromRSA(pk *rsa.PublicKey) string {
-// 	hash20 := HashRSAForGPGID(pk)
-// 	id, err := bech32.ConvertAndEncode(GPGAddrHRP, hash20)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	return id
-// }
-
-// MustDecodeGPGIDToRSAHash decodes a GPG ID to RSA public key hash.
+// MustDecodePushKeyID decodes a push key ID
 // Panics if decoding fails.
-func MustDecodeGPGIDToRSAHash(id string) []byte {
+func MustDecodePushKeyID(id string) []byte {
 	_, bz, err := bech32.DecodeAndConvert(id)
 	if err != nil {
 		panic(err)
@@ -125,19 +108,4 @@ func IsValidPushKeyID(id string) bool {
 		return false
 	}
 	return true
-}
-
-// MustCreateGPGID takes a byte slice and returns a bech32 address with HRP=gpg.
-// Panics if encoding fails.
-func MustCreateGPGID(bz []byte) string {
-	id, err := bech32.ConvertAndEncode(GPGAddrHRP, bz)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
-// HashRSAForGPGID returns a 20 bytes fingerprint of the public key
-func HashRSAForGPGID(pk *rsa.PublicKey) []byte {
-	return RIPEMD160(pk.N.Bytes())
 }

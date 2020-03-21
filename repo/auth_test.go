@@ -9,7 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 )
 
-var _ = FDescribe("Changes", func() {
+var _ = Describe("Changes", func() {
 	var err error
 	var cfg *config.AppConfig
 

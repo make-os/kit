@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/types/core"
 
@@ -50,7 +51,7 @@ var _ = Describe("PushPool", func() {
 		tx = &core.PushNote{
 			RepoName:        "repo",
 			NodeSig:         []byte("sig"),
-			PushKeyID:       util.MustDecodeGPGIDToRSAHash(gpgID),
+			PushKeyID:       util.MustDecodePushKeyID(gpgID),
 			Fee:             "0.2",
 			PusherAcctNonce: 2,
 			References: []*core.PushedReference{
@@ -60,7 +61,7 @@ var _ = Describe("PushPool", func() {
 		tx2 = &core.PushNote{
 			RepoName:        "repo2",
 			NodeSig:         []byte("sig_2"),
-			PushKeyID:       util.MustDecodeGPGIDToRSAHash(gpgID2),
+			PushKeyID:       util.MustDecodePushKeyID(gpgID2),
 			Fee:             "0.2",
 			PusherAcctNonce: 2,
 			References: []*core.PushedReference{
@@ -157,7 +158,7 @@ var _ = Describe("PushPool", func() {
 				tx2 := &core.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
-					PushKeyID:       util.MustDecodeGPGIDToRSAHash(gpgID),
+					PushKeyID:       util.MustDecodePushKeyID(gpgID),
 					Timestamp:       100000000,
 					Fee:             "0.2",
 					PusherAcctNonce: 2,
@@ -187,14 +188,14 @@ var _ = Describe("PushPool", func() {
 				tx2 = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(gpgID),
 					Timestamp: 100000000,
 					Fee:       "0.01", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
 						{Name: "refs/heads/master", Nonce: 2},
 					},
 				}
-				pool.refIndex = containerIndex(map[string]*containerItem{})
+				pool.refIndex = map[string]*containerItem{}
 				err = pool.Add(tx2)
 				Expect(err).ToNot(BeNil())
 			})
@@ -215,14 +216,14 @@ var _ = Describe("PushPool", func() {
 				tx2 = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(gpgID),
 					Timestamp: 100000000,
 					Fee:       "0.01", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1},
 					},
 				}
-				pool.refIndex = containerIndex(map[string]*containerItem{})
+				pool.refIndex = map[string]*containerItem{}
 			})
 
 			It("should panic", func() {
@@ -242,7 +243,7 @@ var _ = Describe("PushPool", func() {
 				tx2 := &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(gpgID),
 					Timestamp: 100000000,
 					Fee:       "0.01", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -271,7 +272,7 @@ var _ = Describe("PushPool", func() {
 				tx2 = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(gpgID),
 					Timestamp: 100000000,
 					Fee:       "0.5", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -301,7 +302,7 @@ var _ = Describe("PushPool", func() {
 				txY = &core.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
-					PushKeyID:       util.MustDecodeGPGIDToRSAHash(gpgID),
+					PushKeyID:       util.MustDecodePushKeyID(gpgID),
 					Timestamp:       100000000,
 					Fee:             "0.01",
 					PusherAcctNonce: 2,
@@ -313,7 +314,7 @@ var _ = Describe("PushPool", func() {
 				txZ = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(gpgID),
 					Timestamp: 100000000,
 					Fee:       "0.01", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -324,7 +325,7 @@ var _ = Describe("PushPool", func() {
 				txX = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(gpgID),
 					Timestamp: 100000000,
 					Fee:       "0.03", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -362,7 +363,7 @@ var _ = Describe("PushPool", func() {
 				txY = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(gpgID),
 					Timestamp: 100000000,
 					Fee:       "0.4", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -373,7 +374,7 @@ var _ = Describe("PushPool", func() {
 				txZ = &core.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
-					PushKeyID:       util.MustDecodeGPGIDToRSAHash(gpgID),
+					PushKeyID:       util.MustDecodePushKeyID(gpgID),
 					Timestamp:       100000000,
 					Fee:             "0.4",
 					PusherAcctNonce: 2,
@@ -385,7 +386,7 @@ var _ = Describe("PushPool", func() {
 				txX = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(gpgID),
 					Timestamp: 100000000,
 					Fee:       "0.7", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -412,7 +413,7 @@ var _ = Describe("PushPool", func() {
 			var txX *core.PushNote
 			BeforeEach(func() {
 				txX = &core.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
+					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(gpgID),
 					Timestamp: 100000000,
 					Fee:       "0.01", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -434,7 +435,7 @@ var _ = Describe("PushPool", func() {
 			var txX *core.PushNote
 			BeforeEach(func() {
 				txX = &core.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID),
+					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(gpgID),
 					Timestamp: 100000000,
 					Fee:       "0.01", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -565,7 +566,7 @@ var _ = Describe("refNonceIndex", func() {
 	Describe(".add", func() {
 		var idx refNonceIndex
 		BeforeEach(func() {
-			idx = refNonceIndex(make(map[string]uint64))
+			idx = make(map[string]uint64)
 		})
 
 		It("should add successfully", func() {
@@ -579,7 +580,7 @@ var _ = Describe("refNonceIndex", func() {
 
 		When("reference has a nonce indexed", func() {
 			BeforeEach(func() {
-				idx = refNonceIndex(make(map[string]uint64))
+				idx = make(map[string]uint64)
 				idx.add("refs/heads/master", 10)
 				idx.remove("refs/heads/master")
 			})
@@ -596,7 +597,7 @@ var _ = Describe("refNonceIndex", func() {
 
 		When("reference has a nonce indexed", func() {
 			BeforeEach(func() {
-				idx = refNonceIndex(make(map[string]uint64))
+				idx = make(map[string]uint64)
 				idx.add("refs/heads/master", 10)
 				nonce = idx.getNonce("refs/heads/master")
 			})
@@ -608,7 +609,7 @@ var _ = Describe("refNonceIndex", func() {
 
 		When("reference has no nonce indexed", func() {
 			BeforeEach(func() {
-				idx = refNonceIndex(make(map[string]uint64))
+				idx = make(map[string]uint64)
 				nonce = idx.getNonce("refs/heads/master")
 			})
 
@@ -620,12 +621,12 @@ var _ = Describe("refNonceIndex", func() {
 })
 
 var _ = Describe("repoNotesIndex", func() {
-	var gpgID = util.MustCreateGPGID([]byte("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"))
+	var gpgID = crypto.BytesToPushKeyID([]byte("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"))
 
 	Describe(".add", func() {
 		var idx repoNotesIndex
 		BeforeEach(func() {
-			idx = repoNotesIndex(map[string][]*containerItem{})
+			idx = map[string][]*containerItem{}
 		})
 
 		It("should add successfully", func() {
@@ -641,7 +642,7 @@ var _ = Describe("repoNotesIndex", func() {
 			var has bool
 
 			BeforeEach(func() {
-				idx = repoNotesIndex(map[string][]*containerItem{})
+				idx = map[string][]*containerItem{}
 				has = idx.has("repo1")
 			})
 
@@ -654,9 +655,9 @@ var _ = Describe("repoNotesIndex", func() {
 			var has bool
 
 			BeforeEach(func() {
-				idx = repoNotesIndex(map[string][]*containerItem{
+				idx = map[string][]*containerItem{
 					"repo1": []*containerItem{},
-				})
+				}
 				has = idx.has("repo1")
 			})
 
@@ -672,8 +673,8 @@ var _ = Describe("repoNotesIndex", func() {
 		When("repo has 1 txA and txA is removed", func() {
 			var txA *core.PushNote
 			BeforeEach(func() {
-				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID), Timestamp: 100000000}
-				idx = repoNotesIndex(map[string][]*containerItem{})
+				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(gpgID), Timestamp: 100000000}
+				idx = map[string][]*containerItem{}
 				idx.add("repo1", &containerItem{Note: txA})
 				Expect(idx["repo1"]).To(HaveLen(1))
 			})
@@ -687,9 +688,9 @@ var _ = Describe("repoNotesIndex", func() {
 		When("repo has 2 txs (txA and TxB) and txA is removed", func() {
 			var txA, txB *core.PushNote
 			BeforeEach(func() {
-				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID), Timestamp: 100000000}
-				txB = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodeGPGIDToRSAHash(gpgID), Timestamp: 200000000}
-				idx = repoNotesIndex(map[string][]*containerItem{})
+				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(gpgID), Timestamp: 100000000}
+				txB = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(gpgID), Timestamp: 200000000}
+				idx = map[string][]*containerItem{}
 				idx.add("repo1", &containerItem{Note: txA})
 				idx.add("repo1", &containerItem{Note: txB})
 				Expect(idx["repo1"]).To(HaveLen(2))
@@ -710,7 +711,7 @@ var _ = Describe("containerIndex", func() {
 	Describe(".add", func() {
 		var idx containerIndex
 		BeforeEach(func() {
-			idx = containerIndex(map[string]*containerItem{})
+			idx = map[string]*containerItem{}
 		})
 
 		It("should add successfully", func() {
@@ -723,7 +724,7 @@ var _ = Describe("containerIndex", func() {
 		When("hash does not exist", func() {
 			var idx containerIndex
 			BeforeEach(func() {
-				idx = containerIndex(map[string]*containerItem{})
+				idx = map[string]*containerItem{}
 			})
 
 			It("should return false", func() {
@@ -736,7 +737,7 @@ var _ = Describe("containerIndex", func() {
 		When("hash exist", func() {
 			var idx containerIndex
 			BeforeEach(func() {
-				idx = containerIndex(map[string]*containerItem{})
+				idx = map[string]*containerItem{}
 				idx.add("0x123", &containerItem{})
 			})
 
@@ -749,7 +750,7 @@ var _ = Describe("containerIndex", func() {
 	Describe(".remove", func() {
 		var idx containerIndex
 		BeforeEach(func() {
-			idx = containerIndex(map[string]*containerItem{})
+			idx = map[string]*containerItem{}
 			idx.add("0x123", &containerItem{})
 			Expect(idx.has("0x123")).To(BeTrue())
 			idx.remove("0x123")
@@ -766,7 +767,7 @@ var _ = Describe("containerIndex", func() {
 		When("hash exist", func() {
 			var item = &containerItem{FeeRate: "123"}
 			BeforeEach(func() {
-				idx = containerIndex(map[string]*containerItem{})
+				idx = map[string]*containerItem{}
 				idx.add("0x123", item)
 			})
 
@@ -777,7 +778,7 @@ var _ = Describe("containerIndex", func() {
 
 		When("hash does not exist", func() {
 			BeforeEach(func() {
-				idx = containerIndex(map[string]*containerItem{})
+				idx = map[string]*containerItem{}
 			})
 
 			It("should return nil", func() {

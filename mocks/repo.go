@@ -397,7 +397,7 @@ func (m *MockBareRepo) DeleteRemoteURLs(name string) error {
 }
 
 // DeleteRemoteURLs indicates an expected call of DeleteRemoteURLs
-func (mr *MockBareRepoMockRecorder) DeleteRemote(name interface{}) *gomock.Call {
+func (mr *MockBareRepoMockRecorder) DeleteRemoteURLs(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteRemoteURLs", reflect.TypeOf((*MockBareRepo)(nil).DeleteRemoteURLs), name)
 }
@@ -446,23 +446,23 @@ func (mr *MockBareRepoMockRecorder) GetRecentCommit() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecentCommit", reflect.TypeOf((*MockBareRepo)(nil).GetRecentCommit))
 }
 
-// MakeSignableCommit mocks base method
-func (m *MockBareRepo) MakeSignableCommit(msg, signingKey string, env ...string) error {
+// CreateAndOrSignQuietCommit mocks base method
+func (m *MockBareRepo) CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{msg, signingKey}
 	for _, a := range env {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "MakeSignableCommit", varargs...)
+	ret := m.ctrl.Call(m, "CreateAndOrSignQuietCommit", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// MakeSignableCommit indicates an expected call of MakeSignableCommit
-func (mr *MockBareRepoMockRecorder) MakeSignableCommit(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
+// CreateAndOrSignQuietCommit indicates an expected call of CreateAndOrSignQuietCommit
+func (mr *MockBareRepoMockRecorder) CreateAndOrSignQuietCommit(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{msg, signingKey}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MakeSignableCommit", reflect.TypeOf((*MockBareRepo)(nil).MakeSignableCommit), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAndOrSignQuietCommit", reflect.TypeOf((*MockBareRepo)(nil).CreateAndOrSignQuietCommit), varargs...)
 }
 
 // CreateTagWithMsg mocks base method
@@ -1961,18 +1961,18 @@ func (mr *MockRepoManagerMockRecorder) GetRepoState(target interface{}, options 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoState", reflect.TypeOf((*MockRepoManager)(nil).GetRepoState), varargs...)
 }
 
-// GetPGPPubKeyGetter mocks base method
-func (m *MockRepoManager) GetPGPPubKeyGetter() core.PGPPubKeyGetter {
+// GetPushKeyGetter mocks base method
+func (m *MockRepoManager) GetPushKeyGetter() core.PushKeyGetter {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPGPPubKeyGetter")
-	ret0, _ := ret[0].(core.PGPPubKeyGetter)
+	ret := m.ctrl.Call(m, "GetPushKeyGetter")
+	ret0, _ := ret[0].(core.PushKeyGetter)
 	return ret0
 }
 
-// GetPGPPubKeyGetter indicates an expected call of GetPGPPubKeyGetter
+// GetPushKeyGetter indicates an expected call of GetPushKeyGetter
 func (mr *MockRepoManagerMockRecorder) GetPGPPubKeyGetter() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPGPPubKeyGetter", reflect.TypeOf((*MockRepoManager)(nil).GetPGPPubKeyGetter))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKeyGetter", reflect.TypeOf((*MockRepoManager)(nil).GetPushKeyGetter))
 }
 
 // GetLogic mocks base method
@@ -2070,7 +2070,7 @@ func (mr *MockRepoManagerMockRecorder) BroadcastPushObjects(pushNote interface{}
 }
 
 // SetPGPPubKeyGetter mocks base method
-func (m *MockRepoManager) SetPGPPubKeyGetter(pkGetter core.PGPPubKeyGetter) {
+func (m *MockRepoManager) SetPGPPubKeyGetter(pkGetter core.PushKeyGetter) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetPGPPubKeyGetter", pkGetter)
 }

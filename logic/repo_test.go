@@ -1204,7 +1204,7 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
-	Describe(".execRepoProposalRegisterGPGKeys", func() {
+	Describe(".execRepoProposalRegisterPushKeys", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var spk util.Bytes32
@@ -1230,7 +1230,7 @@ var _ = Describe("Repo", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
 				spk = sender.PubKey().MustBytes32()
-				err = txLogic.execRepoProposalRegisterGPGKeys(spk, repoName, "1",
+				err = txLogic.execRepoProposalRegisterPushKeys(spk, repoName, "1",
 					[]string{"push1_abc"}, state.FeeModePusherPays,
 					"0",
 					[]*state.RepoACLPolicy{},
@@ -1266,7 +1266,7 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
-	Describe(".applyProposalRegisterGPGKeys", func() {
+	Describe(".applyProposalRegisterPushKeys", func() {
 		var repoUpd *state.Repository
 
 		BeforeEach(func() {
@@ -1281,7 +1281,7 @@ var _ = Describe("Repo", func() {
 					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc", "push1_xyz"}),
 					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModePusherPays),
 				}}
-				err = applyProposalRegisterGPGKeys(logic, proposal, repoUpd, 0)
+				err = applyProposalRegisterPushKeys(logic, proposal, repoUpd, 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -1299,7 +1299,7 @@ var _ = Describe("Repo", func() {
 					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModeRepoPaysCapped),
 					constants.ActionDataKeyFeeCap:   util.ToBytes(util.String("100")),
 				}}
-				err = applyProposalRegisterGPGKeys(logic, proposal, repoUpd, 0)
+				err = applyProposalRegisterPushKeys(logic, proposal, repoUpd, 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -1317,7 +1317,7 @@ var _ = Describe("Repo", func() {
 					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModeRepoPays),
 					constants.ActionDataKeyFeeCap:   util.ToBytes(util.String("100")),
 				}}
-				err = applyProposalRegisterGPGKeys(logic, proposal, repoUpd, 0)
+				err = applyProposalRegisterPushKeys(logic, proposal, repoUpd, 0)
 				Expect(err).To(BeNil())
 			})
 
@@ -1345,7 +1345,7 @@ var _ = Describe("Repo", func() {
 
 				Specify("that it panicked", func() {
 					Expect(func() {
-						applyProposalRegisterGPGKeys(logic, proposal, repoUpd, 0)
+						applyProposalRegisterPushKeys(logic, proposal, repoUpd, 0)
 					}).To(Panic())
 				})
 			})
@@ -1361,7 +1361,7 @@ var _ = Describe("Repo", func() {
 						constants.ActionDataKeyFeeMode:   util.ToBytes(state.FeeModeRepoPays),
 						constants.ActionDataKeyNamespace: util.ToBytes(ns),
 					}}
-					err := applyProposalRegisterGPGKeys(logic, proposal, repoUpd, 0)
+					err := applyProposalRegisterPushKeys(logic, proposal, repoUpd, 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -1396,7 +1396,7 @@ var _ = Describe("Repo", func() {
 
 				Specify("that it panicked", func() {
 					Expect(func() {
-						applyProposalRegisterGPGKeys(logic, proposal, repoUpd, 0)
+						applyProposalRegisterPushKeys(logic, proposal, repoUpd, 0)
 					}).To(Panic())
 				})
 			})
@@ -1412,7 +1412,7 @@ var _ = Describe("Repo", func() {
 						constants.ActionDataKeyFeeMode:       util.ToBytes(state.FeeModeRepoPays),
 						constants.ActionDataKeyNamespaceOnly: util.ToBytes(ns),
 					}}
-					err := applyProposalRegisterGPGKeys(logic, proposal, repoUpd, 0)
+					err := applyProposalRegisterPushKeys(logic, proposal, repoUpd, 0)
 					Expect(err).To(BeNil())
 				})
 

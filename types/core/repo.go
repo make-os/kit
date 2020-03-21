@@ -111,11 +111,11 @@ type BareRepo interface {
 	// Returns ErrNoCommits if no commits exist
 	GetRecentCommit() (string, error)
 
-	// MakeSignableCommit sign and commit staged changes
+	// CreateAndOrSignQuietCommit sign and commit staged changes
 	// msg: The commit message.
 	// signingKey: The signing key
 	// env: Optional environment variables to pass to the command.
-	MakeSignableCommit(msg, signingKey string, env ...string) error
+	CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error
 
 	// CreateTagWithMsg an annotated tag.
 	// args: `git tag` options (NOTE: -a and --file=- are added by default)
@@ -213,8 +213,8 @@ type Remote struct {
 	URLs []string
 }
 
-// PGPPubKeyGetter represents a function for fetching PGP public key
-type PGPPubKeyGetter func(gpgID string) (string, error)
+// PushKeyGetter represents a function used for fetching a push key
+type PushKeyGetter func(pushKeyID string) (crypto.PublicKey, error)
 
 // PoolGetter returns various pools
 type PoolGetter interface {
@@ -509,9 +509,8 @@ type RepoManager interface {
 	// options: Allows the caller to configure how and what state are gathered
 	GetRepoState(target BareRepo, options ...KVOption) (BareRepoState, error)
 
-	// GetPGPPubKeyGetter returns the gpg getter function for finding GPG public
-	// keys by their ID
-	GetPGPPubKeyGetter() PGPPubKeyGetter
+	// GetPushKeyGetter returns getter function for fetching a push key
+	GetPushKeyGetter() PushKeyGetter
 
 	// GetLogic returns the application logic provider
 	GetLogic() Logic
@@ -535,7 +534,7 @@ type RepoManager interface {
 	BroadcastPushObjects(pushNote RepoPushNote) error
 
 	// SetPGPPubKeyGetter sets the PGP public key query function
-	SetPGPPubKeyGetter(pkGetter PGPPubKeyGetter)
+	SetPGPPubKeyGetter(pkGetter PushKeyGetter)
 
 	// RegisterAPIHandlers registers server API handlers
 	RegisterAPIHandlers(agg modules.ModuleHub)

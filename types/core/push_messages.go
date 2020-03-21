@@ -2,6 +2,7 @@ package core
 
 import (
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -36,7 +37,7 @@ func (pt *PushNote) GetPusherKeyID() []byte {
 // GetPusherKeyIDString is like GetPusherKeyID but returns hex string, prefixed
 // with 0x
 func (pt *PushNote) GetPusherKeyIDString() string {
-	return util.MustCreateGPGID(pt.PushKeyID)
+	return crypto.BytesToPushKeyID(pt.PushKeyID)
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

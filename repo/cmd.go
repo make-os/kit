@@ -20,7 +20,6 @@ import (
 	restclient "gitlab.com/makeos/mosdef/api/rest/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
@@ -28,50 +27,84 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
+// getPushPrivateKey gets the push private key corresponding to the given push key ID from the keystore.
+// Using the push key id, it will attempt to unlock the key if found. If the key is unprotected,
+// it will attempt to unlock it using the default passphrase.
+func getPushPrivateKey(keystoreDir, pushKeyID, pushKeyPass string) (core.StoredKey, error) {
+
+	// Get the private key from the keystore
+	ks := keystore.New(keystoreDir)
+	key, err := ks.GetByAddress(pushKeyID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unlock the address
+	if key.IsUnprotected() {
+		if err = key.Unlock(keystore.DefaultPassphrase); err != nil {
+			return nil, errors.Wrap(err, "failed to unlock unprotected push key")
+		}
+		return key, nil
+	}
+
+	if pushKeyPass == "" {
+		return nil, fmt.Errorf("push key passphrase is requred")
+	}
+
+	if err = key.Unlock(pushKeyPass); err != nil {
+		return nil, errors.Wrap(err, "failed to unlock push key")
+	}
+
+	return key, nil
+}
+
 // SignCommitCmd adds transaction information to a new or recent commit and signs it.
 func SignCommitCmd(
+	cfg *config.AppConfig,
 	targetRepo core.BareRepo,
 	txFee,
-	nextNonce,
-	signingKey string,
+	nextNonce string,
 	amendRecent,
 	deleteRefAction bool,
 	mergeID string,
+	pushKeyID,
+	pushKeyPass string,
 	rpcClient *client.RPCClient,
 	remoteClients []restclient.RestClient) error {
 
-	if !govalidator.IsNumeric(mergeID) {
-		return fmt.Errorf("merge id must be numeric")
-	} else if len(mergeID) > 8 {
-		return fmt.Errorf("merge proposal id exceeded 8 bytes limit")
-	}
-
 	// Get the signing key id from the git config if not passed as an argument
-	if signingKey == "" {
-		signingKey = targetRepo.GetConfig("user.signingKey")
-	}
-	if signingKey == "" {
-		return errors.New("signing key was not set or provided")
+	if pushKeyID == "" {
+		pushKeyID = targetRepo.GetConfig("user.signingKey")
+		if pushKeyID == "" {
+			return fmt.Errorf("push key ID is required")
+		}
 	}
 
-	// Get the public key of the signing key
-	// pkEntity, err := crypto.GetGPGPublicKey(signingKey, targetRepo.GetConfig("gpg.program"), "")
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to get gpg public key")
-	// }
+	// Get the push key private key
+	pushKeyPrivKey, err := getPushPrivateKey(cfg.KeystoreDir(), pushKeyID, pushKeyPass)
+	if err != nil {
+		return err
+	}
 
-	var err error
-	// Get the public key network ID
-	gpgID := "" // TODO: get gpg ID
+	// Validate merge ID is set.
+	// Must be numeric and 8 bytes long
+	if mergeID != "" {
+		if !govalidator.IsNumeric(mergeID) {
+			return fmt.Errorf("merge id must be numeric")
+		} else if len(mergeID) > 8 {
+			return fmt.Errorf("merge proposal id exceeded 8 bytes limit")
+		}
+	}
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
-		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(gpgID, rpcClient, remoteClients)
+		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(pushKeyID, rpcClient, remoteClients)
 		if err != nil {
 			return err
 		}
 	}
 
+	// Gather any transaction params directives
 	directives := []string{}
 	if deleteRefAction {
 		directives = append(directives, "deleteRef")
@@ -80,7 +113,8 @@ func SignCommitCmd(
 		directives = append(directives, fmt.Sprintf("mergeID=%s", mergeID))
 	}
 
-	txParams, err := util.MakeAndValidateTxParams(txFee, nextNonce, gpgID, nil, directives...)
+	// Make the transaction parameter object
+	txParams, err := util.MakeAndValidateTxParams(txFee, nextNonce, pushKeyID, nil, directives...)
 	if err != nil {
 		return err
 	}
@@ -88,9 +122,9 @@ func SignCommitCmd(
 	var commit *object.Commit
 	var hash, msg string
 
-	// Create a new commit if recent commit amendment is not required
+	// Create a new quiet commit if recent commit amendment is not desired
 	if !amendRecent {
-		if err := targetRepo.MakeSignableCommit(txParams.String(), signingKey); err != nil {
+		if err := targetRepo.CreateAndOrSignQuietCommit(txParams.String(), pushKeyID); err != nil {
 			return err
 		}
 		goto add_req_token
@@ -112,14 +146,14 @@ func SignCommitCmd(
 	msg += "\n\n" + txParams.String()
 
 	// Update the recent commit message
-	if err = targetRepo.UpdateRecentCommitMsg(msg, signingKey); err != nil {
+	if err = targetRepo.UpdateRecentCommitMsg(msg, pushKeyID); err != nil {
 		return err
 	}
 
 add_req_token:
 
 	// Create & set request token to remote URLs
-	if err = createAndSetRequestTokenToRemoteURLs(signingKey, targetRepo, txParams); err != nil {
+	if err = createAndSetRequestTokenToRemoteURLs(pushKeyPrivKey, targetRepo, txParams); err != nil {
 		return err
 	}
 
@@ -128,81 +162,83 @@ add_req_token:
 
 // SignTagCmd creates an annotated tag, appends transaction information to its
 // message and signs it.
-// If rpcClient is set, the transaction nonce of the signing account is fetched
-// from the rpc server.
 func SignTagCmd(
-	args []string,
+	cfg *config.AppConfig,
+	gitArgs []string,
+	msg string,
 	targetRepo core.BareRepo,
 	txFee,
-	nextNonce,
-	signingKey string,
+	nextNonce string,
 	deleteRefAction bool,
+	pushKeyID,
+	pushKeyPass string,
 	rpcClient *client.RPCClient,
 	remoteClients []restclient.RestClient) error {
 
-	parsed := util.ParseSimpleArgs(args)
-
-	// If -u flag is provided in the git args, use it a signing key
-	if parsed["u"] != "" {
-		signingKey = parsed["u"]
-	}
-	// Get the signing key id from the git config if not passed via app -u flag
-	if signingKey == "" {
-		signingKey = targetRepo.GetConfig("user.signingKey")
-	}
-	// Return error if we still don't have a signing key
-	if signingKey == "" {
-		return errors.New("signing key was not set or provided")
+	// If -u or --local-user flag is provided in the git args, use the value as the push key ID
+	parsedGitArgs := util.ParseSimpleArgs(gitArgs)
+	if parsedGitArgs["u"] != "" {
+		pushKeyID = parsedGitArgs["u"]
+	} else if parsedGitArgs["local-user"] != "" {
+		pushKeyID = parsedGitArgs["local-user"]
 	}
 
-	// Get the user-supplied message from the arguments provided
-	msg := ""
-	if m, ok := parsed["m"]; ok {
-		msg = m
-	} else if message, ok := parsed["message"]; ok {
-		msg = message
+	// Get the signing key id from the git config if not passed as an argument
+	if pushKeyID == "" {
+		pushKeyID = targetRepo.GetConfig("user.signingKey")
+		if pushKeyID == "" {
+			return fmt.Errorf("push key ID is required")
+		}
 	}
 
-	// Remove -m or --message flag from args
-	args = util.RemoveFlagVal(args, []string{"m", "message", "u"})
+	// Get the push key private key
+	pushKeyPrivKey, err := getPushPrivateKey(cfg.KeystoreDir(), pushKeyID, pushKeyPass)
+	if err != nil {
+		return err
+	}
 
-	var err error
-	// Get the public key of the signing key
-	// pkEntity, err := crypto.GetGPGPublicKey(signingKey, targetRepo.GetConfig("gpg.program"), "")
-	// if err != nil {
-	// 	return errors.Wrap(err, "failed to get gpg public key")
-	// }
+	// Get message from the git arguments if message
+	// was not provided via our own --message/-m flag
+	if msg == "" {
+		if m, ok := parsedGitArgs["m"]; ok {
+			msg = m
+		} else if message, ok := parsedGitArgs["message"]; ok {
+			msg = message
+		}
+	}
 
-	// Get the public key network ID
-	gpgID := "" // TODO: set gpg id
+	// Remove -m, --message, -u, -local-user flag from the git args since
+	// we wont be pass the message via flags but stdin
+	gitArgs = util.RemoveFlagVal(gitArgs, []string{"m", "message", "u", "local-user"})
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
-		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(gpgID, rpcClient, remoteClients)
+		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(pushKeyID, rpcClient, remoteClients)
 		if err != nil {
 			return err
 		}
 	}
 
+	// Gather any transaction params directives
 	directives := []string{}
 	if deleteRefAction {
 		directives = append(directives, "deleteRef")
 	}
 
 	// Construct the txparams and append to the current message
-	txParams, err := util.MakeAndValidateTxParams(txFee, nextNonce, gpgID, nil, directives...)
+	txParams, err := util.MakeAndValidateTxParams(txFee, nextNonce, pushKeyID, nil, directives...)
 	if err != nil {
 		return err
 	}
 
 	// Create the tag
 	msg += "\n\n" + txParams.String()
-	if err = targetRepo.CreateTagWithMsg(args, msg, signingKey); err != nil {
+	if err = targetRepo.CreateTagWithMsg(gitArgs, msg, pushKeyID); err != nil {
 		return err
 	}
 
 	// Create & set request token to remote URLs
-	if err = createAndSetRequestTokenToRemoteURLs(signingKey, targetRepo, txParams); err != nil {
+	if err = createAndSetRequestTokenToRemoteURLs(pushKeyPrivKey, targetRepo, txParams); err != nil {
 		return err
 	}
 
@@ -210,28 +246,33 @@ func SignTagCmd(
 }
 
 // SignNoteCmd creates adds transaction information to a note and signs it.
-// If rpcClient is set, the transaction nonce of the signing account is fetched
-// from the rpc server.
 func SignNoteCmd(
+	cfg *config.AppConfig,
 	targetRepo core.BareRepo,
 	txFee,
 	nextNonce,
-	signingKey,
 	note string,
 	deleteRefAction bool,
+	pushKeyID,
+	pushKeyPass string,
 	rpcClient *client.RPCClient,
 	remoteClients []restclient.RestClient) error {
 
-	// Get the signing key id from the git config if not provided via -s flag
-	if signingKey == "" {
-		signingKey = targetRepo.GetConfig("user.signingKey")
-	}
-	// Return error if we still don't have a signing key
-	if signingKey == "" {
-		return errors.New("signing key was not set or provided")
+	// Get the signing key id from the git config if not passed as an argument
+	if pushKeyID == "" {
+		pushKeyID = targetRepo.GetConfig("user.signingKey")
+		if pushKeyID == "" {
+			return fmt.Errorf("push key ID is required")
+		}
 	}
 
-	// Enforce the inclusion of `refs/notes` to the note argument
+	// Get the push key private key
+	pushKeyPrivKey, err := getPushPrivateKey(cfg.KeystoreDir(), pushKeyID, pushKeyPass)
+	if err != nil {
+		return err
+	}
+
+	// Expand note name to full reference name if name is short
 	if !strings.HasPrefix("refs/notes", note) {
 		note = "refs/notes/" + note
 	}
@@ -278,37 +319,29 @@ func SignNoteCmd(
 	}
 	noteHash := noteRef.Hash().String()
 
-	// Get the public key of the signing key
-	pkEntity, err := crypto.GetGPGPrivateKey(signingKey, targetRepo.GetConfig("gpg.program"), "")
-	if err != nil {
-		return errors.Wrap(err, "failed to get gpg public key")
-	}
-
-	// Get the public key network ID
-	gpgID := "" // TODO: set gpg id
-
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
-		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(gpgID, rpcClient, remoteClients)
+		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(pushKeyID, rpcClient, remoteClients)
 		if err != nil {
 			return err
 		}
 	}
 
 	// Sign a message composed of the tx information
-	sigMsg := MakeNoteSigMsg(txFee, nextNonce, gpgID, noteHash, deleteRefAction)
-	sig, err := crypto.GPGSign(pkEntity, sigMsg)
+	sigMsg := MakeNoteSigMsg(txFee, nextNonce, pushKeyID, noteHash, deleteRefAction)
+	sig, err := pushKeyPrivKey.GetKey().PrivKey().Sign(sigMsg)
 	if err != nil {
 		return errors.Wrap(err, "failed to sign transaction parameters")
 	}
 
+	// Gather any transaction params directives
 	directives := []string{}
 	if deleteRefAction {
 		directives = append(directives, "deleteRef")
 	}
 
 	// Construct the txparams
-	txParams, err := util.MakeAndValidateTxParams(txFee, nextNonce, gpgID, sig, directives...)
+	txParams, err := util.MakeAndValidateTxParams(txFee, nextNonce, pushKeyID, sig, directives...)
 	if err != nil {
 		return err
 	}
@@ -325,7 +358,7 @@ func SignNoteCmd(
 	}
 
 	// Create & set request token to remote URLs
-	if err = createAndSetRequestTokenToRemoteURLs(signingKey, targetRepo, txParams); err != nil {
+	if err = createAndSetRequestTokenToRemoteURLs(pushKeyPrivKey, targetRepo, txParams); err != nil {
 		return err
 	}
 
@@ -407,8 +440,8 @@ func CreateAndSendMergeRequestCmd(
 	return nil
 }
 
-// GitSignCmd mocks gpg signing interface allowing this program to
-// be used in place of gpg program
+// GitSignCmd mocks git signing interface allowing this program to
+// be used by git for signing commits, tags etc
 func GitSignCmd(args []string, data io.Reader) {
 
 	// Get the data to be signed and the key id to use
@@ -428,8 +461,8 @@ func GitSignCmd(args []string, data io.Reader) {
 	os.Exit(0)
 }
 
-// GitVerifyCmd mocks gpg signature verification interface allowing this
-// program to be used in place of gpg program
+// GitVerifyCmd mocks git signing interface allowing this program to
+// be used by git for verifying signatures.
 func GitVerifyCmd(args []string) {
 
 	sig, err := ioutil.ReadFile(args[4])

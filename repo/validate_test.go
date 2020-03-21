@@ -82,7 +82,7 @@ var _ = Describe("Validation", func() {
 		mockLogic = mockObjs.Logic
 		mockTickMgr = mockObjs.TicketManager
 		mockRepoKeeper = mockObjs.RepoKeeper
-		mockGPGKeeper = mockObjs.GPGPubKeyKeeper
+		mockGPGKeeper = mockObjs.PushKeyKeeper
 		mockAcctKeeper = mockObjs.AccountKeeper
 		mockSysKeeper = mockObjs.SysKeeper
 		mockTxLogic = mockObjs.Tx
@@ -111,7 +111,7 @@ var _ = Describe("Validation", func() {
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`,
 					path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
+				_, err = checkCommit(cob, repo, gpgPubKeyGetter)
 			})
 
 			It("should return err='txparams was not set'", func() {
@@ -127,7 +127,7 @@ var _ = Describe("Validation", func() {
 				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`,
 					path).String()
 				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
+				_, err = checkCommit(cob, repo, gpgPubKeyGetter)
 			})
 
 			It("should return err='field:gpgID, msg:gpg key id is invalid'", func() {
@@ -348,9 +348,9 @@ var _ = Describe("Validation", func() {
 				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
 			})
 
-			It("should return err='unacceptable note. it does not have a signed transaction object'", func() {
+			It("should return err='note does not include a transaction parameter blob'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("unacceptable note. it does not have a signed transaction object"))
+				Expect(err.Error()).To(Equal("note does not include a transaction parameter blob"))
 			})
 		})
 
@@ -461,7 +461,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: pushed reference must be a branch"))
+				Expect(err.Error()).To(Equal("merge error: pushed reference must be a branch"))
 			})
 		})
 
@@ -476,7 +476,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: merge proposal (0001) not found"))
+				Expect(err.Error()).To(Equal("merge error: merge proposal (0001) not found"))
 			})
 		})
 
@@ -499,7 +499,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: signer must be the creator of the merge proposal (0001)"))
+				Expect(err.Error()).To(Equal("merge error: signer did not create the proposal (0001)"))
 			})
 		})
 
@@ -523,7 +523,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: error"))
+				Expect(err.Error()).To(Equal("merge error: error"))
 			})
 		})
 
@@ -547,7 +547,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: merge proposal (0001) is already closed"))
+				Expect(err.Error()).To(Equal("merge error: merge proposal (0001) is already closed"))
 			})
 		})
 
@@ -576,7 +576,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: pushed branch name and merge proposal base branch name must match"))
+				Expect(err.Error()).To(Equal("merge error: pushed branch name and proposal base branch name must match"))
 			})
 		})
 
@@ -604,7 +604,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: merge proposal (0001) has not been accepted"))
+				Expect(err.Error()).To(Equal("merge error: merge proposal (0001) has not been accepted"))
 			})
 		})
 
@@ -666,7 +666,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: multiple targets not allowed"))
+				Expect(err.Error()).To(Equal("merge error: multiple targets not allowed"))
 			})
 		})
 
@@ -708,7 +708,7 @@ var _ = Describe("Validation", func() {
 
 				It("should return error", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("merge compliance error: merger commit cannot modify history as seen from target commit"))
+					Expect(err.Error()).To(Equal("merge error: merger commit cannot modify history as seen from target commit"))
 				})
 			})
 
@@ -753,7 +753,7 @@ var _ = Describe("Validation", func() {
 
 				It("should return error", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("merge compliance error: merger commit cannot modify history as seen from target commit"))
+					Expect(err.Error()).To(Equal("merge error: merger commit cannot modify history as seen from target commit"))
 				})
 			})
 
@@ -802,7 +802,7 @@ var _ = Describe("Validation", func() {
 
 				It("should return error", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("merge compliance error: merger commit cannot modify history as seen from target commit"))
+					Expect(err.Error()).To(Equal("merge error: merger commit cannot modify history as seen from target commit"))
 				})
 			})
 		})
@@ -853,7 +853,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: merge proposal base branch hash is stale or invalid"))
+				Expect(err.Error()).To(Equal("merge error: merge proposal base branch hash is stale or invalid"))
 			})
 		})
 
@@ -906,7 +906,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge compliance error: target commit " +
+				Expect(err.Error()).To(Equal("merge error: target commit " +
 					"hash and the merge proposal target hash must match"))
 			})
 		})
@@ -1408,7 +1408,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				tx := &core.PushNote{RepoName: "repo1", PushKeyID: util.RandBytes(20)}
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
-				mockGPGKeeper.EXPECT().Get(util.MustCreateGPGID(tx.PushKeyID)).Return(state.BarePushKey())
+				mockGPGKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(state.BarePushKey())
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -1429,7 +1429,7 @@ var _ = Describe("Validation", func() {
 
 				gpgKey := state.BarePushKey()
 				gpgKey.Address = util.Address("address2")
-				mockGPGKeeper.EXPECT().Get(util.MustCreateGPGID(tx.PushKeyID)).Return(gpgKey)
+				mockGPGKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(gpgKey)
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -1450,7 +1450,7 @@ var _ = Describe("Validation", func() {
 
 				gpgKey := state.BarePushKey()
 				gpgKey.Address = util.Address("address1")
-				mockGPGKeeper.EXPECT().Get(util.MustCreateGPGID(tx.PushKeyID)).Return(gpgKey)
+				mockGPGKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(gpgKey)
 
 				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(state.BareAccount())
 
@@ -1475,7 +1475,7 @@ var _ = Describe("Validation", func() {
 
 				gpgKey := state.BarePushKey()
 				gpgKey.Address = util.Address("address1")
-				mockGPGKeeper.EXPECT().Get(util.MustCreateGPGID(tx.PushKeyID)).Return(gpgKey)
+				mockGPGKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(gpgKey)
 
 				acct := state.BareAccount()
 				acct.Nonce = 1
@@ -1505,7 +1505,7 @@ var _ = Describe("Validation", func() {
 
 				gpgKey := state.BarePushKey()
 				gpgKey.Address = util.Address("address1")
-				mockGPGKeeper.EXPECT().Get(util.MustCreateGPGID(tx.PushKeyID)).Return(gpgKey)
+				mockGPGKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(gpgKey)
 
 				acct := state.BareAccount()
 				acct.Nonce = 1
@@ -1653,16 +1653,17 @@ var _ = Describe("Validation", func() {
 	Describe(".checkPushNoteAgainstTxParams", func() {
 		When("pusher key in push note is different from txparams pusher key", func() {
 			BeforeEach(func() {
-				pn := &core.PushNote{PushKeyID: util.MustDecodeGPGIDToRSAHash("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")}
+				pn := &core.PushNote{PushKeyID: util.MustDecodePushKeyID("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")}
 				txParamss := map[string]*util.TxParams{
-					"refs/heads/master": {GPGID: util.MustCreateGPGID(util.RandBytes(20))},
+					"refs/heads/master": {PushKeyID: crypto.BytesToPushKeyID(util.RandBytes(20))},
 				}
 				err = checkPushNoteAgainstTxParams(pn, txParamss)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("push note pusher public key id does not match txparams pusher public key id"))
+				Expect(err.Error()).To(Equal("push note pusher key id does not match " +
+					"push key in tx parameter"))
 			})
 		})
 
@@ -1672,8 +1673,8 @@ var _ = Describe("Validation", func() {
 				pn := &core.PushNote{PushKeyID: gpgID, Fee: "9"}
 				txParamss := map[string]*util.TxParams{
 					"refs/heads/master": {
-						GPGID: util.MustCreateGPGID(gpgID),
-						Fee:   "10",
+						PushKeyID: crypto.BytesToPushKeyID(gpgID),
+						Fee:       "10",
 					},
 				}
 				err = checkPushNoteAgainstTxParams(pn, txParamss)
@@ -1697,8 +1698,8 @@ var _ = Describe("Validation", func() {
 				}
 				txParamss := map[string]*util.TxParams{
 					"refs/heads/master": {
-						GPGID: util.MustCreateGPGID(gpgID),
-						Fee:   "10",
+						PushKeyID: crypto.BytesToPushKeyID(gpgID),
+						Fee:       "10",
 					},
 				}
 				err = checkPushNoteAgainstTxParams(pn, txParamss)

@@ -29,8 +29,6 @@ var _ = Describe("PushHandler", func() {
 	var handler *PushHandler
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
-	// var pubKey, pubKey2 string
-	// var gpgKeyID, gpgKeyID2 string
 	var repoName string
 	var mockMempool *mocks.MockMempool
 	var mockBlockGetter *mocks.MockBlockGetter
@@ -61,11 +59,6 @@ var _ = Describe("PushHandler", func() {
 		// TODO: Use real &TxParams{} and polEnforcer
 		handler = newPushHandler(repo, &PushRequestTokenData{}, nil, mockMgr)
 
-		// gpgKeyID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		// pubKey, err = crypto.GetGPGPublicKeyStr(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
-		// Expect(err).To(BeNil())
-		// gpgKeyID2 = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		// pubKey2, err = crypto.GetGPGPublicKeyStr(gpgKeyID2, testutil.GPGProgramPath, cfg.DataDir())
 		Expect(err).To(BeNil())
 		GitEnv = append(GitEnv, "GNUPGHOME="+cfg.DataDir())
 	})
@@ -208,9 +201,9 @@ var _ = Describe("PushHandler", func() {
 		// 			_, _, err = handler.HandleValidateAndRevert()
 		// 		})
 		//
-		// 		It("should return err='rejected because the pushed references were signed with multiple pgp keys'", func() {
+		// 		It("should return err='rejected because the pushed references were signed with different push keys'", func() {
 		// 			Expect(err).ToNot(BeNil())
-		// 			Expect(err.Error()).To(Equal("rejected because the pushed references were signed with multiple pgp keys"))
+		// 			Expect(err.Error()).To(Equal("rejected because the pushed references were signed with different push keys"))
 		// 		})
 		// 	})
 		// })

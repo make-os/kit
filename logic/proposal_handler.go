@@ -265,8 +265,8 @@ apply:
 		err = applyProposalUpsertOwner(proposal, repo, chainHeight)
 	case state.ProposalActionRepoUpdate:
 		err = applyProposalRepoUpdate(proposal, repo, chainHeight)
-	case state.ProposalActionRegisterGPGIDs:
-		err = applyProposalRegisterGPGKeys(keepers, proposal, repo, chainHeight)
+	case state.ProposalActionRegisterPushKeyIDs:
+		err = applyProposalRegisterPushKeys(keepers, proposal, repo, chainHeight)
 	case state.ProposalActionMergeRequest:
 	// Do nothing since there is no on-chain action
 	default:

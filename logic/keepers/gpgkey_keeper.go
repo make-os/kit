@@ -13,8 +13,8 @@ type PushKeyKeeper struct {
 	db    storage.Tx
 }
 
-// NewGPGPubKeyKeeper creates an instance of PushKeyKeeper
-func NewGPGPubKeyKeeper(state *tree.SafeTree, db storage.Tx) *PushKeyKeeper {
+// NewPushKeyKeeper creates an instance of PushKeyKeeper
+func NewPushKeyKeeper(state *tree.SafeTree, db storage.Tx) *PushKeyKeeper {
 	return &PushKeyKeeper{state: state, db: db}
 }
 
@@ -48,7 +48,7 @@ func (g *PushKeyKeeper) Get(pushKeyID string, blockNum ...uint64) *state.PushKey
 		return state.BarePushKey()
 	}
 
-	pushKey, err := state.NewGPGPubKeyFromBytes(bz)
+	pushKey, err := state.NewPushKeyFromBytes(bz)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to decode"))
 	}

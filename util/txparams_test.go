@@ -38,25 +38,25 @@ var _ = Describe("TxParams", func() {
 
 		When("message has a valid txparams", func() {
 			It("should return no error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, deleteRef"
+				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, deleteRef"
 				txparams, err := ExtractTxParams(str)
 				Expect(err).To(BeNil())
 				Expect(*txparams).To(Equal(TxParams{
 					Fee:       String("10"),
 					Nonce:     2,
-					GPGID:     "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd",
+					PushKeyID: "push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p",
 					DeleteRef: true,
 				}))
 			})
 
 			It("should return no error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
+				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p"
 				txparams, err := ExtractTxParams(str)
 				Expect(err).To(BeNil())
 				Expect(*txparams).To(Equal(TxParams{
 					Fee:       String("10"),
 					Nonce:     2,
-					GPGID:     "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd",
+					PushKeyID: "push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p",
 					DeleteRef: false,
 				}))
 			})
@@ -64,7 +64,7 @@ var _ = Describe("TxParams", func() {
 
 		When("txparams has invalid nonce value", func() {
 			It("should return error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2a, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
+				str := "This is a line\nThis is another line\ntx: fee=10, nonce=2a, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p"
 				_, err := ExtractTxParams(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, msg:nonce must be an unsigned integer"))
@@ -73,7 +73,7 @@ var _ = Describe("TxParams", func() {
 
 		When("txparams has invalid fee value", func() {
 			It("should return error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=1a, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
+				str := "This is a line\nThis is another line\ntx: fee=1a, nonce=2, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p"
 				_, err := ExtractTxParams(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:fee, msg:fee must be numeric"))
@@ -82,7 +82,7 @@ var _ = Describe("TxParams", func() {
 
 		When("txparams has signature field but no value", func() {
 			It("should return error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig="
+				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p sig="
 				_, err := ExtractTxParams(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, msg:signature value is required"))
@@ -91,7 +91,7 @@ var _ = Describe("TxParams", func() {
 
 		When("txparams has signature value that does not begin with 0x", func() {
 			It("should return error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=abc"
+				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p sig=abc"
 				_, err := ExtractTxParams(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, msg:signature format is not valid"))
@@ -100,7 +100,7 @@ var _ = Describe("TxParams", func() {
 
 		When("txparams has signature value that is not a valid hex", func() {
 			It("should return error", func() {
-				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0xabc"
+				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p sig=0xabc"
 				_, err := ExtractTxParams(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, msg:signature format is not valid"))
@@ -110,13 +110,13 @@ var _ = Describe("TxParams", func() {
 		When("txparams has signature format", func() {
 			It("should not return error", func() {
 				sigHex := ToHex([]byte("abc"))
-				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=" + sigHex
+				str := "This is a line\nThis is another line\ntx: fee=1, nonce=2, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p sig=" + sigHex
 				txParams, err := ExtractTxParams(str)
 				Expect(err).To(BeNil())
 				Expect(txParams).To(Equal(&TxParams{
 					Fee:       "1",
 					Nonce:     0x0000000000000002,
-					GPGID:     "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd",
+					PushKeyID: "push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p",
 					Signature: "abc",
 				}))
 			})
@@ -124,7 +124,7 @@ var _ = Describe("TxParams", func() {
 
 		When("txparams contains a merge directive with no value", func() {
 			It("should return err about missing value", func() {
-				str := "tx: fee=0.2, nonce=14, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, mergeID"
+				str := "tx: fee=0.2, nonce=14, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, mergeID"
 				_, err := ExtractTxParams(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("field:mergeID, msg:merge proposal id is required"))
@@ -133,7 +133,7 @@ var _ = Describe("TxParams", func() {
 
 		When("txparams contains a merge directive with invalid value format", func() {
 			It("should return err about missing value", func() {
-				str := "tx: fee=0.2, nonce=14, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, mergeID=abc12"
+				str := "tx: fee=0.2, nonce=14, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, mergeID=abc12"
 				_, err := ExtractTxParams(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("field:mergeID, msg:merge proposal id must be numeric"))
@@ -142,7 +142,7 @@ var _ = Describe("TxParams", func() {
 
 		When("txparams contains a merge directive with length greater than 16", func() {
 			It("should return err about missing value", func() {
-				str := "tx: fee=0.2, nonce=14, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, mergeID=123456789"
+				str := "tx: fee=0.2, nonce=14, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, mergeID=123456789"
 				_, err := ExtractTxParams(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("field:mergeID, msg:merge proposal id exceeded 8 bytes limit"))
@@ -151,34 +151,34 @@ var _ = Describe("TxParams", func() {
 
 		When("txparams contains a merge directive with valid value", func() {
 			It("should return no err and set the Merge field to the value", func() {
-				str := "tx: fee=0.2, nonce=14, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, mergeID=122"
+				str := "tx: fee=0.2, nonce=14, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, mergeID=122"
 				txparams, err := ExtractTxParams(str)
 				Expect(err).To(BeNil())
 				Expect(txparams.MergeProposalID).To(Equal("122"))
 			})
 		})
 
-		When("txparams contains a gpgID != 44 characters long", func() {
+		When("txparams contains a pushKeyID != 44 characters long", func() {
 			It("should return err about missing value", func() {
-				str := "tx: fee=0.2, nonce=14, gpgID=0x9aed9d"
+				str := "tx: fee=0.2, nonce=14, pkID=0x9aed9d"
 				_, err := ExtractTxParams(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:gpgID, msg:gpg key id is invalid"))
+				Expect(err).To(MatchError("field:pkID, msg:push key id is invalid"))
 			})
 		})
 
-		When("txparams contains a gpgID does not begin with gpg", func() {
+		When("txparams contains a pushKeyID does not begin with push", func() {
 			It("should return err about missing value", func() {
-				str := "tx: fee=0.2, nonce=14, gpgID=xas1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
+				str := "tx: fee=0.2, nonce=14, pkID=xas1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
 				_, err := ExtractTxParams(str)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:gpgID, msg:gpg key id is invalid"))
+				Expect(err).To(MatchError("field:pkID, msg:push key id is invalid"))
 			})
 		})
 
 		When("txparams contains an unexpected key", func() {
 			It("should return err about missing value", func() {
-				str := "tx: fee=0.2, nonze=14, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
+				str := "tx: fee=0.2, nonze=14, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p"
 				_, err := ExtractTxParams(str)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("field:nonze, msg:unknown field"))
@@ -189,31 +189,31 @@ var _ = Describe("TxParams", func() {
 	Describe(".MakeTxParams", func() {
 		When("signature is nil", func() {
 			It("should return expected string", func() {
-				txParams := MakeTxParams("1", "1", "gpgID", nil)
-				Expect(txParams).To(Equal("tx: fee=1, nonce=1, gpgID=gpgID"))
+				txParams := MakeTxParams("1", "1", "pushKeyID", nil)
+				Expect(txParams).To(Equal("tx: fee=1, nonce=1, pkID=pushKeyID"))
 			})
 		})
 
 		When("signature is set", func() {
 			It("should return expected string", func() {
-				txParams := MakeTxParams("1", "1", "gpgID", []byte("abc"))
-				Expect(txParams).To(Equal("tx: fee=1, nonce=1, gpgID=gpgID, sig=0x616263"))
+				txParams := MakeTxParams("1", "1", "pushKeyID", []byte("abc"))
+				Expect(txParams).To(Equal("tx: fee=1, nonce=1, pkID=pushKeyID, sig=0x616263"))
 			})
 		})
 
 		When("actions are set", func() {
 			It("should return expected string", func() {
-				txParams := MakeTxParams("1", "1", "gpgID", []byte("abc"), "removeRef", "checkRef")
-				Expect(txParams).To(Equal("tx: fee=1, nonce=1, gpgID=gpgID, removeRef, checkRef, sig=0x616263"))
+				txParams := MakeTxParams("1", "1", "pushKeyID", []byte("abc"), "removeRef", "checkRef")
+				Expect(txParams).To(Equal("tx: fee=1, nonce=1, pkID=pushKeyID, removeRef, checkRef, sig=0x616263"))
 			})
 		})
 
 		When("directive is set", func() {
 			It("should return expected string", func() {
-				txParams := MakeTxParams("1", "1", "gpgID", []byte("abc"), "deleteRef")
-				Expect(txParams).To(Equal("tx: fee=1, nonce=1, gpgID=gpgID, deleteRef, sig=0x616263"))
-				txParams = MakeTxParams("1", "1", "gpgID", []byte("abc"), "deleteRef", "mergeID=123")
-				Expect(txParams).To(Equal("tx: fee=1, nonce=1, gpgID=gpgID, deleteRef, mergeID=123, sig=0x616263"))
+				txParams := MakeTxParams("1", "1", "pushKeyID", []byte("abc"), "deleteRef")
+				Expect(txParams).To(Equal("tx: fee=1, nonce=1, pkID=pushKeyID, deleteRef, sig=0x616263"))
+				txParams = MakeTxParams("1", "1", "pushKeyID", []byte("abc"), "deleteRef", "mergeID=123")
+				Expect(txParams).To(Equal("tx: fee=1, nonce=1, pkID=pushKeyID, deleteRef, mergeID=123, sig=0x616263"))
 			})
 		})
 	})
@@ -224,10 +224,10 @@ var _ = Describe("TxParams", func() {
 				txParams := &TxParams{
 					Fee:       "1",
 					Nonce:     0x0000000000000002,
-					GPGID:     "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd",
+					PushKeyID: "push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p",
 					Signature: "abc",
 				}
-				expected := `tx: fee=1, nonce=2, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd, sig=0x616263`
+				expected := `tx: fee=1, nonce=2, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, sig=0x616263`
 				Expect(txParams.String()).To(Equal(expected))
 			})
 		})
@@ -245,15 +245,15 @@ var _ = Describe("TxParams", func() {
 			It("should return err", func() {
 				_, err := MakeAndValidateTxParams("1", "1", "", nil)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:gpgID, msg:gpg key id is required"))
+				Expect(err).To(MatchError("field:pkID, msg:push key id is required"))
 			})
 		})
 
 		When("txparam is valid", func() {
 			It("should return txparam string", func() {
-				tp, err := MakeAndValidateTxParams("1", "1", "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd", nil)
+				tp, err := MakeAndValidateTxParams("1", "1", "push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p", nil)
 				Expect(err).To(BeNil())
-				Expect(tp).To(Equal("tx: fee=1, nonce=1, gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"))
+				Expect(tp.String()).To(Equal("tx: fee=1, nonce=1, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p"))
 			})
 		})
 	})

@@ -2,7 +2,6 @@ package repo
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -17,37 +16,34 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
-	"golang.org/x/crypto/openpgp"
 )
 
-type policyEnforcer func(gpgID, object, action string) bool
+type policyEnforcer func(pushKeyID, object, action string) bool
 
 // authorize performs authorization checks and returns a policy
 // enforcer for later authentication checks.
 func authorize(
-	pushReqToken *PushRequestTokenData,
+	reqToken *PushRequestTokenData,
 	repo *state.Repository,
 	namespace *state.Namespace,
 	keepers core.Keepers) (policyEnforcer, error) {
 
 	// Check the transaction parameters
-	if err := checkPushRequestTokenData(pushReqToken, keepers); err != nil {
+	if err := checkPushRequestTokenData(reqToken, keepers); err != nil {
 		return nil, err
 	}
 
-	// Get the GPG key that signed the transaction params object
-	signer := keepers.PushKeyKeeper().Get(pushReqToken.GPGID)
+	// Get the push key that signed request token
+	signer := keepers.PushKeyKeeper().Get(reqToken.PushKeyID)
 	if signer.IsNil() {
-		return nil, fmt.Errorf("pusher gpg key is unknown")
+		return nil, fmt.Errorf("pusher key is unknown")
 	}
 
-	// Using the GPG key, verify the transaction parameters signature
-	entity, err := crypto.PGPEntityFromPubKey("") // TODO: provide pub key
+	// Using the key, verify the request token signature
+	pubKey, err := crypto.PubKeyFromBytes(signer.PubKey.Bytes())
 	if err != nil {
 		return nil, fmt.Errorf("signer public key from network is invalid") // should never happen
-	}
-	ok, err := crypto.VerifyGPGSignature(entity, pushReqToken.Sig, pushReqToken.GetSigningMsg())
-	if err != nil || !ok {
+	} else if ok, err := pubKey.Verify(reqToken.GetSigningMsg(), reqToken.Sig); err != nil || !ok {
 		return nil, fmt.Errorf("signature is not valid") // should never happen
 	}
 
@@ -55,22 +51,22 @@ func authorize(
 	// - if they are not among repo's contributors.
 	// - and namespace is default.
 	// - or they are not part of the contributors of the non-nil namespace.
-	if !repo.Contributors.Has(pushReqToken.GPGID) &&
-		(namespace == nil || !namespace.Contributors.Has(pushReqToken.GPGID)) {
-		return nil, fmt.Errorf(color.RedString("GPG key (%s) is not "+
-			"authorized to perform this action", pushReqToken.GPGID))
+	if !repo.Contributors.Has(reqToken.PushKeyID) &&
+		(namespace == nil || !namespace.Contributors.Has(reqToken.PushKeyID)) {
+		return nil, fmt.Errorf(color.RedString("push key (%s) is not "+
+			"authorized to perform this action", reqToken.PushKeyID))
 	}
 
 	var policies []*state.RepoACLPolicy
 
 	// Gather the pusher's policies from the repo's namespace and the repo itself.
-	if repo.Contributors.Has(pushReqToken.GPGID) {
-		for _, p := range repo.Contributors[pushReqToken.GPGID].Policies {
+	if repo.Contributors.Has(reqToken.PushKeyID) {
+		for _, p := range repo.Contributors[reqToken.PushKeyID].Policies {
 			policies = append(policies, p)
 		}
 	}
-	if namespace != nil && namespace.Contributors.Has(pushReqToken.GPGID) {
-		for _, p := range namespace.Contributors[pushReqToken.GPGID].Policies {
+	if namespace != nil && namespace.Contributors.Has(reqToken.PushKeyID) {
+		for _, p := range namespace.Contributors[reqToken.PushKeyID].Policies {
 			policies = append(policies, p)
 		}
 	}
@@ -141,32 +137,32 @@ m = r.sub == p.sub && r.obj == p.obj && r.act == p.act`)
 		enforcer.AddPolicy(policy.Subject, policy.Object, policy.Action)
 	}
 
-	return func(gpgID, object, action string) bool {
-		return enforcer.HasPolicy(gpgID, object, action)
+	return func(pushKeyID, object, action string) bool {
+		return enforcer.HasPolicy(pushKeyID, object, action)
 	}
 }
 
 // aclCheckCanDelete perform ACL check to determine whether the given GPG key
 // is permitted to perform a reference delete operation.
-func aclCheckCanDelete(gpgID string, polEnforcer policyEnforcer) error {
+func aclCheckCanDelete(pushKeyID string, polEnforcer policyEnforcer) error {
 	pp.Println("Check deletion")
 	return nil
 }
 
-// PushRequestTokenData represents the information used to create a push request token
+// PushRequestTokenData represents the information used to create a push request token.
 type PushRequestTokenData struct {
-	GPGID string `json:"gpgID" mapstructure:"gpgID" msgpack:"gpgID"`
-	Nonce uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce"`
-	Fee   string `json:"fee" mapstructure:"fee" msgpack:"fee"`
-	Sig   []byte `json:"sig" mapstructure:"sig" msgpack:"sig"`
+	PushKeyID string `json:"pkID" mapstructure:"pkID" msgpack:"pkID"`
+	Nonce     uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce"`
+	Fee       string `json:"fee" mapstructure:"fee" msgpack:"fee"`
+	Sig       []byte `json:"sig" mapstructure:"sig" msgpack:"sig"`
 }
 
 // GetSigningMsg returns the formatted msg to be signed
 func (p *PushRequestTokenData) GetSigningMsg() []byte {
-	return []byte(fmt.Sprintf("%s,%d,%s", p.GPGID, p.Nonce, p.Fee))
+	return []byte(fmt.Sprintf("%s,%d,%s", p.PushKeyID, p.Nonce, p.Fee))
 }
 
-// PushRequestTokenDataFromByte creates and populates a PushRequestTokenData object from a byte slice
+// PushRequestTokenDataFromByte deserializes a push request token to a PushRequestTokenData object.
 func PushRequestTokenDataFromByte(v []byte) (*PushRequestTokenData, error) {
 	bzParts := bytes.Split(v, []byte(","))
 	if len(bzParts) != 4 {
@@ -174,7 +170,7 @@ func PushRequestTokenDataFromByte(v []byte) (*PushRequestTokenData, error) {
 	}
 
 	p := PushRequestTokenData{}
-	p.GPGID = string(bzParts[0])
+	p.PushKeyID = string(bzParts[0])
 	p.Fee = string(bzParts[2])
 
 	nn, err := strconv.ParseUint(string(bzParts[1]), 10, 64)
@@ -183,7 +179,7 @@ func PushRequestTokenDataFromByte(v []byte) (*PushRequestTokenData, error) {
 	}
 	p.Nonce = nn
 
-	sig, err := hex.DecodeString(string(bzParts[3]))
+	sig, err := base58.Decode(string(bzParts[3]))
 	if err != nil {
 		return nil, fmt.Errorf("invalid push request token format: bad signature part")
 	}
@@ -193,30 +189,30 @@ func PushRequestTokenDataFromByte(v []byte) (*PushRequestTokenData, error) {
 }
 
 // MakePushRequestToken creates a push request token
-func MakePushRequestToken(gpgID string, nonce uint64, fee string, pk *openpgp.Entity) (string, error) {
-	msg := (&PushRequestTokenData{GPGID: gpgID, Nonce: nonce, Fee: fee}).GetSigningMsg()
-	sig, err := crypto.GPGSign(pk, msg)
+func MakePushRequestToken(
+	pushKeyID string,
+	pushKey core.StoredKey,
+	nonce uint64,
+	fee string) (string, error) {
+
+	msg := (&PushRequestTokenData{PushKeyID: pushKeyID, Nonce: nonce, Fee: fee}).GetSigningMsg()
+	sig, err := pushKey.GetKey().PrivKey().Sign(msg)
 	if err != nil {
-		return "", errors.Wrap(err, "sign failure")
+		return "", errors.Wrap(err, "failed to sign")
 	}
-	finalData := []byte(fmt.Sprintf("%s,%d,%s,%x", gpgID, nonce, fee, sig))
+
+	finalData := []byte(fmt.Sprintf("%s,%d,%s,%s", pushKeyID, nonce, fee, base58.Encode(sig)))
 	return base58.Encode(finalData), err
 }
 
 // createAndSetRequestTokenToRemoteURLs creates a push request token and updates the URLs of all remotes.
 func createAndSetRequestTokenToRemoteURLs(
-	signingKey string,
+	pushKey core.StoredKey,
 	targetRepo core.BareRepo,
 	txParams *util.TxParams) error {
 
-	// Get the GPG private key
-	pk, err := crypto.GetGPGPrivateKey(signingKey, targetRepo.GetConfig("gpg.program"), "")
-	if err != nil {
-		return errors.Wrap(err, "failed to get GPG private key")
-	}
-
-	// Create a pusher request token used for authentication
-	pushReqToken, err := MakePushRequestToken(txParams.GPGID, txParams.Nonce, txParams.Fee.String(), pk)
+	// Create a pusher request token
+	pushReqToken, err := MakePushRequestToken(txParams.PushKeyID, pushKey, txParams.Nonce, txParams.Fee.String())
 	if err != nil {
 		return errors.Wrap(err, "failed to create push request token")
 	}

@@ -91,7 +91,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 		return t.execRepoProposalUpdate(spk, o.RepoName, o.ProposalID, o.Config, o.Value, o.Fee, chainHeight)
 
 	case *core.TxRepoProposalRegisterPushKey:
-		return t.execRepoProposalRegisterGPGKeys(spk, o.RepoName, o.ProposalID, o.KeyIDs, o.FeeMode, o.FeeCap,
+		return t.execRepoProposalRegisterPushKeys(spk, o.RepoName, o.ProposalID, o.KeyIDs, o.FeeMode, o.FeeCap,
 			o.Policies, o.Namespace, o.NamespaceOnly, o.Value, o.Fee, chainHeight)
 
 	case *core.TxRepoProposalMergeRequest:
@@ -101,7 +101,7 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 	case *core.TxRegisterPushKey:
 		return t.execRegisterPushKey(spk, o.PublicKey, o.Scopes, o.FeeCap, o.Fee, chainHeight)
 
-	case *core.TxUpDelGPGPubKey:
+	case *core.TxUpDelPushKey:
 		return t.execUpDelPushKey(spk, o.ID, o.AddScopes, o.RemoveScopes, o.Delete, o.FeeCap, o.Fee, chainHeight)
 
 	case *core.TxPush:

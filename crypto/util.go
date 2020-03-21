@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/hex"
 
+	"github.com/tendermint/tendermint/libs/bech32"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -70,4 +72,14 @@ func StrToPublicKey(s string) PublicKey {
 // Panics if pk is not a valid ed25519 public key
 func CreatePushKeyID(pk PublicKey) string {
 	return MustPubKeyFromBytes(pk.Bytes()).PushAddr().String()
+}
+
+// CreatePushKeyID returns bech32 address corresponding to a push key.
+// Panics if pk is not a valid ed25519 public key
+func BytesToPushKeyID(pk []byte) string {
+	encoded, err := bech32.ConvertAndEncode(constants.PushAddrHRP, pk)
+	if err != nil {
+		panic(err)
+	}
+	return encoded
 }

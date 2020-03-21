@@ -235,7 +235,7 @@ var _ = Describe("Gitops", func() {
 		})
 	})
 
-	Describe(".MakeSignableCommit", func() {
+	Describe(".CreateAndOrSignQuietCommit", func() {
 		var gpgUserID string
 
 		BeforeEach(func() {
@@ -244,7 +244,7 @@ var _ = Describe("Gitops", func() {
 
 		When("signingKey is not set", func() {
 			It("should update recent commit to `new commit msg`", func() {
-				err := gitOps.MakeSignableCommit("new commit msg", "", "GNUPGHOME="+cfg.DataDir())
+				err := gitOps.CreateAndOrSignQuietCommit("new commit msg", "", "GNUPGHOME="+cfg.DataDir())
 				Expect(err).To(BeNil())
 				msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
 				Expect(strings.TrimSpace(msg)).To(Equal("new commit msg"))
@@ -253,7 +253,7 @@ var _ = Describe("Gitops", func() {
 
 		When("signingKey is set", func() {
 			It("should update recent commit to `new commit msg` and sign the commit", func() {
-				err := gitOps.MakeSignableCommit("new commit msg", gpgUserID, "GNUPGHOME="+cfg.DataDir())
+				err := gitOps.CreateAndOrSignQuietCommit("new commit msg", gpgUserID, "GNUPGHOME="+cfg.DataDir())
 				Expect(err).To(BeNil())
 				msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
 				Expect(strings.TrimSpace(msg)).To(Equal("new commit msg"))

@@ -202,9 +202,9 @@ func CheckTxRegisterPushKeyConsistency(
 
 	// Check whether there is a matching push key already existing
 	pushKeyID := crypto.CreatePushKeyID(tx.PublicKey)
-	gpgPubKey := logic.PushKeyKeeper().Get(pushKeyID)
-	if !gpgPubKey.IsNil() {
-		return feI(index, "pubKey", "gpg public key already registered")
+	pushKey := logic.PushKeyKeeper().Get(pushKeyID)
+	if !pushKey.IsNil() {
+		return feI(index, "pubKey", "push key already registered")
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
@@ -216,9 +216,9 @@ func CheckTxRegisterPushKeyConsistency(
 	return nil
 }
 
-// CheckTxRegisterPushKeyConsistency performs consistency checks on TxUpDelGPGPubKey
-func CheckTxUpDelGPGPubKeyConsistency(
-	tx *core.TxUpDelGPGPubKey,
+// CheckTxRegisterPushKeyConsistency performs consistency checks on TxUpDelPushKey
+func CheckTxUpDelPushKeyConsistency(
+	tx *core.TxUpDelPushKey,
 	index int,
 	logic core.Logic) error {
 
@@ -229,7 +229,7 @@ func CheckTxUpDelGPGPubKeyConsistency(
 
 	key := logic.PushKeyKeeper().Get(tx.ID)
 	if key.IsNil() {
-		return feI(index, "id", "gpg public key not found")
+		return feI(index, "id", "push key not found")
 	}
 
 	// Ensure sender is the owner of the key
@@ -627,8 +627,8 @@ func CheckTxRepoProposalUpdateConsistency(
 	return nil
 }
 
-// CheckTxRepoProposalRegisterGPGKeyConsistency performs consistency checks on TxRepoProposalRegisterPushKey
-func CheckTxRepoProposalRegisterGPGKeyConsistency(
+// CheckTxRepoProposalRegisterPushKeyConsistency performs consistency checks on TxRepoProposalRegisterPushKey
+func CheckTxRepoProposalRegisterPushKeyConsistency(
 	tx *core.TxRepoProposalRegisterPushKey,
 	index int,
 	logic core.Logic) error {

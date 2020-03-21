@@ -83,7 +83,7 @@ func (h *PushHandler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) erro
 
 		// Pusher wants to delete the reference, can they?
 		if cmd.New.IsZero() {
-			if err := aclCheckCanDelete(h.pushReqTokenData.GPGID, h.polEnforcer); err != nil {
+			if err := aclCheckCanDelete(h.pushReqTokenData.PushKeyID, h.polEnforcer); err != nil {
 				return err
 			}
 		}
@@ -93,7 +93,7 @@ func (h *PushHandler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) erro
 }
 
 // HandleValidateAndRevert validates the transaction information and signatures
-// that must accompany pushed references afterwhich the changes introduced by
+// that must accompany pushed references after which the changes introduced by
 // the push are reverted.
 func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, string, error) {
 
@@ -124,13 +124,12 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, stri
 	// When we have more than one pushed references, we need to ensure they both
 	// were signed using same public key id, if not, we return an error and also
 	// remove the pushed objects from the references and repository
-	var gpgID = funk.Values(refsTxParams).([]*util.TxParams)[0].GPGID
+	var pushKeyID = funk.Values(refsTxParams).([]*util.TxParams)[0].PushKeyID
 	if len(refsTxParams) > 1 {
 		for _, txParams := range refsTxParams {
-			if gpgID != txParams.GPGID {
-				errs = append(errs, fmt.Errorf("rejected because the pushed references "+
-					"were signed with multiple pgp keys"))
-				h.rMgr.GetPruner().Schedule(h.repo.GetName())
+			if pushKeyID != txParams.PushKeyID {
+				msg := "rejected because the pushed references were signed with different push keys"
+				errs = append(errs, fmt.Errorf(msg))
 				break
 			}
 		}
@@ -140,7 +139,7 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, stri
 		return nil, "", errs[0]
 	}
 
-	return refsTxParams, gpgID, nil
+	return refsTxParams, pushKeyID, nil
 }
 
 // HandleUpdate is called after the pushed data have been analysed and
@@ -149,22 +148,22 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, stri
 // the rest of the network
 func (h *PushHandler) HandleUpdate() error {
 
-	refsTxParams, gpgID, err := h.HandleValidateAndRevert()
+	refsTxParams, pushKeyID, err := h.HandleValidateAndRevert()
 	if err != nil {
 		return err
 	}
 
+	// Now that we know the
+
 	// At this point, there are no errors. We need to construct a PushNote
-	pushNote, err := h.createPushNote(gpgID, refsTxParams)
+	pushNote, err := h.createPushNote(pushKeyID, refsTxParams)
 	if err != nil {
 		return err
 	}
 	h.pushNoteID = pushNote.ID().String()
 
-	// Register the push transaction to the push pool. If an error is returned
-	// schedule the repository for pruning
+	// Add the push transaction to the push pool
 	if err := h.rMgr.GetPushPool().Add(pushNote); err != nil {
-		h.rMgr.GetPruner().Schedule(h.repo.GetName())
 		return err
 	}
 
@@ -181,7 +180,7 @@ func (h *PushHandler) HandleUpdate() error {
 
 // createPushNote creates a note that describes a push operation.
 func (h *PushHandler) createPushNote(
-	gpgID string,
+	pushKeyID string,
 	refsTxParams map[string]*util.TxParams) (*core.PushNote, error) {
 
 	var pushNote = &core.PushNote{
@@ -191,8 +190,8 @@ func (h *PushHandler) createPushNote(
 		PushRequestSig:  h.pushReqTokenData.Sig,
 		PusherAcctNonce: h.pushReqTokenData.Nonce,
 		Fee:             util.String(h.pushReqTokenData.Fee),
-		PushKeyID:       util.MustDecodeGPGIDToRSAHash(gpgID),
-		PusherAddress:   h.rMgr.GetLogic().PushKeyKeeper().Get(gpgID).Address,
+		PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
+		PusherAddress:   h.rMgr.GetLogic().PushKeyKeeper().Get(pushKeyID).Address,
 		Timestamp:       time.Now().Unix(),
 		References:      core.PushedReferences{},
 		NodePubKey:      h.rMgr.GetPrivateValidatorKey().PubKey().MustBytes32(),
@@ -269,7 +268,7 @@ func (h *PushHandler) handleReference(ref string) (*util.TxParams, []error) {
 	}
 
 	// Here, we need to validate the change
-	txParams, err := validateChange(h.repo, change, h.rMgr.GetPGPPubKeyGetter())
+	txParams, err := validateChange(h.repo, change, h.rMgr.GetPushKeyGetter())
 	if err != nil {
 		errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
 	}
@@ -282,7 +281,7 @@ func (h *PushHandler) handleReference(ref string) (*util.TxParams, []error) {
 			change,
 			oldRef,
 			txParams.MergeProposalID,
-			txParams.GPGID,
+			txParams.PushKeyID,
 			h.rMgr.GetLogic()); err != nil {
 			errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
 		}
@@ -295,12 +294,6 @@ func (h *PushHandler) handleReference(ref string) (*util.TxParams, []error) {
 	changes, err = revert(h.repo, oldRefState, matchOpt(ref), changesOpt(changes))
 	if err != nil {
 		errs = append(errs, errors.Wrap(err, "failed to revert to pre-push state"))
-	}
-
-	// Now, we need to delete the pushed objects if an error has occurred.
-	// We schedule the repository for pruning.
-	if len(errs) > 0 {
-		h.rMgr.GetPruner().Schedule(h.repo.GetName())
 	}
 
 	return txParams, errs

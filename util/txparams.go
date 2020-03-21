@@ -14,7 +14,7 @@ const TxParamsPrefix = "tx:"
 
 // TxParams errors
 var (
-	ErrTxParamsNotFound = fmt.Errorf("txparams was not set")
+	ErrTxParamsNotFound = fmt.Errorf("transaction params was not set")
 )
 
 // RemoveTxParams removes all lines beginning with a 'TxParams' prefix 'tx'.
@@ -40,7 +40,7 @@ type TxParams struct {
 	SerializerHelper
 	Fee             String `json:"fee" msgpack:"fee" mapstructure:"fee"`                   // Network fee to be paid for update to the target ref
 	Nonce           uint64 `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`             // Nonce of the account paying the network fee and signing the update.
-	GPGID           string `json:"gpgID" msgpack:"gpgID" mapstructure:"gpgID"`             // The GPG public key ID of the reference updater.
+	PushKeyID       string `json:"pkID" msgpack:"pkID" mapstructure:"pkID"`                // The push public key ID of the reference updater.
 	Signature       string `json:"sig" msgpack:"sig" mapstructure:"sig"`                   // The signature of the update (only used in note signing for now)
 	DeleteRef       bool   `json:"deleteRef" msgpack:"deleteRef" mapstructure:"deleteRef"` // A directive to delete the current/pushed reference.
 	MergeProposalID string `json:"mergeID" msgpack:"mergeID" mapstructure:"mergeID"`       // A directive to handle a pushed branch based on the constraints defined in a merge proposal
@@ -61,11 +61,11 @@ func (tp *TxParams) BytesNoSig() []byte {
 }
 
 func (tp *TxParams) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return tp.EncodeMulti(enc, tp.Fee, tp.Nonce, tp.GPGID, tp.Signature, tp.DeleteRef, tp.MergeProposalID)
+	return tp.EncodeMulti(enc, tp.Fee, tp.Nonce, tp.PushKeyID, tp.Signature, tp.DeleteRef, tp.MergeProposalID)
 }
 
 func (tp *TxParams) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return tp.DecodeMulti(dec, &tp.Fee, &tp.Nonce, &tp.GPGID, &tp.Signature, &tp.DeleteRef, &tp.MergeProposalID)
+	return tp.DecodeMulti(dec, &tp.Fee, &tp.Nonce, &tp.PushKeyID, &tp.Signature, &tp.DeleteRef, &tp.MergeProposalID)
 }
 
 // GetNonceAsString returns the nonce as a string
@@ -75,12 +75,12 @@ func (tp *TxParams) GetNonceAsString() string {
 
 func (tp *TxParams) String() string {
 	nonceStr := strconv.FormatUint(tp.Nonce, 10)
-	return MakeTxParams(tp.Fee.String(), nonceStr, tp.GPGID, []byte(tp.Signature))
+	return MakeTxParams(tp.Fee.String(), nonceStr, tp.PushKeyID, []byte(tp.Signature))
 }
 
 // MakeTxParams returns a well formatted txparams string
-func MakeTxParams(txFee, txNonce, gpgID string, sig []byte, directives ...string) string {
-	str := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", txFee, txNonce, gpgID)
+func MakeTxParams(txFee, txNonce, pushKeyID string, sig []byte, directives ...string) string {
+	str := fmt.Sprintf("tx: fee=%s, nonce=%s, pkID=%s", txFee, txNonce, pushKeyID)
 	for _, a := range directives {
 		str = str + fmt.Sprintf(", %s", a)
 	}
@@ -94,10 +94,10 @@ func MakeTxParams(txFee, txNonce, gpgID string, sig []byte, directives ...string
 func MakeAndValidateTxParams(
 	txFee,
 	txNonce,
-	gpgID string,
+	pushKeyID string,
 	sig []byte,
 	directives ...string) (*TxParams, error) {
-	str := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", txFee, txNonce, gpgID)
+	str := fmt.Sprintf("tx: fee=%s, nonce=%s, pkID=%s", txFee, txNonce, pushKeyID)
 	for _, a := range directives {
 		str = str + fmt.Sprintf(", %s", a)
 	}
@@ -155,14 +155,14 @@ func ExtractTxParams(msg string) (*TxParams, error) {
 			continue
 		}
 
-		if kvParts[0] == "gpgID" {
+		if kvParts[0] == "pkID" {
 			if kvParts[1] == "" {
-				return nil, fieldError("gpgID", "gpg key id is required")
+				return nil, fieldError("pkID", "push key id is required")
 			}
-			if len(kvParts[1]) != 42 || !IsValidPushKeyID(kvParts[1]) {
-				return nil, fieldError("gpgID", "gpg key id is invalid")
+			if !IsValidPushKeyID(kvParts[1]) {
+				return nil, fieldError("pkID", "push key id is invalid")
 			}
-			txParams.GPGID = kvParts[1]
+			txParams.PushKeyID = kvParts[1]
 			continue
 		}
 

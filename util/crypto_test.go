@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/libs/bech32"
+	"gitlab.com/makeos/mosdef/types/constants"
 )
 
 var _ = Describe("Crypto", func() {
@@ -134,20 +135,19 @@ var _ = Describe("Crypto", func() {
 		})
 	})
 
-	Describe(".MustDecodeGPGIDToRSAHash", func() {
+	Describe(".MustDecodePushKeyID", func() {
 		It("should return a 20 bytes slice when successful", func() {
-			bz := MustDecodeGPGIDToRSAHash("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
+			bz := MustDecodePushKeyID("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
 			Expect(bz).To(HaveLen(20))
 		})
 
 		It("should panic when not successful", func() {
-			Expect(func() { MustDecodeGPGIDToRSAHash("ql277nsqpczpfd") }).To(Panic())
+			Expect(func() { MustDecodePushKeyID("ql277nsqpczpfd") }).To(Panic())
 		})
 	})
 
 	Describe(".IsValidPushKeyID", func() {
 		It("should return false id could not be decoded", func() {
-			// id := bech32.ConvertAndEncode("abc", []byte("abc"))
 			id := "bad_id"
 			Expect(IsValidPushKeyID(id)).To(BeFalse())
 		})
@@ -158,7 +158,7 @@ var _ = Describe("Crypto", func() {
 		})
 
 		It("should return false id actual data is not 20-bytes", func() {
-			id, _ := bech32.ConvertAndEncode(GPGAddrHRP, []byte("abc"))
+			id, _ := bech32.ConvertAndEncode(constants.PushAddrHRP, []byte("abc"))
 			Expect(IsValidPushKeyID(id)).To(BeFalse())
 		})
 	})
@@ -172,18 +172,6 @@ var _ = Describe("Crypto", func() {
 	Describe(".HashNamespace", func() {
 		It("should produce a 40 byte string", func() {
 			Expect(HashNamespace("name1")).To(HaveLen(40))
-		})
-	})
-
-	Describe(".MustCreateGPGID", func() {
-		It("should create a 42 bytes ID from a 20 bytes input", func() {
-			bz := []uint8{
-				0x6c, 0x73, 0x45, 0x6f, 0x66, 0x4f, 0x73, 0x75, 0x67, 0x42,
-				0x57, 0x68, 0x47, 0x6e, 0x41, 0x72, 0x73, 0x75, 0x45, 0x76,
-			}
-			id := MustCreateGPGID(bz)
-			Expect(id).To(Equal("gpg1d3e52mmxfaeh2e6z2a5ywmjpwfeh23tkyp89t4"))
-			Expect(len(id)).To(Equal(42))
 		})
 	})
 })

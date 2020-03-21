@@ -55,8 +55,8 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxRepoCreate(o, index)
 	case *core.TxRegisterPushKey:
 		return CheckTxRegisterPushKey(o, index)
-	case *core.TxUpDelGPGPubKey:
-		return CheckTxUpDelGPGPubKey(o, index)
+	case *core.TxUpDelPushKey:
+		return CheckTxUpDelPushKey(o, index)
 	case *core.TxPush:
 		return CheckTxPush(o, index)
 	case *core.TxNamespaceAcquire:
@@ -74,7 +74,7 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 	case *core.TxRepoProposalMergeRequest:
 		return CheckTxRepoProposalMergeRequest(o, index)
 	case *core.TxRepoProposalRegisterPushKey:
-		return CheckTxRepoProposalRegisterGPGKey(o, index)
+		return CheckTxRepoProposalRegisterPushKey(o, index)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}
@@ -98,8 +98,8 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 		return CheckTxRepoCreateConsistency(o, index, logic)
 	case *core.TxRegisterPushKey:
 		return CheckTxRegisterPushKeyConsistency(o, index, logic)
-	case *core.TxUpDelGPGPubKey:
-		return CheckTxUpDelGPGPubKeyConsistency(o, index, logic)
+	case *core.TxUpDelPushKey:
+		return CheckTxUpDelPushKeyConsistency(o, index, logic)
 	case *core.TxPush:
 		return CheckTxPushConsistency(o, index, logic, func(name string) (core.BareRepo, error) {
 			return repo.GetRepo(filepath.Join(logic.Cfg().GetRepoRoot(), name))
@@ -119,7 +119,7 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 	case *core.TxRepoProposalMergeRequest:
 		return CheckTxRepoProposalMergeRequestConsistency(o, index, logic)
 	case *core.TxRepoProposalRegisterPushKey:
-		return CheckTxRepoProposalRegisterGPGKeyConsistency(o, index, logic)
+		return CheckTxRepoProposalRegisterPushKeyConsistency(o, index, logic)
 	default:
 		return feI(index, "type", "unsupported transaction type")
 	}

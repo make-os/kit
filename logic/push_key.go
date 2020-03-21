@@ -7,7 +7,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// execRegisterPushKey registers a Push key
+// execRegisterPushKey registers a push key
 //
 // ARGS:
 // senderPubKey: The account public key of the sender.

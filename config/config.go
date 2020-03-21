@@ -185,7 +185,7 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 	// Set data and network directories
 	c.dataDir = dataDir
 	c.netDataDir = path.Join(dataDir, viper.GetString("net.version"))
-	c.accountDir = path.Join(c.DataDir(), KeystoreDirName)
+	c.keystoreDir = path.Join(c.DataDir(), KeystoreDirName)
 	c.consoleHistoryPath = path.Join(c.DataDir(), ".console_history")
 	c.repoDir = path.Join(c.NetDataDir(), "data", "repos")
 	c.extensionDir = path.Join(c.DataDir(), "extensions")

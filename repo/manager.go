@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	types2 "gitlab.com/makeos/mosdef/dht/types"
+	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/node/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
@@ -63,24 +63,24 @@ var services = [][]interface{}{
 type Manager struct {
 	p2p.BaseReactor
 	cfg                  *config.AppConfig
-	log                  logger.Logger        // log is the application logger
-	wg                   *sync.WaitGroup      // wait group for waiting for the manager
-	srv                  *http.Server         // the http server
-	rootDir              string               // the root directory where all repos are stored
-	addr                 string               // addr is the listening address for the http server
-	gitBinPath           string               // gitBinPath is the path of the git executable
-	pushPool             core.PushPool        // The transaction pool for push transactions
-	mempool              core.Mempool         // The general transaction pool for block-bound transaction
-	logic                core.Logic           // logic is the application logic provider
-	privValidatorKey     *crypto.Key          // the node's private validator key for signing transactions
-	pgpPubKeyGetter      core.PGPPubKeyGetter // finds and returns PGP public key
-	dht                  types2.DHTNode       // The dht service
-	pruner               core.Pruner          // The repo runner
-	blockGetter          types.BlockGetter    // Provides access to blocks
-	pushNoteSenders      *cache.Cache         // Store senders of push notes
-	pushOKSenders        *cache.Cache         // Stores senders of PushOK messages
-	pushNoteEndorsements *cache.Cache         // Store PushOKs
-	modulesAgg           modules.ModuleHub    // Modules aggregator
+	log                  logger.Logger      // log is the application logger
+	wg                   *sync.WaitGroup    // wait group for waiting for the manager
+	srv                  *http.Server       // the http server
+	rootDir              string             // the root directory where all repos are stored
+	addr                 string             // addr is the listening address for the http server
+	gitBinPath           string             // gitBinPath is the path of the git executable
+	pushPool             core.PushPool      // The transaction pool for push transactions
+	mempool              core.Mempool       // The general transaction pool for block-bound transaction
+	logic                core.Logic         // logic is the application logic provider
+	privValidatorKey     *crypto.Key        // the node's private validator key for signing transactions
+	pushKeyGetter        core.PushKeyGetter // finds and returns PGP public key
+	dht                  dhttypes.DHTNode   // The dht service
+	pruner               core.Pruner        // The repo runner
+	blockGetter          types.BlockGetter  // Provides access to blocks
+	pushNoteSenders      *cache.Cache       // Store senders of push notes
+	pushOKSenders        *cache.Cache       // Stores senders of PushOK messages
+	pushNoteEndorsements *cache.Cache       // Store PushOKs
+	modulesAgg           modules.ModuleHub  // Modules aggregator
 }
 
 // NewManager creates an instance of Manager
@@ -88,7 +88,7 @@ func NewManager(
 	cfg *config.AppConfig,
 	addr string,
 	logic core.Logic,
-	dht types2.DHTNode,
+	dht dhttypes.DHTNode,
 	mempool core.Mempool,
 	blockGetter types.BlockGetter) *Manager {
 
@@ -114,7 +114,7 @@ func NewManager(
 		pushNoteEndorsements: cache.NewActiveCache(params.PushNotesEndorsementsCacheSize),
 	}
 
-	mgr.pgpPubKeyGetter = mgr.defaultGPGPubKeyGetter
+	mgr.pushKeyGetter = mgr.getPushKey
 	mgr.BaseReactor = *p2p.NewBaseReactor("Reactor", mgr)
 	mgr.pruner = NewPruner(mgr, mgr.rootDir)
 
@@ -132,13 +132,12 @@ func (m *Manager) RegisterAPIHandlers(agg modules.ModuleHub) {
 	m.registerAPIHandlers(m.srv.Handler.(*http.ServeMux))
 }
 
-// TODO: return correct public key
-func (m *Manager) defaultGPGPubKeyGetter(gpgID string) (string, error) {
-	gpgPK := m.logic.PushKeyKeeper().Get(gpgID)
-	if gpgPK.IsNil() {
-		return "", fmt.Errorf("gpg public key not found for the given ID")
+func (m *Manager) getPushKey(pushKeyID string) (crypto.PublicKey, error) {
+	pk := m.logic.PushKeyKeeper().Get(pushKeyID)
+	if pk.IsNil() {
+		return crypto.EmptyPublicKey, fmt.Errorf("push key does not exist")
 	}
-	return "", nil
+	return pk.PubKey, nil
 }
 
 // cachePushNoteSender caches a push note sender
@@ -230,7 +229,7 @@ func (m *Manager) GetMempool() core.Mempool {
 }
 
 // GetDHT returns the dht service
-func (m *Manager) GetDHT() types2.DHTNode {
+func (m *Manager) GetDHT() dhttypes.DHTNode {
 	return m.dht
 }
 
@@ -246,7 +245,7 @@ func (m *Manager) getRepoPath(name string) string {
 // gitRequestsHandler handles incoming http request from a git client
 func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
-	m.log.Debug("NewAPI request", "Method", r.Method, "URL", r.URL.String(), "ProtocolVersion", r.Proto)
+	m.log.Debug("New request", "Method", r.Method, "URL", r.URL.String(), "ProtocolVersion", r.Proto)
 
 	// De-construct the URL to get the repo name and operation
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
@@ -363,9 +362,9 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	writeMethodNotAllowed(w, r)
 }
 
-// GetPGPPubKeyGetter implements RepositoryManager
-func (m *Manager) GetPGPPubKeyGetter() core.PGPPubKeyGetter {
-	return m.pgpPubKeyGetter
+// GetPushKeyGetter implements RepositoryManager
+func (m *Manager) GetPushKeyGetter() core.PushKeyGetter {
+	return m.pushKeyGetter
 }
 
 // Log returns the logger
@@ -374,8 +373,8 @@ func (m *Manager) Log() logger.Logger {
 }
 
 // SetPGPPubKeyGetter implements SetPGPPubKeyGetter
-func (m *Manager) SetPGPPubKeyGetter(pkGetter core.PGPPubKeyGetter) {
-	m.pgpPubKeyGetter = pkGetter
+func (m *Manager) SetPGPPubKeyGetter(pkGetter core.PushKeyGetter) {
+	m.pushKeyGetter = pkGetter
 }
 
 // GetRepoState implements RepositoryManager

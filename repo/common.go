@@ -2,8 +2,9 @@ package repo
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"strings"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -95,10 +96,10 @@ func (c *WrappedCommit) GetHash() plumbing.Hash {
 }
 
 // MakeNoteSigMsg creates the message for note signature
-func MakeNoteSigMsg(txFee, nextNonce, gpgID, noteHash string, deleteRef bool) []byte {
+func MakeNoteSigMsg(txFee, nextNonce, pushKeyID, noteHash string, deleteRef bool) []byte {
 	return []byte(txFee +
 		nextNonce +
-		gpgID +
+		pushKeyID +
 		noteHash +
 		fmt.Sprintf("%v", deleteRef))
 }

@@ -33,11 +33,11 @@ var feI = util.FieldErrorWithIndex
 // validateChange validates a change to a repository
 // repo: The target repository
 // change: The item that changed the repository
-// gpgPubKeyGetter: Getter function for reading gpg public key
+// pushKeyGetter: Getter function for reading push key public key
 func validateChange(
 	repo core.BareRepo,
 	change *core.ItemChange,
-	gpgPubKeyGetter core.PGPPubKeyGetter) (*util.TxParams, error) {
+	pushKeyGetter core.PushKeyGetter) (*util.TxParams, error) {
 
 	var commit *object.Commit
 	var err error
@@ -62,7 +62,7 @@ validateBranch:
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get commit object")
 	}
-	return checkCommit(commit, false, repo, gpgPubKeyGetter)
+	return checkCommit(commit, repo, pushKeyGetter)
 
 validateTag:
 	tagRef, err = repo.Tag(strings.ReplaceAll(change.Item.GetName(), "refs/tags/", ""))
@@ -83,26 +83,26 @@ validateTag:
 		if err != nil {
 			return nil, errors.Wrap(err, "unable to get commit")
 		}
-		return checkCommit(commit, true, repo, gpgPubKeyGetter)
+		return checkCommit(commit, repo, pushKeyGetter)
 	}
 
 	// At this point, the tag is an annotated tag.
 	// We have to ensure the annotated tag object is signed.
-	return checkAnnotatedTag(tagObj, repo, gpgPubKeyGetter)
+	return checkAnnotatedTag(tagObj, repo, pushKeyGetter)
 
 validatedNote:
 	noteName := change.Item.GetName()
-	return checkNote(repo, noteName, gpgPubKeyGetter)
+	return checkNote(repo, noteName, pushKeyGetter)
 }
 
 // checkNote validates a note.
 // noteName: The target note name
 // repo: The repo where the tag exists in.
-// gpgPubKeyGetter: Getter function for reading gpg public key
+// pushKeyGetter: Getter function for reading push key public key
 func checkNote(
 	repo core.BareRepo,
 	noteName string,
-	gpgPubKeyGetter core.PGPPubKeyGetter) (*util.TxParams, error) {
+	pushKeyGetter core.PushKeyGetter) (*util.TxParams, error) {
 
 	// Get a all notes entries
 	noteEntries, err := repo.ListTreeObjects(noteName, false)
@@ -111,8 +111,7 @@ func checkNote(
 		return nil, errors.Wrap(err, msg)
 	}
 
-	// From the entries, find a blob that contains a txparams format
-	// and stop after the first one is found
+	// From the entries, find the blob that contains the transaction parameters
 	var txBlob *object.Blob
 	for hash := range noteEntries {
 		obj, err := repo.BlobObject(plumbing.NewHash(hash))
@@ -133,33 +132,15 @@ func checkNote(
 
 	// Reject note if we didn't find a tx blob
 	if txBlob == nil {
-		return nil, fmt.Errorf("unacceptable note. it does not have a signed transaction object")
+		return nil, fmt.Errorf("note does not include a transaction parameter blob")
 	}
 
 	// Get and parse the transaction line
-	r, err := txBlob.Reader()
-	if err != nil {
-		return nil, err
-	}
-	bz, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
+	r, _ := txBlob.Reader()
+	bz, _ := ioutil.ReadAll(r)
 	txParams, err := util.ExtractTxParams(string(bz))
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("note (%s)", noteName))
-	}
-
-	// Get the public key
-	pubKeyStr, err := gpgPubKeyGetter(txParams.GPGID)
-	if err != nil {
-		msg := "unable to verify note (%s). public key was not found"
-		return nil, errors.Errorf(msg, noteName)
-	}
-	pubKey, err := crypto.PGPEntityFromPubKey(pubKeyStr)
-	if err != nil {
-		msg := "unable to verify note (%s). public key is not valid"
-		return nil, errors.Errorf(msg, noteName)
+		return nil, errors.Wrap(err, fmt.Sprintf("note (%s) has invalid transaction parameters", noteName))
 	}
 
 	// Get the parent of the commit referenced by the note.
@@ -181,14 +162,18 @@ func checkNote(
 		noteHash = parent.Hash.String()
 	}
 
-	// Now, verify the signature
-	// TODO: use MakeNoteSigMsg
-	msg := []byte(txParams.Fee.String() + txParams.GetNonceAsString() + txParams.GPGID + noteHash +
-		fmt.Sprintf("%v", txParams.DeleteRef))
-	_, err = crypto.VerifyGPGSignature(pubKey, []byte(txParams.Signature), msg)
+	pubKey, err := pushKeyGetter(txParams.PushKeyID)
 	if err != nil {
-		msg := "note (%s) signature verification failed: %s"
-		return nil, errors.Errorf(msg, noteName, err.Error())
+		return nil, errors.Wrapf(err, "failed to get push key (%s)", txParams.PushKeyID)
+	}
+	pk := crypto.MustPubKeyFromBytes(pubKey.Bytes())
+
+	// Now, verify the signature
+	msg := MakeNoteSigMsg(txParams.Fee.String(), txParams.GetNonceAsString(),
+		txParams.PushKeyID, noteHash, txParams.DeleteRef)
+	ok, err := pk.Verify(msg, []byte(txParams.Signature))
+	if err != nil || !ok {
+		return nil, errors.Errorf("note (%s) signature verification failed: %s", noteName, err)
 	}
 
 	return txParams, nil
@@ -197,42 +182,38 @@ func checkNote(
 // checkAnnotatedTag validates an annotated tag.
 // tag: The target annotated tag
 // repo: The repo where the tag exists in.
-// gpgPubKeyGetter: Getter function for reading gpg public key
+// pushKeyGetter: Getter function for reading push key public key
 func checkAnnotatedTag(
 	tag *object.Tag,
 	repo core.BareRepo,
-	gpgPubKeyGetter core.PGPPubKeyGetter) (*util.TxParams, error) {
+	pushKeyGetter core.PushKeyGetter) (*util.TxParams, error) {
 
-	// Get and parse txparams from the commit message
 	txParams, err := util.ExtractTxParams(tag.Message)
 	if err != nil {
-		msg := fmt.Sprintf("tag (%s)", tag.Hash.String())
-		return nil, errors.Wrap(err, msg)
+		return nil, errors.Wrap(err, fmt.Sprintf("tag (%s)", tag.Hash.String()))
 	}
 
 	if tag.PGPSignature == "" {
-		msg := "tag (%s) is unsigned. please sign the tag with your gpg key"
+		msg := "tag (%s) is unsigned. Sign the tag with your push key"
 		return nil, errors.Errorf(msg, tag.Hash.String())
 	}
 
-	// Get the public key
-	pubKey, err := gpgPubKeyGetter(txParams.GPGID)
+	pubKey, err := pushKeyGetter(txParams.PushKeyID)
 	if err != nil {
-		msg := "unable to verify tag (%s). public key (id:%s) was not found"
-		return nil, errors.Errorf(msg, tag.Hash.String(), txParams.GPGID)
+		return nil, errors.Wrapf(err, "failed to get pusher key(%s) to verify commit (%s)",
+			txParams.PushKeyID, tag.Hash.String())
 	}
 
-	// Verify tag signature
-	if _, err = tag.Verify(pubKey); err != nil {
-		msg := "tag (%s) signature verification failed: %s"
-		return nil, errors.Errorf(msg, tag.Hash.String(), err.Error())
+	if err = verifyCommitOrTagSignature(tag, pubKey); err != nil {
+		return nil, err
 	}
 
 	commit, err := tag.Commit()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to get referenced commit")
 	}
-	return checkCommit(commit, true, repo, gpgPubKeyGetter)
+
+	return checkCommit(commit, repo, pushKeyGetter)
 }
 
 // checkMergeCompliance checks whether push to a branch satisfied
@@ -242,48 +223,43 @@ func checkMergeCompliance(
 	change *core.ItemChange,
 	oldRef core.Item,
 	mergeProposalID,
-	gpgID string,
+	pushKeyID string,
 	keepers core.Keepers) error {
 
 	ref := plumbing.ReferenceName(change.Item.GetName())
 	if !ref.IsBranch() {
-		return fmt.Errorf("merge compliance error: pushed reference must be a branch")
+		return fmt.Errorf("merge error: pushed reference must be a branch")
 	}
 
 	prop := repo.State().Proposals.Get(mergeProposalID)
 	if prop == nil {
-		return fmt.Errorf("merge compliance error: "+
-			"merge proposal (%s) not found", mergeProposalID)
+		return fmt.Errorf("merge error: merge proposal (%s) not found", mergeProposalID)
 	}
 
 	// Ensure the signer is the creator of the proposal
-	gpgKey := keepers.PushKeyKeeper().Get(gpgID)
-	if gpgKey.Address.String() != prop.Creator {
-		return fmt.Errorf("merge compliance error: "+
-			"signer must be the creator of the merge proposal (%s)", mergeProposalID)
+	pushKey := keepers.PushKeyKeeper().Get(pushKeyID)
+	if pushKey.Address.String() != prop.Creator {
+		return fmt.Errorf("merge error: signer did not create the proposal  (%s)", mergeProposalID)
 	}
 
 	// Check if the merge proposal has been closed
 	closed, err := keepers.RepoKeeper().IsProposalClosed(repo.GetName(), mergeProposalID)
 	if err != nil {
-		return fmt.Errorf("merge compliance error: %s", err)
+		return fmt.Errorf("merge error: %s", err)
 	} else if closed {
-		return fmt.Errorf("merge compliance error: "+
-			"merge proposal (%s) is already closed", mergeProposalID)
+		return fmt.Errorf("merge error: merge proposal (%s) is already closed", mergeProposalID)
 	}
 
 	// Ensure the proposal's base branch matches the pushed branch
 	var propBaseBranch string
 	_ = util.ToObject(prop.ActionData[constants.ActionDataKeyBaseBranch], &propBaseBranch)
 	if ref.Short() != propBaseBranch {
-		return fmt.Errorf("merge compliance error: pushed branch name and " +
-			"merge proposal base branch name must match")
+		return fmt.Errorf("merge error: pushed branch name and proposal base branch name must match")
 	}
 
 	// Check whether the merge proposal has been accepted
 	if prop.Outcome != state.ProposalOutcomeAccepted {
-		return fmt.Errorf("merge compliance error: "+
-			"merge proposal (%s) has not been accepted", mergeProposalID)
+		return fmt.Errorf("merge error: merge proposal (%s) has not been accepted", mergeProposalID)
 	}
 
 	// Get the commit that initiated the merge operation (a.k.a "merger commit").
@@ -297,7 +273,7 @@ func checkMergeCompliance(
 
 	// Ensure the merger commit does not have multiple parents
 	if commit.NumParents() > 1 {
-		return fmt.Errorf("merge compliance error: multiple targets not allowed")
+		return fmt.Errorf("merge error: multiple targets not allowed")
 	}
 
 	// Ensure the difference between the target commit and the merger commit
@@ -308,7 +284,7 @@ func checkMergeCompliance(
 	if commit.GetTreeHash() != targetCommit.GetTreeHash() ||
 		commit.GetAuthor().String() != targetCommit.GetAuthor().String() ||
 		commit.GetCommitter().String() != targetCommit.GetCommitter().String() {
-		return fmt.Errorf("merge compliance error: merger commit " +
+		return fmt.Errorf("merge error: merger commit " +
 			"cannot modify history as seen from target commit")
 	}
 
@@ -330,7 +306,7 @@ func checkMergeCompliance(
 	// Ensure the proposals base branch hash matches the hash of the current
 	// branch before this current push/change.
 	if propBaseHashStr != oldRefHash {
-		return fmt.Errorf("merge compliance error: merge proposal base " +
+		return fmt.Errorf("merge error: merge proposal base " +
 			"branch hash is stale or invalid")
 	}
 
@@ -338,52 +314,60 @@ func checkMergeCompliance(
 	var propTargetHash string
 	_ = util.ToObject(prop.ActionData[constants.ActionDataKeyTargetHash], &propTargetHash)
 	if targetCommit.GetHash().String() != propTargetHash {
-		return fmt.Errorf("merge compliance error: target commit hash and " +
+		return fmt.Errorf("merge error: target commit hash and " +
 			"the merge proposal target hash must match")
 	}
 
 	return nil
 }
 
-// checkCommit checks a commit txparams and verifies its signature
-// commit: The target commit object
-// isReferenced: Whether the commit was referenced somewhere (e.g in a tag)
-// repo: The target repository where the commit exist in.
-// gpgPubKeyGetter: Getter function for reading gpg public key
-func checkCommit(
-	commit *object.Commit,
-	isReferenced bool,
-	repo core.BareRepo,
-	gpgPubKeyGetter core.PGPPubKeyGetter) (*util.TxParams, error) {
-
-	referencedStr := ""
-	if isReferenced {
-		referencedStr = "referenced "
+// verifyCommitSignature verifies commit and tag signatures
+func verifyCommitOrTagSignature(obj object.Object, pubKey crypto.PublicKey) error {
+	encoded := &plumbing.MemoryObject{}
+	sig := []byte{}
+	hash := ""
+	switch o := obj.(type) {
+	case *object.Commit:
+	case *object.Tag:
+		o.EncodeWithoutSignature(encoded)
+		sig = []byte(o.PGPSignature)
+		hash = o.Hash.String()
+	default:
+		return fmt.Errorf("unsupported object type")
 	}
 
-	// Get and parse txparams from the commit message
+	rdr, _ := encoded.Reader()
+	msg, _ := ioutil.ReadAll(rdr)
+	pk := crypto.MustPubKeyFromBytes(pubKey.Bytes())
+	if ok, err := pk.Verify(msg, sig); !ok || err != nil {
+		return errors.Wrapf(err, "commit (%s) signature is invalid", hash)
+	}
+
+	return nil
+}
+
+// checkCommit validates a commit
+// commit: The target commit object
+// repo: The target repository where the commit exist in.
+// pushKeyGetter: Getter function for fetching push public key
+func checkCommit(commit *object.Commit, repo core.BareRepo, pushKeyGetter core.PushKeyGetter) (*util.TxParams, error) {
+
 	txParams, err := util.ExtractTxParams(commit.Message)
 	if err != nil {
-		msg := fmt.Sprintf("%scommit (%s)", referencedStr, commit.Hash.String())
-		return nil, errors.Wrap(err, msg)
+		return nil, errors.Wrapf(err, "commit (%s)", commit.Hash.String())
 	}
 
 	if commit.PGPSignature == "" {
-		msg := "%scommit (%s) is unsigned. please sign the commit with your gpg key"
-		return nil, errors.Errorf(msg, referencedStr, commit.Hash.String())
+		return nil, errors.Wrapf(err, "commit (%s) was not signed", commit.Hash.String())
 	}
 
-	// Get the public key
-	pubKey, err := gpgPubKeyGetter(txParams.GPGID)
+	pubKey, err := pushKeyGetter(txParams.PushKeyID)
 	if err != nil {
-		msg := "unable to verify %scommit (%s). public key (id:%s) was not found"
-		return nil, errors.Errorf(msg, referencedStr, commit.Hash.String(), txParams.GPGID)
+		return nil, errors.Wrapf(err, "failed to get push key (%s)", txParams.PushKeyID)
 	}
 
-	// Verify commit signature
-	if _, err = commit.Verify(pubKey); err != nil {
-		msg := "%scommit (%s) signature verification failed: %s"
-		return nil, errors.Errorf(msg, referencedStr, commit.Hash.String(), err.Error())
+	if err = verifyCommitOrTagSignature(commit, pubKey); err != nil {
+		return nil, err
 	}
 
 	return txParams, nil
@@ -394,10 +378,10 @@ func checkCommit(
 func checkPushNoteAgainstTxParams(pn *core.PushNote, txParams map[string]*util.TxParams) error {
 
 	// Push note pusher public key must match txparams key
-	txParamssObjs := funk.Values(txParams).([]*util.TxParams)
-	if !bytes.Equal(pn.PushKeyID, util.MustDecodeGPGIDToRSAHash(txParamssObjs[0].GPGID)) {
-		return fmt.Errorf("push note pusher public key id does not match " +
-			"txparams pusher public key id")
+	txParamsObjs := funk.Values(txParams).([]*util.TxParams)
+	if !bytes.Equal(pn.PushKeyID, util.MustDecodePushKeyID(txParamsObjs[0].PushKeyID)) {
+		return fmt.Errorf("push note pusher key id does not match " +
+			"push key in tx parameter")
 	}
 
 	totalFees := decimal.Zero
@@ -467,10 +451,10 @@ func CheckPushNoteSyntax(tx *core.PushNote) error {
 	}
 
 	if len(tx.PushKeyID) == 0 {
-		return util.FieldError("pusherKeyId", "pusher gpg key id is required")
+		return util.FieldError("pusherKeyId", "pusher push key key id is required")
 	}
 	if len(tx.PushKeyID) != 20 {
-		return util.FieldError("pusherKeyId", "pusher gpg key is not valid")
+		return util.FieldError("pusherKeyId", "pusher push key key is not valid")
 	}
 
 	if tx.Timestamp == 0 {
@@ -564,49 +548,49 @@ func checkPushedReference(
 // CheckPushNoteConsistency performs consistency checks against the state of the
 // repository as seen by the node. If the target repo object is not set in tx,
 // local reference hash comparision is not performed.
-func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
+func CheckPushNoteConsistency(note *core.PushNote, logic core.Logic) error {
 
 	// Ensure the repository exist
-	repo := logic.RepoKeeper().Get(tx.GetRepoName())
+	repo := logic.RepoKeeper().Get(note.GetRepoName())
 	if repo.IsNil() {
-		msg := fmt.Sprintf("repository named '%s' is unknown", tx.GetRepoName())
+		msg := fmt.Sprintf("repository named '%s' is unknown", note.GetRepoName())
 		return util.FieldError("repoName", msg)
 	}
 
 	// If namespace is provide, ensure it exists
-	if tx.Namespace != "" {
-		if logic.NamespaceKeeper().Get(util.HashNamespace(tx.Namespace)).IsNil() {
-			return util.FieldError("namespace", fmt.Sprintf("namespace '%s' is unknown", tx.Namespace))
+	if note.Namespace != "" {
+		if logic.NamespaceKeeper().Get(util.HashNamespace(note.Namespace)).IsNil() {
+			return util.FieldError("namespace", fmt.Sprintf("namespace '%s' is unknown", note.Namespace))
 		}
 	}
 
-	// Get gpg key of the pusher
-	gpgKey := logic.PushKeyKeeper().Get(util.MustCreateGPGID(tx.PushKeyID))
-	if gpgKey.IsNil() {
-		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", tx.PushKeyID)
+	// Get push key key of the pusher
+	pushKey := logic.PushKeyKeeper().Get(crypto.BytesToPushKeyID(note.PushKeyID))
+	if pushKey.IsNil() {
+		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", note.PushKeyID)
 		return util.FieldError("pusherKeyId", msg)
 	}
 
-	// Ensure the gpg key linked address matches the pusher address
-	if gpgKey.Address != tx.PusherAddress {
-		return util.FieldError("pusherAddr", "gpg key is not associated with the pusher address")
+	// Ensure the push key key linked address matches the pusher address
+	if pushKey.Address != note.PusherAddress {
+		return util.FieldError("pusherAddr", "push key key is not associated with the pusher address")
 	}
 
 	// Ensure next pusher account nonce matches the pushed note's keystore nonce
-	pusherAcct := logic.AccountKeeper().Get(tx.PusherAddress)
+	pusherAcct := logic.AccountKeeper().Get(note.PusherAddress)
 	if pusherAcct.IsNil() {
 		return util.FieldError("pusherAddr", "pusher account not found")
 	}
 	nextNonce := pusherAcct.Nonce + 1
-	if tx.PusherAcctNonce != nextNonce {
-		msg := fmt.Sprintf("wrong account nonce '%d', expecting '%d'", tx.PusherAcctNonce, nextNonce)
+	if note.PusherAcctNonce != nextNonce {
+		msg := fmt.Sprintf("wrong account nonce '%d', expecting '%d'", note.PusherAcctNonce, nextNonce)
 		return util.FieldError("accountNonce", msg)
 	}
 
 	// Check each references against the state version
 	if err := checkPushedReference(
-		tx.GetTargetRepo(),
-		tx.GetPushedReferences(),
+		note.GetTargetRepo(),
+		note.GetPushedReferences(),
 		repo,
 		logic); err != nil {
 		return err
@@ -618,10 +602,10 @@ func CheckPushNoteConsistency(tx *core.PushNote, logic core.Logic) error {
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 	if err = logic.Tx().CanExecCoinTransfer(
-		tx.PusherAddress,
+		note.PusherAddress,
 		"0",
-		tx.GetFee(),
-		tx.PusherAcctNonce,
+		note.GetFee(),
+		note.PusherAcctNonce,
 		uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -772,32 +756,32 @@ func checkPushRequestTokenData(prt *PushRequestTokenData, keepers core.Keepers) 
 // checkPushRequestTokenDataSanity performs sanity checks on push request token data
 func checkPushRequestTokenDataSanity(prt *PushRequestTokenData) error {
 
-	if prt.GPGID == "" {
-		return util.FieldError("gpgID", "push key id is required")
-	} else if !util.IsValidPushKeyID(prt.GPGID) {
-		return util.FieldError("gpgID", "push key id is not valid")
+	if prt.PushKeyID == "" {
+		return util.FieldError("pkID", "push key id is required")
+	}
+	if !util.IsValidPushKeyID(prt.PushKeyID) {
+		return util.FieldError("pkID", "push key id is not valid")
 	}
 
 	if prt.Nonce == 0 {
-		return util.FieldError("gpgOwnerNextNonce", "nonce must be a positive number")
+		return util.FieldError("nonce", "nonce must be a positive number")
 	}
 
 	return nil
 }
 
-// checkPushRequestTokenDataConsistency performs consistency checks on the transaction parameter
-// against the current state of the system
+// checkPushRequestTokenDataConsistency performs consistency checks on the push request token data
 func checkPushRequestTokenDataConsistency(prt *PushRequestTokenData, keepers core.Keepers) error {
 
-	gpgKey := keepers.PushKeyKeeper().Get(prt.GPGID)
-	if gpgKey.IsNil() {
-		return util.FieldError("gpgID", "gpg id is required")
+	pushKey := keepers.PushKeyKeeper().Get(prt.PushKeyID)
+	if pushKey.IsNil() {
+		return util.FieldError("pkID", "push key id is required")
 	}
 
-	keyOwner := keepers.AccountKeeper().Get(gpgKey.Address)
+	keyOwner := keepers.AccountKeeper().Get(pushKey.Address)
 	if prt.Nonce <= keyOwner.Nonce {
-		return util.FieldError("nonce", "nonce cannot be less or equal to the current "+
-			"nonce of the gpg key owner's account")
+		return util.FieldError("nonce", fmt.Sprintf("nonce (%d) must be "+
+			"greater than current key owner nonce (%d)", prt.Nonce, keyOwner.Nonce))
 	}
 
 	return nil

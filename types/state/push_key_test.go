@@ -16,11 +16,11 @@ var _ = Describe("PushKey", func() {
 		})
 	})
 
-	Describe(".NewGPGPubKeyFromBytes", func() {
+	Describe(".NewPushKeyFromBytes", func() {
 		It("should deserialize successfully", func() {
 			gpgPubKey = &PushKey{PubKey: crypto.StrToPublicKey("abc"), Address: "abc"}
 			bz := gpgPubKey.Bytes()
-			obj, err := NewGPGPubKeyFromBytes(bz)
+			obj, err := NewPushKeyFromBytes(bz)
 			Expect(err).To(BeNil())
 			Expect(obj).To(Equal(gpgPubKey))
 		})

@@ -58,7 +58,7 @@ var _ = Describe("Push", func() {
 		var err error
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var repo = "repo1"
-		var pushKeyID = util.MustCreateGPGID([]byte("pushKeyID"))
+		var pushKeyID = crypto.CreatePushKeyID(crypto.StrToPublicKey("pushKeyID"))
 
 		When("reference has nonce = 1", func() {
 			BeforeEach(func() {
@@ -80,10 +80,10 @@ var _ = Describe("Push", func() {
 				})
 
 				refs := []*core.PushedReference{
-					&core.PushedReference{Name: "refs/heads/master"},
+					{Name: "refs/heads/master"},
 				}
 
-				err = txLogic.execPush(repo, refs, "1", util.MustDecodeGPGIDToRSAHash(pushKeyID), 0)
+				err = txLogic.execPush(repo, refs, "1", util.MustDecodePushKeyID(pushKeyID), 0)
 				Expect(err).To(BeNil())
 			})
 

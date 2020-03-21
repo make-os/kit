@@ -169,7 +169,7 @@ func (ks *Keystore) GetByIndex(i int) (core.StoredKey, error) {
 
 // GetByIndexOrAddress gets a key by either its address or index
 func (ks *Keystore) GetByIndexOrAddress(idxOrAddr string) (core.StoredKey, error) {
-	if crypto.IsValidAccountAddr(idxOrAddr) == nil {
+	if crypto.IsValidAccountAddr(idxOrAddr) == nil || crypto.IsValidPushAddr(idxOrAddr) == nil {
 		return ks.GetByAddress(idxOrAddr)
 	}
 	if govalidator.IsNumeric(idxOrAddr) {

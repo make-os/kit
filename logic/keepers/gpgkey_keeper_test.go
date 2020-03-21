@@ -15,7 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 )
 
-var _ = Describe("GPGKeeper", func() {
+var _ = Describe("PushKeyKeeper", func() {
 	var state *tree.SafeTree
 	var appDB storage.Engine
 	var cfg *config.AppConfig
@@ -28,7 +28,7 @@ var _ = Describe("GPGKeeper", func() {
 		appDB, _ = testutil.GetDB(cfg)
 		dbTx := appDB.NewTx(true, true)
 		state = tree.NewSafeTree(tmdb.NewMemDB(), 128)
-		pushKeyKeeper = NewGPGPubKeyKeeper(state, dbTx)
+		pushKeyKeeper = NewPushKeyKeeper(state, dbTx)
 	})
 
 	AfterEach(func() {

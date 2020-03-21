@@ -55,8 +55,8 @@ func (pk *PushKey) IsNil() bool {
 	return pk.PubKey.IsEmpty() && pk.Address.IsEmpty()
 }
 
-// NewGPGPubKeyFromBytes deserialize bz to PushKey
-func NewGPGPubKeyFromBytes(bz []byte) (*PushKey, error) {
+// NewPushKeyFromBytes deserialize bz to PushKey
+func NewPushKeyFromBytes(bz []byte) (*PushKey, error) {
 	var o = &PushKey{}
 	return o, util.ToObject(bz, o)
 }

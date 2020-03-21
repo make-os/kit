@@ -352,8 +352,8 @@ func checkScopes(scopes []string, index int) error {
 	return nil
 }
 
-// CheckTxUpDelGPGPubKey performs sanity checks on TxRegisterPushKey
-func CheckTxUpDelGPGPubKey(tx *core.TxUpDelGPGPubKey, index int) error {
+// CheckTxUpDelPushKey performs sanity checks on TxRegisterPushKey
+func CheckTxUpDelPushKey(tx *core.TxUpDelPushKey, index int) error {
 
 	if err := checkType(tx.TxType, core.TxTypeUpDelPushKey, index); err != nil {
 		return err
@@ -779,8 +779,8 @@ func CheckTxRepoProposalUpdate(tx *core.TxRepoProposalUpdate, index int) error {
 	return nil
 }
 
-// CheckTxRepoProposalRegisterGPGKey performs sanity checks on TxRepoProposalRegisterPushKey
-func CheckTxRepoProposalRegisterGPGKey(tx *core.TxRepoProposalRegisterPushKey, index int) error {
+// CheckTxRepoProposalRegisterPushKey performs sanity checks on TxRepoProposalRegisterPushKey
+func CheckTxRepoProposalRegisterPushKey(tx *core.TxRepoProposalRegisterPushKey, index int) error {
 
 	if err := checkType(tx.TxType, core.TxTypeRepoProposalRegisterPushKey, index); err != nil {
 		return err
@@ -798,16 +798,16 @@ func CheckTxRepoProposalRegisterGPGKey(tx *core.TxRepoProposalRegisterPushKey, i
 		return err
 	}
 
-	// Ensure all gpg key ids are unique and valid
+	// Ensure all push key ids are unique and valid
 	found := map[string]struct{}{}
-	for _, gpgID := range tx.KeyIDs {
-		if !util.IsValidPushKeyID(gpgID) {
-			return feI(index, "ids", fmt.Sprintf("GPG id (%s) is not valid", gpgID))
+	for _, pkID := range tx.KeyIDs {
+		if !util.IsValidPushKeyID(pkID) {
+			return feI(index, "ids", fmt.Sprintf("push key id (%s) is not valid", pkID))
 		}
-		if _, ok := found[gpgID]; ok {
-			return feI(index, "ids", fmt.Sprintf("GPG id (%s) is a duplicate", gpgID))
+		if _, ok := found[pkID]; ok {
+			return feI(index, "ids", fmt.Sprintf("push key id (%s) is a duplicate", pkID))
 		}
-		found[gpgID] = struct{}{}
+		found[pkID] = struct{}{}
 	}
 
 	// Ensure fee mode is valid

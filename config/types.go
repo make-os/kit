@@ -142,7 +142,7 @@ type AppConfig struct {
 	netDataDir string
 
 	// accountDir is where the node's accounts are stored
-	accountDir string
+	keystoreDir string
 
 	// dbDir is where the node's database files are stored
 	dbDir string
@@ -209,9 +209,9 @@ func (c *AppConfig) DataDir() string {
 	return c.dataDir
 }
 
-// AccountDir returns the application's accounts directory
-func (c *AppConfig) AccountDir() string {
-	return c.accountDir
+// KeystoreDir returns the application's accounts directory
+func (c *AppConfig) KeystoreDir() string {
+	return c.keystoreDir
 }
 
 // SetDataDir sets the application's data directory

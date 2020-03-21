@@ -405,8 +405,8 @@ update:
 	return nil
 }
 
-// applyProposalRegisterGPGKeys updates a repo's contributor collection.
-func applyProposalRegisterGPGKeys(
+// applyProposalRegisterPushKeys updates a repo's contributor collection.
+func applyProposalRegisterPushKeys(
 	keepers core.Keepers,
 	proposal state.Proposal,
 	repo *state.Repository,
@@ -449,7 +449,7 @@ func applyProposalRegisterGPGKeys(
 	}
 
 	// For each push key ID, add a contributor.
-	// This will replace any existing contributor with matching GPG ID.
+	// This will replace any existing contributor with matching push key ID.
 	for _, pushKeyID := range pushKeyIDs {
 
 		contributor := &state.BaseContributor{FeeCap: feeCap, FeeUsed: "0", Policies: policies}
@@ -480,23 +480,23 @@ func applyProposalRegisterGPGKeys(
 	return nil
 }
 
-// execRepoProposalRegisterGPGKeys creates a proposal to register one or more GPG ID as contributors
+// execRepoProposalRegisterPushKeys creates a proposal to register one or more push key ID as contributors
 //
 // ARGS:
 // senderPubKey: The public key of the transaction sender.
 // repoName: The name of the target repository.
-// pushKeyIDs: The list of GPG IDs to register
-// feeMode: The fee mode for the GPG IDs
-// feeCap: The max fee the GPG IDs can spend
-// aclPolicies: Access control policies for the GPG IDs
-// namespace: A namespace that the GPG IDs will also be registered to.
-// namespaceOnly: Like 'namespace' but the GPG IDs will not be registered to the repo.
+// pushKeyIDs: The list of push key IDs to register
+// feeMode: The fee mode for the push key IDs
+// feeCap: The max fee the push key IDs can spend
+// aclPolicies: Access control policies for the push key IDs
+// namespace: A namespace that the push key IDs will also be registered to.
+// namespaceOnly: Like 'namespace' but the push key IDs will not be registered to the repo.
 // proposalFee: The proposal anti-spam fee
 // fee: The fee to be paid by the sender.
 // chainHeight: The height of the block chain
 //
 // CONTRACT: Sender's public key must be valid
-func (t *Transaction) execRepoProposalRegisterGPGKeys(
+func (t *Transaction) execRepoProposalRegisterPushKeys(
 	senderPubKey util.Bytes32,
 	repoName,
 	proposalID string,
@@ -517,7 +517,7 @@ func (t *Transaction) execRepoProposalRegisterGPGKeys(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
-	proposal.Action = state.ProposalActionRegisterGPGIDs
+	proposal.Action = state.ProposalActionRegisterPushKeyIDs
 	proposal.ActionData = map[string][]byte{
 		constants.ActionDataKeyIDs:      util.ToBytes(pushKeyIDs),
 		constants.ActionDataKeyPolicies: util.ToBytes(aclPolicies),

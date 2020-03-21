@@ -89,7 +89,7 @@ func NewNode(cfg *config.AppConfig, tmcfg *tmconfig.Config) *Node {
 		log:     cfg.G().Log.Module("node"),
 		tmcfg:   tmcfg,
 		service: services.New(net.JoinHostPort(tmRPCAddr.Hostname(), tmRPCAddr.Port())),
-		acctMgr: keystore.New(cfg.AccountDir()),
+		acctMgr: keystore.New(cfg.KeystoreDir()),
 	}
 }
 

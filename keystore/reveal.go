@@ -68,6 +68,7 @@ unlock:
 	}
 
 	fmt.Fprintln(out, color.HiBlackString("Address: ")+storedAcct.GetAddress())
+	fmt.Fprintln(out, color.HiBlackString("Public Key: ")+storedAcct.GetKey().PubKey().Base58())
 	fmt.Fprintln(out, color.HiCyanString("Private Key:"), storedAcct.GetKey().PrivKey().Base58())
 
 	return nil

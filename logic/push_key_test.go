@@ -25,7 +25,7 @@ func getTestFile(filename string) []byte {
 	return bz
 }
 
-var _ = Describe("GPG", func() {
+var _ = Describe("PushKey", func() {
 	var appDB, stateTreeDB storage.Engine
 	var err error
 	var cfg *config.AppConfig

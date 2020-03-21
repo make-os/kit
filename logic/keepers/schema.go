@@ -7,7 +7,7 @@ import (
 
 const (
 	tagAccount               = "a"
-	tagGPGPubKey             = "g"
+	tagPushKey               = "g"
 	tagAddressPushKeyID      = "ag"
 	tagRepo                  = "r"
 	tagRepoPropVote          = "rpv"
@@ -27,9 +27,9 @@ func MakeAccountKey(address string) []byte {
 	return storage.MakePrefix([]byte(tagAccount), []byte(address))
 }
 
-// MakePushKeyKey creates a key for storing GPG public key
+// MakePushKeyKey creates a key for storing push key
 func MakePushKeyKey(pushKeyID string) []byte {
-	return storage.MakePrefix([]byte(tagGPGPubKey), []byte(pushKeyID))
+	return storage.MakePrefix([]byte(tagPushKey), []byte(pushKeyID))
 }
 
 // MakeAddrPushKeyIDIndexKey creates a key for address to push key index

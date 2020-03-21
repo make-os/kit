@@ -108,7 +108,7 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 	l.accountKeeper = keepers.NewAccountKeeper(safeTree)
 	l.validatorKeeper = keepers.NewValidatorKeeper(dbTx)
 	l.repoKeeper = keepers.NewRepoKeeper(safeTree, dbTx)
-	l.pushKeyKeeper = keepers.NewGPGPubKeyKeeper(safeTree, dbTx)
+	l.pushKeyKeeper = keepers.NewPushKeyKeeper(safeTree, dbTx)
 	l.nsKeeper = keepers.NewNamespaceKeeper(safeTree)
 
 	return l

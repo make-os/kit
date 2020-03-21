@@ -240,12 +240,12 @@ func (r *Repo) GetRecentCommit() (string, error) {
 	return r.ops.GetRecentCommit()
 }
 
-// MakeSignableCommit sign and commit staged changes
+// CreateAndOrSignQuietCommit creates and optionally sign a quiet commit.
 // msg: The commit message.
-// signingKey: The signing key
+// signingKey: The optional signing key. If provided, the commit is signed
 // env: Optional environment variables to pass to the command.
-func (r *Repo) MakeSignableCommit(msg, signingKey string, env ...string) error {
-	return r.ops.MakeSignableCommit(msg, signingKey, env...)
+func (r *Repo) CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error {
+	return r.ops.CreateAndOrSignQuietCommit(msg, signingKey, env...)
 }
 
 // CreateTagWithMsg an annotated tag.
