@@ -8,12 +8,12 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// PushKeyFind finds a push key by its ID
+// PushKeyFind finds a push key by ID
 // QueryParams:
 // - id: The push key unique ID
 // - [blockHeight]: The height of the block to query (default: latest)
 // Response <map> - state.PushKey
-func (r *RESTApi) GPGFind(w http.ResponseWriter, req *http.Request) {
+func (r *RESTApi) FindPushKey(w http.ResponseWriter, req *http.Request) {
 	query := objx.MustFromURLQuery(req.URL.Query().Encode())
 	id := query.Get("id").String()
 
@@ -24,16 +24,16 @@ func (r *RESTApi) GPGFind(w http.ResponseWriter, req *http.Request) {
 	}
 
 	gpgKey := r.Modules().PushKey.Get(id, blockHeight)
-	util.WriteJSON(w, 200, util.StructToMap(gpgKey))
+	util.WriteJSON(w, 200, gpgKey)
 }
 
-// PushKeyGetNonceOfOwner gets the account nonce of the gpg key owner
+// PushKeyGetNonceOfOwner gets the account nonce of the push key owner
 // QueryParams:
 // - id: The gpg key bech32 unique ID
 // - [blockHeight]: The height of the block to query (default: latest)
 // Response <map>
 // - nonce <string> The key owner account nonce
-func (r *RESTApi) GPGGetOwnerNonce(w http.ResponseWriter, req *http.Request) {
+func (r *RESTApi) GetNonceOfPushKeyOwner(w http.ResponseWriter, req *http.Request) {
 	query := objx.MustFromURLQuery(req.URL.Query().Encode())
 	id := query.Get("id").String()
 

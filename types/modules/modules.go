@@ -27,7 +27,7 @@ type Modules struct {
 	Chain   ChainModule
 	Pool    PoolModule
 	Account AccountModule
-	PushKey GPGModule
+	PushKey PushKeyModule
 	Util    UtilModule
 	Ticket  TicketModule
 	Repo    RepoModule
@@ -72,7 +72,7 @@ type AccountModule interface {
 	SetCommission(params map[string]interface{}, options ...interface{}) util.Map
 }
 
-type GPGModule interface {
+type PushKeyModule interface {
 	Configure() []prompt.Suggest
 	Register(params map[string]interface{}, options ...interface{}) util.Map
 	Get(id string, blockHeight ...uint64) util.Map

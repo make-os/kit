@@ -50,8 +50,8 @@ func (r *RESTApi) RegisterEndpoints(s *http.ServeMux) {
 	s.HandleFunc(RestV1Path(constants.NamespaceUser, MethodNameGetNonce), r.get(r.GetAccountNonce))
 	s.HandleFunc(RestV1Path(constants.NamespaceUser, MethodNameGetAccount), r.get(r.GetAccount))
 	s.HandleFunc(RestV1Path(constants.NamespaceTx, MethodNameSendPayload), r.post(r.TxSendPayload))
-	s.HandleFunc(RestV1Path(constants.NamespacePushKey, MethodNameOwnerNonce), r.get(r.GPGGetOwnerNonce))
-	s.HandleFunc(RestV1Path(constants.NamespacePushKey, MethodNamePushKeyFind), r.get(r.GPGFind))
+	s.HandleFunc(RestV1Path(constants.NamespacePushKey, MethodNameOwnerNonce), r.get(r.GetNonceOfPushKeyOwner))
+	s.HandleFunc(RestV1Path(constants.NamespacePushKey, MethodNamePushKeyFind), r.get(r.FindPushKey))
 }
 
 // RestV1Path creates a REST API v1 path
@@ -65,6 +65,11 @@ func RESTApiHandler(method string, handler func(w http.ResponseWriter,
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
+
+				if errMsg, ok := r.(string); ok {
+					r = fmt.Errorf(errMsg)
+				}
+
 				cause := errors.Cause(r.(error))
 				log.Error("api handler error", "Err", cause.Error())
 
