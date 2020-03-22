@@ -522,31 +522,31 @@ func (mr *MockAccountModuleMockRecorder) SetCommission(params interface{}, optio
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCommission", reflect.TypeOf((*MockAccountModule)(nil).SetCommission), varargs...)
 }
 
-// MockGPGModule is a mock of GPGModule interface
-type MockGPGModule struct {
+// MockPushKeyModule is a mock of GPGModule interface
+type MockPushKeyModule struct {
 	ctrl     *gomock.Controller
-	recorder *MockGPGModuleMockRecorder
+	recorder *MockPushKeyModuleMockRecorder
 }
 
-// MockGPGModuleMockRecorder is the mock recorder for MockGPGModule
-type MockGPGModuleMockRecorder struct {
-	mock *MockGPGModule
+// MockPushKeyModuleMockRecorder is the mock recorder for MockPushKeyModule
+type MockPushKeyModuleMockRecorder struct {
+	mock *MockPushKeyModule
 }
 
 // NewMockGPGModule creates a new mock instance
-func NewMockGPGModule(ctrl *gomock.Controller) *MockGPGModule {
-	mock := &MockGPGModule{ctrl: ctrl}
-	mock.recorder = &MockGPGModuleMockRecorder{mock}
+func NewMockGPGModule(ctrl *gomock.Controller) *MockPushKeyModule {
+	mock := &MockPushKeyModule{ctrl: ctrl}
+	mock.recorder = &MockPushKeyModuleMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockGPGModule) EXPECT() *MockGPGModuleMockRecorder {
+func (m *MockPushKeyModule) EXPECT() *MockPushKeyModuleMockRecorder {
 	return m.recorder
 }
 
 // Configure mocks base method
-func (m *MockGPGModule) Configure() []go_prompt.Suggest {
+func (m *MockPushKeyModule) Configure() []go_prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
 	ret0, _ := ret[0].([]go_prompt.Suggest)
@@ -554,13 +554,13 @@ func (m *MockGPGModule) Configure() []go_prompt.Suggest {
 }
 
 // Configure indicates an expected call of Configure
-func (mr *MockGPGModuleMockRecorder) Configure() *gomock.Call {
+func (mr *MockPushKeyModuleMockRecorder) Configure() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockGPGModule)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockPushKeyModule)(nil).Configure))
 }
 
 // Register mocks base method
-func (m *MockGPGModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *MockPushKeyModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{params}
 	for _, a := range options {
@@ -572,14 +572,14 @@ func (m *MockGPGModule) Register(params map[string]interface{}, options ...inter
 }
 
 // Register indicates an expected call of Register
-func (mr *MockGPGModuleMockRecorder) Register(params interface{}, options ...interface{}) *gomock.Call {
+func (mr *MockPushKeyModuleMockRecorder) Register(params interface{}, options ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{params}, options...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockGPGModule)(nil).Register), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Register", reflect.TypeOf((*MockPushKeyModule)(nil).Register), varargs...)
 }
 
 // Get mocks base method
-func (m *MockGPGModule) Get(id string, blockHeight ...uint64) util.Map {
+func (m *MockPushKeyModule) Get(id string, blockHeight ...uint64) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{id}
 	for _, a := range blockHeight {
@@ -591,14 +591,14 @@ func (m *MockGPGModule) Get(id string, blockHeight ...uint64) util.Map {
 }
 
 // Get indicates an expected call of Get
-func (mr *MockGPGModuleMockRecorder) Get(id interface{}, blockHeight ...interface{}) *gomock.Call {
+func (mr *MockPushKeyModuleMockRecorder) Get(id interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{id}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockGPGModule)(nil).Get), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPushKeyModule)(nil).Get), varargs...)
 }
 
 // GetByAddress mocks base method
-func (m *MockGPGModule) GetByAddress(address string) []string {
+func (m *MockPushKeyModule) GetByAddress(address string) []string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetByAddress", address)
 	ret0, _ := ret[0].([]string)
@@ -606,13 +606,13 @@ func (m *MockGPGModule) GetByAddress(address string) []string {
 }
 
 // GetByAddress indicates an expected call of GetByAddress
-func (mr *MockGPGModuleMockRecorder) GetByAddress(address interface{}) *gomock.Call {
+func (mr *MockPushKeyModuleMockRecorder) GetByAddress(address interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAddress", reflect.TypeOf((*MockGPGModule)(nil).GetByAddress), address)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByAddress", reflect.TypeOf((*MockPushKeyModule)(nil).GetByAddress), address)
 }
 
 // GetAccountOfOwner mocks base method
-func (m *MockGPGModule) GetAccountOfOwner(gpgID string, blockHeight ...uint64) util.Map {
+func (m *MockPushKeyModule) GetAccountOfOwner(gpgID string, blockHeight ...uint64) util.Map {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{gpgID}
 	for _, a := range blockHeight {
@@ -624,10 +624,10 @@ func (m *MockGPGModule) GetAccountOfOwner(gpgID string, blockHeight ...uint64) u
 }
 
 // GetAccountOfOwner indicates an expected call of GetAccountOfOwner
-func (mr *MockGPGModuleMockRecorder) GetAccountOfOwner(gpgID interface{}, blockHeight ...interface{}) *gomock.Call {
+func (mr *MockPushKeyModuleMockRecorder) GetAccountOfOwner(gpgID interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{gpgID}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountOfOwner", reflect.TypeOf((*MockGPGModule)(nil).GetAccountOfOwner), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountOfOwner", reflect.TypeOf((*MockPushKeyModule)(nil).GetAccountOfOwner), varargs...)
 }
 
 // MockUtilModule is a mock of UtilModule interface

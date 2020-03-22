@@ -68,12 +68,12 @@ var _ = Describe("Client", func() {
 		})
 	})
 
-	Describe(".AccountGetNextNonceUsingRPCClient", func() {
+	Describe(".GetNextNonceOfAccountUsingRPCClient", func() {
 		When("client call returns error", func() {
 			It("should return error", func() {
 				mockClient := NewMockClient(ctrl)
 				mockClient.EXPECT().AccountGet("addr1").Return(nil, &util.StatusError{Msg: "bad thing"})
-				_, err := AccountGetNextNonceUsingRPCClient("addr1", mockClient)
+				_, err := GetNextNonceOfAccountUsingRPCClient("addr1", mockClient)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Msg).To(Equal("bad thing"))
 			})
@@ -83,7 +83,7 @@ var _ = Describe("Client", func() {
 			It("should be incremented by 1 and returned", func() {
 				mockClient := NewMockClient(ctrl)
 				mockClient.EXPECT().AccountGet("addr1").Return(&state.Account{Nonce: 10}, nil)
-				nonce, err := AccountGetNextNonceUsingRPCClient("addr1", mockClient)
+				nonce, err := GetNextNonceOfAccountUsingRPCClient("addr1", mockClient)
 				Expect(err).To(BeNil())
 				Expect(nonce).To(Equal("11"))
 			})

@@ -317,7 +317,7 @@ type RepoPushNote interface {
 	// GetPushedReferences returns the pushed references
 	GetPushedReferences() PushedReferences
 
-	// GetPusherKeyID returns the pusher gpg key ID
+	// GetPusherKeyID returns the pusher push key ID
 	GetPusherKeyID() []byte
 
 	// GetPusherKeyIDString is like GetPusherKeyID but returns hex string, prefixed
@@ -442,8 +442,7 @@ type ItemChange struct {
 
 // ChangeResult includes information about changes
 type ChangeResult struct {
-	SizeChange bool // TODO: remove if no use so far
-	Changes    []*ItemChange
+	Changes []*ItemChange
 }
 
 // BareRepoState represents a repositories state

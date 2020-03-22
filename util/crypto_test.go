@@ -137,7 +137,7 @@ var _ = Describe("Crypto", func() {
 
 	Describe(".MustDecodePushKeyID", func() {
 		It("should return a 20 bytes slice when successful", func() {
-			bz := MustDecodePushKeyID("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")
+			bz := MustDecodePushKeyID("push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")
 			Expect(bz).To(HaveLen(20))
 		})
 

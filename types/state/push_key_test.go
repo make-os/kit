@@ -7,22 +7,22 @@ import (
 )
 
 var _ = Describe("PushKey", func() {
-	var gpgPubKey *PushKey
+	var pushPubKey *PushKey
 
 	Describe(".Bytes", func() {
 		It("should return byte slice", func() {
-			gpgPubKey = &PushKey{PubKey: crypto.StrToPublicKey("abc")}
-			Expect(gpgPubKey.Bytes()).ToNot(BeEmpty())
+			pushPubKey = &PushKey{PubKey: crypto.StrToPublicKey("abc")}
+			Expect(pushPubKey.Bytes()).ToNot(BeEmpty())
 		})
 	})
 
 	Describe(".NewPushKeyFromBytes", func() {
 		It("should deserialize successfully", func() {
-			gpgPubKey = &PushKey{PubKey: crypto.StrToPublicKey("abc"), Address: "abc"}
-			bz := gpgPubKey.Bytes()
+			pushPubKey = &PushKey{PubKey: crypto.StrToPublicKey("abc"), Address: "abc"}
+			bz := pushPubKey.Bytes()
 			obj, err := NewPushKeyFromBytes(bz)
 			Expect(err).To(BeNil())
-			Expect(obj).To(Equal(gpgPubKey))
+			Expect(obj).To(Equal(pushPubKey))
 		})
 	})
 })

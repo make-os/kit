@@ -31,7 +31,7 @@ const (
 type Client interface {
 	TxSendPayload(data map[string]interface{}) (*types.TxSendPayloadResponse, *util.StatusError)
 	AccountGet(address string, blockHeight ...uint64) (*state.Account, *util.StatusError)
-	GPGGetAccountOfOwner(id string, blockHeight ...uint64) (*state.Account, *util.StatusError)
+	PushKeyGetAccountOfOwner(id string, blockHeight ...uint64) (*state.Account, *util.StatusError)
 	GetOptions() *Options
 	Call(method string, params interface{}) (res util.Map, statusCode int, err error)
 }

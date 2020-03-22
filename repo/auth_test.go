@@ -26,8 +26,8 @@ var _ = Describe("Changes", func() {
 	Describe(".getPolicyEnforcer", func() {
 		When("", func() {
 			It("should", func() {
-				// nsPolicies := []*state.RepoACLPolicy{{Subject: "gpg1", Object: "branch", Action: "push"}}
-				// repoPolicies := []*state.RepoACLPolicy{{Subject: "gpg1", Object: "branch", Action: "delete"}}
+				// nsPolicies := []*state.RepoACLPolicy{{Subject: "push1", Object: "branch", Action: "push"}}
+				// repoPolicies := []*state.RepoACLPolicy{{Subject: "push1", Object: "branch", Action: "delete"}}
 				// getPolicyEnforcer(nsPolicies, repoPolicies)
 			})
 		})

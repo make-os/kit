@@ -1,11 +1,8 @@
 package testutil
 
 import (
-	"io/ioutil"
 	"os"
-	"os/exec"
 	path "path/filepath"
-	"regexp"
 
 	"github.com/golang/mock/gomock"
 	"gitlab.com/makeos/mosdef/mocks"
@@ -22,9 +19,6 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"gitlab.com/makeos/mosdef/config"
 )
-
-// GPGProgramPath is the path to the gpg program
-const GPGProgramPath = "gpg"
 
 // SetTestCfg prepare a config directory for tests
 func SetTestCfg(opts ...string) (*config.AppConfig, error) {
@@ -164,34 +158,4 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.AtomicLogic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
 
 	return mo
-}
-
-// CreateGPGKey creates a GPG RSA key and returns the key id
-func CreateGPGKey(gpgProgram, tempDir string) string {
-	randStr := util.RandString(5)
-	f, err := ioutil.TempFile(tempDir, "testkey")
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-	f.WriteString(`%no-protection
-Key-Type: RSA
-Key-Length: 2048
-Subkey-Type: 1
-Subkey-Length: 2048
-Name-Real: Root ` + randStr + `
-Name-Email: ` + randStr + `@example.com
-Expire-Date: 0`)
-	args := []string{"--batch", "--gen-key", f.Name()}
-	cmd := exec.Command(gpgProgram, args...)
-	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "GNUPGHOME="+tempDir)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		panic(err)
-	}
-
-	reg := regexp.MustCompile("\\s([A-Z0-9]{16})\\s")
-	match := reg.FindStringSubmatch(string(out))
-	return match[1]
 }

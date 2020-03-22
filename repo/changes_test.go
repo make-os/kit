@@ -1,8 +1,9 @@
 package repo
 
 import (
-	"gitlab.com/makeos/mosdef/types/core"
 	"os"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -101,10 +102,6 @@ var _ = Describe("Changes", func() {
 				changeLog = curState.GetChanges(newState)
 			})
 
-			It("should set size change to true", func() {
-				Expect(changeLog.References.SizeChange).To(BeTrue())
-			})
-
 			It("should return 1 ref change with action=remove", func() {
 				Expect(changeLog.References.Changes).To(HaveLen(1))
 				Expect(changeLog.References.Changes).To(ContainElement(&core.ItemChange{
@@ -125,10 +122,6 @@ var _ = Describe("Changes", func() {
 					"ref1": &Obj{Name: "ref1", Data: "hash1"},
 				})}
 				changeLog = curState.GetChanges(newState)
-			})
-
-			It("should set size change to false", func() {
-				Expect(changeLog.References.SizeChange).To(BeFalse())
 			})
 
 			It("should return no ref changes", func() {
@@ -258,10 +251,6 @@ var _ = Describe("Changes", func() {
 					"ref1": &Obj{Name: "ref1", Data: "hash_x"},
 				})}
 				changeLog = curState.GetChanges(newState)
-			})
-
-			It("should set size change to false", func() {
-				Expect(changeLog.References.SizeChange).To(BeFalse())
 			})
 
 			It("should return 1 ref change with action=replace", func() {

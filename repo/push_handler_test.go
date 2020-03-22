@@ -38,9 +38,7 @@ var _ = Describe("PushHandler", func() {
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
-	})
 
-	BeforeEach(func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
@@ -58,9 +56,6 @@ var _ = Describe("PushHandler", func() {
 		mockMgr.EXPECT().Log().Return(cfg.G().Log)
 		// TODO: Use real &TxParams{} and polEnforcer
 		handler = newPushHandler(repo, &PushRequestTokenData{}, nil, mockMgr)
-
-		Expect(err).To(BeNil())
-		GitEnv = append(GitEnv, "GNUPGHOME="+cfg.DataDir())
 	})
 
 	AfterEach(func() {
@@ -96,15 +91,15 @@ var _ = Describe("PushHandler", func() {
 		})
 	})
 
-	Describe(".HandleValidateAndRevert", func() {
+	Describe(".HandleReferences", func() {
 		When("old state is not set", func() {
 			BeforeEach(func() {
-				_, _, err = handler.HandleValidateAndRevert()
+				_, _, err = handler.HandleReferences()
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("push-handler: expected old state to have been captured"))
+				Expect(err.Error()).To(Equal("expected old state to have been captured"))
 			})
 		})
 
@@ -112,7 +107,6 @@ var _ = Describe("PushHandler", func() {
 			var err error
 			BeforeEach(func() {
 				handler.rMgr = mgr
-
 				oldState := getRepoState(repo)
 				appendCommit(path, "file.txt", "line 1\n", "commit 1")
 				newState := getRepoState(repo)
@@ -124,90 +118,186 @@ var _ = Describe("PushHandler", func() {
 				err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
 				Expect(err).To(BeNil())
 
-				_, _, err = handler.HandleValidateAndRevert()
+				_, _, err = handler.HandleReferences()
 			})
 
 			It("should return err='validation error.*txparams was not set'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("validation error.*txparams was not set"))
+				Expect(err.Error()).To(MatchRegexp("transaction params was not set"))
 			})
 		})
 
-		// TODO: fix test
-		// When("txparams is set and valid", func() {
-		// 	var err error
-		// 	BeforeEach(func() {
-		// 		handler.rMgr = mgr
-		//
-		// 		oldState := getRepoState(repo)
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
-		//
-		// 		newState := getRepoState(repo)
-		// 		var packfile io.ReadSeeker
-		// 		packfile, err = makePackfile(repo, oldState, newState)
-		//
-		// 		Expect(err).To(BeNil())
-		// 		handler.oldState = oldState
-		//
-		// 		gpgPubKeyKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
-		// 		gpgPubKeyKeeper.EXPECT().Get(gpgID).Return(&state.PushKey{PubKey: pubKey})
-		// 		mockLogic.EXPECT().PushKeyKeeper().Return(gpgPubKeyKeeper)
-		//
-		// 		err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
-		// 		Expect(err).To(BeNil())
-		// 		_, _, err = handler.HandleValidateAndRevert()
-		// 	})
-		//
-		// 	It("should return no error", func() {
-		// 		Expect(err).To(BeNil())
-		// 	})
-		// })
-		//
-		// Context("with two references", func() {
-		// 	When("txparams for both references are set and valid but gpgIDs are different", func() {
-		// 		var err error
-		// 		BeforeEach(func() {
-		// 			handler.rMgr = mgr
-		//
-		// 			oldState := getRepoState(repo)
-		// 			pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 			gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 			txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 			appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
-		//
-		// 			createCheckoutBranch(path, "branch2")
-		// 			pkEntity, _ = crypto.PGPEntityFromPubKey(pubKey2)
-		// 			gpgID2 := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 			txParams = fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID2)
-		// 			appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID2)
-		//
-		// 			newState := getRepoState(repo)
-		// 			var packfile io.ReadSeeker
-		// 			packfile, err = makePackfile(repo, oldState, newState)
-		//
-		// 			Expect(err).To(BeNil())
-		// 			handler.oldState = oldState
-		//
-		// 			gpgPubKeyKeeper := mocks.NewMockGPGPubKeyKeeper(ctrl)
-		// 			gpgPubKeyKeeper.EXPECT().Get(gpgID).Return(&state.PushKey{PubKey: pubKey})
-		// 			gpgPubKeyKeeper.EXPECT().Get(gpgID2).Return(&state.PushKey{PubKey: pubKey2})
-		// 			mockLogic.EXPECT().PushKeyKeeper().Return(gpgPubKeyKeeper).Times(2)
-		//
-		// 			err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
-		// 			Expect(err).To(BeNil())
-		// 			_, _, err = handler.HandleValidateAndRevert()
-		// 		})
-		//
-		// 		It("should return err='rejected because the pushed references were signed with different push keys'", func() {
-		// 			Expect(err).ToNot(BeNil())
-		// 			Expect(err.Error()).To(Equal("rejected because the pushed references were signed with different push keys"))
-		// 		})
-		// 	})
-		// })
+		When("references are handled without error", func() {
+			var err error
+			BeforeEach(func() {
+				handler.referenceHandler = func(ref string) (params *util.TxParams, errors []error) {
+					return &util.TxParams{}, nil
+				}
+				handler.oldState = getRepoState(repo)
+				handler.pushReader = &PushReader{
+					references: packedReferences{{name: "refs/branch/master"}, {name: "refs/branch/dev"}},
+				}
+				_, _, err = handler.HandleReferences()
+			})
 
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("a reference returns an error", func() {
+			var err error
+			BeforeEach(func() {
+				called := 0
+				handler.referenceHandler = func(ref string) (params *util.TxParams, errors []error) {
+					if called == 0 {
+						called++
+						errors = []error{fmt.Errorf("bad reference")}
+						return
+					}
+					return &util.TxParams{}, nil
+				}
+				handler.oldState = getRepoState(repo)
+				handler.pushReader = &PushReader{
+					references: packedReferences{{name: "refs/branch/master"}, {name: "refs/branch/dev"}},
+				}
+				_, _, err = handler.HandleReferences()
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("bad reference"))
+			})
+		})
+
+		When("references have different push key ID", func() {
+			var err error
+			BeforeEach(func() {
+				called := 0
+				handler.referenceHandler = func(ref string) (params *util.TxParams, errors []error) {
+					called++
+					if called == 1 {
+						return &util.TxParams{PushKeyID: "push1_abc"}, nil
+					}
+					return &util.TxParams{PushKeyID: "push1_xyz"}, nil
+				}
+				handler.oldState = getRepoState(repo)
+				handler.pushReader = &PushReader{
+					references: packedReferences{{name: "refs/branch/master"}, {name: "refs/branch/dev"}},
+				}
+				_, _, err = handler.HandleReferences()
+			})
+
+			It("should return error", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("rejected because the pushed references were signed with different push keys"))
+			})
+		})
 	})
 
+	Describe(".handleReference", func() {
+		var errs []error
+		Describe("when unable to get state of the repository", func() {
+			BeforeEach(func() {
+				handler.oldState = getRepoState(repo)
+				mockMgr.EXPECT().GetRepoState(repo, matchOpt("refs/heads/master")).Return(nil, fmt.Errorf("error"))
+				_, errs = handler.handleReference("refs/heads/master")
+			})
+
+			It("should return error", func() {
+				Expect(errs).To(HaveLen(1))
+				Expect(errs[0].Error()).To(Equal("failed to get current state: error"))
+			})
+		})
+
+		Describe("when a reference failed change validation", func() {
+			BeforeEach(func() {
+				handler.rMgr = mgr
+				appendCommit(path, "file.txt", "line 1\n", "commit 1")
+				handler.oldState = getRepoState(repo)
+				appendCommit(path, "file.txt", "line 1\n", "commit 2")
+				handler.changeValidator = func(repo core.BareRepo, change *core.ItemChange, pushKeyGetter core.PushKeyGetter) (params *util.TxParams, err error) {
+					return nil, fmt.Errorf("bad reference change")
+				}
+				_, errs = handler.handleReference("refs/heads/master")
+			})
+
+			It("should return error", func() {
+				Expect(errs).To(HaveLen(1))
+				Expect(errs[0].Error()).To(Equal("validation error (refs/heads/master): bad reference change"))
+			})
+
+			It("should revert the reference back to the old state", func() {
+				newState := getRepoState(repo)
+				Expect(newState).To(Equal(handler.oldState))
+			})
+		})
+
+		Describe("when a reference failed change validation and reversion failed", func() {
+			BeforeEach(func() {
+				handler.rMgr = mgr
+				appendCommit(path, "file.txt", "line 1\n", "commit 1")
+				handler.oldState = getRepoState(repo)
+				appendCommit(path, "file.txt", "line 1\n", "commit 2")
+				handler.changeValidator = func(repo core.BareRepo, change *core.ItemChange, pushKeyGetter core.PushKeyGetter) (params *util.TxParams, err error) {
+					return nil, fmt.Errorf("bad reference change")
+				}
+				handler.reverter = func(repo core.BareRepo, prevState core.BareRepoState, options ...core.KVOption) (changes *core.Changes, err error) {
+					return nil, fmt.Errorf("failed revert")
+				}
+				_, errs = handler.handleReference("refs/heads/master")
+			})
+
+			It("should return 2 error", func() {
+				Expect(errs).To(HaveLen(2))
+				Expect(errs[0].Error()).To(Equal("validation error (refs/heads/master): bad reference change"))
+				Expect(errs[1].Error()).To(Equal("failed to revert to old state: failed revert"))
+			})
+		})
+
+		Describe("when a reference failed change validation and reversion failed", func() {
+			BeforeEach(func() {
+				handler.rMgr = mgr
+				appendCommit(path, "file.txt", "line 1\n", "commit 1")
+				handler.oldState = getRepoState(repo)
+				appendCommit(path, "file.txt", "line 1\n", "commit 2")
+				handler.changeValidator = func(repo core.BareRepo, change *core.ItemChange, pushKeyGetter core.PushKeyGetter) (params *util.TxParams, err error) {
+					return nil, fmt.Errorf("bad reference change")
+				}
+				handler.reverter = func(repo core.BareRepo, prevState core.BareRepoState, options ...core.KVOption) (changes *core.Changes, err error) {
+					return nil, fmt.Errorf("failed revert")
+				}
+				_, errs = handler.handleReference("refs/heads/master")
+			})
+
+			It("should return 2 error", func() {
+				Expect(errs).To(HaveLen(2))
+				Expect(errs[0].Error()).To(Equal("validation error (refs/heads/master): bad reference change"))
+				Expect(errs[1].Error()).To(Equal("failed to revert to old state: failed revert"))
+			})
+		})
+
+		Describe("when merge id is set in transaction info but merge compliance failed", func() {
+			BeforeEach(func() {
+				handler.rMgr = mgr
+				appendCommit(path, "file.txt", "line 1\n", "commit 1")
+				handler.oldState = getRepoState(repo)
+				appendCommit(path, "file.txt", "line 1\n", "commit 2")
+				handler.changeValidator = func(repo core.BareRepo, change *core.ItemChange, pushKeyGetter core.PushKeyGetter) (params *util.TxParams, err error) {
+					return &util.TxParams{
+						MergeProposalID: "1000111",
+					}, nil
+				}
+				handler.mergeChecker = func(repo core.BareRepo, change *core.ItemChange, oldRef core.Item, mergeProposalID, pushKeyID string, keepers core.Keepers) error {
+					return fmt.Errorf("failed merge check")
+				}
+				_, errs = handler.handleReference("refs/heads/master")
+			})
+
+			It("should return 1 error", func() {
+				Expect(errs).To(HaveLen(1))
+				Expect(errs[0].Error()).To(Equal("validation error (refs/heads/master): failed merge check"))
+			})
+		})
+	})
 })

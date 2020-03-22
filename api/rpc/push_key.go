@@ -7,22 +7,22 @@ import (
 	"gitlab.com/makeos/mosdef/types/modules"
 )
 
-// GPGAPI provides RPC methods for various gpg key functionality.
-type GPGAPI struct {
+// PushKeyAPI provides RPC methods for various push key functionality.
+type PushKeyAPI struct {
 	mods *modules.Modules
 }
 
-// NewGPGAPI creates an instance of GPGAPI
-func NewGPGAPI(mods *modules.Modules) *GPGAPI {
-	return &GPGAPI{mods: mods}
+// NewPushKeyAPI creates an instance of PushKeyAPI
+func NewPushKeyAPI(mods *modules.Modules) *PushKeyAPI {
+	return &PushKeyAPI{mods: mods}
 }
 
-// find finds and returns a GPG public key by its key ID
+// find find a push key by its key ID
 // Body:
-// - id <string>: The GPG key unique ID
+// - id <string>: The push key unique ID
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response <state.PushKey -> map>
-func (a *GPGAPI) find(params interface{}) (resp *rpc.Response) {
+func (a *PushKeyAPI) find(params interface{}) (resp *rpc.Response) {
 	o := objx.New(params)
 
 	keyId, errResp := rpc.GetStringFromObjxMap(o, "id", true)
@@ -39,12 +39,12 @@ func (a *GPGAPI) find(params interface{}) (resp *rpc.Response) {
 	return rpc.Success(key)
 }
 
-// find finds and returns a GPG public key by its key ID
+// find finds and returns a push public key by its key ID
 // Body:
-// - id <string>: The GPG key unique ID
+// - id <string>: The push key unique ID
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response <state.Account -> map>
-func (a *GPGAPI) getAccountOfOwner(params interface{}) (resp *rpc.Response) {
+func (a *PushKeyAPI) getAccountOfOwner(params interface{}) (resp *rpc.Response) {
 	o := objx.New(params)
 
 	keyId, errResp := rpc.GetStringFromObjxMap(o, "id", true)
@@ -62,16 +62,16 @@ func (a *GPGAPI) getAccountOfOwner(params interface{}) (resp *rpc.Response) {
 }
 
 // APIs returns all API handlers
-func (a *GPGAPI) APIs() rpc.APISet {
+func (a *PushKeyAPI) APIs() rpc.APISet {
 	return map[string]rpc.APIInfo{
 		"find": {
 			Namespace:   constants.NamespacePushKey,
-			Description: "Get a GPG key by its key ID",
+			Description: "Find a push key",
 			Func:        a.find,
 		},
 		"getAccountOfOwner": {
 			Namespace:   constants.NamespacePushKey,
-			Description: "Get the account of the owner of a gpg public key",
+			Description: "Get the account that owns a push key",
 			Func:        a.getAccountOfOwner,
 		},
 	}

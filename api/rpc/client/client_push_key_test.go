@@ -23,13 +23,13 @@ var _ = Describe("Client", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".GPGGetAccountOfOwner", func() {
+	Describe(".PushKeyGetAccountOfOwner", func() {
 		When("the RPC call returns an error", func() {
 			It("should return the error wrapped in a StatusError", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return nil, 0, fmt.Errorf("bad thing happened")
 				}
-				_, err := client.GPGGetAccountOfOwner("gpg1_abc", 100)
+				_, err := client.PushKeyGetAccountOfOwner("push1_abc", 100)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
 					Code:     "client_error",
@@ -45,7 +45,7 @@ var _ = Describe("Client", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return util.Map{"balance": 1000}, 0, nil
 				}
-				_, err := client.GPGGetAccountOfOwner("gpg1_abc", 100)
+				_, err := client.PushKeyGetAccountOfOwner("push1_abc", 100)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
 					Code:     "client_error",
@@ -61,20 +61,20 @@ var _ = Describe("Client", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return util.Map{"balance": "1000"}, 0, nil
 				}
-				acct, err := client.GPGGetAccountOfOwner("gpg1_abc", 100)
+				acct, err := client.PushKeyGetAccountOfOwner("push1_abc", 100)
 				Expect(err).To(BeNil())
 				Expect(acct.Balance).To(Equal(util.String("1000")))
 			})
 		})
 	})
 
-	Describe(".GPGGetNextNonceOfOwnerUsingRPCClient", func() {
+	Describe(".GetNextNonceOfPushKeyOwnerUsingRPCClient", func() {
 		When("client call returns error", func() {
 			It("should return error", func() {
 				mockClient := NewMockClient(ctrl)
-				mockClient.EXPECT().GPGGetAccountOfOwner("gpg1_abc").
+				mockClient.EXPECT().PushKeyGetAccountOfOwner("push1_abc").
 					Return(nil, &util.StatusError{Msg: "bad thing"})
-				_, err := GPGGetNextNonceOfOwnerUsingRPCClient("gpg1_abc", mockClient)
+				_, err := GetNextNonceOfPushKeyOwnerUsingRPCClient("push1_abc", mockClient)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Msg).To(Equal("bad thing"))
 			})
@@ -83,8 +83,8 @@ var _ = Describe("Client", func() {
 		When("client call a nonce", func() {
 			It("should be incremented by 1 and returned", func() {
 				mockClient := NewMockClient(ctrl)
-				mockClient.EXPECT().GPGGetAccountOfOwner("gpg1_abc").Return(&state.Account{Nonce: 10}, nil)
-				nonce, err := GPGGetNextNonceOfOwnerUsingRPCClient("gpg1_abc", mockClient)
+				mockClient.EXPECT().PushKeyGetAccountOfOwner("push1_abc").Return(&state.Account{Nonce: 10}, nil)
+				nonce, err := GetNextNonceOfPushKeyOwnerUsingRPCClient("push1_abc", mockClient)
 				Expect(err).To(BeNil())
 				Expect(nonce).To(Equal("11"))
 			})

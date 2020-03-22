@@ -34,7 +34,7 @@ var _ = Describe("GPG", func() {
 	})
 
 	// TODO: fix this test
-	// Describe(".GPGFind", func() {
+	// Describe(".PushKeyFind", func() {
 	// 	var w *httptest.ResponseRecorder
 	// 	var req *http.Request
 	// 	var testCases = map[string]TestCase{
@@ -43,7 +43,7 @@ var _ = Describe("GPG", func() {
 	// 			body:       `{"address":"maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc","pubKey":"-----BEGIN PGP PUBLIC KEY BLOCK..."}`,
 	// 			statusCode: 200,
 	// 			mocker: func(tc *TestCase) {
-	// 				mockGPGModule := mocks.NewMockGPGModule(ctrl)
+	// 				mockGPGModule := mocks.NewMockPushKeyModule(ctrl)
 	// 				mockGPGModule.EXPECT().
 	// 					Get("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd", uint64(1)).
 	// 					Return(&state.PushKey{
@@ -70,7 +70,7 @@ var _ = Describe("GPG", func() {
 	// 				}
 	//
 	// 				req.URL.RawQuery = q.Encode()
-	// 				restApi.GPGFind(w, req)
+	// 				restApi.PushKeyFind(w, req)
 	// 				_ = req.Body.Close()
 	// 				Expect(w.Code).To(Equal(tp.statusCode))
 	// 				Expect(strings.TrimSpace(w.Body.String())).To(Equal(tp.body))
@@ -88,7 +88,7 @@ var _ = Describe("GPG", func() {
 				body:       `{"nonce":"1000"}`,
 				statusCode: 200,
 				mocker: func(tc *TestCase) {
-					mockGPGModule := mocks.NewMockGPGModule(ctrl)
+					mockGPGModule := mocks.NewMockPushKeyModule(ctrl)
 					mockGPGModule.EXPECT().
 						GetAccountOfOwner("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd", uint64(1)).
 						Return(&state.Account{Nonce: 1000})

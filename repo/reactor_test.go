@@ -91,7 +91,7 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("unable to open the target repo", func() {
+		XWhen("unable to open the target repo", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				mockRepoKeeper.EXPECT().Get("unknown").Return(&state.Repository{

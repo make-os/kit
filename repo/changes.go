@@ -125,12 +125,6 @@ func getChanges(old, update core.Items) *core.ChangeResult {
 		return emptyChangeResult()
 	}
 
-	// Detect size change between the collections.
-	// If size is not the same, set SizeChange to true
-	if old.Len() != update.Len() {
-		result.SizeChange = true
-	}
-
 	// We typically loop through the longest collection
 	// to compare with the shorter collection.
 	// Here, we determine which is the longer collection.
@@ -210,9 +204,9 @@ func (s *State) GetReferences() core.Items {
 	return s.References
 }
 
-// StateFromItem creates a State instance from an Item.
+// makeStateFromItem creates a State object from an Item.
 // If Item is nil, an empty State is returned
-func StateFromItem(item core.Item) *State {
+func makeStateFromItem(item core.Item) *State {
 	obj := map[string]core.Item{}
 	if item != nil {
 		obj[item.GetName()] = item

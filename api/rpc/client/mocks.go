@@ -70,24 +70,24 @@ func (mr *MockClientMockRecorder) AccountGet(address interface{}, blockHeight ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountGet", reflect.TypeOf((*MockClient)(nil).AccountGet), varargs...)
 }
 
-// GPGGetAccountOfOwner mocks base method
-func (m *MockClient) GPGGetAccountOfOwner(id string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
+// PushKeyGetAccountOfOwner mocks base method
+func (m *MockClient) PushKeyGetAccountOfOwner(id string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{id}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GPGGetAccountOfOwner", varargs...)
+	ret := m.ctrl.Call(m, "PushKeyGetAccountOfOwner", varargs...)
 	ret0, _ := ret[0].(*state.Account)
 	ret1, _ := ret[1].(*util.StatusError)
 	return ret0, ret1
 }
 
-// GPGGetAccountOfOwner indicates an expected call of GPGGetAccountOfOwner
-func (mr *MockClientMockRecorder) GPGGetAccountOfOwner(id interface{}, blockHeight ...interface{}) *gomock.Call {
+// PushKeyGetAccountOfOwner indicates an expected call of PushKeyGetAccountOfOwner
+func (mr *MockClientMockRecorder) PushKeyGetAccountOfOwner(id interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{id}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GPGGetAccountOfOwner", reflect.TypeOf((*MockClient)(nil).GPGGetAccountOfOwner), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushKeyGetAccountOfOwner", reflect.TypeOf((*MockClient)(nil).PushKeyGetAccountOfOwner), varargs...)
 }
 
 // GetOptions mocks base method

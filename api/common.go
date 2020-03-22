@@ -10,8 +10,8 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// DetermineNextNonceOfGPGKeyOwner is used to determine the next nonce of the account that
-// owns the given gpg key ID.
+// DetermineNextNonceOfPushKeyOwner is used to determine the next nonce of the account that
+// owns the target push key ID.
 //
 // It will use the rpc and remote clients as source to request for
 // the current account nonce.
@@ -23,8 +23,8 @@ import (
 // client, increment its result by 1 and return it as the next nonce.
 //
 // It returns error if unable to get nonce.
-func DetermineNextNonceOfGPGKeyOwner(
-	gpgID string,
+func DetermineNextNonceOfPushKeyOwner(
+	pushKeyID string,
 	rpcClient *client.RPCClient,
 	remoteClients []restclient.RestClient) (string, error) {
 
@@ -33,13 +33,13 @@ func DetermineNextNonceOfGPGKeyOwner(
 	// If next nonce is not provided, attempt to get the nonce from the remote API.
 	var errRemote error
 	if len(remoteClients) > 0 {
-		nextNonce, errRemote = restclient.GPGGetNextNonceOfOwnerUsingClients(remoteClients, gpgID)
+		nextNonce, errRemote = restclient.PushKeyGetNextNonceOfOwnerUsingClients(remoteClients, pushKeyID)
 	}
 
 	// If the nonce is still not known and rpc client non-nil, attempt to get nonce using the client
 	var errRPC error
 	if util.IsZeroString(nextNonce) && rpcClient != nil {
-		nextNonce, errRPC = client.GPGGetNextNonceOfOwnerUsingRPCClient(gpgID, rpcClient)
+		nextNonce, errRPC = client.GetNextNonceOfPushKeyOwnerUsingRPCClient(pushKeyID, rpcClient)
 	}
 
 	// At this point, we have failed to use the clients to get the next nonce.
@@ -88,7 +88,7 @@ func DetermineNextNonceOfAccount(
 	// If the nextNonce is still not known and rpc client non-nil, attempt to get nextNonce using the client
 	var errRPC error
 	if util.IsZeroString(nextNonce) && rpcClient != nil {
-		nextNonce, errRPC = client.AccountGetNextNonceUsingRPCClient(address, rpcClient)
+		nextNonce, errRPC = client.GetNextNonceOfAccountUsingRPCClient(address, rpcClient)
 	}
 
 	// At this point, we have failed to use the clients to get the next nonce.

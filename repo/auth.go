@@ -142,7 +142,7 @@ m = r.sub == p.sub && r.obj == p.obj && r.act == p.act`)
 	}
 }
 
-// aclCheckCanDelete perform ACL check to determine whether the given GPG key
+// aclCheckCanDelete perform ACL check to determine whether the given push key
 // is permitted to perform a reference delete operation.
 func aclCheckCanDelete(pushKeyID string, polEnforcer policyEnforcer) error {
 	pp.Println("Check deletion")

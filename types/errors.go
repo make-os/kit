@@ -4,24 +4,19 @@ import "fmt"
 
 // RPC error codes
 const (
-	// Account package error codes
-	RPCErrCodeAccountNotFound = 30000
-	RPCErrCodeGPGKeyNotFound  = 30001
-
 	// Authentication error codes
 	ErrCodeInvalidAuthHeader      = 40000
 	ErrCodeInvalidAuthCredentials = 40001
 
 	// Implementation error codes
 	RPCErrCodeInvalidParamValue = 60000
-	RPCErrCodeUnexpected        = 60001
 )
 
 // General
 var (
 	ErrKeyUnknown        = fmt.Errorf("key not found")
 	ErrAccountUnknown    = fmt.Errorf("account not found")
-	ErrPushKeyUnknown    = fmt.Errorf("gpg public key not found")
+	ErrPushKeyUnknown    = fmt.Errorf("push key not found")
 	ErrInvalidPrivKey    = fmt.Errorf("private key is invalid")
 	ErrRepoNotFound      = fmt.Errorf("repo not found")
 	ErrTxNotFound        = fmt.Errorf("transaction not found")

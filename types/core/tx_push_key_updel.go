@@ -11,7 +11,7 @@ import (
 )
 
 // TxUpDelPushKey implements BaseTx, it describes a transaction used to update
-// or delete a registered GPG public key
+// or delete a registered push key
 type TxUpDelPushKey struct {
 	*TxCommon    `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType      `json:",flatten" msgpack:"-" mapstructure:"-"`

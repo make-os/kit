@@ -11,7 +11,7 @@ func APIs(modulesAgg modules.ModuleHub, rpcServer *rpc.Server) rpc.APISet {
 	mods := modulesAgg.GetModules()
 	var apiSets = []rpc.APISet{
 		NewAccountAPI(mods).APIs(),
-		NewGPGAPI(mods).APIs(),
+		NewPushKeyAPI(mods).APIs(),
 		NewLocalAccountAPI(mods).APIs(),
 		NewTransactionAPI(mods).APIs(),
 		NewRPCManagerAPI(rpcServer).APIs(),

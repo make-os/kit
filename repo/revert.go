@@ -2,8 +2,9 @@ package repo
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"strings"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/pkg/errors"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -26,6 +27,8 @@ const (
 	// ActionTypeNoteUpdate represents an action to update a note reference
 	ActionTypeNoteUpdate
 )
+
+type reverter func(repo core.BareRepo, prevState core.BareRepoState, options ...core.KVOption) (*core.Changes, error)
 
 // revert reverts the repository from its current state to the previous state.
 // options: Additional options. prefixOpt forces the operation to ignore

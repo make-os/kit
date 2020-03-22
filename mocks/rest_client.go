@@ -120,42 +120,42 @@ func (mr *MockRestClientMockRecorder) PostCall(endpoint, body interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostCall", reflect.TypeOf((*MockRestClient)(nil).PostCall), endpoint, body)
 }
 
-// GPGGetNonceOfOwner mocks base method
-func (m *MockRestClient) GPGGetNonceOfOwner(gpgID string, blockHeight ...uint64) (*types.AccountGetNonceResponse, error) {
+// PushKeyGetNonceOfOwner mocks base method
+func (m *MockRestClient) PushKeyGetNonceOfOwner(pushKeyID string, blockHeight ...uint64) (*types.AccountGetNonceResponse, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{gpgID}
+	varargs := []interface{}{pushKeyID}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GPGGetNonceOfOwner", varargs...)
+	ret := m.ctrl.Call(m, "PushKeyGetNonceOfOwner", varargs...)
 	ret0, _ := ret[0].(*types.AccountGetNonceResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GPGGetNonceOfOwner indicates an expected call of GPGGetNonceOfOwner
-func (mr *MockRestClientMockRecorder) GPGGetNonceOfOwner(gpgID interface{}, blockHeight ...interface{}) *gomock.Call {
+// PushKeyGetNonceOfOwner indicates an expected call of PushKeyGetNonceOfOwner
+func (mr *MockRestClientMockRecorder) PushKeyGetNonceOfOwner(pushKeyID interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{gpgID}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GPGGetNonceOfOwner", reflect.TypeOf((*MockRestClient)(nil).GPGGetNonceOfOwner), varargs...)
+	varargs := append([]interface{}{pushKeyID}, blockHeight...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushKeyGetNonceOfOwner", reflect.TypeOf((*MockRestClient)(nil).PushKeyGetNonceOfOwner), varargs...)
 }
 
-// GPGFind mocks base method
-func (m *MockRestClient) GPGFind(gpgID string, blockHeight ...uint64) (*state.PushKey, error) {
+// PushKeyFind mocks base method
+func (m *MockRestClient) PushKeyFind(pushKeyID string, blockHeight ...uint64) (*state.PushKey, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{gpgID}
+	varargs := []interface{}{pushKeyID}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GPGFind", varargs...)
+	ret := m.ctrl.Call(m, "PushKeyFind", varargs...)
 	ret0, _ := ret[0].(*state.PushKey)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GPGFind indicates an expected call of GPGFind
-func (mr *MockRestClientMockRecorder) GPGFind(gpgID interface{}, blockHeight ...interface{}) *gomock.Call {
+// PushKeyFind indicates an expected call of PushKeyFind
+func (mr *MockRestClientMockRecorder) PushKeyFind(pushKeyID interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{gpgID}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GPGFind", reflect.TypeOf((*MockRestClient)(nil).GPGFind), varargs...)
+	varargs := append([]interface{}{pushKeyID}, blockHeight...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushKeyFind", reflect.TypeOf((*MockRestClient)(nil).PushKeyFind), varargs...)
 }

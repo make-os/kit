@@ -12,20 +12,20 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 )
 
-// GPGGetNonceOfOwner returns the nonce of the gpg owner account
+// PushKeyGetNonceOfOwner returns the nonce of the push key owner account
 // Body:
-// - gpgID <string>: The GPG public key ID
+// - pushKeyID <string>: The push key ID
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
 // - resp <AccountGetNonceResponse>
-func (c *Client) GPGGetNonceOfOwner(gpgID string, blockHeight ...uint64) (*types2.AccountGetNonceResponse, error) {
+func (c *Client) PushKeyGetNonceOfOwner(pushKeyID string, blockHeight ...uint64) (*types2.AccountGetNonceResponse, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
 	}
 
 	resp, err := c.get(rest.RestV1Path(constants.NamespacePushKey, rest.MethodNameOwnerNonce), M{
-		"id":          gpgID,
+		"id":          pushKeyID,
 		"blockHeight": height,
 	})
 	if err != nil {
@@ -36,20 +36,20 @@ func (c *Client) GPGGetNonceOfOwner(gpgID string, blockHeight ...uint64) (*types
 	return &result, resp.ToJSON(&result)
 }
 
-// GPGFind finds a GPG public key matching the given ID
+// PushKeyFind finds a push key by its ID
 // Body:
-// - gpgID <string>: The GPG public key ID
+// - pushKeyID <string>: The push key ID
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
 // - resp <state.PushKey>
-func (c *Client) GPGFind(gpgID string, blockHeight ...uint64) (*state.PushKey, error) {
+func (c *Client) PushKeyFind(pushKeyID string, blockHeight ...uint64) (*state.PushKey, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
 	}
 
-	resp, err := c.get(rest.RestV1Path(constants.NamespacePushKey, rest.MethodNameGPGFind), M{
-		"id":          gpgID,
+	resp, err := c.get(rest.RestV1Path(constants.NamespacePushKey, rest.MethodNamePushKeyFind), M{
+		"id":          pushKeyID,
 		"blockHeight": height,
 	})
 	if err != nil {
@@ -60,13 +60,13 @@ func (c *Client) GPGFind(gpgID string, blockHeight ...uint64) (*state.PushKey, e
 	return &result, resp.ToJSON(&result)
 }
 
-// GPGGetNextNonceOfOwnerUsingClients gets the next account nonce of the owner of the
-// gpg key by querying the given Remote API clients until one succeeds.
-func GPGGetNextNonceOfOwnerUsingClients(clients []RestClient, gpgID string) (string, error) {
+// PushKeyGetNextNonceOfOwnerUsingClients gets the next account nonce of the owner of the
+// push key by querying the given Remote API clients until one succeeds.
+func PushKeyGetNextNonceOfOwnerUsingClients(clients []RestClient, pushKeyID string) (string, error) {
 	var errs = []string{}
 	for i, cl := range clients {
 		var resp *types2.AccountGetNonceResponse
-		resp, err := cl.GPGGetNonceOfOwner(gpgID)
+		resp, err := cl.PushKeyGetNonceOfOwner(pushKeyID)
 		if err != nil {
 			errs = append(errs, errors.Wrapf(err, "client[%d]", i).Error())
 			continue

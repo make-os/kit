@@ -41,11 +41,11 @@ var _ = Describe("PushNote", func() {
 	})
 
 	BeforeEach(func() {
-		var gpgID = []byte("pk_id")
+		var pushKeyID = []byte("pk_id")
 		pushNote = &core.PushNote{
 			RepoName:        "repo",
 			NodeSig:         []byte("node_signer_sig"),
-			PushKeyID:       gpgID,
+			PushKeyID:       pushKeyID,
 			Fee:             "0.2",
 			PusherAcctNonce: 2,
 			References: []*core.PushedReference{

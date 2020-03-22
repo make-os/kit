@@ -154,9 +154,9 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Handle transaction validation and revert pre-commit changes
-	refsTxParams, _, err := pushHandler.HandleValidateAndRevert()
+	refsTxParams, _, err := pushHandler.HandleReferences()
 	if err != nil {
-		return errors.Wrap(err, "HandleValidateAndRevert error")
+		return errors.Wrap(err, "HandleReferences error")
 	}
 
 	if err := cmd.Wait(); err != nil {

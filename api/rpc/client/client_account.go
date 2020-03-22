@@ -32,7 +32,7 @@ func (c *RPCClient) AccountGet(address string, blockHeight ...uint64) (*state.Ac
 	return acct, nil
 }
 
-// AccountGetNextNonceUsingRPCClient gets the next account nonce
+// GetNextNonceOfAccountUsingRPCClient gets the next account nonce
 // of the owner of the gpg key by querying the given JSON-RPC 2.0 client.
 //
 // ARGS:
@@ -41,7 +41,7 @@ func (c *RPCClient) AccountGet(address string, blockHeight ...uint64) (*state.Ac
 //
 // RETURNS:
 // nonce: The next nonce of the account
-func AccountGetNextNonceUsingRPCClient(address string, client Client) (string, *util.StatusError) {
+func GetNextNonceOfAccountUsingRPCClient(address string, client Client) (string, *util.StatusError) {
 	acct, err := client.AccountGet(address)
 	if err != nil {
 		return "", err

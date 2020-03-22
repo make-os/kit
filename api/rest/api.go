@@ -18,7 +18,7 @@ const (
 	MethodNameGetAccount  = "get-account"
 	MethodNameSendPayload = "send-payload"
 	MethodNameOwnerNonce  = "owner-nonce"
-	MethodNameGPGFind     = "find"
+	MethodNamePushKeyFind = "find"
 )
 
 // RESTApi provides a REST API handlers
@@ -51,7 +51,7 @@ func (r *RESTApi) RegisterEndpoints(s *http.ServeMux) {
 	s.HandleFunc(RestV1Path(constants.NamespaceUser, MethodNameGetAccount), r.get(r.GetAccount))
 	s.HandleFunc(RestV1Path(constants.NamespaceTx, MethodNameSendPayload), r.post(r.TxSendPayload))
 	s.HandleFunc(RestV1Path(constants.NamespacePushKey, MethodNameOwnerNonce), r.get(r.GPGGetOwnerNonce))
-	s.HandleFunc(RestV1Path(constants.NamespacePushKey, MethodNameGPGFind), r.get(r.GPGFind))
+	s.HandleFunc(RestV1Path(constants.NamespacePushKey, MethodNamePushKeyFind), r.get(r.GPGFind))
 }
 
 // RestV1Path creates a REST API v1 path

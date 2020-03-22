@@ -2,10 +2,11 @@ package repo
 
 import (
 	"bytes"
-	"gitlab.com/makeos/mosdef/types/core"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -65,9 +66,9 @@ var _ = Describe("PushReader", func() {
 		Describe(".getObjectsOf", func() {
 			It("should return expected objects", func() {
 				m := objRefMap(map[string][]string{
-					"obj1": []string{"ref1", "ref2"},
-					"obj2": []string{"ref", "ref2"},
-					"obj3": []string{"ref1", "ref3"},
+					"obj1": {"ref1", "ref2"},
+					"obj2": {"ref", "ref2"},
+					"obj3": {"ref1", "ref3"},
 				})
 				objs := m.getObjectsOf("ref1")
 				Expect(objs).To(HaveLen(2))
@@ -79,9 +80,9 @@ var _ = Describe("PushReader", func() {
 			Describe(".getObjectsOf", func() {
 				It("should remove ref2 from obj2 ", func() {
 					m := objRefMap(map[string][]string{
-						"obj1": []string{"ref1", "ref2"},
-						"obj2": []string{"ref", "ref2"},
-						"obj3": []string{"ref1", "ref3"},
+						"obj1": {"ref1", "ref2"},
+						"obj2": {"ref", "ref2"},
+						"obj3": {"ref1", "ref3"},
 					})
 					err := m.removeRef("obj2", "ref2")
 					Expect(err).To(BeNil())
@@ -91,7 +92,7 @@ var _ = Describe("PushReader", func() {
 
 				It("should return err if object is not found", func() {
 					m := objRefMap(map[string][]string{
-						"obj1": []string{"ref1", "ref2"},
+						"obj1": {"ref1", "ref2"},
 					})
 					err := m.removeRef("obj2", "ref2")
 					Expect(err).ToNot(BeNil())
@@ -138,9 +139,9 @@ var _ = Describe("PushReader", func() {
 		Specify("object ref map has 3 objects with value 'refs/heads/master'", func() {
 			Expect(pr.objectsRefs).To(HaveLen(3))
 			Expect(funk.Values(pr.objectsRefs)).To(Equal([][]string{
-				[]string{"refs/heads/master"},
-				[]string{"refs/heads/master"},
-				[]string{"refs/heads/master"}}))
+				{"refs/heads/master"},
+				{"refs/heads/master"},
+				{"refs/heads/master"}}))
 		})
 	})
 })

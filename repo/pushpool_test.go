@@ -33,8 +33,8 @@ var _ = Describe("PushPool", func() {
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var mockDHT *mocks.MockDHTNode
-	var gpgID = "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"
-	var gpgID2 = "gpg1wcsg3v7dw3kwxx2yuhkp9h9gyjldygzwv9qu7l"
+	var pushKeyID = "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"
+	var pushKeyID2 = "push1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -51,7 +51,7 @@ var _ = Describe("PushPool", func() {
 		tx = &core.PushNote{
 			RepoName:        "repo",
 			NodeSig:         []byte("sig"),
-			PushKeyID:       util.MustDecodePushKeyID(gpgID),
+			PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
 			Fee:             "0.2",
 			PusherAcctNonce: 2,
 			References: []*core.PushedReference{
@@ -61,7 +61,7 @@ var _ = Describe("PushPool", func() {
 		tx2 = &core.PushNote{
 			RepoName:        "repo2",
 			NodeSig:         []byte("sig_2"),
-			PushKeyID:       util.MustDecodePushKeyID(gpgID2),
+			PushKeyID:       util.MustDecodePushKeyID(pushKeyID2),
 			Fee:             "0.2",
 			PusherAcctNonce: 2,
 			References: []*core.PushedReference{
@@ -158,7 +158,7 @@ var _ = Describe("PushPool", func() {
 				tx2 := &core.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
-					PushKeyID:       util.MustDecodePushKeyID(gpgID),
+					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					Fee:             "0.2",
 					PusherAcctNonce: 2,
@@ -188,7 +188,7 @@ var _ = Describe("PushPool", func() {
 				tx2 = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodePushKeyID(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(pushKeyID),
 					Timestamp: 100000000,
 					Fee:       "0.01", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -216,7 +216,7 @@ var _ = Describe("PushPool", func() {
 				tx2 = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodePushKeyID(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(pushKeyID),
 					Timestamp: 100000000,
 					Fee:       "0.01", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -243,7 +243,7 @@ var _ = Describe("PushPool", func() {
 				tx2 := &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodePushKeyID(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(pushKeyID),
 					Timestamp: 100000000,
 					Fee:       "0.01", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -272,7 +272,7 @@ var _ = Describe("PushPool", func() {
 				tx2 = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodePushKeyID(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(pushKeyID),
 					Timestamp: 100000000,
 					Fee:       "0.5", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -302,7 +302,7 @@ var _ = Describe("PushPool", func() {
 				txY = &core.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
-					PushKeyID:       util.MustDecodePushKeyID(gpgID),
+					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					Fee:             "0.01",
 					PusherAcctNonce: 2,
@@ -314,7 +314,7 @@ var _ = Describe("PushPool", func() {
 				txZ = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodePushKeyID(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(pushKeyID),
 					Timestamp: 100000000,
 					Fee:       "0.01", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -325,7 +325,7 @@ var _ = Describe("PushPool", func() {
 				txX = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodePushKeyID(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(pushKeyID),
 					Timestamp: 100000000,
 					Fee:       "0.03", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -363,7 +363,7 @@ var _ = Describe("PushPool", func() {
 				txY = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodePushKeyID(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(pushKeyID),
 					Timestamp: 100000000,
 					Fee:       "0.4", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -374,7 +374,7 @@ var _ = Describe("PushPool", func() {
 				txZ = &core.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
-					PushKeyID:       util.MustDecodePushKeyID(gpgID),
+					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					Fee:             "0.4",
 					PusherAcctNonce: 2,
@@ -386,7 +386,7 @@ var _ = Describe("PushPool", func() {
 				txX = &core.PushNote{
 					RepoName:  "repo",
 					NodeSig:   []byte("sig"),
-					PushKeyID: util.MustDecodePushKeyID(gpgID),
+					PushKeyID: util.MustDecodePushKeyID(pushKeyID),
 					Timestamp: 100000000,
 					Fee:       "0.7", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -413,7 +413,7 @@ var _ = Describe("PushPool", func() {
 			var txX *core.PushNote
 			BeforeEach(func() {
 				txX = &core.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(gpgID),
+					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID),
 					Timestamp: 100000000,
 					Fee:       "0.01", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -435,7 +435,7 @@ var _ = Describe("PushPool", func() {
 			var txX *core.PushNote
 			BeforeEach(func() {
 				txX = &core.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(gpgID),
+					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID),
 					Timestamp: 100000000,
 					Fee:       "0.01", PusherAcctNonce: 2,
 					References: []*core.PushedReference{
@@ -621,7 +621,7 @@ var _ = Describe("refNonceIndex", func() {
 })
 
 var _ = Describe("repoNotesIndex", func() {
-	var gpgID = crypto.BytesToPushKeyID([]byte("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd"))
+	var pushKeyID = crypto.BytesToPushKeyID([]byte("push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"))
 
 	Describe(".add", func() {
 		var idx repoNotesIndex
@@ -673,7 +673,7 @@ var _ = Describe("repoNotesIndex", func() {
 		When("repo has 1 txA and txA is removed", func() {
 			var txA *core.PushNote
 			BeforeEach(func() {
-				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(gpgID), Timestamp: 100000000}
+				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
 				idx = map[string][]*containerItem{}
 				idx.add("repo1", &containerItem{Note: txA})
 				Expect(idx["repo1"]).To(HaveLen(1))
@@ -688,8 +688,8 @@ var _ = Describe("repoNotesIndex", func() {
 		When("repo has 2 txs (txA and TxB) and txA is removed", func() {
 			var txA, txB *core.PushNote
 			BeforeEach(func() {
-				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(gpgID), Timestamp: 100000000}
-				txB = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(gpgID), Timestamp: 200000000}
+				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
+				txB = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID), Timestamp: 200000000}
 				idx = map[string][]*containerItem{}
 				idx.add("repo1", &containerItem{Note: txA})
 				idx.add("repo1", &containerItem{Note: txB})

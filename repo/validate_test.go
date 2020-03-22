@@ -1,7 +1,7 @@
 package repo
 
 import (
-	"encoding/hex"
+	"encoding/pem"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -17,8 +17,6 @@ import (
 	"github.com/golang/mock/gomock"
 	"gitlab.com/makeos/mosdef/mocks"
 
-	"github.com/bitfield/script"
-	"golang.org/x/crypto/openpgp"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
@@ -36,31 +34,30 @@ var _ = Describe("Validation", func() {
 	var cfg *config.AppConfig
 	var repo core.BareRepo
 	var path string
-	var gpgKeyID string
-	var pubKey string
-	var privKey *openpgp.Entity
-	var privKey2 *openpgp.Entity
+	var pushKeyID string
+	var pubKey *crypto.PubKey
+	var privKey, privKey2 *crypto.Key
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var mockTickMgr *mocks.MockTicketManager
 	var mockRepoKeeper *mocks.MockRepoKeeper
 	var mockNSKeeper *mocks.MockNamespaceKeeper
-	var mockGPGKeeper *mocks.MockGPGPubKeyKeeper
+	var mockPushKeyKeeper *mocks.MockPushKeyKeeper
 	var mockAcctKeeper *mocks.MockAccountKeeper
 	var mockSysKeeper *mocks.MockSystemKeeper
 	var mockTxLogic *mocks.MockTxLogic
 
-	var gpgPubKeyGetter = func(gpgID string) (string, error) {
-		return pubKey, nil
+	var pushKeyGetter = func(pushKeyID string) (crypto.PublicKey, error) {
+		return pubKey.ToPublicKey(), nil
 	}
 
-	var gpgInvalidPubKeyGetter = func(gpgID string) (string, error) {
-		return "invalid key", nil
+	var invalidPushKeyGetter = func(pushKeyID string) (crypto.PublicKey, error) {
+		return crypto.BytesToPublicKey(util.RandBytes(32)), nil
 	}
 
-	var gpgPubKeyGetterWithErr = func(err error) func(gpgID string) (string, error) {
-		return func(gpgID string) (string, error) {
-			return "", err
+	var pushKeyGetterWithErr = func(err error) func(pushKeyID string) (crypto.PublicKey, error) {
+		return func(pushKeyID string) (crypto.PublicKey, error) {
+			return crypto.EmptyPublicKey, err
 		}
 	}
 
@@ -70,19 +67,20 @@ var _ = Describe("Validation", func() {
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
-		gpgKeyID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		gpgKeyID2 := testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		pubKey, err = crypto.GetGPGPublicKeyStr(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
-		privKey, err = crypto.GetGPGPrivateKey(gpgKeyID, testutil.GPGProgramPath, cfg.DataDir())
-		privKey2, err = crypto.GetGPGPrivateKey(gpgKeyID2, testutil.GPGProgramPath, cfg.DataDir())
+		privKey = crypto.NewKeyFromIntSeed(1)
+		privKey2 = crypto.NewKeyFromIntSeed(2)
+		pushKeyID = privKey.PushAddr().String()
+		pubKey = privKey.PubKey()
 		Expect(err).To(BeNil())
+		_ = pushKeyID
+		_ = privKey2
 
 		GitEnv = append(GitEnv, "GNUPGHOME="+cfg.DataDir())
 		mockObjs := testutil.MockLogic(ctrl)
 		mockLogic = mockObjs.Logic
 		mockTickMgr = mockObjs.TicketManager
 		mockRepoKeeper = mockObjs.RepoKeeper
-		mockGPGKeeper = mockObjs.PushKeyKeeper
+		mockPushKeyKeeper = mockObjs.PushKeyKeeper
 		mockAcctKeeper = mockObjs.AccountKeeper
 		mockSysKeeper = mockObjs.SysKeeper
 		mockTxLogic = mockObjs.Tx
@@ -102,109 +100,120 @@ var _ = Describe("Validation", func() {
 	})
 
 	Describe(".checkCommit", func() {
-		var cob *object.Commit
+		var commit *object.Commit
 		var err error
 
-		When("txparams is not set", func() {
+		When("commit does not include transaction parameters", func() {
 			BeforeEach(func() {
 				appendCommit(path, "file.txt", "line 1", "commit 1")
-				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`,
-					path).String()
-				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				_, err = checkCommit(cob, repo, gpgPubKeyGetter)
+				commitHash, _ := repo.GetRecentCommit()
+				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
+				_, err = checkCommit(commit, repo, pushKeyGetter)
 			})
 
-			It("should return err='txparams was not set'", func() {
+			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("txparams was not set"))
+				Expect(err.Error()).To(ContainSubstring("transaction params was not set"))
 			})
 		})
 
-		When("txparams.gpgID is not valid", func() {
+		When("a commit transaction parameters contains invalid push key", func() {
 			BeforeEach(func() {
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", "invalid_pk_id")
+				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkID=%s", "0", "0", "invalid_pk_id")
 				appendCommit(path, "file.txt", "line 1", txParams)
-				commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`,
-					path).String()
-				cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				_, err = checkCommit(cob, repo, gpgPubKeyGetter)
+				commitHash, _ := repo.GetRecentCommit()
+				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
+				_, err = checkCommit(commit, repo, pushKeyGetter)
 			})
 
-			It("should return err='field:gpgID, msg:gpg key id is invalid'", func() {
+			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("field:gpgID, msg:gpg key id is invalid"))
+				Expect(err.Error()).To(ContainSubstring("push key id is invalid"))
 			})
 		})
 
-		// TODO: fix test
-		// When("commit is not signed", func() {
-		// 	BeforeEach(func() {
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		appendCommit(path, "file.txt", "line 1", txParams)
-		// 		commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
-		// 		cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-		// 		_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
-		// 	})
-		//
-		// 	It("should return err='is unsigned. please sign the commit with your gpg key'", func() {
-		// 		Expect(err).ToNot(BeNil())
-		// 		Expect(err.Error()).To(ContainSubstring("is unsigned. please sign the commit with your gpg key"))
-		// 	})
-		// })
+		When("the commit is not signed", func() {
+			BeforeEach(func() {
+				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
+				appendCommit(path, "file.txt", "line 1", txParams)
+				commitHash, _ := repo.GetRecentCommit()
+				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
+				_, err = checkCommit(commit, repo, pushKeyGetter)
+			})
 
-		// When("commit is signed but unable to get public key using the gpgID", func() {
-		// 	BeforeEach(func() {
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		appendCommit(path, "file.txt", "line 1", txParams)
-		// 		commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
-		// 		cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-		// 		cob.PGPSignature = "signature"
-		// 		_, err = checkCommit(cob, false, repo, gpgPubKeyGetterWithErr(fmt.Errorf("bad error")))
-		// 	})
-		//
-		// 	It("should return err='..public key..was not found'", func() {
-		// 		Expect(err).ToNot(BeNil())
-		// 		Expect(err.Error()).To(MatchRegexp(".*public key.*was not found"))
-		// 	})
-		// })
-		//
-		// When("commit has a signature but the signature is not valid", func() {
-		// 	BeforeEach(func() {
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		appendCommit(path, "file.txt", "line 1", txParams)
-		// 		commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
-		// 		cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-		// 		cob.PGPSignature = "signature"
-		// 		_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
-		// 	})
-		//
-		// 	It("should return err='..signature verification failed..'", func() {
-		// 		Expect(err).ToNot(BeNil())
-		// 		Expect(err.Error()).To(ContainSubstring("signature verification failed"))
-		// 	})
-		// })
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("commit .* was not signed"))
+			})
+		})
 
-		// When("commit has a signature and the signature is valid", func() {
-		// 	BeforeEach(func() {
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
-		// 		commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
-		// 		cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-		// 		_, err = checkCommit(cob, false, repo, gpgPubKeyGetter)
-		// 	})
-		//
-		// 	It("should return nil", func() {
-		// 		Expect(err).To(BeNil())
-		// 	})
-		// })
+		When("commit is signed but unable to get public key using the pushKeyID", func() {
+			BeforeEach(func() {
+				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
+				appendCommit(path, "file.txt", "line 1", txParams)
+				commitHash, _ := repo.GetRecentCommit()
+				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
+				commit.PGPSignature = "signature"
+				_, err = checkCommit(commit, repo, pushKeyGetterWithErr(fmt.Errorf("bad error")))
+			})
+
+			It("should return err'", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("failed to get push key (.*): bad error"))
+			})
+		})
+
+		When("commit has a signature but the signature is malformed", func() {
+			BeforeEach(func() {
+				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
+				appendCommit(path, "file.txt", "line 1", txParams)
+				commitHash, _ := repo.GetRecentCommit()
+				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
+				commit.PGPSignature = "signature"
+				_, err = checkCommit(commit, repo, pushKeyGetter)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("signature is malformed"))
+			})
+		})
+
+		When("commit has a signature but the signature is not valid", func() {
+			BeforeEach(func() {
+				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
+				appendCommit(path, "file.txt", "line 1", txParams)
+				commitHash, _ := repo.GetRecentCommit()
+				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
+				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{Bytes: []byte{1, 2, 3}, Type: "SIGNATURE"}))
+				_, err = checkCommit(commit, repo, pushKeyGetter)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("commit (.*) signature is invalid"))
+			})
+		})
+
+		When("commit has a signature and it is valid", func() {
+			var err error
+			var sig []byte
+			BeforeEach(func() {
+				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
+				appendCommit(path, "file.txt", "line 1", txParams)
+				commitHash, _ := repo.GetRecentCommit()
+				commit, _ = repo.CommitObject(plumbing.NewHash(commitHash))
+				sigMsg := getCommitOrTagSigMsg(commit)
+				sig, err = privKey.PrivKey().Sign([]byte(sigMsg))
+				Expect(err).To(BeNil())
+				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{Bytes: sig, Type: "SIGNATURE"}))
+				_, err = checkCommit(commit, repo, pushKeyGetter)
+			})
+
+			It("should return nil", func() {
+				Expect(err).To(BeNil())
+			})
+		})
 	})
 
 	Describe(".checkAnnotatedTag", func() {
@@ -216,116 +225,114 @@ var _ = Describe("Validation", func() {
 				createCommitAndAnnotatedTag(path, "file.txt", "first file", "commit 1", "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
-				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
+				_, err = checkAnnotatedTag(tob, repo, pushKeyGetter)
 			})
 
 			It("should return err='txparams was not set'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("txparams was not set"))
+				Expect(err.Error()).To(MatchRegexp("tag (.*): transaction params was not set"))
 			})
 		})
 
-		When("txparams.gpgID is not valid", func() {
+		When("txparams.pkID is not valid", func() {
 			BeforeEach(func() {
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", "invalid_pk_id")
+				txParams := util.MakeTxParams("0", "0", "invalid_pk_id", nil)
 				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
-				_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
+				_, err = checkAnnotatedTag(tob, repo, pushKeyGetter)
 			})
 
-			It("should return err='field:gpgID, msg:gpg key id is invalid'", func() {
+			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("field:gpgID, msg:gpg key id is invalid"))
+				Expect(err.Error()).To(MatchRegexp("tag (.*): field:pkID, msg:push key id is invalid"))
 			})
 		})
 
-		// TODO: fix test
-		// When("tag is not signed", func() {
-		// 	BeforeEach(func() {
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
-		// 		tagRef, _ := repo.Tag("v1")
-		// 		tob, _ = repo.TagObject(tagRef.Hash())
-		// 		_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
-		// 	})
-		//
-		// 	It("should return err='is unsigned. please sign the tag with your gpg key'", func() {
-		// 		Expect(err).ToNot(BeNil())
-		// 		Expect(err.Error()).To(ContainSubstring("is unsigned. please sign the tag with your gpg key"))
-		// 	})
-		// })
+		When("tag is not signed", func() {
+			BeforeEach(func() {
+				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
+				tagRef, _ := repo.Tag("v1")
+				tob, _ = repo.TagObject(tagRef.Hash())
+				_, err = checkAnnotatedTag(tob, repo, pushKeyGetter)
+			})
 
-		// When("tag is signed but unable to get public key using the gpgID", func() {
-		// 	BeforeEach(func() {
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
-		// 		tagRef, _ := repo.Tag("v1")
-		// 		tob, _ = repo.TagObject(tagRef.Hash())
-		// 		tob.PGPSignature = "signature"
-		// 		_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetterWithErr(fmt.Errorf("bad error")))
-		// 	})
-		//
-		// 	It("should return err='..public key..was not found'", func() {
-		// 		Expect(err).ToNot(BeNil())
-		// 		Expect(err.Error()).To(MatchRegexp(".*public key.*was not found"))
-		// 	})
-		// })
-		//
-		// When("tag has a signature but the signature is not valid", func() {
-		// 	BeforeEach(func() {
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
-		// 		tagRef, _ := repo.Tag("v1")
-		// 		tob, _ = repo.TagObject(tagRef.Hash())
-		// 		tob.PGPSignature = "signature"
-		// 		_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
-		// 	})
-		//
-		// 	It("should return err='..signature verification failed..'", func() {
-		// 		Expect(err).ToNot(BeNil())
-		// 		Expect(err.Error()).To(ContainSubstring("signature verification failed"))
-		// 	})
-		// })
-		//
-		// When("tag has a valid signature but the referenced commit is unsigned", func() {
-		// 	BeforeEach(func() {
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		createCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
-		// 		tagRef, _ := repo.Tag("v1")
-		// 		tob, _ = repo.TagObject(tagRef.Hash())
-		// 		_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
-		// 	})
-		//
-		// 	It("should return err=''", func() {
-		// 		Expect(err).ToNot(BeNil())
-		// 		Expect(err.Error()).To(MatchRegexp(".*referenced commit.* is unsigned.*"))
-		// 	})
-		// })
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("tag (.*) is unsigned. Sign the tag with your push key"))
+			})
+		})
 
-		// When("tag has a valid signature and the referenced commit is valid", func() {
-		// 	BeforeEach(func() {
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		createMakeSignableCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
-		// 		tagRef, _ := repo.Tag("v1")
-		// 		tob, _ = repo.TagObject(tagRef.Hash())
-		// 		_, err = checkAnnotatedTag(tob, repo, gpgPubKeyGetter)
-		// 	})
-		//
-		// 	It("should return nil", func() {
-		// 		Expect(err).To(BeNil())
-		// 	})
-		// })
+		When("tag is signed but unable to get public key using the pushKeyID", func() {
+			BeforeEach(func() {
+				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
+				tagRef, _ := repo.Tag("v1")
+				tob, _ = repo.TagObject(tagRef.Hash())
+				tob.PGPSignature = "signature"
+				_, err = checkAnnotatedTag(tob, repo, pushKeyGetterWithErr(fmt.Errorf("bad error")))
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("failed to get pusher key(.*) to verify commit .*"))
+			})
+		})
+
+		When("tag has a signature but the signature is malformed", func() {
+			BeforeEach(func() {
+				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
+				tagRef, _ := repo.Tag("v1")
+				tob, _ = repo.TagObject(tagRef.Hash())
+				tob.PGPSignature = "signature"
+				_, err = checkAnnotatedTag(tob, repo, pushKeyGetter)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("signature is malformed"))
+			})
+		})
+
+		When("tag has a signature but the signature is invalid", func() {
+			BeforeEach(func() {
+				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
+				tagRef, _ := repo.Tag("v1")
+				tob, _ = repo.TagObject(tagRef.Hash())
+				sig := pem.EncodeToMemory(&pem.Block{Bytes: []byte("invalid sig"), Type: "SIGNATURE"})
+				tob.PGPSignature = string(sig)
+				_, err = checkAnnotatedTag(tob, repo, pushKeyGetter)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("commit (.*) signature is invalid"))
+			})
+		})
+
+		When("tag has a valid signature but the referenced commit is unsigned", func() {
+			BeforeEach(func() {
+				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
+				tagRef, _ := repo.Tag("v1")
+				tob, _ = repo.TagObject(tagRef.Hash())
+
+				msg := getCommitOrTagSigMsg(tob)
+				sig, _ := privKey.PrivKey().Sign([]byte(msg))
+				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Type: "SIGNATURE"})
+				tob.PGPSignature = string(pemData)
+
+				_, err = checkAnnotatedTag(tob, repo, pushKeyGetter)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("commit (.*) was not signed"))
+			})
+		})
 	})
 
 	Describe(".checkNote", func() {
@@ -333,7 +340,7 @@ var _ = Describe("Validation", func() {
 
 		When("target note does not exist", func() {
 			BeforeEach(func() {
-				_, err = checkNote(repo, "unknown", gpgPubKeyGetter)
+				_, err = checkNote(repo, "unknown", pushKeyGetter)
 			})
 
 			It("should return err='unable to fetch note entries (unknown)'", func() {
@@ -345,89 +352,65 @@ var _ = Describe("Validation", func() {
 		When("a note does not have a tx blob object", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+				_, err = checkNote(repo, "refs/notes/note1", pushKeyGetter)
 			})
 
-			It("should return err='note does not include a transaction parameter blob'", func() {
+			It("should return err='note does not include a transaction parameters blob'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("note does not include a transaction parameter blob"))
+				Expect(err.Error()).To(Equal("note does not include a transaction parameters blob"))
+			})
+		})
+
+		When("a notes tx blob has invalid transaction parameters format", func() {
+			BeforeEach(func() {
+				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pushKeyID=push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t sig=xyz")
+				_, err = checkNote(repo, "refs/notes/note1", pushKeyGetter)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("note (refs/notes/note1) has invalid transaction parameters: field:pushKeyID, msg:unknown field"))
 			})
 		})
 
 		When("a notes tx blob has invalid signature format", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=xyz")
-				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkID=push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t sig=xyz")
+				_, err = checkNote(repo, "refs/notes/note1", pushKeyGetter)
 			})
 
-			It("should return err='note (refs/notes/note1): field:sig, msg:signature format is not valid'", func() {
+			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("note (refs/notes/note1): field:sig, msg:signature format is not valid"))
+				Expect(err.Error()).To(Equal("note (refs/notes/note1) has invalid transaction " +
+					"parameters: field:sig, msg:signature format is not valid"))
 			})
 		})
 
 		When("a notes tx blob has an unknown public key id", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x616263")
-				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetterWithErr(fmt.Errorf("error finding pub key")))
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkID=push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t sig=0x616263")
+				_, err = checkNote(repo, "refs/notes/note1", pushKeyGetterWithErr(fmt.Errorf("error finding pub key")))
 			})
 
-			It("should return err='unable to verify note (refs/notes/note1). public key was not found.'", func() {
+			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("unable to verify note (refs/notes/note1). public key was not found"))
+				Expect(err.Error()).To(MatchRegexp("failed to get push key (.*): error finding pub key"))
 			})
 		})
 
 		When("a notes tx blob includes a public key id to an invalid public key", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x616263")
-				_, err = checkNote(repo, "refs/notes/note1", gpgInvalidPubKeyGetter)
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkID=push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t sig=0x616263")
+				_, err = checkNote(repo, "refs/notes/note1", invalidPushKeyGetter)
 			})
 
-			It("should return err='unable to verify note (refs/notes/note1). public key .. was not found.'", func() {
+			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("unable to verify note (refs/notes/note1). public key is not valid"))
-			})
-		})
-
-		When("a note's signature is not signed with an expected private key", func() {
-			var sig []byte
-			BeforeEach(func() {
-				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				commitHash := getRecentCommitHash(path, "refs/notes/note1")
-				msg := MakeNoteSigMsg("0", "0", "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd", commitHash, false)
-				sig, err = crypto.GPGSign(privKey2, msg)
-				Expect(err).To(BeNil())
-				sigHex := hex.EncodeToString(sig)
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x"+sigHex)
-				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
-			})
-
-			It("should return err='invalid signature: RSA verification failure'", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("invalid signature: RSA verification failure"))
-			})
-		})
-
-		When("a note's signature message content/format is not expected", func() {
-			var sig []byte
-			BeforeEach(func() {
-				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				commitHash := getRecentCommitHash(path, "refs/notes/note1")
-				msg := []byte("0" + "0" + "0x0000000000000000000000000000000000000001" + commitHash)
-				sig, err = crypto.GPGSign(privKey, msg)
-				Expect(err).To(BeNil())
-				sigHex := hex.EncodeToString(sig)
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x"+sigHex)
-				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
-			})
-
-			It("should return err='...invalid signature: hash tag doesn't match'", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("invalid signature: hash tag doesn't match"))
+				Expect(err.Error()).To(Equal("note (refs/notes/note1) signature verification failed"))
 			})
 		})
 
@@ -436,12 +419,14 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
 				commitHash := getRecentCommitHash(path, "refs/notes/note1")
-				msg := MakeNoteSigMsg("0", "0", "gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd", commitHash, false)
-				sig, err = crypto.GPGSign(privKey, msg)
+
+				msg := MakeNoteSigMsg("0", "0", "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t", commitHash, false)
+				sig, err = privKey.PrivKey().Sign(msg)
 				Expect(err).To(BeNil())
-				sigHex := hex.EncodeToString(sig)
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 gpgID=gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd sig=0x"+sigHex)
-				_, err = checkNote(repo, "refs/notes/note1", gpgPubKeyGetter)
+				sigHex := util.ToHex(sig)
+
+				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkID=push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t sig="+sigHex)
+				_, err = checkNote(repo, "refs/notes/note1", pushKeyGetter)
 			})
 
 			It("should return nil", func() {
@@ -456,7 +441,7 @@ var _ = Describe("Validation", func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				change := &core.ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -471,7 +456,7 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().State().Return(state.BareRepository())
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -489,12 +474,12 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.PushKey{Address: "address_xyz"})
+				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{Address: "address_xyz"})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
-				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -511,14 +496,14 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", state.BareRepoProposal())
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.PushKey{})
+				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, fmt.Errorf("error"))
 
-				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -535,14 +520,14 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", state.BareRepoProposal())
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.PushKey{})
+				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(true, nil)
 
-				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -564,14 +549,14 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.PushKey{})
+				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
-				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -592,14 +577,14 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.PushKey{})
+				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
-				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -621,7 +606,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.PushKey{})
+				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -629,7 +614,7 @@ var _ = Describe("Validation", func() {
 
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
-				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -651,7 +636,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.PushKey{})
+				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -661,7 +646,7 @@ var _ = Describe("Validation", func() {
 
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
-				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -684,7 +669,7 @@ var _ = Describe("Validation", func() {
 					repoState.Proposals.Add("0001", prop)
 					repo.EXPECT().State().Return(repoState)
 
-					mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.PushKey{})
+					mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 
 					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -703,7 +688,7 @@ var _ = Describe("Validation", func() {
 
 					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
-					err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+					err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 				})
 
 				It("should return error", func() {
@@ -725,7 +710,7 @@ var _ = Describe("Validation", func() {
 					repoState.Proposals.Add("0001", prop)
 					repo.EXPECT().State().Return(repoState)
 
-					mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.PushKey{})
+					mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 
 					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -748,7 +733,7 @@ var _ = Describe("Validation", func() {
 
 					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
-					err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+					err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 				})
 
 				It("should return error", func() {
@@ -770,7 +755,7 @@ var _ = Describe("Validation", func() {
 					repoState.Proposals.Add("0001", prop)
 					repo.EXPECT().State().Return(repoState)
 
-					mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.PushKey{})
+					mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 
 					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -797,7 +782,7 @@ var _ = Describe("Validation", func() {
 
 					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
-					err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+					err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 				})
 
 				It("should return error", func() {
@@ -821,7 +806,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.PushKey{})
+				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "abc"}
@@ -848,7 +833,7 @@ var _ = Describe("Validation", func() {
 
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
-				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -872,7 +857,7 @@ var _ = Describe("Validation", func() {
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
-				mockGPGKeeper.EXPECT().Get("gpg_key_id").Return(&state.PushKey{})
+				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "abc"}
@@ -901,7 +886,7 @@ var _ = Describe("Validation", func() {
 
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
-				err = checkMergeCompliance(repo, change, oldRef, "0001", "gpg_key_id", mockLogic)
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -918,7 +903,7 @@ var _ = Describe("Validation", func() {
 		When("change item has a reference name format that is not known", func() {
 			BeforeEach(func() {
 				change := &core.ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
-				_, err = validateChange(repo, change, gpgPubKeyGetter)
+				_, err = validateChange(repo, change, pushKeyGetter)
 			})
 
 			It("should return err='unrecognised change item'", func() {
@@ -930,7 +915,7 @@ var _ = Describe("Validation", func() {
 		When("change item referenced object is an unknown commit object", func() {
 			BeforeEach(func() {
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
-				_, err = validateChange(repo, change, gpgPubKeyGetter)
+				_, err = validateChange(repo, change, pushKeyGetter)
 			})
 
 			It("should return err='unable to get commit object: object not found'", func() {
@@ -942,7 +927,7 @@ var _ = Describe("Validation", func() {
 		When("change item referenced object is an unknown tag object", func() {
 			BeforeEach(func() {
 				change := &core.ItemChange{Item: &Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
-				_, err = validateChange(repo, change, gpgPubKeyGetter)
+				_, err = validateChange(repo, change, pushKeyGetter)
 			})
 
 			It("should return err='unable to get tag object: tag not found'", func() {
@@ -950,68 +935,6 @@ var _ = Describe("Validation", func() {
 				Expect(err.Error()).To(Equal("unable to get tag object: tag not found"))
 			})
 		})
-
-		// TODO: fix test
-		// When("branch item points to a valid commit", func() {
-		// 	var cob *object.Commit
-		// 	var err error
-		//
-		// 	BeforeEach(func() {
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		appendMakeSignableCommit(path, "file.txt", "line 1", txParams, gpgKeyID)
-		// 		commitHash, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%H`, path).String()
-		// 		cob, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-		//
-		// 		change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: cob.Hash.String()}}
-		// 		_, err = validateChange(repo, change, gpgPubKeyGetter)
-		// 	})
-		//
-		// 	It("should return nil", func() {
-		// 		Expect(err).To(BeNil())
-		// 	})
-		// })
-		//
-		// When("annotated tag item points to a valid commit", func() {
-		// 	var tob *object.Tag
-		// 	var err error
-		//
-		// 	BeforeEach(func() {
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		createMakeSignableCommitAndSignedAnnotatedTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
-		// 		tagRef, _ := repo.Tag("v1")
-		// 		tob, _ = repo.TagObject(tagRef.Hash())
-		//
-		// 		change := &core.ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tob.Hash.String()}}
-		// 		_, err = validateChange(repo, change, gpgPubKeyGetter)
-		// 	})
-		//
-		// 	It("should return nil", func() {
-		// 		Expect(err).To(BeNil())
-		// 	})
-		// })
-		//
-		// When("lightweight tag item points to a valid commit", func() {
-		// 	var err error
-		//
-		// 	BeforeEach(func() {
-		// 		pkEntity, _ := crypto.PGPEntityFromPubKey(pubKey)
-		// 		gpgID := util.CreateGPGIDFromRSA(pkEntity.PrimaryKey.PublicKey.(*rsa.PublicKey))
-		// 		txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, gpgID=%s", "0", "0", gpgID)
-		// 		createMakeSignableCommitAndLightWeightTag(path, "file.txt", "first file", txParams, "v1", gpgKeyID)
-		// 		tagRef, _ := repo.Tag("v1")
-		//
-		// 		change := &core.ItemChange{Item: &Obj{Name: "refs/tags/v1", Data: tagRef.Target().String()}}
-		// 		_, err = validateChange(repo, change, gpgPubKeyGetter)
-		// 	})
-		//
-		// 	It("should return nil", func() {
-		// 		Expect(err).To(BeNil())
-		// 	})
-		// })
 	})
 
 	Describe(".CheckPushOK", func() {
@@ -1142,10 +1065,10 @@ var _ = Describe("Validation", func() {
 
 		var cases = [][]interface{}{
 			{&core.PushNote{}, "field:repoName, msg:repo name is required"},
-			{&core.PushNote{RepoName: "repo"}, "field:pusherKeyId, msg:pusher gpg key id is required"},
+			{&core.PushNote{RepoName: "repo"}, "field:pusherKeyId, msg:push key id is required"},
 			{&core.PushNote{RepoName: "re*&po"}, "field:repoName, msg:repo name is not valid"},
 			{&core.PushNote{RepoName: "repo", Namespace: "*&ns"}, "field:namespace, msg:namespace is not valid"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: []byte("xyz")}, "field:pusherKeyId, msg:pusher gpg key is not valid"},
+			{&core.PushNote{RepoName: "repo", PushKeyID: []byte("xyz")}, "field:pusherKeyId, msg:push key id is not valid"},
 			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: 0}, "field:timestamp, msg:timestamp is required"},
 			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: 2000000000}, "field:timestamp, msg:timestamp cannot be a future time"},
 			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, "field:accountNonce, msg:account nonce must be greater than zero"},
@@ -1394,7 +1317,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				tx := &core.PushNote{Namespace: "ns1"}
 				mockRepoKeeper.EXPECT().Get(gomock.Any()).Return(&state.Repository{Balance: "10"})
-				mockNSKeeper.EXPECT().Get(tx.Namespace).Return(state.BareNamespace())
+				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.Namespace)).Return(state.BareNamespace())
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -1408,7 +1331,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				tx := &core.PushNote{RepoName: "repo1", PushKeyID: util.RandBytes(20)}
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
-				mockGPGKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(state.BarePushKey())
+				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(state.BarePushKey())
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -1418,7 +1341,7 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("gpg owner address not the same as the pusher address", func() {
+		When("push owner address not the same as the pusher address", func() {
 			BeforeEach(func() {
 				tx := &core.PushNote{
 					RepoName:      "repo1",
@@ -1427,15 +1350,15 @@ var _ = Describe("Validation", func() {
 				}
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
-				gpgKey := state.BarePushKey()
-				gpgKey.Address = util.Address("address2")
-				mockGPGKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(gpgKey)
+				pushKey := state.BarePushKey()
+				pushKey.Address = util.Address("address2")
+				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pusherAddr, msg:gpg key is not associated with the pusher address"))
+				Expect(err.Error()).To(Equal("field:pusherAddr, msg:push key does not belong to pusher"))
 			})
 		})
 
@@ -1448,9 +1371,9 @@ var _ = Describe("Validation", func() {
 				}
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
-				gpgKey := state.BarePushKey()
-				gpgKey.Address = util.Address("address1")
-				mockGPGKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(gpgKey)
+				pushKey := state.BarePushKey()
+				pushKey.Address = util.Address("address1")
+				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
 				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(state.BareAccount())
 
@@ -1473,9 +1396,9 @@ var _ = Describe("Validation", func() {
 				}
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
-				gpgKey := state.BarePushKey()
-				gpgKey.Address = util.Address("address1")
-				mockGPGKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(gpgKey)
+				pushKey := state.BarePushKey()
+				pushKey.Address = util.Address("address1")
+				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
 				acct := state.BareAccount()
 				acct.Nonce = 1
@@ -1503,9 +1426,9 @@ var _ = Describe("Validation", func() {
 
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
-				gpgKey := state.BarePushKey()
-				gpgKey.Address = util.Address("address1")
-				mockGPGKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(gpgKey)
+				pushKey := state.BarePushKey()
+				pushKey.Address = util.Address("address1")
+				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
 				acct := state.BareAccount()
 				acct.Nonce = 1
@@ -1653,7 +1576,7 @@ var _ = Describe("Validation", func() {
 	Describe(".checkPushNoteAgainstTxParams", func() {
 		When("pusher key in push note is different from txparams pusher key", func() {
 			BeforeEach(func() {
-				pn := &core.PushNote{PushKeyID: util.MustDecodePushKeyID("gpg1ntkem0drvtr4a8l25peyr2kzql277nsqpczpfd")}
+				pn := &core.PushNote{PushKeyID: util.MustDecodePushKeyID("push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")}
 				txParamss := map[string]*util.TxParams{
 					"refs/heads/master": {PushKeyID: crypto.BytesToPushKeyID(util.RandBytes(20))},
 				}
@@ -1669,11 +1592,11 @@ var _ = Describe("Validation", func() {
 
 		When("fee do not match", func() {
 			BeforeEach(func() {
-				gpgID := util.RandBytes(20)
-				pn := &core.PushNote{PushKeyID: gpgID, Fee: "9"}
+				pushKeyID := util.RandBytes(20)
+				pn := &core.PushNote{PushKeyID: pushKeyID, Fee: "9"}
 				txParamss := map[string]*util.TxParams{
 					"refs/heads/master": {
-						PushKeyID: crypto.BytesToPushKeyID(gpgID),
+						PushKeyID: crypto.BytesToPushKeyID(pushKeyID),
 						Fee:       "10",
 					},
 				}
@@ -1688,9 +1611,9 @@ var _ = Describe("Validation", func() {
 
 		When("push note has unexpected pushed reference", func() {
 			BeforeEach(func() {
-				gpgID := util.RandBytes(20)
+				pushKeyID := util.RandBytes(20)
 				pn := &core.PushNote{
-					PushKeyID: gpgID,
+					PushKeyID: pushKeyID,
 					Fee:       "10",
 					References: []*core.PushedReference{
 						{Name: "refs/heads/dev"},
@@ -1698,7 +1621,7 @@ var _ = Describe("Validation", func() {
 				}
 				txParamss := map[string]*util.TxParams{
 					"refs/heads/master": {
-						PushKeyID: crypto.BytesToPushKeyID(gpgID),
+						PushKeyID: crypto.BytesToPushKeyID(pushKeyID),
 						Fee:       "10",
 					},
 				}

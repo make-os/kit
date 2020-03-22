@@ -98,7 +98,7 @@ func SignCommitCmd(
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
-		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(pushKeyID, rpcClient, remoteClients)
+		nextNonce, err = api.DetermineNextNonceOfPushKeyOwner(pushKeyID, rpcClient, remoteClients)
 		if err != nil {
 			return err
 		}
@@ -213,7 +213,7 @@ func SignTagCmd(
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
-		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(pushKeyID, rpcClient, remoteClients)
+		nextNonce, err = api.DetermineNextNonceOfPushKeyOwner(pushKeyID, rpcClient, remoteClients)
 		if err != nil {
 			return err
 		}
@@ -321,7 +321,7 @@ func SignNoteCmd(
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
-		nextNonce, err = api.DetermineNextNonceOfGPGKeyOwner(pushKeyID, rpcClient, remoteClients)
+		nextNonce, err = api.DetermineNextNonceOfPushKeyOwner(pushKeyID, rpcClient, remoteClients)
 		if err != nil {
 			return err
 		}

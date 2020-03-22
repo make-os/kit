@@ -8,9 +8,9 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// GPGFind gets the GPG key associated with the given ID
+// PushKeyFind finds a push key by its ID
 // QueryParams:
-// - id: The gpg key bech32 unique ID
+// - id: The push key unique ID
 // - [blockHeight]: The height of the block to query (default: latest)
 // Response <map> - state.PushKey
 func (r *RESTApi) GPGFind(w http.ResponseWriter, req *http.Request) {
@@ -27,7 +27,7 @@ func (r *RESTApi) GPGFind(w http.ResponseWriter, req *http.Request) {
 	util.WriteJSON(w, 200, util.StructToMap(gpgKey))
 }
 
-// GPGGetNonceOfOwner gets the account nonce of the gpg key owner
+// PushKeyGetNonceOfOwner gets the account nonce of the gpg key owner
 // QueryParams:
 // - id: The gpg key bech32 unique ID
 // - [blockHeight]: The height of the block to query (default: latest)

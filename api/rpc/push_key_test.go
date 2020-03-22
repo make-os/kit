@@ -11,15 +11,15 @@ import (
 	"gitlab.com/makeos/mosdef/types/modules"
 )
 
-var _ = Describe("GPG", func() {
+var _ = Describe("PushKey", func() {
 	var ctrl *gomock.Controller
-	var gpgApi *GPGAPI
+	var pushApi *PushKeyAPI
 	var mods *modules.Modules
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mods = &modules.Modules{}
-		gpgApi = &GPGAPI{mods}
+		pushApi = &PushKeyAPI{mods}
 	})
 
 	AfterEach(func() {
@@ -37,22 +37,22 @@ var _ = Describe("GPG", func() {
 				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "id"},
 			},
 			"when blockHeight is provided but type is not string": {
-				params: map[string]interface{}{"id": "gpg1_abc", "blockHeight": 1},
+				params: map[string]interface{}{"id": "push1_abc", "blockHeight": 1},
 				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "blockHeight"},
 			},
-			"when gpg key is successfully returned": {
-				params: map[string]interface{}{"id": "gpg1_abc"},
+			"when push key is successfully returned": {
+				params: map[string]interface{}{"id": "push1_abc"},
 				result: util.Map{
 					"pubKey":  "---BEGIN PUBLIC KEY...",
 					"address": "addr1",
 				},
 				mocker: func(tp testCase) {
-					mockGPGMod := mocks.NewMockGPGModule(ctrl)
-					mockGPGMod.EXPECT().Get("gpg1_abc", uint64(0)).Return(util.Map{
+					mockPushKeyMod := mocks.NewMockPushKeyModule(ctrl)
+					mockPushKeyMod.EXPECT().Get("push1_abc", uint64(0)).Return(util.Map{
 						"pubKey":  "---BEGIN PUBLIC KEY...",
 						"address": "addr1",
 					})
-					mods.PushKey = mockGPGMod
+					mods.PushKey = mockPushKeyMod
 				},
 			},
 		}
@@ -63,7 +63,7 @@ var _ = Describe("GPG", func() {
 				if tp.mocker != nil {
 					tp.mocker(tp)
 				}
-				resp := gpgApi.find(tp.params)
+				resp := pushApi.find(tp.params)
 				Expect(resp).To(Equal(&rpc.Response{
 					JSONRPCVersion: "2.0", Err: tp.err, Result: tp.result,
 				}))
@@ -82,20 +82,20 @@ var _ = Describe("GPG", func() {
 				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "id"},
 			},
 			"when blockHeight is provided but type is not string": {
-				params: map[string]interface{}{"id": "gpg1_abc", "blockHeight": 1},
+				params: map[string]interface{}{"id": "push1_abc", "blockHeight": 1},
 				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "blockHeight"},
 			},
 			"when account is successfully returned": {
-				params: map[string]interface{}{"id": "gpg1_abc"},
+				params: map[string]interface{}{"id": "push1_abc"},
 				result: util.Map{"balance": "100", "nonce": 10, "delegatorCommission": 23},
 				mocker: func(tp testCase) {
-					mockGPGMod := mocks.NewMockGPGModule(ctrl)
-					mockGPGMod.EXPECT().GetAccountOfOwner("gpg1_abc", uint64(0)).Return(util.Map{
+					mockPushKeyMod := mocks.NewMockPushKeyModule(ctrl)
+					mockPushKeyMod.EXPECT().GetAccountOfOwner("push1_abc", uint64(0)).Return(util.Map{
 						"balance":             "100",
 						"nonce":               10,
 						"delegatorCommission": 23,
 					})
-					mods.PushKey = mockGPGMod
+					mods.PushKey = mockPushKeyMod
 				},
 			},
 		}
@@ -106,7 +106,7 @@ var _ = Describe("GPG", func() {
 				if tp.mocker != nil {
 					tp.mocker(tp)
 				}
-				resp := gpgApi.getAccountOfOwner(tp.params)
+				resp := pushApi.getAccountOfOwner(tp.params)
 				Expect(resp).To(Equal(&rpc.Response{
 					JSONRPCVersion: "2.0", Err: tp.err, Result: tp.result,
 				}))

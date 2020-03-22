@@ -15,6 +15,8 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
+type refHandler func(ref string) (*util.TxParams, []error)
+
 // PushHandler provides handles all phases of a push operation
 type PushHandler struct {
 	op               string
@@ -24,6 +26,10 @@ type PushHandler struct {
 	log              logger.Logger
 	pushReader       *PushReader
 	pushNoteID       string
+	referenceHandler refHandler
+	changeValidator  changeValidator
+	reverter         reverter
+	mergeChecker     mergeComplianceChecker
 	polEnforcer      policyEnforcer
 	pushReqTokenData *PushRequestTokenData
 }
@@ -34,13 +40,18 @@ func newPushHandler(
 	pushReqTokenData *PushRequestTokenData,
 	polEnforcer policyEnforcer,
 	rMgr core.RepoManager) *PushHandler {
-	return &PushHandler{
+	h := &PushHandler{
 		repo:             repo,
 		rMgr:             rMgr,
 		log:              rMgr.Log().Module("push-handler"),
 		polEnforcer:      polEnforcer,
 		pushReqTokenData: pushReqTokenData,
 	}
+	h.referenceHandler = h.handleReference
+	h.changeValidator = validateChange
+	h.reverter = revert
+	h.mergeChecker = checkMergeCompliance
+	return h
 }
 
 // HandleStream processes git push request stream
@@ -92,14 +103,12 @@ func (h *PushHandler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) erro
 	return nil
 }
 
-// HandleValidateAndRevert validates the transaction information and signatures
-// that must accompany pushed references after which the changes introduced by
-// the push are reverted.
-func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, string, error) {
+// HandleReferences processes all pushed references
+func (h *PushHandler) HandleReferences() (map[string]*util.TxParams, string, error) {
 
 	// Expect old state to have been captured before the push was processed
 	if h.oldState == nil {
-		return nil, "", fmt.Errorf("push-handler: expected old state to have been captured")
+		return nil, "", fmt.Errorf("expected old state to have been captured")
 	}
 
 	var errs []error
@@ -108,12 +117,12 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, stri
 	// Here, we need to validate the changes introduced by the push and also
 	// collect the transaction information pushed alongside the references
 	for _, ref := range h.pushReader.references.names() {
-		txParams, pushErrs := h.handleReference(ref)
-		if len(pushErrs) == 0 {
+		txParams, refErrs := h.referenceHandler(ref)
+		if len(refErrs) == 0 {
 			refsTxParams[ref] = txParams
 			continue
 		}
-		errs = append(errs, pushErrs...)
+		errs = append(errs, refErrs...)
 	}
 
 	// If we got errors, return the first
@@ -125,13 +134,11 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, stri
 	// were signed using same public key id, if not, we return an error and also
 	// remove the pushed objects from the references and repository
 	var pushKeyID = funk.Values(refsTxParams).([]*util.TxParams)[0].PushKeyID
-	if len(refsTxParams) > 1 {
-		for _, txParams := range refsTxParams {
-			if pushKeyID != txParams.PushKeyID {
-				msg := "rejected because the pushed references were signed with different push keys"
-				errs = append(errs, fmt.Errorf(msg))
-				break
-			}
+	for _, txParams := range refsTxParams {
+		if pushKeyID != txParams.PushKeyID {
+			msg := "rejected because the pushed references were signed with different push keys"
+			errs = append(errs, fmt.Errorf(msg))
+			break
 		}
 	}
 
@@ -148,7 +155,7 @@ func (h *PushHandler) HandleValidateAndRevert() (map[string]*util.TxParams, stri
 // the rest of the network
 func (h *PushHandler) HandleUpdate() error {
 
-	refsTxParams, pushKeyID, err := h.HandleValidateAndRevert()
+	refsTxParams, pushKeyID, err := h.HandleReferences()
 	if err != nil {
 		return err
 	}
@@ -250,10 +257,9 @@ func (h *PushHandler) handleReference(ref string) (*util.TxParams, []error) {
 	// Get the old version of the reference prior to the push
 	// and create a lone state object of the old state
 	oldRef := h.oldState.GetReferences().Get(ref)
-	oldRefState := StateFromItem(oldRef)
+	oldRefState := makeStateFromItem(oldRef)
 
-	// Get the current state of the repository; limit the query to only the
-	// target reference
+	// Get the current state of the repository; limit the query to only the target reference
 	curState, err := h.rMgr.GetRepoState(h.repo, matchOpt(ref))
 	if err != nil {
 		errs = append(errs, errors.Wrap(err, "failed to get current state"))
@@ -268,7 +274,7 @@ func (h *PushHandler) handleReference(ref string) (*util.TxParams, []error) {
 	}
 
 	// Here, we need to validate the change
-	txParams, err := validateChange(h.repo, change, h.rMgr.GetPushKeyGetter())
+	txParams, err := h.changeValidator(h.repo, change, h.rMgr.GetPushKeyGetter())
 	if err != nil {
 		errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
 	}
@@ -276,7 +282,7 @@ func (h *PushHandler) handleReference(ref string) (*util.TxParams, []error) {
 	// So, reference update is valid, next we need to ensure the updates
 	// is compliant with the target merge proposal, if a merge proposal id is specified
 	if err == nil && txParams.MergeProposalID != "" {
-		if err := checkMergeCompliance(
+		if err := h.mergeChecker(
 			h.repo,
 			change,
 			oldRef,
@@ -291,9 +297,9 @@ func (h *PushHandler) handleReference(ref string) (*util.TxParams, []error) {
 	// repository since we do not consider them final. Here we attempt to revert
 	// the repository to the old reference state. We passed the changes as an
 	// option so Revert doesn't recompute it
-	changes, err = revert(h.repo, oldRefState, matchOpt(ref), changesOpt(changes))
+	changes, err = h.reverter(h.repo, oldRefState, matchOpt(ref), changesOpt(changes))
 	if err != nil {
-		errs = append(errs, errors.Wrap(err, "failed to revert to pre-push state"))
+		errs = append(errs, errors.Wrap(err, "failed to revert to old state"))
 	}
 
 	return txParams, errs

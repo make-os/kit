@@ -1970,7 +1970,7 @@ func (m *MockRepoManager) GetPushKeyGetter() core.PushKeyGetter {
 }
 
 // GetPushKeyGetter indicates an expected call of GetPushKeyGetter
-func (mr *MockRepoManagerMockRecorder) GetPGPPubKeyGetter() *gomock.Call {
+func (mr *MockRepoManagerMockRecorder) GetPushKeyGetter() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKeyGetter", reflect.TypeOf((*MockRepoManager)(nil).GetPushKeyGetter))
 }

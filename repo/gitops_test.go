@@ -8,7 +8,6 @@ import (
 	"github.com/bitfield/script"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
@@ -235,42 +234,12 @@ var _ = Describe("Gitops", func() {
 		})
 	})
 
-	Describe(".CreateAndOrSignQuietCommit", func() {
-		var gpgUserID string
-
-		BeforeEach(func() {
-			gpgUserID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		})
-
-		When("signingKey is not set", func() {
-			It("should update recent commit to `new commit msg`", func() {
-				err := gitOps.CreateAndOrSignQuietCommit("new commit msg", "", "GNUPGHOME="+cfg.DataDir())
-				Expect(err).To(BeNil())
-				msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
-				Expect(strings.TrimSpace(msg)).To(Equal("new commit msg"))
-			})
-		})
-
-		When("signingKey is set", func() {
-			It("should update recent commit to `new commit msg` and sign the commit", func() {
-				err := gitOps.CreateAndOrSignQuietCommit("new commit msg", gpgUserID, "GNUPGHOME="+cfg.DataDir())
-				Expect(err).To(BeNil())
-				msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
-				Expect(strings.TrimSpace(msg)).To(Equal("new commit msg"))
-				msg, _ = script.ExecInDir(`git --no-pager log --oneline -1 --show-signature`, path).String()
-				Expect(msg).To(ContainSubstring("gpg: Signature"))
-			})
-		})
-	})
-
 	Describe(".CreateTagWithMsg", func() {
-		var gpgUserID string
 
 		BeforeEach(func() {
 			appendCommit(path, "file.txt", "some text", "commit msg")
 			msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
 			Expect(strings.TrimSpace(msg)).To(Equal("commit msg"))
-			gpgUserID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
 		})
 
 		When("when signingKey is not set", func() {
@@ -279,15 +248,6 @@ var _ = Describe("Gitops", func() {
 				Expect(err).To(BeNil())
 				out, _ := script.ExecInDir(`git cat-file -p refs/tags/my_tag`, path).Last(1).String()
 				Expect(strings.TrimSpace(out)).To(Equal("a new tag"))
-			})
-		})
-
-		When("when signingKey is set", func() {
-			It("should create a signed annotated tag with message", func() {
-				err := gitOps.CreateTagWithMsg([]string{"my_tag"}, "a new tag", gpgUserID, "GNUPGHOME="+cfg.DataDir())
-				Expect(err).To(BeNil())
-				out, _ := script.ExecInDir(`git cat-file -p refs/tags/my_tag`, path).Last(1).String()
-				Expect(out).To(ContainSubstring("PGP SIGNATURE"))
 			})
 		})
 	})
@@ -381,43 +341,11 @@ var _ = Describe("Gitops", func() {
 		})
 	})
 
-	Describe(".UpdateRecentCommitMsg", func() {
-		var gpgUserID string
-
-		BeforeEach(func() {
-			appendCommit(path, "file.txt", "some text", "commit msg")
-			msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
-			Expect(strings.TrimSpace(msg)).To(Equal("commit msg"))
-			gpgUserID = testutil.CreateGPGKey(testutil.GPGProgramPath, cfg.DataDir())
-		})
-
-		When("signingKey is not set", func() {
-			It("should update recent commit to `an updated msg`", func() {
-				err := gitOps.UpdateRecentCommitMsg("an updated msg", "", "GNUPGHOME="+cfg.DataDir())
-				Expect(err).To(BeNil())
-				msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
-				Expect(strings.TrimSpace(msg)).To(Equal("an updated msg"))
-			})
-		})
-
-		When("signingKey is set", func() {
-			It("should update recent commit to `an updated msg` and sign the commit", func() {
-				err := gitOps.UpdateRecentCommitMsg("an updated msg", gpgUserID, "GNUPGHOME="+cfg.DataDir())
-				Expect(err).To(BeNil())
-				msg, _ := script.ExecInDir(`git --no-pager log --oneline -1 --pretty=%s`, path).String()
-				Expect(strings.TrimSpace(msg)).To(Equal("an updated msg"))
-				msg, _ = script.ExecInDir(`git --no-pager log --oneline -1 --show-signature`, path).String()
-				Expect(msg).To(ContainSubstring("gpg: Signature"))
-			})
-		})
-	})
-
 	Describe(".SetRemoteURL", func() {
 
 		BeforeEach(func() {
 			_, err := script.ExecInDir(`git remote add origin http://xyz.com`, path).String()
 			Expect(err).To(BeNil())
-			Expect(script.ExecInDir(`git remote -v`, path).CountLines()).To(Equal(2))
 			out, _ := script.ExecInDir(`git remote -v`, path).String()
 			remotes := strings.Split(out, "\n")
 			Expect(remotes).To(ContainElement("origin\thttp://xyz.com (fetch)"))
@@ -429,12 +357,11 @@ var _ = Describe("Gitops", func() {
 		It("should update remote URL", func() {
 			out, _ := script.ExecInDir(`git remote -v`, path).String()
 			remotes := strings.Split(out, "\n")
-			Expect(remotes).To(ContainElement("origin\thttp://abc.com (fetch)"))
 			Expect(remotes).To(ContainElement("origin\thttp://abc.com (push)"))
 		})
 	})
 
-	FDescribe(".DeleteRemoteURLs", func() {
+	Describe(".DeleteRemoteURLs", func() {
 		BeforeEach(func() {
 			_, err := script.ExecInDir(`git remote add origin http://xyz.com`, path).String()
 			Expect(err).To(BeNil())

@@ -67,27 +67,9 @@ func createCommitAndAnnotatedTag(path, file, fileData, commitMsg, tagName string
 	execGit(path, "tag", "-a", tagName, "-m", commitMsg, "-f")
 }
 
-func createCommitAndSignedAnnotatedTag(path, file, fileData, commitMsg, tagName, keyID string) {
-	appendToFile(path, file, fileData)
-	execGitCommit(path, commitMsg)
-	execGit(path, "tag", "-a", tagName, "-m", commitMsg, "-f", "-u"+keyID)
-}
-
-func createMakeSignableCommitAndSignedAnnotatedTag(path, file, fileData, commitMsg, tagName, keyID string) {
-	appendToFile(path, file, fileData)
-	execGitMakeSignableCommit(path, commitMsg, keyID)
-	execGit(path, "tag", "-a", tagName, "-m", commitMsg, "-f", "-u"+keyID)
-}
-
 func createCommitAndLightWeightTag(path, file, fileData, commitMsg, tagName string) {
 	appendToFile(path, file, fileData)
 	execGitCommit(path, commitMsg)
-	execGit(path, "tag", tagName, "-f")
-}
-
-func createMakeSignableCommitAndLightWeightTag(path, file, fileData, commitMsg, tagName, keyID string) {
-	appendToFile(path, file, fileData)
-	execGitMakeSignableCommit(path, commitMsg, keyID)
 	execGit(path, "tag", tagName, "-f")
 }
 
@@ -132,10 +114,6 @@ func scriptFile(path, file string) *script.Pipe {
 
 func createCheckoutBranch(path, branch string) {
 	execGit(path, "checkout", "-b", branch)
-}
-
-func checkoutBranch(path, branch string) {
-	execGit(path, "checkout", branch)
 }
 
 func execAnyCmd(workDir, name string, arg ...string) []byte {

@@ -38,12 +38,6 @@ const (
 	DefaultNS = "r"
 )
 
-// Constants
-const (
-	ServiceReceivePack = "receive-pack"
-	ServiceUploadPack  = "upload-pack"
-)
-
 var services = [][]interface{}{
 	{"(.*?)/git-upload-pack$", service{method: "POST", handle: serveService}},
 	{"(.*?)/git-receive-pack$", service{method: "POST", handle: serveService}},

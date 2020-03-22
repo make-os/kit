@@ -7,16 +7,16 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// GPGGetAccountOfOwner returns the account of the owner of a given gpg public key
+// PushKeyGetAccountOfOwner returns the account that owns a push key
 //
 // ARGS:
-// - id: The GPG public key unique ID
+// - id: The push key unique ID
 // - [blockHeight]: The target block height to query (default: latest).
 //
 // RETURNS:
 // - resp <map> - state.Account
-func (c *RPCClient) GPGGetAccountOfOwner(id string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
-	out, statusCode, err := c.call("gpg_getAccountOfOwner", util.Map{
+func (c *RPCClient) PushKeyGetAccountOfOwner(id string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
+	out, statusCode, err := c.call("key_getAccountOfOwner", util.Map{
 		"id":          id,
 		"blockHeight": util.GetIndexFromUInt64Slice(0, blockHeight...)})
 	if err != nil {
@@ -31,17 +31,17 @@ func (c *RPCClient) GPGGetAccountOfOwner(id string, blockHeight ...uint64) (*sta
 	return acct, nil
 }
 
-// GPGGetNextNonceOfOwnerUsingRPCClient gets the next account nonce
-// of the owner of the gpg key by querying the given JSON-RPC 2.0 client.
+// GetNextNonceOfPushKeyOwnerUsingRPCClient gets the next account nonce
+// of the owner of the push key by querying the given JSON-RPC 2.0 client.
 //
 // ARGS:
-// gpgID: The GPG public key ID
+// pushKeyID: The push key ID
 // client: The RPCClient to use
 //
 // RETURNS
 // nonce: The next nonce of the account
-func GPGGetNextNonceOfOwnerUsingRPCClient(gpgID string, client Client) (string, *util.StatusError) {
-	acct, err := client.GPGGetAccountOfOwner(gpgID)
+func GetNextNonceOfPushKeyOwnerUsingRPCClient(pushKeyID string, client Client) (string, *util.StatusError) {
+	acct, err := client.PushKeyGetAccountOfOwner(pushKeyID)
 	if err != nil {
 		return "", err
 	}
