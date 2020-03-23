@@ -16,9 +16,9 @@ import (
 	apptypes "gitlab.com/makeos/mosdef/types"
 )
 
-// AccountModule provides account management functionalities
+// UserModule provides account management functionalities
 // that are accessed through the javascript console environment
-type AccountModule struct {
+type UserModule struct {
 	cfg     *config.AppConfig
 	acctMgr *keystore.Keystore
 	vm      *otto.Otto
@@ -26,14 +26,14 @@ type AccountModule struct {
 	logic   core.Logic
 }
 
-// NewAccountModule creates an instance of AccountModule
-func NewAccountModule(
+// NewUserModule creates an instance of UserModule
+func NewUserModule(
 	cfg *config.AppConfig,
 	vm *otto.Otto,
 	acctmgr *keystore.Keystore,
 	service services.Service,
-	logic core.Logic) *AccountModule {
-	return &AccountModule{
+	logic core.Logic) *UserModule {
+	return &UserModule{
 		cfg:     cfg,
 		acctMgr: acctmgr,
 		vm:      vm,
@@ -42,7 +42,7 @@ func NewAccountModule(
 	}
 }
 
-func (m *AccountModule) namespacedFuncs() []*modules.ModuleFunc {
+func (m *UserModule) namespacedFuncs() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
 			Name:        "listAccounts",
@@ -92,7 +92,7 @@ func (m *AccountModule) namespacedFuncs() []*modules.ModuleFunc {
 	}
 }
 
-func (m *AccountModule) globals() []*modules.ModuleFunc {
+func (m *UserModule) globals() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
 			Name:        "accounts",
@@ -104,7 +104,7 @@ func (m *AccountModule) globals() []*modules.ModuleFunc {
 
 // Configure configures the JS context and return
 // any number of console prompt suggestions
-func (m *AccountModule) Configure() []prompt.Suggest {
+func (m *UserModule) Configure() []prompt.Suggest {
 	fMap := map[string]interface{}{}
 	suggestions := []prompt.Suggest{}
 
@@ -130,7 +130,7 @@ func (m *AccountModule) Configure() []prompt.Suggest {
 }
 
 // listAccounts lists all accounts on this node
-func (m *AccountModule) ListLocalAccounts() []string {
+func (m *UserModule) ListLocalAccounts() []string {
 	accounts, err := m.acctMgr.List()
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
@@ -151,7 +151,7 @@ func (m *AccountModule) ListLocalAccounts() []string {
 //
 // address: The address corresponding the the local key
 // [passphrase]: The passphrase of the local key
-func (m *AccountModule) GetKey(address string, passphrase ...string) string {
+func (m *UserModule) GetKey(address string, passphrase ...string) string {
 	var pass string
 
 	if address == "" {
@@ -167,6 +167,11 @@ func (m *AccountModule) GetKey(address string, passphrase ...string) string {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound, "address", err.Error()))
 	}
 
+	if acct.IsUnprotected() {
+		pass = keystore.DefaultPassphrase
+		goto unlock
+	}
+
 	// If passphrase is not set, start interactive mode
 	if len(passphrase) == 0 {
 		pass = m.acctMgr.AskForPasswordOnce()
@@ -174,6 +179,7 @@ func (m *AccountModule) GetKey(address string, passphrase ...string) string {
 		pass = passphrase[0]
 	}
 
+unlock:
 	// Unlock the key using the passphrase
 	if err := acct.Unlock(pass); err != nil {
 		if err == apptypes.ErrInvalidPassphrase {
@@ -192,7 +198,7 @@ func (m *AccountModule) GetKey(address string, passphrase ...string) string {
 //
 // address: The address corresponding the the local key
 // [passphrase]: The passphrase of the local key
-func (m *AccountModule) GetPublicKey(address string, passphrase ...string) string {
+func (m *UserModule) GetPublicKey(address string, passphrase ...string) string {
 	var pass string
 
 	if address == "" {
@@ -208,6 +214,11 @@ func (m *AccountModule) GetPublicKey(address string, passphrase ...string) strin
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
+	if acct.IsUnprotected() {
+		pass = keystore.DefaultPassphrase
+		goto unlock
+	}
+
 	// If passphrase is not set, start interactive mode
 	if len(passphrase) == 0 {
 		pass = m.acctMgr.AskForPasswordOnce()
@@ -215,6 +226,7 @@ func (m *AccountModule) GetPublicKey(address string, passphrase ...string) strin
 		pass = passphrase[0]
 	}
 
+unlock:
 	// Unlock the key using the passphrase
 	if err := acct.Unlock(pass); err != nil {
 		if err == apptypes.ErrInvalidPassphrase {
@@ -230,7 +242,7 @@ func (m *AccountModule) GetPublicKey(address string, passphrase ...string) strin
 // address: The address corresponding the account
 // [passphrase]: The target block height to query (default: latest)
 // [height]: The target block height to query (default: latest)
-func (m *AccountModule) GetNonce(address string, height ...uint64) string {
+func (m *UserModule) GetNonce(address string, height ...uint64) string {
 	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
@@ -242,7 +254,7 @@ func (m *AccountModule) GetNonce(address string, height ...uint64) string {
 // Get returns the account of the given address
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
-func (m *AccountModule) GetAccount(address string, height ...uint64) util.Map {
+func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
@@ -257,7 +269,7 @@ func (m *AccountModule) GetAccount(address string, height ...uint64) util.Map {
 // GetSpendableBalance returns the spendable balance of an account
 // address: The address corresponding the account
 // [height]: The target block height to query (default: latest)
-func (m *AccountModule) GetSpendableBalance(address string, height ...uint64) string {
+func (m *UserModule) GetSpendableBalance(address string, height ...uint64) string {
 	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
@@ -279,7 +291,7 @@ func (m *AccountModule) GetSpendableBalance(address string, height ...uint64) st
 // [height]: The target block height to query (default: latest)
 //
 // RETURNS <string>: numeric value
-func (m *AccountModule) GetStakedBalance(address string, height ...uint64) string {
+func (m *UserModule) GetStakedBalance(address string, height ...uint64) string {
 	acct := m.logic.AccountKeeper().Get(util.Address(address), height...)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
@@ -303,7 +315,7 @@ func (m *AccountModule) GetStakedBalance(address string, height ...uint64) strin
 // publicKey <string>:	The validator base58 public key
 // address 	<string>:	The validator's bech32 address.
 // tmAddress <string>:	The tendermint address
-func (m *AccountModule) GetPrivateValidator(includePrivKey ...bool) util.Map {
+func (m *UserModule) GetPrivateValidator(includePrivKey ...bool) util.Map {
 	key, _ := m.cfg.G().PrivVal.GetKey()
 
 	info := map[string]interface{}{
@@ -333,7 +345,7 @@ func (m *AccountModule) GetPrivateValidator(includePrivKey ...bool) util.Map {
 //
 // RETURNS object <map>:
 // object.hash <string>: The transaction hash
-func (m *AccountModule) SetCommission(params map[string]interface{}, options ...interface{}) util.Map {
+func (m *UserModule) SetCommission(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = core.NewBareTxSetDelegateCommission()
