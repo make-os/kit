@@ -218,7 +218,7 @@ var _ = Describe("Repository", func() {
 				It("should update base object", func() {
 					base.MergeMap(map[string]interface{}{
 						"name": "some-name",
-						"gov": map[string]interface{}{
+						"governance": map[string]interface{}{
 							"propProposee":                 13,
 							"propProposeeLimitToCurHeight": false,
 						},

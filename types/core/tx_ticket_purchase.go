@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -29,6 +30,31 @@ func NewBareTxTicketPurchase(ticketType int) *TxTicketPurchase {
 		Delegate:  crypto.EmptyPublicKey,
 		BLSPubKey: []byte{},
 	}
+}
+
+// NewCoinTransferTx creates and populates a ticket purchase transaction
+func NewTicketPurchaseTx(
+	ticketType int,
+	nonce uint64,
+	senderKey *crypto.Key,
+	value util.String,
+	fee util.String,
+	timestamp int64) (baseTx types.BaseTx) {
+
+	tx := NewBareTxTicketPurchase(ticketType)
+	tx.SetValue(value)
+	baseTx = tx
+
+	baseTx.SetTimestamp(timestamp)
+	baseTx.SetFee(fee)
+	baseTx.SetNonce(nonce)
+	baseTx.SetSenderPubKey(senderKey.PubKey().MustBytes())
+	sig, err := baseTx.Sign(senderKey.PrivKey().Base58())
+	if err != nil {
+		panic(err)
+	}
+	baseTx.SetSignature(sig)
+	return
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

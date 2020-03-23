@@ -15,9 +15,7 @@ import (
 // Response <map>
 // - nonce <string> - The account nonce
 func (r *RESTApi) GetAccountNonce(w http.ResponseWriter, req *http.Request) {
-	var body = objx.New(map[string]interface{}{})
-	body.Set("address", req.URL.Query().Get("address"))
-	body.Set("blockHeight", req.URL.Query().Get("blockHeight"))
+	var body = objx.MustFromURLQuery(req.URL.Query().Encode())
 
 	address, errResp := rpc.GetStringFromObjxMap(body, "address", true)
 	if errResp != nil {
@@ -43,9 +41,7 @@ func (r *RESTApi) GetAccountNonce(w http.ResponseWriter, req *http.Request) {
 // Response:
 // - resp <state.Account -> map> - The account object
 func (r *RESTApi) GetAccount(w http.ResponseWriter, req *http.Request) {
-	var body = objx.New(map[string]interface{}{})
-	body.Set("address", req.URL.Query().Get("address"))
-	body.Set("blockHeight", req.URL.Query().Get("blockHeight"))
+	var body = objx.MustFromURLQuery(req.URL.Query().Encode())
 
 	address, errResp := rpc.GetStringFromObjxMap(body, "address", true)
 	if errResp != nil {

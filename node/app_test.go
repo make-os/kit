@@ -2,9 +2,10 @@ package node
 
 import (
 	"fmt"
+	"os"
+
 	types4 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
-	"os"
 
 	"github.com/tendermint/tendermint/privval"
 
@@ -328,7 +329,7 @@ var _ = Describe("App", func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return nil
 				}
-				tx := core.NewBaseTx(0, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewCoinTransferTx(0, sender.Addr(), sender, "10", "1", 1)
 				expectedHash = tx.GetHash()
 				res = app.CheckTx(abcitypes.RequestCheckTx{Tx: tx.Bytes()})
 			})
@@ -345,7 +346,7 @@ var _ = Describe("App", func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return fmt.Errorf("bad error")
 				}
-				tx := core.NewBaseTx(0, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewCoinTransferTx(0, sender.Addr(), sender, "10", "1", 1)
 				res = app.CheckTx(abcitypes.RequestCheckTx{Tx: tx.Bytes()})
 			})
 
@@ -399,7 +400,7 @@ var _ = Describe("App", func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return fmt.Errorf("validation error")
 				}
-				tx := core.NewBaseTx(0, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewCoinTransferTx(0, sender.Addr(), sender, "10", "1", 1)
 				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
 			})
 
@@ -421,7 +422,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				params.MaxValTicketsPerBlock = 1
 				app.unIdxValidatorTickets = append(app.unIdxValidatorTickets, &ticketInfo{})
-				tx := core.NewBaseTx(core.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
 				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
 			})
 
@@ -440,7 +441,7 @@ var _ = Describe("App", func() {
 			})
 
 			BeforeEach(func() {
-				tx := core.NewBaseTx(core.TxTypeValidatorTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
@@ -460,14 +461,14 @@ var _ = Describe("App", func() {
 			})
 
 			BeforeEach(func() {
-				tx := core.NewBaseTx(core.TxTypeHostTicket, 0, sender.Addr(), sender, "10", "1", 1)
+				tx := core.NewBareTxTicketPurchase(core.TxTypeHostTicket)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
 				Expect(app.DeliverTx(req).Code).To(Equal(uint32(0)))
 			})
 
-			It("should return cache the host ticket tx", func() {
+			It("should cache the host ticket tx", func() {
 				Expect(app.unIdxHostTickets).To(HaveLen(1))
 			})
 		})
@@ -480,8 +481,8 @@ var _ = Describe("App", func() {
 			})
 
 			BeforeEach(func() {
-				tx := core.NewBaseTx(core.TxTypeUnbondHostTicket, 0, sender.Addr(), sender, "10", "1", 1)
-				tx.(*core.TxTicketUnbond).TicketHash = util.StrToBytes32("tid")
+				tx := core.NewBareTxTicketUnbond(core.TxTypeUnbondHostTicket)
+				tx.TicketHash = util.StrToBytes32("tid")
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic

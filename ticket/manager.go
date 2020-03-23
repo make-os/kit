@@ -3,7 +3,7 @@ package ticket
 import (
 	"sort"
 
-	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 
@@ -38,7 +38,7 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 
 	t := tx.(*core.TxTicketPurchase)
 
-	ticket := &types3.Ticket{
+	ticket := &tickettypes.Ticket{
 		Type:           tx.GetType(),
 		Height:         blockHeight,
 		Index:          txIndex,
@@ -83,17 +83,17 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 }
 
 // GetTopHosts gets host tickets with the most total delegated value.
-func (m *Manager) GetTopHosts(limit int) (types3.SelectedTickets, error) {
+func (m *Manager) GetTopHosts(limit int) (tickettypes.SelectedTickets, error) {
 	return m.getTopTickets(core.TxTypeHostTicket, limit)
 }
 
 // GetTopValidators gets validator tickets with the most total delegated value.
-func (m *Manager) GetTopValidators(limit int) (types3.SelectedTickets, error) {
+func (m *Manager) GetTopValidators(limit int) (tickettypes.SelectedTickets, error) {
 	return m.getTopTickets(core.TxTypeValidatorTicket, limit)
 }
 
 // getTopTickets finds tickets with the most delegated value
-func (m *Manager) getTopTickets(ticketType, limit int) (types3.SelectedTickets, error) {
+func (m *Manager) getTopTickets(ticketType, limit int) (tickettypes.SelectedTickets, error) {
 
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -102,7 +102,7 @@ func (m *Manager) getTopTickets(ticketType, limit int) (types3.SelectedTickets, 
 	}
 
 	// Get active host tickets
-	activeTickets := m.s.Query(func(t *types3.Ticket) bool {
+	activeTickets := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.Type == ticketType &&
 			t.MatureBy <= uint64(bi.Height) &&
 			(t.DecayBy > uint64(bi.Height) || t.DecayBy == 0)
@@ -112,12 +112,12 @@ func (m *Manager) getTopTickets(ticketType, limit int) (types3.SelectedTickets, 
 	// delegated to it. If a proposer already exist in the index, its value is
 	// added to the total value of the existing ticket in the index.
 	// While doing this, collect the selected tickets.
-	var proposerIdx = make(map[string]*types3.SelectedTicket)
-	var selectedTickets []*types3.SelectedTicket
+	var proposerIdx = make(map[string]*tickettypes.SelectedTicket)
+	var selectedTickets []*tickettypes.SelectedTicket
 	for _, ticket := range activeTickets {
 		existingTicket, ok := proposerIdx[ticket.ProposerPubKey.HexStr()]
 		if !ok {
-			proposerIdx[ticket.ProposerPubKey.HexStr()] = &types3.SelectedTicket{
+			proposerIdx[ticket.ProposerPubKey.HexStr()] = &tickettypes.SelectedTicket{
 				Ticket: ticket,
 				Power:  ticket.Value,
 			}
@@ -152,7 +152,7 @@ func (m *Manager) Remove(hash util.Bytes32) error {
 func (m *Manager) GetByProposer(
 	ticketType int,
 	proposerPubKey util.Bytes32,
-	queryOpt ...interface{}) ([]*types3.Ticket, error) {
+	queryOpt ...interface{}) ([]*tickettypes.Ticket, error) {
 
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -161,7 +161,7 @@ func (m *Manager) GetByProposer(
 
 	qo := getQueryOptions(queryOpt...)
 
-	res := m.s.Query(func(t *types3.Ticket) bool {
+	res := m.s.Query(func(t *tickettypes.Ticket) bool {
 		ok := true
 		if t.Type != ticketType || t.ProposerPubKey != proposerPubKey {
 			ok = false
@@ -188,7 +188,7 @@ func (m *Manager) GetByProposer(
 // public key as the proposer or the delegator;
 // If maturityHeight is non-zero, then only tickets that reached maturity before
 // or on the given height are selected. Otherwise, the current chain height is used.
-func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*types3.Ticket, error) {
+func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint64) ([]*tickettypes.Ticket, error) {
 
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
 	if err != nil {
@@ -204,7 +204,7 @@ func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint6
 		return nil, err
 	}
 
-	result := m.s.Query(func(t *types3.Ticket) bool {
+	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
 				(t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) && // not decayed
@@ -223,7 +223,7 @@ func (m *Manager) CountActiveValidatorTickets() (int, error) {
 		return 0, err
 	}
 
-	count := m.s.Count(func(t *types3.Ticket) bool {
+	count := m.s.Count(func(t *tickettypes.Ticket) bool {
 		return t.Type == core.TxTypeValidatorTicket &&
 			t.MatureBy <= uint64(bi.Height) &&
 			t.DecayBy > uint64(bi.Height)
@@ -239,7 +239,7 @@ func (m *Manager) CountActiveValidatorTickets() (int, error) {
 // ticketType: Filter the search to a specific ticket type
 func (m *Manager) GetNonDelegatedTickets(
 	pubKey util.Bytes32,
-	ticketType int) ([]*types3.Ticket, error) {
+	ticketType int) ([]*tickettypes.Ticket, error) {
 
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -247,7 +247,7 @@ func (m *Manager) GetNonDelegatedTickets(
 		return nil, err
 	}
 
-	result := m.s.Query(func(t *types3.Ticket) bool {
+	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.Type == ticketType &&
 			t.MatureBy <= uint64(bi.Height) &&
 			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) &&
@@ -279,7 +279,7 @@ func (m *Manager) ValueOfNonDelegatedTickets(
 		maturityHeight = uint64(bi.Height)
 	}
 
-	result := m.s.Query(func(t *types3.Ticket) bool {
+	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight &&
 			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) &&
 			t.ProposerPubKey == pubKey &&
@@ -316,7 +316,7 @@ func (m *Manager) ValueOfDelegatedTickets(
 		maturityHeight = uint64(bi.Height)
 	}
 
-	result := m.s.Query(func(t *types3.Ticket) bool {
+	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight &&
 			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) &&
 			t.ProposerPubKey == pubKey &&
@@ -358,7 +358,7 @@ func (m *Manager) ValueOfTickets(
 		return 0, err
 	}
 
-	result := m.s.Query(func(t *types3.Ticket) bool {
+	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
 				(t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) && // not decayed
@@ -391,7 +391,7 @@ func (m *Manager) ValueOfAllTickets(maturityHeight uint64) (float64, error) {
 		maturityHeight = uint64(bi.Height)
 	}
 
-	result := m.s.Query(func(t *types3.Ticket) bool {
+	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
 				(t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) // not decayed
@@ -407,25 +407,25 @@ func (m *Manager) ValueOfAllTickets(maturityHeight uint64) (float64, error) {
 }
 
 // Query finds and returns tickets that match the given query
-func (m *Manager) Query(qf func(t *types3.Ticket) bool, queryOpt ...interface{}) []*types3.Ticket {
+func (m *Manager) Query(qf func(t *tickettypes.Ticket) bool, queryOpt ...interface{}) []*tickettypes.Ticket {
 	return m.s.Query(qf, queryOpt...)
 }
 
 // QueryOne finds and returns a ticket that match the given query
-func (m *Manager) QueryOne(qf func(t *types3.Ticket) bool) *types3.Ticket {
+func (m *Manager) QueryOne(qf func(t *tickettypes.Ticket) bool) *tickettypes.Ticket {
 	return m.s.QueryOne(qf)
 }
 
 // UpdateDecayBy updates the decay height of a ticket
 func (m *Manager) UpdateDecayBy(hash util.Bytes32, newDecayHeight uint64) error {
-	m.s.UpdateOne(types3.Ticket{DecayBy: newDecayHeight},
-		func(t *types3.Ticket) bool { return t.Hash == hash })
+	m.s.UpdateOne(tickettypes.Ticket{DecayBy: newDecayHeight},
+		func(t *tickettypes.Ticket) bool { return t.Hash == hash })
 	return nil
 }
 
 // GetByHash get a ticket by hash
-func (m *Manager) GetByHash(hash util.Bytes32) *types3.Ticket {
-	return m.QueryOne(func(t *types3.Ticket) bool { return t.Hash == hash })
+func (m *Manager) GetByHash(hash util.Bytes32) *tickettypes.Ticket {
+	return m.QueryOne(func(t *tickettypes.Ticket) bool { return t.Hash == hash })
 }
 
 // Stop stores the manager

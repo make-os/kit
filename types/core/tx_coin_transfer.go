@@ -3,6 +3,8 @@ package core
 import (
 	"github.com/fatih/structs"
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -23,6 +25,32 @@ func NewBareTxCoinTransfer() *TxCoinTransfer {
 		TxRecipient: &TxRecipient{To: ""},
 		TxValue:     &TxValue{Value: "0"},
 	}
+}
+
+// NewCoinTransferTx creates and populates a coin transfer transaction
+func NewCoinTransferTx(
+	nonce uint64,
+	to util.Address,
+	senderKey *crypto.Key,
+	value util.String,
+	fee util.String,
+	timestamp int64) (baseTx types.BaseTx) {
+
+	tx := NewBareTxCoinTransfer()
+	tx.SetRecipient(to)
+	tx.SetValue(value)
+	baseTx = tx
+
+	baseTx.SetTimestamp(timestamp)
+	baseTx.SetFee(fee)
+	baseTx.SetNonce(nonce)
+	baseTx.SetSenderPubKey(senderKey.PubKey().MustBytes())
+	sig, err := baseTx.Sign(senderKey.PrivKey().Base58())
+	if err != nil {
+		panic(err)
+	}
+	baseTx.SetSignature(sig)
+	return
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder

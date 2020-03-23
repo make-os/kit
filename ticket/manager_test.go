@@ -303,7 +303,7 @@ var _ = Describe("Manager", func() {
 				BeforeEach(func() {
 					params.MinTicketMatDur = 60
 					params.MaxTicketActiveDur = 40
-					tx := core.NewBaseTx(core.TxTypeValidatorTicket, 1, "", key, "10", "1", 0)
+					tx := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
 					err = mgr.Index(tx, 100, 1)
 					Expect(err).To(BeNil())
 				})
@@ -327,7 +327,7 @@ var _ = Describe("Manager", func() {
 				BeforeEach(func() {
 					params.MinTicketMatDur = 60
 					params.MaxTicketActiveDur = 40
-					tx := core.NewBaseTx(core.TxTypeHostTicket, 1, "", key, "10", "1", 0)
+					tx := core.NewBareTxTicketPurchase(core.TxTypeHostTicket)
 					err = mgr.Index(tx, 100, 1)
 					Expect(err).To(BeNil())
 				})

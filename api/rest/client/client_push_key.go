@@ -8,8 +8,10 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/api/rest"
 	types2 "gitlab.com/makeos/mosdef/api/types"
+	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // PushKeyGetNonceOfOwner returns the nonce of the push key owner account
@@ -56,8 +58,16 @@ func (c *Client) PushKeyFind(pushKeyID string, blockHeight ...uint64) (*state.Pu
 		return nil, err
 	}
 
-	var result state.PushKey
-	return &result, resp.ToJSON(&result)
+	var body map[string]interface{}
+	resp.ToJSON(&body)
+
+	var pushKey state.PushKey
+	util.DecodeMap(body, &pushKey)
+
+	pk, _ := crypto.PubKeyFromBase58(body["pubKey"].(string))
+	pushKey.PubKey = pk.ToPublicKey()
+
+	return &pushKey, nil
 }
 
 // PushKeyGetNextNonceOfOwnerUsingClients gets the next account nonce of the owner of the
