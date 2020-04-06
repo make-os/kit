@@ -4,6 +4,8 @@ package keystore
 import (
 	"crypto/sha256"
 	"fmt"
+	"io"
+	"os"
 
 	"github.com/fatih/color"
 	"golang.org/x/crypto/scrypt"
@@ -22,6 +24,7 @@ type promptFunc func(string, ...interface{}) string
 type Keystore struct {
 	dir         string
 	getPassword promptFunc
+	out         io.Writer
 }
 
 // New creates an instance of Keystore.
@@ -32,7 +35,13 @@ func New(dir string) *Keystore {
 	am := new(Keystore)
 	am.dir = dir
 	am.getPassword = prompt.Password
+	am.out = os.Stdout
 	return am
+}
+
+// SetOutput sets the output writer
+func (ks *Keystore) SetOutput(out io.Writer) {
+	ks.out = out
 }
 
 // AskForPassword starts an interactive prompt to collect passphrase.
@@ -46,7 +55,7 @@ func (ks *Keystore) AskForPassword() (string, error) {
 
 		passphraseRepeat := ks.getPassword("Repeat Passphrase")
 		if passphrase != passphraseRepeat {
-			return "", fmt.Errorf("Passphrases did not match")
+			return "", fmt.Errorf("passphrases did not match")
 		}
 
 		return passphrase, nil
@@ -56,7 +65,7 @@ func (ks *Keystore) AskForPassword() (string, error) {
 // AskForPasswordOnce is like askForPassword but it does not
 // ask to confirm passphrase.
 func (ks *Keystore) AskForPasswordOnce() string {
-	fmt.Println(color.CyanString("Enter your passphrase to unlock the key"))
+	fmt.Fprint(ks.out, color.CyanString("Enter your passphrase to unlock the key\n"))
 	for {
 		passphrase := ks.getPassword("Passphrase")
 		if len(passphrase) == 0 {

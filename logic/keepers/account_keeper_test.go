@@ -22,7 +22,7 @@ var _ = Describe("Account", func() {
 	Describe(".Get", func() {
 		When("account does not exist", func() {
 			It("should return a bare account", func() {
-				acct := ak.Get(util.Address("unknown"), 0)
+				acct := ak.Get("unknown", 0)
 				Expect(acct).To(Equal(state2.BareAccount()))
 			})
 		})
@@ -32,7 +32,7 @@ var _ = Describe("Account", func() {
 
 			BeforeEach(func() {
 				testAcct.Nonce = 1
-				testAcct.Balance = util.String("100")
+				testAcct.Balance = "100"
 				acctKey := MakeAccountKey("addr1")
 				state.Set(acctKey, testAcct.Bytes())
 				_, _, err := state.SaveVersion()
@@ -52,7 +52,7 @@ var _ = Describe("Account", func() {
 			acct := ak.Get(key)
 			Expect(acct.Balance).To(Equal(util.String("0")))
 			Expect(acct.Nonce).To(Equal(uint64(0)))
-			acct.Balance = util.String("10000")
+			acct.Balance = "10000"
 			acct.Nonce = 2
 			ak.Update(key, acct)
 			acct = ak.Get(key)

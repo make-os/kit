@@ -9,12 +9,6 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 )
 
-func testPrompt(resp string) promptFunc {
-	return func(prompt string, args ...interface{}) string {
-		return resp
-	}
-}
-
 // testPrompt2 will return response with index equal to count
 // count is incremented each time the function is called.
 func testPrompt2(count *int, responses []string) promptFunc {
@@ -56,12 +50,12 @@ var _ = Describe("AccountMgr", func() {
 	Describe(".askForPassword", func() {
 		am := New(accountPath)
 
-		It("should return err = 'Passphrases did not match' when passphrase and repeat passphrase don't match", func() {
+		It("should return err = 'passphrases did not match'", func() {
 			count := 0
 			am.getPassword = testPrompt2(&count, []string{"passAbc", "passAb"})
 			_, err := am.AskForPassword()
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("Passphrases did not match"))
+			Expect(err.Error()).To(Equal("passphrases did not match"))
 		})
 
 		It("should return input even when no passphrase is provided the first time", func() {

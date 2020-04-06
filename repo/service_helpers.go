@@ -2,7 +2,6 @@ package repo
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -55,24 +54,6 @@ func execGitCmd(gitBinDir, repoDir string, args ...string) ([]byte, error) {
 			cmd.String(), string(out)))
 	}
 	return out, nil
-}
-
-// execGitCmdWithStdIn executes git commands and returns the output
-// repoDir: The directory of the target repository.
-// args: Arguments for the git sub-command
-func execGitCmdWithStdIn(gitBinDir, repoDir string, args ...string) ([]byte, io.WriteCloser, error) {
-	cmd := exec.Command(gitBinDir, args...)
-	cmd.Dir = repoDir
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return out, nil, errors.Wrap(err, fmt.Sprintf("exec error: cmd=%s, output=%s",
-			cmd.String(), string(out)))
-	}
-	in, err := cmd.StdinPipe()
-	if err != nil {
-		return out, nil, err
-	}
-	return out, in, nil
 }
 
 // getService returns the requested service

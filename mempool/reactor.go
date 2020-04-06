@@ -2,7 +2,6 @@ package mempool
 
 import (
 	"fmt"
-	"math"
 
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -19,17 +18,7 @@ import (
 )
 
 const (
-	MempoolChannel = byte(0x30)
-
-	aminoOverheadForTxMessage = 8
-
-	peerCatchupSleepIntervalMS = 100 // If peer is behind, sleep this amount
-
-	// UnknownPeerID is the peer ID to use when running CheckTx when there is
-	// no peer (e.g. RPC)
-	UnknownPeerID uint16 = 0
-
-	maxActiveIDs = math.MaxUint16
+	Channel = byte(0x30)
 )
 
 // Reactor handles mempool tx broadcasting amongst peers.
@@ -65,7 +54,7 @@ func (r *Reactor) OnStart() error {
 // It returns the list of channels for this reactor.
 func (r *Reactor) GetChannels() []*p2p.ChannelDescriptor {
 	return []*p2p.ChannelDescriptor{
-		{ID: MempoolChannel, Priority: 5},
+		{ID: Channel, Priority: 5},
 	}
 }
 
@@ -144,7 +133,7 @@ func (r *Reactor) broadcastTx(tx types.BaseTx) {
 		if r.isSender(txHash, string(peer.ID())) {
 			continue
 		}
-		go peer.Send(MempoolChannel, txBytes)
+		go peer.Send(Channel, txBytes)
 	}
 }
 

@@ -3,10 +3,10 @@ package console
 import (
 	"fmt"
 
-	prompt "github.com/c-bata/go-prompt"
+	"github.com/c-bata/go-prompt"
 
 	"github.com/fatih/color"
-	prettyjson "github.com/ncodes/go-prettyjson"
+	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 )
@@ -36,7 +36,7 @@ func newExecutor(l logger.Logger) *Executor {
 // PrepareContext adds objects and functions into the VM's global
 // contexts allowing users to have access to pre-defined values and objects
 func (e *Executor) PrepareContext() ([]prompt.Suggest, error) {
-	var suggestions = []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 	return suggestions, nil
 }
 

@@ -32,6 +32,9 @@ type BareRepo interface {
 	// GetName returns the name of the repo
 	GetName() string
 
+	// GetNameFromPath returns the name of the repo
+	GetNameFromPath() string
+
 	// GetNamespace returns the namespace this repo is associated to.
 	GetNamespace() string
 
@@ -59,7 +62,7 @@ type BareRepo interface {
 	// DeleteObject deletes an object from a repository.
 	DeleteObject(hash plumbing.Hash) error
 
-	// Reference deletes an object from a repository.
+	// Reference returns the reference for a given reference name.
 	Reference(name plumbing.ReferenceName, resolved bool) (*plumbing.Reference, error)
 
 	// Object returns an Object with the given hash.
@@ -77,12 +80,6 @@ type BareRepo interface {
 	// WrappedCommitObject returns commit that implements types.Commit interface.
 	WrappedCommitObject(h plumbing.Hash) (Commit, error)
 
-	// MergeBranch merges target branch into base
-	MergeBranch(base, target, targetRepoDir string) error
-
-	// TryMergeBranch merges target branch into base and reverses it
-	TryMergeBranch(base, target, targetRepoDir string) error
-
 	// BlobObject returns a Blob with the given hash.
 	BlobObject(h plumbing.Hash) (*object.Blob, error)
 
@@ -92,17 +89,11 @@ type BareRepo interface {
 	// Tag returns a tag from the repository.
 	Tag(name string) (*plumbing.Reference, error)
 
-	// Get a list of remotes
-	GetRemotes() ([]*Remote, error)
-
-	// SetRemoteURL updates the URL of a remote
-	SetRemoteURL(name, newURL string) error
-
-	// DeleteRemoteURLs deletes a remote
-	DeleteRemoteURLs(name string) error
-
 	// Config return the repository config
 	Config() (*config.Config, error)
+
+	// SetConfig sets the repo config
+	SetConfig(cfg *config.Config) error
 
 	// GetConfig finds and returns a config value
 	GetConfig(path string) string
@@ -157,6 +148,9 @@ type BareRepo interface {
 
 	// State returns the repository's network state
 	State() *state.Repository
+
+	// Head returns the reference where HEAD is pointing to.
+	Head() (string, error)
 
 	// ObjectExist checks whether an object exist in the target repository
 	ObjectExist(objHash string) bool
@@ -331,9 +325,9 @@ type RepoPushNote interface {
 	GetSize() uint64
 
 	// GetPushedObjects returns all objects from all pushed references without a
-	// delete directive.
+	// delete option.
 	// ignoreDelRefs cause deleted references' objects to not be include in the result
-	GetPushedObjects(ignoreDelRefs bool) (objs []string)
+	GetPushedObjects() (objs []string)
 
 	// BytesAndID returns the serialized version of the tx and the id
 	BytesAndID() ([]byte, util.Bytes32)
@@ -360,13 +354,14 @@ type Pruner interface {
 // PushedReference represents a reference that was pushed by git client
 type PushedReference struct {
 	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	Name                  string   `json:"name" msgpack:"name"`       // The full name of the reference
-	OldHash               string   `json:"oldHash" msgpack:"oldHash"` // The hash of the reference before the push
-	NewHash               string   `json:"newHash" msgpack:"newHash"` // The hash of the reference after the push
-	Nonce                 uint64   `json:"nonce" msgpack:"nonce"`     // The next repo nonce of the reference
-	Objects               []string `json:"objects" msgpack:"objects"` // A list of objects pushed to the reference
-	Delete                bool     `json:"delete" msgpack:"delete"`   // Delete indicates that the reference should be deleted from the repo
-	MergeProposalID       string   `json:"mergeID" msgpack:"mergeID"` // The merge proposal ID the reference is complaint with.
+	Name                  string      `json:"name" msgpack:"name,omitempty"`       // The full name of the reference
+	OldHash               string      `json:"oldHash" msgpack:"oldHash,omitempty"` // The hash of the reference before the push
+	NewHash               string      `json:"newHash" msgpack:"newHash,omitempty"` // The hash of the reference after the push
+	Nonce                 uint64      `json:"nonce" msgpack:"nonce,omitempty"`     // The next repo nonce of the reference
+	Objects               []string    `json:"objects" msgpack:"objects,omitempty"` // A list of objects pushed to the reference
+	MergeProposalID       string      `json:"mergeID" msgpack:"mergeID,omitempty"` // The merge proposal ID the reference is complaint with.
+	Fee                   util.String `json:"fee" msgpack:"fee,omitempty"`         // The merge proposal ID the reference is complaint with.
+	PushSig               []byte      `json:"pushSig" msgpack:"pushSig,omitempty"` // The signature of from the push request token
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -377,8 +372,9 @@ func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
 		pr.NewHash,
 		pr.Nonce,
 		pr.Objects,
-		pr.Delete,
-		pr.MergeProposalID)
+		pr.MergeProposalID,
+		pr.Fee,
+		pr.PushSig)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -389,8 +385,9 @@ func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&pr.NewHash,
 		&pr.Nonce,
 		&pr.Objects,
-		&pr.Delete,
-		&pr.MergeProposalID)
+		&pr.MergeProposalID,
+		&pr.Fee,
+		&pr.PushSig)
 }
 
 // PushedReferences represents a collection of pushed references
@@ -530,7 +527,7 @@ type RepoManager interface {
 	BroadcastMsg(ch byte, msg []byte)
 
 	// BroadcastPushObjects broadcasts repo push note and push OK
-	BroadcastPushObjects(pushNote RepoPushNote) error
+	BroadcastPushObjects(note RepoPushNote) error
 
 	// SetPGPPubKeyGetter sets the PGP public key query function
 	SetPGPPubKeyGetter(pkGetter PushKeyGetter)

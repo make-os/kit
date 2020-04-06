@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/pktline"
 )
@@ -21,15 +22,16 @@ type service struct {
 }
 
 type requestInfo struct {
-	w                http.ResponseWriter
-	r                *http.Request
-	pushReqTokenData *PushRequestTokenData
-	pushHandler      *PushHandler
-	repo             core.BareRepo
-	repoDir          string
-	op               string
-	srvName          string
-	gitBinPath       string
+	w           http.ResponseWriter
+	r           *http.Request
+	txDetails   []*types.TxDetail
+	polEnforcer policyEnforcer
+	pushHandler *PushHandler
+	repo        core.BareRepo
+	repoDir     string
+	op          string
+	srvName     string
+	gitBinPath  string
 }
 
 // getInfoRefs Handle incoming request for a repository's references
@@ -165,7 +167,7 @@ func serveService(s *requestInfo) error {
 		return errors.Wrap(err, "HandleUpdate err")
 	}
 
-	pktEnc.Encode(sidebandProgress(fmt.Sprintf("Transaction ID: %s", s.pushHandler.pushNoteID)))
+	pktEnc.Encode(sidebandProgress(fmt.Sprintf("Transaction ID: %s", s.pushHandler.noteID)))
 
 	// Write output from git to the http response
 	for scn.Scan() {

@@ -14,7 +14,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/config"
 
-	prompt "github.com/c-bata/go-prompt"
+	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -71,7 +71,7 @@ func (m *RPCModule) globals() []*modules.ModuleFunc {
 // any number of console prompt suggestions
 func (m *RPCModule) Configure() []prompt.Suggest {
 	fMap := map[string]interface{}{}
-	suggestions := []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 
 	// Set the namespace object
 	util.VMSet(m.vm, constants.NamespaceRPC, fMap)

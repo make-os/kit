@@ -1,9 +1,10 @@
 package types
 
 import (
+	"net"
+
 	cmn "github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/p2p"
-	"net"
 
 	tmconn "github.com/tendermint/tendermint/p2p/conn"
 )

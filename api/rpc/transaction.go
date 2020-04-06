@@ -32,12 +32,12 @@ func (t *TransactionAPI) sendPayload(params interface{}) (resp *rpc.Response) {
 }
 
 // APIs returns all API handlers
-func (l *TransactionAPI) APIs() rpc.APISet {
+func (t *TransactionAPI) APIs() rpc.APISet {
 	return map[string]rpc.APIInfo{
 		"sendPayload": {
 			Namespace:   constants.NamespaceTx,
 			Description: "Sends a signed transaction object to the mempool",
-			Func:        l.sendPayload,
+			Func:        t.sendPayload,
 		},
 	}
 }

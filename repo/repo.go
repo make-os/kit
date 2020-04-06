@@ -41,34 +41,44 @@ type Repo struct {
 	state     *state2.Repository
 }
 
-func getReferenceTree(path, ref string) (*tree.SafeTree, func() error, error) {
+type treeCloser func() error
+
+// getReferenceTree fetches a reference's tree and returns a
+// function for closing the tree db after use
+func getReferenceTree(path, ref string) (refTree *tree.SafeTree, closer treeCloser, err error) {
 	db := s.NewBadger()
-	normRef := strings.ReplaceAll(ref, "/", "-")
-	if err := db.Init(filepath.Join(path, fmt.Sprintf("tree-%s.db", normRef))); err != nil {
+	treeName := makeReferenceTreeName(ref)
+	if err := db.Init(filepath.Join(path, treeName)); err != nil {
 		return nil, nil, errors.Wrap(err, "failed to open state db")
 	}
 
-	tr := tree.NewSafeTree(s.NewTMDBAdapter(db), 5000)
-	if _, err := tr.Load(); err != nil {
+	refTree = tree.NewSafeTree(s.NewTMDBAdapter(db), 5000)
+	if _, err := refTree.Load(); err != nil {
 		return nil, nil, errors.Wrap(err, "failed to load tree")
 	}
 
-	return tr, func() error {
+	return refTree, func() error {
 		err := db.Close()
-		time.Sleep(1 * time.Second)
 		return err
 	}, nil
 }
 
+// makeReferenceTreeName returns a normalized name for a reference tree
+func makeReferenceTreeName(ref string) string {
+	return fmt.Sprintf("tree-%s.db", strings.ReplaceAll(ref, "/", "-"))
+}
+
+// deleteReferenceTree deletes a reference tree
 func deleteReferenceTree(path, ref string) error {
-	normRef := strings.ReplaceAll(ref, "/", "-")
-	treePath := filepath.Join(path, fmt.Sprintf("tree-%s.db", normRef))
+	treeName := makeReferenceTreeName(ref)
+	treePath := filepath.Join(path, treeName)
 	return os.RemoveAll(treePath)
 }
 
-// UpdateTree updates the state tree
-func (r *Repo) UpdateTree(ref string,
-	updater func(tree *tree.SafeTree) error) ([]byte, int64, error) {
+// UpdateTree enables tree update by passing the tree to an updater function; The caller does not need
+// to close the tree as it will be done by UpdateTree.
+// Returns the updated root hash and version.
+func (r *Repo) UpdateTree(ref string, updater func(tree *tree.SafeTree) error) ([]byte, int64, error) {
 
 	tr, closer, err := getReferenceTree(r.Path(), ref)
 	if err != nil {
@@ -95,13 +105,21 @@ func (r *Repo) TreeRoot(ref string) (util.Bytes32, error) {
 		return util.EmptyBytes32, err
 	}
 	defer closer()
-
 	return util.BytesToBytes32(tr.Hash()), nil
 }
 
 // State returns the repository's network state
 func (r *Repo) State() *state2.Repository {
 	return r.state
+}
+
+// Head returns the reference where HEAD is pointing to.
+func (r *Repo) Head() (string, error) {
+	ref, err := r.git.Head()
+	if err != nil {
+		return "", err
+	}
+	return ref.Name().String(), nil
 }
 
 // Path returns the repository's path
@@ -150,7 +168,7 @@ func (r *Repo) DeleteObject(hash plumbing.Hash) error {
 	return r.git.DeleteObject(hash)
 }
 
-// Reference deletes an object from a repository.
+// Reference returns the reference for a given reference name.
 func (r *Repo) Reference(name plumbing.ReferenceName, resolved bool) (*plumbing.Reference, error) {
 	return r.git.Reference(name, resolved)
 }
@@ -199,34 +217,14 @@ func (r *Repo) Tag(name string) (*plumbing.Reference, error) {
 	return r.git.Tag(name)
 }
 
-// Get a list of remotes
-func (r *Repo) GetRemotes() ([]*core.Remote, error) {
-	remotes, err := r.git.Remotes()
-	if err != nil {
-		return nil, err
-	}
-
-	res := []*core.Remote{}
-	for _, remote := range remotes {
-		res = append(res, &core.Remote{Name: remote.Config().Name, URLs: remote.Config().URLs})
-	}
-
-	return res, nil
-}
-
-// SetRemoteURL updates the URL of a remote
-func (r *Repo) SetRemoteURL(name, newURL string) error {
-	return r.ops.SetRemoteURL(name, newURL)
-}
-
-// DeleteRemoteURLs deletes a remote URLs
-func (r *Repo) DeleteRemoteURLs(name string) error {
-	return r.ops.DeleteRemoteURLs(name)
-}
-
 // Config return the repository config
 func (r *Repo) Config() (*config.Config, error) {
 	return r.git.Config()
+}
+
+// SetConfig sets the repo config
+func (r *Repo) SetConfig(cfg *config.Config) error {
+	return r.git.Storer.SetConfig(cfg)
 }
 
 // GetConfig finds and returns a config value
@@ -281,6 +279,12 @@ func (r *Repo) ListTreeObjectsSlice(treename string, recursive, showTrees bool,
 // GetName returns the name of the repo
 func (r *Repo) GetName() string {
 	return r.name
+}
+
+// GetNameFromPath returns the name of the repo
+func (r *Repo) GetNameFromPath() string {
+	_, name := filepath.Split(r.path)
+	return name
 }
 
 // GetNamespace returns the namespace this repo is associated to.
@@ -411,16 +415,6 @@ func (r *Repo) Prune(olderThan time.Time) error {
 			return r.DeleteObject(hash)
 		},
 	})
-}
-
-// MergeBranch merges target branch into base
-func (r *Repo) MergeBranch(base, target, targetRepoDir string) error {
-	return r.ops.MergeBranch(base, target, targetRepoDir)
-}
-
-// TryMergeBranch merges target branch into base and reverses it
-func (r *Repo) TryMergeBranch(base, target, targetRepoDir string) error {
-	return r.ops.TryMergeBranch(base, target, targetRepoDir)
 }
 
 // Get returns a repository

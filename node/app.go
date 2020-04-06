@@ -84,7 +84,7 @@ func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitCh
 			panic(errors.Wrap(err, "failed to write genesis state"))
 		}
 	} else {
-		panic(fmt.Errorf("At init, state must be empty...It is not empty"))
+		panic(fmt.Errorf("at init, state must be empty...It is not empty"))
 	}
 
 	// Store genesis validators
@@ -105,7 +105,7 @@ func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitCh
 // Tendermint expects LastBlockAppHash and LastBlockHeight to be updated during commit.
 func (a *App) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
 
-	var lastBlockAppHash = []byte{}
+	var lastBlockAppHash []byte
 	var lastBlockHeight = int64(0)
 
 	// Get the last committed block information

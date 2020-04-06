@@ -10,11 +10,11 @@ import (
 
 var _ = Describe("RPC", func() {
 	var ctrl *gomock.Controller
-	var rpcApi *RPCManagerAPI
+	var rpcApi *Manager
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		rpcApi = &RPCManagerAPI{}
+		rpcApi = &Manager{}
 	})
 
 	AfterEach(func() {

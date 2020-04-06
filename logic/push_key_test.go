@@ -1,7 +1,6 @@
 package logic
 
 import (
-	"io/ioutil"
 	"os"
 
 	"gitlab.com/makeos/mosdef/types/state"
@@ -16,14 +15,6 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
 )
-
-func getTestFile(filename string) []byte {
-	bz, err := ioutil.ReadFile("./testdata/" + filename)
-	if err != nil {
-		panic(err)
-	}
-	return bz
-}
 
 var _ = Describe("PushKey", func() {
 	var appDB, stateTreeDB storage.Engine

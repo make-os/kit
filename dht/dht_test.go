@@ -3,12 +3,13 @@ package dht
 import (
 	"context"
 	"fmt"
-	"gitlab.com/makeos/mosdef/dht/types"
 	"os"
 	"time"
 
+	"gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/mocks"
+
 	"github.com/golang/mock/gomock"
-	"github.com/libp2p/go-libp2p-core/peer"
 	routing "github.com/libp2p/go-libp2p-routing"
 	"github.com/phayes/freeport"
 
@@ -27,14 +28,6 @@ func randomAddr() string {
 	return fmt.Sprintf("127.0.0.1:%d", port)
 }
 
-func connect(node1, node2 *DHT) {
-	node2AddrInfo := peer.AddrInfo{ID: node2.host.ID(), Addrs: node2.host.Addrs()}
-	err := node1.host.Connect(context.Background(), node2AddrInfo)
-	if err != nil {
-		panic(err)
-	}
-}
-
 type testObjectFinder struct {
 	value []byte
 	err   error
@@ -44,7 +37,7 @@ func (t *testObjectFinder) FindObject(key []byte) ([]byte, error) {
 	return t.value, t.err
 }
 
-var _ = Describe("App", func() {
+var _ = Describe("DHT", func() {
 	var err error
 	var addr string
 	var cfg, cfg2 *config.AppConfig
@@ -58,9 +51,6 @@ var _ = Describe("App", func() {
 		Expect(err).To(BeNil())
 		cfg2, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
-	})
-
-	BeforeEach(func() {
 		port := freeport.GetPort()
 		addr = fmt.Sprintf("127.0.0.1:%d", port)
 	})
@@ -106,6 +96,10 @@ var _ = Describe("App", func() {
 			Expect(err).To(BeNil())
 		})
 
+		AfterEach(func() {
+			dht.Close()
+		})
+
 		When("no bootstrap address exist", func() {
 			It("should return error", func() {
 				err = dht.join()
@@ -115,6 +109,12 @@ var _ = Describe("App", func() {
 		})
 
 		When("an address is not a valid P2p multi addr", func() {
+			It("should return error", func() {
+				cfg.DHT.BootstrapPeers = "invalid/addr"
+				err = dht.join()
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("invalid dht bootstrap address: failed to parse multiaddr"))
+			})
 			It("should return error", func() {
 				cfg.DHT.BootstrapPeers = "invalid/addr"
 				err = dht.join()
@@ -381,6 +381,142 @@ var _ = Describe("App", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(retVal).To(Equal([]byte("value")))
+			})
+		})
+	})
+
+	Describe(".handleFetch", func() {
+		var dht *DHT
+		var err error
+		var mockStream *mocks.MockStream
+
+		BeforeEach(func() {
+			mockStream = mocks.NewMockStream(ctrl)
+			dht, err = New(context.Background(), cfg, key.PrivKey().Key(), addr)
+			Expect(err).To(BeNil())
+			mockStream.EXPECT().Close()
+		})
+
+		When("unable to read from stream", func() {
+			BeforeEach(func() {
+				mockStream.EXPECT().Read(gomock.Any()).Return(0, fmt.Errorf("error"))
+				err = dht.handleFetch(mockStream)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to read query: error"))
+			})
+		})
+
+		When("unable to decode stream output", func() {
+			BeforeEach(func() {
+				mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
+					p = append(p, []byte("invalid data")...)
+					return len(p), nil
+				})
+				err = dht.handleFetch(mockStream)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to decode query: msgpack: invalid code=0 decoding map length"))
+			})
+		})
+
+		When("module finder for the query is not registered", func() {
+			BeforeEach(func() {
+				query := types.DHTObjectQuery{
+					Module:    "module-name",
+					ObjectKey: []byte("object_key"),
+				}
+				mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
+					copy(p, query.Bytes())
+					return len(p), nil
+				})
+				err = dht.handleFetch(mockStream)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("finder for module `module-name` not registered"))
+			})
+		})
+
+		When("module finder returns error", func() {
+			BeforeEach(func() {
+				query := types.DHTObjectQuery{
+					Module:    "module-name",
+					ObjectKey: []byte("object_key"),
+				}
+
+				mockObjFinder := mocks.NewMockObjectFinder(ctrl)
+				mockObjFinder.EXPECT().FindObject(query.ObjectKey).Return(nil, fmt.Errorf("error"))
+				dht.objectFinders["module-name"] = mockObjFinder
+
+				mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
+					copy(p, query.Bytes())
+					return len(p), nil
+				})
+				err = dht.handleFetch(mockStream)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to find requested object (object_key): error"))
+			})
+		})
+
+		When("unable to write to stream", func() {
+			var objData = []byte("object data")
+
+			BeforeEach(func() {
+				query := types.DHTObjectQuery{
+					Module:    "module-name",
+					ObjectKey: []byte("object_key"),
+				}
+
+				mockObjFinder := mocks.NewMockObjectFinder(ctrl)
+				mockObjFinder.EXPECT().FindObject(query.ObjectKey).Return(objData, nil)
+				dht.objectFinders["module-name"] = mockObjFinder
+
+				mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
+					copy(p, query.Bytes())
+					return len(p), nil
+				})
+				mockStream.EXPECT().Write(objData).Return(0, fmt.Errorf("error"))
+				err = dht.handleFetch(mockStream)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to write back find result: error"))
+			})
+		})
+
+		When("object is written successfully", func() {
+			var objData = []byte("object data")
+
+			BeforeEach(func() {
+				query := types.DHTObjectQuery{
+					Module:    "module-name",
+					ObjectKey: []byte("object_key"),
+				}
+
+				mockObjFinder := mocks.NewMockObjectFinder(ctrl)
+				mockObjFinder.EXPECT().FindObject(query.ObjectKey).Return(objData, nil)
+				dht.objectFinders["module-name"] = mockObjFinder
+
+				mockStream.EXPECT().Read(gomock.Any()).DoAndReturn(func(p []byte) (int, error) {
+					copy(p, query.Bytes())
+					return len(p), nil
+				})
+				mockStream.EXPECT().Write(objData).Return(len(objData), nil)
+				err = dht.handleFetch(mockStream)
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
 			})
 		})
 	})

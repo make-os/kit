@@ -2,8 +2,9 @@ package keepers
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"os"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	storagemocks "gitlab.com/makeos/mosdef/storage/mocks"
 

@@ -12,7 +12,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 
-	prompt "github.com/c-bata/go-prompt"
+	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 )
 
@@ -81,7 +81,7 @@ func (m *PushKeyModule) globals() []*modules.ModuleFunc {
 // any number of console prompt suggestions
 func (m *PushKeyModule) Configure() []prompt.Suggest {
 	fMap := map[string]interface{}{}
-	suggestions := []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 
 	// Set the namespace object
 	util.VMSet(m.vm, constants.NamespacePushKey, fMap)

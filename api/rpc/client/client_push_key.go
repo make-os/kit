@@ -45,5 +45,5 @@ func GetNextNonceOfPushKeyOwnerUsingRPCClient(pushKeyID string, client Client) (
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%d", uint64(acct.Nonce+1)), nil
+	return fmt.Sprintf("%d", acct.Nonce+1), nil
 }

@@ -1,12 +1,13 @@
 package repo
 
 import (
-	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -205,7 +206,7 @@ var _ = Describe("Repo", func() {
 			BeforeEach(func() {
 				appendCommit(path, "file.txt", "some text", "commit msg")
 				ci, _ := repo.CommitObjects()
-				commits := []*object.Commit{}
+				var commits []*object.Commit
 				ci.ForEach(func(c *object.Commit) error {
 					commits = append(commits, c)
 					return nil
@@ -227,7 +228,7 @@ var _ = Describe("Repo", func() {
 				appendCommit(path, "file.txt", "some text", "commit msg")
 				appendCommit(path, "file2.txt", "some text 2", "commit msg 2")
 				ci, _ := repo.CommitObjects()
-				commits := []*object.Commit{}
+				var commits []*object.Commit
 
 				// order is not guaranteed
 				ci.ForEach(func(c *object.Commit) error {
@@ -256,7 +257,7 @@ var _ = Describe("Repo", func() {
 				appendCommit(path, "file.txt", "some text", "commit msg")
 				appendCommit(path, "file2.txt", "some text 2", "commit msg 2")
 				ci, _ := repo.CommitObjects()
-				commits := []*object.Commit{}
+				var commits []*object.Commit
 
 				// order is not guaranteed
 				ci.ForEach(func(c *object.Commit) error {
@@ -285,7 +286,7 @@ var _ = Describe("Repo", func() {
 				appendCommit(path, "file.txt", "some text", "commit msg")
 				appendCommit(path, "file.txt", "some text 2", "commit msg 2")
 				ci, _ := repo.CommitObjects()
-				commits := []*object.Commit{}
+				var commits []*object.Commit
 
 				// order is not guaranteed
 				ci.ForEach(func(c *object.Commit) error {
@@ -329,6 +330,34 @@ var _ = Describe("Repo", func() {
 			Expect(err).To(BeNil())
 			defer closer()
 			Expect(tr.Version()).To(Equal(int64(1)))
+		})
+	})
+
+	Describe(".getReferenceTree", func() {
+		It("should return error if unable to open db", func() {
+			_, _, err := getReferenceTree("unknown_path", "refs/heads/master")
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("failed to open state db"))
+		})
+
+		It("should return no error if successful", func() {
+			tree, _, err := getReferenceTree(cfg.GetRepoRoot(), "refs/heads/master")
+			Expect(err).To(BeNil())
+			Expect(tree.Hash()).To(Equal([]byte{}))
+		})
+	})
+
+	Describe(".deleteReferenceTree", func() {
+		It("should successfully delete a reference tree if present", func() {
+			_, _, err := getReferenceTree(cfg.GetRepoRoot(), "refs/heads/master")
+			Expect(err).To(BeNil())
+			fi, err := os.Stat(filepath.Join(cfg.GetRepoRoot(), makeReferenceTreeName("refs/heads/master")))
+			Expect(err).To(BeNil())
+			Expect(fi.IsDir()).To(BeTrue())
+			err = deleteReferenceTree(cfg.GetRepoRoot(), "refs/heads/master")
+			Expect(err).To(BeNil())
+			_, err = os.Stat(filepath.Join(cfg.GetRepoRoot(), makeReferenceTreeName("refs/heads/master")))
+			Expect(os.IsNotExist(err)).To(BeTrue())
 		})
 	})
 })

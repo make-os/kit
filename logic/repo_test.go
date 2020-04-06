@@ -63,7 +63,7 @@ var _ = Describe("Repo", func() {
 		BeforeEach(func() {
 			repoCfg = state.MakeDefaultRepoConfig()
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-				Balance:             util.String("10"),
+				Balance:             "10",
 				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
@@ -78,7 +78,9 @@ var _ = Describe("Repo", func() {
 
 			Specify("that repo config is the default", func() {
 				repo := txLogic.logic.RepoKeeper().Get("repo")
-				Expect(repo.Config).To(Equal(state.DefaultRepoConfig))
+				defCfg := state.MakeDefaultRepoConfig()
+				addDefaultPolicies(defCfg)
+				Expect(repo.Config).To(Equal(defCfg))
 			})
 
 			Specify("that fee is deducted from sender account", func() {
@@ -148,7 +150,7 @@ var _ = Describe("Repo", func() {
 			repoUpd = state.BareRepository()
 			repoUpd.Config = state.DefaultRepoConfig
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-				Balance:             util.String("10"),
+				Balance:             "10",
 				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
@@ -593,7 +595,7 @@ var _ = Describe("Repo", func() {
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-				Balance:             util.String("10"),
+				Balance:             "10",
 				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
@@ -826,12 +828,12 @@ var _ = Describe("Repo", func() {
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-				Balance:             util.String("20"),
+				Balance:             "20",
 				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 0,
 			})
 			logic.AccountKeeper().Update(key2.Addr(), &state.Account{
-				Balance:             util.String("20"),
+				Balance:             "20",
 				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 0,
 			})
@@ -927,7 +929,7 @@ var _ = Describe("Repo", func() {
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-				Balance:             util.String("10"),
+				Balance:             "10",
 				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
@@ -1109,7 +1111,7 @@ var _ = Describe("Repo", func() {
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-				Balance:             util.String("10"),
+				Balance:             "10",
 				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
@@ -1212,7 +1214,7 @@ var _ = Describe("Repo", func() {
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-				Balance:             util.String("10"),
+				Balance:             "10",
 				Stakes:              state.BareAccountStakes(),
 				DelegatorCommission: 10,
 			})
@@ -1233,7 +1235,7 @@ var _ = Describe("Repo", func() {
 				err = txLogic.execRepoProposalRegisterPushKeys(spk, repoName, "1",
 					[]string{"push1_abc"}, state.FeeModePusherPays,
 					"0",
-					[]*state.RepoACLPolicy{},
+					[]*state.ContributorPolicy{},
 					"",
 					"",
 					proposalFee, "1.5", 0)
@@ -1277,7 +1279,7 @@ var _ = Describe("Repo", func() {
 		When("2 ids were provided in action data", func() {
 			BeforeEach(func() {
 				proposal := &state.RepoProposal{ActionData: map[string][]byte{
-					constants.ActionDataKeyPolicies: util.ToBytes([]*state.RepoACLPolicy{{Action: "act", Subject: "sub", Object: "obj"}}),
+					constants.ActionDataKeyPolicies: util.ToBytes([]*state.Policy{{Action: "act", Subject: "sub", Object: "obj"}}),
 					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc", "push1_xyz"}),
 					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModePusherPays),
 				}}
@@ -1294,7 +1296,7 @@ var _ = Describe("Repo", func() {
 		When("feeMode is FeeModeRepoPaysCapped", func() {
 			BeforeEach(func() {
 				proposal := &state.RepoProposal{ActionData: map[string][]byte{
-					constants.ActionDataKeyPolicies: util.ToBytes([]*state.RepoACLPolicy{{Action: "act", Subject: "sub", Object: "obj"}}),
+					constants.ActionDataKeyPolicies: util.ToBytes([]*state.Policy{{Action: "act", Subject: "sub", Object: "obj"}}),
 					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc"}),
 					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModeRepoPaysCapped),
 					constants.ActionDataKeyFeeCap:   util.ToBytes(util.String("100")),
@@ -1312,7 +1314,7 @@ var _ = Describe("Repo", func() {
 		When("feeMode is not FeeModeRepoPaysCapped", func() {
 			BeforeEach(func() {
 				proposal := &state.RepoProposal{ActionData: map[string][]byte{
-					constants.ActionDataKeyPolicies: util.ToBytes([]*state.RepoACLPolicy{{Action: "act", Subject: "sub", Object: "obj"}}),
+					constants.ActionDataKeyPolicies: util.ToBytes([]*state.Policy{{Action: "act", Subject: "sub", Object: "obj"}}),
 					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc"}),
 					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModeRepoPays),
 					constants.ActionDataKeyFeeCap:   util.ToBytes(util.String("100")),
@@ -1335,7 +1337,7 @@ var _ = Describe("Repo", func() {
 			When("the target namespace does not exist", func() {
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{ActionData: map[string][]byte{
-						constants.ActionDataKeyPolicies:  util.ToBytes([]*state.RepoACLPolicy{}),
+						constants.ActionDataKeyPolicies:  util.ToBytes([]*state.Policy{}),
 						constants.ActionDataKeyIDs:       util.ToBytes([]string{"push1_abc"}),
 						constants.ActionDataKeyFeeMode:   util.ToBytes(state.FeeModeRepoPays),
 						constants.ActionDataKeyFeeCap:    util.ToBytes(util.String("100")),
@@ -1356,7 +1358,7 @@ var _ = Describe("Repo", func() {
 					nsObj.Owner = "repo1"
 					logic.NamespaceKeeper().Update(util.HashNamespace(ns), nsObj)
 					proposal = &state.RepoProposal{ActionData: map[string][]byte{
-						constants.ActionDataKeyPolicies:  util.ToBytes([]*state.RepoACLPolicy{}),
+						constants.ActionDataKeyPolicies:  util.ToBytes([]*state.Policy{}),
 						constants.ActionDataKeyIDs:       util.ToBytes([]string{"push1_abc"}),
 						constants.ActionDataKeyFeeMode:   util.ToBytes(state.FeeModeRepoPays),
 						constants.ActionDataKeyNamespace: util.ToBytes(ns),
@@ -1386,7 +1388,7 @@ var _ = Describe("Repo", func() {
 			When("the target namespace does not exist", func() {
 				BeforeEach(func() {
 					proposal = &state.RepoProposal{ActionData: map[string][]byte{
-						constants.ActionDataKeyPolicies:      util.ToBytes([]*state.RepoACLPolicy{}),
+						constants.ActionDataKeyPolicies:      util.ToBytes([]*state.Policy{}),
 						constants.ActionDataKeyIDs:           util.ToBytes([]string{"push1_abc"}),
 						constants.ActionDataKeyFeeMode:       util.ToBytes(state.FeeModeRepoPays),
 						constants.ActionDataKeyFeeCap:        util.ToBytes(util.String("100")),
@@ -1407,7 +1409,7 @@ var _ = Describe("Repo", func() {
 					nsObj.Owner = "repo1"
 					logic.NamespaceKeeper().Update(util.HashNamespace(ns), nsObj)
 					proposal = &state.RepoProposal{ActionData: map[string][]byte{
-						constants.ActionDataKeyPolicies:      util.ToBytes([]*state.RepoACLPolicy{}),
+						constants.ActionDataKeyPolicies:      util.ToBytes([]*state.Policy{}),
 						constants.ActionDataKeyIDs:           util.ToBytes([]string{"push1_abc"}),
 						constants.ActionDataKeyFeeMode:       util.ToBytes(state.FeeModeRepoPays),
 						constants.ActionDataKeyNamespaceOnly: util.ToBytes(ns),

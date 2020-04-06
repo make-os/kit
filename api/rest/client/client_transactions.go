@@ -13,7 +13,7 @@ import (
 
 // TxSendPayload sends a signed transaction to the mempool
 func (c *Client) TxSendPayload(data map[string]interface{}) (*apitypes.TxSendPayloadResponse, error) {
-	resp, err := c.post(rest.RestV1Path(constants.NamespaceTx, rest.MethodNameSendPayload), data)
+	resp, err := c.post(rest.V1Path(constants.NamespaceTx, rest.MethodNameSendPayload), data)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (c *Client) TxSendPayload(data map[string]interface{}) (*apitypes.TxSendPay
 // TxSendPayloadUsingClients sends a signed transaction to the mempool using
 // one of several Remote API clients until one succeeds.
 func TxSendPayloadUsingClients(clients []RestClient, data map[string]interface{}) (*apitypes.TxSendPayloadResponse, error) {
-	var errs = []string{}
+	var errs []string
 	for i, cl := range clients {
 		var resp *apitypes.TxSendPayloadResponse
 		resp, err := cl.TxSendPayload(data)

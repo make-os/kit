@@ -23,7 +23,7 @@ func (ks *Keystore) UIUnlockKey(addressOrIndex, passphrase string) (core.StoredK
 		return nil, err
 	}
 
-	fmt.Println(color.HiBlackString("Chosen Account: ") + storedAcct.GetAddress())
+	fmt.Fprint(ks.out, color.HiBlackString("Chosen Account: ")+storedAcct.GetAddress())
 
 	// Set the passphrase to the default passphrase if account
 	// is encrypted with unprotected passphrase

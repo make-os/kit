@@ -18,12 +18,12 @@ import (
 var _ = Describe("GPG", func() {
 	var ctrl *gomock.Controller
 	var mockModuleHub *mocks.MockModuleHub
-	var restApi *RESTApi
+	var restApi *API
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockModuleHub = mocks.NewMockModuleHub(ctrl)
-		restApi = &RESTApi{
+		restApi = &API{
 			mods: mockModuleHub,
 			log:  logger.NewLogrusNoOp(),
 		}

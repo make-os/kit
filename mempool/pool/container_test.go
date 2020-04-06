@@ -301,7 +301,7 @@ var _ = Describe("TxContainer", func() {
 			Expect(q.container[0].Tx).To(Equal(tx))
 			Expect(q.container[1].Tx).To(Equal(tx4))
 			Expect(q.len).To(Equal(int64(2)))
-			Expect(q.byteSize).To(Equal(int64(tx.GetEcoSize() + tx4.GetEcoSize())))
+			Expect(q.byteSize).To(Equal(tx.GetEcoSize() + tx4.GetEcoSize()))
 		})
 	})
 
@@ -381,7 +381,7 @@ var _ = Describe("senderNonces", func() {
 
 	BeforeEach(func() {
 		nc = defaultNonceCollection()
-		sn = senderNonces(map[util.Address]*nonceCollection{})
+		sn = map[util.Address]*nonceCollection{}
 	})
 
 	Describe(".remove", func() {
@@ -432,7 +432,7 @@ var _ = Describe("NonceCollection", func() {
 		Context("when nonce is part of the collection", func() {
 			nc := nonceCollection{
 				nonces: map[uint64]*nonceInfo{
-					1: &nonceInfo{TxHash: util.StrToBytes32("")},
+					1: {TxHash: util.StrToBytes32("")},
 				},
 			}
 

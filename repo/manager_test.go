@@ -2,10 +2,11 @@ package repo
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/golang/mock/gomock"
 	"github.com/phayes/freeport"
@@ -43,9 +44,7 @@ var _ = Describe("Manager", func() {
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic,
 			mockDHT, mockMempool, mockBlockGetter)
-	})
 
-	BeforeEach(func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
@@ -183,17 +182,17 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
-	Describe(".cachePushNoteSender", func() {
+	Describe(".cacheNoteSender", func() {
 		It("should add to cache", func() {
 			Expect(repoMgr.pushNoteSenders.Len()).To(Equal(0))
-			repoMgr.cachePushNoteSender("sender", "txID")
+			repoMgr.cacheNoteSender("sender", "txID")
 			Expect(repoMgr.pushNoteSenders.Len()).To(Equal(1))
 		})
 	})
 
 	Describe(".isPushNoteSender", func() {
 		It("should return true if sender + txID is cached", func() {
-			repoMgr.cachePushNoteSender("sender", "txID")
+			repoMgr.cacheNoteSender("sender", "txID")
 			Expect(repoMgr.pushNoteSenders.Len()).To(Equal(1))
 			isSender := repoMgr.isPushNoteSender("sender", "txID")
 			Expect(isSender).To(BeTrue())

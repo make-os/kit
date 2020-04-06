@@ -582,9 +582,9 @@ func (mr *MockPushKeyKeeperMockRecorder) Update(gpgID, upd interface{}) *gomock.
 }
 
 // Get mocks base method
-func (m *MockPushKeyKeeper) Get(gpgID string, blockNum ...uint64) *state.PushKey {
+func (m *MockPushKeyKeeper) Get(pushKeyID string, blockNum ...uint64) *state.PushKey {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{gpgID}
+	varargs := []interface{}{pushKeyID}
 	for _, a := range blockNum {
 		varargs = append(varargs, a)
 	}
@@ -594,9 +594,9 @@ func (m *MockPushKeyKeeper) Get(gpgID string, blockNum ...uint64) *state.PushKey
 }
 
 // Get indicates an expected call of Get
-func (mr *MockPushKeyKeeperMockRecorder) Get(gpgID interface{}, blockNum ...interface{}) *gomock.Call {
+func (mr *MockPushKeyKeeperMockRecorder) Get(pushKeyID interface{}, blockNum ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{gpgID}, blockNum...)
+	varargs := append([]interface{}{pushKeyID}, blockNum...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPushKeyKeeper)(nil).Get), varargs...)
 }
 

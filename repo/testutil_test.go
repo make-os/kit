@@ -45,20 +45,10 @@ func appendCommit(path, file, fileData, commitMsg string) {
 	execGitCommit(path, commitMsg)
 }
 
-func writeCommit(path, file, fileData, commitMsg string) {
-	writeToFile(path, file, fileData)
-	execGitCommit(path, commitMsg)
-}
-
 func appendDirAndCommitFile(path, targetDir, file, fileData, commitMsg string) {
 	execAnyCmd(path, "mkdir", targetDir)
 	appendToFile(path, filepath.Join(targetDir, file), fileData)
 	execGitCommit(path, commitMsg)
-}
-
-func appendMakeSignableCommit(path, file, fileData, commitMsg, keyID string) {
-	appendToFile(path, file, fileData)
-	execGitMakeSignableCommit(path, commitMsg, keyID)
 }
 
 func createCommitAndAnnotatedTag(path, file, fileData, commitMsg, tagName string) {

@@ -23,7 +23,7 @@ var _ = Describe("Repository", func() {
 			BeforeEach(func() {
 				r = BareRepository()
 				r.References = map[string]*Reference{
-					"refs/heads/master": &Reference{
+					"refs/heads/master": {
 						Nonce: 20,
 					},
 				}
@@ -45,9 +45,9 @@ var _ = Describe("Repository", func() {
 		Context("Decode Proposals", func() {
 			BeforeEach(func() {
 				r = BareRepository()
-				r.Proposals = map[string]*RepoProposal{"1": &RepoProposal{
-					Creator: "address1",
-				}}
+				prop := BareRepoProposal()
+				prop.Creator = "address1"
+				r.Proposals = map[string]*RepoProposal{"1": prop}
 				expectedBz = r.Bytes()
 			})
 
@@ -86,7 +86,7 @@ var _ = Describe("Repository", func() {
 				r.Balance = "100"
 				config := BareRepoConfig()
 				config.Governance = &RepoConfigGovernance{ProposalDur: 100}
-				config.Policies = RepoACLPolicies{"obj": &RepoACLPolicy{"obj", "sub", "deny"}}
+				config.Policies = []*Policy{{"obj", "sub", "deny"}}
 				r.Config = config
 				expectedBz = r.Bytes()
 			})
@@ -117,7 +117,7 @@ var _ = Describe("Repository", func() {
 
 		It("should return false when at least one field is set", func() {
 			r := BareRepository()
-			r.References = map[string]*Reference{"refs/heads/master": &Reference{}}
+			r.References = map[string]*Reference{"refs/heads/master": {}}
 			Expect(r.IsNil()).To(BeFalse())
 		})
 	})
@@ -126,7 +126,7 @@ var _ = Describe("Repository", func() {
 		Describe(".Get", func() {
 			It("should return bare reference when not found", func() {
 				refs := References(map[string]*Reference{
-					"refs/heads/master": &Reference{Nonce: 10},
+					"refs/heads/master": {Nonce: 10},
 				})
 				Expect(refs.Get("refs/heads/dev")).To(Equal(BareReference()))
 			})
@@ -163,10 +163,10 @@ var _ = Describe("Repository", func() {
 		var v RepoOwners
 
 		BeforeEach(func() {
-			v = RepoOwners(map[string]*RepoOwner{
-				"abc": &RepoOwner{JoinedAt: 100},
-				"xyz": &RepoOwner{JoinedAt: 200},
-			})
+			v = map[string]*RepoOwner{
+				"abc": {JoinedAt: 100},
+				"xyz": {JoinedAt: 200},
+			}
 		})
 
 		Describe(".Get", func() {
@@ -192,7 +192,7 @@ var _ = Describe("Repository", func() {
 
 		Describe(".ForEach", func() {
 			It("should pass all values", func() {
-				var owners = []string{}
+				var owners []string
 				v.ForEach(func(o *RepoOwner, addr string) {
 					owners = append(owners, addr)
 				})
@@ -210,9 +210,7 @@ var _ = Describe("Repository", func() {
 						ProposalProposee:                 1,
 						ProposalProposeeLimitToCurHeight: true,
 					},
-					Policies: RepoACLPolicies{
-						"user1_dev": &RepoACLPolicy{Subject: "user1", Object: "dev", Action: "deny"},
-					},
+					Policies: []*Policy{{Subject: "user1", Object: "dev", Action: "deny"}},
 				}
 
 				It("should update base object", func() {
@@ -231,44 +229,40 @@ var _ = Describe("Repository", func() {
 			Context("Policies merge", func() {
 				When("Policies includes one policy named `user1_dev`", func() {
 					base := &RepoConfig{
-						Policies: RepoACLPolicies{
-							"user1_dev": &RepoACLPolicy{Subject: "user1", Object: "dev", Action: "deny"},
-						},
+						Policies: []*Policy{{Subject: "user1", Object: "dev", Action: "deny"}},
 					}
 
 					It("should replace existing policy if their name matches", func() {
 						base.MergeMap(map[string]interface{}{
-							"policies": map[string]interface{}{
-								"user1_dev": map[string]interface{}{"sub": "sub2", "obj": "branch_dev", "act": "delete"},
+							"policies": []map[string]interface{}{
+								{"sub": "sub2", "obj": "branch_dev", "act": "delete"},
 							},
 						})
 						Expect(base.Policies).To(HaveLen(1))
 						Expect(base.Policies).To(HaveKey("user1_dev"))
-						Expect(base.Policies["user1_dev"].Subject).To(Equal("sub2"))
-						Expect(base.Policies["user1_dev"].Object).To(Equal("branch_dev"))
-						Expect(base.Policies["user1_dev"].Action).To(Equal("delete"))
+						Expect(base.Policies[0].Subject).To(Equal("sub2"))
+						Expect(base.Policies[0].Object).To(Equal("branch_dev"))
+						Expect(base.Policies[0].Action).To(Equal("delete"))
 					})
 				})
 
 				When("Policies includes one policy named `user1_dev`", func() {
 					base := &RepoConfig{
-						Policies: RepoACLPolicies{
-							"user1_dev": &RepoACLPolicy{Subject: "user1", Object: "dev", Action: "deny"},
-						},
+						Policies: []*Policy{{Subject: "user1", Object: "dev", Action: "deny"}},
 					}
 
 					It("should add policy if it does not already exist", func() {
 						base.MergeMap(map[string]interface{}{
-							"policies": map[string]interface{}{
-								"user2_dev": map[string]interface{}{"sub": "sub2", "obj": "branch_dev", "act": "delete"},
+							"policies": []map[string]interface{}{
+								{"sub": "sub2", "obj": "branch_dev", "act": "delete"},
 							},
 						})
 						Expect(base.Policies).To(HaveLen(2))
 						Expect(base.Policies).To(HaveKey("user1_dev"))
 						Expect(base.Policies).To(HaveKey("user2_dev"))
-						Expect(base.Policies["user2_dev"].Subject).To(Equal("sub2"))
-						Expect(base.Policies["user2_dev"].Object).To(Equal("branch_dev"))
-						Expect(base.Policies["user2_dev"].Action).To(Equal("delete"))
+						Expect(base.Policies[0].Subject).To(Equal("sub2"))
+						Expect(base.Policies[0].Object).To(Equal("branch_dev"))
+						Expect(base.Policies[0].Action).To(Equal("delete"))
 					})
 				})
 			})
@@ -280,7 +274,7 @@ var _ = Describe("Repository", func() {
 					ProposalProposee:                 1,
 					ProposalProposeeLimitToCurHeight: true,
 				},
-				Policies: map[string]*RepoACLPolicy{},
+				Policies: []*Policy{},
 			}
 
 			It("should clone into a different RepoConfig object", func() {

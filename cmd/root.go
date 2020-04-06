@@ -80,7 +80,7 @@ var rootCmd = &cobra.Command{
 development network that allows anyone, anywhere to create software products
 and organizations without a centralized authority.`,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		config.Configure(cmd.Root(), cfg, tmconfig, &itr)
+		config.Configure(cfg, tmconfig, &itr)
 		log = cfg.G().Log
 
 		if cmd.CalledAs() != "init" {
@@ -127,6 +127,10 @@ func init() {
 	viper.BindPFlag("node.gitbin", rootCmd.PersistentFlags().Lookup("gitbin"))
 	viper.BindPFlag("net.version", rootCmd.PersistentFlags().Lookup("net"))
 	viper.BindPFlag("console.only", consoleCmd.Flags().Lookup("only"))
+	viper.BindPFlag("dev", rootCmd.PersistentFlags().Lookup("dev"))
+	viper.BindPFlag("home", rootCmd.PersistentFlags().Lookup("home"))
+	viper.BindPFlag("home.prefix", rootCmd.PersistentFlags().Lookup("home.prefix"))
+	viper.BindPFlag("nolog", rootCmd.PersistentFlags().Lookup("nolog"))
 
 	setStartFlags(startCmd, consoleCmd)
 	setKeyCmdAndFlags()

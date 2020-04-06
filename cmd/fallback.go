@@ -27,11 +27,11 @@ var fallbackCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if IsGitSignRequest(args) {
-			repo.GitSignCmd(args, os.Stdin)
+			repo.GitSignCmd(cfg, args, os.Stdin)
 		}
 
 		if IsGitVerifyRequest(args) {
-			repo.GitVerifyCmd(args)
+			repo.GitVerifyCmd(cfg, args)
 		}
 
 		fmt.Print("Unknown command. Use --help to see commands.\n")

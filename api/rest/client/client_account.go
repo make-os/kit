@@ -25,7 +25,7 @@ func (c *Client) AccountGetNonce(address string, blockHeight ...uint64) (*apityp
 		height = blockHeight[0]
 	}
 
-	path := rest.RestV1Path(constants.NamespaceUser, rest.MethodNameGetNonce)
+	path := rest.V1Path(constants.NamespaceUser, rest.MethodNameGetNonce)
 	resp, err := c.get(path, M{"address": address, "blockHeight": height})
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (c *Client) AccountGet(address string, blockHeight ...uint64) (*state.Accou
 		height = blockHeight[0]
 	}
 
-	path := rest.RestV1Path(constants.NamespaceUser, rest.MethodNameGetAccount)
+	path := rest.V1Path(constants.NamespaceUser, rest.MethodNameGetAccount)
 	resp, err := c.get(path, M{"address": address, "blockHeight": height})
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (c *Client) AccountGet(address string, blockHeight ...uint64) (*state.Accou
 // AccountGetNextNonceUsingClients gets the next nonce of an account by
 // querying the given Remote API clients until one succeeds.
 func AccountGetNextNonceUsingClients(clients []RestClient, address string) (string, error) {
-	var errs = []string{}
+	var errs []string
 	for i, cl := range clients {
 		resp, err := cl.AccountGetNonce(address)
 		if err != nil {

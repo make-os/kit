@@ -1,13 +1,9 @@
 package logic
 
 import (
-	"fmt"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/types/core"
 )
-
-// ErrNoSeedFound means no secret was found
-var ErrNoSeedFound = fmt.Errorf("no secret found")
 
 // System implements types.TxLogic.
 // Provides functionalities for executing transactions

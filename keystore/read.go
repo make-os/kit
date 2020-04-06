@@ -7,7 +7,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/btcsuite/btcutil/base58"
-	funk "github.com/thoas/go-funk"
+	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"

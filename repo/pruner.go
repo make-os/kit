@@ -2,10 +2,11 @@ package repo
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/params"

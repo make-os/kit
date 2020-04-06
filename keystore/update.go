@@ -2,7 +2,6 @@ package keystore
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,10 +10,10 @@ import (
 )
 
 // UpdateCmd fetches and lists all accounts
-func (ks *Keystore) UpdateCmd(addressOrIndex, passphrase string, out io.Writer) error {
+func (ks *Keystore) UpdateCmd(addressOrIndex, passphrase string) error {
 
 	if len(addressOrIndex) == 0 {
-		return fmt.Errorf("Address or address index is required")
+		return fmt.Errorf("address or address index is required")
 	}
 
 	// Unlock the key
@@ -24,7 +23,7 @@ func (ks *Keystore) UpdateCmd(addressOrIndex, passphrase string, out io.Writer) 
 	}
 
 	// Collect the new passphrase
-	fmt.Fprintln(out, "Enter your new passphrase")
+	fmt.Fprintln(ks.out, "Enter your new passphrase")
 	newPassphrase, err := ks.AskForPassword()
 	if err != nil {
 		return err
@@ -51,7 +50,7 @@ func (ks *Keystore) UpdateCmd(addressOrIndex, passphrase string, out io.Writer) 
 	// Delete the backup
 	os.RemoveAll(backupPath)
 
-	fmt.Fprintln(out, "Successfully updated key")
+	fmt.Fprintln(ks.out, "Successfully updated key")
 
 	return nil
 }

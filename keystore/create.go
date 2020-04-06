@@ -2,7 +2,6 @@ package keystore
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -91,8 +90,7 @@ func (ks *Keystore) CreateCmd(
 	keyType core.KeyType,
 	seed int64,
 	passphrase string,
-	nopass bool,
-	out io.Writer) (*crypto.Key, error) {
+	nopass bool) (*crypto.Key, error) {
 
 	var passFromPrompt string
 	var err error
@@ -100,7 +98,7 @@ func (ks *Keystore) CreateCmd(
 	// If no passphrase is provided, start an interactive session to
 	// collect the passphrase
 	if !nopass && strings.TrimSpace(passphrase) == "" {
-		fmt.Println("Your new key needs to be locked with a passphrase. Please enter a passphrase.")
+		fmt.Fprint(ks.out, "Your new key needs to be locked with a passphrase. Please enter a passphrase.")
 		passFromPrompt, err = ks.AskForPassword()
 		if err != nil {
 			return nil, err
@@ -132,11 +130,11 @@ func (ks *Keystore) CreateCmd(
 		return nil, err
 	}
 
-	fmt.Fprintln(out, "New key created, encrypted and stored.")
+	fmt.Fprintln(ks.out, "New key created, encrypted and stored.")
 	if keyType == core.KeyTypeAccount {
-		fmt.Fprintln(out, "Address:", color.CyanString(key.Addr().String()))
+		fmt.Fprintln(ks.out, "Address:", color.CyanString(key.Addr().String()))
 	} else if keyType == core.KeyTypePush {
-		fmt.Fprintln(out, "Address:", color.CyanString(key.PushAddr().String()))
+		fmt.Fprintln(ks.out, "Address:", color.CyanString(key.PushAddr().String()))
 	}
 
 	return key, nil

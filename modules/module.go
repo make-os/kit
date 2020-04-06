@@ -70,7 +70,7 @@ func (m *Module) GetModules() *modules.Modules {
 func (m *Module) registerModules(vm *otto.Otto) {
 	m.Modules.Tx = NewTxModule(vm, m.service, m.logic)
 	m.Modules.Chain = NewChainModule(vm, m.service, m.logic)
-	m.Modules.Account = NewAccountModule(m.cfg, vm, m.acctmgr, m.service, m.logic)
+	m.Modules.Account = NewUserModule(m.cfg, vm, m.acctmgr, m.service, m.logic)
 	m.Modules.PushKey = NewPushKeyModule(m.cfg, vm, m.service, m.logic)
 	m.Modules.Ticket = NewTicketModule(vm, m.service, m.logic, m.ticketmgr)
 	m.Modules.Repo = NewRepoModule(vm, m.service, m.repoMgr, m.logic)

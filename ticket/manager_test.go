@@ -356,7 +356,7 @@ var _ = Describe("Manager", func() {
 
 			BeforeEach(func() {
 				txn := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
-				txn.Value = util.String("35")
+				txn.Value = "35"
 				txn.SenderPubKey = crypto.BytesToPublicKey(delegator.PubKey().MustBytes())
 				txn.Delegate = crypto.BytesToPublicKey(proposer.PubKey().MustBytes())
 				tx = txn
@@ -387,7 +387,7 @@ var _ = Describe("Manager", func() {
 
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(proposer.Addr(), &state.Account{
-					Balance:             util.String("1000"),
+					Balance:             "1000",
 					Stakes:              state.BareAccountStakes(),
 					DelegatorCommission: 50,
 				})
@@ -395,7 +395,7 @@ var _ = Describe("Manager", func() {
 
 			BeforeEach(func() {
 				txn := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
-				txn.Value = util.String("35")
+				txn.Value = "35"
 				txn.SenderPubKey = crypto.BytesToPublicKey(delegator.PubKey().MustBytes())
 				txn.Delegate = crypto.BytesToPublicKey(proposer.PubKey().MustBytes())
 				tx = txn
@@ -417,7 +417,7 @@ var _ = Describe("Manager", func() {
 		When("one ticket exist", func() {
 			BeforeEach(func() {
 				txn := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
-				txn.Value = util.String("35")
+				txn.Value = "35"
 				txn.SenderPubKey = crypto.StrToPublicKey("pub_key")
 				tx = txn
 				err = mgr.Index(tx, 100, 1)
@@ -444,7 +444,7 @@ var _ = Describe("Manager", func() {
 				params.MinTicketMatDur = 60
 				params.MaxTicketActiveDur = 40
 				txn := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
-				txn.Value = util.String("35")
+				txn.Value = "35"
 				txn.SenderPubKey = crypto.StrToPublicKey("pub_key")
 				tx = txn
 				err = mgr.Index(tx, 100, 1)

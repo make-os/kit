@@ -249,7 +249,7 @@ func (p *PushPool) Add(note core.RepoPushNote, noValidation ...bool) error {
 	// Validate the transaction
 	if len(noValidation) == 0 || noValidation[0] == false {
 		if err := p.validate(note); err != nil {
-			return errors.Wrap(err, "validation failed")
+			return errors.Wrapf(err, "push note validation failed")
 		}
 	}
 

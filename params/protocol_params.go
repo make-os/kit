@@ -21,18 +21,12 @@ var (
 	// BlockTime is the number of seconds between blocks
 	BlockTime = 15
 
-	// MaxBlockSize is the max size of a block
-	MaxBlockSize = int64(1000000)
-
 	// FeePerByte is the cost per byte of a transaction
 	FeePerByte = decimal.NewFromFloat(0.00001)
 
 	// TxTTL is the number of days a transaction
 	// can last for in the pool
 	TxTTL = 7
-
-	// TxPoolCap is the number of transactions the tx pool can contain
-	TxPoolCap = int64(10000)
 
 	// MinTicketMatDur is the number of blocks that must be created
 	// before a ticket is considered matured.
@@ -73,10 +67,6 @@ var (
 	// is unbonded
 	NumBlocksInHostThawPeriod = 10
 
-	// ValidatorTicketPoolSize is the size of the ticket pool from which validator
-	// tickets are selected randomly
-	ValidatorTicketPoolSize = 60000
-
 	// PushPoolCap is the pool transaction capacity
 	PushPoolCap = 1000
 
@@ -85,9 +75,6 @@ var (
 
 	// PushPoolItemTTL is the maximum life time of an item in the push pool
 	PushPoolItemTTL = 24 * 3 * time.Hour
-
-	// UnfinalizedObjectsCacheSize is the max size for unfinalized objects cache
-	UnfinalizedObjectsCacheSize = 10000
 
 	// PushObjectsSendersCacheSize is the max size for push note senders cache
 	PushObjectsSendersCacheSize = 5000
@@ -108,10 +95,6 @@ var (
 	// CostOfNamespace is the amount of native coin required to obtain a
 	// repo namespace
 	CostOfNamespace = decimal.NewFromFloat(1)
-
-	// MaxNamespaceRevealDur is the number of blocks within which a namespace
-	// must be revealed
-	MaxNamespaceRevealDur = 10
 
 	// NamespaceTTL is the number of blocks of a namespace life span
 	NamespaceTTL = 10

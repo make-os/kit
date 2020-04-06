@@ -182,11 +182,6 @@ func EmptyAppConfig() AppConfig {
 }
 
 // EmptyAppConfigWithGlobals is like EmptyAppConfig but sets the globals with g
-func EmptyAppConfigWithGlobals(g *Globals) AppConfig {
-	cfg := EmptyAppConfig()
-	cfg.g = g
-	return cfg
-}
 
 // GetConsoleHistoryPath returns the filepath where the console
 // input history is stored

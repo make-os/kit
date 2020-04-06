@@ -20,9 +20,9 @@ const (
 // BareAccount returns an empty account
 func BareAccount() *Account {
 	return &Account{
-		Balance: util.String("0"),
+		Balance: "0",
 		Nonce:   0,
-		Stakes:  AccountStakes(map[string]*StakeInfo{}),
+		Stakes:  map[string]*StakeInfo{},
 	}
 }
 
@@ -145,12 +145,12 @@ func (a *Account) Clean(curHeight uint64) {
 
 // BareAccountStakes returns an empty AccountStakes
 func BareAccountStakes() AccountStakes {
-	return AccountStakes(map[string]*StakeInfo{})
+	return map[string]*StakeInfo{}
 }
 
 // BareStakeInfo returns an empty StakeInfo
 func BareStakeInfo() *StakeInfo {
-	return &StakeInfo{Value: util.String("0")}
+	return &StakeInfo{Value: "0"}
 }
 
 // StakeInfo represents properties about a stake.

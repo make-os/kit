@@ -11,7 +11,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 
-	prompt "github.com/c-bata/go-prompt"
+	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 	apptypes "gitlab.com/makeos/mosdef/types"
 )
@@ -106,7 +106,7 @@ func (m *UserModule) globals() []*modules.ModuleFunc {
 // any number of console prompt suggestions
 func (m *UserModule) Configure() []prompt.Suggest {
 	fMap := map[string]interface{}{}
-	suggestions := []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 
 	// Set the namespace object
 	util.VMSet(m.vm, constants.NamespaceUser, fMap)
@@ -136,7 +136,7 @@ func (m *UserModule) ListLocalAccounts() []string {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	var resp = []string{}
+	var resp []string
 	for _, a := range accounts {
 		resp = append(resp, a.GetAddress())
 	}

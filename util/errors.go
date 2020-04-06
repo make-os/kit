@@ -92,7 +92,7 @@ func NewStatusError(httpCode int, code, field, msg string) *StatusError {
 }
 
 func (s *StatusError) Error() string {
-	var msgParts = []string{}
+	var msgParts []string
 	if s.Field != "" {
 		msgParts = append(msgParts, fmt.Sprintf("field:'%s'", s.Field))
 	}
@@ -143,7 +143,8 @@ func StatusErrorFromStr(str string) *StatusError {
 // getKeyFromFieldErrOutput lets you extract the value of a key in a BadFieldError output
 func getKeyFromFieldErrOutput(fieldErr, key string) string {
 	target := key + ":"
-	buf, buf2 := []byte{}, []byte{}
+	var buf2 []byte
+	var buf []byte
 	startIndex, endIndex := -1, -1
 
 	for i := 0; i < len(fieldErr); i++ {

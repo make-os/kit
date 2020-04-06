@@ -1,8 +1,9 @@
 package logic
 
 import (
-	"gitlab.com/makeos/mosdef/types/core"
 	"os"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"gitlab.com/makeos/mosdef/testutil"
 

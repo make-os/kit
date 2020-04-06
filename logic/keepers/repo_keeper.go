@@ -172,7 +172,7 @@ func (a *RepoKeeper) IndexProposalEnd(name, propID string, endHeight uint64) err
 // height: The chain height when the proposal will stop accepting votes.
 func (a *RepoKeeper) GetProposalsEndingAt(height uint64) []*core.EndingProposals {
 	key := MakeQueryKeyRepoProposalAtEndHeight(height)
-	var res = []*core.EndingProposals{}
+	var res []*core.EndingProposals
 	a.db.Iterate(key, true, func(rec *storage.Record) bool {
 		prefixes := storage.SplitPrefix(rec.GetKey())
 		res = append(res, &core.EndingProposals{

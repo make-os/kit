@@ -18,7 +18,6 @@ import (
 
 	"github.com/tendermint/tendermint/config"
 
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 )
@@ -37,7 +36,7 @@ var (
 	KeystoreDirName = "accounts"
 
 	// AppEnvPrefix is used as the prefix for environment variables
-	AppEnvPrefix = "MD"
+	AppEnvPrefix = AppName
 
 	// DefaultNodeAddress is the default Node listening address
 	DefaultNodeAddress = "127.0.0.1:9000"
@@ -71,20 +70,8 @@ func GenesisData() []*GenDataEntry {
 	return data
 }
 
-// GenesisFileHash returns the hash of the genesis file
-func GenesisFileHash() util.Bytes32 {
-	box := packr.NewBox("../data")
-	genesisData, err := box.Find("genesis.json")
-	if err != nil {
-		panic(errors.Wrap(err, "failed to read genesis file"))
-	}
-	return util.BytesToBytes32(util.Blake2b256(genesisData))
-}
-
-// setDefaultViperConfig sets default config values.
-// They are used when their values is not provided
-// in flag, env or config file.
-func setDefaultViperConfig(cmd *cobra.Command) {
+// setDefaultViperConfig sets default viper config values.
+func setDefaultViperConfig() {
 	viper.SetDefault("mempool.size", 5000)
 	viper.SetDefault("mempool.cacheSize", 10000)
 	viper.SetDefault("mempool.maxTxSize", 1024*1024)       // 1MB
@@ -113,31 +100,29 @@ func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
 // Configure sets up the application command structure, tendermint
 // and mosdef configuration. This is where all configuration and
 // settings are prepared
-func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
+func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {
 
+	// Populate viper from environment variables
+	viper.SetEnvPrefix(AppEnvPrefix)
+	replacer := strings.NewReplacer(".", "_")
+	viper.SetEnvKeyReplacer(replacer)
+	viper.AutomaticEnv()
+
+	// Create app config and populate with default values
 	var c = EmptyAppConfig()
 	c.Node.Mode = ModeProd
 	c.g.Interrupt = itr
-
-	dataDir := DefaultDataDir
-
-	// If data directory path is set in a flag, update the default data directory
-	dd, _ := rootCmd.PersistentFlags().GetString("home")
-	ddPrefix, _ := rootCmd.PersistentFlags().GetString("home.prefix")
-	if dd != "" {
-		dataDir = dd
-	}
-
-	devMode, _ := rootCmd.Flags().GetBool("dev")
+	dataDir := viper.GetString("home")
+	devDataDirPrefix := viper.GetString("home.prefix")
+	devMode := viper.GetBool("dev")
 
 	// In development mode, use the development data directory.
 	// Attempt to create the directory
 	if devMode {
 		dataDir = DefaultDevDataDir
 		c.Node.Mode = ModeDev
-
-		if ddPrefix != "" {
-			dataDir = dataDir + "_" + ddPrefix
+		if devDataDirPrefix != "" {
+			dataDir = dataDir + "_" + devDataDirPrefix
 		}
 	}
 
@@ -149,8 +134,7 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 	readTendermintConfig(tmcfg, dataDir)
 
 	// Set viper configuration
-	setDefaultViperConfig(rootCmd)
-
+	setDefaultViperConfig()
 	viper.SetConfigName(AppName)
 	viper.AddConfigPath(dataDir)
 	viper.AddConfigPath(".")
@@ -166,11 +150,6 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 			golog.Fatalf("Failed to read config file: %s", err)
 		}
 	}
-
-	viper.SetEnvPrefix(AppEnvPrefix)
-	replacer := strings.NewReplacer(".", "_")
-	viper.SetEnvKeyReplacer(replacer)
-	viper.AutomaticEnv()
 
 	// Read the loaded config into AppConfig
 	if err := viper.Unmarshal(&c); err != nil {
@@ -208,7 +187,7 @@ func Configure(rootCmd *cobra.Command, cfg *AppConfig, tmcfg *config.Config, itr
 	}
 
 	// If no logger is wanted, set mosdef and tendermint log level to `error`
-	noLog, _ := rootCmd.Flags().GetBool("nolog")
+	noLog := viper.GetBool("nolog")
 	if noLog {
 		tmcfg.LogLevel = fmt.Sprintf("*:error")
 		c.G().Log.SetToError()

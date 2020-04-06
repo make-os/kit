@@ -1,7 +1,7 @@
 package console
 
 import (
-	prompt "github.com/c-bata/go-prompt"
+	"github.com/c-bata/go-prompt"
 )
 
 var initialSuggestions = []prompt.Suggest{

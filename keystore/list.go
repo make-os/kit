@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	humanize "github.com/dustin/go-humanize"
+	"github.com/dustin/go-humanize"
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"gitlab.com/makeos/mosdef/crypto"

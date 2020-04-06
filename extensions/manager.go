@@ -17,7 +17,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/util"
 
-	prompt "github.com/c-bata/go-prompt"
+	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 )
 
@@ -71,7 +71,7 @@ func (m *Manager) globals() []*modules.ModuleFunc {
 // context and return any number of console prompt suggestions
 func (m *Manager) Configure() []prompt.Suggest {
 	fMap := map[string]interface{}{}
-	suggestions := []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 
 	// Set the namespace object
 	util.VMSet(m.vm, constants.NamespaceExtension, fMap)

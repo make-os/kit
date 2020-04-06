@@ -1,9 +1,10 @@
 package repo
 
 import (
-	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 	"path/filepath"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"

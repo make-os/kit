@@ -11,7 +11,6 @@ import (
 
 	"github.com/tendermint/tendermint/cmd/tendermint/commands"
 
-	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	tmconfig "github.com/tendermint/tendermint/config"
 	"gitlab.com/makeos/mosdef/util"
@@ -21,44 +20,35 @@ import (
 )
 
 // SetTestCfg prepare a config directory for tests
-func SetTestCfg(opts ...string) (*config.AppConfig, error) {
+func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
 	var dataDirName = util.RandString(5)
 	if len(opts) > 0 {
 		dataDirName = opts[0]
 	}
 
-	var err error
+	// Create test directory
 	dir, _ := homedir.Dir()
 	dataDir := path.Join(dir, dataDirName)
 	os.MkdirAll(dataDir, 0700)
 
-	// Create test root command and
-	// set required flags and values
-	rootCmd := &cobra.Command{}
-	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set the network version")
-	rootCmd.PersistentFlags().String("home", "", "Set configuration directory")
-	rootCmd.PersistentFlags().Set("home", dataDir)
-	rootCmd.PersistentFlags().Set("net", dataDir)
+	// Set required viper keys
 	viper.Set("net.version", 10000000)
-
-	var cfg = &config.AppConfig{}
-	var tmcfg = tmconfig.DefaultConfig()
+	viper.Set("home", dataDir)
 
 	commands.SetLoggerToNoop()
 
 	// Initialize the config using the test root command
+	var tmcfg = tmconfig.DefaultConfig()
+	cfg = &config.AppConfig{}
 	interrupt := util.Interrupt(make(chan struct{}))
-	config.Configure(rootCmd, cfg, tmcfg, &interrupt)
+	config.Configure(cfg, tmcfg, &interrupt)
 	cfg.Node.Mode = config.ModeTest
-	os.MkdirAll(path.Join(cfg.NetDataDir(), "repos"), 0700)
-	cfg.SetRepoRoot(path.Join(cfg.NetDataDir(), "repos"))
 
 	// Initialize the directory
 	commands.SetConfig(tmcfg)
-	commands.InitFilesCmd.RunE(nil, nil)
 	tmconfig.EnsureRoot(tmcfg.RootDir)
-	cfg.LoadKeys(tmcfg.NodeKeyFile(), tmcfg.PrivValidatorKeyFile(),
-		tmcfg.PrivValidatorStateFile())
+	commands.InitFilesCmd.RunE(nil, nil)
+	cfg.LoadKeys(tmcfg.NodeKeyFile(), tmcfg.PrivValidatorKeyFile(), tmcfg.PrivValidatorStateFile())
 
 	// Replace logger with Noop logger
 	cfg.G().Log = logger.NewLogrusNoOp()
@@ -80,13 +70,6 @@ func GetDB(cfg *config.AppConfig) (appDB *storage.Badger, stateTreeDB *storage.B
 }
 
 // GetDBAtDir test databases at a directory
-func GetDBAtDir(cfg *config.AppConfig, dir string) *storage.Badger {
-	db := storage.NewBadger()
-	if err := db.Init(dir); err != nil {
-		panic(err)
-	}
-	return db
-}
 
 // MockObjects contains mocks for various structs
 type MockObjects struct {
@@ -141,6 +124,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.Logic.EXPECT().StateTree().Return(mo.StateTree).MinTimes(0)
 	mo.Logic.EXPECT().GetRepoManager().Return(mo.RepoManager).MinTimes(0)
 	mo.Logic.EXPECT().PushKeyKeeper().Return(mo.PushKeyKeeper).MinTimes(0)
+	mo.Logic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
 	mo.Logic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
 
 	mo.AtomicLogic.EXPECT().Sys().Return(mo.Sys).MinTimes(0)

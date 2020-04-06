@@ -10,14 +10,13 @@ import (
 	"sync"
 	"time"
 
+	"gitlab.com/makeos/mosdef/api/rest"
 	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/node/types"
+	"gitlab.com/makeos/mosdef/pkgs/cache"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/state"
-
-	"gitlab.com/makeos/mosdef/api/rest"
-	"gitlab.com/makeos/mosdef/pkgs/cache"
 
 	"github.com/tendermint/tendermint/p2p"
 	"gitlab.com/makeos/mosdef/config"
@@ -56,25 +55,30 @@ var services = [][]interface{}{
 // and service a git repositories through http and ssh protocols.
 type Manager struct {
 	p2p.BaseReactor
-	cfg                  *config.AppConfig
-	log                  logger.Logger      // log is the application logger
-	wg                   *sync.WaitGroup    // wait group for waiting for the manager
-	srv                  *http.Server       // the http server
-	rootDir              string             // the root directory where all repos are stored
-	addr                 string             // addr is the listening address for the http server
-	gitBinPath           string             // gitBinPath is the path of the git executable
-	pushPool             core.PushPool      // The transaction pool for push transactions
-	mempool              core.Mempool       // The general transaction pool for block-bound transaction
-	logic                core.Logic         // logic is the application logic provider
-	privValidatorKey     *crypto.Key        // the node's private validator key for signing transactions
-	pushKeyGetter        core.PushKeyGetter // finds and returns PGP public key
-	dht                  dhttypes.DHTNode   // The dht service
-	pruner               core.Pruner        // The repo runner
-	blockGetter          types.BlockGetter  // Provides access to blocks
-	pushNoteSenders      *cache.Cache       // Store senders of push notes
-	pushOKSenders        *cache.Cache       // Stores senders of PushOK messages
-	pushNoteEndorsements *cache.Cache       // Store PushOKs
-	modulesAgg           modules.ModuleHub  // Modules aggregator
+	cfg                      *config.AppConfig
+	log                      logger.Logger               // log is the application logger
+	wg                       *sync.WaitGroup             // wait group for waiting for the manager
+	srv                      *http.Server                // the http server
+	rootDir                  string                      // the root directory where all repos are stored
+	addr                     string                      // addr is the listening address for the http server
+	gitBinPath               string                      // gitBinPath is the path of the git executable
+	pushPool                 core.PushPool               // The transaction pool for push transactions
+	mempool                  core.Mempool                // The general transaction pool for block-bound transaction
+	logic                    core.Logic                  // logic is the application logic provider
+	privValidatorKey         *crypto.Key                 // the node's private validator key for signing transactions
+	pushKeyGetter            core.PushKeyGetter          // finds and returns PGP public key
+	dht                      dhttypes.DHTNode            // The dht service
+	pruner                   core.Pruner                 // The repo runner
+	blockGetter              types.BlockGetter           // Provides access to blocks
+	pushNoteSenders          *cache.Cache                // Store senders of push notes
+	pushOKSenders            *cache.Cache                // Stores senders of PushOK messages
+	pushNoteEndorsements     *cache.Cache                // Store PushOKs
+	modulesAgg               modules.ModuleHub           // Modules aggregator
+	authenticate             authenticator               // Function for performing authentication
+	checkPushNote            pushNoteChecker             // Function for performing PushNote validation
+	packfileMaker            referenceUpdateRequestMaker // Function for creating a packfile for updating a repository
+	makePushHandler          pushHandlerCreator          // Function for creating a push handler
+	pushedObjectsBroadcaster pushedObjectsBroadcaster    // Function for broadcasting a push note and pushed objects
 }
 
 // NewManager creates an instance of Manager
@@ -103,12 +107,17 @@ func NewManager(
 		dht:                  dht,
 		mempool:              mempool,
 		blockGetter:          blockGetter,
+		authenticate:         authenticate,
+		checkPushNote:        checkPushNote,
+		packfileMaker:        makeReferenceUpdateRequest,
 		pushNoteSenders:      cache.NewActiveCache(params.PushObjectsSendersCacheSize),
 		pushOKSenders:        cache.NewActiveCache(params.PushObjectsSendersCacheSize),
 		pushNoteEndorsements: cache.NewActiveCache(params.PushNotesEndorsementsCacheSize),
 	}
 
+	mgr.makePushHandler = mgr.createPushHandler
 	mgr.pushKeyGetter = mgr.getPushKey
+	mgr.pushedObjectsBroadcaster = mgr.broadcastPushedObjects
 	mgr.BaseReactor = *p2p.NewBaseReactor("Reactor", mgr)
 	mgr.pruner = NewPruner(mgr, mgr.rootDir)
 
@@ -134,9 +143,9 @@ func (m *Manager) getPushKey(pushKeyID string) (crypto.PublicKey, error) {
 	return pk.PubKey, nil
 }
 
-// cachePushNoteSender caches a push note sender
-func (m *Manager) cachePushNoteSender(senderID string, pushNoteID string) {
-	key := util.Hash20Hex([]byte(senderID + pushNoteID))
+// cacheNoteSender caches a push note sender
+func (m *Manager) cacheNoteSender(senderID string, noteID string) {
+	key := util.Hash20Hex([]byte(senderID + noteID))
 	m.pushNoteSenders.AddWithExp(key, struct{}{}, time.Now().Add(10*time.Minute))
 }
 
@@ -147,27 +156,27 @@ func (m *Manager) cachePushOkSender(senderID string, pushOkID string) {
 }
 
 // isPushNoteSender checks whether a push note was sent by the given sender ID
-func (m *Manager) isPushNoteSender(senderID string, txID string) bool {
-	key := util.Hash20Hex([]byte(senderID + txID))
+func (m *Manager) isPushNoteSender(senderID string, noteID string) bool {
+	key := util.Hash20Hex([]byte(senderID + noteID))
 	v := m.pushNoteSenders.Get(key)
 	return v == struct{}{}
 }
 
 // isPushOKSender checks whether a "push OK" was sent by the given sender ID
-func (m *Manager) isPushOKSender(senderID string, txID string) bool {
-	key := util.Hash20Hex([]byte(senderID + txID))
+func (m *Manager) isPushOKSender(senderID string, pushOKID string) bool {
+	key := util.Hash20Hex([]byte(senderID + pushOKID))
 	v := m.pushOKSenders.Get(key)
 	return v == struct{}{}
 }
 
 // addPushNoteEndorsement indexes a PushOK for a given push note
-func (m *Manager) addPushNoteEndorsement(pnID string, pok *core.PushOK) {
-	pokList := m.pushNoteEndorsements.Get(pnID)
+func (m *Manager) addPushNoteEndorsement(noteID string, pok *core.PushOK) {
+	pokList := m.pushNoteEndorsements.Get(noteID)
 	if pokList == nil {
 		pokList = map[string]*core.PushOK{}
 	}
 	pokList.(map[string]*core.PushOK)[pok.ID().String()] = pok
-	m.pushNoteEndorsements.Add(pnID, pokList)
+	m.pushNoteEndorsements.Add(noteID, pokList)
 }
 
 // Start starts the server that serves the repos.
@@ -193,8 +202,8 @@ func (m *Manager) Start() error {
 }
 
 func (m *Manager) registerAPIHandlers(s *http.ServeMux) {
-	rest := rest.NewAPI(m.modulesAgg, m.log)
-	rest.RegisterEndpoints(s)
+	api := rest.NewAPI(m.modulesAgg, m.log)
+	api.RegisterEndpoints(s)
 }
 
 // GetLogic returns the application logic provider
@@ -239,7 +248,10 @@ func (m *Manager) getRepoPath(name string) string {
 // gitRequestsHandler handles incoming http request from a git client
 func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
-	m.log.Debug("New request", "Method", r.Method, "URL", r.URL.String(), "ProtocolVersion", r.Proto)
+	m.log.Debug("New request",
+		"Method", r.Method,
+		"URL", r.URL.String(),
+		"ProtocolVersion", r.Proto)
 
 	// De-construct the URL to get the repo name and operation
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
@@ -255,8 +267,8 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		ns = m.logic.NamespaceKeeper().Get(util.HashNamespace(namespace))
 		if ns.IsNil() {
 			w.WriteHeader(http.StatusNotFound)
-			m.log.Debug("Unknown repository", "Name", repoName, "StatusCode", http.StatusNotFound,
-				"StatusText", http.StatusText(http.StatusNotFound))
+			m.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound,
+				"Status", http.StatusText(http.StatusNotFound))
 			return
 		}
 
@@ -265,8 +277,8 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		target := ns.Domains.Get(repoName)
 		if target == "" || target[:2] != "r/" {
 			w.WriteHeader(http.StatusNotFound)
-			m.log.Debug("Unknown repository", "Name", repoName, "StatusCode", http.StatusNotFound,
-				"StatusText", http.StatusText(http.StatusNotFound))
+			m.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound,
+				"Status", http.StatusText(http.StatusNotFound))
 			return
 		}
 
@@ -278,17 +290,17 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	repoState := m.logic.RepoKeeper().Get(repoName)
 	if repoState.IsNil() {
 		w.WriteHeader(http.StatusNotFound)
-		m.log.Debug("Unknown repository", "Name", repoName, "StatusCode", http.StatusNotFound,
-			"StatusText", http.StatusText(http.StatusNotFound))
+		m.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound,
+			"Status", http.StatusText(http.StatusNotFound))
 		return
 	}
 
 	// Authenticate pusher
-	pushReqTokenData, polEnforcer, err := m.handleAuth(r, repoState, ns)
+	txDetails, polEnforcer, err := m.handleAuth(r, repoState, ns)
 	if err != nil {
 		w.Header().Set("WWW-Authenticate", "Basic")
 		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprint(w, err.Error())
+		m.log.Error("Auth failure", "Err", err.Error(), "Name", repoName)
 		return
 	}
 
@@ -302,34 +314,31 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(statusCode)
 		m.log.Debug("Failed to open target repository",
 			"Name", repoName,
-			"StatusCode", statusCode,
-			"StatusText", http.StatusText(statusCode))
+			"Code", statusCode,
+			"Status", http.StatusText(statusCode))
 		return
 	}
 
-	targetRepo := &Repo{
-		name:  repoName,
-		git:   repo,
-		ops:   NewGitOps(m.gitBinPath, fullRepoDir),
-		path:  fullRepoDir,
-		state: repoState,
+	req := &requestInfo{
+		w:           w,
+		r:           r,
+		op:          op,
+		txDetails:   txDetails,
+		polEnforcer: polEnforcer,
+		repo: &Repo{
+			name:      repoName,
+			git:       repo,
+			ops:       NewGitOps(m.gitBinPath, fullRepoDir),
+			path:      fullRepoDir,
+			state:     repoState,
+			namespace: namespace,
+		},
+		repoDir:    fullRepoDir,
+		srvName:    getService(r),
+		gitBinPath: m.gitBinPath,
 	}
 
-	if namespace != DefaultNS {
-		targetRepo.namespace = namespace
-	}
-
-	reqInfo := &requestInfo{
-		w:                w,
-		r:                r,
-		op:               op,
-		pushReqTokenData: pushReqTokenData,
-		repo:             targetRepo,
-		repoDir:          fullRepoDir,
-		srvName:          getService(r),
-		gitBinPath:       m.gitBinPath,
-		pushHandler:      newPushHandler(targetRepo, pushReqTokenData, polEnforcer, m),
-	}
+	req.pushHandler = m.makePushHandler(req.repo, txDetails, polEnforcer)
 
 	for _, s := range services {
 		srvPattern := s[0].(string)
@@ -345,7 +354,7 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err := srv.handle(reqInfo)
+		err := srv.handle(req)
 		if err != nil {
 			m.log.Error("failed to handle request", "Req", srvPattern, "Err", err)
 		}

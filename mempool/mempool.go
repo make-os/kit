@@ -118,7 +118,7 @@ func (mp *Mempool) CheckTxWithInfo(tx types.Tx,
 	// can't be larger than the maxMsgSize, otherwise we can't
 	// relay it to peers.
 	if txSize > mp.cfg.Mempool.MaxTxSize {
-		return fmt.Errorf("Tx too large. Max size is %d, but got %d",
+		return fmt.Errorf("tx is too large. Max size is %d, but got %d",
 			mp.cfg.Mempool.MaxTxSize, txSize)
 	}
 
@@ -208,7 +208,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 	var totalBytes int64
 	txs := make([]types.Tx, 0, mp.pool.Size())
 	numValTicketTxReaped := 0
-	ignoredTx := []t.BaseTx{}
+	var ignoredTx []t.BaseTx
 
 	// Collect transactions from the top
 	// of the pool up to the given maxBytes.
@@ -276,8 +276,8 @@ func (mp *Mempool) Unlock() {
 // NOTE: unsafe; Lock/Unlock must be managed by caller
 func (mp *Mempool) Update(blockHeight int64, txs types.Txs,
 	deliverTxResponses []*abci.ResponseDeliverTx,
-	newPreFn mempool.PreCheckFunc,
-	newPostFn mempool.PostCheckFunc) error {
+	_ mempool.PreCheckFunc,
+	_ mempool.PostCheckFunc) error {
 
 	mp.notifiedTxsAvailable = false
 

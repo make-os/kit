@@ -35,8 +35,6 @@ const (
 	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 
-	// ZeroString contains "0" value
-	ZeroString = String("0")
 )
 
 type Map map[string]interface{}
@@ -403,24 +401,29 @@ func XorBytes(a, b []byte) []byte {
 	return new(big.Int).Xor(iA, iB).Bytes()
 }
 
-// RemoveFlagVal takes a slice of arguments and remove
-// flags matching flagname and their value
-func RemoveFlagVal(args []string, flags []string) []string {
-	newArgs := []string{}
+// RemoveFlag takes a slice of arguments and remove specific flags
+func RemoveFlag(args []string, flags []string) []string {
+	var newArgs []string
 	curFlag := ""
 	curFlagRemoved := false
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 		if arg[:1] == "-" {
-			curFlag = strings.Trim(arg[1:], "-")
-			curFlag = strings.Split(curFlag, "=")[0]
+			curFlag = strings.Split(strings.Trim(arg[1:], "-"), "=")[0]
 			if !funk.ContainsString(flags, curFlag) {
 				newArgs = append(newArgs, arg)
 				curFlagRemoved = false
 				continue
 			} else {
+				if strings.Index(arg, "=") != -1 {
+					curFlagRemoved = false
+					continue
+				}
 				curFlagRemoved = true
 			}
+		} else if arg[:1] != "-" && curFlagRemoved {
+			curFlagRemoved = false
+			continue
 		}
 		if !curFlagRemoved {
 			newArgs = append(newArgs, arg)

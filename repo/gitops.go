@@ -10,11 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// GitOps errors
 var (
 	ErrRefNotFound = fmt.Errorf("ref not found")
-	ErrEmptyHEAD   = fmt.Errorf("empty head")
-	ErrNoCommits   = fmt.Errorf("no commits")
+
+	ErrNoCommits = fmt.Errorf("no commits")
 )
 
 // GitOps provides convenience methods that utilize
@@ -227,7 +226,7 @@ func (g *GitOps) ListTreeObjectsSlice(treename string, recursive, showTrees bool
 	}
 
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
-	var entriesHash = []string{}
+	var entriesHash []string
 	for _, entry := range lines {
 		fields := strings.Fields(entry)
 		entriesHash = append(entriesHash, fields[2])
@@ -290,86 +289,4 @@ func (g *GitOps) UpdateRecentCommitMsg(msg, signingKey string, env ...string) er
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), env...)
 	return errors.Wrap(cmd.Run(), "failed to update recent commit msg")
-}
-
-// MergeBranch merges target branch into base
-func (g *GitOps) MergeBranch(base, target, targetRepoDir string) error {
-
-	// Checkout base branch
-	_, err := execGitCmd(g.gitBinPath, g.path, "checkout", base)
-	if err != nil {
-		return errors.Wrap(err, "failed to checkout base branch")
-	}
-
-	// Merge target into base if target branch is not in another repo...
-	if targetRepoDir == "" {
-		_, err = execGitCmd(g.gitBinPath, g.path, "merge", target)
-		if err == nil {
-			return nil
-		}
-	} else {
-		// ...otherwise, pull from the repo
-		_, err = execGitCmd(g.gitBinPath, g.path, "pull", targetRepoDir, target)
-		if err == nil {
-			return nil
-		}
-	}
-
-	// Reset uncommitted merge history if merge failed
-	_, resetErr := execGitCmd(g.gitBinPath, g.path, "reset", "--merge")
-	if resetErr != nil {
-		return errors.Wrap(resetErr, "failed to reset uncommitted merge")
-	}
-
-	return errors.Wrap(err, "failed to merge")
-}
-
-// TryMergeBranch merges target branch into base and reverses it.
-func (g *GitOps) TryMergeBranch(base, target, targetRepoDir string) error {
-
-	// Checkout the base branch
-	_, err := execGitCmd(g.gitBinPath, g.path, "checkout", base)
-	if err != nil {
-		return errors.Wrap(err, "failed to checkout base branch")
-	}
-
-	// Merge target into base while disabling commit and fast-forward
-	if targetRepoDir == "" {
-		_, err = execGitCmd(g.gitBinPath, g.path, "merge", target, "--no-commit", "--no-ff")
-	} else {
-		// ...otherwise, pull from the repo
-		_, err = execGitCmd(g.gitBinPath, g.path, "pull", targetRepoDir,
-			target, "--no-commit", "--no-ff")
-	}
-
-	// Reset uncommitted merge history
-	_, resetErr := execGitCmd(g.gitBinPath, g.path, "reset", "--merge")
-	if resetErr != nil {
-		return errors.Wrap(resetErr, "failed to reset uncommitted merge")
-	}
-
-	return errors.Wrap(err, "failed to merge")
-}
-
-// SetRemoteURL adds a URL to a remote
-func (g *GitOps) SetRemoteURL(remoteName, newURL string) error {
-	_, err := execGitCmd(g.gitBinPath, g.path, "remote", "set-url", "--add", remoteName, newURL)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// DeleteRemoteURL deletes a URL to a remote
-func (g *GitOps) DeleteRemoteURLs(remoteName string) error {
-	_, err := execGitCmd(
-		g.gitBinPath,
-		g.path,
-		"config",
-		"--unset-all",
-		fmt.Sprintf("remote.%s.url", remoteName))
-	if err != nil {
-		return err
-	}
-	return nil
 }

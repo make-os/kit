@@ -83,7 +83,7 @@ func (g *PushKeyKeeper) Remove(pushKeyID string) bool {
 // ARGS:
 // address: The target address
 func (g *PushKeyKeeper) GetByAddress(address string) []string {
-	pushKeyIDs := []string{}
+	var pushKeyIDs []string
 	g.db.Iterate(MakeQueryPushKeyIDsOfAddress(address), true, func(rec *storage.Record) bool {
 		parts := storage.SplitPrefix(rec.Key)
 		pushKeyIDs = append(pushKeyIDs, string(parts[len(parts)-1]))

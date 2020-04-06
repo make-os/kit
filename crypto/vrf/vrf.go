@@ -1,6 +1,6 @@
 // Package vrf implements a verifiable random function using the Edwards form
 // of Curve25519, SHA3 and the Elligator map.
-// Project URLs: 
+// Project URLs:
 // - https://github.com/YahooArchive/coname/tree/master/vrf
 // - https://github.com/coniks-sys/coniks-go/tree/master/crypto/vrf
 // Paper: https://www.usenix.org/system/files/conference/usenixsecurity15/sec15-paper-melara.pdf
@@ -34,10 +34,9 @@ import (
 	"golang.org/x/crypto/ed25519"
 )
 
-// Some constants
 const (
-	PublicKeySize    = 32
-	PrivateKeySize   = 64
+	PublicKeySize = 32
+
 	Size             = 32
 	intermediateSize = 32
 	ProofSize        = 32 + 32 + intermediateSize

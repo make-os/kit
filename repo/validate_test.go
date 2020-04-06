@@ -8,25 +8,23 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang/mock/gomock"
+	"github.com/mr-tron/base58"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/crypto"
 	dhttypes "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/testutil"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-
-	"github.com/golang/mock/gomock"
-	"gitlab.com/makeos/mosdef/mocks"
-
+	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Validation", func() {
@@ -34,9 +32,8 @@ var _ = Describe("Validation", func() {
 	var cfg *config.AppConfig
 	var repo core.BareRepo
 	var path string
-	var pushKeyID string
 	var pubKey *crypto.PubKey
-	var privKey, privKey2 *crypto.Key
+	var privKey *crypto.Key
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var mockTickMgr *mocks.MockTicketManager
@@ -46,13 +43,10 @@ var _ = Describe("Validation", func() {
 	var mockAcctKeeper *mocks.MockAccountKeeper
 	var mockSysKeeper *mocks.MockSystemKeeper
 	var mockTxLogic *mocks.MockTxLogic
+	var baseTxDetail *types.TxDetail
 
 	var pushKeyGetter = func(pushKeyID string) (crypto.PublicKey, error) {
 		return pubKey.ToPublicKey(), nil
-	}
-
-	var invalidPushKeyGetter = func(pushKeyID string) (crypto.PublicKey, error) {
-		return crypto.BytesToPublicKey(util.RandBytes(32)), nil
 	}
 
 	var pushKeyGetterWithErr = func(err error) func(pushKeyID string) (crypto.PublicKey, error) {
@@ -68,14 +62,9 @@ var _ = Describe("Validation", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
 		privKey = crypto.NewKeyFromIntSeed(1)
-		privKey2 = crypto.NewKeyFromIntSeed(2)
-		pushKeyID = privKey.PushAddr().String()
+		baseTxDetail = &types.TxDetail{PushKeyID: privKey.PushAddr().String()}
 		pubKey = privKey.PubKey()
-		Expect(err).To(BeNil())
-		_ = pushKeyID
-		_ = privKey2
 
-		GitEnv = append(GitEnv, "GNUPGHOME="+cfg.DataDir())
 		mockObjs := testutil.MockLogic(ctrl)
 		mockLogic = mockObjs.Logic
 		mockTickMgr = mockObjs.TicketManager
@@ -103,74 +92,42 @@ var _ = Describe("Validation", func() {
 		var commit *object.Commit
 		var err error
 
-		When("commit does not include transaction parameters", func() {
+		When("commit was not signed", func() {
 			BeforeEach(func() {
 				appendCommit(path, "file.txt", "line 1", "commit 1")
 				commitHash, _ := repo.GetRecentCommit()
 				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				_, err = checkCommit(commit, repo, pushKeyGetter)
+				err = checkCommit(commit, baseTxDetail, pushKeyGetter)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("transaction params was not set"))
-			})
-		})
-
-		When("a commit transaction parameters contains invalid push key", func() {
-			BeforeEach(func() {
-				txParams := fmt.Sprintf("tx: fee=%s, nonce=%s, pkID=%s", "0", "0", "invalid_pk_id")
-				appendCommit(path, "file.txt", "line 1", txParams)
-				commitHash, _ := repo.GetRecentCommit()
-				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				_, err = checkCommit(commit, repo, pushKeyGetter)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("push key id is invalid"))
-			})
-		})
-
-		When("the commit is not signed", func() {
-			BeforeEach(func() {
-				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
-				appendCommit(path, "file.txt", "line 1", txParams)
-				commitHash, _ := repo.GetRecentCommit()
-				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				_, err = checkCommit(commit, repo, pushKeyGetter)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("commit .* was not signed"))
+				Expect(err.Error()).To(MatchRegexp("commit (.*) was not signed"))
 			})
 		})
 
 		When("commit is signed but unable to get public key using the pushKeyID", func() {
 			BeforeEach(func() {
-				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
-				appendCommit(path, "file.txt", "line 1", txParams)
+				appendCommit(path, "file.txt", "line 1", "commit message")
 				commitHash, _ := repo.GetRecentCommit()
 				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				commit.PGPSignature = "signature"
-				_, err = checkCommit(commit, repo, pushKeyGetterWithErr(fmt.Errorf("bad error")))
+				err = checkCommit(commit, baseTxDetail, pushKeyGetterWithErr(fmt.Errorf("not found")))
 			})
 
-			It("should return err'", func() {
+			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed to get push key (.*): bad error"))
+				Expect(err.Error()).To(MatchRegexp("failed to get push key (.*): not found"))
 			})
 		})
 
 		When("commit has a signature but the signature is malformed", func() {
 			BeforeEach(func() {
-				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
-				appendCommit(path, "file.txt", "line 1", txParams)
+				appendCommit(path, "file.txt", "line 1", "commit message")
 				commitHash, _ := repo.GetRecentCommit()
 				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				commit.PGPSignature = "signature"
-				_, err = checkCommit(commit, repo, pushKeyGetter)
+				err = checkCommit(commit, baseTxDetail, pushKeyGetter)
 			})
 
 			It("should return err", func() {
@@ -179,38 +136,88 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("commit has a signature but the signature is not valid", func() {
+		When("commit signature header could not be decoded", func() {
 			BeforeEach(func() {
-				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
-				appendCommit(path, "file.txt", "line 1", txParams)
+				appendCommit(path, "file.txt", "line 1", "commit message")
 				commitHash, _ := repo.GetRecentCommit()
 				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{Bytes: []byte{1, 2, 3}, Type: "SIGNATURE"}))
-				_, err = checkCommit(commit, repo, pushKeyGetter)
+				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{
+					Bytes:   []byte{1, 2, 3},
+					Headers: map[string]string{"nonce": "invalid"},
+					Type:    "SIGNATURE"}))
+				err = checkCommit(commit, baseTxDetail, pushKeyGetter)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("commit (.*) signature is invalid"))
+				Expect(err.Error()).To(MatchRegexp("failed to decode PEM header: nonce: .* invalid syntax"))
 			})
 		})
 
-		When("commit has a signature and it is valid", func() {
+		When("commit has a signature but the signature is not valid", func() {
+			BeforeEach(func() {
+				appendCommit(path, "file.txt", "line 1", "commit message")
+				commitHash, _ := repo.GetRecentCommit()
+				commit, _ = repo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
+				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
+				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{
+					Bytes:   []byte{1, 2, 3},
+					Headers: txDetail.ToMapForPEMHeader(),
+					Type:    "SIGNATURE"}))
+				err = checkCommit(commit, baseTxDetail, pushKeyGetter)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("object (.*) signature is invalid"))
+			})
+		})
+
+		When("commit has a valid signature but its decoded header did not match the request transaction info", func() {
 			var err error
 			var sig []byte
 			BeforeEach(func() {
-				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
-				appendCommit(path, "file.txt", "line 1", txParams)
+				appendCommit(path, "file.txt", "line 1", "commit message")
 				commitHash, _ := repo.GetRecentCommit()
 				commit, _ = repo.CommitObject(plumbing.NewHash(commitHash))
 				sigMsg := getCommitOrTagSigMsg(commit)
-				sig, err = privKey.PrivKey().Sign([]byte(sigMsg))
+
+				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
+				pemHeader := txDetail.ToMapForPEMHeader()
+
+				sig, err = privKey.PrivKey().Sign(append([]byte(sigMsg), txDetail.BytesNoSig()...))
 				Expect(err).To(BeNil())
-				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{Bytes: sig, Type: "SIGNATURE"}))
-				_, err = checkCommit(commit, repo, pushKeyGetter)
+
+				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: pemHeader, Type: "SIGNATURE"}))
+				err = checkCommit(commit, baseTxDetail, pushKeyGetter)
 			})
 
-			It("should return nil", func() {
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(Equal(ErrSigHeaderAndReqParamsMismatch))
+			})
+		})
+
+		When("commit has a valid signature and the decoded signature header matches the request transaction info", func() {
+			var err error
+			var sig []byte
+			BeforeEach(func() {
+				appendCommit(path, "file.txt", "line 1", "commit message")
+				commitHash, _ := repo.GetRecentCommit()
+				commit, _ = repo.CommitObject(plumbing.NewHash(commitHash))
+				sigMsg := getCommitOrTagSigMsg(commit)
+
+				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
+				pemHeader := txDetail.ToMapForPEMHeader()
+
+				sig, err = privKey.PrivKey().Sign(append([]byte(sigMsg), txDetail.BytesNoSig()...))
+				Expect(err).To(BeNil())
+
+				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: pemHeader, Type: "SIGNATURE"}))
+				err = checkCommit(commit, txDetail, pushKeyGetter)
+			})
+
+			It("should return err", func() {
 				Expect(err).To(BeNil())
 			})
 		})
@@ -220,45 +227,15 @@ var _ = Describe("Validation", func() {
 		var err error
 		var tob *object.Tag
 
-		When("txparams is not set", func() {
+		When("tag is not signed", func() {
 			BeforeEach(func() {
 				createCommitAndAnnotatedTag(path, "file.txt", "first file", "commit 1", "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
-				_, err = checkAnnotatedTag(tob, repo, pushKeyGetter)
+				err = checkAnnotatedTag(tob, baseTxDetail, pushKeyGetter)
 			})
 
-			It("should return err='txparams was not set'", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("tag (.*): transaction params was not set"))
-			})
-		})
-
-		When("txparams.pkID is not valid", func() {
-			BeforeEach(func() {
-				txParams := util.MakeTxParams("0", "0", "invalid_pk_id", nil)
-				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
-				tagRef, _ := repo.Tag("v1")
-				tob, _ = repo.TagObject(tagRef.Hash())
-				_, err = checkAnnotatedTag(tob, repo, pushKeyGetter)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("tag (.*): field:pkID, msg:push key id is invalid"))
-			})
-		})
-
-		When("tag is not signed", func() {
-			BeforeEach(func() {
-				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
-				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
-				tagRef, _ := repo.Tag("v1")
-				tob, _ = repo.TagObject(tagRef.Hash())
-				_, err = checkAnnotatedTag(tob, repo, pushKeyGetter)
-			})
-
-			It("should return err", func() {
+			It("should return err='txDetail was not set'", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(MatchRegexp("tag (.*) is unsigned. Sign the tag with your push key"))
 			})
@@ -266,12 +243,12 @@ var _ = Describe("Validation", func() {
 
 		When("tag is signed but unable to get public key using the pushKeyID", func() {
 			BeforeEach(func() {
-				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
-				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
+				txDetail := types.MakeTxDetail("0", "0", pubKey.PushAddr().String(), nil)
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", txDetail, "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 				tob.PGPSignature = "signature"
-				_, err = checkAnnotatedTag(tob, repo, pushKeyGetterWithErr(fmt.Errorf("bad error")))
+				err = checkAnnotatedTag(tob, baseTxDetail, pushKeyGetterWithErr(fmt.Errorf("bad error")))
 			})
 
 			It("should return err", func() {
@@ -282,12 +259,11 @@ var _ = Describe("Validation", func() {
 
 		When("tag has a signature but the signature is malformed", func() {
 			BeforeEach(func() {
-				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
-				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 				tob.PGPSignature = "signature"
-				_, err = checkAnnotatedTag(tob, repo, pushKeyGetter)
+				err = checkAnnotatedTag(tob, baseTxDetail, pushKeyGetter)
 			})
 
 			It("should return err", func() {
@@ -298,34 +274,57 @@ var _ = Describe("Validation", func() {
 
 		When("tag has a signature but the signature is invalid", func() {
 			BeforeEach(func() {
-				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
-				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
-				sig := pem.EncodeToMemory(&pem.Block{Bytes: []byte("invalid sig"), Type: "SIGNATURE"})
+
+				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
+				sig := pem.EncodeToMemory(&pem.Block{Bytes: []byte("invalid sig"), Headers: txDetail.ToMapForPEMHeader(), Type: "SIGNATURE"})
 				tob.PGPSignature = string(sig)
-				_, err = checkAnnotatedTag(tob, repo, pushKeyGetter)
+
+				err = checkAnnotatedTag(tob, baseTxDetail, pushKeyGetter)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("commit (.*) signature is invalid"))
+				Expect(err.Error()).To(MatchRegexp("object (.*) signature is invalid"))
 			})
 		})
 
-		When("tag has a valid signature but the referenced commit is unsigned", func() {
+		When("tag has a valid signature but the signature header does not match the request transaction info", func() {
 			BeforeEach(func() {
-				txParams := util.MakeTxParams("0", "0", pubKey.PushAddr().String(), nil)
-				createCommitAndAnnotatedTag(path, "file.txt", "first file", txParams, "v1")
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
 				tagRef, _ := repo.Tag("v1")
 				tob, _ = repo.TagObject(tagRef.Hash())
 
+				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
 				msg := getCommitOrTagSigMsg(tob)
-				sig, _ := privKey.PrivKey().Sign([]byte(msg))
-				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Type: "SIGNATURE"})
+				sig, _ := privKey.PrivKey().Sign(append([]byte(msg), txDetail.BytesNoSig()...))
+				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.ToMapForPEMHeader(), Type: "SIGNATURE"})
 				tob.PGPSignature = string(pemData)
 
-				_, err = checkAnnotatedTag(tob, repo, pushKeyGetter)
+				err = checkAnnotatedTag(tob, baseTxDetail, pushKeyGetter)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(Equal(ErrSigHeaderAndReqParamsMismatch))
+			})
+		})
+
+		When("tag has signature and header are valid but the referenced commit is unsigned", func() {
+			BeforeEach(func() {
+				createCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
+				tagRef, _ := repo.Tag("v1")
+				tob, _ = repo.TagObject(tagRef.Hash())
+
+				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
+				msg := getCommitOrTagSigMsg(tob)
+				sig, _ := privKey.PrivKey().Sign(append([]byte(msg), txDetail.BytesNoSig()...))
+				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.ToMapForPEMHeader(), Type: "SIGNATURE"})
+				tob.PGPSignature = string(pemData)
+
+				err = checkAnnotatedTag(tob, txDetail, pushKeyGetter)
 			})
 
 			It("should return err", func() {
@@ -338,99 +337,33 @@ var _ = Describe("Validation", func() {
 	Describe(".checkNote", func() {
 		var err error
 
-		When("target note does not exist", func() {
+		When("unable to get note", func() {
 			BeforeEach(func() {
-				_, err = checkNote(repo, "unknown", pushKeyGetter)
-			})
-
-			It("should return err='unable to fetch note entries (unknown)'", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("unable to fetch note entries (unknown)"))
-			})
-		})
-
-		When("a note does not have a tx blob object", func() {
-			BeforeEach(func() {
-				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				_, err = checkNote(repo, "refs/notes/note1", pushKeyGetter)
-			})
-
-			It("should return err='note does not include a transaction parameters blob'", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("note does not include a transaction parameters blob"))
-			})
-		})
-
-		When("a notes tx blob has invalid transaction parameters format", func() {
-			BeforeEach(func() {
-				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pushKeyID=push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t sig=xyz")
-				_, err = checkNote(repo, "refs/notes/note1", pushKeyGetter)
+				detail := &types.TxDetail{Reference: "refs/notes/note1"}
+				mockRepo := mocks.NewMockBareRepo(ctrl)
+				mockRepo.EXPECT().RefGet(detail.Reference).Return("", fmt.Errorf("bad error"))
+				err = checkNote(mockRepo, detail)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("note (refs/notes/note1) has invalid transaction parameters: field:pushKeyID, msg:unknown field"))
+				Expect(err.Error()).To(ContainSubstring("failed to get note: bad error"))
 			})
 		})
 
-		When("a notes tx blob has invalid signature format", func() {
+		When("current note hash is different from tx detail hash", func() {
 			BeforeEach(func() {
-				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkID=push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t sig=xyz")
-				_, err = checkNote(repo, "refs/notes/note1", pushKeyGetter)
+				hash := util.RandString(40)
+				detail := &types.TxDetail{Reference: "refs/notes/note1", Head: hash}
+				mockRepo := mocks.NewMockBareRepo(ctrl)
+				noteHash := util.RandString(40)
+				mockRepo.EXPECT().RefGet(detail.Reference).Return(noteHash, nil)
+				err = checkNote(mockRepo, detail)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("note (refs/notes/note1) has invalid transaction " +
-					"parameters: field:sig, msg:signature format is not valid"))
-			})
-		})
-
-		When("a notes tx blob has an unknown public key id", func() {
-			BeforeEach(func() {
-				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkID=push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t sig=0x616263")
-				_, err = checkNote(repo, "refs/notes/note1", pushKeyGetterWithErr(fmt.Errorf("error finding pub key")))
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed to get push key (.*): error finding pub key"))
-			})
-		})
-
-		When("a notes tx blob includes a public key id to an invalid public key", func() {
-			BeforeEach(func() {
-				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkID=push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t sig=0x616263")
-				_, err = checkNote(repo, "refs/notes/note1", invalidPushKeyGetter)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("note (refs/notes/note1) signature verification failed"))
-			})
-		})
-
-		When("a note's signature is valid", func() {
-			var sig []byte
-			BeforeEach(func() {
-				createCommitAndNote(path, "file.txt", "a file", "commit msg", "note1")
-				commitHash := getRecentCommitHash(path, "refs/notes/note1")
-
-				msg := MakeNoteSigMsg("0", "0", "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t", commitHash, false)
-				sig, err = privKey.PrivKey().Sign(msg)
-				Expect(err).To(BeNil())
-				sigHex := util.ToHex(sig)
-
-				createNoteEntry(path, "note1", "tx: fee=0 nonce=0 pkID=push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t sig="+sigHex)
-				_, err = checkNote(repo, "refs/notes/note1", pushKeyGetter)
-			})
-
-			It("should return nil", func() {
-				Expect(err).To(BeNil())
+				Expect(err.Error()).To(Equal("current note hash differs from signed note hash"))
 			})
 		})
 	})
@@ -903,7 +836,7 @@ var _ = Describe("Validation", func() {
 		When("change item has a reference name format that is not known", func() {
 			BeforeEach(func() {
 				change := &core.ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
-				_, err = validateChange(repo, change, pushKeyGetter)
+				err = validateChange(repo, change, baseTxDetail, pushKeyGetter)
 			})
 
 			It("should return err='unrecognised change item'", func() {
@@ -915,7 +848,7 @@ var _ = Describe("Validation", func() {
 		When("change item referenced object is an unknown commit object", func() {
 			BeforeEach(func() {
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
-				_, err = validateChange(repo, change, pushKeyGetter)
+				err = validateChange(repo, change, baseTxDetail, pushKeyGetter)
 			})
 
 			It("should return err='unable to get commit object: object not found'", func() {
@@ -927,7 +860,7 @@ var _ = Describe("Validation", func() {
 		When("change item referenced object is an unknown tag object", func() {
 			BeforeEach(func() {
 				change := &core.ItemChange{Item: &Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
-				_, err = validateChange(repo, change, pushKeyGetter)
+				err = validateChange(repo, change, baseTxDetail, pushKeyGetter)
 			})
 
 			It("should return err='unable to get tag object: tag not found'", func() {
@@ -1072,11 +1005,9 @@ var _ = Describe("Validation", func() {
 			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: 0}, "field:timestamp, msg:timestamp is required"},
 			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: 2000000000}, "field:timestamp, msg:timestamp cannot be a future time"},
 			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, "field:accountNonce, msg:account nonce must be greater than zero"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1, Fee: ""}, "field:fee, msg:fee is required"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1, Fee: "one"}, "field:fee, msg:fee must be numeric"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1, Fee: "1"}, "field:nodePubKey, msg:push node public key is required"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32()}, "field:nodeSig, msg:push node signature is required"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1, Fee: "1", NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid signature")}, "field:nodeSig, msg:failed to verify signature"},
+			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1}, "field:nodePubKey, msg:push node public key is required"},
+			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1, NodePubKey: key.PubKey().MustBytes32()}, "field:nodeSig, msg:push node signature is required"},
+			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1, NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid signature")}, "field:nodeSig, msg:failed to verify signature"},
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{}}}, "index:0, field:references.name, msg:name is required"},
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1"}}}, "index:0, field:references.oldHash, msg:old hash is required"},
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: "invalid"}}}, "index:0, field:references.oldHash, msg:old hash is not valid"},
@@ -1084,6 +1015,11 @@ var _ = Describe("Validation", func() {
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: "invalid"}}}, "index:0, field:references.newHash, msg:new hash is not valid"},
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40)}}}, "index:0, field:references.nonce, msg:reference nonce must be greater than zero"},
 			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Objects: []string{"invalid object"}}}}, "index:0, field:references.objects.0, msg:object hash is not valid"},
+			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1}}}, "index:0, field:fee, msg:fee is required"},
+			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Fee: "ten"}}}, "index:0, field:fee, msg:fee must be numeric"},
+			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Fee: "0", MergeProposalID: "1a"}}}, "index:0, field:mergeID, msg:merge proposal id must be numeric"},
+			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Fee: "0", MergeProposalID: "123456789"}}}, "index:0, field:mergeID, msg:merge proposal id exceeded 8 bytes limit"},
+			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Fee: "0"}}}, "index:0, field:pushSig, msg:signature is required"},
 		}
 
 		It("should check cases", func() {
@@ -1098,170 +1034,134 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
-	Describe(".checkPushedReference", func() {
-		var mockKeepers *mocks.MockKeepers
+	Describe(".checkPushedReferenceConsistency", func() {
 		var mockRepo *mocks.MockBareRepo
-		var oldHash = fmt.Sprintf("%x", util.Hash20(util.RandBytes(16)))
+		var oldHash = fmt.Sprintf("%x", util.RandBytes(20))
+		var newHash = fmt.Sprintf("%x", util.RandBytes(20))
 
 		BeforeEach(func() {
-			mockKeepers = mocks.NewMockKeepers(ctrl)
 			mockRepo = mocks.NewMockBareRepo(ctrl)
 		})
 
 		When("old hash is non-zero and pushed reference does not exist", func() {
 			BeforeEach(func() {
-				refs := []*core.PushedReference{
-					{Name: "refs/heads/master", OldHash: oldHash},
-				}
-				repository := &state.Repository{
-					References: map[string]*state.Reference{},
-				}
-				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
+				refs := &core.PushedReference{Name: "refs/heads/master", OldHash: oldHash}
+				repository := &state.Repository{References: map[string]*state.Reference{}}
+				err = checkPushedReferenceConsistency(mockRepo, refs, repository)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:references, msg:reference 'refs/heads/master' is unknown"))
+				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' is unknown"))
 			})
 		})
 
 		When("old hash is zero and pushed reference does not exist", func() {
 			BeforeEach(func() {
-				refs := []*core.PushedReference{
-					{Name: "refs/heads/master", OldHash: strings.Repeat("0", 40)},
-				}
-				repository := &state.Repository{
-					References: map[string]*state.Reference{},
-				}
-				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
+				refs := &core.PushedReference{Name: "refs/heads/master", OldHash: strings.Repeat("0", 40)}
+				repository := &state.Repository{References: map[string]*state.Reference{}}
+				err = checkPushedReferenceConsistency(mockRepo, refs, repository)
 			})
 
 			It("should not return error about unknown reference", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).ToNot(Equal("index:0, field:references, msg:reference 'refs/heads/master' is unknown"))
+				Expect(err.Error()).ToNot(Equal("field:references, msg:reference 'refs/heads/master' is unknown"))
 			})
 		})
 
 		When("old hash of reference is different from the local hash of same reference", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				refs := []*core.PushedReference{
-					{Name: refName, OldHash: oldHash},
-				}
-				repository := &state.Repository{
-					References: map[string]*state.Reference{
-						refName: {Nonce: 0},
-					},
-				}
+				ref := &core.PushedReference{Name: refName, OldHash: oldHash}
+				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
 					Return(plumbing.NewReferenceFromStrings("", util.RandString(40)), nil)
-
-				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
+				err = checkPushedReferenceConsistency(mockRepo, ref, repository)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:references, msg:reference 'refs/heads/master' old hash does not match its local version"))
+				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' old hash does not match its local version"))
 			})
 		})
 
 		When("old hash of reference is non-zero and the local equivalent reference is not accessible", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				refs := []*core.PushedReference{
-					{Name: refName, OldHash: oldHash},
-				}
-				repository := &state.Repository{
-					References: map[string]*state.Reference{
-						refName: {Nonce: 0},
-					},
-				}
+				ref := &core.PushedReference{Name: refName, OldHash: oldHash}
+				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
 					Return(nil, plumbing.ErrReferenceNotFound)
-
-				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
+				err = checkPushedReferenceConsistency(mockRepo, ref, repository)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:references, msg:reference 'refs/heads/master' does not exist locally"))
+				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' does not exist locally"))
 			})
 		})
 
 		When("old hash of reference is non-zero and nil repo passed", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				refs := []*core.PushedReference{
-					{Name: refName, OldHash: oldHash},
-				}
-				repository := &state.Repository{
-					References: map[string]*state.Reference{
-						refName: {Nonce: 0},
-					},
-				}
-
-				err = checkPushedReference(nil, refs, repository, mockKeepers)
+				ref := &core.PushedReference{Name: refName, OldHash: oldHash}
+				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
+				err = checkPushedReferenceConsistency(nil, ref, repository)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).ToNot(Equal("index:0, field:references, msg:reference 'refs/heads/master' does not exist locally"))
+				Expect(err.Error()).ToNot(Equal("field:references, msg:reference 'refs/heads/master' does not exist locally"))
 			})
 		})
 
 		When("old hash of reference is non-zero and it is different from the hash of the equivalent local reference", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				refs := []*core.PushedReference{
-					{Name: refName, OldHash: oldHash},
-				}
-				repository := &state.Repository{
-					References: map[string]*state.Reference{
-						refName: {Nonce: 0},
-					},
-				}
+				ref := &core.PushedReference{Name: refName, OldHash: oldHash}
+				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
 					Return(plumbing.NewReferenceFromStrings("", util.RandString(40)), nil)
-
-				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
+				err = checkPushedReferenceConsistency(mockRepo, ref, repository)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:references, msg:reference 'refs/heads/master' old hash does not match its local version"))
+				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' old hash does not match its local version"))
 			})
 		})
 
 		When("pushed reference nonce is unexpected", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				newHash := util.RandString(40)
-				refs := []*core.PushedReference{
-					{
-						Name:    refName,
-						OldHash: oldHash,
-						NewHash: newHash,
-						Objects: []string{newHash},
-						Nonce:   2,
-					},
-				}
-
-				repository := &state.Repository{
-					References: map[string]*state.Reference{
-						refName: {Nonce: 0},
-					},
-				}
-
+				ref := &core.PushedReference{OldHash: oldHash, Name: refName, NewHash: newHash, Objects: []string{newHash}, Nonce: 2}
+				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
 				mockRepo.EXPECT().
 					Reference(plumbing.ReferenceName(refName), false).
 					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
-
-				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
+				err = checkPushedReferenceConsistency(mockRepo, ref, repository)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:references, msg:reference 'refs/heads/master' has nonce '2', expecting '1'"))
+				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' has nonce '2', expecting '1'"))
+			})
+		})
+
+		When("nonce is unset", func() {
+			BeforeEach(func() {
+				refName := "refs/heads/master"
+				refs := &core.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Objects: []string{newHash}, Nonce: 0}
+				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
+				mockRepo.EXPECT().
+					Reference(plumbing.ReferenceName(refName), false).
+					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
+				err = checkPushedReferenceConsistency(mockRepo, refs, repository)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:references, msg:reference 'refs/heads/master' has nonce '0', expecting '1'"))
 			})
 		})
 
@@ -1269,27 +1169,13 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
 				newHash := util.RandString(40)
-				refs := []*core.PushedReference{
-					{
-						Name:    refName,
-						OldHash: oldHash,
-						NewHash: newHash,
-						Objects: []string{newHash},
-						Nonce:   1,
-					},
-				}
-
-				repository := &state.Repository{
-					References: map[string]*state.Reference{
-						refName: {Nonce: 0},
-					},
-				}
-
+				refs := &core.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Objects: []string{newHash}, Nonce: 1, Fee: "1"}
+				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
 				mockRepo.EXPECT().
 					Reference(plumbing.ReferenceName(refName), false).
 					Return(plumbing.NewHashReference("", plumbing.NewHash(oldHash)), nil)
 
-				err = checkPushedReference(mockRepo, refs, repository, mockKeepers)
+				err = checkPushedReferenceConsistency(mockRepo, refs, repository)
 			})
 
 			It("should return err", func() {
@@ -1351,7 +1237,7 @@ var _ = Describe("Validation", func() {
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				pushKey := state.BarePushKey()
-				pushKey.Address = util.Address("address2")
+				pushKey.Address = "address2"
 				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 				err = CheckPushNoteConsistency(tx, mockLogic)
 			})
@@ -1372,7 +1258,7 @@ var _ = Describe("Validation", func() {
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				pushKey := state.BarePushKey()
-				pushKey.Address = util.Address("address1")
+				pushKey.Address = "address1"
 				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
 				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(state.BareAccount())
@@ -1388,16 +1274,11 @@ var _ = Describe("Validation", func() {
 
 		When("pusher account nonce is not correct", func() {
 			BeforeEach(func() {
-				tx := &core.PushNote{
-					RepoName:        "repo1",
-					PushKeyID:       util.RandBytes(20),
-					PusherAddress:   "address1",
-					PusherAcctNonce: 3,
-				}
+				tx := &core.PushNote{RepoName: "repo1", PushKeyID: util.RandBytes(20), PusherAddress: "address1", PusherAcctNonce: 3}
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				pushKey := state.BarePushKey()
-				pushKey.Address = util.Address("address1")
+				pushKey.Address = "address1"
 				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
 				acct := state.BareAccount()
@@ -1413,6 +1294,34 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
+		When("reference signature is invalid", func() {
+			BeforeEach(func() {
+				tx := &core.PushNote{RepoName: "repo1", PushKeyID: util.RandBytes(20), PusherAddress: "address1", PusherAcctNonce: 2}
+				tx.References = append(tx.References, &core.PushedReference{
+					Name:    "refs/heads/master",
+					Nonce:   1,
+					PushSig: util.RandBytes(64),
+				})
+				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
+
+				pushKey := state.BarePushKey()
+				pushKey.Address = "address1"
+				pushKey.PubKey = privKey.PubKey().ToPublicKey()
+				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
+
+				acct := state.BareAccount()
+				acct.Nonce = 1
+				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(acct)
+
+				err = CheckPushNoteConsistency(tx, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("index:0, field:references, msg:reference (.*) signature is not valid"))
+			})
+		})
+
 		When("pusher account balance not sufficient to pay fee", func() {
 			BeforeEach(func() {
 
@@ -1421,13 +1330,12 @@ var _ = Describe("Validation", func() {
 					PushKeyID:       util.RandBytes(20),
 					PusherAddress:   "address1",
 					PusherAcctNonce: 2,
-					Fee:             "10",
 				}
 
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				pushKey := state.BarePushKey()
-				pushKey.Address = util.Address("address1")
+				pushKey.Address = "address1"
 				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(pushKey)
 
 				acct := state.BareAccount()
@@ -1436,7 +1344,7 @@ var _ = Describe("Validation", func() {
 
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
 				mockTxLogic.EXPECT().
-					CanExecCoinTransfer(tx.PusherAddress, util.String("0"), tx.Fee, uint64(2), uint64(1)).
+					CanExecCoinTransfer(tx.PusherAddress, util.String("0"), tx.GetFee(), uint64(2), uint64(1)).
 					Return(fmt.Errorf("insufficient"))
 
 				err = CheckPushNoteConsistency(tx, mockLogic)
@@ -1573,65 +1481,176 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
-	Describe(".checkPushNoteAgainstTxParams", func() {
-		When("pusher key in push note is different from txparams pusher key", func() {
-			BeforeEach(func() {
-				pn := &core.PushNote{PushKeyID: util.MustDecodePushKeyID("push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t")}
-				txParamss := map[string]*util.TxParams{
-					"refs/heads/master": {PushKeyID: crypto.BytesToPushKeyID(util.RandBytes(20))},
-				}
-				err = checkPushNoteAgainstTxParams(pn, txParamss)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("push note pusher key id does not match " +
-					"push key in tx parameter"))
-			})
+	Describe(".checkTxDetailSanity", func() {
+		It("should return error when push key is unset", func() {
+			detail := &types.TxDetail{}
+			err := checkTxDetailSanity(detail, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:pkID, msg:push key id is required"))
 		})
 
-		When("fee do not match", func() {
-			BeforeEach(func() {
-				pushKeyID := util.RandBytes(20)
-				pn := &core.PushNote{PushKeyID: pushKeyID, Fee: "9"}
-				txParamss := map[string]*util.TxParams{
-					"refs/heads/master": {
-						PushKeyID: crypto.BytesToPushKeyID(pushKeyID),
-						Fee:       "10",
-					},
-				}
-				err = checkPushNoteAgainstTxParams(pn, txParamss)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("push note fees does not match total txparams fees"))
-			})
+		It("should return error when push key is not valid", func() {
+			detail := &types.TxDetail{PushKeyID: "invalid_key"}
+			err := checkTxDetailSanity(detail, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:pkID, msg:push key id is not valid"))
 		})
 
-		When("push note has unexpected pushed reference", func() {
-			BeforeEach(func() {
-				pushKeyID := util.RandBytes(20)
-				pn := &core.PushNote{
-					PushKeyID: pushKeyID,
-					Fee:       "10",
-					References: []*core.PushedReference{
-						{Name: "refs/heads/dev"},
-					},
-				}
-				txParamss := map[string]*util.TxParams{
-					"refs/heads/master": {
-						PushKeyID: crypto.BytesToPushKeyID(pushKeyID),
-						Fee:       "10",
-					},
-				}
-				err = checkPushNoteAgainstTxParams(pn, txParamss)
-			})
+		It("should return error when nonce is not set", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String()}
+			err := checkTxDetailSanity(detail, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
+		})
 
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("push note has unexpected pushed reference (refs/heads/dev)"))
-			})
+		It("should return error when fee is not set", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: ""}
+			err := checkTxDetailSanity(detail, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:fee, msg:fee is required"))
+		})
+
+		It("should return error when fee is not numeric", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: "1_invalid"}
+			err := checkTxDetailSanity(detail, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:fee, msg:fee must be numeric"))
+		})
+
+		It("should return error when signature is malformed", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: "1", Signature: "0x_invalid"}
+			err := checkTxDetailSanity(detail, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:sig, msg:signature format is not valid"))
+		})
+
+		It("should return error when merge proposal ID is not numeric", func() {
+			detail := &types.TxDetail{
+				PushKeyID:       privKey.PushAddr().String(),
+				Nonce:           1,
+				Fee:             "1",
+				Signature:       base58.Encode([]byte("data")),
+				MergeProposalID: "invalid",
+			}
+			err := checkTxDetailSanity(detail, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:mergeID, msg:merge proposal id must be numeric"))
+		})
+
+		It("should return error when merge proposal ID surpasses 8 bytes", func() {
+			detail := &types.TxDetail{
+				PushKeyID:       privKey.PushAddr().String(),
+				Nonce:           1,
+				Fee:             "1",
+				Signature:       base58.Encode([]byte("data")),
+				MergeProposalID: "1234567890",
+			}
+			err := checkTxDetailSanity(detail, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:mergeID, msg:merge proposal id exceeded 8 bytes limit"))
+		})
+
+		It("should return no error", func() {
+			detail := &types.TxDetail{
+				PushKeyID:       privKey.PushAddr().String(),
+				Nonce:           1,
+				Fee:             "1",
+				Signature:       base58.Encode([]byte("data")),
+				MergeProposalID: "12",
+			}
+			err := checkTxDetailSanity(detail, false)
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Describe(".checkTxDetailConsistency", func() {
+		It("should return error when push key is unknown", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String()}
+			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(state.BarePushKey())
+			err := checkTxDetailConsistency(detail, mockLogic, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:pkID, msg:push key not found"))
+		})
+
+		It("should return error when nonce is not greater than push key owner account nonce", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
+
+			pk := state.BarePushKey()
+			pk.Address = privKey.Addr()
+			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+			acct := state.BareAccount()
+			acct.Nonce = 10
+			mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
+
+			err := checkTxDetailConsistency(detail, mockLogic, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:nonce, msg:nonce (9) must be greater than current key owner nonce (10)"))
+		})
+
+		It("should return error when signature could not be verified", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
+			sig, err := privKey.PrivKey().Sign(detail.BytesNoSig())
+			Expect(err).To(BeNil())
+			detail.Signature = base58.Encode(sig)
+
+			pk := state.BarePushKey()
+			pk.Address = privKey.Addr()
+			pk.PubKey = crypto.BytesToPublicKey([]byte("bad key"))
+			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+			acct := state.BareAccount()
+			acct.Nonce = 8
+			mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
+
+			err = checkTxDetailConsistency(detail, mockLogic, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
+		})
+
+		It("should return nil when signature is valid", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
+			sig, err := privKey.PrivKey().Sign(detail.BytesNoSig())
+			Expect(err).To(BeNil())
+			detail.Signature = base58.Encode(sig)
+
+			pk := state.BarePushKey()
+			pk.Address = privKey.Addr()
+			pk.PubKey = privKey.PubKey().ToPublicKey()
+			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+			acct := state.BareAccount()
+			acct.Nonce = 8
+			mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
+
+			err = checkTxDetailConsistency(detail, mockLogic, false)
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Describe(".checkTxDetail", func() {
+		It("should return nil when no error ", func() {
+			detail := &types.TxDetail{
+				PushKeyID:       privKey.PushAddr().String(),
+				Nonce:           9,
+				Fee:             "1",
+				MergeProposalID: "12",
+			}
+			sig, err := privKey.PrivKey().Sign(detail.BytesNoSig())
+			Expect(err).To(BeNil())
+			detail.Signature = base58.Encode(sig)
+
+			pk := state.BarePushKey()
+			pk.Address = privKey.Addr()
+			pk.PubKey = privKey.PubKey().ToPublicKey()
+			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+			acct := state.BareAccount()
+			acct.Nonce = 8
+			mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
+
+			err = checkTxDetail(detail, mockLogic, false)
+			Expect(err).To(BeNil())
 		})
 	})
 })

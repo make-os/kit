@@ -62,7 +62,7 @@ func (m *TxModule) globals() []*modules.ModuleFunc {
 // Configure configures the JS context and return
 // any number of console prompt suggestions
 func (m *TxModule) Configure() []prompt.Suggest {
-	suggestions := []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 
 	// Register the main tx namespace
 	txMap := map[string]interface{}{}

@@ -11,6 +11,20 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
+// addDefaultPolicies adds default repo-level policies
+func addDefaultPolicies(config *state.RepoConfig) {
+	config.Policies = append(
+		config.Policies,
+		&state.Policy{Subject: "all", Object: "refs/heads", Action: "update"},
+		&state.Policy{Subject: "all", Object: "refs/tags", Action: "update"},
+		&state.Policy{Subject: "all", Object: "refs/notes", Action: "update"},
+		&state.Policy{Subject: "all", Object: "refs/heads", Action: "delete"},
+		&state.Policy{Subject: "all", Object: "refs/tags", Action: "delete"},
+		&state.Policy{Subject: "all", Object: "refs/notes", Action: "delete"},
+		&state.Policy{Subject: "all", Object: "refs/heads/dev", Action: "deny-delete"},
+	)
+}
+
 // execRepoCreate processes a TxTypeRepoCreate transaction, which creates a git
 // repository.
 //
@@ -35,6 +49,11 @@ func (t *Transaction) execRepoCreate(
 	newRepo := state.BareRepository()
 	newRepo.Config = state.MakeDefaultRepoConfig()
 	newRepo.Config.MergeMap(config)
+
+	// Apply default policies when none is set
+	if len(newRepo.Config.Policies) == 0 {
+		addDefaultPolicies(newRepo.Config)
+	}
 
 	proposee := newRepo.Config.Governance.ProposalProposee
 
@@ -180,22 +199,8 @@ func applyProposalRepoUpdate(
 	var cfgUpd map[string]interface{}
 	util.ToObject(proposal.GetActionData()[constants.ActionDataKeyCFG], &cfgUpd)
 
-	// Merge update with existing config
+	// Merge update to existing config
 	repo.Config.MergeMap(cfgUpd)
-
-	policies := cfgUpd["pol"]
-	if policies == nil {
-		return nil
-	}
-
-	// Since empty Policies policy update means a deletion request,
-	// find policies with empty content and remove them
-	aclRules := policies.(map[string]interface{})
-	for policyName, content := range aclRules {
-		if len(content.(map[string]interface{})) == 0 {
-			delete(repo.Config.Policies, policyName)
-		}
-	}
 
 	return nil
 }
@@ -415,7 +420,7 @@ func applyProposalRegisterPushKeys(
 	ad := proposal.GetActionData()
 
 	// Extract the policies.
-	var policies []*state.RepoACLPolicy
+	var policies []*state.ContributorPolicy
 	_ = util.ToObject(ad[constants.ActionDataKeyPolicies], &policies)
 
 	// Extract the push key IDs.
@@ -503,7 +508,7 @@ func (t *Transaction) execRepoProposalRegisterPushKeys(
 	pushKeyIDs []string,
 	feeMode state.FeeMode,
 	feeCap util.String,
-	aclPolicies []*state.RepoACLPolicy,
+	aclPolicies []*state.ContributorPolicy,
 	namespace string,
 	namespaceOnly string,
 	proposalFee,

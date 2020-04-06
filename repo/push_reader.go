@@ -19,18 +19,17 @@ import (
 
 // packedReferenceObject represent references added to a pack file
 type packedReferenceObject struct {
-	name    string
 	oldHash string
 	newHash string
 }
 
 // packedReferences represents a collection of packed references
-type packedReferences []*packedReferenceObject
+type packedReferences map[string]*packedReferenceObject
 
 // names return the names of the references
 func (p *packedReferences) names() (refs []string) {
-	for _, p := range *p {
-		refs = append(refs, p.name)
+	for name := range *p {
+		refs = append(refs, name)
 	}
 	return
 }
@@ -88,7 +87,7 @@ func newPushReader(dst io.WriteCloser, repo core.BareRepo) (*PushReader, error) 
 		repo:        repo,
 		objectsRefs: make(map[string][]string),
 		objects:     []*packObject{},
-		references:  []*packedReferenceObject{},
+		references:  make(map[string]*packedReferenceObject),
 	}, nil
 }
 
@@ -116,8 +115,11 @@ func (r *PushReader) Read() error {
 	// Decode the packfile into a ReferenceUpdateRequest
 	ur := packp.NewReferenceUpdateRequest()
 	if err = ur.Decode(r.packFile); err != nil {
-		return err
+		return errors.Wrap(err, "failed to decode request pack")
 	}
+
+	// Extract references from the packfile
+	r.references = r.getReferences(ur)
 
 	// Call OnReferenceUpdateRequestRead callback method
 	if r.updateReqCB != nil {
@@ -125,9 +127,6 @@ func (r *PushReader) Read() error {
 			return err
 		}
 	}
-
-	// Extract references from the packfile
-	r.references = append(r.references, r.getReferences(ur)...)
 
 	// Scan the packfile and extract objects hashes.
 	// Confirm if the next 4 bytes are indeed 'PACK', otherwise, the packfile is invalid
@@ -163,14 +162,13 @@ func (r *PushReader) getObjects(scanner *packfile.Scanner) (objs []*packObject, 
 }
 
 // getReferences returns the references found in the pack buffer
-func (r *PushReader) getReferences(ur *packp.ReferenceUpdateRequest) (references []*packedReferenceObject) {
+func (r *PushReader) getReferences(ur *packp.ReferenceUpdateRequest) (references map[string]*packedReferenceObject) {
+	references = make(map[string]*packedReferenceObject)
 	for _, cmd := range ur.Commands {
-		refObj := &packedReferenceObject{
-			name:    cmd.Name.String(),
+		references[cmd.Name.String()] = &packedReferenceObject{
 			oldHash: cmd.Old.String(),
 			newHash: cmd.New.String(),
 		}
-		references = append(references, refObj)
 	}
 	return
 }
@@ -214,7 +212,7 @@ func (m *objRefMap) removeRef(objHash, ref string) error {
 	if !ok {
 		return fmt.Errorf("object not found")
 	}
-	newRefs := []string{}
+	var newRefs []string
 	for _, r := range refs {
 		if r != ref {
 			newRefs = append(newRefs, r)

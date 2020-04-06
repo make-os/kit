@@ -109,7 +109,7 @@ var _ = Describe("TMDBAdapter", func() {
 
 		When("start = k, end = k3", func() {
 			It("should return 2 keys in the expected ascending order", func() {
-				expected := [][]byte{}
+				var expected [][]byte
 				it := adapter.Iterator(k, k3)
 				for ; it.Valid(); it.Next() {
 					expected = append(expected, it.Key())
@@ -136,7 +136,7 @@ var _ = Describe("TMDBAdapter", func() {
 
 		When("start = k, end = k3", func() {
 			It("should return 2 keys in the expected ascending order", func() {
-				expected := [][]byte{}
+				var expected [][]byte
 				it := adapter.ReverseIterator(k, k3)
 				defer it.Close()
 				for ; it.Valid(); it.Next() {

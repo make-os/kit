@@ -15,7 +15,7 @@ import (
 	"github.com/multiformats/go-multiaddr"
 	"github.com/multiformats/go-multihash"
 
-	libp2p "github.com/libp2p/go-libp2p"
+	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -45,19 +45,19 @@ type DHT struct {
 	ticker        *time.Ticker
 }
 
-// New creates a new DHTNode service
+// New creates a new DHT Node
 func New(
 	ctx context.Context,
 	cfg *config.AppConfig,
 	key crypto.PrivKey,
 	addr string) (*DHT, error) {
 
-	host, port, err := net.SplitHostPort(addr)
+	address, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid address")
 	}
 
-	lAddr := libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/%s/tcp/%s", host, port))
+	lAddr := libp2p.ListenAddrStrings(fmt.Sprintf("/ip4/%s/tcp/%s", address, port))
 	h, err := libp2p.New(ctx, libp2p.Identity(key), lAddr)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create host")
@@ -78,9 +78,9 @@ func New(
 
 	log := cfg.G().Log.Module("dht")
 	fullAddr := fmt.Sprintf("%s/p2p/%s", h.Addrs()[0].String(), h.ID().Pretty())
-	log.Info("DHTNode service has started", "Address", fullAddr)
+	log.Info("DHT service has started", "Address", fullAddr)
 
-	dht := &DHT{
+	dhtNode := &DHT{
 		host:          h,
 		dht:           ipfsDht,
 		cfg:           cfg,
@@ -89,9 +89,13 @@ func New(
 		objectFinders: make(map[string]types.ObjectFinder),
 	}
 
-	h.SetStreamHandler("/fetch/1", dht.handleFetch)
+	h.SetStreamHandler("/fetch/1", func(s network.Stream) {
+		if err := dhtNode.handleFetch(s); err != nil {
+			log.Error(err.Error())
+		}
+	})
 
-	return dht, err
+	return dhtNode, err
 }
 
 // Addr returns the p2p multiaddr of the dht host
@@ -128,17 +132,17 @@ func (dht *DHT) join() error {
 
 		dht.host.Peerstore().AddAddrs(info.ID, info.Addrs, peerstore.PermanentAddrTTL)
 		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
-		defer cn()
 		if err := dht.host.Connect(ctx, *info); err != nil {
+			cn()
 			continue
 		}
+		cn()
 
 		connected = true
 		break
 	}
 
 	if !connected {
-		dht.log.Error("Could not connect to any bootstrap peers", "KnownAddrs", len(addrs))
 		return fmt.Errorf("could not connect to peers")
 	}
 
@@ -147,13 +151,13 @@ func (dht *DHT) join() error {
 
 // Start starts the DHTNode
 func (dht *DHT) Start() error {
-	go dht.attemptToJoinPeers()
+	go dht.tryConnect()
 	return nil
 }
 
-// attemptToJoinPeers periodically attempts to connect the DHTNode to a peer
+// tryConnect periodically attempts to connect the node to a peer
 // if no connection has been established.
-func (dht *DHT) attemptToJoinPeers() {
+func (dht *DHT) tryConnect() {
 	for range dht.ticker.C {
 		if len(dht.host.Network().Conns()) == 0 {
 			dht.join()
@@ -213,11 +217,11 @@ func (dht *DHT) GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo, 
 
 // Announce informs the network that it can provide value for the given key
 func (dht *DHT) Announce(ctx context.Context, key []byte) error {
-	cid, err := cid.NewPrefixV1(cid.Raw, multihash.BLAKE2B_MAX).Sum(key)
+	id, err := cid.NewPrefixV1(cid.Raw, multihash.BLAKE2B_MAX).Sum(key)
 	if err != nil {
 		return err
 	}
-	return dht.dht.Provide(ctx, cid, true)
+	return dht.dht.Provide(ctx, id, true)
 }
 
 // Close closes the host
@@ -308,36 +312,33 @@ func (dht *DHT) GetObject(
 }
 
 // handleFetch processes incoming fetch requests
-func (dht *DHT) handleFetch(s network.Stream) {
+func (dht *DHT) handleFetch(s network.Stream) error {
 	defer s.Close()
 
 	bz := make([]byte, 256)
 	if _, err := s.Read(bz); err != nil {
-		dht.log.Error("failed to read query", "Err", err.Error())
-		return
+		return errors.Wrap(err, "failed to read query")
 	}
 
 	var query types.DHTObjectQuery
 	if err := util.ToObject(bz, &query); err != nil {
-		dht.log.Error("failed to decode query", "Err", err.Error())
-		return
+		return errors.Wrap(err, "failed to decode query")
 	}
 
 	finder := dht.objectFinders[query.Module]
 	if finder == nil {
 		msg := fmt.Sprintf("finder for module `%s` not registered", query.Module)
-		dht.log.Error("failed to process query", "Err", msg)
-		return
+		return fmt.Errorf("failed to process query: %s", msg)
 	}
 
 	objBz, err := finder.FindObject(query.ObjectKey)
 	if err != nil {
-		dht.log.Error("failed to find requested object", "Err", err.Error(),
-			"ObjectKey", string(query.ObjectKey))
+		return errors.Wrapf(err, "failed to find requested object (%s)", string(query.ObjectKey))
 	}
 
 	if _, err := s.Write(objBz); err != nil {
-		dht.log.Error("failed to write back find result", "Err", err.Error())
-		return
+		return errors.Wrap(err, "failed to write back find result")
 	}
+
+	return nil
 }

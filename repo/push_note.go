@@ -6,9 +6,12 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"gitlab.com/makeos/mosdef/types/core"
-
+	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
+	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
@@ -37,6 +40,9 @@ func makePackfileFromPushNote(repo core.BareRepo, tx *core.PushNote) (io.ReadSee
 
 	return bytes.NewReader(buf.Bytes()), nil
 }
+
+// referenceUpdateRequestMaker describes a function for create git packfile from a push note and a target repository
+type referenceUpdateRequestMaker func(repo core.BareRepo, tx *core.PushNote) (io.ReadSeeker, error)
 
 // makeReferenceUpdateRequest creates a git reference update request from a push
 // transaction. This is what git push sends to the git-receive-pack.
@@ -89,7 +95,7 @@ func makePushNoteFromStateChange(
 		newHash := change.Item.GetData()
 		var commit *object.Commit
 		var err error
-		var objHashes = []string{}
+		var objHashes []string
 
 		// Get the hash of the old version of the changed reference
 		var changedRefOld = oldState.GetReferences().Get(change.Item.GetName())
@@ -219,4 +225,29 @@ func makePackfile(
 	}
 
 	return makeReferenceUpdateRequest(repo, pushNote)
+}
+
+// getTxDetailsFromNote creates a slice of TxDetail objects from a push note.
+// Limit to references specified in targetRefs
+func getTxDetailsFromNote(note *core.PushNote, targetRefs ...string) (details []*types.TxDetail) {
+	for _, ref := range note.References {
+		if len(targetRefs) > 0 && !funk.ContainsString(targetRefs, ref.Name) {
+			continue
+		}
+		detail := &types.TxDetail{
+			RepoName:        note.RepoName,
+			RepoNamespace:   note.Namespace,
+			Reference:       ref.Name,
+			Fee:             ref.Fee,
+			Nonce:           note.PusherAcctNonce,
+			PushKeyID:       crypto.BytesToPushKeyID(note.PushKeyID),
+			Signature:       base58.Encode(ref.PushSig),
+			MergeProposalID: ref.MergeProposalID,
+		}
+		if isNote(detail.Reference) {
+			detail.Head = ref.NewHash
+		}
+		details = append(details, detail)
+	}
+	return
 }

@@ -83,7 +83,7 @@ func feBytesLE(a, b *[32]byte) int32 {
 		equalSoFar = equalSoFar & (((x ^ y) - 1) >> 31)
 	}
 
-	return int32(^equalSoFar & 1 & greater)
+	return ^equalSoFar & 1 & greater
 }
 
 // ScalarBaseMult computes a curve25519 public key from a private key and also

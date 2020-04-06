@@ -85,7 +85,7 @@ func inc(b *[32]byte) {
 	acc := uint(1)
 	for i := 0; i < 32; i++ {
 		acc += uint(b[i])
-		acc, b[i] = uint(acc>>8), byte(acc)
+		acc, b[i] = acc>>8, byte(acc)
 	}
 }
 

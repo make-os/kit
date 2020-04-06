@@ -30,9 +30,6 @@ type QueryOptions struct {
 	NonDecayedOnly bool `json:"nonDecayed" mapstructure:"nonDecayed"`
 }
 
-// EmptyQueryOptions is an empty instance of QueryOptions
-var EmptyQueryOptions = QueryOptions{}
-
 // TicketManager describes a ticket manager
 // Get finds tickets belonging to the given proposer.
 type TicketManager interface {

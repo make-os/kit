@@ -24,10 +24,13 @@ require (
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
+	github.com/gen2brain/beeep v0.0.0-20200305193625-ff0f4a39397e
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/gobuffalo/packr v1.30.1
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/mock v1.3.1
+	github.com/google/go-cmp v0.4.0
+	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/rpc v1.2.0
 	github.com/hashicorp/golang-lru v0.5.3
@@ -90,9 +93,8 @@ require (
 	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/net v0.0.0-20191207000613-e7e4b65ae663 // indirect
-	golang.org/x/sys v0.0.0-20191210023423-ac6580df4449 // indirect
+	golang.org/x/sys v0.0.0-20200321134203-328b4cd54aae // indirect
 	golang.org/x/tools v0.0.0-20191206204035-259af5ff87bd // indirect
-	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/genproto v0.0.0-20190502173448-54afdca5d873 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/oleiade/lane.v1 v1.0.0

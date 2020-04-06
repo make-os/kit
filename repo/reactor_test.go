@@ -2,16 +2,20 @@ package repo
 
 import (
 	"fmt"
+	"io"
 	"os"
-
-	types3 "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
+	"path/filepath"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/p2p"
+	dhttypes "gitlab.com/makeos/mosdef/dht/types"
+	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
+	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
@@ -27,7 +31,7 @@ var _ = Describe("Reactor", func() {
 	var mgr *Manager
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
-	var repoName string
+	var repoName, path string
 	var mockMempool *mocks.MockMempool
 	var mockPeer *mocks.MockPeer
 	var mockRepoKeeper *mocks.MockRepoKeeper
@@ -35,6 +39,7 @@ var _ = Describe("Reactor", func() {
 	var mockDHT *mocks.MockDHTNode
 	var mockMgr *mocks.MockRepoManager
 	var mockTickMgr *mocks.MockTicketManager
+	var mockNS *mocks.MockNamespaceKeeper
 	var key = crypto.NewKeyFromIntSeed(1)
 
 	BeforeEach(func() {
@@ -44,7 +49,10 @@ var _ = Describe("Reactor", func() {
 		ctrl = gomock.NewController(GinkgoT())
 
 		repoName = util.RandString(5)
+		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
+		_, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
+		Expect(err).To(BeNil())
 
 		mockObjects := testutil.MockLogic(ctrl)
 		mockLogic = mockObjects.Logic
@@ -54,6 +62,7 @@ var _ = Describe("Reactor", func() {
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockTickMgr = mockObjects.TicketManager
+		mockNS = mockObjects.NamespaceKeeper
 		mgr = NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 
 		mockPeer = mocks.NewMockPeer(ctrl)
@@ -66,18 +75,23 @@ var _ = Describe("Reactor", func() {
 	})
 
 	Describe(".onPushNote", func() {
-		When("unable to decode msg", func() {
-			BeforeEach(func() {
-				err = mgr.onPushNote(mockPeer, util.RandBytes(5))
+		When("in validator mode", func() {
+			It("should return nil", func() {
+				cfg.Node.Validator = true
+				err = mgr.onPushNote(mockPeer, util.RandBytes(10))
+				Expect(err).To(BeNil())
 			})
+		})
 
+		When("unable to decode msg", func() {
 			It("should return err=failed to decoded message...", func() {
+				err = mgr.onPushNote(mockPeer, util.RandBytes(5))
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("failed to decoded message"))
 			})
 		})
 
-		When("repo referenced in PushNote is not found", func() {
+		When("repo is not found", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				mockRepoKeeper.EXPECT().Get("unknown").Return(state.BareRepository())
@@ -91,19 +105,329 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		XWhen("unable to open the target repo", func() {
+		When("namespace is set but not found", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
-				mockRepoKeeper.EXPECT().Get("unknown").Return(&state.Repository{
-					Balance: "10",
-				})
-				pn := &core.PushNote{RepoName: "unknown"}
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
+				mockNS.EXPECT().Get("ns1").Return(state.BareNamespace())
+				pn := &core.PushNote{RepoName: "repo1", Namespace: "ns1"}
+				err = mgr.onPushNote(mockPeer, pn.Bytes())
+			})
+
+			It("should return err=`namespace 'ns1' not found`", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("namespace 'ns1' not found"))
+			})
+		})
+
+		When("authentication fails", func() {
+			BeforeEach(func() {
+				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
+
+				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers) (enforcer policyEnforcer, err error) {
+					return nil, fmt.Errorf("bad error")
+				}
+
+				pn := &core.PushNote{RepoName: "repo1"}
 				err = mgr.onPushNote(mockPeer, pn.Bytes())
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to open repo 'unknown': repository does not exist"))
+				Expect(err.Error()).To(Equal("authorization failed: bad error"))
+			})
+		})
+
+		When("unable to open target repository", func() {
+			BeforeEach(func() {
+				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
+
+				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers) (enforcer policyEnforcer, err error) {
+					return nil, nil
+				}
+
+				pn := &core.PushNote{RepoName: "repo1"}
+				err = mgr.onPushNote(mockPeer, pn.Bytes())
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to open repo 'repo1': repository does not exist"))
+			})
+		})
+
+		When("push note failed validation", func() {
+			var peerID = p2p.ID("peer-id")
+			var pn *core.PushNote
+
+			BeforeEach(func() {
+				mockPeer.EXPECT().ID().Return(peerID)
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
+
+				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
+					keepers core.Keepers) (enforcer policyEnforcer, err error) {
+					return nil, nil
+				}
+				mgr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
+					return fmt.Errorf("error")
+				}
+
+				pn = &core.PushNote{RepoName: repoName}
+				err = mgr.onPushNote(mockPeer, pn.Bytes())
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed push note validation: error"))
+			})
+
+			Specify("that the peer is registered as the sender of the push note", func() {
+				Expect(mgr.isPushNoteSender(string(peerID), pn.ID().String())).To(BeTrue())
+			})
+		})
+
+		When("unable to create packfile from push note", func() {
+			var peerID = p2p.ID("peer-id")
+			var pn *core.PushNote
+
+			BeforeEach(func() {
+				mockPeer.EXPECT().ID().Return(peerID)
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
+
+				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
+					keepers core.Keepers) (enforcer policyEnforcer, err error) {
+					return nil, nil
+				}
+				mgr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
+					return nil
+				}
+				mgr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+					return nil, fmt.Errorf("bad error")
+				}
+
+				pn = &core.PushNote{RepoName: repoName}
+				err = mgr.onPushNote(mockPeer, pn.Bytes())
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to create packfile from push note: bad error"))
+			})
+		})
+
+		When("push handler failed to handle packfile stream", func() {
+			var peerID = p2p.ID("peer-id")
+			var pn *core.PushNote
+
+			BeforeEach(func() {
+				mockPeer.EXPECT().ID().Return(peerID)
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
+
+				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
+					keepers core.Keepers) (enforcer policyEnforcer, err error) {
+					return nil, nil
+				}
+				mgr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
+					return nil
+				}
+				mgr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+					oldState := getRepoState(repo)
+					appendCommit(path, "file.txt", "line 1\n", "commit 1")
+					newState := getRepoState(repo)
+					packfile, err := makePackfile(repo, oldState, newState)
+					Expect(err).To(BeNil())
+					return packfile, nil
+				}
+
+				mgr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policyEnforcer) *PushHandler {
+					mockMgr.EXPECT().GetRepoState(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
+					return &PushHandler{mgr: mockMgr}
+				}
+
+				pn = &core.PushNote{RepoName: repoName}
+				err = mgr.onPushNote(mockPeer, pn.Bytes())
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("HandleStream error: bad error"))
+			})
+		})
+
+		When("push handler failed to handle reference without error", func() {
+			var peerID = p2p.ID("peer-id")
+			var pn *core.PushNote
+
+			BeforeEach(func() {
+				mockPeer.EXPECT().ID().Return(peerID)
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
+
+				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
+					keepers core.Keepers) (enforcer policyEnforcer, err error) {
+					return nil, nil
+				}
+				mgr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
+					return nil
+				}
+
+				pushHandler := &PushHandler{mgr: mockMgr}
+				mgr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+					pushHandler.oldState = getRepoState(repo)
+					pushHandler.repo = repo
+					appendCommit(path, "file.txt", "line 1\n", "commit 1")
+					newState := getRepoState(repo)
+					packfile, err := makePackfile(repo, pushHandler.oldState, newState)
+					Expect(err).To(BeNil())
+					return packfile, nil
+				}
+				mgr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policyEnforcer) *PushHandler {
+					return pushHandler
+				}
+
+				pushHandler.authorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
+					return nil
+				}
+				pushHandler.referenceHandler = func(ref string) []error {
+					Expect(ref).To(Equal("refs/heads/master"))
+					return []error{fmt.Errorf("bad reference")}
+				}
+
+				pn = &core.PushNote{RepoName: repoName}
+				err = mgr.onPushNote(mockPeer, pn.Bytes())
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("HandleReferences error: bad reference"))
+			})
+		})
+
+		When("push pool addition failed", func() {
+			var peerID = p2p.ID("peer-id")
+			var pn *core.PushNote
+
+			BeforeEach(func() {
+				mockPeer.EXPECT().ID().Return(peerID)
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
+
+				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
+					keepers core.Keepers) (enforcer policyEnforcer, err error) {
+					return nil, nil
+				}
+				mgr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
+					return nil
+				}
+
+				pushHandler := &PushHandler{mgr: mockMgr}
+				mgr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+					pushHandler.oldState = getRepoState(repo)
+					pushHandler.repo = repo
+					appendCommit(path, "file.txt", "line 1\n", "commit 1")
+					newState := getRepoState(repo)
+					packfile, err := makePackfile(repo, pushHandler.oldState, newState)
+					Expect(err).To(BeNil())
+					return packfile, nil
+				}
+				mgr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policyEnforcer) *PushHandler {
+					return pushHandler
+				}
+
+				pushHandler.authorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
+					return nil
+				}
+				pushHandler.referenceHandler = func(ref string) []error {
+					Expect(ref).To(Equal("refs/heads/master"))
+					return nil
+				}
+				mgr.pushedObjectsBroadcaster = func(pn *core.PushNote) (err error) {
+					return nil
+				}
+
+				mockPushPool := mocks.NewMockPushPool(ctrl)
+				mockPushPool.EXPECT().Add(gomock.Any(), true).Return(fmt.Errorf("push pool error"))
+				mgr.pushPool = mockPushPool
+
+				pn = &core.PushNote{RepoName: repoName}
+				err = mgr.onPushNote(mockPeer, pn.Bytes())
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to add push note to push pool: push pool error"))
+			})
+		})
+
+		When("push note is successfully processed", func() {
+			var peerID = p2p.ID("peer-id")
+			var pn *core.PushNote
+
+			BeforeEach(func() {
+				mockPeer.EXPECT().ID().Return(peerID)
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
+
+				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
+					keepers core.Keepers) (enforcer policyEnforcer, err error) {
+					return nil, nil
+				}
+				mgr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
+					return nil
+				}
+
+				pushHandler := &PushHandler{mgr: mockMgr}
+				mgr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+					pushHandler.oldState = getRepoState(repo)
+					pushHandler.repo = repo
+					appendCommit(path, "file.txt", "line 1\n", "commit 1")
+					newState := getRepoState(repo)
+					packfile, err := makePackfile(repo, pushHandler.oldState, newState)
+					Expect(err).To(BeNil())
+					return packfile, nil
+				}
+				mgr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policyEnforcer) *PushHandler {
+					return pushHandler
+				}
+
+				pushHandler.authorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
+					return nil
+				}
+				pushHandler.referenceHandler = func(ref string) []error {
+					Expect(ref).To(Equal("refs/heads/master"))
+					return nil
+				}
+				mgr.pushedObjectsBroadcaster = func(pn *core.PushNote) (err error) {
+					return nil
+				}
+
+				mockPushPool := mocks.NewMockPushPool(ctrl)
+				mockPushPool.EXPECT().Add(gomock.Any(), true).Return(nil)
+				mgr.pushPool = mockPushPool
+
+				pn = &core.PushNote{RepoName: repoName}
+				err = mgr.onPushNote(mockPeer, pn.Bytes())
+			})
+
+			It("should return nil", func() {
+				Expect(err).To(BeNil())
 			})
 		})
 	})
@@ -144,7 +468,7 @@ var _ = Describe("Reactor", func() {
 
 			It("should return err='Not enough push endorsements to satisfy quorum size'", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("Not enough push endorsements to satisfy quorum size"))
+				Expect(err.Error()).To(Equal("not enough push endorsements to satisfy quorum size"))
 			})
 		})
 
@@ -210,7 +534,7 @@ var _ = Describe("Reactor", func() {
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{
-					&types3.SelectedTicket{
+					{
 						Ticket: &types3.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      []byte("invalid bls public key"),
@@ -239,7 +563,7 @@ var _ = Describe("Reactor", func() {
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{
-					&types3.SelectedTicket{
+					{
 						Ticket: &types3.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
@@ -269,7 +593,7 @@ var _ = Describe("Reactor", func() {
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{
-					&types3.SelectedTicket{
+					{
 						Ticket: &types3.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
@@ -328,9 +652,9 @@ var _ = Describe("Reactor", func() {
 				tx.PushNote.RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = core.PushedReferences([]*core.PushedReference{
-					&core.PushedReference{Objects: []string{obj}},
-				})
+				tx.PushNote.References = []*core.PushedReference{
+					{Objects: []string{obj}},
+				}
 
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(true)
@@ -351,9 +675,9 @@ var _ = Describe("Reactor", func() {
 				tx.PushNote.RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = core.PushedReferences([]*core.PushedReference{
-					&core.PushedReference{Objects: []string{obj}},
-				})
+				tx.PushNote.References = []*core.PushedReference{
+					{Objects: []string{obj}},
+				}
 
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(true)
@@ -375,9 +699,9 @@ var _ = Describe("Reactor", func() {
 				tx.PushNote.RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = core.PushedReferences([]*core.PushedReference{
-					&core.PushedReference{Objects: []string{obj}},
-				})
+				tx.PushNote.References = []*core.PushedReference{
+					{Objects: []string{obj}},
+				}
 
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(false)
@@ -399,9 +723,9 @@ var _ = Describe("Reactor", func() {
 				tx.PushNote.RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = core.PushedReferences([]*core.PushedReference{
-					&core.PushedReference{Objects: []string{obj}},
-				})
+				tx.PushNote.References = []*core.PushedReference{
+					{Objects: []string{obj}},
+				}
 
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(false)
@@ -426,9 +750,9 @@ var _ = Describe("Reactor", func() {
 				tx.PushNote.RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = core.PushedReferences([]*core.PushedReference{
-					&core.PushedReference{Objects: []string{obj}},
-				})
+				tx.PushNote.References = []*core.PushedReference{
+					{Objects: []string{obj}},
+				}
 
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(false)
@@ -444,41 +768,6 @@ var _ = Describe("Reactor", func() {
 			})
 
 			It("should return no error", func() {
-				Expect(err).To(BeNil())
-			})
-		})
-
-		When("object download succeeded but pushed reference has a delete directive", func() {
-			var repo *mocks.MockBareRepo
-			var obj string
-			var tx *core.TxPush
-			var objBytes []byte
-
-			BeforeEach(func() {
-				tx = core.NewBareTxPush()
-				tx.PushNote.RepoName = "repo1"
-
-				obj = util.RandString(40)
-				tx.PushNote.References = core.PushedReferences([]*core.PushedReference{
-					&core.PushedReference{Name: "ref1", Objects: []string{obj}, Delete: true},
-				})
-
-				repo = mocks.NewMockBareRepo(ctrl)
-				repo.EXPECT().ObjectExist(obj).Return(false)
-
-				objBytes = util.RandBytes(10)
-				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(objBytes, nil)
-
-				mockDHT.EXPECT().Announce(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
-				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
-			})
-
-			It("should delete the reference", func() {
-				repo.EXPECT().WriteObjectToFile(obj, objBytes).Return(nil)
-				repo.EXPECT().RefDelete("ref1").Return(nil)
-				repo.EXPECT().Path().Return("/path/to/repo")
-				err = execTxPush(mockMgr, tx)
 				Expect(err).To(BeNil())
 			})
 		})

@@ -32,7 +32,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/mempool"
 
-	logic "gitlab.com/makeos/mosdef/logic"
+	"gitlab.com/makeos/mosdef/logic"
 
 	"gitlab.com/makeos/mosdef/node/services"
 
@@ -137,9 +137,9 @@ func (n *Node) Start() error {
 
 	n.log.Info("Starting node...", "NodeID", n.cfg.G().NodeKey.ID(), "DevMode", n.cfg.IsDev())
 
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+	tmLog := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	var err error
-	logger, err = tmflags.ParseLogLevel(n.tmcfg.LogLevel, logger, tmconfig.DefaultLogLevel())
+	tmLog, err = tmflags.ParseLogLevel(n.tmcfg.LogLevel, tmLog, tmconfig.DefaultLogLevel())
 	if err != nil {
 		return errors.Wrap(err, "failed to parse log level")
 	}
@@ -209,7 +209,7 @@ func (n *Node) Start() error {
 		nm.DefaultGenesisDocProviderFunc(n.tmcfg),
 		nm.DefaultDBProvider,
 		nm.DefaultMetricsProvider(n.tmcfg.Instrumentation),
-		logger)
+		tmLog)
 	if err != nil {
 		return errors.Wrap(err, "failed to fully create node")
 	}

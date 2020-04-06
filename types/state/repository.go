@@ -85,22 +85,29 @@ type RepoConfigGovernance struct {
 	ProposalFeeRefundType            ProposalFeeRefundType `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType"`
 }
 
-// RepoACLPolicy describes an Policies policy
-type RepoACLPolicy struct {
+// Policy describes a repository access policy
+type Policy struct {
 	Object  string `json:"obj,omitempty" mapstructure:"obj,omitempty" msgpack:"obj,omitempty"`
 	Subject string `json:"sub,omitempty" mapstructure:"sub,omitempty" msgpack:"sub,omitempty"`
 	Action  string `json:"act,omitempty" mapstructure:"act,omitempty" msgpack:"act,omitempty"`
 }
 
-// RepoACLPolicies represents an index of repo Policies policies
+// ContributorPolicy describes a contributors policy.
+// Similar to Policy except the one has no subject field.
+type ContributorPolicy struct {
+	Object string `json:"obj,omitempty" mapstructure:"obj,omitempty" msgpack:"obj,omitempty"`
+	Action string `json:"act,omitempty" mapstructure:"act,omitempty" msgpack:"act,omitempty"`
+}
+
+// RepoPolicies represents an index of repo Policies policies
 // key is policy id
-type RepoACLPolicies map[string]*RepoACLPolicy
+type RepoPolicies []*Policy
 
 // RepoConfig contains repo-specific configuration settings
 type RepoConfig struct {
 	util.SerializerHelper `json:"-" mapstructure:"-" msgpack:"-"`
 	Governance            *RepoConfigGovernance `json:"governance" mapstructure:"governance" msgpack:"governance"`
-	Policies              RepoACLPolicies       `json:"policies" mapstructure:"policies" msgpack:"policies"`
+	Policies              RepoPolicies          `json:"policies" mapstructure:"policies" msgpack:"policies"`
 }
 
 func (c *RepoConfig) EncodeMsgpack(enc *msgpack.Encoder) error {
@@ -162,7 +169,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			ProposalFeeRefundType:            0,
 			ProposalFeeDepDur:                0,
 		},
-		Policies: map[string]*RepoACLPolicy{},
+		Policies: []*Policy{},
 	}
 }
 
@@ -170,15 +177,15 @@ func MakeDefaultRepoConfig() *RepoConfig {
 func BareRepoConfig() *RepoConfig {
 	return &RepoConfig{
 		Governance: &RepoConfigGovernance{},
-		Policies:   RepoACLPolicies{},
+		Policies:   RepoPolicies{},
 	}
 }
 
 // BaseContributor represents the basic information of a contributor
 type BaseContributor struct {
-	FeeCap   util.String      `json:"feeCap" mapstructure:"feeCap" msgpack:"feeCap"`
-	FeeUsed  util.String      `json:"feeUsed" mapstructure:"feeUsed" msgpack:"feeUsed"`
-	Policies []*RepoACLPolicy `json:"policies" mapstructure:"policies" msgpack:"policies"`
+	FeeCap   util.String          `json:"feeCap" mapstructure:"feeCap" msgpack:"feeCap"`
+	FeeUsed  util.String          `json:"feeUsed" mapstructure:"feeUsed" msgpack:"feeUsed"`
+	Policies []*ContributorPolicy `json:"policies" mapstructure:"policies" msgpack:"policies"`
 }
 
 // BaseContributors is a collection of repo contributors
@@ -192,10 +199,10 @@ func (rc *BaseContributors) Has(gpgID string) bool {
 
 // RepoContributor represents a repository contributor
 type RepoContributor struct {
-	FeeMode  FeeMode          `json:"feeMode" mapstructure:"feeMode" msgpack:"feeMode"`
-	FeeCap   util.String      `json:"feeCap" mapstructure:"feeCap" msgpack:"feeCap"`
-	FeeUsed  util.String      `json:"feeUsed" mapstructure:"feeUsed" msgpack:"feeUsed"`
-	Policies []*RepoACLPolicy `json:"policies" mapstructure:"policies" msgpack:"policies"`
+	FeeMode  FeeMode              `json:"feeMode" mapstructure:"feeMode" msgpack:"feeMode"`
+	FeeCap   util.String          `json:"feeCap" mapstructure:"feeCap" msgpack:"feeCap"`
+	FeeUsed  util.String          `json:"feeUsed" mapstructure:"feeUsed" msgpack:"feeUsed"`
+	Policies []*ContributorPolicy `json:"policies" mapstructure:"policies" msgpack:"policies"`
 }
 
 // RepoContributors is a collection of repo contributors

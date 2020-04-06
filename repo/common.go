@@ -2,6 +2,7 @@ package repo
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"gitlab.com/makeos/mosdef/types/core"
@@ -9,9 +10,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
-
-// ErrRepoNotFound means a repo was not found on the local storage
-var ErrRepoNotFound = fmt.Errorf("repo not found")
 
 func getKVOpt(key string, options []core.KVOption) interface{} {
 	for _, opt := range options {
@@ -61,6 +59,32 @@ func checkEvtArgs(args []interface{}) error {
 	return err
 }
 
+// isBranch checks whether a reference name indicates a branch
+func isBranch(refname string) bool {
+	return plumbing.ReferenceName(refname).IsBranch()
+}
+
+// isReference checks the given name is a reference path or full reference name
+func isReference(refname string) bool {
+	m, _ := regexp.MatchString("^refs/(heads|tags|notes)(/[a-z0-9_-]+)?$", refname)
+	return m
+}
+
+// isTag checks whether a reference name indicates a tag
+func isTag(refname string) bool {
+	return plumbing.ReferenceName(refname).IsTag()
+}
+
+// isNote checks whether a reference name indicates a tag
+func isNote(refname string) bool {
+	return plumbing.ReferenceName(refname).IsNote()
+}
+
+// isZeroHash checks whether a given hash is a zero git hash
+func isZeroHash(h string) bool {
+	return h == plumbing.ZeroHash.String()
+}
+
 // WrappedCommit wraps a go-git commit to ensure it conforms to types.Commit
 type WrappedCommit struct {
 	*object.Commit
@@ -96,10 +120,3 @@ func (c *WrappedCommit) GetHash() plumbing.Hash {
 }
 
 // MakeNoteSigMsg creates the message for note signature
-func MakeNoteSigMsg(txFee, nextNonce, pushKeyID, noteHash string, deleteRef bool) []byte {
-	return []byte(txFee +
-		nextNonce +
-		pushKeyID +
-		noteHash +
-		fmt.Sprintf("%v", deleteRef))
-}

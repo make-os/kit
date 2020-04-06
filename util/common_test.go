@@ -544,13 +544,13 @@ var _ = Describe("Common", func() {
 
 		It("should return empty slice element type is not map or struct", func() {
 			Expect(func() {
-				arg := []string{}
+				var arg []string
 				StructSliceToMapSlice(arg)
 			}).To(Panic())
 		})
 
 		It("should return empty slice of map[string]interface{} when slice arg is empty", func() {
-			arg := []map[string]interface{}{}
+			var arg = []map[string]interface{}{}
 			out := StructSliceToMapSlice(arg)
 			Expect(out).To(Equal(arg))
 		})
@@ -639,23 +639,33 @@ var _ = Describe("Common", func() {
 		})
 	})
 
-	Describe(".RemoveFlagVal", func() {
-		Specify("that nothing is removed when flag to remove is not present", func() {
-			res := RemoveFlagVal([]string{"-nickname", "abc", "--age", "12"}, []string{"name", "height"})
+	Describe(".RemoveFlag", func() {
+		Specify("case 1", func() {
+			res := RemoveFlag([]string{"-nickname", "abc", "--age", "12"}, []string{"name", "height"})
 			Expect(res).To(Equal([]string{"-nickname", "abc", "--age", "12"}))
 		})
-		Specify("that `age` flag and value are removed when flag to remove is not present", func() {
-			res := RemoveFlagVal([]string{"--nickname", "abc", "--age", "12"}, []string{"name", "age"})
+		Specify("case 2", func() {
+			res := RemoveFlag([]string{"--nickname", "abc", "--age", "12"}, []string{"name", "age"})
 			Expect(res).To(Equal([]string{"--nickname", "abc"}))
 		})
-		Specify("that `nickname` flag and value are removed when flag to remove is not present", func() {
-			res := RemoveFlagVal([]string{"--nickname", "abc", "--age", "12"}, []string{"nickname", "height"})
+		Specify("case 3", func() {
+			res := RemoveFlag([]string{"--nickname", "abc", "--age", "12"}, []string{"nickname", "height"})
 			Expect(res).To(Equal([]string{"--age", "12"}))
 		})
 
-		Specify("that `nickname` flag and value are removed when flag to remove is not present (case 2)", func() {
-			res := RemoveFlagVal([]string{"--nickname=abc", "--age", "12"}, []string{"nickname", "height"})
+		Specify("case 4", func() {
+			res := RemoveFlag([]string{"--nickname=abc", "--age", "12"}, []string{"nickname", "height"})
 			Expect(res).To(Equal([]string{"--age", "12"}))
+		})
+
+		Specify("case 5", func() {
+			res := RemoveFlag([]string{"--nickname", "logan", "xmen"}, []string{"nickname"})
+			Expect(res).To(Equal([]string{"xmen"}))
+		})
+
+		Specify("case 6", func() {
+			res := RemoveFlag([]string{"--nickname", "logan", "xmen", "--sex", "female"}, []string{"nickname"})
+			Expect(res).To(Equal([]string{"xmen", "--sex", "female"}))
 		})
 	})
 
@@ -697,8 +707,8 @@ var _ = Describe("Common", func() {
 			extArgs := map[string]string{"e1.size": "200", "e2.phase": "start"}
 			res, common := ParseExtArgs(extArgs)
 			Expect(res).To(Equal(map[string]map[string]string{
-				"e1": map[string]string{"size": "200"},
-				"e2": map[string]string{"phase": "start"},
+				"e1": {"size": "200"},
+				"e2": {"phase": "start"},
 			}))
 			Expect(common).To(BeEmpty())
 		})
@@ -707,8 +717,8 @@ var _ = Describe("Common", func() {
 			extArgs := map[string]string{"e1.size": "200", "e2.phase": "start", "env": "dev"}
 			res, common := ParseExtArgs(extArgs)
 			Expect(res).To(Equal(map[string]map[string]string{
-				"e1": map[string]string{"size": "200"},
-				"e2": map[string]string{"phase": "start"},
+				"e1": {"size": "200"},
+				"e2": {"phase": "start"},
 			}))
 			Expect(common).To(Equal(map[string]string{"env": "dev"}))
 		})
@@ -717,8 +727,8 @@ var _ = Describe("Common", func() {
 			extArgs := map[string]string{"e1.size": "200", "e2.phase": "start", "size": "100"}
 			res, common := ParseExtArgs(extArgs)
 			Expect(res).To(Equal(map[string]map[string]string{
-				"e1": map[string]string{"size": "200"},
-				"e2": map[string]string{"phase": "start"},
+				"e1": {"size": "200"},
+				"e2": {"phase": "start"},
 			}))
 			Expect(common).To(Equal(map[string]string{"size": "100"}))
 		})

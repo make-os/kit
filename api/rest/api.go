@@ -21,46 +21,46 @@ const (
 	MethodNamePushKeyFind = "find"
 )
 
-// RESTApi provides a REST API handlers
-type RESTApi struct {
+// API provides a REST API handlers
+type API struct {
 	mods modules.ModuleHub
 	log  logger.Logger
 }
 
-// NewAPI creates an instance of RESTApi
-func NewAPI(mods modules.ModuleHub, log logger.Logger) *RESTApi {
-	return &RESTApi{mods: mods, log: log.Module("rest-api")}
+// NewAPI creates an instance of API
+func NewAPI(mods modules.ModuleHub, log logger.Logger) *API {
+	return &API{mods: mods, log: log.Module("rest-api")}
 }
 
 // Modules returns modules
-func (r *RESTApi) Modules() *modules.Modules {
+func (r *API) Modules() *modules.Modules {
 	return r.mods.GetModules()
 }
 
-func (r *RESTApi) get(handler func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
-	return RESTApiHandler("GET", handler, r.log)
+func (r *API) get(handler func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+	return APIHandler("GET", handler, r.log)
 }
 
-func (r *RESTApi) post(handler func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
-	return RESTApiHandler("POST", handler, r.log)
+func (r *API) post(handler func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
+	return APIHandler("POST", handler, r.log)
 }
 
 // RegisterEndpoints registers handlers to endpoints
-func (r *RESTApi) RegisterEndpoints(s *http.ServeMux) {
-	s.HandleFunc(RestV1Path(constants.NamespaceUser, MethodNameGetNonce), r.get(r.GetAccountNonce))
-	s.HandleFunc(RestV1Path(constants.NamespaceUser, MethodNameGetAccount), r.get(r.GetAccount))
-	s.HandleFunc(RestV1Path(constants.NamespaceTx, MethodNameSendPayload), r.post(r.TxSendPayload))
-	s.HandleFunc(RestV1Path(constants.NamespacePushKey, MethodNameOwnerNonce), r.get(r.GetNonceOfPushKeyOwner))
-	s.HandleFunc(RestV1Path(constants.NamespacePushKey, MethodNamePushKeyFind), r.get(r.FindPushKey))
+func (r *API) RegisterEndpoints(s *http.ServeMux) {
+	s.HandleFunc(V1Path(constants.NamespaceUser, MethodNameGetNonce), r.get(r.GetAccountNonce))
+	s.HandleFunc(V1Path(constants.NamespaceUser, MethodNameGetAccount), r.get(r.GetAccount))
+	s.HandleFunc(V1Path(constants.NamespaceTx, MethodNameSendPayload), r.post(r.TxSendPayload))
+	s.HandleFunc(V1Path(constants.NamespacePushKey, MethodNameOwnerNonce), r.get(r.GetNonceOfPushKeyOwner))
+	s.HandleFunc(V1Path(constants.NamespacePushKey, MethodNamePushKeyFind), r.get(r.FindPushKey))
 }
 
-// RestV1Path creates a REST API v1 path
-func RestV1Path(ns, method string) string {
+// V1Path creates a REST API v1 path
+func V1Path(ns, method string) string {
 	return fmt.Sprintf("/v1/%s/%s", ns, method)
 }
 
-// RESTApiHandler wraps http handlers, providing panic recoverability
-func RESTApiHandler(method string, handler func(w http.ResponseWriter,
+// APIHandler wraps http handlers, providing panic recoverability
+func APIHandler(method string, handler func(w http.ResponseWriter,
 	r *http.Request), log logger.Logger) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer func() {

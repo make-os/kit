@@ -787,6 +787,18 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 			})
 
+			It("has invalid repo config (propProposee)", func() {
+				tx.Nonce = 1
+				tx.Timestamp = time.Now().Unix()
+				tx.Name = "repo1"
+				tx.Config["governance"] = map[string]interface{}{
+					"propProposee": -1,
+				}
+				err := validators.CheckTxRepoCreate(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:config.gov.propProposee, msg:unknown value"))
+			})
+
 			It("has no nonce", func() {
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
@@ -1175,6 +1187,16 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:name, msg:name is too short. Must be at least 3 characters long"))
 			})
 		})
+
+		When("a domain is not valid", func() {
+			It("should return err", func() {
+				tx.Name = "name1"
+				tx.Domains = map[string]string{"domain": "invalid-target"}
+				err := validators.CheckTxNamespaceDomainUpdate(tx, -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:domains, msg:domains.domain: target is invalid"))
+			})
+		})
 	})
 
 	Describe(".CheckTxPush", func() {
@@ -1187,7 +1209,6 @@ var _ = Describe("TxValidator", func() {
 			tx.PushNote.PushKeyID = util.RandBytes(20)
 			tx.PushNote.Timestamp = time.Now().Unix()
 			tx.PushNote.PusherAcctNonce = 1
-			tx.PushNote.Fee = "1"
 			tx.PushNote.NodePubKey = key.PubKey().MustBytes32()
 			tx.PushNote.NodeSig = key.PrivKey().MustSign(tx.PushNote.Bytes())
 		})

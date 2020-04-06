@@ -2,7 +2,6 @@ package keystore
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -18,7 +17,7 @@ import (
 // the passphrase. Otherwise, the file is read and used as the
 // passphrase. When pass is not set, the user is prompted to
 // provide the passphrase.
-func (ks *Keystore) ImportCmd(keyfile string, keyType core.KeyType, pass string, out io.Writer) error {
+func (ks *Keystore) ImportCmd(keyfile string, keyType core.KeyType, pass string) error {
 
 	if keyfile == "" {
 		return fmt.Errorf("key file path is required")
@@ -46,7 +45,7 @@ func (ks *Keystore) ImportCmd(keyfile string, keyType core.KeyType, pass string,
 	// If no passphrase or passphrase file is provided, ask for passphrase
 	passphrase := ""
 	if len(pass) == 0 {
-		fmt.Fprintln(out, "Your new account needs to be locked with a passphrase. Please enter a passphrase.")
+		fmt.Fprintln(ks.out, "Your new account needs to be locked with a passphrase. Please enter a passphrase.")
 		passphrase, err = ks.AskForPassword()
 		if err != nil {
 			return err
@@ -72,11 +71,11 @@ create:
 		return err
 	}
 
-	fmt.Fprintln(out, "Import successful. New key created, encrypted and stored")
+	fmt.Fprintln(ks.out, "Import successful. New key created, encrypted and stored")
 	if keyType == core.KeyTypeAccount {
-		fmt.Fprintln(out, "Address:", color.CyanString(key.Addr().String()))
+		fmt.Fprintln(ks.out, "Address:", color.CyanString(key.Addr().String()))
 	} else if keyType == core.KeyTypePush {
-		fmt.Fprintln(out, "Address:", color.CyanString(key.PushAddr().String()))
+		fmt.Fprintln(ks.out, "Address:", color.CyanString(key.PushAddr().String()))
 	}
 
 	return nil

@@ -7,13 +7,12 @@ import (
 	"os/exec"
 	"time"
 
-	"gitlab.com/makeos/mosdef/dht/types"
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
-
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto/bls"
+	"gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
@@ -49,19 +48,19 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		return errors.Wrap(err, "failed to decoded message")
 	}
 
-	m.log.Debug("Received push notification from peer",
-		"PeerID", peer.ID(), "TxID", pn.ID().String())
+	peerID := peer.ID()
+	m.log.Debug("Received a push note", "PeerID", peerID, "ID", pn.ID().String())
 
 	repoName := pn.GetRepoName()
 	repoPath := m.getRepoPath(repoName)
-
-	// Get the repository's state object
 	repoState := m.logic.RepoKeeper().Get(repoName)
+
+	// Ensure target repository exists
 	if repoState.IsNil() {
 		return fmt.Errorf("repo '%s' not found", repoName)
 	}
 
-	// Get the namespace
+	// If namespace is set, get it and ensure it exists
 	var namespace *state.Namespace
 	if pn.Namespace != "" {
 		namespace = m.logic.NamespaceKeeper().Get(pn.Namespace)
@@ -70,9 +69,11 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		}
 	}
 
+	// Reconstruct references transaction details from push note
+	txDetails := getTxDetailsFromNote(&pn)
+
 	// Perform authorization check
-	// TODO use real PushRequestTokenData
-	polEnforcer, err := authorize(&PushRequestTokenData{}, repoState, namespace, m.logic)
+	polEnforcer, err := m.authenticate(txDetails, repoState, namespace, m.logic)
 	if err != nil {
 		return errors.Wrap(err, "authorization failed")
 	}
@@ -84,7 +85,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Register a cache entry that indicates the sender of the push note
-	m.cachePushNoteSender(string(peer.ID()), pn.ID().String())
+	m.cacheNoteSender(string(peerID), pn.ID().String())
 
 	// Set the target repository object
 	pn.TargetRepo = &Repo{
@@ -95,29 +96,16 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		state: repoState,
 	}
 
-	defer m.pruner.Schedule(pn.GetRepoName())
-
 	// Validate the push note.
 	// Downloads the git objects, performs sanity and consistency checks on the
 	// push note. Does not check if the push note can extend the repository
 	// without issue.
-	// NOTE: If in validator mode, only sanity check is performed.
-	if err := checkPushNote(&pn, m.dht, m.logic); err != nil {
+	if err := m.checkPushNote(&pn, m.dht, m.logic); err != nil {
 		return errors.Wrap(err, "failed push note validation")
 	}
 
-	// ------------------------------------------------------------------------
-	// At this point, we know that the push note is valid and its proposed
-	// reference updates are consistent with the state of the repository,
-	// but we need to also check that the proposed references and objects are
-	// well signed, have correct transaction information and can update the
-	// state of the repository on disk without issue.
-	// To do this, we create a packfile from the push tx and attempt to let
-	// git-receive-pack process it.
-	// ------------------------------------------------------------------------
-
-	// Create the pack file
-	packfile, err := makeReferenceUpdateRequest(pn.TargetRepo, &pn)
+	// Create the packfile
+	packfile, err := m.packfileMaker(pn.TargetRepo, &pn)
 	if err != nil {
 		return errors.Wrap(err, "failed to create packfile from push note")
 	}
@@ -147,14 +135,13 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Read, analyse and pass the packfile to git
-	// TODO use real TxParams
-	pushHandler := newPushHandler(pn.TargetRepo, &PushRequestTokenData{}, polEnforcer, m)
+	pushHandler := m.makePushHandler(pn.TargetRepo, txDetails, polEnforcer)
 	if err := pushHandler.HandleStream(packfile, in); err != nil {
 		return errors.Wrap(err, "HandleStream error")
 	}
 
-	// Handle transaction validation and revert pre-commit changes
-	refsTxParams, _, err := pushHandler.HandleReferences()
+	// Handle transaction validation and revert changes
+	err = pushHandler.HandleReferences()
 	if err != nil {
 		return errors.Wrap(err, "HandleReferences error")
 	}
@@ -163,36 +150,45 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 		return errors.Wrap(err, "failed to process packfile derived from push note")
 	}
 
-	// Verify that push note is consistent with the txparams
-	if err := checkPushNoteAgainstTxParams(&pn, refsTxParams); err != nil {
-		return errors.Wrapf(err, "push note and txparams conflict")
-	}
-
-	// At this point, the transaction has passed all validation and
-	// compatibility checks. We can now attempt to add the push note to the
-	// PushPool without validation
+	// Add the note to the push pool
 	if err := m.GetPushPool().Add(&pn, true); err != nil {
 		return errors.Wrap(err, "failed to add push note to push pool")
 	}
 
-	// Announce the objects of the push note to the dht
-	for _, hash := range pn.GetPushedObjects(false) {
-		dhtKey := MakeRepoObjectDHTKey(repoName, hash)
-		ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
-		defer c()
-		if err := m.GetDHT().Announce(ctx, []byte(dhtKey)); err != nil {
-			m.log.Warn("unable to announce git object", "Err", err)
-			continue
-		}
-	}
+	// Announce the objects and push note
+	m.log.Info("Added valid push note to push pool", "ID", pn.ID().String())
 
-	if err = m.BroadcastPushObjects(&pn); err != nil {
-		m.log.Error("Error broadcasting push objects", "Err", err)
-	}
-
-	m.log.Info("Added valid push note to push pool", "TxID", pn.ID().String())
+	// Broadcast the push note and pushed objects
+	go m.pushedObjectsBroadcaster(&pn)
 
 	return nil
+}
+
+// pushedObjectsBroadcaster describes an object for broadcasting pushed objects
+type pushedObjectsBroadcaster func(pn *core.PushNote) (err error)
+
+func (m *Manager) broadcastPushedObjects(pn *core.PushNote) (err error) {
+
+	// Announce all pushed objects to the DHT
+	for _, hash := range pn.GetPushedObjects() {
+		dhtKey := MakeRepoObjectDHTKey(pn.RepoName, hash)
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		if err := m.GetDHT().Announce(ctx, []byte(dhtKey)); err != nil {
+			err = fmt.Errorf("unable to announce git object")
+			m.log.Warn(err.Error())
+			cancel()
+			continue
+		}
+		cancel()
+	}
+
+	// Broadcast the push note and an endorse if this note is a host
+	if err = m.BroadcastPushObjects(pn); err != nil {
+		err = errors.Wrap(err, "failed to broadcast push note and endorsement")
+		m.log.Error(err.Error())
+	}
+
+	return
 }
 
 // onPushOK is the handler for incoming PushOK messages
@@ -237,10 +233,10 @@ func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
 
 // BroadcastPushObjects broadcasts repo push notes and PushOK; PushOK is only
 // created and broadcast only if the node is a top host.
-func (m *Manager) BroadcastPushObjects(pushNote core.RepoPushNote) error {
+func (m *Manager) BroadcastPushObjects(note core.RepoPushNote) error {
 
 	// Broadcast the push note to peers
-	m.broadcastPushNote(pushNote)
+	m.broadcastPushNote(note)
 
 	// Get the top hosts
 	topHosts, err := m.logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
@@ -254,7 +250,7 @@ func (m *Manager) BroadcastPushObjects(pushNote core.RepoPushNote) error {
 	}
 
 	// At this point, the node is a top host, so we create, sign and broadcast a PushOK
-	pok, err := m.createPushOK(pushNote)
+	pok, err := m.createPushOK(note)
 	if err != nil {
 		return err
 	}
@@ -262,7 +258,7 @@ func (m *Manager) BroadcastPushObjects(pushNote core.RepoPushNote) error {
 
 	// Cache the PushOK object as an endorsement of the PushNote so can use it
 	// to create a PushTx when enough PushOKs are discovered.
-	m.addPushNoteEndorsement(pushNote.ID().String(), pok)
+	m.addPushNoteEndorsement(note.ID().String(), pok)
 
 	// Attempt to create a PushTx and send to the transaction pool
 	if err = m.MaybeCreatePushTx(pok.PushNoteID.HexStr()); err != nil {
@@ -273,21 +269,17 @@ func (m *Manager) BroadcastPushObjects(pushNote core.RepoPushNote) error {
 }
 
 // createPushOK creates a PushOK for a push note
-func (m *Manager) createPushOK(pushNote core.RepoPushNote) (*core.PushOK, error) {
+func (m *Manager) createPushOK(note core.RepoPushNote) (*core.PushOK, error) {
 
 	pok := &core.PushOK{}
-	pok.PushNoteID = pushNote.ID()
+	pok.PushNoteID = note.ID()
 	pok.SenderPubKey = util.BytesToBytes32(m.privValidatorKey.PubKey().MustBytes())
 
-	repo, err := GetRepo(m.getRepoPath(pushNote.GetRepoName()))
-	if err != nil {
-		return nil, err
-	}
-
 	// Set the state hash for every reference
-	for _, pushedRef := range pushNote.GetPushedReferences() {
+	var err error
+	for _, pushedRef := range note.GetPushedReferences() {
 		refHash := &core.ReferenceHash{}
-		refHash.Hash, err = repo.TreeRoot(pushedRef.Name)
+		refHash.Hash, err = note.GetTargetRepo().TreeRoot(pushedRef.Name)
 		if err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("failed to get reference (%s) state hash",
 				pushedRef.Name))
@@ -358,7 +350,7 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 	// Ensure there are enough PushOKs
 	pushOKIdx := notePushOKs.(map[string]*core.PushOK)
 	if len(pushOKIdx) < params.PushOKQuorumSize {
-		return fmt.Errorf("Not enough push endorsements to satisfy quorum size")
+		return fmt.Errorf("not enough push endorsements to satisfy quorum size")
 	}
 
 	// Get the push note from the push pool
@@ -375,8 +367,8 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 	// Collect the BLS public keys of all PushOK senders.
 	// We need them for the construction of BLS aggregated signature.
 	pushOKs := funk.Values(pushOKIdx).([]*core.PushOK)
-	pokPubKeys := []*bls.PublicKey{}
-	pokSigs := [][]byte{}
+	var pokPubKeys []*bls.PublicKey
+	var pokSigs [][]byte
 	for i, pok := range pushOKs {
 		selTicket := hosts.Get(pok.SenderPubKey)
 		if selTicket == nil {
@@ -523,7 +515,7 @@ func execTxPush(m core.RepoManager, tx *core.TxPush) error {
 	}
 
 	// Download pushed objects
-	for _, objHash := range tx.PushNote.GetPushedObjects(false) {
+	for _, objHash := range tx.PushNote.GetPushedObjects() {
 		if repo.ObjectExist(objHash) {
 			continue
 		}
@@ -531,15 +523,16 @@ func execTxPush(m core.RepoManager, tx *core.TxPush) error {
 		// Fetch from the dht
 		dhtKey := MakeRepoObjectDHTKey(repoName, objHash)
 		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
-		defer cn()
 		objValue, err := m.GetDHT().GetObject(ctx, &types.DHTObjectQuery{
 			Module:    core.RepoObjectModule,
 			ObjectKey: []byte(dhtKey),
 		})
 		if err != nil {
+			cn()
 			msg := fmt.Sprintf("failed to fetch object '%s'", objHash)
 			return errors.Wrap(err, msg)
 		}
+		cn()
 
 		// Write fetched object to the repo
 		if err = repo.WriteObjectToFile(objHash, objValue); err != nil {
@@ -564,10 +557,10 @@ update:
 		return err
 	}
 
-	// For any pushed reference that has a delete directive, remove the
+	// For any pushed reference that has a delete option, remove the
 	// reference from the repo and also its tree.
 	for _, ref := range tx.PushNote.GetPushedReferences() {
-		if ref.Delete {
+		if isZeroHash(ref.NewHash) {
 			if !cfg.IsValidatorNode() {
 				if err = repo.RefDelete(ref.Name); err != nil {
 					return errors.Wrapf(err, "failed to delete reference (%s)", ref.Name)

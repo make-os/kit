@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 
 	"github.com/pkg/errors"
-	kyber "go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/pairing/bn256"
 	"go.dedis.ch/kyber/v3/sign"
@@ -104,7 +104,7 @@ func BytesToPublicKey(bz []byte) (*PublicKey, error) {
 // create an aggregate signature
 func AggregateSignatures(pubKeys []*PublicKey, sig [][]byte) ([]byte, error) {
 
-	publicKeys := []kyber.Point{}
+	var publicKeys []kyber.Point
 	for _, pk := range pubKeys {
 		publicKeys = append(publicKeys, pk.pk)
 	}
@@ -132,7 +132,7 @@ func AggregateSignatures(pubKeys []*PublicKey, sig [][]byte) ([]byte, error) {
 // aggregate public key
 func AggregatePublicKeys(pubKeys []*PublicKey) (*PublicKey, error) {
 
-	publicKeys := []kyber.Point{}
+	var publicKeys []kyber.Point
 	for _, pk := range pubKeys {
 		publicKeys = append(publicKeys, pk.pk)
 	}

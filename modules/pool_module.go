@@ -53,7 +53,7 @@ func (m *PoolModule) funcs() []*modules.ModuleFunc {
 // Configure configures the JS context and return
 // any number of console prompt suggestions
 func (m *PoolModule) Configure() []prompt.Suggest {
-	suggestions := []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
@@ -83,7 +83,7 @@ func (m *PoolModule) GetSize() util.Map {
 
 // getTop returns all the transactions in the pool
 func (m *PoolModule) GetTop(n int) []util.Map {
-	var res = []util.Map{}
+	var res []util.Map
 	for _, tx := range m.reactor.GetTop(n) {
 		res = append(res, EncodeForJS(tx.ToMap()))
 	}

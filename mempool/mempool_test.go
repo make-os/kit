@@ -85,7 +85,7 @@ var _ = Describe("Mempool", func() {
 				tx := core.NewCoinTransferTx(0, "recipient_addr2", sender, "10", "0.1", time.Now().Unix())
 				err := mempool.CheckTxWithInfo(tx.Bytes(), nil, tmmem.TxInfo{})
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("Tx too large. Max size is 100, but got"))
+				Expect(err.Error()).To(ContainSubstring("tx is too large. Max size is 100, but got"))
 			})
 		})
 	})

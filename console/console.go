@@ -22,7 +22,7 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 
-	prompt "github.com/c-bata/go-prompt"
+	"github.com/c-bata/go-prompt"
 )
 
 // Console defines functionalities for create and using
@@ -96,11 +96,6 @@ func New(historyPath string, cfg *config.AppConfig, log logger.Logger) *Console 
 }
 
 // NewAttached is like New but enables attach mode
-func NewAttached(historyPath string, cfg *config.AppConfig, log logger.Logger) *Console {
-	c := New(historyPath, cfg, log)
-	c.attached = true
-	return c
-}
 
 // Prepare sets up the console's prompt
 // colors, suggestions etc.

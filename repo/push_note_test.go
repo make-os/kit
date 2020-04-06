@@ -46,7 +46,6 @@ var _ = Describe("PushNote", func() {
 			RepoName:        "repo",
 			NodeSig:         []byte("node_signer_sig"),
 			PushKeyID:       pushKeyID,
-			Fee:             "0.2",
 			PusherAcctNonce: 2,
 			References: []*core.PushedReference{
 				{
@@ -54,6 +53,7 @@ var _ = Describe("PushNote", func() {
 					NewHash: "new_object_hash",
 					Name:    "refs/heads/master",
 					OldHash: "old_object_hash",
+					Fee:     "0.2",
 				},
 			},
 		}

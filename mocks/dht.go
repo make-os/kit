@@ -7,9 +7,12 @@ package mocks
 import (
 	context "context"
 	gomock "github.com/golang/mock/gomock"
+	network "github.com/libp2p/go-libp2p-core/network"
 	peer "github.com/libp2p/go-libp2p-core/peer"
+	protocol "github.com/libp2p/go-libp2p-core/protocol"
 	types "gitlab.com/makeos/mosdef/dht/types"
 	reflect "reflect"
+	time "time"
 )
 
 // MockObjectFinder is a mock of ObjectFinder interface
@@ -198,4 +201,181 @@ func (m *MockDHTNode) Close() error {
 func (mr *MockDHTNodeMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockDHTNode)(nil).Close))
+}
+
+// MockStream is a mock of Stream interface
+type MockStream struct {
+	ctrl     *gomock.Controller
+	recorder *MockStreamMockRecorder
+}
+
+// MockStreamMockRecorder is the mock recorder for MockStream
+type MockStreamMockRecorder struct {
+	mock *MockStream
+}
+
+// NewMockStream creates a new mock instance
+func NewMockStream(ctrl *gomock.Controller) *MockStream {
+	mock := &MockStream{ctrl: ctrl}
+	mock.recorder = &MockStreamMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockStream) EXPECT() *MockStreamMockRecorder {
+	return m.recorder
+}
+
+// Read mocks base method
+func (m *MockStream) Read(p []byte) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Read", p)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Read indicates an expected call of Read
+func (mr *MockStreamMockRecorder) Read(p interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockStream)(nil).Read), p)
+}
+
+// Write mocks base method
+func (m *MockStream) Write(p []byte) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Write", p)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Write indicates an expected call of Write
+func (mr *MockStreamMockRecorder) Write(p interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Write", reflect.TypeOf((*MockStream)(nil).Write), p)
+}
+
+// Close mocks base method
+func (m *MockStream) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close
+func (mr *MockStreamMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStream)(nil).Close))
+}
+
+// Reset mocks base method
+func (m *MockStream) Reset() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Reset")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Reset indicates an expected call of Reset
+func (mr *MockStreamMockRecorder) Reset() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Reset", reflect.TypeOf((*MockStream)(nil).Reset))
+}
+
+// SetDeadline mocks base method
+func (m *MockStream) SetDeadline(arg0 time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetDeadline", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetDeadline indicates an expected call of SetDeadline
+func (mr *MockStreamMockRecorder) SetDeadline(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetDeadline", reflect.TypeOf((*MockStream)(nil).SetDeadline), arg0)
+}
+
+// SetReadDeadline mocks base method
+func (m *MockStream) SetReadDeadline(arg0 time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetReadDeadline", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetReadDeadline indicates an expected call of SetReadDeadline
+func (mr *MockStreamMockRecorder) SetReadDeadline(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetReadDeadline", reflect.TypeOf((*MockStream)(nil).SetReadDeadline), arg0)
+}
+
+// SetWriteDeadline mocks base method
+func (m *MockStream) SetWriteDeadline(arg0 time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetWriteDeadline", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetWriteDeadline indicates an expected call of SetWriteDeadline
+func (mr *MockStreamMockRecorder) SetWriteDeadline(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetWriteDeadline", reflect.TypeOf((*MockStream)(nil).SetWriteDeadline), arg0)
+}
+
+// Protocol mocks base method
+func (m *MockStream) Protocol() protocol.ID {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Protocol")
+	ret0, _ := ret[0].(protocol.ID)
+	return ret0
+}
+
+// Protocol indicates an expected call of Protocol
+func (mr *MockStreamMockRecorder) Protocol() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Protocol", reflect.TypeOf((*MockStream)(nil).Protocol))
+}
+
+// SetProtocol mocks base method
+func (m *MockStream) SetProtocol(id protocol.ID) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetProtocol", id)
+}
+
+// SetProtocol indicates an expected call of SetProtocol
+func (mr *MockStreamMockRecorder) SetProtocol(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetProtocol", reflect.TypeOf((*MockStream)(nil).SetProtocol), id)
+}
+
+// Stat mocks base method
+func (m *MockStream) Stat() network.Stat {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Stat")
+	ret0, _ := ret[0].(network.Stat)
+	return ret0
+}
+
+// Stat indicates an expected call of Stat
+func (mr *MockStreamMockRecorder) Stat() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stat", reflect.TypeOf((*MockStream)(nil).Stat))
+}
+
+// Conn mocks base method
+func (m *MockStream) Conn() network.Conn {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Conn")
+	ret0, _ := ret[0].(network.Conn)
+	return ret0
+}
+
+// Conn indicates an expected call of Conn
+func (mr *MockStreamMockRecorder) Conn() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Conn", reflect.TypeOf((*MockStream)(nil).Conn))
 }

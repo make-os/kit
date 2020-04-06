@@ -61,14 +61,14 @@ var _ = Describe("Transfers", func() {
 		Context("when sender variable type is not valid", func() {
 			It("should panic", func() {
 				Expect(func() {
-					txLogic.CanExecCoinTransfer(123, util.String("100"), util.String("0"), 3, 1)
+					txLogic.CanExecCoinTransfer(123, "100", "0", 3, 1)
 				}).Should(Panic())
 			})
 		})
 
 		Context("when sender account has insufficient spendable balance", func() {
 			It("should not return err='sender's spendable account balance is insufficient'", func() {
-				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 1, 1)
+				err := txLogic.CanExecCoinTransfer(sender.PubKey(), "100", "0", 1, 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, msg:sender's spendable account balance is insufficient"))
 			})
@@ -76,7 +76,7 @@ var _ = Describe("Transfers", func() {
 
 		Context("when nonce is invalid", func() {
 			It("should return no error", func() {
-				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 3, 1)
+				err := txLogic.CanExecCoinTransfer(sender.PubKey(), "100", "0", 3, 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, msg:tx has invalid nonce (3), expected (1)"))
 			})
@@ -85,13 +85,13 @@ var _ = Describe("Transfers", func() {
 		Context("when sender account has sufficient spendable balance", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("1000"),
+					Balance: "1000",
 					Stakes:  state.BareAccountStakes(),
 				})
 			})
 
 			It("should return no error", func() {
-				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 1, 0)
+				err := txLogic.CanExecCoinTransfer(sender.PubKey(), "100", "0", 1, 0)
 				Expect(err).To(BeNil())
 			})
 		})
@@ -104,11 +104,11 @@ var _ = Describe("Transfers", func() {
 		Context("when sender has bal=100, recipient has bal=10", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("100"),
+					Balance: "100",
 					Stakes:  state.BareAccountStakes(),
 				})
 				logic.AccountKeeper().Update(recipientKey.Addr(), &state.Account{
-					Balance: util.String("10"),
+					Balance: "10",
 					Stakes:  state.BareAccountStakes(),
 				})
 			})
@@ -116,7 +116,7 @@ var _ = Describe("Transfers", func() {
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
 					senderPubKey := sender.PubKey().MustBytes32()
-					err := txLogic.execCoinTransfer(senderPubKey, recipientKey.Addr(), util.String("10"), util.String("1"), 0)
+					err := txLogic.execCoinTransfer(senderPubKey, recipientKey.Addr(), "10", "1", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -137,7 +137,7 @@ var _ = Describe("Transfers", func() {
 		Context("when sender and recipient are the same; with bal=100", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("100"),
+					Balance: "100",
 					Stakes:  state.BareAccountStakes(),
 				})
 			})
@@ -145,7 +145,7 @@ var _ = Describe("Transfers", func() {
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
 					senderPubKey := sender.PubKey().MustBytes32()
-					err := txLogic.execCoinTransfer(senderPubKey, sender.Addr(), util.String("10"), util.String("1"), 0)
+					err := txLogic.execCoinTransfer(senderPubKey, sender.Addr(), "10", "1", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -163,7 +163,7 @@ var _ = Describe("Transfers", func() {
 
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("100"),
+					Balance: "100",
 					Stakes:  state.BareAccountStakes(),
 				})
 
@@ -177,7 +177,7 @@ var _ = Describe("Transfers", func() {
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
 					senderPubKey := sender.PubKey().MustBytes32()
-					err := txLogic.execCoinTransfer(senderPubKey, senderNamespaceURI, util.String("10"), util.String("1"), 0)
+					err := txLogic.execCoinTransfer(senderPubKey, senderNamespaceURI, "10", "1", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -192,7 +192,7 @@ var _ = Describe("Transfers", func() {
 		When("recipient address is a prefixed user account address", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("100"),
+					Balance: "100",
 					Stakes:  state.BareAccountStakes(),
 				})
 			})
@@ -201,7 +201,7 @@ var _ = Describe("Transfers", func() {
 				BeforeEach(func() {
 					recipient := "a/" + sender.Addr()
 					senderPubKey := sender.PubKey().MustBytes32()
-					err := txLogic.execCoinTransfer(senderPubKey, recipient, util.String("10"), util.String("1"), 0)
+					err := txLogic.execCoinTransfer(senderPubKey, recipient, "10", "1", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -220,7 +220,7 @@ var _ = Describe("Transfers", func() {
 
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("100"),
+					Balance: "100",
 					Stakes:  state.BareAccountStakes(),
 				})
 
@@ -234,7 +234,7 @@ var _ = Describe("Transfers", func() {
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
 					senderPubKey := sender.PubKey().MustBytes32()
-					err := txLogic.execCoinTransfer(senderPubKey, senderNamespaceURI, util.String("10"), util.String("1"), 0)
+					err := txLogic.execCoinTransfer(senderPubKey, senderNamespaceURI, "10", "1", 0)
 					Expect(err).To(BeNil())
 				})
 
@@ -254,7 +254,7 @@ var _ = Describe("Transfers", func() {
 		When("recipient address is a prefixed user account address", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("100"),
+					Balance: "100",
 					Stakes:  state.BareAccountStakes(),
 				})
 			})
@@ -265,7 +265,7 @@ var _ = Describe("Transfers", func() {
 				BeforeEach(func() {
 					recipient := util.Address("r/" + repoName)
 					senderPubKey := sender.PubKey().MustBytes32()
-					err := txLogic.execCoinTransfer(senderPubKey, recipient, util.String("10"), util.String("1"), 0)
+					err := txLogic.execCoinTransfer(senderPubKey, recipient, "10", "1", 0)
 					Expect(err).To(BeNil())
 				})
 

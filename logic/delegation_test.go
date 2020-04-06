@@ -61,12 +61,12 @@ var _ = Describe("Delegation", func() {
 		Context("when tx has incorrect nonce", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance:             util.String("10"),
+					Balance:             "10",
 					Stakes:              state.BareAccountStakes(),
 					DelegatorCommission: 15.4,
 				})
 				spk := sender.PubKey().MustBytes32()
-				err := txLogic.execSetDelegatorCommission(spk, util.String("23.5"), util.String("2"), 0)
+				err := txLogic.execSetDelegatorCommission(spk, "23.5", "2", 0)
 				Expect(err).To(BeNil())
 				senderAcct = logic.AccountKeeper().Get(sender.Addr())
 			})

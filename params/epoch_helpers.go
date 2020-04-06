@@ -60,7 +60,7 @@ func GetEndOfEpochOfHeight(targetHeight int64) int64 {
 // for the epoch where the target height falls in
 func GetSeedHeightInEpochOfHeight(targetHeight int64) int64 {
 	epochOfHeight := int64(math.Ceil(float64(targetHeight) / float64(NumBlocksPerEpoch)))
-	return (epochOfHeight*int64(NumBlocksPerEpoch) - int64(NumBlocksToEffectValChange))
+	return epochOfHeight*int64(NumBlocksPerEpoch) - int64(NumBlocksToEffectValChange)
 }
 
 // GetEndOfParentEpochOfHeight returns the block height that is the last block in

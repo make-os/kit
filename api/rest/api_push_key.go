@@ -13,7 +13,7 @@ import (
 // - id: The push key unique ID
 // - [blockHeight]: The height of the block to query (default: latest)
 // Response <map> - state.PushKey
-func (r *RESTApi) FindPushKey(w http.ResponseWriter, req *http.Request) {
+func (r *API) FindPushKey(w http.ResponseWriter, req *http.Request) {
 	query := objx.MustFromURLQuery(req.URL.Query().Encode())
 	id := query.Get("id").String()
 
@@ -33,7 +33,7 @@ func (r *RESTApi) FindPushKey(w http.ResponseWriter, req *http.Request) {
 // - [blockHeight]: The height of the block to query (default: latest)
 // Response <map>
 // - nonce <string> The key owner account nonce
-func (r *RESTApi) GetNonceOfPushKeyOwner(w http.ResponseWriter, req *http.Request) {
+func (r *API) GetNonceOfPushKeyOwner(w http.ResponseWriter, req *http.Request) {
 	query := objx.MustFromURLQuery(req.URL.Query().Encode())
 	id := query.Get("id").String()
 

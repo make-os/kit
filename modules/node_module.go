@@ -64,7 +64,7 @@ func (m *ChainModule) funcs() []*modules.ModuleFunc {
 // Configure configures the JS context and return
 // any number of console prompt suggestions
 func (m *ChainModule) Configure() []prompt.Suggest {
-	suggestions := []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
@@ -161,7 +161,7 @@ func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	var vList = []util.Map{}
+	var vList []util.Map
 	for pubKey, valInfo := range validators {
 
 		var pub32 ed25519.PubKeyEd25519

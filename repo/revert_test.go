@@ -2,9 +2,10 @@ package repo
 
 import (
 	"fmt"
-	"gitlab.com/makeos/mosdef/types/core"
 	"os"
 	"path/filepath"
+
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/bitfield/script"
 	"github.com/golang/mock/gomock"
@@ -26,7 +27,7 @@ var _ = Describe("Revert", func() {
 	var cfg *config.AppConfig
 	var repoMgr *Manager
 	var repo core.BareRepo
-	var path string
+	var repoName, path string
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
 	var mockDHT *mocks.MockDHTNode
@@ -38,7 +39,7 @@ var _ = Describe("Revert", func() {
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
-		repoName := util.RandString(5)
+		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
 
@@ -205,19 +206,11 @@ var _ = Describe("Revert", func() {
 	})
 
 	Describe(".revert (annotated tags)", func() {
-		var path string
 		var prevState core.BareRepoState
 
-		BeforeEach(func() {
-			repoName := util.RandString(5)
-			path = filepath.Join(cfg.GetRepoRoot(), repoName)
-			execGit(cfg.GetRepoRoot(), "init", repoName)
-		})
-
 		When("repo old state has 0 tags; new state has 1 tag", func() {
-
 			BeforeEach(func() {
-				prevState, _ = repoMgr.GetRepoState(repo)
+				prevState = getRepoState(repo)
 				Expect(prevState.IsEmpty()).To(BeTrue())
 				createCommitAndAnnotatedTag(path, "file.txt", "v1 file", "v1 commit", "v1")
 			})
@@ -225,7 +218,7 @@ var _ = Describe("Revert", func() {
 			It("should remove the new tag and old state should equal current state", func() {
 				_, err := revert(repo, prevState)
 				Expect(err).To(BeNil())
-				curState, _ := repoMgr.GetRepoState(repo)
+				curState := getRepoState(repo)
 				Expect(curState.GetReferences()).To(Equal(prevState.GetReferences()))
 			})
 		})
@@ -316,14 +309,7 @@ var _ = Describe("Revert", func() {
 	})
 
 	Describe(".revert (notes)", func() {
-		var path string
 		var prevState core.BareRepoState
-
-		BeforeEach(func() {
-			repoName := util.RandString(5)
-			path = filepath.Join(cfg.GetRepoRoot(), repoName)
-			execGit(cfg.GetRepoRoot(), "init", repoName)
-		})
 
 		When("repo old state has 0 notes; new state has 1 note", func() {
 

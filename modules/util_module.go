@@ -10,7 +10,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/modules"
 
 	"github.com/c-bata/go-prompt"
-	prettyjson "github.com/ncodes/go-prettyjson"
+	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
@@ -111,7 +111,7 @@ func (m *UtilModule) funcs() []*modules.ModuleFunc {
 // Configure configures the JS context and return
 // any number of console prompt suggestions
 func (m *UtilModule) Configure() []prompt.Suggest {
-	suggestions := []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 
 	// Register the main namespace
 	obj := map[string]interface{}{}

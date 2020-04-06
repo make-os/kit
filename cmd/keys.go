@@ -76,7 +76,7 @@ Always backup your keeps regularly.`,
 		if pushType {
 			kt = core.KeyTypePush
 		}
-		_, err := ks.CreateCmd(kt, seed, pass, nopass, os.Stdout)
+		_, err := ks.CreateCmd(kt, seed, pass, nopass)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
@@ -115,7 +115,7 @@ convert a key encrypted in an old format to a new one.
 		pass, _ := cmd.Flags().GetString("pass")
 
 		ks := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
-		if err := ks.UpdateCmd(address, pass, os.Stdout); err != nil {
+		if err := ks.UpdateCmd(address, pass); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -150,7 +150,7 @@ key.
 		}
 
 		ks := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
-		if err := ks.ImportCmd(keyFile, kt, pass, os.Stdout); err != nil {
+		if err := ks.ImportCmd(keyFile, kt, pass); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -176,7 +176,7 @@ Also, the flag accepts a path to a file containing a password.
 		pass := viper.GetString("node.passphrase")
 
 		ks := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
-		if err := ks.RevealCmd(address, pass, os.Stdout); err != nil {
+		if err := ks.RevealCmd(address, pass); err != nil {
 			log.Fatal(err.Error())
 		}
 	},

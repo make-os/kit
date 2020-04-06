@@ -42,6 +42,7 @@ genmocks:
     mockgen -source=types/tendermint.go -destination=mocks/tendermint.go -package mocks && \
     mockgen -source=ticket/types/types.go -destination=mocks/ticket.go -package mocks && \
     mockgen -source=types/core/mempool.go -destination=mocks/mempool.go -package mocks && \
+    mockgen -source=types/core/keystore.go -destination=mocks/keystore.go -package mocks && \
     mockgen -source=api/rest/client/types.go -destination=mocks/rest_client.go -package mocks && \
     mockgen -source=api/rpc/client/client.go -destination=api/rpc/client/mocks.go -package client && \
     mockgen -source=types/modules/modules.go -destination=mocks/modules.go -package mocks && \

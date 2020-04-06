@@ -12,7 +12,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/util"
 
-	prompt "github.com/c-bata/go-prompt"
+	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 )
 
@@ -75,7 +75,7 @@ func (m *DHTModule) globals() []*modules.ModuleFunc {
 // any number of console prompt suggestions
 func (m *DHTModule) Configure() []prompt.Suggest {
 	fMap := map[string]interface{}{}
-	suggestions := []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 
 	// Set the namespace object
 	util.VMSet(m.vm, constants.NamespaceDHT, fMap)
@@ -147,7 +147,7 @@ func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
 	}
 	for _, p := range peers {
-		address := []string{}
+		var address []string
 		for _, addr := range p.Addrs {
 			address = append(address, addr.String())
 		}

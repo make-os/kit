@@ -63,7 +63,7 @@ var _ = Describe("Push", func() {
 		When("reference has nonce = 1", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("10"),
+					Balance: "10",
 					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})

@@ -14,7 +14,7 @@ type Validator struct {
 
 // Index indexes the validator set for the given height.
 func (v *Validator) Index(height int64, valUpdates []abcitypes.ValidatorUpdate) error {
-	var validators = []*core.Validator{}
+	var validators []*core.Validator
 	for _, validator := range valUpdates {
 		validators = append(validators, &core.Validator{
 			PubKey: util.BytesToBytes32(validator.PubKey.Data),

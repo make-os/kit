@@ -6,69 +6,40 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
-	"strconv"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
+	"github.com/spf13/pflag"
 	"gitlab.com/makeos/mosdef/api"
 	restclient "gitlab.com/makeos/mosdef/api/rest/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/keystore"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
-
-// getPushPrivateKey gets the push private key corresponding to the given push key ID from the keystore.
-// Using the push key id, it will attempt to unlock the key if found. If the key is unprotected,
-// it will attempt to unlock it using the default passphrase.
-func getPushPrivateKey(keystoreDir, pushKeyID, pushKeyPass string) (core.StoredKey, error) {
-
-	// Get the private key from the keystore
-	ks := keystore.New(keystoreDir)
-	key, err := ks.GetByAddress(pushKeyID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Unlock the address
-	if key.IsUnprotected() {
-		if err = key.Unlock(keystore.DefaultPassphrase); err != nil {
-			return nil, errors.Wrap(err, "failed to unlock unprotected push key")
-		}
-		return key, nil
-	}
-
-	if pushKeyPass == "" {
-		return nil, fmt.Errorf("push key passphrase is requred")
-	}
-
-	if err = key.Unlock(pushKeyPass); err != nil {
-		return nil, errors.Wrap(err, "failed to unlock push key")
-	}
-
-	return key, nil
-}
 
 // SignCommitCmd adds transaction information to a new or recent commit and signs it.
 func SignCommitCmd(
 	cfg *config.AppConfig,
+	message string,
 	targetRepo core.BareRepo,
 	txFee,
 	nextNonce string,
-	amendRecent,
-	deleteRefAction bool,
-	mergeID string,
+	amendRecent bool,
+	mergeID,
 	pushKeyID,
-	pushKeyPass string,
+	pushKeyPass,
+	targetRemote string,
+	resetTokens bool,
 	rpcClient *client.RPCClient,
 	remoteClients []restclient.RestClient) error {
 
@@ -80,8 +51,8 @@ func SignCommitCmd(
 		}
 	}
 
-	// Get the push key private key
-	pushKeyPrivKey, err := getPushPrivateKey(cfg.KeystoreDir(), pushKeyID, pushKeyPass)
+	// Get and unlock the pusher key
+	key, err := getAndUnlockPushKey(cfg, pushKeyID, pushKeyPass, targetRepo)
 	if err != nil {
 		return err
 	}
@@ -104,35 +75,40 @@ func SignCommitCmd(
 		}
 	}
 
-	// Gather any transaction params directives
-	directives := []string{}
-	if deleteRefAction {
-		directives = append(directives, "deleteRef")
+	// Get the reference pointed to by HEAD
+	head, err := targetRepo.Head()
+	if err != nil {
+		return fmt.Errorf("failed to get HEAD") // :D
 	}
+
+	// Gather any transaction options
+	options := []string{fmt.Sprintf("reference=%s", head)}
 	if mergeID != "" {
-		directives = append(directives, fmt.Sprintf("mergeID=%s", mergeID))
+		options = append(options, fmt.Sprintf("mergeID=%s", mergeID))
 	}
 
 	// Make the transaction parameter object
-	txParams, err := util.MakeAndValidateTxParams(txFee, nextNonce, pushKeyID, nil, directives...)
+	txDetail, err := types.MakeAndValidateTxDetail(txFee, nextNonce, pushKeyID, nil, options...)
 	if err != nil {
 		return err
 	}
 
-	var commit *object.Commit
-	var hash, msg string
+	// Create & set request token to remote URLs in config
+	if _, err = setPushTokenToRemotes(targetRepo, targetRemote, txDetail, key, resetTokens); err != nil {
+		return err
+	}
 
 	// Create a new quiet commit if recent commit amendment is not desired
 	if !amendRecent {
-		if err := targetRepo.CreateAndOrSignQuietCommit(txParams.String(), pushKeyID); err != nil {
+		if err := targetRepo.CreateAndOrSignQuietCommit(message, pushKeyID); err != nil {
 			return err
 		}
-		goto add_req_token
+		return nil
 	}
 
 	// Otherwise, amend the recent commit.
 	// Get recent commit hash of the current branch.
-	hash, err = targetRepo.GetRecentCommit()
+	hash, err := targetRepo.GetRecentCommit()
 	if err != nil {
 		if err == ErrNoCommits {
 			return errors.New("no commits have been created yet")
@@ -140,20 +116,13 @@ func SignCommitCmd(
 		return err
 	}
 
-	// Remove any existing txparams and append the new one
-	commit, _ = targetRepo.CommitObject(plumbing.NewHash(hash))
-	msg = util.RemoveTxParams(commit.Message)
-	msg += "\n\n" + txParams.String()
-
-	// Update the recent commit message
-	if err = targetRepo.UpdateRecentCommitMsg(msg, pushKeyID); err != nil {
-		return err
+	commit, _ := targetRepo.CommitObject(plumbing.NewHash(hash))
+	if message == "" {
+		message = commit.Message
 	}
 
-add_req_token:
-
-	// Create & set request token to remote URLs
-	if err = createAndSetRequestTokenToRemoteURLs(pushKeyPrivKey, targetRepo, txParams); err != nil {
+	// Update the recent commit message
+	if err = targetRepo.UpdateRecentCommitMsg(message, pushKeyID); err != nil {
 		return err
 	}
 
@@ -168,19 +137,23 @@ func SignTagCmd(
 	msg string,
 	targetRepo core.BareRepo,
 	txFee,
-	nextNonce string,
-	deleteRefAction bool,
+	nextNonce,
 	pushKeyID,
-	pushKeyPass string,
+	pushKeyPass,
+	targetRemote string,
+	resetTokens bool,
 	rpcClient *client.RPCClient,
 	remoteClients []restclient.RestClient) error {
 
-	// If -u or --local-user flag is provided in the git args, use the value as the push key ID
-	parsedGitArgs := util.ParseSimpleArgs(gitArgs)
-	if parsedGitArgs["u"] != "" {
-		pushKeyID = parsedGitArgs["u"]
-	} else if parsedGitArgs["local-user"] != "" {
-		pushKeyID = parsedGitArgs["local-user"]
+	gitFlags := pflag.NewFlagSet("git-tag", pflag.ExitOnError)
+	gitFlags.ParseErrorsWhitelist.UnknownFlags = true
+	gitFlags.StringP("message", "m", "", "user message")
+	gitFlags.StringP("local-user", "u", "", "user signing key")
+	gitFlags.Parse(gitArgs)
+
+	// If --local-user (-u) flag is provided in the git args, use the value as the push key ID
+	if gitFlags.Lookup("local-user") != nil {
+		pushKeyID, _ = gitFlags.GetString("local-user")
 	}
 
 	// Get the signing key id from the git config if not passed as an argument
@@ -191,25 +164,19 @@ func SignTagCmd(
 		}
 	}
 
-	// Get the push key private key
-	pushKeyPrivKey, err := getPushPrivateKey(cfg.KeystoreDir(), pushKeyID, pushKeyPass)
+	// Get and unlock the pusher key
+	key, err := getAndUnlockPushKey(cfg, pushKeyID, pushKeyPass, targetRepo)
 	if err != nil {
 		return err
 	}
 
-	// Get message from the git arguments if message
-	// was not provided via our own --message/-m flag
-	if msg == "" {
-		if m, ok := parsedGitArgs["m"]; ok {
-			msg = m
-		} else if message, ok := parsedGitArgs["message"]; ok {
-			msg = message
-		}
+	// If --message (-m) flag is provided, use the value as the message
+	if gitFlags.Lookup("message") != nil {
+		msg, _ = gitFlags.GetString("message")
 	}
 
-	// Remove -m, --message, -u, -local-user flag from the git args since
-	// we wont be pass the message via flags but stdin
-	gitArgs = util.RemoveFlagVal(gitArgs, []string{"m", "message", "u", "local-user"})
+	// Remove -m, --message, -u, -local-user flag from the git args
+	gitArgs = util.RemoveFlag(gitArgs, []string{"m", "message", "u", "local-user"})
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
@@ -219,26 +186,24 @@ func SignTagCmd(
 		}
 	}
 
-	// Gather any transaction params directives
-	directives := []string{}
-	if deleteRefAction {
-		directives = append(directives, "deleteRef")
+	// Gather any transaction params options
+	options := []string{
+		fmt.Sprintf("reference=%s", plumbing.NewTagReferenceName(gitFlags.Arg(0)).String()),
 	}
 
-	// Construct the txparams and append to the current message
-	txParams, err := util.MakeAndValidateTxParams(txFee, nextNonce, pushKeyID, nil, directives...)
+	// Construct the txDetail and append to the current message
+	txDetail, err := types.MakeAndValidateTxDetail(txFee, nextNonce, pushKeyID, nil, options...)
 	if err != nil {
 		return err
 	}
 
-	// Create the tag
-	msg += "\n\n" + txParams.String()
-	if err = targetRepo.CreateTagWithMsg(gitArgs, msg, pushKeyID); err != nil {
+	// Create & set request token to remote URLs in config
+	if _, err = setPushTokenToRemotes(targetRepo, targetRemote, txDetail, key, resetTokens); err != nil {
 		return err
 	}
 
-	// Create & set request token to remote URLs
-	if err = createAndSetRequestTokenToRemoteURLs(pushKeyPrivKey, targetRepo, txParams); err != nil {
+	// Create the tag
+	if err = targetRepo.CreateTagWithMsg(gitArgs, msg, pushKeyID); err != nil {
 		return err
 	}
 
@@ -251,10 +216,11 @@ func SignNoteCmd(
 	targetRepo core.BareRepo,
 	txFee,
 	nextNonce,
-	note string,
-	deleteRefAction bool,
+	note,
 	pushKeyID,
-	pushKeyPass string,
+	pushKeyPass,
+	targetRemote string,
+	resetTokens bool,
 	rpcClient *client.RPCClient,
 	remoteClients []restclient.RestClient) error {
 
@@ -266,8 +232,8 @@ func SignNoteCmd(
 		}
 	}
 
-	// Get the push key private key
-	pushKeyPrivKey, err := getPushPrivateKey(cfg.KeystoreDir(), pushKeyID, pushKeyPass)
+	// Get and unlock the pusher key
+	key, err := getAndUnlockPushKey(cfg, pushKeyID, pushKeyPass, targetRepo)
 	if err != nil {
 		return err
 	}
@@ -277,47 +243,15 @@ func SignNoteCmd(
 		note = "refs/notes/" + note
 	}
 
-	// Get a list of all notes entries in the note
-	noteEntries, err := targetRepo.ListTreeObjects(note, false)
-	if err != nil {
-		msg := fmt.Sprintf("unable to fetch note entries for tree object (%s)", note)
-		return errors.Wrap(err, msg)
-	}
-
-	// From the entries, find existing tx blob and stop after the first one
-	var lastTxBlob *object.Blob
-	for hash := range noteEntries {
-		obj, err := targetRepo.BlobObject(plumbing.NewHash(hash))
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to read object (%s)", hash))
-		}
-		r, err := obj.Reader()
-		if err != nil {
-			return err
-		}
-		prefix := make([]byte, 3)
-		_, _ = r.Read(prefix)
-		if string(prefix) == util.TxParamsPrefix {
-			lastTxBlob = obj
-			break
-		}
-	}
-
-	// Remove the last tx blob from the note, if present
-	if lastTxBlob != nil {
-		err = targetRepo.RemoveEntryFromNote(note, noteEntries[lastTxBlob.Hash.String()])
-		if err != nil {
-			return errors.Wrap(err, "failed to delete existing transaction blob")
-		}
-	}
-
-	// Get the commit hash the note is currently referencing.
-	// We need to add this hash to the signature.
+	// Get the HEAD hash of the note and add it as a option
 	noteRef, err := targetRepo.Reference(plumbing.ReferenceName(note), true)
 	if err != nil {
 		return errors.Wrap(err, "failed to get note reference")
 	}
-	noteHash := noteRef.Hash().String()
+	options := []string{
+		fmt.Sprintf("reference=%s", noteRef.Name()),
+		fmt.Sprintf("head=%s", noteRef.Hash().String()),
+	}
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(nextNonce) {
@@ -327,38 +261,14 @@ func SignNoteCmd(
 		}
 	}
 
-	// Sign a message composed of the tx information
-	sigMsg := MakeNoteSigMsg(txFee, nextNonce, pushKeyID, noteHash, deleteRefAction)
-	sig, err := pushKeyPrivKey.GetKey().PrivKey().Sign(sigMsg)
-	if err != nil {
-		return errors.Wrap(err, "failed to sign transaction parameters")
-	}
-
-	// Gather any transaction params directives
-	directives := []string{}
-	if deleteRefAction {
-		directives = append(directives, "deleteRef")
-	}
-
-	// Construct the txparams
-	txParams, err := util.MakeAndValidateTxParams(txFee, nextNonce, pushKeyID, sig, directives...)
+	// Construct the txDetail
+	txDetail, err := types.MakeAndValidateTxDetail(txFee, nextNonce, pushKeyID, nil, options...)
 	if err != nil {
 		return err
 	}
 
-	// Create a blob with 0 byte content which be the subject of our note.
-	blobHash, err := targetRepo.CreateBlob("")
-	if err != nil {
-		return err
-	}
-
-	// Next we add the tx blob to the note
-	if err = targetRepo.AddEntryToNote(note, blobHash, txParams.String()); err != nil {
-		return errors.Wrap(err, "failed to add tx blob")
-	}
-
-	// Create & set request token to remote URLs
-	if err = createAndSetRequestTokenToRemoteURLs(pushKeyPrivKey, targetRepo, txParams); err != nil {
+	// Create & set request token to remote URLs in config
+	if _, err = setPushTokenToRemotes(targetRepo, targetRemote, txDetail, key, resetTokens); err != nil {
 		return err
 	}
 
@@ -440,67 +350,191 @@ func CreateAndSendMergeRequestCmd(
 	return nil
 }
 
+// getAndUnlockPushKey takes a push key ID and unlocks it using the default passphrase
+// or one obtained from the git config of the repository or from an environment variable.
+func getAndUnlockPushKey(
+	cfg *config.AppConfig,
+	pushKeyID,
+	defaultPassphrase string,
+	targetRepo core.BareRepo) (core.StoredKey, error) {
+
+	// Get the push key from the key store
+	ks := keystore.New(cfg.KeystoreDir())
+	ks.SetOutput(ioutil.Discard)
+
+	// Ensure the push key exist
+	key, err := ks.GetByIndexOrAddress(pushKeyID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find push key (%s)", pushKeyID)
+	}
+
+	// Get the request token from the config
+	repoCfg, err := targetRepo.Config()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to get repo config")
+	}
+
+	// APPNAME_REPONAME_PASS may contain the passphrase
+	_, repoName := filepath.Split(targetRepo.Path())
+	passEnvVarName := fmt.Sprintf("%s_%s_PASS", strings.ToUpper(config.AppName), strings.ToUpper(repoName))
+
+	// If push key is protected, require passphrase
+	var passphrase = defaultPassphrase
+	if !key.IsUnprotected() && passphrase == "" {
+
+		// Get the password from the "user.passphrase" option in git config
+		passphrase = repoCfg.Raw.Section("user").Option("passphrase")
+
+		// If we still don't have a passphrase, get it from the env variable:
+		// APPNAME_REPONAME_PASS
+		if passphrase == "" {
+			passphrase = os.Getenv(passEnvVarName)
+		}
+
+		// Well, if no passphrase still, so exit with error
+		if passphrase == "" {
+			return nil, fmt.Errorf("passphrase of signing key is required")
+		}
+	}
+
+	key, err = ks.UIUnlockKey(pushKeyID, passphrase)
+	if err != nil {
+		return nil, errors.Wrapf(err, "unable to unlock push key (%s)", pushKeyID)
+	}
+
+	// Set the passphrase on the env var so signing/verify commands
+	// can learn about the passphrase
+	os.Setenv(passEnvVarName, passphrase)
+
+	return key, nil
+}
+
 // GitSignCmd mocks git signing interface allowing this program to
-// be used by git for signing commits, tags etc
-func GitSignCmd(args []string, data io.Reader) {
+// be used by git for signing a commit or tag.
+func GitSignCmd(cfg *config.AppConfig, args []string, data io.Reader) {
+
+	log := cfg.G().Log
 
 	// Get the data to be signed and the key id to use
-	// dataBz, _ := ioutil.ReadAll(data)
-	// keyID := os.Args[3]
+	pushKeyID := os.Args[3]
 
+	// Get the target repo
+	repoDir, _ := os.Getwd()
+	targetRepo, err := GetRepo(repoDir)
+	if err != nil {
+		log.Fatal(errors.Wrapf(err, "failed to get repo").Error())
+	}
+
+	// Get and unlock the pusher key
+	key, err := getAndUnlockPushKey(cfg, pushKeyID, "", targetRepo)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	// Get the push request token
+	token := os.Getenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", config.AppName))
+	if token == "" {
+		log.Fatal(errors.Wrap(err, "push request token not set").Error())
+	}
+
+	// Decode the push request token
+	txDetail, err := DecodePushToken(token)
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to decode token").Error())
+	}
+
+	// Construct the message
+	// git sig message + msgpack(tx parameters)
+	msg, _ := ioutil.ReadAll(data)
+	msg = append(msg, txDetail.BytesNoSig()...)
+
+	// Sign the message
+	sig, err := key.GetKey().PrivKey().Sign(msg)
+	if err != nil {
+		log.Fatal(errors.Wrap(err, "failed to sign").Error())
+	}
+
+	// Write output
 	w := bytes.NewBuffer(nil)
-	pem.Encode(w, &pem.Block{Bytes: []byte("some sig"), Type: "PGP SIGNATURE", Headers: map[string]string{
-		"time":   fmt.Sprintf("%d", time.Now().Unix()),
-		"signer": "maker1abc",
-	}})
-
+	pem.Encode(w, &pem.Block{Bytes: sig, Type: "PGP SIGNATURE", Headers: txDetail.ToMapForPEMHeader()})
 	fmt.Fprintf(os.Stderr, "[GNUPG:] BEGIN_SIGNING\n")
-	fmt.Fprintf(os.Stderr, "[GNUPG:] SIG_CREATED C 1 8 00 1584390372 690B4F273B5A8C04AFD41E1DE14EE57A45993CDF\n")
-	fmt.Fprintf(os.Stdout, "%s\n", w.Bytes())
+	fmt.Fprintf(os.Stderr, "[GNUPG:] SIG_CREATED C\n")
+	fmt.Fprintf(os.Stdout, "%s", w.Bytes())
 
 	os.Exit(0)
 }
 
 // GitVerifyCmd mocks git signing interface allowing this program to
 // be used by git for verifying signatures.
-func GitVerifyCmd(args []string) {
+func GitVerifyCmd(cfg *config.AppConfig, args []string) {
 
+	fp := fmt.Fprintf
+
+	// Read the signature
 	sig, err := ioutil.ReadFile(args[4])
 	if err != nil {
-		log.Fatalf("failed to read sig file: %s", err)
-	}
-
-	p, _ := pem.Decode(sig)
-	if p == nil {
-		os.Stderr.Write([]byte("malformed signature"))
+		fp(os.Stderr, "failed to read sig file: %s", err)
 		os.Exit(1)
 	}
 
-	fmt.Fprintf(os.Stdout, "[GNUPG:] NEWSIG\n")
-
-	var signedAt int64
-	if ts, ok := p.Headers["time"]; ok {
-		signedAt, err = strconv.ParseInt(ts, 10, 64)
-		if err != nil {
-			fmt.Fprintf(os.Stdout, "[GNUPG:] BADSIG 0\n")
-			fmt.Fprintf(os.Stderr, "headers.time is invalid")
-			os.Exit(1)
-		}
-	}
-
-	signer, ok := p.Headers["signer"]
-	if !ok {
-		fmt.Fprintf(os.Stdout, "[GNUPG:] BADSIG 0\n")
-		fmt.Fprintf(os.Stderr, "headers.signer is required")
+	// Attempt to decode from PEM
+	decSig, _ := pem.Decode(sig)
+	if decSig == nil {
+		fp(os.Stderr, "malformed signatured. Expected pem encoded signature.", err)
 		os.Exit(1)
 	}
 
-	fmt.Fprintf(os.Stdout, "[GNUPG:] GOODSIG 0\n")
-	fmt.Fprintf(os.Stdout, "[GNUPG:] TRUST_FULLY 0 shell\n")
-	fmt.Fprintf(os.Stderr, "%s\n", color.GreenString("sig: signature is ok"))
-	fmt.Fprintf(os.Stderr, "%s\n", color.GreenString("sig: signed on %s",
-		time.Unix(signedAt, 0).String()))
-	fmt.Fprintf(os.Stderr, "%s\n", color.GreenString("sig: signed by %s", signer))
+	// Get tx parameters from the header
+	txDetail, err := types.TxDetailFromPEMHeader(decSig.Headers)
+	if err != nil {
+		fp(os.Stdout, "[GNUPG:] BADSIG 0\n")
+		fp(os.Stderr, "invalid header: %s\n", err)
+		os.Exit(1)
+	}
+
+	// Ensure push key is set
+	if txDetail.PushKeyID == "" {
+		fp(os.Stdout, "[GNUPG:] BADSIG 0\n")
+		fp(os.Stderr, "invalid header: 'pkID' is required\n")
+		os.Exit(1)
+	}
+
+	// Get the target repo
+	repoDir, _ := os.Getwd()
+	targetRepo, err := GetRepo(repoDir)
+	if err != nil {
+		fp(os.Stderr, errors.Wrapf(err, "failed to get repo").Error()+"\n")
+		os.Exit(1)
+	}
+
+	// Get and unlock the pusher key
+	key, err := getAndUnlockPushKey(cfg, txDetail.PushKeyID, "", targetRepo)
+	if err != nil {
+		fp(os.Stderr, err.Error()+"\n")
+		os.Exit(1)
+	}
+
+	// Construct the signature message
+	msg, _ := ioutil.ReadAll(os.Stdin)
+	msg = append(msg, txDetail.BytesNoSig()...)
+
+	// Verify the signature
+	if ok, err := key.GetKey().PubKey().Verify(msg, decSig.Bytes); err != nil || !ok {
+		fp(os.Stderr, "signature is not valid\n")
+		os.Exit(1)
+	}
+
+	// Write output
+	cg := color.GreenString
+	fp(os.Stdout, "[GNUPG:] NEWSIG\n")
+	fp(os.Stdout, "[GNUPG:] GOODSIG 0\n")
+	fp(os.Stdout, "[GNUPG:] TRUST_FULLY 0 shell\n")
+	fp(os.Stderr, "%s\n", cg("sig: signature is ok"))
+	fp(os.Stderr, "%s\n", cg("sig: signed by %s (nonce: %d)", txDetail.PushKeyID, txDetail.Nonce))
+	fp(os.Stderr, "%s\n", cg("sig: fee: %s", txDetail.Fee))
+	if txDetail.MergeProposalID != "" {
+		fp(os.Stderr, "%s\n", cg("sig: fulfilling merge proposal: %s", txDetail.MergeProposalID))
+	}
 
 	os.Exit(0)
 }

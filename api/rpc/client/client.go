@@ -23,7 +23,7 @@ import (
 
 // Timeout is the max duration for connection and read attempt
 const (
-	Timeout       = time.Duration(15 * time.Second)
+	Timeout       = 15 * time.Second
 	ErrCodeClient = "client_error"
 )
 

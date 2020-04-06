@@ -777,6 +777,27 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
+		When("target namespace is not found", func() {
+			BeforeEach(func() {
+				name := "name1"
+				tx := core.NewBareTxNamespaceDomainUpdate()
+				tx.Name = name
+				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+
+				bi := &core.BlockInfo{Height: 1}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+
+				mockNSKeeper.EXPECT().Get(tx.Name).Return(state.BareNamespace())
+
+				err = validators.CheckTxNamespaceDomainUpdateConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:name, msg:namespace not found"))
+			})
+		})
+
 		When("sender not owner of target namespace", func() {
 			BeforeEach(func() {
 				name := "name1"
@@ -881,7 +902,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				params.NumTopHostsLimit = 10
 				hosts := []*types4.SelectedTicket{
-					&types4.SelectedTicket{Ticket: &types4.Ticket{
+					{Ticket: &types4.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 					}},
 				}
@@ -911,7 +932,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				params.NumTopHostsLimit = 10
 				hosts := []*types4.SelectedTicket{
-					&types4.SelectedTicket{Ticket: &types4.Ticket{
+					{Ticket: &types4.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 						BLSPubKey:      []byte("invalid"),
 					}},
@@ -948,7 +969,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				params.NumTopHostsLimit = 10
 				hosts := []*types4.SelectedTicket{
-					&types4.SelectedTicket{Ticket: &types4.Ticket{
+					{Ticket: &types4.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 						BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
 					}},
@@ -991,7 +1012,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				params.NumTopHostsLimit = 10
 				hosts := []*types4.SelectedTicket{
-					&types4.SelectedTicket{Ticket: &types4.Ticket{
+					{Ticket: &types4.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 						BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
 					}},
@@ -1034,7 +1055,7 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				params.NumTopHostsLimit = 10
 				hosts := []*types4.SelectedTicket{
-					&types4.SelectedTicket{Ticket: &types4.Ticket{
+					{Ticket: &types4.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 						BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
 					}},
@@ -1459,7 +1480,6 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				txProposal := &core.TxProposalCommon{RepoName: "repo1"}
 				txCommon := &core.TxCommon{}
-				txProposal.RepoName = "repo1"
 				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := state.BareRepository()
 
@@ -1474,11 +1494,50 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
+		When("proposal with matching ID exist", func() {
+			BeforeEach(func() {
+				txProposal := &core.TxProposalCommon{RepoName: "repo1"}
+				txCommon := &core.TxCommon{}
+				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				txProposal.ProposalID = "1"
+				repo := state.BareRepository()
+				repo.Proposals[txProposal.ProposalID] = &state.RepoProposal{EndAt: 1000}
+
+				bi := &core.BlockInfo{Height: 1}
+				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:id, msg:proposal id has been used, choose another"))
+			})
+		})
+
+		When("proposal does not need a proposal fee but it is set", func() {
+			BeforeEach(func() {
+				txProposal := &core.TxProposalCommon{RepoName: "repo1", ProposalID: "1", Value: "10"}
+				txCommon := &core.TxCommon{}
+				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+				repo := state.BareRepository()
+				repo.Balance = "100"
+				repo.Config.Governance.ProposalFee = 0
+
+				bi := &core.BlockInfo{Height: 1}
+				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:value, msg:proposal fee is not required but was provided"))
+			})
+		})
+
 		When("proposal fee is less than repo minimum", func() {
 			BeforeEach(func() {
 				txProposal := &core.TxProposalCommon{RepoName: "repo1"}
 				txCommon := &core.TxCommon{}
-				txProposal.RepoName = "repo1"
 				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				txProposal.Value = "10"
 				repo := state.BareRepository()
@@ -1499,7 +1558,6 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				txProposal := &core.TxProposalCommon{RepoName: "repo1"}
 				txCommon := &core.TxCommon{}
-				txProposal.RepoName = "repo1"
 				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				txProposal.Value = "101"
 				repo := state.BareRepository()
@@ -1521,7 +1579,6 @@ var _ = Describe("TxValidator", func() {
 			BeforeEach(func() {
 				txProposal := &core.TxProposalCommon{RepoName: "repo1"}
 				txCommon := &core.TxCommon{}
-				txProposal.RepoName = "repo1"
 				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				txProposal.Value = "101"
 				repo := state.BareRepository()
@@ -1540,6 +1597,99 @@ var _ = Describe("TxValidator", func() {
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("error"))
+			})
+		})
+	})
+
+	Describe(".CheckTxRepoProposalUpsertOwnerConsistency", func() {
+		When("unable to get current block info", func() {
+			BeforeEach(func() {
+				tx := core.NewBareRepoProposalUpsertOwner()
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
+				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to fetch current block info: error"))
+			})
+		})
+
+		When("target repo does not exist", func() {
+			BeforeEach(func() {
+				tx := core.NewBareRepoProposalUpsertOwner()
+				tx.RepoName = "unknown"
+				bi := &core.BlockInfo{Height: 1}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName, uint64(bi.Height)).Return(state.BareRepository())
+				err = validators.CheckTxRepoProposalUpsertOwnerConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:name, msg:repo not found"))
+			})
+		})
+	})
+
+	Describe(".CheckTxRepoProposalMergeRequestConsistency", func() {
+		When("unable to get current block info", func() {
+			BeforeEach(func() {
+				tx := core.NewBareRepoProposalMergeRequest()
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
+				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to fetch current block info: error"))
+			})
+		})
+
+		When("target repo does not exist", func() {
+			BeforeEach(func() {
+				tx := core.NewBareRepoProposalMergeRequest()
+				tx.RepoName = "unknown"
+				bi := &core.BlockInfo{Height: 1}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName, uint64(bi.Height)).Return(state.BareRepository())
+				err = validators.CheckTxRepoProposalMergeRequestConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:name, msg:repo not found"))
+			})
+		})
+	})
+
+	Describe(".CheckTxRepoProposalUpdateConsistency", func() {
+		When("unable to get current block info", func() {
+			BeforeEach(func() {
+				tx := core.NewBareRepoProposalUpdate()
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(nil, fmt.Errorf("error"))
+				err = validators.CheckTxRepoProposalUpdateConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to fetch current block info: error"))
+			})
+		})
+
+		When("target repo does not exist", func() {
+			BeforeEach(func() {
+				tx := core.NewBareRepoProposalUpdate()
+				tx.RepoName = "unknown"
+				bi := &core.BlockInfo{Height: 1}
+				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
+				mockRepoKeeper.EXPECT().Get(tx.RepoName, uint64(bi.Height)).Return(state.BareRepository())
+				err = validators.CheckTxRepoProposalUpdateConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:name, msg:repo not found"))
 			})
 		})
 	})

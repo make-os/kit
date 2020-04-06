@@ -40,7 +40,7 @@ func (t *Transaction) execUnbond(
 	// Set new unbond height
 	newUnbondHeight := chainHeight + 1 + uint64(params.NumBlocksInHostThawPeriod)
 	senderAcct.Stakes.UpdateUnbondHeight(state.StakeTypeHost,
-		util.String(ticket.Value), 0, newUnbondHeight)
+		ticket.Value, 0, newUnbondHeight)
 
 	// Deduct the fee from the sender's account
 	senderAcct.Balance = util.String(senderBal.Sub(fee.Decimal()).String())

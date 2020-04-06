@@ -2,6 +2,7 @@ package state
 
 import (
 	"github.com/shopspring/decimal"
+	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -137,6 +138,7 @@ const (
 
 // RepoProposal represents a repository proposal
 type RepoProposal struct {
+	util.SerializerHelper `json:"-" msgpack:"-"`
 	ID                    string                `json:"-" mapstructure:"-" msgpack:"-"`
 	Action                ProposalAction        `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
 	ActionData            map[string][]byte     `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
@@ -178,7 +180,7 @@ func BareRepoProposal() *RepoProposal {
 
 // IsDepositPeriod checks whether the proposal is in the deposit period
 func (p *RepoProposal) IsDepositPeriod(chainHeight uint64) bool {
-	return p.FeeDepositEndAt != 0 && p.FeeDepositEndAt >= uint64(chainHeight)
+	return p.FeeDepositEndAt != 0 && p.FeeDepositEndAt >= chainHeight
 }
 
 // IsFeeDepositEnabled checks whether fee deposit is enabled on the proposal
@@ -196,6 +198,20 @@ func (p *RepoProposal) IsDepositedFeeOK() bool {
 // GetCreator implements Proposal
 func (p *RepoProposal) GetCreator() string {
 	return p.Creator
+}
+
+// EncodeMsgpack implements msgpack.CustomEncoder
+func (p *RepoProposal) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return p.EncodeMulti(enc, p.ID, p.Action, p.ActionData, p.Creator, p.Height, p.Config,
+		p.EndAt, p.FeeDepositEndAt, p.ProposeeMaxJoinHeight, p.Yes, p.No,
+		p.NoWithVeto, p.NoWithVetoByOwners, p.Abstain, p.Fees, p.Outcome)
+}
+
+// DecodeMsgpack implements msgpack.CustomDecoder
+func (p *RepoProposal) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return p.DecodeMulti(dec, &p.ID, &p.Action, &p.ActionData, &p.Creator, &p.Height, &p.Config,
+		&p.EndAt, &p.FeeDepositEndAt, &p.ProposeeMaxJoinHeight, &p.Yes, &p.No,
+		&p.NoWithVeto, &p.NoWithVetoByOwners, &p.Abstain, &p.Fees, &p.Outcome)
 }
 
 // IsFinalized implements Proposal

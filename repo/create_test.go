@@ -1,9 +1,10 @@
 package repo
 
 import (
-	"gitlab.com/makeos/mosdef/mocks"
 	"os"
 	"path/filepath"
+
+	"gitlab.com/makeos/mosdef/mocks"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
@@ -13,7 +14,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 )
 
-var _ = Describe("Repo", func() {
+var _ = Describe("Create", func() {
 	var err error
 	var cfg *config.AppConfig
 	var repoMgr *Manager

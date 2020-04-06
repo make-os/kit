@@ -26,7 +26,7 @@ func (c *Client) PushKeyGetNonceOfOwner(pushKeyID string, blockHeight ...uint64)
 		height = blockHeight[0]
 	}
 
-	resp, err := c.get(rest.RestV1Path(constants.NamespacePushKey, rest.MethodNameOwnerNonce), M{
+	resp, err := c.get(rest.V1Path(constants.NamespacePushKey, rest.MethodNameOwnerNonce), M{
 		"id":          pushKeyID,
 		"blockHeight": height,
 	})
@@ -50,7 +50,7 @@ func (c *Client) PushKeyFind(pushKeyID string, blockHeight ...uint64) (*state.Pu
 		height = blockHeight[0]
 	}
 
-	resp, err := c.get(rest.RestV1Path(constants.NamespacePushKey, rest.MethodNamePushKeyFind), M{
+	resp, err := c.get(rest.V1Path(constants.NamespacePushKey, rest.MethodNamePushKeyFind), M{
 		"id":          pushKeyID,
 		"blockHeight": height,
 	})
@@ -73,7 +73,7 @@ func (c *Client) PushKeyFind(pushKeyID string, blockHeight ...uint64) (*state.Pu
 // PushKeyGetNextNonceOfOwnerUsingClients gets the next account nonce of the owner of the
 // push key by querying the given Remote API clients until one succeeds.
 func PushKeyGetNextNonceOfOwnerUsingClients(clients []RestClient, pushKeyID string) (string, error) {
-	var errs = []string{}
+	var errs []string
 	for i, cl := range clients {
 		var resp *types2.AccountGetNonceResponse
 		resp, err := cl.PushKeyGetNonceOfOwner(pushKeyID)

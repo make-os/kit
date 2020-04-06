@@ -68,7 +68,7 @@ var _ = Describe("SystemKeeper", func() {
 
 		When("record exist", func() {
 			height := int64(1)
-			rec := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{
+			rec := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): {
 				PubKey: util.StrToBytes32("ticket1"),
 			}}
 			BeforeEach(func() {
@@ -87,7 +87,7 @@ var _ = Describe("SystemKeeper", func() {
 
 	Describe(".GetByHeight", func() {
 		When("one validator is stored at height=1, search height = 1", func() {
-			rec := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket1")}}
+			rec := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): {PubKey: util.StrToBytes32("ticket1")}}
 			BeforeEach(func() {
 				key := MakeBlockValidatorsKey(1)
 				err := valKeeper.db.Put(storage.NewFromKeyValue(key, util.ToBytes(rec)))
@@ -102,8 +102,8 @@ var _ = Describe("SystemKeeper", func() {
 		})
 
 		When("two two validators exist; valset1 at height 1, valset2 at height 2; argument height = 0", func() {
-			valset := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket1")}}
-			valset2 := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket2")}}
+			valset := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): {PubKey: util.StrToBytes32("ticket1")}}
+			valset2 := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): {PubKey: util.StrToBytes32("ticket2")}}
 			BeforeEach(func() {
 				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(1), util.ToBytes(valset)))
 				Expect(err).To(BeNil())
@@ -119,8 +119,8 @@ var _ = Describe("SystemKeeper", func() {
 		})
 
 		When("two validators exist; valset1 at height 2, valset2 at height 4; argument height = 9; blocks per epoch = 2", func() {
-			valset := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket1")}}
-			valset2 := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket2")}}
+			valset := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): {PubKey: util.StrToBytes32("ticket1")}}
+			valset2 := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): {PubKey: util.StrToBytes32("ticket2")}}
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 2
 				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ToBytes(valset)))
@@ -137,8 +137,8 @@ var _ = Describe("SystemKeeper", func() {
 		})
 
 		When("two validators exist; valset1 at height 2, valset2 at height 4; argument height = 10; blocks per epoch = 2", func() {
-			valset := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket1")}}
-			valset2 := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): &core.Validator{PubKey: util.StrToBytes32("ticket2")}}
+			valset := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): {PubKey: util.StrToBytes32("ticket1")}}
+			valset2 := map[util.Bytes32]*core.Validator{util.StrToBytes32("pubkey"): {PubKey: util.StrToBytes32("ticket2")}}
 			BeforeEach(func() {
 				params.NumBlocksPerEpoch = 2
 				err := valKeeper.db.Put(storage.NewFromKeyValue(MakeBlockValidatorsKey(2), util.ToBytes(valset)))
@@ -159,7 +159,7 @@ var _ = Describe("SystemKeeper", func() {
 		var err error
 		When("no issues with database", func() {
 			BeforeEach(func() {
-				vals := []*core.Validator{&core.Validator{PubKey: pubKey}}
+				vals := []*core.Validator{{PubKey: pubKey}}
 				err = valKeeper.Index(1, vals)
 			})
 
@@ -182,7 +182,7 @@ var _ = Describe("SystemKeeper", func() {
 			})
 
 			BeforeEach(func() {
-				vals := []*core.Validator{&core.Validator{PubKey: pubKey}}
+				vals := []*core.Validator{{PubKey: pubKey}}
 				err = valKeeper.Index(1, vals)
 			})
 

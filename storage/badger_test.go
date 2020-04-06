@@ -9,9 +9,9 @@ import (
 
 	"github.com/dgraph-io/badger"
 
-	"gitlab.com/makeos/mosdef/config"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gitlab.com/makeos/mosdef/config"
 )
 
 var _ = Describe("storage.Badger", func() {
@@ -138,7 +138,7 @@ var _ = Describe("storage.Badger", func() {
 
 			Context("iterating from the first record", func() {
 				It("should successfully return the records in the correct order", func() {
-					var recs = []*storage.Record{}
+					var recs []*storage.Record
 					c.Iterate(nil, true, func(rec *storage.Record) bool {
 						recs = append(recs, rec)
 						return false
@@ -150,7 +150,7 @@ var _ = Describe("storage.Badger", func() {
 
 			Context("iterating from the last record", func() {
 				It("should successfully return the records in the correct order", func() {
-					var recs = []*storage.Record{}
+					var recs []*storage.Record
 					c.Iterate(nil, false, func(rec *storage.Record) bool {
 						recs = append(recs, rec)
 						return false
@@ -162,7 +162,7 @@ var _ = Describe("storage.Badger", func() {
 
 			Context("iterating from the first record and end after 1 iteration", func() {
 				It("should successfully return the records in the correct order", func() {
-					var recs = []*storage.Record{}
+					var recs []*storage.Record
 					c.Iterate(nil, true, func(rec *storage.Record) bool {
 						recs = append(recs, rec)
 						return true

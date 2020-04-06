@@ -104,7 +104,7 @@ func (m *TicketModule) hostFuncs() []*modules.ModuleFunc {
 // Configure configures the JS context and return
 // any number of console prompt suggestions
 func (m *TicketModule) Configure() []prompt.Suggest {
-	suggestions := []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 
 	// Set the namespaces
 	ticketObj := map[string]interface{}{"host": m.hostObj}
@@ -248,7 +248,7 @@ func (m *TicketModule) ListValidatorTicketsOfProposer(
 		_ = mapstructure.Decode(qoMap, &qopts)
 	}
 
-	// If no sort by height directive, sort by height in descending order
+	// If no sort by height option, sort by height in descending order
 	if qopts.SortByHeight == 0 {
 		qopts.SortByHeight = -1
 	}
@@ -284,7 +284,7 @@ func (m *TicketModule) ListHostTicketsOfProposer(
 		_ = mapstructure.Decode(queryOpts[0], &qopts)
 	}
 
-	// If no sort by height directive, sort by height in descending order
+	// If no sort by height option, sort by height in descending order
 	if qopts.SortByHeight == 0 {
 		qopts.SortByHeight = -1
 	}

@@ -28,24 +28,23 @@ var signCommitCmd = &cobra.Command{
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
 		sk, _ := cmd.Flags().GetString("signing-key")
-		deleteRef, _ := cmd.Flags().GetBool("delete")
 		mergeID, _ := cmd.Flags().GetString("merge-id")
 		amend, _ := cmd.Flags().GetBool("amend")
 		pass, _ := cmd.Flags().GetString("pass")
+		msg, _ := cmd.Flags().GetString("message")
+		targetRemotes, _ := cmd.Flags().GetString("remote")
+		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
 		if err := repo.SignCommitCmd(
 			cfg,
+			msg,
 			targetRepo,
-			fee,
-			nonce,
-			amend,
-			deleteRef,
-			mergeID,
-			sk,
-			pass,
-			client,
-			remoteClients); err != nil {
+			fee, nonce, amend, mergeID,
+			sk, pass,
+			targetRemotes,
+			resetRemoteTokens,
+			client, remoteClients); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -59,9 +58,10 @@ var signTagCmd = &cobra.Command{
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
 		sk, _ := cmd.Flags().GetString("signing-key")
-		deleteRef, _ := cmd.Flags().GetBool("delete")
 		pass, _ := cmd.Flags().GetString("pass")
 		msg, _ := cmd.Flags().GetString("message")
+		targetRemotes, _ := cmd.Flags().GetString("remote")
+		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
 
@@ -71,11 +71,10 @@ var signTagCmd = &cobra.Command{
 			args,
 			msg,
 			targetRepo,
-			fee,
-			nonce,
-			deleteRef,
-			sk,
-			pass,
+			fee, nonce,
+			sk, pass,
+			targetRemotes,
+			resetRemoteTokens,
 			client, remoteClients); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
@@ -91,7 +90,8 @@ var signNoteCmd = &cobra.Command{
 		nonce, _ := cmd.Flags().GetString("nonce")
 		sk, _ := cmd.Flags().GetString("signing-key")
 		pass, _ := cmd.Flags().GetString("pass")
-		deleteRef, _ := cmd.Flags().GetBool("delete")
+		targetRemotes, _ := cmd.Flags().GetString("remote")
+		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
 		if len(args) == 0 {
 			log.Fatal("name is required")
@@ -101,14 +101,12 @@ var signNoteCmd = &cobra.Command{
 		if err := repo.SignNoteCmd(
 			cfg,
 			targetRepo,
-			fee,
-			nonce,
+			fee, nonce,
 			args[0],
-			deleteRef,
-			sk,
-			pass,
-			client,
-			remoteClients); err != nil {
+			sk, pass,
+			targetRemotes,
+			resetRemoteTokens,
+			client, remoteClients); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -132,17 +130,18 @@ func initSign() {
 	pf := signCmd.PersistentFlags()
 
 	// Top-level flags
-	pf.BoolP("delete", "d", false, "Register a directive to delete the target reference")
 	pf.StringP("pass", "p", "", "Passphrase used to unlock the signing key")
+	pf.BoolP("reset", "x", false, "Clear any existing remote tokens")
 
-	signTagCmd.Flags().StringP("message", "m", "", "The new tag message")
-	signCommitCmd.Flags().StringP("merge-id", "m", "", "Provide a merge proposal ID for merge fulfilment")
+	signCommitCmd.Flags().String("merge-id", "", "Provide a merge proposal ID for merge fulfilment")
 	signCommitCmd.Flags().BoolP("amend", "a", false, "Amend and sign the recent comment instead of a new one")
 
 	// Transaction information
+	pf.StringP("message", "m", "", "commit or tag message")
 	pf.StringP("fee", "f", "0", "Set the transaction fee")
 	pf.StringP("nonce", "n", "0", "Set the transaction nonce")
 	pf.StringP("signing-key", "s", "", "Set the signing key ID")
+	pf.StringP("remote", "r", "origin", "Set push token to a remote")
 
 	// API connection config flags
 	addAPIConnectionFlags(pf)

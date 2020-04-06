@@ -17,12 +17,12 @@ type TxRepoProposalRegisterPushKey struct {
 	*TxCommon         `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxType           `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxProposalCommon `json:",flatten" msgpack:"-" mapstructure:"-"`
-	KeyIDs            []string               `json:"ids" msgpack:"ids" mapstructure:"ids"`
-	Policies          []*state.RepoACLPolicy `json:"policies" msgpack:"policies,omitempty" mapstructure:"policies,omitempty"`
-	FeeMode           state.FeeMode          `json:"feeMode" msgpack:"feeMode,omitempty" mapstructure:"feeMode,omitempty"`
-	FeeCap            util.String            `json:"feeCap" msgpack:"feeCap,omitempty" mapstructure:"feeCap,omitempty"`
-	Namespace         string                 `json:"namespace" msgpack:"namespace,omitempty" mapstructure:"namespace"`
-	NamespaceOnly     string                 `json:"namespaceOnly" msgpack:"namespaceOnly,omitempty" mapstructure:"namespaceOnly"`
+	KeyIDs            []string                   `json:"ids" msgpack:"ids" mapstructure:"ids"`
+	Policies          []*state.ContributorPolicy `json:"policies" msgpack:"policies,omitempty" mapstructure:"policies,omitempty"`
+	FeeMode           state.FeeMode              `json:"feeMode" msgpack:"feeMode,omitempty" mapstructure:"feeMode,omitempty"`
+	FeeCap            util.String                `json:"feeCap" msgpack:"feeCap,omitempty" mapstructure:"feeCap,omitempty"`
+	Namespace         string                     `json:"namespace" msgpack:"namespace,omitempty" mapstructure:"namespace"`
+	NamespaceOnly     string                     `json:"namespaceOnly" msgpack:"namespaceOnly,omitempty" mapstructure:"namespaceOnly"`
 }
 
 // NewBareRepoProposalRegisterPushKey returns an instance of TxRepoProposalRegisterPushKey with zero values
@@ -32,7 +32,7 @@ func NewBareRepoProposalRegisterPushKey() *TxRepoProposalRegisterPushKey {
 		TxType:           &TxType{Type: TxTypeRepoProposalRegisterPushKey},
 		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: "", ProposalID: ""},
 		KeyIDs:           []string{},
-		Policies:         []*state.RepoACLPolicy{},
+		Policies:         []*state.ContributorPolicy{},
 		FeeMode:          state.FeeModePusherPays,
 	}
 }
@@ -152,9 +152,9 @@ func (tx *TxRepoProposalRegisterPushKey) FromMap(data map[string]interface{}) er
 	// Policies: expects slice in map
 	if acl := o.Get("policies"); !acl.IsNil() {
 		if acl.IsMSISlice() {
-			var policies []*state.RepoACLPolicy
+			var policies []*state.ContributorPolicy
 			for _, m := range acl.MSISlice() {
-				var p state.RepoACLPolicy
+				var p state.ContributorPolicy
 				_ = util.DecodeMap(m, &p)
 				policies = append(policies, &p)
 			}

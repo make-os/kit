@@ -18,7 +18,6 @@ import (
 
 const (
 	middlewareErrCode = -32000
-	serverErrCode     = -32001
 )
 
 // MethodInfo describe an RPC method info

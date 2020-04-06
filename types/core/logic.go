@@ -220,7 +220,7 @@ type PushKeyKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Account if no account is found.
-	Get(gpgID string, blockNum ...uint64) *state.PushKey
+	Get(pushKeyID string, blockNum ...uint64) *state.PushKey
 
 	// GetByAddress returns all public keys associated with the given address
 	//

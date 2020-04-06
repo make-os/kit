@@ -72,7 +72,7 @@ func (tx *TxType) FromMap(data map[string]interface{}) (err error) {
 		if typeVal.IsInt64() {
 			tx.Type = int(typeVal.Int64())
 		} else if typeVal.IsInt() {
-			tx.Type = int(typeVal.Int())
+			tx.Type = typeVal.Int()
 		} else if typeVal.IsFloat64() {
 			tx.Type = int(typeVal.Float64())
 		} else {

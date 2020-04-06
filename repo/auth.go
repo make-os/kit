@@ -1,77 +1,140 @@
 package repo
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
+	"os"
+	"strings"
 
-	"github.com/casbin/casbin"
-	"github.com/fatih/color"
-	"github.com/k0kubun/pp"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/crypto"
+	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-type policyEnforcer func(pushKeyID, object, action string) bool
+var (
+	ErrPushTokenRequired = fmt.Errorf("push token must be provided")
+	ErrMalformedToken    = fmt.Errorf("malformed token")
+)
 
-// authorize performs authorization checks and returns a policy
-// enforcer for later authentication checks.
-func authorize(
-	reqToken *PushRequestTokenData,
+// policyEnforcer describes a function used for checking policies.
+// subject: The policy subject
+// object: The policy object
+// action: The policy action
+type policyEnforcer func(subject, object, action string) (bool, int)
+
+// authenticator describes a function for performing authentication.
+// txDetails: The transaction details for pushed references
+// repo: The target repository state.
+// namespace: The target namespace.
+// keepers: The application states keeper
+type authenticator func(
+	txDetails []*types.TxDetail,
 	repo *state.Repository,
+	namespace *state.Namespace,
+	keepers core.Keepers) (policyEnforcer, error)
+
+// authenticate performs authentication checks and returns a policy
+// enforcer for later authorization checks.
+func authenticate(
+	txDetails []*types.TxDetail,
+	repoState *state.Repository,
 	namespace *state.Namespace,
 	keepers core.Keepers) (policyEnforcer, error) {
 
-	// Check the transaction parameters
-	if err := checkPushRequestTokenData(reqToken, keepers); err != nil {
-		return nil, err
+	// Check all the transaction parameters individually
+	for i, txDetail := range txDetails {
+		if err := checkTxDetail(txDetail, keepers, true); err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("token(%d,ref=%s)", i, txDetail.Reference))
+		}
 	}
 
-	// Get the push key that signed request token
-	signer := keepers.PushKeyKeeper().Get(reqToken.PushKeyID)
-	if signer.IsNil() {
-		return nil, fmt.Errorf("pusher key is unknown")
+	var lastPushKeyID, lastRepoName, lastRepoNamespace string
+	var lastAcctNonce uint64
+
+	// Proceed to policy enforcer creation when only one tx details was passed
+	if len(txDetails) == 1 {
+		goto makeEnforcer
 	}
 
-	// Using the key, verify the request token signature
-	pubKey, err := crypto.PubKeyFromBytes(signer.PubKey.Bytes())
-	if err != nil {
-		return nil, fmt.Errorf("signer public key from network is invalid") // should never happen
-	} else if ok, err := pubKey.Verify(reqToken.GetSigningMsg(), reqToken.Sig); err != nil || !ok {
-		return nil, fmt.Errorf("signature is not valid") // should never happen
+	// When there are multiple pushed references, specific fields must be the same.
+	for i, detail := range txDetails {
+		if i > 0 && detail.PushKeyID != lastPushKeyID {
+			return nil, fmt.Errorf("pushed references cannot be signed with different push keys")
+		}
+		if i > 0 && detail.RepoName != lastRepoName {
+			return nil, fmt.Errorf("pushed references cannot target different repositories")
+		}
+		if i > 0 && detail.Nonce != lastAcctNonce {
+			return nil, fmt.Errorf("pushed references cannot have different nonce")
+		}
+		if i > 0 && detail.RepoNamespace != lastRepoNamespace {
+			return nil, fmt.Errorf("pushed references cannot target different namespaces")
+		}
+		lastPushKeyID, lastRepoName, lastRepoNamespace = detail.PushKeyID, detail.RepoName, detail.RepoNamespace
+		lastAcctNonce = detail.Nonce
 	}
+
+makeEnforcer:
 
 	// The pusher is not authorized:
 	// - if they are not among repo's contributors.
 	// - and namespace is default.
 	// - or they are not part of the contributors of the non-nil namespace.
-	if !repo.Contributors.Has(reqToken.PushKeyID) &&
-		(namespace == nil || !namespace.Contributors.Has(reqToken.PushKeyID)) {
-		return nil, fmt.Errorf(color.RedString("push key (%s) is not "+
-			"authorized to perform this action", reqToken.PushKeyID))
+	pushKeyID := txDetails[0].PushKeyID
+	if !repoState.Contributors.Has(pushKeyID) &&
+		(namespace == nil || !namespace.Contributors.Has(pushKeyID)) {
+		return nil, fmt.Errorf("push key (%s) is not a repo (%s) contributor", pushKeyID, txDetails[0].RepoName)
 	}
 
-	var policies []*state.RepoACLPolicy
+	return getPolicyEnforcer(makePusherPolicyGroups(pushKeyID, repoState, namespace)), nil
+}
 
-	// Gather the pusher's policies from the repo's namespace and the repo itself.
-	if repo.Contributors.Has(reqToken.PushKeyID) {
-		for _, p := range repo.Contributors[reqToken.PushKeyID].Policies {
-			policies = append(policies, p)
+// makePusherPolicyGroups creates a policy group contain the different category of policies
+// a pusher can have. Currently, we have 3 policy levels namely, repo default policies,
+// namespace contributor policies and repo contributor policies. Policies of lower slice
+// indices take precedence than those at higher indices.
+//
+// Policy levels:
+// - 0: Repo's contributor policy collection (highest precedence)
+// - 1: Repo's namespace's contributor policy collection
+// - 2: Repo's config policy collection
+func makePusherPolicyGroups(
+	pushKeyID string,
+	repoState *state.Repository,
+	namespace *state.Namespace) [][]*state.Policy {
+
+	// Gather the policies into groups
+	var groups = make([][]*state.Policy, 3)
+
+	// Find policies in the config-level policies where the subject is "all" or the pusher key ID
+	// and also whose object is points to a reference path or name
+	for _, pol := range repoState.Config.Policies {
+		if (pol.Subject == "all" || pol.Subject == pushKeyID) && isReference(pol.Object) {
+			groups[2] = append(groups[2], pol)
 		}
 	}
-	if namespace != nil && namespace.Contributors.Has(reqToken.PushKeyID) {
-		for _, p := range namespace.Contributors[reqToken.PushKeyID].Policies {
-			policies = append(policies, p)
+
+	// Add the pusher's namespace-level contributor policies
+	if namespace != nil && namespace.Contributors.Has(pushKeyID) {
+		for _, p := range namespace.Contributors[pushKeyID].Policies {
+			groups[1] = append(groups[1], &state.Policy{Subject: pushKeyID, Object: p.Object, Action: p.Action})
 		}
 	}
 
-	return getPolicyEnforcer(policies), nil
+	// Add the pusher's repo-level contributor policies
+	if repoState.Contributors.Has(pushKeyID) {
+		for _, p := range repoState.Contributors[pushKeyID].Policies {
+			groups[0] = append(groups[0], &state.Policy{Subject: pushKeyID, Object: p.Object, Action: p.Action})
+		}
+	}
+
+	return groups
 }
 
 // handleAuth validates a request using the request token provided in the url username.
@@ -85,158 +148,238 @@ func authorize(
 func (m *Manager) handleAuth(
 	r *http.Request,
 	repo *state.Repository,
-	namespace *state.Namespace) (*PushRequestTokenData, policyEnforcer, error) {
+	namespace *state.Namespace) (txDetails []*types.TxDetail, polEnforcer policyEnforcer, err error) {
+
+	if r.Method == "GET" {
+		return nil, nil, nil
+	}
 
 	// Get the request
-	pushReqToken, _, _ := r.BasicAuth()
+	tokens, _, _ := r.BasicAuth()
 
-	// We expect push request to be provided
-	if pushReqToken == "" {
-		return nil, nil, fmt.Errorf(color.RedString("Push request token must be provided"))
+	// We expect push token(s) to be provided
+	if tokens == "" {
+		return nil, nil, ErrPushTokenRequired
 	}
 
-	// Decode the push request token
-	bz, err := base58.Decode(pushReqToken)
-	if err != nil {
-		return nil, nil, fmt.Errorf(color.RedString("malformed request token. Unable to decode"))
-	}
-	pushReqTokenData, err := PushRequestTokenDataFromByte(bz)
-	if err != nil {
-		return nil, nil, fmt.Errorf(color.RedString("malformed request token. Unable to decode"))
+	// Decode the push request token(s)
+	txDetails = []*types.TxDetail{}
+	for i, token := range strings.Split(tokens, ",") {
+		txDetail, err := DecodePushToken(token)
+		if err != nil {
+			return nil, nil, fmt.Errorf("malformed push token at index %d. Unable to decode", i)
+		}
+		txDetails = append(txDetails, txDetail)
 	}
 
 	// Perform authorization checks
-	enforcer, err := authorize(pushReqTokenData, repo, namespace, m.logic)
+	polEnforcer, err = m.authenticate(txDetails, repo, namespace, m.logic)
 	if err != nil {
-		return nil, nil, fmt.Errorf(color.RedString(err.Error()))
+		return nil, nil, err
 	}
 
-	return pushReqTokenData, enforcer, nil
+	return
 }
 
-// getPolicyEnforcer creates and returns a policy enforcer function
-// ARGS:
-// - policies: A list of the contributor's policies.
-func getPolicyEnforcer(policies []*state.RepoACLPolicy) policyEnforcer {
-	model := casbin.NewModel(`
-[request_definition]
-r = sub, obj, act
-
-[policy_definition]
-p = sub, obj, act
-
-[policy_effect]
-e = some(where (p.eft == allow))
-
-[matchers]
-m = r.sub == p.sub && r.obj == p.obj && r.act == p.act`)
-	enforcer := casbin.NewEnforcer()
-	enforcer.SetModel(model)
-
-	for _, policy := range policies {
-		enforcer.AddPolicy(policy.Subject, policy.Object, policy.Action)
-	}
-
-	return func(pushKeyID, object, action string) bool {
-		return enforcer.HasPolicy(pushKeyID, object, action)
+// getPolicyEnforcer returns a policy enforcer function used for enforcing policies against a subject.
+func getPolicyEnforcer(policyGroup [][]*state.Policy) policyEnforcer {
+	enforcer := newPolicyEnforcer(policyGroup)
+	return func(subject, object, action string) (bool, int) {
+		return enforcer.Enforce(subject, object, action)
 	}
 }
 
-// aclCheckCanDelete perform ACL check to determine whether the given push key
-// is permitted to perform a reference delete operation.
-func aclCheckCanDelete(pushKeyID string, polEnforcer policyEnforcer) error {
-	pp.Println("Check deletion")
+// policyChecker describes a function for enforcing repository policy
+type policyChecker func(enforcer policyEnforcer, pushKeyID, reference, action string) error
+
+// checkPolicy performs ACL checks to determine whether the given push key
+// is permitted to perform the given action on the reference subject.
+func checkPolicy(enforcer policyEnforcer, pushKeyID, reference, action string) error {
+
+	dir := "refs/"
+	if isBranch(reference) {
+		dir = dir + "heads"
+	} else if isTag(reference) {
+		dir = dir + "tags"
+	} else if isNote(reference) {
+		dir = dir + "notes"
+	} else {
+		return fmt.Errorf("unknown reference (%s)", reference)
+	}
+
+	var negativeAct = "deny-" + action
+	var allowed bool
+	var highestLvl = 999 // Set default to a random, high number greater than all levels
+
+	// Check if all push keys can or cannot perform the action to the target reference
+	res, lvl := enforcer("all", reference, action)
+	if lvl > -1 {
+		allowed = res
+		highestLvl = lvl
+	}
+	res, lvl = enforcer("all", reference, negativeAct)
+	if lvl > -1 && lvl <= highestLvl {
+		allowed = !res
+		highestLvl = lvl
+	}
+
+	// Check if all push keys can or cannot perform the action on the target reference directory
+	res, lvl = enforcer("all", dir, action)
+	if lvl > -1 && lvl <= highestLvl {
+		allowed = res
+		highestLvl = lvl
+	}
+	res, lvl = enforcer("all", dir, negativeAct)
+	if lvl > -1 && lvl <= highestLvl {
+		allowed = !res
+		highestLvl = lvl
+	}
+
+	// Check if the push key can or cannot perform the action on the reference
+	res, lvl = enforcer(pushKeyID, reference, action)
+	if lvl > -1 && lvl <= highestLvl {
+		allowed = res
+		highestLvl = lvl
+	}
+	res, lvl = enforcer(pushKeyID, reference, negativeAct)
+	if lvl > -1 && lvl <= highestLvl {
+		allowed = !res
+		highestLvl = lvl
+	}
+
+	// Check if the push key can or cannot perform the action on the reference directory
+	res, lvl = enforcer(pushKeyID, dir, action)
+	if lvl > -1 && lvl <= highestLvl {
+		allowed = res
+		highestLvl = lvl
+	}
+	res, lvl = enforcer(pushKeyID, dir, negativeAct)
+	if lvl > -1 && lvl <= highestLvl {
+		allowed = !res
+		highestLvl = lvl
+	}
+
+	if !allowed {
+		return fmt.Errorf("reference (%s): not authorized to perform '%s' action", reference, action)
+	}
+
 	return nil
 }
 
-// PushRequestTokenData represents the information used to create a push request token.
-type PushRequestTokenData struct {
-	PushKeyID string `json:"pkID" mapstructure:"pkID" msgpack:"pkID"`
-	Nonce     uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce"`
-	Fee       string `json:"fee" mapstructure:"fee" msgpack:"fee"`
-	Sig       []byte `json:"sig" mapstructure:"sig" msgpack:"sig"`
-}
-
-// GetSigningMsg returns the formatted msg to be signed
-func (p *PushRequestTokenData) GetSigningMsg() []byte {
-	return []byte(fmt.Sprintf("%s,%d,%s", p.PushKeyID, p.Nonce, p.Fee))
-}
-
-// PushRequestTokenDataFromByte deserializes a push request token to a PushRequestTokenData object.
-func PushRequestTokenDataFromByte(v []byte) (*PushRequestTokenData, error) {
-	bzParts := bytes.Split(v, []byte(","))
-	if len(bzParts) != 4 {
-		return nil, fmt.Errorf("invalid push request token format")
-	}
-
-	p := PushRequestTokenData{}
-	p.PushKeyID = string(bzParts[0])
-	p.Fee = string(bzParts[2])
-
-	nn, err := strconv.ParseUint(string(bzParts[1]), 10, 64)
+// DecodePushToken decodes a push request token.
+func DecodePushToken(v string) (*types.TxDetail, error) {
+	bz, err := base58.Decode(v)
 	if err != nil {
-		return nil, fmt.Errorf("invalid push request token format: bad next nonce part")
+		return nil, ErrMalformedToken
 	}
-	p.Nonce = nn
 
-	sig, err := base58.Decode(string(bzParts[3]))
-	if err != nil {
-		return nil, fmt.Errorf("invalid push request token format: bad signature part")
+	var txDetail types.TxDetail
+	if err = util.ToObject(bz, &txDetail); err != nil {
+		return nil, ErrMalformedToken
 	}
-	p.Sig = sig
 
-	return &p, nil
+	return &txDetail, nil
 }
 
-// MakePushRequestToken creates a push request token
-func MakePushRequestToken(
-	pushKeyID string,
-	pushKey core.StoredKey,
-	nonce uint64,
-	fee string) (string, error) {
-
-	msg := (&PushRequestTokenData{PushKeyID: pushKeyID, Nonce: nonce, Fee: fee}).GetSigningMsg()
-	sig, err := pushKey.GetKey().PrivKey().Sign(msg)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to sign")
-	}
-
-	finalData := []byte(fmt.Sprintf("%s,%d,%s,%s", pushKeyID, nonce, fee, base58.Encode(sig)))
-	return base58.Encode(finalData), err
+// MakePushToken creates a push request token
+func MakePushToken(key core.StoredKey, txDetail *types.TxDetail) string {
+	sig, _ := key.GetKey().PrivKey().Sign(txDetail.BytesNoSig())
+	txDetail.Signature = base58.Encode(sig)
+	return base58.Encode(txDetail.Bytes())
 }
 
-// createAndSetRequestTokenToRemoteURLs creates a push request token and updates the URLs of all remotes.
-func createAndSetRequestTokenToRemoteURLs(
-	pushKey core.StoredKey,
+// setPushTokenToRemotes creates a push request token and updates the URLs of all remotes.
+// targetRepo: The target repository
+// targetRemotes: A list of target remotes whose push URLs will include a push token.
+// txDetail: The push request parameters
+// pushKey: The push key to use to sign the token.
+func setPushTokenToRemotes(
 	targetRepo core.BareRepo,
-	txParams *util.TxParams) error {
+	targetRemote string,
+	txDetail *types.TxDetail,
+	pushKey core.StoredKey,
+	reset bool) (string, error) {
 
-	// Create a pusher request token
-	pushReqToken, err := MakePushRequestToken(txParams.PushKeyID, pushKey, txParams.Nonce, txParams.Fee.String())
+	repoCfg, err := targetRepo.Config()
 	if err != nil {
-		return errors.Wrap(err, "failed to create push request token")
+		return "", errors.Wrap(err, "failed to get config")
 	}
 
-	// Get all remotes
-	remotes, err := targetRepo.GetRemotes()
-	if err != nil {
-		return errors.Wrap(err, "failed to get current repo remotes")
+	remotes := repoCfg.Remotes
+	remote, ok := remotes[targetRemote]
+	if !ok {
+		return "", fmt.Errorf("remote (%s): does not exist", targetRemote)
 	}
 
-	// For each remote, add the request token to every URL.
-	// For bad URLS, do nothing.
-	for _, remote := range remotes {
-		targetRepo.DeleteRemoteURLs(remote.Name)
-		for _, v := range remote.URLs {
-			rawURL, err := url.Parse(v)
-			if err != nil {
-				targetRepo.SetRemoteURL(remote.Name, v)
-				continue
-			}
-			rawURL.User = url.UserPassword(pushReqToken, "-")
-			targetRepo.SetRemoteURL(remote.Name, rawURL.String())
+	// Create and apply tokens to every push URL.
+	// For remote with multiple push URLs, ensure the target repositories and namespaces
+	// are not different. This is forbidden because the signed reference must include the repository
+	// name and namespace in the signature header and if it varies across URLs we won't know which
+	// sets of repo and namespace to use.
+	// If pushing to different namespaces/repositories is desirable, I recommend creating new remotes as needed.
+	lastURLRepoName, lastURLRepoNamespace, token := "", "", ""
+	for i, v := range remote.URLs {
+		rawURL, err := url.Parse(v)
+		if err != nil {
+			continue
 		}
+
+		// Split the url path; ignore urls with less than 2 path sections
+		pathPath := strings.Split(strings.Trim(rawURL.Path, "/"), "/")
+		if len(pathPath) < 2 {
+			continue
+		}
+
+		// Set repo name and namespace
+		txp := *txDetail
+		txp.RepoName = pathPath[1]
+		if pathPath[0] != DefaultNS {
+			txp.RepoNamespace = pathPath[0]
+		}
+
+		// For remote with multiple push URLs, ensure the target repositories and namespaces
+		// are not different. This is forbidden because the signed reference must include the repository
+		// name and namespace in the signature header and if it varies across URLs we won't know which
+		// sets of repo and namespace to use.
+		if i > 0 && (txp.RepoName != lastURLRepoName || txp.RepoNamespace != lastURLRepoNamespace) {
+			return "", fmt.Errorf("remote (%s): cannot have multiple urls pointing to "+
+				"different repository/namespace", targetRemote)
+		}
+
+		// Remove any existing token for the target reference only if reset is false
+		var existingTokens []string
+		if !reset {
+			existingTokens = strings.Split(rawURL.User.Username(), ",")
+			existingTokens = funk.FilterString(existingTokens, func(t string) bool {
+				if t == "" {
+					return false
+				}
+				txp, err := DecodePushToken(t)
+				if err != nil {
+					return false
+				}
+				return txp.Reference != txDetail.Reference
+			})
+		}
+
+		// Create the signed token and add to existing tokens
+		token = MakePushToken(pushKey, &txp)
+		existingTokens = append(existingTokens, token)
+		rawURL.User = url.UserPassword(strings.Join(existingTokens, ","), "-")
+		remote.URLs[i] = rawURL.String()
+
+		lastURLRepoName, lastURLRepoNamespace = txp.RepoName, txp.RepoNamespace
 	}
 
-	return nil
+	// Set the push token to the env so that other processes can use it.
+	// E.g the signing command called by git needs it for creating a signature.
+	if token != "" {
+		os.Setenv(fmt.Sprintf("%s_LAST_PUSH_TOKEN", config.AppName), token)
+	}
+
+	if err := targetRepo.SetConfig(repoCfg); err != nil {
+		return "", errors.Wrap(err, "failed to update config")
+	}
+
+	return token, nil
 }

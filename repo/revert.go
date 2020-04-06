@@ -7,7 +7,6 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/pkg/errors"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // ActionType represents a repo altering action
@@ -33,7 +32,11 @@ type reverter func(repo core.BareRepo, prevState core.BareRepoState, options ...
 // revert reverts the repository from its current state to the previous state.
 // options: Additional options. prefixOpt forces the operation to ignore
 // any reference that does not contain the provided prefix.
-func revert(repo core.BareRepo, prevState core.BareRepoState, options ...core.KVOption) (*core.Changes, error) {
+func revert(
+	repo core.BareRepo,
+	prevState core.BareRepoState,
+	options ...core.KVOption) (*core.Changes, error) {
+
 	var actions []*Action
 	changes := getKVOpt("changes", options)
 
@@ -116,21 +119,6 @@ func findRefInCol(refname string, refCol core.Items) (found core.Item) {
 		return false
 	})
 	return
-}
-
-// isBranch checks whether a reference name indicates a branch
-func isBranch(refname string) bool {
-	return plumbing.ReferenceName(refname).IsBranch()
-}
-
-// isTag checks whether a reference name indicates a tag
-func isTag(refname string) bool {
-	return plumbing.ReferenceName(refname).IsTag()
-}
-
-// isNote checks whether a reference name indicates a tag
-func isNote(refname string) bool {
-	return plumbing.ReferenceName(refname).IsNote()
 }
 
 // Action describes a repo action to be effected on a repo object

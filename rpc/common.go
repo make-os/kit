@@ -9,10 +9,6 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-func isStrFieldSet(val *objx.Value) bool {
-	return val.Str() != ""
-}
-
 // GetStringFromObjxMap gets a field from the given objx.Map ensuring its type is a 'string'.
 //
 // o: The objx map.

@@ -154,8 +154,8 @@ func CheckTxRepoCreateConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	repo := logic.RepoKeeper().Get(tx.Name)
-	if !repo.IsNil() {
+	repoState := logic.RepoKeeper().Get(tx.Name)
+	if !repoState.IsNil() {
 		msg := "name is not available. choose another"
 		return feI(index, "name", msg)
 	}
@@ -273,7 +273,7 @@ func CheckTxPushConsistency(
 		return errors.Wrap(err, "failed to get top hosts")
 	}
 
-	pokPubKeys := []*bls.PublicKey{}
+	var pokPubKeys []*bls.PublicKey
 	for index, pok := range tx.PushOKs {
 
 		// Perform consistency checks but don't check the signature as we don't
@@ -407,11 +407,13 @@ func CheckProposalCommonConsistency(
 	logic core.Logic,
 	currentHeight int64) (*state.Repository, error) {
 
+	// Find the repository
 	targetRepo := logic.RepoKeeper().Get(txProposal.RepoName, uint64(currentHeight))
 	if targetRepo.IsNil() {
 		return nil, feI(index, "name", "repo not found")
 	}
 
+	// Ensure not proposal with matching ID exist
 	if targetRepo.Proposals.Get(txProposal.ProposalID) != nil {
 		return nil, feI(index, "id", "proposal id has been used, choose another")
 	}
@@ -476,13 +478,13 @@ func CheckTxVoteConsistency(
 	logic core.Logic) error {
 
 	// The repo must exist
-	repo := logic.RepoKeeper().Get(tx.RepoName)
-	if repo.IsNil() {
+	repoState := logic.RepoKeeper().Get(tx.RepoName)
+	if repoState.IsNil() {
 		return feI(index, "name", "repo not found")
 	}
 
 	// The proposal must exist
-	proposal := repo.Proposals.Get(tx.ProposalID)
+	proposal := repoState.Proposals.Get(tx.ProposalID)
 	if proposal == nil {
 		return feI(index, "id", "proposal not found")
 	}
@@ -510,7 +512,7 @@ func CheckTxVoteConsistency(
 
 	// If the proposal is targeted at repo owners, then
 	// the sender must be an owner
-	senderOwner := repo.Owners.Get(tx.GetFrom().String())
+	senderOwner := repoState.Owners.Get(tx.GetFrom().String())
 	if proposal.GetProposeeType() == state.ProposeeOwner && senderOwner == nil {
 		return feI(index, "senderPubKey", "sender is not one of the repo owners")
 	}
@@ -548,13 +550,13 @@ func CheckTxRepoProposalSendFeeConsistency(
 	logic core.Logic) error {
 
 	// The repo must exist
-	repo := logic.RepoKeeper().Get(tx.RepoName)
-	if repo.IsNil() {
+	repoState := logic.RepoKeeper().Get(tx.RepoName)
+	if repoState.IsNil() {
 		return feI(index, "name", "repo not found")
 	}
 
 	// The proposal must exist
-	proposal := repo.Proposals.Get(tx.ProposalID)
+	proposal := repoState.Proposals.Get(tx.ProposalID)
 	if proposal == nil {
 		return feI(index, "id", "proposal not found")
 	}

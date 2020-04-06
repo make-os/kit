@@ -8,8 +8,6 @@ import (
 
 	"gitlab.com/makeos/mosdef/crypto"
 
-	"gitlab.com/makeos/mosdef/util"
-
 	"gitlab.com/makeos/mosdef/types"
 
 	. "github.com/onsi/ginkgo"
@@ -86,14 +84,14 @@ var _ = Describe("Transaction", func() {
 
 		Context("when sender account has insufficient spendable balance", func() {
 			It("should not return err='sender's spendable account balance is insufficient'", func() {
-				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 1, 1)
+				err := txLogic.CanExecCoinTransfer(sender.PubKey(), "100", "0", 1, 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, msg:sender's spendable account balance is insufficient"))
 			})
 
 			When("value=0 and fee is non-zero", func() {
 				It("should not return err='sender's spendable account balance is insufficient' with field=fee", func() {
-					err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("0"), util.String("10"), 1, 1)
+					err := txLogic.CanExecCoinTransfer(sender.PubKey(), "0", "10", 1, 1)
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("field:fee, msg:sender's spendable account balance is insufficient"))
 				})
@@ -102,7 +100,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("when nonce is invalid", func() {
 			It("should return no error", func() {
-				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 3, 1)
+				err := txLogic.CanExecCoinTransfer(sender.PubKey(), "100", "0", 3, 1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, msg:tx has invalid nonce (3), expected (1)"))
 			})
@@ -111,13 +109,13 @@ var _ = Describe("Transaction", func() {
 		Context("when sender account has sufficient spendable balance", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("1000"),
+					Balance: "1000",
 					Stakes:  state.BareAccountStakes(),
 				})
 			})
 
 			It("should return no error", func() {
-				err := txLogic.CanExecCoinTransfer(sender.PubKey(), util.String("100"), util.String("0"), 1, 0)
+				err := txLogic.CanExecCoinTransfer(sender.PubKey(), "100", "0", 1, 0)
 				Expect(err).To(BeNil())
 			})
 		})

@@ -17,12 +17,12 @@ import (
 var _ = Describe("Account", func() {
 	var ctrl *gomock.Controller
 	var mockModuleHub *mocks.MockModuleHub
-	var restApi *RESTApi
+	var restApi *API
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockModuleHub = mocks.NewMockModuleHub(ctrl)
-		restApi = &RESTApi{
+		restApi = &API{
 			mods: mockModuleHub,
 			log:  logger.NewLogrusNoOp(),
 		}
@@ -46,7 +46,7 @@ var _ = Describe("Account", func() {
 				body:       `{"error":{"code":"60000","field":"blockHeight","msg":"blockHeight requires a numeric value"}}`,
 				statusCode: 400,
 			},
-			"address should be passed to AccountModule#GetNonce": {
+			"address should be passed to UserModule#GetNonce": {
 				params:     map[string]string{"address": "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc"},
 				body:       `{"nonce":"100"}`,
 				statusCode: 200,

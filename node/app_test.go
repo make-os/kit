@@ -157,7 +157,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				mockTicketMgr := mockLogic.TicketManager
-				selected := []*types4.SelectedTicket{}
+				var selected []*types4.SelectedTicket
 				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(selected, nil)
 				app.ticketMgr = mockTicketMgr
 			})
@@ -210,7 +210,7 @@ var _ = Describe("App", func() {
 				// Mock the return of the existing validator
 				pubKey := existingValKey.PubKey().MustBytes32()
 				mockLogic.ValidatorKeeper.EXPECT().GetByHeight(gomock.Any()).Return(map[util.Bytes32]*core.Validator{
-					pubKey: &core.Validator{PubKey: util.StrToBytes32("pub_key")},
+					pubKey: {PubKey: util.StrToBytes32("pub_key")},
 				}, nil)
 
 				app.logic = mockLogic.AtomicLogic

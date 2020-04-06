@@ -3,7 +3,7 @@ package modules
 import (
 	"fmt"
 
-	prompt "github.com/c-bata/go-prompt"
+	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
@@ -89,7 +89,7 @@ func (m *RepoModule) globals() []*modules.ModuleFunc {
 // Configure configures the JS context and return
 // any number of console prompt suggestions
 func (m *RepoModule) Configure() []prompt.Suggest {
-	suggestions := []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 
 	// Register the main namespace
 	obj := map[string]interface{}{}

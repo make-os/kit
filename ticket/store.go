@@ -21,7 +21,7 @@ const (
 func MakeKey(hash []byte, height uint64, index int) []byte {
 	bzSep := []byte(Separator)
 	tagBz := []byte(TagTicket)
-	bzHeight := util.EncodeNumber(uint64(height))
+	bzHeight := util.EncodeNumber(height)
 	bzIndex := util.EncodeNumber(uint64(index))
 	return bytes.Join([][]byte{tagBz, bzSep, hash, bzSep, bzHeight, bzSep, bzIndex}, nil)
 }

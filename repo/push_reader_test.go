@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"gitlab.com/makeos/mosdef/types/core"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -53,11 +54,12 @@ var _ = Describe("PushReader", func() {
 	Describe("packedReferences", func() {
 		Describe(".names", func() {
 			It("should return the names of references", func() {
-				packedRefs := packedReferences([]*packedReferenceObject{
-					{name: "ref1"},
-					{name: "ref2"},
-				})
-				Expect(packedRefs.names()).To(Equal([]string{"ref1", "ref2"}))
+				packedRefs := packedReferences{
+					"ref1": {oldHash: plumbing.ZeroHash.String()},
+					"ref2": {oldHash: plumbing.ZeroHash.String()},
+				}
+				Expect(packedRefs.names()).To(ContainElement("ref1"))
+				Expect(packedRefs.names()).To(ContainElement("ref2"))
 			})
 		})
 	})

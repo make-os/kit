@@ -3,7 +3,7 @@ package modules
 import (
 	"fmt"
 
-	prompt "github.com/c-bata/go-prompt"
+	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -62,7 +62,7 @@ func (m *NamespaceModule) globals() []*modules.ModuleFunc {
 // Configure configures the JS context and return
 // any number of console prompt suggestions
 func (m *NamespaceModule) Configure() []prompt.Suggest {
-	suggestions := []prompt.Suggest{}
+	var suggestions []prompt.Suggest
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
@@ -99,7 +99,7 @@ func (m *NamespaceModule) Lookup(name string, height ...uint64) interface{} {
 
 	var targetHeight uint64
 	if len(height) > 0 {
-		targetHeight = uint64(height[0])
+		targetHeight = height[0]
 	}
 
 	ns := m.logic.NamespaceKeeper().Get(util.HashNamespace(name), targetHeight)
@@ -138,7 +138,7 @@ func (m *NamespaceModule) GetTarget(path string, height ...uint64) string {
 
 	var targetHeight uint64
 	if len(height) > 0 {
-		targetHeight = uint64(height[0])
+		targetHeight = height[0]
 	}
 
 	target, err := m.logic.NamespaceKeeper().GetTarget(path, targetHeight)

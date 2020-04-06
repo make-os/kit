@@ -57,7 +57,7 @@ var _ = Describe("Namespace", func() {
 				params.NamespaceGraceDur = 10
 
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("10"),
+					Balance: "10",
 					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})
@@ -102,7 +102,7 @@ var _ = Describe("Namespace", func() {
 				params.NamespaceGraceDur = 10
 
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("10"),
+					Balance: "10",
 					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})
@@ -126,7 +126,7 @@ var _ = Describe("Namespace", func() {
 				params.NamespaceGraceDur = 10
 
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("10"),
+					Balance: "10",
 					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})
@@ -155,7 +155,7 @@ var _ = Describe("Namespace", func() {
 				params.NamespaceGraceDur = 10
 
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("10"),
+					Balance: "10",
 					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})
@@ -189,7 +189,7 @@ var _ = Describe("Namespace", func() {
 				params.NamespaceGraceDur = 10
 
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("10"),
+					Balance: "10",
 					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})
@@ -217,7 +217,7 @@ var _ = Describe("Namespace", func() {
 				params.NamespaceGraceDur = 10
 
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: util.String("10"),
+					Balance: "10",
 					Stakes:  state.BareAccountStakes(),
 					Nonce:   1,
 				})

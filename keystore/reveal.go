@@ -2,7 +2,6 @@ package keystore
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
@@ -27,7 +26,7 @@ func readPassFromFile(path string) (string, error) {
 // the passphrase. Otherwise, the file content is used as the
 // passphrase. When pass is not set, the user is prompted to
 // provide their passphrase.
-func (ks *Keystore) RevealCmd(addrOrIdx, pass string, out io.Writer) error {
+func (ks *Keystore) RevealCmd(addrOrIdx, pass string) error {
 
 	if addrOrIdx == "" {
 		return fmt.Errorf("address is required")
@@ -67,9 +66,9 @@ unlock:
 		return errors.Wrap(err, "could not unlock key")
 	}
 
-	fmt.Fprintln(out, color.HiBlackString("Address: ")+storedAcct.GetAddress())
-	fmt.Fprintln(out, color.HiBlackString("Public Key: ")+storedAcct.GetKey().PubKey().Base58())
-	fmt.Fprintln(out, color.HiCyanString("Private Key:"), storedAcct.GetKey().PrivKey().Base58())
+	fmt.Fprintln(ks.out, color.HiBlackString("Address: ")+storedAcct.GetAddress())
+	fmt.Fprintln(ks.out, color.HiBlackString("Public Key: ")+storedAcct.GetKey().PubKey().Base58())
+	fmt.Fprintln(ks.out, color.HiCyanString("Private Key:"), storedAcct.GetKey().PrivKey().Base58())
 
 	return nil
 }
