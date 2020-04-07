@@ -8,9 +8,10 @@ import (
 const (
 	addressPrefixRepo                = "r/"
 	addressPrefixAddressUser         = "a/"
-	addressPrefixedIdentifierRegexp  = "^[ar]{1}/[a-zA-Z0-9_-]+$"              // e.g r/abc-xyz or a/abc-xyz
-	AddressNamespaceDomainNameRegexp = "^[a-zA-Z0-9_-]+$"                      // e.g abc-xyz_
-	addressNamespaceRegexp           = "^[a-zA-Z0-9_-]{3,}/[a-zA-Z0-9_-]{0,}$" // e.g namespace/abc-xyz_
+	addressPrefixedIdentifierRegexp  = "^[ar]{1}/[a-zA-Z0-9_-]+$"                  // e.g r/abc-xyz or a/abc-xyz
+	AddressNamespaceDomainNameRegexp = "^[a-zA-Z0-9_-]+$"                          // e.g abc-xyz_
+	addressNonDefaultNamespaceRegexp = "^[a-zA-Z0-9_-]{3,}/[a-zA-Z0-9_-]{0,}$"     // e.g namespace/abc-xyz_ (excluding: r/abc-xyz)
+	addressNamespaceRegexp           = "^([a-zA-Z0-9_-]{3,}|r)/[a-zA-Z0-9_-]{0,}$" // e.g namespace/abc-xyz_ or r/abc-xyz
 )
 
 // GetPrefixedAddressValue returns the address without the prefix
@@ -40,7 +41,12 @@ func IsPrefixedAddr(addr string) bool {
 	return regexp.MustCompile(addressPrefixedIdentifierRegexp).MatchString(addr)
 }
 
-// IsNamespaceURI checks whether the given address is a namespace URI
+// IsNonDefaultNamespaceURI checks whether the given address is a non-default namespace URI
+func IsNonDefaultNamespaceURI(addr string) bool {
+	return regexp.MustCompile(addressNonDefaultNamespaceRegexp).MatchString(addr)
+}
+
+// IsNamespaceURI checks whether the given address is a namespace URI (including default or custom namespaces).
 func IsNamespaceURI(addr string) bool {
 	return regexp.MustCompile(addressNamespaceRegexp).MatchString(addr)
 }
@@ -62,9 +68,9 @@ func (a Address) IsEmpty() bool {
 	return a.String() == ""
 }
 
-// IsNamespaceURI checks whether the address is a namespace URI
+// IsNonDefaultNamespaceURI checks whether the address is a namespace URI
 func (a Address) IsNamespaceURI() bool {
-	return IsNamespaceURI(string(a))
+	return IsNonDefaultNamespaceURI(string(a))
 }
 
 // IsPrefixed checks whether the address is prefixed with a/ or /r which

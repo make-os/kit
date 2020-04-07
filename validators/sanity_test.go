@@ -890,7 +890,6 @@ var _ = Describe("TxValidator", func() {
 
 			It("has invalid scopes", func() {
 				scopes := []string{
-					"r/repo",
 					"maker13463exprf3fdq44eth4lkf99dy6z5ajuk4ln4z",
 					"a/maker13463exprf3fdq44eth4lkf99dy6z5ajuk4ln4z",
 					"repo_&*",

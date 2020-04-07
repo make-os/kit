@@ -42,10 +42,21 @@ var _ = Describe("Address", func() {
 		})
 	})
 
+	Describe(".IsNonDefaultNamespaceURI", func() {
+		It("should return false when address is not a non-default namespaced URI", func() {
+			Expect(IsNonDefaultNamespaceURI("abcde")).To(BeFalse())
+			Expect(IsNonDefaultNamespaceURI("r/abcde")).To(BeFalse())
+			Expect(IsNonDefaultNamespaceURI("a/abcde")).To(BeFalse())
+			Expect(IsNonDefaultNamespaceURI("z/abcde")).To(BeFalse())
+			Expect(IsNonDefaultNamespaceURI("namespace/abcde")).To(BeTrue())
+			Expect(IsNonDefaultNamespaceURI("namespace/")).To(BeTrue())
+		})
+	})
+
 	Describe(".IsNamespaceURI", func() {
-		It("should return false when address is not a namespaced URI", func() {
+		It("should return false when address is a namespaced URI", func() {
 			Expect(IsNamespaceURI("abcde")).To(BeFalse())
-			Expect(IsNamespaceURI("r/abcde")).To(BeFalse())
+			Expect(IsNamespaceURI("r/abcde")).To(BeTrue())
 			Expect(IsNamespaceURI("a/abcde")).To(BeFalse())
 			Expect(IsNamespaceURI("z/abcde")).To(BeFalse())
 			Expect(IsNamespaceURI("namespace/abcde")).To(BeTrue())
@@ -67,7 +78,7 @@ var _ = Describe("Address", func() {
 			})
 		})
 
-		Describe(".IsNamespaceURI", func() {
+		Describe(".IsNonDefaultNamespaceURI", func() {
 			It("should return true when address is a namespace URI and false when not", func() {
 				Expect(Address("ns1/abcdef").IsNamespaceURI()).To(BeTrue())
 				Expect(Address("abcdef").IsNamespaceURI()).To(BeFalse())

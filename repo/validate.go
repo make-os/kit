@@ -652,6 +652,53 @@ func checkMergeProposalID(id string, index int) error {
 	return nil
 }
 
+// isBlockedByScope checks whether the given tx parameter satisfy a given scope
+func isBlockedByScope(scopes []string, params *types.TxDetail, namespaceFromParams *state.Namespace) bool {
+	blocked := true
+	for _, scope := range scopes {
+		if util.IsNamespaceURI(scope) {
+			ns, domain, _ := util.SplitNamespaceDomain(scope)
+
+			// If scope is r/repo-name, make sure tx info namespace is unset and repo name is 'repo-name'.
+			// If scope is r/ only, make sure only tx info namespace is set
+			if ns == DefaultNS && params.RepoNamespace == "" && (domain == "" || domain == params.RepoName) {
+				blocked = false
+				break
+			}
+
+			// If scope is some_ns/repo-name, make sure tx info namespace and repo name matches the scope
+			// namespace and repo name.
+			if ns != DefaultNS && ns == params.RepoNamespace && domain == params.RepoName {
+				blocked = false
+				break
+			}
+
+			// If scope is just some_ns/, make sure tx info namespace matches
+			if ns != DefaultNS && domain == "" && ns == params.RepoNamespace {
+				blocked = false
+				break
+			}
+		}
+
+		// At this point, the scope is just a target repo name.
+		// e.g unblock if tx info namespace is default and the repo name matches the scope
+		if params.RepoNamespace == "" && params.RepoName == scope {
+			blocked = false
+			break
+		}
+
+		// But if the scope's repo name is set, ensure the domain target matches the sc
+		if params.RepoNamespace != "" {
+			if target := namespaceFromParams.Domains[params.RepoName]; target != "" && target[2:] == scope {
+				blocked = false
+				break
+			}
+		}
+	}
+
+	return blocked
+}
+
 // checkTxDetailConsistency performs consistency checks on a transaction's parameters.
 // When authScope is true, only fields necessary for authentication are validated.
 func checkTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, authScope bool) error {
@@ -662,12 +709,31 @@ func checkTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, auth
 		return util.FieldError("pkID", "push key not found")
 	}
 
+	// Ensure repo namespace exist if set
+	var paramNS = state.BareNamespace()
+	if params.RepoNamespace != "" && len(pushKey.Scopes) > 0 {
+		paramNS = keepers.NamespaceKeeper().Get(params.RepoNamespace)
+		if paramNS.IsNil() {
+			msg := fmt.Sprintf("namespace (%s) is unknown", params.RepoNamespace)
+			return util.FieldError("repoNamespace", msg)
+		}
+	}
+
+	// Ensure push key scope grants access to the destination repo namespace and repo name.
+	if len(pushKey.Scopes) > 0 {
+		if isBlockedByScope(pushKey.Scopes, params, paramNS) {
+			msg := fmt.Sprintf("push key (%s) not permitted due to scope limitation", params.PushKeyID)
+			return util.FieldError("repoName|repoNamespace", msg)
+		}
+	}
+
 	// Ensure the nonce is a future nonce (> current nonce of pusher's account)
 	if !authScope {
 		keyOwner := keepers.AccountKeeper().Get(pushKey.Address)
 		if params.Nonce <= keyOwner.Nonce {
-			return util.FieldError("nonce", fmt.Sprintf("nonce (%d) must be "+
-				"greater than current key owner nonce (%d)", params.Nonce, keyOwner.Nonce))
+			msg := fmt.Sprintf("nonce (%d) must be greater than current key owner nonce (%d)", params.Nonce,
+				keyOwner.Nonce)
+			return util.FieldError("nonce", msg)
 		}
 	}
 

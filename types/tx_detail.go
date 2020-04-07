@@ -9,7 +9,6 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/mr-tron/base58"
-	"github.com/pkg/errors"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -139,7 +138,6 @@ func (tp *TxDetail) ToMapForPEMHeader() map[string]string {
 }
 
 // TxDetailFromPEMHeader constructs a TxDetail instance from a PEM header
-// TODO: add test
 func TxDetailFromPEMHeader(hdr map[string]string) (*TxDetail, error) {
 	var params = &TxDetail{
 		RepoName:      hdr["repoName"],
@@ -149,10 +147,10 @@ func TxDetailFromPEMHeader(hdr map[string]string) (*TxDetail, error) {
 		Fee:           util.String(hdr["fee"]),
 	}
 
-	var err error
-	params.Nonce, err = strconv.ParseUint(hdr["nonce"], 10, 64)
-	if err != nil {
-		return nil, errors.Wrap(err, "nonce")
+	if !govalidator.IsNumeric(hdr["nonce"]) {
+		return nil, fmt.Errorf("nonce must be numeric")
+	} else {
+		params.Nonce, _ = strconv.ParseUint(hdr["nonce"], 10, 64)
 	}
 
 	if mergeID, ok := hdr["mergeID"]; ok {

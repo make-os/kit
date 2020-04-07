@@ -124,10 +124,10 @@ func (c *RepoConfig) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 // Clone clones c
 func (c *RepoConfig) Clone() *RepoConfig {
-	var clone RepoConfig
+	var clone = BareRepoConfig()
 	m := util.StructToMap(c)
 	_ = mapstructure.Decode(m, &clone)
-	return &clone
+	return clone
 }
 
 // MergeMap merges map o into c

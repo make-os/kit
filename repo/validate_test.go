@@ -150,7 +150,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("failed to decode PEM header: nonce: .* invalid syntax"))
+				Expect(err.Error()).To(MatchRegexp("failed to decode PEM header: nonce must be numeric"))
 			})
 		})
 
@@ -1563,6 +1563,84 @@ var _ = Describe("Validation", func() {
 		})
 	})
 
+	Describe(".isBlockedByScope", func() {
+		It("should return true when scopes has r/repo1 and tx repo=repo2 and namespace=''", func() {
+			scopes := []string{"r/repo1"}
+			detail := &types.TxDetail{RepoName: "repo2", RepoNamespace: ""}
+			ns := state.BareNamespace()
+			Expect(isBlockedByScope(scopes, detail, ns)).To(BeTrue())
+		})
+
+		It("should return false when scopes has r/repo1 and tx repo=repo1 and namespace=''", func() {
+			scopes := []string{"r/repo1"}
+			detail := &types.TxDetail{RepoName: "repo1", RepoNamespace: ""}
+			ns := state.BareNamespace()
+			Expect(isBlockedByScope(scopes, detail, ns)).To(BeFalse())
+		})
+
+		It("should return true when scopes has ns1/repo1 and tx repo=repo1 and namespace=ns2", func() {
+			scopes := []string{"ns1/repo1"}
+			detail := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns2"}
+			ns := state.BareNamespace()
+			Expect(isBlockedByScope(scopes, detail, ns)).To(BeTrue())
+		})
+
+		It("should return false when scopes has ns1/repo1 and tx repo=repo1 and namespace=ns1", func() {
+			scopes := []string{"ns1/repo1"}
+			detail := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1"}
+			ns := state.BareNamespace()
+			Expect(isBlockedByScope(scopes, detail, ns)).To(BeFalse())
+		})
+
+		It("should return true when scopes has ns1/ and tx repo=repo1 and namespace=ns2", func() {
+			scopes := []string{"ns1/"}
+			detail := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns2"}
+			ns := state.BareNamespace()
+			Expect(isBlockedByScope(scopes, detail, ns)).To(BeTrue())
+		})
+
+		It("should return false when scopes has ns1/ and tx repo=repo1 and namespace=ns1", func() {
+			scopes := []string{"ns1/"}
+			detail := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1"}
+			ns := state.BareNamespace()
+			Expect(isBlockedByScope(scopes, detail, ns)).To(BeFalse())
+		})
+
+		It("should return false when scopes has repo1 and tx repo=repo1 and namespace=''", func() {
+			scopes := []string{"repo1"}
+			detail := &types.TxDetail{RepoName: "repo1", RepoNamespace: ""}
+			ns := state.BareNamespace()
+			Expect(isBlockedByScope(scopes, detail, ns)).To(BeFalse())
+		})
+
+		It("should return true when scopes has repo1 and tx repo=repo2 and namespace=''", func() {
+			scopes := []string{"repo1"}
+			detail := &types.TxDetail{RepoName: "repo2", RepoNamespace: ""}
+			ns := state.BareNamespace()
+			Expect(isBlockedByScope(scopes, detail, ns)).To(BeTrue())
+		})
+
+		It("should return true when scopes has repo1 and tx repo=repo2 and "+
+			"namespace='ns1' "+
+			"but ns1/repo2 does not point to repo1", func() {
+			scopes := []string{"repo1"}
+			detail := &types.TxDetail{RepoName: "repo2", RepoNamespace: "ns1"}
+			ns := state.BareNamespace()
+			ns.Domains["repo2"] = "repo100"
+			Expect(isBlockedByScope(scopes, detail, ns)).To(BeTrue())
+		})
+
+		It("should return false when scopes has repo1 and tx repo=repo2 and "+
+			"namespace='ns1' "+
+			"but ns1/repo2 does not point to r/repo1", func() {
+			scopes := []string{"repo1"}
+			detail := &types.TxDetail{RepoName: "repo2", RepoNamespace: "ns1"}
+			ns := state.BareNamespace()
+			ns.Domains["repo2"] = "r/repo1"
+			Expect(isBlockedByScope(scopes, detail, ns)).To(BeFalse())
+		})
+	})
+
 	Describe(".checkTxDetailConsistency", func() {
 		It("should return error when push key is unknown", func() {
 			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String()}
@@ -1570,6 +1648,64 @@ var _ = Describe("Validation", func() {
 			err := checkTxDetailConsistency(detail, mockLogic, false)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("field:pkID, msg:push key not found"))
+		})
+
+		It("should return error when repo namespace and push key scopes are set but namespace does not exist", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo1", RepoNamespace: "ns1"}
+			pk := state.BarePushKey()
+			pk.Address = privKey.Addr()
+			pk.Scopes = []string{"r/repo1"}
+			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+			mockNSKeeper.EXPECT().Get(detail.RepoNamespace).Return(state.BareNamespace())
+
+			err := checkTxDetailConsistency(detail, mockLogic, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:repoNamespace, msg:namespace (ns1) is unknown"))
+		})
+
+		It("should return scope error when key scope is r/repo1 and tx repo=repo2 and namespace is unset", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo2", RepoNamespace: ""}
+			pk := state.BarePushKey()
+			pk.Address = privKey.Addr()
+			pk.Scopes = []string{"r/repo1"}
+			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+			err := checkTxDetailConsistency(detail, mockLogic, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("not permitted due to scope limitation"))
+		})
+
+		It("should return scope error when key scope is ns1/repo1 and tx repo=repo2 and namespace=ns1", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo2", RepoNamespace: "ns1"}
+			pk := state.BarePushKey()
+			pk.Address = privKey.Addr()
+			pk.Scopes = []string{"ns1/repo1"}
+			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+			ns := state.BareNamespace()
+			ns.Domains["ns1"] = "real-repo"
+			mockNSKeeper.EXPECT().Get(detail.RepoNamespace).Return(ns)
+
+			err := checkTxDetailConsistency(detail, mockLogic, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("not permitted due to scope limitation"))
+		})
+
+		It("should return scope error when key scope is ns1/ and tx repo=repo2 and namespace=ns2", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo2", RepoNamespace: "ns1"}
+			pk := state.BarePushKey()
+			pk.Address = privKey.Addr()
+			pk.Scopes = []string{"ns1/repo1"}
+			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+			ns := state.BareNamespace()
+			ns.Domains["ns1"] = "real-repo"
+			mockNSKeeper.EXPECT().Get(detail.RepoNamespace).Return(ns)
+
+			err := checkTxDetailConsistency(detail, mockLogic, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("not permitted due to scope limitation"))
 		})
 
 		It("should return error when nonce is not greater than push key owner account nonce", func() {

@@ -239,32 +239,12 @@ var _ = Describe("Repository", func() {
 							},
 						})
 						Expect(base.Policies).To(HaveLen(1))
-						Expect(base.Policies).To(HaveKey("user1_dev"))
 						Expect(base.Policies[0].Subject).To(Equal("sub2"))
 						Expect(base.Policies[0].Object).To(Equal("branch_dev"))
 						Expect(base.Policies[0].Action).To(Equal("delete"))
 					})
 				})
 
-				When("Policies includes one policy named `user1_dev`", func() {
-					base := &RepoConfig{
-						Policies: []*Policy{{Subject: "user1", Object: "dev", Action: "deny"}},
-					}
-
-					It("should add policy if it does not already exist", func() {
-						base.MergeMap(map[string]interface{}{
-							"policies": []map[string]interface{}{
-								{"sub": "sub2", "obj": "branch_dev", "act": "delete"},
-							},
-						})
-						Expect(base.Policies).To(HaveLen(2))
-						Expect(base.Policies).To(HaveKey("user1_dev"))
-						Expect(base.Policies).To(HaveKey("user2_dev"))
-						Expect(base.Policies[0].Subject).To(Equal("sub2"))
-						Expect(base.Policies[0].Object).To(Equal("branch_dev"))
-						Expect(base.Policies[0].Action).To(Equal("delete"))
-					})
-				})
 			})
 		})
 
