@@ -431,43 +431,43 @@ func CheckTxPush(tx *core.TxPush, index int) error {
 		return err
 	}
 
-	if len(tx.PushOKs) < params.PushEndorseQuorumSize {
+	if len(tx.PushEnds) < params.PushEndorseQuorumSize {
 		return feI(index, "endorsements", "not enough endorsements included")
 	}
 
 	senders := map[string]struct{}{}
-	pushOKRefHashesID := util.EmptyBytes32
-	for index, pushOK := range tx.PushOKs {
+	pushEndRefHashesID := util.EmptyBytes32
+	for index, pushEnd := range tx.PushEnds {
 
-		if err := repo.CheckPushOK(pushOK, index); err != nil {
+		if err := repo.CheckPushEnd(pushEnd, index); err != nil {
 			return err
 		}
 
-		// Ensure push note id and the target pushOK push note id match
-		if !pushOK.NoteID.Equal(tx.PushNote.ID()) {
+		// Ensure push note id and the target pushEnd push note id match
+		if !pushEnd.NoteID.Equal(tx.PushNote.ID()) {
 			msg := "push note id and push endorsement id must match"
 			return feI(index, "endorsements.pushNoteID", msg)
 		}
 
 		// Make sure we haven't seen a PushEndorsement from this sender before
-		_, ok := senders[pushOK.EndorserPubKey.HexStr()]
+		_, ok := senders[pushEnd.EndorserPubKey.HexStr()]
 		if !ok {
-			senders[pushOK.EndorserPubKey.HexStr()] = struct{}{}
+			senders[pushEnd.EndorserPubKey.HexStr()] = struct{}{}
 		} else {
 			msg := "multiple endorsement by a single sender not permitted"
 			return feI(index, "endorsements.senderPubKey", msg)
 		}
 
-		_, err := crypto.PubKeyFromBytes(pushOK.EndorserPubKey.Bytes())
+		_, err := crypto.PubKeyFromBytes(pushEnd.EndorserPubKey.Bytes())
 		if err != nil {
 			return feI(index, "endorsements.senderPubKey", "public key is not valid")
 		}
 
 		// Ensure the references hashes are all the same
-		if pushOKRefHashesID.IsEmpty() {
-			pushOKRefHashesID = pushOK.References.ID()
+		if pushEndRefHashesID.IsEmpty() {
+			pushEndRefHashesID = pushEnd.References.ID()
 		}
-		if !pushOK.References.ID().Equal(pushOKRefHashesID) {
+		if !pushEnd.References.ID().Equal(pushEndRefHashesID) {
 			msg := "references of all endorsements must match"
 			return feI(index, "endorsements.refsHash", msg)
 		}

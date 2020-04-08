@@ -1678,31 +1678,31 @@ func (mr *MockItemsMockRecorder) Hash() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockItems)(nil).Hash))
 }
 
-// MockRepoPushOK is a mock of RepoPushOK interface
-type MockRepoPushOK struct {
+// MockRepoPushEnd is a mock of RepoPushEndorsement interface
+type MockRepoPushEnd struct {
 	ctrl     *gomock.Controller
-	recorder *MockRepoPushOKMockRecorder
+	recorder *MockRepoPushEndMockRecorder
 }
 
-// MockRepoPushOKMockRecorder is the mock recorder for MockRepoPushOK
-type MockRepoPushOKMockRecorder struct {
-	mock *MockRepoPushOK
+// MockRepoPushEndMockRecorder is the mock recorder for MockRepoPushEnd
+type MockRepoPushEndMockRecorder struct {
+	mock *MockRepoPushEnd
 }
 
-// NewMockRepoPushOK creates a new mock instance
-func NewMockRepoPushOK(ctrl *gomock.Controller) *MockRepoPushOK {
-	mock := &MockRepoPushOK{ctrl: ctrl}
-	mock.recorder = &MockRepoPushOKMockRecorder{mock}
+// NewMockRepoPushEnd creates a new mock instance
+func NewMockRepoPushEnd(ctrl *gomock.Controller) *MockRepoPushEnd {
+	mock := &MockRepoPushEnd{ctrl: ctrl}
+	mock.recorder = &MockRepoPushEndMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockRepoPushOK) EXPECT() *MockRepoPushOKMockRecorder {
+func (m *MockRepoPushEnd) EXPECT() *MockRepoPushEndMockRecorder {
 	return m.recorder
 }
 
 // ID mocks base method
-func (m *MockRepoPushOK) ID() util.Bytes32 {
+func (m *MockRepoPushEnd) ID() util.Bytes32 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ID")
 	ret0, _ := ret[0].(util.Bytes32)
@@ -1710,13 +1710,13 @@ func (m *MockRepoPushOK) ID() util.Bytes32 {
 }
 
 // ID indicates an expected call of ID
-func (mr *MockRepoPushOKMockRecorder) ID() *gomock.Call {
+func (mr *MockRepoPushEndMockRecorder) ID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockRepoPushOK)(nil).ID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockRepoPushEnd)(nil).ID))
 }
 
 // Bytes mocks base method
-func (m *MockRepoPushOK) Bytes() []byte {
+func (m *MockRepoPushEnd) Bytes() []byte {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Bytes")
 	ret0, _ := ret[0].([]byte)
@@ -1724,13 +1724,13 @@ func (m *MockRepoPushOK) Bytes() []byte {
 }
 
 // Bytes indicates an expected call of Bytes
-func (mr *MockRepoPushOKMockRecorder) Bytes() *gomock.Call {
+func (mr *MockRepoPushEndMockRecorder) Bytes() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockRepoPushOK)(nil).Bytes))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockRepoPushEnd)(nil).Bytes))
 }
 
 // BytesAndID mocks base method
-func (m *MockRepoPushOK) BytesAndID() ([]byte, util.Bytes32) {
+func (m *MockRepoPushEnd) BytesAndID() ([]byte, util.Bytes32) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BytesAndID")
 	ret0, _ := ret[0].([]byte)
@@ -1739,9 +1739,9 @@ func (m *MockRepoPushOK) BytesAndID() ([]byte, util.Bytes32) {
 }
 
 // BytesAndID indicates an expected call of BytesAndID
-func (mr *MockRepoPushOKMockRecorder) BytesAndID() *gomock.Call {
+func (mr *MockRepoPushEndMockRecorder) BytesAndID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockRepoPushOK)(nil).BytesAndID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockRepoPushEnd)(nil).BytesAndID))
 }
 
 // MockRepoManager is a mock of RepoManager interface

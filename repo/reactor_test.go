@@ -433,10 +433,10 @@ var _ = Describe("Reactor", func() {
 		})
 	})
 
-	Describe(".onPushOK", func() {
+	Describe(".onPushEnd", func() {
 		When("unable to decode msg", func() {
 			BeforeEach(func() {
-				err = mgr.onPushOK(mockPeer, util.RandBytes(5))
+				err = mgr.onPushEnd(mockPeer, util.RandBytes(5))
 			})
 
 			It("should return err=failed to decoded message...", func() {
@@ -459,7 +459,7 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("PushOKs for the given note is not up to the quorum size", func() {
+		When("PushEnds for the given note is not up to the quorum size", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 2
@@ -513,11 +513,11 @@ var _ = Describe("Reactor", func() {
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{}, nil)
-				pok := &core.PushEndorsement{
+				pushEnd := &core.PushEndorsement{
 					Sig:            util.BytesToBytes64(util.RandBytes(5)),
 					EndorserPubKey: util.BytesToBytes32(util.RandBytes(32)),
 				}
-				mgr.addPushNoteEndorsement(pushNote.ID().String(), pok)
+				mgr.addPushNoteEndorsement(pushNote.ID().String(), pushEnd)
 				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
 			})
 
@@ -542,11 +542,11 @@ var _ = Describe("Reactor", func() {
 						},
 					},
 				}, nil)
-				pok := &core.PushEndorsement{
+				pushEnd := &core.PushEndorsement{
 					EndorserPubKey: key.PubKey().MustBytes32(),
 				}
 
-				mgr.addPushNoteEndorsement(pushNote.ID().String(), pok)
+				mgr.addPushNoteEndorsement(pushNote.ID().String(), pushEnd)
 				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
 			})
 
@@ -571,12 +571,12 @@ var _ = Describe("Reactor", func() {
 						},
 					},
 				}, nil)
-				pok := &core.PushEndorsement{
+				pushEnd := &core.PushEndorsement{
 					EndorserPubKey: key.PubKey().MustBytes32(),
 				}
-				pok.Sig = util.BytesToBytes64(util.RandBytes(64))
+				pushEnd.Sig = util.BytesToBytes64(util.RandBytes(64))
 
-				mgr.addPushNoteEndorsement(pushNote.ID().String(), pok)
+				mgr.addPushNoteEndorsement(pushNote.ID().String(), pushEnd)
 				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
 			})
 
@@ -601,16 +601,16 @@ var _ = Describe("Reactor", func() {
 						},
 					},
 				}, nil)
-				pok := &core.PushEndorsement{
+				pushEnd := &core.PushEndorsement{
 					EndorserPubKey: key.PubKey().MustBytes32(),
 				}
-				var pokSig []byte
-				pokSig, err = key.PrivKey().BLSKey().Sign(pok.BytesNoSigAndSenderPubKey())
+				var pushEndSig []byte
+				pushEndSig, err = key.PrivKey().BLSKey().Sign(pushEnd.BytesNoSigAndSenderPubKey())
 				Expect(err).To(BeNil())
-				pok.Sig = util.BytesToBytes64(pokSig)
+				pushEnd.Sig = util.BytesToBytes64(pushEndSig)
 
 				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&core.TxPush{})).Return(nil)
-				mgr.addPushNoteEndorsement(pushNote.ID().String(), pok)
+				mgr.addPushNoteEndorsement(pushNote.ID().String(), pushEnd)
 				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
 			})
 

@@ -27,8 +27,8 @@ func (m *Manager) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 		if err := m.onPushNote(peer, msgBytes); err != nil {
 			m.log.Error(err.Error())
 		}
-	case PushOKReactorChannel:
-		if err := m.onPushOK(peer, msgBytes); err != nil {
+	case PushEndReactorChannel:
+		if err := m.onPushEnd(peer, msgBytes); err != nil {
 			m.log.Error(err.Error())
 		}
 	}
@@ -190,8 +190,8 @@ func (m *Manager) broadcastPushedObjects(pn *core.PushNote) (err error) {
 	return
 }
 
-// onPushOK is the handler for incoming PushEndorsement messages
-func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
+// onPushEnd is the handler for incoming PushEndorsement messages
+func (m *Manager) onPushEnd(peer p2p.Peer, msgBytes []byte) error {
 
 	// Return if in validator mode.
 	if m.cfg.IsValidatorNode() {
@@ -199,33 +199,33 @@ func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Attempt to decode message to PushEndorsement object
-	var pok core.PushEndorsement
-	if err := util.ToObject(msgBytes, &pok); err != nil {
+	var pushEnd core.PushEndorsement
+	if err := util.ToObject(msgBytes, &pushEnd); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
 
 	// Validate the PushEndorsement object
-	pokID := pok.ID().String()
-	if err := checkPushOK(&pok, m.logic, -1); err != nil {
-		m.log.Debug("Received an invalid push endorsement", "ID", pokID, "Err", err)
+	pushEndID := pushEnd.ID().String()
+	if err := checkPushEnd(&pushEnd, m.logic, -1); err != nil {
+		m.log.Debug("Received an invalid push endorsement", "ID", pushEndID, "Err", err)
 		return err
 	}
 
-	m.log.Debug("Received a valid push endorsement", "PeerID", peer.ID(), "ID", pokID)
+	m.log.Debug("Received a valid push endorsement", "PeerID", peer.ID(), "ID", pushEndID)
 
 	// Cache the sender so we don't broadcast same PushEndorsement to it later
-	m.cachePushOkSender(string(peer.ID()), pokID)
+	m.cachePushEndSender(string(peer.ID()), pushEndID)
 
 	// cache the PushEndorsement object as an endorsement of the PushNote
-	m.addPushNoteEndorsement(pok.NoteID.HexStr(), &pok)
+	m.addPushNoteEndorsement(pushEnd.NoteID.HexStr(), &pushEnd)
 
 	// Attempt to create an send a PushTx to the transaction pool
-	if err := m.MaybeCreatePushTx(pok.NoteID.HexStr()); err != nil {
+	if err := m.MaybeCreatePushTx(pushEnd.NoteID.HexStr()); err != nil {
 		m.Log().Debug(err.Error())
 	}
 
 	// Broadcast the PushEndorsement to peers
-	m.broadcastPushOK(&pok)
+	m.broadcastPushEnd(&pushEnd)
 
 	return nil
 }
@@ -249,18 +249,18 @@ func (m *Manager) BroadcastPushObjects(note core.RepoPushNote) error {
 	}
 
 	// At this point, the node is a top host, so we create, sign and broadcast a PushEndorsement
-	pok, err := m.createEndorsement(note)
+	pushEnd, err := m.createEndorsement(note)
 	if err != nil {
 		return err
 	}
-	m.broadcastPushOK(pok)
+	m.broadcastPushEnd(pushEnd)
 
 	// Cache the PushEndorsement object as an endorsement of the PushNote so can use it
 	// to create a PushTx when enough push endorsements are discovered.
-	m.addPushNoteEndorsement(note.ID().String(), pok)
+	m.addPushNoteEndorsement(note.ID().String(), pushEnd)
 
 	// Attempt to create a PushTx and send to the transaction pool
-	if err = m.MaybeCreatePushTx(pok.NoteID.HexStr()); err != nil {
+	if err = m.MaybeCreatePushTx(pushEnd.NoteID.HexStr()); err != nil {
 		m.Log().Debug(err.Error())
 	}
 
@@ -311,14 +311,14 @@ func (m *Manager) broadcastPushNote(pushNote core.RepoPushNote) {
 	}
 }
 
-// broadcastPushOK sends out push endorsements (PushEndorsement) to peers
-func (m *Manager) broadcastPushOK(pushOk core.RepoPushOK) {
+// broadcastPushEnd sends out push endorsements (PushEndorsement) to peers
+func (m *Manager) broadcastPushEnd(pushEnd core.RepoPushEndorsement) {
 	for _, peer := range m.Switch.Peers().List() {
-		bz, id := pushOk.BytesAndID()
-		if m.isPushOKSender(string(peer.ID()), id.String()) {
+		bz, id := pushEnd.BytesAndID()
+		if m.isPushEndSender(string(peer.ID()), id.String()) {
 			continue
 		}
-		if peer.Send(PushOKReactorChannel, bz) {
+		if peer.Send(PushEndReactorChannel, bz) {
 			m.log.Debug("Sent push endorsement to peer", "PeerID", peer.ID(), "TxID", id)
 		}
 	}
@@ -335,7 +335,7 @@ func (m *Manager) BroadcastMsg(ch byte, msg []byte) {
 func (m *Manager) GetChannels() []*p2p.ChannelDescriptor {
 	return []*p2p.ChannelDescriptor{
 		{ID: PushNoteReactorChannel, Priority: 5},
-		{ID: PushOKReactorChannel, Priority: 5},
+		{ID: PushEndReactorChannel, Priority: 5},
 	}
 }
 
@@ -402,14 +402,14 @@ func (m *Manager) MaybeCreatePushTx(noteID string) error {
 
 	// Set push note and endorsements
 	pushTx.PushNote = note
-	pushTx.PushOKs = noteEndorsements
+	pushTx.PushEnds = noteEndorsements
 
 	// Generate and set aggregated BLS signature
 	aggSig, err := bls.AggregateSignatures(endorsementsPubKey, endorsementsSig)
 	if err != nil {
 		return errors.Wrap(err, "unable to create aggregated signature")
 	}
-	pushTx.AggPushOKsSig = aggSig
+	pushTx.AggPushEndsSig = aggSig
 
 	// Register push transaction to mempool
 	if err := m.GetMempool().Add(pushTx); err != nil {

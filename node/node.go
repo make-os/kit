@@ -179,7 +179,7 @@ func (n *Node) Start() error {
 	// Register custom reactor channels
 	node.AddChannels([]byte{
 		repo.PushNoteReactorChannel,
-		repo.PushOKReactorChannel,
+		repo.PushEndReactorChannel,
 	})
 
 	// Create the ABCI app and wrap with a ClientCreator

@@ -9,11 +9,11 @@ import (
 // TxPush implements BaseTx, it describes a transaction that creates a
 // repository for the signer
 type TxPush struct {
-	*TxCommon     `json:",flatten" mapstructure:"-"`
-	*TxType       `json:",flatten" msgpack:"-"`
-	PushNote      *PushNote          `json:"pushNote" mapstructure:"pushNote"`
-	PushOKs       []*PushEndorsement `json:"endorsements" mapstructure:"endorsements"`
-	AggPushOKsSig []byte             `json:"aggEndorsersPubKey" mapstructure:"aggEndorsersPubKey"`
+	*TxCommon      `json:",flatten" mapstructure:"-"`
+	*TxType        `json:",flatten" msgpack:"-"`
+	PushNote       *PushNote          `json:"pushNote" mapstructure:"pushNote"`
+	PushEnds       []*PushEndorsement `json:"endorsements" mapstructure:"endorsements"`
+	AggPushEndsSig []byte             `json:"aggEndorsersPubKey" mapstructure:"aggEndorsersPubKey"`
 }
 
 // NewBareTxPush returns an instance of TxPush with zero values
@@ -22,7 +22,7 @@ func NewBareTxPush() *TxPush {
 		TxCommon: NewBareTxCommon(),
 		TxType:   &TxType{Type: TxTypePush},
 		PushNote: &PushNote{},
-		PushOKs:  []*PushEndorsement{},
+		PushEnds: []*PushEndorsement{},
 	}
 }
 
@@ -31,8 +31,8 @@ func (tx *TxPush) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return enc.EncodeMulti(
 		tx.Type,
 		tx.PushNote,
-		tx.PushOKs,
-		tx.AggPushOKsSig)
+		tx.PushEnds,
+		tx.AggPushEndsSig)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
@@ -40,8 +40,8 @@ func (tx *TxPush) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return tx.DecodeMulti(dec,
 		&tx.Type,
 		&tx.PushNote,
-		&tx.PushOKs,
-		&tx.AggPushOKsSig)
+		&tx.PushEnds,
+		&tx.AggPushEndsSig)
 }
 
 // Bytes returns the serialized transaction

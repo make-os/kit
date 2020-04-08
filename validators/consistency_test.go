@@ -890,7 +890,7 @@ var _ = Describe("TxValidator", func() {
 
 				tx := core.NewBareTxPush()
 				tx.PushNote.RepoName = "repo1"
-				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{
+				tx.PushEnds = append(tx.PushEnds, &core.PushEndorsement{
 					NoteID:         util.StrToBytes32("pn1"),
 					EndorserPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
 				})
@@ -923,7 +923,7 @@ var _ = Describe("TxValidator", func() {
 				tx := core.NewBareTxPush()
 				tx.PushNote.RepoName = "repo1"
 				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{Name: "refs/heads/master"})
-				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{
+				tx.PushEnds = append(tx.PushEnds, &core.PushEndorsement{
 					NoteID:         util.StrToBytes32("pn1"),
 					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
 					References:     []*core.EndorsedReference{{Hash: util.RandBytes(20)}},
@@ -957,7 +957,7 @@ var _ = Describe("TxValidator", func() {
 				tx := core.NewBareTxPush()
 				tx.PushNote.RepoName = "repo1"
 				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{Name: "refs/heads/master"})
-				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{
+				tx.PushEnds = append(tx.PushEnds, &core.PushEndorsement{
 					NoteID:         util.StrToBytes32("pn1"),
 					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
 					References:     []*core.EndorsedReference{{Hash: util.RandBytes(20)}},
@@ -992,7 +992,7 @@ var _ = Describe("TxValidator", func() {
 				tx := core.NewBareTxPush()
 				tx.PushNote.RepoName = "repo1"
 				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{Name: "refs/heads/master"})
-				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{
+				tx.PushEnds = append(tx.PushEnds, &core.PushEndorsement{
 					NoteID:         util.StrToBytes32("pn1"),
 					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
 					References:     []*core.EndorsedReference{{Hash: refHash}},
@@ -1025,10 +1025,10 @@ var _ = Describe("TxValidator", func() {
 
 				refHash := util.RandBytes(20)
 				tx := core.NewBareTxPush()
-				tx.AggPushOKsSig = util.RandBytes(128)
+				tx.AggPushEndsSig = util.RandBytes(128)
 				tx.PushNote.RepoName = "repo1"
 				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{Name: "refs/heads/master"})
-				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{
+				tx.PushEnds = append(tx.PushEnds, &core.PushEndorsement{
 					NoteID:         util.StrToBytes32("pn1"),
 					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
 					References:     []*core.EndorsedReference{{Hash: refHash}},

@@ -30,8 +30,8 @@ import (
 const (
 	// PushNoteReactorChannel is the channel id sending/receiving push notes
 	PushNoteReactorChannel = byte(0x32)
-	// PushOKReactorChannel is the channel id for sending/receiving push okays
-	PushOKReactorChannel = byte(0x33)
+	// PushEndReactorChannel is the channel id for sending/receiving push endorsements
+	PushEndReactorChannel = byte(0x33)
 
 	// DefaultNS is the default repo namespace
 	DefaultNS = "r"
@@ -71,8 +71,8 @@ type Manager struct {
 	pruner                   core.Pruner                 // The repo runner
 	blockGetter              types.BlockGetter           // Provides access to blocks
 	pushNoteSenders          *cache.Cache                // Store senders of push notes
-	pushOKSenders            *cache.Cache                // Stores senders of PushEndorsement messages
-	pushEndorsements         *cache.Cache                // Store PushOKs
+	pushEndSenders           *cache.Cache                // Stores senders of PushEndorsement messages
+	pushEndorsements         *cache.Cache                // Store PushEnds
 	modulesAgg               modules.ModuleHub           // Modules aggregator
 	authenticate             authenticator               // Function for performing authentication
 	checkPushNote            pushNoteChecker             // Function for performing PushNote validation
@@ -111,7 +111,7 @@ func NewManager(
 		checkPushNote:    checkPushNote,
 		packfileMaker:    makeReferenceUpdateRequest,
 		pushNoteSenders:  cache.NewActiveCache(params.PushObjectsSendersCacheSize),
-		pushOKSenders:    cache.NewActiveCache(params.PushObjectsSendersCacheSize),
+		pushEndSenders:   cache.NewActiveCache(params.PushObjectsSendersCacheSize),
 		pushEndorsements: cache.NewActiveCache(params.PushNotesEndorsementsCacheSize),
 	}
 
@@ -149,10 +149,10 @@ func (m *Manager) cacheNoteSender(senderID string, noteID string) {
 	m.pushNoteSenders.AddWithExp(key, struct{}{}, time.Now().Add(10*time.Minute))
 }
 
-// cachePushOkSender caches a push OK sender
-func (m *Manager) cachePushOkSender(senderID string, pushOkID string) {
-	key := util.Hash20Hex([]byte(senderID + pushOkID))
-	m.pushOKSenders.AddWithExp(key, struct{}{}, time.Now().Add(60*time.Minute))
+// cachePushEndSender caches a push endorsement sender
+func (m *Manager) cachePushEndSender(senderID string, pushEndID string) {
+	key := util.Hash20Hex([]byte(senderID + pushEndID))
+	m.pushEndSenders.AddWithExp(key, struct{}{}, time.Now().Add(60*time.Minute))
 }
 
 // isPushNoteSender checks whether a push note was sent by the given sender ID
@@ -162,21 +162,21 @@ func (m *Manager) isPushNoteSender(senderID string, noteID string) bool {
 	return v == struct{}{}
 }
 
-// isPushOKSender checks whether a "push OK" was sent by the given sender ID
-func (m *Manager) isPushOKSender(senderID string, pushOKID string) bool {
-	key := util.Hash20Hex([]byte(senderID + pushOKID))
-	v := m.pushOKSenders.Get(key)
+// isPushEndSender checks whether a push endorsement was sent by the given sender ID
+func (m *Manager) isPushEndSender(senderID string, pushEndID string) bool {
+	key := util.Hash20Hex([]byte(senderID + pushEndID))
+	v := m.pushEndSenders.Get(key)
 	return v == struct{}{}
 }
 
 // addPushNoteEndorsement indexes a PushEndorsement for a given push note
-func (m *Manager) addPushNoteEndorsement(noteID string, pok *core.PushEndorsement) {
-	pokList := m.pushEndorsements.Get(noteID)
-	if pokList == nil {
-		pokList = map[string]*core.PushEndorsement{}
+func (m *Manager) addPushNoteEndorsement(noteID string, pushEnd *core.PushEndorsement) {
+	pushEndList := m.pushEndorsements.Get(noteID)
+	if pushEndList == nil {
+		pushEndList = map[string]*core.PushEndorsement{}
 	}
-	pokList.(map[string]*core.PushEndorsement)[pok.ID().String()] = pok
-	m.pushEndorsements.Add(noteID, pokList)
+	pushEndList.(map[string]*core.PushEndorsement)[pushEnd.ID().String()] = pushEnd
+	m.pushEndorsements.Add(noteID, pushEndList)
 }
 
 // Start starts the server that serves the repos.

@@ -204,24 +204,24 @@ var _ = Describe("Manager", func() {
 		})
 	})
 
-	Describe(".cachePushOkSender", func() {
+	Describe(".cachePushEndSender", func() {
 		It("should add to cache", func() {
-			Expect(repoMgr.pushOKSenders.Len()).To(Equal(0))
-			repoMgr.cachePushOkSender("sender", "txID")
-			Expect(repoMgr.pushOKSenders.Len()).To(Equal(1))
+			Expect(repoMgr.pushEndSenders.Len()).To(Equal(0))
+			repoMgr.cachePushEndSender("sender", "txID")
+			Expect(repoMgr.pushEndSenders.Len()).To(Equal(1))
 		})
 	})
 
-	Describe(".isPushOKSender", func() {
+	Describe(".isPushEndSender", func() {
 		It("should return true if sender + txID is cached", func() {
-			repoMgr.cachePushOkSender("sender", "txID")
-			Expect(repoMgr.pushOKSenders.Len()).To(Equal(1))
-			isSender := repoMgr.isPushOKSender("sender", "txID")
+			repoMgr.cachePushEndSender("sender", "txID")
+			Expect(repoMgr.pushEndSenders.Len()).To(Equal(1))
+			isSender := repoMgr.isPushEndSender("sender", "txID")
 			Expect(isSender).To(BeTrue())
 		})
 
 		It("should return false if sender + txID is not cached", func() {
-			isSender := repoMgr.isPushOKSender("sender", "txID")
+			isSender := repoMgr.isPushEndSender("sender", "txID")
 			Expect(isSender).To(BeFalse())
 		})
 	})
@@ -229,29 +229,29 @@ var _ = Describe("Manager", func() {
 	Describe(".addPushNoteEndorsement", func() {
 		When("1 PushEndorsement for id=abc is added", func() {
 			BeforeEach(func() {
-				pushOK := &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
-				repoMgr.addPushNoteEndorsement("abc", pushOK)
+				pushEnd := &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				repoMgr.addPushNoteEndorsement("abc", pushEnd)
 			})
 
 			Specify("that id=abc has 1 PushEndorsement", func() {
 				Expect(repoMgr.pushEndorsements.Len()).To(Equal(1))
-				pushOKList := repoMgr.pushEndorsements.Get("abc")
-				Expect(pushOKList).To(HaveLen(1))
+				pushEndList := repoMgr.pushEndorsements.Get("abc")
+				Expect(pushEndList).To(HaveLen(1))
 			})
 		})
 
-		When("2 PushOKs for id=abc are added", func() {
+		When("2 PushEnds for id=abc are added", func() {
 			BeforeEach(func() {
-				pushOK := &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
-				pushOK2 := &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
-				repoMgr.addPushNoteEndorsement("abc", pushOK)
-				repoMgr.addPushNoteEndorsement("abc", pushOK2)
+				pushEnd := &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushEnd2 := &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				repoMgr.addPushNoteEndorsement("abc", pushEnd)
+				repoMgr.addPushNoteEndorsement("abc", pushEnd2)
 			})
 
 			Specify("that id=abc has 2 PushEndorsement", func() {
 				Expect(repoMgr.pushEndorsements.Len()).To(Equal(1))
-				pushOKList := repoMgr.pushEndorsements.Get("abc")
-				Expect(pushOKList).To(HaveLen(2))
+				pushEndList := repoMgr.pushEndorsements.Get("abc")
+				Expect(pushEndList).To(HaveLen(2))
 			})
 		})
 	})

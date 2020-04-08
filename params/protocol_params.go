@@ -85,7 +85,7 @@ var (
 	// RepoPrunerTickDur is the duration between each repo pruning operation
 	RepoPrunerTickDur = 10 * time.Second
 
-	// PushOKQuorumSize is the minimum number of PushOKs a push note requires
+	// PushEndQuorumSize is the minimum number of PushEnds a push note requires
 	// for approval
 	PushEndorseQuorumSize = 2
 

@@ -466,8 +466,8 @@ type Items interface {
 	Hash() util.Bytes32
 }
 
-// RepoPushOK represents a push endorsement
-type RepoPushOK interface {
+// RepoPushEndorsement represents a push endorsement
+type RepoPushEndorsement interface {
 	// ID returns the hash of the object
 	ID() util.Bytes32
 	// Bytes returns a serialized version of the object
@@ -513,7 +513,7 @@ type RepoManager interface {
 	// BroadcastMsg broadcast messages to peers
 	BroadcastMsg(ch byte, msg []byte)
 
-	// BroadcastPushObjects broadcasts repo push note and push OK
+	// BroadcastPushObjects broadcasts repo push note and push endorsement
 	BroadcastPushObjects(note RepoPushNote) error
 
 	// SetPGPPubKeyGetter sets the PGP public key query function

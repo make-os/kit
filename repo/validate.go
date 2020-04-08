@@ -480,35 +480,35 @@ func checkPushNote(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic)
 	return nil
 }
 
-// CheckPushOK performs sanity checks on the given PushEndorsement object
-func CheckPushOK(pushOK *core.PushEndorsement, index int) error {
+// CheckPushEnd performs sanity checks on the given PushEndorsement object
+func CheckPushEnd(pushEnd *core.PushEndorsement, index int) error {
 
 	// Push note id must be set
-	if pushOK.NoteID.IsEmpty() {
+	if pushEnd.NoteID.IsEmpty() {
 		return feI(index, "endorsements.pushNoteID", "push note id is required")
 	}
 
 	// Sender public key must be set
-	if pushOK.EndorserPubKey.IsEmpty() {
+	if pushEnd.EndorserPubKey.IsEmpty() {
 		return feI(index, "endorsements.senderPubKey", "sender public key is required")
 	}
 
 	return nil
 }
 
-// CheckPushOKConsistencyUsingHost performs consistency checks on the given PushEndorsement object
+// CheckPushEndConsistencyUsingHost performs consistency checks on the given PushEndorsement object
 // against the current state of the network.
-// EXPECT: Sanity check to have been performed using CheckPushOK
-func CheckPushOKConsistencyUsingHost(
+// EXPECT: Sanity check to have been performed using CheckPushEnd
+func CheckPushEndConsistencyUsingHost(
 	hosts tickettypes.SelectedTickets,
-	pushOK *core.PushEndorsement,
+	pushEnd *core.PushEndorsement,
 	logic core.Logic,
 	noSigCheck bool,
 	index int) error {
 
 	// Check if the sender is one of the top hosts.
 	// Ensure that the signers of the PushEndorsement are part of the hosts
-	signerSelectedTicket := hosts.Get(pushOK.EndorserPubKey)
+	signerSelectedTicket := hosts.Get(pushEnd.EndorserPubKey)
 	if signerSelectedTicket == nil {
 		return feI(index, "endorsements.senderPubKey",
 			"sender public key does not belong to an active host")
@@ -520,7 +520,7 @@ func CheckPushOKConsistencyUsingHost(
 		if err != nil {
 			return errors.Wrap(err, "failed to decode bls public key of endorser")
 		}
-		if err = blsPubKey.Verify(pushOK.Sig.Bytes(), pushOK.BytesNoSigAndSenderPubKey()); err != nil {
+		if err = blsPubKey.Verify(pushEnd.Sig.Bytes(), pushEnd.BytesNoSigAndSenderPubKey()); err != nil {
 			return feI(index, "endorsements.sig", "signature could not be verified")
 		}
 	}
@@ -528,23 +528,23 @@ func CheckPushOKConsistencyUsingHost(
 	return nil
 }
 
-// CheckPushOKConsistency performs consistency checks on the given PushEndorsement object
+// CheckPushEndConsistency performs consistency checks on the given PushEndorsement object
 // against the current state of the network.
-// EXPECT: Sanity check to have been performed using CheckPushOK
-func CheckPushOKConsistency(pushOK *core.PushEndorsement, logic core.Logic, noSigCheck bool, index int) error {
+// EXPECT: Sanity check to have been performed using CheckPushEnd
+func CheckPushEndConsistency(pushEnd *core.PushEndorsement, logic core.Logic, noSigCheck bool, index int) error {
 	hosts, err := logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
 	if err != nil {
 		return errors.Wrap(err, "failed to get top hosts")
 	}
-	return CheckPushOKConsistencyUsingHost(hosts, pushOK, logic, noSigCheck, index)
+	return CheckPushEndConsistencyUsingHost(hosts, pushEnd, logic, noSigCheck, index)
 }
 
-// checkPushOK performs sanity and state consistency checks on the given PushEndorsement object
-func checkPushOK(pushOK *core.PushEndorsement, logic core.Logic, index int) error {
-	if err := CheckPushOK(pushOK, index); err != nil {
+// checkPushEnd performs sanity and state consistency checks on the given PushEndorsement object
+func checkPushEnd(pushEnd *core.PushEndorsement, logic core.Logic, index int) error {
+	if err := CheckPushEnd(pushEnd, index); err != nil {
 		return err
 	}
-	if err := CheckPushOKConsistency(pushOK, logic, false, index); err != nil {
+	if err := CheckPushEndConsistency(pushEnd, logic, false, index); err != nil {
 		return err
 	}
 	return nil

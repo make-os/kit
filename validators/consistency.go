@@ -270,19 +270,19 @@ func CheckTxPushConsistency(tx *core.TxPush, index int, logic core.Logic) error 
 		return fmt.Errorf("repo not found")
 	}
 
-	var pokPubKeys []*bls.PublicKey
-	for index, pok := range tx.PushOKs {
+	var pushEndPubKeys []*bls.PublicKey
+	for index, pushEnd := range tx.PushEnds {
 
 		// Perform consistency checks but don't check the signature as we don't
 		// care about that when dealing with a TxPush object, instead we care
 		// about checking the aggregated BLS signature
-		if err := repo.CheckPushOKConsistencyUsingHost(hosts, pok,
+		if err := repo.CheckPushEndConsistencyUsingHost(hosts, pushEnd,
 			logic, true, index); err != nil {
 			return err
 		}
 
 		// Get the BLS public key of the PushEndorsement signer
-		signerTicket := hosts.Get(pok.EndorserPubKey)
+		signerTicket := hosts.Get(pushEnd.EndorserPubKey)
 		if signerTicket == nil {
 			return fmt.Errorf("push endorser not part of the top hosts")
 		}
@@ -290,10 +290,10 @@ func CheckTxPushConsistency(tx *core.TxPush, index int, logic core.Logic) error 
 		if err != nil {
 			return errors.Wrap(err, "failed to decode bls public key of endorser")
 		}
-		pokPubKeys = append(pokPubKeys, blsPubKey)
+		pushEndPubKeys = append(pushEndPubKeys, blsPubKey)
 
 		// Verify the endorsements
-		for i, endorsement := range pok.References {
+		for i, endorsement := range pushEnd.References {
 			ref := tx.PushNote.References[i]
 
 			// If reference doesnt exist in the repo state, we don't expect
@@ -314,8 +314,8 @@ func CheckTxPushConsistency(tx *core.TxPush, index int, logic core.Logic) error 
 
 	// Generate an aggregated public key and use it to check
 	// the endorsers aggregated signature
-	aggPubKey, _ := bls.AggregatePublicKeys(pokPubKeys)
-	err = aggPubKey.Verify(tx.AggPushOKsSig, tx.PushOKs[0].BytesNoSigAndSenderPubKey())
+	aggPubKey, _ := bls.AggregatePublicKeys(pushEndPubKeys)
+	err = aggPubKey.Verify(tx.AggPushEndsSig, tx.PushEnds[0].BytesNoSigAndSenderPubKey())
 	if err != nil {
 		return errors.Wrap(err, "could not verify aggregated endorsers' signature")
 	}
