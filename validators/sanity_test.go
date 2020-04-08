@@ -1235,15 +1235,15 @@ var _ = Describe("TxValidator", func() {
 			})
 
 			It("has low endorsement (not up to quorum)", func() {
-				params.PushOKQuorumSize = 1
+				params.PushEndorseQuorumSize = 1
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:endorsements, msg:not enough endorsements included"))
 			})
 
 			It("has a no push note id", func() {
-				params.PushOKQuorumSize = 1
-				tx.PushOKs = append(tx.PushOKs, &core.PushOK{})
+				params.PushEndorseQuorumSize = 1
+				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{})
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, _ := key.PrivKey().Sign(tx.Bytes())
 				tx.Sig = sig
@@ -1252,11 +1252,11 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("index:0, field:endorsements.pushNoteID, msg:push note id is required"))
 			})
 
-			It("has a PushOK with no sender public key", func() {
-				params.PushOKQuorumSize = 1
-				tx.PushOKs = append(tx.PushOKs, &core.PushOK{
-					PushNoteID:   util.StrToBytes32("id"),
-					SenderPubKey: util.EmptyBytes32,
+			It("has a PushEndorsement with no sender public key", func() {
+				params.PushEndorseQuorumSize = 1
+				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{
+					NoteID:         util.StrToBytes32("id"),
+					EndorserPubKey: util.EmptyBytes32,
 				})
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, _ := key.PrivKey().Sign(tx.Bytes())
@@ -1266,11 +1266,11 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("index:0, field:endorsements.senderPubKey, msg:sender public key is required"))
 			})
 
-			It("has a PushOK with a push note id that is different from the PushTx.PushNoteID", func() {
-				params.PushOKQuorumSize = 1
-				tx.PushOKs = append(tx.PushOKs, &core.PushOK{
-					PushNoteID:   util.StrToBytes32("id"),
-					SenderPubKey: key.PubKey().MustBytes32(),
+			It("has a PushEndorsement with a push note id that is different from the PushTx.PushNoteID", func() {
+				params.PushEndorseQuorumSize = 1
+				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{
+					NoteID:         util.StrToBytes32("id"),
+					EndorserPubKey: key.PubKey().MustBytes32(),
 				})
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				sig, _ := key.PrivKey().Sign(tx.Bytes())
@@ -1281,19 +1281,19 @@ var _ = Describe("TxValidator", func() {
 			})
 
 			It("has multiple PushOKs from same sender", func() {
-				params.PushOKQuorumSize = 1
+				params.PushEndorseQuorumSize = 1
 
-				pushOK1 := &core.PushOK{
-					PushNoteID:   tx.PushNote.ID(),
-					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+				pushOK1 := &core.PushEndorsement{
+					NoteID:         tx.PushNote.ID(),
+					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
 				}
 				sig, _ := key.PrivKey().Sign(pushOK1.Bytes())
 				pushOK1.Sig = util.BytesToBytes64(sig)
 				tx.PushOKs = append(tx.PushOKs, pushOK1)
 
-				pushOK2 := &core.PushOK{
-					PushNoteID:   tx.PushNote.ID(),
-					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+				pushOK2 := &core.PushEndorsement{
+					NoteID:         tx.PushNote.ID(),
+					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
 				}
 				sig, _ = key.PrivKey().Sign(pushOK2.Bytes())
 				pushOK2.Sig = util.BytesToBytes64(sig)
@@ -1308,24 +1308,24 @@ var _ = Describe("TxValidator", func() {
 			})
 
 			It("has PushOKs with different references hash set", func() {
-				params.PushOKQuorumSize = 1
+				params.PushEndorseQuorumSize = 1
 
-				pushOK1 := &core.PushOK{
-					PushNoteID:   tx.PushNote.ID(),
-					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-					ReferencesHash: []*core.ReferenceHash{
-						{Hash: util.BytesToBytes32(util.RandBytes(32))},
+				pushOK1 := &core.PushEndorsement{
+					NoteID:         tx.PushNote.ID(),
+					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+					References: []*core.EndorsedReference{
+						{Hash: util.RandBytes(20)},
 					},
 				}
 				sig, _ := key.PrivKey().Sign(pushOK1.Bytes())
 				pushOK1.Sig = util.BytesToBytes64(sig)
 				tx.PushOKs = append(tx.PushOKs, pushOK1)
 
-				pushOK2 := &core.PushOK{
-					PushNoteID:   tx.PushNote.ID(),
-					SenderPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
-					ReferencesHash: []*core.ReferenceHash{
-						{Hash: util.BytesToBytes32(util.RandBytes(32))},
+				pushOK2 := &core.PushEndorsement{
+					NoteID:         tx.PushNote.ID(),
+					EndorserPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
+					References: []*core.EndorsedReference{
+						{Hash: util.RandBytes(20)},
 					},
 				}
 				sig, _ = key2.PrivKey().Sign(pushOK2.Bytes())
@@ -1343,11 +1343,11 @@ var _ = Describe("TxValidator", func() {
 
 		When("no error", func() {
 			It("should return no error", func() {
-				params.PushOKQuorumSize = 1
+				params.PushEndorseQuorumSize = 1
 
-				pok := &core.PushOK{
-					PushNoteID:   tx.PushNote.ID(),
-					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+				pok := &core.PushEndorsement{
+					NoteID:         tx.PushNote.ID(),
+					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
 				}
 				sig, _ := key.PrivKey().Sign(pok.Bytes())
 				pok.Sig = util.BytesToBytes64(sig)

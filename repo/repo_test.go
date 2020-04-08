@@ -15,7 +15,6 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/pkgs/tree"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -306,58 +305,6 @@ var _ = Describe("Repo", func() {
 			It("should have 3 history hashes", func() {
 				Expect(history).To(HaveLen(3))
 			})
-		})
-	})
-
-	Describe(".UpdateTree", func() {
-		BeforeEach(func() {
-			tr, closer, err := getReferenceTree(repo.Path(), "refs/heads/master")
-			Expect(err).To(BeNil())
-			Expect(tr.Version()).To(Equal(int64(0)))
-			closer()
-		})
-
-		It("should update repo tree", func() {
-			hash, version, err := repo.UpdateTree("refs/heads/master", func(tr *tree.SafeTree) error {
-				tr.Set([]byte("key"), []byte("value"))
-				return nil
-			})
-			Expect(err).To(BeNil())
-			Expect(version).To(Equal(int64(1)))
-			Expect(hash).To(HaveLen(32))
-
-			tr, closer, err := getReferenceTree(repo.Path(), "refs/heads/master")
-			Expect(err).To(BeNil())
-			defer closer()
-			Expect(tr.Version()).To(Equal(int64(1)))
-		})
-	})
-
-	Describe(".getReferenceTree", func() {
-		It("should return error if unable to open db", func() {
-			_, _, err := getReferenceTree("unknown_path", "refs/heads/master")
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("failed to open state db"))
-		})
-
-		It("should return no error if successful", func() {
-			tree, _, err := getReferenceTree(cfg.GetRepoRoot(), "refs/heads/master")
-			Expect(err).To(BeNil())
-			Expect(tree.Hash()).To(Equal([]byte{}))
-		})
-	})
-
-	Describe(".deleteReferenceTree", func() {
-		It("should successfully delete a reference tree if present", func() {
-			_, _, err := getReferenceTree(cfg.GetRepoRoot(), "refs/heads/master")
-			Expect(err).To(BeNil())
-			fi, err := os.Stat(filepath.Join(cfg.GetRepoRoot(), makeReferenceTreeName("refs/heads/master")))
-			Expect(err).To(BeNil())
-			Expect(fi.IsDir()).To(BeTrue())
-			err = deleteReferenceTree(cfg.GetRepoRoot(), "refs/heads/master")
-			Expect(err).To(BeNil())
-			_, err = os.Stat(filepath.Join(cfg.GetRepoRoot(), makeReferenceTreeName("refs/heads/master")))
-			Expect(os.IsNotExist(err)).To(BeTrue())
 		})
 	})
 })

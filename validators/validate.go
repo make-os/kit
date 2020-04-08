@@ -2,14 +2,12 @@ package validators
 
 import (
 	"fmt"
-	"path/filepath"
 
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/repo"
 )
 
 var feI = util.FieldErrorWithIndex
@@ -101,9 +99,7 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 	case *core.TxUpDelPushKey:
 		return CheckTxUpDelPushKeyConsistency(o, index, logic)
 	case *core.TxPush:
-		return CheckTxPushConsistency(o, index, logic, func(name string) (core.BareRepo, error) {
-			return repo.GetRepo(filepath.Join(logic.Cfg().GetRepoRoot(), name))
-		})
+		return CheckTxPushConsistency(o, index, logic)
 	case *core.TxNamespaceAcquire:
 		return CheckTxNSAcquireConsistency(o, index, logic)
 	case *core.TxNamespaceDomainUpdate:

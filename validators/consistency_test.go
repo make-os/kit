@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	types4 "gitlab.com/makeos/mosdef/ticket/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 
@@ -201,7 +201,7 @@ var _ = Describe("TxValidator", func() {
 					bi := &core.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
 					mockTickMgr.EXPECT().GetNonDelegatedTickets(delegate.PubKey().MustBytes32(), tx.Type).
-						Return([]*types4.Ticket{}, nil)
+						Return([]*tickettypes.Ticket{}, nil)
 
 					err = validators.CheckTxTicketPurchaseConsistency(tx, -1, mockLogic)
 				})
@@ -296,7 +296,7 @@ var _ = Describe("TxValidator", func() {
 
 					bi := &core.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					ticket := &types4.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}
+					ticket := &tickettypes.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}
 					mockTickMgr.EXPECT().GetByHash(tx.TicketHash).Return(ticket)
 
 					err = validators.CheckTxUnbondTicketConsistency(tx, -1, mockLogic)
@@ -319,7 +319,7 @@ var _ = Describe("TxValidator", func() {
 
 					bi := &core.BlockInfo{Height: 1}
 					mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-					ticket := &types4.Ticket{
+					ticket := &tickettypes.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 						Delegator:      key.Addr().String(),
 					}
@@ -343,7 +343,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &core.BlockInfo{Height: 50}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-				ticket := &types4.Ticket{
+				ticket := &tickettypes.Ticket{
 					ProposerPubKey: key.PubKey().MustBytes32(),
 					DecayBy:        100,
 				}
@@ -366,7 +366,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &core.BlockInfo{Height: 101}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-				ticket := &types4.Ticket{
+				ticket := &tickettypes.Ticket{
 					ProposerPubKey: key.PubKey().MustBytes32(),
 					DecayBy:        100,
 				}
@@ -389,7 +389,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &core.BlockInfo{Height: 101}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
-				ticket := &types4.Ticket{
+				ticket := &tickettypes.Ticket{
 					ProposerPubKey: key.PubKey().MustBytes32(),
 					DecayBy:        0,
 				}
@@ -852,44 +852,12 @@ var _ = Describe("TxValidator", func() {
 
 	Describe(".CheckTxPushConsistency", func() {
 
-		When("repository does not exist or retrieval failed", func() {
-			BeforeEach(func() {
-				tx := core.NewBareTxPush()
-				tx.PushOKs = append(tx.PushOKs, &core.PushOK{
-					PushNoteID:   util.StrToBytes32("pn1"),
-					SenderPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
-				})
-
-				repoGetter := func(name string) (core.BareRepo, error) {
-					return nil, fmt.Errorf("error")
-				}
-
-				err = validators.CheckTxPushConsistency(tx, -1, mockLogic, repoGetter)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to get repo: error"))
-			})
-		})
-
 		When("unable to get top hosts", func() {
 			BeforeEach(func() {
 				params.NumTopHostsLimit = 10
-
 				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(nil, fmt.Errorf("error"))
-
 				tx := core.NewBareTxPush()
-				tx.PushOKs = append(tx.PushOKs, &core.PushOK{
-					PushNoteID:   util.StrToBytes32("pn1"),
-					SenderPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
-				})
-
-				repoGetter := func(name string) (core.BareRepo, error) {
-					return nil, nil
-				}
-
-				err = validators.CheckTxPushConsistency(tx, -1, mockLogic, repoGetter)
+				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -898,28 +866,40 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("a PushOK signer is not among the top hosts", func() {
+		When("repository does not exist", func() {
+			BeforeEach(func() {
+				tx := core.NewBareTxPush()
+				tx.PushNote.RepoName = "repo1"
+				hosts := []*tickettypes.SelectedTicket{{Ticket: &tickettypes.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}}}
+				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(hosts, nil)
+				mockRepoKeeper.EXPECT().Get(tx.PushNote.RepoName).Return(state.BareRepository())
+				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("repo not found"))
+			})
+		})
+
+		When("an endorsement signer is not among the top hosts", func() {
 			BeforeEach(func() {
 				params.NumTopHostsLimit = 10
-				hosts := []*types4.SelectedTicket{
-					{Ticket: &types4.Ticket{
-						ProposerPubKey: key.PubKey().MustBytes32(),
-					}},
-				}
-
+				hosts := []*tickettypes.SelectedTicket{{Ticket: &tickettypes.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}}}
 				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(hosts, nil)
 
 				tx := core.NewBareTxPush()
-				tx.PushOKs = append(tx.PushOKs, &core.PushOK{
-					PushNoteID:   util.StrToBytes32("pn1"),
-					SenderPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
+				tx.PushNote.RepoName = "repo1"
+				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{
+					NoteID:         util.StrToBytes32("pn1"),
+					EndorserPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
 				})
 
-				repoGetter := func(name string) (core.BareRepo, error) {
-					return nil, nil
-				}
+				repo := state.BareRepository()
+				repo.References["refs/heads/master"] = &state.Reference{}
+				mockRepoKeeper.EXPECT().Get(tx.PushNote.RepoName).Return(repo)
 
-				err = validators.CheckTxPushConsistency(tx, -1, mockLogic, repoGetter)
+				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -928,35 +908,32 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("a PushOK has invalid BLS public key", func() {
+		When("an endorsement has invalid BLS public key", func() {
 			BeforeEach(func() {
 				params.NumTopHostsLimit = 10
-				hosts := []*types4.SelectedTicket{
-					{Ticket: &types4.Ticket{
+
+				hosts := []*tickettypes.SelectedTicket{
+					{Ticket: &tickettypes.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 						BLSPubKey:      []byte("invalid"),
 					}},
 				}
-
 				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(hosts, nil)
 
 				tx := core.NewBareTxPush()
-				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{
-					Name: "refs/heads/master",
-				})
-				tx.PushOKs = append(tx.PushOKs, &core.PushOK{
-					PushNoteID:   util.StrToBytes32("pn1"),
-					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-					ReferencesHash: []*core.ReferenceHash{
-						{Hash: util.BytesToBytes32(util.RandBytes(32))},
-					},
+				tx.PushNote.RepoName = "repo1"
+				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{Name: "refs/heads/master"})
+				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{
+					NoteID:         util.StrToBytes32("pn1"),
+					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+					References:     []*core.EndorsedReference{{Hash: util.RandBytes(20)}},
 				})
 
-				repoGetter := func(name string) (core.BareRepo, error) {
-					return mocks.NewMockBareRepo(ctrl), nil
-				}
+				repo := state.BareRepository()
+				repo.References["refs/heads/master"] = &state.Reference{}
+				mockRepoKeeper.EXPECT().Get(tx.PushNote.RepoName).Return(repo)
 
-				err = validators.CheckTxPushConsistency(tx, -1, mockLogic, repoGetter)
+				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -965,120 +942,67 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("unable to get reference tree", func() {
+		When("an endorsement hash is different from the current reference hash on the repository state", func() {
 			BeforeEach(func() {
 				params.NumTopHostsLimit = 10
-				hosts := []*types4.SelectedTicket{
-					{Ticket: &types4.Ticket{
+
+				hosts := []*tickettypes.SelectedTicket{
+					{Ticket: &tickettypes.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 						BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
 					}},
 				}
-
 				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(hosts, nil)
 
 				tx := core.NewBareTxPush()
-				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{
-					Name: "refs/heads/master",
+				tx.PushNote.RepoName = "repo1"
+				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{Name: "refs/heads/master"})
+				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{
+					NoteID:         util.StrToBytes32("pn1"),
+					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+					References:     []*core.EndorsedReference{{Hash: util.RandBytes(20)}},
 				})
 
-				pok := &core.PushOK{
-					PushNoteID:   util.StrToBytes32("pn1"),
-					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-					ReferencesHash: []*core.ReferenceHash{
-						{Hash: util.BytesToBytes32(util.RandBytes(32))},
-					},
-				}
-				blsSig, _ := key.PrivKey().BLSKey().Sign(pok.BytesNoSig())
-				pok.Sig = util.BytesToBytes64(blsSig)
-				tx.PushOKs = append(tx.PushOKs, pok)
+				repo := state.BareRepository()
+				repo.References["refs/heads/master"] = &state.Reference{Hash: util.RandBytes(20)}
+				mockRepoKeeper.EXPECT().Get(tx.PushNote.RepoName).Return(repo)
 
-				mockBareRepo := mocks.NewMockBareRepo(ctrl)
-				mockBareRepo.EXPECT().TreeRoot("refs/heads/master").Return(util.EmptyBytes32, fmt.Errorf("error"))
-				repoGetter := func(name string) (core.BareRepo, error) {
-					return mockBareRepo, nil
-				}
-
-				err = validators.CheckTxPushConsistency(tx, -1, mockLogic, repoGetter)
+				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to get reference (refs/heads/master) tree root hash: error"))
+				Expect(err.Error()).To(ContainSubstring("not the expected hash"))
 			})
 		})
 
-		When("a PushOK reference has a hash that does not match the local reference hash", func() {
+		When("an endorsement's aggregated push signature is unset", func() {
 			BeforeEach(func() {
 				params.NumTopHostsLimit = 10
-				hosts := []*types4.SelectedTicket{
-					{Ticket: &types4.Ticket{
+
+				hosts := []*tickettypes.SelectedTicket{
+					{Ticket: &tickettypes.Ticket{
 						ProposerPubKey: key.PubKey().MustBytes32(),
 						BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
 					}},
 				}
-
 				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(hosts, nil)
 
+				refHash := util.RandBytes(20)
 				tx := core.NewBareTxPush()
-				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{
-					Name: "refs/heads/master",
+				tx.PushNote.RepoName = "repo1"
+				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{Name: "refs/heads/master"})
+				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{
+					NoteID:         util.StrToBytes32("pn1"),
+					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+					References:     []*core.EndorsedReference{{Hash: refHash}},
 				})
 
-				pok := &core.PushOK{
-					PushNoteID:   util.StrToBytes32("pn1"),
-					SenderPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-					ReferencesHash: []*core.ReferenceHash{
-						{Hash: util.BytesToBytes32(util.RandBytes(32))},
-					},
-				}
-				blsSig, _ := key.PrivKey().BLSKey().Sign(pok.BytesNoSig())
-				pok.Sig = util.BytesToBytes64(blsSig)
-				tx.PushOKs = append(tx.PushOKs, pok)
+				repo := state.BareRepository()
+				repo.References["refs/heads/master"] = &state.Reference{Hash: refHash}
+				mockRepoKeeper.EXPECT().Get(tx.PushNote.RepoName).Return(repo)
 
-				mockBareRepo := mocks.NewMockBareRepo(ctrl)
-				mockBareRepo.EXPECT().TreeRoot("refs/heads/master").Return(util.BytesToBytes32(util.RandBytes(32)), nil)
-				repoGetter := func(name string) (core.BareRepo, error) {
-					return mockBareRepo, nil
-				}
-
-				err = validators.CheckTxPushConsistency(tx, -1, mockLogic, repoGetter)
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:endorsements.refsHash, msg:wrong tree hash for reference (refs/heads/master)"))
-			})
-		})
-
-		When("aggregated signature is invalid", func() {
-			BeforeEach(func() {
-				params.NumTopHostsLimit = 10
-				hosts := []*types4.SelectedTicket{
-					{Ticket: &types4.Ticket{
-						ProposerPubKey: key.PubKey().MustBytes32(),
-						BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
-					}},
-				}
-
-				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(hosts, nil)
-
-				tx := core.NewBareTxPush()
-
-				pok := &core.PushOK{
-					PushNoteID:     util.StrToBytes32("pn1"),
-					SenderPubKey:   util.BytesToBytes32(key.PubKey().MustBytes()),
-					ReferencesHash: []*core.ReferenceHash{},
-				}
-				pok.Sig = util.BytesToBytes64(util.RandBytes(64))
-				tx.PushOKs = append(tx.PushOKs, pok)
-
-				mockBareRepo := mocks.NewMockBareRepo(ctrl)
-				repoGetter := func(name string) (core.BareRepo, error) {
-					return mockBareRepo, nil
-				}
-
-				err = validators.CheckTxPushConsistency(tx, -1, mockLogic, repoGetter)
+				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
 			})
 
 			It("should return err", func() {
@@ -1087,6 +1011,41 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
+		When("an endorsement's aggregated push signature is invalid", func() {
+			BeforeEach(func() {
+				params.NumTopHostsLimit = 10
+
+				hosts := []*tickettypes.SelectedTicket{
+					{Ticket: &tickettypes.Ticket{
+						ProposerPubKey: key.PubKey().MustBytes32(),
+						BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
+					}},
+				}
+				mockTickMgr.EXPECT().GetTopHosts(params.NumTopHostsLimit).Return(hosts, nil)
+
+				refHash := util.RandBytes(20)
+				tx := core.NewBareTxPush()
+				tx.AggPushOKsSig = util.RandBytes(128)
+				tx.PushNote.RepoName = "repo1"
+				tx.PushNote.References = append(tx.PushNote.References, &core.PushedReference{Name: "refs/heads/master"})
+				tx.PushOKs = append(tx.PushOKs, &core.PushEndorsement{
+					NoteID:         util.StrToBytes32("pn1"),
+					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+					References:     []*core.EndorsedReference{{Hash: refHash}},
+				})
+
+				repo := state.BareRepository()
+				repo.References["refs/heads/master"] = &state.Reference{Hash: refHash}
+				mockRepoKeeper.EXPECT().Get(tx.PushNote.RepoName).Return(repo)
+
+				err = validators.CheckTxPushConsistency(tx, -1, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(ContainSubstring("could not verify aggregated endorsers' signature"))
+			})
+		})
 	})
 
 	Describe(".CheckTxVoteConsistency", func() {

@@ -184,14 +184,13 @@ func (m *Manager) broadcastPushedObjects(pn *core.PushNote) (err error) {
 
 	// Broadcast the push note and an endorse if this note is a host
 	if err = m.BroadcastPushObjects(pn); err != nil {
-		err = errors.Wrap(err, "failed to broadcast push note and endorsement")
-		m.log.Error(err.Error())
+		m.log.Error("Failed to broadcast push note", "Err", err)
 	}
 
 	return
 }
 
-// onPushOK is the handler for incoming PushOK messages
+// onPushOK is the handler for incoming PushEndorsement messages
 func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
 
 	// Return if in validator mode.
@@ -199,13 +198,13 @@ func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
 		return nil
 	}
 
-	// Attempt to decode message to PushOK object
-	var pok core.PushOK
+	// Attempt to decode message to PushEndorsement object
+	var pok core.PushEndorsement
 	if err := util.ToObject(msgBytes, &pok); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
 
-	// Validate the PushOK object
+	// Validate the PushEndorsement object
 	pokID := pok.ID().String()
 	if err := checkPushOK(&pok, m.logic, -1); err != nil {
 		m.log.Debug("Received an invalid push endorsement", "ID", pokID, "Err", err)
@@ -214,24 +213,24 @@ func (m *Manager) onPushOK(peer p2p.Peer, msgBytes []byte) error {
 
 	m.log.Debug("Received a valid push endorsement", "PeerID", peer.ID(), "ID", pokID)
 
-	// Cache the sender so we don't broadcast same PushOK to it later
+	// Cache the sender so we don't broadcast same PushEndorsement to it later
 	m.cachePushOkSender(string(peer.ID()), pokID)
 
-	// cache the PushOK object as an endorsement of the PushNote
-	m.addPushNoteEndorsement(pok.PushNoteID.HexStr(), &pok)
+	// cache the PushEndorsement object as an endorsement of the PushNote
+	m.addPushNoteEndorsement(pok.NoteID.HexStr(), &pok)
 
 	// Attempt to create an send a PushTx to the transaction pool
-	if err := m.MaybeCreatePushTx(pok.PushNoteID.HexStr()); err != nil {
+	if err := m.MaybeCreatePushTx(pok.NoteID.HexStr()); err != nil {
 		m.Log().Debug(err.Error())
 	}
 
-	// Broadcast the PushOK to peers
+	// Broadcast the PushEndorsement to peers
 	m.broadcastPushOK(&pok)
 
 	return nil
 }
 
-// BroadcastPushObjects broadcasts repo push notes and PushOK; PushOK is only
+// BroadcastPushObjects broadcasts repo push notes and PushEndorsement; PushEndorsement is only
 // created and broadcast only if the node is a top host.
 func (m *Manager) BroadcastPushObjects(note core.RepoPushNote) error {
 
@@ -249,49 +248,53 @@ func (m *Manager) BroadcastPushObjects(note core.RepoPushNote) error {
 		return nil
 	}
 
-	// At this point, the node is a top host, so we create, sign and broadcast a PushOK
-	pok, err := m.createPushOK(note)
+	// At this point, the node is a top host, so we create, sign and broadcast a PushEndorsement
+	pok, err := m.createEndorsement(note)
 	if err != nil {
 		return err
 	}
 	m.broadcastPushOK(pok)
 
-	// Cache the PushOK object as an endorsement of the PushNote so can use it
-	// to create a PushTx when enough PushOKs are discovered.
+	// Cache the PushEndorsement object as an endorsement of the PushNote so can use it
+	// to create a PushTx when enough push endorsements are discovered.
 	m.addPushNoteEndorsement(note.ID().String(), pok)
 
 	// Attempt to create a PushTx and send to the transaction pool
-	if err = m.MaybeCreatePushTx(pok.PushNoteID.HexStr()); err != nil {
+	if err = m.MaybeCreatePushTx(pok.NoteID.HexStr()); err != nil {
 		m.Log().Debug(err.Error())
 	}
 
 	return nil
 }
 
-// createPushOK creates a PushOK for a push note
-func (m *Manager) createPushOK(note core.RepoPushNote) (*core.PushOK, error) {
+// createEndorsement creates a PushEndorsement for a push note
+func (m *Manager) createEndorsement(note core.RepoPushNote) (*core.PushEndorsement, error) {
 
-	pok := &core.PushOK{}
-	pok.PushNoteID = note.ID()
-	pok.SenderPubKey = util.BytesToBytes32(m.privValidatorKey.PubKey().MustBytes())
+	pe := &core.PushEndorsement{}
+	pe.NoteID = note.ID()
+	pe.EndorserPubKey = util.BytesToBytes32(m.privValidatorKey.PubKey().MustBytes())
 
-	// Set the state hash for every reference
-	var err error
+	// Set the hash of the endorsement equal the local hash of the reference
 	for _, pushedRef := range note.GetPushedReferences() {
-		refHash := &core.ReferenceHash{}
-		refHash.Hash, err = note.GetTargetRepo().TreeRoot(pushedRef.Name)
-		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("failed to get reference (%s) state hash",
-				pushedRef.Name))
+		endorsement := &core.EndorsedReference{}
+
+		// Get the current reference hash
+		refHash, err := note.GetTargetRepo().RefGet(pushedRef.Name)
+		if err != nil && err.Error() != "ref not found" {
+			return nil, errors.Wrap(err, fmt.Sprintf("failed to get hash of reference (%s)", pushedRef.Name))
 		}
-		pok.ReferencesHash = append(pok.ReferencesHash, refHash)
+		if err == nil {
+			endorsement.Hash = util.MustFromHex(refHash)
+		}
+
+		pe.References = append(pe.References, endorsement)
 	}
 
 	// Sign the endorsement using our BLS key
-	blsSig, _ := m.privValidatorKey.PrivKey().BLSKey().Sign(pok.BytesNoSigAndSenderPubKey())
-	pok.Sig = util.BytesToBytes64(blsSig)
+	sig, _ := m.privValidatorKey.PrivKey().BLSKey().Sign(pe.BytesNoSigAndSenderPubKey())
+	pe.Sig = util.BytesToBytes64(sig)
 
-	return pok, nil
+	return pe, nil
 }
 
 // broadcastPushNote broadcast push transaction to peers.
@@ -308,7 +311,7 @@ func (m *Manager) broadcastPushNote(pushNote core.RepoPushNote) {
 	}
 }
 
-// broadcastPushOK sends out push endorsements (PushOK) to peers
+// broadcastPushOK sends out push endorsements (PushEndorsement) to peers
 func (m *Manager) broadcastPushOK(pushOk core.RepoPushOK) {
 	for _, peer := range m.Switch.Peers().List() {
 		bz, id := pushOk.BytesAndID()
@@ -338,66 +341,77 @@ func (m *Manager) GetChannels() []*p2p.ChannelDescriptor {
 
 // MaybeCreatePushTx attempts to create a PushTx from a given push note, only if
 // a push note matching the given id exist in the push pool and the push note
-// has received a quorum PushOK.
-func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
+// has received a quorum PushEndorsement.
+func (m *Manager) MaybeCreatePushTx(noteID string) error {
 
-	// Get the list of PushOKs received for the push note
-	notePushOKs := m.pushNoteEndorsements.Get(pushNoteID)
-	if notePushOKs == nil {
+	// Get the list of push endorsements received for the push note
+	endorsements := m.pushEndorsements.Get(noteID)
+	if endorsements == nil {
 		return fmt.Errorf("no endorsements yet")
 	}
 
-	// Ensure there are enough PushOKs
-	pushOKIdx := notePushOKs.(map[string]*core.PushOK)
-	if len(pushOKIdx) < params.PushOKQuorumSize {
+	// Ensure there are enough push endorsements
+	endorsementIdx := endorsements.(map[string]*core.PushEndorsement)
+	if len(endorsementIdx) < params.PushEndorseQuorumSize {
 		return fmt.Errorf("not enough push endorsements to satisfy quorum size")
 	}
 
 	// Get the push note from the push pool
-	note := m.GetPushPool().Get(pushNoteID)
+	note := m.GetPushPool().Get(noteID)
 	if note == nil {
 		return fmt.Errorf("push note not found in pool")
 	}
 
+	// Get the top hosts
 	hosts, err := m.logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
 	if err != nil {
 		return errors.Wrap(err, "failed to get top hosts")
 	}
 
-	// Collect the BLS public keys of all PushOK senders.
+	// Collect the BLS public keys of all PushEndorsement senders.
 	// We need them for the construction of BLS aggregated signature.
-	pushOKs := funk.Values(pushOKIdx).([]*core.PushOK)
-	var pokPubKeys []*bls.PublicKey
-	var pokSigs [][]byte
-	for i, pok := range pushOKs {
-		selTicket := hosts.Get(pok.SenderPubKey)
+	noteEndorsements := funk.Values(endorsementIdx).([]*core.PushEndorsement)
+	var endorsementsPubKey []*bls.PublicKey
+	var endorsementsSig [][]byte
+	for i, ed := range noteEndorsements {
+
+		// Get the selected ticket of the endorsers
+		selTicket := hosts.Get(ed.EndorserPubKey)
 		if selTicket == nil {
 			return fmt.Errorf("endorsement[%d]: ticket not found in top hosts list", i)
 		}
 
+		// Get their BLS public key from the ticket
 		pk, err := bls.BytesToPublicKey(selTicket.Ticket.BLSPubKey)
 		if err != nil {
 			return errors.Wrapf(err, "endorsement[%d]: bls public key is invalid", i)
 		}
 
-		pokPubKeys = append(pokPubKeys, pk)
-		pokSigs = append(pokSigs, pok.Sig.Bytes())
-		pushOKs[i] = pok.Clone()
-		pushOKs[i].Sig = util.EmptyBytes64
+		// Collect the public key and signature for later generation of aggregated signature
+		endorsementsPubKey = append(endorsementsPubKey, pk)
+		endorsementsSig = append(endorsementsSig, ed.Sig.Bytes())
+
+		// Clone the endorsement and replace endorsement at i.
+		// Also clear the signature as it will no longer be useful
+		noteEndorsements[i] = ed.Clone()
+		noteEndorsements[i].Sig = util.EmptyBytes64
 	}
 
+	// Create a new push transaction
 	pushTx := core.NewBareTxPush()
-	pushTx.PushNote = note
-	pushTx.PushOKs = pushOKs
 
-	// Generate aggregated BLS signature
-	aggSig, err := bls.AggregateSignatures(pokPubKeys, pokSigs)
+	// Set push note and endorsements
+	pushTx.PushNote = note
+	pushTx.PushOKs = noteEndorsements
+
+	// Generate and set aggregated BLS signature
+	aggSig, err := bls.AggregateSignatures(endorsementsPubKey, endorsementsSig)
 	if err != nil {
 		return errors.Wrap(err, "unable to create aggregated signature")
 	}
 	pushTx.AggPushOKsSig = aggSig
 
-	// Register push to mempool
+	// Register push transaction to mempool
 	if err := m.GetMempool().Add(pushTx); err != nil {
 		return errors.Wrap(err, "failed to add push tx to mempool")
 	}
@@ -407,9 +421,8 @@ func (m *Manager) MaybeCreatePushTx(pushNoteID string) error {
 	return nil
 }
 
-// mergeTxPush takes a push transaction and attempts to merge it into the
-// target repository
-func (m *Manager) mergeTxPush(tx *core.TxPush) error {
+// updateWithPushTx updates a repository using a push transaction
+func (m *Manager) updateWithPushTx(tx *core.TxPush) error {
 
 	repoPath := m.getRepoPath(tx.PushNote.GetRepoName())
 
@@ -456,36 +469,22 @@ func (m *Manager) mergeTxPush(tx *core.TxPush) error {
 		return fmt.Errorf("git exec failed")
 	}
 
-	m.Log().Debug("Committed pushed tx to repository permanently",
-		"Repo", tx.PushNote.RepoName)
+	m.Log().Debug("Updated repo with push transaction",
+		"Repo", tx.PushNote.RepoName, "TxID", tx.GetID())
 
 	return nil
 }
 
-// UpdateRepoWithTxPush attempts to merge a push transaction to a repository and
-// also update the repository's state tree.
+// UpdateRepoWithTxPush attempts to update a repository using a push transaction
 func (m *Manager) UpdateRepoWithTxPush(tx *core.TxPush) error {
 
-	// Merge the push transaction to the repo only if the node is not in
-	// validator mode.
-	if !m.cfg.IsValidatorNode() {
-		if err := m.mergeTxPush(tx); err != nil {
-			m.Log().Error("failed to process push transaction", "Err", err)
-			return nil
-		}
+	if m.cfg.IsValidatorNode() {
+		return nil
 	}
 
-	// Update the repository's reference tree(s)
-	pn := tx.PushNote
-	refHashes, err := updateReferencesTree(pn.References, m.getRepoPath(pn.RepoName))
-	if err != nil {
-		m.Log().Error("Error updating repo tree", "RepoName", pn.RepoName, "Err", err)
+	if err := m.updateWithPushTx(tx); err != nil {
+		m.Log().Error("failed to process push transaction", "Err", err)
 		return err
-	}
-
-	for ref, hash := range refHashes {
-		m.Log().Info("Reference state updated", "RepoName", pn.RepoName,
-			"Ref", ref, "StateHash", hash)
 	}
 
 	return nil
@@ -496,8 +495,7 @@ func (m *Manager) ExecTxPush(tx *core.TxPush) error {
 	return execTxPush(m, tx)
 }
 
-// execTxPush executes a push transaction coming from a block that is currently
-// being processed.
+// execTxPush executes a push transaction
 func execTxPush(m core.RepoManager, tx *core.TxPush) error {
 
 	repoName := tx.PushNote.RepoName
@@ -506,27 +504,21 @@ func execTxPush(m core.RepoManager, tx *core.TxPush) error {
 		return errors.Wrap(err, "unable to find repo locally")
 	}
 
-	defer m.GetPruner().Schedule(repoName)
-
-	// Do not download pushed objects in validator mode
-	cfg := m.Cfg()
-	if cfg.IsValidatorNode() {
+	// As a validator, move straight to updating the state of the references
+	if m.Cfg().IsValidatorNode() {
 		goto update
 	}
 
-	// Download pushed objects
 	for _, objHash := range tx.PushNote.GetPushedObjects() {
 		if repo.ObjectExist(objHash) {
 			continue
 		}
 
-		// Fetch from the dht
+		// Fetch the object from the dht
 		dhtKey := MakeRepoObjectDHTKey(repoName, objHash)
 		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
-		objValue, err := m.GetDHT().GetObject(ctx, &types.DHTObjectQuery{
-			Module:    core.RepoObjectModule,
-			ObjectKey: []byte(dhtKey),
-		})
+		query := &types.DHTObjectQuery{Module: core.RepoObjectModule, ObjectKey: []byte(dhtKey)}
+		objValue, err := m.GetDHT().GetObject(ctx, query)
 		if err != nil {
 			cn()
 			msg := fmt.Sprintf("failed to fetch object '%s'", objHash)
@@ -547,27 +539,21 @@ func execTxPush(m core.RepoManager, tx *core.TxPush) error {
 			continue
 		}
 
-		m.Log().Debug("Fetched object for repo", "ObjHash", objHash,
-			"RepoName", repoName)
+		m.Log().Debug("Fetched object for repo", "ObjHash", objHash, "RepoName", repoName)
 	}
 
 update:
-	// Attempt to merge the push transaction to the target repo
+
+	// Attempt to update the local repository using the push transaction
 	if err = m.UpdateRepoWithTxPush(tx); err != nil {
 		return err
 	}
 
-	// For any pushed reference that has a delete option, remove the
-	// reference from the repo and also its tree.
+	// If delete request and we are not a validator, delete the reference from the local repo.
 	for _, ref := range tx.PushNote.GetPushedReferences() {
-		if isZeroHash(ref.NewHash) {
-			if !cfg.IsValidatorNode() {
-				if err = repo.RefDelete(ref.Name); err != nil {
-					return errors.Wrapf(err, "failed to delete reference (%s)", ref.Name)
-				}
-			}
-			if err := deleteReferenceTree(repo.Path(), ref.Name); err != nil {
-				return errors.Wrapf(err, "failed to delete reference (%s) tree", ref.Name)
+		if isZeroHash(ref.NewHash) && !m.Cfg().IsValidatorNode() {
+			if err = repo.RefDelete(ref.Name); err != nil {
+				return errors.Wrapf(err, "failed to delete reference (%s)", ref.Name)
 			}
 		}
 	}

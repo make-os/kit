@@ -300,34 +300,6 @@ func (mr *MockBareRepoMockRecorder) WrappedCommitObject(h interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WrappedCommitObject", reflect.TypeOf((*MockBareRepo)(nil).WrappedCommitObject), h)
 }
 
-// MergeBranch mocks base method
-func (m *MockBareRepo) MergeBranch(base, target, targetRepoDir string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MergeBranch", base, target, targetRepoDir)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// MergeBranch indicates an expected call of MergeBranch
-func (mr *MockBareRepoMockRecorder) MergeBranch(base, target, targetRepoDir interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MergeBranch", reflect.TypeOf((*MockBareRepo)(nil).MergeBranch), base, target, targetRepoDir)
-}
-
-// TryMergeBranch mocks base method
-func (m *MockBareRepo) TryMergeBranch(base, target, targetRepoDir string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TryMergeBranch", base, target, targetRepoDir)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// TryMergeBranch indicates an expected call of TryMergeBranch
-func (mr *MockBareRepoMockRecorder) TryMergeBranch(base, target, targetRepoDir interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TryMergeBranch", reflect.TypeOf((*MockBareRepo)(nil).TryMergeBranch), base, target, targetRepoDir)
-}
-
 // BlobObject mocks base method
 func (m *MockBareRepo) BlobObject(h plumbing.Hash) (*object.Blob, error) {
 	m.ctrl.T.Helper()
@@ -975,7 +947,7 @@ func (mr *MockRepoGetterMockRecorder) GetRepo(name interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockRepoGetter)(nil).GetRepo), name)
 }
 
-// MockTxPushMerger is a mock of TxPushMerger interface
+// MockTxPushMerger is a mock of RepoUpdater interface
 type MockTxPushMerger struct {
 	ctrl     *gomock.Controller
 	recorder *MockTxPushMergerMockRecorder
@@ -1010,67 +982,6 @@ func (m *MockTxPushMerger) UpdateRepoWithTxPush(tx *core.TxPush) error {
 func (mr *MockTxPushMergerMockRecorder) UpdateRepoWithTxPush(tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRepoWithTxPush", reflect.TypeOf((*MockTxPushMerger)(nil).UpdateRepoWithTxPush), tx)
-}
-
-// MockUnfinalizedObjectCache is a mock of UnfinalizedObjectCache interface
-type MockUnfinalizedObjectCache struct {
-	ctrl     *gomock.Controller
-	recorder *MockUnfinalizedObjectCacheMockRecorder
-}
-
-// MockUnfinalizedObjectCacheMockRecorder is the mock recorder for MockUnfinalizedObjectCache
-type MockUnfinalizedObjectCacheMockRecorder struct {
-	mock *MockUnfinalizedObjectCache
-}
-
-// NewMockUnfinalizedObjectCache creates a new mock instance
-func NewMockUnfinalizedObjectCache(ctrl *gomock.Controller) *MockUnfinalizedObjectCache {
-	mock := &MockUnfinalizedObjectCache{ctrl: ctrl}
-	mock.recorder = &MockUnfinalizedObjectCacheMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockUnfinalizedObjectCache) EXPECT() *MockUnfinalizedObjectCacheMockRecorder {
-	return m.recorder
-}
-
-// AddUnfinalizedObject mocks base method
-func (m *MockUnfinalizedObjectCache) AddUnfinalizedObject(repo, objHash string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "AddUnfinalizedObject", repo, objHash)
-}
-
-// AddUnfinalizedObject indicates an expected call of AddUnfinalizedObject
-func (mr *MockUnfinalizedObjectCacheMockRecorder) AddUnfinalizedObject(repo, objHash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUnfinalizedObject", reflect.TypeOf((*MockUnfinalizedObjectCache)(nil).AddUnfinalizedObject), repo, objHash)
-}
-
-// RemoveUnfinalizedObject mocks base method
-func (m *MockUnfinalizedObjectCache) RemoveUnfinalizedObject(repo, objHash string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "RemoveUnfinalizedObject", repo, objHash)
-}
-
-// RemoveUnfinalizedObject indicates an expected call of RemoveUnfinalizedObject
-func (mr *MockUnfinalizedObjectCacheMockRecorder) RemoveUnfinalizedObject(repo, objHash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveUnfinalizedObject", reflect.TypeOf((*MockUnfinalizedObjectCache)(nil).RemoveUnfinalizedObject), repo, objHash)
-}
-
-// IsUnfinalizedObject mocks base method
-func (m *MockUnfinalizedObjectCache) IsUnfinalizedObject(repo, objHash string) bool {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsUnfinalizedObject", repo, objHash)
-	ret0, _ := ret[0].(bool)
-	return ret0
-}
-
-// IsUnfinalizedObject indicates an expected call of IsUnfinalizedObject
-func (mr *MockUnfinalizedObjectCacheMockRecorder) IsUnfinalizedObject(repo, objHash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUnfinalizedObject", reflect.TypeOf((*MockUnfinalizedObjectCache)(nil).IsUnfinalizedObject), repo, objHash)
 }
 
 // MockPushPool is a mock of PushPool interface

@@ -1,6 +1,7 @@
 package validators
 
 import (
+	"bytes"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -257,20 +258,16 @@ func CheckTxUpDelPushKeyConsistency(
 
 // CheckTxPushConsistency performs consistency checks on TxPush.
 // EXPECTS: sanity check using CheckTxPush to have been performed.
-func CheckTxPushConsistency(
-	tx *core.TxPush,
-	index int,
-	logic core.Logic,
-	repoGetter func(name string) (core.BareRepo, error)) error {
-
-	localRepo, err := repoGetter(tx.PushNote.GetRepoName())
-	if err != nil {
-		return errors.Wrap(err, "failed to get repo")
-	}
+func CheckTxPushConsistency(tx *core.TxPush, index int, logic core.Logic) error {
 
 	hosts, err := logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
 	if err != nil {
 		return errors.Wrap(err, "failed to get top hosts")
+	}
+
+	repoState := logic.RepoKeeper().Get(tx.PushNote.GetRepoName())
+	if repoState.IsNil() {
+		return fmt.Errorf("repo not found")
 	}
 
 	var pokPubKeys []*bls.PublicKey
@@ -284,8 +281,8 @@ func CheckTxPushConsistency(
 			return err
 		}
 
-		// Get the BLS public key of the PushOK signer
-		signerTicket := hosts.Get(pok.SenderPubKey)
+		// Get the BLS public key of the PushEndorsement signer
+		signerTicket := hosts.Get(pok.EndorserPubKey)
 		if signerTicket == nil {
 			return fmt.Errorf("push endorser not part of the top hosts")
 		}
@@ -295,16 +292,22 @@ func CheckTxPushConsistency(
 		}
 		pokPubKeys = append(pokPubKeys, blsPubKey)
 
-		// Ensure the references hash match local history
-		for i, refHash := range pok.ReferencesHash {
+		// Verify the endorsements
+		for i, endorsement := range pok.References {
 			ref := tx.PushNote.References[i]
-			curRefHash, err := localRepo.TreeRoot(ref.Name)
-			if err != nil {
-				return errors.Wrapf(err, "failed to get reference (%s) tree root hash", ref.Name)
+
+			// If reference doesnt exist in the repo state, we don't expect
+			// the endorsement to include a hash.
+			if endorsement.Hash == nil && !repoState.References.Has(ref.Name) {
+				continue
 			}
-			if !refHash.Hash.Equal(curRefHash) {
-				msg := fmt.Sprintf("wrong tree hash for reference (%s)", ref.Name)
-				return feI(index, "endorsements.refsHash", msg)
+
+			// But when reference exist, we expect the hash to match the endorsement hash
+			curRefHash := repoState.References.Get(ref.Name).Hash
+			if !bytes.Equal(endorsement.Hash, curRefHash) {
+				msg := fmt.Sprintf("hash (%x) of endorsed reference (%s) is not the expected hash (%x)",
+					endorsement.Hash, ref.Name, curRefHash)
+				return feI(index, "endorsements.hash", msg)
 			}
 		}
 	}

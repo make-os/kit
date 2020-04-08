@@ -872,15 +872,15 @@ var _ = Describe("Validation", func() {
 
 	Describe(".CheckPushOK", func() {
 		It("should return error when push note id is not set", func() {
-			err := CheckPushOK(&core.PushOK{}, -1)
+			err := CheckPushOK(&core.PushEndorsement{}, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("field:endorsements.pushNoteID, msg:push note id is required"))
 		})
 
 		It("should return error when public key is not valid", func() {
-			err := CheckPushOK(&core.PushOK{
-				PushNoteID:   util.StrToBytes32("id"),
-				SenderPubKey: util.EmptyBytes32,
+			err := CheckPushOK(&core.PushEndorsement{
+				NoteID:         util.StrToBytes32("id"),
+				EndorserPubKey: util.EmptyBytes32,
 			}, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("field:endorsements.senderPubKey, msg:sender public key is required"))
@@ -891,9 +891,9 @@ var _ = Describe("Validation", func() {
 		When("unable to fetch top hosts", func() {
 			BeforeEach(func() {
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(nil, fmt.Errorf("error"))
-				err = CheckPushOKConsistency(&core.PushOK{
-					PushNoteID:   util.StrToBytes32("id"),
-					SenderPubKey: util.EmptyBytes32,
+				err = CheckPushOKConsistency(&core.PushEndorsement{
+					NoteID:         util.StrToBytes32("id"),
+					EndorserPubKey: util.EmptyBytes32,
 				}, mockLogic, false, -1)
 			})
 
@@ -907,9 +907,9 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{}, nil)
-				err = CheckPushOKConsistency(&core.PushOK{
-					PushNoteID:   util.StrToBytes32("id"),
-					SenderPubKey: key.PubKey().MustBytes32(),
+				err = CheckPushOKConsistency(&core.PushEndorsement{
+					NoteID:         util.StrToBytes32("id"),
+					EndorserPubKey: key.PubKey().MustBytes32(),
 				}, mockLogic, false, -1)
 			})
 
@@ -930,9 +930,9 @@ var _ = Describe("Validation", func() {
 						},
 					},
 				}, nil)
-				err = CheckPushOKConsistency(&core.PushOK{
-					PushNoteID:   util.StrToBytes32("id"),
-					SenderPubKey: key.PubKey().MustBytes32(),
+				err = CheckPushOKConsistency(&core.PushEndorsement{
+					NoteID:         util.StrToBytes32("id"),
+					EndorserPubKey: key.PubKey().MustBytes32(),
 				}, mockLogic, false, -1)
 			})
 
@@ -954,9 +954,9 @@ var _ = Describe("Validation", func() {
 						},
 					},
 				}, nil)
-				err = CheckPushOKConsistency(&core.PushOK{
-					PushNoteID:   util.StrToBytes32("id"),
-					SenderPubKey: key.PubKey().MustBytes32(),
+				err = CheckPushOKConsistency(&core.PushEndorsement{
+					NoteID:         util.StrToBytes32("id"),
+					EndorserPubKey: key.PubKey().MustBytes32(),
 				}, mockLogic, false, -1)
 			})
 
@@ -978,9 +978,9 @@ var _ = Describe("Validation", func() {
 						},
 					},
 				}, nil)
-				err = CheckPushOKConsistency(&core.PushOK{
-					PushNoteID:   util.StrToBytes32("id"),
-					SenderPubKey: key.PubKey().MustBytes32(),
+				err = CheckPushOKConsistency(&core.PushEndorsement{
+					NoteID:         util.StrToBytes32("id"),
+					EndorserPubKey: key.PubKey().MustBytes32(),
 				}, mockLogic, true, -1)
 			})
 

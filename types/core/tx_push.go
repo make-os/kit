@@ -11,9 +11,9 @@ import (
 type TxPush struct {
 	*TxCommon     `json:",flatten" mapstructure:"-"`
 	*TxType       `json:",flatten" msgpack:"-"`
-	PushNote      *PushNote `json:"pushNote" mapstructure:"pushNote"`
-	PushOKs       []*PushOK `json:"endorsements" mapstructure:"endorsements"`
-	AggPushOKsSig []byte    `json:"aggEndorsersPubKey" mapstructure:"aggEndorsersPubKey"`
+	PushNote      *PushNote          `json:"pushNote" mapstructure:"pushNote"`
+	PushOKs       []*PushEndorsement `json:"endorsements" mapstructure:"endorsements"`
+	AggPushOKsSig []byte             `json:"aggEndorsersPubKey" mapstructure:"aggEndorsersPubKey"`
 }
 
 // NewBareTxPush returns an instance of TxPush with zero values
@@ -22,7 +22,7 @@ func NewBareTxPush() *TxPush {
 		TxCommon: NewBareTxCommon(),
 		TxType:   &TxType{Type: TxTypePush},
 		PushNote: &PushNote{},
-		PushOKs:  []*PushOK{},
+		PushOKs:  []*PushEndorsement{},
 	}
 }
 

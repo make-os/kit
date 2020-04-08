@@ -71,8 +71,8 @@ type Manager struct {
 	pruner                   core.Pruner                 // The repo runner
 	blockGetter              types.BlockGetter           // Provides access to blocks
 	pushNoteSenders          *cache.Cache                // Store senders of push notes
-	pushOKSenders            *cache.Cache                // Stores senders of PushOK messages
-	pushNoteEndorsements     *cache.Cache                // Store PushOKs
+	pushOKSenders            *cache.Cache                // Stores senders of PushEndorsement messages
+	pushEndorsements         *cache.Cache                // Store PushOKs
 	modulesAgg               modules.ModuleHub           // Modules aggregator
 	authenticate             authenticator               // Function for performing authentication
 	checkPushNote            pushNoteChecker             // Function for performing PushNote validation
@@ -95,24 +95,24 @@ func NewManager(
 
 	key, _ := cfg.G().PrivVal.GetKey()
 	mgr := &Manager{
-		cfg:                  cfg,
-		log:                  cfg.G().Log.Module("repo-manager"),
-		addr:                 addr,
-		rootDir:              cfg.GetRepoRoot(),
-		gitBinPath:           cfg.Node.GitBinPath,
-		wg:                   wg,
-		pushPool:             NewPushPool(params.PushPoolCap, logic, dht),
-		logic:                logic,
-		privValidatorKey:     key,
-		dht:                  dht,
-		mempool:              mempool,
-		blockGetter:          blockGetter,
-		authenticate:         authenticate,
-		checkPushNote:        checkPushNote,
-		packfileMaker:        makeReferenceUpdateRequest,
-		pushNoteSenders:      cache.NewActiveCache(params.PushObjectsSendersCacheSize),
-		pushOKSenders:        cache.NewActiveCache(params.PushObjectsSendersCacheSize),
-		pushNoteEndorsements: cache.NewActiveCache(params.PushNotesEndorsementsCacheSize),
+		cfg:              cfg,
+		log:              cfg.G().Log.Module("repo-manager"),
+		addr:             addr,
+		rootDir:          cfg.GetRepoRoot(),
+		gitBinPath:       cfg.Node.GitBinPath,
+		wg:               wg,
+		pushPool:         NewPushPool(params.PushPoolCap, logic, dht),
+		logic:            logic,
+		privValidatorKey: key,
+		dht:              dht,
+		mempool:          mempool,
+		blockGetter:      blockGetter,
+		authenticate:     authenticate,
+		checkPushNote:    checkPushNote,
+		packfileMaker:    makeReferenceUpdateRequest,
+		pushNoteSenders:  cache.NewActiveCache(params.PushObjectsSendersCacheSize),
+		pushOKSenders:    cache.NewActiveCache(params.PushObjectsSendersCacheSize),
+		pushEndorsements: cache.NewActiveCache(params.PushNotesEndorsementsCacheSize),
 	}
 
 	mgr.makePushHandler = mgr.createPushHandler
@@ -169,14 +169,14 @@ func (m *Manager) isPushOKSender(senderID string, pushOKID string) bool {
 	return v == struct{}{}
 }
 
-// addPushNoteEndorsement indexes a PushOK for a given push note
-func (m *Manager) addPushNoteEndorsement(noteID string, pok *core.PushOK) {
-	pokList := m.pushNoteEndorsements.Get(noteID)
+// addPushNoteEndorsement indexes a PushEndorsement for a given push note
+func (m *Manager) addPushNoteEndorsement(noteID string, pok *core.PushEndorsement) {
+	pokList := m.pushEndorsements.Get(noteID)
 	if pokList == nil {
-		pokList = map[string]*core.PushOK{}
+		pokList = map[string]*core.PushEndorsement{}
 	}
-	pokList.(map[string]*core.PushOK)[pok.ID().String()] = pok
-	m.pushNoteEndorsements.Add(noteID, pokList)
+	pokList.(map[string]*core.PushEndorsement)[pok.ID().String()] = pok
+	m.pushEndorsements.Add(noteID, pokList)
 }
 
 // Start starts the server that serves the repos.
@@ -300,7 +300,6 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.Header().Set("WWW-Authenticate", "Basic")
 		w.WriteHeader(http.StatusUnauthorized)
-		m.log.Error("Auth failure", "Err", err.Error(), "Name", repoName)
 		return
 	}
 

@@ -2,26 +2,19 @@ package repo
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"gitlab.com/makeos/mosdef/types/core"
 	state2 "gitlab.com/makeos/mosdef/types/state"
 
-	"gitlab.com/makeos/mosdef/pkgs/tree"
-	s "gitlab.com/makeos/mosdef/storage"
-
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/storage"
 
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/util"
-
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/objfile"
@@ -39,73 +32,6 @@ type Repo struct {
 	namespace string
 	ops       *GitOps
 	state     *state2.Repository
-}
-
-type treeCloser func() error
-
-// getReferenceTree fetches a reference's tree and returns a
-// function for closing the tree db after use
-func getReferenceTree(path, ref string) (refTree *tree.SafeTree, closer treeCloser, err error) {
-	db := s.NewBadger()
-	treeName := makeReferenceTreeName(ref)
-	if err := db.Init(filepath.Join(path, treeName)); err != nil {
-		return nil, nil, errors.Wrap(err, "failed to open state db")
-	}
-
-	refTree = tree.NewSafeTree(s.NewTMDBAdapter(db), 5000)
-	if _, err := refTree.Load(); err != nil {
-		return nil, nil, errors.Wrap(err, "failed to load tree")
-	}
-
-	return refTree, func() error {
-		err := db.Close()
-		return err
-	}, nil
-}
-
-// makeReferenceTreeName returns a normalized name for a reference tree
-func makeReferenceTreeName(ref string) string {
-	return fmt.Sprintf("tree-%s.db", strings.ReplaceAll(ref, "/", "-"))
-}
-
-// deleteReferenceTree deletes a reference tree
-func deleteReferenceTree(path, ref string) error {
-	treeName := makeReferenceTreeName(ref)
-	treePath := filepath.Join(path, treeName)
-	return os.RemoveAll(treePath)
-}
-
-// UpdateTree enables tree update by passing the tree to an updater function; The caller does not need
-// to close the tree as it will be done by UpdateTree.
-// Returns the updated root hash and version.
-func (r *Repo) UpdateTree(ref string, updater func(tree *tree.SafeTree) error) ([]byte, int64, error) {
-
-	tr, closer, err := getReferenceTree(r.Path(), ref)
-	if err != nil {
-		return nil, 0, err
-	}
-	defer closer()
-
-	if err := updater(tr); err != nil {
-		return nil, 0, err
-	}
-
-	newHash, v, err := tr.SaveVersion()
-	if err != nil {
-		return nil, 0, errors.Wrap(err, "failed to save new repo tree updates")
-	}
-
-	return newHash, v, nil
-}
-
-// TreeRoot returns the state root of the repository
-func (r *Repo) TreeRoot(ref string) (util.Bytes32, error) {
-	tr, closer, err := getReferenceTree(r.Path(), ref)
-	if _, err = tr.Load(); err != nil {
-		return util.EmptyBytes32, err
-	}
-	defer closer()
-	return util.BytesToBytes32(tr.Hash()), nil
 }
 
 // State returns the repository's network state
@@ -518,33 +444,4 @@ func getObjectsSize(repo core.BareRepo, objects []string) (uint64, error) {
 		size += objSize
 	}
 	return uint64(size), nil
-}
-
-// updateReferencesTree takes a slice of pushed references and use them to
-// update the merkle tree of target references
-func updateReferencesTree(
-	pushedRefs core.PushedReferences,
-	repoPath string) (map[string]util.Bytes32, error) {
-
-	repo, err := GetRepo(repoPath)
-	if err != nil {
-		return nil, err
-	}
-
-	var res = make(map[string]util.Bytes32)
-	for _, pushedRef := range pushedRefs {
-		hash, _, err := repo.UpdateTree(pushedRef.Name, func(tree *tree.SafeTree) error {
-			tree.Set([]byte(pushedRef.Name), bytes.Join([][]byte{
-				util.MustFromHex(pushedRef.OldHash),
-				util.MustFromHex(pushedRef.NewHash),
-				util.ToBytes(pushedRef.Objects)}, nil))
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
-		res[pushedRef.Name] = util.BytesToBytes32(hash)
-	}
-
-	return res, nil
 }

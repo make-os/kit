@@ -12,7 +12,6 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/pkgs/tree"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -128,10 +127,10 @@ type BareRepo interface {
 	UpdateRecentCommitMsg(msg, signingKey string, env ...string) error
 
 	// UpdateTree updates the state tree
-	UpdateTree(ref string, updater func(tree *tree.SafeTree) error) ([]byte, int64, error)
+	// UpdateTree(ref string, updater func(tree *tree.SafeTree) error) ([]byte, int64, error)
 
 	// TreeRoot returns the state root of the repository
-	TreeRoot(ref string) (util.Bytes32, error)
+	// TreeRoot(ref string) (util.Bytes32, error)
 
 	// AddEntryToNote adds a note
 	AddEntryToNote(notename, objectHash, note string, env ...string) error
@@ -227,23 +226,11 @@ type RepoGetter interface {
 	GetRepo(name string) (BareRepo, error)
 }
 
-// TxPushMerger describes an interface for merging push transaction to a repository
-type TxPushMerger interface {
+// RepoUpdater describes an interface for updating a repository from a push transaction
+type RepoUpdater interface {
 	// UpdateRepoWithTxPush attempts to merge a push transaction to a repository and
 	// also update the repository's state tree.
 	UpdateRepoWithTxPush(tx *TxPush) error
-}
-
-// UnfinalizedObjectCache keeps track of unfinalized repository objects
-type UnfinalizedObjectCache interface {
-	// AddUnfinalizedObject adds an object to the unfinalized object cache
-	AddUnfinalizedObject(repo, objHash string)
-
-	// Remove removes an object from the unfinalized object cache
-	RemoveUnfinalizedObject(repo, objHash string)
-
-	// IsUnfinalizedObject checks whether an object exist in the unfinalized object cache
-	IsUnfinalizedObject(repo, objHash string) bool
 }
 
 // PushPool represents a pool for holding and ordering git push transactions
@@ -493,7 +480,7 @@ type RepoPushOK interface {
 type RepoManager interface {
 	PoolGetter
 	RepoGetter
-	TxPushMerger
+	RepoUpdater
 
 	// Log returns the logger
 	Log() logger.Logger

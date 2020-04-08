@@ -190,15 +190,15 @@ func (h *PushHandler) HandleUpdate() error {
 		return err
 	}
 
-	go func() {
-		// Announce the pushed objects
-		for _, obj := range h.pushReader.objects {
-			h.announceObject(obj.Hash.String())
-		}
+	// Announce the pushed objects
+	for _, obj := range h.pushReader.objects {
+		h.announceObject(obj.Hash.String())
+	}
 
-		// Broadcast the push note
-		h.mgr.BroadcastPushObjects(note)
-	}()
+	// Broadcast the push note
+	if err = h.mgr.BroadcastPushObjects(note); err != nil {
+		h.log.Error("Failed to broadcast push note", "Err", err)
+	}
 
 	return nil
 }

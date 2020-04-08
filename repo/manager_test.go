@@ -227,30 +227,30 @@ var _ = Describe("Manager", func() {
 	})
 
 	Describe(".addPushNoteEndorsement", func() {
-		When("1 PushOK for id=abc is added", func() {
+		When("1 PushEndorsement for id=abc is added", func() {
 			BeforeEach(func() {
-				pushOK := &core.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushOK := &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
 				repoMgr.addPushNoteEndorsement("abc", pushOK)
 			})
 
-			Specify("that id=abc has 1 PushOK", func() {
-				Expect(repoMgr.pushNoteEndorsements.Len()).To(Equal(1))
-				pushOKList := repoMgr.pushNoteEndorsements.Get("abc")
+			Specify("that id=abc has 1 PushEndorsement", func() {
+				Expect(repoMgr.pushEndorsements.Len()).To(Equal(1))
+				pushOKList := repoMgr.pushEndorsements.Get("abc")
 				Expect(pushOKList).To(HaveLen(1))
 			})
 		})
 
 		When("2 PushOKs for id=abc are added", func() {
 			BeforeEach(func() {
-				pushOK := &core.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
-				pushOK2 := &core.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushOK := &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushOK2 := &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
 				repoMgr.addPushNoteEndorsement("abc", pushOK)
 				repoMgr.addPushNoteEndorsement("abc", pushOK2)
 			})
 
-			Specify("that id=abc has 2 PushOK", func() {
-				Expect(repoMgr.pushNoteEndorsements.Len()).To(Equal(1))
-				pushOKList := repoMgr.pushNoteEndorsements.Get("abc")
+			Specify("that id=abc has 2 PushEndorsement", func() {
+				Expect(repoMgr.pushEndorsements.Len()).To(Equal(1))
+				pushOKList := repoMgr.pushEndorsements.Get("abc")
 				Expect(pushOKList).To(HaveLen(2))
 			})
 		})

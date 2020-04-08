@@ -431,7 +431,7 @@ func CheckTxPush(tx *core.TxPush, index int) error {
 		return err
 	}
 
-	if len(tx.PushOKs) < params.PushOKQuorumSize {
+	if len(tx.PushOKs) < params.PushEndorseQuorumSize {
 		return feI(index, "endorsements", "not enough endorsements included")
 	}
 
@@ -444,30 +444,30 @@ func CheckTxPush(tx *core.TxPush, index int) error {
 		}
 
 		// Ensure push note id and the target pushOK push note id match
-		if !pushOK.PushNoteID.Equal(tx.PushNote.ID()) {
+		if !pushOK.NoteID.Equal(tx.PushNote.ID()) {
 			msg := "push note id and push endorsement id must match"
 			return feI(index, "endorsements.pushNoteID", msg)
 		}
 
-		// Make sure we haven't seen a PushOK from this sender before
-		_, ok := senders[pushOK.SenderPubKey.HexStr()]
+		// Make sure we haven't seen a PushEndorsement from this sender before
+		_, ok := senders[pushOK.EndorserPubKey.HexStr()]
 		if !ok {
-			senders[pushOK.SenderPubKey.HexStr()] = struct{}{}
+			senders[pushOK.EndorserPubKey.HexStr()] = struct{}{}
 		} else {
 			msg := "multiple endorsement by a single sender not permitted"
 			return feI(index, "endorsements.senderPubKey", msg)
 		}
 
-		_, err := crypto.PubKeyFromBytes(pushOK.SenderPubKey.Bytes())
+		_, err := crypto.PubKeyFromBytes(pushOK.EndorserPubKey.Bytes())
 		if err != nil {
 			return feI(index, "endorsements.senderPubKey", "public key is not valid")
 		}
 
 		// Ensure the references hashes are all the same
 		if pushOKRefHashesID.IsEmpty() {
-			pushOKRefHashesID = pushOK.ReferencesHash.ID()
+			pushOKRefHashesID = pushOK.References.ID()
 		}
-		if !pushOK.ReferencesHash.ID().Equal(pushOKRefHashesID) {
+		if !pushOK.References.ID().Equal(pushOKRefHashesID) {
 			msg := "references of all endorsements must match"
 			return feI(index, "endorsements.refsHash", msg)
 		}

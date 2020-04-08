@@ -22,7 +22,17 @@ func BareReference() *Reference {
 
 // Reference represents a git reference
 type Reference struct {
-	Nonce uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce"`
+	util.SerializerHelper `json:"-" mapstructure:"-" msgpack:"-"`
+	Nonce                 uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce"`
+	Hash                  []byte `json:"hash" mapstructure:"hash" msgpack:"hash"`
+}
+
+func (r *Reference) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return r.EncodeMulti(enc, r.Nonce, r.Hash)
+}
+
+func (r *Reference) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return r.DecodeMulti(dec, &r.Nonce, &r.Hash)
 }
 
 // References represents a collection of references

@@ -87,7 +87,7 @@ var (
 
 	// PushOKQuorumSize is the minimum number of PushOKs a push note requires
 	// for approval
-	PushOKQuorumSize = 2
+	PushEndorseQuorumSize = 2
 
 	// NumTopHostsLimit is maximum the number of top hosts
 	NumTopHostsLimit = 21

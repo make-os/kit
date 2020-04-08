@@ -107,11 +107,10 @@ func (t *Transaction) exec(tx types.BaseTx, chainHeight uint64) error {
 	case *core.TxPush:
 		pn := o.PushNote
 		err := t.execPush(pn.RepoName, pn.References, pn.GetFee(), pn.PushKeyID, chainHeight)
-		if err == nil {
-			// Execute the tx against the repository's local state
-			return t.logic.GetRepoManager().ExecTxPush(o)
+		if err != nil {
+			return err
 		}
-		return err
+		return t.logic.GetRepoManager().ExecTxPush(o)
 
 	case *core.TxNamespaceAcquire:
 		return t.execAcquireNamespace(spk, o.Name, o.Value, o.Fee, o.TransferTo, o.Domains, chainHeight)

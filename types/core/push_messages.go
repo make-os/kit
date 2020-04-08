@@ -154,85 +154,87 @@ func (pt *PushNote) GetFee() util.String {
 	return util.String(fee.String())
 }
 
-// ReferenceHash describes the current and previous state hash of a reference
-type ReferenceHash struct {
-	Hash util.Bytes32 `json:"hash" msgpack:"hash" mapstructure:"hash"`
+// EndorsedReference describes the current state of a reference endorsed by a host
+type EndorsedReference struct {
+	Hash []byte `json:"hash" msgpack:"hash,omitempty" mapstructure:"hash"`
 }
 
-// ReferenceHashes is a collection of ReferenceHash
-type ReferenceHashes []*ReferenceHash
+// EndorsedReferences is a collection of EndorsedReference
+type EndorsedReferences []*EndorsedReference
 
 // ID returns the id of the collection
-func (r *ReferenceHashes) ID() util.Bytes32 {
+func (r *EndorsedReferences) ID() util.Bytes32 {
 	bz := util.ToBytes(r)
 	return util.BytesToBytes32(util.Blake2b256(bz))
 }
 
-// PushOK is used to endorse a push note
-type PushOK struct {
+// PushEndorsement is used to endorse a push note
+type PushEndorsement struct {
 	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	PushNoteID            util.Bytes32    `json:"pushNoteID" msgpack:"pushNoteID,omitempty" mapstructure:"pushNoteID"`
-	ReferencesHash        ReferenceHashes `json:"refsHash" msgpack:"refsHash,omitempty" mapstructure:"refsHash"`
-	SenderPubKey          util.Bytes32    `json:"senderPubKey" msgpack:"senderPubKey,omitempty" mapstructure:"senderPubKey"`
-	Sig                   util.Bytes64    `json:"sig" msgpack:"sig,omitempty" mapstructure:"sig"`
+	NoteID                util.Bytes32       `json:"noteID" msgpack:"noteID,omitempty" mapstructure:"noteID"`
+	References            EndorsedReferences `json:"endorsedRefs" msgpack:"endorsedRefs,omitempty" mapstructure:"endorsedRefs"`
+	EndorserPubKey        util.Bytes32       `json:"endorser" msgpack:"endorser,omitempty" mapstructure:"endorser"`
+	Sig                   util.Bytes64       `json:"sig" msgpack:"sig,omitempty" mapstructure:"sig"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
-func (po *PushOK) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return po.EncodeMulti(enc, po.PushNoteID, po.ReferencesHash, po.SenderPubKey.Bytes(), po.Sig.Bytes())
+func (e *PushEndorsement) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return e.EncodeMulti(enc, e.NoteID, e.References, e.EndorserPubKey.Bytes(), e.Sig.Bytes())
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
-func (po *PushOK) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return po.DecodeMulti(dec, &po.PushNoteID, &po.ReferencesHash, &po.SenderPubKey, &po.Sig)
+func (e *PushEndorsement) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return e.DecodeMulti(dec, &e.NoteID, &e.References, &e.EndorserPubKey, &e.Sig)
 }
 
 // ID returns the hash of the object
-func (po *PushOK) ID() util.Bytes32 {
-	return util.BytesToBytes32(util.Blake2b256(po.Bytes()))
+func (e *PushEndorsement) ID() util.Bytes32 {
+	return util.BytesToBytes32(util.Blake2b256(e.Bytes()))
 }
 
 // Bytes returns a serialized version of the object
-func (po *PushOK) Bytes() []byte {
-	return util.ToBytes(po)
+func (e *PushEndorsement) Bytes() []byte {
+	return util.ToBytes(e)
 }
 
 // BytesNoSig returns the serialized version of
-func (po *PushOK) BytesNoSig() []byte {
-	sig := po.Sig
-	po.Sig = util.EmptyBytes64
-	msg := po.Bytes()
-	po.Sig = sig
+func (e *PushEndorsement) BytesNoSig() []byte {
+	sig := e.Sig
+	e.Sig = util.EmptyBytes64
+	msg := e.Bytes()
+	e.Sig = sig
 	return msg
 }
 
 // BytesNoSigAndSenderPubKey returns the serialized version of
-func (po *PushOK) BytesNoSigAndSenderPubKey() []byte {
-	sig, spk := po.Sig, po.SenderPubKey
-	po.Sig = util.EmptyBytes64
-	po.SenderPubKey = util.EmptyBytes32
-	msg := po.Bytes()
-	po.Sig, po.SenderPubKey = sig, spk
+func (e *PushEndorsement) BytesNoSigAndSenderPubKey() []byte {
+	sig, spk := e.Sig, e.EndorserPubKey
+	e.Sig = util.EmptyBytes64
+	e.EndorserPubKey = util.EmptyBytes32
+	msg := e.Bytes()
+	e.Sig, e.EndorserPubKey = sig, spk
 	return msg
 }
 
 // BytesAndID returns the serialized version of the tx and the id
-func (po *PushOK) BytesAndID() ([]byte, util.Bytes32) {
-	bz := po.Bytes()
+func (e *PushEndorsement) BytesAndID() ([]byte, util.Bytes32) {
+	bz := e.Bytes()
 	return bz, util.BytesToBytes32(util.Blake2b256(bz))
 }
 
 // Clone clones the object
-func (po *PushOK) Clone() *PushOK {
-	cp := &PushOK{}
-	cp.PushNoteID = po.PushNoteID
-	cp.SenderPubKey = util.BytesToBytes32(po.SenderPubKey.Bytes())
-	cp.Sig = util.BytesToBytes64(po.Sig.Bytes())
-	cp.ReferencesHash = []*ReferenceHash{}
-	for _, rh := range po.ReferencesHash {
-		cpRefHash := &ReferenceHash{}
-		cpRefHash.Hash = util.BytesToBytes32(rh.Hash.Bytes())
-		cp.ReferencesHash = append(cp.ReferencesHash, cpRefHash)
+func (e *PushEndorsement) Clone() *PushEndorsement {
+	cp := &PushEndorsement{}
+	cp.NoteID = e.NoteID
+	cp.EndorserPubKey = util.BytesToBytes32(e.EndorserPubKey.Bytes())
+	cp.Sig = util.BytesToBytes64(e.Sig.Bytes())
+	cp.References = []*EndorsedReference{}
+	for _, rh := range e.References {
+		cpEndorsement := &EndorsedReference{}
+		cpHash := make([]byte, len(rh.Hash))
+		copy(cpHash, rh.Hash)
+		cpEndorsement.Hash = cpHash
+		cp.References = append(cp.References, cpEndorsement)
 	}
 	return cp
 }

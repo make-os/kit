@@ -38,6 +38,7 @@ func (t *Transaction) execPush(
 	for _, ref := range references {
 		curRef := repo.References.Get(ref.Name)
 		curRef.Nonce = curRef.Nonce + 1
+		curRef.Hash = util.MustFromHex(ref.NewHash)
 		repo.References[ref.Name] = curRef
 	}
 

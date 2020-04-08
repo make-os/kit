@@ -15,6 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 
 	"gitlab.com/makeos/mosdef/config"
@@ -446,7 +447,7 @@ var _ = Describe("Reactor", func() {
 	})
 
 	Describe(".MaybeCreatePushTx", func() {
-		When("no PushOK for the given note", func() {
+		When("no PushEndorsement for the given note", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
 				err = mgr.MaybeCreatePushTx(pushNoteID)
@@ -461,8 +462,8 @@ var _ = Describe("Reactor", func() {
 		When("PushOKs for the given note is not up to the quorum size", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
-				params.PushOKQuorumSize = 2
-				mgr.addPushNoteEndorsement(pushNoteID, &core.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
+				params.PushEndorseQuorumSize = 2
+				mgr.addPushNoteEndorsement(pushNoteID, &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = mgr.MaybeCreatePushTx(pushNoteID)
 			})
 
@@ -475,8 +476,8 @@ var _ = Describe("Reactor", func() {
 		When("PushNote does not exist in the pool", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
-				params.PushOKQuorumSize = 1
-				mgr.addPushNoteEndorsement(pushNoteID, &core.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
+				params.PushEndorseQuorumSize = 1
+				mgr.addPushNoteEndorsement(pushNoteID, &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = mgr.MaybeCreatePushTx(pushNoteID)
 			})
 
@@ -488,13 +489,13 @@ var _ = Describe("Reactor", func() {
 
 		When("unable to get top hosts", func() {
 			BeforeEach(func() {
-				params.PushOKQuorumSize = 1
+				params.PushEndorseQuorumSize = 1
 				var pushNote = &core.PushNote{RepoName: "repo1"}
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(nil, fmt.Errorf("error"))
-				mgr.addPushNoteEndorsement(pushNote.ID().String(), &core.PushOK{Sig: util.BytesToBytes64(util.RandBytes(5))})
+				mgr.addPushNoteEndorsement(pushNote.ID().String(), &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
 			})
 
@@ -506,15 +507,15 @@ var _ = Describe("Reactor", func() {
 
 		When("unable to get ticket of push endorsement sender", func() {
 			BeforeEach(func() {
-				params.PushOKQuorumSize = 1
+				params.PushEndorseQuorumSize = 1
 				var pushNote = &core.PushNote{RepoName: "repo1"}
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{}, nil)
-				pok := &core.PushOK{
-					Sig:          util.BytesToBytes64(util.RandBytes(5)),
-					SenderPubKey: util.BytesToBytes32(util.RandBytes(32)),
+				pok := &core.PushEndorsement{
+					Sig:            util.BytesToBytes64(util.RandBytes(5)),
+					EndorserPubKey: util.BytesToBytes32(util.RandBytes(32)),
 				}
 				mgr.addPushNoteEndorsement(pushNote.ID().String(), pok)
 				err = mgr.MaybeCreatePushTx(pushNote.ID().String())
@@ -528,7 +529,7 @@ var _ = Describe("Reactor", func() {
 
 		When("a push endorsement has invalid bls public key", func() {
 			BeforeEach(func() {
-				params.PushOKQuorumSize = 1
+				params.PushEndorseQuorumSize = 1
 				var pushNote = &core.PushNote{RepoName: "repo1"}
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
@@ -541,8 +542,8 @@ var _ = Describe("Reactor", func() {
 						},
 					},
 				}, nil)
-				pok := &core.PushOK{
-					SenderPubKey: key.PubKey().MustBytes32(),
+				pok := &core.PushEndorsement{
+					EndorserPubKey: key.PubKey().MustBytes32(),
 				}
 
 				mgr.addPushNoteEndorsement(pushNote.ID().String(), pok)
@@ -557,7 +558,7 @@ var _ = Describe("Reactor", func() {
 
 		When("endorsement signature is invalid", func() {
 			BeforeEach(func() {
-				params.PushOKQuorumSize = 1
+				params.PushEndorseQuorumSize = 1
 				var pushNote = &core.PushNote{RepoName: "repo1"}
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
@@ -570,8 +571,8 @@ var _ = Describe("Reactor", func() {
 						},
 					},
 				}, nil)
-				pok := &core.PushOK{
-					SenderPubKey: key.PubKey().MustBytes32(),
+				pok := &core.PushEndorsement{
+					EndorserPubKey: key.PubKey().MustBytes32(),
 				}
 				pok.Sig = util.BytesToBytes64(util.RandBytes(64))
 
@@ -587,7 +588,7 @@ var _ = Describe("Reactor", func() {
 
 		When("push note is ok", func() {
 			BeforeEach(func() {
-				params.PushOKQuorumSize = 1
+				params.PushEndorseQuorumSize = 1
 				var pushNote = &core.PushNote{RepoName: "repo1"}
 				err = mgr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
@@ -600,8 +601,8 @@ var _ = Describe("Reactor", func() {
 						},
 					},
 				}, nil)
-				pok := &core.PushOK{
-					SenderPubKey: key.PubKey().MustBytes32(),
+				pok := &core.PushEndorsement{
+					EndorserPubKey: key.PubKey().MustBytes32(),
 				}
 				var pokSig []byte
 				pokSig, err = key.PrivKey().BLSKey().Sign(pok.BytesNoSigAndSenderPubKey())
@@ -768,6 +769,45 @@ var _ = Describe("Reactor", func() {
 			})
 
 			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("push note contains a pushed reference new hash set to zero-hash", func() {
+			It("should attempt to delete the pushed reference and return error if it failed", func() {
+				tx := core.NewBareTxPush()
+				tx.PushNote.RepoName = repoName
+
+				tx.PushNote.References = []*core.PushedReference{
+					{NewHash: plumbing.ZeroHash.String(), Name: "refs/heads/master"},
+				}
+
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().RefDelete("refs/heads/master").Return(fmt.Errorf("failed to delete"))
+
+				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
+				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				err = execTxPush(mockMgr, tx)
+
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed to delete reference (refs/heads/master): failed to delete"))
+			})
+
+			It("should attempt to delete the pushed reference and return nil if it succeeded", func() {
+				tx := core.NewBareTxPush()
+				tx.PushNote.RepoName = repoName
+
+				tx.PushNote.References = []*core.PushedReference{
+					{NewHash: plumbing.ZeroHash.String(), Name: "refs/heads/master"},
+				}
+
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().RefDelete("refs/heads/master").Return(nil)
+
+				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
+				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				err = execTxPush(mockMgr, tx)
+
 				Expect(err).To(BeNil())
 			})
 		})
