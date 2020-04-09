@@ -82,10 +82,10 @@ func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
 
 // RepoConfigGovernance contains governance settings for a repository
 type RepoConfigGovernance struct {
-	ProposalProposee                 ProposeeType          `json:"propProposee" mapstructure:"propProposee,omitempty" msgpack:"propProposee"`
-	ProposalProposeeLimitToCurHeight bool                  `json:"propProposeeLimitToCurHeight" mapstructure:"propProposeeLimitToCurHeight,omitempty" msgpack:"propProposeeLimitToCurHeight"`
+	Proposer                         ProposerType          `json:"propProposer" mapstructure:"propProposer,omitempty" msgpack:"propProposer"`
+	ProposalProposerLimitToCurHeight bool                  `json:"propProposerLimitToCurHeight" mapstructure:"propProposerLimitToCurHeight,omitempty" msgpack:"propProposerLimitToCurHeight"`
 	ProposalDur                      uint64                `json:"propDuration" mapstructure:"propDuration,omitempty" msgpack:"propDuration"`
-	ProposalFeeDepDur                uint64                `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur"`
+	ProposalFeeDepositDur            uint64                `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur"`
 	ProposalTallyMethod              ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod"`
 	ProposalQuorum                   float64               `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum"`
 	ProposalThreshold                float64               `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold"`
@@ -167,8 +167,8 @@ var (
 func MakeDefaultRepoConfig() *RepoConfig {
 	return &RepoConfig{
 		Governance: &RepoConfigGovernance{
-			ProposalProposee:                 ProposeeOwner,
-			ProposalProposeeLimitToCurHeight: false,
+			Proposer:                         ProposerOwner,
+			ProposalProposerLimitToCurHeight: false,
 			ProposalDur:                      params.RepoProposalDur,
 			ProposalTallyMethod:              ProposalTallyMethodIdentity,
 			ProposalQuorum:                   params.RepoProposalQuorum,
@@ -177,7 +177,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			ProposalVetoOwnersQuorum:         params.RepoProposalVetoOwnersQuorum,
 			ProposalFee:                      params.MinProposalFee,
 			ProposalFeeRefundType:            0,
-			ProposalFeeDepDur:                0,
+			ProposalFeeDepositDur:            0,
 		},
 		Policies: []*Policy{},
 	}

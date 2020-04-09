@@ -224,18 +224,18 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 	actual.MergeMap(cfg)
 	govCfg := actual.Governance
 
-	// Ensure the proposee type is known
-	allowedProposeeChoices := []state.ProposeeType{0,
-		state.ProposeeOwner,
-		state.ProposeeNetStakeholders,
-		state.ProposeeNetStakeholdersAndVetoOwner}
-	if !funk.Contains(allowedProposeeChoices, govCfg.ProposalProposee) {
-		return feI(index, "config.gov.propProposee", fmt.Sprintf("unknown value"))
+	// Ensure the proposer type is known
+	allowedProposerChoices := []state.ProposerType{0,
+		state.ProposerOwner,
+		state.ProposerNetStakeholders,
+		state.ProposerNetStakeholdersAndVetoOwner}
+	if !funk.Contains(allowedProposerChoices, govCfg.Proposer) {
+		return feI(index, "config.gov.propProposer", fmt.Sprintf("unknown value"))
 	}
 
 	sf := fmt.Sprintf
 
-	// Ensure the proposee tally method is known
+	// Ensure the proposer tally method is known
 	allowedTallyMethod := []state.ProposalTallyMethod{0,
 		state.ProposalTallyMethodIdentity,
 		state.ProposalTallyMethodCoinWeighted,
@@ -267,12 +267,12 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 		return feI(index, "config.gov.propFee", sf("cannot be lower than network minimum"))
 	}
 
-	// When proposee is ProposeeOwner, tally method cannot be CoinWeighted or Identity
-	isNotOwnerProposee := govCfg.ProposalProposee != state.ProposeeOwner
-	if isNotOwnerProposee &&
+	// When proposer is ProposerOwner, tally method cannot be CoinWeighted or Identity
+	isNotOwnerProposer := govCfg.Proposer != state.ProposerOwner
+	if isNotOwnerProposer &&
 		(govCfg.ProposalTallyMethod == state.ProposalTallyMethodCoinWeighted ||
 			govCfg.ProposalTallyMethod == state.ProposalTallyMethodIdentity) {
-		return feI(index, "config", "when proposee type is not 'ProposeeOwner', tally methods "+
+		return feI(index, "config", "when proposer type is not 'ProposerOwner', tally methods "+
 			"'CoinWeighted' and 'Identity' are not allowed")
 	}
 

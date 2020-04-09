@@ -1234,7 +1234,7 @@ var _ = Describe("TxValidator", func() {
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
-				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
+				repo.Config.Governance.Proposer = state.ProposerOwner
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
 					Config: repo.Config.Governance,
 				})
@@ -1261,7 +1261,7 @@ var _ = Describe("TxValidator", func() {
 
 					repo := state.BareRepository()
 					repo.AddOwner(key.Addr().String(), &state.RepoOwner{})
-					repo.Config.Governance.ProposalProposee = state.ProposeeOwner
+					repo.Config.Governance.Proposer = state.ProposerOwner
 					repo.Proposals.Add("proposal1", &state.RepoProposal{
 						Config: repo.Config.Governance,
 					})
@@ -1521,7 +1521,7 @@ var _ = Describe("TxValidator", func() {
 				txProposal.Value = "101"
 				repo := state.BareRepository()
 				repo.Config.Governance.ProposalFee = 100
-				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
+				repo.Config.Governance.Proposer = state.ProposerOwner
 
 				bi := &core.BlockInfo{Height: 1}
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
@@ -1542,7 +1542,7 @@ var _ = Describe("TxValidator", func() {
 				txProposal.Value = "101"
 				repo := state.BareRepository()
 				repo.Config.Governance.ProposalFee = 100
-				repo.Config.Governance.ProposalProposee = state.ProposeeOwner
+				repo.Config.Governance.Proposer = state.ProposerOwner
 				repo.Owners[key.Addr().String()] = &state.RepoOwner{}
 
 				bi := &core.BlockInfo{Height: 1}

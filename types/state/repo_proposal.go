@@ -6,20 +6,18 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// ProposeeType represents a type of repo proposal proposee
-type ProposeeType int
+// ProposerType represents a type of repository proposer
+type ProposerType int
 
-// Proposee types
 const (
-	ProposeeOwner                       ProposeeType = iota + 1 // Proposals will allow only owners to vote
-	ProposeeNetStakeholders                                     // Proposals will allow network stakeholders to vote
-	ProposeeNetStakeholdersAndVetoOwner                         // Proposals will allow stakeholders and veto owners to vote
+	ProposerOwner                       ProposerType = iota + 1 // Only owners can create proposals and vote on them
+	ProposerNetStakeholders                                     // Allows anyone to create a proposal but only network stakeholders can vote.
+	ProposerNetStakeholdersAndVetoOwner                         // Allows anyone to create a proposal but only network stakeholders and veto owners can vote.
 )
 
 // ProposalFeeRefundType describes the type of refund scheme supported
 type ProposalFeeRefundType int
 
-// Proposal fee refund types
 const (
 	ProposalFeeRefundNo ProposalFeeRefundType = iota
 	ProposalFeeRefundOnAccept
@@ -34,7 +32,6 @@ const (
 // ProposalTallyMethod represents a type for repo proposal counting method
 type ProposalTallyMethod int
 
-// ProposalTallyMethod types
 const (
 	ProposalTallyMethodIdentity ProposalTallyMethod = iota + 1
 	ProposalTallyMethodCoinWeighted
@@ -97,8 +94,8 @@ const (
 // Proposal describes a repository proposal
 type Proposal interface {
 	GetCreator() string
-	GetProposeeType() ProposeeType
-	GetProposeeMaxJoinHeight() uint64
+	GetProposerType() ProposerType
+	GetProposerMaxJoinHeight() uint64
 	GetEndAt() uint64
 	GetQuorum() float64
 	GetTallyMethod() ProposalTallyMethod
@@ -131,7 +128,6 @@ const (
 	ProposalOutcomeRejectedWithVeto
 	ProposalOutcomeRejectedWithVetoByOwners
 	ProposalOutcomeQuorumNotMet
-	ProposalOutcomeThresholdNotMet
 	ProposalOutcomeBelowThreshold
 	ProposalOutcomeInsufficientDeposit
 )
@@ -147,7 +143,7 @@ type RepoProposal struct {
 	Config                *RepoConfigGovernance `json:"config" mapstructure:"config" msgpack:"-"`                                                   // The repo config to used to evaluate the proposal
 	EndAt                 uint64                `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                                                 // Used to close the proposal after the given height.
 	FeeDepositEndAt       uint64                `json:"feeDepEndAt" mapstructure:"feeDepEndAt" msgpack:"feeDepEndAt"`                               // Used to close the proposal after the given height.
-	ProposeeMaxJoinHeight uint64                `json:"proposeeMaxJoinHeight" mapstructure:"proposeeMaxJoinHeight" msgpack:"proposeeMaxJoinHeight"` // Used to allow proposee that are active before a specific height.
+	ProposerMaxJoinHeight uint64                `json:"proposerMaxJoinHeight" mapstructure:"proposerMaxJoinHeight" msgpack:"proposerMaxJoinHeight"` // Used to allow proposer that are active before a specific height.
 	Yes                   float64               `json:"yes" mapstructure:"yes" msgpack:"yes"`                                                       // Count of "Yes" votes
 	No                    float64               `json:"no" mapstructure:"no" msgpack:"no"`                                                          // Count of "No" votes
 	NoWithVeto            float64               `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes from owners/stakeholders veto power
@@ -203,14 +199,14 @@ func (p *RepoProposal) GetCreator() string {
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (p *RepoProposal) EncodeMsgpack(enc *msgpack.Encoder) error {
 	return p.EncodeMulti(enc, p.ID, p.Action, p.ActionData, p.Creator, p.Height, p.Config,
-		p.EndAt, p.FeeDepositEndAt, p.ProposeeMaxJoinHeight, p.Yes, p.No,
+		p.EndAt, p.FeeDepositEndAt, p.ProposerMaxJoinHeight, p.Yes, p.No,
 		p.NoWithVeto, p.NoWithVetoByOwners, p.Abstain, p.Fees, p.Outcome)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (p *RepoProposal) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return p.DecodeMulti(dec, &p.ID, &p.Action, &p.ActionData, &p.Creator, &p.Height, &p.Config,
-		&p.EndAt, &p.FeeDepositEndAt, &p.ProposeeMaxJoinHeight, &p.Yes, &p.No,
+		&p.EndAt, &p.FeeDepositEndAt, &p.ProposerMaxJoinHeight, &p.Yes, &p.No,
 		&p.NoWithVeto, &p.NoWithVetoByOwners, &p.Abstain, &p.Fees, &p.Outcome)
 }
 
@@ -229,14 +225,14 @@ func (p *RepoProposal) IncrAccept() {
 	p.Yes++
 }
 
-// GetProposeeType implements Proposal
-func (p *RepoProposal) GetProposeeType() ProposeeType {
-	return p.Config.ProposalProposee
+// GetProposerType implements Proposal
+func (p *RepoProposal) GetProposerType() ProposerType {
+	return p.Config.Proposer
 }
 
-// GetProposeeMaxJoinHeight implements Proposal
-func (p *RepoProposal) GetProposeeMaxJoinHeight() uint64 {
-	return p.ProposeeMaxJoinHeight
+// GetProposerMaxJoinHeight implements Proposal
+func (p *RepoProposal) GetProposerMaxJoinHeight() uint64 {
+	return p.ProposerMaxJoinHeight
 }
 
 // GetEndAt implements Proposal

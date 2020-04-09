@@ -16,8 +16,8 @@ import (
 
 // getProposalOutcome returns the current outcome of a proposal
 // whose voters are only network stakeholders; If the proposal requires
-// a proposee max join height, only stakeholders whose tickets became mature
-// before the proposee max join height
+// a proposer max join height, only stakeholders whose tickets became mature
+// before the proposer max join height
 func getProposalOutcome(
 	tickmgr types3.TicketManager,
 	prop state.Proposal,
@@ -26,12 +26,12 @@ func getProposalOutcome(
 	var err error
 	totalPower := float64(0)
 
-	// When proposees are only the owners of the repo, the power is the total
+	// When proposers are only the owners of the repo, the power is the total
 	// number of owners of the repository - one vote to one owner.
-	// However, If there is a max proposee join height, eligible owners are
-	// those who joined on or before the proposee max join height.
-	if prop.GetProposeeType() == state.ProposeeOwner {
-		maxJoinHeight := prop.GetProposeeMaxJoinHeight()
+	// However, If there is a max proposer join height, eligible owners are
+	// those who joined on or before the proposer max join height.
+	if prop.GetProposerType() == state.ProposerOwner {
+		maxJoinHeight := prop.GetProposerMaxJoinHeight()
 		repo.Owners.ForEach(func(o *state.RepoOwner, addr string) {
 			if maxJoinHeight > 0 && maxJoinHeight < o.JoinedAt {
 				return
@@ -40,11 +40,11 @@ func getProposalOutcome(
 		})
 	}
 
-	// When proposees include only network stakeholders, the total power is the total
+	// When proposers include only network stakeholders, the total power is the total
 	// value of mature and active tickets on the network.
-	if prop.GetProposeeType() == state.ProposeeNetStakeholders ||
-		prop.GetProposeeType() == state.ProposeeNetStakeholdersAndVetoOwner {
-		totalPower, err = tickmgr.ValueOfAllTickets(prop.GetProposeeMaxJoinHeight())
+	if prop.GetProposerType() == state.ProposerNetStakeholders ||
+		prop.GetProposerType() == state.ProposerNetStakeholdersAndVetoOwner {
+		totalPower, err = tickmgr.ValueOfAllTickets(prop.GetProposerMaxJoinHeight())
 		if err != nil {
 			panic(err)
 		}
@@ -72,9 +72,9 @@ func getProposalOutcome(
 		return state.ProposalOutcomeRejectedWithVeto
 	}
 
-	// When proposee are stakeholders and veto owners, the veto owners win
+	// When proposer are stakeholders and veto owners, the veto owners win
 	// the vote iff the "NoWithVetoByOwners" reached the special veto owner quorum.
-	if prop.GetProposeeType() == state.ProposeeNetStakeholdersAndVetoOwner {
+	if prop.GetProposerType() == state.ProposerNetStakeholdersAndVetoOwner {
 		if nRejectedWithVetoVotesByOwners > 0 &&
 			nRejectedWithVetoVotesByOwners >= vetoOwnerQuorum {
 			return state.ProposalOutcomeRejectedWithVetoByOwners
@@ -237,7 +237,7 @@ func maybeApplyProposal(
 
 	// When allowed voters are only the repo owners and there is just one owner
 	// whom is also the creator of the proposal, instantly apply the proposal.
-	isOwnersOnlyProposal := proposal.GetProposeeType() == state.ProposeeOwner
+	isOwnersOnlyProposal := proposal.GetProposerType() == state.ProposerOwner
 	if isOwnersOnlyProposal && len(repo.Owners) == 1 && repo.Owners.Has(proposal.GetCreator()) {
 		outcome = state.ProposalOutcomeAccepted
 		proposal.SetOutcome(outcome)

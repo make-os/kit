@@ -432,7 +432,7 @@ func CheckProposalCommonConsistency(
 
 	// When the repo does not support a fee deposit duration period,
 	// ensure the minimum fee was paid in the current transaction.
-	if targetRepo.Config.Governance.ProposalFeeDepDur == 0 {
+	if targetRepo.Config.Governance.ProposalFeeDepositDur == 0 {
 		if repoPropFee.GreaterThan(decimal.Zero) &&
 			txProposal.Value.Decimal().LessThan(repoPropFee) {
 			return nil, feI(index, "value", "proposal fee cannot be less than repo minimum")
@@ -441,7 +441,7 @@ func CheckProposalCommonConsistency(
 
 	// If the repo is owned by some owners, ensure the sender is one of the owners
 	senderOwner := targetRepo.Owners.Get(txCommon.GetFrom().String())
-	if targetRepo.Config.Governance.ProposalProposee == state.ProposeeOwner && senderOwner == nil {
+	if targetRepo.Config.Governance.Proposer == state.ProposerOwner && senderOwner == nil {
 		return nil, feI(index, "senderPubKey", "sender is not one of the repo owners")
 	}
 
@@ -516,13 +516,13 @@ func CheckTxVoteConsistency(
 	// If the proposal is targeted at repo owners, then
 	// the sender must be an owner
 	senderOwner := repoState.Owners.Get(tx.GetFrom().String())
-	if proposal.GetProposeeType() == state.ProposeeOwner && senderOwner == nil {
+	if proposal.GetProposerType() == state.ProposerOwner && senderOwner == nil {
 		return feI(index, "senderPubKey", "sender is not one of the repo owners")
 	}
 
 	// If the proposal is targetted at repo owners and
 	// the vote is a NoWithVeto, then the sender must have veto rights.
-	if proposal.GetProposeeType() == state.ProposeeOwner &&
+	if proposal.GetProposerType() == state.ProposerOwner &&
 		tx.Vote == state.ProposalVoteNoWithVeto && !senderOwner.Veto {
 		return feI(index, "senderPubKey", "sender cannot vote 'no with veto' because "+
 			"they have no veto right")

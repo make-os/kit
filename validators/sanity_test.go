@@ -601,16 +601,16 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckRepoConfig", func() {
-		When("proposee type is unknown", func() {
+		When("proposer type is unknown", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						ProposalProposee: 1000,
+						Proposer: 1000,
 					},
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propProposee, msg:unknown value"))
+				Expect(err.Error()).To(Equal("field:config.gov.propProposer, msg:unknown value"))
 			})
 		})
 
@@ -618,7 +618,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						ProposalProposee:    state.ProposeeOwner,
+						Proposer:            state.ProposerOwner,
 						ProposalTallyMethod: 1000,
 					},
 				}
@@ -632,7 +632,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						ProposalProposee:    state.ProposeeOwner,
+						Proposer:            state.ProposerOwner,
 						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
 						ProposalQuorum:      -1,
 					},
@@ -647,7 +647,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						ProposalProposee:    state.ProposeeOwner,
+						Proposer:            state.ProposerOwner,
 						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
 						ProposalQuorum:      1,
 						ProposalThreshold:   -1,
@@ -663,7 +663,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						ProposalProposee:    state.ProposeeOwner,
+						Proposer:            state.ProposerOwner,
 						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
 						ProposalQuorum:      1,
 						ProposalThreshold:   1,
@@ -680,7 +680,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						ProposalProposee:         state.ProposeeOwner,
+						Proposer:                 state.ProposerOwner,
 						ProposalTallyMethod:      state.ProposalTallyMethodNetStake,
 						ProposalQuorum:           1,
 						ProposalThreshold:        1,
@@ -699,7 +699,7 @@ var _ = Describe("TxValidator", func() {
 				params.MinProposalFee = float64(400)
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						ProposalProposee:         state.ProposeeOwner,
+						Proposer:                 state.ProposerOwner,
 						ProposalTallyMethod:      state.ProposalTallyMethodNetStake,
 						ProposalQuorum:           1,
 						ProposalThreshold:        1,
@@ -715,33 +715,33 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("proposee is not ProposeeOwner and tally method is CoinWeighted", func() {
+		When("proposer is not ProposerOwner and tally method is CoinWeighted", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						ProposalProposee:    state.ProposeeNetStakeholders,
+						Proposer:            state.ProposerNetStakeholders,
 						ProposalTallyMethod: state.ProposalTallyMethodCoinWeighted,
 					},
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config, msg:when proposee type " +
-					"is not 'ProposeeOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
+				Expect(err.Error()).To(Equal("field:config, msg:when proposer type " +
+					"is not 'ProposerOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
 			})
 		})
 
-		When("proposee is not ProposeeOwner and tally method is Identity", func() {
+		When("proposer is not ProposerOwner and tally method is Identity", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						ProposalProposee:    state.ProposeeNetStakeholders,
+						Proposer:            state.ProposerNetStakeholders,
 						ProposalTallyMethod: state.ProposalTallyMethodIdentity,
 					},
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config, msg:when proposee type " +
-					"is not 'ProposeeOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
+				Expect(err.Error()).To(Equal("field:config, msg:when proposer type " +
+					"is not 'ProposerOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
 			})
 		})
 	})
@@ -787,16 +787,16 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 			})
 
-			It("has invalid repo config (propProposee)", func() {
+			It("has invalid repo config (propProposer)", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
 				tx.Name = "repo1"
 				tx.Config["governance"] = map[string]interface{}{
-					"propProposee": -1,
+					"propProposer": -1,
 				}
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propProposee, msg:unknown value"))
+				Expect(err.Error()).To(Equal("field:config.gov.propProposer, msg:unknown value"))
 			})
 
 			It("has no nonce", func() {

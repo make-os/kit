@@ -1,5 +1,5 @@
 dist
 play
-.vscode
-.idea
+.vscode/*
+.idea/*
 *.coverprofile
