@@ -30,7 +30,7 @@ func getProposalOutcome(
 	// number of owners of the repository - one vote to one owner.
 	// However, If there is a max proposer join height, eligible owners are
 	// those who joined on or before the proposer max join height.
-	if prop.GetProposerType() == state.ProposerOwner {
+	if prop.GetProposerType() == state.VoteByOwner {
 		maxJoinHeight := prop.GetProposerMaxJoinHeight()
 		repo.Owners.ForEach(func(o *state.RepoOwner, addr string) {
 			if maxJoinHeight > 0 && maxJoinHeight < o.JoinedAt {
@@ -42,8 +42,8 @@ func getProposalOutcome(
 
 	// When proposers include only network stakeholders, the total power is the total
 	// value of mature and active tickets on the network.
-	if prop.GetProposerType() == state.ProposerNetStakeholders ||
-		prop.GetProposerType() == state.ProposerNetStakeholdersAndVetoOwner {
+	if prop.GetProposerType() == state.VoteByNetStakers ||
+		prop.GetProposerType() == state.VoteByNetStakersAndVetoOwner {
 		totalPower, err = tickmgr.ValueOfAllTickets(prop.GetProposerMaxJoinHeight())
 		if err != nil {
 			panic(err)
@@ -74,7 +74,7 @@ func getProposalOutcome(
 
 	// When proposer are stakeholders and veto owners, the veto owners win
 	// the vote iff the "NoWithVetoByOwners" reached the special veto owner quorum.
-	if prop.GetProposerType() == state.ProposerNetStakeholdersAndVetoOwner {
+	if prop.GetProposerType() == state.VoteByNetStakersAndVetoOwner {
 		if nRejectedWithVetoVotesByOwners > 0 &&
 			nRejectedWithVetoVotesByOwners >= vetoOwnerQuorum {
 			return state.ProposalOutcomeRejectedWithVetoByOwners
@@ -134,10 +134,7 @@ func maybeProcessProposalFee(
 		}
 
 	case state.ProposalFeeRefundOnAcceptReject:
-		expected := []state.ProposalOutcome{
-			state.ProposalOutcomeAccepted,
-			state.ProposalOutcomeRejected,
-		}
+		expected := []state.ProposalOutcome{state.ProposalOutcomeAccepted, state.ProposalOutcomeRejected}
 		if funk.Contains(expected, outcome) {
 			return refundProposalFees(keepers, proposal)
 		}
@@ -154,18 +151,13 @@ func maybeProcessProposalFee(
 		}
 
 	case state.ProposalFeeRefundOnBelowThreshold:
-		expected := []state.ProposalOutcome{
-			state.ProposalOutcomeBelowThreshold,
-		}
+		expected := []state.ProposalOutcome{state.ProposalOutcomeBelowThreshold}
 		if funk.Contains(expected, outcome) {
 			return refundProposalFees(keepers, proposal)
 		}
 
 	case state.ProposalFeeRefundOnBelowThresholdAccept:
-		expected := []state.ProposalOutcome{
-			state.ProposalOutcomeBelowThreshold,
-			state.ProposalOutcomeAccepted,
-		}
+		expected := []state.ProposalOutcome{state.ProposalOutcomeBelowThreshold, state.ProposalOutcomeAccepted}
 		if funk.Contains(expected, outcome) {
 			return refundProposalFees(keepers, proposal)
 		}
@@ -237,7 +229,7 @@ func maybeApplyProposal(
 
 	// When allowed voters are only the repo owners and there is just one owner
 	// whom is also the creator of the proposal, instantly apply the proposal.
-	isOwnersOnlyProposal := proposal.GetProposerType() == state.ProposerOwner
+	isOwnersOnlyProposal := proposal.GetProposerType() == state.VoteByOwner
 	if isOwnersOnlyProposal && len(repo.Owners) == 1 && repo.Owners.Has(proposal.GetCreator()) {
 		outcome = state.ProposalOutcomeAccepted
 		proposal.SetOutcome(outcome)

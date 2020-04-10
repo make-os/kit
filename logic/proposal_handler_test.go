@@ -69,7 +69,7 @@ var _ = Describe("ProposalHandler", func() {
 				proposal = &state.RepoProposal{
 					Config: state.MakeDefaultRepoConfig().Governance,
 				}
-				proposal.Config.Proposer = state.ProposerOwner
+				proposal.Config.Voter = state.VoteByOwner
 				proposal.Creator = key.Addr().String()
 			})
 
@@ -102,7 +102,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{
 						Config: state.MakeDefaultRepoConfig().Governance,
 					}
-					proposal.Config.Proposer = state.ProposerOwner
+					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.ProposerMaxJoinHeight = 100
 					repo.Owners.Get("addr3").JoinedAt = 200
@@ -177,7 +177,7 @@ var _ = Describe("ProposalHandler", func() {
 				proposal = &state.RepoProposal{
 					Config: state.MakeDefaultRepoConfig().Governance,
 				}
-				proposal.Config.Proposer = state.ProposerOwner
+				proposal.Config.Voter = state.VoteByOwner
 				proposal.Creator = key.Addr().String()
 				proposal.Action = state.ProposalActionAddOwner
 				proposal.ActionData = map[string][]byte{
@@ -199,7 +199,7 @@ var _ = Describe("ProposalHandler", func() {
 		When("proposal's end height is a future height", func() {
 			It("should return false", func() {
 				proposal := state.BareRepoProposal()
-				proposal.Config.Proposer = state.ProposerOwner
+				proposal.Config.Voter = state.VoteByOwner
 				proposal.Creator = key.Addr().String()
 				proposal.EndAt = 100
 				repo := state.BareRepository()
@@ -222,7 +222,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{
 						Config: state.MakeDefaultRepoConfig().Governance,
 					}
-					proposal.Config.Proposer = state.ProposerOwner
+					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Action = state.ProposalActionAddOwner
 					proposal.Fees = map[string]string{
@@ -262,7 +262,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{
 						Config: state.MakeDefaultRepoConfig().Governance,
 					}
-					proposal.Config.Proposer = state.ProposerOwner
+					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Action = state.ProposalActionAddOwner
 					proposal.Fees = map[string]string{
@@ -302,7 +302,7 @@ var _ = Describe("ProposalHandler", func() {
 				proposal = &state.RepoProposal{
 					Config: state.MakeDefaultRepoConfig().Governance,
 				}
-				proposal.Config.Proposer = state.ProposerNetStakeholders
+				proposal.Config.Voter = state.VoteByNetStakers
 				proposal.Creator = key.Addr().String()
 				proposal.Config.ProposalQuorum = 40
 				proposal.Yes = 100
@@ -328,7 +328,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{
 						Config: state.MakeDefaultRepoConfig().Governance,
 					}
-					proposal.Config.Proposer = state.ProposerOwner
+					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
 					proposal.Yes = 1
@@ -349,7 +349,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{
 						Config: state.MakeDefaultRepoConfig().Governance,
 					}
-					proposal.Config.Proposer = state.ProposerOwner
+					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
 					proposal.Config.ProposalVetoQuorum = 10
@@ -371,7 +371,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{
 						Config: state.MakeDefaultRepoConfig().Governance,
 					}
-					proposal.Config.Proposer = state.ProposerNetStakeholdersAndVetoOwner
+					proposal.Config.Voter = state.VoteByNetStakersAndVetoOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
 					proposal.Config.ProposalVetoQuorum = 10
@@ -399,7 +399,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{
 						Config: state.MakeDefaultRepoConfig().Governance,
 					}
-					proposal.Config.Proposer = state.ProposerOwner
+					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
 					proposal.Config.ProposalVetoQuorum = 0
@@ -421,7 +421,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{
 						Config: state.MakeDefaultRepoConfig().Governance,
 					}
-					proposal.Config.Proposer = state.ProposerOwner
+					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
 					proposal.Config.ProposalVetoQuorum = 10
@@ -443,7 +443,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{
 						Config: state.MakeDefaultRepoConfig().Governance,
 					}
-					proposal.Config.Proposer = state.ProposerOwner
+					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
 					proposal.Config.ProposalVetoQuorum = 10
@@ -466,7 +466,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{
 						Config: state.MakeDefaultRepoConfig().Governance,
 					}
-					proposal.Config.Proposer = state.ProposerOwner
+					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
 					proposal.Config.ProposalVetoQuorum = 10

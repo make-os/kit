@@ -78,7 +78,7 @@ var _ = Describe("Transfers", func() {
 			It("should return no error", func() {
 				err := txLogic.CanExecCoinTransfer(sender.PubKey(), "100", "0", 3, 1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, msg:tx has invalid nonce (3), expected (1)"))
+				Expect(err.Error()).To(Equal("field:value, msg:tx has invalid nonce (3); expected (1)"))
 			})
 		})
 

@@ -55,14 +55,14 @@ func (t *Transaction) execRepoCreate(
 		addDefaultPolicies(newRepo.Config)
 	}
 
-	proposer := newRepo.Config.Governance.Proposer
+	voterType := newRepo.Config.Governance.Voter
 
 	// Register sender as owner only if proposer type is ProposerOwner
 	// Register sender as a veto owner if proposer type is ProposerNetStakeholdersAndVetoOwner
-	if proposer == state.ProposerOwner || proposer == state.ProposerNetStakeholdersAndVetoOwner {
+	if voterType == state.VoteByOwner || voterType == state.VoteByNetStakersAndVetoOwner {
 		newRepo.AddOwner(spk.Addr().String(), &state.RepoOwner{
 			Creator:  true,
-			Veto:     proposer == state.ProposerNetStakeholdersAndVetoOwner,
+			Veto:     voterType == state.VoteByNetStakersAndVetoOwner,
 			JoinedAt: chainHeight + 1,
 		})
 	}
@@ -318,7 +318,7 @@ func makeProposal(
 		Config:     repo.Config.Clone().Governance,
 		Creator:    spk.Addr().String(),
 		Height:     chainHeight,
-		EndAt:      repo.Config.Governance.ProposalDur + chainHeight + 1,
+		EndAt:      repo.Config.Governance.DurOfProposal + chainHeight + 1,
 		Fees:       map[string]string{},
 		ActionData: map[string][]byte{},
 	}
@@ -329,15 +329,15 @@ func makeProposal(
 	}
 
 	// Set the max. join height for voters.
-	if repo.Config.Governance.ProposalProposerLimitToCurHeight {
+	if repo.Config.Governance.VoterAgeAsCurHeight {
 		proposal.ProposerMaxJoinHeight = chainHeight + 1
 	}
 
 	// Set the fee deposit end height and also update the proposal end height to
 	// be after the fee deposit height
-	if repo.Config.Governance.ProposalFeeDepositDur > 0 {
-		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governance.ProposalFeeDepositDur
-		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governance.ProposalDur
+	if repo.Config.Governance.FeeDepositDurOfProposal > 0 {
+		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governance.FeeDepositDurOfProposal
+		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governance.DurOfProposal
 	}
 
 	// Register the proposal to the repo
@@ -590,23 +590,23 @@ func (t *Transaction) execRepoProposalVote(
 
 	// When proposers are the owners, and tally method is ProposalTallyMethodIdentity
 	// each proposer will have 1 voting power.
-	if prop.Config.Proposer == state.ProposerOwner &&
-		prop.Config.ProposalTallyMethod == state.ProposalTallyMethodIdentity {
+	if prop.Config.Voter == state.VoteByOwner &&
+		prop.Config.TallyMethodOfProposal == state.ProposalTallyMethodIdentity {
 		increments = 1
 	}
 
 	// When proposers are the owners, and tally method is ProposalTallyMethodCoinWeighted
 	// each proposer will use the value of the voter's spendable account balance
 	// as their voting power.
-	if prop.Config.Proposer == state.ProposerOwner &&
-		prop.Config.ProposalTallyMethod == state.ProposalTallyMethodCoinWeighted {
+	if prop.Config.Voter == state.VoteByOwner &&
+		prop.Config.TallyMethodOfProposal == state.ProposalTallyMethodCoinWeighted {
 		senderAcct := t.logic.AccountKeeper().Get(spk.Addr())
 		increments = senderAcct.GetSpendableBalance(chainHeight).Float()
 	}
 
 	// For network staked-weighted votes, use the total value of coins directly
 	// staked by the voter as their vote power
-	if prop.Config.ProposalTallyMethod == state.ProposalTallyMethodNetStakeOfProposer {
+	if prop.Config.TallyMethodOfProposal == state.ProposalTallyMethodNetStakeOfProposer {
 		increments, err = t.logic.GetTicketManager().
 			ValueOfNonDelegatedTickets(senderPubKey, prop.ProposerMaxJoinHeight)
 		if err != nil {
@@ -616,7 +616,7 @@ func (t *Transaction) execRepoProposalVote(
 
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
-	if prop.Config.ProposalTallyMethod == state.ProposalTallyMethodNetStakeOfDelegators {
+	if prop.Config.TallyMethodOfProposal == state.ProposalTallyMethodNetStakeOfDelegators {
 		increments, err = t.logic.GetTicketManager().
 			ValueOfDelegatedTickets(senderPubKey, prop.ProposerMaxJoinHeight)
 		if err != nil {
@@ -626,7 +626,7 @@ func (t *Transaction) execRepoProposalVote(
 
 	// For network staked-weighted votes, use the total value of coins delegated
 	// to the voter as their vote power
-	if prop.Config.ProposalTallyMethod == state.ProposalTallyMethodNetStake {
+	if prop.Config.TallyMethodOfProposal == state.ProposalTallyMethodNetStake {
 
 		tickets, err := t.logic.GetTicketManager().
 			GetNonDecayedTickets(senderPubKey, prop.ProposerMaxJoinHeight)
@@ -718,7 +718,7 @@ func (t *Transaction) execRepoProposalVote(
 		// Also, if the proposer type for the proposal is stakeholders and veto
 		// owners and voter is an owner, increment NoWithVetoByOwners by 1
 		voterOwnerObj := repo.Owners.Get(spk.Addr().String())
-		isStakeholderAndVetoOwnerProposer := prop.Config.Proposer == state.ProposerNetStakeholdersAndVetoOwner
+		isStakeholderAndVetoOwnerProposer := prop.Config.Voter == state.VoteByNetStakersAndVetoOwner
 		if isStakeholderAndVetoOwnerProposer && voterOwnerObj != nil && voterOwnerObj.Veto {
 			prop.NoWithVetoByOwners = 1
 		}

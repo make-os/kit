@@ -35,6 +35,19 @@ var _ = Describe("Errors", func() {
 				}))
 			})
 		})
+
+		When("msg contains a field error format: `msg:'field:id, msg:user's name is required', httpCode:'400', code:'mempool_add_fail'`", func() {
+			It("should convert successfully without altering the field error", func() {
+				out := `msg:'field:id, msg:user's name is required', httpCode:'400', code:'mempool_add_fail'`
+				err := StatusErrorFromStr(out)
+				Expect(err).To(Equal(&StatusError{
+					Code:     "mempool_add_fail",
+					HttpCode: 400,
+					Msg:      "field:id, msg:user's name is required",
+					Field:    "",
+				}))
+			})
+		})
 	})
 
 	Describe(".getKeyFromFieldErrOutput", func() {

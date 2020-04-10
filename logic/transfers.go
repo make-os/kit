@@ -142,7 +142,7 @@ func (t *Transaction) CanExecCoinTransfer(
 	// Ensure the transaction nonce is the next expected nonce
 	expectedNonce := senderAcct.Nonce + 1
 	if expectedNonce != nonce {
-		return util.FieldError(field, fmt.Sprintf("tx has invalid nonce (%d), expected (%d)",
+		return util.FieldError(field, fmt.Sprintf("tx has invalid nonce (%d); expected (%d)",
 			nonce, expectedNonce))
 	}
 

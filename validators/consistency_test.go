@@ -1234,7 +1234,7 @@ var _ = Describe("TxValidator", func() {
 				tx.ProposalID = "proposal1"
 
 				repo := state.BareRepository()
-				repo.Config.Governance.Proposer = state.ProposerOwner
+				repo.Config.Governance.Voter = state.VoteByOwner
 				repo.Proposals.Add("proposal1", &state.RepoProposal{
 					Config: repo.Config.Governance,
 				})
@@ -1261,7 +1261,7 @@ var _ = Describe("TxValidator", func() {
 
 					repo := state.BareRepository()
 					repo.AddOwner(key.Addr().String(), &state.RepoOwner{})
-					repo.Config.Governance.Proposer = state.ProposerOwner
+					repo.Config.Governance.Voter = state.VoteByOwner
 					repo.Proposals.Add("proposal1", &state.RepoProposal{
 						Config: repo.Config.Governance,
 					})
@@ -1444,7 +1444,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &core.BlockInfo{Height: 1}
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
+				_, err = validators.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {
@@ -1464,7 +1464,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &core.BlockInfo{Height: 1}
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
+				_, err = validators.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {
@@ -1484,7 +1484,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &core.BlockInfo{Height: 1}
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
+				_, err = validators.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {
@@ -1504,7 +1504,7 @@ var _ = Describe("TxValidator", func() {
 
 				bi := &core.BlockInfo{Height: 1}
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
+				_, err = validators.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {
@@ -1513,24 +1513,119 @@ var _ = Describe("TxValidator", func() {
 			})
 		})
 
-		When("sender is not one of the repo owners", func() {
-			BeforeEach(func() {
-				txProposal := &core.TxProposalCommon{RepoName: "repo1"}
-				txCommon := &core.TxCommon{}
-				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				txProposal.Value = "101"
-				repo := state.BareRepository()
-				repo.Config.Governance.ProposalFee = 100
-				repo.Config.Governance.Proposer = state.ProposerOwner
+		When("repo config allows only owners to create proposals", func() {
+			When("sender is not one of the repo owners", func() {
+				BeforeEach(func() {
+					txProposal := &core.TxProposalCommon{RepoName: "repo1"}
+					txCommon := &core.TxCommon{}
+					txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+					txProposal.Value = "101"
+					repo := state.BareRepository()
+					repo.Config.Governance.ProposalCreator = state.ProposalCreatorOwner
+					repo.Config.Governance.ProposalFee = 100
+					repo.Config.Governance.Voter = state.VoteByOwner
 
-				bi := &core.BlockInfo{Height: 1}
-				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
-				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
+					bi := &core.BlockInfo{Height: 1}
+					mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+					_, err = validators.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
+				})
+
+				It("should return err", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("field:senderPubKey, msg:sender is not permitted to create proposal"))
+				})
 			})
 
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:senderPubKey, msg:sender is not one of the repo owners"))
+			When("sender is one of the repo owners", func() {
+				BeforeEach(func() {
+					txProposal := &core.TxProposalCommon{RepoName: "repo1"}
+					txCommon := &core.TxCommon{}
+					txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+					txProposal.Value = "101"
+					repo := state.BareRepository()
+					repo.Config.Governance.ProposalCreator = state.ProposalCreatorOwner
+					repo.Config.Governance.ProposalFee = 100
+					repo.Config.Governance.Voter = state.VoteByOwner
+					repo.Owners[key.Addr().String()] = &state.RepoOwner{}
+
+					bi := &core.BlockInfo{Height: 1}
+					mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+					mockTxLogic.EXPECT().CanExecCoinTransfer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+					_, err = validators.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
+				})
+
+				It("should return no error", func() {
+					Expect(err).To(BeNil())
+				})
+			})
+		})
+
+		When("repo config allows only owners and merge request creators to create proposals", func() {
+			When("sender is not one of the repo owners and proposal type is not a merge request", func() {
+				BeforeEach(func() {
+					txProposal := &core.TxProposalCommon{RepoName: "repo1"}
+					txCommon := &core.TxCommon{}
+					txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+					txProposal.Value = "101"
+					repo := state.BareRepository()
+					repo.Config.Governance.ProposalCreator = state.ProposalCreatorOwnerAndAnyForMerge
+					repo.Config.Governance.ProposalFee = 100
+					repo.Config.Governance.Voter = state.VoteByOwner
+
+					bi := &core.BlockInfo{Height: 1}
+					mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+					_, err = validators.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
+				})
+
+				It("should return err", func() {
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("field:senderPubKey, msg:sender is not permitted to create proposal"))
+				})
+			})
+
+			When("sender is one of the repo owners", func() {
+				BeforeEach(func() {
+					txProposal := &core.TxProposalCommon{RepoName: "repo1"}
+					txCommon := &core.TxCommon{}
+					txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+					txProposal.Value = "101"
+					repo := state.BareRepository()
+					repo.Config.Governance.ProposalCreator = state.ProposalCreatorOwnerAndAnyForMerge
+					repo.Config.Governance.ProposalFee = 100
+					repo.Config.Governance.Voter = state.VoteByOwner
+					repo.Owners[key.Addr().String()] = &state.RepoOwner{}
+
+					bi := &core.BlockInfo{Height: 1}
+					mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+					mockTxLogic.EXPECT().CanExecCoinTransfer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+					_, err = validators.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
+				})
+
+				It("should return no error", func() {
+					Expect(err).To(BeNil())
+				})
+			})
+
+			When("sender is not one of the repo owners but proposal type is a merge request", func() {
+				BeforeEach(func() {
+					txProposal := &core.TxProposalCommon{RepoName: "repo1"}
+					txCommon := &core.TxCommon{}
+					txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+					txProposal.Value = "101"
+					repo := state.BareRepository()
+					repo.Config.Governance.ProposalCreator = state.ProposalCreatorOwnerAndAnyForMerge
+					repo.Config.Governance.ProposalFee = 100
+					repo.Config.Governance.Voter = state.VoteByOwner
+
+					bi := &core.BlockInfo{Height: 1}
+					mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
+					mockTxLogic.EXPECT().CanExecCoinTransfer(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+					_, err = validators.CheckProposalCommonConsistency(core.TxTypeRepoProposalMergeRequest, txProposal, txCommon, -1, mockLogic, 1)
+				})
+
+				It("should return no error", func() {
+					Expect(err).To(BeNil())
+				})
 			})
 		})
 
@@ -1542,7 +1637,7 @@ var _ = Describe("TxValidator", func() {
 				txProposal.Value = "101"
 				repo := state.BareRepository()
 				repo.Config.Governance.ProposalFee = 100
-				repo.Config.Governance.Proposer = state.ProposerOwner
+				repo.Config.Governance.Voter = state.VoteByOwner
 				repo.Owners[key.Addr().String()] = &state.RepoOwner{}
 
 				bi := &core.BlockInfo{Height: 1}
@@ -1550,7 +1645,7 @@ var _ = Describe("TxValidator", func() {
 				mockTxLogic.EXPECT().CanExecCoinTransfer(key.PubKey(),
 					txProposal.Value, txCommon.Fee, txCommon.Nonce, uint64(bi.Height)).Return(fmt.Errorf("error"))
 
-				_, err = validators.CheckProposalCommonConsistency(txProposal, txCommon, -1, mockLogic, 1)
+				_, err = validators.CheckProposalCommonConsistency(0, txProposal, txCommon, -1, mockLogic, 1)
 			})
 
 			It("should return err", func() {

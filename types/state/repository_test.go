@@ -85,7 +85,7 @@ var _ = Describe("Repository", func() {
 				r = BareRepository()
 				r.Balance = "100"
 				config := BareRepoConfig()
-				config.Governance = &RepoConfigGovernance{ProposalDur: 100}
+				config.Governance = &RepoConfigGovernance{DurOfProposal: 100}
 				config.Policies = []*Policy{{"obj", "sub", "deny"}}
 				r.Config = config
 				expectedBz = r.Bytes()
@@ -207,8 +207,8 @@ var _ = Describe("Repository", func() {
 			Context("merge all key/value in map", func() {
 				base := &RepoConfig{
 					Governance: &RepoConfigGovernance{
-						Proposer:                         1,
-						ProposalProposerLimitToCurHeight: true,
+						Voter:               1,
+						VoterAgeAsCurHeight: true,
 					},
 					Policies: []*Policy{{Subject: "user1", Object: "dev", Action: "deny"}},
 				}
@@ -217,12 +217,12 @@ var _ = Describe("Repository", func() {
 					base.MergeMap(map[string]interface{}{
 						"name": "some-name",
 						"governance": map[string]interface{}{
-							"propProposer":                 13,
-							"propProposerLimitToCurHeight": false,
+							"propVoter":                 13,
+							"propVoterLimitToCurHeight": false,
 						},
 					})
-					Expect(int(base.Governance.Proposer)).To(Equal(13))
-					Expect(base.Governance.ProposalProposerLimitToCurHeight).To(BeFalse())
+					Expect(int(base.Governance.Voter)).To(Equal(13))
+					Expect(base.Governance.VoterAgeAsCurHeight).To(BeFalse())
 				})
 			})
 
@@ -251,8 +251,8 @@ var _ = Describe("Repository", func() {
 		Describe(".Clone", func() {
 			base := &RepoConfig{
 				Governance: &RepoConfigGovernance{
-					Proposer:                         1,
-					ProposalProposerLimitToCurHeight: true,
+					Voter:               1,
+					VoterAgeAsCurHeight: true,
 				},
 				Policies: []*Policy{},
 			}

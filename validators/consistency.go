@@ -404,6 +404,7 @@ func CheckTxNamespaceDomainUpdateConsistency(
 // CheckProposalCommonConsistency includes common consistency checks for
 // proposal transactions.
 func CheckProposalCommonConsistency(
+	proposalType int,
 	txProposal *core.TxProposalCommon,
 	txCommon *core.TxCommon,
 	index int,
@@ -416,7 +417,7 @@ func CheckProposalCommonConsistency(
 		return nil, feI(index, "name", "repo not found")
 	}
 
-	// Ensure not proposal with matching ID exist
+	// Ensure no proposal with matching ID exist
 	if targetRepo.Proposals.Get(txProposal.ProposalID) != nil {
 		return nil, feI(index, "id", "proposal id has been used, choose another")
 	}
@@ -432,17 +433,27 @@ func CheckProposalCommonConsistency(
 
 	// When the repo does not support a fee deposit duration period,
 	// ensure the minimum fee was paid in the current transaction.
-	if targetRepo.Config.Governance.ProposalFeeDepositDur == 0 {
+	if targetRepo.Config.Governance.FeeDepositDurOfProposal == 0 {
 		if repoPropFee.GreaterThan(decimal.Zero) &&
 			txProposal.Value.Decimal().LessThan(repoPropFee) {
 			return nil, feI(index, "value", "proposal fee cannot be less than repo minimum")
 		}
 	}
 
-	// If the repo is owned by some owners, ensure the sender is one of the owners
-	senderOwner := targetRepo.Owners.Get(txCommon.GetFrom().String())
-	if targetRepo.Config.Governance.Proposer == state.ProposerOwner && senderOwner == nil {
-		return nil, feI(index, "senderPubKey", "sender is not one of the repo owners")
+	// Check if the sender is permitted to create the proposal.
+	// When proposal creator parameter is ProposalCreatorOwner, the sender is permitted only if they are an owner...
+	owner := targetRepo.Owners.Get(txCommon.GetFrom().String())
+	propCreator := targetRepo.Config.Governance.ProposalCreator
+	if propCreator == state.ProposalCreatorOwner && owner == nil {
+		return nil, feI(index, "senderPubKey", "sender is not permitted to create proposal")
+	}
+
+	// ... But if proposal creator parameter is ProposalCreatorOwnerAndAnyForMerge, the sender is only permitted
+	// if there are an owner or this proposal is a merge request.
+	if propCreator == state.ProposalCreatorOwnerAndAnyForMerge && owner == nil {
+		if proposalType != core.TxTypeRepoProposalMergeRequest {
+			return nil, feI(index, "senderPubKey", "sender is not permitted to create proposal")
+		}
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(txCommon.GetSenderPubKey().Bytes())
@@ -466,7 +477,7 @@ func CheckTxRepoProposalUpsertOwnerConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	_, err = CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
+	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
 	if err != nil {
 		return err
 	}
@@ -516,13 +527,13 @@ func CheckTxVoteConsistency(
 	// If the proposal is targeted at repo owners, then
 	// the sender must be an owner
 	senderOwner := repoState.Owners.Get(tx.GetFrom().String())
-	if proposal.GetProposerType() == state.ProposerOwner && senderOwner == nil {
+	if proposal.GetProposerType() == state.VoteByOwner && senderOwner == nil {
 		return feI(index, "senderPubKey", "sender is not one of the repo owners")
 	}
 
 	// If the proposal is targetted at repo owners and
 	// the vote is a NoWithVeto, then the sender must have veto rights.
-	if proposal.GetProposerType() == state.ProposerOwner &&
+	if proposal.GetProposerType() == state.VoteByOwner &&
 		tx.Vote == state.ProposalVoteNoWithVeto && !senderOwner.Veto {
 		return feI(index, "senderPubKey", "sender cannot vote 'no with veto' because "+
 			"they have no veto right")
@@ -605,7 +616,7 @@ func CheckTxRepoProposalMergeRequestConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	_, err = CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
+	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
 	if err != nil {
 		return err
 	}
@@ -624,7 +635,7 @@ func CheckTxRepoProposalUpdateConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	_, err = CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
+	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
 	if err != nil {
 		return err
 	}
@@ -661,7 +672,7 @@ func CheckTxRepoProposalRegisterPushKeyConsistency(
 		}
 	}
 
-	_, err = CheckProposalCommonConsistency(tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
+	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
 	if err != nil {
 		return err
 	}

@@ -82,17 +82,18 @@ func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
 
 // RepoConfigGovernance contains governance settings for a repository
 type RepoConfigGovernance struct {
-	Proposer                         ProposerType          `json:"propProposer" mapstructure:"propProposer,omitempty" msgpack:"propProposer"`
-	ProposalProposerLimitToCurHeight bool                  `json:"propProposerLimitToCurHeight" mapstructure:"propProposerLimitToCurHeight,omitempty" msgpack:"propProposerLimitToCurHeight"`
-	ProposalDur                      uint64                `json:"propDuration" mapstructure:"propDuration,omitempty" msgpack:"propDuration"`
-	ProposalFeeDepositDur            uint64                `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur"`
-	ProposalTallyMethod              ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod"`
-	ProposalQuorum                   float64               `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum"`
-	ProposalThreshold                float64               `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold"`
-	ProposalVetoQuorum               float64               `json:"propVetoQuorum" mapstructure:"propVetoQuorum,omitempty" msgpack:"propVetoQuorum"`
-	ProposalVetoOwnersQuorum         float64               `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum,omitempty" msgpack:"propVetoOwnersQuorum"`
-	ProposalFee                      float64               `json:"propFee" mapstructure:"propFee,omitempty" msgpack:"propFee"`
-	ProposalFeeRefundType            ProposalFeeRefundType `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType"`
+	Voter                    VoterType             `json:"propVoter" mapstructure:"propVoter,omitempty" msgpack:"propVoter"`
+	ProposalCreator          ProposalCreatorType   `json:"propCreator" mapstructure:"propCreator,omitempty" msgpack:"propCreator"`
+	VoterAgeAsCurHeight      bool                  `json:"voterAgeAsCurHeight" mapstructure:"voterAgeAsCurHeight,omitempty" msgpack:"voterAgeAsCurHeight"`
+	DurOfProposal            uint64                `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur"`
+	FeeDepositDurOfProposal  uint64                `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur"`
+	TallyMethodOfProposal    ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod"`
+	ProposalQuorum           float64               `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum"`
+	ProposalThreshold        float64               `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold"`
+	ProposalVetoQuorum       float64               `json:"propVetoQuorum" mapstructure:"propVetoQuorum,omitempty" msgpack:"propVetoQuorum"`
+	ProposalVetoOwnersQuorum float64               `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum,omitempty" msgpack:"propVetoOwnersQuorum"`
+	ProposalFee              float64               `json:"propFee" mapstructure:"propFee,omitempty" msgpack:"propFee"`
+	ProposalFeeRefundType    ProposalFeeRefundType `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType"`
 }
 
 // Policy describes a repository access policy
@@ -167,17 +168,18 @@ var (
 func MakeDefaultRepoConfig() *RepoConfig {
 	return &RepoConfig{
 		Governance: &RepoConfigGovernance{
-			Proposer:                         ProposerOwner,
-			ProposalProposerLimitToCurHeight: false,
-			ProposalDur:                      params.RepoProposalDur,
-			ProposalTallyMethod:              ProposalTallyMethodIdentity,
-			ProposalQuorum:                   params.RepoProposalQuorum,
-			ProposalThreshold:                params.RepoProposalThreshold,
-			ProposalVetoQuorum:               params.RepoProposalVetoQuorum,
-			ProposalVetoOwnersQuorum:         params.RepoProposalVetoOwnersQuorum,
-			ProposalFee:                      params.MinProposalFee,
-			ProposalFeeRefundType:            0,
-			ProposalFeeDepositDur:            0,
+			Voter:                    VoteByOwner,
+			ProposalCreator:          ProposalCreatorAny,
+			VoterAgeAsCurHeight:      false,
+			DurOfProposal:            params.RepoProposalDur,
+			TallyMethodOfProposal:    ProposalTallyMethodIdentity,
+			ProposalQuorum:           params.RepoProposalQuorum,
+			ProposalThreshold:        params.RepoProposalThreshold,
+			ProposalVetoQuorum:       params.RepoProposalVetoQuorum,
+			ProposalVetoOwnersQuorum: params.RepoProposalVetoOwnersQuorum,
+			ProposalFee:              params.MinProposalFee,
+			ProposalFeeRefundType:    ProposalFeeRefundNo,
+			FeeDepositDurOfProposal:  0,
 		},
 		Policies: []*Policy{},
 	}

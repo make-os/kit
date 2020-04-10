@@ -6,20 +6,29 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// ProposerType represents a type of repository proposer
-type ProposerType int
+// VoterType represents a type of repository voter type
+type VoterType int
 
 const (
-	ProposerOwner                       ProposerType = iota + 1 // Only owners can create proposals and vote on them
-	ProposerNetStakeholders                                     // Allows anyone to create a proposal but only network stakeholders can vote.
-	ProposerNetStakeholdersAndVetoOwner                         // Allows anyone to create a proposal but only network stakeholders and veto owners can vote.
+	VoteByOwner                  VoterType = iota + 1 // Describes a repo where only owners can vote
+	VoteByNetStakers                                  // Describes a repo where only network stakeholders can vote.
+	VoteByNetStakersAndVetoOwner                      // Describes a repo whether only network stakeholders and veto owners can vote.
+)
+
+// ProposalCreatorType describes types of proposal creators
+type ProposalCreatorType int
+
+const (
+	ProposalCreatorAny ProposalCreatorType = iota + 1
+	ProposalCreatorOwner
+	ProposalCreatorOwnerAndAnyForMerge
 )
 
 // ProposalFeeRefundType describes the type of refund scheme supported
 type ProposalFeeRefundType int
 
 const (
-	ProposalFeeRefundNo ProposalFeeRefundType = iota
+	ProposalFeeRefundNo ProposalFeeRefundType = iota + 1
 	ProposalFeeRefundOnAccept
 	ProposalFeeRefundOnAcceptReject
 	ProposalFeeRefundOnAcceptAllReject
@@ -94,7 +103,7 @@ const (
 // Proposal describes a repository proposal
 type Proposal interface {
 	GetCreator() string
-	GetProposerType() ProposerType
+	GetProposerType() VoterType
 	GetProposerMaxJoinHeight() uint64
 	GetEndAt() uint64
 	GetQuorum() float64
@@ -226,8 +235,8 @@ func (p *RepoProposal) IncrAccept() {
 }
 
 // GetProposerType implements Proposal
-func (p *RepoProposal) GetProposerType() ProposerType {
-	return p.Config.Proposer
+func (p *RepoProposal) GetProposerType() VoterType {
+	return p.Config.Voter
 }
 
 // GetProposerMaxJoinHeight implements Proposal
@@ -257,7 +266,7 @@ func (p *RepoProposal) GetQuorum() float64 {
 
 // GetTallyMethod implements Proposal
 func (p *RepoProposal) GetTallyMethod() ProposalTallyMethod {
-	return p.Config.ProposalTallyMethod
+	return p.Config.TallyMethodOfProposal
 }
 
 // GetAction implements Proposal

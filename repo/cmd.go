@@ -301,6 +301,7 @@ func CreateAndSendMergeRequestCmd(
 	if err != nil {
 		return errors.Wrap(err, "unable to unlock")
 	}
+	fmt.Println("")
 
 	// Determine the next nonce, if unset from flag
 	if util.IsZeroString(nextNonce) {

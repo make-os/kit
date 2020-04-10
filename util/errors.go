@@ -117,7 +117,7 @@ func (s *StatusError) Is(target error) bool {
 // string to match the StatusError#Error output.
 // Never returns an error even on failure.
 func StatusErrorFromStr(str string) *StatusError {
-	var msgRe = regexp.MustCompile(`(?m)msg:'(.*?)'`)
+	var msgRe = regexp.MustCompile(`(?m)msg:'(.*?)'(,|$|\s)`)
 	var httpCodeRe = regexp.MustCompile(`(?m)httpCode:'(.*?)'`)
 	var codeRe = regexp.MustCompile(`(?m)code:'(.*?)'`)
 	var fieldRe = regexp.MustCompile(`(?m)field:'(.*?)'`)
@@ -126,13 +126,16 @@ func StatusErrorFromStr(str string) *StatusError {
 	if res := msgRe.FindStringSubmatch(str); res != nil {
 		err.Msg = res[1]
 	}
+
 	if res := httpCodeRe.FindStringSubmatch(str); res != nil {
 		httpCode, _ := strconv.Atoi(res[1])
 		err.HttpCode = httpCode
 	}
+
 	if res := codeRe.FindStringSubmatch(str); res != nil {
 		err.Code = res[1]
 	}
+
 	if res := fieldRe.FindStringSubmatch(str); res != nil {
 		err.Field = res[1]
 	}

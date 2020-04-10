@@ -601,16 +601,30 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckRepoConfig", func() {
-		When("proposer type is unknown", func() {
+		When("voter type is unknown", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Proposer: 1000,
+						Voter: 1000,
 					},
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propProposer, msg:unknown value"))
+				Expect(err.Error()).To(Equal("field:config.gov.propVoter, msg:unknown value"))
+			})
+		})
+
+		When("proposal creator type is unknown", func() {
+			It("should return error", func() {
+				repoCfg := &state.RepoConfig{
+					Governance: &state.RepoConfigGovernance{
+						Voter:           state.VoteByOwner,
+						ProposalCreator: 10,
+					},
+				}
+				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:config.gov.propCreator, msg:unknown value"))
 			})
 		})
 
@@ -618,8 +632,8 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Proposer:            state.ProposerOwner,
-						ProposalTallyMethod: 1000,
+						Voter:                 state.VoteByOwner,
+						TallyMethodOfProposal: 1000,
 					},
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -632,9 +646,9 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Proposer:            state.ProposerOwner,
-						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
-						ProposalQuorum:      -1,
+						Voter:                 state.VoteByOwner,
+						TallyMethodOfProposal: state.ProposalTallyMethodNetStake,
+						ProposalQuorum:        -1,
 					},
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -647,10 +661,10 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Proposer:            state.ProposerOwner,
-						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
-						ProposalQuorum:      1,
-						ProposalThreshold:   -1,
+						Voter:                 state.VoteByOwner,
+						TallyMethodOfProposal: state.ProposalTallyMethodNetStake,
+						ProposalQuorum:        1,
+						ProposalThreshold:     -1,
 					},
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -663,11 +677,11 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Proposer:            state.ProposerOwner,
-						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
-						ProposalQuorum:      1,
-						ProposalThreshold:   1,
-						ProposalVetoQuorum:  -1,
+						Voter:                 state.VoteByOwner,
+						TallyMethodOfProposal: state.ProposalTallyMethodNetStake,
+						ProposalQuorum:        1,
+						ProposalThreshold:     1,
+						ProposalVetoQuorum:    -1,
 					},
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -680,8 +694,8 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Proposer:                 state.ProposerOwner,
-						ProposalTallyMethod:      state.ProposalTallyMethodNetStake,
+						Voter:                    state.VoteByOwner,
+						TallyMethodOfProposal:    state.ProposalTallyMethodNetStake,
 						ProposalQuorum:           1,
 						ProposalThreshold:        1,
 						ProposalVetoQuorum:       1,
@@ -699,8 +713,8 @@ var _ = Describe("TxValidator", func() {
 				params.MinProposalFee = float64(400)
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Proposer:                 state.ProposerOwner,
-						ProposalTallyMethod:      state.ProposalTallyMethodNetStake,
+						Voter:                    state.VoteByOwner,
+						TallyMethodOfProposal:    state.ProposalTallyMethodNetStake,
 						ProposalQuorum:           1,
 						ProposalThreshold:        1,
 						ProposalVetoQuorum:       1,
@@ -719,8 +733,8 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Proposer:            state.ProposerNetStakeholders,
-						ProposalTallyMethod: state.ProposalTallyMethodCoinWeighted,
+						Voter:                 state.VoteByNetStakers,
+						TallyMethodOfProposal: state.ProposalTallyMethodCoinWeighted,
 					},
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -734,8 +748,8 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Proposer:            state.ProposerNetStakeholders,
-						ProposalTallyMethod: state.ProposalTallyMethodIdentity,
+						Voter:                 state.VoteByNetStakers,
+						TallyMethodOfProposal: state.ProposalTallyMethodIdentity,
 					},
 				}
 				err := validators.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -787,16 +801,16 @@ var _ = Describe("TxValidator", func() {
 				Expect(err.Error()).To(Equal("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
 			})
 
-			It("has invalid repo config (propProposer)", func() {
+			It("has invalid repo config (propVoter)", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
 				tx.Name = "repo1"
 				tx.Config["governance"] = map[string]interface{}{
-					"propProposer": -1,
+					"propVoter": -1,
 				}
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propProposer, msg:unknown value"))
+				Expect(err.Error()).To(Equal("field:config.gov.propVoter, msg:unknown value"))
 			})
 
 			It("has no nonce", func() {

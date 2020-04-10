@@ -224,13 +224,22 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 	actual.MergeMap(cfg)
 	govCfg := actual.Governance
 
-	// Ensure the proposer type is known
-	allowedProposerChoices := []state.ProposerType{0,
-		state.ProposerOwner,
-		state.ProposerNetStakeholders,
-		state.ProposerNetStakeholdersAndVetoOwner}
-	if !funk.Contains(allowedProposerChoices, govCfg.Proposer) {
-		return feI(index, "config.gov.propProposer", fmt.Sprintf("unknown value"))
+	// Ensure the voter type is known
+	allowedVoterChoices := []state.VoterType{0,
+		state.VoteByOwner,
+		state.VoteByNetStakers,
+		state.VoteByNetStakersAndVetoOwner}
+	if !funk.Contains(allowedVoterChoices, govCfg.Voter) {
+		return feI(index, "config.gov.propVoter", fmt.Sprintf("unknown value"))
+	}
+
+	// Ensure the proposal creator type is known
+	allowedPropCreator := []state.ProposalCreatorType{0,
+		state.ProposalCreatorAny,
+		state.ProposalCreatorOwner,
+		state.ProposalCreatorOwnerAndAnyForMerge}
+	if !funk.Contains(allowedPropCreator, govCfg.ProposalCreator) {
+		return feI(index, "config.gov.propCreator", fmt.Sprintf("unknown value"))
 	}
 
 	sf := fmt.Sprintf
@@ -243,7 +252,7 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 		state.ProposalTallyMethodNetStakeOfDelegators,
 		state.ProposalTallyMethodNetStake,
 	}
-	if !funk.Contains(allowedTallyMethod, govCfg.ProposalTallyMethod) {
+	if !funk.Contains(allowedTallyMethod, govCfg.TallyMethodOfProposal) {
 		return feI(index, "config.gov.propTallyMethod", sf("unknown value"))
 	}
 
@@ -268,10 +277,10 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 	}
 
 	// When proposer is ProposerOwner, tally method cannot be CoinWeighted or Identity
-	isNotOwnerProposer := govCfg.Proposer != state.ProposerOwner
+	isNotOwnerProposer := govCfg.Voter != state.VoteByOwner
 	if isNotOwnerProposer &&
-		(govCfg.ProposalTallyMethod == state.ProposalTallyMethodCoinWeighted ||
-			govCfg.ProposalTallyMethod == state.ProposalTallyMethodIdentity) {
+		(govCfg.TallyMethodOfProposal == state.ProposalTallyMethodCoinWeighted ||
+			govCfg.TallyMethodOfProposal == state.ProposalTallyMethodIdentity) {
 		return feI(index, "config", "when proposer type is not 'ProposerOwner', tally methods "+
 			"'CoinWeighted' and 'Identity' are not allowed")
 	}
