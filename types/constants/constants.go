@@ -18,11 +18,6 @@ const (
 	NamespaceHost      = "host"
 )
 
-// ABCI related events
-const (
-	EvtABCICommittedTx = "abci_delivered_valid_tx"
-)
-
 // Proposal action data keys
 const (
 	ActionDataKeyBaseBranch    = "b"

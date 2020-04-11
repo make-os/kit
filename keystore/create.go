@@ -98,7 +98,7 @@ func (ks *Keystore) CreateCmd(
 	// If no passphrase is provided, start an interactive session to
 	// collect the passphrase
 	if !nopass && strings.TrimSpace(passphrase) == "" {
-		fmt.Fprint(ks.out, "Your new key needs to be locked with a passphrase. Please enter a passphrase.")
+		fmt.Fprint(ks.out, "Your new key needs to be locked with a passphrase. Please enter a passphrase.\n")
 		passFromPrompt, err = ks.AskForPassword()
 		if err != nil {
 			return nil, err

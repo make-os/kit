@@ -3,6 +3,7 @@ package repo
 import (
 	"bytes"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -22,14 +23,16 @@ import (
 	gogitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
+func testCheckTxDetail(err error) func(params *types.TxDetail, keepers core.Keepers, index int) error {
+	return func(params *types.TxDetail, keepers core.Keepers, index int) error { return err }
+}
+
 var _ = Describe("Auth", func() {
 	var err error
 	var cfg *config.AppConfig
 	var repoName, path string
-	var repo core.BareRepo
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
-	var mockPushKeyKeeper *mocks.MockPushKeyKeeper
 	var key, key2 *crypto.Key
 	var mgr *Manager
 
@@ -43,14 +46,12 @@ var _ = Describe("Auth", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = GetRepo(path)
+		_, err = GetRepo(path)
 		Expect(err).To(BeNil())
-		_ = repo
 
 		ctrl = gomock.NewController(GinkgoT())
 		mocksObjs := testutil.MockLogic(ctrl)
 		mockLogic = mocksObjs.Logic
-		mockPushKeyKeeper = mocksObjs.PushKeyKeeper
 
 		mockDHTNode := mocks.NewMockDHTNode(ctrl)
 		mockMempool := mocks.NewMockMempool(ctrl)
@@ -65,181 +66,141 @@ var _ = Describe("Auth", func() {
 	})
 
 	Describe(".authenticate", func() {
-		It("should return error when a reference transaction detail is invalid", func() {
-			txDetails := []*types.TxDetail{{Reference: "refs/heads/master"}}
-			_, err := authenticate(txDetails, &state.Repository{}, &state.Namespace{}, mockLogic)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("token(0,ref=refs/heads/master): field:pkID, " +
-				"msg:push key id is required"))
-		})
 
 		When("there are two or more transaction details", func() {
-			When("the details are signed with different push keys", func() {
+			When("they are signed with different push keys", func() {
 				BeforeEach(func() {
-					mockPushKeyKeeper.EXPECT().Get(key.PushAddr().String()).Return(&state.PushKey{
-						Address: key.PushAddr(),
-						PubKey:  key.PubKey().ToPublicKey(),
-					})
-					mockPushKeyKeeper.EXPECT().Get(key2.PushAddr().String()).Return(&state.PushKey{
-						Address: key2.PushAddr(),
-						PubKey:  key2.PubKey().ToPublicKey(),
-					})
-
-					txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Reference: "refs/heads/master",
-						Fee: "1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "", Head: ""}
-					sig, _ := key.PrivKey().Sign(txD.BytesNoSig())
-					txD.Signature = base58.Encode(sig)
-
-					txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Reference: "refs/heads/master",
-						Fee: "1", Nonce: 2, PushKeyID: key2.PushAddr().String(), MergeProposalID: "", Head: ""}
-					sig, _ = key2.PrivKey().Sign(txD2.BytesNoSig())
-					txD2.Signature = base58.Encode(sig)
-
+					txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+					txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key2.PushAddr().String()}
+					repoState := state.BareRepository()
+					repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
 					txDetails := []*types.TxDetail{txD, txD2}
-					_, err = authenticate(txDetails, &state.Repository{}, &state.Namespace{}, mockLogic)
+					_, err = authenticate(txDetails, repoState, state.BareNamespace(), mockLogic, testCheckTxDetail(nil))
 				})
 
 				It("should return err", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err).To(MatchError("pushed references cannot be signed with different push keys"))
+					Expect(err).To(MatchError("index:1, field:pkID, msg:token siblings must be signed with the same push key"))
 				})
 			})
 		})
 
 		When("the details have different target repository name", func() {
 			BeforeEach(func() {
-				mockPushKeyKeeper.EXPECT().Get(key.PushAddr().String()).Return(&state.PushKey{
-					Address: key.PushAddr(),
-					PubKey:  key.PubKey().ToPublicKey(),
-				}).Times(2)
-
-				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Reference: "refs/heads/master",
-					Fee: "1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "", Head: ""}
-				sig, _ := key.PrivKey().Sign(txD.BytesNoSig())
-				txD.Signature = base58.Encode(sig)
-
-				txD2 := &types.TxDetail{RepoName: "repo2", RepoNamespace: "ns1", Reference: "refs/heads/master",
-					Fee: "1", Nonce: 2, PushKeyID: key.PushAddr().String(), MergeProposalID: "", Head: ""}
-				sig, _ = key.PrivKey().Sign(txD2.BytesNoSig())
-				txD2.Signature = base58.Encode(sig)
-
+				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+				txD2 := &types.TxDetail{RepoName: "repo2", RepoNamespace: "ns1", Nonce: 2, PushKeyID: key.PushAddr().String()}
 				txDetails := []*types.TxDetail{txD, txD2}
-				_, err = authenticate(txDetails, &state.Repository{}, &state.Namespace{}, mockLogic)
+				repoState := state.BareRepository()
+				repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
+				_, err = authenticate(txDetails, repoState, state.BareNamespace(), mockLogic, testCheckTxDetail(nil))
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("pushed references cannot target different repositories"))
+				Expect(err).To(MatchError("index:1, field:repoName, msg:token siblings must target the same repository"))
 			})
 		})
 
 		When("the details have different nonce", func() {
 			BeforeEach(func() {
-				mockPushKeyKeeper.EXPECT().Get(key.PushAddr().String()).Return(&state.PushKey{
-					Address: key.PushAddr(),
-					PubKey:  key.PubKey().ToPublicKey(),
-				}).Times(2)
-
-				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Reference: "refs/heads/master",
-					Fee: "1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "", Head: ""}
-				sig, _ := key.PrivKey().Sign(txD.BytesNoSig())
-				txD.Signature = base58.Encode(sig)
-
-				txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Reference: "refs/heads/master",
-					Fee: "1", Nonce: 2, PushKeyID: key.PushAddr().String(), MergeProposalID: "", Head: ""}
-				sig, _ = key.PrivKey().Sign(txD2.BytesNoSig())
-				txD2.Signature = base58.Encode(sig)
-
+				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+				txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 2, PushKeyID: key.PushAddr().String()}
 				txDetails := []*types.TxDetail{txD, txD2}
-				_, err = authenticate(txDetails, &state.Repository{}, &state.Namespace{}, mockLogic)
+				repoState := state.BareRepository()
+				repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
+				_, err = authenticate(txDetails, repoState, state.BareNamespace(), mockLogic, testCheckTxDetail(nil))
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("pushed references cannot have different nonce"))
+				Expect(err).To(MatchError("index:1, field:nonce, msg:token siblings must have the same nonce"))
 			})
 		})
 
 		When("the details have different target namespace", func() {
 			BeforeEach(func() {
-				mockPushKeyKeeper.EXPECT().Get(key.PushAddr().String()).Return(&state.PushKey{
-					Address: key.PushAddr(),
-					PubKey:  key.PubKey().ToPublicKey(),
-				}).Times(2)
-
-				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Reference: "refs/heads/master",
-					Fee: "1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "", Head: ""}
-				sig, _ := key.PrivKey().Sign(txD.BytesNoSig())
-				txD.Signature = base58.Encode(sig)
-
-				txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns2", Reference: "refs/heads/master",
-					Fee: "1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "", Head: ""}
-				sig, _ = key.PrivKey().Sign(txD2.BytesNoSig())
-				txD2.Signature = base58.Encode(sig)
-
+				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+				txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns2", Nonce: 1, PushKeyID: key.PushAddr().String()}
 				txDetails := []*types.TxDetail{txD, txD2}
-				_, err = authenticate(txDetails, &state.Repository{}, &state.Namespace{}, mockLogic)
+				repoState := state.BareRepository()
+				repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
+				_, err = authenticate(txDetails, repoState, state.BareNamespace(), mockLogic, testCheckTxDetail(nil))
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("pushed references cannot target different namespaces"))
+				Expect(err).To(MatchError("index:1, field:repoNamespace, msg:token siblings must target the same namespace"))
 			})
 		})
 
 		When("the pusher is not a contributor to the repository or namespace", func() {
 			BeforeEach(func() {
-				mockPushKeyKeeper.EXPECT().Get(key.PushAddr().String()).Return(&state.PushKey{
-					Address: key.PushAddr(),
-					PubKey:  key.PubKey().ToPublicKey(),
-				}).Times(2)
-
-				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Reference: "refs/heads/master",
-					Fee: "1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "", Head: ""}
-				sig, _ := key.PrivKey().Sign(txD.BytesNoSig())
-				txD.Signature = base58.Encode(sig)
-
-				txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Reference: "refs/heads/master",
-					Fee: "1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "", Head: ""}
-				sig, _ = key.PrivKey().Sign(txD2.BytesNoSig())
-				txD2.Signature = base58.Encode(sig)
-
+				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+				txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
 				txDetails := []*types.TxDetail{txD, txD2}
-				_, err = authenticate(txDetails, &state.Repository{}, &state.Namespace{}, mockLogic)
+				repoState := state.BareRepository()
+				_, err = authenticate(txDetails, repoState, &state.Namespace{}, mockLogic, testCheckTxDetail(nil))
 			})
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("push key (push1dmqxfznwyhmkcgcfthlvvt88vajyhnxqw65khm) " +
-					"is not a repo (repo1) contributor"))
+				Expect(err).To(MatchError("field:pkID, msg:push key is not a contributor to the target repo/namespace"))
 			})
 		})
 
-		Context("on success", func() {
+		When("the pusher is not a contributor to the repository or namespace but merge id is provided", func() {
 			BeforeEach(func() {
-				mockPushKeyKeeper.EXPECT().Get(key.PushAddr().String()).Return(&state.PushKey{
-					Address: key.PushAddr(),
-					PubKey:  key.PubKey().ToPublicKey(),
-				}).Times(2)
-
-				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Reference: "refs/heads/master",
-					Fee: "1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "", Head: ""}
-				sig, _ := key.PrivKey().Sign(txD.BytesNoSig())
-				txD.Signature = base58.Encode(sig)
-
-				txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Reference: "refs/heads/master",
-					Fee: "1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "", Head: ""}
-				sig, _ = key.PrivKey().Sign(txD2.BytesNoSig())
-				txD2.Signature = base58.Encode(sig)
-
+				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "123"}
+				txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "123"}
 				txDetails := []*types.TxDetail{txD, txD2}
 				repoState := state.BareRepository()
-				repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
-				_, err = authenticate(txDetails, repoState, &state.Namespace{}, mockLogic)
+				_, err = authenticate(txDetails, repoState, &state.Namespace{}, mockLogic, testCheckTxDetail(nil))
 			})
 
-			It("should return err", func() {
+			It("should return no error", func() {
 				Expect(err).To(BeNil())
+			})
+		})
+
+		It("should return error when a reference transaction detail failed validation", func() {
+			txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+			txDetails := []*types.TxDetail{txD}
+			repoState := state.BareRepository()
+			repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
+			_, err := authenticate(txDetails, repoState, &state.Namespace{}, mockLogic, testCheckTxDetail(fmt.Errorf("bad error")))
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("token error: bad error"))
+		})
+
+		Context("on success", func() {
+			When("push key is a repo contributor", func() {
+				BeforeEach(func() {
+					txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+					txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+					txDetails := []*types.TxDetail{txD, txD2}
+					repoState := state.BareRepository()
+					repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
+					_, err = authenticate(txDetails, repoState, &state.Namespace{}, mockLogic, testCheckTxDetail(nil))
+				})
+
+				It("should return no error", func() {
+					Expect(err).To(BeNil())
+				})
+			})
+
+			When("push key is a namespace contributor", func() {
+				BeforeEach(func() {
+					txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+					txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+					txDetails := []*types.TxDetail{txD, txD2}
+					ns := &state.Namespace{}
+					ns.Contributors = map[string]*state.BaseContributor{key.PushAddr().String(): {}}
+					_, err = authenticate(txDetails, state.BareRepository(), ns, mockLogic, testCheckTxDetail(nil))
+				})
+
+				It("should return no error", func() {
+					Expect(err).To(BeNil())
+				})
 			})
 		})
 	})
@@ -354,10 +315,16 @@ var _ = Describe("Auth", func() {
 	})
 
 	Describe(".handleAuth", func() {
+		var w http.ResponseWriter
+
+		BeforeEach(func() {
+			w = httptest.NewRecorder()
+		})
+
 		When("request method is GET", func() {
 			It("should return nil transaction details, enforcer and error", func() {
 				req := httptest.NewRequest("GET", "https://127.0.0.1", bytes.NewReader(nil))
-				txDetails, enforcer, err := mgr.handleAuth(req, &state.Repository{}, &state.Namespace{})
+				txDetails, enforcer, err := mgr.handleAuth(req, w, &state.Repository{}, &state.Namespace{})
 				Expect(err).To(BeNil())
 				Expect(txDetails).To(BeNil())
 				Expect(enforcer).To(BeNil())
@@ -367,7 +334,7 @@ var _ = Describe("Auth", func() {
 		When("a push token is not provided", func() {
 			It("should return error", func() {
 				req := httptest.NewRequest("POST", "https://127.0.0.1", bytes.NewReader(nil))
-				_, _, err := mgr.handleAuth(req, &state.Repository{}, &state.Namespace{})
+				_, _, err := mgr.handleAuth(req, w, &state.Repository{}, &state.Namespace{})
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(ErrPushTokenRequired))
 			})
@@ -377,7 +344,7 @@ var _ = Describe("Auth", func() {
 			It("should return error", func() {
 				req := httptest.NewRequest("POST", "https://127.0.0.1", bytes.NewReader(nil))
 				req.SetBasicAuth("xyz-malformed", "")
-				_, _, err := mgr.handleAuth(req, &state.Repository{}, &state.Namespace{})
+				_, _, err := mgr.handleAuth(req, w, &state.Repository{}, &state.Namespace{})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("malformed push token at index 0. Unable to decode"))
 			})
@@ -389,10 +356,10 @@ var _ = Describe("Auth", func() {
 				token := base58.Encode(util.ToBytes(txDetail))
 				req := httptest.NewRequest("POST", "https://127.0.0.1", bytes.NewReader(nil))
 				req.SetBasicAuth(token, "")
-				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers) (enforcer policyEnforcer, err error) {
+				mgr.authenticate = func([]*types.TxDetail, *state.Repository, *state.Namespace, core.Keepers, txDetailChecker) (enforcer policyEnforcer, err error) {
 					return nil, fmt.Errorf("auth error")
 				}
-				_, _, err := mgr.handleAuth(req, &state.Repository{}, &state.Namespace{})
+				_, _, err := mgr.handleAuth(req, w, &state.Repository{}, &state.Namespace{})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("auth error"))
 			})
@@ -405,10 +372,10 @@ var _ = Describe("Auth", func() {
 				req := httptest.NewRequest("POST", "https://127.0.0.1", bytes.NewReader(nil))
 				req.SetBasicAuth(token, "")
 				enforcer := getPolicyEnforcer([][]*state.Policy{{{Object: "obj", Subject: "sub", Action: "ac"}}})
-				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers) (policyEnforcer, error) {
+				mgr.authenticate = func([]*types.TxDetail, *state.Repository, *state.Namespace, core.Keepers, txDetailChecker) (policyEnforcer, error) {
 					return enforcer, nil
 				}
-				_, enc, err := mgr.handleAuth(req, &state.Repository{}, &state.Namespace{})
+				_, enc, err := mgr.handleAuth(req, w, &state.Repository{}, &state.Namespace{})
 				Expect(err).To(BeNil())
 				Expect(fmt.Sprintf("%p", enc)).To(Equal(fmt.Sprintf("%p", enforcer)))
 			})

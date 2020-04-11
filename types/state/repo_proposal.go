@@ -81,17 +81,6 @@ func (pf ProposalFees) Total() decimal.Decimal {
 	return sum
 }
 
-// ProposalAction represents proposal action types
-type ProposalAction int
-
-// Proposal actions
-const (
-	ProposalActionAddOwner ProposalAction = iota + 1
-	ProposalActionRepoUpdate
-	ProposalActionMergeRequest
-	ProposalActionRegisterPushKeyIDs
-)
-
 // Proposal vote choices
 const (
 	ProposalVoteYes        = 1
@@ -108,7 +97,7 @@ type Proposal interface {
 	GetEndAt() uint64
 	GetQuorum() float64
 	GetTallyMethod() ProposalTallyMethod
-	GetAction() ProposalAction
+	GetAction() int
 	GetActionData() map[string][]byte
 	GetThreshold() float64
 	GetVetoQuorum() float64
@@ -145,7 +134,7 @@ const (
 type RepoProposal struct {
 	util.SerializerHelper `json:"-" msgpack:"-"`
 	ID                    string                `json:"-" mapstructure:"-" msgpack:"-"`
-	Action                ProposalAction        `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
+	Action                int                   `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
 	ActionData            map[string][]byte     `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
 	Creator               string                `json:"creator" mapstructure:"creator" msgpack:"creator"`                                           // The creator is the address of the proposal creator.
 	Height                uint64                `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
@@ -224,6 +213,11 @@ func (p *RepoProposal) IsFinalized() bool {
 	return p.Outcome > 0
 }
 
+// IsAccepted implements Proposal
+func (p *RepoProposal) IsAccepted() bool {
+	return p.Outcome == ProposalOutcomeAccepted
+}
+
 // SetOutcome implements Proposal
 func (p *RepoProposal) SetOutcome(v ProposalOutcome) {
 	p.Outcome = v
@@ -270,7 +264,7 @@ func (p *RepoProposal) GetTallyMethod() ProposalTallyMethod {
 }
 
 // GetAction implements Proposal
-func (p *RepoProposal) GetAction() ProposalAction {
+func (p *RepoProposal) GetAction() int {
 	return p.Action
 }
 

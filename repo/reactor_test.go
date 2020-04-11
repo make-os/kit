@@ -130,7 +130,12 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
 
-				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers) (enforcer policyEnforcer, err error) {
+				mgr.authenticate = func(
+					txDetails []*types.TxDetail,
+					repo *state.Repository,
+					namespace *state.Namespace,
+					keepers core.Keepers,
+					checkTxDetail txDetailChecker) (enforcer policyEnforcer, err error) {
 					return nil, fmt.Errorf("bad error")
 				}
 
@@ -151,7 +156,12 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
 
-				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers) (enforcer policyEnforcer, err error) {
+				mgr.authenticate = func(
+					txDetails []*types.TxDetail,
+					repo *state.Repository,
+					namespace *state.Namespace,
+					keepers core.Keepers,
+					checkTxDetail txDetailChecker) (enforcer policyEnforcer, err error) {
 					return nil, nil
 				}
 
@@ -175,8 +185,12 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
-					keepers core.Keepers) (enforcer policyEnforcer, err error) {
+				mgr.authenticate = func(
+					txDetails []*types.TxDetail,
+					repo *state.Repository,
+					namespace *state.Namespace,
+					keepers core.Keepers,
+					checkTxDetail txDetailChecker) (enforcer policyEnforcer, err error) {
 					return nil, nil
 				}
 				mgr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
@@ -207,8 +221,12 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
-					keepers core.Keepers) (enforcer policyEnforcer, err error) {
+				mgr.authenticate = func(
+					txDetails []*types.TxDetail,
+					repo *state.Repository,
+					namespace *state.Namespace,
+					keepers core.Keepers,
+					checkTxDetail txDetailChecker) (enforcer policyEnforcer, err error) {
 					return nil, nil
 				}
 				mgr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
@@ -238,8 +256,7 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
-					keepers core.Keepers) (enforcer policyEnforcer, err error) {
+				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail txDetailChecker) (enforcer policyEnforcer, err error) {
 					return nil, nil
 				}
 				mgr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
@@ -280,7 +297,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
 				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
-					keepers core.Keepers) (enforcer policyEnforcer, err error) {
+					keepers core.Keepers, checkTxDetail txDetailChecker) (enforcer policyEnforcer, err error) {
 					return nil, nil
 				}
 				mgr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
@@ -330,7 +347,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
 				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
-					keepers core.Keepers) (enforcer policyEnforcer, err error) {
+					keepers core.Keepers, checkTxDetail txDetailChecker) (enforcer policyEnforcer, err error) {
 					return nil, nil
 				}
 				mgr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
@@ -387,7 +404,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
 				mgr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
-					keepers core.Keepers) (enforcer policyEnforcer, err error) {
+					keepers core.Keepers, checkTxDetail txDetailChecker) (enforcer policyEnforcer, err error) {
 					return nil, nil
 				}
 				mgr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {

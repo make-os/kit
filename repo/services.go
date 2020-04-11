@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -167,6 +168,7 @@ func serveService(s *requestInfo) error {
 		return errors.Wrap(err, "HandleUpdate err")
 	}
 
+	w.Header().Set("TxID", color.GreenString(s.pushHandler.noteID))
 	pktEnc.Encode(sidebandProgress(fmt.Sprintf("Transaction ID: %s", s.pushHandler.noteID)))
 
 	// Write output from git to the http response
@@ -175,4 +177,12 @@ func serveService(s *requestInfo) error {
 	}
 
 	return nil
+}
+
+// writeGitSidebandErr writes an error to git sideband error channel and returns the err
+func writeGitSidebandErr(w http.ResponseWriter, err error) error {
+	pktEnc := pktline.NewEncoder(w)
+	defer pktEnc.Flush()
+	pktEnc.Encode(sidebandErr(err.Error()))
+	return err
 }

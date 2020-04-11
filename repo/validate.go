@@ -27,9 +27,11 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-var feI = util.FieldErrorWithIndex
-var ErrSigHeaderAndReqParamsMismatch = fmt.Errorf("request transaction info and signature " +
-	"transaction info did not match")
+var (
+	fe                               = util.FieldErrorWithIndex
+	ErrSigHeaderAndReqParamsMismatch = fmt.Errorf("request transaction info and signature " +
+		"transaction info did not match")
+)
 
 type changeValidator func(
 	repo core.BareRepo,
@@ -261,7 +263,7 @@ func CheckPushNoteSyntax(tx *core.PushNote) error {
 		return util.FieldError("namespace", "namespace is not valid")
 	}
 
-	fe := util.FieldErrorWithIndex
+	fe := fe
 	for i, ref := range tx.References {
 		if ref.Name == "" {
 			return fe(i, "references.name", "name is required")
@@ -437,7 +439,7 @@ func CheckPushNoteConsistency(note *core.PushNote, logic core.Logic) error {
 		pushPubKey := crypto.MustPubKeyFromBytes(pushKey.PubKey.Bytes())
 		if ok, err := pushPubKey.Verify(txDetail.BytesNoSig(), ref.PushSig); err != nil || !ok {
 			msg := fmt.Sprintf("reference (%s) signature is not valid", ref.Name)
-			return util.FieldErrorWithIndex(i, "references", msg)
+			return fe(i, "references", msg)
 		}
 	}
 
@@ -485,12 +487,12 @@ func CheckPushEnd(pushEnd *core.PushEndorsement, index int) error {
 
 	// Push note id must be set
 	if pushEnd.NoteID.IsEmpty() {
-		return feI(index, "endorsements.pushNoteID", "push note id is required")
+		return fe(index, "endorsements.pushNoteID", "push note id is required")
 	}
 
 	// Sender public key must be set
 	if pushEnd.EndorserPubKey.IsEmpty() {
-		return feI(index, "endorsements.senderPubKey", "sender public key is required")
+		return fe(index, "endorsements.senderPubKey", "sender public key is required")
 	}
 
 	return nil
@@ -510,7 +512,7 @@ func CheckPushEndConsistencyUsingHost(
 	// Ensure that the signers of the PushEndorsement are part of the hosts
 	signerSelectedTicket := hosts.Get(pushEnd.EndorserPubKey)
 	if signerSelectedTicket == nil {
-		return feI(index, "endorsements.senderPubKey",
+		return fe(index, "endorsements.senderPubKey",
 			"sender public key does not belong to an active host")
 	}
 
@@ -521,7 +523,7 @@ func CheckPushEndConsistencyUsingHost(
 			return errors.Wrap(err, "failed to decode bls public key of endorser")
 		}
 		if err = blsPubKey.Verify(pushEnd.Sig.Bytes(), pushEnd.BytesNoSigAndSenderPubKey()); err != nil {
-			return feI(index, "endorsements.sig", "signature could not be verified")
+			return fe(index, "endorsements.sig", "signature could not be verified")
 		}
 	}
 
@@ -598,49 +600,51 @@ func fetchAndCheckReferenceObjects(tx core.RepoPushNote, dhtnode dhttypes.DHTNod
 	return nil
 }
 
+// txDetailChecker describes a function for checking a transaction detail
+type txDetailChecker func(params *types.TxDetail, keepers core.Keepers, index int) error
+
 // checkTxDetail performs sanity and consistency checks on a transaction's parameters.
-// When authScope is true, only fields necessary for authentication are validated.
-func checkTxDetail(params *types.TxDetail, keepers core.Keepers, authScope bool) error {
-	if err := checkTxDetailSanity(params, authScope); err != nil {
+func checkTxDetail(params *types.TxDetail, keepers core.Keepers, index int) error {
+	if err := checkTxDetailSanity(params, index); err != nil {
 		return err
 	}
-	return checkTxDetailConsistency(params, keepers, authScope)
+	return checkTxDetailConsistency(params, keepers, index)
 }
 
 // checkTxDetailSanity performs sanity checks on a transaction's parameters.
 // When authScope is true, only fields necessary for authentication are validated.
-func checkTxDetailSanity(params *types.TxDetail, authScope bool) error {
+func checkTxDetailSanity(params *types.TxDetail, index int) error {
 
 	// Push key is required and must be valid
 	if params.PushKeyID == "" {
-		return util.FieldError("pkID", "push key id is required")
+		return fe(index, "pkID", "push key id is required")
 	} else if !util.IsValidPushKeyID(params.PushKeyID) {
-		return util.FieldError("pkID", "push key id is not valid")
+		return fe(index, "pkID", "push key id is not valid")
 	}
 
 	// Nonce must be set
-	if !authScope && params.Nonce == 0 {
-		return util.FieldError("nonce", "nonce is required")
+	if params.Nonce == 0 {
+		return fe(index, "nonce", "nonce is required")
 	}
 
 	// Fee must be set
-	if !authScope && params.Fee.String() == "" {
-		return util.FieldError("fee", "fee is required")
+	if params.Fee.String() == "" {
+		return fe(index, "fee", "fee is required")
 	}
 
 	// Fee must be numeric
-	if !authScope && !gv.IsFloat(params.Fee.String()) {
-		return util.FieldError("fee", "fee must be numeric")
+	if !gv.IsFloat(params.Fee.String()) {
+		return fe(index, "fee", "fee must be numeric")
 	}
 
 	// Signature format must be valid
 	if _, err := base58.Decode(params.Signature); err != nil {
-		return util.FieldError("sig", "signature format is not valid")
+		return fe(index, "sig", "signature format is not valid")
 	}
 
 	// Merge proposal, if set, must be numeric and have 8 bytes length max.
-	if !authScope && params.MergeProposalID != "" {
-		return checkMergeProposalID(params.MergeProposalID, -1)
+	if params.MergeProposalID != "" {
+		return checkMergeProposalID(params.MergeProposalID, index)
 	}
 
 	return nil
@@ -649,10 +653,10 @@ func checkTxDetailSanity(params *types.TxDetail, authScope bool) error {
 // checkMergeProposalID performs sanity checks on merge proposal ID
 func checkMergeProposalID(id string, index int) error {
 	if !gv.IsNumeric(id) {
-		return util.FieldErrorWithIndex(index, "mergeID", "merge proposal id must be numeric")
+		return fe(index, "mergeID", "merge proposal id must be numeric")
 	}
 	if len(id) > 8 {
-		return util.FieldErrorWithIndex(index, "mergeID", "merge proposal id exceeded 8 bytes limit")
+		return fe(index, "mergeID", "merge proposal id exceeded 8 bytes limit")
 	}
 	return nil
 }
@@ -705,13 +709,12 @@ func isBlockedByScope(scopes []string, params *types.TxDetail, namespaceFromPara
 }
 
 // checkTxDetailConsistency performs consistency checks on a transaction's parameters.
-// When authScope is true, only fields necessary for authentication are validated.
-func checkTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, authScope bool) error {
+func checkTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, index int) error {
 
 	// Pusher key must exist
 	pushKey := keepers.PushKeyKeeper().Get(params.PushKeyID)
 	if pushKey.IsNil() {
-		return util.FieldError("pkID", "push key not found")
+		return fe(index, "pkID", "push key not found")
 	}
 
 	// Ensure repo namespace exist if set
@@ -720,7 +723,7 @@ func checkTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, auth
 		paramNS = keepers.NamespaceKeeper().Get(params.RepoNamespace)
 		if paramNS.IsNil() {
 			msg := fmt.Sprintf("namespace (%s) is unknown", params.RepoNamespace)
-			return util.FieldError("repoNamespace", msg)
+			return fe(index, "repoNamespace", msg)
 		}
 	}
 
@@ -728,24 +731,38 @@ func checkTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, auth
 	if len(pushKey.Scopes) > 0 {
 		if isBlockedByScope(pushKey.Scopes, params, paramNS) {
 			msg := fmt.Sprintf("push key (%s) not permitted due to scope limitation", params.PushKeyID)
-			return util.FieldError("repoName|repoNamespace", msg)
+			return fe(index, "repoName|repoNamespace", msg)
 		}
 	}
 
 	// Ensure the nonce is a future nonce (> current nonce of pusher's account)
-	if !authScope {
-		keyOwner := keepers.AccountKeeper().Get(pushKey.Address)
-		if params.Nonce <= keyOwner.Nonce {
-			msg := fmt.Sprintf("nonce (%d) must be greater than current key owner nonce (%d)", params.Nonce,
-				keyOwner.Nonce)
-			return util.FieldError("nonce", msg)
+	keyOwner := keepers.AccountKeeper().Get(pushKey.Address)
+	if params.Nonce <= keyOwner.Nonce {
+		msg := fmt.Sprintf("nonce (%d) must be greater than current key owner nonce (%d)", params.Nonce,
+			keyOwner.Nonce)
+		return fe(index, "nonce", msg)
+	}
+
+	// When merge proposal ID is set, check if merge proposal exist and
+	// whether it was created by the owner of the push key
+	if params.MergeProposalID != "" {
+		repoState := keepers.RepoKeeper().Get(params.RepoName)
+		mp := repoState.Proposals.Get(params.MergeProposalID)
+		if mp == nil {
+			return fe(index, "mergeID", "merge proposal not found")
+		}
+		if mp.Action != core.TxTypeRepoProposalMergeRequest {
+			return fe(index, "mergeID", "proposal is not a merge request")
+		}
+		if mp.Creator != pushKey.Address.String() {
+			return fe(index, "mergeID", "merge error: signer did not create the proposal")
 		}
 	}
 
 	// Use the key to verify the tx params signature
 	pubKey, _ := crypto.PubKeyFromBytes(pushKey.PubKey.Bytes())
 	if ok, err := pubKey.Verify(params.BytesNoSig(), params.MustSignatureAsBytes()); err != nil || !ok {
-		return util.FieldError("sig", "signature is not valid")
+		return fe(index, "sig", "signature is not valid")
 	}
 
 	return nil
@@ -776,13 +793,13 @@ func checkMergeCompliance(
 
 	prop := repo.State().Proposals.Get(mergeProposalID)
 	if prop == nil {
-		return fmt.Errorf("merge error: merge proposal (%s) not found", mergeProposalID)
+		return fmt.Errorf("merge error: target merge proposal was not found")
 	}
 
 	// Ensure the signer is the creator of the proposal
 	pushKey := keepers.PushKeyKeeper().Get(pushKeyID)
 	if pushKey.Address.String() != prop.Creator {
-		return fmt.Errorf("merge error: signer did not create the proposal (%s)", mergeProposalID)
+		return fmt.Errorf("merge error: push key owner did not create the proposal")
 	}
 
 	// Check if the merge proposal has been closed
@@ -790,7 +807,7 @@ func checkMergeCompliance(
 	if err != nil {
 		return fmt.Errorf("merge error: %s", err)
 	} else if closed {
-		return fmt.Errorf("merge error: merge proposal (%s) is already closed", mergeProposalID)
+		return fmt.Errorf("merge error: target merge proposal is already closed")
 	}
 
 	// Ensure the proposal's base branch matches the pushed branch
@@ -801,8 +818,12 @@ func checkMergeCompliance(
 	}
 
 	// Check whether the merge proposal has been accepted
-	if prop.Outcome != state.ProposalOutcomeAccepted {
-		return fmt.Errorf("merge error: merge proposal (%s) has not been accepted", mergeProposalID)
+	if !prop.IsAccepted() {
+		if prop.Outcome == 0 {
+			return fmt.Errorf("merge error: target merge proposal is undecided")
+		} else {
+			return fmt.Errorf("merge error: target merge proposal was not accepted")
+		}
 	}
 
 	// Get the commit that initiated the merge operation (a.k.a "merger commit").
@@ -827,8 +848,7 @@ func checkMergeCompliance(
 	if commit.GetTreeHash() != targetCommit.GetTreeHash() ||
 		commit.GetAuthor().String() != targetCommit.GetAuthor().String() ||
 		commit.GetCommitter().String() != targetCommit.GetCommitter().String() {
-		return fmt.Errorf("merge error: merger commit " +
-			"cannot modify history as seen from target commit")
+		return fmt.Errorf("merge error: merger commit must not modify target branch history")
 	}
 
 	// When no older reference (ex. a new/first branch),
@@ -849,16 +869,14 @@ func checkMergeCompliance(
 	// Ensure the proposals base branch hash matches the hash of the current
 	// branch before this current push/change.
 	if propBaseHashStr != oldRefHash {
-		return fmt.Errorf("merge error: merge proposal base " +
-			"branch hash is stale or invalid")
+		return fmt.Errorf("merge error: target merge proposal base branch hash is stale or invalid")
 	}
 
 	// Ensure the target commit and the proposal target match
 	var propTargetHash string
 	_ = util.ToObject(prop.ActionData[constants.ActionDataKeyTargetHash], &propTargetHash)
 	if targetCommit.GetHash().String() != propTargetHash {
-		return fmt.Errorf("merge error: target commit hash and " +
-			"the merge proposal target hash must match")
+		return fmt.Errorf("merge error: target commit hash and the merge proposal target hash must match")
 	}
 
 	return nil

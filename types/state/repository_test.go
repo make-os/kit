@@ -217,8 +217,8 @@ var _ = Describe("Repository", func() {
 					base.MergeMap(map[string]interface{}{
 						"name": "some-name",
 						"governance": map[string]interface{}{
-							"propVoter":                 13,
-							"propVoterLimitToCurHeight": false,
+							"propVoter":           13,
+							"voterAgeAsCurHeight": false,
 						},
 					})
 					Expect(int(base.Governance.Voter)).To(Equal(13))

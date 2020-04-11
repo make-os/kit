@@ -15,7 +15,6 @@ import (
 	"gitlab.com/makeos/mosdef/storage"
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gitlab.com/makeos/mosdef/validators"
@@ -452,11 +451,6 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	if err := a.logic.Commit(); err != nil {
 		a.commitPanic(errors.Wrap(err, "failed to commit"))
 	}
-
-	// Emit events about the committed transactions
-	committedTxs := make([]types.BaseTx, len(a.unIdxTxs))
-	copy(committedTxs, a.unIdxTxs)
-	a.cfg.G().Bus.Emit(constants.EvtABCICommittedTx, nil, committedTxs)
 
 	return abcitypes.ResponseCommit{
 		Data: bi.AppHash,

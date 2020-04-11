@@ -161,7 +161,7 @@ func (t *Transaction) execRepoProposalUpsertOwner(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
-	proposal.Action = state.ProposalActionAddOwner
+	proposal.Action = core.TxTypeRepoProposalUpsertOwner
 	proposal.ActionData = map[string][]byte{
 		constants.ActionDataKeyAddrs: util.ToBytes(addresses),
 		constants.ActionDataKeyVeto:  util.ToBytes(veto),
@@ -232,7 +232,7 @@ func (t *Transaction) execRepoProposalUpdate(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
-	proposal.Action = state.ProposalActionRepoUpdate
+	proposal.Action = core.TxTypeRepoProposalUpdate
 	proposal.ActionData[constants.ActionDataKeyCFG] = util.ToBytes(config)
 
 	// Deduct network fee + proposal fee from sender
@@ -379,7 +379,7 @@ func (t *Transaction) execRepoProposalMergeRequest(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
-	proposal.Action = state.ProposalActionMergeRequest
+	proposal.Action = core.TxTypeRepoProposalMergeRequest
 	proposal.ActionData = map[string][]byte{
 		constants.ActionDataKeyBaseBranch:   util.ToBytes(baseBranch),
 		constants.ActionDataKeyBaseHash:     util.ToBytes(baseBranchHash),
@@ -522,7 +522,7 @@ func (t *Transaction) execRepoProposalRegisterPushKeys(
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(senderPubKey.Bytes())
 	proposal := makeProposal(spk, repo, proposalID, proposalFee, chainHeight)
-	proposal.Action = state.ProposalActionRegisterPushKeyIDs
+	proposal.Action = core.TxTypeRepoProposalRegisterPushKey
 	proposal.ActionData = map[string][]byte{
 		constants.ActionDataKeyIDs:      util.ToBytes(pushKeyIDs),
 		constants.ActionDataKeyPolicies: util.ToBytes(aclPolicies),

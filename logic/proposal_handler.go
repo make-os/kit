@@ -253,13 +253,13 @@ func maybeApplyProposal(
 
 apply:
 	switch proposal.GetAction() {
-	case state.ProposalActionAddOwner:
+	case core.TxTypeRepoProposalUpsertOwner:
 		err = applyProposalUpsertOwner(proposal, repo, chainHeight)
-	case state.ProposalActionRepoUpdate:
+	case core.TxTypeRepoProposalUpdate:
 		err = applyProposalRepoUpdate(proposal, repo, chainHeight)
-	case state.ProposalActionRegisterPushKeyIDs:
+	case core.TxTypeRepoProposalRegisterPushKey:
 		err = applyProposalRegisterPushKeys(keepers, proposal, repo, chainHeight)
-	case state.ProposalActionMergeRequest:
+	case core.TxTypeRepoProposalMergeRequest:
 	// Do nothing since there is no on-chain action
 	default:
 		err = fmt.Errorf("unsupported proposal action")

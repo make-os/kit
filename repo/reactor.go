@@ -73,7 +73,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	txDetails := getTxDetailsFromNote(&pn)
 
 	// Perform authorization check
-	polEnforcer, err := m.authenticate(txDetails, repoState, namespace, m.logic)
+	polEnforcer, err := m.authenticate(txDetails, repoState, namespace, m.logic, checkTxDetail)
 	if err != nil {
 		return errors.Wrap(err, "authorization failed")
 	}

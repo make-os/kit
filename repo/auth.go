@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
@@ -37,7 +38,8 @@ type authenticator func(
 	txDetails []*types.TxDetail,
 	repo *state.Repository,
 	namespace *state.Namespace,
-	keepers core.Keepers) (policyEnforcer, error)
+	keepers core.Keepers,
+	checkTxDetail txDetailChecker) (policyEnforcer, error)
 
 // authenticate performs authentication checks and returns a policy
 // enforcer for later authorization checks.
@@ -45,54 +47,50 @@ func authenticate(
 	txDetails []*types.TxDetail,
 	repoState *state.Repository,
 	namespace *state.Namespace,
-	keepers core.Keepers) (policyEnforcer, error) {
-
-	// Check all the transaction parameters individually
-	for i, txDetail := range txDetails {
-		if err := checkTxDetail(txDetail, keepers, true); err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("token(%d,ref=%s)", i, txDetail.Reference))
-		}
-	}
+	keepers core.Keepers,
+	checkTxDetail txDetailChecker) (policyEnforcer, error) {
 
 	var lastPushKeyID, lastRepoName, lastRepoNamespace string
 	var lastAcctNonce uint64
-
-	// Proceed to policy enforcer creation when only one tx details was passed
-	if len(txDetails) == 1 {
-		goto makeEnforcer
-	}
-
-	// When there are multiple pushed references, specific fields must be the same.
 	for i, detail := range txDetails {
-		if i > 0 && detail.PushKeyID != lastPushKeyID {
-			return nil, fmt.Errorf("pushed references cannot be signed with different push keys")
+		pushKeyID := detail.PushKeyID
+
+		// When there are multiple transaction details, some fields are expected to be the same.
+		if i > 0 && pushKeyID != lastPushKeyID {
+			return nil, fe(i, "pkID", "token siblings must be signed with the same push key")
 		}
 		if i > 0 && detail.RepoName != lastRepoName {
-			return nil, fmt.Errorf("pushed references cannot target different repositories")
+			return nil, fe(i, "repoName", "token siblings must target the same repository")
 		}
 		if i > 0 && detail.Nonce != lastAcctNonce {
-			return nil, fmt.Errorf("pushed references cannot have different nonce")
+			return nil, fe(i, "nonce", "token siblings must have the same nonce")
 		}
 		if i > 0 && detail.RepoNamespace != lastRepoNamespace {
-			return nil, fmt.Errorf("pushed references cannot target different namespaces")
+			return nil, fe(i, "repoNamespace", "token siblings must target the same namespace")
 		}
-		lastPushKeyID, lastRepoName, lastRepoNamespace = detail.PushKeyID, detail.RepoName, detail.RepoNamespace
+
+		lastPushKeyID, lastRepoName, lastRepoNamespace = pushKeyID, detail.RepoName, detail.RepoNamespace
 		lastAcctNonce = detail.Nonce
+
+		// For a merge push, do not check if pusher is a contributor.
+		if detail.MergeProposalID == "" {
+
+			// The pusher is not authorized:
+			// - if they are not among repo's contributors.
+			// - and namespace is default.
+			// - or they are not part of the contributors of the non-nil namespace.
+			if !repoState.Contributors.Has(pushKeyID) && (namespace == nil || !namespace.Contributors.Has(pushKeyID)) {
+				return nil, fe(-1, "pkID", "push key is not a contributor to the target repo/namespace")
+			}
+		}
+
+		// Validate the transaction detail
+		if err := checkTxDetail(detail, keepers, i); err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("token error"))
+		}
 	}
 
-makeEnforcer:
-
-	// The pusher is not authorized:
-	// - if they are not among repo's contributors.
-	// - and namespace is default.
-	// - or they are not part of the contributors of the non-nil namespace.
-	pushKeyID := txDetails[0].PushKeyID
-	if !repoState.Contributors.Has(pushKeyID) &&
-		(namespace == nil || !namespace.Contributors.Has(pushKeyID)) {
-		return nil, fmt.Errorf("push key (%s) is not a repo (%s) contributor", pushKeyID, txDetails[0].RepoName)
-	}
-
-	return getPolicyEnforcer(makePusherPolicyGroups(pushKeyID, repoState, namespace)), nil
+	return getPolicyEnforcer(makePusherPolicyGroups(txDetails[0].PushKeyID, repoState, namespace)), nil
 }
 
 // makePusherPolicyGroups creates a policy group contain the different category of policies
@@ -147,6 +145,7 @@ func makePusherPolicyGroups(
 // - namespace: The namespace object. Nil means default namespace.
 func (m *Manager) handleAuth(
 	r *http.Request,
+	w http.ResponseWriter,
 	repo *state.Repository,
 	namespace *state.Namespace) (txDetails []*types.TxDetail, polEnforcer policyEnforcer, err error) {
 
@@ -167,14 +166,17 @@ func (m *Manager) handleAuth(
 	for i, token := range strings.Split(tokens, ",") {
 		txDetail, err := DecodePushToken(token)
 		if err != nil {
-			return nil, nil, fmt.Errorf("malformed push token at index %d. Unable to decode", i)
+			err = fmt.Errorf("malformed push token at index %d. Unable to decode", i)
+			w.Header().Set("Err", color.RedString(err.Error()))
+			return nil, nil, err
 		}
 		txDetails = append(txDetails, txDetail)
 	}
 
 	// Perform authorization checks
-	polEnforcer, err = m.authenticate(txDetails, repo, namespace, m.logic)
+	polEnforcer, err = m.authenticate(txDetails, repo, namespace, m.logic, checkTxDetail)
 	if err != nil {
+		w.Header().Set("Err", color.RedString(err.Error()))
 		return nil, nil, err
 	}
 

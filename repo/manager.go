@@ -296,7 +296,7 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Authenticate pusher
-	txDetails, polEnforcer, err := m.handleAuth(r, repoState, ns)
+	txDetails, polEnforcer, err := m.handleAuth(r, w, repoState, ns)
 	if err != nil {
 		w.Header().Set("WWW-Authenticate", "Basic")
 		w.WriteHeader(http.StatusUnauthorized)

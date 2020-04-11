@@ -99,9 +99,7 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governance,
-					}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
 					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.ProposerMaxJoinHeight = 100
@@ -179,7 +177,7 @@ var _ = Describe("ProposalHandler", func() {
 				}
 				proposal.Config.Voter = state.VoteByOwner
 				proposal.Creator = key.Addr().String()
-				proposal.Action = state.ProposalActionAddOwner
+				proposal.Action = core.TxTypeRepoProposalUpsertOwner
 				proposal.ActionData = map[string][]byte{
 					"addresses": util.ToBytes("addr"),
 					"veto":      util.ToBytes(false),
@@ -219,12 +217,10 @@ var _ = Describe("ProposalHandler", func() {
 					err := logic.SysKeeper().SetHelmRepo(helmRepo)
 					Expect(err).To(BeNil())
 
-					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governance,
-					}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
 					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Action = state.ProposalActionAddOwner
+					proposal.Action = core.TxTypeRepoProposalUpsertOwner
 					proposal.Fees = map[string]string{
 						"addr":  "100",
 						"addr2": "50",
@@ -259,12 +255,10 @@ var _ = Describe("ProposalHandler", func() {
 					err := logic.SysKeeper().SetHelmRepo(helmRepo)
 					Expect(err).To(BeNil())
 
-					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governance,
-					}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
 					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Action = state.ProposalActionAddOwner
+					proposal.Action = core.TxTypeRepoProposalUpsertOwner
 					proposal.Fees = map[string]string{
 						"addr":  "100",
 						"addr2": "50",
@@ -325,9 +319,7 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governance,
-					}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
 					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
@@ -346,9 +338,7 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governance,
-					}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
 					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
@@ -368,9 +358,7 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governance,
-					}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
 					proposal.Config.Voter = state.VoteByNetStakersAndVetoOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
@@ -396,9 +384,7 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governance,
-					}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
 					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
@@ -418,9 +404,7 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governance,
-					}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
 					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
@@ -440,9 +424,7 @@ var _ = Describe("ProposalHandler", func() {
 			When("No threshold is reached", func() {
 				var proposal *state.RepoProposal
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governance,
-					}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
 					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
@@ -463,9 +445,7 @@ var _ = Describe("ProposalHandler", func() {
 				var proposal *state.RepoProposal
 
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{
-						Config: state.MakeDefaultRepoConfig().Governance,
-					}
+					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
 					proposal.Config.Voter = state.VoteByOwner
 					proposal.Creator = key.Addr().String()
 					proposal.Config.ProposalQuorum = 40
@@ -509,10 +489,7 @@ var _ = Describe("ProposalHandler", func() {
 		When("proposal refund type is ProposalFeeRefundOnAccept", func() {
 			When("proposal outcome is 'accepted'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnAccept,
-						state.ProposalOutcomeAccepted,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnAccept, state.ProposalOutcomeAccepted)
 					Expect(err).To(BeNil())
 				})
 
@@ -524,10 +501,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			When("proposal outcome is not 'accepted'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnAccept,
-						state.ProposalOutcomeRejected,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnAccept, state.ProposalOutcomeRejected)
 					Expect(err).To(BeNil())
 				})
 
@@ -547,10 +521,7 @@ var _ = Describe("ProposalHandler", func() {
 		When("proposal refund type is ProposalFeeRefundOnAcceptReject", func() {
 			When("proposal outcome is 'accepted'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnAcceptReject,
-						state.ProposalOutcomeAccepted,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnAcceptReject, state.ProposalOutcomeAccepted)
 					Expect(err).To(BeNil())
 				})
 
@@ -564,10 +535,7 @@ var _ = Describe("ProposalHandler", func() {
 		When("proposal refund type is ProposalFeeRefundOnAcceptAllReject", func() {
 			When("proposal outcome is 'rejected with veto'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnAcceptAllReject,
-						state.ProposalOutcomeRejectedWithVeto,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnAcceptAllReject, state.ProposalOutcomeRejectedWithVeto)
 					Expect(err).To(BeNil())
 				})
 
@@ -579,10 +547,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			When("proposal outcome is 'rejected with veto by owners'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnAcceptAllReject,
-						state.ProposalOutcomeRejectedWithVetoByOwners,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnAcceptAllReject, state.ProposalOutcomeRejectedWithVetoByOwners)
 					Expect(err).To(BeNil())
 				})
 
@@ -596,10 +561,7 @@ var _ = Describe("ProposalHandler", func() {
 		When("proposal refund type is ProposalFeeRefundOnBelowThreshold", func() {
 			When("proposal outcome is a 'tie'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnBelowThreshold,
-						state.ProposalOutcomeBelowThreshold,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnBelowThreshold, state.ProposalOutcomeBelowThreshold)
 					Expect(err).To(BeNil())
 				})
 
@@ -613,10 +575,7 @@ var _ = Describe("ProposalHandler", func() {
 		When("proposal refund type is ProposalFeeRefundOnBelowThresholdAccept", func() {
 			When("proposal outcome is a 'tie'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnBelowThresholdAccept,
-						state.ProposalOutcomeBelowThreshold,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnBelowThresholdAccept, state.ProposalOutcomeBelowThreshold)
 					Expect(err).To(BeNil())
 				})
 
@@ -628,10 +587,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			When("proposal outcome is 'accepted'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnBelowThresholdAccept,
-						state.ProposalOutcomeAccepted,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnBelowThresholdAccept, state.ProposalOutcomeAccepted)
 					Expect(err).To(BeNil())
 				})
 
@@ -645,10 +601,7 @@ var _ = Describe("ProposalHandler", func() {
 		When("proposal refund type is ProposalFeeRefundOnBelowThresholdAcceptReject", func() {
 			When("proposal outcome is a 'tie'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnBelowThresholdAcceptReject,
-						state.ProposalOutcomeBelowThreshold,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnBelowThresholdAcceptReject, state.ProposalOutcomeBelowThreshold)
 					Expect(err).To(BeNil())
 				})
 
@@ -660,10 +613,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			When("proposal outcome is 'accepted'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnBelowThresholdAcceptReject,
-						state.ProposalOutcomeAccepted,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnBelowThresholdAcceptReject, state.ProposalOutcomeAccepted)
 					Expect(err).To(BeNil())
 				})
 
@@ -675,10 +625,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			When("proposal outcome is 'rejected'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnBelowThresholdAcceptReject,
-						state.ProposalOutcomeRejected,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnBelowThresholdAcceptReject, state.ProposalOutcomeRejected)
 					Expect(err).To(BeNil())
 				})
 
@@ -690,10 +637,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			When("proposal outcome is 'rejected with veto'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnBelowThresholdAcceptReject,
-						state.ProposalOutcomeRejectedWithVeto,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnBelowThresholdAcceptReject, state.ProposalOutcomeRejectedWithVeto)
 					Expect(err).To(BeNil())
 				})
 
@@ -707,10 +651,7 @@ var _ = Describe("ProposalHandler", func() {
 		When("proposal refund type is ProposalFeeRefundOnBelowThresholdAcceptAllReject", func() {
 			When("proposal outcome is a 'tie'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnBelowThresholdAcceptAllReject,
-						state.ProposalOutcomeBelowThreshold,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnBelowThresholdAcceptAllReject, state.ProposalOutcomeBelowThreshold)
 					Expect(err).To(BeNil())
 				})
 
@@ -722,10 +663,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			When("proposal outcome is 'accepted'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnBelowThresholdAcceptAllReject,
-						state.ProposalOutcomeAccepted,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnBelowThresholdAcceptAllReject, state.ProposalOutcomeAccepted)
 					Expect(err).To(BeNil())
 				})
 
@@ -737,10 +675,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			When("proposal outcome is 'rejected'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnBelowThresholdAcceptAllReject,
-						state.ProposalOutcomeRejectedWithVetoByOwners,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnBelowThresholdAcceptAllReject, state.ProposalOutcomeRejectedWithVetoByOwners)
 					Expect(err).To(BeNil())
 				})
 
@@ -752,10 +687,7 @@ var _ = Describe("ProposalHandler", func() {
 
 			When("proposal outcome is 'rejected with veto'", func() {
 				BeforeEach(func() {
-					err = makeMaybeProcessProposalFeeTest(
-						state.ProposalFeeRefundOnBelowThresholdAcceptAllReject,
-						state.ProposalOutcomeRejectedWithVeto,
-					)
+					err = makeMaybeProcessProposalFeeTest(state.ProposalFeeRefundOnBelowThresholdAcceptAllReject, state.ProposalOutcomeRejectedWithVeto)
 					Expect(err).To(BeNil())
 				})
 
