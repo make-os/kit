@@ -27,6 +27,7 @@ const (
 
 // BareRepo represents a local git repository on disk
 type BareRepo interface {
+	LiteGit
 
 	// GetName returns the name of the repo
 	GetName() string
@@ -40,23 +41,8 @@ type BareRepo interface {
 	// References returns an unsorted ReferenceIter for all references.
 	References() (storer.ReferenceIter, error)
 
-	// RefDelete executes `git update-ref -d <refname>` to delete a reference
-	RefDelete(refname string) error
-
-	// RefUpdate executes `git update-ref <refname> <commit hash>` to update/create a reference
-	RefUpdate(refname, commitHash string) error
-
-	// RefGet returns the hash content of a reference.
-	RefGet(refname string) (string, error)
-
-	// TagDelete executes `git tag -d <tagname>` to delete a tag
-	TagDelete(tagname string) error
-
 	// GetRemoteURLs returns the remote URLS of the repository
 	GetRemoteURLs() (urls []string)
-
-	// ListTreeObjects executes `git tag -d <tagname>` to delete a tag
-	ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error)
 
 	// DeleteObject deletes an object from a repository.
 	DeleteObject(hash plumbing.Hash) error
@@ -93,51 +79,6 @@ type BareRepo interface {
 
 	// SetConfig sets the repo config
 	SetConfig(cfg *config.Config) error
-
-	// GetConfig finds and returns a config value
-	GetConfig(path string) string
-
-	// GetRecentCommit gets the hash of the recent commit.
-	// Returns ErrNoCommits if no commits exist
-	GetRecentCommit() (string, error)
-
-	// CreateAndOrSignQuietCommit sign and commit staged changes
-	// msg: The commit message.
-	// signingKey: The signing key
-	// env: Optional environment variables to pass to the command.
-	CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error
-
-	// CreateTagWithMsg an annotated tag.
-	// args: `git tag` options (NOTE: -a and --file=- are added by default)
-	// msg: The tag's message which is passed to the command's stdin.
-	// signingKey: The signing key to use
-	// env: Optional environment variables to pass to the command.
-	CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error
-
-	// RemoveEntryFromNote removes a note
-	RemoveEntryFromNote(notename, objectHash string, env ...string) error
-
-	// CreateBlob creates a blob object
-	CreateBlob(content string) (string, error)
-
-	// UpdateRecentCommitMsg updates the recent commit message.
-	// msg: The commit message which is passed to the command's stdin.
-	// signingKey: The signing key
-	// env: Optional environment variables to pass to the command.
-	UpdateRecentCommitMsg(msg, signingKey string, env ...string) error
-
-	// UpdateTree updates the state tree
-	// UpdateTree(ref string, updater func(tree *tree.SafeTree) error) ([]byte, int64, error)
-
-	// TreeRoot returns the state root of the repository
-	// TreeRoot(ref string) (util.Bytes32, error)
-
-	// AddEntryToNote adds a note
-	AddEntryToNote(notename, objectHash, note string, env ...string) error
-
-	// ListTreeObjectsSlice returns a slice containing objects name of tree entries
-	ListTreeObjectsSlice(treename string, recursive, showTrees bool,
-		env ...string) ([]string, error)
 
 	// SetPath sets the repository root path
 	SetPath(path string)
@@ -188,6 +129,9 @@ type Commit interface {
 	// Parent returns the ith parent of a commit.
 	Parent(i int) (Commit, error)
 
+	// IsParent checks whether the specified hash is a parent of the commit
+	IsParent(hash string) (bool, Commit)
+
 	// GetCommitter returns the one performing the commit, might be different from Author
 	GetCommitter() *object.Signature
 
@@ -199,6 +143,9 @@ type Commit interface {
 
 	// GetHash returns the hash of the commit object
 	GetHash() plumbing.Hash
+
+	// GetTree returns the tree from the commit
+	GetTree() (*object.Tree, error)
 }
 
 type Remote struct {
@@ -537,4 +484,39 @@ type RepoManager interface {
 
 	// Stop implements Reactor
 	Stop() error
+}
+
+type LiteGit interface {
+	RefDelete(refname string) error
+	RefUpdate(refname, commitHash string) error
+	TagDelete(tagname string) error
+	RefGet(refname string) (string, error)
+	GetRecentCommit() (string, error)
+	GetHEAD(short bool) (string, error)
+	NumCommits(branch string) (int, error)
+	GetConfig(path string) string
+	CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error
+	CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error
+	ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error)
+	ListTreeObjectsSlice(treename string, recursive, showTrees bool, env ...string) ([]string, error)
+	RemoveEntryFromNote(notename, objectHash string, env ...string) error
+	AddEntryToNote(notename, objectHash, note string, env ...string) error
+	CreateBlob(content string) (string, error)
+	UpdateRecentCommitMsg(msg, signingKey string, env ...string) error
+	IsDescendant(childHash string, parentHash string, env ...string) error
+	HasMergeCommits(reference string, env ...string) (bool, error)
+	GetMergeCommits(reference string, env ...string) ([]string, error)
+}
+
+type CommitTree interface {
+	File(path string) (*object.File, error)
+	Size(path string) (int64, error)
+	Tree(path string) (*object.Tree, error)
+	TreeEntryFile(e *object.TreeEntry) (*object.File, error)
+	FindEntry(path string) (*object.TreeEntry, error)
+	Files() *object.FileIter
+	ID() plumbing.Hash
+	Type() plumbing.ObjectType
+	Decode(o plumbing.EncodedObject) (err error)
+	Encode(o plumbing.EncodedObject) (err error)
 }

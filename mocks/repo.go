@@ -11,7 +11,6 @@ import (
 	crypto "gitlab.com/makeos/mosdef/crypto"
 	types "gitlab.com/makeos/mosdef/dht/types"
 	logger "gitlab.com/makeos/mosdef/pkgs/logger"
-	tree "gitlab.com/makeos/mosdef/pkgs/tree"
 	core "gitlab.com/makeos/mosdef/types/core"
 	modules "gitlab.com/makeos/mosdef/types/modules"
 	state "gitlab.com/makeos/mosdef/types/state"
@@ -46,6 +45,331 @@ func NewMockBareRepo(ctrl *gomock.Controller) *MockBareRepo {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockBareRepo) EXPECT() *MockBareRepoMockRecorder {
 	return m.recorder
+}
+
+// RefDelete mocks base method
+func (m *MockBareRepo) RefDelete(refname string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RefDelete", refname)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RefDelete indicates an expected call of RefDelete
+func (mr *MockBareRepoMockRecorder) RefDelete(refname interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefDelete", reflect.TypeOf((*MockBareRepo)(nil).RefDelete), refname)
+}
+
+// RefUpdate mocks base method
+func (m *MockBareRepo) RefUpdate(refname, commitHash string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RefUpdate", refname, commitHash)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RefUpdate indicates an expected call of RefUpdate
+func (mr *MockBareRepoMockRecorder) RefUpdate(refname, commitHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefUpdate", reflect.TypeOf((*MockBareRepo)(nil).RefUpdate), refname, commitHash)
+}
+
+// TagDelete mocks base method
+func (m *MockBareRepo) TagDelete(tagname string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TagDelete", tagname)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TagDelete indicates an expected call of TagDelete
+func (mr *MockBareRepoMockRecorder) TagDelete(tagname interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TagDelete", reflect.TypeOf((*MockBareRepo)(nil).TagDelete), tagname)
+}
+
+// RefGet mocks base method
+func (m *MockBareRepo) RefGet(refname string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RefGet", refname)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RefGet indicates an expected call of RefGet
+func (mr *MockBareRepoMockRecorder) RefGet(refname interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefGet", reflect.TypeOf((*MockBareRepo)(nil).RefGet), refname)
+}
+
+// GetRecentCommit mocks base method
+func (m *MockBareRepo) GetRecentCommit() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRecentCommit")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRecentCommit indicates an expected call of GetRecentCommit
+func (mr *MockBareRepoMockRecorder) GetRecentCommit() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecentCommit", reflect.TypeOf((*MockBareRepo)(nil).GetRecentCommit))
+}
+
+// GetHEAD mocks base method
+func (m *MockBareRepo) GetHEAD(short bool) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHEAD", short)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetHEAD indicates an expected call of GetHEAD
+func (mr *MockBareRepoMockRecorder) GetHEAD(short interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHEAD", reflect.TypeOf((*MockBareRepo)(nil).GetHEAD), short)
+}
+
+// NumCommits mocks base method
+func (m *MockBareRepo) NumCommits(branch string) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NumCommits", branch)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NumCommits indicates an expected call of NumCommits
+func (mr *MockBareRepoMockRecorder) NumCommits(branch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumCommits", reflect.TypeOf((*MockBareRepo)(nil).NumCommits), branch)
+}
+
+// GetConfig mocks base method
+func (m *MockBareRepo) GetConfig(path string) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfig", path)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetConfig indicates an expected call of GetConfig
+func (mr *MockBareRepoMockRecorder) GetConfig(path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockBareRepo)(nil).GetConfig), path)
+}
+
+// CreateAndOrSignQuietCommit mocks base method
+func (m *MockBareRepo) CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{msg, signingKey}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateAndOrSignQuietCommit", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateAndOrSignQuietCommit indicates an expected call of CreateAndOrSignQuietCommit
+func (mr *MockBareRepoMockRecorder) CreateAndOrSignQuietCommit(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{msg, signingKey}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAndOrSignQuietCommit", reflect.TypeOf((*MockBareRepo)(nil).CreateAndOrSignQuietCommit), varargs...)
+}
+
+// CreateTagWithMsg mocks base method
+func (m *MockBareRepo) CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{args, msg, signingKey}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateTagWithMsg", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateTagWithMsg indicates an expected call of CreateTagWithMsg
+func (mr *MockBareRepoMockRecorder) CreateTagWithMsg(args, msg, signingKey interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{args, msg, signingKey}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTagWithMsg", reflect.TypeOf((*MockBareRepo)(nil).CreateTagWithMsg), varargs...)
+}
+
+// ListTreeObjects mocks base method
+func (m *MockBareRepo) ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{treename, recursive}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListTreeObjects", varargs...)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListTreeObjects indicates an expected call of ListTreeObjects
+func (mr *MockBareRepoMockRecorder) ListTreeObjects(treename, recursive interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{treename, recursive}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTreeObjects", reflect.TypeOf((*MockBareRepo)(nil).ListTreeObjects), varargs...)
+}
+
+// ListTreeObjectsSlice mocks base method
+func (m *MockBareRepo) ListTreeObjectsSlice(treename string, recursive, showTrees bool, env ...string) ([]string, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{treename, recursive, showTrees}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListTreeObjectsSlice", varargs...)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListTreeObjectsSlice indicates an expected call of ListTreeObjectsSlice
+func (mr *MockBareRepoMockRecorder) ListTreeObjectsSlice(treename, recursive, showTrees interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{treename, recursive, showTrees}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTreeObjectsSlice", reflect.TypeOf((*MockBareRepo)(nil).ListTreeObjectsSlice), varargs...)
+}
+
+// RemoveEntryFromNote mocks base method
+func (m *MockBareRepo) RemoveEntryFromNote(notename, objectHash string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{notename, objectHash}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RemoveEntryFromNote", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveEntryFromNote indicates an expected call of RemoveEntryFromNote
+func (mr *MockBareRepoMockRecorder) RemoveEntryFromNote(notename, objectHash interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{notename, objectHash}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveEntryFromNote", reflect.TypeOf((*MockBareRepo)(nil).RemoveEntryFromNote), varargs...)
+}
+
+// AddEntryToNote mocks base method
+func (m *MockBareRepo) AddEntryToNote(notename, objectHash, note string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{notename, objectHash, note}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddEntryToNote", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddEntryToNote indicates an expected call of AddEntryToNote
+func (mr *MockBareRepoMockRecorder) AddEntryToNote(notename, objectHash, note interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{notename, objectHash, note}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddEntryToNote", reflect.TypeOf((*MockBareRepo)(nil).AddEntryToNote), varargs...)
+}
+
+// CreateBlob mocks base method
+func (m *MockBareRepo) CreateBlob(content string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateBlob", content)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateBlob indicates an expected call of CreateBlob
+func (mr *MockBareRepoMockRecorder) CreateBlob(content interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBlob", reflect.TypeOf((*MockBareRepo)(nil).CreateBlob), content)
+}
+
+// UpdateRecentCommitMsg mocks base method
+func (m *MockBareRepo) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{msg, signingKey}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateRecentCommitMsg", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateRecentCommitMsg indicates an expected call of UpdateRecentCommitMsg
+func (mr *MockBareRepoMockRecorder) UpdateRecentCommitMsg(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{msg, signingKey}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRecentCommitMsg", reflect.TypeOf((*MockBareRepo)(nil).UpdateRecentCommitMsg), varargs...)
+}
+
+// IsDescendant mocks base method
+func (m *MockBareRepo) IsDescendant(childHash, parentHash string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{childHash, parentHash}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "IsDescendant", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IsDescendant indicates an expected call of IsDescendant
+func (mr *MockBareRepoMockRecorder) IsDescendant(childHash, parentHash interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{childHash, parentHash}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsDescendant", reflect.TypeOf((*MockBareRepo)(nil).IsDescendant), varargs...)
+}
+
+// HasMergeCommits mocks base method
+func (m *MockBareRepo) HasMergeCommits(reference string, env ...string) (bool, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{reference}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "HasMergeCommits", varargs...)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasMergeCommits indicates an expected call of HasMergeCommits
+func (mr *MockBareRepoMockRecorder) HasMergeCommits(reference interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{reference}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMergeCommits", reflect.TypeOf((*MockBareRepo)(nil).HasMergeCommits), varargs...)
+}
+
+// GetMergeCommits mocks base method
+func (m *MockBareRepo) GetMergeCommits(reference string, env ...string) ([]string, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{reference}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetMergeCommits", varargs...)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMergeCommits indicates an expected call of GetMergeCommits
+func (mr *MockBareRepoMockRecorder) GetMergeCommits(reference interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{reference}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeCommits", reflect.TypeOf((*MockBareRepo)(nil).GetMergeCommits), varargs...)
 }
 
 // GetName mocks base method
@@ -105,63 +429,6 @@ func (mr *MockBareRepoMockRecorder) References() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "References", reflect.TypeOf((*MockBareRepo)(nil).References))
 }
 
-// RefDelete mocks base method
-func (m *MockBareRepo) RefDelete(refname string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RefDelete", refname)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RefDelete indicates an expected call of RefDelete
-func (mr *MockBareRepoMockRecorder) RefDelete(refname interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefDelete", reflect.TypeOf((*MockBareRepo)(nil).RefDelete), refname)
-}
-
-// RefUpdate mocks base method
-func (m *MockBareRepo) RefUpdate(refname, commitHash string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RefUpdate", refname, commitHash)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RefUpdate indicates an expected call of RefUpdate
-func (mr *MockBareRepoMockRecorder) RefUpdate(refname, commitHash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefUpdate", reflect.TypeOf((*MockBareRepo)(nil).RefUpdate), refname, commitHash)
-}
-
-// RefGet mocks base method
-func (m *MockBareRepo) RefGet(refname string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RefGet", refname)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// RefGet indicates an expected call of RefGet
-func (mr *MockBareRepoMockRecorder) RefGet(refname interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefGet", reflect.TypeOf((*MockBareRepo)(nil).RefGet), refname)
-}
-
-// TagDelete mocks base method
-func (m *MockBareRepo) TagDelete(tagname string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TagDelete", tagname)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// TagDelete indicates an expected call of TagDelete
-func (mr *MockBareRepoMockRecorder) TagDelete(tagname interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TagDelete", reflect.TypeOf((*MockBareRepo)(nil).TagDelete), tagname)
-}
-
 // GetRemoteURLs mocks base method
 func (m *MockBareRepo) GetRemoteURLs() []string {
 	m.ctrl.T.Helper()
@@ -174,26 +441,6 @@ func (m *MockBareRepo) GetRemoteURLs() []string {
 func (mr *MockBareRepoMockRecorder) GetRemoteURLs() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemoteURLs", reflect.TypeOf((*MockBareRepo)(nil).GetRemoteURLs))
-}
-
-// ListTreeObjects mocks base method
-func (m *MockBareRepo) ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{treename, recursive}
-	for _, a := range env {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListTreeObjects", varargs...)
-	ret0, _ := ret[0].(map[string]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListTreeObjects indicates an expected call of ListTreeObjects
-func (mr *MockBareRepoMockRecorder) ListTreeObjects(treename, recursive interface{}, env ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{treename, recursive}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTreeObjects", reflect.TypeOf((*MockBareRepo)(nil).ListTreeObjects), varargs...)
 }
 
 // DeleteObject mocks base method
@@ -372,196 +619,6 @@ func (m *MockBareRepo) SetConfig(cfg *config0.Config) error {
 func (mr *MockBareRepoMockRecorder) SetConfig(cfg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConfig", reflect.TypeOf((*MockBareRepo)(nil).SetConfig), cfg)
-}
-
-// GetConfig mocks base method
-func (m *MockBareRepo) GetConfig(path string) string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetConfig", path)
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// GetConfig indicates an expected call of GetConfig
-func (mr *MockBareRepoMockRecorder) GetConfig(path interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockBareRepo)(nil).GetConfig), path)
-}
-
-// GetRecentCommit mocks base method
-func (m *MockBareRepo) GetRecentCommit() (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRecentCommit")
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetRecentCommit indicates an expected call of GetRecentCommit
-func (mr *MockBareRepoMockRecorder) GetRecentCommit() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecentCommit", reflect.TypeOf((*MockBareRepo)(nil).GetRecentCommit))
-}
-
-// CreateAndOrSignQuietCommit mocks base method
-func (m *MockBareRepo) CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{msg, signingKey}
-	for _, a := range env {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CreateAndOrSignQuietCommit", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateAndOrSignQuietCommit indicates an expected call of CreateAndOrSignQuietCommit
-func (mr *MockBareRepoMockRecorder) CreateAndOrSignQuietCommit(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{msg, signingKey}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAndOrSignQuietCommit", reflect.TypeOf((*MockBareRepo)(nil).CreateAndOrSignQuietCommit), varargs...)
-}
-
-// CreateTagWithMsg mocks base method
-func (m *MockBareRepo) CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{args, msg, signingKey}
-	for _, a := range env {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CreateTagWithMsg", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateTagWithMsg indicates an expected call of CreateTagWithMsg
-func (mr *MockBareRepoMockRecorder) CreateTagWithMsg(args, msg, signingKey interface{}, env ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{args, msg, signingKey}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTagWithMsg", reflect.TypeOf((*MockBareRepo)(nil).CreateTagWithMsg), varargs...)
-}
-
-// RemoveEntryFromNote mocks base method
-func (m *MockBareRepo) RemoveEntryFromNote(notename, objectHash string, env ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{notename, objectHash}
-	for _, a := range env {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "RemoveEntryFromNote", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// RemoveEntryFromNote indicates an expected call of RemoveEntryFromNote
-func (mr *MockBareRepoMockRecorder) RemoveEntryFromNote(notename, objectHash interface{}, env ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{notename, objectHash}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveEntryFromNote", reflect.TypeOf((*MockBareRepo)(nil).RemoveEntryFromNote), varargs...)
-}
-
-// CreateBlob mocks base method
-func (m *MockBareRepo) CreateBlob(content string) (string, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateBlob", content)
-	ret0, _ := ret[0].(string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateBlob indicates an expected call of CreateBlob
-func (mr *MockBareRepoMockRecorder) CreateBlob(content interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBlob", reflect.TypeOf((*MockBareRepo)(nil).CreateBlob), content)
-}
-
-// UpdateRecentCommitMsg mocks base method
-func (m *MockBareRepo) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{msg, signingKey}
-	for _, a := range env {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "UpdateRecentCommitMsg", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateRecentCommitMsg indicates an expected call of UpdateRecentCommitMsg
-func (mr *MockBareRepoMockRecorder) UpdateRecentCommitMsg(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{msg, signingKey}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRecentCommitMsg", reflect.TypeOf((*MockBareRepo)(nil).UpdateRecentCommitMsg), varargs...)
-}
-
-// UpdateTree mocks base method
-func (m *MockBareRepo) UpdateTree(ref string, updater func(*tree.SafeTree) error) ([]byte, int64, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateTree", ref, updater)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(int64)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// UpdateTree indicates an expected call of UpdateTree
-func (mr *MockBareRepoMockRecorder) UpdateTree(ref, updater interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTree", reflect.TypeOf((*MockBareRepo)(nil).UpdateTree), ref, updater)
-}
-
-// TreeRoot mocks base method
-func (m *MockBareRepo) TreeRoot(ref string) (util.Bytes32, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TreeRoot", ref)
-	ret0, _ := ret[0].(util.Bytes32)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// TreeRoot indicates an expected call of TreeRoot
-func (mr *MockBareRepoMockRecorder) TreeRoot(ref interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TreeRoot", reflect.TypeOf((*MockBareRepo)(nil).TreeRoot), ref)
-}
-
-// AddEntryToNote mocks base method
-func (m *MockBareRepo) AddEntryToNote(notename, objectHash, note string, env ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{notename, objectHash, note}
-	for _, a := range env {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "AddEntryToNote", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddEntryToNote indicates an expected call of AddEntryToNote
-func (mr *MockBareRepoMockRecorder) AddEntryToNote(notename, objectHash, note interface{}, env ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{notename, objectHash, note}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddEntryToNote", reflect.TypeOf((*MockBareRepo)(nil).AddEntryToNote), varargs...)
-}
-
-// ListTreeObjectsSlice mocks base method
-func (m *MockBareRepo) ListTreeObjectsSlice(treename string, recursive, showTrees bool, env ...string) ([]string, error) {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{treename, recursive, showTrees}
-	for _, a := range env {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "ListTreeObjectsSlice", varargs...)
-	ret0, _ := ret[0].([]string)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ListTreeObjectsSlice indicates an expected call of ListTreeObjectsSlice
-func (mr *MockBareRepoMockRecorder) ListTreeObjectsSlice(treename, recursive, showTrees interface{}, env ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{treename, recursive, showTrees}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTreeObjectsSlice", reflect.TypeOf((*MockBareRepo)(nil).ListTreeObjectsSlice), varargs...)
 }
 
 // SetPath mocks base method
@@ -802,6 +859,21 @@ func (mr *MockCommitMockRecorder) Parent(i interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Parent", reflect.TypeOf((*MockCommit)(nil).Parent), i)
 }
 
+// IsParent mocks base method
+func (m *MockCommit) IsParent(hash string) (bool, core.Commit) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsParent", hash)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(core.Commit)
+	return ret0, ret1
+}
+
+// IsParent indicates an expected call of IsParent
+func (mr *MockCommitMockRecorder) IsParent(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsParent", reflect.TypeOf((*MockCommit)(nil).IsParent), hash)
+}
+
 // GetCommitter mocks base method
 func (m *MockCommit) GetCommitter() *object.Signature {
 	m.ctrl.T.Helper()
@@ -856,6 +928,21 @@ func (m *MockCommit) GetHash() plumbing.Hash {
 func (mr *MockCommitMockRecorder) GetHash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHash", reflect.TypeOf((*MockCommit)(nil).GetHash))
+}
+
+// GetTree mocks base method
+func (m *MockCommit) GetTree() (*object.Tree, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTree")
+	ret0, _ := ret[0].(*object.Tree)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTree indicates an expected call of GetTree
+func (mr *MockCommitMockRecorder) GetTree() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTree", reflect.TypeOf((*MockCommit)(nil).GetTree))
 }
 
 // MockPoolGetter is a mock of PoolGetter interface
@@ -947,31 +1034,31 @@ func (mr *MockRepoGetterMockRecorder) GetRepo(name interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockRepoGetter)(nil).GetRepo), name)
 }
 
-// MockTxPushMerger is a mock of RepoUpdater interface
-type MockTxPushMerger struct {
+// MockRepoUpdater is a mock of RepoUpdater interface
+type MockRepoUpdater struct {
 	ctrl     *gomock.Controller
-	recorder *MockTxPushMergerMockRecorder
+	recorder *MockRepoUpdaterMockRecorder
 }
 
-// MockTxPushMergerMockRecorder is the mock recorder for MockTxPushMerger
-type MockTxPushMergerMockRecorder struct {
-	mock *MockTxPushMerger
+// MockRepoUpdaterMockRecorder is the mock recorder for MockRepoUpdater
+type MockRepoUpdaterMockRecorder struct {
+	mock *MockRepoUpdater
 }
 
-// NewMockTxPushMerger creates a new mock instance
-func NewMockTxPushMerger(ctrl *gomock.Controller) *MockTxPushMerger {
-	mock := &MockTxPushMerger{ctrl: ctrl}
-	mock.recorder = &MockTxPushMergerMockRecorder{mock}
+// NewMockRepoUpdater creates a new mock instance
+func NewMockRepoUpdater(ctrl *gomock.Controller) *MockRepoUpdater {
+	mock := &MockRepoUpdater{ctrl: ctrl}
+	mock.recorder = &MockRepoUpdaterMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockTxPushMerger) EXPECT() *MockTxPushMergerMockRecorder {
+func (m *MockRepoUpdater) EXPECT() *MockRepoUpdaterMockRecorder {
 	return m.recorder
 }
 
 // UpdateRepoWithTxPush mocks base method
-func (m *MockTxPushMerger) UpdateRepoWithTxPush(tx *core.TxPush) error {
+func (m *MockRepoUpdater) UpdateRepoWithTxPush(tx *core.TxPush) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateRepoWithTxPush", tx)
 	ret0, _ := ret[0].(error)
@@ -979,9 +1066,9 @@ func (m *MockTxPushMerger) UpdateRepoWithTxPush(tx *core.TxPush) error {
 }
 
 // UpdateRepoWithTxPush indicates an expected call of UpdateRepoWithTxPush
-func (mr *MockTxPushMergerMockRecorder) UpdateRepoWithTxPush(tx interface{}) *gomock.Call {
+func (mr *MockRepoUpdaterMockRecorder) UpdateRepoWithTxPush(tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRepoWithTxPush", reflect.TypeOf((*MockTxPushMerger)(nil).UpdateRepoWithTxPush), tx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRepoWithTxPush", reflect.TypeOf((*MockRepoUpdater)(nil).UpdateRepoWithTxPush), tx)
 }
 
 // MockPushPool is a mock of PushPool interface
@@ -1678,31 +1765,31 @@ func (mr *MockItemsMockRecorder) Hash() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockItems)(nil).Hash))
 }
 
-// MockRepoPushEnd is a mock of RepoPushEndorsement interface
-type MockRepoPushEnd struct {
+// MockRepoPushEndorsement is a mock of RepoPushEndorsement interface
+type MockRepoPushEndorsement struct {
 	ctrl     *gomock.Controller
-	recorder *MockRepoPushEndMockRecorder
+	recorder *MockRepoPushEndorsementMockRecorder
 }
 
-// MockRepoPushEndMockRecorder is the mock recorder for MockRepoPushEnd
-type MockRepoPushEndMockRecorder struct {
-	mock *MockRepoPushEnd
+// MockRepoPushEndorsementMockRecorder is the mock recorder for MockRepoPushEndorsement
+type MockRepoPushEndorsementMockRecorder struct {
+	mock *MockRepoPushEndorsement
 }
 
-// NewMockRepoPushEnd creates a new mock instance
-func NewMockRepoPushEnd(ctrl *gomock.Controller) *MockRepoPushEnd {
-	mock := &MockRepoPushEnd{ctrl: ctrl}
-	mock.recorder = &MockRepoPushEndMockRecorder{mock}
+// NewMockRepoPushEndorsement creates a new mock instance
+func NewMockRepoPushEndorsement(ctrl *gomock.Controller) *MockRepoPushEndorsement {
+	mock := &MockRepoPushEndorsement{ctrl: ctrl}
+	mock.recorder = &MockRepoPushEndorsementMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockRepoPushEnd) EXPECT() *MockRepoPushEndMockRecorder {
+func (m *MockRepoPushEndorsement) EXPECT() *MockRepoPushEndorsementMockRecorder {
 	return m.recorder
 }
 
 // ID mocks base method
-func (m *MockRepoPushEnd) ID() util.Bytes32 {
+func (m *MockRepoPushEndorsement) ID() util.Bytes32 {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ID")
 	ret0, _ := ret[0].(util.Bytes32)
@@ -1710,13 +1797,13 @@ func (m *MockRepoPushEnd) ID() util.Bytes32 {
 }
 
 // ID indicates an expected call of ID
-func (mr *MockRepoPushEndMockRecorder) ID() *gomock.Call {
+func (mr *MockRepoPushEndorsementMockRecorder) ID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockRepoPushEnd)(nil).ID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockRepoPushEndorsement)(nil).ID))
 }
 
 // Bytes mocks base method
-func (m *MockRepoPushEnd) Bytes() []byte {
+func (m *MockRepoPushEndorsement) Bytes() []byte {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Bytes")
 	ret0, _ := ret[0].([]byte)
@@ -1724,13 +1811,13 @@ func (m *MockRepoPushEnd) Bytes() []byte {
 }
 
 // Bytes indicates an expected call of Bytes
-func (mr *MockRepoPushEndMockRecorder) Bytes() *gomock.Call {
+func (mr *MockRepoPushEndorsementMockRecorder) Bytes() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockRepoPushEnd)(nil).Bytes))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockRepoPushEndorsement)(nil).Bytes))
 }
 
 // BytesAndID mocks base method
-func (m *MockRepoPushEnd) BytesAndID() ([]byte, util.Bytes32) {
+func (m *MockRepoPushEndorsement) BytesAndID() ([]byte, util.Bytes32) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BytesAndID")
 	ret0, _ := ret[0].([]byte)
@@ -1739,9 +1826,9 @@ func (m *MockRepoPushEnd) BytesAndID() ([]byte, util.Bytes32) {
 }
 
 // BytesAndID indicates an expected call of BytesAndID
-func (mr *MockRepoPushEndMockRecorder) BytesAndID() *gomock.Call {
+func (mr *MockRepoPushEndorsementMockRecorder) BytesAndID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockRepoPushEnd)(nil).BytesAndID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockRepoPushEndorsement)(nil).BytesAndID))
 }
 
 // MockRepoManager is a mock of RepoManager interface
@@ -2070,4 +2157,520 @@ func (m *MockRepoManager) Stop() error {
 func (mr *MockRepoManagerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockRepoManager)(nil).Stop))
+}
+
+// MockLiteGit is a mock of LiteGit interface
+type MockLiteGit struct {
+	ctrl     *gomock.Controller
+	recorder *MockLiteGitMockRecorder
+}
+
+// MockLiteGitMockRecorder is the mock recorder for MockLiteGit
+type MockLiteGitMockRecorder struct {
+	mock *MockLiteGit
+}
+
+// NewMockLiteGit creates a new mock instance
+func NewMockLiteGit(ctrl *gomock.Controller) *MockLiteGit {
+	mock := &MockLiteGit{ctrl: ctrl}
+	mock.recorder = &MockLiteGitMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockLiteGit) EXPECT() *MockLiteGitMockRecorder {
+	return m.recorder
+}
+
+// RefDelete mocks base method
+func (m *MockLiteGit) RefDelete(refname string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RefDelete", refname)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RefDelete indicates an expected call of RefDelete
+func (mr *MockLiteGitMockRecorder) RefDelete(refname interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefDelete", reflect.TypeOf((*MockLiteGit)(nil).RefDelete), refname)
+}
+
+// RefUpdate mocks base method
+func (m *MockLiteGit) RefUpdate(refname, commitHash string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RefUpdate", refname, commitHash)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RefUpdate indicates an expected call of RefUpdate
+func (mr *MockLiteGitMockRecorder) RefUpdate(refname, commitHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefUpdate", reflect.TypeOf((*MockLiteGit)(nil).RefUpdate), refname, commitHash)
+}
+
+// TagDelete mocks base method
+func (m *MockLiteGit) TagDelete(tagname string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TagDelete", tagname)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TagDelete indicates an expected call of TagDelete
+func (mr *MockLiteGitMockRecorder) TagDelete(tagname interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TagDelete", reflect.TypeOf((*MockLiteGit)(nil).TagDelete), tagname)
+}
+
+// RefGet mocks base method
+func (m *MockLiteGit) RefGet(refname string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RefGet", refname)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RefGet indicates an expected call of RefGet
+func (mr *MockLiteGitMockRecorder) RefGet(refname interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefGet", reflect.TypeOf((*MockLiteGit)(nil).RefGet), refname)
+}
+
+// GetRecentCommit mocks base method
+func (m *MockLiteGit) GetRecentCommit() (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRecentCommit")
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRecentCommit indicates an expected call of GetRecentCommit
+func (mr *MockLiteGitMockRecorder) GetRecentCommit() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecentCommit", reflect.TypeOf((*MockLiteGit)(nil).GetRecentCommit))
+}
+
+// GetHEAD mocks base method
+func (m *MockLiteGit) GetHEAD(short bool) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetHEAD", short)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetHEAD indicates an expected call of GetHEAD
+func (mr *MockLiteGitMockRecorder) GetHEAD(short interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHEAD", reflect.TypeOf((*MockLiteGit)(nil).GetHEAD), short)
+}
+
+// NumCommits mocks base method
+func (m *MockLiteGit) NumCommits(branch string) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NumCommits", branch)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NumCommits indicates an expected call of NumCommits
+func (mr *MockLiteGitMockRecorder) NumCommits(branch interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumCommits", reflect.TypeOf((*MockLiteGit)(nil).NumCommits), branch)
+}
+
+// GetConfig mocks base method
+func (m *MockLiteGit) GetConfig(path string) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConfig", path)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetConfig indicates an expected call of GetConfig
+func (mr *MockLiteGitMockRecorder) GetConfig(path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockLiteGit)(nil).GetConfig), path)
+}
+
+// CreateAndOrSignQuietCommit mocks base method
+func (m *MockLiteGit) CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{msg, signingKey}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateAndOrSignQuietCommit", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateAndOrSignQuietCommit indicates an expected call of CreateAndOrSignQuietCommit
+func (mr *MockLiteGitMockRecorder) CreateAndOrSignQuietCommit(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{msg, signingKey}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAndOrSignQuietCommit", reflect.TypeOf((*MockLiteGit)(nil).CreateAndOrSignQuietCommit), varargs...)
+}
+
+// CreateTagWithMsg mocks base method
+func (m *MockLiteGit) CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{args, msg, signingKey}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "CreateTagWithMsg", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateTagWithMsg indicates an expected call of CreateTagWithMsg
+func (mr *MockLiteGitMockRecorder) CreateTagWithMsg(args, msg, signingKey interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{args, msg, signingKey}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTagWithMsg", reflect.TypeOf((*MockLiteGit)(nil).CreateTagWithMsg), varargs...)
+}
+
+// ListTreeObjects mocks base method
+func (m *MockLiteGit) ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{treename, recursive}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListTreeObjects", varargs...)
+	ret0, _ := ret[0].(map[string]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListTreeObjects indicates an expected call of ListTreeObjects
+func (mr *MockLiteGitMockRecorder) ListTreeObjects(treename, recursive interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{treename, recursive}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTreeObjects", reflect.TypeOf((*MockLiteGit)(nil).ListTreeObjects), varargs...)
+}
+
+// ListTreeObjectsSlice mocks base method
+func (m *MockLiteGit) ListTreeObjectsSlice(treename string, recursive, showTrees bool, env ...string) ([]string, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{treename, recursive, showTrees}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ListTreeObjectsSlice", varargs...)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListTreeObjectsSlice indicates an expected call of ListTreeObjectsSlice
+func (mr *MockLiteGitMockRecorder) ListTreeObjectsSlice(treename, recursive, showTrees interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{treename, recursive, showTrees}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTreeObjectsSlice", reflect.TypeOf((*MockLiteGit)(nil).ListTreeObjectsSlice), varargs...)
+}
+
+// RemoveEntryFromNote mocks base method
+func (m *MockLiteGit) RemoveEntryFromNote(notename, objectHash string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{notename, objectHash}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "RemoveEntryFromNote", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RemoveEntryFromNote indicates an expected call of RemoveEntryFromNote
+func (mr *MockLiteGitMockRecorder) RemoveEntryFromNote(notename, objectHash interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{notename, objectHash}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RemoveEntryFromNote", reflect.TypeOf((*MockLiteGit)(nil).RemoveEntryFromNote), varargs...)
+}
+
+// AddEntryToNote mocks base method
+func (m *MockLiteGit) AddEntryToNote(notename, objectHash, note string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{notename, objectHash, note}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "AddEntryToNote", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddEntryToNote indicates an expected call of AddEntryToNote
+func (mr *MockLiteGitMockRecorder) AddEntryToNote(notename, objectHash, note interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{notename, objectHash, note}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddEntryToNote", reflect.TypeOf((*MockLiteGit)(nil).AddEntryToNote), varargs...)
+}
+
+// CreateBlob mocks base method
+func (m *MockLiteGit) CreateBlob(content string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateBlob", content)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateBlob indicates an expected call of CreateBlob
+func (mr *MockLiteGitMockRecorder) CreateBlob(content interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBlob", reflect.TypeOf((*MockLiteGit)(nil).CreateBlob), content)
+}
+
+// UpdateRecentCommitMsg mocks base method
+func (m *MockLiteGit) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{msg, signingKey}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateRecentCommitMsg", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateRecentCommitMsg indicates an expected call of UpdateRecentCommitMsg
+func (mr *MockLiteGitMockRecorder) UpdateRecentCommitMsg(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{msg, signingKey}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRecentCommitMsg", reflect.TypeOf((*MockLiteGit)(nil).UpdateRecentCommitMsg), varargs...)
+}
+
+// IsDescendant mocks base method
+func (m *MockLiteGit) IsDescendant(childHash, parentHash string, env ...string) error {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{childHash, parentHash}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "IsDescendant", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IsDescendant indicates an expected call of IsDescendant
+func (mr *MockLiteGitMockRecorder) IsDescendant(childHash, parentHash interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{childHash, parentHash}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsDescendant", reflect.TypeOf((*MockLiteGit)(nil).IsDescendant), varargs...)
+}
+
+// HasMergeCommits mocks base method
+func (m *MockLiteGit) HasMergeCommits(reference string, env ...string) (bool, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{reference}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "HasMergeCommits", varargs...)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// HasMergeCommits indicates an expected call of HasMergeCommits
+func (mr *MockLiteGitMockRecorder) HasMergeCommits(reference interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{reference}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMergeCommits", reflect.TypeOf((*MockLiteGit)(nil).HasMergeCommits), varargs...)
+}
+
+// GetMergeCommits mocks base method
+func (m *MockLiteGit) GetMergeCommits(reference string, env ...string) ([]string, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{reference}
+	for _, a := range env {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetMergeCommits", varargs...)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMergeCommits indicates an expected call of GetMergeCommits
+func (mr *MockLiteGitMockRecorder) GetMergeCommits(reference interface{}, env ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{reference}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeCommits", reflect.TypeOf((*MockLiteGit)(nil).GetMergeCommits), varargs...)
+}
+
+// MockCommitTree is a mock of CommitTree interface
+type MockCommitTree struct {
+	ctrl     *gomock.Controller
+	recorder *MockCommitTreeMockRecorder
+}
+
+// MockCommitTreeMockRecorder is the mock recorder for MockCommitTree
+type MockCommitTreeMockRecorder struct {
+	mock *MockCommitTree
+}
+
+// NewMockCommitTree creates a new mock instance
+func NewMockCommitTree(ctrl *gomock.Controller) *MockCommitTree {
+	mock := &MockCommitTree{ctrl: ctrl}
+	mock.recorder = &MockCommitTreeMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockCommitTree) EXPECT() *MockCommitTreeMockRecorder {
+	return m.recorder
+}
+
+// File mocks base method
+func (m *MockCommitTree) File(path string) (*object.File, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "File", path)
+	ret0, _ := ret[0].(*object.File)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// File indicates an expected call of File
+func (mr *MockCommitTreeMockRecorder) File(path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "File", reflect.TypeOf((*MockCommitTree)(nil).File), path)
+}
+
+// Size mocks base method
+func (m *MockCommitTree) Size(path string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Size", path)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Size indicates an expected call of Size
+func (mr *MockCommitTreeMockRecorder) Size(path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Size", reflect.TypeOf((*MockCommitTree)(nil).Size), path)
+}
+
+// Tree mocks base method
+func (m *MockCommitTree) Tree(path string) (*object.Tree, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Tree", path)
+	ret0, _ := ret[0].(*object.Tree)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Tree indicates an expected call of Tree
+func (mr *MockCommitTreeMockRecorder) Tree(path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tree", reflect.TypeOf((*MockCommitTree)(nil).Tree), path)
+}
+
+// TreeEntryFile mocks base method
+func (m *MockCommitTree) TreeEntryFile(e *object.TreeEntry) (*object.File, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TreeEntryFile", e)
+	ret0, _ := ret[0].(*object.File)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TreeEntryFile indicates an expected call of TreeEntryFile
+func (mr *MockCommitTreeMockRecorder) TreeEntryFile(e interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TreeEntryFile", reflect.TypeOf((*MockCommitTree)(nil).TreeEntryFile), e)
+}
+
+// FindEntry mocks base method
+func (m *MockCommitTree) FindEntry(path string) (*object.TreeEntry, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindEntry", path)
+	ret0, _ := ret[0].(*object.TreeEntry)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindEntry indicates an expected call of FindEntry
+func (mr *MockCommitTreeMockRecorder) FindEntry(path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindEntry", reflect.TypeOf((*MockCommitTree)(nil).FindEntry), path)
+}
+
+// Files mocks base method
+func (m *MockCommitTree) Files() *object.FileIter {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Files")
+	ret0, _ := ret[0].(*object.FileIter)
+	return ret0
+}
+
+// Files indicates an expected call of Files
+func (mr *MockCommitTreeMockRecorder) Files() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Files", reflect.TypeOf((*MockCommitTree)(nil).Files))
+}
+
+// ID mocks base method
+func (m *MockCommitTree) ID() plumbing.Hash {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ID")
+	ret0, _ := ret[0].(plumbing.Hash)
+	return ret0
+}
+
+// ID indicates an expected call of ID
+func (mr *MockCommitTreeMockRecorder) ID() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockCommitTree)(nil).ID))
+}
+
+// Type mocks base method
+func (m *MockCommitTree) Type() plumbing.ObjectType {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Type")
+	ret0, _ := ret[0].(plumbing.ObjectType)
+	return ret0
+}
+
+// Type indicates an expected call of Type
+func (mr *MockCommitTreeMockRecorder) Type() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Type", reflect.TypeOf((*MockCommitTree)(nil).Type))
+}
+
+// Decode mocks base method
+func (m *MockCommitTree) Decode(o plumbing.EncodedObject) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Decode", o)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Decode indicates an expected call of Decode
+func (mr *MockCommitTreeMockRecorder) Decode(o interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Decode", reflect.TypeOf((*MockCommitTree)(nil).Decode), o)
+}
+
+// Encode mocks base method
+func (m *MockCommitTree) Encode(o plumbing.EncodedObject) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Encode", o)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Encode indicates an expected call of Encode
+func (mr *MockCommitTreeMockRecorder) Encode(o interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Encode", reflect.TypeOf((*MockCommitTree)(nil).Encode), o)
 }

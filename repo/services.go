@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -168,7 +167,7 @@ func serveService(s *requestInfo) error {
 		return errors.Wrap(err, "HandleUpdate err")
 	}
 
-	w.Header().Set("TxID", color.GreenString(s.pushHandler.noteID))
+	w.Header().Set("TxID", s.pushHandler.noteID)
 	pktEnc.Encode(sidebandProgress(fmt.Sprintf("Transaction ID: %s", s.pushHandler.noteID)))
 
 	// Write output from git to the http response

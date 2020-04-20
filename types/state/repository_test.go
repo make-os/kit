@@ -209,6 +209,7 @@ var _ = Describe("Repository", func() {
 					Governance: &RepoConfigGovernance{
 						Voter:               1,
 						VoterAgeAsCurHeight: true,
+						ProposalQuorum:      1,
 					},
 					Policies: []*Policy{{Subject: "user1", Object: "dev", Action: "deny"}},
 				}
@@ -219,6 +220,7 @@ var _ = Describe("Repository", func() {
 						"governance": map[string]interface{}{
 							"propVoter":           13,
 							"voterAgeAsCurHeight": false,
+							"propQuorum":          0,
 						},
 					})
 					Expect(int(base.Governance.Voter)).To(Equal(13))

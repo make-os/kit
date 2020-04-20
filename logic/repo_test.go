@@ -79,7 +79,7 @@ var _ = Describe("Repo", func() {
 			Specify("that repo config is the default", func() {
 				repo := txLogic.logic.RepoKeeper().Get("repo")
 				defCfg := state.MakeDefaultRepoConfig()
-				addDefaultPolicies(defCfg)
+				AddDefaultPolicies(defCfg)
 				Expect(repo.Config).To(Equal(defCfg))
 			})
 

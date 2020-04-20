@@ -16,7 +16,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-type refHandler func(ref string) []error
+type refHandler func(ref string, revertOnly bool) []error
 type authorizationHandler func(ur *packp.ReferenceUpdateRequest) error
 
 // PushHandler provides handles all phases of a push operation
@@ -128,20 +128,40 @@ func (h *PushHandler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) erro
 		return err
 	}
 
-	// For each commands, check whether the pusher is authorized to perform the actions
+	// For each push details, check whether the pusher is authorized
 	for _, cmd := range ur.Commands {
-		pushKeyID := h.txDetails.GetPushKeyID()
+		detail := h.txDetails.Get(cmd.Name.String())
 
-		// For delete command, check if their is a policy allowing the pusher to do this.
+		// For delete command, check if there is a policy allowing the pusher to do it.
 		if cmd.New.IsZero() {
-			if err := h.policyChecker(h.polEnforcer, pushKeyID, cmd.Name.String(), "delete"); err != nil {
+			if err := h.policyChecker(h.polEnforcer, detail.PushKeyID, cmd.Name.String(),
+				"delete"); err != nil {
 				return err
 			}
 			continue
 		}
 
-		// For write command, check if their is a policy allowing the pusher to do this.
-		if err := h.policyChecker(h.polEnforcer, pushKeyID, cmd.Name.String(), "update"); err != nil {
+		// For merge update, check if there is a policy allowing the pusher to do it.
+		if detail.MergeProposalID != "" {
+			if err := h.policyChecker(h.polEnforcer, detail.PushKeyID, cmd.Name.String(),
+				"merge-update"); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// For merge update, check if there is a policy allowing the pusher to do it.
+		if isIssueBranch(detail.Reference) {
+			if err := h.policyChecker(h.polEnforcer, detail.PushKeyID, cmd.Name.String(),
+				"issue-update"); err != nil {
+				return err
+			}
+			continue
+		}
+
+		// For write command, check if there is a policy allowing the pusher to do it.
+		if err := h.policyChecker(h.polEnforcer, detail.PushKeyID, cmd.Name.String(),
+			"update"); err != nil {
 			return err
 		}
 	}
@@ -157,11 +177,21 @@ func (h *PushHandler) HandleReferences() error {
 		return fmt.Errorf("expected old state to have been captured")
 	}
 
+	var errs = []error{}
 	for _, ref := range h.pushReader.references.names() {
-		refErrs := h.referenceHandler(ref)
-		if len(refErrs) > 0 {
-			return refErrs[0]
+
+		// When the previous reference handling failed, the only handling operation
+		// to perform on the current reference is a revert of new changes introduced
+		revertOnly := false
+		if len(errs) > 0 {
+			revertOnly = true
 		}
+
+		errs = append(errs, h.referenceHandler(ref, revertOnly)...)
+	}
+
+	if len(errs) > 0 {
+		return errs[0]
 	}
 
 	return nil
@@ -264,12 +294,9 @@ func (h *PushHandler) announceObject(objHash string) error {
 	return nil
 }
 
-// handleReference handles push updates to references.
-// The goal of this function is to:
-// - Determine what changed as a result of the push.
-// - Validate the pushed references transaction information & signature.
-// - Revert the changes and delete the new objects if validation failed.
-func (h *PushHandler) handleReference(ref string) []error {
+// handleReference handles reference update validation and reversion.
+// When revertOnly is true, only reversion operation is performed.
+func (h *PushHandler) handleReference(ref string, revertOnly bool) []error {
 
 	var errs []error
 
@@ -292,9 +319,14 @@ func (h *PushHandler) handleReference(ref string) []error {
 		change = changes.References.Changes[0]
 	}
 
+	if revertOnly {
+		goto revert
+	}
+
 	// Here, we need to validate the change for non-delete request
 	if !isZeroHash(h.pushReader.references[ref].newHash) {
-		err = h.changeValidator(h.repo, change, h.txDetails.Get(ref), h.mgr.GetPushKeyGetter())
+		oldHash := h.pushReader.references[ref].oldHash
+		err = h.changeValidator(h.repo, oldHash, change, h.txDetails.Get(ref), h.mgr.GetPushKeyGetter())
 		if err != nil {
 			errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
 		}
@@ -314,6 +346,7 @@ func (h *PushHandler) handleReference(ref string) []error {
 		}
 	}
 
+revert:
 	// As with all push operations, we must revert the changes made to the
 	// repository since we do not consider them final. Here we attempt to revert
 	// the repository to the old reference state. We passed the changes as an

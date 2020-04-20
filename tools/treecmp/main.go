@@ -108,24 +108,17 @@ func printRawStrDiff(diffs []Diffs) {
 
 func main() {
 	diffs := findAndPrintDiffKeys(
-		207,
+		1505,
 		"/Users/ncodes/.mosdef_dev_node1/1/data/appstate.db",
 		"/Users/ncodes/.mosdef_dev_node2/1/data/appstate.db")
 
 	// printRawStrDiff(diffs)
+	printBytesDiff(diffs)
 
 	// Print specific objects
 	for _, diff := range diffs {
 		if string(diff.k[:2]) == (keepers.TagRepo + ":") {
 			var r, r2 state.Repository
-			util.ToObject(diff.pairs[0], &r)
-			util.ToObject(diff.pairs[1], &r2)
-			pp.Println(r)
-			pp.Println(r2)
-		}
-
-		if string(diff.k[:2]) == (keepers.TagAccount + ":") {
-			var r, r2 state.Account
 			util.ToObject(diff.pairs[0], &r)
 			util.ToObject(diff.pairs[1], &r2)
 			pp.Println(r)

@@ -26,18 +26,9 @@ func appendToFile(path, file string, data string) {
 	_, _ = script.Echo(data).AppendFile(filepath.Join(path, file))
 }
 
-func writeToFile(path, file string, data string) {
-	_, _ = script.Echo(data).WriteFile(filepath.Join(path, file))
-}
-
 func execGitCommit(path, msg string) []byte {
 	execGit(path, "add", ".")
 	return execGit(path, "commit", "-m", msg)
-}
-
-func execGitMakeSignableCommit(path, msg, keyID string) []byte {
-	execGit(path, "add", ".")
-	return execGit(path, "commit", "-m", msg, "-S"+keyID)
 }
 
 func appendCommit(path, file, fileData, commitMsg string) {
@@ -104,6 +95,14 @@ func scriptFile(path, file string) *script.Pipe {
 
 func createCheckoutBranch(path, branch string) {
 	execGit(path, "checkout", "-b", branch)
+}
+
+func checkoutBranch(path, branch string) {
+	execGit(path, "checkout", branch)
+}
+
+func forceMergeOurs(path, targetBranch string) {
+	execGit(path, "merge", targetBranch, "-X", "ours")
 }
 
 func execAnyCmd(workDir, name string, arg ...string) []byte {

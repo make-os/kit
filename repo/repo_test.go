@@ -36,7 +36,7 @@ var _ = Describe("Repo", func() {
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		dotGitPath = filepath.Join(path, ".git")
 		execGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
+		repo, err = getRepoWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 

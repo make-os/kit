@@ -1,20 +1,26 @@
 package repo
 
 import (
+	"bytes"
 	"context"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"reflect"
 	"strings"
 	"time"
 
+	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/mr-tron/base58"
+	"github.com/stretchr/objx"
+	"github.com/thoas/go-funk"
 	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
 
 	gv "github.com/asaskevich/govalidator"
 	"gitlab.com/makeos/mosdef/crypto"
@@ -31,21 +37,26 @@ var (
 	fe                               = util.FieldErrorWithIndex
 	ErrSigHeaderAndReqParamsMismatch = fmt.Errorf("request transaction info and signature " +
 		"transaction info did not match")
+	MaxIssueContentLen = 1024 * 8 // 8KB
+	MaxIssueTitleLen   = 256
 )
 
 type changeValidator func(
 	repo core.BareRepo,
+	oldHash string,
 	change *core.ItemChange,
 	txDetail *types.TxDetail,
 	getPushKey core.PushKeyGetter) error
 
 // validateChange validates a change to a repository
 // repo: The target repository
-// change: The item that changed the repository
+// oldHash: The hash of the old reference
+// change: The change to the reference
 // txDetail: The pusher transaction detail
 // getPushKey: Getter function for reading push key public key
 func validateChange(
 	repo core.BareRepo,
+	oldHash string,
 	change *core.ItemChange,
 	txDetail *types.TxDetail,
 	getPushKey core.PushKeyGetter) error {
@@ -56,7 +67,12 @@ func validateChange(
 		if err != nil {
 			return errors.Wrap(err, "unable to get commit object")
 		}
-		return checkCommit(commit, txDetail, getPushKey)
+
+		if isIssueBranch(change.Item.GetName()) {
+			return checkIssueCommit(wrapCommit(commit), txDetail.Reference, oldHash, repo)
+		} else {
+			return checkCommit(commit, txDetail, getPushKey)
+		}
 	}
 
 	// Handle tag validation
@@ -120,10 +136,7 @@ func checkNote(
 // tag: The target annotated tag
 // txDetail: The pusher transaction detail
 // getPushKey: Getter function for reading push key public key
-func checkAnnotatedTag(
-	tag *object.Tag,
-	txDetail *types.TxDetail,
-	getPushKey core.PushKeyGetter) error {
+func checkAnnotatedTag(tag *object.Tag, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 
 	if tag.PGPSignature == "" {
 		msg := "tag (%s) is unsigned. Sign the tag with your push key"
@@ -215,13 +228,11 @@ func verifyCommitOrTagSignature(obj object.Object, pubKey crypto.PublicKey) (*ty
 }
 
 // checkCommit validates a commit
+// repo: The target repo
 // commit: The target commit object
 // txDetail: The push transaction detail
 // getPushKey: Getter function for fetching push public key
-func checkCommit(
-	commit *object.Commit,
-	txDetail *types.TxDetail,
-	getPushKey core.PushKeyGetter) error {
+func checkCommit(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 
 	// Signature must be set
 	if commit.PGPSignature == "" {
@@ -244,6 +255,211 @@ func checkCommit(
 	// detail extracted from the signature header
 	if !txDetail.Equal(commitTxDetail) {
 		return ErrSigHeaderAndReqParamsMismatch
+	}
+
+	return nil
+}
+
+// checkIssueCommit checks commits of an issue branch.
+func checkIssueCommit(commit core.Commit, reference, oldHash string, repo core.BareRepo) error {
+
+	// Issue commits can't have multiple parents (merge commit not permitted)
+	if commit.NumParents() > 1 {
+		return fmt.Errorf("issue commit cannot have more than one parent")
+	}
+
+	// Issue commit history cannot have merge commits in it (merge commit not permitted)
+	hasMerges, err := repo.HasMergeCommits(reference)
+	if err != nil {
+		return errors.Wrap(err, "failed to check for merges in issue commit history")
+	} else if hasMerges {
+		return fmt.Errorf("issue commit history must not include a merge commit")
+	}
+
+	// New issue's first commit must have zero hash parent (orphan commit)
+	isNewIssue := !repo.State().References.Has(reference)
+	if isNewIssue {
+		if commit.NumParents() != 0 {
+			return fmt.Errorf("first commit of a new issue must have no parent")
+		}
+	}
+
+	// Issue commit history must not alter the current history (rebasing not permitted)
+	if !isNewIssue && repo.IsDescendant(commit.GetHash().String(), oldHash) != nil {
+		return fmt.Errorf("issue commit must not alter history")
+	}
+
+	tree, err := commit.GetTree()
+	if err != nil {
+		return fmt.Errorf("unable to read issue commit tree")
+	}
+
+	// Issue commit tree cannot be left empty
+	if len(tree.Entries) == 0 {
+		return fmt.Errorf("issue commit must have a 'body' file")
+	}
+
+	// Issue commit must include one file
+	if len(tree.Entries) > 1 {
+		return fmt.Errorf("issue commit tree must only include a 'body' file")
+	}
+
+	// Issue commit must include only a body file
+	body := tree.Entries[0]
+	if body.Mode != filemode.Regular {
+		return fmt.Errorf("issue body file is not a regular file")
+	}
+
+	file, _ := tree.File(body.Name)
+	content, err := file.Contents()
+	if err != nil {
+		return fmt.Errorf("issue body file could not be read")
+	}
+
+	// The body file must be parsable (extract front matter and content)
+	cfm, err := pageparser.ParseFrontMatterAndContent(bytes.NewBufferString(content))
+	if err != nil {
+		return fmt.Errorf("issue body could not be parsed")
+	}
+
+	// Validate extracted front matter
+	if err = checkIssueBody(repo, commit, isNewIssue, cfm.FrontMatter, cfm.Content); err != nil {
+		return errors.Wrap(err, "issue body has invalid front matter")
+	}
+
+	return nil
+}
+
+// checkIssueBody checks whether the front matter and content extracted from an issue body is ok.
+// Valid front matter fields:
+// - title: The title of the issue (optional)
+// - labels: Labels categorize issues into arbitrary or conceptual units
+// - replyTo: Indicates the issue is a response an earlier comment.
+// - assignees: List push keys assigned to the issue and open for interpretation by clients.
+// - fixers: List push keys assigned to fix an issue and is enforced by the protocol.
+func checkIssueBody(
+	repo core.BareRepo,
+	commit core.Commit,
+	isNewIssue bool,
+	fm map[string]interface{},
+	content []byte) error {
+
+	// Ensure only valid fields are included
+	var validFields = []string{"title", "labels", "replyTo", "assignees", "fixers"}
+	for k := range fm {
+		if !funk.ContainsString(validFields, k) {
+			return fe(-1, k, "unknown field")
+		}
+	}
+
+	obj := objx.New(fm)
+
+	title := obj.Get("title")
+	if !title.IsNil() && !title.IsStr() {
+		return fe(-1, "title", "expected a string value")
+	}
+
+	replyTo := obj.Get("replyTo")
+	if !replyTo.IsNil() && !replyTo.IsStr() {
+		return fe(-1, "replyTo", "expected a string value")
+	}
+
+	labels := obj.Get("labels")
+	if !labels.IsNil() && !labels.IsInterSlice() {
+		return fe(-1, "labels", "expected a list of string values")
+	}
+
+	assignees := obj.Get("assignees")
+	if !assignees.IsNil() && !assignees.IsInterSlice() {
+		return fe(-1, "assignees", "expected a list of string values")
+	}
+
+	fixers := obj.Get("fixers")
+	if !fixers.IsNil() && !fixers.IsInterSlice() {
+		return fe(-1, "fixers", "expected a list of string values")
+	}
+
+	// Ensure issue commit do not have a replyTo value
+	if isNewIssue && len(replyTo.String()) > 0 {
+		return fe(-1, "replyTo", "not expected in a new issue commit")
+	}
+
+	// Ensure title is unset when replyTo is set
+	if len(replyTo.String()) > 0 && len(title.String()) > 0 {
+		return fe(-1, "title", "title is not required when replying")
+	}
+
+	// Ensure title is provided if issue is new
+	if isNewIssue && len(title.String()) == 0 {
+		return fe(-1, "title", "title is required")
+	} else if !isNewIssue && len(title.String()) > 0 {
+		return fe(-1, "title", "title is not required for comment commit")
+	}
+
+	// Title cannot exceed max.
+	if len(title.String()) > MaxIssueTitleLen {
+		return fe(-1, "title", "title is too long and cannot exceed 256 characters")
+	}
+
+	// ReplyTo must have len 40
+	replyToVal := replyTo.String()
+	if len(replyToVal) > 0 && len(replyToVal) != 40 {
+		return fe(-1, "replyTo", "invalid hash value")
+	}
+
+	// When ReplyTo is set, ensure the issue commit is a descendant of the replyTo
+	if len(replyToVal) > 0 {
+		if repo.IsDescendant(commit.GetHash().String(), replyToVal) != nil {
+			return fe(-1, "replyTo", "not a valid hash of a commit in the issue")
+		}
+	}
+
+	// Check labels if set.
+	// Labels cannot exceed 10.
+	if len(labels.InterSlice()) > 10 {
+		return fe(-1, "labels", "too many labels. Cannot exceed 10")
+	}
+	if len(labels.InterSlice()) > 0 {
+		if reflect.TypeOf(labels.InterSlice()[0]).Kind() != reflect.String {
+			return fe(-1, "labels", "expected a string list of labels")
+		}
+	}
+
+	// Check assignees if set.
+	// Assignees cannot exceed 10.
+	// Assignees must be valid push key IDs
+	if len(assignees.InterSlice()) > 10 {
+		return fe(-1, "assignees", "too many assignees. Cannot exceed 10")
+	}
+	for i, assignee := range assignees.InterSlice() {
+		pkID, ok := assignee.(string)
+		if !ok {
+			return fe(-1, "assignees", "expected a string list of push keys")
+		}
+		if !util.IsValidPushKeyID(pkID) {
+			return fe(-1, fmt.Sprintf("assignees[%d]", i), "invalid push key ID")
+		}
+	}
+
+	// Check fixers if set.
+	// Fixers cannot exceed 10.
+	// Fixers must be valid push key IDs
+	if len(fixers.InterSlice()) > 10 {
+		return fe(-1, "fixers", "too many fixers. Cannot exceed 10")
+	}
+	for i, assignee := range fixers.InterSlice() {
+		pkID, ok := assignee.(string)
+		if !ok {
+			return fe(-1, "fixers", "expected a string list of push keys")
+		}
+		if !util.IsValidPushKeyID(pkID) {
+			return fe(-1, fmt.Sprintf("fixers[%d]", i), "invalid push key ID")
+		}
+	}
+
+	// Issue content cannot be greater than the maximum
+	if len(content) > MaxIssueContentLen {
+		return fe(-1, "content", "issue content length exceeded max character limit")
 	}
 
 	return nil
@@ -826,7 +1042,7 @@ func checkMergeCompliance(
 		}
 	}
 
-	// Get the commit that initiated the merge operation (a.k.a "merger commit").
+	// Get the commit that initiated the merge operation (a.k.a "pushed commit").
 	// Since by convention, its parent is considered the actual merge target.
 	// As such, we need to perform some validation before we compare it with
 	// the merge proposal target hash.
@@ -835,20 +1051,35 @@ func checkMergeCompliance(
 		return errors.Wrap(err, "unable to get commit object")
 	}
 
-	// Ensure the merger commit does not have multiple parents
-	if commit.NumParents() > 1 {
-		return fmt.Errorf("merge error: multiple targets not allowed")
+	var propTargetHash string
+	util.ToObject(prop.ActionData[constants.ActionDataKeyTargetHash], &propTargetHash)
+
+	// By default, the parent of the merge commit is target commit...
+	targetCommit, _ := commit.Parent(0)
+
+	// ...unless the merge commit is the proposal target, in which case
+	// we use the commit as the target hash.
+	if propTargetHash == commit.GetHash().String() {
+		targetCommit = commit
 	}
 
-	// Ensure the difference between the target commit and the merger commit
+	// When the merge commit has parents, ensure the proposal target is a parent.
+	// Extract it and use as the target commit.
+	if commit.NumParents() > 1 {
+		_, targetCommit = commit.IsParent(propTargetHash)
+		if targetCommit == nil {
+			return fmt.Errorf("merge error: target hash is not a parent of the merge commit")
+		}
+	}
+
+	// Ensure the difference between the target commit and the pushed commit
 	// only exist in the commit hash and not the tree, author and committer information.
-	// By convention, the merger commit can only modify its commit object (time,
+	// By convention, the pushed commit can only modify its commit object (time,
 	// message and signature).
-	targetCommit, _ := commit.Parent(0)
 	if commit.GetTreeHash() != targetCommit.GetTreeHash() ||
 		commit.GetAuthor().String() != targetCommit.GetAuthor().String() ||
 		commit.GetCommitter().String() != targetCommit.GetCommitter().String() {
-		return fmt.Errorf("merge error: merger commit must not modify target branch history")
+		return fmt.Errorf("merge error: pushed commit must not modify target branch history")
 	}
 
 	// When no older reference (ex. a new/first branch),
@@ -873,8 +1104,6 @@ func checkMergeCompliance(
 	}
 
 	// Ensure the target commit and the proposal target match
-	var propTargetHash string
-	_ = util.ToObject(prop.ActionData[constants.ActionDataKeyTargetHash], &propTargetHash)
 	if targetCommit.GetHash().String() != propTargetHash {
 		return fmt.Errorf("merge error: target commit hash and the merge proposal target hash must match")
 	}

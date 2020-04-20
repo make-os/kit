@@ -16,23 +16,23 @@ var (
 	ErrNoCommits = fmt.Errorf("no commits")
 )
 
-// GitOps provides convenience methods that utilize
+// LiteGit provides convenience methods that utilize
 // the git tool to access and modify a repository
-type GitOps struct {
+type LiteGit struct {
 	gitBinPath string
 	path       string
 }
 
-// NewGitOps creates an instance of GitOps.
+// NewLiteGit creates an instance of LiteGit.
 // binPath: Git executable path
 // path: The target repository path
-func NewGitOps(gitBinPath, path string) *GitOps {
-	return &GitOps{gitBinPath: gitBinPath, path: path}
+func NewLiteGit(gitBinPath, path string) *LiteGit {
+	return &LiteGit{gitBinPath: gitBinPath, path: path}
 }
 
 // RefDelete executes `git update-ref -d <refname>` to delete a reference
-func (g *GitOps) RefDelete(refname string) error {
-	_, err := execGitCmd(g.gitBinPath, g.path, "update-ref", "-d", refname)
+func (lg *LiteGit) RefDelete(refname string) error {
+	_, err := execGitCmd(lg.gitBinPath, lg.path, "update-ref", "-d", refname)
 	if err != nil {
 		return errors.Wrap(err, "reference delete failed")
 	}
@@ -40,8 +40,8 @@ func (g *GitOps) RefDelete(refname string) error {
 }
 
 // RefUpdate executes `git update-ref <refname> <commit hash>` to update/create a reference
-func (g *GitOps) RefUpdate(refname, commitHash string) error {
-	_, err := execGitCmd(g.gitBinPath, g.path, "update-ref", refname, commitHash)
+func (lg *LiteGit) RefUpdate(refname, commitHash string) error {
+	_, err := execGitCmd(lg.gitBinPath, lg.path, "update-ref", refname, commitHash)
 	if err != nil {
 		return errors.Wrap(err, "reference update failed")
 	}
@@ -49,8 +49,8 @@ func (g *GitOps) RefUpdate(refname, commitHash string) error {
 }
 
 // TagDelete executes `git tag -d <tagname>` to delete a tag
-func (g *GitOps) TagDelete(tagname string) error {
-	_, err := execGitCmd(g.gitBinPath, g.path, "tag", "-d", tagname)
+func (lg *LiteGit) TagDelete(tagname string) error {
+	_, err := execGitCmd(lg.gitBinPath, lg.path, "tag", "-d", tagname)
 	if err != nil {
 		return errors.Wrap(err, "tag delete failed")
 	}
@@ -59,8 +59,8 @@ func (g *GitOps) TagDelete(tagname string) error {
 
 // RefGet returns the hash content of a reference.
 // Returns ErrRefNotFound if ref does not exist
-func (g *GitOps) RefGet(refname string) (string, error) {
-	out, err := execGitCmd(g.gitBinPath, g.path, "rev-parse", "--verify", refname)
+func (lg *LiteGit) RefGet(refname string) (string, error) {
+	out, err := execGitCmd(lg.gitBinPath, lg.path, "rev-parse", "--verify", refname)
 	if err != nil {
 		if strings.Contains(err.Error(), "fatal: Needed a single revision") {
 			return "", ErrRefNotFound
@@ -72,15 +72,15 @@ func (g *GitOps) RefGet(refname string) (string, error) {
 
 // GetRecentCommit gets the hash of the recent commit
 // Returns ErrNoCommits if no commits exist
-func (g *GitOps) GetRecentCommit() (string, error) {
+func (lg *LiteGit) GetRecentCommit() (string, error) {
 
 	// Get current branch
-	curBranch, err := g.GetHEAD(true)
+	curBranch, err := lg.GetHEAD(true)
 	if err != nil {
 		return "", err
 	}
 
-	numCommits, err := g.NumCommits(curBranch)
+	numCommits, err := lg.NumCommits(curBranch)
 	if err != nil {
 		return "", err
 	}
@@ -89,7 +89,7 @@ func (g *GitOps) GetRecentCommit() (string, error) {
 		return "", ErrNoCommits
 	}
 
-	out, err := execGitCmd(g.gitBinPath, g.path, "rev-parse", "HEAD")
+	out, err := execGitCmd(lg.gitBinPath, lg.path, "rev-parse", "HEAD")
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get recent commit")
 	}
@@ -99,14 +99,14 @@ func (g *GitOps) GetRecentCommit() (string, error) {
 
 // GetHEAD returns the reference stored in HEAD
 // short: When set to true, the full reference name is returned
-func (g *GitOps) GetHEAD(short bool) (string, error) {
+func (lg *LiteGit) GetHEAD(short bool) (string, error) {
 
 	var args = []string{"symbolic-ref", "HEAD"}
 	if short {
 		args = []string{"symbolic-ref", "--short", "HEAD"}
 	}
 
-	out, err := execGitCmd(g.gitBinPath, g.path, args...)
+	out, err := execGitCmd(lg.gitBinPath, lg.path, args...)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get current branch")
 	}
@@ -115,8 +115,8 @@ func (g *GitOps) GetHEAD(short bool) (string, error) {
 }
 
 // NumCommits gets the number of commits in a branch
-func (g *GitOps) NumCommits(branch string) (int, error) {
-	out, err := execGitCmd(g.gitBinPath, g.path, "--no-pager", "log", "--oneline", branch,
+func (lg *LiteGit) NumCommits(branch string) (int, error) {
+	out, err := execGitCmd(lg.gitBinPath, lg.path, "--no-pager", "log", "--oneline", branch,
 		`--pretty="%h"`)
 	if err != nil {
 		if strings.Contains(err.Error(), "unknown revision") {
@@ -129,8 +129,8 @@ func (g *GitOps) NumCommits(branch string) (int, error) {
 }
 
 // GetConfig finds and returns a config value
-func (g *GitOps) GetConfig(path string) string {
-	out, err := execGitCmd(g.gitBinPath, g.path, "config", path)
+func (lg *LiteGit) GetConfig(path string) string {
+	out, err := execGitCmd(lg.gitBinPath, lg.path, "config", path)
 	if err != nil {
 		return ""
 	}
@@ -141,13 +141,13 @@ func (g *GitOps) GetConfig(path string) string {
 // msg: The commit message.
 // signingKey: The optional signing key. If provided, the commit is signed
 // env: Optional environment variables to pass to the command.
-func (g *GitOps) CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error {
+func (lg *LiteGit) CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error {
 	args := []string{"commit", "--quiet", "--allow-empty", "--file", "-"}
 	if signingKey != "" {
 		args = append(args, "--gpg-sign="+signingKey)
 	}
-	cmd := exec.Command(g.gitBinPath, args...)
-	cmd.Dir = g.path
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
 	cmd.Stdin = strings.NewReader(msg)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -160,13 +160,13 @@ func (g *GitOps) CreateAndOrSignQuietCommit(msg, signingKey string, env ...strin
 // msg: The tag's message which is passed to the command's stdin.
 // signingKey: The signing key to use
 // env: Optional environment variables to pass to the command.
-func (g *GitOps) CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error {
+func (lg *LiteGit) CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error {
 	if signingKey != "" {
 		args = append(args, "-u", signingKey)
 	}
 	args = append([]string{"tag", "-a", "--file", "-"}, args...)
-	cmd := exec.Command(g.gitBinPath, args...)
-	cmd.Dir = g.path
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
 	cmd.Stdin = strings.NewReader(msg)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -175,14 +175,14 @@ func (g *GitOps) CreateTagWithMsg(args []string, msg, signingKey string, env ...
 }
 
 // ListTreeObjects returns a map containing tree entries (filename: objectname)
-func (g *GitOps) ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error) {
+func (lg *LiteGit) ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error) {
 	args := []string{"ls-tree", treename}
 	if recursive {
 		args = append(args, "-r")
 	}
 
-	cmd := exec.Command(g.gitBinPath, args...)
-	cmd.Dir = g.path
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
 	out := bytes.NewBuffer(nil)
 	cmd.Stdout = out
 	cmd.Stderr = os.Stderr
@@ -204,7 +204,7 @@ func (g *GitOps) ListTreeObjects(treename string, recursive bool, env ...string)
 }
 
 // ListTreeObjectsSlice returns a slice containing objects name of tree entries
-func (g *GitOps) ListTreeObjectsSlice(treename string, recursive, showTrees bool, env ...string) ([]string, error) {
+func (lg *LiteGit) ListTreeObjectsSlice(treename string, recursive, showTrees bool, env ...string) ([]string, error) {
 	args := []string{"ls-tree", treename}
 	if recursive {
 		args = append(args, "-r")
@@ -213,8 +213,8 @@ func (g *GitOps) ListTreeObjectsSlice(treename string, recursive, showTrees bool
 		args = append(args, "-t")
 	}
 
-	cmd := exec.Command(g.gitBinPath, args...)
-	cmd.Dir = g.path
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
 	out := bytes.NewBuffer(nil)
 	cmd.Stdout = out
 	cmd.Stderr = os.Stderr
@@ -236,10 +236,10 @@ func (g *GitOps) ListTreeObjectsSlice(treename string, recursive, showTrees bool
 }
 
 // RemoveEntryFromNote removes a note
-func (g *GitOps) RemoveEntryFromNote(notename, objectHash string, env ...string) error {
+func (lg *LiteGit) RemoveEntryFromNote(notename, objectHash string, env ...string) error {
 	args := []string{"notes", "--ref", notename, "add", "-m", "", "-f", objectHash}
-	cmd := exec.Command(g.gitBinPath, args...)
-	cmd.Dir = g.path
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), env...)
@@ -247,10 +247,10 @@ func (g *GitOps) RemoveEntryFromNote(notename, objectHash string, env ...string)
 }
 
 // AddEntryToNote adds a note
-func (g *GitOps) AddEntryToNote(notename, objectHash, note string, env ...string) error {
+func (lg *LiteGit) AddEntryToNote(notename, objectHash, note string, env ...string) error {
 	args := []string{"notes", "--ref", notename, "add", "-m", note, "-f", objectHash}
-	cmd := exec.Command(g.gitBinPath, args...)
-	cmd.Dir = g.path
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), env...)
@@ -258,9 +258,9 @@ func (g *GitOps) AddEntryToNote(notename, objectHash, note string, env ...string
 }
 
 // CreateBlob creates a blob object
-func (g *GitOps) CreateBlob(content string) (string, error) {
-	cmd := exec.Command(g.gitBinPath, []string{"hash-object", "-w", "--stdin"}...)
-	cmd.Dir = g.path
+func (lg *LiteGit) CreateBlob(content string) (string, error) {
+	cmd := exec.Command(lg.gitBinPath, []string{"hash-object", "-w", "--stdin"}...)
+	cmd.Dir = lg.path
 	cmd.Stdin = strings.NewReader(content)
 	out := bytes.NewBuffer(nil)
 	cmd.Stdout = out
@@ -276,17 +276,63 @@ func (g *GitOps) CreateBlob(content string) (string, error) {
 // msg: The commit message which is passed to the command's stdin.
 // signingKey: The signing key
 // env: Optional environment variables to pass to the command.
-func (g *GitOps) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
+func (lg *LiteGit) UpdateRecentCommitMsg(msg, signingKey string, env ...string) error {
 	args := []string{"commit", "--amend", "--quiet", "--allow-empty-message",
 		"--allow-empty", "--file", "-"}
 	if signingKey != "" {
 		args = append(args, "--gpg-sign="+signingKey)
 	}
-	cmd := exec.Command(g.gitBinPath, args...)
-	cmd.Dir = g.path
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
 	cmd.Stdin = strings.NewReader(msg)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), env...)
 	return errors.Wrap(cmd.Run(), "failed to update recent commit msg")
+}
+
+// IsDescendant checks whether a child commit hash is a descendant of a parent commit
+func (lg *LiteGit) IsDescendant(childHash string, parentHash string, env ...string) error {
+	args := []string{"merge-base", "--is-ancestor", parentHash, childHash}
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
+	cmd.Env = append(os.Environ(), env...)
+	if err := cmd.Run(); err != nil {
+		if _, ok := err.(*exec.ExitError); ok {
+			return fmt.Errorf("not a descendant")
+		}
+		return err
+	}
+	return nil
+}
+
+// GetMergeCommits returns the hash of merge commits in a reference
+func (lg *LiteGit) GetMergeCommits(reference string, env ...string) ([]string, error) {
+	args := []string{"--no-pager", "log", "--merges", "--oneline", "--format=%H", reference}
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
+	out := bytes.NewBuffer(nil)
+	cmd.Stdout = out
+	cmd.Stderr = os.Stderr
+	cmd.Env = append(os.Environ(), env...)
+
+	if err := cmd.Run(); err != nil {
+		return nil, errors.Wrap(cmd.Run(), "failed to get merges")
+	}
+
+	if trimmed := strings.TrimSpace(out.String()); trimmed != "" {
+		hashes := strings.Split(trimmed, ",")
+		return hashes, nil
+	}
+
+	return []string{}, nil
+}
+
+// HasMergeCommits checks whether a reference has merge commits
+func (lg *LiteGit) HasMergeCommits(reference string, env ...string) (bool, error) {
+	hashes, err := lg.GetMergeCommits(reference, env...)
+	if err != nil {
+		return false, err
+	}
+	return len(hashes) > 0, nil
 }

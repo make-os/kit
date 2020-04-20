@@ -118,7 +118,7 @@ var fallbackCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if IsGitSignRequest(args) {
-			repo.GitSignCmd(cfg, args, os.Stdin)
+			repo.GitSignCmd(cfg, os.Stdin)
 		}
 
 		if IsGitVerifyRequest(args) {

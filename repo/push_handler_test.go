@@ -44,7 +44,7 @@ var _ = Describe("PushHandler", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
+		repo, err = getRepoWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
 		mockLogic = mocks.NewMockLogic(ctrl)
@@ -147,10 +147,10 @@ var _ = Describe("PushHandler", func() {
 			ur = &packp.ReferenceUpdateRequest{}
 		})
 
-		It("should return error if a reference has no tx detail", func() {
+		It("should return no error if a tx detail include a merge ID", func() {
+			handler.txDetails["refs/heads/master"] = &types.TxDetail{MergeProposalID: "xyz"}
 			err = handler.HandleAuthorization(ur)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("reference (refs/heads/master) has no transaction information"))
+			Expect(err).To(BeNil())
 		})
 
 		It("should return error when command is a delete request and policy check failed", func() {
@@ -159,6 +159,36 @@ var _ = Describe("PushHandler", func() {
 			handler.policyChecker = func(enforcer policyEnforcer, pushKeyID, reference, action string) error {
 				Expect(reference).To(Equal("refs/heads/master"))
 				Expect(action).To(Equal("delete"))
+				return fmt.Errorf("unauthorized")
+			}
+			err = handler.HandleAuthorization(ur)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("unauthorized"))
+		})
+
+		It("should return error when command is a merge update request and policy check failed", func() {
+			handler.txDetails["refs/heads/master"] = &types.TxDetail{MergeProposalID: "123"}
+			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
+			handler.policyChecker = func(enforcer policyEnforcer, pushKeyID, reference, action string) error {
+				Expect(reference).To(Equal("refs/heads/master"))
+				Expect(action).To(Equal("merge-update"))
+				return fmt.Errorf("unauthorized")
+			}
+			err = handler.HandleAuthorization(ur)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("unauthorized"))
+		})
+
+		It("should return error when command is a issue update request and policy check failed", func() {
+			handler.pushReader.references["refs/heads/issues/do-something"] = &packedReferenceObject{}
+			handler.txDetails["refs/heads/issues/do-something"] = &types.TxDetail{MergeProposalID: "123"}
+			handler.txDetails["refs/heads/master"] = &types.TxDetail{MergeProposalID: "234"}
+			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/issues/do-something", New: hash})
+			handler.policyChecker = func(enforcer policyEnforcer, pushKeyID, reference, action string) error {
+				Expect(reference).To(Equal("refs/heads/issues/do-something"))
+				Expect(action).To(Or(Equal("issue-update"), Equal("merge-update")))
 				return fmt.Errorf("unauthorized")
 			}
 			err = handler.HandleAuthorization(ur)
@@ -232,7 +262,7 @@ var _ = Describe("PushHandler", func() {
 			var err error
 			BeforeEach(func() {
 				handler.oldState = getRepoState(repo)
-				handler.referenceHandler = func(ref string) []error {
+				handler.referenceHandler = func(ref string, revertOnly bool) []error {
 					return []error{fmt.Errorf("bad error")}
 				}
 				handler.pushReader.references = map[string]*packedReferenceObject{
@@ -255,7 +285,7 @@ var _ = Describe("PushHandler", func() {
 			BeforeEach(func() {
 				handler.oldState = getRepoState(repo)
 				mockMgr.EXPECT().GetRepoState(repo, matchOpt("refs/heads/master")).Return(nil, fmt.Errorf("error"))
-				errs = handler.handleReference("refs/heads/master")
+				errs = handler.handleReference("refs/heads/master", false)
 			})
 
 			It("should return error", func() {
@@ -270,13 +300,13 @@ var _ = Describe("PushHandler", func() {
 				handler.pushReader.references = map[string]*packedReferenceObject{
 					"refs/heads/master": {newHash: util.RandString(40)},
 				}
-				handler.changeValidator = func(core.BareRepo, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+				handler.changeValidator = func(core.BareRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 					return fmt.Errorf("bad reference change")
 				}
 
 				appendCommit(path, "file.txt", "line 1\n", "commit 1")
 				handler.oldState = getRepoState(repo)
-				errs = handler.handleReference("refs/heads/master")
+				errs = handler.handleReference("refs/heads/master", false)
 			})
 
 			It("should return error", func() {
@@ -297,7 +327,7 @@ var _ = Describe("PushHandler", func() {
 					handler.pushReader.references = map[string]*packedReferenceObject{
 						"refs/heads/master": {newHash: util.RandString(40)},
 					}
-					handler.changeValidator = func(core.BareRepo, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.changeValidator = func(core.BareRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return fmt.Errorf("bad reference change")
 					}
 					handler.reverter = func(repo core.BareRepo, prevState core.BareRepoState, options ...core.KVOption) (changes *core.Changes, err error) {
@@ -307,7 +337,7 @@ var _ = Describe("PushHandler", func() {
 					appendCommit(path, "file.txt", "line 1\n", "commit 1")
 					handler.oldState = getRepoState(repo)
 					appendCommit(path, "file.txt", "line 1\n", "commit 2")
-					errs = handler.handleReference("refs/heads/master")
+					errs = handler.handleReference("refs/heads/master", false)
 				})
 
 				It("should return 2 error", func() {
@@ -323,19 +353,45 @@ var _ = Describe("PushHandler", func() {
 					handler.pushReader.references = map[string]*packedReferenceObject{
 						"refs/heads/master": {newHash: util.RandString(40)},
 					}
-					handler.changeValidator = func(core.BareRepo, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.changeValidator = func(core.BareRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return fmt.Errorf("bad reference change")
 					}
 
 					appendCommit(path, "file.txt", "line 1\n", "commit 1")
 					handler.oldState = getRepoState(repo)
 					appendCommit(path, "file.txt", "line 1\n", "commit 2")
-					errs = handler.handleReference("refs/heads/master")
+					errs = handler.handleReference("refs/heads/master", false)
 				})
 
 				It("should return 1 error", func() {
 					Expect(errs).To(HaveLen(1))
 					Expect(errs[0].Error()).To(Equal("validation error (refs/heads/master): bad reference change"))
+				})
+
+				Specify("that repo state was reverted to old state", func() {
+					curState := getRepoState(repo)
+					Expect(curState).To(Equal(handler.oldState))
+				})
+			})
+
+			Describe("when a reference failed change validation but revertOnly is true", func() {
+				BeforeEach(func() {
+					handler.mgr = mgr
+					handler.pushReader.references = map[string]*packedReferenceObject{
+						"refs/heads/master": {newHash: util.RandString(40)},
+					}
+					handler.changeValidator = func(core.BareRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+						return fmt.Errorf("bad reference change")
+					}
+
+					appendCommit(path, "file.txt", "line 1\n", "commit 1")
+					handler.oldState = getRepoState(repo)
+					appendCommit(path, "file.txt", "line 1\n", "commit 2")
+					errs = handler.handleReference("refs/heads/master", true)
+				})
+
+				It("should return no error since validation is skipped", func() {
+					Expect(errs).To(HaveLen(0))
 				})
 
 				Specify("that repo state was reverted to old state", func() {
@@ -353,14 +409,14 @@ var _ = Describe("PushHandler", func() {
 					handler.pushReader.references = map[string]*packedReferenceObject{
 						"refs/heads/master": {newHash: util.RandString(40)},
 					}
-					handler.changeValidator = func(core.BareRepo, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.changeValidator = func(core.BareRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return nil
 					}
 
 					appendCommit(path, "file.txt", "line 1\n", "commit 1")
 					handler.oldState = getRepoState(repo)
 					appendCommit(path, "file.txt", "line 1\n", "commit 2")
-					errs = handler.handleReference("refs/heads/master")
+					errs = handler.handleReference("refs/heads/master", false)
 				})
 
 				It("should return no error", func() {
@@ -383,7 +439,7 @@ var _ = Describe("PushHandler", func() {
 				handler.pushReader.references = map[string]*packedReferenceObject{
 					"refs/heads/master": {newHash: strings.Repeat("0", 40)},
 				}
-				handler.changeValidator = func(core.BareRepo, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+				handler.changeValidator = func(core.BareRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 					return nil
 				}
 				handler.mergeChecker = func(repo core.BareRepo, change *core.ItemChange, oldRef core.Item, mergeProposalID, pushKeyID string, keepers core.Keepers) error {
@@ -393,7 +449,7 @@ var _ = Describe("PushHandler", func() {
 				appendCommit(path, "file.txt", "line 1\n", "commit 1")
 				handler.oldState = getRepoState(repo)
 				appendCommit(path, "file.txt", "line 1\n", "commit 2")
-				errs = handler.handleReference("refs/heads/master")
+				errs = handler.handleReference("refs/heads/master", false)
 			})
 
 			It("should return 1 error", func() {

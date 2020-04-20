@@ -60,34 +60,36 @@ func authenticate(
 			return nil, fe(i, "pkID", "token siblings must be signed with the same push key")
 		}
 		if i > 0 && detail.RepoName != lastRepoName {
-			return nil, fe(i, "repoName", "token siblings must target the same repository")
+			return nil, fe(i, "repoName", "all push tokens must target the same repository")
 		}
 		if i > 0 && detail.Nonce != lastAcctNonce {
-			return nil, fe(i, "nonce", "token siblings must have the same nonce")
+			return nil, fe(i, "nonce", "all push tokens must have the same nonce")
 		}
 		if i > 0 && detail.RepoNamespace != lastRepoNamespace {
-			return nil, fe(i, "repoNamespace", "token siblings must target the same namespace")
-		}
-
-		lastPushKeyID, lastRepoName, lastRepoNamespace = pushKeyID, detail.RepoName, detail.RepoNamespace
-		lastAcctNonce = detail.Nonce
-
-		// For a merge push, do not check if pusher is a contributor.
-		if detail.MergeProposalID == "" {
-
-			// The pusher is not authorized:
-			// - if they are not among repo's contributors.
-			// - and namespace is default.
-			// - or they are not part of the contributors of the non-nil namespace.
-			if !repoState.Contributors.Has(pushKeyID) && (namespace == nil || !namespace.Contributors.Has(pushKeyID)) {
-				return nil, fe(-1, "pkID", "push key is not a contributor to the target repo/namespace")
-			}
+			return nil, fe(i, "repoNamespace", "all push tokens must target the same namespace")
 		}
 
 		// Validate the transaction detail
 		if err := checkTxDetail(detail, keepers, i); err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("token error"))
 		}
+
+		// Check if pusher is an authorized contributor.
+		// The pusher is not authorized:
+		// - if they are not among repo's contributors.
+		// - and namespace is default.
+		// - or they are not part of the contributors of the non-nil namespace.
+		// Do not check if
+		// - detail is a merge push
+		// - and target reference is not an issue reference.
+		if detail.MergeProposalID == "" && !isIssueBranch(detail.Reference) {
+			if !repoState.Contributors.Has(pushKeyID) && (namespace == nil || !namespace.Contributors.Has(pushKeyID)) {
+				return nil, fe(-1, "pkID", "pusher is not a contributor")
+			}
+		}
+
+		lastPushKeyID, lastRepoName, lastRepoNamespace, lastAcctNonce = pushKeyID, detail.RepoName,
+			detail.RepoNamespace, detail.Nonce
 	}
 
 	return getPolicyEnforcer(makePusherPolicyGroups(txDetails[0].PushKeyID, repoState, namespace)), nil
@@ -135,6 +137,11 @@ func makePusherPolicyGroups(
 	return groups
 }
 
+// isPullRequest checks whether a request is a pull request
+func isPullRequest(r *http.Request) bool {
+	return r.Method == "GET" || strings.Index(r.URL.Path, "git-upload-pack") != -1
+}
+
 // handleAuth validates a request using the request token provided in the url username.
 // The request token is a base58 encode of the serialized transaction information which
 // contains the fee, account nonce and request signature.
@@ -149,7 +156,7 @@ func (m *Manager) handleAuth(
 	repo *state.Repository,
 	namespace *state.Namespace) (txDetails []*types.TxDetail, polEnforcer policyEnforcer, err error) {
 
-	if r.Method == "GET" {
+	if isPullRequest(r) {
 		return nil, nil, nil
 	}
 

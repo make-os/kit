@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/params"
@@ -84,7 +85,7 @@ func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
 type RepoConfigGovernance struct {
 	Voter                    VoterType             `json:"propVoter" mapstructure:"propVoter,omitempty" msgpack:"propVoter"`
 	ProposalCreator          ProposalCreatorType   `json:"propCreator" mapstructure:"propCreator,omitempty" msgpack:"propCreator"`
-	VoterAgeAsCurHeight      bool                  `json:"voterAgeAsCurHeight" mapstructure:"voterAgeAsCurHeight,omitempty" msgpack:"voterAgeAsCurHeight"`
+	VoterAgeAsCurHeight      bool                  `json:"voterAgeAsCurHeight" mapstructure:"voterAgeAsCurHeight" msgpack:"voterAgeAsCurHeight"`
 	DurOfProposal            uint64                `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur"`
 	FeeDepositDurOfProposal  uint64                `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur"`
 	TallyMethodOfProposal    ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod"`
@@ -117,7 +118,7 @@ type RepoPolicies []*Policy
 // RepoConfig contains repo-specific configuration settings
 type RepoConfig struct {
 	util.SerializerHelper `json:"-" mapstructure:"-" msgpack:"-"`
-	Governance            *RepoConfigGovernance `json:"governance" mapstructure:"governance" msgpack:"governance"`
+	Governance            *RepoConfigGovernance `json:"governance" mapstructure:"governance,omitempty" msgpack:"governance"`
 	Policies              RepoPolicies          `json:"policies" mapstructure:"policies" msgpack:"policies"`
 }
 
@@ -141,11 +142,21 @@ func (c *RepoConfig) Clone() *RepoConfig {
 	return clone
 }
 
-// MergeMap merges map o into c
-func (c *RepoConfig) MergeMap(o map[string]interface{}) {
-	baseMap := util.StructToMap(c)
-	_ = mapstructure.Decode(o, &baseMap)
-	_ = mapstructure.Decode(baseMap, c)
+// MergeMap merges the specified map into c
+func (c *RepoConfig) MergeMap(m map[string]interface{}) {
+
+	// Decode the specified map to RepoConfig so
+	// that we get a compatible source type
+	mCfg := RepoConfig{}
+	mapstructure.Decode(m, &mCfg)
+	src := util.StructToMap(mCfg, "mapstructure")
+
+	dst := util.StructToMap(c, "mapstructure")
+	mergo.Merge(&dst, src, mergo.WithOverride, mergo.WithOverwriteWithEmptyValue)
+	newCfg := RepoConfig{}
+	mapstructure.Decode(dst, &newCfg)
+
+	*c = newCfg
 }
 
 // IsNil checks if the object's field all have zero value

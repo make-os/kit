@@ -29,6 +29,7 @@ var signCommitCmd = &cobra.Command{
 		nonce, _ := cmd.Flags().GetString("nonce")
 		sk, _ := cmd.Flags().GetString("signing-key")
 		mergeID, _ := cmd.Flags().GetString("merge-id")
+		head, _ := cmd.Flags().GetString("head")
 		amend, _ := cmd.Flags().GetBool("amend")
 		pass, _ := cmd.Flags().GetString("pass")
 		msg, _ := cmd.Flags().GetString("message")
@@ -40,7 +41,7 @@ var signCommitCmd = &cobra.Command{
 			cfg,
 			msg,
 			targetRepo,
-			fee, nonce, amend, mergeID,
+			fee, nonce, amend, mergeID, head,
 			sk, pass,
 			targetRemotes,
 			resetRemoteTokens,
@@ -134,6 +135,7 @@ func initSign() {
 	pf.BoolP("reset", "x", false, "Clear any existing remote tokens")
 
 	signCommitCmd.Flags().String("merge-id", "", "Provide a merge proposal ID for merge fulfilment")
+	signCommitCmd.Flags().String("head", "", "Specify the branch to use as git HEAD")
 	signCommitCmd.Flags().BoolP("amend", "a", false, "Amend and sign the recent comment instead of a new one")
 
 	// Transaction information

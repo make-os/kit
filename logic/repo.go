@@ -11,17 +11,19 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// addDefaultPolicies adds default repo-level policies
-func addDefaultPolicies(config *state.RepoConfig) {
+// AddDefaultPolicies adds default repo-level policies
+func AddDefaultPolicies(config *state.RepoConfig) {
 	config.Policies = append(
 		config.Policies,
 		&state.Policy{Subject: "all", Object: "refs/heads", Action: "update"},
+		&state.Policy{Subject: "all", Object: "refs/heads", Action: "merge-update"},
+		&state.Policy{Subject: "all", Object: "refs/heads", Action: "issue-update"},
 		&state.Policy{Subject: "all", Object: "refs/tags", Action: "update"},
 		&state.Policy{Subject: "all", Object: "refs/notes", Action: "update"},
 		&state.Policy{Subject: "all", Object: "refs/heads", Action: "delete"},
 		&state.Policy{Subject: "all", Object: "refs/tags", Action: "delete"},
 		&state.Policy{Subject: "all", Object: "refs/notes", Action: "delete"},
-		&state.Policy{Subject: "all", Object: "refs/heads/dev", Action: "deny-delete"},
+		&state.Policy{Subject: "all", Object: "refs/heads/master", Action: "deny-delete"},
 	)
 }
 
@@ -32,6 +34,7 @@ func addDefaultPolicies(config *state.RepoConfig) {
 // creatorPubKey: The public key of the creator
 // name: The name of the repository
 // fee: The fee to be paid by the sender.
+// config: The repo config
 // chainHeight: The height of the block chain
 //
 // CONTRACT: Creator's public key must be valid
@@ -52,7 +55,7 @@ func (t *Transaction) execRepoCreate(
 
 	// Apply default policies when none is set
 	if len(newRepo.Config.Policies) == 0 {
-		addDefaultPolicies(newRepo.Config)
+		AddDefaultPolicies(newRepo.Config)
 	}
 
 	voterType := newRepo.Config.Governance.Voter

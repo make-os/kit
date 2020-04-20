@@ -36,6 +36,7 @@ func SignCommitCmd(
 	nextNonce string,
 	amendRecent bool,
 	mergeID,
+	head,
 	pushKeyID,
 	pushKeyPass,
 	targetRemote string,
@@ -76,9 +77,15 @@ func SignCommitCmd(
 	}
 
 	// Get the reference pointed to by HEAD
-	head, err := targetRepo.Head()
-	if err != nil {
-		return fmt.Errorf("failed to get HEAD") // :D
+	if head == "" {
+		head, err = targetRepo.Head()
+		if err != nil {
+			return fmt.Errorf("failed to get HEAD") // :D
+		}
+	} else {
+		if !isBranch(head) {
+			head = plumbing.NewBranchReferenceName(head).String()
+		}
 	}
 
 	// Gather any transaction options
@@ -412,7 +419,7 @@ func getAndUnlockPushKey(
 
 // GitSignCmd mocks git signing interface allowing this program to
 // be used by git for signing a commit or tag.
-func GitSignCmd(cfg *config.AppConfig, args []string, data io.Reader) {
+func GitSignCmd(cfg *config.AppConfig, data io.Reader) {
 
 	log := cfg.G().Log
 

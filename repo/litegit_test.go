@@ -17,7 +17,7 @@ var _ = Describe("Gitops", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
-	var gitOps *GitOps
+	var liteGit *LiteGit
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -29,7 +29,7 @@ var _ = Describe("Gitops", func() {
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
-		gitOps = NewGitOps(cfg.Node.GitBinPath, path)
+		liteGit = NewLiteGit(cfg.Node.GitBinPath, path)
 	})
 
 	AfterEach(func() {
@@ -43,7 +43,7 @@ var _ = Describe("Gitops", func() {
 				appendCommit(path, "file.txt", "some text", "commit msg")
 				nRef, _ := script.ExecInDir("git show-ref", path).CountLines()
 				Expect(nRef).To(Equal(1))
-				err := gitOps.RefDelete("refs/heads/master")
+				err := liteGit.RefDelete("refs/heads/master")
 				Expect(err).To(BeNil())
 			})
 
@@ -57,7 +57,7 @@ var _ = Describe("Gitops", func() {
 			BeforeEach(func() {
 				nRef, _ := script.ExecInDir("git show-ref", path).CountLines()
 				Expect(nRef).To(Equal(0))
-				err = gitOps.RefDelete("refs/heads/master")
+				err = liteGit.RefDelete("refs/heads/master")
 			})
 
 			It("should return nil", func() {
@@ -69,7 +69,7 @@ var _ = Describe("Gitops", func() {
 	Describe(".RefUpdate", func() {
 		When("ref commit hash is not a valid sha1 hash", func() {
 			BeforeEach(func() {
-				err = gitOps.RefUpdate("refs/heads/master", "invalid_sha1_hash")
+				err = liteGit.RefUpdate("refs/heads/master", "invalid_sha1_hash")
 				Expect(err).ToNot(BeNil())
 			})
 
@@ -80,7 +80,7 @@ var _ = Describe("Gitops", func() {
 
 		When("ref commit hash is valid but unknown, non-existent object", func() {
 			BeforeEach(func() {
-				err = gitOps.RefUpdate("refs/heads/master", "3faa623fa42799dba4089f522784740b9ed49f9a")
+				err = liteGit.RefUpdate("refs/heads/master", "3faa623fa42799dba4089f522784740b9ed49f9a")
 				Expect(err).ToNot(BeNil())
 			})
 
@@ -97,7 +97,7 @@ var _ = Describe("Gitops", func() {
 				nCommits, _ := log.CountLines()
 				Expect(nCommits).To(Equal(2))
 				commit1, _ := script.ExecInDir(`git --no-pager log --oneline --pretty=%H`, path).Last(1).String()
-				err = gitOps.RefUpdate("refs/heads/master", strings.TrimSpace(commit1))
+				err = liteGit.RefUpdate("refs/heads/master", strings.TrimSpace(commit1))
 			})
 
 			It("should return no error", func() {
@@ -112,7 +112,7 @@ var _ = Describe("Gitops", func() {
 				createCommitAndAnnotatedTag(path, "file.txt", "some text", "commit msg", "tag_v1")
 				nTag, _ := script.ExecInDir(`git --no-pager tag -l`, path).CountLines()
 				Expect(nTag).To(Equal(1))
-				err = gitOps.TagDelete("tag_v1")
+				err = liteGit.TagDelete("tag_v1")
 				nTag, _ = script.ExecInDir(`git --no-pager tag -l`, path).CountLines()
 				Expect(nTag).To(Equal(0))
 			})
@@ -124,7 +124,7 @@ var _ = Describe("Gitops", func() {
 
 		When("tag does not exists", func() {
 			BeforeEach(func() {
-				err = gitOps.TagDelete("tag_v1")
+				err = liteGit.TagDelete("tag_v1")
 			})
 
 			It("should return err=..tag 'tag_v1' not found", func() {
@@ -136,7 +136,7 @@ var _ = Describe("Gitops", func() {
 	Describe(".RefGet", func() {
 		When("ref does not exist", func() {
 			BeforeEach(func() {
-				_, err = gitOps.RefGet("master")
+				_, err = liteGit.RefGet("master")
 			})
 
 			It("should return err=ErrRefNotFound", func() {
@@ -149,7 +149,7 @@ var _ = Describe("Gitops", func() {
 
 			BeforeEach(func() {
 				appendCommit(path, "file.txt", "some text", "commit msg")
-				hash, err = gitOps.RefGet("master")
+				hash, err = liteGit.RefGet("master")
 			})
 
 			It("should return err=nil", func() {
@@ -164,13 +164,13 @@ var _ = Describe("Gitops", func() {
 
 	Describe(".GetHEAD", func() {
 		It("should return the correct branch", func() {
-			branch, err := gitOps.GetHEAD(false)
+			branch, err := liteGit.GetHEAD(false)
 			Expect(err).To(BeNil())
 			Expect(branch).To(Equal("refs/heads/master"))
 		})
 
 		It("should return the correct branch", func() {
-			branch, err := gitOps.GetHEAD(true)
+			branch, err := liteGit.GetHEAD(true)
 			Expect(err).To(BeNil())
 			Expect(branch).To(Equal("master"))
 		})
@@ -179,7 +179,7 @@ var _ = Describe("Gitops", func() {
 	Describe(".NumCommits", func() {
 		When("branch does not exist", func() {
 			It("should return 0 and no error", func() {
-				count, err := gitOps.NumCommits("master")
+				count, err := liteGit.NumCommits("master")
 				Expect(err).To(BeNil())
 				Expect(count).To(Equal(0))
 			})
@@ -191,7 +191,7 @@ var _ = Describe("Gitops", func() {
 				appendCommit(path, "file.txt", "some text 2", "commit msg 2")
 			})
 			It("should return 0 and no error", func() {
-				count, err := gitOps.NumCommits("master")
+				count, err := liteGit.NumCommits("master")
 				Expect(err).To(BeNil())
 				Expect(count).To(Equal(2))
 			})
@@ -201,7 +201,7 @@ var _ = Describe("Gitops", func() {
 	Describe(".GetRecentCommit", func() {
 		When("no recent commits", func() {
 			It("should return err", func() {
-				hash, err := gitOps.GetRecentCommit()
+				hash, err := liteGit.GetRecentCommit()
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(ErrNoCommits))
 				Expect(hash).To(BeEmpty())
@@ -214,7 +214,7 @@ var _ = Describe("Gitops", func() {
 			})
 
 			It("should return 40 character hash", func() {
-				hash, err := gitOps.GetRecentCommit()
+				hash, err := liteGit.GetRecentCommit()
 				Expect(err).To(BeNil())
 				Expect(len(hash)).To(Equal(40))
 			})
@@ -223,13 +223,13 @@ var _ = Describe("Gitops", func() {
 
 	Describe(".GetConfig", func() {
 		It("should return empty string when not found", func() {
-			val := gitOps.GetConfig("some.config.key")
+			val := liteGit.GetConfig("some.config.key")
 			Expect(val).To(BeEmpty())
 		})
 
 		It("should return correct value when found", func() {
 			execGit(path, "config", "some.config.key", "value")
-			val := gitOps.GetConfig("some.config.key")
+			val := liteGit.GetConfig("some.config.key")
 			Expect(val).To(Equal("value"))
 		})
 	})
@@ -244,7 +244,7 @@ var _ = Describe("Gitops", func() {
 
 		When("when signingKey is not set", func() {
 			It("should create an annotated tag with message", func() {
-				err := gitOps.CreateTagWithMsg([]string{"my_tag"}, "a new tag", "")
+				err := liteGit.CreateTagWithMsg([]string{"my_tag"}, "a new tag", "")
 				Expect(err).To(BeNil())
 				out, _ := script.ExecInDir(`git cat-file -p refs/tags/my_tag`, path).Last(1).String()
 				Expect(strings.TrimSpace(out)).To(Equal("a new tag"))
@@ -259,7 +259,7 @@ var _ = Describe("Gitops", func() {
 		BeforeEach(func() {
 			createCommitAndNote(path, "file.txt", "hello", "commit 1", "note1")
 			createNoteEntry(path, "note1", "some note")
-			entries, err = gitOps.ListTreeObjects("refs/notes/note1", true)
+			entries, err = liteGit.ListTreeObjects("refs/notes/note1", true)
 			Expect(err).To(BeNil())
 		})
 
@@ -275,7 +275,7 @@ var _ = Describe("Gitops", func() {
 		BeforeEach(func() {
 			createCommitAndNote(path, "file.txt", "hello", "commit 1", "note1")
 			createNoteEntry(path, "note1", "some note")
-			entries, err = gitOps.ListTreeObjectsSlice("refs/notes/note1", true, false)
+			entries, err = liteGit.ListTreeObjectsSlice("refs/notes/note1", true, false)
 			Expect(err).To(BeNil())
 		})
 
@@ -291,11 +291,11 @@ var _ = Describe("Gitops", func() {
 		BeforeEach(func() {
 			createCommitAndNote(path, "file.txt", "hello", "commit 1", "note1")
 			entryHash := createNoteEntry(path, "note1", "some note")
-			entries, err = gitOps.ListTreeObjects("refs/notes/note1", true)
+			entries, err = liteGit.ListTreeObjects("refs/notes/note1", true)
 			Expect(err).To(BeNil())
 			Expect(entries).To(HaveLen(2))
-			err = gitOps.RemoveEntryFromNote("refs/notes/note1", entryHash)
-			entries, _ = gitOps.ListTreeObjects("refs/notes/note1", true)
+			err = liteGit.RemoveEntryFromNote("refs/notes/note1", entryHash)
+			entries, _ = liteGit.ListTreeObjects("refs/notes/note1", true)
 		})
 
 		It("should return 1 entry", func() {
@@ -310,15 +310,15 @@ var _ = Describe("Gitops", func() {
 
 		BeforeEach(func() {
 			createCommitAndNote(path, "file.txt", "hello", "commit 1", "note1")
-			entries, err = gitOps.ListTreeObjects("refs/notes/note1", true)
+			entries, err = liteGit.ListTreeObjects("refs/notes/note1", true)
 			Expect(err).To(BeNil())
 			Expect(entries).To(HaveLen(1))
 
 			hash := createBlob(path, "some content")
-			err = gitOps.AddEntryToNote("refs/notes/note1", hash, "a note")
+			err = liteGit.AddEntryToNote("refs/notes/note1", hash, "a note")
 			Expect(err).To(BeNil())
 
-			entries, err = gitOps.ListTreeObjects("refs/notes/note1", true)
+			entries, err = liteGit.ListTreeObjects("refs/notes/note1", true)
 		})
 
 		It("should return 2 entries", func() {
@@ -332,12 +332,71 @@ var _ = Describe("Gitops", func() {
 		var err error
 
 		BeforeEach(func() {
-			hash, err = gitOps.CreateBlob("some content")
+			hash, err = liteGit.CreateBlob("some content")
 			Expect(err).To(BeNil())
 		})
 
 		It("should return 40 character hash", func() {
 			Expect(hash).To(HaveLen(40))
+		})
+	})
+
+	Describe(".IsDescendant", func() {
+		It("should return no error when child is a descendant of parent", func() {
+			appendCommit(path, "file.txt", "some text", "commit msg")
+			rootHash := getRecentCommitHash(path, "refs/heads/master")
+			appendCommit(path, "file.txt", "some text appended", "commit msg")
+			childOfRootHash := getRecentCommitHash(path, "refs/heads/master")
+			Expect(liteGit.IsDescendant(childOfRootHash, rootHash)).To(BeNil())
+		})
+
+		It("should return error when child is not a descendant of parent", func() {
+			appendCommit(path, "file.txt", "some text", "commit msg")
+			rootHash := getRecentCommitHash(path, "refs/heads/master")
+			appendCommit(path, "file.txt", "some text appended", "commit msg")
+			childOfRootHash := getRecentCommitHash(path, "refs/heads/master")
+			err = liteGit.IsDescendant(rootHash, childOfRootHash)
+			Expect(err).ToNot(BeNil())
+		})
+	})
+
+	Describe(".GetMergeCommits", func() {
+		It("should return one hash when branch has a merge commit", func() {
+			appendCommit(path, "file.txt", "some text", "commit msg")
+			createCheckoutBranch(path, "dev")
+			appendCommit(path, "file.txt", "log some good text", "commit msg")
+			checkoutBranch(path, "master")
+			appendCommit(path, "file.txt", "intro to \n****some nice text", "commit msg")
+			forceMergeOurs(path, "dev")
+			appendCommit(path, "file.txt", "some other stuff", "commit msg")
+			appendCommit(path, "file.txt", "some other other stuff", "commit msg")
+			hashes, err := liteGit.GetMergeCommits("master")
+			Expect(err).To(BeNil())
+			Expect(hashes).To(HaveLen(1))
+		})
+	})
+
+	Describe(".HasMergeCommits", func() {
+		It("should return true when branch has a merge commit", func() {
+			appendCommit(path, "file.txt", "some text", "commit msg")
+			createCheckoutBranch(path, "dev")
+			appendCommit(path, "file.txt", "log some good text", "commit msg")
+			checkoutBranch(path, "master")
+			appendCommit(path, "file.txt", "intro to \n****some nice text", "commit msg")
+			forceMergeOurs(path, "dev")
+			appendCommit(path, "file.txt", "some other stuff", "commit msg")
+			appendCommit(path, "file.txt", "some other other stuff", "commit msg")
+			has, err := liteGit.HasMergeCommits("master")
+			Expect(err).To(BeNil())
+			Expect(has).To(BeTrue())
+		})
+
+		It("should return false when branch has no merge commit", func() {
+			appendCommit(path, "file.txt", "some text", "commit msg")
+			appendCommit(path, "file.txt", "some other text", "commit msg")
+			has, err := liteGit.HasMergeCommits("master")
+			Expect(err).To(BeNil())
+			Expect(has).To(BeFalse())
 		})
 	})
 })

@@ -43,15 +43,15 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Attempt to decode message to PushNote
-	var pn core.PushNote
-	if err := util.ToObject(msgBytes, &pn); err != nil {
+	var note core.PushNote
+	if err := util.ToObject(msgBytes, &note); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
 
 	peerID := peer.ID()
-	m.log.Debug("Received a push note", "PeerID", peerID, "ID", pn.ID().String())
+	m.log.Debug("Received a push note", "PeerID", peerID, "ID", note.ID().String())
 
-	repoName := pn.GetRepoName()
+	repoName := note.GetRepoName()
 	repoPath := m.getRepoPath(repoName)
 	repoState := m.logic.RepoKeeper().Get(repoName)
 
@@ -62,15 +62,15 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 
 	// If namespace is set, get it and ensure it exists
 	var namespace *state.Namespace
-	if pn.Namespace != "" {
-		namespace = m.logic.NamespaceKeeper().Get(pn.Namespace)
+	if note.Namespace != "" {
+		namespace = m.logic.NamespaceKeeper().Get(note.Namespace)
 		if namespace.IsNil() {
-			return fmt.Errorf("namespace '%s' not found", pn.Namespace)
+			return fmt.Errorf("namespace '%s' not found", note.Namespace)
 		}
 	}
 
 	// Reconstruct references transaction details from push note
-	txDetails := getTxDetailsFromNote(&pn)
+	txDetails := getTxDetailsFromNote(&note)
 
 	// Perform authorization check
 	polEnforcer, err := m.authenticate(txDetails, repoState, namespace, m.logic, checkTxDetail)
@@ -85,27 +85,27 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Register a cache entry that indicates the sender of the push note
-	m.cacheNoteSender(string(peerID), pn.ID().String())
+	m.cacheNoteSender(string(peerID), note.ID().String())
 
 	// Set the target repository object
-	pn.TargetRepo = &Repo{
-		name:  repoName,
-		git:   repo,
-		ops:   NewGitOps(m.gitBinPath, repoPath),
-		path:  repoPath,
-		state: repoState,
+	note.TargetRepo = &Repo{
+		name:       repoName,
+		Repository: repo,
+		LiteGit:    NewLiteGit(m.gitBinPath, repoPath),
+		path:       repoPath,
+		state:      repoState,
 	}
 
 	// Validate the push note.
 	// Downloads the git objects, performs sanity and consistency checks on the
 	// push note. Does not check if the push note can extend the repository
 	// without issue.
-	if err := m.checkPushNote(&pn, m.dht, m.logic); err != nil {
+	if err := m.checkPushNote(&note, m.dht, m.logic); err != nil {
 		return errors.Wrap(err, "failed push note validation")
 	}
 
 	// Create the packfile
-	packfile, err := m.packfileMaker(pn.TargetRepo, &pn)
+	packfile, err := m.packfileMaker(note.TargetRepo, &note)
 	if err != nil {
 		return errors.Wrap(err, "failed to create packfile from push note")
 	}
@@ -135,7 +135,7 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Read, analyse and pass the packfile to git
-	pushHandler := m.makePushHandler(pn.TargetRepo, txDetails, polEnforcer)
+	pushHandler := m.makePushHandler(note.TargetRepo, txDetails, polEnforcer)
 	if err := pushHandler.HandleStream(packfile, in); err != nil {
 		return errors.Wrap(err, "HandleStream error")
 	}
@@ -151,15 +151,15 @@ func (m *Manager) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Add the note to the push pool
-	if err := m.GetPushPool().Add(&pn, true); err != nil {
+	if err := m.GetPushPool().Add(&note, true); err != nil {
 		return errors.Wrap(err, "failed to add push note to push pool")
 	}
 
 	// Announce the objects and push note
-	m.log.Info("Added valid push note to push pool", "ID", pn.ID().String())
+	m.log.Info("Added valid push note to push pool", "ID", note.ID().String())
 
 	// Broadcast the push note and pushed objects
-	go m.pushedObjectsBroadcaster(&pn)
+	go m.pushedObjectsBroadcaster(&note)
 
 	return nil
 }

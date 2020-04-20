@@ -248,10 +248,7 @@ func (m *Manager) getRepoPath(name string) string {
 // gitRequestsHandler handles incoming http request from a git client
 func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
-	m.log.Debug("New request",
-		"Method", r.Method,
-		"URL", r.URL.String(),
-		"ProtocolVersion", r.Proto)
+	m.log.Debug("New request", "Method", r.Method, "URL", r.URL.String())
 
 	// De-construct the URL to get the repo name and operation
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
@@ -325,12 +322,12 @@ func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		txDetails:   txDetails,
 		polEnforcer: polEnforcer,
 		repo: &Repo{
-			name:      repoName,
-			git:       repo,
-			ops:       NewGitOps(m.gitBinPath, fullRepoDir),
-			path:      fullRepoDir,
-			state:     repoState,
-			namespace: namespace,
+			name:       repoName,
+			Repository: repo,
+			LiteGit:    NewLiteGit(m.gitBinPath, fullRepoDir),
+			path:       fullRepoDir,
+			state:      repoState,
+			namespace:  namespace,
 		},
 		repoDir:    fullRepoDir,
 		srvName:    getService(r),
@@ -416,7 +413,7 @@ func (m *Manager) FindObject(key []byte) ([]byte, error) {
 
 // Get returns a repo handle
 func (m *Manager) GetRepo(name string) (core.BareRepo, error) {
-	return getRepoWithGitOpt(m.gitBinPath, m.getRepoPath(name))
+	return getRepoWithLiteGit(m.gitBinPath, m.getRepoPath(name))
 }
 
 // Shutdown shuts down the server

@@ -52,7 +52,7 @@ var _ = Describe("Reactor", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
-		_, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
+		_, err = getRepoWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
 		mockObjects := testutil.MockLogic(ctrl)
@@ -321,7 +321,7 @@ var _ = Describe("Reactor", func() {
 				pushHandler.authorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
 					return nil
 				}
-				pushHandler.referenceHandler = func(ref string) []error {
+				pushHandler.referenceHandler = func(ref string, revertOnly bool) []error {
 					Expect(ref).To(Equal("refs/heads/master"))
 					return []error{fmt.Errorf("bad reference")}
 				}
@@ -371,7 +371,7 @@ var _ = Describe("Reactor", func() {
 				pushHandler.authorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
 					return nil
 				}
-				pushHandler.referenceHandler = func(ref string) []error {
+				pushHandler.referenceHandler = func(ref string, revertOnly bool) []error {
 					Expect(ref).To(Equal("refs/heads/master"))
 					return nil
 				}
@@ -428,7 +428,7 @@ var _ = Describe("Reactor", func() {
 				pushHandler.authorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
 					return nil
 				}
-				pushHandler.referenceHandler = func(ref string) []error {
+				pushHandler.referenceHandler = func(ref string, revertOnly bool) []error {
 					Expect(ref).To(Equal("refs/heads/master"))
 					return nil
 				}

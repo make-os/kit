@@ -52,7 +52,7 @@ var _ = Describe("Revert", func() {
 
 		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic, mockDHT,
 			mockMempool, mockBlockGetter)
-		repo, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
+		repo, err = getRepoWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 

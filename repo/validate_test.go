@@ -24,8 +24,13 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
+
+func makeHash(data string) plumbing.Hash {
+	return plumbing.ComputeHash(plumbing.CommitObject, []byte(data))
+}
 
 var _ = Describe("Validation", func() {
 	var err error
@@ -79,7 +84,7 @@ var _ = Describe("Validation", func() {
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
+		repo, err = getRepoWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 
@@ -431,11 +436,10 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().State().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, fmt.Errorf("error"))
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, fmt.Errorf("error"))
 
 				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
@@ -455,11 +459,10 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().State().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(true, nil)
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(true, nil)
 
 				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
@@ -484,11 +487,10 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().State().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
 				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
@@ -512,11 +514,10 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().State().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
 				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
@@ -541,11 +542,10 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().State().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
 				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
@@ -556,7 +556,7 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("unable to get merger initiator commit", func() {
+		When("unable to get pushed commit", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
@@ -570,12 +570,11 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().State().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(nil, fmt.Errorf("error"))
-
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
 				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
@@ -586,7 +585,7 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("unable to get merger initiator commit has more than 1 parents", func() {
+		When("pushed commit is a merge commit (has multiple parents) but proposal target hash is not a parent", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
@@ -595,30 +594,34 @@ var _ = Describe("Validation", func() {
 				prop.Outcome = state.ProposalOutcomeAccepted
 				prop.ActionData = map[string][]byte{
 					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
+					constants.ActionDataKeyTargetHash: util.ToBytes("target_xyz"),
 				}
 				repoState.Proposals.Add("0001", prop)
 				repo.EXPECT().State().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-
-				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
-				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-				mergerCommit := mocks.NewMockCommit(ctrl)
-				mergerCommit.EXPECT().NumParents().Return(2)
-				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(mergerCommit, nil)
-
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
+				pushedCommit := mocks.NewMockCommit(ctrl)
+				pushedCommit.EXPECT().NumParents().Return(2)
+				pushedCommitParent := mocks.NewMockCommit(ctrl)
+				pushedCommit.EXPECT().Parent(0).Return(pushedCommitParent, nil)
+				pushedCommit.EXPECT().GetHash().Return(makeHash("push_commit_hash"))
+				pushedCommit.EXPECT().IsParent("target_xyz").Return(false, nil)
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
+
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("merge error: multiple targets not allowed"))
+				Expect(err.Error()).To(Equal("merge error: target hash is not a parent of the merge commit"))
 			})
 		})
 
-		When("merger commit modified worktree history of parent", func() {
+		When("pushed commit modified worktree history of parent", func() {
 			When("tree hash is modified", func() {
 				BeforeEach(func() {
 					repo := mocks.NewMockBareRepo(ctrl)
@@ -633,30 +636,28 @@ var _ = Describe("Validation", func() {
 					repo.EXPECT().State().Return(repoState)
 
 					mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
-					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
-					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-
-					mergerCommit := mocks.NewMockCommit(ctrl)
-					mergerCommit.EXPECT().NumParents().Return(1)
+					pushedCommit := mocks.NewMockCommit(ctrl)
+					pushedCommit.EXPECT().NumParents().Return(1)
+					pushedCommit.EXPECT().GetHash().Return(makeHash("push_commit_hash"))
 					treeHash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
-					mergerCommit.EXPECT().GetTreeHash().Return(treeHash)
-
+					pushedCommit.EXPECT().GetTreeHash().Return(treeHash)
 					targetCommit := mocks.NewMockCommit(ctrl)
 					treeHash = plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
 					targetCommit.EXPECT().GetTreeHash().Return(treeHash)
+					pushedCommit.EXPECT().Parent(0).Return(targetCommit, nil)
 
-					mergerCommit.EXPECT().Parent(0).Return(targetCommit, nil)
-					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(mergerCommit, nil)
+					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
-					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
-
+					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 					err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 				})
 
 				It("should return error", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("merge error: merger commit must not modify target branch history"))
+					Expect(err.Error()).To(Equal("merge error: pushed commit must not modify target branch history"))
 				})
 			})
 
@@ -674,34 +675,33 @@ var _ = Describe("Validation", func() {
 					repo.EXPECT().State().Return(repoState)
 
 					mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
-					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
-					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-
-					mergerCommit := mocks.NewMockCommit(ctrl)
-					mergerCommit.EXPECT().NumParents().Return(1)
-					treeHash := plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
-					mergerCommit.EXPECT().GetTreeHash().Return(treeHash)
+					pushedCommit := mocks.NewMockCommit(ctrl)
+					pushedCommit.EXPECT().NumParents().Return(1)
+					pushedCommit.EXPECT().GetHash().Return(makeHash("push_commit_hash"))
+					treeHash := makeHash("hash")
+					pushedCommit.EXPECT().GetTreeHash().Return(treeHash)
 					author := &object.Signature{Name: "author1", Email: "author@email.com"}
-					mergerCommit.EXPECT().GetAuthor().Return(author)
+					pushedCommit.EXPECT().GetAuthor().Return(author)
 
 					targetCommit := mocks.NewMockCommit(ctrl)
-					treeHash = plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
+					treeHash = makeHash("hash")
 					targetCommit.EXPECT().GetTreeHash().Return(treeHash)
 					author = &object.Signature{Name: "author1", Email: "author2@email.com"}
 					targetCommit.EXPECT().GetAuthor().Return(author)
+					pushedCommit.EXPECT().Parent(0).Return(targetCommit, nil)
 
-					mergerCommit.EXPECT().Parent(0).Return(targetCommit, nil)
-					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(mergerCommit, nil)
+					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
-					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
-
+					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 					err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 				})
 
 				It("should return error", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("merge error: merger commit must not modify target branch history"))
+					Expect(err.Error()).To(Equal("merge error: pushed commit must not modify target branch history"))
 				})
 			})
 
@@ -719,38 +719,38 @@ var _ = Describe("Validation", func() {
 					repo.EXPECT().State().Return(repoState)
 
 					mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
-					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 					oldRef := &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
-					mergerCommit := mocks.NewMockCommit(ctrl)
-					mergerCommit.EXPECT().NumParents().Return(1)
-					treeHash := plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
-					mergerCommit.EXPECT().GetTreeHash().Return(treeHash)
+					pushedCommit := mocks.NewMockCommit(ctrl)
+					pushedCommit.EXPECT().NumParents().Return(1)
+					pushedCommit.EXPECT().GetHash().Return(makeHash("push_commit_hash"))
+					treeHash := makeHash("hash")
+					pushedCommit.EXPECT().GetTreeHash().Return(treeHash)
 					author := &object.Signature{Name: "author1", Email: "author@email.com"}
-					mergerCommit.EXPECT().GetAuthor().Return(author)
+					pushedCommit.EXPECT().GetAuthor().Return(author)
 					committer := &object.Signature{Name: "committer1", Email: "committer@email.com"}
-					mergerCommit.EXPECT().GetCommitter().Return(committer)
+					pushedCommit.EXPECT().GetCommitter().Return(committer)
 
 					targetCommit := mocks.NewMockCommit(ctrl)
-					treeHash = plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
+					treeHash = makeHash("hash")
 					targetCommit.EXPECT().GetTreeHash().Return(treeHash)
 					author = &object.Signature{Name: "author1", Email: "author@email.com"}
 					targetCommit.EXPECT().GetAuthor().Return(author)
 					committer = &object.Signature{Name: "committer1", Email: "committer2@email.com"}
 					targetCommit.EXPECT().GetCommitter().Return(committer)
+					pushedCommit.EXPECT().Parent(0).Return(targetCommit, nil)
 
-					mergerCommit.EXPECT().Parent(0).Return(targetCommit, nil)
-					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(mergerCommit, nil)
-
-					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+					change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
 					err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 				})
 
 				It("should return error", func() {
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("merge error: merger commit must not modify target branch history"))
+					Expect(err.Error()).To(Equal("merge error: pushed commit must not modify target branch history"))
 				})
 			})
 		})
@@ -770,31 +770,31 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().State().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "abc"}
 
-				mergerCommit := mocks.NewMockCommit(ctrl)
-				mergerCommit.EXPECT().NumParents().Return(1)
-				treeHash := plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
-				mergerCommit.EXPECT().GetTreeHash().Return(treeHash)
+				pushedCommit := mocks.NewMockCommit(ctrl)
+				pushedCommit.EXPECT().NumParents().Return(1)
+				pushedCommit.EXPECT().GetHash().Return(makeHash("push_commit_hash"))
+				treeHash := makeHash("hash")
+				pushedCommit.EXPECT().GetTreeHash().Return(treeHash)
 				author := &object.Signature{Name: "author1", Email: "author@email.com"}
-				mergerCommit.EXPECT().GetAuthor().Return(author)
+				pushedCommit.EXPECT().GetAuthor().Return(author)
 				committer := &object.Signature{Name: "committer1", Email: "committer@email.com"}
-				mergerCommit.EXPECT().GetCommitter().Return(committer)
+				pushedCommit.EXPECT().GetCommitter().Return(committer)
 
 				targetCommit := mocks.NewMockCommit(ctrl)
-				treeHash = plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
+				treeHash = makeHash("hash")
 				targetCommit.EXPECT().GetTreeHash().Return(treeHash)
 				author = &object.Signature{Name: "author1", Email: "author@email.com"}
 				targetCommit.EXPECT().GetAuthor().Return(author)
 				committer = &object.Signature{Name: "committer1", Email: "committer@email.com"}
 				targetCommit.EXPECT().GetCommitter().Return(committer)
 
-				mergerCommit.EXPECT().Parent(0).Return(targetCommit, nil)
-				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(mergerCommit, nil)
-
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+				pushedCommit.EXPECT().Parent(0).Return(targetCommit, nil)
+				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
 				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
@@ -821,33 +821,33 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().State().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
 
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &Obj{Name: "refs/heads/unknown", Data: "abc"}
 
-				mergerCommit := mocks.NewMockCommit(ctrl)
-				mergerCommit.EXPECT().NumParents().Return(1)
-				treeHash := plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
-				mergerCommit.EXPECT().GetTreeHash().Return(treeHash)
+				pushedCommit := mocks.NewMockCommit(ctrl)
+				pushedCommit.EXPECT().NumParents().Return(1)
+				pushedCommit.EXPECT().GetHash().Return(makeHash("push_commit_hash"))
+				treeHash := makeHash("hash")
+				pushedCommit.EXPECT().GetTreeHash().Return(treeHash)
 				author := &object.Signature{Name: "author1", Email: "author@email.com"}
-				mergerCommit.EXPECT().GetAuthor().Return(author)
+				pushedCommit.EXPECT().GetAuthor().Return(author)
 				committer := &object.Signature{Name: "committer1", Email: "committer@email.com"}
-				mergerCommit.EXPECT().GetCommitter().Return(committer)
+				pushedCommit.EXPECT().GetCommitter().Return(committer)
 
 				targetCommit := mocks.NewMockCommit(ctrl)
 				targetHash := plumbing.ComputeHash(plumbing.CommitObject, []byte("target_abc"))
 				targetCommit.EXPECT().GetHash().Return(targetHash)
-				treeHash = plumbing.ComputeHash(plumbing.CommitObject, []byte("hash"))
+				treeHash = makeHash("hash")
 				targetCommit.EXPECT().GetTreeHash().Return(treeHash)
 				author = &object.Signature{Name: "author1", Email: "author@email.com"}
 				targetCommit.EXPECT().GetAuthor().Return(author)
 				committer = &object.Signature{Name: "committer1", Email: "committer@email.com"}
 				targetCommit.EXPECT().GetCommitter().Return(committer)
 
-				mergerCommit.EXPECT().Parent(0).Return(targetCommit, nil)
-				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(mergerCommit, nil)
-
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+				pushedCommit.EXPECT().Parent(0).Return(targetCommit, nil)
+				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
 				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
 			})
@@ -855,6 +855,101 @@ var _ = Describe("Validation", func() {
 			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("merge error: target commit hash and the merge proposal target hash must match"))
+			})
+		})
+
+		When("pushed commit hash matches proposal target hash and pushed commit history is compliant with merge proposal", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().GetName().Return("repo1")
+				repoState := state.BareRepository()
+				prop := state.BareRepoProposal()
+				prop.Outcome = state.ProposalOutcomeAccepted
+				propTargetHash := makeHash(util.RandString(20))
+				prop.ActionData = map[string][]byte{
+					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
+					constants.ActionDataKeyBaseHash:   util.ToBytes("abc"),
+					constants.ActionDataKeyTargetHash: util.ToBytes(propTargetHash.String()),
+				}
+				repoState.Proposals.Add("0001", prop)
+				repo.EXPECT().State().Return(repoState)
+
+				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "abc"}
+
+				pushedCommit := mocks.NewMockCommit(ctrl)
+				pushedCommit.EXPECT().NumParents().Return(1)
+				pushedCommit.EXPECT().GetHash().Return(propTargetHash).Times(2)
+				pushedCommit.EXPECT().Parent(0).Return(nil, nil)
+				treeHash := makeHash("hash")
+				pushedCommit.EXPECT().GetTreeHash().Return(treeHash).Times(2)
+				author := &object.Signature{Name: "author1", Email: "author@email.com"}
+				pushedCommit.EXPECT().GetAuthor().Return(author).Times(2)
+				committer := &object.Signature{Name: "committer1", Email: "committer@email.com"}
+				pushedCommit.EXPECT().GetCommitter().Return(committer).Times(2)
+
+				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
+
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("pushed commit history is compliant with merge proposal", func() {
+			BeforeEach(func() {
+				repo := mocks.NewMockBareRepo(ctrl)
+				repo.EXPECT().GetName().Return("repo1")
+				repoState := state.BareRepository()
+				prop := state.BareRepoProposal()
+				prop.Outcome = state.ProposalOutcomeAccepted
+				propTargetHash := makeHash(util.RandString(20))
+				prop.ActionData = map[string][]byte{
+					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
+					constants.ActionDataKeyBaseHash:   util.ToBytes("abc"),
+					constants.ActionDataKeyTargetHash: util.ToBytes(propTargetHash.String()),
+				}
+				repoState.Proposals.Add("0001", prop)
+				repo.EXPECT().State().Return(repoState)
+
+				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+
+				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/master", Data: "stuff"}}
+				oldRef := &Obj{Name: "refs/heads/unknown", Data: "abc"}
+
+				pushedCommit := mocks.NewMockCommit(ctrl)
+				pushedCommit.EXPECT().NumParents().Return(1)
+				pushedCommit.EXPECT().GetHash().Return(makeHash("push_commit_hash"))
+				treeHash := makeHash("hash")
+				pushedCommit.EXPECT().GetTreeHash().Return(treeHash)
+				author := &object.Signature{Name: "author1", Email: "author@email.com"}
+				pushedCommit.EXPECT().GetAuthor().Return(author)
+				committer := &object.Signature{Name: "committer1", Email: "committer@email.com"}
+				pushedCommit.EXPECT().GetCommitter().Return(committer)
+
+				targetCommit := mocks.NewMockCommit(ctrl)
+				targetCommit.EXPECT().GetHash().Return(propTargetHash)
+				treeHash = makeHash("hash")
+				targetCommit.EXPECT().GetTreeHash().Return(treeHash)
+				author = &object.Signature{Name: "author1", Email: "author@email.com"}
+				targetCommit.EXPECT().GetAuthor().Return(author)
+				committer = &object.Signature{Name: "committer1", Email: "committer@email.com"}
+				targetCommit.EXPECT().GetCommitter().Return(committer)
+
+				pushedCommit.EXPECT().Parent(0).Return(targetCommit, nil)
+				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
+
+				err = checkMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
 			})
 		})
 	})
@@ -865,7 +960,7 @@ var _ = Describe("Validation", func() {
 		When("change item has a reference name format that is not known", func() {
 			BeforeEach(func() {
 				change := &core.ItemChange{Item: &Obj{Name: "refs/others/name", Data: "stuff"}}
-				err = validateChange(repo, change, baseTxDetail, pushKeyGetter)
+				err = validateChange(repo, "", change, baseTxDetail, pushKeyGetter)
 			})
 
 			It("should return err='unrecognised change item'", func() {
@@ -877,7 +972,7 @@ var _ = Describe("Validation", func() {
 		When("change item referenced object is an unknown commit object", func() {
 			BeforeEach(func() {
 				change := &core.ItemChange{Item: &Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
-				err = validateChange(repo, change, baseTxDetail, pushKeyGetter)
+				err = validateChange(repo, "", change, baseTxDetail, pushKeyGetter)
 			})
 
 			It("should return err='unable to get commit object: object not found'", func() {
@@ -889,7 +984,7 @@ var _ = Describe("Validation", func() {
 		When("change item referenced object is an unknown tag object", func() {
 			BeforeEach(func() {
 				change := &core.ItemChange{Item: &Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
-				err = validateChange(repo, change, baseTxDetail, pushKeyGetter)
+				err = validateChange(repo, "", change, baseTxDetail, pushKeyGetter)
 			})
 
 			It("should return err='unable to get tag object: tag not found'", func() {
@@ -1874,6 +1969,260 @@ var _ = Describe("Validation", func() {
 			mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
 
 			err = checkTxDetail(detail, mockLogic, 0)
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Describe(".checkIssueCommit", func() {
+		var commit *mocks.MockCommit
+		var repo *mocks.MockBareRepo
+
+		BeforeEach(func() {
+			commit = mocks.NewMockCommit(ctrl)
+			repo = mocks.NewMockBareRepo(ctrl)
+		})
+
+		It("should return error when issue commit has more than 1 parents", func() {
+			commit.EXPECT().NumParents().Return(2)
+			err := checkIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError("issue commit cannot have more than one parent"))
+		})
+
+		It("should return error when reference has a merge commit in its history", func() {
+			commit.EXPECT().NumParents().Return(1)
+			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, fmt.Errorf("error"))
+			err := checkIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError("failed to check for merges in issue commit history: error"))
+		})
+
+		It("should return error when the reference of the issue commit is new but the issue commit has multiple parents ", func() {
+			commit.EXPECT().NumParents().Return(1).Times(2)
+			repoState := &state.Repository{}
+			repo.EXPECT().State().Return(repoState)
+			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, nil)
+			err := checkIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError("first commit of a new issue must have no parent"))
+		})
+
+		It("should return error when the issue commit alters history", func() {
+			commit.EXPECT().NumParents().Return(1)
+			commit.EXPECT().GetHash().Return(makeHash("hash"))
+			repoState := &state.Repository{References: map[string]*state.Reference{"refs/heads/issues/abc": {}}}
+			repo.EXPECT().State().Return(repoState)
+			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, nil)
+			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+			err := checkIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError("issue commit must not alter history"))
+		})
+
+		It("should return error when unable to get commit tree", func() {
+			commit.EXPECT().NumParents().Return(1)
+			commit.EXPECT().GetHash().Return(makeHash("hash"))
+			commit.EXPECT().GetTree().Return(nil, fmt.Errorf("bad query"))
+			repoState := &state.Repository{References: map[string]*state.Reference{"refs/heads/issues/abc": {}}}
+			repo.EXPECT().State().Return(repoState)
+			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, nil)
+			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(nil)
+			err := checkIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError("unable to read issue commit tree"))
+		})
+
+		It("should return error when issue commit tree does not have 'body' file", func() {
+			commit.EXPECT().NumParents().Return(1)
+			commit.EXPECT().GetHash().Return(makeHash("hash"))
+			tree := &object.Tree{Entries: []object.TreeEntry{}}
+			commit.EXPECT().GetTree().Return(tree, nil)
+			repoState := &state.Repository{References: map[string]*state.Reference{"refs/heads/issues/abc": {}}}
+			repo.EXPECT().State().Return(repoState)
+			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, nil)
+			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(nil)
+			err := checkIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError("issue commit must have a 'body' file"))
+		})
+
+		It("should return error when issue commit tree has more than 1 files", func() {
+			commit.EXPECT().NumParents().Return(1)
+			commit.EXPECT().GetHash().Return(makeHash("hash"))
+			tree := &object.Tree{Entries: []object.TreeEntry{{}, {}}}
+			commit.EXPECT().GetTree().Return(tree, nil)
+			repoState := &state.Repository{References: map[string]*state.Reference{"refs/heads/issues/abc": {}}}
+			repo.EXPECT().State().Return(repoState)
+			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, nil)
+			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(nil)
+			err := checkIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError("issue commit tree must only include a 'body' file"))
+		})
+
+		It("should return error when issue commit tree has a body entry that isn't a regular file", func() {
+			commit.EXPECT().NumParents().Return(1)
+			commit.EXPECT().GetHash().Return(makeHash("hash"))
+			tree := &object.Tree{Entries: []object.TreeEntry{{Name: "body", Mode: filemode.Dir}}}
+			commit.EXPECT().GetTree().Return(tree, nil)
+			repoState := &state.Repository{References: map[string]*state.Reference{"refs/heads/issues/abc": {}}}
+			repo.EXPECT().State().Return(repoState)
+			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, nil)
+			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(nil)
+			err := checkIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError("issue body file is not a regular file"))
+		})
+	})
+
+	Describe(".checkIssueBody", func() {
+		var commit *object.Commit
+
+		BeforeEach(func() {
+			commit = &object.Commit{Hash: makeHash("hash")}
+		})
+
+		It("should return error when an unexpected field exists", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{"field1": "xyz"}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:field1, msg:unknown field"))
+		})
+
+		It("should return error when an 'title' value is not string", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{"title": 1}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:title, msg:expected a string value"))
+		})
+
+		It("should return error when an 'replyTo' value is not string", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{"replyTo": 1}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:replyTo, msg:expected a string value"))
+		})
+
+		It("should return error when an 'labels' value is not a string slice", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{"labels": []int{1}}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:labels, msg:expected a list of string values"))
+		})
+
+		It("should return error when an 'assignees' value is not a string slice", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{"assignees": []int{1}}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:assignees, msg:expected a list of string values"))
+		})
+
+		It("should return error when an 'fixers' value is not a string slice", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{"fixers": []int{1}}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:fixers, msg:expected a list of string values"))
+		})
+
+		It("should return error when a 'replyTo' field is set and issue commit is new", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{"replyTo": "xyz"}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:replyTo, msg:not expected in a new issue commit"))
+		})
+
+		It("should return error when issue is not new, a 'replyTo' field is set and title is set", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), false, map[string]interface{}{"replyTo": "xyz", "title": "abc"}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:title, msg:title is not required when replying"))
+		})
+
+		It("should return error when issue is new and title is not set", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:title, msg:title is required"))
+		})
+
+		It("should return error when title length is greater than max.", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{"title": util.RandString(MaxIssueTitleLen + 1)}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:title, msg:title is too long and cannot exceed 256 characters"))
+		})
+
+		It("should return error when replyTo value is not a valid git object hash", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), false, map[string]interface{}{"replyTo": "invalid hash"}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:replyTo, msg:invalid hash value"))
+		})
+
+		It("should return error when replyTo hash is not an ancestor", func() {
+			replyTo := makeHash("hash").String()
+			mockRepo := mocks.NewMockBareRepo(ctrl)
+			mockRepo.EXPECT().IsDescendant(commit.Hash.String(), replyTo).Return(fmt.Errorf("error"))
+			err := checkIssueBody(mockRepo, wrapCommit(commit), false, map[string]interface{}{"replyTo": replyTo}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:replyTo, msg:not a valid hash of a commit in the issue"))
+		})
+
+		It("should return error when labels exceed max", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{
+				"title":  util.RandString(10),
+				"labels": []interface{}{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"},
+			}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:labels, msg:too many labels. Cannot exceed 10"))
+		})
+
+		It("should return error when labels does not include string values", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{
+				"title":  util.RandString(10),
+				"labels": []interface{}{1, 2},
+			}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:labels, msg:expected a string list of labels"))
+		})
+
+		It("should return error when assignees does not include string values", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{
+				"title":     util.RandString(10),
+				"assignees": []interface{}{1, 2},
+			}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:assignees, msg:expected a string list of push keys"))
+		})
+
+		It("should return error when assignees includes invalid push keys", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{
+				"title":     util.RandString(10),
+				"assignees": []interface{}{"invalid_push_key"},
+			}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:assignees[0], msg:invalid push key ID"))
+		})
+
+		It("should return error when fixers does not include string values", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{
+				"title":  util.RandString(10),
+				"fixers": []interface{}{1, 2},
+			}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:fixers, msg:expected a string list of push keys"))
+		})
+
+		It("should return error when fixers includes invalid push keys", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{
+				"title":  util.RandString(10),
+				"fixers": []interface{}{"invalid_push_key"},
+			}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:fixers[0], msg:invalid push key ID"))
+		})
+
+		It("should return error when content surpassed max. limit", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{
+				"title": util.RandString(10),
+			}, util.RandBytes(MaxIssueContentLen+1))
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:content, msg:issue content length exceeded max character limit"))
+		})
+
+		It("should return no error when fields are acceptable", func() {
+			err := checkIssueBody(nil, wrapCommit(commit), true, map[string]interface{}{
+				"title": util.RandString(10),
+			}, []byte(""))
 			Expect(err).To(BeNil())
 		})
 	})

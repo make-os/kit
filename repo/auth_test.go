@@ -66,7 +66,6 @@ var _ = Describe("Auth", func() {
 	})
 
 	Describe(".authenticate", func() {
-
 		When("there are two or more transaction details", func() {
 			When("they are signed with different push keys", func() {
 				BeforeEach(func() {
@@ -97,7 +96,7 @@ var _ = Describe("Auth", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:1, field:repoName, msg:token siblings must target the same repository"))
+				Expect(err).To(MatchError("index:1, field:repoName, msg:all push tokens must target the same repository"))
 			})
 		})
 
@@ -113,7 +112,7 @@ var _ = Describe("Auth", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:1, field:nonce, msg:token siblings must have the same nonce"))
+				Expect(err).To(MatchError("index:1, field:nonce, msg:all push tokens must have the same nonce"))
 			})
 		})
 
@@ -129,7 +128,7 @@ var _ = Describe("Auth", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:1, field:repoNamespace, msg:token siblings must target the same namespace"))
+				Expect(err).To(MatchError("index:1, field:repoNamespace, msg:all push tokens must target the same namespace"))
 			})
 		})
 
@@ -144,15 +143,14 @@ var _ = Describe("Auth", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:pkID, msg:push key is not a contributor to the target repo/namespace"))
+				Expect(err).To(MatchError("field:pkID, msg:pusher is not a contributor"))
 			})
 		})
 
-		When("the pusher is not a contributor to the repository or namespace but merge id is provided", func() {
+		When("the pusher is not a contributor but merge id is provided", func() {
 			BeforeEach(func() {
 				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "123"}
-				txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String(), MergeProposalID: "123"}
-				txDetails := []*types.TxDetail{txD, txD2}
+				txDetails := []*types.TxDetail{txD}
 				repoState := state.BareRepository()
 				_, err = authenticate(txDetails, repoState, &state.Namespace{}, mockLogic, testCheckTxDetail(nil))
 			})

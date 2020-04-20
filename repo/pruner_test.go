@@ -36,7 +36,7 @@ var _ = Describe("Pruner", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		execGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = getRepoWithGitOpt(cfg.Node.GitBinPath, path)
+		repo, err = getRepoWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
 		mgr = mocks.NewMockPoolGetter(ctrl)
