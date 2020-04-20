@@ -110,3 +110,8 @@ func setStartFlags(cmds ...*cobra.Command) {
 	}
 
 }
+
+func init() {
+	rootCmd.AddCommand(startCmd)
+	setStartFlags(startCmd)
+}

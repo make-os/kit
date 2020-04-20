@@ -59,3 +59,7 @@ launch the node.`,
 		initializeTendermint()
 	},
 }
+
+func init() {
+	rootCmd.AddCommand(initCmd)
+}

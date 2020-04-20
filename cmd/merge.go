@@ -55,7 +55,9 @@ var mergeReqCmd = &cobra.Command{
 	},
 }
 
-func initMerge() {
+func init() {
+	rootCmd.AddCommand(mergeReqCmd)
+
 	pf := mergeReqCmd.PersistentFlags()
 	pf.SortFlags = false
 	mergeReqCmd.Flags().SortFlags = false

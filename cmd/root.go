@@ -100,15 +100,15 @@ and organizations without a centralized authority.`,
 	},
 }
 
-// IsGitSignRequest checks whether the program arguments
+// isGitSignRequest checks whether the program arguments
 // indicate a request from git to sign a message
-func IsGitSignRequest(args []string) bool {
+func isGitSignRequest(args []string) bool {
 	return len(args) == 4 && args[1] == "--status-fd=2" && args[2] == "-bsau"
 }
 
-// IsGitVerifyRequest checks whether the program arguments
+// isGitVerifyRequest checks whether the program arguments
 // indicate a request from git to verify a signature
-func IsGitVerifyRequest(args []string) bool {
+func isGitVerifyRequest(args []string) bool {
 	return len(args) == 6 && funk.ContainsString(args, "--verify")
 }
 
@@ -117,11 +117,11 @@ var fallbackCmd = &cobra.Command{
 	Hidden: true,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		if IsGitSignRequest(args) {
+		if isGitSignRequest(args) {
 			repo.GitSignCmd(cfg, os.Stdin)
 		}
 
-		if IsGitVerifyRequest(args) {
+		if isGitVerifyRequest(args) {
 			repo.GitVerifyCmd(cfg, args)
 		}
 
@@ -131,12 +131,6 @@ var fallbackCmd = &cobra.Command{
 }
 
 func init() {
-
-	// Register commands
-	rootCmd.AddCommand(initCmd)
-	rootCmd.AddCommand(startCmd)
-	rootCmd.AddCommand(consoleCmd)
-	rootCmd.AddCommand(mergeReqCmd)
 	rootCmd.AddCommand(fallbackCmd)
 
 	// Register flags
@@ -146,7 +140,6 @@ func init() {
 	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
 	rootCmd.PersistentFlags().Bool("nolog", false, "Disables loggers")
 	rootCmd.PersistentFlags().String("gitbin", "/usr/bin/git", "Path to git executable")
-	consoleCmd.Flags().Bool("only", false, "Run only the console (no servers)")
 
 	// Hidden flags relevant to git gpg interface conformance
 	rootCmd.PersistentFlags().String("keyid-format", "", "")
@@ -159,14 +152,8 @@ func init() {
 	// Viper bindings
 	viper.BindPFlag("node.gitbin", rootCmd.PersistentFlags().Lookup("gitbin"))
 	viper.BindPFlag("net.version", rootCmd.PersistentFlags().Lookup("net"))
-	viper.BindPFlag("console.only", consoleCmd.Flags().Lookup("only"))
 	viper.BindPFlag("dev", rootCmd.PersistentFlags().Lookup("dev"))
 	viper.BindPFlag("home", rootCmd.PersistentFlags().Lookup("home"))
 	viper.BindPFlag("home.prefix", rootCmd.PersistentFlags().Lookup("home.prefix"))
 	viper.BindPFlag("nolog", rootCmd.PersistentFlags().Lookup("nolog"))
-
-	setStartFlags(startCmd, consoleCmd)
-	setKeyCmdAndFlags()
-	initSign()
-	initMerge()
 }

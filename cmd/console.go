@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/node"
@@ -49,4 +50,13 @@ var consoleCmd = &cobra.Command{
 			}()
 		})
 	},
+}
+
+func init() {
+	rootCmd.AddCommand(consoleCmd)
+
+	consoleCmd.Flags().Bool("only", false, "Run only the console (no servers)")
+	viper.BindPFlag("console.only", consoleCmd.Flags().Lookup("only"))
+
+	setStartFlags(consoleCmd)
 }

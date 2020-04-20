@@ -208,7 +208,8 @@ var keyGenCmd = &cobra.Command{
 	},
 }
 
-func setKeyCmdAndFlags() {
+func init() {
+	rootCmd.AddCommand(keysCmd)
 	keysCmd.AddCommand(keyCreateCmd)
 	keysCmd.AddCommand(keyListCmd)
 	keysCmd.AddCommand(keyUpdateCmd)
@@ -221,5 +222,4 @@ func setKeyCmdAndFlags() {
 	keyCreateCmd.Flags().Bool("nopass", false, "Force key to be created with no passphrase")
 	keyCreateCmd.Flags().Bool("push", false, "Create a push key")
 	keyImportCmd.Flags().Bool("push", false, "Create a push key")
-	rootCmd.AddCommand(keysCmd)
 }

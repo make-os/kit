@@ -122,7 +122,7 @@ func addAPIConnectionFlags(pf *pflag.FlagSet) {
 	pf.Bool("no.rpc", false, "Disable the ability to query the JSON-RPC API")
 }
 
-func initSign() {
+func init() {
 	rootCmd.AddCommand(signCmd)
 	signCmd.AddCommand(signTagCmd)
 	signCmd.AddCommand(signCommitCmd)
