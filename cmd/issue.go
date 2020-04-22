@@ -15,21 +15,10 @@
 package cmd
 
 import (
-	"bufio"
-	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
-	"os/exec"
-	"os/signal"
-	"strings"
-	"syscall"
 
-	"github.com/fatih/color"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gitlab.com/makeos/mosdef/remote/issues"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	remotecmd "gitlab.com/makeos/mosdef/remote/cmd"
 )
 
 // issueCmd represents the issue command
@@ -40,31 +29,6 @@ var issueCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Help()
 	},
-}
-
-// readFromEditor reads input from the specified editor
-func readFromEditor(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) {
-	file, err := ioutil.TempFile(os.TempDir(), "")
-	if err != nil {
-		return "", nil
-	}
-	defer os.Remove(file.Name())
-
-	args := strings.Split(editor, " ")
-	cmd := exec.Command(args[0], append(args[1:], file.Name())...)
-	cmd.Stdout = stdOut
-	cmd.Stderr = stdErr
-	cmd.Stdin = stdIn
-	if err := cmd.Run(); err != nil {
-		return "", err
-	}
-
-	bz, err := ioutil.ReadFile(file.Name())
-	if err != nil {
-		return "", err
-	}
-
-	return string(bz), nil
 }
 
 // issueCreateCmd represents a sub-command to create an issue
@@ -83,60 +47,9 @@ var issueCreateCmd = &cobra.Command{
 		assignees, _ := cmd.Flags().GetStringSlice("assignees")
 		fixers, _ := cmd.Flags().GetStringSlice("fixers")
 
-		if targetIssue != "" && title != "" {
-			log.Fatal("title not required when adding comments to an issue")
-		}
-
-		// Get the repository in the current working directory
-		targetRepo, err := repo2.GetCurrentWDRepo(cfg.Node.GitBinPath)
-		if err != nil {
-			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
-		}
-
-		sigs := make(chan os.Signal, 1)
-		signal.Notify(sigs, syscall.SIGINT)
-		go func() { <-sigs; os.Stdin.Close() }()
-		rdr := bufio.NewReader(os.Stdin)
-
-		// Read title if not provided via flag and replyTo is not set
-		if len(title) == 0 && len(replyTo) == 0 {
-			fmt.Println(color.HiBlackString("Title: (256 chars) - Press enter to continue"))
-			title, _ = rdr.ReadString('\n')
-			title = strings.TrimSpace(title)
-		}
-
-		// Read body
-		if len(body) == 0 && useEditor == false {
-			fmt.Println(color.HiBlackString("Body: (8192 chars) - Press ctrl-D to continue"))
-			bz, _ := ioutil.ReadAll(rdr)
-			body = strings.TrimSpace(string(bz))
-		}
-
-		// Read body from editor if required
-		if useEditor == true {
-			editor := targetRepo.GetConfig("core.editor")
-			if editorPath != "" {
-				editor = editorPath
-			}
-			body, err = readFromEditor(editor, os.Stdin, os.Stdout, os.Stderr)
-			if err != nil {
-				log.Fatal(errors.Wrap(err, "failed read body from editor").Error())
-			}
-		}
-
-		// Create the issue body and prompt user to confirm
-		issueBody := issues.MakeIssueBody(title, body, replyTo, labels, assignees, fixers)
-
-		// Create a new issue or add comment commit to existing issue
-		newIssue, ref, err := issues.AddIssueOrCommentCommitCmd(targetRepo, targetIssue, issueBody)
-		if err != nil {
+		if err := remotecmd.IssueCreateCmd(title, body, replyTo, labels, assignees, fixers,
+			useEditor, editorPath, targetIssue, os.Stdout, cfg.Node.GitBinPath); err != nil {
 			log.Fatal(err.Error())
-		}
-
-		if newIssue {
-			fmt.Println(color.GreenString("New issue created @ %s", ref))
-		} else {
-			fmt.Println(color.GreenString("New issue comment created @ %s", ref))
 		}
 	},
 }

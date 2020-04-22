@@ -227,9 +227,9 @@ func GetRepoWithLiteGit(gitBinPath, path string) (core.BareRepo, error) {
 	}, nil
 }
 
-// GetCurrentWDRepo returns a Repo instance pointed to the repository
+// GetRepoAtWorkingDir returns a Repo instance pointed to the repository
 // in the current working directory.
-func GetCurrentWDRepo(gitBinDir string) (core.BareRepo, error) {
+func GetRepoAtWorkingDir(gitBinDir string) (core.BareRepo, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current working directory")

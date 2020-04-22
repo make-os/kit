@@ -2,7 +2,6 @@ package issues
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
@@ -19,7 +18,7 @@ func AddIssueOrCommentCommitCmd(targetRepo core.BareRepo, targetIssue, issueBody
 	if targetIssue != "" {
 		issueRefName = fmt.Sprintf("refs/heads/issues/%s", targetIssue)
 	} else {
-		issueBranchName := fmt.Sprintf("%d-%s", time.Now().Unix(), plumbing.MakeCommitHash(issueBody))
+		issueBranchName := plumbing.MakeCommitHash(issueBody)
 		issueRefName = fmt.Sprintf("refs/heads/issues/%s", issueBranchName)
 	}
 
