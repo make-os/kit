@@ -23,8 +23,8 @@ import (
 type refHandler func(ref string, revertOnly bool) []error
 type authorizationHandler func(ur *packp.ReferenceUpdateRequest) error
 
-// PushHandler provides handles all phases of a push operation
-type PushHandler struct {
+// Handler provides handles all phases of a push operation
+type Handler struct {
 	log                  logger.Logger
 	op                   string                              // The current git operation
 	Repo                 core.BareRepo                       // The target repository
@@ -46,16 +46,16 @@ type PushHandler struct {
 type PushHandlerFunc func(
 	targetRepo core.BareRepo,
 	txDetails []*types.TxDetail,
-	enforcer policy.EnforcerFunc) *PushHandler
+	enforcer policy.EnforcerFunc) *Handler
 
-// NewHandler returns an instance of PushHandler
+// NewHandler returns an instance of Handler
 func NewHandler(
 	repo core.BareRepo,
 	txDetails []*types.TxDetail,
 	polEnforcer policy.EnforcerFunc,
-	rMgr core.RemoteServer) *PushHandler {
+	rMgr core.RemoteServer) *Handler {
 
-	h := &PushHandler{
+	h := &Handler{
 		Repo:            repo,
 		Server:          rMgr,
 		log:             rMgr.Log().Module("push-handler"),
@@ -73,7 +73,7 @@ func NewHandler(
 }
 
 // HandleStream processes git push request stream
-func (h *PushHandler) HandleStream(packfile io.Reader, gitReceivePack io.WriteCloser) error {
+func (h *Handler) HandleStream(packfile io.Reader, gitReceivePack io.WriteCloser) error {
 
 	var err error
 
@@ -107,7 +107,7 @@ func (h *PushHandler) HandleStream(packfile io.Reader, gitReceivePack io.WriteCl
 }
 
 // CheckForReferencesTxDetail checks that each pushed reference has a transaction detail
-func (h *PushHandler) CheckForReferencesTxDetail() error {
+func (h *Handler) CheckForReferencesTxDetail() error {
 	for _, ref := range h.PushReader.References.Names() {
 		if h.TxDetails.Get(ref) == nil {
 			return fmt.Errorf("reference (%s) has no transaction information", ref)
@@ -117,7 +117,7 @@ func (h *PushHandler) CheckForReferencesTxDetail() error {
 }
 
 // HandleAuthorization performs authorization checks
-func (h *PushHandler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
+func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 
 	// Make sure every pushed references has a tx detail
 	if err := h.CheckForReferencesTxDetail(); err != nil {
@@ -166,7 +166,7 @@ func (h *PushHandler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) erro
 }
 
 // HandleReferences processes all pushed references
-func (h *PushHandler) HandleReferences() error {
+func (h *Handler) HandleReferences() error {
 
 	// Expect old state to have been captured before the push was processed
 	if h.OldState == nil {
@@ -197,7 +197,7 @@ func (h *PushHandler) HandleReferences() error {
 // processed by git-receive-pack. Here, we attempt to determine what changed,
 // validate the pushed objects, construct a push transaction and broadcast to
 // the rest of the network
-func (h *PushHandler) HandleUpdate() error {
+func (h *Handler) HandleUpdate() error {
 
 	// Validate and pass the references pushed
 	err := h.HandleReferences()
@@ -230,7 +230,7 @@ func (h *PushHandler) HandleUpdate() error {
 }
 
 // createPushNote creates a note that describes a push operation.
-func (h *PushHandler) createPushNote() (*core.PushNote, error) {
+func (h *Handler) createPushNote() (*core.PushNote, error) {
 
 	var note = &core.PushNote{
 		TargetRepo:      h.Repo,
@@ -279,7 +279,7 @@ func (h *PushHandler) createPushNote() (*core.PushNote, error) {
 }
 
 // AnnounceObject announces a packed object to DHT peers
-func (h *PushHandler) AnnounceObject(objHash string) error {
+func (h *Handler) AnnounceObject(objHash string) error {
 	dhtKey := plumbing.MakeRepoObjectDHTKey(h.Repo.GetName(), objHash)
 	ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
 	defer c()
@@ -292,7 +292,7 @@ func (h *PushHandler) AnnounceObject(objHash string) error {
 
 // HandleReference handles reference update validation and reversion.
 // When revertOnly is true, only reversion operation is performed.
-func (h *PushHandler) HandleReference(ref string, revertOnly bool) []error {
+func (h *Handler) HandleReference(ref string, revertOnly bool) []error {
 
 	var errs []error
 

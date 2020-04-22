@@ -371,11 +371,11 @@ func (sv *Server) GetPushKeyGetter() core.PushKeyGetter {
 	return sv.pushKeyGetter
 }
 
-// createPushHandler creates an instance of PushHandler
+// createPushHandler creates an instance of Handler
 func (sv *Server) createPushHandler(
 	targetRepo core.BareRepo,
 	txDetails []*types2.TxDetail,
-	enforcer policy.EnforcerFunc) *pushhandler.PushHandler {
+	enforcer policy.EnforcerFunc) *pushhandler.Handler {
 	return pushhandler.NewHandler(targetRepo, txDetails, enforcer, sv)
 }
 

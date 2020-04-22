@@ -25,7 +25,7 @@ type RequestContext struct {
 	R           *http.Request
 	TxDetails   []*types.TxDetail
 	PolEnforcer policy.EnforcerFunc
-	PushHandler *pushhandler.PushHandler
+	PushHandler *pushhandler.Handler
 	Repo        core.BareRepo
 	RepoDir     string
 	Operation   string

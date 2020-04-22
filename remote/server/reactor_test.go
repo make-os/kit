@@ -277,9 +277,9 @@ var _ = Describe("Reactor", func() {
 					return packfile, nil
 				}
 
-				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.PushHandler {
+				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					mockMgr.EXPECT().GetRepoState(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
-					return &pushhandler.PushHandler{Server: mockMgr}
+					return &pushhandler.Handler{Server: mockMgr}
 				}
 
 				pn = &core.PushNote{RepoName: repoName}
@@ -310,7 +310,7 @@ var _ = Describe("Reactor", func() {
 					return nil
 				}
 
-				pushHandler := &pushhandler.PushHandler{Server: mockMgr}
+				pushHandler := &pushhandler.Handler{Server: mockMgr}
 				svr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
@@ -320,7 +320,7 @@ var _ = Describe("Reactor", func() {
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.PushHandler {
+				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					return pushHandler
 				}
 
@@ -360,7 +360,7 @@ var _ = Describe("Reactor", func() {
 					return nil
 				}
 
-				pushHandler := &pushhandler.PushHandler{Server: mockMgr}
+				pushHandler := &pushhandler.Handler{Server: mockMgr}
 				svr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
@@ -370,7 +370,7 @@ var _ = Describe("Reactor", func() {
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.PushHandler {
+				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					return pushHandler
 				}
 
@@ -417,7 +417,7 @@ var _ = Describe("Reactor", func() {
 					return nil
 				}
 
-				pushHandler := &pushhandler.PushHandler{Server: mockMgr}
+				pushHandler := &pushhandler.Handler{Server: mockMgr}
 				svr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
@@ -427,7 +427,7 @@ var _ = Describe("Reactor", func() {
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.PushHandler {
+				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					return pushHandler
 				}
 

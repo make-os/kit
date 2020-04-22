@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	repo2 "gitlab.com/makeos/mosdef/remote"
+	cmd2 "gitlab.com/makeos/mosdef/remote/cmd"
 	// "gitlab.com/makeos/mosdef/repo"
 )
 
@@ -48,7 +48,7 @@ var mergeReqCmd = &cobra.Command{
 			baseBranchHash = ref
 		}
 
-		if err := repo2.CreateAndSendMergeRequestCmd(cfg, account, passphrase, repoName, propID, baseBranch,
+		if err := cmd2.CreateAndSendMergeRequestCmd(cfg, account, passphrase, repoName, propID, baseBranch,
 			baseBranchHash, targetBranch, targetBranchHash, fee, nonce, client, remoteClients); err != nil {
 			log.Fatal(err.Error())
 		}

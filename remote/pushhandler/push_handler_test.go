@@ -27,14 +27,14 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 )
 
-var _ = Describe("PushHandler", func() {
+var _ = Describe("Handler", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
 	var repo core.BareRepo
 	var mockMgr *mocks.MockRepoManager
 	var svr core.RemoteServer
-	var handler *pushhandler.PushHandler
+	var handler *pushhandler.Handler
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var repoName string
