@@ -63,7 +63,7 @@ type Logic struct {
 	pushKeyKeeper *keepers.PushKeyKeeper
 
 	// repoMgr provides access to the git repository manager
-	repoMgr core.RepoManager
+	repoMgr core.RemoteServer
 
 	// mempoolReactor provides access to mempool operations
 	mempoolReactor core.MempoolReactor
@@ -130,12 +130,12 @@ func (l *Logic) GetMempoolReactor() core.MempoolReactor {
 }
 
 // SetRepoManager sets the repository manager
-func (l *Logic) SetRepoManager(m core.RepoManager) {
+func (l *Logic) SetRepoManager(m core.RemoteServer) {
 	l.repoMgr = m
 }
 
 // GetRepoManager returns the repository manager
-func (l *Logic) GetRepoManager() core.RepoManager {
+func (l *Logic) GetRepoManager() core.RemoteServer {
 	return l.repoMgr
 }
 

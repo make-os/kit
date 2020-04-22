@@ -27,7 +27,7 @@ type Module struct {
 	dht            types.DHTNode
 	extMgr         modules.ExtManager
 	rpcServer      *rpc.Server
-	repoMgr        core.RepoManager
+	repoMgr        core.RemoteServer
 	Modules        *modules.Modules
 }
 
@@ -43,7 +43,7 @@ func New(
 	dht types.DHTNode,
 	extMgr *extensions.Manager,
 	rpcServer *rpc.Server,
-	repoMgr core.RepoManager) *Module {
+	repoMgr core.RemoteServer) *Module {
 
 	agg := &Module{
 		cfg:            cfg,

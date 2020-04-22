@@ -19,14 +19,14 @@ type RepoModule struct {
 	vm      *otto.Otto
 	logic   core.Logic
 	service services.Service
-	repoMgr core.RepoManager
+	repoMgr core.RemoteServer
 }
 
 // NewRepoModule creates an instance of RepoModule
 func NewRepoModule(
 	vm *otto.Otto,
 	service services.Service,
-	repoMgr core.RepoManager,
+	repoMgr core.RemoteServer,
 	logic core.Logic) *RepoModule {
 	return &RepoModule{vm: vm, service: service, logic: logic, repoMgr: repoMgr}
 }

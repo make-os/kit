@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"gitlab.com/makeos/mosdef/repo/validator"
+	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -436,7 +436,7 @@ func CheckTxPush(tx *core.TxPush, index int) error {
 		return err
 	}
 
-	if err := validator.CheckPushNoteSyntax(tx.PushNote); err != nil {
+	if err := validation.CheckPushNoteSyntax(tx.PushNote); err != nil {
 		return err
 	}
 
@@ -448,7 +448,7 @@ func CheckTxPush(tx *core.TxPush, index int) error {
 	pushEndRefHashesID := util.EmptyBytes32
 	for index, pushEnd := range tx.PushEnds {
 
-		if err := validator.CheckPushEnd(pushEnd, index); err != nil {
+		if err := validation.CheckPushEndorsement(pushEnd, index); err != nil {
 			return err
 		}
 

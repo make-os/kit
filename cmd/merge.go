@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	repo2 "gitlab.com/makeos/mosdef/repo"
+	repo2 "gitlab.com/makeos/mosdef/remote"
 	// "gitlab.com/makeos/mosdef/repo"
 )
 

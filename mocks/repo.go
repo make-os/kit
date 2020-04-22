@@ -1860,7 +1860,7 @@ func (mr *MockRepoPushEndorsementMockRecorder) BytesAndID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockRepoPushEndorsement)(nil).BytesAndID))
 }
 
-// MockRepoManager is a mock of RepoManager interface
+// MockRepoManager is a mock of RemoteServer interface
 type MockRepoManager struct {
 	ctrl     *gomock.Controller
 	recorder *MockRepoManagerMockRecorder

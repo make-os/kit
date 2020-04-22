@@ -874,7 +874,7 @@ func (mr *MockAtomicLogicMockRecorder) SetTicketManager(tm interface{}) *gomock.
 }
 
 // SetRepoManager mocks base method
-func (m_2 *MockAtomicLogic) SetRepoManager(m core.RepoManager) {
+func (m_2 *MockAtomicLogic) SetRepoManager(m core.RemoteServer) {
 	m_2.ctrl.T.Helper()
 	m_2.ctrl.Call(m_2, "SetRepoManager", m)
 }
@@ -886,10 +886,10 @@ func (mr *MockAtomicLogicMockRecorder) SetRepoManager(m interface{}) *gomock.Cal
 }
 
 // GetRepoManager mocks base method
-func (m *MockAtomicLogic) GetRepoManager() core.RepoManager {
+func (m *MockAtomicLogic) GetRepoManager() core.RemoteServer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRepoManager")
-	ret0, _ := ret[0].(core.RepoManager)
+	ret0, _ := ret[0].(core.RemoteServer)
 	return ret0
 }
 
@@ -1239,7 +1239,7 @@ func (mr *MockLogicMockRecorder) SetTicketManager(tm interface{}) *gomock.Call {
 }
 
 // SetRepoManager mocks base method
-func (m_2 *MockLogic) SetRepoManager(m core.RepoManager) {
+func (m_2 *MockLogic) SetRepoManager(m core.RemoteServer) {
 	m_2.ctrl.T.Helper()
 	m_2.ctrl.Call(m_2, "SetRepoManager", m)
 }
@@ -1251,10 +1251,10 @@ func (mr *MockLogicMockRecorder) SetRepoManager(m interface{}) *gomock.Call {
 }
 
 // GetRepoManager mocks base method
-func (m *MockLogic) GetRepoManager() core.RepoManager {
+func (m *MockLogic) GetRepoManager() core.RemoteServer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRepoManager")
-	ret0, _ := ret[0].(core.RepoManager)
+	ret0, _ := ret[0].(core.RemoteServer)
 	return ret0
 }
 

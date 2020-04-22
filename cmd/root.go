@@ -21,7 +21,7 @@ import (
 
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/repo"
+	"gitlab.com/makeos/mosdef/remote"
 	"gitlab.com/makeos/mosdef/util"
 
 	tmcfg "github.com/tendermint/tendermint/config"
@@ -118,11 +118,11 @@ var fallbackCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if isGitSignRequest(args) {
-			repo.GitSignCmd(cfg, os.Stdin)
+			remote.GitSignCmd(cfg, os.Stdin)
 		}
 
 		if isGitVerifyRequest(args) {
-			repo.GitVerifyCmd(cfg, args)
+			remote.GitVerifyCmd(cfg, args)
 		}
 
 		fmt.Print("Unknown command. Use --help to see commands.\n")

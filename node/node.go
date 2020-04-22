@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"gitlab.com/makeos/mosdef/dht/types"
-	"gitlab.com/makeos/mosdef/repo/manager"
+	"gitlab.com/makeos/mosdef/remote/server"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	modules2 "gitlab.com/makeos/mosdef/types/modules"
@@ -70,7 +70,7 @@ type Node struct {
 	dht            types.DHTNode
 	modules        modules2.ModuleHub
 	rpcServer      *rpc.Server
-	repoMgr        core.RepoManager
+	repoMgr        core.RemoteServer
 }
 
 // NewNode creates an instance of Node
@@ -177,8 +177,8 @@ func (n *Node) Start() error {
 
 	// Register custom reactor channels
 	node.AddChannels([]byte{
-		manager.PushNoteReactorChannel,
-		manager.PushEndReactorChannel,
+		server.PushNoteReactorChannel,
+		server.PushEndReactorChannel,
 	})
 
 	// Create the ABCI app and wrap with a ClientCreator
@@ -194,7 +194,7 @@ func (n *Node) Start() error {
 	n.logic.SetMempoolReactor(mempR)
 
 	// Create repository manager and pass it to logic
-	repoMgr := manager.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht, memp, n)
+	repoMgr := server.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht, memp, n)
 	n.repoMgr = repoMgr
 	n.logic.SetRepoManager(repoMgr)
 

@@ -426,8 +426,8 @@ type RepoPushEndorsement interface {
 	BytesAndID() ([]byte, util.Bytes32)
 }
 
-// RepoManager provides functionality for manipulating repositories.
-type RepoManager interface {
+// RemoteServer provides functionality for manipulating repositories.
+type RemoteServer interface {
 	PoolGetter
 	RepoGetter
 	RepoUpdater

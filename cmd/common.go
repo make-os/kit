@@ -10,7 +10,7 @@ import (
 	"github.com/thoas/go-funk"
 	restclient "gitlab.com/makeos/mosdef/api/rest/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
-	repo2 "gitlab.com/makeos/mosdef/repo/repo"
+	repo2 "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )

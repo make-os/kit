@@ -283,10 +283,10 @@ type Logic interface {
 	SetTicketManager(tm types2.TicketManager)
 
 	// SetRepoManager sets the repository manager
-	SetRepoManager(m RepoManager)
+	SetRepoManager(m RemoteServer)
 
 	// GetRepoManager returns the repository manager
-	GetRepoManager() RepoManager
+	GetRepoManager() RemoteServer
 
 	// Cfg returns the application config
 	Cfg() *config.AppConfig

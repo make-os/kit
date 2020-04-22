@@ -28,9 +28,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gitlab.com/makeos/mosdef/repo"
-	"gitlab.com/makeos/mosdef/repo/issues"
-	repo2 "gitlab.com/makeos/mosdef/repo/repo"
+	"gitlab.com/makeos/mosdef/remote/issues"
+	repo2 "gitlab.com/makeos/mosdef/remote/repo"
 )
 
 // issueCmd represents the issue command
@@ -85,7 +84,7 @@ var issueCreateCmd = &cobra.Command{
 		fixers, _ := cmd.Flags().GetStringSlice("fixers")
 
 		if targetIssue != "" && title != "" {
-			log.Fatal("title not required when commenting on issue")
+			log.Fatal("title not required when adding comments to an issue")
 		}
 
 		// Get the repository in the current working directory
@@ -129,7 +128,7 @@ var issueCreateCmd = &cobra.Command{
 		issueBody := issues.MakeIssueBody(title, body, replyTo, labels, assignees, fixers)
 
 		// Create a new issue or add comment commit to existing issue
-		newIssue, ref, err := repo.AddIssueOrCommentCommitCmd(targetRepo, targetIssue, issueBody)
+		newIssue, ref, err := issues.AddIssueOrCommentCommitCmd(targetRepo, targetIssue, issueBody)
 		if err != nil {
 			log.Fatal(err.Error())
 		}

@@ -15,8 +15,7 @@ require (
 	github.com/bitfield/script v0.14.1
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/c-bata/go-prompt v0.2.3
-	github.com/casbin/casbin v1.9.1
-	github.com/davecgh/go-spew v1.1.1
+	github.com/casbin/casbin v1.9.1 // indirect
 	github.com/dgraph-io/badger v1.6.0
 	github.com/dgryski/go-farm v0.0.0-20191112170834-c2139c5d712b // indirect
 	github.com/dustin/go-humanize v1.0.0
@@ -24,7 +23,7 @@ require (
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
-	github.com/gen2brain/beeep v0.0.0-20200305193625-ff0f4a39397e
+	github.com/gen2brain/beeep v0.0.0-20200305193625-ff0f4a39397e // indirect
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/gobuffalo/packr v1.30.1
 	github.com/gogo/protobuf v1.3.1
@@ -32,7 +31,6 @@ require (
 	github.com/golang/mock v1.3.1
 	github.com/google/go-cmp v0.4.0
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
-	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/rpc v1.2.0
 	github.com/hashicorp/golang-lru v0.5.3
 	github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e // indirect

@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/repo"
+	"gitlab.com/makeos/mosdef/remote"
 )
 
 // signCmd represents the commit command
@@ -37,7 +37,7 @@ var signCommitCmd = &cobra.Command{
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
-		if err := repo.SignCommitCmd(
+		if err := remote.SignCommitCmd(
 			cfg,
 			msg,
 			targetRepo,
@@ -67,7 +67,7 @@ var signTagCmd = &cobra.Command{
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
 
 		args = cmd.Flags().Args()
-		if err := repo.SignTagCmd(
+		if err := remote.SignTagCmd(
 			cfg,
 			args,
 			msg,
@@ -99,7 +99,7 @@ var signNoteCmd = &cobra.Command{
 		}
 
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
-		if err := repo.SignNoteCmd(
+		if err := remote.SignNoteCmd(
 			cfg,
 			targetRepo,
 			fee, nonce,
