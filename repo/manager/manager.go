@@ -1,0 +1,445 @@
+package manager
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
+	"gitlab.com/makeos/mosdef/api/rest"
+	dhttypes "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/node/types"
+	"gitlab.com/makeos/mosdef/pkgs/cache"
+	"gitlab.com/makeos/mosdef/repo/plumbing"
+	"gitlab.com/makeos/mosdef/repo/policy"
+	"gitlab.com/makeos/mosdef/repo/pruner"
+	repo2 "gitlab.com/makeos/mosdef/repo/repo"
+	"gitlab.com/makeos/mosdef/repo/validator"
+	types2 "gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/modules"
+	"gitlab.com/makeos/mosdef/types/state"
+
+	"github.com/tendermint/tendermint/p2p"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/mosdef/util"
+	"gopkg.in/src-d/go-git.v4"
+)
+
+const (
+	// PushNoteReactorChannel is the channel id sending/receiving push notes
+	PushNoteReactorChannel = byte(0x32)
+	// PushEndReactorChannel is the channel id for sending/receiving push endorsements
+	PushEndReactorChannel = byte(0x33)
+)
+
+var services = [][]interface{}{
+	{"(.*?)/git-upload-pack$", service{method: "POST", handle: serveService}},
+	{"(.*?)/git-receive-pack$", service{method: "POST", handle: serveService}},
+	{"(.*?)/info/refs$", service{method: "GET", handle: getInfoRefs}},
+	{"(.*?)/HEAD$", service{method: "GET", handle: GetTextFile}},
+	{"(.*?)/objects/info/alternates$", service{method: "GET", handle: GetTextFile}},
+	{"(.*?)/objects/info/http-alternates$", service{method: "GET", handle: GetTextFile}},
+	{"(.*?)/objects/info/packs$", service{method: "GET", handle: GetInfoPacks}},
+	{"(.*?)/objects/info/[^/]*$", service{method: "GET", handle: GetTextFile}},
+	{"(.*?)/objects/[0-9a-f]{2}/[0-9a-f]{38}$", service{method: "GET", handle: GetInfoPacks}},
+	{"(.*?)/objects/pack/pack-[0-9a-f]{40}\\.pack$", service{method: "GET", handle: GetPackFile}},
+	{"(.*?)/objects/pack/pack-[0-9a-f]{40}\\.idx$", service{method: "GET", handle: GetIdxFile}},
+}
+
+// Manager implements types.Manager. It provides a system for managing
+// and service a git repositories through http and ssh protocols.
+type Manager struct {
+	p2p.BaseReactor
+	cfg                      *config.AppConfig
+	log                      logger.Logger               // log is the application logger
+	wg                       *sync.WaitGroup             // wait group for waiting for the manager
+	srv                      *http.Server                // the http server
+	rootDir                  string                      // the root directory where all repos are stored
+	addr                     string                      // addr is the listening address for the http server
+	gitBinPath               string                      // gitBinPath is the path of the git executable
+	pushPool                 core.PushPool               // The transaction pool for push transactions
+	mempool                  core.Mempool                // The general transaction pool for block-bound transaction
+	logic                    core.Logic                  // logic is the application logic provider
+	privValidatorKey         *crypto.Key                 // the node's private validator key for signing transactions
+	pushKeyGetter            core.PushKeyGetter          // finds and returns PGP public key
+	dht                      dhttypes.DHTNode            // The dht service
+	pruner                   core.Pruner                 // The repo runner
+	blockGetter              types.BlockGetter           // Provides access to blocks
+	pushNoteSenders          *cache.Cache                // Store senders of push notes
+	pushEndSenders           *cache.Cache                // Stores senders of PushEndorsement messages
+	pushEndorsements         *cache.Cache                // Store PushEnds
+	modulesAgg               modules.ModuleHub           // Modules aggregator
+	authenticate             AuthenticatorFunc           // Function for performing authentication
+	checkPushNote            validator.PushNoteCheckFunc // Function for performing PushNote validation
+	packfileMaker            ReferenceUpdateRequestMaker // Function for creating a packfile for updating a repository
+	makePushHandler          PushHandlerFunc             // Function for creating a push handler
+	pushedObjectsBroadcaster pushedObjectsBroadcaster    // Function for broadcasting a push note and pushed objects
+}
+
+// NewManager creates an instance of Manager
+func NewManager(
+	cfg *config.AppConfig,
+	addr string,
+	logic core.Logic,
+	dht dhttypes.DHTNode,
+	mempool core.Mempool,
+	blockGetter types.BlockGetter) *Manager {
+
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+
+	key, _ := cfg.G().PrivVal.GetKey()
+	mgr := &Manager{
+		cfg:              cfg,
+		log:              cfg.G().Log.Module("repo-manager"),
+		addr:             addr,
+		rootDir:          cfg.GetRepoRoot(),
+		gitBinPath:       cfg.Node.GitBinPath,
+		wg:               wg,
+		pushPool:         NewPushPool(params.PushPoolCap, logic, dht),
+		logic:            logic,
+		privValidatorKey: key,
+		dht:              dht,
+		mempool:          mempool,
+		blockGetter:      blockGetter,
+		authenticate:     authenticate,
+		checkPushNote:    validator.CheckPushNote,
+		packfileMaker:    MakeReferenceUpdateRequest,
+		pushNoteSenders:  cache.NewActiveCache(params.PushObjectsSendersCacheSize),
+		pushEndSenders:   cache.NewActiveCache(params.PushObjectsSendersCacheSize),
+		pushEndorsements: cache.NewActiveCache(params.PushNotesEndorsementsCacheSize),
+	}
+
+	mgr.makePushHandler = mgr.createPushHandler
+	mgr.pushKeyGetter = mgr.getPushKey
+	mgr.pushedObjectsBroadcaster = mgr.broadcastPushedObjects
+	mgr.BaseReactor = *p2p.NewBaseReactor("Reactor", mgr)
+	mgr.pruner = pruner.NewPruner(mgr, mgr.rootDir)
+
+	return mgr
+}
+
+// SetRootDir sets the directory where repositories are stored
+func (m *Manager) SetRootDir(dir string) {
+	m.rootDir = dir
+}
+
+// RegisterAPIHandlers registers server API handlers
+func (m *Manager) RegisterAPIHandlers(agg modules.ModuleHub) {
+	m.modulesAgg = agg
+	m.registerAPIHandlers(m.srv.Handler.(*http.ServeMux))
+}
+
+func (m *Manager) getPushKey(pushKeyID string) (crypto.PublicKey, error) {
+	pk := m.logic.PushKeyKeeper().Get(pushKeyID)
+	if pk.IsNil() {
+		return crypto.EmptyPublicKey, fmt.Errorf("push key does not exist")
+	}
+	return pk.PubKey, nil
+}
+
+// cacheNoteSender caches a push note sender
+func (m *Manager) cacheNoteSender(senderID string, noteID string) {
+	key := util.Hash20Hex([]byte(senderID + noteID))
+	m.pushNoteSenders.AddWithExp(key, struct{}{}, time.Now().Add(10*time.Minute))
+}
+
+// cachePushEndSender caches a push endorsement sender
+func (m *Manager) cachePushEndSender(senderID string, pushEndID string) {
+	key := util.Hash20Hex([]byte(senderID + pushEndID))
+	m.pushEndSenders.AddWithExp(key, struct{}{}, time.Now().Add(60*time.Minute))
+}
+
+// isPushNoteSender checks whether a push note was sent by the given sender ID
+func (m *Manager) isPushNoteSender(senderID string, noteID string) bool {
+	key := util.Hash20Hex([]byte(senderID + noteID))
+	v := m.pushNoteSenders.Get(key)
+	return v == struct{}{}
+}
+
+// isPushEndSender checks whether a push endorsement was sent by the given sender ID
+func (m *Manager) isPushEndSender(senderID string, pushEndID string) bool {
+	key := util.Hash20Hex([]byte(senderID + pushEndID))
+	v := m.pushEndSenders.Get(key)
+	return v == struct{}{}
+}
+
+// addPushNoteEndorsement indexes a PushEndorsement for a given push note
+func (m *Manager) addPushNoteEndorsement(noteID string, pushEnd *core.PushEndorsement) {
+	pushEndList := m.pushEndorsements.Get(noteID)
+	if pushEndList == nil {
+		pushEndList = map[string]*core.PushEndorsement{}
+	}
+	pushEndList.(map[string]*core.PushEndorsement)[pushEnd.ID().String()] = pushEnd
+	m.pushEndorsements.Add(noteID, pushEndList)
+}
+
+// Start starts the server that serves the repos.
+// Implements p2p.Reactor
+func (m *Manager) Start() error {
+	s := http.NewServeMux()
+
+	if !m.cfg.IsValidatorNode() {
+		s.HandleFunc("/", m.gitRequestsHandler)
+	}
+
+	m.log.Info("Server has started", "Address", m.addr)
+	m.srv = &http.Server{Addr: m.addr, Handler: s}
+	go func() {
+		m.srv.ListenAndServe()
+		m.wg.Done()
+	}()
+
+	go m.subscribe()
+	go m.pruner.Start()
+
+	return nil
+}
+
+func (m *Manager) registerAPIHandlers(s *http.ServeMux) {
+	api := rest.NewAPI(m.modulesAgg, m.log)
+	api.RegisterEndpoints(s)
+}
+
+// GetLogic returns the application logic provider
+func (m *Manager) GetLogic() core.Logic {
+	return m.logic
+}
+
+// GetPrivateValidatorKey implements RepositoryManager
+func (m *Manager) GetPrivateValidatorKey() *crypto.Key {
+	return m.privValidatorKey
+}
+
+// GetPruner returns the repo pruner
+func (m *Manager) GetPruner() core.Pruner {
+	return m.pruner
+}
+
+// GetPushPool returns the push pool
+func (m *Manager) GetPushPool() core.PushPool {
+	return m.pushPool
+}
+
+// GetMempool returns the transaction pool
+func (m *Manager) GetMempool() core.Mempool {
+	return m.mempool
+}
+
+// GetDHT returns the dht service
+func (m *Manager) GetDHT() dhttypes.DHTNode {
+	return m.dht
+}
+
+// Cfg returns the application config
+func (m *Manager) Cfg() *config.AppConfig {
+	return m.cfg
+}
+
+func (m *Manager) getRepoPath(name string) string {
+	return filepath.Join(m.rootDir, name)
+}
+
+// gitRequestsHandler handles incoming http request from a git client
+func (m *Manager) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
+
+	m.log.Debug("New request", "Method", r.Method, "URL", r.URL.String())
+
+	// De-construct the URL to get the repo name and operation
+	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	namespace := pathParts[0]
+	repoName := pathParts[1]
+	op := pathParts[2]
+
+	// Resolve the namespace if the given namespace is not the default
+	var ns *state.Namespace
+	if namespace != repo2.DefaultNS {
+
+		// Get the namespace, return 404 if not found
+		ns = m.logic.NamespaceKeeper().Get(util.HashNamespace(namespace))
+		if ns.IsNil() {
+			w.WriteHeader(http.StatusNotFound)
+			m.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound,
+				"Status", http.StatusText(http.StatusNotFound))
+			return
+		}
+
+		// Get the target. If the target is not set or the target is not
+		// prefixed with r/, return 404
+		target := ns.Domains.Get(repoName)
+		if target == "" || target[:2] != "r/" {
+			w.WriteHeader(http.StatusNotFound)
+			m.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound,
+				"Status", http.StatusText(http.StatusNotFound))
+			return
+		}
+
+		repoName = target[2:]
+	}
+
+	// Check if the repository exist
+	fullRepoDir := m.getRepoPath(repoName)
+	repoState := m.logic.RepoKeeper().Get(repoName)
+	if repoState.IsNil() {
+		w.WriteHeader(http.StatusNotFound)
+		m.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound,
+			"Status", http.StatusText(http.StatusNotFound))
+		return
+	}
+
+	// Authenticate pusher
+	txDetails, polEnforcer, err := m.handleAuth(r, w, repoState, ns)
+	if err != nil {
+		w.Header().Set("WWW-Authenticate", "Basic")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// Attempt to load the repository at the given path
+	repo, err := git.PlainOpen(fullRepoDir)
+	if err != nil {
+		statusCode := http.StatusInternalServerError
+		if err == git.ErrRepositoryNotExists {
+			statusCode = http.StatusNotFound
+		}
+		w.WriteHeader(statusCode)
+		m.log.Debug("Failed to open target repository",
+			"Name", repoName,
+			"Code", statusCode,
+			"Status", http.StatusText(statusCode))
+		return
+	}
+
+	req := &RequestContext{
+		W:           w,
+		R:           r,
+		Operation:   op,
+		TxDetails:   txDetails,
+		PolEnforcer: polEnforcer,
+		Repo: &repo2.Repo{
+			Name:       repoName,
+			Repository: repo,
+			LiteGit:    repo2.NewLiteGit(m.gitBinPath, fullRepoDir),
+			Path:       fullRepoDir,
+			State:      repoState,
+			Namespace:  namespace,
+		},
+		RepoDir:    fullRepoDir,
+		SrvName:    GetService(r),
+		GitBinPath: m.gitBinPath,
+	}
+
+	req.PushHandler = m.makePushHandler(req.Repo, txDetails, polEnforcer)
+
+	for _, s := range services {
+		srvPattern := s[0].(string)
+		srv := s[1].(service)
+
+		re := regexp.MustCompile(srvPattern)
+		if m := re.FindStringSubmatch(r.URL.Path); m == nil {
+			continue
+		}
+
+		if srv.method != r.Method {
+			WriteMethodNotAllowed(w, r)
+			return
+		}
+
+		err := srv.handle(req)
+		if err != nil {
+			m.log.Error("failed to handle request", "Req", srvPattern, "Err", err)
+		}
+
+		return
+	}
+
+	WriteMethodNotAllowed(w, r)
+}
+
+// GetPushKeyGetter implements RepositoryManager
+func (m *Manager) GetPushKeyGetter() core.PushKeyGetter {
+	return m.pushKeyGetter
+}
+
+// createPushHandler creates an instance of PushHandler
+func (m *Manager) createPushHandler(
+	targetRepo core.BareRepo,
+	txDetails []*types2.TxDetail,
+	enforcer policy.EnforcerFunc) *PushHandler {
+	return NewHandler(targetRepo, txDetails, enforcer, m)
+}
+
+// Log returns the logger
+func (m *Manager) Log() logger.Logger {
+	return m.log
+}
+
+// SetPGPPubKeyGetter implements SetPGPPubKeyGetter
+func (m *Manager) SetPGPPubKeyGetter(pkGetter core.PushKeyGetter) {
+	m.pushKeyGetter = pkGetter
+}
+
+// GetRepoState implements RepositoryManager
+func (m *Manager) GetRepoState(repo core.BareRepo, options ...core.KVOption) (core.BareRepoState, error) {
+	return plumbing.GetRepoState(repo, options...), nil
+}
+
+// Wait can be used by the caller to wait till the server terminates
+func (m *Manager) Wait() {
+	m.wg.Wait()
+}
+
+// FindObject implements dht.ObjectFinder
+func (m *Manager) FindObject(key []byte) ([]byte, error) {
+
+	repoName, objHash, err := plumbing.ParseRepoObjectDHTKey(string(key))
+	if err != nil {
+		return nil, fmt.Errorf("invalid repo object key")
+	}
+
+	if len(objHash) != 40 {
+		return nil, fmt.Errorf("invalid object hash")
+	}
+
+	repo, err := repo2.GetRepo(m.getRepoPath(repoName))
+	if err != nil {
+		return nil, err
+	}
+
+	bz, err := repo.GetCompressedObject(objHash)
+	if err != nil {
+		return nil, err
+	}
+
+	return bz, nil
+}
+
+// Get returns a repo handle
+func (m *Manager) GetRepo(name string) (core.BareRepo, error) {
+	return repo2.GetRepoWithLiteGit(m.gitBinPath, m.getRepoPath(name))
+}
+
+// Shutdown shuts down the server
+func (m *Manager) Shutdown(ctx context.Context) {
+	m.log.Info("Shutting down")
+	if m.srv != nil {
+		m.srv.Shutdown(ctx)
+	}
+	m.pruner.Stop()
+}
+
+// Stop implements Reactor
+func (m *Manager) Stop() error {
+	m.BaseReactor.Stop()
+	m.Shutdown(context.Background())
+	m.log.Info("Shutdown")
+	return nil
+}

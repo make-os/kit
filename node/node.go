@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/repo/manager"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	modules2 "gitlab.com/makeos/mosdef/types/modules"
@@ -20,13 +21,11 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/robertkrimen/otto"
+	"github.com/tendermint/tendermint/node"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/extensions"
 	"gitlab.com/makeos/mosdef/keystore"
-	"gitlab.com/makeos/mosdef/repo"
-
-	"github.com/tendermint/tendermint/node"
-	tmtypes "github.com/tendermint/tendermint/types"
 
 	"gitlab.com/makeos/mosdef/ticket"
 
@@ -178,8 +177,8 @@ func (n *Node) Start() error {
 
 	// Register custom reactor channels
 	node.AddChannels([]byte{
-		repo.PushNoteReactorChannel,
-		repo.PushEndReactorChannel,
+		manager.PushNoteReactorChannel,
+		manager.PushEndReactorChannel,
 	})
 
 	// Create the ABCI app and wrap with a ClientCreator
@@ -195,7 +194,7 @@ func (n *Node) Start() error {
 	n.logic.SetMempoolReactor(mempR)
 
 	// Create repository manager and pass it to logic
-	repoMgr := repo.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht, memp, n)
+	repoMgr := manager.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht, memp, n)
 	n.repoMgr = repoMgr
 	n.logic.SetRepoManager(repoMgr)
 

@@ -21,6 +21,9 @@ import (
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/keystore"
+	"gitlab.com/makeos/mosdef/repo/manager"
+	plumbing2 "gitlab.com/makeos/mosdef/repo/plumbing"
+	"gitlab.com/makeos/mosdef/repo/repo"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
@@ -83,7 +86,7 @@ func SignCommitCmd(
 			return fmt.Errorf("failed to get HEAD") // :D
 		}
 	} else {
-		if !isBranch(head) {
+		if !plumbing2.IsBranch(head) {
 			head = plumbing.NewBranchReferenceName(head).String()
 		}
 	}
@@ -101,7 +104,7 @@ func SignCommitCmd(
 	}
 
 	// Create & set request token to remote URLs in config
-	if _, err = setPushTokenToRemotes(targetRepo, targetRemote, txDetail, key, resetTokens); err != nil {
+	if _, err = manager.setPushTokenToRemotes(targetRepo, targetRemote, txDetail, key, resetTokens); err != nil {
 		return err
 	}
 
@@ -117,7 +120,7 @@ func SignCommitCmd(
 	// Get recent commit hash of the current branch.
 	hash, err := targetRepo.GetRecentCommit()
 	if err != nil {
-		if err == ErrNoCommits {
+		if err == repo.ErrNoCommits {
 			return errors.New("no commits have been created yet")
 		}
 		return err
@@ -205,7 +208,7 @@ func SignTagCmd(
 	}
 
 	// Create & set request token to remote URLs in config
-	if _, err = setPushTokenToRemotes(targetRepo, targetRemote, txDetail, key, resetTokens); err != nil {
+	if _, err = manager.setPushTokenToRemotes(targetRepo, targetRemote, txDetail, key, resetTokens); err != nil {
 		return err
 	}
 
@@ -275,7 +278,7 @@ func SignNoteCmd(
 	}
 
 	// Create & set request token to remote URLs in config
-	if _, err = setPushTokenToRemotes(targetRepo, targetRemote, txDetail, key, resetTokens); err != nil {
+	if _, err = manager.setPushTokenToRemotes(targetRepo, targetRemote, txDetail, key, resetTokens); err != nil {
 		return err
 	}
 
@@ -383,7 +386,7 @@ func getAndUnlockPushKey(
 	}
 
 	// APPNAME_REPONAME_PASS may contain the passphrase
-	_, repoName := filepath.Split(targetRepo.Path())
+	_, repoName := filepath.Split(targetRepo.GetPath())
 	passEnvVarName := fmt.Sprintf("%s_%s_PASS", strings.ToUpper(config.AppName), strings.ToUpper(repoName))
 
 	// If push key is protected, require passphrase
@@ -428,7 +431,7 @@ func GitSignCmd(cfg *config.AppConfig, data io.Reader) {
 
 	// Get the target repo
 	repoDir, _ := os.Getwd()
-	targetRepo, err := GetRepo(repoDir)
+	targetRepo, err := repo.GetRepo(repoDir)
 	if err != nil {
 		log.Fatal(errors.Wrapf(err, "failed to get repo").Error())
 	}
@@ -446,7 +449,7 @@ func GitSignCmd(cfg *config.AppConfig, data io.Reader) {
 	}
 
 	// Decode the push request token
-	txDetail, err := DecodePushToken(token)
+	txDetail, err := manager.DecodePushToken(token)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to decode token").Error())
 	}
@@ -509,7 +512,7 @@ func GitVerifyCmd(cfg *config.AppConfig, args []string) {
 
 	// Get the target repo
 	repoDir, _ := os.Getwd()
-	targetRepo, err := GetRepo(repoDir)
+	targetRepo, err := repo.GetRepo(repoDir)
 	if err != nil {
 		fp(os.Stderr, errors.Wrapf(err, "failed to get repo").Error()+"\n")
 		os.Exit(1)

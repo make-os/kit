@@ -10,7 +10,7 @@ import (
 	"github.com/thoas/go-funk"
 	restclient "gitlab.com/makeos/mosdef/api/rest/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
-	"gitlab.com/makeos/mosdef/repo"
+	repo2 "gitlab.com/makeos/mosdef/repo/repo"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
@@ -80,7 +80,7 @@ func getRepoAndClients(cmd *cobra.Command, nonceFromFlag string) (core.BareRepo,
 	*client.RPCClient, []restclient.RestClient) {
 
 	// Get the repository
-	targetRepo, err := repo.GetCurrentWDRepo(cfg.Node.GitBinPath)
+	targetRepo, err := repo2.GetCurrentWDRepo(cfg.Node.GitBinPath)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

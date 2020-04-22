@@ -139,7 +139,7 @@ func init() {
 	rootCmd.PersistentFlags().String("home.prefix", "", "Adds a prefix to the home directory in dev mode")
 	rootCmd.PersistentFlags().Uint64("net", config.DefaultNetVersion, "Set network/chain ID")
 	rootCmd.PersistentFlags().Bool("nolog", false, "Disables loggers")
-	rootCmd.PersistentFlags().String("gitbin", "/usr/bin/git", "Path to git executable")
+	rootCmd.PersistentFlags().String("gitbin", "/usr/bin/git", "GetPath to git executable")
 
 	// Hidden flags relevant to git gpg interface conformance
 	rootCmd.PersistentFlags().String("keyid-format", "", "")

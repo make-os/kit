@@ -83,11 +83,11 @@ type BareRepo interface {
 	// SetPath sets the repository root path
 	SetPath(path string)
 
-	// Path returns the repository's path
-	Path() string
+	// GetPath returns the repository's path
+	GetPath() string
 
-	// State returns the repository's network state
-	State() *state.Repository
+	// GetState returns the repository's network state
+	GetState() *state.Repository
 
 	// Head returns the reference where HEAD is pointing to.
 	Head() (string, error)
@@ -115,6 +115,9 @@ type BareRepo interface {
 
 	// GetHost returns the storage engine of the repository
 	GetHost() storage.Storer
+
+	// CreateOrphanBranch creates an orphan branch
+	CreateOrphanBranch(name, initCommitHash string) error
 
 	// Prune prunes objects older than the given time
 	Prune(olderThan time.Time) error
@@ -384,7 +387,7 @@ type BareRepoState interface {
 	IsEmpty() bool
 	// Hash returns the 32-bytes hash of the state
 	Hash() util.Bytes32
-	// GetChanges summarizes the changes between State s and y.
+	// GetChanges summarizes the changes between GetState s and y.
 	GetChanges(y BareRepoState) *Changes
 }
 
@@ -506,6 +509,7 @@ type LiteGit interface {
 	IsDescendant(childHash string, parentHash string, env ...string) error
 	HasMergeCommits(reference string, env ...string) (bool, error)
 	GetMergeCommits(reference string, env ...string) ([]string, error)
+	CreateSingleFileCommit(filename, content, parent string) (string, error)
 }
 
 type CommitTree interface {

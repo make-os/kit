@@ -9,7 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/crypto/bls"
 	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/repo"
+	"gitlab.com/makeos/mosdef/repo/validator"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
@@ -276,7 +276,7 @@ func CheckTxPushConsistency(tx *core.TxPush, index int, logic core.Logic) error 
 		// Perform consistency checks but don't check the signature as we don't
 		// care about that when dealing with a TxPush object, instead we care
 		// about checking the aggregated BLS signature
-		if err := repo.CheckPushEndConsistencyUsingHost(hosts, pushEnd,
+		if err := validator.CheckPushEndConsistencyUsingHost(hosts, pushEnd,
 			logic, true, index); err != nil {
 			return err
 		}
@@ -321,7 +321,7 @@ func CheckTxPushConsistency(tx *core.TxPush, index int, logic core.Logic) error 
 	}
 
 	// Check push note
-	if err := repo.CheckPushNoteConsistency(tx.PushNote, logic); err != nil {
+	if err := validator.CheckPushNoteConsistency(tx.PushNote, logic); err != nil {
 		return err
 	}
 

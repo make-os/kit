@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"gitlab.com/makeos/mosdef/repo/validator"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -12,7 +13,6 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/repo"
 	"gitlab.com/makeos/mosdef/util"
 
 	v "github.com/go-ozzo/ozzo-validation"
@@ -436,7 +436,7 @@ func CheckTxPush(tx *core.TxPush, index int) error {
 		return err
 	}
 
-	if err := repo.CheckPushNoteSyntax(tx.PushNote); err != nil {
+	if err := validator.CheckPushNoteSyntax(tx.PushNote); err != nil {
 		return err
 	}
 
@@ -448,7 +448,7 @@ func CheckTxPush(tx *core.TxPush, index int) error {
 	pushEndRefHashesID := util.EmptyBytes32
 	for index, pushEnd := range tx.PushEnds {
 
-		if err := repo.CheckPushEnd(pushEnd, index); err != nil {
+		if err := validator.CheckPushEnd(pushEnd, index); err != nil {
 			return err
 		}
 

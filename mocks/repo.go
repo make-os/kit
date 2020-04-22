@@ -372,6 +372,21 @@ func (mr *MockBareRepoMockRecorder) GetMergeCommits(reference interface{}, env .
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeCommits", reflect.TypeOf((*MockBareRepo)(nil).GetMergeCommits), varargs...)
 }
 
+// CreateSingleFileCommit mocks base method
+func (m *MockBareRepo) CreateSingleFileCommit(filename, content, parent string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSingleFileCommit", filename, content, parent)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSingleFileCommit indicates an expected call of CreateSingleFileCommit
+func (mr *MockBareRepoMockRecorder) CreateSingleFileCommit(filename, content, parent interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSingleFileCommit", reflect.TypeOf((*MockBareRepo)(nil).CreateSingleFileCommit), filename, content, parent)
+}
+
 // GetName mocks base method
 func (m *MockBareRepo) GetName() string {
 	m.ctrl.T.Helper()
@@ -633,32 +648,32 @@ func (mr *MockBareRepoMockRecorder) SetPath(path interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPath", reflect.TypeOf((*MockBareRepo)(nil).SetPath), path)
 }
 
-// Path mocks base method
-func (m *MockBareRepo) Path() string {
+// GetPath mocks base method
+func (m *MockBareRepo) GetPath() string {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Path")
+	ret := m.ctrl.Call(m, "GetPath")
 	ret0, _ := ret[0].(string)
 	return ret0
 }
 
-// Path indicates an expected call of Path
+// GetPath indicates an expected call of GetPath
 func (mr *MockBareRepoMockRecorder) Path() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Path", reflect.TypeOf((*MockBareRepo)(nil).Path))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPath", reflect.TypeOf((*MockBareRepo)(nil).GetPath))
 }
 
-// State mocks base method
-func (m *MockBareRepo) State() *state.Repository {
+// GetState mocks base method
+func (m *MockBareRepo) GetState() *state.Repository {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "State")
+	ret := m.ctrl.Call(m, "GetState")
 	ret0, _ := ret[0].(*state.Repository)
 	return ret0
 }
 
-// State indicates an expected call of State
+// GetState indicates an expected call of GetState
 func (mr *MockBareRepoMockRecorder) State() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "State", reflect.TypeOf((*MockBareRepo)(nil).State))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockBareRepo)(nil).GetState))
 }
 
 // Head mocks base method
@@ -791,6 +806,20 @@ func (m *MockBareRepo) GetHost() storage.Storer {
 func (mr *MockBareRepoMockRecorder) GetHost() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHost", reflect.TypeOf((*MockBareRepo)(nil).GetHost))
+}
+
+// CreateOrphanBranch mocks base method
+func (m *MockBareRepo) CreateOrphanBranch(name, initCommitHash string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateOrphanBranch", name, initCommitHash)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateOrphanBranch indicates an expected call of CreateOrphanBranch
+func (mr *MockBareRepoMockRecorder) CreateOrphanBranch(name, initCommitHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrphanBranch", reflect.TypeOf((*MockBareRepo)(nil).CreateOrphanBranch), name, initCommitHash)
 }
 
 // Prune mocks base method
@@ -2505,6 +2534,21 @@ func (mr *MockLiteGitMockRecorder) GetMergeCommits(reference interface{}, env ..
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{reference}, env...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMergeCommits", reflect.TypeOf((*MockLiteGit)(nil).GetMergeCommits), varargs...)
+}
+
+// CreateSingleFileCommit mocks base method
+func (m *MockLiteGit) CreateSingleFileCommit(filename, content, parent string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSingleFileCommit", filename, content, parent)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSingleFileCommit indicates an expected call of CreateSingleFileCommit
+func (mr *MockLiteGitMockRecorder) CreateSingleFileCommit(filename, content, parent interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSingleFileCommit", reflect.TypeOf((*MockLiteGit)(nil).CreateSingleFileCommit), filename, content, parent)
 }
 
 // MockCommitTree is a mock of CommitTree interface
