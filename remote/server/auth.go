@@ -81,7 +81,7 @@ func authenticate(
 		// Do not check if
 		// - detail is a merge push
 		// - and target reference is not an issue reference.
-		if detail.MergeProposalID == "" && !plumbing.IsIssueBranch(detail.Reference) {
+		if detail.MergeProposalID == "" && !plumbing.IsIssueReference(detail.Reference) {
 			if !repoState.Contributors.Has(pushKeyID) && (namespace == nil || !namespace.Contributors.Has(pushKeyID)) {
 				return nil, fe(-1, "pkID", "pusher is not a contributor")
 			}

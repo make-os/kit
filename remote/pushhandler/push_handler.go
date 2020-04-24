@@ -147,7 +147,7 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 		}
 
 		// For merge update, check if there is a policy allowing the pusher to do it.
-		if plumbing.IsIssueBranch(detail.Reference) {
+		if plumbing.IsIssueReference(detail.Reference) {
 			if err := h.PolicyChecker(h.polEnforcer, detail.PushKeyID, cmd.Name.String(),
 				"issue-update"); err != nil {
 				return err

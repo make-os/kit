@@ -22,7 +22,7 @@ var signCmd = &cobra.Command{
 
 var signCommitCmd = &cobra.Command{
 	Use:   "commit",
-	Short: "Sign or amend current commit and generate push request token",
+	Short: "Sign or amend current commit",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
@@ -30,6 +30,8 @@ var signCommitCmd = &cobra.Command{
 		sk, _ := cmd.Flags().GetString("signing-key")
 		mergeID, _ := cmd.Flags().GetString("merge-id")
 		head, _ := cmd.Flags().GetString("head")
+		branch, _ := cmd.Flags().GetString("branch")
+		forceCheckout, _ := cmd.Flags().GetBool("force")
 		amend, _ := cmd.Flags().GetBool("amend")
 		pass, _ := cmd.Flags().GetString("pass")
 		msg, _ := cmd.Flags().GetString("message")
@@ -37,15 +39,22 @@ var signCommitCmd = &cobra.Command{
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
-		if err := cmd2.SignCommitCmd(
-			cfg,
-			msg,
-			targetRepo,
-			fee, nonce, amend, mergeID, head,
-			sk, pass,
-			targetRemotes,
-			resetRemoteTokens,
-			client, remoteClients); err != nil {
+		if err := cmd2.SignCommitCmd(cfg, targetRepo, cmd2.SignCommitCmdArgs{
+			Message:       msg,
+			Fee:           fee,
+			Nonce:         nonce,
+			AmendCommit:   amend,
+			MergeID:       mergeID,
+			Head:          head,
+			Branch:        branch,
+			ForceCheckout: forceCheckout,
+			PushKeyID:     sk,
+			PushKeyPass:   pass,
+			Remote:        targetRemotes,
+			ResetTokens:   resetRemoteTokens,
+			RPCClient:     client,
+			RemoteClients: remoteClients,
+		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -53,7 +62,7 @@ var signCommitCmd = &cobra.Command{
 
 var signTagCmd = &cobra.Command{
 	Use:   "tag",
-	Short: "Create and sign an annotated tag and generate push request token",
+	Short: "Create and sign an annotated tag",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
@@ -67,16 +76,17 @@ var signTagCmd = &cobra.Command{
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
 
 		args = cmd.Flags().Args()
-		if err := cmd2.SignTagCmd(
-			cfg,
-			args,
-			msg,
-			targetRepo,
-			fee, nonce,
-			sk, pass,
-			targetRemotes,
-			resetRemoteTokens,
-			client, remoteClients); err != nil {
+		if err := cmd2.SignTagCmd(cfg, args, targetRepo, cmd2.SignTagArgs{
+			Message:       msg,
+			Fee:           fee,
+			Nonce:         nonce,
+			PushKeyID:     sk,
+			PushKeyPass:   pass,
+			Remote:        targetRemotes,
+			ResetTokens:   resetRemoteTokens,
+			RPCClient:     client,
+			RemoteClients: remoteClients,
+		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
 	},
@@ -84,7 +94,7 @@ var signTagCmd = &cobra.Command{
 
 var signNoteCmd = &cobra.Command{
 	Use:   "notes",
-	Short: "Sign a note and generate push request token",
+	Short: "Sign a note",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
@@ -99,15 +109,16 @@ var signNoteCmd = &cobra.Command{
 		}
 
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
-		if err := cmd2.SignNoteCmd(
-			cfg,
-			targetRepo,
-			fee, nonce,
-			args[0],
-			sk, pass,
-			targetRemotes,
-			resetRemoteTokens,
-			client, remoteClients); err != nil {
+		if err := cmd2.SignNoteCmd(cfg, targetRepo, cmd2.SignNoteArgs{
+			Fee:           fee,
+			Nonce:         nonce,
+			PushKeyID:     sk,
+			PushKeyPass:   pass,
+			Remote:        targetRemotes,
+			ResetTokens:   resetRemoteTokens,
+			RPCClient:     client,
+			RemoteClients: remoteClients,
+		}); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -136,6 +147,8 @@ func init() {
 
 	signCommitCmd.Flags().String("merge-id", "", "Provide a merge proposal ID for merge fulfilment")
 	signCommitCmd.Flags().String("head", "", "Specify the branch to use as git HEAD")
+	signCommitCmd.Flags().StringP("branch", "b", "", "Specify a target branch to sign (default: HEAD)")
+	signCommitCmd.Flags().Bool("force", false, "Forcefully checkout the target branch to sign")
 	signCommitCmd.Flags().BoolP("amend", "a", false, "Amend and sign the recent comment instead of a new one")
 
 	// Transaction information

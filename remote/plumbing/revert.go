@@ -52,7 +52,7 @@ func Revert(
 
 		// For branch references
 		if IsBranch(refname) {
-			acts, err := getBranchRevertActions(ref, oldStateRef)
+			acts, err := GetBranchRevertActions(ref, oldStateRef)
 			if err != nil {
 				return nil, err
 			}
@@ -61,7 +61,7 @@ func Revert(
 
 		// For tags
 		if IsTag(refname) {
-			acts, err := getTagRevertActions(ref, oldStateRef)
+			acts, err := GetTagRevertActions(ref, oldStateRef)
 			if err != nil {
 				return nil, err
 			}
@@ -70,7 +70,7 @@ func Revert(
 
 		// For notes
 		if IsNote(refname) {
-			acts, err := getNoteRevertActions(ref, oldStateRef)
+			acts, err := GetNoteRevertActions(ref, oldStateRef)
 			if err != nil {
 				return nil, err
 			}
@@ -128,13 +128,13 @@ type Action struct {
 	Type     ActionType
 }
 
-// getBranchRevertActions returns a set of actions to be executed against
+// GetBranchRevertActions returns a set of actions to be executed against
 // repo in other to bring its branch state to a specific target.
 //
 // branchRef: The reference that was changed in the repo.
 // oldRef: The version of ref that was in the old state (this one we want to
 // Revert to)
-func getBranchRevertActions(branchRef *core.ItemChange, oldRef core.Item) ([]*Action, error) {
+func GetBranchRevertActions(branchRef *core.ItemChange, oldRef core.Item) ([]*Action, error) {
 
 	var actions []*Action
 	refname := branchRef.Item.GetName()
@@ -153,13 +153,13 @@ func getBranchRevertActions(branchRef *core.ItemChange, oldRef core.Item) ([]*Ac
 	return actions, nil
 }
 
-// getTagRevertActions returns a set of actions to be executed against
+// GetTagRevertActions returns a set of actions to be executed against
 // repo in other to bring its tag state to a specific target.
 //
 // tagRef: The reference that was changed in the repo.
 // oldRef: The version of ref that was in the old state (this one we want to
 // Revert to)
-func getTagRevertActions(tagRef *core.ItemChange, oldRef core.Item) ([]*Action, error) {
+func GetTagRevertActions(tagRef *core.ItemChange, oldRef core.Item) ([]*Action, error) {
 
 	var actions []*Action
 	tagname := tagRef.Item.GetName()
@@ -179,13 +179,13 @@ func getTagRevertActions(tagRef *core.ItemChange, oldRef core.Item) ([]*Action, 
 	return actions, nil
 }
 
-// getNoteRevertActions returns actions that represent instruction on how to
+// GetNoteRevertActions returns actions that represent instruction on how to
 // Revert a repo to a previous state
 //
 // noteRef: The note reference that was changed in the repo.
 // oldRef: The version of ref that was in the old state (this one we want to
 // Revert to)
-func getNoteRevertActions(noteRef *core.ItemChange, oldRef core.Item) ([]*Action, error) {
+func GetNoteRevertActions(noteRef *core.ItemChange, oldRef core.Item) ([]*Action, error) {
 
 	var actions []*Action
 	tagname := noteRef.Item.GetName()

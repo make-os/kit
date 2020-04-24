@@ -85,7 +85,7 @@ type MockObjects struct {
 	TxKeeper        *mocks.MockTxKeeper
 	TicketManager   *mocks.MockTicketManager
 	StateTree       *mocks.MockTree
-	RepoManager     *mocks.MockRepoManager
+	RemoteServer    *mocks.MockRemoteServer
 	PushKeyKeeper   *mocks.MockPushKeyKeeper
 	NamespaceKeeper *mocks.MockNamespaceKeeper
 	BlockGetter     *mocks.MockBlockGetter
@@ -107,7 +107,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.TxKeeper = mocks.NewMockTxKeeper(ctrl)
 	mo.TicketManager = mocks.NewMockTicketManager(ctrl)
 	mo.StateTree = mocks.NewMockTree(ctrl)
-	mo.RepoManager = mocks.NewMockRepoManager(ctrl)
+	mo.RemoteServer = mocks.NewMockRemoteServer(ctrl)
 	mo.PushKeyKeeper = mocks.NewMockPushKeyKeeper(ctrl)
 	mo.NamespaceKeeper = mocks.NewMockNamespaceKeeper(ctrl)
 	mo.BlockGetter = mocks.NewMockBlockGetter(ctrl)
@@ -122,7 +122,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.Logic.EXPECT().TxKeeper().Return(mo.TxKeeper).MinTimes(0)
 	mo.Logic.EXPECT().GetTicketManager().Return(mo.TicketManager).MinTimes(0)
 	mo.Logic.EXPECT().StateTree().Return(mo.StateTree).MinTimes(0)
-	mo.Logic.EXPECT().GetRepoManager().Return(mo.RepoManager).MinTimes(0)
+	mo.Logic.EXPECT().GetRepoManager().Return(mo.RemoteServer).MinTimes(0)
 	mo.Logic.EXPECT().PushKeyKeeper().Return(mo.PushKeyKeeper).MinTimes(0)
 	mo.Logic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
 	mo.Logic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
@@ -137,7 +137,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.AtomicLogic.EXPECT().TxKeeper().Return(mo.TxKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().GetTicketManager().Return(mo.TicketManager).MinTimes(0)
 	mo.AtomicLogic.EXPECT().StateTree().Return(mo.StateTree).MinTimes(0)
-	mo.AtomicLogic.EXPECT().GetRepoManager().Return(mo.RepoManager).MinTimes(0)
+	mo.AtomicLogic.EXPECT().GetRepoManager().Return(mo.RemoteServer).MinTimes(0)
 	mo.AtomicLogic.EXPECT().PushKeyKeeper().Return(mo.PushKeyKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
 

@@ -116,11 +116,11 @@ type BareRepo interface {
 	// GetHost returns the storage engine of the repository
 	GetHost() storage.Storer
 
-	// CreateOrphanBranch creates an orphan branch
-	CreateOrphanBranch(name, initCommitHash string) error
-
 	// Prune prunes objects older than the given time
 	Prune(olderThan time.Time) error
+
+	// NumIssueBranches counts the number of issues branches
+	NumIssueBranches() (count int, err error)
 }
 
 // Commit represents a Commit.
@@ -494,11 +494,11 @@ type LiteGit interface {
 	RefUpdate(refname, commitHash string) error
 	TagDelete(tagname string) error
 	RefGet(refname string) (string, error)
-	GetRecentCommit() (string, error)
+	GetRecentCommitHash() (string, error)
 	GetHEAD(short bool) (string, error)
-	NumCommits(branch string) (int, error)
+	NumCommits(branch string, noMerges bool) (int, error)
 	GetConfig(path string) string
-	CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error
+	CreateSignedEmptyCommit(msg, signingKey string, env ...string) error
 	CreateTagWithMsg(args []string, msg, signingKey string, env ...string) error
 	ListTreeObjects(treename string, recursive bool, env ...string) (map[string]string, error)
 	ListTreeObjectsSlice(treename string, recursive, showTrees bool, env ...string) ([]string, error)
@@ -509,7 +509,8 @@ type LiteGit interface {
 	IsDescendant(childHash string, parentHash string, env ...string) error
 	HasMergeCommits(reference string, env ...string) (bool, error)
 	GetMergeCommits(reference string, env ...string) ([]string, error)
-	CreateSingleFileCommit(filename, content, parent string) (string, error)
+	CreateSingleFileCommit(filename, content, commitMsg, parent string) (string, error)
+	Checkout(refname string, create, force bool) error
 }
 
 type CommitTree interface {

@@ -115,7 +115,7 @@ var _ = Describe("PushNote", func() {
 		When("a commit hash is added to a reference object list", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-				commitHash, _ = repo.GetRecentCommit()
+				commitHash, _ = repo.GetRecentCommitHash()
 				tx := &core.PushNote{
 					References: []*core.PushedReference{
 						{Objects: []string{commitHash}},
@@ -145,9 +145,9 @@ var _ = Describe("PushNote", func() {
 		When("a two commit hashes are added to a reference object list", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-				commitHash, _ = repo.GetRecentCommit()
+				commitHash, _ = repo.GetRecentCommitHash()
 				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-				commitHash2, _ = repo.GetRecentCommit()
+				commitHash2, _ = repo.GetRecentCommitHash()
 				tx := &core.PushNote{
 					References: []*core.PushedReference{
 						{Objects: []string{commitHash, commitHash2}},
@@ -188,7 +188,7 @@ var _ = Describe("PushNote", func() {
 
 		BeforeEach(func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-			commitHash, _ = repo.GetRecentCommit()
+			commitHash, _ = repo.GetRecentCommitHash()
 			tx := &core.PushNote{
 				References: []*core.PushedReference{
 					{Name: "refs/heads/master", OldHash: plumbing.ZeroHash.String(), NewHash: commitHash, Objects: []string{commitHash}},

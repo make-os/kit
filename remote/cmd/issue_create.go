@@ -14,6 +14,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/issues"
+	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/repo"
 )
 
@@ -43,46 +44,76 @@ func readFromEditor(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (s
 }
 
 // IssueCreateCmd create a new issue or adds a comment commit to an existing issue
-func IssueCreateCmd(title, body, replyTo string, labels, assignees, fixers []string,
+func IssueCreateCmd(title, body string, commentID int, labels, assignees, fixers []string,
 	useEditor bool,
-	editorPath,
-	targetIssue string,
+	editorPath string,
 	stdOut io.Writer,
-	gitBinPath string) error {
+	gitBinPath string,
+	issueID int) error {
 
-	if targetIssue != "" && title != "" {
-		return fmt.Errorf("title not required when adding a comment to an issue")
+	// When an issue ID is not set and a target comment commit is set,
+	// it means this the intent is to add reply to a comment.
+	// Ensure the issue ID where the comment commit reside is set.
+	if issueID == 0 && commentID > 0 {
+		return fmt.Errorf("issue ID is required")
 	}
 
-	// Get the repository in the current working directory
+	// Get the repository in the current working directory where the command is being run
 	targetRepo, err := repo.GetRepoAtWorkingDir(gitBinPath)
 	if err != nil {
 		return errors.Wrap(err, "failed to open repo at cwd")
 	}
 
+	var issueRef string
+	var nIssueComments int
+
+	// Perform some validation when a target issue ID is specified.
+	if issueID > 0 {
+		issueRef = plumbing.MakeIssueReference(issueID)
+		nIssueComments, err = targetRepo.NumCommits(issueRef, false)
+		if err != nil {
+			return fmt.Errorf("failed to count comment commits in issue")
+		}
+
+		// Do not allow a title when this action will result in a comment on the issue.
+		// Comments do not carry titles.
+		if nIssueComments > 0 && title != "" {
+			return fmt.Errorf("title not required when adding a comment to an issue")
+		}
+
+		// When a comment commit ID is set, this is considered a reply to another comment commit.
+		// Ensure the ID is within the range of 0 - [number of known commits in the issue].
+		if commentID > 0 && commentID >= nIssueComments {
+			return fmt.Errorf("the specified comment commit ID is unknown")
+		}
+	}
+
+	// Hook to syscall.SIGINT signal so we close os.Stdin
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT)
 	go func() { <-sigs; os.Stdin.Close() }()
 	rdr := bufio.NewReader(os.Stdin)
 
-	// Read title if not provided via flag and replyTo is not set
-	if len(title) == 0 && len(replyTo) == 0 && len(targetIssue) == 0 {
+	// Prompt user for title only if was not provided via flag and this is not a comment
+	if len(title) == 0 && commentID == 0 && nIssueComments == 0 {
 		fmt.Fprintln(stdOut, color.HiBlackString("Title: (256 chars) - Press enter to continue"))
 		title, _ = rdr.ReadString('\n')
 		title = strings.TrimSpace(title)
 	}
 
-	// Read body
+	// Read body from stdIn only if an editor is not requested
 	if len(body) == 0 && useEditor == false {
 		fmt.Fprintln(stdOut, color.HiBlackString("Body: (8192 chars) - Press ctrl-D to continue"))
 		bz, _ := ioutil.ReadAll(rdr)
 		body = strings.TrimSpace(string(bz))
 	}
+
+	// No matter what, body is always required
 	if len(strings.TrimSpace(body)) == 0 {
 		return fmt.Errorf("body is required")
 	}
 
-	// Read body from editor if required
+	// Read body from editor if requested
 	if useEditor == true {
 		editor := targetRepo.GetConfig("core.editor")
 		if editorPath != "" {
@@ -95,18 +126,20 @@ func IssueCreateCmd(title, body, replyTo string, labels, assignees, fixers []str
 	}
 
 	// Create the issue body and prompt user to confirm
-	issueBody := issues.MakeIssueBody(title, body, replyTo, labels, assignees, fixers)
+	issueBody := issues.MakeIssueBody(title, body, commentID, labels, assignees, fixers)
 
 	// Create a new issue or add comment commit to existing issue
-	newIssue, ref, err := issues.AddIssueOrCommentCommitCmd(targetRepo, targetIssue, issueBody)
+	newIssue, ref, err := issues.AddIssueOrCommentCommit(targetRepo, issueID, issueBody, commentID > 0)
 	if err != nil {
 		return err
 	}
 
+	// Print reference address
 	if newIssue {
-		fmt.Fprintln(stdOut, color.GreenString("New issue created @ %s", ref))
+		fmt.Fprintln(stdOut, fmt.Sprintf("%s#0", ref))
 	} else {
-		fmt.Fprintln(stdOut, color.GreenString("New issue comment created @ %s", ref))
+		id, _ := targetRepo.NumCommits(ref, false)
+		fmt.Fprintln(stdOut, fmt.Sprintf("%s#%d", ref, id-1))
 	}
 
 	return nil

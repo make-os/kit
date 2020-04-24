@@ -86,6 +86,32 @@ var _ = Describe("Repo", func() {
 		})
 	})
 
+	Describe(".NumIssueBranches", func() {
+		It("should return 1 when only one issue branch exists", func() {
+			testutil2.CreateCheckoutBranch(path, "issues/1")
+			testutil2.AppendCommit(path, "body", "content", "added body")
+			n, err := repo.NumIssueBranches()
+			Expect(err).To(BeNil())
+			Expect(n).To(Equal(1))
+		})
+
+		It("should return 2 when only one issue branch exists", func() {
+			testutil2.CreateCheckoutBranch(path, "issues/1")
+			testutil2.AppendCommit(path, "body", "content", "added body")
+			testutil2.CreateCheckoutBranch(path, "issues/2")
+			testutil2.AppendCommit(path, "body", "content", "added body")
+			n, err := repo.NumIssueBranches()
+			Expect(err).To(BeNil())
+			Expect(n).To(Equal(2))
+		})
+
+		It("should return 0 when no issue branch exists", func() {
+			n, err := repo.NumIssueBranches()
+			Expect(err).To(BeNil())
+			Expect(n).To(Equal(0))
+		})
+	})
+
 	Describe(".GetEncodedObject", func() {
 		It("should return object if it exists", func() {
 			hash := testutil2.CreateBlob(path, "hello world")
@@ -106,7 +132,7 @@ var _ = Describe("Repo", func() {
 	Describe(".GetObjectSize", func() {
 		It("should return size of content", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-			hash, err := repo.GetRecentCommit()
+			hash, err := repo.GetRecentCommitHash()
 			Expect(err).To(BeNil())
 			size, err := repo.GetObjectSize(hash)
 			Expect(err).To(BeNil())
@@ -121,7 +147,7 @@ var _ = Describe("Repo", func() {
 
 		It("should return size of content", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-			hash, err := repo.GetRecentCommit()
+			hash, err := repo.GetRecentCommitHash()
 			Expect(err).To(BeNil())
 			size, err := repo.GetObjectDiskSize(hash)
 			Expect(err).To(BeNil())

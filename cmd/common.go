@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -96,4 +97,26 @@ func getRepoAndClients(cmd *cobra.Command, nonceFromFlag string) (core.BareRepo,
 	remoteClients := getRemoteAPIClients(cmd, targetRepo)
 
 	return targetRepo, rpcClient, remoteClients
+}
+
+// rejectFlagCombo rejects unwanted flag combination
+func rejectFlagCombo(cmd *cobra.Command, flags ...string) {
+	var found = []string{}
+	for _, f := range flags {
+		if len(found) > 0 && cmd.Flags().Changed(f) {
+			str := "--" + f
+			if fShort := cmd.Flags().Lookup(f).Shorthand; fShort != "" {
+				str += "|-" + fShort
+			}
+			found = append(found, str)
+			log.Fatal(fmt.Sprintf("These flags %s can't be used together", strings.Join(found, ", ")))
+		}
+		if cmd.Flags().Changed(f) {
+			str := "--" + f
+			if fShort := cmd.Flags().Lookup(f).Shorthand; fShort != "" {
+				str += "|-" + fShort
+			}
+			found = append(found, str)
+		}
+	}
 }

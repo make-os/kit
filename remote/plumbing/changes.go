@@ -108,7 +108,8 @@ func (oc *ObjCol) Hash() util.Bytes32 {
 	return util.BytesToBytes32(util.Blake2b256(oc.Bytes()))
 }
 
-func emptyChangeResult() *core.ChangeResult {
+// EmptyChangeResult returns an empty ChangeResult
+func EmptyChangeResult() *core.ChangeResult {
 	return &core.ChangeResult{Changes: []*core.ItemChange{}}
 }
 
@@ -116,13 +117,13 @@ func newChange(i core.Item, action core.ColChangeType) *core.ItemChange {
 	return &core.ItemChange{Item: i, Action: action}
 }
 
-// getChanges takes one old collection of items and an updated collection of
+// GetChanges takes one old collection of items and an updated collection of
 // items and attempts to determine the changes that must be executed against
 // the old collection before it is equal to the updated collection.
-func getChanges(old, update core.Items) *core.ChangeResult {
+func GetChanges(old, update core.Items) *core.ChangeResult {
 	var result = new(core.ChangeResult)
 	if update == nil {
-		return emptyChangeResult()
+		return EmptyChangeResult()
 	}
 
 	// We typically loop through the longest collection
@@ -191,7 +192,7 @@ func getChanges(old, update core.Items) *core.ChangeResult {
 
 // getRefChanges returns the reference changes from old to upd.
 func getRefChanges(old, update core.Items) *core.ChangeResult {
-	return getChanges(old, update)
+	return GetChanges(old, update)
 }
 
 // GetState describes the current state of repository
@@ -235,7 +236,7 @@ func (s *State) GetChanges(y core.BareRepoState) *core.Changes {
 	// If y is nil, return an empty change result since
 	// there is nothing to compare s with.
 	if y == nil {
-		return &core.Changes{References: emptyChangeResult()}
+		return &core.Changes{References: EmptyChangeResult()}
 	}
 
 	// As long as GetState y has a reference collection,

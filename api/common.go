@@ -10,7 +10,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// DetermineNextNonceOfPushKeyOwner is used to determine the next nonce of the account that
+// GetNextNonceOfPushKeyOwner is used to determine the next nonce of the account that
 // owns the target push key ID.
 //
 // It will use the rpc and remote clients as source to request for
@@ -23,7 +23,7 @@ import (
 // client, increment its result by 1 and return it as the next nonce.
 //
 // It returns error if unable to get nonce.
-func DetermineNextNonceOfPushKeyOwner(
+func GetNextNonceOfPushKeyOwner(
 	pushKeyID string,
 	rpcClient *client.RPCClient,
 	remoteClients []restclient.RestClient) (string, error) {

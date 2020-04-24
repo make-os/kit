@@ -101,7 +101,7 @@ var _ = Describe("Validation", func() {
 		When("commit was not signed", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit 1")
-				commitHash, _ := testRepo.GetRecentCommit()
+				commitHash, _ := testRepo.GetRecentCommitHash()
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				err = validation.CheckCommit(commit, baseTxDetail, pushKeyGetter)
 			})
@@ -115,7 +115,7 @@ var _ = Describe("Validation", func() {
 		When("commit is signed but unable to get public key using the pushKeyID", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := testRepo.GetRecentCommit()
+				commitHash, _ := testRepo.GetRecentCommitHash()
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				commit.PGPSignature = "signature"
 				err = validation.CheckCommit(commit, baseTxDetail, pushKeyGetterWithErr(fmt.Errorf("not found")))
@@ -130,7 +130,7 @@ var _ = Describe("Validation", func() {
 		When("commit has a signature but the signature is malformed", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := testRepo.GetRecentCommit()
+				commitHash, _ := testRepo.GetRecentCommitHash()
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				commit.PGPSignature = "signature"
 				err = validation.CheckCommit(commit, baseTxDetail, pushKeyGetter)
@@ -145,7 +145,7 @@ var _ = Describe("Validation", func() {
 		When("commit signature header could not be decoded", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := testRepo.GetRecentCommit()
+				commitHash, _ := testRepo.GetRecentCommitHash()
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{
 					Bytes:   []byte{1, 2, 3},
@@ -163,7 +163,7 @@ var _ = Describe("Validation", func() {
 		When("commit has a signature but the signature is not valid", func() {
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := testRepo.GetRecentCommit()
+				commitHash, _ := testRepo.GetRecentCommitHash()
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
 				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
 				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{
@@ -184,7 +184,7 @@ var _ = Describe("Validation", func() {
 			var sig []byte
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := testRepo.GetRecentCommit()
+				commitHash, _ := testRepo.GetRecentCommitHash()
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
 				sigMsg := validation.GetCommitOrTagSigMsg(commit)
 
@@ -209,7 +209,7 @@ var _ = Describe("Validation", func() {
 			var sig []byte
 			BeforeEach(func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
-				commitHash, _ := testRepo.GetRecentCommit()
+				commitHash, _ := testRepo.GetRecentCommitHash()
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
 				sigMsg := validation.GetCommitOrTagSigMsg(commit)
 
@@ -392,7 +392,7 @@ var _ = Describe("Validation", func() {
 		When("target merge proposal does not exist", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockBareRepo(ctrl)
-				repo.EXPECT().State().Return(state.BareRepository())
+				repo.EXPECT().GetState().Return(state.BareRepository())
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
@@ -411,7 +411,7 @@ var _ = Describe("Validation", func() {
 				prop := state.BareRepoProposal()
 				prop.Creator = "address_of_creator"
 				repoState.Proposals.Add("0001", prop)
-				repo.EXPECT().State().Return(repoState)
+				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{Address: "address_xyz"})
 
@@ -433,7 +433,7 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				repoState.Proposals.Add("0001", state.BareRepoProposal())
-				repo.EXPECT().State().Return(repoState)
+				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, fmt.Errorf("error"))
@@ -456,7 +456,7 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				repoState.Proposals.Add("0001", state.BareRepoProposal())
-				repo.EXPECT().State().Return(repoState)
+				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(true, nil)
@@ -484,7 +484,7 @@ var _ = Describe("Validation", func() {
 					constants.ActionDataKeyBaseBranch: util.ToBytes("release"),
 				}
 				repoState.Proposals.Add("0001", prop)
-				repo.EXPECT().State().Return(repoState)
+				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -511,7 +511,7 @@ var _ = Describe("Validation", func() {
 					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
 				}
 				repoState.Proposals.Add("0001", prop)
-				repo.EXPECT().State().Return(repoState)
+				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -539,7 +539,7 @@ var _ = Describe("Validation", func() {
 				}
 				prop.Outcome = 3
 				repoState.Proposals.Add("0001", prop)
-				repo.EXPECT().State().Return(repoState)
+				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -567,7 +567,7 @@ var _ = Describe("Validation", func() {
 					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
 				}
 				repoState.Proposals.Add("0001", prop)
-				repo.EXPECT().State().Return(repoState)
+				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -597,7 +597,7 @@ var _ = Describe("Validation", func() {
 					constants.ActionDataKeyTargetHash: util.ToBytes("target_xyz"),
 				}
 				repoState.Proposals.Add("0001", prop)
-				repo.EXPECT().State().Return(repoState)
+				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -633,7 +633,7 @@ var _ = Describe("Validation", func() {
 						constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
 					}
 					repoState.Proposals.Add("0001", prop)
-					repo.EXPECT().State().Return(repoState)
+					repo.EXPECT().GetState().Return(repoState)
 
 					mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -672,7 +672,7 @@ var _ = Describe("Validation", func() {
 						constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
 					}
 					repoState.Proposals.Add("0001", prop)
-					repo.EXPECT().State().Return(repoState)
+					repo.EXPECT().GetState().Return(repoState)
 
 					mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -716,7 +716,7 @@ var _ = Describe("Validation", func() {
 						constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
 					}
 					repoState.Proposals.Add("0001", prop)
-					repo.EXPECT().State().Return(repoState)
+					repo.EXPECT().GetState().Return(repoState)
 
 					mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -767,7 +767,7 @@ var _ = Describe("Validation", func() {
 					constants.ActionDataKeyBaseHash:   util.ToBytes("xyz"),
 				}
 				repoState.Proposals.Add("0001", prop)
-				repo.EXPECT().State().Return(repoState)
+				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -818,7 +818,7 @@ var _ = Describe("Validation", func() {
 					constants.ActionDataKeyTargetHash: util.ToBytes("target_xyz"),
 				}
 				repoState.Proposals.Add("0001", prop)
-				repo.EXPECT().State().Return(repoState)
+				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -872,7 +872,7 @@ var _ = Describe("Validation", func() {
 					constants.ActionDataKeyTargetHash: util.ToBytes(propTargetHash.String()),
 				}
 				repoState.Proposals.Add("0001", prop)
-				repo.EXPECT().State().Return(repoState)
+				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -915,7 +915,7 @@ var _ = Describe("Validation", func() {
 					constants.ActionDataKeyTargetHash: util.ToBytes(propTargetHash.String()),
 				}
 				repoState.Proposals.Add("0001", prop)
-				repo.EXPECT().State().Return(repoState)
+				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
@@ -1984,92 +1984,99 @@ var _ = Describe("Validation", func() {
 
 		It("should return error when issue commit has more than 1 parents", func() {
 			commit.EXPECT().NumParents().Return(2)
-			err := validation.CheckIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			err := validation.CheckIssueCommit(commit, "refs/heads/"+plumbing2.IssueBranchPrefix+"/abc", "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue commit cannot have more than one parent"))
 		})
 
 		It("should return error when reference has a merge commit in its history", func() {
+			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
 			commit.EXPECT().NumParents().Return(1)
-			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, fmt.Errorf("error"))
-			err := validation.CheckIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, fmt.Errorf("error"))
+			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("failed to check for merges in issue commit history: error"))
 		})
 
 		It("should return error when the reference of the issue commit is new but the issue commit has multiple parents ", func() {
+			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
 			commit.EXPECT().NumParents().Return(1).Times(2)
 			repoState := &state.Repository{}
-			repo.EXPECT().State().Return(repoState)
-			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, nil)
-			err := validation.CheckIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			repo.EXPECT().GetState().Return(repoState)
+			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
+			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("first commit of a new issue must have no parent"))
 		})
 
 		It("should return error when the issue commit alters history", func() {
+			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
-			repoState := &state.Repository{References: map[string]*state.Reference{"refs/heads/issues/abc": {}}}
-			repo.EXPECT().State().Return(repoState)
-			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, nil)
+			repoState := &state.Repository{References: map[string]*state.Reference{issueBranch: {}}}
+			repo.EXPECT().GetState().Return(repoState)
+			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
 			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
-			err := validation.CheckIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue commit must not alter history"))
 		})
 
 		It("should return error when unable to get commit tree", func() {
+			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			commit.EXPECT().GetTree().Return(nil, fmt.Errorf("bad query"))
-			repoState := &state.Repository{References: map[string]*state.Reference{"refs/heads/issues/abc": {}}}
-			repo.EXPECT().State().Return(repoState)
-			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, nil)
+			repoState := &state.Repository{References: map[string]*state.Reference{issueBranch: {}}}
+			repo.EXPECT().GetState().Return(repoState)
+			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
 			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(nil)
-			err := validation.CheckIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("unable to read issue commit tree"))
 		})
 
 		It("should return error when issue commit tree does not have 'body' file", func() {
+			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			tree := &object.Tree{Entries: []object.TreeEntry{}}
 			commit.EXPECT().GetTree().Return(tree, nil)
-			repoState := &state.Repository{References: map[string]*state.Reference{"refs/heads/issues/abc": {}}}
-			repo.EXPECT().State().Return(repoState)
-			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, nil)
+			repoState := &state.Repository{References: map[string]*state.Reference{issueBranch: {}}}
+			repo.EXPECT().GetState().Return(repoState)
+			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
 			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(nil)
-			err := validation.CheckIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue commit must have a 'body' file"))
 		})
 
 		It("should return error when issue commit tree has more than 1 files", func() {
+			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			tree := &object.Tree{Entries: []object.TreeEntry{{}, {}}}
 			commit.EXPECT().GetTree().Return(tree, nil)
-			repoState := &state.Repository{References: map[string]*state.Reference{"refs/heads/issues/abc": {}}}
-			repo.EXPECT().State().Return(repoState)
-			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, nil)
+			repoState := &state.Repository{References: map[string]*state.Reference{issueBranch: {}}}
+			repo.EXPECT().GetState().Return(repoState)
+			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
 			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(nil)
-			err := validation.CheckIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue commit tree must only include a 'body' file"))
 		})
 
 		It("should return error when issue commit tree has a body entry that isn't a regular file", func() {
+			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			tree := &object.Tree{Entries: []object.TreeEntry{{Name: "body", Mode: filemode.Dir}}}
 			commit.EXPECT().GetTree().Return(tree, nil)
-			repoState := &state.Repository{References: map[string]*state.Reference{"refs/heads/issues/abc": {}}}
-			repo.EXPECT().State().Return(repoState)
-			repo.EXPECT().HasMergeCommits("refs/heads/issues/abc").Return(false, nil)
+			repoState := &state.Repository{References: map[string]*state.Reference{issueBranch: {}}}
+			repo.EXPECT().GetState().Return(repoState)
+			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
 			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(nil)
-			err := validation.CheckIssueCommit(commit, "refs/heads/issues/abc", "", repo)
+			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue body file is not a regular file"))
 		})

@@ -34,21 +34,21 @@ var issueCmd = &cobra.Command{
 // issueCreateCmd represents a sub-command to create an issue
 var issueCreateCmd = &cobra.Command{
 	Use:   "create",
-	Short: "Create an issue",
+	Short: "Create an issue or add a comment to an existing issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		title, _ := cmd.Flags().GetString("title")
 		body, _ := cmd.Flags().GetString("body")
-		replyTo, _ := cmd.Flags().GetString("replyTo")
+		commentCommitID, _ := cmd.Flags().GetInt("reply-comment")
 		useEditor, _ := cmd.Flags().GetBool("use-editor")
 		editorPath, _ := cmd.Flags().GetString("editor")
-		targetIssue, _ := cmd.Flags().GetString("issue")
 		labels, _ := cmd.Flags().GetStringSlice("labels")
 		assignees, _ := cmd.Flags().GetStringSlice("assignees")
 		fixers, _ := cmd.Flags().GetStringSlice("fixers")
+		issueID, _ := cmd.Flags().GetInt("issue-id")
 
-		if err := remotecmd.IssueCreateCmd(title, body, replyTo, labels, assignees, fixers,
-			useEditor, editorPath, targetIssue, os.Stdout, cfg.Node.GitBinPath); err != nil {
+		if err := remotecmd.IssueCreateCmd(title, body, commentCommitID, labels, assignees, fixers,
+			useEditor, editorPath, os.Stdout, cfg.Node.GitBinPath, issueID); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -57,13 +57,13 @@ var issueCreateCmd = &cobra.Command{
 func init() {
 	issueCmd.AddCommand(issueCreateCmd)
 	rootCmd.AddCommand(issueCmd)
-	issueCreateCmd.Flags().StringP("title", "t", "", "Title of the issue (max. 250 B)")
-	issueCreateCmd.Flags().StringP("body", "b", "", "Body of the issue (max. 8 KB)")
-	issueCreateCmd.Flags().StringP("replyTo", "r", "", "Set the hash of an issue comment to respond to")
-	issueCreateCmd.Flags().StringSliceP("labels", "l", nil, "Labels to associate to the issue (max. 10)")
-	issueCreateCmd.Flags().StringSliceP("assignees", "a", nil, "Push key of assignees (max. 10)")
-	issueCreateCmd.Flags().StringSliceP("fixers", "f", nil, "Push key of fixers (max. 10)")
+	issueCreateCmd.Flags().StringP("title", "t", "", "The issue title (max. 250 B)")
+	issueCreateCmd.Flags().StringP("body", "b", "", "The issue message (max. 8 KB)")
+	issueCreateCmd.Flags().IntP("reply-comment", "r", 0, "Reply to a comment at the specified ID")
+	issueCreateCmd.Flags().StringSliceP("labels", "l", nil, "Specify labels to add to the issue/comment (max. 10)")
+	issueCreateCmd.Flags().StringSliceP("assignees", "a", nil, "Specify push key of assignees to add to the issue/comment (max. 10)")
+	issueCreateCmd.Flags().StringSliceP("fixers", "f", nil, "Specify push key of fixers to add to the issue/comment (max. 10)")
 	issueCreateCmd.Flags().BoolP("use-editor", "u", false, "Use git configured editor to write body")
 	issueCreateCmd.Flags().StringP("editor", "e", "", "GetPath an editor to use instead of the git configured editor")
-	issueCreateCmd.Flags().StringP("issue", "i", "", "Add a comment commit to the specified issue")
+	issueCreateCmd.Flags().IntP("issue-id", "i", 0, "Specify a target issue number to create or add a comment")
 }

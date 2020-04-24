@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -12,8 +13,7 @@ import (
 
 var (
 	ErrRefNotFound = fmt.Errorf("ref not found")
-
-	ErrNoCommits = fmt.Errorf("no commits")
+	ErrNoCommits   = fmt.Errorf("no commits")
 )
 
 // execGitCmd executes git commands and returns the output
@@ -84,9 +84,9 @@ func (lg *LiteGit) RefGet(refname string) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-// GetRecentCommit gets the hash of the recent commit
+// GetRecentCommitHash gets the hash of the recent commit
 // Returns ErrNoCommits if no commits exist
-func (lg *LiteGit) GetRecentCommit() (string, error) {
+func (lg *LiteGit) GetRecentCommitHash() (string, error) {
 
 	// Get current branch
 	curBranch, err := lg.GetHEAD(true)
@@ -94,7 +94,7 @@ func (lg *LiteGit) GetRecentCommit() (string, error) {
 		return "", err
 	}
 
-	numCommits, err := lg.NumCommits(curBranch)
+	numCommits, err := lg.NumCommits(curBranch, false)
 	if err != nil {
 		return "", err
 	}
@@ -128,20 +128,6 @@ func (lg *LiteGit) GetHEAD(short bool) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-// NumCommits gets the number of commits in a branch
-func (lg *LiteGit) NumCommits(branch string) (int, error) {
-	out, err := ExecGitCmd(lg.gitBinPath, lg.path, "--no-pager", "log", "--oneline", branch,
-		`--pretty="%h"`)
-	if err != nil {
-		if strings.Contains(err.Error(), "unknown revision") {
-			return 0, nil
-		}
-		return 0, errors.Wrap(err, "failed to get commit count")
-	}
-	shortHashes := strings.Fields(strings.TrimSpace(string(out)))
-	return len(shortHashes), nil
-}
-
 // GetConfig finds and returns a config value
 func (lg *LiteGit) GetConfig(path string) string {
 	out, err := ExecGitCmd(lg.gitBinPath, lg.path, "config", path)
@@ -151,12 +137,12 @@ func (lg *LiteGit) GetConfig(path string) string {
 	return strings.TrimSpace(string(out))
 }
 
-// CreateAndOrSignQuietCommit creates and optionally sign a quiet commit.
+// CreateSignedEmptyCommit creates and optionally sign a quiet commit.
 // msg: The commit message.
 // signingKey: The optional signing key. If provided, the commit is signed
 // env: Optional environment variables to pass to the command.
-func (lg *LiteGit) CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error {
-	args := []string{"commit", "--quiet", "--allow-empty", "--file", "-"}
+func (lg *LiteGit) CreateSignedEmptyCommit(msg, signingKey string, env ...string) error {
+	args := []string{"commit", "--quiet", "--allow-empty", "--allow-empty-message", "--file", "-"}
 	if signingKey != "" {
 		args = append(args, "--gpg-sign="+signingKey)
 	}
@@ -254,8 +240,6 @@ func (lg *LiteGit) RemoveEntryFromNote(notename, objectHash string, env ...strin
 	args := []string{"notes", "--ref", notename, "add", "-m", "", "-f", objectHash}
 	cmd := exec.Command(lg.gitBinPath, args...)
 	cmd.Dir = lg.path
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), env...)
 	return errors.Wrap(cmd.Run(), "failed to remove note")
 }
@@ -352,7 +336,7 @@ func (lg *LiteGit) HasMergeCommits(reference string, env ...string) (bool, error
 }
 
 // CreateSingleFileCommit creates a commit tree with no parent and has only one file
-func (lg *LiteGit) CreateSingleFileCommit(filename, content, parent string) (string, error) {
+func (lg *LiteGit) CreateSingleFileCommit(filename, content, commitMsg, parent string) (string, error) {
 
 	// Create body blob
 	args := []string{"hash-object", "-w", "--stdin"}
@@ -381,6 +365,9 @@ func (lg *LiteGit) CreateSingleFileCommit(filename, content, parent string) (str
 	if parent != "" {
 		args = append(args, "-p", parent)
 	}
+	if commitMsg != "" {
+		args = append(args, "-m", commitMsg)
+	}
 	cmd = exec.Command(lg.gitBinPath, args...)
 	cmd.Dir = lg.path
 	out, err = cmd.Output()
@@ -391,15 +378,53 @@ func (lg *LiteGit) CreateSingleFileCommit(filename, content, parent string) (str
 	return strings.TrimSpace(string(out)), nil
 }
 
-func (lg *LiteGit) CreateOrphanBranch(name, initCommitHash string) error {
+// NumCommits counts the number of commits in a reference.
+// When noMerges is true, merges are not counted.
+func (lg *LiteGit) NumCommits(refname string, noMerges bool) (int, error) {
+	args := []string{"rev-list", "--count", refname}
+	if noMerges {
+		args = append(args, "--no-merges")
+	}
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
+	out := bytes.NewBuffer(nil)
+	cmd.Stdout = out
+	cmd.Stderr = out
+	err := cmd.Run()
+	if err != nil {
+		if strings.Contains(out.String(), "unknown revision") {
+			return 0, nil
+		}
+		return 0, err
+	}
 
-	// args = append([]string{"tag", "-a", "--file", "-"}, args...)
-	// cmd := exec.Command(lg.gitBinPath, args...)
-	// cmd.Dir = lg.path
-	// cmd.Stdin = strings.NewReader(msg)
-	// cmd.Stdout = os.Stdout
-	// cmd.Stderr = os.Stderr
-	// cmd.Env = append(os.Environ(), env...)
-	// return errors.Wrap(cmd.Run(), "failed to create tag")
+	return strconv.Atoi(strings.TrimSpace(out.String()))
+}
+
+// Checkout switches HEAD to the specified reference.
+// When create is true, the -b is added
+func (lg *LiteGit) Checkout(refname string, create, force bool) error {
+	args := []string{"checkout"}
+	if create {
+		args = append(args, "-b", "--quite", refname)
+	} else {
+		args = append(args, refname)
+	}
+	if force {
+		args = append(args, "-f")
+	}
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
+	out := bytes.NewBuffer(nil)
+	cmd.Stdout = out
+	cmd.Stderr = out
+	err := cmd.Run()
+	if err != nil {
+		outStr := out.String()
+		if strings.Contains(outStr, "did not match any file(s) known to git") {
+			return ErrRefNotFound
+		}
+		return errors.Wrap(err, out.String())
+	}
 	return nil
 }

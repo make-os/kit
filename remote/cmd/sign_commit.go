@@ -18,87 +18,147 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
+type SignCommitCmdArgs struct {
+	// Message is a custom commit message
+	Message string
+
+	// Fee is the transaction fee
+	Fee string
+
+	// Nonce is the signer's next account nonce
+	Nonce string
+
+	// AmendCommit indicates whether to amend the last commit or create an empty commit
+	AmendCommit bool
+
+	// MergeID indicates an optional merge proposal ID to attach to the transaction
+	MergeID string
+
+	// Head specifies a reference to use in the transaction info instead of the signed branch reference
+	Head string
+
+	// Branch specifies a branch to checkout and sign instead of the current branch (HEAD)
+	Branch string
+
+	// ForceCheckout forcefully checks out the target branch (clears unsaved work)
+	ForceCheckout bool
+
+	// PushKeyID is the signers push key ID
+	PushKeyID string
+
+	// PushKeyPass is the signers push key passphrase
+	PushKeyPass string
+
+	// Remote specifies the remote name whose URL we will attach the push token to
+	Remote string
+
+	// ResetTokens clears all push tokens from the remote URL before adding the new one.
+	ResetTokens bool
+
+	// RpcClient is the RPC client
+	RPCClient *client.RPCClient
+
+	// RemoteClients is the remote server API client.
+	RemoteClients []restclient.RestClient
+}
+
 // SignCommitCmd adds transaction information to a new or recent commit and signs it.
+// cfg: App config object
+// targetRepo: The target repository at the working directory
 func SignCommitCmd(
 	cfg *config.AppConfig,
-	message string,
 	targetRepo core.BareRepo,
-	txFee,
-	nextNonce string,
-	amendRecent bool,
-	mergeID,
-	head,
-	pushKeyID,
-	pushKeyPass,
-	targetRemote string,
-	resetTokens bool,
-	rpcClient *client.RPCClient,
-	remoteClients []restclient.RestClient) error {
+	args SignCommitCmdArgs) error {
 
 	// Get the signing key id from the git config if not passed as an argument
-	if pushKeyID == "" {
-		pushKeyID = targetRepo.GetConfig("user.signingKey")
-		if pushKeyID == "" {
+	if args.PushKeyID == "" {
+		args.PushKeyID = targetRepo.GetConfig("user.signingKey")
+		if args.PushKeyID == "" {
 			return fmt.Errorf("push key ID is required")
 		}
 	}
 
 	// Get and unlock the pusher key
-	key, err := getAndUnlockPushKey(cfg, pushKeyID, pushKeyPass, targetRepo)
+	key, err := getAndUnlockPushKey(cfg, args.PushKeyID, args.PushKeyPass, targetRepo)
 	if err != nil {
 		return err
 	}
 
 	// Validate merge ID is set.
 	// Must be numeric and 8 bytes long
-	if mergeID != "" {
-		if !govalidator.IsNumeric(mergeID) {
+	if args.MergeID != "" {
+		if !govalidator.IsNumeric(args.MergeID) {
 			return fmt.Errorf("merge id must be numeric")
-		} else if len(mergeID) > 8 {
+		} else if len(args.MergeID) > 8 {
 			return fmt.Errorf("merge proposal id exceeded 8 bytes limit")
 		}
 	}
 
 	// Get the next nonce, if not set
-	if util.IsZeroString(nextNonce) {
-		nextNonce, err = api.DetermineNextNonceOfPushKeyOwner(pushKeyID, rpcClient, remoteClients)
+	if util.IsZeroString(args.Nonce) {
+		args.Nonce, err = api.GetNextNonceOfPushKeyOwner(args.PushKeyID, args.RPCClient, args.RemoteClients)
 		if err != nil {
 			return err
 		}
 	}
 
-	// Get the reference pointed to by HEAD
-	if head == "" {
-		head, err = targetRepo.Head()
-		if err != nil {
-			return fmt.Errorf("failed to get HEAD") // :D
+	// Get the current active branch.
+	// When branch is explicitly provided, use it as the active branch
+	var activeBranchCpy string
+	activeBranch, err := targetRepo.Head()
+	activeBranchCpy = activeBranch
+	if err != nil {
+		return fmt.Errorf("failed to get HEAD")
+	} else if args.Branch != "" {
+		activeBranch = args.Branch
+		if !plumbing2.IsReference(activeBranch) {
+			activeBranch = plumbing.NewBranchReferenceName(activeBranch).String()
 		}
-	} else {
-		if !plumbing2.IsBranch(head) {
-			head = plumbing.NewBranchReferenceName(head).String()
+	}
+
+	// If an explicit branch was provided via flag, check it out.
+	// Then set a deferred function to revert back the the original branch.
+	if activeBranch != activeBranchCpy {
+		if err := targetRepo.Checkout(plumbing.ReferenceName(activeBranch).Short(),
+			false, args.ForceCheckout); err != nil {
+			return fmt.Errorf("failed to checkout branch (%s): %s", activeBranch, err)
+		}
+		defer func() {
+			targetRepo.Checkout(plumbing.ReferenceName(activeBranchCpy).Short(), false, false)
+		}()
+	}
+
+	// Use active branch as the tx reference only if
+	// head arg. was not explicitly provided
+	var txReference = activeBranch
+	if args.Head != "" {
+		txReference = args.Head
+		if !plumbing2.IsReference(txReference) {
+			txReference = plumbing.NewBranchReferenceName(args.Head).String()
 		}
 	}
 
 	// Gather any transaction options
-	options := []string{fmt.Sprintf("reference=%s", head)}
-	if mergeID != "" {
-		options = append(options, fmt.Sprintf("mergeID=%s", mergeID))
+	options := []string{fmt.Sprintf("reference=%s", txReference)}
+	if args.MergeID != "" {
+		options = append(options, fmt.Sprintf("params.MergeID=%s", args.MergeID))
 	}
 
 	// Make the transaction parameter object
-	txDetail, err := types.MakeAndValidateTxDetail(txFee, nextNonce, pushKeyID, nil, options...)
+	txDetail, err := types.MakeAndValidateTxDetail(args.Fee, args.Nonce, args.PushKeyID, nil, options...)
 	if err != nil {
 		return err
 	}
 
 	// Create & set request token to remote URLs in config
-	if _, err = server.SetPushTokenToRemotes(targetRepo, targetRemote, txDetail, key, resetTokens); err != nil {
+	if _, err = server.SetPushTokenToRemotes(targetRepo, args.Remote,
+		txDetail, key, args.ResetTokens); err != nil {
 		return err
 	}
 
 	// Create a new quiet commit if recent commit amendment is not desired
-	if !amendRecent {
-		if err := targetRepo.CreateAndOrSignQuietCommit(message, pushKeyID); err != nil {
+	if !args.AmendCommit {
+		if err := targetRepo.CreateSignedEmptyCommit(args.Message, args.PushKeyID); err != nil {
 			return err
 		}
 		return nil
@@ -106,7 +166,7 @@ func SignCommitCmd(
 
 	// Otherwise, amend the recent commit.
 	// Get recent commit hash of the current branch.
-	hash, err := targetRepo.GetRecentCommit()
+	hash, err := targetRepo.GetRecentCommitHash()
 	if err != nil {
 		if err == repo.ErrNoCommits {
 			return errors.New("no commits have been created yet")
@@ -114,13 +174,14 @@ func SignCommitCmd(
 		return err
 	}
 
+	// Use previous commit message as default
 	commit, _ := targetRepo.CommitObject(plumbing.NewHash(hash))
-	if message == "" {
-		message = commit.Message
+	if args.Message == "" {
+		args.Message = commit.Message
 	}
 
 	// Update the recent commit message
-	if err = targetRepo.UpdateRecentCommitMsg(message, pushKeyID); err != nil {
+	if err = targetRepo.UpdateRecentCommitMsg(args.Message, args.PushKeyID); err != nil {
 		return err
 	}
 

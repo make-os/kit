@@ -44,7 +44,7 @@ var _ = Describe("Reactor", func() {
 	var mockRepoKeeper *mocks.MockRepoKeeper
 	var mockBlockGetter *mocks.MockBlockGetter
 	var mockDHT *mocks.MockDHTNode
-	var mockMgr *mocks.MockRepoManager
+	var mockRemoteSrv *mocks.MockRemoteServer
 	var mockTickMgr *mocks.MockTicketManager
 	var mockNS *mocks.MockNamespaceKeeper
 	var key = crypto.NewKeyFromIntSeed(1)
@@ -63,7 +63,7 @@ var _ = Describe("Reactor", func() {
 
 		mockObjects := testutil.MockLogic(ctrl)
 		mockLogic = mockObjects.Logic
-		mockMgr = mockObjects.RepoManager
+		mockRemoteSrv = mockObjects.RemoteServer
 		mockRepoKeeper = mockObjects.RepoKeeper
 		mockDHT = mocks.NewMockDHTNode(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
@@ -278,8 +278,8 @@ var _ = Describe("Reactor", func() {
 				}
 
 				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
-					mockMgr.EXPECT().GetRepoState(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
-					return &pushhandler.Handler{Server: mockMgr}
+					mockRemoteSrv.EXPECT().GetRepoState(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
+					return &pushhandler.Handler{Server: mockRemoteSrv}
 				}
 
 				pn = &core.PushNote{RepoName: repoName}
@@ -310,7 +310,7 @@ var _ = Describe("Reactor", func() {
 					return nil
 				}
 
-				pushHandler := &pushhandler.Handler{Server: mockMgr}
+				pushHandler := &pushhandler.Handler{Server: mockRemoteSrv}
 				svr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
@@ -360,7 +360,7 @@ var _ = Describe("Reactor", func() {
 					return nil
 				}
 
-				pushHandler := &pushhandler.Handler{Server: mockMgr}
+				pushHandler := &pushhandler.Handler{Server: mockRemoteSrv}
 				svr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
@@ -417,7 +417,7 @@ var _ = Describe("Reactor", func() {
 					return nil
 				}
 
-				pushHandler := &pushhandler.Handler{Server: mockMgr}
+				pushHandler := &pushhandler.Handler{Server: mockRemoteSrv}
 				svr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
@@ -647,21 +647,21 @@ var _ = Describe("Reactor", func() {
 		var err error
 
 		BeforeEach(func() {
-			mockMgr.EXPECT().Cfg().Return(cfg).AnyTimes()
-			mockMgr.EXPECT().GetDHT().Return(mockDHT).AnyTimes()
-			mockMgr.EXPECT().Log().Return(cfg.G().Log).AnyTimes()
+			mockRemoteSrv.EXPECT().Cfg().Return(cfg).AnyTimes()
+			mockRemoteSrv.EXPECT().GetDHT().Return(mockDHT).AnyTimes()
+			mockRemoteSrv.EXPECT().Log().Return(cfg.G().Log).AnyTimes()
 
 			mockPruner := mocks.NewMockPruner(ctrl)
 			mockPruner.EXPECT().Schedule(gomock.Any()).AnyTimes()
-			mockMgr.EXPECT().GetPruner().Return(mockPruner).AnyTimes()
+			mockRemoteSrv.EXPECT().GetPruner().Return(mockPruner).AnyTimes()
 		})
 
 		When("target repo does not exist locally", func() {
 			BeforeEach(func() {
 				tx := core.NewBareTxPush()
 				tx.PushNote.RepoName = "unknown"
-				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(nil, fmt.Errorf("error"))
-				err = execTxPush(mockMgr, tx)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(nil, fmt.Errorf("error"))
+				err = execTxPush(mockRemoteSrv, tx)
 			})
 
 			It("should return err='unable to find repo locally: error'", func() {
@@ -682,10 +682,10 @@ var _ = Describe("Reactor", func() {
 
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(true)
-				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
 
-				err = execTxPush(mockMgr, tx)
+				err = execTxPush(mockRemoteSrv, tx)
 			})
 
 			It("should return no error", func() {
@@ -705,10 +705,10 @@ var _ = Describe("Reactor", func() {
 
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(true)
-				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(fmt.Errorf("error"))
-				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(fmt.Errorf("error"))
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
 
-				err = execTxPush(mockMgr, tx)
+				err = execTxPush(mockRemoteSrv, tx)
 			})
 
 			It("should return error", func() {
@@ -730,9 +730,9 @@ var _ = Describe("Reactor", func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(false)
 				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
-				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
 
-				err = execTxPush(mockMgr, tx)
+				err = execTxPush(mockRemoteSrv, tx)
 			})
 
 			It("should return error='failed to fetch object...'", func() {
@@ -757,9 +757,9 @@ var _ = Describe("Reactor", func() {
 				objBz := util.RandBytes(10)
 				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(objBz, nil)
 				repo.EXPECT().WriteObjectToFile(obj, objBz).Return(fmt.Errorf("error"))
-				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
 
-				err = execTxPush(mockMgr, tx)
+				err = execTxPush(mockRemoteSrv, tx)
 			})
 
 			It("should return error='failed to write fetched object...'", func() {
@@ -786,9 +786,9 @@ var _ = Describe("Reactor", func() {
 				repo.EXPECT().WriteObjectToFile(obj, objBz).Return(nil)
 
 				mockDHT.EXPECT().Announce(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
-				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
-				err = execTxPush(mockMgr, tx)
+				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				err = execTxPush(mockRemoteSrv, tx)
 			})
 
 			It("should return no error", func() {
@@ -808,9 +808,9 @@ var _ = Describe("Reactor", func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().RefDelete("refs/heads/master").Return(fmt.Errorf("failed to delete"))
 
-				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
-				err = execTxPush(mockMgr, tx)
+				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				err = execTxPush(mockRemoteSrv, tx)
 
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to delete reference (refs/heads/master): failed to delete"))
@@ -827,9 +827,9 @@ var _ = Describe("Reactor", func() {
 				repo := mocks.NewMockBareRepo(ctrl)
 				repo.EXPECT().RefDelete("refs/heads/master").Return(nil)
 
-				mockMgr.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockMgr.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
-				err = execTxPush(mockMgr, tx)
+				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				err = execTxPush(mockRemoteSrv, tx)
 
 				Expect(err).To(BeNil())
 			})

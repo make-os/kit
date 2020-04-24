@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 
@@ -201,6 +202,21 @@ func (r *Repo) Prune(olderThan time.Time) error {
 			return r.DeleteObject(hash)
 		},
 	})
+}
+
+// NumIssueBranches counts the number of issues branches
+func (r *Repo) NumIssueBranches() (count int, err error) {
+	refIter, err := r.References()
+	if err != nil {
+		return 0, err
+	}
+	refIter.ForEach(func(reference *plumbing.Reference) error {
+		if plumbing2.IsIssueReference(reference.Name().String()) {
+			count++
+		}
+		return nil
+	})
+	return count, nil
 }
 
 // Get returns a repository

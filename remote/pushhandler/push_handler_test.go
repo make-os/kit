@@ -32,7 +32,7 @@ var _ = Describe("Handler", func() {
 	var cfg *config.AppConfig
 	var path string
 	var repo core.BareRepo
-	var mockMgr *mocks.MockRepoManager
+	var mockRemoteSrv *mocks.MockRemoteServer
 	var svr core.RemoteServer
 	var handler *pushhandler.Handler
 	var ctrl *gomock.Controller
@@ -58,10 +58,10 @@ var _ = Describe("Handler", func() {
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		svr = server.NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
-		mockMgr = mocks.NewMockRepoManager(ctrl)
-		mockMgr.EXPECT().Log().Return(cfg.G().Log)
+		mockRemoteSrv = mocks.NewMockRemoteServer(ctrl)
+		mockRemoteSrv.EXPECT().Log().Return(cfg.G().Log)
 
-		handler = pushhandler.NewHandler(repo, []*types.TxDetail{}, nil, mockMgr)
+		handler = pushhandler.NewHandler(repo, []*types.TxDetail{}, nil, mockRemoteSrv)
 	})
 
 	AfterEach(func() {
@@ -73,7 +73,7 @@ var _ = Describe("Handler", func() {
 	Describe(".HandleStream", func() {
 		When("unable to get repo old state", func() {
 			BeforeEach(func() {
-				mockMgr.EXPECT().GetRepoState(repo).Return(nil, fmt.Errorf("error"))
+				mockRemoteSrv.EXPECT().GetRepoState(repo).Return(nil, fmt.Errorf("error"))
 				err = handler.HandleStream(nil, nil)
 			})
 
@@ -86,7 +86,7 @@ var _ = Describe("Handler", func() {
 		When("packfile is invalid", func() {
 			BeforeEach(func() {
 				oldState := &plumbing2.State{}
-				mockMgr.EXPECT().GetRepoState(repo).Return(oldState, nil)
+				mockRemoteSrv.EXPECT().GetRepoState(repo).Return(oldState, nil)
 				err = handler.HandleStream(strings.NewReader("invalid"), nil)
 			})
 
@@ -187,13 +187,14 @@ var _ = Describe("Handler", func() {
 		})
 
 		It("should return error when command is a issue update request and policy check failed", func() {
-			handler.PushReader.References["refs/heads/issues/do-something"] = &pushhandler.PackedReferenceObject{}
-			handler.TxDetails["refs/heads/issues/do-something"] = &types.TxDetail{MergeProposalID: "123"}
+			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
+			handler.PushReader.References[issueBranch] = &pushhandler.PackedReferenceObject{}
+			handler.TxDetails[issueBranch] = &types.TxDetail{MergeProposalID: "123"}
 			handler.TxDetails["refs/heads/master"] = &types.TxDetail{MergeProposalID: "234"}
 			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
-			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/issues/do-something", New: hash})
+			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(issueBranch), New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, pushKeyID, reference, action string) error {
-				Expect(reference).To(Equal("refs/heads/issues/do-something"))
+				Expect(reference).To(Equal(issueBranch))
 				Expect(action).To(Or(Equal("issue-update"), Equal("merge-update")))
 				return fmt.Errorf("unauthorized")
 			}
@@ -233,9 +234,9 @@ var _ = Describe("Handler", func() {
 	Describe(".AnnounceObject", func() {
 		var mockDHT *mocks.MockDHTNode
 		BeforeEach(func() {
-			handler.Server = mockMgr
+			handler.Server = mockRemoteSrv
 			mockDHT = mocks.NewMockDHTNode(ctrl)
-			mockMgr.EXPECT().GetDHT().Return(mockDHT)
+			mockRemoteSrv.EXPECT().GetDHT().Return(mockDHT)
 		})
 
 		It("should return error when DHT failed to announce", func() {
@@ -290,7 +291,7 @@ var _ = Describe("Handler", func() {
 		Describe("when unable to get state of the repository", func() {
 			BeforeEach(func() {
 				handler.OldState = plumbing2.GetRepoState(repo)
-				mockMgr.EXPECT().GetRepoState(repo, plumbing2.MatchOpt("refs/heads/master")).Return(nil, fmt.Errorf("error"))
+				mockRemoteSrv.EXPECT().GetRepoState(repo, plumbing2.MatchOpt("refs/heads/master")).Return(nil, fmt.Errorf("error"))
 				errs = handler.HandleReference("refs/heads/master", false)
 			})
 

@@ -104,19 +104,19 @@ func (mr *MockBareRepoMockRecorder) RefGet(refname interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefGet", reflect.TypeOf((*MockBareRepo)(nil).RefGet), refname)
 }
 
-// GetRecentCommit mocks base method
-func (m *MockBareRepo) GetRecentCommit() (string, error) {
+// GetRecentCommitHash mocks base method
+func (m *MockBareRepo) GetRecentCommitHash() (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRecentCommit")
+	ret := m.ctrl.Call(m, "GetRecentCommitHash")
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetRecentCommit indicates an expected call of GetRecentCommit
-func (mr *MockBareRepoMockRecorder) GetRecentCommit() *gomock.Call {
+// GetRecentCommitHash indicates an expected call of GetRecentCommitHash
+func (mr *MockBareRepoMockRecorder) GetRecentCommitHash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecentCommit", reflect.TypeOf((*MockBareRepo)(nil).GetRecentCommit))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecentCommitHash", reflect.TypeOf((*MockBareRepo)(nil).GetRecentCommitHash))
 }
 
 // GetHEAD mocks base method
@@ -135,18 +135,18 @@ func (mr *MockBareRepoMockRecorder) GetHEAD(short interface{}) *gomock.Call {
 }
 
 // NumCommits mocks base method
-func (m *MockBareRepo) NumCommits(branch string) (int, error) {
+func (m *MockBareRepo) NumCommits(branch string, noMerges bool) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NumCommits", branch)
+	ret := m.ctrl.Call(m, "NumCommits", branch, noMerges)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // NumCommits indicates an expected call of NumCommits
-func (mr *MockBareRepoMockRecorder) NumCommits(branch interface{}) *gomock.Call {
+func (mr *MockBareRepoMockRecorder) NumCommits(branch, noMerges interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumCommits", reflect.TypeOf((*MockBareRepo)(nil).NumCommits), branch)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumCommits", reflect.TypeOf((*MockBareRepo)(nil).NumCommits), branch, noMerges)
 }
 
 // GetConfig mocks base method
@@ -163,23 +163,23 @@ func (mr *MockBareRepoMockRecorder) GetConfig(path interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockBareRepo)(nil).GetConfig), path)
 }
 
-// CreateAndOrSignQuietCommit mocks base method
-func (m *MockBareRepo) CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error {
+// CreateSignedEmptyCommit mocks base method
+func (m *MockBareRepo) CreateSignedEmptyCommit(msg, signingKey string, env ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{msg, signingKey}
 	for _, a := range env {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "CreateAndOrSignQuietCommit", varargs...)
+	ret := m.ctrl.Call(m, "CreateSignedEmptyCommit", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CreateAndOrSignQuietCommit indicates an expected call of CreateAndOrSignQuietCommit
-func (mr *MockBareRepoMockRecorder) CreateAndOrSignQuietCommit(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
+// CreateSignedEmptyCommit indicates an expected call of CreateSignedEmptyCommit
+func (mr *MockBareRepoMockRecorder) CreateSignedEmptyCommit(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{msg, signingKey}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAndOrSignQuietCommit", reflect.TypeOf((*MockBareRepo)(nil).CreateAndOrSignQuietCommit), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSignedEmptyCommit", reflect.TypeOf((*MockBareRepo)(nil).CreateSignedEmptyCommit), varargs...)
 }
 
 // CreateTagWithMsg mocks base method
@@ -373,18 +373,32 @@ func (mr *MockBareRepoMockRecorder) GetMergeCommits(reference interface{}, env .
 }
 
 // CreateSingleFileCommit mocks base method
-func (m *MockBareRepo) CreateSingleFileCommit(filename, content, parent string) (string, error) {
+func (m *MockBareRepo) CreateSingleFileCommit(filename, content, commitMsg, parent string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateSingleFileCommit", filename, content, parent)
+	ret := m.ctrl.Call(m, "CreateSingleFileCommit", filename, content, commitMsg, parent)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateSingleFileCommit indicates an expected call of CreateSingleFileCommit
-func (mr *MockBareRepoMockRecorder) CreateSingleFileCommit(filename, content, parent interface{}) *gomock.Call {
+func (mr *MockBareRepoMockRecorder) CreateSingleFileCommit(filename, content, commitMsg, parent interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSingleFileCommit", reflect.TypeOf((*MockBareRepo)(nil).CreateSingleFileCommit), filename, content, parent)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSingleFileCommit", reflect.TypeOf((*MockBareRepo)(nil).CreateSingleFileCommit), filename, content, commitMsg, parent)
+}
+
+// Checkout mocks base method
+func (m *MockBareRepo) Checkout(refname string, create bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Checkout", refname, create)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Checkout indicates an expected call of Checkout
+func (mr *MockBareRepoMockRecorder) Checkout(refname, create interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkout", reflect.TypeOf((*MockBareRepo)(nil).Checkout), refname, create)
 }
 
 // GetName mocks base method
@@ -657,7 +671,7 @@ func (m *MockBareRepo) GetPath() string {
 }
 
 // GetPath indicates an expected call of GetPath
-func (mr *MockBareRepoMockRecorder) Path() *gomock.Call {
+func (mr *MockBareRepoMockRecorder) GetPath() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPath", reflect.TypeOf((*MockBareRepo)(nil).GetPath))
 }
@@ -671,7 +685,7 @@ func (m *MockBareRepo) GetState() *state.Repository {
 }
 
 // GetState indicates an expected call of GetState
-func (mr *MockBareRepoMockRecorder) State() *gomock.Call {
+func (mr *MockBareRepoMockRecorder) GetState() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockBareRepo)(nil).GetState))
 }
@@ -808,20 +822,6 @@ func (mr *MockBareRepoMockRecorder) GetHost() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHost", reflect.TypeOf((*MockBareRepo)(nil).GetHost))
 }
 
-// CreateOrphanBranch mocks base method
-func (m *MockBareRepo) CreateOrphanBranch(name, initCommitHash string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateOrphanBranch", name, initCommitHash)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CreateOrphanBranch indicates an expected call of CreateOrphanBranch
-func (mr *MockBareRepoMockRecorder) CreateOrphanBranch(name, initCommitHash interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrphanBranch", reflect.TypeOf((*MockBareRepo)(nil).CreateOrphanBranch), name, initCommitHash)
-}
-
 // Prune mocks base method
 func (m *MockBareRepo) Prune(olderThan time.Time) error {
 	m.ctrl.T.Helper()
@@ -834,6 +834,21 @@ func (m *MockBareRepo) Prune(olderThan time.Time) error {
 func (mr *MockBareRepoMockRecorder) Prune(olderThan interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Prune", reflect.TypeOf((*MockBareRepo)(nil).Prune), olderThan)
+}
+
+// NumIssueBranches mocks base method
+func (m *MockBareRepo) NumIssueBranches() (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "NumIssueBranches")
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// NumIssueBranches indicates an expected call of NumIssueBranches
+func (mr *MockBareRepoMockRecorder) NumIssueBranches() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumIssueBranches", reflect.TypeOf((*MockBareRepo)(nil).NumIssueBranches))
 }
 
 // MockCommit is a mock of Commit interface
@@ -1860,31 +1875,31 @@ func (mr *MockRepoPushEndorsementMockRecorder) BytesAndID() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockRepoPushEndorsement)(nil).BytesAndID))
 }
 
-// MockRepoManager is a mock of RemoteServer interface
-type MockRepoManager struct {
+// MockRemoteServer is a mock of RemoteServer interface
+type MockRemoteServer struct {
 	ctrl     *gomock.Controller
-	recorder *MockRepoManagerMockRecorder
+	recorder *MockRemoteServerMockRecorder
 }
 
-// MockRepoManagerMockRecorder is the mock recorder for MockRepoManager
-type MockRepoManagerMockRecorder struct {
-	mock *MockRepoManager
+// MockRemoteServerMockRecorder is the mock recorder for MockRemoteServer
+type MockRemoteServerMockRecorder struct {
+	mock *MockRemoteServer
 }
 
-// NewMockRepoManager creates a new mock instance
-func NewMockRepoManager(ctrl *gomock.Controller) *MockRepoManager {
-	mock := &MockRepoManager{ctrl: ctrl}
-	mock.recorder = &MockRepoManagerMockRecorder{mock}
+// NewMockRemoteServer creates a new mock instance
+func NewMockRemoteServer(ctrl *gomock.Controller) *MockRemoteServer {
+	mock := &MockRemoteServer{ctrl: ctrl}
+	mock.recorder = &MockRemoteServerMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockRepoManager) EXPECT() *MockRepoManagerMockRecorder {
+func (m *MockRemoteServer) EXPECT() *MockRemoteServerMockRecorder {
 	return m.recorder
 }
 
 // GetPushPool mocks base method
-func (m *MockRepoManager) GetPushPool() core.PushPool {
+func (m *MockRemoteServer) GetPushPool() core.PushPool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
 	ret0, _ := ret[0].(core.PushPool)
@@ -1892,13 +1907,13 @@ func (m *MockRepoManager) GetPushPool() core.PushPool {
 }
 
 // GetPushPool indicates an expected call of GetPushPool
-func (mr *MockRepoManagerMockRecorder) GetPushPool() *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) GetPushPool() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushPool", reflect.TypeOf((*MockRepoManager)(nil).GetPushPool))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushPool", reflect.TypeOf((*MockRemoteServer)(nil).GetPushPool))
 }
 
 // GetMempool mocks base method
-func (m *MockRepoManager) GetMempool() core.Mempool {
+func (m *MockRemoteServer) GetMempool() core.Mempool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMempool")
 	ret0, _ := ret[0].(core.Mempool)
@@ -1906,13 +1921,13 @@ func (m *MockRepoManager) GetMempool() core.Mempool {
 }
 
 // GetMempool indicates an expected call of GetMempool
-func (mr *MockRepoManagerMockRecorder) GetMempool() *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) GetMempool() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMempool", reflect.TypeOf((*MockRepoManager)(nil).GetMempool))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMempool", reflect.TypeOf((*MockRemoteServer)(nil).GetMempool))
 }
 
 // GetRepo mocks base method
-func (m *MockRepoManager) GetRepo(name string) (core.BareRepo, error) {
+func (m *MockRemoteServer) GetRepo(name string) (core.BareRepo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRepo", name)
 	ret0, _ := ret[0].(core.BareRepo)
@@ -1921,13 +1936,13 @@ func (m *MockRepoManager) GetRepo(name string) (core.BareRepo, error) {
 }
 
 // GetRepo indicates an expected call of GetRepo
-func (mr *MockRepoManagerMockRecorder) GetRepo(name interface{}) *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) GetRepo(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockRepoManager)(nil).GetRepo), name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockRemoteServer)(nil).GetRepo), name)
 }
 
 // UpdateRepoWithTxPush mocks base method
-func (m *MockRepoManager) UpdateRepoWithTxPush(tx *core.TxPush) error {
+func (m *MockRemoteServer) UpdateRepoWithTxPush(tx *core.TxPush) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateRepoWithTxPush", tx)
 	ret0, _ := ret[0].(error)
@@ -1935,13 +1950,13 @@ func (m *MockRepoManager) UpdateRepoWithTxPush(tx *core.TxPush) error {
 }
 
 // UpdateRepoWithTxPush indicates an expected call of UpdateRepoWithTxPush
-func (mr *MockRepoManagerMockRecorder) UpdateRepoWithTxPush(tx interface{}) *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) UpdateRepoWithTxPush(tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRepoWithTxPush", reflect.TypeOf((*MockRepoManager)(nil).UpdateRepoWithTxPush), tx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRepoWithTxPush", reflect.TypeOf((*MockRemoteServer)(nil).UpdateRepoWithTxPush), tx)
 }
 
 // Log mocks base method
-func (m *MockRepoManager) Log() logger.Logger {
+func (m *MockRemoteServer) Log() logger.Logger {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Log")
 	ret0, _ := ret[0].(logger.Logger)
@@ -1949,13 +1964,13 @@ func (m *MockRepoManager) Log() logger.Logger {
 }
 
 // Log indicates an expected call of Log
-func (mr *MockRepoManagerMockRecorder) Log() *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) Log() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Log", reflect.TypeOf((*MockRepoManager)(nil).Log))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Log", reflect.TypeOf((*MockRemoteServer)(nil).Log))
 }
 
 // Cfg mocks base method
-func (m *MockRepoManager) Cfg() *config.AppConfig {
+func (m *MockRemoteServer) Cfg() *config.AppConfig {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Cfg")
 	ret0, _ := ret[0].(*config.AppConfig)
@@ -1963,13 +1978,13 @@ func (m *MockRepoManager) Cfg() *config.AppConfig {
 }
 
 // Cfg indicates an expected call of Cfg
-func (mr *MockRepoManagerMockRecorder) Cfg() *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) Cfg() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockRepoManager)(nil).Cfg))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Cfg", reflect.TypeOf((*MockRemoteServer)(nil).Cfg))
 }
 
 // GetRepoState mocks base method
-func (m *MockRepoManager) GetRepoState(target core.BareRepo, options ...core.KVOption) (core.BareRepoState, error) {
+func (m *MockRemoteServer) GetRepoState(target core.BareRepo, options ...core.KVOption) (core.BareRepoState, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{target}
 	for _, a := range options {
@@ -1982,14 +1997,14 @@ func (m *MockRepoManager) GetRepoState(target core.BareRepo, options ...core.KVO
 }
 
 // GetRepoState indicates an expected call of GetRepoState
-func (mr *MockRepoManagerMockRecorder) GetRepoState(target interface{}, options ...interface{}) *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) GetRepoState(target interface{}, options ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{target}, options...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoState", reflect.TypeOf((*MockRepoManager)(nil).GetRepoState), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoState", reflect.TypeOf((*MockRemoteServer)(nil).GetRepoState), varargs...)
 }
 
 // GetPushKeyGetter mocks base method
-func (m *MockRepoManager) GetPushKeyGetter() core.PushKeyGetter {
+func (m *MockRemoteServer) GetPushKeyGetter() core.PushKeyGetter {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushKeyGetter")
 	ret0, _ := ret[0].(core.PushKeyGetter)
@@ -1997,13 +2012,13 @@ func (m *MockRepoManager) GetPushKeyGetter() core.PushKeyGetter {
 }
 
 // GetPushKeyGetter indicates an expected call of GetPushKeyGetter
-func (mr *MockRepoManagerMockRecorder) GetPushKeyGetter() *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) GetPushKeyGetter() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKeyGetter", reflect.TypeOf((*MockRepoManager)(nil).GetPushKeyGetter))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKeyGetter", reflect.TypeOf((*MockRemoteServer)(nil).GetPushKeyGetter))
 }
 
 // GetLogic mocks base method
-func (m *MockRepoManager) GetLogic() core.Logic {
+func (m *MockRemoteServer) GetLogic() core.Logic {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLogic")
 	ret0, _ := ret[0].(core.Logic)
@@ -2011,13 +2026,13 @@ func (m *MockRepoManager) GetLogic() core.Logic {
 }
 
 // GetLogic indicates an expected call of GetLogic
-func (mr *MockRepoManagerMockRecorder) GetLogic() *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) GetLogic() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogic", reflect.TypeOf((*MockRepoManager)(nil).GetLogic))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLogic", reflect.TypeOf((*MockRemoteServer)(nil).GetLogic))
 }
 
 // GetPrivateValidatorKey mocks base method
-func (m *MockRepoManager) GetPrivateValidatorKey() *crypto.Key {
+func (m *MockRemoteServer) GetPrivateValidatorKey() *crypto.Key {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPrivateValidatorKey")
 	ret0, _ := ret[0].(*crypto.Key)
@@ -2025,13 +2040,13 @@ func (m *MockRepoManager) GetPrivateValidatorKey() *crypto.Key {
 }
 
 // GetPrivateValidatorKey indicates an expected call of GetPrivateValidatorKey
-func (mr *MockRepoManagerMockRecorder) GetPrivateValidatorKey() *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) GetPrivateValidatorKey() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrivateValidatorKey", reflect.TypeOf((*MockRepoManager)(nil).GetPrivateValidatorKey))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPrivateValidatorKey", reflect.TypeOf((*MockRemoteServer)(nil).GetPrivateValidatorKey))
 }
 
 // Start mocks base method
-func (m *MockRepoManager) Start() error {
+func (m *MockRemoteServer) Start() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Start")
 	ret0, _ := ret[0].(error)
@@ -2039,25 +2054,25 @@ func (m *MockRepoManager) Start() error {
 }
 
 // Start indicates an expected call of Start
-func (mr *MockRepoManagerMockRecorder) Start() *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) Start() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockRepoManager)(nil).Start))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Start", reflect.TypeOf((*MockRemoteServer)(nil).Start))
 }
 
 // Wait mocks base method
-func (m *MockRepoManager) Wait() {
+func (m *MockRemoteServer) Wait() {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Wait")
 }
 
 // Wait indicates an expected call of Wait
-func (mr *MockRepoManagerMockRecorder) Wait() *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) Wait() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Wait", reflect.TypeOf((*MockRepoManager)(nil).Wait))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Wait", reflect.TypeOf((*MockRemoteServer)(nil).Wait))
 }
 
 // CreateRepository mocks base method
-func (m *MockRepoManager) CreateRepository(name string) error {
+func (m *MockRemoteServer) CreateRepository(name string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateRepository", name)
 	ret0, _ := ret[0].(error)
@@ -2065,25 +2080,25 @@ func (m *MockRepoManager) CreateRepository(name string) error {
 }
 
 // CreateRepository indicates an expected call of CreateRepository
-func (mr *MockRepoManagerMockRecorder) CreateRepository(name interface{}) *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) CreateRepository(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRepository", reflect.TypeOf((*MockRepoManager)(nil).CreateRepository), name)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateRepository", reflect.TypeOf((*MockRemoteServer)(nil).CreateRepository), name)
 }
 
 // BroadcastMsg mocks base method
-func (m *MockRepoManager) BroadcastMsg(ch byte, msg []byte) {
+func (m *MockRemoteServer) BroadcastMsg(ch byte, msg []byte) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "BroadcastMsg", ch, msg)
 }
 
 // BroadcastMsg indicates an expected call of BroadcastMsg
-func (mr *MockRepoManagerMockRecorder) BroadcastMsg(ch, msg interface{}) *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) BroadcastMsg(ch, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastMsg", reflect.TypeOf((*MockRepoManager)(nil).BroadcastMsg), ch, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastMsg", reflect.TypeOf((*MockRemoteServer)(nil).BroadcastMsg), ch, msg)
 }
 
 // BroadcastPushObjects mocks base method
-func (m *MockRepoManager) BroadcastPushObjects(note core.RepoPushNote) error {
+func (m *MockRemoteServer) BroadcastPushObjects(note core.RepoPushNote) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "BroadcastPushObjects", note)
 	ret0, _ := ret[0].(error)
@@ -2091,37 +2106,37 @@ func (m *MockRepoManager) BroadcastPushObjects(note core.RepoPushNote) error {
 }
 
 // BroadcastPushObjects indicates an expected call of BroadcastPushObjects
-func (mr *MockRepoManagerMockRecorder) BroadcastPushObjects(note interface{}) *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) BroadcastPushObjects(note interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastPushObjects", reflect.TypeOf((*MockRepoManager)(nil).BroadcastPushObjects), note)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastPushObjects", reflect.TypeOf((*MockRemoteServer)(nil).BroadcastPushObjects), note)
 }
 
 // SetPGPPubKeyGetter mocks base method
-func (m *MockRepoManager) SetPGPPubKeyGetter(pkGetter core.PushKeyGetter) {
+func (m *MockRemoteServer) SetPGPPubKeyGetter(pkGetter core.PushKeyGetter) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetPGPPubKeyGetter", pkGetter)
 }
 
 // SetPGPPubKeyGetter indicates an expected call of SetPGPPubKeyGetter
-func (mr *MockRepoManagerMockRecorder) SetPGPPubKeyGetter(pkGetter interface{}) *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) SetPGPPubKeyGetter(pkGetter interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPGPPubKeyGetter", reflect.TypeOf((*MockRepoManager)(nil).SetPGPPubKeyGetter), pkGetter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPGPPubKeyGetter", reflect.TypeOf((*MockRemoteServer)(nil).SetPGPPubKeyGetter), pkGetter)
 }
 
 // RegisterAPIHandlers mocks base method
-func (m *MockRepoManager) RegisterAPIHandlers(agg modules.ModuleHub) {
+func (m *MockRemoteServer) RegisterAPIHandlers(agg modules.ModuleHub) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "RegisterAPIHandlers", agg)
 }
 
 // RegisterAPIHandlers indicates an expected call of RegisterAPIHandlers
-func (mr *MockRepoManagerMockRecorder) RegisterAPIHandlers(agg interface{}) *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) RegisterAPIHandlers(agg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterAPIHandlers", reflect.TypeOf((*MockRepoManager)(nil).RegisterAPIHandlers), agg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterAPIHandlers", reflect.TypeOf((*MockRemoteServer)(nil).RegisterAPIHandlers), agg)
 }
 
 // GetPruner mocks base method
-func (m *MockRepoManager) GetPruner() core.Pruner {
+func (m *MockRemoteServer) GetPruner() core.Pruner {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPruner")
 	ret0, _ := ret[0].(core.Pruner)
@@ -2129,13 +2144,13 @@ func (m *MockRepoManager) GetPruner() core.Pruner {
 }
 
 // GetPruner indicates an expected call of GetPruner
-func (mr *MockRepoManagerMockRecorder) GetPruner() *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) GetPruner() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPruner", reflect.TypeOf((*MockRepoManager)(nil).GetPruner))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPruner", reflect.TypeOf((*MockRemoteServer)(nil).GetPruner))
 }
 
 // GetDHT mocks base method
-func (m *MockRepoManager) GetDHT() types.DHTNode {
+func (m *MockRemoteServer) GetDHT() types.DHTNode {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDHT")
 	ret0, _ := ret[0].(types.DHTNode)
@@ -2143,13 +2158,13 @@ func (m *MockRepoManager) GetDHT() types.DHTNode {
 }
 
 // GetDHT indicates an expected call of GetDHT
-func (mr *MockRepoManagerMockRecorder) GetDHT() *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) GetDHT() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDHT", reflect.TypeOf((*MockRepoManager)(nil).GetDHT))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDHT", reflect.TypeOf((*MockRemoteServer)(nil).GetDHT))
 }
 
 // ExecTxPush mocks base method
-func (m *MockRepoManager) ExecTxPush(tx *core.TxPush) error {
+func (m *MockRemoteServer) ExecTxPush(tx *core.TxPush) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ExecTxPush", tx)
 	ret0, _ := ret[0].(error)
@@ -2157,25 +2172,25 @@ func (m *MockRepoManager) ExecTxPush(tx *core.TxPush) error {
 }
 
 // ExecTxPush indicates an expected call of ExecTxPush
-func (mr *MockRepoManagerMockRecorder) ExecTxPush(tx interface{}) *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) ExecTxPush(tx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecTxPush", reflect.TypeOf((*MockRepoManager)(nil).ExecTxPush), tx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecTxPush", reflect.TypeOf((*MockRemoteServer)(nil).ExecTxPush), tx)
 }
 
 // Shutdown mocks base method
-func (m *MockRepoManager) Shutdown(ctx context.Context) {
+func (m *MockRemoteServer) Shutdown(ctx context.Context) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Shutdown", ctx)
 }
 
 // Shutdown indicates an expected call of Shutdown
-func (mr *MockRepoManagerMockRecorder) Shutdown(ctx interface{}) *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) Shutdown(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockRepoManager)(nil).Shutdown), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Shutdown", reflect.TypeOf((*MockRemoteServer)(nil).Shutdown), ctx)
 }
 
 // Stop mocks base method
-func (m *MockRepoManager) Stop() error {
+func (m *MockRemoteServer) Stop() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Stop")
 	ret0, _ := ret[0].(error)
@@ -2183,9 +2198,9 @@ func (m *MockRepoManager) Stop() error {
 }
 
 // Stop indicates an expected call of Stop
-func (mr *MockRepoManagerMockRecorder) Stop() *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) Stop() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockRepoManager)(nil).Stop))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockRemoteServer)(nil).Stop))
 }
 
 // MockLiteGit is a mock of LiteGit interface
@@ -2268,19 +2283,19 @@ func (mr *MockLiteGitMockRecorder) RefGet(refname interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RefGet", reflect.TypeOf((*MockLiteGit)(nil).RefGet), refname)
 }
 
-// GetRecentCommit mocks base method
-func (m *MockLiteGit) GetRecentCommit() (string, error) {
+// GetRecentCommitHash mocks base method
+func (m *MockLiteGit) GetRecentCommitHash() (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRecentCommit")
+	ret := m.ctrl.Call(m, "GetRecentCommitHash")
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetRecentCommit indicates an expected call of GetRecentCommit
-func (mr *MockLiteGitMockRecorder) GetRecentCommit() *gomock.Call {
+// GetRecentCommitHash indicates an expected call of GetRecentCommitHash
+func (mr *MockLiteGitMockRecorder) GetRecentCommitHash() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecentCommit", reflect.TypeOf((*MockLiteGit)(nil).GetRecentCommit))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRecentCommitHash", reflect.TypeOf((*MockLiteGit)(nil).GetRecentCommitHash))
 }
 
 // GetHEAD mocks base method
@@ -2299,18 +2314,18 @@ func (mr *MockLiteGitMockRecorder) GetHEAD(short interface{}) *gomock.Call {
 }
 
 // NumCommits mocks base method
-func (m *MockLiteGit) NumCommits(branch string) (int, error) {
+func (m *MockLiteGit) NumCommits(branch string, noMerges bool) (int, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NumCommits", branch)
+	ret := m.ctrl.Call(m, "NumCommits", branch, noMerges)
 	ret0, _ := ret[0].(int)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // NumCommits indicates an expected call of NumCommits
-func (mr *MockLiteGitMockRecorder) NumCommits(branch interface{}) *gomock.Call {
+func (mr *MockLiteGitMockRecorder) NumCommits(branch, noMerges interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumCommits", reflect.TypeOf((*MockLiteGit)(nil).NumCommits), branch)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumCommits", reflect.TypeOf((*MockLiteGit)(nil).NumCommits), branch, noMerges)
 }
 
 // GetConfig mocks base method
@@ -2327,23 +2342,23 @@ func (mr *MockLiteGitMockRecorder) GetConfig(path interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockLiteGit)(nil).GetConfig), path)
 }
 
-// CreateAndOrSignQuietCommit mocks base method
-func (m *MockLiteGit) CreateAndOrSignQuietCommit(msg, signingKey string, env ...string) error {
+// CreateSignedEmptyCommit mocks base method
+func (m *MockLiteGit) CreateSignedEmptyCommit(msg, signingKey string, env ...string) error {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{msg, signingKey}
 	for _, a := range env {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "CreateAndOrSignQuietCommit", varargs...)
+	ret := m.ctrl.Call(m, "CreateSignedEmptyCommit", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// CreateAndOrSignQuietCommit indicates an expected call of CreateAndOrSignQuietCommit
-func (mr *MockLiteGitMockRecorder) CreateAndOrSignQuietCommit(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
+// CreateSignedEmptyCommit indicates an expected call of CreateSignedEmptyCommit
+func (mr *MockLiteGitMockRecorder) CreateSignedEmptyCommit(msg, signingKey interface{}, env ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{msg, signingKey}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAndOrSignQuietCommit", reflect.TypeOf((*MockLiteGit)(nil).CreateAndOrSignQuietCommit), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSignedEmptyCommit", reflect.TypeOf((*MockLiteGit)(nil).CreateSignedEmptyCommit), varargs...)
 }
 
 // CreateTagWithMsg mocks base method
@@ -2537,18 +2552,32 @@ func (mr *MockLiteGitMockRecorder) GetMergeCommits(reference interface{}, env ..
 }
 
 // CreateSingleFileCommit mocks base method
-func (m *MockLiteGit) CreateSingleFileCommit(filename, content, parent string) (string, error) {
+func (m *MockLiteGit) CreateSingleFileCommit(filename, content, commitMsg, parent string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateSingleFileCommit", filename, content, parent)
+	ret := m.ctrl.Call(m, "CreateSingleFileCommit", filename, content, commitMsg, parent)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateSingleFileCommit indicates an expected call of CreateSingleFileCommit
-func (mr *MockLiteGitMockRecorder) CreateSingleFileCommit(filename, content, parent interface{}) *gomock.Call {
+func (mr *MockLiteGitMockRecorder) CreateSingleFileCommit(filename, content, commitMsg, parent interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSingleFileCommit", reflect.TypeOf((*MockLiteGit)(nil).CreateSingleFileCommit), filename, content, parent)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSingleFileCommit", reflect.TypeOf((*MockLiteGit)(nil).CreateSingleFileCommit), filename, content, commitMsg, parent)
+}
+
+// Checkout mocks base method
+func (m *MockLiteGit) Checkout(refname string, create bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Checkout", refname, create)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Checkout indicates an expected call of Checkout
+func (mr *MockLiteGitMockRecorder) Checkout(refname, create interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkout", reflect.TypeOf((*MockLiteGit)(nil).Checkout), refname, create)
 }
 
 // MockCommitTree is a mock of CommitTree interface

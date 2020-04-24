@@ -70,7 +70,7 @@ func ValidateChange(
 			return errors.Wrap(err, "unable to get commit object")
 		}
 
-		if plumbing2.IsIssueBranch(change.Item.GetName()) {
+		if plumbing2.IsIssueReference(change.Item.GetName()) {
 			return CheckIssueCommit(repo2.NewWrappedCommit(commit), txDetail.Reference, oldHash, repo)
 		} else {
 			return CheckCommit(commit, txDetail, getPushKey)
