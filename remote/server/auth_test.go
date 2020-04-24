@@ -100,7 +100,7 @@ var _ = Describe("Auth", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:1, field:repoName, msg:all push tokens must target the same repository"))
+				Expect(err).To(MatchError("index:1, field:repo, msg:all push tokens must target the same repository"))
 			})
 		})
 
@@ -132,7 +132,7 @@ var _ = Describe("Auth", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("index:1, field:repoNamespace, msg:all push tokens must target the same namespace"))
+				Expect(err).To(MatchError("index:1, field:namespace, msg:all push tokens must target the same namespace"))
 			})
 		})
 

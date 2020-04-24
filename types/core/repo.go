@@ -506,7 +506,7 @@ type LiteGit interface {
 	AddEntryToNote(notename, objectHash, note string, env ...string) error
 	CreateBlob(content string) (string, error)
 	UpdateRecentCommitMsg(msg, signingKey string, env ...string) error
-	IsDescendant(childHash string, parentHash string, env ...string) error
+	IsAncestor(commitA string, commitB string, env ...string) error
 	HasMergeCommits(reference string, env ...string) (bool, error)
 	GetMergeCommits(reference string, env ...string) ([]string, error)
 	CreateSingleFileCommit(filename, content, commitMsg, parent string) (string, error)

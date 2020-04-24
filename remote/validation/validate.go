@@ -287,7 +287,7 @@ func CheckIssueCommit(commit core.Commit, reference, oldHash string, repo core.B
 	}
 
 	// Issue commit history must not alter the current history (rebasing not permitted)
-	if !isNewIssue && repo.IsDescendant(commit.GetHash().String(), oldHash) != nil {
+	if !isNewIssue && repo.IsAncestor(oldHash, commit.GetHash().String()) != nil {
 		return fmt.Errorf("issue commit must not alter history")
 	}
 
@@ -411,7 +411,7 @@ func CheckIssueBody(
 
 	// When ReplyTo is set, ensure the issue commit is a descendant of the replyTo
 	if len(replyToVal) > 0 {
-		if repo.IsDescendant(commit.GetHash().String(), replyToVal) != nil {
+		if repo.IsAncestor(replyToVal, commit.GetHash().String()) != nil {
 			return fe(-1, "replyTo", "not a valid hash of a commit in the issue")
 		}
 	}
@@ -471,10 +471,10 @@ func CheckIssueBody(
 func CheckPushNoteSyntax(tx *core.PushNote) error {
 
 	if tx.RepoName == "" {
-		return util.FieldError("repoName", "repo name is required")
+		return util.FieldError("repo", "repo name is required")
 	}
 	if util.IsValidIdentifierName(tx.RepoName) != nil {
-		return util.FieldError("repoName", "repo name is not valid")
+		return util.FieldError("repo", "repo name is not valid")
 	}
 
 	if tx.Namespace != "" && util.IsValidIdentifierName(tx.Namespace) != nil {
@@ -639,7 +639,7 @@ func CheckPushNoteConsistency(note *core.PushNote, logic core.Logic) error {
 	repo := logic.RepoKeeper().Get(note.GetRepoName())
 	if repo.IsNil() {
 		msg := fmt.Sprintf("repository named '%s' is unknown", note.GetRepoName())
-		return util.FieldError("repoName", msg)
+		return util.FieldError("repo", msg)
 	}
 
 	// If namespace is provide, ensure it exists
@@ -966,7 +966,7 @@ func CheckTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, inde
 		paramNS = keepers.NamespaceKeeper().Get(params.RepoNamespace)
 		if paramNS.IsNil() {
 			msg := fmt.Sprintf("namespace (%s) is unknown", params.RepoNamespace)
-			return fe(index, "repoNamespace", msg)
+			return fe(index, "namespace", msg)
 		}
 	}
 
@@ -974,7 +974,7 @@ func CheckTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, inde
 	if len(pushKey.Scopes) > 0 {
 		if IsBlockedByScope(pushKey.Scopes, params, paramNS) {
 			msg := fmt.Sprintf("push key (%s) not permitted due to scope limitation", params.PushKeyID)
-			return fe(index, "repoName|repoNamespace", msg)
+			return fe(index, "repo|namespace", msg)
 		}
 	}
 

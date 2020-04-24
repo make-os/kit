@@ -12,7 +12,7 @@ import (
 type PushNote struct {
 	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
 	TargetRepo            BareRepo         `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
-	RepoName              string           `json:"repoName,omitempty" msgpack:"repoName,omitempty"`         // The name of the repo
+	RepoName              string           `json:"repo,omitempty" msgpack:"repo,omitempty"`                 // The name of the repo
 	Namespace             string           `json:"namespace,omitempty" msgpack:"namespace,omitempty"`       // The namespace which the repo is under.
 	References            PushedReferences `json:"references,omitempty" msgpack:"references,omitempty"`     // A list of references pushed
 	PushKeyID             []byte           `json:"pusherKeyId,omitempty" msgpack:"pusherKeyId,omitempty"`   // The PGP key of the pusher

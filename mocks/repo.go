@@ -313,23 +313,23 @@ func (mr *MockBareRepoMockRecorder) UpdateRecentCommitMsg(msg, signingKey interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRecentCommitMsg", reflect.TypeOf((*MockBareRepo)(nil).UpdateRecentCommitMsg), varargs...)
 }
 
-// IsDescendant mocks base method
-func (m *MockBareRepo) IsDescendant(childHash, parentHash string, env ...string) error {
+// IsAncestor mocks base method
+func (m *MockBareRepo) IsAncestor(commitA, commitB string, env ...string) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{childHash, parentHash}
+	varargs := []interface{}{commitA, commitB}
 	for _, a := range env {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "IsDescendant", varargs...)
+	ret := m.ctrl.Call(m, "IsAncestor", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// IsDescendant indicates an expected call of IsDescendant
-func (mr *MockBareRepoMockRecorder) IsDescendant(childHash, parentHash interface{}, env ...interface{}) *gomock.Call {
+// IsAncestor indicates an expected call of IsAncestor
+func (mr *MockBareRepoMockRecorder) IsAncestor(commitA, commitB interface{}, env ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{childHash, parentHash}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsDescendant", reflect.TypeOf((*MockBareRepo)(nil).IsDescendant), varargs...)
+	varargs := append([]interface{}{commitA, commitB}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAncestor", reflect.TypeOf((*MockBareRepo)(nil).IsAncestor), varargs...)
 }
 
 // HasMergeCommits mocks base method
@@ -388,17 +388,17 @@ func (mr *MockBareRepoMockRecorder) CreateSingleFileCommit(filename, content, co
 }
 
 // Checkout mocks base method
-func (m *MockBareRepo) Checkout(refname string, create bool) error {
+func (m *MockBareRepo) Checkout(refname string, create, force bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Checkout", refname, create)
+	ret := m.ctrl.Call(m, "Checkout", refname, create, force)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Checkout indicates an expected call of Checkout
-func (mr *MockBareRepoMockRecorder) Checkout(refname, create interface{}) *gomock.Call {
+func (mr *MockBareRepoMockRecorder) Checkout(refname, create, force interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkout", reflect.TypeOf((*MockBareRepo)(nil).Checkout), refname, create)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkout", reflect.TypeOf((*MockBareRepo)(nil).Checkout), refname, create, force)
 }
 
 // GetName mocks base method
@@ -2492,23 +2492,23 @@ func (mr *MockLiteGitMockRecorder) UpdateRecentCommitMsg(msg, signingKey interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRecentCommitMsg", reflect.TypeOf((*MockLiteGit)(nil).UpdateRecentCommitMsg), varargs...)
 }
 
-// IsDescendant mocks base method
-func (m *MockLiteGit) IsDescendant(childHash, parentHash string, env ...string) error {
+// IsAncestor mocks base method
+func (m *MockLiteGit) IsAncestor(commitA, commitB string, env ...string) error {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{childHash, parentHash}
+	varargs := []interface{}{commitA, commitB}
 	for _, a := range env {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "IsDescendant", varargs...)
+	ret := m.ctrl.Call(m, "IsAncestor", varargs...)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// IsDescendant indicates an expected call of IsDescendant
-func (mr *MockLiteGitMockRecorder) IsDescendant(childHash, parentHash interface{}, env ...interface{}) *gomock.Call {
+// IsAncestor indicates an expected call of IsAncestor
+func (mr *MockLiteGitMockRecorder) IsAncestor(commitA, commitB interface{}, env ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{childHash, parentHash}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsDescendant", reflect.TypeOf((*MockLiteGit)(nil).IsDescendant), varargs...)
+	varargs := append([]interface{}{commitA, commitB}, env...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAncestor", reflect.TypeOf((*MockLiteGit)(nil).IsAncestor), varargs...)
 }
 
 // HasMergeCommits mocks base method
@@ -2567,17 +2567,17 @@ func (mr *MockLiteGitMockRecorder) CreateSingleFileCommit(filename, content, com
 }
 
 // Checkout mocks base method
-func (m *MockLiteGit) Checkout(refname string, create bool) error {
+func (m *MockLiteGit) Checkout(refname string, create, force bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Checkout", refname, create)
+	ret := m.ctrl.Call(m, "Checkout", refname, create, force)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Checkout indicates an expected call of Checkout
-func (mr *MockLiteGitMockRecorder) Checkout(refname, create interface{}) *gomock.Call {
+func (mr *MockLiteGitMockRecorder) Checkout(refname, create, force interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkout", reflect.TypeOf((*MockLiteGit)(nil).Checkout), refname, create)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkout", reflect.TypeOf((*MockLiteGit)(nil).Checkout), refname, create, force)
 }
 
 // MockCommitTree is a mock of CommitTree interface

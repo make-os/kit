@@ -289,9 +289,9 @@ func (lg *LiteGit) UpdateRecentCommitMsg(msg, signingKey string, env ...string) 
 	return errors.Wrap(cmd.Run(), "failed to update recent commit msg")
 }
 
-// IsDescendant checks whether a child commit hash is a descendant of a parent commit
-func (lg *LiteGit) IsDescendant(childHash string, parentHash string, env ...string) error {
-	args := []string{"merge-base", "--is-ancestor", parentHash, childHash}
+// IsAncestor checks whether the commitA is an ancestor of commitB
+func (lg *LiteGit) IsAncestor(commitA string, commitB string, env ...string) error {
+	args := []string{"merge-base", "--is-ancestor", commitA, commitB}
 	cmd := exec.Command(lg.gitBinPath, args...)
 	cmd.Dir = lg.path
 	cmd.Env = append(os.Environ(), env...)
@@ -404,9 +404,9 @@ func (lg *LiteGit) NumCommits(refname string, noMerges bool) (int, error) {
 // Checkout switches HEAD to the specified reference.
 // When create is true, the -b is added
 func (lg *LiteGit) Checkout(refname string, create, force bool) error {
-	args := []string{"checkout"}
+	args := []string{"checkout", "--quiet"}
 	if create {
-		args = append(args, "-b", "--quite", refname)
+		args = append(args, "-b", refname)
 	} else {
 		args = append(args, refname)
 	}
@@ -424,7 +424,30 @@ func (lg *LiteGit) Checkout(refname string, create, force bool) error {
 		if strings.Contains(outStr, "did not match any file(s) known to git") {
 			return ErrRefNotFound
 		}
-		return errors.Wrap(err, out.String())
+		return errors.Wrap(err, outStr)
 	}
 	return nil
+}
+
+// GetRefCommits returns the hash of all commits in the specified reference's history
+func (lg *LiteGit) GetRefCommits(ref string, noMerges bool) ([]string, error) {
+	args := []string{"rev-list", ref}
+	if noMerges {
+		args = append(args, "--no-merges")
+	}
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
+	out := bytes.NewBuffer(nil)
+	cmd.Stdout = out
+	cmd.Stderr = out
+	err := cmd.Run()
+	if err != nil {
+		outStr := out.String()
+		if strings.Contains(outStr, "unknown revision or path") {
+			return nil, ErrRefNotFound
+		}
+		return nil, errors.Wrap(err, outStr)
+	}
+
+	return strings.Fields(out.String()), nil
 }

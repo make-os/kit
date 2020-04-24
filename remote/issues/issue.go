@@ -81,15 +81,15 @@ func AddIssueOrCommentCommit(
 }
 
 // MakeIssueBody creates an issue body using the specified fields
-func MakeIssueBody(title, body string, replyTo int, labels, assignees, fixers []string) string {
+func MakeIssueBody(title, body string, replyTo string, labels, assignees, fixers []string) string {
 	args := ""
 	str := "---\n%s---\n"
 
 	if len(title) > 0 {
 		args += fmt.Sprintf("title: %s\n", title)
 	}
-	if replyTo > 0 {
-		args += fmt.Sprintf("replyTo: %d\n", replyTo)
+	if replyTo != "" {
+		args += fmt.Sprintf("replyTo: %s\n", replyTo)
 	}
 	if len(labels) > 0 {
 		labelsStr, _ := json.Marshal(labels)

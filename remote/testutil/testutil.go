@@ -27,6 +27,10 @@ func AppendToFile(path, file string, data string) {
 	_, _ = script.Echo(data).AppendFile(filepath.Join(path, file))
 }
 
+func ExecGitAdd(path, file string) []byte {
+	return ExecGit(path, "add", file)
+}
+
 func ExecGitCommit(path, msg string) []byte {
 	ExecGit(path, "add", ".")
 	return ExecGit(path, "commit", "-m", msg)

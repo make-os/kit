@@ -44,7 +44,13 @@ func readFromEditor(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (s
 }
 
 // IssueCreateCmd create a new issue or adds a comment commit to an existing issue
-func IssueCreateCmd(title, body string, commentID int, labels, assignees, fixers []string,
+func IssueCreateCmd(
+	title,
+	body string,
+	replyHash string,
+	labels,
+	assignees,
+	fixers []string,
 	useEditor bool,
 	editorPath string,
 	stdOut io.Writer,
@@ -54,7 +60,7 @@ func IssueCreateCmd(title, body string, commentID int, labels, assignees, fixers
 	// When an issue ID is not set and a target comment commit is set,
 	// it means this the intent is to add reply to a comment.
 	// Ensure the issue ID where the comment commit reside is set.
-	if issueID == 0 && commentID > 0 {
+	if issueID == 0 && replyHash != "" {
 		return fmt.Errorf("issue ID is required")
 	}
 
@@ -64,27 +70,29 @@ func IssueCreateCmd(title, body string, commentID int, labels, assignees, fixers
 		return errors.Wrap(err, "failed to open repo at cwd")
 	}
 
-	var issueRef string
 	var nIssueComments int
-
-	// Perform some validation when a target issue ID is specified.
 	if issueID > 0 {
-		issueRef = plumbing.MakeIssueReference(issueID)
+
+		// Get the number of comment commits in the issue
+		issueRef := plumbing.MakeIssueReference(issueID)
 		nIssueComments, err = targetRepo.NumCommits(issueRef, false)
 		if err != nil {
 			return fmt.Errorf("failed to count comment commits in issue")
 		}
 
-		// Do not allow a title when this action will result in a comment on the issue.
-		// Comments do not carry titles.
+		// Do not allow a title when this action will result in a
+		// comment on the issue. Comments do not carry titles.
 		if nIssueComments > 0 && title != "" {
 			return fmt.Errorf("title not required when adding a comment to an issue")
 		}
 
-		// When a comment commit ID is set, this is considered a reply to another comment commit.
-		// Ensure the ID is within the range of 0 - [number of known commits in the issue].
-		if commentID > 0 && commentID >= nIssueComments {
-			return fmt.Errorf("the specified comment commit ID is unknown")
+		// When a reply ID is set, this is a reply to another comment commit
+		// using their commit hash. Ensure the hash exist in the history of the issue
+		if replyHash != "" {
+			issueRefHash, _ := targetRepo.RefGet(issueRef)
+			if targetRepo.IsAncestor(replyHash, issueRefHash) != nil {
+				return fmt.Errorf("target comment hash (%s) is unknown", replyHash)
+			}
 		}
 	}
 
@@ -95,7 +103,7 @@ func IssueCreateCmd(title, body string, commentID int, labels, assignees, fixers
 	rdr := bufio.NewReader(os.Stdin)
 
 	// Prompt user for title only if was not provided via flag and this is not a comment
-	if len(title) == 0 && commentID == 0 && nIssueComments == 0 {
+	if len(title) == 0 && replyHash == "" && nIssueComments == 0 {
 		fmt.Fprintln(stdOut, color.HiBlackString("Title: (256 chars) - Press enter to continue"))
 		title, _ = rdr.ReadString('\n')
 		title = strings.TrimSpace(title)
@@ -126,15 +134,14 @@ func IssueCreateCmd(title, body string, commentID int, labels, assignees, fixers
 	}
 
 	// Create the issue body and prompt user to confirm
-	issueBody := issues.MakeIssueBody(title, body, commentID, labels, assignees, fixers)
+	issueBody := issues.MakeIssueBody(title, body, replyHash, labels, assignees, fixers)
 
 	// Create a new issue or add comment commit to existing issue
-	newIssue, ref, err := issues.AddIssueOrCommentCommit(targetRepo, issueID, issueBody, commentID > 0)
+	newIssue, ref, err := issues.AddIssueOrCommentCommit(targetRepo, issueID, issueBody, replyHash != "")
 	if err != nil {
 		return err
 	}
 
-	// Print reference address
 	if newIssue {
 		fmt.Fprintln(stdOut, fmt.Sprintf("%s#0", ref))
 	} else {

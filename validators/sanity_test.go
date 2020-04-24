@@ -1245,7 +1245,7 @@ var _ = Describe("TxValidator", func() {
 				tx.PushNote.RepoName = ""
 				err := validators.CheckTxPush(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:repoName, msg:repo name is required"))
+				Expect(err.Error()).To(Equal("field:repo, msg:repo name is required"))
 			})
 
 			It("has low endorsement (not up to quorum)", func() {

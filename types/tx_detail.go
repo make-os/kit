@@ -92,15 +92,15 @@ func (td ReferenceTxDetails) GetNonce() uint64 {
 // and tag objects
 type TxDetail struct {
 	util.SerializerHelper
-	RepoName        string      `json:"repoName" msgpack:"repoName,omitempty" mapstructure:"repoName"`                // The target repo name
-	RepoNamespace   string      `json:"repoNamespace" msgpack:"repoNamespace,omitempty" mapstructure:"repoNamespace"` // The target repo namespace
-	Reference       string      `json:"reference" msgpack:"reference,omitempty" mapstructure:"reference"`             // The target reference
-	Fee             util.String `json:"fee" msgpack:"fee,omitempty" mapstructure:"fee"`                               // Network fee to be paid for update to the target ref
-	Nonce           uint64      `json:"nonce" msgpack:"nonce,omitempty" mapstructure:"nonce"`                         // Nonce of the account paying the network fee and signing the update.
-	PushKeyID       string      `json:"pkID" msgpack:"pkID,omitempty" mapstructure:"pkID"`                            // The pusher public key ID.
-	Signature       string      `json:"sig" msgpack:"sig,omitempty" mapstructure:"sig"`                               // The signature of the tx parameter
-	MergeProposalID string      `json:"mergeID" msgpack:"mergeID,omitempty" mapstructure:"mergeID"`                   // Specifies a merge proposal that the push is meant to fulfil
-	Head            string      `json:"head" msgpack:"head,omitempty" mapstructure:"head"`                            // Indicates the HEAD hash of the target reference
+	RepoName        string      `json:"repo" msgpack:"repo,omitempty" mapstructure:"repo"`                // The target repo name
+	RepoNamespace   string      `json:"namespace" msgpack:"namespace,omitempty" mapstructure:"namespace"` // The target repo namespace
+	Reference       string      `json:"reference" msgpack:"reference,omitempty" mapstructure:"reference"` // The target reference
+	Fee             util.String `json:"fee" msgpack:"fee,omitempty" mapstructure:"fee"`                   // Network fee to be paid for update to the target ref
+	Nonce           uint64      `json:"nonce" msgpack:"nonce,omitempty" mapstructure:"nonce"`             // Nonce of the account paying the network fee and signing the update.
+	PushKeyID       string      `json:"pkID" msgpack:"pkID,omitempty" mapstructure:"pkID"`                // The pusher public key ID.
+	Signature       string      `json:"sig" msgpack:"sig,omitempty" mapstructure:"sig"`                   // The signature of the tx parameter
+	MergeProposalID string      `json:"mergeID" msgpack:"mergeID,omitempty" mapstructure:"mergeID"`       // Specifies a merge proposal that the push is meant to fulfil
+	Head            string      `json:"head" msgpack:"head,omitempty" mapstructure:"head"`                // Indicates the HEAD hash of the target reference
 }
 
 // MustSignatureAsBytes returns the decoded signature.
@@ -124,12 +124,12 @@ func (tp *TxDetail) Equal(o *TxDetail) bool {
 // ToMapForPEMHeader returns a map version of the object suitable for use in a PEM header
 func (tp *TxDetail) ToMapForPEMHeader() map[string]string {
 	hdr := map[string]string{
-		"repoName":      tp.RepoName,
-		"repoNamespace": tp.RepoNamespace,
-		"reference":     tp.Reference,
-		"pkID":          tp.PushKeyID,
-		"nonce":         fmt.Sprintf("%d", tp.Nonce),
-		"fee":           fmt.Sprintf("%s", tp.Fee),
+		"repo":      tp.RepoName,
+		"namespace": tp.RepoNamespace,
+		"reference": tp.Reference,
+		"pkID":      tp.PushKeyID,
+		"nonce":     fmt.Sprintf("%d", tp.Nonce),
+		"fee":       fmt.Sprintf("%s", tp.Fee),
 	}
 	if tp.MergeProposalID != "" {
 		hdr["mergeID"] = tp.MergeProposalID
@@ -140,8 +140,8 @@ func (tp *TxDetail) ToMapForPEMHeader() map[string]string {
 // TxDetailFromPEMHeader constructs a TxDetail instance from a PEM header
 func TxDetailFromPEMHeader(hdr map[string]string) (*TxDetail, error) {
 	var params = &TxDetail{
-		RepoName:      hdr["repoName"],
-		RepoNamespace: hdr["repoNamespace"],
+		RepoName:      hdr["repo"],
+		RepoNamespace: hdr["namespace"],
 		Reference:     hdr["reference"],
 		PushKeyID:     hdr["pkID"],
 		Fee:           util.String(hdr["fee"]),
@@ -289,15 +289,15 @@ func ExtractTxDetail(msg string) (*TxDetail, error) {
 		kv = strings.TrimRight(strings.TrimSpace(kv), ",")
 		kvParts := strings.Split(kv, "=")
 
-		if kvParts[0] == "repoName" {
+		if kvParts[0] == "repo" {
 			if len(kvParts) == 1 {
-				return nil, util.FieldError("repoName", "target repo name is required")
+				return nil, util.FieldError("repo", "target repo name is required")
 			}
 			txDetail.RepoName = kvParts[1]
 			continue
 		}
 
-		if kvParts[0] == "repoNamespace" {
+		if kvParts[0] == "namespace" {
 			if len(kvParts) > 1 {
 				txDetail.RepoNamespace = kvParts[1]
 			}

@@ -59,13 +59,13 @@ func authenticate(
 			return nil, fe(i, "pkID", "token siblings must be signed with the same push key")
 		}
 		if i > 0 && detail.RepoName != lastRepoName {
-			return nil, fe(i, "repoName", "all push tokens must target the same repository")
+			return nil, fe(i, "repo", "all push tokens must target the same repository")
 		}
 		if i > 0 && detail.Nonce != lastAcctNonce {
 			return nil, fe(i, "nonce", "all push tokens must have the same nonce")
 		}
 		if i > 0 && detail.RepoNamespace != lastRepoNamespace {
-			return nil, fe(i, "repoNamespace", "all push tokens must target the same namespace")
+			return nil, fe(i, "namespace", "all push tokens must target the same namespace")
 		}
 
 		// Validate the transaction detail

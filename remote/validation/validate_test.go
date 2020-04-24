@@ -1121,9 +1121,9 @@ var _ = Describe("Validation", func() {
 		okTx.NodeSig = bz
 
 		var cases = [][]interface{}{
-			{&core.PushNote{}, "field:repoName, msg:repo name is required"},
+			{&core.PushNote{}, "field:repo, msg:repo name is required"},
 			{&core.PushNote{RepoName: "repo"}, "field:pusherKeyId, msg:push key id is required"},
-			{&core.PushNote{RepoName: "re*&po"}, "field:repoName, msg:repo name is not valid"},
+			{&core.PushNote{RepoName: "re*&po"}, "field:repo, msg:repo name is not valid"},
 			{&core.PushNote{RepoName: "repo", Namespace: "*&ns"}, "field:namespace, msg:namespace is not valid"},
 			{&core.PushNote{RepoName: "repo", PushKeyID: []byte("xyz")}, "field:pusherKeyId, msg:push key id is not valid"},
 			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: 0}, "field:timestamp, msg:timestamp is required"},
@@ -1319,7 +1319,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:repoName, msg:repository named 'unknown' is unknown"))
+				Expect(err.Error()).To(Equal("field:repo, msg:repository named 'unknown' is unknown"))
 			})
 		})
 
@@ -1785,7 +1785,7 @@ var _ = Describe("Validation", func() {
 
 			err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("index:0, field:repoNamespace, msg:namespace (ns1) is unknown"))
+			Expect(err.Error()).To(Equal("index:0, field:namespace, msg:namespace (ns1) is unknown"))
 		})
 
 		It("should return scope error when key scope is r/repo1 and tx repo=repo2 and namespace is unset", func() {
@@ -2016,7 +2016,7 @@ var _ = Describe("Validation", func() {
 			repoState := &state.Repository{References: map[string]*state.Reference{issueBranch: {}}}
 			repo.EXPECT().GetState().Return(repoState)
 			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
-			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+			repo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue commit must not alter history"))
@@ -2030,7 +2030,7 @@ var _ = Describe("Validation", func() {
 			repoState := &state.Repository{References: map[string]*state.Reference{issueBranch: {}}}
 			repo.EXPECT().GetState().Return(repoState)
 			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
-			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(nil)
+			repo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
 			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("unable to read issue commit tree"))
@@ -2045,7 +2045,7 @@ var _ = Describe("Validation", func() {
 			repoState := &state.Repository{References: map[string]*state.Reference{issueBranch: {}}}
 			repo.EXPECT().GetState().Return(repoState)
 			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
-			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(nil)
+			repo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
 			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue commit must have a 'body' file"))
@@ -2060,7 +2060,7 @@ var _ = Describe("Validation", func() {
 			repoState := &state.Repository{References: map[string]*state.Reference{issueBranch: {}}}
 			repo.EXPECT().GetState().Return(repoState)
 			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
-			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(nil)
+			repo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
 			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue commit tree must only include a 'body' file"))
@@ -2075,7 +2075,7 @@ var _ = Describe("Validation", func() {
 			repoState := &state.Repository{References: map[string]*state.Reference{issueBranch: {}}}
 			repo.EXPECT().GetState().Return(repoState)
 			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
-			repo.EXPECT().IsDescendant(gomock.Any(), gomock.Any()).Return(nil)
+			repo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
 			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue body file is not a regular file"))
@@ -2158,7 +2158,7 @@ var _ = Describe("Validation", func() {
 		It("should return error when replyTo hash is not an ancestor", func() {
 			replyTo := plumbing2.MakeCommitHash("hash").String()
 			mockRepo := mocks.NewMockBareRepo(ctrl)
-			mockRepo.EXPECT().IsDescendant(commit.Hash.String(), replyTo).Return(fmt.Errorf("error"))
+			mockRepo.EXPECT().IsAncestor(commit.Hash.String(), replyTo).Return(fmt.Errorf("error"))
 			err := validation.CheckIssueBody(mockRepo, repo.NewWrappedCommit(commit), false, map[string]interface{}{"replyTo": replyTo}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(Equal("field:replyTo, msg:not a valid hash of a commit in the issue"))

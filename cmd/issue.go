@@ -39,7 +39,7 @@ var issueCreateCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		title, _ := cmd.Flags().GetString("title")
 		body, _ := cmd.Flags().GetString("body")
-		commentCommitID, _ := cmd.Flags().GetInt("reply-comment")
+		commentCommitID, _ := cmd.Flags().GetString("reply")
 		useEditor, _ := cmd.Flags().GetBool("use-editor")
 		editorPath, _ := cmd.Flags().GetString("editor")
 		labels, _ := cmd.Flags().GetStringSlice("labels")
@@ -59,7 +59,7 @@ func init() {
 	rootCmd.AddCommand(issueCmd)
 	issueCreateCmd.Flags().StringP("title", "t", "", "The issue title (max. 250 B)")
 	issueCreateCmd.Flags().StringP("body", "b", "", "The issue message (max. 8 KB)")
-	issueCreateCmd.Flags().IntP("reply-comment", "r", 0, "Reply to a comment at the specified ID")
+	issueCreateCmd.Flags().StringP("reply", "r", "", "Hash or ID of comment commit to respond to")
 	issueCreateCmd.Flags().StringSliceP("labels", "l", nil, "Specify labels to add to the issue/comment (max. 10)")
 	issueCreateCmd.Flags().StringSliceP("assignees", "a", nil, "Specify push key of assignees to add to the issue/comment (max. 10)")
 	issueCreateCmd.Flags().StringSliceP("fixers", "f", nil, "Specify push key of fixers to add to the issue/comment (max. 10)")

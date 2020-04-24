@@ -51,18 +51,18 @@ var _ = Describe("TxDetail", func() {
 			})
 		})
 
-		When("txDetail has 'repoName'", func() {
+		When("txDetail has 'repo'", func() {
 			When("it has no value", func() {
 				It("should return error", func() {
-					str := "tx: fee=10, nonce=1, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, repoName"
+					str := "tx: fee=10, nonce=1, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, repo"
 					_, err := ExtractTxDetail(str)
-					Expect(err).To(MatchError("field:repoName, msg:target repo name is required"))
+					Expect(err).To(MatchError("field:repo, msg:target repo name is required"))
 				})
 			})
 
 			When("it has a value", func() {
 				It("should return error", func() {
-					str := "tx: fee=10, nonce=1, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, repoName=repo1"
+					str := "tx: fee=10, nonce=1, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, repo=repo1"
 					tp, err := ExtractTxDetail(str)
 					Expect(err).To(BeNil())
 					Expect(tp.RepoName).To(Equal("repo1"))
@@ -70,10 +70,10 @@ var _ = Describe("TxDetail", func() {
 			})
 		})
 
-		When("txDetail has 'repoName'", func() {
+		When("txDetail has 'repo'", func() {
 			When("it has no value", func() {
 				Specify("that RepoNamespace field is unset", func() {
-					str := "tx: fee=10, nonce=1, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, repoNamespace"
+					str := "tx: fee=10, nonce=1, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, namespace"
 					tp, err := ExtractTxDetail(str)
 					Expect(err).To(BeNil())
 					Expect(tp.RepoNamespace).To(BeEmpty())
@@ -82,7 +82,7 @@ var _ = Describe("TxDetail", func() {
 
 			When("with a value", func() {
 				Specify("that RepoNamespace field is set", func() {
-					str := "tx: fee=10, nonce=1, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, repoNamespace=ns1"
+					str := "tx: fee=10, nonce=1, pkID=push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p, namespace=ns1"
 					tp, err := ExtractTxDetail(str)
 					Expect(err).To(BeNil())
 					Expect(tp.RepoNamespace).To(Equal("ns1"))
@@ -325,12 +325,12 @@ var _ = Describe("TxDetail", func() {
 
 		It("should successfully create TxDetail from PEM header", func() {
 			hdr := map[string]string{
-				"nonce":         "1",
-				"repoName":      "r1",
-				"repoNamespace": "ns1",
-				"reference":     "refs/heads/master",
-				"pkID":          "push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p",
-				"fee":           "10",
+				"nonce":     "1",
+				"repo":      "r1",
+				"namespace": "ns1",
+				"reference": "refs/heads/master",
+				"pkID":      "push1y00fkeju2kdjefvwrlmads83uudjkahun3lj4p",
+				"fee":       "10",
 			}
 			txDetail, err := TxDetailFromPEMHeader(hdr)
 			Expect(err).To(BeNil())

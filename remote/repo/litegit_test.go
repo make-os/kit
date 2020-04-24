@@ -366,13 +366,13 @@ var _ = Describe("Gitops", func() {
 		})
 	})
 
-	Describe(".IsDescendant", func() {
+	Describe(".IsAncestor", func() {
 		It("should return no error when child is a descendant of parent", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 			rootHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
 			testutil2.AppendCommit(path, "file.txt", "some text appended", "commit msg")
 			childOfRootHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-			Expect(r.IsDescendant(childOfRootHash, rootHash)).To(BeNil())
+			Expect(r.IsAncestor(rootHash, childOfRootHash)).To(BeNil())
 		})
 
 		It("should return error when child is not a descendant of parent", func() {
@@ -380,7 +380,7 @@ var _ = Describe("Gitops", func() {
 			rootHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
 			testutil2.AppendCommit(path, "file.txt", "some text appended", "commit msg")
 			childOfRootHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-			err = r.IsDescendant(rootHash, childOfRootHash)
+			err = r.IsAncestor(childOfRootHash, rootHash)
 			Expect(err).ToNot(BeNil())
 		})
 	})
@@ -445,18 +445,65 @@ var _ = Describe("Gitops", func() {
 
 	Describe(".Checkout", func() {
 		It("should return error if unable to checkout a non-existing branch", func() {
-			err := r.Checkout("refs/heads/unknown", false)
+			err := r.Checkout("refs/heads/unknown", false, false)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(repo.ErrRefNotFound))
 		})
 
 		It("should return no error and create branch if it does not exist but create=true", func() {
-			err := r.Checkout("refs/heads/branch1", true)
-			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
+			err := r.Checkout("refs/heads/branch1", true, false)
 			Expect(err).To(BeNil())
+			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 			hash, err := r.RefGet("refs/heads/branch1")
 			Expect(err).To(BeNil())
 			Expect(hash).To(HaveLen(40))
+		})
+
+		It("should return error when there are uncommitted local modifications", func() {
+			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
+			testutil2.CreateCheckoutBranch(path, "dev")
+			testutil2.AppendCommit(path, "file.txt", "some text 2", "commit msg 2")
+			testutil2.CheckoutBranch(path, "master")
+			testutil2.AppendToFile(path, "file.txt", "sample data")
+			testutil2.ExecGitAdd(path, "file.txt")
+			err = r.Checkout("dev", false, false)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("Your local changes to the following files"))
+		})
+
+		It("should return no error when there are uncommitted local modifications but force=true", func() {
+			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
+			testutil2.CreateCheckoutBranch(path, "dev")
+			testutil2.AppendCommit(path, "file.txt", "some text 2", "commit msg 2")
+			testutil2.CheckoutBranch(path, "master")
+			testutil2.AppendToFile(path, "file.txt", "sample data")
+			testutil2.ExecGitAdd(path, "file.txt")
+			err = r.Checkout("dev", false, true)
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Describe(".GetRefCommits", func() {
+		It("should return 2 hashes when there are 2 commits in branch", func() {
+			testutil2.AppendCommit(path, "file.txt", "some text 1", "commit 1")
+			testutil2.AppendCommit(path, "file.txt", "some text 2", "commit 2")
+			hashes, err := r.GetRefCommits("refs/heads/master", false)
+			Expect(err).To(BeNil())
+			Expect(hashes).To(HaveLen(2))
+		})
+
+		It("should return 2 hashes when there are 3 commits and 1 merge commit in branch and noMerges = true", func() {
+			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
+			testutil2.CreateCheckoutBranch(path, "dev")
+			testutil2.AppendCommit(path, "file.txt", "log some good text", "commit msg")
+			testutil2.CheckoutBranch(path, "master")
+			testutil2.AppendCommit(path, "file.txt", "intro to \n****some nice text", "commit msg")
+			testutil2.ForceMergeOurs(path, "dev")
+			hashes, err := r.GetRefCommits("refs/heads/master", true)
+			Expect(err).To(BeNil())
+			Expect(hashes).To(HaveLen(3))
+			mergeCommitHash := testutil2.GetRecentCommitHash(path, "master")
+			Expect(hashes).ToNot(ContainElement(mergeCommitHash))
 		})
 	})
 })
