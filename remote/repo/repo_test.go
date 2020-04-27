@@ -1,12 +1,14 @@
 package repo_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	repo2 "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/types/core"
 
@@ -333,6 +335,23 @@ var _ = Describe("Repo", func() {
 			It("should have 3 history hashes", func() {
 				Expect(history).To(HaveLen(3))
 			})
+		})
+	})
+
+	Describe(".GetFreeIssueNum", func() {
+		It("should return start point if free", func() {
+			n, err := repo.GetFreeIssueNum(1)
+			Expect(err).To(BeNil())
+			Expect(n).To(Equal(1))
+		})
+
+		It("should return next monotonic number if start number is not free", func() {
+			start := 1
+			testutil2.CreateCheckoutBranch(path, fmt.Sprintf("%s/%d", plumbing2.IssueBranchPrefix, start))
+			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
+			n, err := repo.GetFreeIssueNum(start)
+			Expect(err).To(BeNil())
+			Expect(n).To(Equal(2))
 		})
 	})
 })

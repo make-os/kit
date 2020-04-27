@@ -17,8 +17,11 @@ package cmd
 import (
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/thoas/go-funk"
 	remotecmd "gitlab.com/makeos/mosdef/remote/cmd"
+	"gitlab.com/makeos/mosdef/remote/repo"
 )
 
 // issueCmd represents the issue command
@@ -41,14 +44,55 @@ var issueCreateCmd = &cobra.Command{
 		body, _ := cmd.Flags().GetString("body")
 		commentCommitID, _ := cmd.Flags().GetString("reply")
 		useEditor, _ := cmd.Flags().GetBool("use-editor")
+		noBody, _ := cmd.Flags().GetBool("no-body")
 		editorPath, _ := cmd.Flags().GetString("editor")
 		labels, _ := cmd.Flags().GetStringSlice("labels")
+		reactions, _ := cmd.Flags().GetStringSlice("react")
 		assignees, _ := cmd.Flags().GetStringSlice("assignees")
 		fixers, _ := cmd.Flags().GetStringSlice("fixers")
 		issueID, _ := cmd.Flags().GetInt("issue-id")
 
-		if err := remotecmd.IssueCreateCmd(title, body, commentCommitID, labels, assignees, fixers,
-			useEditor, editorPath, os.Stdout, cfg.Node.GitBinPath, issueID); err != nil {
+		targetRepo, err := repo.GetRepoAtWorkingDir(cfg.Node.GitBinPath)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		if err := remotecmd.IssueCreateCmd(targetRepo, remotecmd.IssueCreateArg{
+			IssueID:    issueID,
+			Title:      title,
+			Body:       body,
+			NoBody:     noBody,
+			ReplyHash:  commentCommitID,
+			Reactions:  funk.UniqString(reactions),
+			Labels:     funk.UniqString(labels),
+			Assignees:  funk.UniqString(assignees),
+			Fixers:     funk.UniqString(fixers),
+			UseEditor:  useEditor,
+			EditorPath: editorPath,
+			StdOut:     os.Stdout,
+			StdIn:      os.Stdin,
+		}); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
+// issueListCmd represents a sub-command to list all issues
+var issueListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List all issues",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		limit, _ := cmd.Flags().GetInt("limit")
+		reverse, _ := cmd.Flags().GetBool("reverse")
+		dateFmt, _ := cmd.Flags().GetString("date")
+
+		targetRepo, err := repo.GetRepoAtWorkingDir(cfg.Node.GitBinPath)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		if err = remotecmd.IssueListCmd(targetRepo, limit, reverse, dateFmt); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -56,14 +100,21 @@ var issueCreateCmd = &cobra.Command{
 
 func init() {
 	issueCmd.AddCommand(issueCreateCmd)
+	issueCmd.AddCommand(issueListCmd)
 	rootCmd.AddCommand(issueCmd)
 	issueCreateCmd.Flags().StringP("title", "t", "", "The issue title (max. 250 B)")
 	issueCreateCmd.Flags().StringP("body", "b", "", "The issue message (max. 8 KB)")
-	issueCreateCmd.Flags().StringP("reply", "r", "", "Hash or ID of comment commit to respond to")
+	issueCreateCmd.Flags().StringP("reply", "r", "", "Specify the hash of a comment to respond to")
+	issueCreateCmd.Flags().StringSliceP("react", "e", nil, "Add reactions to the comment being replied to  (max. 10)")
 	issueCreateCmd.Flags().StringSliceP("labels", "l", nil, "Specify labels to add to the issue/comment (max. 10)")
 	issueCreateCmd.Flags().StringSliceP("assignees", "a", nil, "Specify push key of assignees to add to the issue/comment (max. 10)")
 	issueCreateCmd.Flags().StringSliceP("fixers", "f", nil, "Specify push key of fixers to add to the issue/comment (max. 10)")
 	issueCreateCmd.Flags().BoolP("use-editor", "u", false, "Use git configured editor to write body")
-	issueCreateCmd.Flags().StringP("editor", "e", "", "GetPath an editor to use instead of the git configured editor")
+	issueCreateCmd.Flags().Bool("no-body", false, "Skip prompt for issue body")
+	issueCreateCmd.Flags().String("editor", "", "GetPath an editor to use instead of the git configured editor")
 	issueCreateCmd.Flags().IntP("issue-id", "i", 0, "Specify a target issue number to create or add a comment")
+
+	issueListCmd.Flags().IntP("limit", "n", 0, "Limit the number of issues returned")
+	issueListCmd.Flags().Bool("reverse", false, "Return the result in reversed order")
+	issueListCmd.Flags().StringP("date", "d", "Mon Jan _2 15:04:05 2006 -0700", "Set date format")
 }

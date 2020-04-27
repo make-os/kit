@@ -102,6 +102,10 @@ func CreateCheckoutBranch(path, branch string) {
 	ExecGit(path, "checkout", "-b", branch)
 }
 
+func CreateCheckoutOrphanBranch(path, branch string) {
+	ExecGit(path, "checkout", "--orphan", branch)
+}
+
 func CheckoutBranch(path, branch string) {
 	ExecGit(path, "checkout", branch)
 }

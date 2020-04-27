@@ -451,3 +451,36 @@ func (lg *LiteGit) GetRefCommits(ref string, noMerges bool) ([]string, error) {
 
 	return strings.Fields(out.String()), nil
 }
+
+// GetRefRootCommit returns the hash of the root commit of the specified reference
+func (lg *LiteGit) GetRefRootCommit(ref string) (string, error) {
+	args := []string{"rev-list", "--max-parents=0", ref}
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
+	out := bytes.NewBuffer(nil)
+	cmd.Stdout = out
+	cmd.Stderr = out
+	err := cmd.Run()
+	if err != nil {
+		outStr := out.String()
+		if strings.Contains(outStr, "unknown revision or path") {
+			return "", ErrRefNotFound
+		}
+		return "", errors.Wrap(err, outStr)
+	}
+	return strings.TrimSpace(out.String()), nil
+}
+
+var ErrGitVarNotFound = fmt.Errorf("variable not found")
+
+// Var returns the value of git's logical variables
+func (lg *LiteGit) Var(name string) (string, error) {
+	args := []string{"var", name}
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
+	out, err := cmd.Output()
+	if err != nil {
+		return "", ErrGitVarNotFound
+	}
+	return strings.TrimSpace(string(out)), nil
+}

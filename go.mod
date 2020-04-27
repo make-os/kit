@@ -16,6 +16,7 @@ require (
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/c-bata/go-prompt v0.2.3
 	github.com/casbin/casbin v1.9.1 // indirect
+	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/dgraph-io/badger v1.6.0
 	github.com/dgryski/go-farm v0.0.0-20191112170834-c2139c5d712b // indirect
 	github.com/dustin/go-humanize v1.0.0
@@ -52,6 +53,7 @@ require (
 	github.com/libp2p/go-libp2p-routing v0.1.0
 	github.com/libp2p/go-yamux v1.2.4 // indirect
 	github.com/mattn/go-tty v0.0.0-20190424173100-523744f04859 // indirect
+	github.com/mingrammer/commonregex v1.0.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/mr-tron/base58 v1.1.3
@@ -89,6 +91,9 @@ require (
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/sys v0.0.0-20200321134203-328b4cd54aae // indirect
 	golang.org/x/tools v0.0.0-20191206204035-259af5ff87bd // indirect
+	gonum.org/v1/gonum v0.7.0 // indirect
+	gopkg.in/jdkato/prose.v2 v2.0.0-20190814032740-822d591a158c
+	gopkg.in/neurosnap/sentences.v1 v1.0.6 // indirect
 	gopkg.in/oleiade/lane.v1 v1.0.0
 	gopkg.in/sourcemap.v1 v1.0.5 // indirect
 	gopkg.in/src-d/go-git.v4 v4.13.1

@@ -401,6 +401,51 @@ func (mr *MockBareRepoMockRecorder) Checkout(refname, create, force interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkout", reflect.TypeOf((*MockBareRepo)(nil).Checkout), refname, create, force)
 }
 
+// GetRefRootCommit mocks base method
+func (m *MockBareRepo) GetRefRootCommit(ref string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRefRootCommit", ref)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRefRootCommit indicates an expected call of GetRefRootCommit
+func (mr *MockBareRepoMockRecorder) GetRefRootCommit(ref interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefRootCommit", reflect.TypeOf((*MockBareRepo)(nil).GetRefRootCommit), ref)
+}
+
+// GetRefCommits mocks base method
+func (m *MockBareRepo) GetRefCommits(ref string, noMerges bool) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRefCommits", ref, noMerges)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRefCommits indicates an expected call of GetRefCommits
+func (mr *MockBareRepoMockRecorder) GetRefCommits(ref, noMerges interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefCommits", reflect.TypeOf((*MockBareRepo)(nil).GetRefCommits), ref, noMerges)
+}
+
+// Var mocks base method
+func (m *MockBareRepo) Var(name string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Var", name)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Var indicates an expected call of Var
+func (mr *MockBareRepoMockRecorder) Var(name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Var", reflect.TypeOf((*MockBareRepo)(nil).Var), name)
+}
+
 // GetName mocks base method
 func (m *MockBareRepo) GetName() string {
 	m.ctrl.T.Helper()
@@ -849,6 +894,21 @@ func (m *MockBareRepo) NumIssueBranches() (int, error) {
 func (mr *MockBareRepoMockRecorder) NumIssueBranches() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NumIssueBranches", reflect.TypeOf((*MockBareRepo)(nil).NumIssueBranches))
+}
+
+// GetFreeIssueNum mocks base method
+func (m *MockBareRepo) GetFreeIssueNum(startID int) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFreeIssueNum", startID)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFreeIssueNum indicates an expected call of GetFreeIssueNum
+func (mr *MockBareRepoMockRecorder) GetFreeIssueNum(startID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFreeIssueNum", reflect.TypeOf((*MockBareRepo)(nil).GetFreeIssueNum), startID)
 }
 
 // MockCommit is a mock of Commit interface
@@ -2578,6 +2638,51 @@ func (m *MockLiteGit) Checkout(refname string, create, force bool) error {
 func (mr *MockLiteGitMockRecorder) Checkout(refname, create, force interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Checkout", reflect.TypeOf((*MockLiteGit)(nil).Checkout), refname, create, force)
+}
+
+// GetRefRootCommit mocks base method
+func (m *MockLiteGit) GetRefRootCommit(ref string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRefRootCommit", ref)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRefRootCommit indicates an expected call of GetRefRootCommit
+func (mr *MockLiteGitMockRecorder) GetRefRootCommit(ref interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefRootCommit", reflect.TypeOf((*MockLiteGit)(nil).GetRefRootCommit), ref)
+}
+
+// GetRefCommits mocks base method
+func (m *MockLiteGit) GetRefCommits(ref string, noMerges bool) ([]string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRefCommits", ref, noMerges)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRefCommits indicates an expected call of GetRefCommits
+func (mr *MockLiteGitMockRecorder) GetRefCommits(ref, noMerges interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRefCommits", reflect.TypeOf((*MockLiteGit)(nil).GetRefCommits), ref, noMerges)
+}
+
+// Var mocks base method
+func (m *MockLiteGit) Var(name string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Var", name)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Var indicates an expected call of Var
+func (mr *MockLiteGitMockRecorder) Var(name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Var", reflect.TypeOf((*MockLiteGit)(nil).Var), name)
 }
 
 // MockCommitTree is a mock of CommitTree interface

@@ -194,6 +194,21 @@ func (r *Repo) GetHost() storage.Storer {
 	return r.Storer
 }
 
+// GetFreeIssueNum finds an issue number that has not been used
+func (r *Repo) GetFreeIssueNum(startID int) (int, error) {
+	for {
+		ref := plumbing2.MakeIssueReference(startID)
+		hash, err := r.RefGet(ref)
+		if err != nil && err != ErrRefNotFound {
+			return 0, err
+		}
+		if hash == "" {
+			return startID, nil
+		}
+		startID++
+	}
+}
+
 // Prune deletes objects older than the given time
 func (r *Repo) Prune(olderThan time.Time) error {
 	return r.Repository.Prune(git.PruneOptions{

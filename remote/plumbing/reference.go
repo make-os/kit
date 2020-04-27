@@ -19,6 +19,11 @@ func IsIssueReference(name string) bool {
 	return regexp.MustCompile(fmt.Sprintf("^refs/heads/%s/[1-9]+([0-9]+)?$", IssueBranchPrefix)).MatchString(name)
 }
 
+// IsIssueReferencePath checks if the specified reference matches an issue reference path
+func IsIssueReferencePath(name string) bool {
+	return regexp.MustCompile(fmt.Sprintf("^refs/heads/%s(/|$)?", IssueBranchPrefix)).MatchString(name)
+}
+
 // isReference checks the given name is a reference path or full reference name
 func IsReference(name string) bool {
 	return regexp.MustCompile("^refs/(heads|tags|notes)((/[a-z0-9_-]+)+)?$").MatchString(name)

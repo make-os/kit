@@ -41,6 +41,14 @@ var _ = Describe("Common", func() {
 		})
 	})
 
+	Describe(".IsIssueReferencePath", func() {
+		It("should return true if string has issue reference path", func() {
+			Expect(plumbing.IsIssueReferencePath(fmt.Sprintf("refs/heads/%s/", plumbing.IssueBranchPrefix))).To(BeTrue())
+			Expect(plumbing.IsIssueReferencePath(fmt.Sprintf("refs/heads/%s", plumbing.IssueBranchPrefix))).To(BeTrue())
+			Expect(plumbing.IsIssueReferencePath("refs/heads/stuffs")).To(BeFalse())
+		})
+	})
+
 	Describe(".MakeIssueReference", func() {
 		It("should create a valid issue reference", func() {
 			ref := plumbing.MakeIssueReference(1)

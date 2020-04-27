@@ -37,10 +37,9 @@ import (
 
 var (
 	fe                               = util.FieldErrorWithIndex
-	ErrSigHeaderAndReqParamsMismatch = fmt.Errorf("request transaction info and signature " +
-		"transaction info did not match")
-	MaxIssueContentLen = 1024 * 8 // 8KB
-	MaxIssueTitleLen   = 256
+	ErrSigHeaderAndReqParamsMismatch = fmt.Errorf("request data and signature data mismatched")
+	MaxIssueContentLen               = 1024 * 8 // 8KB
+	MaxIssueTitleLen                 = 256
 )
 
 type ChangeValidatorFunc func(
@@ -70,7 +69,7 @@ func ValidateChange(
 			return errors.Wrap(err, "unable to get commit object")
 		}
 
-		if plumbing2.IsIssueReference(change.Item.GetName()) {
+		if plumbing2.IsIssueReferencePath(change.Item.GetName()) {
 			return CheckIssueCommit(repo2.NewWrappedCommit(commit), txDetail.Reference, oldHash, repo)
 		} else {
 			return CheckCommit(commit, txDetail, getPushKey)
@@ -265,6 +264,11 @@ func CheckCommit(commit *object.Commit, txDetail *types.TxDetail, getPushKey cor
 // CheckIssueCommit checks commits of an issue branch.
 func CheckIssueCommit(commit core.Commit, reference, oldHash string, repo core.BareRepo) error {
 
+	// Issue reference name must be valid
+	if !plumbing2.IsIssueReference(reference) {
+		return fmt.Errorf("issue number is not valid. Must be numeric")
+	}
+
 	// Issue commits can't have multiple parents (merge commit not permitted)
 	if commit.NumParents() > 1 {
 		return fmt.Errorf("issue commit cannot have more than one parent")
@@ -347,7 +351,7 @@ func CheckIssueBody(
 	content []byte) error {
 
 	// Ensure only valid fields are included
-	var validFields = []string{"title", "labels", "replyTo", "assignees", "fixers"}
+	var validFields = []string{"title", "reactions", "labels", "replyTo", "assignees", "fixers"}
 	for k := range fm {
 		if !funk.ContainsString(validFields, k) {
 			return fe(-1, k, "unknown field")
@@ -364,6 +368,11 @@ func CheckIssueBody(
 	replyTo := obj.Get("replyTo")
 	if !replyTo.IsNil() && !replyTo.IsStr() {
 		return fe(-1, "replyTo", "expected a string value")
+	}
+
+	reactions := obj.Get("reactions")
+	if !reactions.IsNil() && !reactions.IsInterSlice() {
+		return fe(-1, "reactions", "expected a list of string values")
 	}
 
 	labels := obj.Get("labels")
@@ -403,9 +412,9 @@ func CheckIssueBody(
 		return fe(-1, "title", "title is too long and cannot exceed 256 characters")
 	}
 
-	// ReplyTo must have len 40
+	// ReplyTo must have len >= 4 or < 40
 	replyToVal := replyTo.String()
-	if len(replyToVal) > 0 && len(replyToVal) != 40 {
+	if len(replyToVal) > 0 && (len(replyToVal) < 4 || len(replyToVal) > 40) {
 		return fe(-1, "replyTo", "invalid hash value")
 	}
 
@@ -413,6 +422,17 @@ func CheckIssueBody(
 	if len(replyToVal) > 0 {
 		if repo.IsAncestor(replyToVal, commit.GetHash().String()) != nil {
 			return fe(-1, "replyTo", "not a valid hash of a commit in the issue")
+		}
+	}
+
+	// Check reactions if set.
+	// Reactions cannot exceed 10.
+	if len(reactions.InterSlice()) > 10 {
+		return fe(-1, "reactions", "too many reactions. Cannot exceed 10")
+	}
+	if len(reactions.InterSlice()) > 0 {
+		if reflect.TypeOf(reactions.InterSlice()[0]).Kind() != reflect.String {
+			return fe(-1, "reactions", "expected a string list of reactions")
 		}
 	}
 

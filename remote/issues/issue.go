@@ -10,21 +10,6 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 )
 
-// MustGetUnusedIssueID finds an issue ID that has not been used locally
-func MustGetUnusedIssueID(targetRepo core.BareRepo, startID int) int {
-	for {
-		ref := plumbing.MakeIssueReference(startID)
-		hash, err := targetRepo.RefGet(ref)
-		if err != nil && err != repo.ErrRefNotFound {
-			panic(err)
-		}
-		if hash == "" {
-			return startID
-		}
-		startID++
-	}
-}
-
 // AddIssueOrCommentCommit creates a new issue or adds a comment commit to an existing issue.
 // Returns true if target issue was newly created.
 // The target reference is also returned
@@ -32,24 +17,20 @@ func AddIssueOrCommentCommit(
 	targetRepo core.BareRepo,
 	issueID int,
 	issueBody string,
-	isComment bool) (bool, string, error) {
+	isComment bool) (isNewIssue bool, issueReference string, err error) {
 
-	var err error
 	var ref string
 
 	if issueID != 0 {
 		ref = plumbing.MakeIssueReference(issueID)
 	}
 
-	// When an issue ID is not provided, incrementally find an unused issue ID
-	// starting with the (num. of existing issue + 1)
+	// When an issue number is not provided, find an unused number monotonically
 	if issueID == 0 {
-		issueID, err = targetRepo.NumIssueBranches()
+		issueID, err = targetRepo.GetFreeIssueNum(1)
 		if err != nil {
-			return false, "", errors.Wrap(err, "failed to get number of issues")
+			return false, "", errors.Wrap(err, "failed to find free issue number")
 		}
-		issueID++
-		issueID = MustGetUnusedIssueID(targetRepo, issueID)
 		ref = plumbing.MakeIssueReference(issueID)
 	}
 
@@ -63,25 +44,25 @@ func AddIssueOrCommentCommit(
 
 	// To create comment commit, the issue must already exist
 	if hash == "" && isComment {
-		return false, "", fmt.Errorf("issue (%d) does not exist", issueID)
+		return false, "", fmt.Errorf("can't add comment to a non-existing issue (%d)", issueID)
 	}
 
 	// Create an issue commit (pass the current reference hash as parent)
 	issueHash, err := targetRepo.CreateSingleFileCommit("body", issueBody, "", hash)
 	if err != nil {
-		return false, "", errors.Wrap(err, "failed to create root issue commit")
+		return false, "", errors.Wrap(err, "failed to create issue commit")
 	}
 
 	// Update the current hash of the issue reference
 	if err = targetRepo.RefUpdate(ref, issueHash); err != nil {
-		return false, "", errors.Wrap(err, "failed to update issue branch")
+		return false, "", errors.Wrap(err, "failed to update issue reference target hash")
 	}
 
 	return hash == "", ref, nil
 }
 
 // MakeIssueBody creates an issue body using the specified fields
-func MakeIssueBody(title, body string, replyTo string, labels, assignees, fixers []string) string {
+func MakeIssueBody(title, body string, replyTo string, reactions, labels, assignees, fixers []string) string {
 	args := ""
 	str := "---\n%s---\n"
 
@@ -90,6 +71,10 @@ func MakeIssueBody(title, body string, replyTo string, labels, assignees, fixers
 	}
 	if replyTo != "" {
 		args += fmt.Sprintf("replyTo: %s\n", replyTo)
+	}
+	if len(reactions) > 0 {
+		reactionsStr, _ := json.Marshal(reactions)
+		args += fmt.Sprintf("reactions: %s\n", reactionsStr)
 	}
 	if len(labels) > 0 {
 		labelsStr, _ := json.Marshal(labels)

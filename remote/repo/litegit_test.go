@@ -506,4 +506,35 @@ var _ = Describe("Gitops", func() {
 			Expect(hashes).ToNot(ContainElement(mergeCommitHash))
 		})
 	})
+
+	Describe(".GetRefRootCommit", func() {
+		It("should return the commit with no parent", func() {
+			testutil2.AppendCommit(path, "file.txt", "some text 1", "commit 1")
+			actualRootHash := testutil2.GetRecentCommitHash(path, "master")
+			testutil2.AppendCommit(path, "file.txt", "some text 2", "commit 1")
+			rootHash, err := r.GetRefRootCommit("master")
+			Expect(err).To(BeNil())
+			Expect(rootHash).To(Equal(actualRootHash))
+		})
+
+		It("should return the commit with no parent", func() {
+			_, err := r.GetRefRootCommit("dev")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(repo.ErrRefNotFound))
+		})
+	})
+
+	Describe(".Var", func() {
+		It("should return the value of GIT_PAGER", func() {
+			val, err := r.Var("GIT_PAGER")
+			Expect(err).To(BeNil())
+			Expect(val).ToNot(BeEmpty())
+		})
+
+		It("should return ErrGitVarNotFound when variable is unknown", func() {
+			_, err := r.Var("GIT_STUFF")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(Equal(repo.ErrGitVarNotFound))
+		})
+	})
 })

@@ -121,6 +121,9 @@ type BareRepo interface {
 
 	// NumIssueBranches counts the number of issues branches
 	NumIssueBranches() (count int, err error)
+
+	// GetFreeIssueNum finds an issue number that has not been used
+	GetFreeIssueNum(startID int) (int, error)
 }
 
 // Commit represents a Commit.
@@ -511,6 +514,9 @@ type LiteGit interface {
 	GetMergeCommits(reference string, env ...string) ([]string, error)
 	CreateSingleFileCommit(filename, content, commitMsg, parent string) (string, error)
 	Checkout(refname string, create, force bool) error
+	GetRefRootCommit(ref string) (string, error)
+	GetRefCommits(ref string, noMerges bool) ([]string, error)
+	Var(name string) (string, error)
 }
 
 type CommitTree interface {

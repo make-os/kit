@@ -1982,15 +1982,22 @@ var _ = Describe("Validation", func() {
 			repo = mocks.NewMockBareRepo(ctrl)
 		})
 
-		It("should return error when issue commit has more than 1 parents", func() {
-			commit.EXPECT().NumParents().Return(2)
+		It("should return error when issue number is not valid", func() {
 			err := validation.CheckIssueCommit(commit, "refs/heads/"+plumbing2.IssueBranchPrefix+"/abc", "", repo)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError("issue number is not valid. Must be numeric"))
+		})
+
+		It("should return error when issue commit has more than 1 parents", func() {
+			issueBranch := plumbing2.MakeIssueReference(1)
+			commit.EXPECT().NumParents().Return(2)
+			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue commit cannot have more than one parent"))
 		})
 
 		It("should return error when reference has a merge commit in its history", func() {
-			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
+			issueBranch := plumbing2.MakeIssueReference(1)
 			commit.EXPECT().NumParents().Return(1)
 			repo.EXPECT().HasMergeCommits(issueBranch).Return(false, fmt.Errorf("error"))
 			err := validation.CheckIssueCommit(commit, issueBranch, "", repo)
@@ -1999,7 +2006,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when the reference of the issue commit is new but the issue commit has multiple parents ", func() {
-			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
+			issueBranch := plumbing2.MakeIssueReference(1)
 			commit.EXPECT().NumParents().Return(1).Times(2)
 			repoState := &state.Repository{}
 			repo.EXPECT().GetState().Return(repoState)
@@ -2010,7 +2017,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when the issue commit alters history", func() {
-			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
+			issueBranch := plumbing2.MakeIssueReference(1)
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			repoState := &state.Repository{References: map[string]*state.Reference{issueBranch: {}}}
@@ -2023,7 +2030,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when unable to get commit tree", func() {
-			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
+			issueBranch := plumbing2.MakeIssueReference(1)
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			commit.EXPECT().GetTree().Return(nil, fmt.Errorf("bad query"))
@@ -2037,7 +2044,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when issue commit tree does not have 'body' file", func() {
-			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
+			issueBranch := plumbing2.MakeIssueReference(1)
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			tree := &object.Tree{Entries: []object.TreeEntry{}}
@@ -2052,7 +2059,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when issue commit tree has more than 1 files", func() {
-			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
+			issueBranch := plumbing2.MakeIssueReference(1)
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			tree := &object.Tree{Entries: []object.TreeEntry{{}, {}}}
@@ -2067,7 +2074,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when issue commit tree has a body entry that isn't a regular file", func() {
-			issueBranch := "refs/heads/" + plumbing2.IssueBranchPrefix + "/1"
+			issueBranch := plumbing2.MakeIssueReference(1)
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			tree := &object.Tree{Entries: []object.TreeEntry{{Name: "body", Mode: filemode.Dir}}}
@@ -2107,7 +2114,7 @@ var _ = Describe("Validation", func() {
 			Expect(err.Error()).To(Equal("field:replyTo, msg:expected a string value"))
 		})
 
-		It("should return error when an 'labels' value is not a string slice", func() {
+		It("should return error when a 'labels' value is not a string slice", func() {
 			err := validation.CheckIssueBody(nil, repo.NewWrappedCommit(commit), true, map[string]interface{}{"labels": []int{1}}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(Equal("field:labels, msg:expected a list of string values"))
@@ -2119,7 +2126,7 @@ var _ = Describe("Validation", func() {
 			Expect(err.Error()).To(Equal("field:assignees, msg:expected a list of string values"))
 		})
 
-		It("should return error when an 'fixers' value is not a string slice", func() {
+		It("should return error when a 'fixers' value is not a string slice", func() {
 			err := validation.CheckIssueBody(nil, repo.NewWrappedCommit(commit), true, map[string]interface{}{"fixers": []int{1}}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(Equal("field:fixers, msg:expected a list of string values"))
@@ -2149,8 +2156,12 @@ var _ = Describe("Validation", func() {
 			Expect(err.Error()).To(Equal("field:title, msg:title is too long and cannot exceed 256 characters"))
 		})
 
-		It("should return error when replyTo value is not a valid git object hash", func() {
-			err := validation.CheckIssueBody(nil, repo.NewWrappedCommit(commit), false, map[string]interface{}{"replyTo": "invalid hash"}, nil)
+		It("should return error when replyTo value has length < 4 or > 40", func() {
+			err := validation.CheckIssueBody(nil, repo.NewWrappedCommit(commit), false, map[string]interface{}{"replyTo": "abc"}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:replyTo, msg:invalid hash value"))
+
+			err = validation.CheckIssueBody(nil, repo.NewWrappedCommit(commit), false, map[string]interface{}{"replyTo": util.RandString(41)}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(Equal("field:replyTo, msg:invalid hash value"))
 		})
@@ -2162,6 +2173,15 @@ var _ = Describe("Validation", func() {
 			err := validation.CheckIssueBody(mockRepo, repo.NewWrappedCommit(commit), false, map[string]interface{}{"replyTo": replyTo}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(Equal("field:replyTo, msg:not a valid hash of a commit in the issue"))
+		})
+
+		It("should return error when reactions exceed max", func() {
+			err := validation.CheckIssueBody(nil, repo.NewWrappedCommit(commit), true, map[string]interface{}{
+				"title":     util.RandString(10),
+				"reactions": []interface{}{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"},
+			}, nil)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(Equal("field:reactions, msg:too many reactions. Cannot exceed 10"))
 		})
 
 		It("should return error when labels exceed max", func() {
