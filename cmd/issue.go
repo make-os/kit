@@ -21,7 +21,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
 	remotecmd "gitlab.com/makeos/mosdef/remote/cmd"
+	"gitlab.com/makeos/mosdef/remote/issues"
 	"gitlab.com/makeos/mosdef/remote/repo"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // issueCmd represents the issue command
@@ -45,6 +47,7 @@ var issueCreateCmd = &cobra.Command{
 		commentCommitID, _ := cmd.Flags().GetString("reply")
 		useEditor, _ := cmd.Flags().GetBool("use-editor")
 		noBody, _ := cmd.Flags().GetBool("no-body")
+		close, _ := cmd.Flags().GetBool("close")
 		editorPath, _ := cmd.Flags().GetString("editor")
 		labels, _ := cmd.Flags().GetStringSlice("labels")
 		reactions, _ := cmd.Flags().GetStringSlice("react")
@@ -57,20 +60,23 @@ var issueCreateCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err := remotecmd.IssueCreateCmd(targetRepo, remotecmd.IssueCreateArg{
-			IssueID:    issueID,
-			Title:      title,
-			Body:       body,
-			NoBody:     noBody,
-			ReplyHash:  commentCommitID,
-			Reactions:  funk.UniqString(reactions),
-			Labels:     funk.UniqString(labels),
-			Assignees:  funk.UniqString(assignees),
-			Fixers:     funk.UniqString(fixers),
-			UseEditor:  useEditor,
-			EditorPath: editorPath,
-			StdOut:     os.Stdout,
-			StdIn:      os.Stdin,
+		if err := remotecmd.IssueCreateCmd(targetRepo, &remotecmd.IssueCreateArgs{
+			IssueNumber:         issueID,
+			Title:               title,
+			Body:                body,
+			NoBody:              noBody,
+			ReplyHash:           commentCommitID,
+			Reactions:           funk.UniqString(reactions),
+			Labels:              funk.UniqString(labels),
+			Assignees:           funk.UniqString(assignees),
+			Fixers:              funk.UniqString(fixers),
+			UseEditor:           useEditor,
+			EditorPath:          editorPath,
+			Close:               close,
+			StdOut:              os.Stdout,
+			StdIn:               os.Stdin,
+			IssueCommentCreator: issues.CreateIssueComment,
+			EditorReader:        util.ReadFromEditor,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -102,6 +108,7 @@ func init() {
 	issueCmd.AddCommand(issueCreateCmd)
 	issueCmd.AddCommand(issueListCmd)
 	rootCmd.AddCommand(issueCmd)
+
 	issueCreateCmd.Flags().StringP("title", "t", "", "The issue title (max. 250 B)")
 	issueCreateCmd.Flags().StringP("body", "b", "", "The issue message (max. 8 KB)")
 	issueCreateCmd.Flags().StringP("reply", "r", "", "Specify the hash of a comment to respond to")
@@ -113,6 +120,7 @@ func init() {
 	issueCreateCmd.Flags().Bool("no-body", false, "Skip prompt for issue body")
 	issueCreateCmd.Flags().String("editor", "", "GetPath an editor to use instead of the git configured editor")
 	issueCreateCmd.Flags().IntP("issue-id", "i", 0, "Specify a target issue number to create or add a comment")
+	issueCreateCmd.Flags().BoolP("close", "c", false, "Add a directive to close the issue")
 
 	issueListCmd.Flags().IntP("limit", "n", 0, "Limit the number of issues returned")
 	issueListCmd.Flags().Bool("reverse", false, "Return the result in reversed order")

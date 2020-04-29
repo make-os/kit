@@ -6,10 +6,13 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"math/big"
 	r "math/rand"
 	"net/http"
 	"os"
+	"os/exec"
 	"reflect"
 	"strconv"
 	"strings"
@@ -617,4 +620,29 @@ func IsValidIdentifierName(name string) error {
 		return fmt.Errorf("name is too short. Must be at least 3 characters long")
 	}
 	return nil
+}
+
+// ReadFromEditor reads input from the specified editor program
+func ReadFromEditor(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) {
+	file, err := ioutil.TempFile(os.TempDir(), "")
+	if err != nil {
+		return "", nil
+	}
+	defer os.Remove(file.Name())
+
+	args := strings.Split(editor, " ")
+	cmd := exec.Command(args[0], append(args[1:], file.Name())...)
+	cmd.Stdout = stdOut
+	cmd.Stderr = stdErr
+	cmd.Stdin = stdIn
+	if err := cmd.Run(); err != nil {
+		return "", err
+	}
+
+	bz, err := ioutil.ReadFile(file.Name())
+	if err != nil {
+		return "", err
+	}
+
+	return string(bz), nil
 }

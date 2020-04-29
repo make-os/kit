@@ -71,7 +71,7 @@ var _ = Describe("Issue", func() {
 		})
 	})
 
-	Describe(".AddIssueOrCommentCommit", func() {
+	Describe(".CreateIssueComment", func() {
 		var mockRepo *mocks.MockBareRepo
 
 		BeforeEach(func() {
@@ -81,7 +81,7 @@ var _ = Describe("Issue", func() {
 		When("issue number is not provided", func() {
 			It("should return err when unable to get free issue number", func() {
 				mockRepo.EXPECT().GetFreeIssueNum(1).Return(0, fmt.Errorf("error"))
-				_, _, err := issues.AddIssueOrCommentCommit(mockRepo, 0, "", false)
+				_, _, err := issues.CreateIssueComment(mockRepo, 0, "", false)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("failed to find free issue number: error"))
 			})
@@ -90,7 +90,7 @@ var _ = Describe("Issue", func() {
 		It("should return error when unable to get issue reference", func() {
 			mockRepo.EXPECT().GetFreeIssueNum(1).Return(1, nil)
 			mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return("", fmt.Errorf("error"))
-			_, _, err := issues.AddIssueOrCommentCommit(mockRepo, 0, "", false)
+			_, _, err := issues.CreateIssueComment(mockRepo, 0, "", false)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to check issue existence: error"))
 		})
@@ -99,7 +99,7 @@ var _ = Describe("Issue", func() {
 			It("should return err", func() {
 				mockRepo.EXPECT().GetFreeIssueNum(1).Return(1, nil)
 				mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return("", repo.ErrRefNotFound)
-				_, _, err := issues.AddIssueOrCommentCommit(mockRepo, 0, "", true)
+				_, _, err := issues.CreateIssueComment(mockRepo, 0, "", true)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("can't add comment to a non-existing issue (1)"))
 			})
@@ -110,7 +110,7 @@ var _ = Describe("Issue", func() {
 			mockRepo.EXPECT().GetFreeIssueNum(1).Return(1, nil)
 			mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return(hash, nil)
 			mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return("", fmt.Errorf("error"))
-			_, _, err := issues.AddIssueOrCommentCommit(mockRepo, 0, "body content", true)
+			_, _, err := issues.CreateIssueComment(mockRepo, 0, "body content", true)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to create issue commit: error"))
 		})
@@ -123,7 +123,7 @@ var _ = Describe("Issue", func() {
 			mockRepo.EXPECT().RefGet(refname).Return(hash, nil)
 			mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return(issueHash, nil)
 			mockRepo.EXPECT().RefUpdate(refname, issueHash).Return(fmt.Errorf("error"))
-			_, _, err := issues.AddIssueOrCommentCommit(mockRepo, 0, "body content", true)
+			_, _, err := issues.CreateIssueComment(mockRepo, 0, "body content", true)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to update issue reference target hash: error"))
 		})
@@ -136,7 +136,7 @@ var _ = Describe("Issue", func() {
 			mockRepo.EXPECT().RefGet(refname).Return(hash, nil)
 			mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return(issueHash, nil)
 			mockRepo.EXPECT().RefUpdate(refname, issueHash).Return(nil)
-			isNewIssue, issueReference, err := issues.AddIssueOrCommentCommit(mockRepo, 0, "body content", true)
+			isNewIssue, issueReference, err := issues.CreateIssueComment(mockRepo, 0, "body content", true)
 			Expect(err).To(BeNil())
 			Expect(isNewIssue).To(BeFalse())
 			Expect(issueReference).To(Equal(refname))

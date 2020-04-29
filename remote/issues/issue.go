@@ -10,10 +10,14 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 )
 
-// AddIssueOrCommentCommit creates a new issue or adds a comment commit to an existing issue.
-// Returns true if target issue was newly created.
-// The target reference is also returned
-func AddIssueOrCommentCommit(
+// IssueCommentCreator is a function type for creating an issue or adding comments to an issue
+type IssueCommentCreator func(targetRepo core.BareRepo,
+	issueID int,
+	issueBody string,
+	isComment bool) (isNewIssue bool, issueReference string, err error)
+
+// CreateIssueComment creates a new issue and/or adds a comment commit to a new/existing issue.
+func CreateIssueComment(
 	targetRepo core.BareRepo,
 	issueID int,
 	issueBody string,

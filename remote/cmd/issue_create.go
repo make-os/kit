@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"os/signal"
 	"strings"
 	"syscall"
@@ -20,109 +19,103 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// readFromEditor reads input from the specified editor
-func readFromEditor(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) {
-	file, err := ioutil.TempFile(os.TempDir(), "")
-	if err != nil {
-		return "", nil
-	}
-	defer os.Remove(file.Name())
-
-	args := strings.Split(editor, " ")
-	cmd := exec.Command(args[0], append(args[1:], file.Name())...)
-	cmd.Stdout = stdOut
-	cmd.Stderr = stdErr
-	cmd.Stdin = stdIn
-	if err := cmd.Run(); err != nil {
-		return "", err
-	}
-
-	bz, err := ioutil.ReadFile(file.Name())
-	if err != nil {
-		return "", err
-	}
-
-	return string(bz), nil
-}
-
-type IssueCreateArg struct {
+type IssueCreateArgs struct {
 	// IssueID is the unique Issue ID
-	IssueID int
+	IssueNumber int
+
 	// Title is the title of the Issue
 	Title string
+
 	// Body is the Issue's body
 	Body string
+
 	// ReplyHash is the hash of a comment commit
 	ReplyHash string
+
 	// Reactions towards the replied comment commit
 	Reactions []string
+
 	// Labels may include terms used to classify the Issue
 	Labels []string
+
 	// Assignees may include push keys that may be interpreted by an application
 	Assignees []string
+
 	// Fixers may include push keys of indicating who should fix the Issue
 	Fixers []string
+
 	// UseEditor indicates that the body of the Issue should be collected using a text editor.
 	UseEditor bool
+
 	// EditorPath indicates the path to an editor program
 	EditorPath string
+
 	// NoBody prevents prompting user for issue body
 	NoBody bool
+
+	// Close adds a directive to close the issue
+	Close bool
+
 	// StdOut receives the output
 	StdOut io.Writer
+
 	// StdIn receives input
 	StdIn io.ReadCloser
+
+	// IssueOrCommentCommitCreatorFunc is the issue commit creating function
+	IssueCommentCreator issues.IssueCommentCreator
+
+	// EditorReader is used to read from an editor program
+	EditorReader func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error)
 }
 
-// IssueCreateCmd create a new Issue or adds a comment commit to an existing Issue
-func IssueCreateCmd(targetRepo core.BareRepo, args IssueCreateArg) error {
+var (
+	ErrBodyRequired  = fmt.Errorf("body is required")
+	ErrTitleRequired = fmt.Errorf("title is required")
+)
 
-	var nIssueComments int
+// IssueCreateCmd create a new Issue or adds a comment commit to an existing Issue
+func IssueCreateCmd(r core.BareRepo, args *IssueCreateArgs) error {
+
+	var nComments int
 	var issueRef, issueRefHash string
 	var err error
 
 	// If issue number is not set, it means a new issue should be created.
 	// Go directly to input collection.
-	if args.IssueID == 0 {
+	if args.IssueNumber == 0 {
 		goto input
 	}
 
 	// Get the issue reference
-	issueRef = plumbing.MakeIssueReference(args.IssueID)
-	issueRefHash, err = targetRepo.RefGet(issueRef)
+	issueRef = plumbing.MakeIssueReference(args.IssueNumber)
+	issueRefHash, err = r.RefGet(issueRef)
 
 	// When issue does not exist and this is a reply intent, return error
 	if err != nil && err == repo.ErrRefNotFound && args.ReplyHash != "" {
-		return fmt.Errorf("issue (%d) was not found", args.IssueID)
+		return fmt.Errorf("issue (%d) was not found", args.IssueNumber)
 	} else if err != nil && err != repo.ErrRefNotFound {
 		return err
 	}
 
 	// Get the number of comments
-	nIssueComments, err = targetRepo.NumCommits(issueRef, false)
+	nComments, err = r.NumCommits(issueRef, false)
 	if err != nil {
-		return fmt.Errorf("failed to count comments in issue")
+		return errors.Wrap(err, "failed to count comments in issue")
 	}
 
 	// Title is not required when the intent is to add a comment
-	if nIssueComments > 0 && args.Title != "" {
+	if nComments > 0 && args.Title != "" {
 		return fmt.Errorf("title not required when adding a comment to an issue")
 	}
 
 	// When the intent is to reply to a specific comment, ensure the target
 	// comment hash exist in the issue
-	if args.ReplyHash != "" {
-		if targetRepo.IsAncestor(args.ReplyHash, issueRefHash) != nil {
-			return fmt.Errorf("target comment hash (%s) is unknown", args.ReplyHash)
-		}
+	if args.ReplyHash != "" && r.IsAncestor(args.ReplyHash, issueRefHash) != nil {
+		return fmt.Errorf("target comment hash (%s) is unknown", args.ReplyHash)
 	}
 
 input:
-
-	// When reactions are set, ensure the intent is to add a comment
-	if len(args.Reactions) > 0 && args.ReplyHash == "" && nIssueComments == 0 {
-		return fmt.Errorf("reactions can only be used when adding a comment")
-	}
 
 	// Ensure the reactions are all supported
 	for _, reaction := range args.Reactions {
@@ -132,8 +125,8 @@ input:
 	}
 
 	// When intent is to reply to a comment, an issue number is required
-	if args.IssueID == 0 && args.ReplyHash != "" {
-		return fmt.Errorf("issue number is required")
+	if args.IssueNumber == 0 && args.ReplyHash != "" {
+		return fmt.Errorf("issue number is required when adding a comment")
 	}
 
 	// Hook to syscall.SIGINT signal so we close args.StdIn
@@ -143,10 +136,13 @@ input:
 	rdr := bufio.NewReader(args.StdIn)
 
 	// Prompt user for title only if was not provided via flag and this is not a comment
-	if len(args.Title) == 0 && args.ReplyHash == "" && nIssueComments == 0 {
+	if len(args.Title) == 0 && args.ReplyHash == "" && nComments == 0 {
 		fmt.Fprintln(args.StdOut, color.HiBlackString("Title: (256 chars) - Press enter to continue"))
 		args.Title, _ = rdr.ReadString('\n')
 		args.Title = strings.TrimSpace(args.Title)
+		if len(args.Title) == 0 {
+			return ErrTitleRequired
+		}
 	}
 
 	// Read body from stdIn only if an editor is not requested and --no-body is unset
@@ -157,21 +153,21 @@ input:
 		args.Body = strings.TrimSpace(string(bz))
 	}
 
-	// Ensure body is provided. But not required when a reaction is provided
-	if len(strings.TrimSpace(args.Body)) == 0 && len(args.Reactions) == 0 {
-		return fmt.Errorf("body is required")
-	}
-
 	// Read body from editor if requested
 	if args.UseEditor == true {
-		editor := targetRepo.GetConfig("core.editor")
-		if args.EditorPath != "" {
-			editor = args.EditorPath
+		var editor = args.EditorPath
+		if editor == "" {
+			editor = r.GetConfig("core.editor")
 		}
-		args.Body, err = readFromEditor(editor, args.StdIn, os.Stdout, os.Stderr)
+		args.Body, err = args.EditorReader(editor, args.StdIn, os.Stdout, os.Stderr)
 		if err != nil {
 			return errors.Wrap(err, "failed read body from editor")
 		}
+	}
+
+	// Body is required for a new issue
+	if nComments == 0 && args.Body == "" {
+		return ErrBodyRequired
 	}
 
 	// Create the Issue body and prompt user to confirm
@@ -179,16 +175,15 @@ input:
 		args.Reactions, args.Labels, args.Assignees, args.Fixers)
 
 	// Create a new Issue or add comment commit to existing Issue
-	newIssue, ref, err := issues.AddIssueOrCommentCommit(targetRepo, args.IssueID, issueBody, args.ReplyHash != "")
+	newIssue, ref, err := args.IssueCommentCreator(r, args.IssueNumber, issueBody, args.ReplyHash != "")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to add issue or comment")
 	}
 
 	if newIssue {
 		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#0", ref))
 	} else {
-		id, _ := targetRepo.NumCommits(ref, false)
-		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#%d", ref, id-1))
+		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#%d", ref, nComments))
 	}
 
 	return nil
