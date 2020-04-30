@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"encoding/pem"
 	"fmt"
 	"os"
 	"strings"
@@ -22,6 +23,8 @@ import (
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 	cmd2 "gitlab.com/makeos/mosdef/remote/cmd"
+	"gitlab.com/makeos/mosdef/remote/cmd/gitcmd"
+	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/util"
 
 	tmcfg "github.com/tendermint/tendermint/config"
@@ -118,11 +121,31 @@ var fallbackCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 
 		if isGitSignRequest(args) {
-			cmd2.GitSignCmd(cfg, os.Stdin)
+			if err := gitcmd.GitSignCmd(cfg, os.Stdin, &gitcmd.GitSignArgs{
+				Args:            os.Args,
+				RepoGetter:      repo.GetRepo,
+				PushKeyUnlocker: cmd2.UnlockPushKey,
+				StdErr:          os.Stderr,
+				StdOut:          os.Stdout,
+			}); err != nil {
+				log.Fatal(err.Error())
+			}
+			os.Exit(0)
 		}
 
 		if isGitVerifyRequest(args) {
-			cmd2.GitVerifyCmd(cfg, args)
+			if err := gitcmd.GitVerifyCmd(cfg, &gitcmd.GitVerifyArgs{
+				Args:            args,
+				RepoGetter:      repo.GetRepo,
+				PushKeyUnlocker: cmd2.UnlockPushKey,
+				PemDecoder:      pem.Decode,
+				StdOut:          os.Stdout,
+				StdErr:          os.Stderr,
+				StdIn:           os.Stdin,
+			}); err != nil {
+				log.Fatal(err.Error())
+			}
+			os.Exit(0)
 		}
 
 		fmt.Print("Unknown command. Use --help to see commands.\n")

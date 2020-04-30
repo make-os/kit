@@ -30,6 +30,9 @@ type Post struct {
 	Comment *Comment
 }
 
+// PostGetter describes a function for finding posts
+type PostGetter func(targetRepo core.BareRepo, filter func(ref *plumbing.Reference) bool) (posts []Post, err error)
+
 // GetPosts returns references that conform to the post protocol
 // filter is used to check whether a reference is a post reference.
 // Returns a slice of posts

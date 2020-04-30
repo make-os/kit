@@ -169,12 +169,20 @@ func MakePushToken(key core.StoredKey, txDetail *types.TxDetail) string {
 	return base58.Encode(txDetail.Bytes())
 }
 
-// SetPushTokenToRemotes creates a push request token and updates the URLs of all remotes.
+// RemoteURLsPushTokenUpdater describes a function for setting push tokens on remote URL
+type RemoteURLsPushTokenUpdater func(
+	targetRepo core.BareRepo,
+	targetRemote string,
+	txDetail *types.TxDetail,
+	pushKey core.StoredKey,
+	reset bool) (string, error)
+
+// UpdateRemoteURLsWithPushToken creates a push request token and updates the URLs of all remotes.
 // targetRepo: The target repository
 // targetRemotes: A list of target remotes whose push URLs will include a push token.
 // txDetail: The push request parameters
 // pushKey: The push key to use to sign the token.
-func SetPushTokenToRemotes(
+func UpdateRemoteURLsWithPushToken(
 	targetRepo core.BareRepo,
 	targetRemote string,
 	txDetail *types.TxDetail,

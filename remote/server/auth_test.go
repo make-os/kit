@@ -644,7 +644,7 @@ var _ = Describe("Auth", func() {
 		})
 	})
 
-	Describe(".SetPushTokenToRemotes", func() {
+	Describe(".UpdateRemoteURLsWithPushToken", func() {
 		var mockRepo *mocks.MockBareRepo
 		var txDetail *types.TxDetail
 		var mockStoreKey *mocks.MockStoredKey
@@ -658,7 +658,7 @@ var _ = Describe("Auth", func() {
 
 		It("should return err when unable to get config", func() {
 			mockRepo.EXPECT().Config().Return(nil, fmt.Errorf("error"))
-			_, err = SetPushTokenToRemotes(mockRepo, "master", txDetail, mockStoreKey, false)
+			_, err = UpdateRemoteURLsWithPushToken(mockRepo, "master", txDetail, mockStoreKey, false)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get config: error"))
 		})
@@ -666,7 +666,7 @@ var _ = Describe("Auth", func() {
 		It("should return err when unable to get config", func() {
 			cfg := &gogitcfg.Config{}
 			mockRepo.EXPECT().Config().Return(cfg, nil)
-			_, err = SetPushTokenToRemotes(mockRepo, "master", txDetail, mockStoreKey, false)
+			_, err = UpdateRemoteURLsWithPushToken(mockRepo, "master", txDetail, mockStoreKey, false)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("remote (master): does not exist"))
 		})
@@ -678,7 +678,7 @@ var _ = Describe("Auth", func() {
 				URLs: []string{"https://push.node/r/repo1", "https://push.node/ns/repo1"},
 			}
 			mockRepo.EXPECT().Config().Return(cfg, nil)
-			_, err = SetPushTokenToRemotes(mockRepo, "master", txDetail, mockStoreKey, false)
+			_, err = UpdateRemoteURLsWithPushToken(mockRepo, "master", txDetail, mockStoreKey, false)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("remote (master): cannot have multiple urls pointing to different repository/namespace"))
 		})
@@ -690,7 +690,7 @@ var _ = Describe("Auth", func() {
 				URLs: []string{"https://push.node/ns/repo1", "https://push.node/ns/repo2"},
 			}
 			mockRepo.EXPECT().Config().Return(cfg, nil)
-			_, err = SetPushTokenToRemotes(mockRepo, "master", txDetail, mockStoreKey, false)
+			_, err = UpdateRemoteURLsWithPushToken(mockRepo, "master", txDetail, mockStoreKey, false)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("remote (master): cannot have multiple urls pointing to different repository/namespace"))
 		})
@@ -704,7 +704,7 @@ var _ = Describe("Auth", func() {
 				}
 				mockRepo.EXPECT().Config().Return(cfg, nil)
 				mockRepo.EXPECT().SetConfig(gomock.Any()).Return(nil)
-				token, err = SetPushTokenToRemotes(mockRepo, "master", txDetail, mockStoreKey, false)
+				token, err = UpdateRemoteURLsWithPushToken(mockRepo, "master", txDetail, mockStoreKey, false)
 			})
 
 			It("should return no error", func() {

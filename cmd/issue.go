@@ -20,8 +20,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
-	remotecmd "gitlab.com/makeos/mosdef/remote/cmd"
+	"gitlab.com/makeos/mosdef/remote/cmd/issuecmd"
 	"gitlab.com/makeos/mosdef/remote/issues"
+	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -60,7 +61,7 @@ var issueCreateCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err := remotecmd.IssueCreateCmd(targetRepo, &remotecmd.IssueCreateArgs{
+		if err := issuecmd.IssueCreateCmd(targetRepo, &issuecmd.IssueCreateArgs{
 			IssueNumber:         issueID,
 			Title:               title,
 			Body:                body,
@@ -92,13 +93,23 @@ var issueListCmd = &cobra.Command{
 		limit, _ := cmd.Flags().GetInt("limit")
 		reverse, _ := cmd.Flags().GetBool("reverse")
 		dateFmt, _ := cmd.Flags().GetString("date")
+		format, _ := cmd.Flags().GetString("format")
 
 		targetRepo, err := repo.GetRepoAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = remotecmd.IssueListCmd(targetRepo, limit, reverse, dateFmt); err != nil {
+		if err = issuecmd.IssueListCmd(targetRepo, &issuecmd.IssueListArgs{
+			Limit:      limit,
+			Reverse:    reverse,
+			DateFmt:    dateFmt,
+			PostGetter: plumbing.GetPosts,
+			PagerWrite: issuecmd.WriteToPager,
+			Format:     format,
+			StdOut:     os.Stdout,
+			StdErr:     os.Stderr,
+		}); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -125,4 +136,5 @@ func init() {
 	issueListCmd.Flags().IntP("limit", "n", 0, "Limit the number of issues returned")
 	issueListCmd.Flags().Bool("reverse", false, "Return the result in reversed order")
 	issueListCmd.Flags().StringP("date", "d", "Mon Jan _2 15:04:05 2006 -0700", "Set date format")
+	issueListCmd.Flags().StringP("format", "f", "", "Set output format")
 }

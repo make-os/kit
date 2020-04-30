@@ -10,6 +10,13 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
+// NextNonceGetter describes a function for getting next nonce of a pusher
+// using the remote rest client or the json rpc client
+type NextNonceGetter func(
+	pushKeyID string,
+	rpcClient *client.RPCClient,
+	remoteClients []restclient.RestClient) (string, error)
+
 // GetNextNonceOfPushKeyOwner is used to determine the next nonce of the account that
 // owns the target push key ID.
 //

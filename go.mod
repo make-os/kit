@@ -4,6 +4,7 @@ go 1.13
 
 replace (
 	github.com/bitfield/script => github.com/ncodes/script v0.14.1
+	github.com/cbroglie/mustache => github.com/ncodes/mustache v1.0.2-0.20200429192435-945fed20e1e2
 	github.com/go-critic/go-critic v0.0.0-20181204210945-ee9bf5809ead => github.com/go-critic/go-critic v0.3.5-0.20190526074819-1df300866540
 	github.com/golangci/golangci-lint => github.com/golangci/golangci-lint v1.18.0
 	github.com/tendermint/tendermint => github.com/ncodes/tendermint v0.32.7-0.20200119162731-39690ff2d37e
@@ -15,7 +16,7 @@ require (
 	github.com/bitfield/script v0.14.1
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/c-bata/go-prompt v0.2.3
-	github.com/casbin/casbin v1.9.1 // indirect
+	github.com/cbroglie/mustache v1.0.1
 	github.com/deckarep/golang-set v1.7.1 // indirect
 	github.com/dgraph-io/badger v1.6.0
 	github.com/dgryski/go-farm v0.0.0-20191112170834-c2139c5d712b // indirect
@@ -24,7 +25,7 @@ require (
 	github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.1.0
-	github.com/gen2brain/beeep v0.0.0-20200305193625-ff0f4a39397e // indirect
+	github.com/gen2brain/beeep v0.0.0-20200420150314-13046a26d502
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
 	github.com/gobuffalo/packr v1.30.1
 	github.com/gogo/protobuf v1.3.1
@@ -60,6 +61,7 @@ require (
 	github.com/multiformats/go-multiaddr v0.2.0
 	github.com/multiformats/go-multihash v0.0.10
 	github.com/ncodes/go-prettyjson v0.0.0-20180528130907-d229c224a219
+	github.com/neurosnap/sentences v1.0.6 // indirect
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/onsi/ginkgo v1.8.0
@@ -88,8 +90,7 @@ require (
 	go.uber.org/multierr v1.4.0 // indirect
 	go.uber.org/zap v1.13.0 // indirect
 	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
-	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
-	golang.org/x/sys v0.0.0-20200321134203-328b4cd54aae // indirect
+	golang.org/x/sys v0.0.0-20200430082407-1f5687305801 // indirect
 	golang.org/x/tools v0.0.0-20191206204035-259af5ff87bd // indirect
 	gonum.org/v1/gonum v0.7.0 // indirect
 	gopkg.in/jdkato/prose.v2 v2.0.0-20190814032740-822d591a158c

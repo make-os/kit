@@ -20,6 +20,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/btcsuite/btcutil/bech32"
+	"github.com/cbroglie/mustache"
 	"github.com/robertkrimen/otto"
 	"github.com/thoas/go-funk"
 
@@ -645,4 +646,21 @@ func ReadFromEditor(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (s
 	}
 
 	return string(bz), nil
+}
+
+// MustacheParserOpt are options for MustacheParseString
+type MustacheParserOpt struct {
+	ForceRaw bool
+	StartTag string
+	EndTag   string
+}
+
+// MustacheParseString passes a given string format.
+func MustacheParseString(format string, ctx map[string]interface{}, opt MustacheParserOpt) (string, error) {
+	tpl, err := mustache.ParseStringPartialsRawWithDelims(format, nil,
+		opt.StartTag, opt.EndTag, opt.ForceRaw)
+	if err != nil {
+		return "", err
+	}
+	return tpl.Render(ctx)
 }

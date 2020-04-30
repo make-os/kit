@@ -1,14 +1,16 @@
-package cmd
+package signcmd
 
 import (
 	"errors"
 	"fmt"
 
 	"github.com/asaskevich/govalidator"
+	errors2 "github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/api"
 	restclient "gitlab.com/makeos/mosdef/api/rest/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/remote/cmd"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/server"
@@ -60,28 +62,36 @@ type SignCommitCmdArgs struct {
 
 	// RemoteClients is the remote server API client.
 	RemoteClients []restclient.RestClient
+
+	// PushKeyUnlocker is a function for getting and unlocking a push key from keystore
+	PushKeyUnlocker cmd.PushKeyUnlocker
+
+	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
+	GetNextNonce api.NextNonceGetter
+
+	// RemoteURLTokenUpdater is a function for setting push tokens to git remote URLs
+	RemoteURLTokenUpdater server.RemoteURLsPushTokenUpdater
 }
+
+var ErrMissingPushKeyID = fmt.Errorf("push key ID is required")
 
 // SignCommitCmd adds transaction information to a new or recent commit and signs it.
 // cfg: App config object
 // targetRepo: The target repository at the working directory
-func SignCommitCmd(
-	cfg *config.AppConfig,
-	targetRepo core.BareRepo,
-	args SignCommitCmdArgs) error {
+func SignCommitCmd(cfg *config.AppConfig, targetRepo core.BareRepo, args *SignCommitCmdArgs) error {
 
 	// Get the signing key id from the git config if not passed as an argument
 	if args.PushKeyID == "" {
 		args.PushKeyID = targetRepo.GetConfig("user.signingKey")
 		if args.PushKeyID == "" {
-			return fmt.Errorf("push key ID is required")
+			return ErrMissingPushKeyID
 		}
 	}
 
 	// Get and unlock the pusher key
-	key, err := getAndUnlockPushKey(cfg, args.PushKeyID, args.PushKeyPass, targetRepo)
+	key, err := args.PushKeyUnlocker(cfg, args.PushKeyID, args.PushKeyPass, targetRepo)
 	if err != nil {
-		return err
+		return errors2.Wrap(err, "unable to unlock push key")
 	}
 
 	// Validate merge ID is set.
@@ -96,7 +106,7 @@ func SignCommitCmd(
 
 	// Get the next nonce, if not set
 	if util.IsZeroString(args.Nonce) {
-		args.Nonce, err = api.GetNextNonceOfPushKeyOwner(args.PushKeyID, args.RPCClient, args.RemoteClients)
+		args.Nonce, err = args.GetNextNonce(args.PushKeyID, args.RPCClient, args.RemoteClients)
 		if err != nil {
 			return err
 		}
@@ -123,9 +133,7 @@ func SignCommitCmd(
 			false, args.ForceCheckout); err != nil {
 			return fmt.Errorf("failed to checkout branch (%s): %s", activeBranch, err)
 		}
-		defer func() {
-			targetRepo.Checkout(plumbing.ReferenceName(activeBranchCpy).Short(), false, false)
-		}()
+		defer targetRepo.Checkout(plumbing.ReferenceName(activeBranchCpy).Short(), false, false)
 	}
 
 	// Use active branch as the tx reference only if
@@ -141,7 +149,7 @@ func SignCommitCmd(
 	// Gather any transaction options
 	options := []string{fmt.Sprintf("reference=%s", txReference)}
 	if args.MergeID != "" {
-		options = append(options, fmt.Sprintf("params.MergeID=%s", args.MergeID))
+		options = append(options, fmt.Sprintf("mergeID=%s", args.MergeID))
 	}
 
 	// Make the transaction parameter object
@@ -151,7 +159,7 @@ func SignCommitCmd(
 	}
 
 	// Create & set request token to remote URLs in config
-	if _, err = server.SetPushTokenToRemotes(targetRepo, args.Remote,
+	if _, err = args.RemoteURLTokenUpdater(targetRepo, args.Remote,
 		txDetail, key, args.ResetTokens); err != nil {
 		return err
 	}
@@ -175,8 +183,10 @@ func SignCommitCmd(
 	}
 
 	// Use previous commit message as default
-	commit, _ := targetRepo.CommitObject(plumbing.NewHash(hash))
-	if args.Message == "" {
+	commit, err := targetRepo.CommitObject(plumbing.NewHash(hash))
+	if err != nil {
+		return err
+	} else if args.Message == "" {
 		args.Message = commit.Message
 	}
 

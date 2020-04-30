@@ -13,9 +13,16 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 )
 
-// getAndUnlockPushKey takes a push key ID and unlocks it using the default passphrase
+// PushKeyUnlocker describes a function for fetching and unlocking a push key from the keystore
+type PushKeyUnlocker func(
+	cfg *config.AppConfig,
+	pushKeyID,
+	defaultPassphrase string,
+	targetRepo core.BareRepo) (core.StoredKey, error)
+
+// UnlockPushKey takes a push key ID and unlocks it using the default passphrase
 // or one obtained from the git config of the repository or from an environment variable.
-func getAndUnlockPushKey(
+func UnlockPushKey(
 	cfg *config.AppConfig,
 	pushKeyID,
 	defaultPassphrase string,

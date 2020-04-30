@@ -5,8 +5,11 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"gitlab.com/makeos/mosdef/api"
 	"gitlab.com/makeos/mosdef/config"
 	cmd2 "gitlab.com/makeos/mosdef/remote/cmd"
+	"gitlab.com/makeos/mosdef/remote/cmd/signcmd"
+	"gitlab.com/makeos/mosdef/remote/server"
 )
 
 // signCmd represents the commit command
@@ -39,21 +42,24 @@ var signCommitCmd = &cobra.Command{
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
-		if err := cmd2.SignCommitCmd(cfg, targetRepo, cmd2.SignCommitCmdArgs{
-			Message:       msg,
-			Fee:           fee,
-			Nonce:         nonce,
-			AmendCommit:   amend,
-			MergeID:       mergeID,
-			Head:          head,
-			Branch:        branch,
-			ForceCheckout: forceCheckout,
-			PushKeyID:     sk,
-			PushKeyPass:   pass,
-			Remote:        targetRemotes,
-			ResetTokens:   resetRemoteTokens,
-			RPCClient:     client,
-			RemoteClients: remoteClients,
+		if err := signcmd.SignCommitCmd(cfg, targetRepo, &signcmd.SignCommitCmdArgs{
+			Message:               msg,
+			Fee:                   fee,
+			Nonce:                 nonce,
+			AmendCommit:           amend,
+			MergeID:               mergeID,
+			Head:                  head,
+			Branch:                branch,
+			ForceCheckout:         forceCheckout,
+			PushKeyID:             sk,
+			PushKeyPass:           pass,
+			Remote:                targetRemotes,
+			ResetTokens:           resetRemoteTokens,
+			RPCClient:             client,
+			RemoteClients:         remoteClients,
+			PushKeyUnlocker:       cmd2.UnlockPushKey,
+			GetNextNonce:          api.GetNextNonceOfPushKeyOwner,
+			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
@@ -76,7 +82,7 @@ var signTagCmd = &cobra.Command{
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
 
 		args = cmd.Flags().Args()
-		if err := cmd2.SignTagCmd(cfg, args, targetRepo, cmd2.SignTagArgs{
+		if err := signcmd.SignTagCmd(cfg, args, targetRepo, signcmd.SignTagArgs{
 			Message:       msg,
 			Fee:           fee,
 			Nonce:         nonce,
@@ -109,7 +115,7 @@ var signNoteCmd = &cobra.Command{
 		}
 
 		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
-		if err := cmd2.SignNoteCmd(cfg, targetRepo, cmd2.SignNoteArgs{
+		if err := signcmd.SignNoteCmd(cfg, targetRepo, signcmd.SignNoteArgs{
 			Fee:           fee,
 			Nonce:         nonce,
 			PushKeyID:     sk,

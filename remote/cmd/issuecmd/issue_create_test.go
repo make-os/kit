@@ -1,4 +1,4 @@
-package cmd_test
+package issuecmd_test
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/mocks"
-	"gitlab.com/makeos/mosdef/remote/cmd"
+	"gitlab.com/makeos/mosdef/remote/cmd/issuecmd"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/testutil"
@@ -35,7 +35,7 @@ func mockReadFunc(data []byte, err error) func(b []byte) (int, error) {
 	}
 }
 
-var _ = Describe("Issue", func() {
+var _ = Describe("IssueCreate", func() {
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
@@ -57,15 +57,15 @@ var _ = Describe("Issue", func() {
 	Describe(".IssueCreateCmd", func() {
 		When("issue number is unset (new issue creation)", func() {
 			It("should return error when a reaction is unknown", func() {
-				args := &cmd.IssueCreateArgs{Reactions: []string{":unknown:"}}
-				err := cmd.IssueCreateCmd(mockRepo, args)
+				args := &issuecmd.IssueCreateArgs{Reactions: []string{":unknown:"}}
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("reaction (:unknown:) is not supported"))
 			})
 
 			It("should return error when reply hash is set but issue number is not set", func() {
-				args := &cmd.IssueCreateArgs{ReplyHash: "02we"}
-				err := cmd.IssueCreateCmd(mockRepo, args)
+				args := &issuecmd.IssueCreateArgs{ReplyHash: "02we"}
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("issue number is required when adding a comment"))
 			})
@@ -75,8 +75,8 @@ var _ = Describe("Issue", func() {
 					mockStdIn := mocks.NewMockReadCloser(ctrl)
 					mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my title\n"), nil))
 					mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my body"), io.EOF))
-					args := &cmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn, IssueCommentCreator: noopIssueCommentCreator}
-					err := cmd.IssueCreateCmd(mockRepo, args)
+					args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn, IssueCommentCreator: noopIssueCommentCreator}
+					err := issuecmd.IssueCreateCmd(mockRepo, args)
 					Expect(err).To(BeNil())
 					Expect(args.Title).To(Equal("my title"))
 					Expect(args.Body).To(Equal("my body"))
@@ -87,45 +87,45 @@ var _ = Describe("Issue", func() {
 				mockStdIn := mocks.NewMockReadCloser(ctrl)
 				mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc(nil, nil))
 				mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc(nil, io.EOF))
-				args := &cmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn}
-				err := cmd.IssueCreateCmd(mockRepo, args)
+				args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn}
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(cmd.ErrTitleRequired))
+				Expect(err).To(Equal(issuecmd.ErrTitleRequired))
 			})
 
 			It("should return error when body is not provided from stdin", func() {
 				mockStdIn := mocks.NewMockReadCloser(ctrl)
 				mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my title\n"), nil))
 				mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc(nil, io.EOF))
-				args := &cmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn}
-				err := cmd.IssueCreateCmd(mockRepo, args)
+				args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn}
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(args.Title).To(Equal("my title"))
-				Expect(err).To(Equal(cmd.ErrBodyRequired))
+				Expect(err).To(Equal(issuecmd.ErrBodyRequired))
 			})
 
 			It("should return error when body is not provided from stdin even is NoBody is true", func() {
 				mockStdIn := mocks.NewMockReadCloser(ctrl)
 				mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my title\n"), nil))
-				args := &cmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn, NoBody: true}
-				err := cmd.IssueCreateCmd(mockRepo, args)
+				args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn, NoBody: true}
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(args.Title).To(Equal("my title"))
-				Expect(err).To(Equal(cmd.ErrBodyRequired))
+				Expect(err).To(Equal(issuecmd.ErrBodyRequired))
 			})
 
 			When("custom editor is requested", func() {
-				var args *cmd.IssueCreateArgs
+				var args *issuecmd.IssueCreateArgs
 				BeforeEach(func() {
 					mockStdIn := mocks.NewMockReadCloser(ctrl)
 					mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my title\n"), nil))
-					args = &cmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn, UseEditor: true}
+					args = &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn, UseEditor: true}
 				})
 
 				It("should request fetch core.editor from git config", func() {
 					mockRepo.EXPECT().GetConfig("core.editor")
 					args.EditorReader = func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) { return "", nil }
-					cmd.IssueCreateCmd(mockRepo, args)
+					issuecmd.IssueCreateCmd(mockRepo, args)
 				})
 
 				It("should use custom editor program is EditorPath is set", func() {
@@ -134,7 +134,7 @@ var _ = Describe("Issue", func() {
 						Expect(editor).To(Equal(args.EditorPath))
 						return "", nil
 					}
-					cmd.IssueCreateCmd(mockRepo, args)
+					issuecmd.IssueCreateCmd(mockRepo, args)
 				})
 
 				It("should return error if reading from editor failed", func() {
@@ -142,7 +142,7 @@ var _ = Describe("Issue", func() {
 					args.EditorReader = func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) {
 						return "", fmt.Errorf("error")
 					}
-					err := cmd.IssueCreateCmd(mockRepo, args)
+					err := issuecmd.IssueCreateCmd(mockRepo, args)
 					Expect(err).ToNot(BeNil())
 					Expect(err).To(MatchError("failed read body from editor: error"))
 				})
@@ -150,9 +150,9 @@ var _ = Describe("Issue", func() {
 				It("should return error when body is unset through editor", func() {
 					mockRepo.EXPECT().GetConfig("core.editor")
 					args.EditorReader = func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) { return "", nil }
-					err := cmd.IssueCreateCmd(mockRepo, args)
+					err := issuecmd.IssueCreateCmd(mockRepo, args)
 					Expect(err).ToNot(BeNil())
-					Expect(err).To(Equal(cmd.ErrBodyRequired))
+					Expect(err).To(Equal(issuecmd.ErrBodyRequired))
 				})
 			})
 
@@ -160,50 +160,50 @@ var _ = Describe("Issue", func() {
 
 		When("issue number is set (new issue creation or comment)", func() {
 			It("should return error when issue does not exist and reply hash is set", func() {
-				args := &cmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "xyz"}
+				args := &issuecmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "xyz"}
 				ref := plumbing.MakeIssueReference(args.IssueNumber)
 				mockRepo.EXPECT().RefGet(ref).Return("", repo.ErrRefNotFound)
-				err := cmd.IssueCreateCmd(mockRepo, args)
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("issue (1) was not found"))
 			})
 
 			It("should return error when unable to get issue reference", func() {
-				args := &cmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "xyz"}
+				args := &issuecmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "xyz"}
 				ref := plumbing.MakeIssueReference(args.IssueNumber)
 				mockRepo.EXPECT().RefGet(ref).Return("", fmt.Errorf("error"))
-				err := cmd.IssueCreateCmd(mockRepo, args)
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("error"))
 			})
 
 			It("should return error when unable to count number of comments in reference", func() {
-				args := &cmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "xyz"}
+				args := &issuecmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "xyz"}
 				ref := plumbing.MakeIssueReference(args.IssueNumber)
 				mockRepo.EXPECT().RefGet(ref).Return("xyz", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(0, fmt.Errorf("error"))
-				err := cmd.IssueCreateCmd(mockRepo, args)
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("failed to count comments in issue: error"))
 			})
 
 			It("should return error when issue has commits and title is provided", func() {
-				args := &cmd.IssueCreateArgs{IssueNumber: 1, Title: "Some Title"}
+				args := &issuecmd.IssueCreateArgs{IssueNumber: 1, Title: "Some Title"}
 				ref := plumbing.MakeIssueReference(args.IssueNumber)
 				mockRepo.EXPECT().RefGet(ref).Return("xyz", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(1, nil)
-				err := cmd.IssueCreateCmd(mockRepo, args)
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("title not required when adding a comment to an issue"))
 			})
 
 			It("should return error when reply hash does not exist in issue branch", func() {
-				args := &cmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "reply_hash"}
+				args := &issuecmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "reply_hash"}
 				ref := plumbing.MakeIssueReference(args.IssueNumber)
 				mockRepo.EXPECT().RefGet(ref).Return("xyz", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(1, nil)
 				mockRepo.EXPECT().IsAncestor("reply_hash", "xyz").Return(fmt.Errorf("bad"))
-				err := cmd.IssueCreateCmd(mockRepo, args)
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("target comment hash (reply_hash) is unknown"))
 			})
@@ -213,14 +213,14 @@ var _ = Describe("Issue", func() {
 
 				issueNumber := 1
 				ref := plumbing.MakeIssueReference(issueNumber)
-				args := &cmd.IssueCreateArgs{IssueNumber: issueNumber, ReplyHash: "comment_hash", NoBody: true,
+				args := &issuecmd.IssueCreateArgs{IssueNumber: issueNumber, ReplyHash: "comment_hash", NoBody: true,
 					StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn,
 					IssueCommentCreator: testIssueCommentCreator(true, ref, nil)}
 
 				mockRepo.EXPECT().RefGet(ref).Return("ref_hash", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(1, nil)
 				mockRepo.EXPECT().IsAncestor("comment_hash", "ref_hash").Return(nil)
-				err := cmd.IssueCreateCmd(mockRepo, args)
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).To(BeNil())
 			})
 		})
@@ -229,8 +229,8 @@ var _ = Describe("Issue", func() {
 			mockStdIn := mocks.NewMockReadCloser(ctrl)
 			mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my title\n"), nil))
 			mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my body"), io.EOF))
-			args := &cmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn, IssueCommentCreator: errorIssueCommentCreator}
-			err := cmd.IssueCreateCmd(mockRepo, args)
+			args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn, IssueCommentCreator: errorIssueCommentCreator}
+			err := issuecmd.IssueCreateCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(args.Title).To(Equal("my title"))
 			Expect(args.Body).To(Equal("my body"))
