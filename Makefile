@@ -35,6 +35,9 @@ release-linux:
 	 dep ensure -v && \
 	 env GOVERSION=$(GOVERSION) goreleaser release --snapshot --rm-dist -f ".goreleaser.linux.yml"
 
+install:
+	cd cmd/mosdef && go install
+
 genmocks:
 	mockgen -source=types/core/logic.go -destination=mocks/logic.go -package mocks && \
 	mockgen -source=dht/types/types.go -destination=mocks/dht.go -package mocks && \
