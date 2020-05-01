@@ -165,7 +165,7 @@ var _ = Describe("Validation", func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
 				commitHash, _ := testRepo.GetRecentCommitHash()
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
+				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{
 					Bytes:   []byte{1, 2, 3},
 					Headers: txDetail.ToMapForPEMHeader(),
@@ -188,7 +188,7 @@ var _ = Describe("Validation", func() {
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
 				sigMsg := validation.GetCommitOrTagSigMsg(commit)
 
-				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
+				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				pemHeader := txDetail.ToMapForPEMHeader()
 
 				sig, err = privKey.PrivKey().Sign(append([]byte(sigMsg), txDetail.BytesNoSig()...))
@@ -213,7 +213,7 @@ var _ = Describe("Validation", func() {
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
 				sigMsg := validation.GetCommitOrTagSigMsg(commit)
 
-				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
+				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				pemHeader := txDetail.ToMapForPEMHeader()
 
 				sig, err = privKey.PrivKey().Sign(append([]byte(sigMsg), txDetail.BytesNoSig()...))
@@ -249,8 +249,7 @@ var _ = Describe("Validation", func() {
 
 		When("tag is signed but unable to get public key using the pushKeyID", func() {
 			BeforeEach(func() {
-				txDetail := types.MakeTxDetail("0", "0", pubKey.PushAddr().String(), nil)
-				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", txDetail, "v1")
+				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
 				tagRef, _ := testRepo.Tag("v1")
 				tob, _ = testRepo.TagObject(tagRef.Hash())
 				tob.PGPSignature = "signature"
@@ -284,7 +283,7 @@ var _ = Describe("Validation", func() {
 				tagRef, _ := testRepo.Tag("v1")
 				tob, _ = testRepo.TagObject(tagRef.Hash())
 
-				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
+				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				sig := pem.EncodeToMemory(&pem.Block{Bytes: []byte("invalid sig"), Headers: txDetail.ToMapForPEMHeader(), Type: "SIGNATURE"})
 				tob.PGPSignature = string(sig)
 
@@ -303,7 +302,7 @@ var _ = Describe("Validation", func() {
 				tagRef, _ := testRepo.Tag("v1")
 				tob, _ = testRepo.TagObject(tagRef.Hash())
 
-				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
+				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				msg := validation.GetCommitOrTagSigMsg(tob)
 				sig, _ := privKey.PrivKey().Sign(append([]byte(msg), txDetail.BytesNoSig()...))
 				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.ToMapForPEMHeader(), Type: "SIGNATURE"})
@@ -324,7 +323,7 @@ var _ = Describe("Validation", func() {
 				tagRef, _ := testRepo.Tag("v1")
 				tob, _ = testRepo.TagObject(tagRef.Hash())
 
-				txDetail, _ := types.MakeAndValidateTxDetail("0", "0", pubKey.PushAddr().String(), nil)
+				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				msg := validation.GetCommitOrTagSigMsg(tob)
 				sig, _ := privKey.PrivKey().Sign(append([]byte(msg), txDetail.BytesNoSig()...))
 				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.ToMapForPEMHeader(), Type: "SIGNATURE"})

@@ -3,6 +3,7 @@ package signcmd
 import (
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/asaskevich/govalidator"
 	errors2 "github.com/pkg/errors"
@@ -20,7 +21,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-type SignCommitCmdArgs struct {
+type SignCommitArgs struct {
 	// Message is a custom commit message
 	Message string
 
@@ -28,7 +29,7 @@ type SignCommitCmdArgs struct {
 	Fee string
 
 	// Nonce is the signer's next account nonce
-	Nonce string
+	Nonce uint64
 
 	// AmendCommit indicates whether to amend the last commit or create an empty commit
 	AmendCommit bool
@@ -78,7 +79,7 @@ var ErrMissingPushKeyID = fmt.Errorf("push key ID is required")
 // SignCommitCmd adds transaction information to a new or recent commit and signs it.
 // cfg: App config object
 // targetRepo: The target repository at the working directory
-func SignCommitCmd(cfg *config.AppConfig, targetRepo core.BareRepo, args *SignCommitCmdArgs) error {
+func SignCommitCmd(cfg *config.AppConfig, targetRepo core.BareRepo, args *SignCommitArgs) error {
 
 	// Get the signing key id from the git config if not passed as an argument
 	if args.PushKeyID == "" {
@@ -105,11 +106,12 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo core.BareRepo, args *SignCo
 	}
 
 	// Get the next nonce, if not set
-	if util.IsZeroString(args.Nonce) {
-		args.Nonce, err = args.GetNextNonce(args.PushKeyID, args.RPCClient, args.RemoteClients)
+	if args.Nonce == 0 {
+		nonce, err := args.GetNextNonce(args.PushKeyID, args.RPCClient, args.RemoteClients)
 		if err != nil {
 			return err
 		}
+		args.Nonce, _ = strconv.ParseUint(nonce, 10, 64)
 	}
 
 	// Get the current active branch.
@@ -138,29 +140,25 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo core.BareRepo, args *SignCo
 
 	// Use active branch as the tx reference only if
 	// head arg. was not explicitly provided
-	var txReference = activeBranch
+	var reference = activeBranch
 	if args.Head != "" {
-		txReference = args.Head
-		if !plumbing2.IsReference(txReference) {
-			txReference = plumbing.NewBranchReferenceName(args.Head).String()
+		reference = args.Head
+		if !plumbing2.IsReference(reference) {
+			reference = plumbing.NewBranchReferenceName(args.Head).String()
 		}
 	}
 
-	// Gather any transaction options
-	options := []string{fmt.Sprintf("reference=%s", txReference)}
-	if args.MergeID != "" {
-		options = append(options, fmt.Sprintf("mergeID=%s", args.MergeID))
-	}
-
 	// Make the transaction parameter object
-	txDetail, err := types.MakeAndValidateTxDetail(args.Fee, args.Nonce, args.PushKeyID, nil, options...)
-	if err != nil {
-		return err
+	txDetail := &types.TxDetail{
+		Fee:             util.String(args.Fee),
+		Nonce:           args.Nonce,
+		PushKeyID:       args.PushKeyID,
+		MergeProposalID: args.MergeID,
+		Reference:       reference,
 	}
 
 	// Create & set request token to remote URLs in config
-	if _, err = args.RemoteURLTokenUpdater(targetRepo, args.Remote,
-		txDetail, key, args.ResetTokens); err != nil {
+	if _, err = args.RemoteURLTokenUpdater(targetRepo, args.Remote, txDetail, key, args.ResetTokens); err != nil {
 		return err
 	}
 

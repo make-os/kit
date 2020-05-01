@@ -29,7 +29,7 @@ var signCommitCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
-		nonce, _ := cmd.Flags().GetString("nonce")
+		nonce, _ := cmd.Flags().GetUint64("nonce")
 		sk, _ := cmd.Flags().GetString("signing-key")
 		mergeID, _ := cmd.Flags().GetString("merge-id")
 		head, _ := cmd.Flags().GetString("head")
@@ -41,8 +41,8 @@ var signCommitCmd = &cobra.Command{
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
-		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
-		if err := signcmd.SignCommitCmd(cfg, targetRepo, &signcmd.SignCommitCmdArgs{
+		targetRepo, client, remoteClients := getRepoAndClients(cmd)
+		if err := signcmd.SignCommitCmd(cfg, targetRepo, &signcmd.SignCommitArgs{
 			Message:               msg,
 			Fee:                   fee,
 			Nonce:                 nonce,
@@ -72,26 +72,29 @@ var signTagCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
-		nonce, _ := cmd.Flags().GetString("nonce")
+		nonce, _ := cmd.Flags().GetUint64("nonce")
 		sk, _ := cmd.Flags().GetString("signing-key")
 		pass, _ := cmd.Flags().GetString("pass")
 		msg, _ := cmd.Flags().GetString("message")
 		targetRemotes, _ := cmd.Flags().GetString("remote")
 		resetRemoteTokens, _ := cmd.Flags().GetBool("reset")
 
-		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
+		targetRepo, client, remoteClients := getRepoAndClients(cmd)
 
 		args = cmd.Flags().Args()
-		if err := signcmd.SignTagCmd(cfg, args, targetRepo, signcmd.SignTagArgs{
-			Message:       msg,
-			Fee:           fee,
-			Nonce:         nonce,
-			PushKeyID:     sk,
-			PushKeyPass:   pass,
-			Remote:        targetRemotes,
-			ResetTokens:   resetRemoteTokens,
-			RPCClient:     client,
-			RemoteClients: remoteClients,
+		if err := signcmd.SignTagCmd(cfg, args, targetRepo, &signcmd.SignTagArgs{
+			Message:               msg,
+			Fee:                   fee,
+			Nonce:                 nonce,
+			PushKeyID:             sk,
+			PushKeyPass:           pass,
+			Remote:                targetRemotes,
+			ResetTokens:           resetRemoteTokens,
+			RPCClient:             client,
+			RemoteClients:         remoteClients,
+			PushKeyUnlocker:       cmd2.UnlockPushKey,
+			GetNextNonce:          api.GetNextNonceOfPushKeyOwner,
+			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
 		}
@@ -104,7 +107,7 @@ var signNoteCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
-		nonce, _ := cmd.Flags().GetString("nonce")
+		nonce, _ := cmd.Flags().GetUint64("nonce")
 		sk, _ := cmd.Flags().GetString("signing-key")
 		pass, _ := cmd.Flags().GetString("pass")
 		targetRemotes, _ := cmd.Flags().GetString("remote")
@@ -114,16 +117,20 @@ var signNoteCmd = &cobra.Command{
 			log.Fatal("name is required")
 		}
 
-		targetRepo, client, remoteClients := getRepoAndClients(cmd, nonce)
-		if err := signcmd.SignNoteCmd(cfg, targetRepo, signcmd.SignNoteArgs{
-			Fee:           fee,
-			Nonce:         nonce,
-			PushKeyID:     sk,
-			PushKeyPass:   pass,
-			Remote:        targetRemotes,
-			ResetTokens:   resetRemoteTokens,
-			RPCClient:     client,
-			RemoteClients: remoteClients,
+		targetRepo, client, remoteClients := getRepoAndClients(cmd)
+		if err := signcmd.SignNoteCmd(cfg, targetRepo, &signcmd.SignNoteArgs{
+			Name:                  args[0],
+			Fee:                   fee,
+			Nonce:                 nonce,
+			PushKeyID:             sk,
+			PushKeyPass:           pass,
+			Remote:                targetRemotes,
+			ResetTokens:           resetRemoteTokens,
+			RPCClient:             client,
+			RemoteClients:         remoteClients,
+			PushKeyUnlocker:       cmd2.UnlockPushKey,
+			GetNextNonce:          api.GetNextNonceOfPushKeyOwner,
+			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -160,7 +167,7 @@ func init() {
 	// Transaction information
 	pf.StringP("message", "m", "", "commit or tag message")
 	pf.StringP("fee", "f", "0", "Set the transaction fee")
-	pf.StringP("nonce", "n", "0", "Set the transaction nonce")
+	pf.Uint64P("nonce", "n", 0, "Set the transaction nonce")
 	pf.StringP("signing-key", "s", "", "Set the signing key ID")
 	pf.StringP("remote", "r", "origin", "Set push token to a remote")
 

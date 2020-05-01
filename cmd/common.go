@@ -77,7 +77,7 @@ func getRemoteAPIClients(cmd *cobra.Command, repo core.BareRepo) (clients []rest
 }
 
 // getClients returns RPCClient and Remote API clients
-func getRepoAndClients(cmd *cobra.Command, nonceFromFlag string) (core.BareRepo,
+func getRepoAndClients(cmd *cobra.Command) (core.BareRepo,
 	*client.RPCClient, []restclient.RestClient) {
 
 	// Get the repository

@@ -1,8 +1,9 @@
 package signcmd
 
 import (
-	"fmt"
+	"strconv"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 	"gitlab.com/makeos/mosdef/api"
 	restclient "gitlab.com/makeos/mosdef/api/rest/client"
@@ -24,7 +25,7 @@ type SignTagArgs struct {
 	Fee string
 
 	// Nonce is the signer's next account nonce
-	Nonce string
+	Nonce uint64
 
 	// PushKeyID is the signers push key ID
 	PushKeyID string
@@ -43,11 +44,20 @@ type SignTagArgs struct {
 
 	// RemoteClients is the remote server API client.
 	RemoteClients []restclient.RestClient
+
+	// PushKeyUnlocker is a function for getting and unlocking a push key from keystore
+	PushKeyUnlocker cmd.PushKeyUnlocker
+
+	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
+	GetNextNonce api.NextNonceGetter
+
+	// RemoteURLTokenUpdater is a function for setting push tokens to git remote URLs
+	RemoteURLTokenUpdater server.RemoteURLsPushTokenUpdater
 }
 
 // SignTagCmd creates an annotated tag, appends transaction information to its
 // message and signs it.
-func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo core.BareRepo, args SignTagArgs) error {
+func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo core.BareRepo, args *SignTagArgs) error {
 
 	gitFlags := pflag.NewFlagSet("git-tag", pflag.ExitOnError)
 	gitFlags.ParseErrorsWhitelist.UnknownFlags = true
@@ -56,7 +66,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo core.BareRep
 	gitFlags.Parse(gitArgs)
 
 	// If --local-user (-u) flag is provided in the git args, use the value as the push key ID
-	if gitFlags.Lookup("local-user") != nil {
+	if gitFlags.Lookup("local-user").Changed {
 		args.PushKeyID, _ = gitFlags.GetString("local-user")
 	}
 
@@ -69,13 +79,13 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo core.BareRep
 	}
 
 	// Get and unlock the pusher key
-	key, err := cmd.UnlockPushKey(cfg, args.PushKeyID, args.PushKeyPass, targetRepo)
+	key, err := args.PushKeyUnlocker(cfg, args.PushKeyID, args.PushKeyPass, targetRepo)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to unlock push key")
 	}
 
 	// If --message (-m) flag is provided, use the value as the message
-	if gitFlags.Lookup("message") != nil {
+	if gitFlags.Lookup("message").Changed {
 		args.Message, _ = gitFlags.GetString("message")
 	}
 
@@ -83,26 +93,24 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo core.BareRep
 	gitArgs = util.RemoveFlag(gitArgs, []string{"m", "message", "u", "local-user"})
 
 	// Get the next nonce, if not set
-	if util.IsZeroString(args.Nonce) {
-		args.Nonce, err = api.GetNextNonceOfPushKeyOwner(args.PushKeyID, args.RPCClient, args.RemoteClients)
+	if args.Nonce == 0 {
+		nonce, err := args.GetNextNonce(args.PushKeyID, args.RPCClient, args.RemoteClients)
 		if err != nil {
 			return err
 		}
+		args.Nonce, _ = strconv.ParseUint(nonce, 10, 64)
 	}
 
-	// Gather any transaction params options
-	options := []string{
-		fmt.Sprintf("reference=%s", plumbing.NewTagReferenceName(gitFlags.Arg(0)).String()),
-	}
-
-	// Construct the txDetail and append to the current message
-	txDetail, err := types.MakeAndValidateTxDetail(args.Fee, args.Nonce, args.PushKeyID, nil, options...)
-	if err != nil {
-		return err
+	// Make the transaction parameter object
+	txDetail := &types.TxDetail{
+		Fee:       util.String(args.Fee),
+		Nonce:     args.Nonce,
+		PushKeyID: args.PushKeyID,
+		Reference: plumbing.NewTagReferenceName(gitFlags.Arg(0)).String(),
 	}
 
 	// Create & set request token to remote URLs in config
-	if _, err = server.UpdateRemoteURLsWithPushToken(targetRepo, args.Remote, txDetail,
+	if _, err = args.RemoteURLTokenUpdater(targetRepo, args.Remote, txDetail,
 		key, args.ResetTokens); err != nil {
 		return err
 	}

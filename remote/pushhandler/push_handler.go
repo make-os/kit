@@ -61,7 +61,7 @@ func NewHandler(
 		log:             rMgr.Log().Module("push-handler"),
 		polEnforcer:     polEnforcer,
 		PushReader:      &PushReader{},
-		TxDetails:       types.SliceOfTxDetailToReferenceTxDetails(txDetails),
+		TxDetails:       types.ToReferenceTxDetails(txDetails),
 		ChangeValidator: validation.ValidateChange,
 		Reverter:        plumbing.Revert,
 		MergeChecker:    validation.CheckMergeCompliance,

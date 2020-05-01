@@ -24,7 +24,7 @@ var mergeReqCmd = &cobra.Command{
 		fee, _ := cmd.Flags().GetString("fee")
 		nonce, _ := cmd.Flags().GetString("nonce")
 
-		repo, client, remoteClients := getRepoAndClients(cmd, nonce)
+		repo, client, remoteClients := getRepoAndClients(cmd)
 
 		// When target branch hash is not provided or is equal to '.', automatically
 		// read the latest reference hash of the target branch.
