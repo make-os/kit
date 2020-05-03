@@ -35,38 +35,26 @@ var _ = Describe("Issue", func() {
 	})
 
 	Describe(".MakeIssueBody", func() {
-		It("case 1 - only title is set", func() {
-			str := issues.MakeIssueBody("my title", "", "", nil, nil, nil, nil, nil)
+		It("cases", func() {
+			str := issues.MakeIssueBody("my title", "", "", nil, nil, nil, nil)
 			Expect(str).To(Equal("---\ntitle: my title\n---\n"))
-		})
 
-		It("case 2 - only title,body are set", func() {
-			str := issues.MakeIssueBody("my title", "my body", "", nil, nil, nil, nil, nil)
+			str = issues.MakeIssueBody("my title", "my body", "", nil, nil, nil, nil)
 			Expect(str).To(Equal("---\ntitle: my title\n---\nmy body"))
-		})
 
-		It("case 3 - only title,body,replyTo are set", func() {
-			str := issues.MakeIssueBody("my title", "my body", "xyz", nil, nil, nil, nil, nil)
+			str = issues.MakeIssueBody("my title", "my body", "xyz", nil, nil, nil, nil)
 			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\n---\nmy body"))
-		})
 
-		It("case 4 - only title,body,replyTo,labels are set", func() {
-			str := issues.MakeIssueBody("my title", "my body", "xyz", nil, nil, []string{"a", "b"}, nil, nil)
+			str = issues.MakeIssueBody("my title", "my body", "xyz", nil, []string{"a", "b"}, nil, nil)
 			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nlabels: [\"a\",\"b\"]\n---\nmy body"))
-		})
 
-		It("case 5 - only assignees is set", func() {
-			str := issues.MakeIssueBody("my title", "my body", "xyz", nil, nil, nil, []string{"a", "b"}, nil)
+			str = issues.MakeIssueBody("my title", "my body", "xyz", nil, nil, []string{"a", "b"}, nil)
 			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nassignees: [\"a\",\"b\"]\n---\nmy body"))
-		})
 
-		It("case 6 - only fixers is set", func() {
-			str := issues.MakeIssueBody("my title", "my body", "xyz", nil, nil, nil, nil, []string{"a", "b"})
+			str = issues.MakeIssueBody("my title", "my body", "xyz", nil, nil, nil, []string{"a", "b"})
 			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nfixers: [\"a\",\"b\"]\n---\nmy body"))
-		})
 
-		It("case 6 - only reactions is set", func() {
-			str := issues.MakeIssueBody("my title", "my body", "xyz", []string{"a", "b"}, nil, nil, nil, nil)
+			str = issues.MakeIssueBody("my title", "my body", "xyz", []string{"a", "b"}, nil, nil, nil)
 			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nreactions: [\"a\",\"b\"]\n---\nmy body"))
 		})
 	})

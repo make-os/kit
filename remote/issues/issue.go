@@ -71,7 +71,6 @@ func MakeIssueBody(
 	body,
 	replyTo string,
 	reactions,
-	rmReactions,
 	labels,
 	assignees,
 	fixers []string) string {
@@ -88,10 +87,6 @@ func MakeIssueBody(
 	if len(reactions) > 0 {
 		reactionsStr, _ := json.Marshal(reactions)
 		args += fmt.Sprintf("reactions: %s\n", reactionsStr)
-	}
-	if len(rmReactions) > 0 {
-		reactionsStr, _ := json.Marshal(rmReactions)
-		args += fmt.Sprintf("removeReactions: %s\n", reactionsStr)
 	}
 	if len(labels) > 0 {
 		labelsStr, _ := json.Marshal(labels)

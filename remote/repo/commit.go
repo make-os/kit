@@ -16,6 +16,11 @@ func NewWrappedCommit(gc *object.Commit) *WrappedCommit {
 	return &WrappedCommit{gc}
 }
 
+// UnWrap returns the underlying commit object
+func (c *WrappedCommit) UnWrap() *object.Commit {
+	return c.Commit
+}
+
 // Parent returns the ith parent of a commit.
 func (c *WrappedCommit) Parent(i int) (core.Commit, error) {
 	parent, err := c.Commit.Parent(i)

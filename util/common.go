@@ -664,3 +664,7 @@ func MustacheParseString(format string, ctx map[string]interface{}, opt Mustache
 	}
 	return tpl.Render(ctx)
 }
+
+func IsString(v interface{}) bool {
+	return reflect.TypeOf(v).Kind() == reflect.String
+}

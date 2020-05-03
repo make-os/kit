@@ -52,7 +52,6 @@ var issueCreateCmd = &cobra.Command{
 		editorPath, _ := cmd.Flags().GetString("editor")
 		labels, _ := cmd.Flags().GetStringSlice("labels")
 		reactions, _ := cmd.Flags().GetStringSlice("reactions")
-		rmReactions, _ := cmd.Flags().GetStringSlice("rm-reactions")
 		assignees, _ := cmd.Flags().GetStringSlice("assignees")
 		fixers, _ := cmd.Flags().GetStringSlice("fixers")
 		issueID, _ := cmd.Flags().GetInt("issue-id")
@@ -69,7 +68,6 @@ var issueCreateCmd = &cobra.Command{
 			NoBody:              noBody,
 			ReplyHash:           commentCommitID,
 			Reactions:           funk.UniqString(reactions),
-			RemoveReactions:     rmReactions,
 			Labels:              funk.UniqString(labels),
 			Assignees:           funk.UniqString(assignees),
 			Fixers:              funk.UniqString(fixers),
@@ -126,7 +124,6 @@ func init() {
 	issueCreateCmd.Flags().StringP("body", "b", "", "The issue message (max. 8 KB)")
 	issueCreateCmd.Flags().StringP("reply", "r", "", "Specify the hash of a comment to respond to")
 	issueCreateCmd.Flags().StringSliceP("reactions", "e", nil, "Add reactions to a reply (max. 10)")
-	issueCreateCmd.Flags().StringSlice("rm-reactions", nil, "Remove reactions from a previous reply  (max. 10)")
 	issueCreateCmd.Flags().StringSliceP("labels", "l", nil, "Specify labels to add to the issue/comment (max. 10)")
 	issueCreateCmd.Flags().StringSliceP("assignees", "a", nil, "Specify push key of assignees to add to the issue/comment (max. 10)")
 	issueCreateCmd.Flags().StringSliceP("fixers", "f", nil, "Specify push key of fixers to add to the issue/comment (max. 10)")

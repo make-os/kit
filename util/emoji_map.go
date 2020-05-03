@@ -1,5 +1,10 @@
 package util
 
+import (
+	"fmt"
+	"strings"
+)
+
 // NOTE: THIS FILE WAS PRODUCED BY THE
 // EMOJICODEMAP CODE GENERATION TOOL (github.com/kyokomi/emoji/cmd/generateEmojiCodeMap)
 // DO NOT EDIT
@@ -4676,4 +4681,9 @@ var EmojiCodeMap = map[string]string{
 	":zombie_man:":                            "\U0001f9df\u200d\u2642\ufe0f",
 	":zombie_woman:":                          "\U0001f9df\u200d\u2640\ufe0f",
 	":zzz:":                                   "\U0001f4a4",
+}
+
+func IsEmojiValid(short string) bool {
+	_, ok := EmojiCodeMap[fmt.Sprintf(":%s:", strings.TrimLeft(short, "-"))]
+	return ok
 }

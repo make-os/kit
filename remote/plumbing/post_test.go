@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gohugoio/hugo/parser/pageparser"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
@@ -84,11 +85,36 @@ var _ = Describe("Post", func() {
 
 	Describe(".GetCommentPreview", func() {
 		It("should return sentence", func() {
-			prev := plumbing.GetCommentPreview(&plumbing.Comment{Content: "This is a simulation. We are in a simulation."})
+			prev := plumbing.GetCommentPreview(&plumbing.Comment{Body: &plumbing.IssueBody{Content: []byte("This is a simulation. We are in a simulation.")}})
 			Expect(strings.TrimSpace(prev)).To(Equal("This is a simulation..."))
 
-			prev = plumbing.GetCommentPreview(&plumbing.Comment{Content: "This is a simulation."})
+			prev = plumbing.GetCommentPreview(&plumbing.Comment{Body: &plumbing.IssueBody{Content: []byte("This is a simulation.")}})
 			Expect(strings.TrimSpace(prev)).To(Equal("This is a simulation."))
+		})
+	})
+
+	Describe(".IssueBodyFromContentFrontMatter", func() {
+		It("case 1", func() {
+			issue := plumbing.IssueBodyFromContentFrontMatter(&pageparser.ContentFrontMatter{
+				Content: []byte("content"),
+				FrontMatter: map[string]interface{}{
+					"title":     "My Title",
+					"replyTo":   "12345",
+					"reactions": []string{"smile"},
+					"labels":    []string{"help"},
+					"assignees": []string{"push1abc"},
+					"fixers":    []string{"push1abc"},
+				},
+				FrontMatterFormat: "",
+			})
+
+			Expect(issue.Content).To(Equal([]byte("content")))
+			Expect(issue.Title).To(Equal("My Title"))
+			Expect(issue.ReplyTo).To(Equal("12345"))
+			Expect(issue.Reactions).To(Equal([]string{"smile"}))
+			Expect(issue.Labels).To(Equal([]string{"help"}))
+			Expect(issue.Assignees).To(Equal([]string{"push1abc"}))
+			Expect(issue.Fixers).To(Equal([]string{"push1abc"}))
 		})
 	})
 })

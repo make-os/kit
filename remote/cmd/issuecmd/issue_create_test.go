@@ -63,13 +63,6 @@ var _ = Describe("IssueCreate", func() {
 				Expect(err).To(MatchError("reaction (:unknown:) is not supported"))
 			})
 
-			It("should return error when reactions to remove is specified", func() {
-				args := &issuecmd.IssueCreateArgs{RemoveReactions: []string{":smile:"}}
-				err := issuecmd.IssueCreateCmd(mockRepo, args)
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("can only specify reactions to remove in comments"))
-			})
-
 			It("should return error when reply hash is set but issue number is not set", func() {
 				args := &issuecmd.IssueCreateArgs{ReplyHash: "02we"}
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
@@ -192,16 +185,6 @@ var _ = Describe("IssueCreate", func() {
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("failed to count comments in issue: error"))
-			})
-
-			It("should return error when RemoveReactions contains unknown reaction", func() {
-				args := &issuecmd.IssueCreateArgs{IssueNumber: 1, RemoveReactions: []string{":unknown:"}}
-				ref := plumbing.MakeIssueReference(args.IssueNumber)
-				mockRepo.EXPECT().RefGet(ref).Return("xyz", nil)
-				mockRepo.EXPECT().NumCommits(ref, false).Return(1, nil)
-				err := issuecmd.IssueCreateCmd(mockRepo, args)
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("reaction (:unknown:) is not supported"))
 			})
 
 			It("should return error when issue has commits and title is provided", func() {

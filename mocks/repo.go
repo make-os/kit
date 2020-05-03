@@ -978,6 +978,20 @@ func (mr *MockCommitMockRecorder) IsParent(hash interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsParent", reflect.TypeOf((*MockCommit)(nil).IsParent), hash)
 }
 
+// UnWrap mocks base method
+func (m *MockCommit) UnWrap() *object.Commit {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UnWrap")
+	ret0, _ := ret[0].(*object.Commit)
+	return ret0
+}
+
+// UnWrap indicates an expected call of UnWrap
+func (mr *MockCommitMockRecorder) UnWrap() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnWrap", reflect.TypeOf((*MockCommit)(nil).UnWrap))
+}
+
 // GetCommitter mocks base method
 func (m *MockCommit) GetCommitter() *object.Signature {
 	m.ctrl.T.Helper()

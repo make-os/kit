@@ -7,6 +7,7 @@ import (
 
 	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/pkg/errors"
+	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/jdkato/prose.v2"
@@ -18,10 +19,10 @@ import (
 type Comment struct {
 	Created     time.Time
 	Hash        string
-	Content     string
 	Author      string
 	AuthorEmail string
 	Signature   string
+	Body        *IssueBody
 }
 
 // Post represents a reference post
@@ -79,11 +80,11 @@ func GetPosts(targetRepo core.BareRepo, filter func(ref *plumbing.Reference) boo
 		posts = append(posts, Post{
 			Title: fm.Get("title").String(),
 			Comment: &Comment{
+				Body:        IssueBodyFromContentFrontMatter(&cfm),
 				Hash:        commit.Hash.String(),
 				Created:     commit.Committer.When,
 				Author:      commit.Author.Name,
 				AuthorEmail: commit.Author.Email,
-				Content:     string(cfm.Content),
 				Signature:   commit.PGPSignature,
 			},
 		})
@@ -99,7 +100,7 @@ func GetPosts(targetRepo core.BareRepo, filter func(ref *plumbing.Reference) boo
 
 // GetCommentPreview returns a preview of a comment
 func GetCommentPreview(comment *Comment) string {
-	doc, _ := prose.NewDocument(comment.Content)
+	doc, _ := prose.NewDocument(string(comment.Body.Content))
 	var preview = ""
 	if sentences := doc.Sentences(); len(sentences) > 0 {
 		preview = "\n    " + sentences[0].Text
@@ -109,4 +110,39 @@ func GetCommentPreview(comment *Comment) string {
 		}
 	}
 	return preview
+}
+
+type IssueBody struct {
+	Content   []byte
+	Title     string
+	ReplyTo   string
+	Reactions []string
+	Labels    []string
+	Assignees []string
+	Fixers    []string
+}
+
+// IssueBodyFromContentFrontMatter attempts to load the instance from
+// the specified content front matter object; It will find expected
+// fields and try to cast the their expected type. It will not validate
+// or return any error.
+func IssueBodyFromContentFrontMatter(cfm *pageparser.ContentFrontMatter) *IssueBody {
+	ob := objx.New(cfm.FrontMatter)
+	b := &IssueBody{}
+	b.Content = cfm.Content
+	b.Title = ob.Get("title").String()
+	b.ReplyTo = ob.Get("replyTo").String()
+
+	b.Reactions = cast.ToStringSlice(ob.Get("reactions").
+		StringSlice(cast.ToStringSlice(ob.Get("reactions").InterSlice())))
+
+	b.Labels = cast.ToStringSlice(ob.Get("labels").
+		StringSlice(cast.ToStringSlice(ob.Get("labels").InterSlice())))
+
+	b.Assignees = cast.ToStringSlice(ob.Get("assignees").
+		StringSlice(cast.ToStringSlice(ob.Get("assignees").InterSlice())))
+
+	b.Fixers = cast.ToStringSlice(ob.Get("fixers").
+		StringSlice(cast.ToStringSlice(ob.Get("fixers").InterSlice())))
+	return b
 }

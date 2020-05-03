@@ -138,6 +138,9 @@ type Commit interface {
 	// IsParent checks whether the specified hash is a parent of the commit
 	IsParent(hash string) (bool, Commit)
 
+	// UnWrap returns the underlying commit object
+	UnWrap() *object.Commit
+
 	// GetCommitter returns the one performing the commit, might be different from Author
 	GetCommitter() *object.Signature
 
