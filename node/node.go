@@ -157,9 +157,6 @@ func (n *Node) Start() error {
 
 	// Create ticket manager
 	n.ticketMgr = ticket.NewManager(n.logic.GetDBTx(), n.cfg, n.logic)
-	if err != nil {
-		return errors.Wrap(err, "failed to create ticket manager")
-	}
 	n.logic.SetTicketManager(n.ticketMgr)
 
 	// Create DHTNode reactor and add it to the switch

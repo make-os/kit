@@ -38,6 +38,7 @@ release-linux:
 install:
 	cd cmd/mosdef && go install
 
+
 genmocks:
 	mockgen -source=types/core/logic.go -destination=mocks/logic.go -package mocks && \
 	mockgen -source=dht/types/types.go -destination=mocks/dht.go -package mocks && \

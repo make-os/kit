@@ -3,3 +3,4 @@ play
 .vscode/*
 .idea/*
 *.coverprofile
+*.local

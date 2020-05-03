@@ -32,8 +32,11 @@ type IssueCreateArgs struct {
 	// ReplyHash is the hash of a comment commit
 	ReplyHash string
 
-	// Reactions towards the replied comment commit
+	// Reactions adds reactions to a replied comment commit
 	Reactions []string
+
+	// RemoveReactions remove reactions from a previous reply to a comment commit
+	RemoveReactions []string
 
 	// Labels may include terms used to classify the Issue
 	Labels []string
@@ -124,6 +127,18 @@ input:
 		}
 	}
 
+	// Non-comments are not allowed to specify reactions to remove
+	if nComments == 0 && len(args.RemoveReactions) > 0 {
+		return fmt.Errorf("can only specify reactions to remove in comments")
+	}
+
+	// Ensure the reactions to remove are all supported
+	for _, reaction := range args.RemoveReactions {
+		if _, ok := util.EmojiCodeMap[reaction]; !ok {
+			return fmt.Errorf("reaction (%s) is not supported", reaction)
+		}
+	}
+
 	// When intent is to reply to a comment, an issue number is required
 	if args.IssueNumber == 0 && args.ReplyHash != "" {
 		return fmt.Errorf("issue number is required when adding a comment")
@@ -171,8 +186,15 @@ input:
 	}
 
 	// Create the Issue body and prompt user to confirm
-	issueBody := issues.MakeIssueBody(args.Title, args.Body, args.ReplyHash,
-		args.Reactions, args.Labels, args.Assignees, args.Fixers)
+	issueBody := issues.MakeIssueBody(
+		args.Title,
+		args.Body,
+		args.ReplyHash,
+		args.Reactions,
+		args.RemoveReactions,
+		args.Labels,
+		args.Assignees,
+		args.Fixers)
 
 	// Create a new Issue or add comment commit to existing Issue
 	newIssue, ref, err := args.IssueCommentCreator(r, args.IssueNumber, issueBody, args.ReplyHash != "")

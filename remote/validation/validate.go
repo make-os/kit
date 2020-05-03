@@ -1,22 +1,18 @@
 package validation
 
 import (
-	"bytes"
 	"context"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"reflect"
 	"strings"
 	"time"
 
-	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/mr-tron/base58"
-	"github.com/stretchr/objx"
 	"github.com/thoas/go-funk"
 	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	"gitlab.com/makeos/mosdef/remote/repo"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -56,35 +52,45 @@ type ChangeValidatorFunc func(
 // txDetail: The pusher transaction detail
 // getPushKey: Getter function for reading push key public key
 func ValidateChange(
-	repo core.BareRepo,
+	localRepo core.BareRepo,
 	oldHash string,
 	change *core.ItemChange,
-	txDetail *types.TxDetail,
+	detail *types.TxDetail,
 	getPushKey core.PushKeyGetter) error {
 
+	refname := change.Item.GetName()
+	isIssueRef := plumbing2.IsIssueReferencePath(refname)
+
 	// Handle branch validation
-	if plumbing2.IsBranch(change.Item.GetName()) {
-		commit, err := repo.CommitObject(plumbing.NewHash(change.Item.GetData()))
+	if plumbing2.IsBranch(refname) && !isIssueRef {
+		commit, err := localRepo.CommitObject(plumbing.NewHash(change.Item.GetData()))
 		if err != nil {
 			return errors.Wrap(err, "unable to get commit object")
 		}
+		return CheckCommit(commit, detail, getPushKey)
+	}
 
-		if plumbing2.IsIssueReferencePath(change.Item.GetName()) {
-			return CheckIssueCommit(repo2.NewWrappedCommit(commit), txDetail.Reference, oldHash, repo)
-		} else {
-			return CheckCommit(commit, txDetail, getPushKey)
+	// Handle issue branch validation
+	if plumbing2.IsBranch(refname) && isIssueRef {
+		commit, err := localRepo.CommitObject(plumbing.NewHash(change.Item.GetData()))
+		if err != nil {
+			return errors.Wrap(err, "unable to get commit object")
 		}
+		if err = CheckIssueCommit(repo.NewWrappedCommit(commit), detail.Reference, oldHash, localRepo); err != nil {
+			return err
+		}
+		return CheckCommit(commit, detail, getPushKey)
 	}
 
 	// Handle tag validation
 	if plumbing2.IsTag(change.Item.GetName()) {
-		tagRef, err := repo.Tag(strings.ReplaceAll(change.Item.GetName(), "refs/tags/", ""))
+		tagRef, err := localRepo.Tag(strings.ReplaceAll(change.Item.GetName(), "refs/tags/", ""))
 		if err != nil {
 			return errors.Wrap(err, "unable to get tag object")
 		}
 
 		// Get the tag object (for annotated tags)
-		tagObj, err := repo.TagObject(tagRef.Hash())
+		tagObj, err := localRepo.TagObject(tagRef.Hash())
 		if err != nil && err != plumbing.ErrObjectNotFound {
 			return err
 		}
@@ -92,21 +98,21 @@ func ValidateChange(
 		// Here, the tag is not an annotated tag, so we need to
 		// ensure the referenced commit is signed correctly
 		if tagObj == nil {
-			commit, err := repo.CommitObject(tagRef.Hash())
+			commit, err := localRepo.CommitObject(tagRef.Hash())
 			if err != nil {
 				return errors.Wrap(err, "unable to get commit")
 			}
-			return CheckCommit(commit, txDetail, getPushKey)
+			return CheckCommit(commit, detail, getPushKey)
 		}
 
 		// At this point, the tag is an annotated tag.
 		// We have to ensure the annotated tag object is signed.
-		return CheckAnnotatedTag(tagObj, txDetail, getPushKey)
+		return CheckAnnotatedTag(tagObj, detail, getPushKey)
 	}
 
 	// Handle note validation
 	if plumbing2.IsNote(change.Item.GetName()) {
-		return CheckNote(repo, txDetail)
+		return CheckNote(localRepo, detail)
 	}
 
 	return fmt.Errorf("unrecognised change item")
@@ -284,10 +290,8 @@ func CheckIssueCommit(commit core.Commit, reference, oldHash string, repo core.B
 
 	// New issue's first commit must have zero hash parent (orphan commit)
 	isNewIssue := !repo.GetState().References.Has(reference)
-	if isNewIssue {
-		if commit.NumParents() != 0 {
-			return fmt.Errorf("first commit of a new issue must have no parent")
-		}
+	if isNewIssue && commit.NumParents() != 0 {
+		return fmt.Errorf("first commit of a new issue must have no parent")
 	}
 
 	// Issue commit history must not alter the current history (rebasing not permitted)
@@ -311,177 +315,8 @@ func CheckIssueCommit(commit core.Commit, reference, oldHash string, repo core.B
 	}
 
 	// Issue commit must include only a body file
-	body := tree.Entries[0]
-	if body.Mode != filemode.Regular {
+	if tree.Entries[0].Mode != filemode.Regular {
 		return fmt.Errorf("issue body file is not a regular file")
-	}
-
-	file, _ := tree.File(body.Name)
-	content, err := file.Contents()
-	if err != nil {
-		return fmt.Errorf("issue body file could not be read")
-	}
-
-	// The body file must be parsable (extract front matter and content)
-	cfm, err := pageparser.ParseFrontMatterAndContent(bytes.NewBufferString(content))
-	if err != nil {
-		return fmt.Errorf("issue body could not be parsed")
-	}
-
-	// Validate extracted front matter
-	if err = CheckIssueBody(repo, commit, isNewIssue, cfm.FrontMatter, cfm.Content); err != nil {
-		return errors.Wrap(err, "issue body has invalid front matter")
-	}
-
-	return nil
-}
-
-// CheckIssueBody checks whether the front matter and content extracted from an issue body is ok.
-// Valid front matter fields:
-// - title: The title of the issue (optional)
-// - labels: Labels categorize issues into arbitrary or conceptual units
-// - replyTo: Indicates the issue is a response an earlier comment.
-// - assignees: List push keys assigned to the issue and open for interpretation by clients.
-// - fixers: List push keys assigned to fix an issue and is enforced by the protocol.
-func CheckIssueBody(
-	repo core.BareRepo,
-	commit core.Commit,
-	isNewIssue bool,
-	fm map[string]interface{},
-	content []byte) error {
-
-	// Ensure only valid fields are included
-	var validFields = []string{"title", "reactions", "labels", "replyTo", "assignees", "fixers"}
-	for k := range fm {
-		if !funk.ContainsString(validFields, k) {
-			return fe(-1, k, "unknown field")
-		}
-	}
-
-	obj := objx.New(fm)
-
-	title := obj.Get("title")
-	if !title.IsNil() && !title.IsStr() {
-		return fe(-1, "title", "expected a string value")
-	}
-
-	replyTo := obj.Get("replyTo")
-	if !replyTo.IsNil() && !replyTo.IsStr() {
-		return fe(-1, "replyTo", "expected a string value")
-	}
-
-	reactions := obj.Get("reactions")
-	if !reactions.IsNil() && !reactions.IsInterSlice() {
-		return fe(-1, "reactions", "expected a list of string values")
-	}
-
-	labels := obj.Get("labels")
-	if !labels.IsNil() && !labels.IsInterSlice() {
-		return fe(-1, "labels", "expected a list of string values")
-	}
-
-	assignees := obj.Get("assignees")
-	if !assignees.IsNil() && !assignees.IsInterSlice() {
-		return fe(-1, "assignees", "expected a list of string values")
-	}
-
-	fixers := obj.Get("fixers")
-	if !fixers.IsNil() && !fixers.IsInterSlice() {
-		return fe(-1, "fixers", "expected a list of string values")
-	}
-
-	// Ensure issue commit do not have a replyTo value
-	if isNewIssue && len(replyTo.String()) > 0 {
-		return fe(-1, "replyTo", "not expected in a new issue commit")
-	}
-
-	// Ensure title is unset when replyTo is set
-	if len(replyTo.String()) > 0 && len(title.String()) > 0 {
-		return fe(-1, "title", "title is not required when replying")
-	}
-
-	// Ensure title is provided if issue is new
-	if isNewIssue && len(title.String()) == 0 {
-		return fe(-1, "title", "title is required")
-	} else if !isNewIssue && len(title.String()) > 0 {
-		return fe(-1, "title", "title is not required for comment commit")
-	}
-
-	// Title cannot exceed max.
-	if len(title.String()) > MaxIssueTitleLen {
-		return fe(-1, "title", "title is too long and cannot exceed 256 characters")
-	}
-
-	// ReplyTo must have len >= 4 or < 40
-	replyToVal := replyTo.String()
-	if len(replyToVal) > 0 && (len(replyToVal) < 4 || len(replyToVal) > 40) {
-		return fe(-1, "replyTo", "invalid hash value")
-	}
-
-	// When ReplyTo is set, ensure the issue commit is a descendant of the replyTo
-	if len(replyToVal) > 0 {
-		if repo.IsAncestor(replyToVal, commit.GetHash().String()) != nil {
-			return fe(-1, "replyTo", "not a valid hash of a commit in the issue")
-		}
-	}
-
-	// Check reactions if set.
-	// Reactions cannot exceed 10.
-	if len(reactions.InterSlice()) > 10 {
-		return fe(-1, "reactions", "too many reactions. Cannot exceed 10")
-	}
-	if len(reactions.InterSlice()) > 0 {
-		if reflect.TypeOf(reactions.InterSlice()[0]).Kind() != reflect.String {
-			return fe(-1, "reactions", "expected a string list of reactions")
-		}
-	}
-
-	// Check labels if set.
-	// Labels cannot exceed 10.
-	if len(labels.InterSlice()) > 10 {
-		return fe(-1, "labels", "too many labels. Cannot exceed 10")
-	}
-	if len(labels.InterSlice()) > 0 {
-		if reflect.TypeOf(labels.InterSlice()[0]).Kind() != reflect.String {
-			return fe(-1, "labels", "expected a string list of labels")
-		}
-	}
-
-	// Check assignees if set.
-	// Assignees cannot exceed 10.
-	// Assignees must be valid push key IDs
-	if len(assignees.InterSlice()) > 10 {
-		return fe(-1, "assignees", "too many assignees. Cannot exceed 10")
-	}
-	for i, assignee := range assignees.InterSlice() {
-		pkID, ok := assignee.(string)
-		if !ok {
-			return fe(-1, "assignees", "expected a string list of push keys")
-		}
-		if !util.IsValidPushKeyID(pkID) {
-			return fe(-1, fmt.Sprintf("assignees[%d]", i), "invalid push key ID")
-		}
-	}
-
-	// Check fixers if set.
-	// Fixers cannot exceed 10.
-	// Fixers must be valid push key IDs
-	if len(fixers.InterSlice()) > 10 {
-		return fe(-1, "fixers", "too many fixers. Cannot exceed 10")
-	}
-	for i, assignee := range fixers.InterSlice() {
-		pkID, ok := assignee.(string)
-		if !ok {
-			return fe(-1, "fixers", "expected a string list of push keys")
-		}
-		if !util.IsValidPushKeyID(pkID) {
-			return fe(-1, fmt.Sprintf("fixers[%d]", i), "invalid push key ID")
-		}
-	}
-
-	// Issue content cannot be greater than the maximum
-	if len(content) > MaxIssueContentLen {
-		return fe(-1, "content", "issue content length exceeded max character limit")
 	}
 
 	return nil
@@ -933,20 +768,20 @@ func IsBlockedByScope(scopes []string, params *types.TxDetail, namespaceFromPara
 
 			// If scope is r/repo-name, make sure tx info namespace is unset and repo name is 'repo-name'.
 			// If scope is r/ only, make sure only tx info namespace is set
-			if ns == repo2.DefaultNS && params.RepoNamespace == "" && (domain == "" || domain == params.RepoName) {
+			if ns == repo.DefaultNS && params.RepoNamespace == "" && (domain == "" || domain == params.RepoName) {
 				blocked = false
 				break
 			}
 
 			// If scope is some_ns/repo-name, make sure tx info namespace and repo name matches the scope
 			// namespace and repo name.
-			if ns != repo2.DefaultNS && ns == params.RepoNamespace && domain == params.RepoName {
+			if ns != repo.DefaultNS && ns == params.RepoNamespace && domain == params.RepoName {
 				blocked = false
 				break
 			}
 
 			// If scope is just some_ns/, make sure tx info namespace matches
-			if ns != repo2.DefaultNS && domain == "" && ns == params.RepoNamespace {
+			if ns != repo.DefaultNS && domain == "" && ns == params.RepoNamespace {
 				blocked = false
 				break
 			}

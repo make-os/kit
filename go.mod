@@ -93,6 +93,7 @@ require (
 	golang.org/x/sys v0.0.0-20200430082407-1f5687305801 // indirect
 	golang.org/x/tools v0.0.0-20191206204035-259af5ff87bd // indirect
 	gonum.org/v1/gonum v0.7.0 // indirect
+	google.golang.org/protobuf v1.21.0 // indirect
 	gopkg.in/jdkato/prose.v2 v2.0.0-20190814032740-822d591a158c
 	gopkg.in/neurosnap/sentences.v1 v1.0.6 // indirect
 	gopkg.in/oleiade/lane.v1 v1.0.0
