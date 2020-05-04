@@ -29,14 +29,14 @@ type PolicyChecker func(enforcer EnforcerFunc, pushKeyID, reference, action stri
 func CheckPolicy(enforcer EnforcerFunc, pushKeyID, reference, action string) error {
 
 	rootDir := "refs/"
-	if plumbing.IsBranch(reference) {
+	if plumbing.IsIssueReference(reference) {
+		rootDir = rootDir + plumbing.IssueBranchPrefix
+	} else if plumbing.IsBranch(reference) {
 		rootDir = rootDir + "heads"
 	} else if plumbing.IsTag(reference) {
 		rootDir = rootDir + "tags"
 	} else if plumbing.IsNote(reference) {
 		rootDir = rootDir + "notes"
-	} else if plumbing.IsIssueReference(reference) {
-		rootDir = rootDir + plumbing.IssueBranchPrefix
 	} else {
 		return fmt.Errorf("unknown reference (%s)", reference)
 	}

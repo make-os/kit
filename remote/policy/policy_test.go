@@ -154,7 +154,7 @@ var _ = Describe("Auth", func() {
 			Expect(err.Error()).To(Equal("unknown reference (refs/unknown/xyz)"))
 		})
 
-		Context("with 'update' action", func() {
+		Context("with 'write' action", func() {
 			var allowAction = "write"
 			var denyAction = "deny-" + allowAction
 			var enforcer EnforcerFunc
@@ -190,7 +190,7 @@ var _ = Describe("Auth", func() {
 					policies := [][]*state.Policy{{}, {}, {}}
 					enforcer = GetPolicyEnforcer(policies)
 					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'update' action"))
+					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
 			})
 
@@ -205,7 +205,7 @@ var _ = Describe("Auth", func() {
 					enforcer = GetPolicyEnforcer(policies)
 					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'update' action"))
+					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
 			})
 
@@ -229,7 +229,7 @@ var _ = Describe("Auth", func() {
 					}
 					enforcer = GetPolicyEnforcer(policies)
 					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'update' action"))
+					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
 			})
 
@@ -242,7 +242,7 @@ var _ = Describe("Auth", func() {
 					}
 					enforcer = GetPolicyEnforcer(policies)
 					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'update' action"))
+					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
 			})
 
@@ -267,7 +267,7 @@ var _ = Describe("Auth", func() {
 					enforcer = GetPolicyEnforcer(policies)
 					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'update' action"))
+					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
 			})
 
@@ -296,7 +296,7 @@ var _ = Describe("Auth", func() {
 					enforcer = GetPolicyEnforcer(policies)
 					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'update' action"))
+					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
 			})
 
@@ -310,7 +310,7 @@ var _ = Describe("Auth", func() {
 					enforcer = GetPolicyEnforcer(policies)
 					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'update' action"))
+					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
 			})
 
@@ -336,7 +336,7 @@ var _ = Describe("Auth", func() {
 					enforcer = GetPolicyEnforcer(policies)
 					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
 					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'update' action"))
+					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
 			})
 
