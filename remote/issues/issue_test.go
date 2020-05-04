@@ -34,31 +34,6 @@ var _ = Describe("Issue", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".MakeIssueBody", func() {
-		It("cases", func() {
-			str := issues.MakeIssueBody("my title", "", "", nil, nil, nil, nil)
-			Expect(str).To(Equal("---\ntitle: my title\n---\n"))
-
-			str = issues.MakeIssueBody("my title", "my body", "", nil, nil, nil, nil)
-			Expect(str).To(Equal("---\ntitle: my title\n---\nmy body"))
-
-			str = issues.MakeIssueBody("my title", "my body", "xyz", nil, nil, nil, nil)
-			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\n---\nmy body"))
-
-			str = issues.MakeIssueBody("my title", "my body", "xyz", nil, []string{"a", "b"}, nil, nil)
-			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nlabels: [\"a\",\"b\"]\n---\nmy body"))
-
-			str = issues.MakeIssueBody("my title", "my body", "xyz", nil, nil, []string{"a", "b"}, nil)
-			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nassignees: [\"a\",\"b\"]\n---\nmy body"))
-
-			str = issues.MakeIssueBody("my title", "my body", "xyz", nil, nil, nil, []string{"a", "b"})
-			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nfixers: [\"a\",\"b\"]\n---\nmy body"))
-
-			str = issues.MakeIssueBody("my title", "my body", "xyz", []string{"a", "b"}, nil, nil, nil)
-			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nreactions: [\"a\",\"b\"]\n---\nmy body"))
-		})
-	})
-
 	Describe(".CreateIssueComment", func() {
 		var mockRepo *mocks.MockBareRepo
 

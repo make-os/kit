@@ -3,6 +3,7 @@ package validation
 import (
 	"bytes"
 	"fmt"
+	"strings"
 
 	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/pkg/errors"
@@ -253,7 +254,7 @@ func CheckIssueBody(
 			return fe(-1, makeField("reactions"), "expected a string list")
 		}
 		for i, name := range reactions.InterSlice() {
-			if !util.IsEmojiValid(name.(string)) {
+			if !util.IsEmojiValid(strings.TrimPrefix(name.(string), "-")) {
 				return fe(i, makeField("reactions"), "unknown reaction")
 			}
 		}
@@ -267,6 +268,11 @@ func CheckIssueBody(
 		if !util.IsString(labels.InterSlice()[0]) {
 			return fe(-1, makeField("labels"), "expected a string list")
 		}
+		for i, val := range labels.InterSlice() {
+			if err := util.IsValidIdentifierName(strings.TrimPrefix(val.(string), "-")); err != nil {
+				return fe(i, makeField("labels"), err.Error())
+			}
+		}
 	}
 
 	// Check assignees if set.
@@ -278,7 +284,7 @@ func CheckIssueBody(
 			return fe(-1, makeField("assignees"), "expected a string list")
 		}
 		for i, assignee := range val {
-			if !util.IsValidPushAddr(assignee.(string)) {
+			if !util.IsValidPushAddr(strings.TrimPrefix(assignee.(string), "-")) {
 				return fe(i, makeField("assignees"), "invalid push key ID")
 			}
 		}
@@ -293,7 +299,7 @@ func CheckIssueBody(
 			return fe(-1, makeField("fixers"), "expected a string list")
 		}
 		for i, fixer := range val {
-			if !util.IsValidPushAddr(fixer.(string)) {
+			if !util.IsValidPushAddr(strings.TrimPrefix(fixer.(string), "-")) {
 				return fe(i, makeField("fixers"), "invalid push key ID")
 			}
 		}

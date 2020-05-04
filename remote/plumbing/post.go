@@ -1,6 +1,7 @@
 package plumbing
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -120,6 +121,7 @@ type IssueBody struct {
 	Labels    []string
 	Assignees []string
 	Fixers    []string
+	Close     int
 }
 
 // IssueBodyFromContentFrontMatter attempts to load the instance from
@@ -132,6 +134,7 @@ func IssueBodyFromContentFrontMatter(cfm *pageparser.ContentFrontMatter) *IssueB
 	b.Content = cfm.Content
 	b.Title = ob.Get("title").String()
 	b.ReplyTo = ob.Get("replyTo").String()
+	b.Close = ob.Get("close").Int()
 
 	b.Reactions = cast.ToStringSlice(ob.Get("reactions").
 		StringSlice(cast.ToStringSlice(ob.Get("reactions").InterSlice())))
@@ -145,4 +148,39 @@ func IssueBodyFromContentFrontMatter(cfm *pageparser.ContentFrontMatter) *IssueB
 	b.Fixers = cast.ToStringSlice(ob.Get("fixers").
 		StringSlice(cast.ToStringSlice(ob.Get("fixers").InterSlice())))
 	return b
+}
+
+// IssueBodyToString creates a formatted issue body from an IssueBody object
+func IssueBodyToString(body *IssueBody) string {
+
+	args := ""
+	str := "---\n%s---\n"
+
+	if len(body.Title) > 0 {
+		args += fmt.Sprintf("title: %s\n", body.Title)
+	}
+	if body.ReplyTo != "" {
+		args += fmt.Sprintf("replyTo: %s\n", body.ReplyTo)
+	}
+	if len(body.Reactions) > 0 {
+		reactionsStr, _ := json.Marshal(body.Reactions)
+		args += fmt.Sprintf("reactions: %s\n", reactionsStr)
+	}
+	if len(body.Labels) > 0 {
+		labelsStr, _ := json.Marshal(body.Labels)
+		args += fmt.Sprintf("labels: %s\n", labelsStr)
+	}
+	if len(body.Assignees) > 0 {
+		assigneesStr, _ := json.Marshal(body.Assignees)
+		args += fmt.Sprintf("assignees: %s\n", assigneesStr)
+	}
+	if len(body.Fixers) > 0 {
+		fixersStr, _ := json.Marshal(body.Fixers)
+		args += fmt.Sprintf("fixers: %s\n", fixersStr)
+	}
+	if body.Close >= 0 {
+		args += fmt.Sprintf("close: %d\n", body.Close)
+	}
+
+	return fmt.Sprintf(str, args) + string(body.Content)
 }

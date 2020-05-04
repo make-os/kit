@@ -51,7 +51,7 @@ func (m *PushKeyModule) namespacedFuncs() []*modules.ModuleFunc {
 			Description: "Remove a push key from the network",
 		},
 		{
-			Name:        "update",
+			Name:        "write",
 			Value:       m.Update,
 			Description: "Update a previously registered push key",
 		},

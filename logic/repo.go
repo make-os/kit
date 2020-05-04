@@ -1,6 +1,7 @@
 package logic
 
 import (
+	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -15,11 +16,11 @@ import (
 func AddDefaultPolicies(config *state.RepoConfig) {
 	config.Policies = append(
 		config.Policies,
-		&state.Policy{Subject: "all", Object: "refs/heads", Action: "update"},
-		&state.Policy{Subject: "all", Object: "refs/heads", Action: "merge-update"},
-		&state.Policy{Subject: "all", Object: "refs/heads", Action: "issue-update"},
-		&state.Policy{Subject: "all", Object: "refs/tags", Action: "update"},
-		&state.Policy{Subject: "all", Object: "refs/notes", Action: "update"},
+		&state.Policy{Subject: "all", Object: "refs/heads", Action: "write"},
+		&state.Policy{Subject: "all", Object: "refs/heads", Action: "merge-write"},
+		&state.Policy{Subject: "all", Object: "refs/heads/" + plumbing.IssueBranchPrefix, Action: "issue-write"},
+		&state.Policy{Subject: "all", Object: "refs/tags", Action: "write"},
+		&state.Policy{Subject: "all", Object: "refs/notes", Action: "write"},
 		&state.Policy{Subject: "all", Object: "refs/heads", Action: "delete"},
 		&state.Policy{Subject: "all", Object: "refs/tags", Action: "delete"},
 		&state.Policy{Subject: "all", Object: "refs/notes", Action: "delete"},

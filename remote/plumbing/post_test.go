@@ -104,12 +104,14 @@ var _ = Describe("Post", func() {
 					"labels":    []string{"help"},
 					"assignees": []string{"push1abc"},
 					"fixers":    []string{"push1abc"},
+					"close":     1,
 				},
 				FrontMatterFormat: "",
 			})
 
 			Expect(issue.Content).To(Equal([]byte("content")))
 			Expect(issue.Title).To(Equal("My Title"))
+			Expect(issue.Close).To(Equal(1))
 			Expect(issue.ReplyTo).To(Equal("12345"))
 			Expect(issue.Reactions).To(Equal([]string{"smile"}))
 			Expect(issue.Labels).To(Equal([]string{"help"}))
@@ -117,4 +119,41 @@ var _ = Describe("Post", func() {
 			Expect(issue.Fixers).To(Equal([]string{"push1abc"}))
 		})
 	})
+
+	Describe(".IssueBodyToString", func() {
+		It("cases", func() {
+			body := &plumbing.IssueBody{Content: nil, Title: "my title", ReplyTo: "", Reactions: nil, Labels: nil, Assignees: nil, Fixers: nil, Close: -1}
+			str := plumbing.IssueBodyToString(body)
+			Expect(str).To(Equal("---\ntitle: my title\n---\n"))
+
+			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: "", Close: -1}
+			str = plumbing.IssueBodyToString(body)
+			Expect(str).To(Equal("---\ntitle: my title\n---\nmy body"))
+
+			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: "xyz", Close: -1}
+			str = plumbing.IssueBodyToString(body)
+			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\n---\nmy body"))
+
+			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: "xyz", Labels: []string{"a", "b"}, Close: -1}
+			str = plumbing.IssueBodyToString(body)
+			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nlabels: [\"a\",\"b\"]\n---\nmy body"))
+
+			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: "xyz", Assignees: []string{"a", "b"}, Close: -1}
+			str = plumbing.IssueBodyToString(body)
+			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nassignees: [\"a\",\"b\"]\n---\nmy body"))
+
+			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: "xyz", Fixers: []string{"a", "b"}, Close: -1}
+			str = plumbing.IssueBodyToString(body)
+			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nfixers: [\"a\",\"b\"]\n---\nmy body"))
+
+			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: "xyz", Reactions: []string{"a", "b"}, Close: -1}
+			str = plumbing.IssueBodyToString(body)
+			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nreactions: [\"a\",\"b\"]\n---\nmy body"))
+
+			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: "xyz", Close: 1}
+			str = plumbing.IssueBodyToString(body)
+			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nclose: 1\n---\nmy body"))
+		})
+	})
+
 })

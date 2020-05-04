@@ -54,8 +54,11 @@ type IssueCreateArgs struct {
 	// NoBody prevents prompting user for issue body
 	NoBody bool
 
-	// Close adds a directive to close the issue
+	// Close sets close status to 1.
 	Close bool
+
+	// Open sets close status to 0
+	Open bool
 
 	// StdOut receives the output
 	StdOut io.Writer
@@ -120,8 +123,29 @@ input:
 
 	// Ensure the reactions are all supported
 	for _, reaction := range args.Reactions {
-		if !util.IsEmojiValid(reaction) {
+		if !util.IsEmojiValid(strings.TrimPrefix(reaction, "-")) {
 			return fmt.Errorf("reaction (%s) is not supported", reaction)
+		}
+	}
+
+	// Ensure labels are valid identifiers
+	for _, label := range args.Labels {
+		if err := util.IsValidIdentifierName(strings.TrimPrefix(label, "-")); err != nil {
+			return fmt.Errorf("label (%s) is not valid", label)
+		}
+	}
+
+	// Ensure assignees are valid push address
+	for _, assignee := range args.Assignees {
+		if !util.IsValidPushAddr(strings.TrimPrefix(assignee, "-")) {
+			return fmt.Errorf("assignee (%s) is not a valid push key address", assignee)
+		}
+	}
+
+	// Ensure fixers are valid push address
+	for _, fixer := range args.Fixers {
+		if !util.IsValidPushAddr(strings.TrimPrefix(fixer, "-")) {
+			return fmt.Errorf("fixer (%s) is not a valid push key address", fixer)
 		}
 	}
 
@@ -171,15 +195,24 @@ input:
 		return ErrBodyRequired
 	}
 
+	closeState := -1
+	if args.Close {
+		closeState = 1
+	} else if args.Open {
+		closeState = 0
+	}
+
 	// Create the Issue body and prompt user to confirm
-	issueBody := issues.MakeIssueBody(
+	issueBody := plumbing.IssueBodyToString(&plumbing.IssueBody{
+		[]byte(args.Body),
 		args.Title,
-		args.Body,
 		args.ReplyHash,
 		args.Reactions,
 		args.Labels,
 		args.Assignees,
-		args.Fixers)
+		args.Fixers,
+		closeState,
+	})
 
 	// Create a new Issue or add comment commit to existing Issue
 	newIssue, ref, err := args.IssueCommentCreator(r, args.IssueNumber, issueBody, args.ReplyHash != "")

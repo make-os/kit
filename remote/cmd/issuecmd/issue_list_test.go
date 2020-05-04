@@ -56,8 +56,22 @@ var _ = Describe("IssueList", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
 			posts := []plumbing2.Post{
-				{Title: "How to open a file", Comment: &plumbing2.Comment{Created: time.Now().Add(-10 * time.Second), Hash: hash1}},
-				{Title: "Remove examples", Comment: &plumbing2.Comment{Created: time.Now().Add(-5 * time.Second), Hash: hash2}},
+				{
+					Title: "How to open a file",
+					Comment: &plumbing2.Comment{
+						Body:    &plumbing2.IssueBody{},
+						Created: time.Now().Add(-10 * time.Second),
+						Hash:    hash1,
+					},
+				},
+				{
+					Title: "Remove examples",
+					Comment: &plumbing2.Comment{
+						Body:    &plumbing2.IssueBody{},
+						Created: time.Now().Add(-5 * time.Second),
+						Hash:    hash2,
+					},
+				},
 			}
 			out := bytes.NewBuffer(nil)
 			args := &issuecmd.IssueListArgs{
@@ -79,8 +93,22 @@ var _ = Describe("IssueList", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
 			posts := []plumbing2.Post{
-				{Title: "How to open a file", Comment: &plumbing2.Comment{Created: time.Now().Add(-10 * time.Second), Hash: hash1}},
-				{Title: "Remove examples", Comment: &plumbing2.Comment{Created: time.Now().Add(-5 * time.Second), Hash: hash2}},
+				{
+					Title: "How to open a file",
+					Comment: &plumbing2.Comment{
+						Body:    &plumbing2.IssueBody{},
+						Created: time.Now().Add(-10 * time.Second),
+						Hash:    hash1,
+					},
+				},
+				{
+					Title: "Remove examples",
+					Comment: &plumbing2.Comment{
+						Body:    &plumbing2.IssueBody{},
+						Created: time.Now().Add(-5 * time.Second),
+						Hash:    hash2,
+					},
+				},
 			}
 			out := bytes.NewBuffer(nil)
 			args := &issuecmd.IssueListArgs{
@@ -103,8 +131,22 @@ var _ = Describe("IssueList", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
 			posts := []plumbing2.Post{
-				{Title: "How to open a file", Comment: &plumbing2.Comment{Created: time.Now().Add(-10 * time.Second), Hash: hash1}},
-				{Title: "Remove examples", Comment: &plumbing2.Comment{Created: time.Now().Add(-5 * time.Second), Hash: hash2}},
+				{
+					Title: "How to open a file",
+					Comment: &plumbing2.Comment{
+						Body:    &plumbing2.IssueBody{},
+						Created: time.Now().Add(-10 * time.Second),
+						Hash:    hash1,
+					},
+				},
+				{
+					Title: "Remove examples",
+					Comment: &plumbing2.Comment{
+						Body:    &plumbing2.IssueBody{},
+						Created: time.Now().Add(-5 * time.Second),
+						Hash:    hash2,
+					},
+				},
 			}
 			out := bytes.NewBuffer(nil)
 			args := &issuecmd.IssueListArgs{

@@ -178,7 +178,7 @@ var _ = Describe("Handler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, pushKeyID, reference, action string) error {
 				Expect(reference).To(Equal("refs/heads/master"))
-				Expect(action).To(Equal("merge-update"))
+				Expect(action).To(Equal("merge-write"))
 				return fmt.Errorf("unauthorized")
 			}
 			err = handler.HandleAuthorization(ur)
@@ -195,7 +195,7 @@ var _ = Describe("Handler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(issueBranch), New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, pushKeyID, reference, action string) error {
 				Expect(reference).To(Equal(issueBranch))
-				Expect(action).To(Or(Equal("issue-update"), Equal("merge-update")))
+				Expect(action).To(Or(Equal("issue-write"), Equal("merge-write")))
 				return fmt.Errorf("unauthorized")
 			}
 			err = handler.HandleAuthorization(ur)
@@ -209,7 +209,7 @@ var _ = Describe("Handler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, pushKeyID, reference, action string) error {
 				Expect(reference).To(Equal("refs/heads/master"))
-				Expect(action).To(Equal("update"))
+				Expect(action).To(Equal("write"))
 				return fmt.Errorf("unauthorized")
 			}
 			err = handler.HandleAuthorization(ur)
@@ -223,7 +223,7 @@ var _ = Describe("Handler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, pushKeyID, reference, action string) error {
 				Expect(reference).To(Equal("refs/heads/master"))
-				Expect(action).To(Equal("update"))
+				Expect(action).To(Equal("write"))
 				return nil
 			}
 			err = handler.HandleAuthorization(ur)

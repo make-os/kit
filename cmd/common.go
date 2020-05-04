@@ -109,7 +109,7 @@ func rejectFlagCombo(cmd *cobra.Command, flags ...string) {
 				str += "|-" + fShort
 			}
 			found = append(found, str)
-			log.Fatal(fmt.Sprintf("These flags %s can't be used together", strings.Join(found, ", ")))
+			log.Fatal(fmt.Sprintf("flags %s can't be used together", strings.Join(found, ", ")))
 		}
 		if cmd.Flags().Changed(f) {
 			str := "--" + f

@@ -2,7 +2,6 @@ package util
 
 import (
 	"fmt"
-	"strings"
 )
 
 // NOTE: THIS FILE WAS PRODUCED BY THE
@@ -4683,7 +4682,8 @@ var EmojiCodeMap = map[string]string{
 	":zzz:":                                   "\U0001f4a4",
 }
 
+// IsEmojiValid checks whether a given emoji is valid
 func IsEmojiValid(short string) bool {
-	_, ok := EmojiCodeMap[fmt.Sprintf(":%s:", strings.TrimLeft(short, "-"))]
+	_, ok := EmojiCodeMap[fmt.Sprintf(":%s:", short)]
 	return ok
 }

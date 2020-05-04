@@ -45,7 +45,7 @@ func (m *RepoModule) funcs() []*modules.ModuleFunc {
 			Description: "Get and return a repository",
 		},
 		{
-			Name:        "update",
+			Name:        "write",
 			Value:       m.Update,
 			Description: "Update a repository",
 		},

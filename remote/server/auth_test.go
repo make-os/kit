@@ -223,11 +223,11 @@ var _ = Describe("Auth", func() {
 
 				// Add target pusher repo config policies
 				repoState := state.BareRepository()
-				repoPolicy = &state.Policy{Subject: targetPusherAddr, Object: "refs/heads/master", Action: "update"}
+				repoPolicy = &state.Policy{Subject: targetPusherAddr, Object: "refs/heads/master", Action: "write"}
 				repoState.Config.Policies = append(repoState.Config.Policies, repoPolicy)
 
 				// Add target pusher namespace policies
-				namespacePolicy = &state.ContributorPolicy{Object: "refs/heads/about", Action: "update"}
+				namespacePolicy = &state.ContributorPolicy{Object: "refs/heads/about", Action: "write"}
 				ns := &state.Namespace{Contributors: map[string]*state.BaseContributor{
 					key.PushAddr().String(): {Policies: []*state.ContributorPolicy{namespacePolicy}},
 				}}
@@ -259,7 +259,7 @@ var _ = Describe("Auth", func() {
 			Specify("that index 1 includes the pusher's namespace contributor policy", func() {
 				Expect(polGroups[1]).To(ContainElement(&state.Policy{
 					Object:  "refs/heads/about",
-					Action:  "update",
+					Action:  "write",
 					Subject: key.PushAddr().String(),
 				}))
 			})
@@ -267,7 +267,7 @@ var _ = Describe("Auth", func() {
 			Specify("that index 1 includes the pusher's repo config policy", func() {
 				Expect(polGroups[2]).To(ContainElement(&state.Policy{
 					Object:  "refs/heads/master",
-					Action:  "update",
+					Action:  "write",
 					Subject: key.PushAddr().String(),
 				}))
 			})
@@ -276,7 +276,7 @@ var _ = Describe("Auth", func() {
 		When("repo config policies include a policy whose subject is not a push key ID or 'all'", func() {
 			BeforeEach(func() {
 				repoState := state.BareRepository()
-				repoPolicy = &state.Policy{Subject: "some_subject", Object: "refs/heads/master", Action: "update"}
+				repoPolicy = &state.Policy{Subject: "some_subject", Object: "refs/heads/master", Action: "write"}
 				repoState.Config.Policies = append(repoState.Config.Policies, repoPolicy)
 				polGroups = policy.MakePusherPolicyGroups(key.PushAddr().String(), repoState, state.BareNamespace())
 			})
@@ -290,7 +290,7 @@ var _ = Describe("Auth", func() {
 		When("repo config policies include a policy whose subject is 'all'", func() {
 			BeforeEach(func() {
 				repoState := state.BareRepository()
-				repoPolicy = &state.Policy{Subject: "all", Object: "refs/heads/master", Action: "update"}
+				repoPolicy = &state.Policy{Subject: "all", Object: "refs/heads/master", Action: "write"}
 				repoState.Config.Policies = append(repoState.Config.Policies, repoPolicy)
 				polGroups = policy.MakePusherPolicyGroups(key.PushAddr().String(), repoState, state.BareNamespace())
 			})
@@ -304,7 +304,7 @@ var _ = Describe("Auth", func() {
 		When("repo config policies include a policy whose object is not a recognized reference name", func() {
 			BeforeEach(func() {
 				repoState := state.BareRepository()
-				repoPolicy = &state.Policy{Subject: "all", Object: "master", Action: "update"}
+				repoPolicy = &state.Policy{Subject: "all", Object: "master", Action: "write"}
 				repoState.Config.Policies = append(repoState.Config.Policies, repoPolicy)
 				polGroups = policy.MakePusherPolicyGroups(key.PushAddr().String(), repoState, state.BareNamespace())
 			})
@@ -387,13 +387,13 @@ var _ = Describe("Auth", func() {
 	Describe(".CheckPolicy", func() {
 		It("should return error when reference type is unknown", func() {
 			enforcer := policy.GetPolicyEnforcer([][]*state.Policy{{{Object: "obj", Subject: "sub", Action: "ac"}}})
-			err := policy.CheckPolicy(enforcer, key.PushAddr().String(), "refs/unknown/xyz", "update")
+			err := policy.CheckPolicy(enforcer, key.PushAddr().String(), "refs/unknown/xyz", "write")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("unknown reference (refs/unknown/xyz)"))
 		})
 
 		Context("with 'update' action", func() {
-			var allowAction = "update"
+			var allowAction = "write"
 			var denyAction = "deny-" + allowAction
 			var enforcer policy.EnforcerFunc
 			var pushAddrA string

@@ -243,7 +243,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Name = "invalid&"
 				err := validators.CheckTxNSAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+				Expect(err.Error()).To(Equal("field:name, msg:invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
 			})
 
 			It("has invalid transfer destination", func() {
@@ -798,7 +798,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Name = "org&name#"
 				err := validators.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+				Expect(err.Error()).To(Equal("field:name, msg:invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
 			})
 
 			It("has invalid repo config (propVoter)", func() {
@@ -1188,7 +1188,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Name = "&name"
 				err := validators.CheckTxNamespaceDomainUpdate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+				Expect(err.Error()).To(Equal("field:name, msg:invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
 			})
 		})
 
@@ -1398,7 +1398,7 @@ var _ = Describe("TxValidator", func() {
 			tx.RepoName = "*&^"
 			err := validators.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+			Expect(err).To(MatchError("field:name, msg:invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
 		})
 
 		It("should return error when proposal id is unset", func() {
@@ -1485,7 +1485,7 @@ var _ = Describe("TxValidator", func() {
 			tx.RepoName = "*&^"
 			err := validators.CheckTxVote(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+			Expect(err).To(MatchError("field:name, msg:invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
 		})
 
 		It("should return error when proposal id is not provided", func() {
@@ -1541,7 +1541,7 @@ var _ = Describe("TxValidator", func() {
 			tx.RepoName = "*&^"
 			err := validators.CheckTxRepoProposalSendFee(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+			Expect(err).To(MatchError("field:name, msg:invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
 		})
 
 		It("should return error when proposal id is not provided", func() {
@@ -1596,7 +1596,7 @@ var _ = Describe("TxValidator", func() {
 			tx.RepoName = "*&^"
 			err := validators.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+			Expect(err).To(MatchError("field:name, msg:invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
 		})
 
 		It("should return error when proposal id is unset", func() {
@@ -1776,7 +1776,7 @@ var _ = Describe("TxValidator", func() {
 			tx.RepoName = "*&^"
 			err := validators.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, msg:invalid characters in name. Only alphanumeric, _ and - characters are allowed"))
+			Expect(err).To(MatchError("field:name, msg:invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
 		})
 
 		It("should return error when proposal id is unset", func() {

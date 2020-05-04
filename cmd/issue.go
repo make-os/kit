@@ -43,12 +43,15 @@ var issueCreateCmd = &cobra.Command{
 	Short: "Create an issue or add a comment to an existing issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		rejectFlagCombo(cmd, "close", "open")
+
 		title, _ := cmd.Flags().GetString("title")
 		body, _ := cmd.Flags().GetString("body")
 		commentCommitID, _ := cmd.Flags().GetString("reply")
 		useEditor, _ := cmd.Flags().GetBool("use-editor")
 		noBody, _ := cmd.Flags().GetBool("no-body")
-		close, _ := cmd.Flags().GetBool("close")
+		_close, _ := cmd.Flags().GetBool("close")
+		open, _ := cmd.Flags().GetBool("open")
 		editorPath, _ := cmd.Flags().GetString("editor")
 		labels, _ := cmd.Flags().GetStringSlice("labels")
 		reactions, _ := cmd.Flags().GetStringSlice("reactions")
@@ -73,7 +76,8 @@ var issueCreateCmd = &cobra.Command{
 			Fixers:              funk.UniqString(fixers),
 			UseEditor:           useEditor,
 			EditorPath:          editorPath,
-			Close:               close,
+			Close:               _close,
+			Open:                open,
 			StdOut:              os.Stdout,
 			StdIn:               os.Stdin,
 			IssueCommentCreator: issues.CreateIssueComment,
@@ -131,7 +135,8 @@ func init() {
 	issueCreateCmd.Flags().Bool("no-body", false, "Skip prompt for issue body")
 	issueCreateCmd.Flags().String("editor", "", "GetPath an editor to use instead of the git configured editor")
 	issueCreateCmd.Flags().IntP("issue-id", "i", 0, "Specify a target issue number to create or add a comment")
-	issueCreateCmd.Flags().BoolP("close", "c", false, "Add a directive to close the issue")
+	issueCreateCmd.Flags().BoolP("close", "c", false, "Close the issue")
+	issueCreateCmd.Flags().BoolP("open", "o", false, "Open a closed issue")
 
 	issueListCmd.Flags().IntP("limit", "n", 0, "Limit the number of issues returned")
 	issueListCmd.Flags().Bool("reverse", false, "Return the result in reversed order")

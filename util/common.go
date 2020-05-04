@@ -618,12 +618,14 @@ func IsZeroString(str string) bool {
 
 // IsValidIdentifierName checks whether an identifier is valid
 func IsValidIdentifierName(name string) error {
-	if !govalidator.Matches(name, "^[a-zA-Z0-9_-]+$") {
-		return fmt.Errorf("invalid characters in name. Only alphanumeric, _ and - characters are allowed")
-	} else if len(name) > 128 {
-		return fmt.Errorf("name is too long. Maximum character length is 128")
-	} else if len(name) <= 2 {
+	if len(name) <= 2 {
 		return fmt.Errorf("name is too short. Must be at least 3 characters long")
+	}
+	if !govalidator.Matches(name, "^[a-z0-9][a-zA-Z0-9_-]+$") {
+		return fmt.Errorf("invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars")
+	}
+	if len(name) > 128 {
+		return fmt.Errorf("name is too long. Maximum character length is 128")
 	}
 	return nil
 }

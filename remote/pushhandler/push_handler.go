@@ -140,7 +140,7 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 		// For merge update, check if there is a policy allowing the pusher to do it.
 		if detail.MergeProposalID != "" {
 			if err := h.PolicyChecker(h.polEnforcer, detail.PushKeyID, cmd.Name.String(),
-				"merge-update"); err != nil {
+				"merge-write"); err != nil {
 				return err
 			}
 			continue
@@ -149,7 +149,7 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 		// For merge update, check if there is a policy allowing the pusher to do it.
 		if plumbing.IsIssueReference(detail.Reference) {
 			if err := h.PolicyChecker(h.polEnforcer, detail.PushKeyID, cmd.Name.String(),
-				"issue-update"); err != nil {
+				"issue-write"); err != nil {
 				return err
 			}
 			continue
@@ -157,7 +157,7 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 
 		// For write command, check if there is a policy allowing the pusher to do it.
 		if err := h.PolicyChecker(h.polEnforcer, detail.PushKeyID, cmd.Name.String(),
-			"update"); err != nil {
+			"write"); err != nil {
 			return err
 		}
 	}

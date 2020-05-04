@@ -63,6 +63,27 @@ var _ = Describe("IssueCreate", func() {
 				Expect(err).To(MatchError("reaction (:unknown:) is not supported"))
 			})
 
+			It("should return error when a label is not valid", func() {
+				args := &issuecmd.IssueCreateArgs{Labels: []string{"*la&bel"}}
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("label (*la&bel) is not valid"))
+			})
+
+			It("should return error when a assignee is not valid", func() {
+				args := &issuecmd.IssueCreateArgs{Assignees: []string{"*assign&ee"}}
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("assignee (*assign&ee) is not a valid push key address"))
+			})
+
+			It("should return error when a fixer is not valid", func() {
+				args := &issuecmd.IssueCreateArgs{Fixers: []string{"*fix&er"}}
+				err := issuecmd.IssueCreateCmd(mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("fixer (*fix&er) is not a valid push key address"))
+			})
+
 			It("should return error when reply hash is set but issue number is not set", func() {
 				args := &issuecmd.IssueCreateArgs{ReplyHash: "02we"}
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
