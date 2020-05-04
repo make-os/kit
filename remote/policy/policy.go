@@ -28,13 +28,15 @@ type PolicyChecker func(enforcer EnforcerFunc, pushKeyID, reference, action stri
 // is permitted to perform the given action on the reference subject.
 func CheckPolicy(enforcer EnforcerFunc, pushKeyID, reference, action string) error {
 
-	dir := "refs/"
+	rootDir := "refs/"
 	if plumbing.IsBranch(reference) {
-		dir = dir + "heads"
+		rootDir = rootDir + "heads"
 	} else if plumbing.IsTag(reference) {
-		dir = dir + "tags"
+		rootDir = rootDir + "tags"
 	} else if plumbing.IsNote(reference) {
-		dir = dir + "notes"
+		rootDir = rootDir + "notes"
+	} else if plumbing.IsIssueReference(reference) {
+		rootDir = rootDir + plumbing.IssueBranchPrefix
 	} else {
 		return fmt.Errorf("unknown reference (%s)", reference)
 	}
@@ -56,12 +58,12 @@ func CheckPolicy(enforcer EnforcerFunc, pushKeyID, reference, action string) err
 	}
 
 	// Check if all push keys can or cannot perform the action on the target reference directory
-	res, lvl = enforcer("all", dir, action)
+	res, lvl = enforcer("all", rootDir, action)
 	if lvl > -1 && lvl <= highestLvl {
 		allowed = res
 		highestLvl = lvl
 	}
-	res, lvl = enforcer("all", dir, negativeAct)
+	res, lvl = enforcer("all", rootDir, negativeAct)
 	if lvl > -1 && lvl <= highestLvl {
 		allowed = !res
 		highestLvl = lvl
@@ -80,12 +82,12 @@ func CheckPolicy(enforcer EnforcerFunc, pushKeyID, reference, action string) err
 	}
 
 	// Check if the push key can or cannot perform the action on the reference directory
-	res, lvl = enforcer(pushKeyID, dir, action)
+	res, lvl = enforcer(pushKeyID, rootDir, action)
 	if lvl > -1 && lvl <= highestLvl {
 		allowed = res
 		highestLvl = lvl
 	}
-	res, lvl = enforcer(pushKeyID, dir, negativeAct)
+	res, lvl = enforcer(pushKeyID, rootDir, negativeAct)
 	if lvl > -1 && lvl <= highestLvl {
 		allowed = !res
 		highestLvl = lvl
