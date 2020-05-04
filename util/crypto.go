@@ -94,9 +94,8 @@ func MustDecodePushKeyID(id string) []byte {
 	return bz
 }
 
-// IsValidPushKeyID checks whether the given id is a valid bech32 encoded string
-// used for representing a push key
-func IsValidPushKeyID(id string) bool {
+// IsValidPushAddr checks whether the given id is a valid bech32 encoded address
+func IsValidPushAddr(id string) bool {
 	hrp, bz, err := bech32.DecodeAndConvert(id)
 	if err != nil {
 		return false

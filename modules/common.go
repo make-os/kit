@@ -126,7 +126,7 @@ func EncodeForJS(obj interface{}, fieldToIgnore ...string) util.Map {
 	if vObj.Kind() != reflect.Map {
 		panic("only struct or map are allowed")
 	}
-	m := util.ToMapSI(obj)
+	m := util.ToStringMapInter(obj)
 
 	for k, v := range m {
 		if funk.InStrings(fieldToIgnore, k) {

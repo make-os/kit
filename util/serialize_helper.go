@@ -37,7 +37,7 @@ func (h SerializerHelper) EncodeMulti(enc Encoder, v ...interface{}) error {
 		_, isStrVal := vv.(map[string]string)
 		_, isInterVal := vv.(map[string]interface{})
 		if !isStrVal && !isInterVal {
-			v[i] = ToMapSI(vv)
+			v[i] = ToStringMapInter(vv)
 		}
 	}
 

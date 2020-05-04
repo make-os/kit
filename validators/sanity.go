@@ -370,7 +370,7 @@ func CheckTxUpDelPushKey(tx *core.TxUpDelPushKey, index int) error {
 
 	if tx.ID == "" {
 		return feI(index, "id", "push key id is required")
-	} else if !util.IsValidPushKeyID(tx.ID) {
+	} else if !util.IsValidPushAddr(tx.ID) {
 		return feI(index, "id", "push key id is not valid")
 	}
 
@@ -810,7 +810,7 @@ func CheckTxRepoProposalRegisterPushKey(tx *core.TxRepoProposalRegisterPushKey, 
 	// Ensure all push key ids are unique and valid
 	found := map[string]struct{}{}
 	for _, pkID := range tx.KeyIDs {
-		if !util.IsValidPushKeyID(pkID) {
+		if !util.IsValidPushAddr(pkID) {
 			return feI(index, "ids", fmt.Sprintf("push key id (%s) is not valid", pkID))
 		}
 		if _, ok := found[pkID]; ok {

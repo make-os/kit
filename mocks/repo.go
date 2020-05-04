@@ -1657,20 +1657,6 @@ func (mr *MockBareRepoStateMockRecorder) IsEmpty() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEmpty", reflect.TypeOf((*MockBareRepoState)(nil).IsEmpty))
 }
 
-// Hash mocks base method
-func (m *MockBareRepoState) Hash() util.Bytes32 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Hash")
-	ret0, _ := ret[0].(util.Bytes32)
-	return ret0
-}
-
-// Hash indicates an expected call of Hash
-func (mr *MockBareRepoStateMockRecorder) Hash() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Hash", reflect.TypeOf((*MockBareRepoState)(nil).Hash))
-}
-
 // GetChanges mocks base method
 func (m *MockBareRepoState) GetChanges(y core.BareRepoState) *core.Changes {
 	m.ctrl.T.Helper()

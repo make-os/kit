@@ -197,6 +197,7 @@ func getRefChanges(old, update core.Items) *core.ChangeResult {
 
 // GetState describes the current state of repository
 type State struct {
+	util.SerializerHelper
 	References *ObjCol
 }
 
@@ -218,14 +219,6 @@ func MakeStateFromItem(item core.Item) *State {
 // IsEmpty checks whether the state is empty
 func (s *State) IsEmpty() bool {
 	return s.References.Len() == 0
-}
-
-// Hash returns the 32-bytes hash of the state
-func (s *State) Hash() util.Bytes32 {
-	bz := util.ToBytes([]interface{}{
-		s.References.Bytes(),
-	})
-	return util.BytesToBytes32(util.Blake2b256(bz))
 }
 
 // GetChanges summarizes the changes between GetState s and y.

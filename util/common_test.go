@@ -508,28 +508,28 @@ var _ = Describe("Common", func() {
 		})
 	})
 
-	Describe(".ToMapSI", func() {
+	Describe(".ToStringMapInter", func() {
 		It("should convert map with non-interface value to map[string]interface{} type", func() {
 			src := map[string]int{"jin": 20}
-			out := ToMapSI(src)
+			out := ToStringMapInter(src)
 			Expect(out).To(HaveLen(1))
 			Expect(out["jin"]).To(Equal(20))
 		})
 
 		It("should panic if arg is not a map[string]interface{}", func() {
 			src := map[int]string{1: "abc"}
-			Expect(func() { ToMapSI(src) }).To(Panic())
+			Expect(func() { ToStringMapInter(src) }).To(Panic())
 		})
 
 		It("should return same arg if arg is already a map[string]interface{}", func() {
 			src := map[string]interface{}{"key": "abc"}
-			out := ToMapSI(src)
+			out := ToStringMapInter(src)
 			Expect(fmt.Sprintf("%p", src)).To(Equal(fmt.Sprintf("%p", out)))
 		})
 
 		It("should convert struct element to map if structToMap is true", func() {
 			src := map[string]struct{ Name string }{"jin": {Name: "jin"}}
-			out := ToMapSI(src, true)
+			out := ToStringMapInter(src, true)
 			Expect(out).To(Equal(map[string]interface{}{"jin": map[string]interface{}{"Name": "jin"}}))
 		})
 	})
@@ -750,6 +750,47 @@ var _ = Describe("Common", func() {
 				Expect(ns).To(Equal("coinfiddle"))
 				Expect(domain).To(Equal("payment"))
 			})
+		})
+	})
+
+	Describe(".MustacheParseString", func() {
+		It("should return error if template is invalid", func() {
+			_, err := MustacheParseString("{{ stuff", map[string]interface{}{}, MustacheParserOpt{StartTag: "{{"})
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("runtime error: index out of range [0] with length 0"))
+		})
+
+		It("should return no error if template is valid", func() {
+			str, err := MustacheParseString("<stuff>", map[string]interface{}{"stuff": "123"},
+				MustacheParserOpt{StartTag: "<", EndTag: ">"})
+			Expect(err).To(BeNil())
+			Expect(str).To(Equal("123"))
+		})
+	})
+
+	Describe(".IsString", func() {
+		It("should return true if string or false if not", func() {
+			Expect(IsString("abc")).To(BeTrue())
+			Expect(IsString(123)).To(BeFalse())
+		})
+	})
+
+	Describe("IsValidAddr", func() {
+		It("should return if address is unset", func() {
+			Expect(IsValidAddr("")).To(Equal(fmt.Errorf("empty address")))
+		})
+
+		It("should return if address is not valid", func() {
+			err := IsValidAddr("abc")
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("invalid bech32 string"))
+		})
+
+		It("should return nil when address is valid", func() {
+			err := IsValidAddr("push1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz")
+			Expect(err).ToNot(BeNil())
+			err = IsValidAddr("maker1dhlnq5dt488huxs8nyzd7mu20ujw6zddjv3w4w")
+			Expect(err).To(BeNil())
 		})
 	})
 })

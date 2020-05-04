@@ -146,7 +146,7 @@ func (s *JSONRPC) APIs() APISet {
 			Description: "List RPC methods",
 			Namespace:   "rpc",
 			Func: func(interface{}) *Response {
-				return Success(util.ToMapSI(s.Methods()))
+				return Success(util.ToStringMapInter(s.Methods()))
 			},
 		},
 	}

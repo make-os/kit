@@ -146,20 +146,20 @@ var _ = Describe("Crypto", func() {
 		})
 	})
 
-	Describe(".IsValidPushKeyID", func() {
+	Describe(".IsValidPushAddr", func() {
 		It("should return false id could not be decoded", func() {
 			id := "bad_id"
-			Expect(IsValidPushKeyID(id)).To(BeFalse())
+			Expect(IsValidPushAddr(id)).To(BeFalse())
 		})
 
 		It("should return false id has wrong hrp", func() {
 			id, _ := bech32.ConvertAndEncode("abc", []byte("abc"))
-			Expect(IsValidPushKeyID(id)).To(BeFalse())
+			Expect(IsValidPushAddr(id)).To(BeFalse())
 		})
 
 		It("should return false id actual data is not 20-bytes", func() {
 			id, _ := bech32.ConvertAndEncode(constants.PushAddrHRP, []byte("abc"))
-			Expect(IsValidPushKeyID(id)).To(BeFalse())
+			Expect(IsValidPushAddr(id)).To(BeFalse())
 		})
 	})
 

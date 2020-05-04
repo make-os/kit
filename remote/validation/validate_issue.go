@@ -278,7 +278,7 @@ func CheckIssueBody(
 			return fe(-1, makeField("assignees"), "expected a string list")
 		}
 		for i, assignee := range val {
-			if !util.IsValidPushKeyID(assignee.(string)) {
+			if !util.IsValidPushAddr(assignee.(string)) {
 				return fe(i, makeField("assignees"), "invalid push key ID")
 			}
 		}
@@ -293,7 +293,7 @@ func CheckIssueBody(
 			return fe(-1, makeField("fixers"), "expected a string list")
 		}
 		for i, fixer := range val {
-			if !util.IsValidPushKeyID(fixer.(string)) {
+			if !util.IsValidPushAddr(fixer.(string)) {
 				return fe(i, makeField("fixers"), "invalid push key ID")
 			}
 		}

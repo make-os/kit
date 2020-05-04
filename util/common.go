@@ -23,6 +23,7 @@ import (
 	"github.com/cbroglie/mustache"
 	"github.com/robertkrimen/otto"
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/types/constants"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -279,7 +280,7 @@ func StructSliceToMapSlice(ss interface{}, tagName ...string) []map[string]inter
 	res := make([]map[string]interface{}, val.Len())
 	for i := 0; i < val.Len(); i++ {
 		if sliceKind == reflect.Map {
-			res[i] = ToMapSI(val.Index(i).Interface(), true)
+			res[i] = ToStringMapInter(val.Index(i).Interface(), true)
 			continue
 		}
 		res[i] = StructToMap(val.Index(i).Interface(), tagName...)
@@ -538,9 +539,13 @@ func IsValidAddr(addr string) error {
 		return fmt.Errorf("empty address")
 	}
 
-	_, _, err := bech32.Decode(addr)
+	hrp, _, err := bech32.Decode(addr)
 	if err != nil {
 		return err
+	}
+
+	if hrp != constants.AddrHRP {
+		return fmt.Errorf("invalid hrp")
 	}
 
 	return nil
@@ -577,11 +582,11 @@ func GetIndexFromUInt64Slice(index int, opts ...uint64) uint64 {
 	return opts[index]
 }
 
-// ToMapSI converts a map to map[string]interface{}.
+// ToStringMapInter converts a map to map[string]interface{}.
 // If structToMap is true, struct element is converted to map.
 // Panics if m is not a map with string key.
 // Returns m if m is already a map[string]interface{}.
-func ToMapSI(m interface{}, structToMap ...bool) map[string]interface{} {
+func ToStringMapInter(m interface{}, structToMap ...bool) map[string]interface{} {
 	v := reflect.ValueOf(m)
 	if v.Kind() != reflect.Map || v.Type().Key().Kind() != reflect.String {
 		panic("not a map with string key")
@@ -611,7 +616,7 @@ func IsZeroString(str string) bool {
 	return str == "" || str == "0"
 }
 
-// IsValidIdentifierName
+// IsValidIdentifierName checks whether an identifier is valid
 func IsValidIdentifierName(name string) error {
 	if !govalidator.Matches(name, "^[a-zA-Z0-9_-]+$") {
 		return fmt.Errorf("invalid characters in name. Only alphanumeric, _ and - characters are allowed")
@@ -656,7 +661,12 @@ type MustacheParserOpt struct {
 }
 
 // MustacheParseString passes a given string format.
-func MustacheParseString(format string, ctx map[string]interface{}, opt MustacheParserOpt) (string, error) {
+func MustacheParseString(format string, ctx map[string]interface{}, opt MustacheParserOpt) (str string, err error) {
+	defer func() {
+		if rcv, ok := recover().(error); ok {
+			err = rcv
+		}
+	}()
 	tpl, err := mustache.ParseStringPartialsRawWithDelims(format, nil,
 		opt.StartTag, opt.EndTag, opt.ForceRaw)
 	if err != nil {
@@ -665,6 +675,7 @@ func MustacheParseString(format string, ctx map[string]interface{}, opt Mustache
 	return tpl.Render(ctx)
 }
 
+// IsString checks whether the interface is a string
 func IsString(v interface{}) bool {
 	return reflect.TypeOf(v).Kind() == reflect.String
 }

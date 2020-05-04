@@ -30,7 +30,7 @@ func CheckTxDetailSanity(params *types.TxDetail, index int) error {
 	// Push key is required and must be valid
 	if params.PushKeyID == "" {
 		return fe(index, "pkID", "push key id is required")
-	} else if !util.IsValidPushKeyID(params.PushKeyID) {
+	} else if !util.IsValidPushAddr(params.PushKeyID) {
 		return fe(index, "pkID", "push key id is not valid")
 	}
 

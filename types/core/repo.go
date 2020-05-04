@@ -391,8 +391,6 @@ type BareRepoState interface {
 	GetReferences() Items
 	// IsEmpty checks whether the state is empty
 	IsEmpty() bool
-	// Hash returns the 32-bytes hash of the state
-	Hash() util.Bytes32
 	// GetChanges summarizes the changes between GetState s and y.
 	GetChanges(y BareRepoState) *Changes
 }
