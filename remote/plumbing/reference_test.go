@@ -97,4 +97,10 @@ var _ = Describe("Common", func() {
 			Expect(plumbing.IsReference("refs/notes")).To(BeTrue())
 		})
 	})
+
+	Describe(".MakeIssueReferencePath", func() {
+		It("should return refs/heads/<issues_branch_prefix>", func() {
+			Expect(plumbing.MakeIssueReferencePath()).To(Equal(fmt.Sprintf("refs/heads/" + plumbing.IssueBranchPrefix)))
+		})
+	})
 })

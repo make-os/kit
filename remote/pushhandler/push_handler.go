@@ -106,8 +106,8 @@ func (h *Handler) HandleStream(packfile io.Reader, gitReceivePack io.WriteCloser
 	return nil
 }
 
-// CheckForReferencesTxDetail checks that each pushed reference has a transaction detail
-func (h *Handler) CheckForReferencesTxDetail() error {
+// EnsureReferencesHaveTxDetail checks that each pushed reference has a transaction detail
+func (h *Handler) EnsureReferencesHaveTxDetail() error {
 	for _, ref := range h.PushReader.References.Names() {
 		if h.TxDetails.Get(ref) == nil {
 			return fmt.Errorf("reference (%s) has no transaction information", ref)
@@ -120,44 +120,47 @@ func (h *Handler) CheckForReferencesTxDetail() error {
 func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 
 	// Make sure every pushed references has a tx detail
-	if err := h.CheckForReferencesTxDetail(); err != nil {
+	if err := h.EnsureReferencesHaveTxDetail(); err != nil {
 		return err
 	}
 
-	// For each push details, check whether the pusher is authorized
+	// Check whether the pusher is a contributor
+	pusher := h.TxDetails.GetPushKeyID()
+	isContrib := h.Repo.IsContributor(pusher)
+
 	for _, cmd := range ur.Commands {
 		detail := h.TxDetails.Get(cmd.Name.String())
 
-		// For delete command, check if there is a policy allowing the pusher to do it.
+		// For delete command, check if there is a policy permitting it.
 		if cmd.New.IsZero() {
-			if err := h.PolicyChecker(h.polEnforcer, detail.PushKeyID, cmd.Name.String(),
-				"delete"); err != nil {
+			err := h.PolicyChecker(h.polEnforcer, pusher, isContrib, cmd.Name.String(), "delete")
+			if err != nil {
 				return err
 			}
 			continue
 		}
 
-		// For merge update, check if there is a policy allowing the pusher to do it.
+		// For merge update, check if there is a policy permitting it.
 		if detail.MergeProposalID != "" {
-			if err := h.PolicyChecker(h.polEnforcer, detail.PushKeyID, cmd.Name.String(),
-				"merge-write"); err != nil {
+			err := h.PolicyChecker(h.polEnforcer, pusher, isContrib, cmd.Name.String(), "merge-write")
+			if err != nil {
 				return err
 			}
 			continue
 		}
 
-		// For merge update, check if there is a policy allowing the pusher to do it.
-		if plumbing.IsIssueReference(detail.Reference) {
-			if err := h.PolicyChecker(h.polEnforcer, detail.PushKeyID, cmd.Name.String(),
-				"issue-write"); err != nil {
+		// For merge update, check if there is a policy permitting it.
+		if plumbing.IsIssueReference(cmd.Name.String()) {
+			err := h.PolicyChecker(h.polEnforcer, pusher, isContrib, cmd.Name.String(), "issue-write")
+			if err != nil {
 				return err
 			}
 			continue
 		}
 
-		// For write command, check if there is a policy allowing the pusher to do it.
-		if err := h.PolicyChecker(h.polEnforcer, detail.PushKeyID, cmd.Name.String(),
-			"write"); err != nil {
+		// For write command, check if there is a policy permitting it.
+		err := h.PolicyChecker(h.polEnforcer, pusher, isContrib, cmd.Name.String(), "write")
+		if err != nil {
 			return err
 		}
 	}

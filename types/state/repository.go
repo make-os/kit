@@ -215,8 +215,8 @@ type BaseContributor struct {
 type BaseContributors map[string]*BaseContributor
 
 // Has checks whether a gpg id exists
-func (rc *BaseContributors) Has(gpgID string) bool {
-	_, ok := (*rc)[gpgID]
+func (rc *BaseContributors) Has(pushKeyID string) bool {
+	_, ok := (*rc)[pushKeyID]
 	return ok
 }
 
@@ -231,9 +231,9 @@ type RepoContributor struct {
 // RepoContributors is a collection of repo contributors
 type RepoContributors map[string]*RepoContributor
 
-// Has checks whether a gpg id exists
-func (rc *RepoContributors) Has(gpgID string) bool {
-	_, ok := (*rc)[gpgID]
+// Has checks whether a push key id exists
+func (rc *RepoContributors) Has(pushKeyID string) bool {
+	_, ok := (*rc)[pushKeyID]
 	return ok
 }
 

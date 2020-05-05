@@ -442,4 +442,17 @@ var _ = Describe("ObjCol", func() {
 		})
 	})
 
+	Describe(".MakeStateFromItem", func() {
+		It("should empty state if nil is provided as argument", func() {
+			st := plumbing2.MakeStateFromItem(nil)
+			Expect(st.References.Len()).To(BeZero())
+		})
+
+		It("should return State", func() {
+			item := &plumbing2.Obj{Name: "refs/heads/dev"}
+			st := plumbing2.MakeStateFromItem(item)
+			Expect(st).To(BeAssignableToTypeOf(&plumbing2.State{}))
+			Expect(st.References.Get(item.Name)).To(Equal(item))
+		})
+	})
 })

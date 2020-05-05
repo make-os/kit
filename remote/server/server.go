@@ -257,17 +257,17 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// De-construct the URL to get the repo name and operation
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
-	namespace := pathParts[0]
+	namespaceName := pathParts[0]
 	repoName := pathParts[1]
 	op := pathParts[2]
 
 	// Resolve the namespace if the given namespace is not the default
-	var ns *state.Namespace
-	if namespace != repo2.DefaultNS {
+	var namespace *state.Namespace
+	if namespaceName != repo2.DefaultNS {
 
 		// Get the namespace, return 404 if not found
-		ns = sv.logic.NamespaceKeeper().Get(util.HashNamespace(namespace))
-		if ns.IsNil() {
+		namespace = sv.logic.NamespaceKeeper().Get(util.HashNamespace(namespaceName))
+		if namespace.IsNil() {
 			w.WriteHeader(http.StatusNotFound)
 			sv.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound,
 				"Status", http.StatusText(http.StatusNotFound))
@@ -276,7 +276,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Get the target. If the target is not set or the target is not
 		// prefixed with r/, return 404
-		target := ns.Domains.Get(repoName)
+		target := namespace.Domains.Get(repoName)
 		if target == "" || target[:2] != "r/" {
 			w.WriteHeader(http.StatusNotFound)
 			sv.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound,
@@ -298,7 +298,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Authenticate pusher
-	txDetails, polEnforcer, err := sv.handleAuth(r, w, repoState, ns)
+	txDetails, polEnforcer, err := sv.handleAuth(r, w, repoState, namespace)
 	if err != nil {
 		w.Header().Set("WWW-Authenticate", "Basic")
 		w.WriteHeader(http.StatusUnauthorized)
@@ -327,12 +327,13 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		TxDetails:   txDetails,
 		PolEnforcer: polEnforcer,
 		Repo: &repo2.Repo{
-			Name:       repoName,
-			Repository: repo,
-			LiteGit:    repo2.NewLiteGit(sv.gitBinPath, fullRepoDir),
-			Path:       fullRepoDir,
-			State:      repoState,
-			Namespace:  namespace,
+			Name:          repoName,
+			Repository:    repo,
+			LiteGit:       repo2.NewLiteGit(sv.gitBinPath, fullRepoDir),
+			Path:          fullRepoDir,
+			State:         repoState,
+			NamespaceName: namespaceName,
+			Namespace:     namespace,
 		},
 		RepoDir:     fullRepoDir,
 		ServiceName: GetService(r),

@@ -3,6 +3,7 @@ package policy
 import (
 	"fmt"
 
+	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/types/state"
 )
@@ -22,15 +23,20 @@ func GetPolicyEnforcer(policyGroup [][]*state.Policy) EnforcerFunc {
 }
 
 // policyChecker describes a function for enforcing repository policy
-type PolicyChecker func(enforcer EnforcerFunc, pushKeyID, reference, action string) error
+// enforce is the enforcer function.
+// pushKeyID is the push key of the pusher.
+// isContributor indicates that the pusher is a contributor of the requested repository.
+// reference is the target reference.
+// action is the action requested by the user.
+type PolicyChecker func(enforcer EnforcerFunc, pushKeyID string, isContributor bool, reference, action string) error
 
 // CheckPolicy performs ACL checks to determine whether the given push key
 // is permitted to perform the given action on the reference subject.
-func CheckPolicy(enforcer EnforcerFunc, pushKeyID, reference, action string) error {
+func CheckPolicy(enforcer EnforcerFunc, pushKeyID string, isContributor bool, reference, action string) error {
 
 	rootDir := "refs/"
 	if plumbing.IsIssueReference(reference) {
-		rootDir = rootDir + plumbing.IssueBranchPrefix
+		rootDir = plumbing.MakeIssueReferencePath()
 	} else if plumbing.IsBranch(reference) {
 		rootDir = rootDir + "heads"
 	} else if plumbing.IsTag(reference) {
@@ -93,6 +99,37 @@ func CheckPolicy(enforcer EnforcerFunc, pushKeyID, reference, action string) err
 		highestLvl = lvl
 	}
 
+	// Skip to conclusion if pusher is not a contributor
+	if !isContributor {
+		goto conclude
+	}
+
+	// For only contributors
+	// Check if the contributor can or cannot perform the action on the reference
+	res, lvl = enforcer("contrib", reference, action)
+	if lvl > -1 && lvl <= highestLvl {
+		allowed = res
+		highestLvl = lvl
+	}
+	res, lvl = enforcer("contrib", reference, negativeAct)
+	if lvl > -1 && lvl <= highestLvl {
+		allowed = !res
+		highestLvl = lvl
+	}
+
+	// Check if the contributor can or cannot perform the action on the reference directory
+	res, lvl = enforcer("contrib", rootDir, action)
+	if lvl > -1 && lvl <= highestLvl {
+		allowed = res
+		highestLvl = lvl
+	}
+	res, lvl = enforcer("contrib", rootDir, negativeAct)
+	if lvl > -1 && lvl <= highestLvl {
+		allowed = !res
+		highestLvl = lvl
+	}
+
+conclude:
 	if !allowed {
 		return fmt.Errorf("reference (%s): not authorized to perform '%s' action", reference, action)
 	}
@@ -117,10 +154,12 @@ func MakePusherPolicyGroups(
 	// Gather the policies into groups
 	var groups = make([][]*state.Policy, 3)
 
-	// Find policies in the config-level policies where the subject is "all" or the pusher key ID
-	// and also whose object is points to a reference path or name
+	// Find policies in the repo config-level policies
+	// where the subject is "all", "contrib" or the pusher key ID
+	// and also whose object points to a reference path or name
 	for _, pol := range repoState.Config.Policies {
-		if (pol.Subject == "all" || pol.Subject == pushKeyID) && plumbing.IsReference(pol.Object) {
+		if (funk.ContainsString([]string{"all", "contrib"}, pol.Subject) || pol.Subject == pushKeyID) &&
+			plumbing.IsReference(pol.Object) {
 			groups[2] = append(groups[2], pol)
 		}
 	}

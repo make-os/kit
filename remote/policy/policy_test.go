@@ -103,7 +103,7 @@ var _ = Describe("Auth", func() {
 			})
 		})
 
-		When("repo config policies include a policy whose subject is not a push key ID or 'all'", func() {
+		When("repo config policies include a policy whose subject is not a push key ID or 'all' or 'contrib'", func() {
 			BeforeEach(func() {
 				repoState := state.BareRepository()
 				repoPolicy = &state.Policy{Subject: "some_subject", Object: "refs/heads/master", Action: "write"}
@@ -117,15 +117,30 @@ var _ = Describe("Auth", func() {
 			})
 		})
 
-		When("repo config policies include a policy whose subject is 'all'", func() {
-			BeforeEach(func() {
+		When("repo config policies include a policy whose subject is 'all' or 'contrib' or a push key", func() {
+			It("should return policy if its subject is 'all'", func() {
 				repoState := state.BareRepository()
 				repoPolicy = &state.Policy{Subject: "all", Object: "refs/heads/master", Action: "write"}
 				repoState.Config.Policies = append(repoState.Config.Policies, repoPolicy)
 				polGroups = MakePusherPolicyGroups(key.PushAddr().String(), repoState, state.BareNamespace())
+				Expect(polGroups).To(HaveLen(3))
+				Expect(polGroups[2]).To(HaveLen(1))
 			})
 
-			It("should include the policy", func() {
+			It("should return policy if its subject is 'contrib'", func() {
+				repoState := state.BareRepository()
+				repoPolicy = &state.Policy{Subject: "contrib", Object: "refs/heads/master", Action: "write"}
+				repoState.Config.Policies = append(repoState.Config.Policies, repoPolicy)
+				polGroups = MakePusherPolicyGroups(key.PushAddr().String(), repoState, state.BareNamespace())
+				Expect(polGroups).To(HaveLen(3))
+				Expect(polGroups[2]).To(HaveLen(1))
+			})
+
+			It("should return policy if its subject is a push key address", func() {
+				repoState := state.BareRepository()
+				repoPolicy = &state.Policy{Subject: key.PushAddr().String(), Object: "refs/heads/master", Action: "write"}
+				repoState.Config.Policies = append(repoState.Config.Policies, repoPolicy)
+				polGroups = MakePusherPolicyGroups(key.PushAddr().String(), repoState, state.BareNamespace())
 				Expect(polGroups).To(HaveLen(3))
 				Expect(polGroups[2]).To(HaveLen(1))
 			})
@@ -149,7 +164,7 @@ var _ = Describe("Auth", func() {
 	Describe(".CheckPolicy", func() {
 		It("should return error when reference type is unknown", func() {
 			enforcer := GetPolicyEnforcer([][]*state.Policy{{{Object: "obj", Subject: "sub", Action: "ac"}}})
-			err := CheckPolicy(enforcer, key.PushAddr().String(), "refs/unknown/xyz", "write")
+			err := CheckPolicy(enforcer, key.PushAddr().String(), false, "refs/unknown/xyz", "write")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("unknown reference (refs/unknown/xyz)"))
 		})
@@ -168,19 +183,19 @@ var _ = Describe("Auth", func() {
 				It("should return nil at level 0", func() {
 					policies := [][]*state.Policy{{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}}}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err).To(BeNil())
 				})
 				It("should return nil at level 1", func() {
 					policies := [][]*state.Policy{{}, {{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}}}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err).To(BeNil())
 				})
 				It("should return nil at level 2", func() {
 					policies := [][]*state.Policy{{}, {}, {{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}}}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err).To(BeNil())
 				})
 			})
@@ -189,7 +204,7 @@ var _ = Describe("Auth", func() {
 				It("should return err", func() {
 					policies := [][]*state.Policy{{}, {}, {}}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
 			})
@@ -203,7 +218,7 @@ var _ = Describe("Auth", func() {
 						},
 					}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
@@ -216,7 +231,7 @@ var _ = Describe("Auth", func() {
 						{{Subject: pushAddrA, Object: "refs/heads/master", Action: denyAction}},
 					}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err).To(BeNil())
 				})
 			})
@@ -228,7 +243,7 @@ var _ = Describe("Auth", func() {
 						{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
 					}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
 			})
@@ -241,7 +256,7 @@ var _ = Describe("Auth", func() {
 						{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
 					}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
 			})
@@ -253,7 +268,7 @@ var _ = Describe("Auth", func() {
 						{{Subject: "all", Object: "refs/heads/master", Action: allowAction}},
 					}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err).To(BeNil())
 				})
 			})
@@ -265,7 +280,7 @@ var _ = Describe("Auth", func() {
 						{{Subject: "all", Object: "refs/heads/master", Action: denyAction}},
 					}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
@@ -279,7 +294,7 @@ var _ = Describe("Auth", func() {
 						{{Subject: "all", Object: "refs/heads/master", Action: denyAction}},
 					}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err).To(BeNil())
 				})
 			})
@@ -294,7 +309,7 @@ var _ = Describe("Auth", func() {
 						},
 					}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
@@ -308,7 +323,7 @@ var _ = Describe("Auth", func() {
 						{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
 					}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
@@ -322,7 +337,7 @@ var _ = Describe("Auth", func() {
 						{},
 					}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err).To(BeNil())
 				})
 			})
@@ -334,7 +349,7 @@ var _ = Describe("Auth", func() {
 						{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
 					}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/heads/master", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
 					Expect(err).ToNot(BeNil())
 					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
 				})
@@ -351,8 +366,39 @@ var _ = Describe("Auth", func() {
 						}, {}, {},
 					}
 					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, "refs/tags/tag1", allowAction)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/tags/tag1", allowAction)
 					Expect(err).To(BeNil())
+				})
+			})
+
+			When("pusher is contributor", func() {
+				It("should return nil when action is allowed for subject:contrib, object:refs/heads/master", func() {
+					policies := [][]*state.Policy{
+						{{Subject: "contrib", Object: "refs/heads/master", Action: allowAction}},
+					}
+					enforcer = GetPolicyEnforcer(policies)
+					err = CheckPolicy(enforcer, pushAddrA, true, "refs/heads/master", allowAction)
+					Expect(err).To(BeNil())
+				})
+
+				It("should return nil when action is allowed for subject:contrib, object:refs/heads", func() {
+					policies := [][]*state.Policy{
+						{{Subject: "contrib", Object: "refs/heads", Action: allowAction}},
+					}
+					enforcer = GetPolicyEnforcer(policies)
+					err = CheckPolicy(enforcer, pushAddrA, true, "refs/heads/master", allowAction)
+					Expect(err).To(BeNil())
+				})
+			})
+
+			When("pusher is not a contributor", func() {
+				It("should return error when action is not allowed", func() {
+					policies := [][]*state.Policy{
+						{{Subject: "contrib", Object: "refs/heads/master", Action: allowAction}},
+					}
+					enforcer = GetPolicyEnforcer(policies)
+					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
+					Expect(err).ToNot(BeNil())
 				})
 			})
 		})

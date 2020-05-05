@@ -14,7 +14,7 @@ import (
 func (sv *Server) subscribe() {
 
 	// Removes a push note corresponding to a finalized push transaction from the push pool
-	var rmTx = func(evt emitter.Event) error {
+	var rmTxFromPushPool = func(evt emitter.Event) error {
 		if err := util.CheckEvtArgs(evt.Args); err != nil {
 			return err
 		}
@@ -32,9 +32,7 @@ func (sv *Server) subscribe() {
 	// Remove the transaction from the push pool
 	go func() {
 		for evt := range sv.cfg.G().Bus.On(mempool.EvtMempoolTxRemoved) {
-			if err := rmTx(evt); err != nil {
-				sv.log.Error("Failed to remove push note of finalized PushTx from pool", err.Error())
-			}
+			rmTxFromPushPool(evt)
 		}
 	}()
 
@@ -42,9 +40,7 @@ func (sv *Server) subscribe() {
 	// Remove the transaction from the push pool
 	go func() {
 		for evt := range sv.cfg.G().Bus.On(mempool.EvtMempoolTxRejected) {
-			if err := rmTx(evt); err != nil {
-				sv.log.Error("Failed to remove push note of finalized PushTx from pool", err.Error())
-			}
+			rmTxFromPushPool(evt)
 		}
 	}()
 }

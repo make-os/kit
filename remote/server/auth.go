@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/validation"
@@ -71,20 +70,6 @@ func authenticate(
 		// Validate the transaction detail
 		if err := checkTxDetail(detail, keepers, i); err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintf("token error"))
-		}
-
-		// Check if pusher is an authorized contributor.
-		// The pusher is not authorized:
-		// - if they are not among repo's contributors.
-		// - and namespace is default.
-		// - or they are not part of the contributors of the non-nil namespace.
-		// Do not check if
-		// - detail is a merge push
-		// - and target reference is not an issue reference.
-		if detail.MergeProposalID == "" && !plumbing.IsIssueReference(detail.Reference) {
-			if !repoState.Contributors.Has(pushKeyID) && (namespace == nil || !namespace.Contributors.Has(pushKeyID)) {
-				return nil, fe(-1, "pkID", "pusher is not a contributor")
-			}
 		}
 
 		lastPushKeyID, lastRepoName, lastRepoNamespace, lastAcctNonce = pushKeyID, detail.RepoName,

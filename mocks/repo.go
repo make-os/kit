@@ -474,11 +474,25 @@ func (mr *MockBareRepoMockRecorder) GetNameFromPath() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNameFromPath", reflect.TypeOf((*MockBareRepo)(nil).GetNameFromPath))
 }
 
+// GetNamespaceName mocks base method
+func (m *MockBareRepo) GetNamespaceName() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetNamespaceName")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetNamespaceName indicates an expected call of GetNamespaceName
+func (mr *MockBareRepoMockRecorder) GetNamespaceName() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNamespaceName", reflect.TypeOf((*MockBareRepo)(nil).GetNamespaceName))
+}
+
 // GetNamespace mocks base method
-func (m *MockBareRepo) GetNamespace() string {
+func (m *MockBareRepo) GetNamespace() *state.Namespace {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNamespace")
-	ret0, _ := ret[0].(string)
+	ret0, _ := ret[0].(*state.Namespace)
 	return ret0
 }
 
@@ -501,6 +515,20 @@ func (m *MockBareRepo) References() (storer.ReferenceIter, error) {
 func (mr *MockBareRepoMockRecorder) References() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "References", reflect.TypeOf((*MockBareRepo)(nil).References))
+}
+
+// IsContributor mocks base method
+func (m *MockBareRepo) IsContributor(pushKeyID string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsContributor", pushKeyID)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsContributor indicates an expected call of IsContributor
+func (mr *MockBareRepoMockRecorder) IsContributor(pushKeyID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContributor", reflect.TypeOf((*MockBareRepo)(nil).IsContributor), pushKeyID)
 }
 
 // GetRemoteURLs mocks base method

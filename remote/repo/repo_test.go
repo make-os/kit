@@ -8,9 +8,11 @@ import (
 	"strings"
 	"time"
 
+	"gitlab.com/makeos/mosdef/crypto"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	repo2 "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/types/core"
+	state2 "gitlab.com/makeos/mosdef/types/state"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -23,16 +25,18 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-var _ = Describe("Repo", func() {
+var _ = Describe("RepoContext", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path, dotGitPath string
 	var repo core.BareRepo
+	var key *crypto.Key
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
+		key = crypto.NewKeyFromIntSeed(1)
 	})
 
 	BeforeEach(func() {
@@ -194,6 +198,22 @@ var _ = Describe("Repo", func() {
 			size, err := repo2.GetObjectsSize(repo, objs)
 			Expect(err).To(BeNil())
 			Expect(size).To(Equal(uint64(expectedSize)))
+		})
+	})
+
+	Describe(".IsContributor", func() {
+		It("should return true when push key is a repo contributor", func() {
+			repo.(*repo2.Repo).State = &state2.Repository{Contributors: map[string]*state2.RepoContributor{key.PushAddr().String(): {}}}
+			Expect(repo.IsContributor(key.PushAddr().String())).To(BeTrue())
+		})
+
+		It("should return true when push key is a namespace contributor", func() {
+			repo.(*repo2.Repo).Namespace = &state2.Namespace{Contributors: map[string]*state2.BaseContributor{key.PushAddr().String(): {}}}
+			Expect(repo.IsContributor(key.PushAddr().String())).To(BeTrue())
+		})
+
+		It("should return false when push key is a namespace or repo contributor", func() {
+			Expect(repo.IsContributor(key.PushAddr().String())).To(BeFalse())
 		})
 	})
 

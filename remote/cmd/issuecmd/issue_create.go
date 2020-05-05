@@ -204,14 +204,14 @@ input:
 
 	// Create the Issue body and prompt user to confirm
 	issueBody := plumbing.IssueBodyToString(&plumbing.IssueBody{
-		[]byte(args.Body),
-		args.Title,
-		args.ReplyHash,
-		args.Reactions,
-		args.Labels,
-		args.Assignees,
-		args.Fixers,
-		closeState,
+		Content:   []byte(args.Body),
+		Title:     args.Title,
+		ReplyTo:   args.ReplyHash,
+		Reactions: args.Reactions,
+		Labels:    args.Labels,
+		Assignees: args.Assignees,
+		Fixers:    args.Fixers,
+		Close:     closeState,
 	})
 
 	// Create a new Issue or add comment commit to existing Issue

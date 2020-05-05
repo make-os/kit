@@ -9,5 +9,5 @@ import (
 
 func TestRepo(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Repo Suite")
+	RunSpecs(t, "RepoContext Suite")
 }

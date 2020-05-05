@@ -23,14 +23,16 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-// Repo represents a git repository
+// Repo provides functions for accessing and modifying
+// a repository loaded by the remote server.
 type Repo struct {
 	*LiteGit
 	*git.Repository
-	Path      string
-	Name      string
-	Namespace string
-	State     *state.Repository
+	Path          string
+	Name          string
+	NamespaceName string
+	Namespace     *state.Namespace
+	State         *state.Repository
 }
 
 // GetState returns the repository's network state
@@ -82,9 +84,28 @@ func (r *Repo) GetNameFromPath() string {
 	return name
 }
 
-// GetNamespace returns the namespace this repo is associated to.
-func (r *Repo) GetNamespace() string {
+// GetNamespaceName returns the name of the repo's namespace
+func (r *Repo) GetNamespaceName() string {
+	return r.NamespaceName
+}
+
+// GetNamespace returns the repos's namespace
+func (r *Repo) GetNamespace() *state.Namespace {
 	return r.Namespace
+}
+
+// IsContributor checks whether a push key is a contributor to either
+// the repository or its namespace
+func (r *Repo) IsContributor(pushKeyID string) (isContrib bool) {
+	if s := r.GetState(); s != nil {
+		if s.Contributors.Has(pushKeyID) {
+			return true
+		}
+	}
+	if ns := r.GetNamespace(); ns != nil {
+		return ns.Contributors.Has(pushKeyID)
+	}
+	return
 }
 
 // GetRemoteURLs returns the remote URLS of the repository
@@ -258,7 +279,7 @@ func GetRepoWithLiteGit(gitBinPath, path string) (core.BareRepo, error) {
 	}, nil
 }
 
-// GetRepoAtWorkingDir returns a Repo instance pointed to the repository
+// GetRepoAtWorkingDir returns a RepoContext instance pointed to the repository
 // in the current working directory.
 func GetRepoAtWorkingDir(gitBinDir string) (core.BareRepo, error) {
 	wd, err := os.Getwd()

@@ -35,11 +35,18 @@ type BareRepo interface {
 	// GetNameFromPath returns the name of the repo
 	GetNameFromPath() string
 
-	// GetNamespace returns the namespace this repo is associated to.
-	GetNamespace() string
+	// GetNamespaceName returns the namespace this repo is associated to.
+	GetNamespaceName() string
+
+	// GetNamespace returns the repos's namespace
+	GetNamespace() *state.Namespace
 
 	// References returns an unsorted ReferenceIter for all references.
 	References() (storer.ReferenceIter, error)
+
+	// IsContributor checks whether a push key is a contributor to either
+	// the repository or its namespace
+	IsContributor(pushKeyID string) bool
 
 	// GetRemoteURLs returns the remote URLS of the repository
 	GetRemoteURLs() (urls []string)

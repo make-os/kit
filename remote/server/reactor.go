@@ -93,11 +93,13 @@ func (sv *Server) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 
 	// Set the target repository object
 	note.TargetRepo = &repo2.Repo{
-		Name:       repoName,
-		Repository: repo,
-		LiteGit:    repo2.NewLiteGit(sv.gitBinPath, repoPath),
-		Path:       repoPath,
-		State:      repoState,
+		Name:          repoName,
+		Repository:    repo,
+		LiteGit:       repo2.NewLiteGit(sv.gitBinPath, repoPath),
+		Path:          repoPath,
+		NamespaceName: note.Namespace,
+		State:         repoState,
+		Namespace:     namespace,
 	}
 
 	// Validate the push note.
@@ -474,7 +476,7 @@ func (sv *Server) updateWithPushTx(tx *core.TxPush) error {
 	}
 
 	sv.Log().Debug("Updated repo with push transaction",
-		"Repo", tx.PushNote.RepoName, "TxID", tx.GetID())
+		"RepoContext", tx.PushNote.RepoName, "TxID", tx.GetID())
 
 	return nil
 }
