@@ -59,27 +59,67 @@ var _ = Describe("Push", func() {
 		var sender = crypto.NewKeyFromIntSeed(1)
 		var repo = "repo1"
 		var pushKeyID = crypto.CreatePushKeyID(crypto.StrToPublicKey("pushKeyID"))
+		var pushKeyID2 = crypto.CreatePushKeyID(crypto.StrToPublicKey("pushKeyID2"))
+		var refs []*core.PushedReference
+
+		BeforeEach(func() {
+			logic.AccountKeeper().Update(sender.Addr(), &state.Account{
+				Balance: "10",
+				Stakes:  state.BareAccountStakes(),
+				Nonce:   1,
+			})
+
+			logic.PushKeyKeeper().Update(pushKeyID, &state.PushKey{
+				PubKey:  crypto.StrToPublicKey("pub_key"),
+				Address: sender.Addr(),
+			})
+
+			logic.RepoKeeper().Update(repo, &state.Repository{
+				References: map[string]*state.Reference{
+					"refs/heads/master": {
+						Nonce:   1,
+						Creator: util.MustDecodePushKeyID(pushKeyID),
+					},
+				},
+			})
+		})
+
+		When("pushed reference did not previously exist (new reference)", func() {
+			It("should add pusher as creator of the reference", func() {
+				refs = []*core.PushedReference{
+					{Name: "refs/heads/dev"},
+				}
+
+				rawPkID := util.MustDecodePushKeyID(pushKeyID2)
+				err = txLogic.execPush(repo, refs, "1", rawPkID, 0)
+				Expect(err).To(BeNil())
+
+				rep := txLogic.logic.RepoKeeper().Get(repo)
+				Expect(rep.References.Get("refs/heads/dev").Creator).To(Equal(rawPkID))
+			})
+		})
+
+		When("pushed reference already exist", func() {
+			It("should not update reference creator", func() {
+				refs = []*core.PushedReference{
+					{Name: "refs/heads/master"},
+				}
+
+				rawPkID := util.MustDecodePushKeyID(pushKeyID2)
+				err = txLogic.execPush(repo, refs, "1", rawPkID, 0)
+				Expect(err).To(BeNil())
+
+				rep := txLogic.logic.RepoKeeper().Get(repo)
+				Expect(rep.References.Get("refs/heads/master").Creator).ToNot(Equal(rawPkID))
+
+				actual := util.MustDecodePushKeyID(pushKeyID)
+				Expect(rep.References.Get("refs/heads/master").Creator).To(Equal(actual))
+			})
+		})
 
 		When("reference has nonce = 1", func() {
 			BeforeEach(func() {
-				logic.AccountKeeper().Update(sender.Addr(), &state.Account{
-					Balance: "10",
-					Stakes:  state.BareAccountStakes(),
-					Nonce:   1,
-				})
-
-				logic.PushKeyKeeper().Update(pushKeyID, &state.PushKey{
-					PubKey:  crypto.StrToPublicKey("pub_key"),
-					Address: sender.Addr(),
-				})
-
-				logic.RepoKeeper().Update(repo, &state.Repository{
-					References: map[string]*state.Reference{
-						"refs/heads/master": {Nonce: 1},
-					},
-				})
-
-				refs := []*core.PushedReference{
+				refs = []*core.PushedReference{
 					{Name: "refs/heads/master"},
 				}
 

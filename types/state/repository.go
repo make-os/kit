@@ -24,16 +24,29 @@ func BareReference() *Reference {
 // Reference represents a git reference
 type Reference struct {
 	util.SerializerHelper `json:"-" mapstructure:"-" msgpack:"-"`
-	Nonce                 uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce"`
-	Hash                  []byte `json:"hash" mapstructure:"hash" msgpack:"hash"`
+
+	// Creator is the raw push key ID of the reference creator
+	Creator []byte `json:"creator" mapstructure:"creator" msgpack:"creator,omitempty"`
+
+	// Nonce is the current count of commits on the reference.
+	// It is used to enforce order of operation to the reference.
+	Nonce uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce,omitempty"`
+
+	// Hash is the current hash of the reference
+	Hash []byte `json:"hash" mapstructure:"hash" msgpack:"hash,omitempty"`
+}
+
+// IsNil checks whether the reference fields are all empty
+func (r *Reference) IsNil() bool {
+	return len(r.Creator) == 0 && len(r.Hash) == 0 && r.Nonce == 0
 }
 
 func (r *Reference) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return r.EncodeMulti(enc, r.Nonce, r.Hash)
+	return r.EncodeMulti(enc, r.Creator, r.Nonce, r.Hash)
 }
 
 func (r *Reference) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return r.DecodeMulti(dec, &r.Nonce, &r.Hash)
+	return r.DecodeMulti(dec, &r.Creator, &r.Nonce, &r.Hash)
 }
 
 // References represents a collection of references
@@ -241,11 +254,11 @@ func (rc *RepoContributors) Has(pushKeyID string) bool {
 func BareRepository() *Repository {
 	return &Repository{
 		Balance:      "0",
-		References:   make(map[string]*Reference),
-		Owners:       make(map[string]*RepoOwner),
-		Proposals:    make(map[string]*RepoProposal),
+		References:   map[string]*Reference{},
+		Owners:       map[string]*RepoOwner{},
+		Proposals:    map[string]*RepoProposal{},
 		Config:       BareRepoConfig(),
-		Contributors: make(map[string]*RepoContributor),
+		Contributors: map[string]*RepoContributor{},
 	}
 }
 
@@ -300,13 +313,14 @@ func (r *Repository) EncodeMsgpack(enc *msgpack.Encoder) error {
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (r *Repository) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return r.DecodeMulti(dec,
+	err := r.DecodeMulti(dec,
 		&r.Balance,
 		&r.Owners,
 		&r.References,
 		&r.Proposals,
 		&r.Config,
 		&r.Contributors)
+	return err
 }
 
 // Bytes return the bytes equivalent of the account

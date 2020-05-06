@@ -352,23 +352,23 @@ func (mr *MockRepoKeeperMockRecorder) Get(name interface{}, blockNum ...interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockRepoKeeper)(nil).Get), varargs...)
 }
 
-// GetWithNoPopulation mocks base method
-func (m *MockRepoKeeper) GetWithNoPopulation(name string, blockNum ...uint64) *state.Repository {
+// GetNoPopulate mocks base method
+func (m *MockRepoKeeper) GetNoPopulate(name string, blockNum ...uint64) *state.Repository {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{name}
 	for _, a := range blockNum {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetWithNoPopulation", varargs...)
+	ret := m.ctrl.Call(m, "GetNoPopulate", varargs...)
 	ret0, _ := ret[0].(*state.Repository)
 	return ret0
 }
 
-// GetWithNoPopulation indicates an expected call of GetWithNoPopulation
+// GetNoPopulate indicates an expected call of GetNoPopulate
 func (mr *MockRepoKeeperMockRecorder) GetWithNoPopulation(name interface{}, blockNum ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{name}, blockNum...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWithNoPopulation", reflect.TypeOf((*MockRepoKeeper)(nil).GetWithNoPopulation), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNoPopulate", reflect.TypeOf((*MockRepoKeeper)(nil).GetNoPopulate), varargs...)
 }
 
 // Update mocks base method

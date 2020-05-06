@@ -760,7 +760,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add the new proposal with expected `endAt` and `feeDepEndAt` values", func() {
-				repo := logic.RepoKeeper().GetWithNoPopulation(repoName)
+				repo := logic.RepoKeeper().GetNoPopulate(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").FeeDepositEndAt).To(Equal(uint64(301)))
 				Expect(repo.Proposals.Get("1").EndAt).To(Equal(uint64(1301)))
@@ -1059,7 +1059,7 @@ var _ = Describe("Repo", func() {
 			})
 
 			It("should add the new proposal with expected `endAt` and `feeDepEndAt` values", func() {
-				repo := logic.RepoKeeper().GetWithNoPopulation(repoName)
+				repo := logic.RepoKeeper().GetNoPopulate(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
 				Expect(repo.Proposals.Get("1").FeeDepositEndAt).To(Equal(uint64(301)))
 				Expect(repo.Proposals.Get("1").EndAt).To(Equal(uint64(1301)))

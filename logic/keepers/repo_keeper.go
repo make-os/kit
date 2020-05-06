@@ -35,7 +35,7 @@ func NewRepoKeeper(state *tree.SafeTree, db storage.Tx) *RepoKeeper {
 // CONTRACT: It returns an empty Repository if no repo is found.
 func (a *RepoKeeper) Get(name string, blockNum ...uint64) *state.Repository {
 
-	repo := a.GetWithNoPopulation(name, blockNum...)
+	repo := a.GetNoPopulate(name, blockNum...)
 
 	// For each proposal in the repo, fetch their config from the version of the
 	// repo where they first appeared.
@@ -45,7 +45,7 @@ func (a *RepoKeeper) Get(name string, blockNum ...uint64) *state.Repository {
 			prop.Config = repo.Config.Governance
 			return nil
 		}
-		propParent := a.GetWithNoPopulation(name, prop.Height)
+		propParent := a.GetNoPopulate(name, prop.Height)
 		if propParent.IsNil() {
 			return fmt.Errorf("failed to get repo version of proposal (%s)", id)
 		}
@@ -59,7 +59,7 @@ func (a *RepoKeeper) Get(name string, blockNum ...uint64) *state.Repository {
 	return repo
 }
 
-// GetWithNoPopulation fetches a repository by the given name without making additional
+// GetNoPopulate fetches a repository by the given name without making additional
 // queries to populate the repo with associated objects.
 //
 // ARGS:
@@ -67,7 +67,7 @@ func (a *RepoKeeper) Get(name string, blockNum ...uint64) *state.Repository {
 // blockNum: The target block to query (Optional. Default: latest)
 //
 // CONTRACT: It returns an empty Repository if no repo is found.
-func (a *RepoKeeper) GetWithNoPopulation(name string, blockNum ...uint64) *state.Repository {
+func (a *RepoKeeper) GetNoPopulate(name string, blockNum ...uint64) *state.Repository {
 
 	// Get version is provided
 	var version uint64

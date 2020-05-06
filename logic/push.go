@@ -23,24 +23,29 @@ func (t *Transaction) execPush(
 	repoName string,
 	references core.PushedReferences,
 	fee util.String,
-	pusherKeyID []byte,
+	pushKeyID []byte,
 	chainHeight uint64) error {
 
 	// Get repository
 	repoKeeper := t.logic.RepoKeeper()
 	repo := repoKeeper.Get(repoName)
 
-	// Get the push key of the pusher
-	pushKeyID := crypto.BytesToPushKeyID(pusherKeyID)
-	pushKey := t.logic.PushKeyKeeper().Get(pushKeyID, chainHeight)
-
 	// Register the references to the repo and update their nonce
 	for _, ref := range references {
 		curRef := repo.References.Get(ref.Name)
+
+		// Set pusher as creator if reference is new
+		if curRef.IsNil() {
+			curRef.Creator = pushKeyID
+		}
+
 		curRef.Nonce = curRef.Nonce + 1
 		curRef.Hash = util.MustFromHex(ref.NewHash)
 		repo.References[ref.Name] = curRef
 	}
+
+	// Get the push key of the pusher
+	pushKey := t.logic.PushKeyKeeper().Get(crypto.BytesToPushKeyID(pushKeyID), chainHeight)
 
 	// Get the account of the pusher
 	acctKeeper := t.logic.AccountKeeper()

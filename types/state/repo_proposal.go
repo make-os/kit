@@ -196,16 +196,44 @@ func (p *RepoProposal) GetCreator() string {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (p *RepoProposal) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return p.EncodeMulti(enc, p.ID, p.Action, p.ActionData, p.Creator, p.Height, p.Config,
-		p.EndAt, p.FeeDepositEndAt, p.ProposerMaxJoinHeight, p.Yes, p.No,
-		p.NoWithVeto, p.NoWithVetoByOwners, p.Abstain, p.Fees, p.Outcome)
+	return p.EncodeMulti(enc,
+		p.ID,
+		p.Action,
+		p.ActionData,
+		p.Creator,
+		p.Height,
+		p.Config,
+		p.EndAt,
+		p.FeeDepositEndAt,
+		p.ProposerMaxJoinHeight,
+		p.Yes,
+		p.No,
+		p.NoWithVeto,
+		p.NoWithVetoByOwners,
+		p.Abstain,
+		p.Fees,
+		p.Outcome)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (p *RepoProposal) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return p.DecodeMulti(dec, &p.ID, &p.Action, &p.ActionData, &p.Creator, &p.Height, &p.Config,
-		&p.EndAt, &p.FeeDepositEndAt, &p.ProposerMaxJoinHeight, &p.Yes, &p.No,
-		&p.NoWithVeto, &p.NoWithVetoByOwners, &p.Abstain, &p.Fees, &p.Outcome)
+	return p.DecodeMulti(dec,
+		&p.ID,
+		&p.Action,
+		&p.ActionData,
+		&p.Creator,
+		&p.Height,
+		&p.Config,
+		&p.EndAt,
+		&p.FeeDepositEndAt,
+		&p.ProposerMaxJoinHeight,
+		&p.Yes,
+		&p.No,
+		&p.NoWithVeto,
+		&p.NoWithVetoByOwners,
+		&p.Abstain,
+		&p.Fees,
+		&p.Outcome)
 }
 
 // IsFinalized implements Proposal

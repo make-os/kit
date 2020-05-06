@@ -108,7 +108,7 @@ type RepoKeeper interface {
 	// CONTRACT: It returns an empty Repository if no repo is found.
 	Get(name string, blockNum ...uint64) *state.Repository
 
-	// GetWithNoPopulation fetches a repository by the given name without making additional
+	// GetNoPopulate fetches a repository by the given name without making additional
 	// queries to populate the repo with associated objects.
 	//
 	// ARGS:
@@ -116,7 +116,7 @@ type RepoKeeper interface {
 	// blockNum: The target block to query (Optional. Default: latest)
 	//
 	// CONTRACT: It returns an empty Repository if no repo is found.
-	GetWithNoPopulation(name string, blockNum ...uint64) *state.Repository
+	GetNoPopulate(name string, blockNum ...uint64) *state.Repository
 
 	// Update sets a new object at the given name.
 	//

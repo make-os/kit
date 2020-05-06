@@ -26,18 +26,29 @@ func (h SerializerHelper) DecodeMulti(dec Decoder, v ...interface{}) error {
 	return nil
 }
 
-// EncodeMulti wraps msgpack.Encoder#EncodeMulti to normalize the encoded values
+// EncodeMulti is a wraps msgpack.Encoder#EncodeMulti; It normalizes fields and performs
+// pre-serialization operations
 func (h SerializerHelper) EncodeMulti(enc Encoder, v ...interface{}) error {
 
-	// Normalize map types to map[string]interface{}
 	for i, vv := range v {
-		if reflect.TypeOf(vv).Kind() != reflect.Map {
-			continue
-		}
-		_, isStrVal := vv.(map[string]string)
-		_, isInterVal := vv.(map[string]interface{})
-		if !isStrVal && !isInterVal {
-			v[i] = ToStringMapInter(vv)
+
+		value := reflect.ValueOf(vv)
+		kind := value.Kind()
+
+		switch kind {
+		case reflect.Map:
+			// Convert to map[string]interface if element is not string or interface
+			_, isStrVal := vv.(map[string]string)
+			_, isInterVal := vv.(map[string]interface{})
+			if !isStrVal && !isInterVal {
+				v[i] = ToStringMapInter(vv)
+			}
+
+		case reflect.Slice:
+			// Convert to empty byte slice if element is a nil byte slice
+			if value.Type().Elem().Kind() == reflect.Uint8 && value.IsNil() {
+				v[i] = []uint8{}
+			}
 		}
 	}
 

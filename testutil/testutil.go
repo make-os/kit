@@ -21,7 +21,7 @@ import (
 
 // SetTestCfg prepare a config directory for tests
 func SetTestCfg(opts ...string) (cfg *config.AppConfig, err error) {
-	var dataDirName = util.RandString(5)
+	var dataDirName = "_test_" + util.RandString(5)
 	if len(opts) > 0 {
 		dataDirName = opts[0]
 	}
