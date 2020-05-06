@@ -83,3 +83,6 @@ func BytesToPushKeyID(pk []byte) string {
 	}
 	return encoded
 }
+
+// PushKey represents push key
+type PushKey []byte

@@ -95,7 +95,7 @@ var _ = Describe("Push", func() {
 				Expect(err).To(BeNil())
 
 				rep := txLogic.logic.RepoKeeper().Get(repo)
-				Expect(rep.References.Get("refs/heads/dev").Creator).To(Equal(rawPkID))
+				Expect(rep.References.Get("refs/heads/dev").Creator).To(Equal(crypto.PushKey(rawPkID)))
 			})
 		})
 
@@ -113,7 +113,7 @@ var _ = Describe("Push", func() {
 				Expect(rep.References.Get("refs/heads/master").Creator).ToNot(Equal(rawPkID))
 
 				actual := util.MustDecodePushKeyID(pushKeyID)
-				Expect(rep.References.Get("refs/heads/master").Creator).To(Equal(actual))
+				Expect(rep.References.Get("refs/heads/master").Creator).To(Equal(crypto.PushKey(actual)))
 			})
 		})
 

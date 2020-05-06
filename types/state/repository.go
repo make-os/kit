@@ -4,6 +4,7 @@ import (
 	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -26,7 +27,7 @@ type Reference struct {
 	util.SerializerHelper `json:"-" mapstructure:"-" msgpack:"-"`
 
 	// Creator is the raw push key ID of the reference creator
-	Creator []byte `json:"creator" mapstructure:"creator" msgpack:"creator,omitempty"`
+	Creator crypto.PushKey `json:"creator" mapstructure:"creator" msgpack:"creator,omitempty"`
 
 	// Nonce is the current count of commits on the reference.
 	// It is used to enforce order of operation to the reference.
