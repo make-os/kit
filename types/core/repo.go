@@ -96,6 +96,9 @@ type BareRepo interface {
 	// GetState returns the repository's network state
 	GetState() *state.Repository
 
+	// SetState sets the repository's network state
+	SetState(s *state.Repository)
+
 	// Head returns the reference where HEAD is pointing to.
 	Head() (string, error)
 

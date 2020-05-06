@@ -40,6 +40,11 @@ func (r *Repo) GetState() *state.Repository {
 	return r.State
 }
 
+// SetState sets the repository's network state
+func (r *Repo) SetState(s *state.Repository) {
+	r.State = s
+}
+
 // Head returns the reference where HEAD is pointing to.
 func (r *Repo) Head() (string, error) {
 	ref, err := r.Repository.Head()

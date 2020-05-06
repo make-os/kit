@@ -162,243 +162,277 @@ var _ = Describe("Auth", func() {
 	})
 
 	Describe(".CheckPolicy", func() {
+		var allowAction = "write"
+		var denyAction = "deny-" + allowAction
+		var enforcer EnforcerFunc
+		var pushAddrA string
+
+		BeforeEach(func() {
+			pushAddrA = key.PushAddr().String()
+		})
+
 		It("should return error when reference type is unknown", func() {
 			enforcer := GetPolicyEnforcer([][]*state.Policy{{{Object: "obj", Subject: "sub", Action: "ac"}}})
-			err := CheckPolicy(enforcer, key.PushAddr().String(), false, "refs/unknown/xyz", "write")
+			err := CheckPolicy(enforcer, "refs/unknown/xyz", false, key.PushAddr().String(), false, "write")
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("unknown reference (refs/unknown/xyz)"))
 		})
 
-		Context("with 'write' action", func() {
-			var allowAction = "write"
-			var denyAction = "deny-" + allowAction
-			var enforcer EnforcerFunc
-			var pushAddrA string
+		When("action is allowed on any level", func() {
+			It("should return nil at level 0", func() {
+				policies := [][]*state.Policy{{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}}}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).To(BeNil())
+			})
+			It("should return nil at level 1", func() {
+				policies := [][]*state.Policy{{}, {{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}}}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).To(BeNil())
+			})
+			It("should return nil at level 2", func() {
+				policies := [][]*state.Policy{{}, {}, {{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}}}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).To(BeNil())
+			})
+		})
 
-			BeforeEach(func() {
-				pushAddrA = key.PushAddr().String()
+		When("action does not have a policy", func() {
+			It("should return err", func() {
+				policies := [][]*state.Policy{{}, {}, {}}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
+			})
+		})
+
+		When("action is allowed on level 0 and denied on level 0", func() {
+			It("should return err", func() {
+				policies := [][]*state.Policy{
+					{
+						{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction},
+						{Subject: pushAddrA, Object: "refs/heads/master", Action: denyAction},
+					},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
+			})
+		})
+
+		When("action is allowed on level 0 and denied on level 1", func() {
+			It("should return err", func() {
+				policies := [][]*state.Policy{
+					{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
+					{{Subject: pushAddrA, Object: "refs/heads/master", Action: denyAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("action is denied on level 0 and allowed on level 1", func() {
+			It("should return err", func() {
+				policies := [][]*state.Policy{
+					{{Subject: pushAddrA, Object: "refs/heads/master", Action: denyAction}},
+					{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
+			})
+		})
+
+		When("action is denied on level 1 and allowed on level 2", func() {
+			It("should return err", func() {
+				policies := [][]*state.Policy{
+					{},
+					{{Subject: pushAddrA, Object: "refs/heads/master", Action: denyAction}},
+					{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
+			})
+		})
+
+		When("action is allowed for subject:'all' on level 2", func() {
+			It("should return nil", func() {
+				policies := [][]*state.Policy{
+					{}, {},
+					{{Subject: "all", Object: "refs/heads/master", Action: allowAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("action is denied for subject:'all' on level 2", func() {
+			It("should return error", func() {
+				policies := [][]*state.Policy{
+					{}, {},
+					{{Subject: "all", Object: "refs/heads/master", Action: denyAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
+			})
+		})
+
+		When("action is denied for subject:'all' on level 2 and allowed at level 1", func() {
+			It("should return nil", func() {
+				policies := [][]*state.Policy{
+					{},
+					{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
+					{{Subject: "all", Object: "refs/heads/master", Action: denyAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("action is denied for subject:'pushAddrA' on level 2 and allowed for subject:all level 2", func() {
+			It("should not authorize pushAddrA by returning error", func() {
+				policies := [][]*state.Policy{
+					{}, {},
+					{
+						{Subject: "all", Object: "refs/heads/master", Action: allowAction},
+						{Subject: pushAddrA, Object: "refs/heads/master", Action: denyAction},
+					},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
+			})
+		})
+
+		When("action is denied for subject:'all' on level 1 and allowed for subject:'pushAddrA' level 2", func() {
+			It("should not authorize pushAddrA by returning error", func() {
+				policies := [][]*state.Policy{
+					{},
+					{{Subject: "all", Object: "refs/heads/master", Action: denyAction}},
+					{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
+			})
+		})
+
+		When("action is denied for subject:'all' on level 1 and allowed for subject:'pushAddrA' level 0", func() {
+			It("should return nil", func() {
+				policies := [][]*state.Policy{
+					{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
+					{{Subject: "all", Object: "refs/heads/master", Action: denyAction}},
+					{},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("action is denied on dir:refs/heads as subject:'all' on level 0 and allowed on refs/heads/master on level 1", func() {
+			It("should not authorize pushAddrA by returning error", func() {
+				policies := [][]*state.Policy{
+					{{Subject: pushAddrA, Object: "refs/heads", Action: denyAction}},
+					{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
+			})
+		})
+
+		When("action is denied on dir:refs/heads as subject:'all' on level 0 and "+
+			"dir:refs/tags as subject is allowed on level 0 and "+
+			"query subject is refs/tags/tag1", func() {
+			It("should return nil", func() {
+				policies := [][]*state.Policy{
+					{
+						{Subject: "all", Object: "refs/heads", Action: denyAction},
+						{Subject: pushAddrA, Object: "refs/tags", Action: allowAction},
+					}, {}, {},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/tags/tag1", false, pushAddrA, false, allowAction)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("pusher is a contributor", func() {
+			It("should return nil when action is allowed for subject:contrib, object:refs/heads/master", func() {
+				policies := [][]*state.Policy{
+					{{Subject: "contrib", Object: "refs/heads/master", Action: allowAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, true, allowAction)
+				Expect(err).To(BeNil())
 			})
 
-			When("action is allowed on any level", func() {
-				It("should return nil at level 0", func() {
-					policies := [][]*state.Policy{{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}}}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).To(BeNil())
-				})
-				It("should return nil at level 1", func() {
-					policies := [][]*state.Policy{{}, {{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}}}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).To(BeNil())
-				})
-				It("should return nil at level 2", func() {
-					policies := [][]*state.Policy{{}, {}, {{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}}}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).To(BeNil())
-				})
+			It("should return nil when action is allowed for subject:contrib, object:refs/heads", func() {
+				policies := [][]*state.Policy{
+					{{Subject: "contrib", Object: "refs/heads", Action: allowAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, true, allowAction)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("pusher is not a contributor", func() {
+			It("should return error when action is not allowed", func() {
+				policies := [][]*state.Policy{
+					{{Subject: "contrib", Object: "refs/heads/master", Action: allowAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", false, pushAddrA, false, allowAction)
+				Expect(err).ToNot(BeNil())
+			})
+		})
+
+		When("pusher is the reference creator", func() {
+			It("should return nil when action is allowed for subject:creator, object:refs/heads/master", func() {
+				policies := [][]*state.Policy{
+					{{Subject: "creator", Object: "refs/heads/master", Action: allowAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", true, pushAddrA, false, allowAction)
+				Expect(err).To(BeNil())
 			})
 
-			When("action does not have a policy", func() {
-				It("should return err", func() {
-					policies := [][]*state.Policy{{}, {}, {}}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
-				})
+			It("should return nil when action is allowed for subject:creator, object:refs/heads", func() {
+				policies := [][]*state.Policy{
+					{{Subject: "creator", Object: "refs/heads", Action: allowAction}},
+				}
+				enforcer = GetPolicyEnforcer(policies)
+				err = CheckPolicy(enforcer, "refs/heads/master", true, pushAddrA, false, allowAction)
+				Expect(err).To(BeNil())
 			})
+		})
 
-			When("action is allowed on level 0 and denied on level 0", func() {
-				It("should return err", func() {
-					policies := [][]*state.Policy{
-						{
-							{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction},
-							{Subject: pushAddrA, Object: "refs/heads/master", Action: denyAction},
-						},
+		Context("check goto in unnamed enforce() method within CheckPolicy", func() {
+			When("reference=(refs/heads) is a root reference", func() {
+				It("should skip to root reference check "+
+					"(enforcer call count must be 4 (2 for sub:all, 2 for sub:pushKeyID, object=refs/heads/2)", func() {
+					count := 0
+					enforcer = func(subject, object, action string) (bool, int) {
+						count++
+						Expect(object).To(Equal("refs/heads"))
+						return true, 0
 					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
-				})
-			})
-
-			When("action is allowed on level 0 and denied on level 1", func() {
-				It("should return err", func() {
-					policies := [][]*state.Policy{
-						{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
-						{{Subject: pushAddrA, Object: "refs/heads/master", Action: denyAction}},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).To(BeNil())
-				})
-			})
-
-			When("action is denied on level 0 and allowed on level 1", func() {
-				It("should return err", func() {
-					policies := [][]*state.Policy{
-						{{Subject: pushAddrA, Object: "refs/heads/master", Action: denyAction}},
-						{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
-				})
-			})
-
-			When("action is denied on level 1 and allowed on level 2", func() {
-				It("should return err", func() {
-					policies := [][]*state.Policy{
-						{},
-						{{Subject: pushAddrA, Object: "refs/heads/master", Action: denyAction}},
-						{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
-				})
-			})
-
-			When("action is allowed for subject:'all' on level 2", func() {
-				It("should return nil", func() {
-					policies := [][]*state.Policy{
-						{}, {},
-						{{Subject: "all", Object: "refs/heads/master", Action: allowAction}},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).To(BeNil())
-				})
-			})
-
-			When("action is denied for subject:'all' on level 2", func() {
-				It("should return error", func() {
-					policies := [][]*state.Policy{
-						{}, {},
-						{{Subject: "all", Object: "refs/heads/master", Action: denyAction}},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
-				})
-			})
-
-			When("action is denied for subject:'all' on level 2 and allowed at level 1", func() {
-				It("should return nil", func() {
-					policies := [][]*state.Policy{
-						{},
-						{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
-						{{Subject: "all", Object: "refs/heads/master", Action: denyAction}},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).To(BeNil())
-				})
-			})
-
-			When("action is denied for subject:'pushAddrA' on level 2 and allowed for subject:all level 2", func() {
-				It("should not authorize pushAddrA by returning error", func() {
-					policies := [][]*state.Policy{
-						{}, {},
-						{
-							{Subject: "all", Object: "refs/heads/master", Action: allowAction},
-							{Subject: pushAddrA, Object: "refs/heads/master", Action: denyAction},
-						},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
-				})
-			})
-
-			When("action is denied for subject:'all' on level 1 and allowed for subject:'pushAddrA' level 2", func() {
-				It("should not authorize pushAddrA by returning error", func() {
-					policies := [][]*state.Policy{
-						{},
-						{{Subject: "all", Object: "refs/heads/master", Action: denyAction}},
-						{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
-				})
-			})
-
-			When("action is denied for subject:'all' on level 1 and allowed for subject:'pushAddrA' level 0", func() {
-				It("should return nil", func() {
-					policies := [][]*state.Policy{
-						{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
-						{{Subject: "all", Object: "refs/heads/master", Action: denyAction}},
-						{},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).To(BeNil())
-				})
-			})
-
-			When("action is denied on dir:refs/heads as subject:'all' on level 0 and allowed on refs/heads/master on level 1", func() {
-				It("should not authorize pushAddrA by returning error", func() {
-					policies := [][]*state.Policy{
-						{{Subject: pushAddrA, Object: "refs/heads", Action: denyAction}},
-						{{Subject: pushAddrA, Object: "refs/heads/master", Action: allowAction}},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("reference (refs/heads/master): not authorized to perform 'write' action"))
-				})
-			})
-
-			When("action is denied on dir:refs/heads as subject:'all' on level 0 and "+
-				"dir:refs/tags as subject is allowed on level 0 and "+
-				"query subject is refs/tags/tag1", func() {
-				It("should return nil", func() {
-					policies := [][]*state.Policy{
-						{
-							{Subject: "all", Object: "refs/heads", Action: denyAction},
-							{Subject: pushAddrA, Object: "refs/tags", Action: allowAction},
-						}, {}, {},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/tags/tag1", allowAction)
-					Expect(err).To(BeNil())
-				})
-			})
-
-			When("pusher is contributor", func() {
-				It("should return nil when action is allowed for subject:contrib, object:refs/heads/master", func() {
-					policies := [][]*state.Policy{
-						{{Subject: "contrib", Object: "refs/heads/master", Action: allowAction}},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, true, "refs/heads/master", allowAction)
-					Expect(err).To(BeNil())
-				})
-
-				It("should return nil when action is allowed for subject:contrib, object:refs/heads", func() {
-					policies := [][]*state.Policy{
-						{{Subject: "contrib", Object: "refs/heads", Action: allowAction}},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, true, "refs/heads/master", allowAction)
-					Expect(err).To(BeNil())
-				})
-			})
-
-			When("pusher is not a contributor", func() {
-				It("should return error when action is not allowed", func() {
-					policies := [][]*state.Policy{
-						{{Subject: "contrib", Object: "refs/heads/master", Action: allowAction}},
-					}
-					enforcer = GetPolicyEnforcer(policies)
-					err = CheckPolicy(enforcer, pushAddrA, false, "refs/heads/master", allowAction)
-					Expect(err).ToNot(BeNil())
+					err = CheckPolicy(enforcer, "refs/heads", false, pushAddrA, false, allowAction)
+					Expect(count).To(Equal(4))
 				})
 			})
 		})

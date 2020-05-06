@@ -365,7 +365,7 @@ func (m *MockRepoKeeper) GetNoPopulate(name string, blockNum ...uint64) *state.R
 }
 
 // GetNoPopulate indicates an expected call of GetNoPopulate
-func (mr *MockRepoKeeperMockRecorder) GetWithNoPopulation(name interface{}, blockNum ...interface{}) *gomock.Call {
+func (mr *MockRepoKeeperMockRecorder) GetNoPopulate(name interface{}, blockNum ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{name}, blockNum...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNoPopulate", reflect.TypeOf((*MockRepoKeeper)(nil).GetNoPopulate), varargs...)

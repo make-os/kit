@@ -129,11 +129,19 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 	isContrib := h.Repo.IsContributor(pusher)
 
 	for _, cmd := range ur.Commands {
-		detail := h.TxDetails.Get(cmd.Name.String())
+		ref := cmd.Name.String()
+		detail := h.TxDetails.Get(ref)
+
+		// Determine whether the reference is/was created by the pusher.
+		// It is true for existing reference where the pusher is the creator.
+		isRefCreator := false
+		if r := h.Repo.GetState().References.Get(ref); !r.IsNil() {
+			isRefCreator = r.Creator.String() == pusher
+		}
 
 		// For delete command, check if there is a policy permitting it.
 		if cmd.New.IsZero() {
-			err := h.PolicyChecker(h.polEnforcer, pusher, isContrib, cmd.Name.String(), "delete")
+			err := h.PolicyChecker(h.polEnforcer, ref, isRefCreator, pusher, isContrib, "delete")
 			if err != nil {
 				return err
 			}
@@ -142,7 +150,7 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 
 		// For merge update, check if there is a policy permitting it.
 		if detail.MergeProposalID != "" {
-			err := h.PolicyChecker(h.polEnforcer, pusher, isContrib, cmd.Name.String(), "merge-write")
+			err := h.PolicyChecker(h.polEnforcer, ref, isRefCreator, pusher, isContrib, "merge-write")
 			if err != nil {
 				return err
 			}
@@ -150,8 +158,8 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 		}
 
 		// For merge update, check if there is a policy permitting it.
-		if plumbing.IsIssueReference(cmd.Name.String()) {
-			err := h.PolicyChecker(h.polEnforcer, pusher, isContrib, cmd.Name.String(), "issue-write")
+		if plumbing.IsIssueReference(ref) {
+			err := h.PolicyChecker(h.polEnforcer, ref, isRefCreator, pusher, isContrib, "issue-write")
 			if err != nil {
 				return err
 			}
@@ -159,7 +167,7 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 		}
 
 		// For write command, check if there is a policy permitting it.
-		err := h.PolicyChecker(h.polEnforcer, pusher, isContrib, cmd.Name.String(), "write")
+		err := h.PolicyChecker(h.polEnforcer, ref, isRefCreator, pusher, isContrib, "write")
 		if err != nil {
 			return err
 		}

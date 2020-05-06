@@ -24,15 +24,16 @@ func GetPolicyEnforcer(policyGroup [][]*state.Policy) EnforcerFunc {
 
 // policyChecker describes a function for enforcing repository policy
 // enforce is the enforcer function.
+// reference is the target reference.
+// isRefCreator indicates that the pusher is also the target reference creator.
 // pushKeyID is the push key of the pusher.
 // isContributor indicates that the pusher is a contributor of the requested repository.
-// reference is the target reference.
 // action is the action requested by the user.
-type PolicyChecker func(enforcer EnforcerFunc, pushKeyID string, isContributor bool, reference, action string) error
+type PolicyChecker func(enforcer EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContributor bool, action string) error
 
 // CheckPolicy performs ACL checks to determine whether the given push key
 // is permitted to perform the given action on the reference subject.
-func CheckPolicy(enforcer EnforcerFunc, pushKeyID string, isContributor bool, reference, action string) error {
+func CheckPolicy(enforcer EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContributor bool, action string) error {
 
 	rootDir := "refs/"
 	if plumbing.IsIssueReference(reference) {
@@ -44,92 +45,68 @@ func CheckPolicy(enforcer EnforcerFunc, pushKeyID string, isContributor bool, re
 	} else if plumbing.IsNote(reference) {
 		rootDir = rootDir + "notes"
 	} else {
-		return fmt.Errorf("unknown reference (%s)", reference)
+		if plumbing.IsReference(reference) {
+			rootDir = reference
+		} else {
+			return fmt.Errorf("unknown reference (%s)", reference)
+		}
 	}
 
 	var negativeAct = "deny-" + action
 	var allowed bool
 	var highestLvl = 999 // Set default to a random, high number greater than all levels
+	var res bool
+	var lvl int
 
-	// Check if all push keys can or cannot perform the action to the target reference
-	res, lvl := enforcer("all", reference, action)
-	if lvl > -1 {
-		allowed = res
-		highestLvl = lvl
-	}
-	res, lvl = enforcer("all", reference, negativeAct)
-	if lvl > -1 && lvl <= highestLvl {
-		allowed = !res
-		highestLvl = lvl
-	}
+	// enforce attempts to check whether the specified subject is allowed
+	// or disallowed to perform the specified action on both the target
+	// reference and the root of the target reference.
+	var enforce = func(subject string) {
 
-	// Check if all push keys can or cannot perform the action on the target reference directory
-	res, lvl = enforcer("all", rootDir, action)
-	if lvl > -1 && lvl <= highestLvl {
-		allowed = res
-		highestLvl = lvl
-	}
-	res, lvl = enforcer("all", rootDir, negativeAct)
-	if lvl > -1 && lvl <= highestLvl {
-		allowed = !res
-		highestLvl = lvl
-	}
+		// Skip to root directory check if target reference and root directory are the same.
+		if reference == rootDir {
+			goto root
+		}
 
-	// Check if the push key can or cannot perform the action on the reference
-	res, lvl = enforcer(pushKeyID, reference, action)
-	if lvl > -1 && lvl <= highestLvl {
-		allowed = res
-		highestLvl = lvl
-	}
-	res, lvl = enforcer(pushKeyID, reference, negativeAct)
-	if lvl > -1 && lvl <= highestLvl {
-		allowed = !res
-		highestLvl = lvl
-	}
+		// Check if the subject can or cannot perform the action on the reference
+		res, lvl = enforcer(subject, reference, action)
+		if lvl > -1 && lvl <= highestLvl {
+			allowed = res
+			highestLvl = lvl
+		}
+		res, lvl = enforcer(subject, reference, negativeAct)
+		if lvl > -1 && lvl <= highestLvl {
+			allowed = !res
+			highestLvl = lvl
+		}
 
-	// Check if the push key can or cannot perform the action on the reference directory
-	res, lvl = enforcer(pushKeyID, rootDir, action)
-	if lvl > -1 && lvl <= highestLvl {
-		allowed = res
-		highestLvl = lvl
-	}
-	res, lvl = enforcer(pushKeyID, rootDir, negativeAct)
-	if lvl > -1 && lvl <= highestLvl {
-		allowed = !res
-		highestLvl = lvl
+	root:
+		// Check if the subject can or cannot perform the action on the reference directory
+		res, lvl = enforcer(subject, rootDir, action)
+		if lvl > -1 && lvl <= highestLvl {
+			allowed = res
+			highestLvl = lvl
+		}
+		res, lvl = enforcer(subject, rootDir, negativeAct)
+		if lvl > -1 && lvl <= highestLvl {
+			allowed = !res
+			highestLvl = lvl
+		}
 	}
 
-	// Skip to conclusion if pusher is not a contributor
-	if !isContributor {
-		goto conclude
-	}
+	enforce("all")
+	enforce(pushKeyID)
 
 	// For only contributors
-	// Check if the contributor can or cannot perform the action on the reference
-	res, lvl = enforcer("contrib", reference, action)
-	if lvl > -1 && lvl <= highestLvl {
-		allowed = res
-		highestLvl = lvl
-	}
-	res, lvl = enforcer("contrib", reference, negativeAct)
-	if lvl > -1 && lvl <= highestLvl {
-		allowed = !res
-		highestLvl = lvl
+	if isContributor {
+		enforce("contrib")
 	}
 
-	// Check if the contributor can or cannot perform the action on the reference directory
-	res, lvl = enforcer("contrib", rootDir, action)
-	if lvl > -1 && lvl <= highestLvl {
-		allowed = res
-		highestLvl = lvl
-	}
-	res, lvl = enforcer("contrib", rootDir, negativeAct)
-	if lvl > -1 && lvl <= highestLvl {
-		allowed = !res
-		highestLvl = lvl
+	// For only reference creators
+	if isRefCreator {
+		enforce("creator")
 	}
 
-conclude:
 	if !allowed {
 		return fmt.Errorf("reference (%s): not authorized to perform '%s' action", reference, action)
 	}

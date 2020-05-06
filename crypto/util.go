@@ -86,3 +86,8 @@ func BytesToPushKeyID(pk []byte) string {
 
 // PushKey represents push key
 type PushKey []byte
+
+// String returns the push key ID as a string
+func (p PushKey) String() string {
+	return BytesToPushKeyID(p)
+}

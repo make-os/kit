@@ -763,6 +763,18 @@ func (mr *MockBareRepoMockRecorder) GetState() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetState", reflect.TypeOf((*MockBareRepo)(nil).GetState))
 }
 
+// SetState mocks base method
+func (m *MockBareRepo) SetState(s *state.Repository) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetState", s)
+}
+
+// SetState indicates an expected call of SetState
+func (mr *MockBareRepoMockRecorder) SetState(s interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetState", reflect.TypeOf((*MockBareRepo)(nil).SetState), s)
+}
+
 // Head mocks base method
 func (m *MockBareRepo) Head() (string, error) {
 	m.ctrl.T.Helper()

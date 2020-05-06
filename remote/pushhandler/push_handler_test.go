@@ -22,6 +22,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
@@ -149,6 +150,7 @@ var _ = Describe("Handler", func() {
 	Describe(".HandleAuthorization", func() {
 		var ur *packp.ReferenceUpdateRequest
 		BeforeEach(func() {
+			handler.Repo.SetState(state.BareRepository())
 			handler.PushReader.References = map[string]*pushhandler.PackedReferenceObject{"refs/heads/master": {}}
 			ur = &packp.ReferenceUpdateRequest{}
 		})
@@ -162,7 +164,7 @@ var _ = Describe("Handler", func() {
 		It("should return error when command is a delete request and policy check failed", func() {
 			handler.TxDetails["refs/heads/master"] = &types.TxDetail{}
 			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: plumbing.ZeroHash})
-			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, pushKeyID string, isContrib bool, reference, action string) error {
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal("refs/heads/master"))
 				Expect(action).To(Equal("delete"))
 				return fmt.Errorf("unauthorized")
@@ -176,7 +178,7 @@ var _ = Describe("Handler", func() {
 			handler.TxDetails["refs/heads/master"] = &types.TxDetail{MergeProposalID: "123"}
 			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
 			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
-			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, pushKeyID string, isContrib bool, reference, action string) error {
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal("refs/heads/master"))
 				Expect(action).To(Equal("merge-write"))
 				return fmt.Errorf("unauthorized")
@@ -193,7 +195,7 @@ var _ = Describe("Handler", func() {
 			handler.TxDetails["refs/heads/master"] = &types.TxDetail{MergeProposalID: "234"}
 			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
 			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(issueBranch), New: hash})
-			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, pushKeyID string, isContrib bool, reference, action string) error {
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal(issueBranch))
 				Expect(action).To(Or(Equal("issue-write"), Equal("merge-write")))
 				return fmt.Errorf("unauthorized")
@@ -207,7 +209,7 @@ var _ = Describe("Handler", func() {
 			handler.TxDetails["refs/heads/master"] = &types.TxDetail{}
 			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
 			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
-			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, pushKeyID string, isContrib bool, reference, action string) error {
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal("refs/heads/master"))
 				Expect(action).To(Equal("write"))
 				return fmt.Errorf("unauthorized")
@@ -221,7 +223,7 @@ var _ = Describe("Handler", func() {
 			handler.TxDetails["refs/heads/master"] = &types.TxDetail{}
 			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
 			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
-			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, pushKeyID string, isContrib bool, reference, action string) error {
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal("refs/heads/master"))
 				Expect(action).To(Equal("write"))
 				return nil
