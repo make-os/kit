@@ -34,6 +34,12 @@ func (t *Transaction) execPush(
 	for _, ref := range references {
 		curRef := repo.References.Get(ref.Name)
 
+		// When the reference should be deleted, remove from repo reference
+		if ref.IsDeletable() && !curRef.IsNil() {
+			delete(repo.References, ref.Name)
+			continue
+		}
+
 		// Set pusher as creator if reference is new
 		if curRef.IsNil() {
 			curRef.Creator = pushKeyID

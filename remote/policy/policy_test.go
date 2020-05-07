@@ -136,6 +136,15 @@ var _ = Describe("Auth", func() {
 				Expect(polGroups[2]).To(HaveLen(1))
 			})
 
+			It("should return policy if its subject is 'creator'", func() {
+				repoState := state.BareRepository()
+				repoPolicy = &state.Policy{Subject: "creator", Object: "refs/heads/master", Action: "write"}
+				repoState.Config.Policies = append(repoState.Config.Policies, repoPolicy)
+				polGroups = MakePusherPolicyGroups(key.PushAddr().String(), repoState, state.BareNamespace())
+				Expect(polGroups).To(HaveLen(3))
+				Expect(polGroups[2]).To(HaveLen(1))
+			})
+
 			It("should return policy if its subject is a push key address", func() {
 				repoState := state.BareRepository()
 				repoPolicy = &state.Policy{Subject: key.PushAddr().String(), Object: "refs/heads/master", Action: "write"}

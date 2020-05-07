@@ -1,7 +1,7 @@
 package logic
 
 import (
-	"gitlab.com/makeos/mosdef/remote/plumbing"
+	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -11,22 +11,6 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
 )
-
-// AddDefaultPolicies adds default repo-level policies
-func AddDefaultPolicies(config *state.RepoConfig) {
-	config.Policies = append(
-		config.Policies,
-		&state.Policy{Subject: "all", Object: "refs/heads", Action: "merge-write"},
-		&state.Policy{Subject: "all", Object: plumbing.MakeIssueReferencePath(), Action: "issue-write"},
-		&state.Policy{Subject: "contrib", Object: "refs/heads", Action: "write"},
-		&state.Policy{Subject: "contrib", Object: "refs/tags", Action: "write"},
-		&state.Policy{Subject: "contrib", Object: "refs/notes", Action: "write"},
-		&state.Policy{Subject: "contrib", Object: "refs/heads", Action: "delete"},
-		&state.Policy{Subject: "contrib", Object: "refs/tags", Action: "delete"},
-		&state.Policy{Subject: "contrib", Object: "refs/notes", Action: "delete"},
-		&state.Policy{Subject: "contrib", Object: "refs/heads/master", Action: "deny-delete"},
-	)
-}
 
 // execRepoCreate processes a TxTypeRepoCreate transaction, which creates a git
 // repository.
@@ -56,7 +40,7 @@ func (t *Transaction) execRepoCreate(
 
 	// Apply default policies when none is set
 	if len(newRepo.Config.Policies) == 0 {
-		AddDefaultPolicies(newRepo.Config)
+		policy.AddDefaultPolicies(newRepo.Config)
 	}
 
 	voterType := newRepo.Config.Governance.Voter

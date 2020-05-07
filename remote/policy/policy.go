@@ -132,10 +132,10 @@ func MakePusherPolicyGroups(
 	var groups = make([][]*state.Policy, 3)
 
 	// Find policies in the repo config-level policies
-	// where the subject is "all", "contrib" or the pusher key ID
+	// where the subject is "all", "contrib", "creator" or a pusher key ID
 	// and also whose object points to a reference path or name
 	for _, pol := range repoState.Config.Policies {
-		if (funk.ContainsString([]string{"all", "contrib"}, pol.Subject) || pol.Subject == pushKeyID) &&
+		if (funk.ContainsString([]string{"all", "contrib", "creator"}, pol.Subject) || pol.Subject == pushKeyID) &&
 			plumbing.IsReference(pol.Object) {
 			groups[2] = append(groups[2], pol)
 		}

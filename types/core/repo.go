@@ -343,6 +343,11 @@ func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&pr.PushSig)
 }
 
+// IsDeletable checks whether the pushed reference can be deleted
+func (pr *PushedReference) IsDeletable() bool {
+	return pr.NewHash == plumbing.ZeroHash.String()
+}
+
 // PushedReferences represents a collection of pushed references
 type PushedReferences []*PushedReference
 

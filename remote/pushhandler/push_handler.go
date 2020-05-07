@@ -131,6 +131,8 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 	for _, cmd := range ur.Commands {
 		ref := cmd.Name.String()
 		detail := h.TxDetails.Get(ref)
+		isIssueRef := plumbing.IsIssueReference(ref)
+		isRefDelete := cmd.New.IsZero()
 
 		// Determine whether the reference is/was created by the pusher.
 		// It is true for existing reference where the pusher is the creator.
@@ -139,35 +141,29 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 			isRefCreator = r.Creator.String() == pusher
 		}
 
-		// For delete command, check if there is a policy permitting it.
-		if cmd.New.IsZero() {
-			err := h.PolicyChecker(h.polEnforcer, ref, isRefCreator, pusher, isContrib, "delete")
-			if err != nil {
-				return err
-			}
-			continue
+		// Default action is set to 'write'
+		action := "write"
+
+		// For delete command, set action to 'delete'.
+		if isRefDelete {
+			action = "delete"
 		}
 
-		// For merge update, check if there is a policy permitting it.
+		// For merge update, set action to 'merge-write'
 		if detail.MergeProposalID != "" {
-			err := h.PolicyChecker(h.polEnforcer, ref, isRefCreator, pusher, isContrib, "merge-write")
-			if err != nil {
-				return err
-			}
-			continue
+			action = "merge-write"
 		}
 
-		// For merge update, check if there is a policy permitting it.
-		if plumbing.IsIssueReference(ref) {
-			err := h.PolicyChecker(h.polEnforcer, ref, isRefCreator, pusher, isContrib, "issue-write")
-			if err != nil {
-				return err
+		// For issue update, set action to 'issue-write'.
+		// But if reference to delete is an issue reference, set action to 'issue-delete'
+		if isIssueRef {
+			action = "issue-write"
+			if isRefDelete {
+				action = "issue-delete"
 			}
-			continue
 		}
 
-		// For write command, check if there is a policy permitting it.
-		err := h.PolicyChecker(h.polEnforcer, ref, isRefCreator, pusher, isContrib, "write")
+		err := h.PolicyChecker(h.polEnforcer, ref, isRefCreator, pusher, isContrib, action)
 		if err != nil {
 			return err
 		}

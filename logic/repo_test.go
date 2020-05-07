@@ -3,6 +3,7 @@ package logic
 import (
 	"os"
 
+	"gitlab.com/makeos/mosdef/remote/policy"
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -79,7 +80,7 @@ var _ = Describe("Repo", func() {
 			Specify("that repo config is the default", func() {
 				repo := txLogic.logic.RepoKeeper().Get("repo")
 				defCfg := state.MakeDefaultRepoConfig()
-				AddDefaultPolicies(defCfg)
+				policy.AddDefaultPolicies(defCfg)
 				Expect(repo.Config).To(Equal(defCfg))
 			})
 

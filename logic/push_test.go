@@ -2,11 +2,11 @@ package logic
 
 import (
 	"os"
-
-	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/state"
+	"strings"
 
 	"github.com/golang/mock/gomock"
+	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
@@ -96,6 +96,21 @@ var _ = Describe("Push", func() {
 
 				rep := txLogic.logic.RepoKeeper().Get(repo)
 				Expect(rep.References.Get("refs/heads/dev").Creator).To(Equal(crypto.PushKey(rawPkID)))
+			})
+		})
+
+		When("pushed reference new hash is zero (meaning delete is required)", func() {
+			It("should remove the reference from the repo", func() {
+				refs = []*core.PushedReference{
+					{Name: "refs/heads/master", NewHash: strings.Repeat("0", 40)},
+				}
+
+				rawPkID := util.MustDecodePushKeyID(pushKeyID2)
+				err = txLogic.execPush(repo, refs, "1", rawPkID, 0)
+				Expect(err).To(BeNil())
+
+				rep := txLogic.logic.RepoKeeper().Get(repo)
+				Expect(rep.References.Has("refs/heads/master")).To(BeFalse())
 			})
 		})
 
