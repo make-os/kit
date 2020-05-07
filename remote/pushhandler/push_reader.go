@@ -64,14 +64,15 @@ func (o *ObjectObserver) OnFooter(h plumbing.Hash) error { return nil }
 // pushed references, objects and object to reference mapping. It also pipes the
 // pushed stream to a destination (git-receive-pack) when finished.
 type PushReader struct {
-	dst         io.WriteCloser
-	packFile    *os.File
-	buf         []byte
-	References  PackedReferences
-	Objects     []*PackObject
-	ObjectsRefs ObjRefMap
-	repo        core.BareRepo
-	updateReqCB func(ur *packp.ReferenceUpdateRequest) error
+	dst           io.WriteCloser
+	packFile      *os.File
+	buf           []byte
+	References    PackedReferences
+	Objects       []*PackObject
+	ObjectsRefs   ObjRefMap
+	repo          core.BareRepo
+	refsUpdateReq *packp.ReferenceUpdateRequest
+	updateReqCB   func(ur *packp.ReferenceUpdateRequest) error
 }
 
 // NewPushReader creates an instance of PushReader, and after inspection, the
@@ -104,6 +105,11 @@ func (r *PushReader) OnReferenceUpdateRequestRead(cb func(ur *packp.ReferenceUpd
 	r.updateReqCB = cb
 }
 
+// GetUpdateRequest returns the reference update request object
+func (r *PushReader) GetUpdateRequest() *packp.ReferenceUpdateRequest {
+	return r.refsUpdateReq
+}
+
 // Read reads the packfile, extracting object and reference information
 // and finally writes the read data to a provided destination
 func (r *PushReader) Read() error {
@@ -114,17 +120,17 @@ func (r *PushReader) Read() error {
 	r.packFile.Seek(0, 0)
 
 	// Decode the packfile into a ReferenceUpdateRequest
-	ur := packp.NewReferenceUpdateRequest()
-	if err = ur.Decode(r.packFile); err != nil {
+	r.refsUpdateReq = packp.NewReferenceUpdateRequest()
+	if err = r.refsUpdateReq.Decode(r.packFile); err != nil {
 		return errors.Wrap(err, "failed to decode request pack")
 	}
 
 	// Extract references from the packfile
-	r.References = r.getReferences(ur)
+	r.References = r.getReferences(r.refsUpdateReq)
 
 	// Call OnReferenceUpdateRequestRead callback method
 	if r.updateReqCB != nil {
-		if err = r.updateReqCB(ur); err != nil {
+		if err = r.updateReqCB(r.refsUpdateReq); err != nil {
 			return err
 		}
 	}

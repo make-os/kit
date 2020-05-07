@@ -166,36 +166,7 @@ var _ = Describe("Handler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: plumbing.ZeroHash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal("refs/heads/master"))
-				Expect(action).To(Equal("delete"))
-				return fmt.Errorf("unauthorized")
-			}
-			err = handler.HandleAuthorization(ur)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("unauthorized"))
-		})
-
-		It("should return error when command is a delete request, reference is an issue reference and policy check failed", func() {
-			issueBranch := plumbing2.MakeIssueReference(1)
-			handler.PushReader.References = map[string]*pushhandler.PackedReferenceObject{issueBranch: {}}
-			handler.TxDetails[plumbing2.MakeIssueReference(1)] = &types.TxDetail{}
-			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(issueBranch), New: plumbing.ZeroHash})
-			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
-				Expect(reference).To(Equal(issueBranch))
-				Expect(action).To(Equal("issue-delete"))
-				return fmt.Errorf("unauthorized")
-			}
-			err = handler.HandleAuthorization(ur)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("unauthorized"))
-		})
-
-		It("should return error when command is a merge update request and policy check failed", func() {
-			handler.TxDetails["refs/heads/master"] = &types.TxDetail{MergeProposalID: "123"}
-			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
-			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
-			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
-				Expect(reference).To(Equal("refs/heads/master"))
-				Expect(action).To(Equal("merge-write"))
+				Expect(action).To(Equal(policy.PolicyActionDelete))
 				return fmt.Errorf("unauthorized")
 			}
 			err = handler.HandleAuthorization(ur)
@@ -212,7 +183,7 @@ var _ = Describe("Handler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(issueBranch), New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal(issueBranch))
-				Expect(action).To(Or(Equal("issue-write"), Equal("merge-write")))
+				Expect(action).To(Or(Equal(policy.PolicyActionIssueWrite), Equal("merge-write")))
 				return fmt.Errorf("unauthorized")
 			}
 			err = handler.HandleAuthorization(ur)
@@ -220,13 +191,60 @@ var _ = Describe("Handler", func() {
 			Expect(err.Error()).To(Equal("unauthorized"))
 		})
 
-		It("should return error when command is an update request and policy check failed", func() {
+		It("should return error when command is a delete request, reference is an issue reference and policy check failed", func() {
+			issueBranch := plumbing2.MakeIssueReference(1)
+			handler.PushReader.References = map[string]*pushhandler.PackedReferenceObject{issueBranch: {}}
+			handler.TxDetails[plumbing2.MakeIssueReference(1)] = &types.TxDetail{}
+			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(issueBranch), New: plumbing.ZeroHash})
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
+				Expect(reference).To(Equal(issueBranch))
+				Expect(action).To(Equal(policy.PolicyActionIssueDelete))
+				return fmt.Errorf("unauthorized")
+			}
+			err = handler.HandleAuthorization(ur)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("unauthorized"))
+		})
+
+		It("should return error when command is an update request, reference is an issue reference, "+
+			"issue update flag is set in tx detail and"+
+			" policy check failed", func() {
+			issueBranch := plumbing2.MakeIssueReference(1)
+			handler.PushReader.References = map[string]*pushhandler.PackedReferenceObject{issueBranch: {}}
+			handler.TxDetails[issueBranch] = &types.TxDetail{FlagCheckIssueUpdatePolicy: true}
+			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(issueBranch), New: hash})
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
+				Expect(reference).To(Equal(issueBranch))
+				Expect(action).To(Equal(policy.PolicyActionIssueUpdate))
+				return fmt.Errorf("unauthorized")
+			}
+			err = handler.HandleAuthorization(ur)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("unauthorized"))
+		})
+
+		It("should return error when command is a merge update request and policy check failed", func() {
+			handler.TxDetails["refs/heads/master"] = &types.TxDetail{MergeProposalID: "123"}
+			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
+				Expect(reference).To(Equal("refs/heads/master"))
+				Expect(action).To(Equal(policy.PolicyActionMergeWrite))
+				return fmt.Errorf("unauthorized")
+			}
+			err = handler.HandleAuthorization(ur)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("unauthorized"))
+		})
+
+		It("should return error when command is a write request and policy check failed", func() {
 			handler.TxDetails["refs/heads/master"] = &types.TxDetail{}
 			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
 			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal("refs/heads/master"))
-				Expect(action).To(Equal("write"))
+				Expect(action).To(Equal(policy.PolicyActionWrite))
 				return fmt.Errorf("unauthorized")
 			}
 			err = handler.HandleAuthorization(ur)
@@ -240,7 +258,7 @@ var _ = Describe("Handler", func() {
 			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal("refs/heads/master"))
-				Expect(action).To(Equal("write"))
+				Expect(action).To(Equal(policy.PolicyActionWrite))
 				return nil
 			}
 			err = handler.HandleAuthorization(ur)

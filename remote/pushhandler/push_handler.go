@@ -93,6 +93,7 @@ func (h *Handler) HandleStream(packfile io.Reader, gitReceivePack io.WriteCloser
 	}
 
 	// Perform actions that should happen before git consumes the stream.
+	// Ex: Pre-push processing authorization
 	h.PushReader.OnReferenceUpdateRequestRead(func(ur *packp.ReferenceUpdateRequest) error {
 		return errors.Wrap(h.AuthorizationHandler(ur), "authorization")
 	})
@@ -116,13 +117,9 @@ func (h *Handler) EnsureReferencesHaveTxDetail() error {
 	return nil
 }
 
-// HandleAuthorization performs authorization checks
-func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
-
-	// Make sure every pushed references has a tx detail
-	if err := h.EnsureReferencesHaveTxDetail(); err != nil {
-		return err
-	}
+// DoAuthCheck performs authorization checks on the specified target reference.
+// If targetRef is unset, all references are checked.
+func (h *Handler) DoAuthCheck(ur *packp.ReferenceUpdateRequest, targetRef string) error {
 
 	// Check whether the pusher is a contributor
 	pusher := h.TxDetails.GetPushKeyID()
@@ -130,6 +127,12 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 
 	for _, cmd := range ur.Commands {
 		ref := cmd.Name.String()
+
+		// Skip command if its reference did not match the target reference
+		if targetRef != "" && targetRef != ref {
+			continue
+		}
+
 		detail := h.TxDetails.Get(ref)
 		isIssueRef := plumbing.IsIssueReference(ref)
 		isRefDelete := cmd.New.IsZero()
@@ -142,24 +145,31 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 		}
 
 		// Default action is set to 'write'
-		action := "write"
+		action := policy.PolicyActionWrite
 
 		// For delete command, set action to 'delete'.
 		if isRefDelete {
-			action = "delete"
+			action = policy.PolicyActionDelete
 		}
 
 		// For merge update, set action to 'merge-write'
 		if detail.MergeProposalID != "" {
-			action = "merge-write"
+			action = policy.PolicyActionMergeWrite
 		}
 
 		// For issue update, set action to 'issue-write'.
-		// But if reference to delete is an issue reference, set action to 'issue-delete'
 		if isIssueRef {
-			action = "issue-write"
+			action = policy.PolicyActionIssueWrite
+
+			// But if reference to delete is an issue reference, set action to 'issue-delete'
 			if isRefDelete {
-				action = "issue-delete"
+				action = policy.PolicyActionIssueDelete
+			}
+
+			// When there is a tx detail flag requesting for issue update policy check,
+			// set action to 'issue-update'
+			if detail.FlagCheckIssueUpdatePolicy {
+				action = policy.PolicyActionIssueUpdate
 			}
 		}
 
@@ -170,6 +180,17 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 	}
 
 	return nil
+}
+
+// HandleAuthorization performs authorization checks
+func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
+
+	// Make sure every pushed references has a tx detail
+	if err := h.EnsureReferencesHaveTxDetail(); err != nil {
+		return err
+	}
+
+	return h.DoAuthCheck(ur, "")
 }
 
 // HandleReferences processes all pushed references
@@ -302,6 +323,7 @@ func (h *Handler) AnnounceObject(objHash string) error {
 func (h *Handler) HandleReference(ref string, revertOnly bool) []error {
 
 	var errs []error
+	var detail = h.TxDetails.Get(ref)
 
 	// Get the old version of the reference prior to the push
 	// and create a lone state object of the old state
@@ -329,7 +351,7 @@ func (h *Handler) HandleReference(ref string, revertOnly bool) []error {
 	// Here, we need to validate the change for non-delete request
 	if !plumbing.IsZeroHash(h.PushReader.References[ref].NewHash) {
 		oldHash := h.PushReader.References[ref].OldHash
-		err = h.ChangeValidator(h.Repo, oldHash, change, h.TxDetails.Get(ref), h.Server.GetPushKeyGetter())
+		err = h.ChangeValidator(h.Repo, oldHash, change, detail, h.Server.GetPushKeyGetter())
 		if err != nil {
 			errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
 		}
@@ -337,7 +359,7 @@ func (h *Handler) HandleReference(ref string, revertOnly bool) []error {
 
 	// So, reference update is valid, next we need to ensure the updates
 	// is compliant with the target merge proposal, if a merge proposal id is specified
-	if err == nil && h.TxDetails.Get(ref).MergeProposalID != "" {
+	if err == nil && detail.MergeProposalID != "" {
 		if err := h.MergeChecker(
 			h.Repo,
 			change,
@@ -346,6 +368,14 @@ func (h *Handler) HandleReference(ref string, revertOnly bool) []error {
 			h.TxDetails.GetPushKeyID(),
 			h.Server.GetLogic()); err != nil {
 			errs = append(errs, errors.Wrap(err, fmt.Sprintf("validation error (%s)", ref)))
+		}
+	}
+
+	// Re-perform authorization checks for issue references that have been
+	// flagged for issue update policy check
+	if plumbing.IsIssueReference(ref) && detail.FlagCheckIssueUpdatePolicy {
+		if err = h.DoAuthCheck(h.PushReader.GetUpdateRequest(), ref); err != nil {
+			errs = append(errs, errors.Wrap(err, "authorization"))
 		}
 	}
 

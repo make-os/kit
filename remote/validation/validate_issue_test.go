@@ -82,11 +82,11 @@ var _ = Describe("Validation", func() {
 				CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 					return nil
 				},
-				CheckIssueCommit: func(commit core.Commit, reference, oldHash string, r core.BareRepo) error {
+				CheckIssueCommit: func(commit core.Commit, reference, oldHash string, r core.BareRepo) (*plumbing2.IssueBody, error) {
 					checkIssueCommitCalled++
 					Expect(commit).To(Equal(testCommit))
 					Expect(reference).To(Equal(detail.Reference))
-					return fmt.Errorf("issue check error")
+					return nil, fmt.Errorf("issue check error")
 				},
 			}
 			err := validation.ValidateIssueCommit(mockRepo, args)
@@ -108,16 +108,41 @@ var _ = Describe("Validation", func() {
 					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckIssueCommit: func(commit core.Commit, reference, oldHash string, r core.BareRepo) error {
+					CheckIssueCommit: func(commit core.Commit, reference, oldHash string, r core.BareRepo) (*plumbing2.IssueBody, error) {
 						checkIssueCommitCalled++
 						Expect(commit).To(Equal(testCommit))
 						Expect(reference).To(Equal(detail.Reference))
-						return nil
+						return &plumbing2.IssueBody{}, nil
 					},
 				}
 				err := validation.ValidateIssueCommit(mockRepo, args)
 				Expect(err).To(BeNil())
 				Expect(checkIssueCommitCalled).To(Equal(1))
+			})
+
+			It("should set tx detail policy checker flag to true if issue body updates admin fields like 'labels'", func() {
+				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+				testCommit := repo.NewWrappedCommit(&object.Commit{Message: "commit 1"})
+				mockRepo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(testCommit, nil)
+				detail := &types.TxDetail{Reference: "refs/heads/issue/1"}
+
+				checkIssueCommitCalled := 0
+				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
+					TxDetail: detail,
+					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
+						return nil
+					},
+					CheckIssueCommit: func(commit core.Commit, reference, oldHash string, r core.BareRepo) (*plumbing2.IssueBody, error) {
+						checkIssueCommitCalled++
+						Expect(commit).To(Equal(testCommit))
+						Expect(reference).To(Equal(detail.Reference))
+						return &plumbing2.IssueBody{Labels: []string{"label_update"}}, nil
+					},
+				}
+				err := validation.ValidateIssueCommit(mockRepo, args)
+				Expect(err).To(BeNil())
+				Expect(checkIssueCommitCalled).To(Equal(1))
+				Expect(detail.FlagCheckIssueUpdatePolicy).To(BeTrue())
 			})
 		})
 
@@ -140,10 +165,10 @@ var _ = Describe("Validation", func() {
 					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckIssueCommit: func(commit core.Commit, reference, oldHash string, r core.BareRepo) error {
+					CheckIssueCommit: func(commit core.Commit, reference, oldHash string, r core.BareRepo) (*plumbing2.IssueBody, error) {
 						checkIssueCommitCalled++
 						Expect(reference).To(Equal(detail.Reference))
-						return nil
+						return &plumbing2.IssueBody{}, nil
 					},
 				}
 				err := validation.ValidateIssueCommit(mockRepo, args)
@@ -170,10 +195,10 @@ var _ = Describe("Validation", func() {
 					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckIssueCommit: func(commit core.Commit, reference, oldHash string, r core.BareRepo) error {
+					CheckIssueCommit: func(commit core.Commit, reference, oldHash string, r core.BareRepo) (*plumbing2.IssueBody, error) {
 						checkIssueCommitCalled++
 						Expect(reference).To(Equal(detail.Reference))
-						return nil
+						return &plumbing2.IssueBody{}, nil
 					},
 				}
 				err := validation.ValidateIssueCommit(mockRepo, args)
@@ -185,7 +210,7 @@ var _ = Describe("Validation", func() {
 
 	Describe(".CheckIssueCommit", func() {
 		It("should return error when issue number is not valid", func() {
-			err := validation.CheckIssueCommit(commit, "refs/heads/"+plumbing2.IssueBranchPrefix+"/abc", "", mockRepo)
+			_, err := validation.CheckIssueCommit(commit, "refs/heads/"+plumbing2.IssueBranchPrefix+"/abc", "", mockRepo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue number is not valid. Must be numeric"))
 		})
@@ -193,7 +218,7 @@ var _ = Describe("Validation", func() {
 		It("should return error when issue commit has more than 1 parents", func() {
 			issueBranch := plumbing2.MakeIssueReference(1)
 			commit.EXPECT().NumParents().Return(2)
-			err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
+			_, err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue commit cannot have more than one parent"))
 		})
@@ -202,7 +227,7 @@ var _ = Describe("Validation", func() {
 			issueBranch := plumbing2.MakeIssueReference(1)
 			commit.EXPECT().NumParents().Return(1)
 			mockRepo.EXPECT().HasMergeCommits(issueBranch).Return(false, fmt.Errorf("error"))
-			err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
+			_, err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("failed to check for merges in issue commit history: error"))
 		})
@@ -213,7 +238,7 @@ var _ = Describe("Validation", func() {
 			repoState := &state.Repository{}
 			mockRepo.EXPECT().GetState().Return(repoState)
 			mockRepo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
-			err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
+			_, err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("first commit of a new issue must have no parent"))
 		})
@@ -226,7 +251,7 @@ var _ = Describe("Validation", func() {
 			mockRepo.EXPECT().GetState().Return(repoState)
 			mockRepo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
-			err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
+			_, err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue commit must not alter history"))
 		})
@@ -240,7 +265,7 @@ var _ = Describe("Validation", func() {
 			mockRepo.EXPECT().GetState().Return(repoState)
 			mockRepo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
-			err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
+			_, err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("unable to read issue commit tree"))
 		})
@@ -255,7 +280,7 @@ var _ = Describe("Validation", func() {
 			mockRepo.EXPECT().GetState().Return(repoState)
 			mockRepo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
-			err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
+			_, err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue commit must have a 'body' file"))
 		})
@@ -270,7 +295,7 @@ var _ = Describe("Validation", func() {
 			mockRepo.EXPECT().GetState().Return(repoState)
 			mockRepo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
-			err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
+			_, err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue commit tree must only include a 'body' file"))
 		})
@@ -285,7 +310,7 @@ var _ = Describe("Validation", func() {
 			mockRepo.EXPECT().GetState().Return(repoState)
 			mockRepo.EXPECT().HasMergeCommits(issueBranch).Return(false, nil)
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
-			err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
+			_, err := validation.CheckIssueCommit(commit, issueBranch, "", mockRepo)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError("issue body file is not a regular file"))
 		})

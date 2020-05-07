@@ -114,14 +114,38 @@ func GetCommentPreview(comment *Comment) string {
 }
 
 type IssueBody struct {
-	Content   []byte
-	Title     string
-	ReplyTo   string
+
+	// Content is the issue content
+	Content []byte
+
+	// Title is the issue title
+	Title string
+
+	// ReplyTo is used to set the comment commit hash to reply to.
+	ReplyTo string
+
+	// Reactions are emoji short names used to describe an emotion
+	// towards an issue comment
 	Reactions []string
-	Labels    []string
+
+	// Labels describes and classifies the issue using keywords
+	Labels []string
+
+	// Assignees are the push keys assigned to do a task
 	Assignees []string
-	Fixers    []string
-	Close     int
+
+	// Fixers are the push keys that should fix the issue
+	Fixers []string
+
+	// Close indicates that the issue should be closed.
+	// 0: Default (open), 1: Close, 2: Open
+	Close int
+}
+
+// RequiresUpdatePolicy checks whether the issue body will require an 'issue-update' policy
+// if the contents need to be added to the issue.
+func (b *IssueBody) RequiresUpdatePolicy() bool {
+	return len(b.Labels) > 0 || len(b.Assignees) > 0 || len(b.Fixers) > 0 || b.Close > 0
 }
 
 // IssueBodyFromContentFrontMatter attempts to load the instance from

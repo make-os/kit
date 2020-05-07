@@ -156,4 +156,14 @@ var _ = Describe("Post", func() {
 		})
 	})
 
+	Describe("IssueBody.RequiresUpdatePolicy", func() {
+		It("should return true when labels, fixers, assignees and close are set", func() {
+			Expect((&plumbing.IssueBody{Labels: []string{"val"}}).RequiresUpdatePolicy()).To(BeTrue())
+			Expect((&plumbing.IssueBody{Fixers: []string{"val"}}).RequiresUpdatePolicy()).To(BeTrue())
+			Expect((&plumbing.IssueBody{Assignees: []string{"val"}}).RequiresUpdatePolicy()).To(BeTrue())
+			Expect((&plumbing.IssueBody{Close: 0}).RequiresUpdatePolicy()).To(BeFalse())
+			Expect((&plumbing.IssueBody{Close: 1}).RequiresUpdatePolicy()).To(BeTrue())
+			Expect((&plumbing.IssueBody{Close: 2}).RequiresUpdatePolicy()).To(BeTrue())
+		})
+	})
 })

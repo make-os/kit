@@ -75,6 +75,10 @@ type TxDetail struct {
 	Signature       string      `json:"sig" msgpack:"sig,omitempty" mapstructure:"sig"`                   // The signature of the tx parameter
 	MergeProposalID string      `json:"mergeID" msgpack:"mergeID,omitempty" mapstructure:"mergeID"`       // Specifies a merge proposal that the push is meant to fulfil
 	Head            string      `json:"head" msgpack:"head,omitempty" mapstructure:"head"`                // Indicates the HEAD hash of the target reference
+
+	// FlagCheckIssueUpdatePolicy instructs the authorization function to check whether the
+	// pusher has 'issue-update' permission for the reference
+	FlagCheckIssueUpdatePolicy bool `json:"-" msgpack:"-" mapstructure:"-"`
 }
 
 // MustSignatureAsBytes returns the decoded signature.

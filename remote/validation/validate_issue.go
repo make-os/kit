@@ -50,12 +50,21 @@ func ValidateIssueCommit(localRepo core.BareRepo, args *ValidateIssueCommitArg) 
 	// Now, check that the recent commit down to the old (pre-push) commit
 	// pass issue commit validation
 	for {
-		if err = args.CheckIssueCommit(commit, args.TxDetail.Reference, args.OldHash, localRepo); err != nil {
+		issueBody, err := args.CheckIssueCommit(commit, args.TxDetail.Reference, args.OldHash, localRepo)
+		if err != nil {
 			return err
 		}
+
+		// Flag the authorizer function to check for issue update policy
+		// if the issue body includes restricted fields
+		if issueBody.RequiresUpdatePolicy() {
+			args.TxDetail.FlagCheckIssueUpdatePolicy = true
+		}
+
 		if commit.NumParents() == 0 {
 			break
 		}
+
 		parent, err := commit.Parent(0)
 		if err != nil {
 			return err
@@ -69,80 +78,80 @@ func ValidateIssueCommit(localRepo core.BareRepo, args *ValidateIssueCommitArg) 
 	return nil
 }
 
-// IssueCommitChecker describes a function for validating an issue commit
-type IssueCommitChecker func(commit core.Commit, reference, oldHash string, repo core.BareRepo) error
+// IssueCommitChecker describes a function for validating an issue commit.
+type IssueCommitChecker func(commit core.Commit, reference, oldHash string, repo core.BareRepo) (*plumbing2.IssueBody, error)
 
 // CheckIssueCommit checks commits of an issue branch.
-func CheckIssueCommit(commit core.Commit, reference, oldHash string, repo core.BareRepo) error {
+func CheckIssueCommit(commit core.Commit, reference, oldHash string, repo core.BareRepo) (*plumbing2.IssueBody, error) {
 
 	// Issue reference name must be valid
 	if !plumbing2.IsIssueReference(reference) {
-		return fmt.Errorf("issue number is not valid. Must be numeric")
+		return nil, fmt.Errorf("issue number is not valid. Must be numeric")
 	}
 
 	// Issue commits can't have multiple parents (merge commit not permitted)
 	if commit.NumParents() > 1 {
-		return fmt.Errorf("issue commit cannot have more than one parent")
+		return nil, fmt.Errorf("issue commit cannot have more than one parent")
 	}
 
 	// Issue commit history cannot have merge commits in it (merge commit not permitted)
 	hasMerges, err := repo.HasMergeCommits(reference)
 	if err != nil {
-		return errors.Wrap(err, "failed to check for merges in issue commit history")
+		return nil, errors.Wrap(err, "failed to check for merges in issue commit history")
 	} else if hasMerges {
-		return fmt.Errorf("issue commit history must not include a merge commit")
+		return nil, fmt.Errorf("issue commit history must not include a merge commit")
 	}
 
 	// New issue's first commit must have zero hash parent (orphan commit)
 	isNewIssue := !repo.GetState().References.Has(reference)
 	if isNewIssue && commit.NumParents() != 0 {
-		return fmt.Errorf("first commit of a new issue must have no parent")
+		return nil, fmt.Errorf("first commit of a new issue must have no parent")
 	}
 
 	// Issue commit history must not alter the current history (rebasing not permitted)
 	if !isNewIssue && repo.IsAncestor(oldHash, commit.GetHash().String()) != nil {
-		return fmt.Errorf("issue commit must not alter history")
+		return nil, fmt.Errorf("issue commit must not alter history")
 	}
 
 	tree, err := commit.GetTree()
 	if err != nil {
-		return fmt.Errorf("unable to read issue commit tree")
+		return nil, fmt.Errorf("unable to read issue commit tree")
 	}
 
 	// Issue commit tree cannot be left empty
 	if len(tree.Entries) == 0 {
-		return fmt.Errorf("issue commit must have a 'body' file")
+		return nil, fmt.Errorf("issue commit must have a 'body' file")
 	}
 
 	// Issue commit must include one file
 	if len(tree.Entries) > 1 {
-		return fmt.Errorf("issue commit tree must only include a 'body' file")
+		return nil, fmt.Errorf("issue commit tree must only include a 'body' file")
 	}
 
 	// Issue commit must include only a body file
 	body := tree.Entries[0]
 	if body.Mode != filemode.Regular {
-		return fmt.Errorf("issue body file is not a regular file")
+		return nil, fmt.Errorf("issue body file is not a regular file")
 	}
 
 	file, _ := tree.File(body.Name)
 	content, err := file.Contents()
 	if err != nil {
-		return fmt.Errorf("issue body file could not be read")
+		return nil, fmt.Errorf("issue body file could not be read")
 	}
 
 	// The body file must be parsable (extract front matter and content)
 	cfm, err := pageparser.ParseFrontMatterAndContent(bytes.NewBufferString(content))
 	if err != nil {
-		return fmt.Errorf("issue body could not be parsed")
+		return nil, fmt.Errorf("issue body could not be parsed")
 	}
 
 	// Validate extracted front matter
 	if err = CheckIssueBody(repo, commit, isNewIssue, cfm.FrontMatter, cfm.Content); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return plumbing2.IssueBodyFromContentFrontMatter(&cfm), nil
 }
 
 // CheckIssueBody checks whether the front matter and content extracted from an issue body is ok.
@@ -171,7 +180,8 @@ func CheckIssueBody(
 		"labels",
 		"replyTo",
 		"assignees",
-		"fixers"}
+		"fixers",
+		"close"}
 	for k := range fm {
 		if !funk.ContainsString(validFields, k) {
 			return fe(-1, makeField(k), "unknown field")
