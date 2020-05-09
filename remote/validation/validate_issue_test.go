@@ -49,13 +49,13 @@ var _ = Describe("Validation", func() {
 		var args *validation.ValidateIssueCommitArg
 
 		BeforeEach(func() {
-			detail = &core.TxDetail{Reference: "refs/heads/issue/1"}
+			detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
 			args = &validation.ValidateIssueCommitArg{OldHash: "", TxDetail: detail}
 		})
 
 		It("should return error when unable to check for merge commits", func() {
 			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-			detail := &core.TxDetail{Reference: "refs/heads/issue/1"}
+			detail := &core.TxDetail{Reference: "refs/heads/issues/1"}
 			args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change, TxDetail: detail}
 			mockRepo.EXPECT().HasMergeCommits(detail.Reference).Return(false, fmt.Errorf("error"))
 			err := validation.ValidateIssueCommit(mockRepo, nil, args)
@@ -65,7 +65,7 @@ var _ = Describe("Validation", func() {
 
 		It("should return error when issue has merge commits", func() {
 			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-			detail = &core.TxDetail{Reference: "refs/heads/issue/1"}
+			detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
 			args = &validation.ValidateIssueCommitArg{OldHash: "", Change: change, TxDetail: detail}
 			commit := repo.WrapCommit(&object.Commit{})
 			mockRepo.EXPECT().HasMergeCommits(detail.Reference).Return(true, nil)
@@ -93,7 +93,7 @@ var _ = Describe("Validation", func() {
 			commit := repo.WrapCommit(&object.Commit{Message: "commit 1"})
 			mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
 			detail := &core.TxDetail{
-				Reference: "refs/heads/issue/1",
+				Reference: "refs/heads/issues/1",
 			}
 
 			mockRepo.EXPECT().GetAncestors(commit.UnWrap(), args.OldHash, true).Return(nil, fmt.Errorf("ancestor get error"))
@@ -113,7 +113,7 @@ var _ = Describe("Validation", func() {
 			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 			commit := repo.WrapCommit(&object.Commit{Message: "commit 1"})
 			mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
-			detail := &core.TxDetail{Reference: "refs/heads/issue/1"}
+			detail := &core.TxDetail{Reference: "refs/heads/issues/1"}
 			mockRepo.EXPECT().GetAncestors(commit.UnWrap(), args.OldHash, true).Return([]*object.Commit{}, nil)
 			mockRepoState := state.BareRepository()
 			mockRepo.EXPECT().GetState().Return(mockRepoState)
@@ -139,13 +139,14 @@ var _ = Describe("Validation", func() {
 
 		When("commit has no ancestor", func() {
 			var child *object.Commit
+			var mockRepoState *state.Repository
 
 			BeforeEach(func() {
 				child = &object.Commit{}
 				commit.EXPECT().UnWrap().Return(child)
 				mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
 				mockRepo.EXPECT().GetAncestors(child, args.OldHash, true).Return([]*object.Commit{}, nil)
-				mockRepoState := state.BareRepository()
+				mockRepoState = state.BareRepository()
 				mockRepo.EXPECT().GetState().Return(mockRepoState)
 			})
 
@@ -154,7 +155,7 @@ var _ = Describe("Validation", func() {
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 				callCount := 0
 				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
-					TxDetail:    &core.TxDetail{Reference: "refs/heads/issue/1"},
+					TxDetail:    &core.TxDetail{Reference: "refs/heads/issues/1"},
 					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
 					CheckIssueCommit: func(r core.BareRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
 						callCount++
@@ -170,7 +171,7 @@ var _ = Describe("Validation", func() {
 
 			It("should set tx detail FlagCheckIssueUpdatePolicy to true if issue body updates admin fields like 'labels'", func() {
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-				detail = &core.TxDetail{Reference: "refs/heads/issue/1"}
+				detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
 				callCount := 0
 				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
 					TxDetail:    detail,
@@ -191,7 +192,7 @@ var _ = Describe("Validation", func() {
 			It("should set tx detail.Data.Close if issue body has 'close' set", func() {
 				child.Hash = plumbing.NewHash("069199ae527ca118368d93af02feefa80432e563")
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-				detail = &core.TxDetail{Reference: "refs/heads/issue/1"}
+				detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
 				callCount := 0
 				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
 					TxDetail:    detail,
@@ -209,6 +210,49 @@ var _ = Describe("Validation", func() {
 				Expect(callCount).To(Equal(1))
 				Expect(detail.Data().Close).To(Equal(1))
 			})
+
+			It("should return error when issue reference has been previously closed and new issue commit did not set close=2", func() {
+				child.Hash = plumbing.NewHash("069199ae527ca118368d93af02feefa80432e563")
+				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+				detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
+				mockRepoState.References[detail.Reference] = &state.Reference{Closed: true, Hash: []byte("hash")}
+				callCount := 0
+				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
+					TxDetail:    detail,
+					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
+					CheckIssueCommit: func(r core.BareRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+						callCount++
+						Expect(commit).To(Equal(commit))
+						Expect(args.Reference).To(Equal(detail.Reference))
+						return &plumbing2.IssueBody{}, nil
+					},
+				}
+
+				err := validation.ValidateIssueCommit(mockRepo, commit, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(Equal(validation.ErrCannotWriteToClosedIssue))
+			})
+
+			It("should return no error when issue reference has been previously closed and new issue commit set close=2", func() {
+				child.Hash = plumbing.NewHash("069199ae527ca118368d93af02feefa80432e563")
+				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+				detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
+				mockRepoState.References[detail.Reference] = &state.Reference{Closed: true, Hash: []byte("hash")}
+				callCount := 0
+				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
+					TxDetail:    detail,
+					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
+					CheckIssueCommit: func(r core.BareRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+						callCount++
+						Expect(commit).To(Equal(commit))
+						Expect(args.Reference).To(Equal(detail.Reference))
+						return &plumbing2.IssueBody{Close: plumbing2.IssueStateOpen}, nil
+					},
+				}
+
+				err := validation.ValidateIssueCommit(mockRepo, commit, args)
+				Expect(err).To(BeNil())
+			})
 		})
 
 		When("commit has an ancestor", func() {
@@ -221,14 +265,14 @@ var _ = Describe("Validation", func() {
 				ancestor = &object.Commit{Hash: plumbing.NewHash("c045fafe22ae2ef4d7c2390704e9b7a73c12bd43")}
 				mockRepo.EXPECT().GetAncestors(child, args.OldHash, true).Return([]*object.Commit{ancestor}, nil)
 				mockRepoState := state.BareRepository()
-				mockRepo.EXPECT().GetState().Return(mockRepoState).Times(2)
+				mockRepo.EXPECT().GetState().Return(mockRepoState).Times(1)
 			})
 
 			Specify("that issue checker is called twice for both the commit and its ancestor", func() {
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: child.Hash.String()}}
 				callCount := 0
 				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
-					TxDetail:    &core.TxDetail{Reference: "refs/heads/issue/1"},
+					TxDetail:    &core.TxDetail{Reference: "refs/heads/issues/1"},
 					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
 					CheckIssueCommit: func(r core.BareRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
 						callCount++

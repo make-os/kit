@@ -17,8 +17,9 @@ import (
 )
 
 var (
-	MaxIssueContentLen = 1024 * 8 // 8KB
-	MaxIssueTitleLen   = 256
+	MaxIssueContentLen          = 1024 * 8 // 8KB
+	MaxIssueTitleLen            = 256
+	ErrCannotWriteToClosedIssue = fmt.Errorf("cannot write to a closed issue reference")
 )
 
 // ValidateIssueCommitArg contains arguments for ValidateIssueCommit
@@ -59,13 +60,14 @@ func ValidateIssueCommit(repo core.BareRepo, commit core.Commit, args *ValidateI
 	// Validate the new issue commits by replaying the commits
 	// individually beginning from the first ancestor.
 	issueCommits := append(ancestors, unwrapped)
+	refState := repo.GetState().References.Get(args.TxDetail.Reference)
 	for i, issueCommit := range issueCommits {
 
 		// Define the issie commit checker arguments
 		icArgs := &CheckIssueCommitArgs{
 			Reference:  args.TxDetail.Reference,
 			OldHash:    args.OldHash,
-			IsNewIssue: !repo.GetState().References.Has(args.TxDetail.Reference),
+			IsNewIssue: refState.IsNil(),
 		}
 
 		// If there are ancestors, set IsNewIssue to false at index > 0.
@@ -89,8 +91,15 @@ func ValidateIssueCommit(repo core.BareRepo, commit core.Commit, args *ValidateI
 		}
 
 		// Set Close field in the reference data. Do this for only the latest commit
-		if issueCommit.Hash.String() == args.Change.Item.GetData() && issueBody.Close > 0 {
+		isRecentIssueCommit := issueCommit.Hash.String() == args.Change.Item.GetData()
+		if isRecentIssueCommit && issueBody.Close > 0 {
 			args.TxDetail.Data().Close = issueBody.Close
+		}
+
+		// When an issue reference exist and it is closed, the next pushed commit is expected
+		// to set the close option to 'open'.
+		if isRecentIssueCommit && refState.Closed && issueBody.Close != plumbing2.IssueStateOpen {
+			return ErrCannotWriteToClosedIssue
 		}
 	}
 

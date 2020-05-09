@@ -113,6 +113,11 @@ func GetCommentPreview(comment *Comment) string {
 	return preview
 }
 
+const (
+	IssueStateClose = iota + 1
+	IssueStateOpen
+)
+
 type IssueBody struct {
 
 	// Content is the issue content
@@ -202,7 +207,7 @@ func IssueBodyToString(body *IssueBody) string {
 		fixersStr, _ := json.Marshal(body.Fixers)
 		args += fmt.Sprintf("fixers: %s\n", fixersStr)
 	}
-	if body.Close >= 0 {
+	if body.Close > 0 {
 		args += fmt.Sprintf("close: %d\n", body.Close)
 	}
 

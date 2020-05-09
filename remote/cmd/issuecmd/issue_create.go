@@ -195,11 +195,11 @@ input:
 		return ErrBodyRequired
 	}
 
-	closeState := 0
+	var closeState int
 	if args.Close {
-		closeState = 1
+		closeState = plumbing.IssueStateClose
 	} else if args.Open {
-		closeState = 2
+		closeState = plumbing.IssueStateOpen
 	}
 
 	// Create the Issue body and prompt user to confirm
