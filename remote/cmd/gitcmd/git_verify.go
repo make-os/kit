@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/cmd"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 )
 
@@ -59,7 +58,7 @@ func GitVerifyCmd(cfg *config.AppConfig, args *GitVerifyArgs) error {
 	}
 
 	// Get tx parameters from the header
-	txDetail, err := types.TxDetailFromPEMHeader(decSig.Headers)
+	txDetail, err := core.TxDetailFromPEMHeader(decSig.Headers)
 	if err != nil {
 		fmt.Fprintf(args.StdOut, "[GNUPG:] BADSIG 0\n")
 		err = fmt.Errorf("invalid header: %s", err)

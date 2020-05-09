@@ -11,7 +11,6 @@ import (
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/validation"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 
@@ -36,7 +35,7 @@ type Handler struct {
 	Reverter             plumbing.RevertFunc                 // Repository state reverser function
 	MergeChecker         validation.MergeComplianceCheckFunc // Merge request checker function
 	polEnforcer          policy.EnforcerFunc                 // Authorization policy enforcer function for the repository
-	TxDetails            types.ReferenceTxDetails            // Map of references to their transaction details
+	TxDetails            core.ReferenceTxDetails             // Map of references to their transaction details
 	ReferenceHandler     refHandler                          // Pushed reference handler function
 	AuthorizationHandler authorizationHandler                // Authorization handler function
 	PolicyChecker        policy.PolicyChecker                // Policy checker function
@@ -45,13 +44,13 @@ type Handler struct {
 // PushHandlerFunc describes a function for creating a push handler
 type PushHandlerFunc func(
 	targetRepo core.BareRepo,
-	txDetails []*types.TxDetail,
+	txDetails []*core.TxDetail,
 	enforcer policy.EnforcerFunc) *Handler
 
 // NewHandler returns an instance of Handler
 func NewHandler(
 	repo core.BareRepo,
-	txDetails []*types.TxDetail,
+	txDetails []*core.TxDetail,
 	polEnforcer policy.EnforcerFunc,
 	rMgr core.RemoteServer) *Handler {
 
@@ -61,7 +60,7 @@ func NewHandler(
 		log:             rMgr.Log().Module("push-handler"),
 		polEnforcer:     polEnforcer,
 		PushReader:      &PushReader{},
-		TxDetails:       types.ToReferenceTxDetails(txDetails),
+		TxDetails:       core.ToReferenceTxDetails(txDetails),
 		ChangeValidator: validation.ValidateChange,
 		Reverter:        plumbing.Revert,
 		MergeChecker:    validation.CheckMergeCompliance,
@@ -127,6 +126,7 @@ func (h *Handler) DoAuthCheck(ur *packp.ReferenceUpdateRequest, targetRef string
 
 	for _, cmd := range ur.Commands {
 		ref := cmd.Name.String()
+		refState := h.Repo.GetState().References.Get(ref)
 
 		// Skip command if its reference did not match the target reference
 		if targetRef != "" && targetRef != ref {
@@ -140,8 +140,8 @@ func (h *Handler) DoAuthCheck(ur *packp.ReferenceUpdateRequest, targetRef string
 		// Determine whether the reference is/was created by the pusher.
 		// It is true for existing reference where the pusher is the creator.
 		isRefCreator := false
-		if r := h.Repo.GetState().References.Get(ref); !r.IsNil() {
-			isRefCreator = r.Creator.String() == pusher
+		if !refState.IsNil() {
+			isRefCreator = refState.Creator.String() == pusher
 		}
 
 		// Default action is set to 'write'
@@ -167,8 +167,8 @@ func (h *Handler) DoAuthCheck(ur *packp.ReferenceUpdateRequest, targetRef string
 			}
 
 			// When there is a tx detail flag requesting for issue update policy check,
-			// set action to 'issue-update'
-			if detail.FlagCheckIssueUpdatePolicy {
+			// set action to 'issue-update'. Ignore if reference is new.
+			if detail.FlagCheckIssueUpdatePolicy && !refState.IsNil() {
 				action = policy.PolicyActionIssueUpdate
 			}
 		}
@@ -274,6 +274,7 @@ func (h *Handler) createPushNote() (*core.PushNote, error) {
 
 	// Add references
 	for refName, ref := range h.PushReader.References {
+		detail := h.TxDetails.Get(refName)
 		note.References = append(note.References, &core.PushedReference{
 			Name:            refName,
 			OldHash:         ref.OldHash,
@@ -283,6 +284,7 @@ func (h *Handler) createPushNote() (*core.PushNote, error) {
 			Fee:             h.TxDetails.Get(refName).Fee,
 			MergeProposalID: h.TxDetails.Get(refName).MergeProposalID,
 			PushSig:         h.TxDetails.Get(refName).MustSignatureAsBytes(),
+			Data:            detail.ReferenceData,
 		})
 	}
 

@@ -14,7 +14,6 @@ import (
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/server"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 )
 
@@ -98,7 +97,7 @@ var _ = Describe("GitSign", func() {
 			}
 
 			mockStoredKey.EXPECT().GetKey().Return(key).Times(2)
-			txDetail := &types.TxDetail{RepoName: "repo1", RepoNamespace: "namespace",
+			txDetail := &core.TxDetail{RepoName: "repo1", RepoNamespace: "namespace",
 				Fee: "1.2", PushKeyID: key.PushAddr().String(), Reference: "refs/heads/master", Nonce: 1}
 			token := server.MakePushToken(mockStoredKey, txDetail)
 

@@ -134,6 +134,11 @@ type BareRepo interface {
 
 	// GetFreeIssueNum finds an issue number that has not been used
 	GetFreeIssueNum(startID int) (int, error)
+
+	// GetAncestors returns the ancestors of the given commit up til the ancestor matching the stop hash.
+	// The stop hash ancestor is not included in the result.
+	// Reverse reverses the result
+	GetAncestors(commit *object.Commit, stopHash string, reverse bool) (ancestors []*object.Commit, err error)
 }
 
 // Commit represents a Commit.
@@ -307,14 +312,15 @@ type Pruner interface {
 // PushedReference represents a reference that was pushed by git client
 type PushedReference struct {
 	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	Name                  string      `json:"name" msgpack:"name,omitempty"`       // The full name of the reference
-	OldHash               string      `json:"oldHash" msgpack:"oldHash,omitempty"` // The hash of the reference before the push
-	NewHash               string      `json:"newHash" msgpack:"newHash,omitempty"` // The hash of the reference after the push
-	Nonce                 uint64      `json:"nonce" msgpack:"nonce,omitempty"`     // The next repo nonce of the reference
-	Objects               []string    `json:"objects" msgpack:"objects,omitempty"` // A list of objects pushed to the reference
-	MergeProposalID       string      `json:"mergeID" msgpack:"mergeID,omitempty"` // The merge proposal ID the reference is complaint with.
-	Fee                   util.String `json:"fee" msgpack:"fee,omitempty"`         // The merge proposal ID the reference is complaint with.
-	PushSig               []byte      `json:"pushSig" msgpack:"pushSig,omitempty"` // The signature of from the push request token
+	Name                  string         `json:"name" msgpack:"name,omitempty"`       // The full name of the reference
+	OldHash               string         `json:"oldHash" msgpack:"oldHash,omitempty"` // The hash of the reference before the push
+	NewHash               string         `json:"newHash" msgpack:"newHash,omitempty"` // The hash of the reference after the push
+	Nonce                 uint64         `json:"nonce" msgpack:"nonce,omitempty"`     // The next repo nonce of the reference
+	Objects               []string       `json:"objects" msgpack:"objects,omitempty"` // A list of objects pushed to the reference
+	MergeProposalID       string         `json:"mergeID" msgpack:"mergeID,omitempty"` // The merge proposal ID the reference is complaint with.
+	Fee                   util.String    `json:"fee" msgpack:"fee,omitempty"`         // The merge proposal ID the reference is complaint with.
+	PushSig               []byte         `json:"pushSig" msgpack:"pushSig,omitempty"` // The signature of from the push request token
+	Data                  *ReferenceData `json:"data" msgpack:"data,omitempty"`       // Contains updates to the reference data
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
@@ -327,6 +333,7 @@ func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
 		pr.Objects,
 		pr.MergeProposalID,
 		pr.Fee,
+		pr.Data,
 		pr.PushSig)
 }
 
@@ -340,6 +347,7 @@ func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&pr.Objects,
 		&pr.MergeProposalID,
 		&pr.Fee,
+		&pr.Data,
 		&pr.PushSig)
 }
 

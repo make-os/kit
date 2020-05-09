@@ -6,17 +6,16 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/mr-tron/base58"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 // TxDetailChecker describes a function for checking a transaction detail
-type TxDetailChecker func(params *types.TxDetail, keepers core.Keepers, index int) error
+type TxDetailChecker func(params *core.TxDetail, keepers core.Keepers, index int) error
 
 // CheckTxDetail performs sanity and consistency checks on a transaction's parameters.
-func CheckTxDetail(params *types.TxDetail, keepers core.Keepers, index int) error {
+func CheckTxDetail(params *core.TxDetail, keepers core.Keepers, index int) error {
 	if err := CheckTxDetailSanity(params, index); err != nil {
 		return err
 	}
@@ -25,7 +24,7 @@ func CheckTxDetail(params *types.TxDetail, keepers core.Keepers, index int) erro
 
 // CheckTxDetailSanity performs sanity checks on a transaction's parameters.
 // When authScope is true, only fields necessary for authentication are validated.
-func CheckTxDetailSanity(params *types.TxDetail, index int) error {
+func CheckTxDetailSanity(params *core.TxDetail, index int) error {
 
 	// Push key is required and must be valid
 	if params.PushKeyID == "" {
@@ -63,7 +62,7 @@ func CheckTxDetailSanity(params *types.TxDetail, index int) error {
 }
 
 // CheckTxDetailConsistency performs consistency checks on a transaction's parameters.
-func CheckTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, index int) error {
+func CheckTxDetailConsistency(params *core.TxDetail, keepers core.Keepers, index int) error {
 
 	// Pusher key must exist
 	pushKey := keepers.PushKeyKeeper().Get(params.PushKeyID)

@@ -14,7 +14,6 @@ import (
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -32,8 +31,8 @@ func testPushKeyUnlocker(key core.StoredKey, err error) func(cfg *config.AppConf
 }
 
 func testRemoteURLTokenUpdater(token string, err error) func(targetRepo core.BareRepo, targetRemote string,
-	txDetail *types.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
-	return func(targetRepo core.BareRepo, targetRemote string, txDetail *types.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
+	txDetail *core.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
+	return func(targetRepo core.BareRepo, targetRemote string, txDetail *core.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
 		return token, err
 	}
 }
@@ -180,7 +179,7 @@ var _ = Describe("SignCommit", func() {
 		When("args.Head is set to 'refs/heads/some_branch'", func() {
 			It("the generated tx detail should set Reference to 'refs/heads/some_branch'", func() {
 				args := &SignCommitArgs{Fee: "1", PushKeyID: key.PushAddr().String(), Message: "some message", GetNextNonce: testGetNextNonce, AmendCommit: false, Head: "refs/heads/some_branch"}
-				args.RemoteURLTokenUpdater = func(targetRepo core.BareRepo, targetRemote string, txDetail *types.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
+				args.RemoteURLTokenUpdater = func(targetRepo core.BareRepo, targetRemote string, txDetail *core.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
 					Expect(txDetail.Reference).To(Equal("refs/heads/some_branch"))
 					return "", nil
 				}

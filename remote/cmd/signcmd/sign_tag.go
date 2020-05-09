@@ -11,7 +11,6 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/cmd"
 	"gitlab.com/makeos/mosdef/remote/server"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -102,7 +101,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo core.BareRep
 	}
 
 	// Make the transaction parameter object
-	txDetail := &types.TxDetail{
+	txDetail := &core.TxDetail{
 		Fee:       util.String(args.Fee),
 		Nonce:     args.Nonce,
 		PushKeyID: args.PushKeyID,

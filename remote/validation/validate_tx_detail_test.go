@@ -12,7 +12,6 @@ import (
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 )
@@ -53,7 +52,7 @@ var _ = Describe("Validation", func() {
 
 	Describe(".CheckTxDetail", func() {
 		It("should return nil when no error ", func() {
-			detail := &types.TxDetail{
+			detail := &core.TxDetail{
 				PushKeyID: privKey.PushAddr().String(),
 				Nonce:     9,
 				Fee:       "1",
@@ -78,49 +77,49 @@ var _ = Describe("Validation", func() {
 
 	Describe(".CheckTxDetailSanity", func() {
 		It("should return error when push key is unset", func() {
-			detail := &types.TxDetail{}
+			detail := &core.TxDetail{}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("index:0, field:pkID, msg:push key id is required"))
 		})
 
 		It("should return error when push key is not valid", func() {
-			detail := &types.TxDetail{PushKeyID: "invalid_key"}
+			detail := &core.TxDetail{PushKeyID: "invalid_key"}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("index:0, field:pkID, msg:push key id is not valid"))
 		})
 
 		It("should return error when nonce is not set", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String()}
+			detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String()}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("index:0, field:nonce, msg:nonce is required"))
 		})
 
 		It("should return error when fee is not set", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: ""}
+			detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: ""}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("index:0, field:fee, msg:fee is required"))
 		})
 
 		It("should return error when fee is not numeric", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: "1_invalid"}
+			detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: "1_invalid"}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("index:0, field:fee, msg:fee must be numeric"))
 		})
 
 		It("should return error when signature is malformed", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: "1", Signature: "0x_invalid"}
+			detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: "1", Signature: "0x_invalid"}
 			err := validation.CheckTxDetailSanity(detail, 0)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("index:0, field:sig, msg:signature format is not valid"))
 		})
 
 		It("should return error when merge proposal ID is not numeric", func() {
-			detail := &types.TxDetail{
+			detail := &core.TxDetail{
 				PushKeyID:       privKey.PushAddr().String(),
 				Nonce:           1,
 				Fee:             "1",
@@ -133,7 +132,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when merge proposal ID surpasses 8 bytes", func() {
-			detail := &types.TxDetail{
+			detail := &core.TxDetail{
 				PushKeyID:       privKey.PushAddr().String(),
 				Nonce:           1,
 				Fee:             "1",
@@ -146,7 +145,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return no error", func() {
-			detail := &types.TxDetail{
+			detail := &core.TxDetail{
 				PushKeyID:       privKey.PushAddr().String(),
 				Nonce:           1,
 				Fee:             "1",
@@ -160,7 +159,7 @@ var _ = Describe("Validation", func() {
 
 	Describe(".CheckTxDetailConsistency", func() {
 		It("should return error when push key is unknown", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String()}
+			detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String()}
 			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(state.BarePushKey())
 			err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
 			Expect(err).ToNot(BeNil())
@@ -168,7 +167,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when repo namespace and push key scopes are set but namespace does not exist", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo1", RepoNamespace: "ns1"}
+			detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo1", RepoNamespace: "ns1"}
 			pk := state.BarePushKey()
 			pk.Address = privKey.Addr()
 			pk.Scopes = []string{"r/repo1"}
@@ -182,7 +181,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return scope error when key scope is r/repo1 and tx repo=repo2 and namespace is unset", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo2", RepoNamespace: ""}
+			detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo2", RepoNamespace: ""}
 			pk := state.BarePushKey()
 			pk.Address = privKey.Addr()
 			pk.Scopes = []string{"r/repo1"}
@@ -194,7 +193,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return scope error when key scope is ns1/repo1 and tx repo=repo2 and namespace=ns1", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo2", RepoNamespace: "ns1"}
+			detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo2", RepoNamespace: "ns1"}
 			pk := state.BarePushKey()
 			pk.Address = privKey.Addr()
 			pk.Scopes = []string{"ns1/repo1"}
@@ -210,7 +209,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return scope error when key scope is ns1/ and tx repo=repo2 and namespace=ns2", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo2", RepoNamespace: "ns1"}
+			detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, RepoName: "repo2", RepoNamespace: "ns1"}
 			pk := state.BarePushKey()
 			pk.Address = privKey.Addr()
 			pk.Scopes = []string{"ns1/repo1"}
@@ -226,7 +225,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when nonce is not greater than push key owner account nonce", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
+			detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
 
 			pk := state.BarePushKey()
 			pk.Address = privKey.Addr()
@@ -243,7 +242,7 @@ var _ = Describe("Validation", func() {
 
 		When("merge proposal ID is set", func() {
 			It("should return error when the proposal does not exist", func() {
-				detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, MergeProposalID: "100"}
+				detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, MergeProposalID: "100"}
 
 				pk := state.BarePushKey()
 				pk.Address = privKey.Addr()
@@ -261,7 +260,7 @@ var _ = Describe("Validation", func() {
 			})
 
 			It("should return error when the proposal is not a merge request", func() {
-				detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, MergeProposalID: "100"}
+				detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, MergeProposalID: "100"}
 
 				pk := state.BarePushKey()
 				pk.Address = privKey.Addr()
@@ -281,7 +280,7 @@ var _ = Describe("Validation", func() {
 			})
 
 			It("should return error when the proposal creator is not the push key owner", func() {
-				detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, MergeProposalID: "100"}
+				detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, MergeProposalID: "100"}
 
 				pk := state.BarePushKey()
 				pk.Address = privKey.Addr()
@@ -302,7 +301,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when signature could not be verified", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
+			detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
 			sig, err := privKey.PrivKey().Sign(detail.BytesNoSig())
 			Expect(err).To(BeNil())
 			detail.Signature = base58.Encode(sig)
@@ -322,7 +321,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return nil when signature is valid", func() {
-			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
+			detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
 			sig, err := privKey.PrivKey().Sign(detail.BytesNoSig())
 			Expect(err).To(BeNil())
 			detail.Signature = base58.Encode(sig)

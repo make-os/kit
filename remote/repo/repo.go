@@ -260,8 +260,38 @@ func (r *Repo) NumIssueBranches() (count int, err error) {
 	return count, nil
 }
 
+// GetAncestors returns the ancestors of the given commit up til the ancestor matching the stop hash.
+// The stop hash ancestor is not included in the result.
+// Reverse reverses the result.
+func (r *Repo) GetAncestors(commit *object.Commit, stopHash string, reverse bool) (ancestors []*object.Commit, err error) {
+	var next = commit
+	for {
+		if next.NumParents() == 0 {
+			break
+		}
+		ancestor, err := next.Parent(0)
+		if err != nil {
+			return nil, err
+		}
+		if ancestor.Hash.String() == stopHash {
+			break
+		}
+		ancestors = append(ancestors, ancestor)
+		next = ancestor
+	}
+
+	if reverse {
+		for i := len(ancestors)/2 - 1; i >= 0; i-- {
+			opp := len(ancestors) - 1 - i
+			ancestors[i], ancestors[opp] = ancestors[opp], ancestors[i]
+		}
+	}
+
+	return
+}
+
 // Get returns a repository
-func GetRepo(path string) (core.BareRepo, error) {
+func Get(path string) (core.BareRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
@@ -272,7 +302,7 @@ func GetRepo(path string) (core.BareRepo, error) {
 	}, nil
 }
 
-func GetRepoWithLiteGit(gitBinPath, path string) (core.BareRepo, error) {
+func GetWithLiteGit(gitBinPath, path string) (core.BareRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
@@ -284,9 +314,9 @@ func GetRepoWithLiteGit(gitBinPath, path string) (core.BareRepo, error) {
 	}, nil
 }
 
-// GetRepoAtWorkingDir returns a RepoContext instance pointed to the repository
+// GetAtWorkingDir returns a RepoContext instance pointed to the repository
 // in the current working directory.
-func GetRepoAtWorkingDir(gitBinDir string) (core.BareRepo, error) {
+func GetAtWorkingDir(gitBinDir string) (core.BareRepo, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current working directory")
@@ -294,7 +324,7 @@ func GetRepoAtWorkingDir(gitBinDir string) (core.BareRepo, error) {
 
 	// Since we expect the working directory to be a git working tree,
 	// we need to get a repo instance to verify it
-	repo, err := GetRepoWithLiteGit(gitBinDir, wd)
+	repo, err := GetWithLiteGit(gitBinDir, wd)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to open repository")
 	} else if repoCfg, _ := repo.Config(); repoCfg.Core.IsBare {

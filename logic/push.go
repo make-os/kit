@@ -26,15 +26,14 @@ func (t *Transaction) execPush(
 	pushKeyID []byte,
 	chainHeight uint64) error {
 
-	// Get repository
 	repoKeeper := t.logic.RepoKeeper()
 	repo := repoKeeper.Get(repoName)
 
-	// Register the references to the repo and update their nonce
+	// Register or update references
 	for _, ref := range references {
-		curRef := repo.References.Get(ref.Name)
 
-		// When the reference should be deleted, remove from repo reference
+		// When the reference needs to be deleted, remove from repo reference
+		curRef := repo.References.Get(ref.Name)
 		if ref.IsDeletable() && !curRef.IsNil() {
 			delete(repo.References, ref.Name)
 			continue
@@ -45,6 +44,7 @@ func (t *Transaction) execPush(
 			curRef.Creator = pushKeyID
 		}
 
+		curRef.Closed = ref.Data.Close == 1
 		curRef.Nonce = curRef.Nonce + 1
 		curRef.Hash = util.MustFromHex(ref.NewHash)
 		repo.References[ref.Name] = curRef

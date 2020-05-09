@@ -59,7 +59,7 @@ var issueCreateCmd = &cobra.Command{
 		fixers, _ := cmd.Flags().GetStringSlice("fixers")
 		issueID, _ := cmd.Flags().GetInt("issue-id")
 
-		targetRepo, err := repo.GetRepoAtWorkingDir(cfg.Node.GitBinPath)
+		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
@@ -99,7 +99,7 @@ var issueListCmd = &cobra.Command{
 		dateFmt, _ := cmd.Flags().GetString("date")
 		format, _ := cmd.Flags().GetString("format")
 
-		targetRepo, err := repo.GetRepoAtWorkingDir(cfg.Node.GitBinPath)
+		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}

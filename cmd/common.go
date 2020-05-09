@@ -81,7 +81,7 @@ func getRepoAndClients(cmd *cobra.Command) (core.BareRepo,
 	*client.RPCClient, []restclient.RestClient) {
 
 	// Get the repository
-	targetRepo, err := repo2.GetRepoAtWorkingDir(cfg.Node.GitBinPath)
+	targetRepo, err := repo2.GetAtWorkingDir(cfg.Node.GitBinPath)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

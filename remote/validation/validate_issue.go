@@ -10,10 +10,9 @@ import (
 	"github.com/stretchr/objx"
 	"github.com/thoas/go-funk"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/types"
+	repo2 "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
-	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
 )
 
@@ -26,31 +25,59 @@ var (
 type ValidateIssueCommitArg struct {
 	OldHash          string
 	Change           *core.ItemChange
-	TxDetail         *types.TxDetail
+	TxDetail         *core.TxDetail
 	PushKeyGetter    core.PushKeyGetter
 	CheckIssueCommit IssueCommitChecker
 	CheckCommit      CommitChecker
 }
 
-// ValidateIssueCommit validates an issue commit.
-func ValidateIssueCommit(localRepo core.BareRepo, args *ValidateIssueCommitArg) error {
+// ValidateIssueCommit validates pushed issue commits.
+// commit is the latest commit in the issue reference.
+func ValidateIssueCommit(repo core.BareRepo, commit core.Commit, args *ValidateIssueCommitArg) error {
 
-	// Get the latest comment
-	commitHash := plumbing.NewHash(args.Change.Item.GetData())
-	commit, err := localRepo.WrappedCommitObject(commitHash)
+	// Issue reference history cannot have merge commits (merge commit not permitted)
+	hasMerges, err := repo.HasMergeCommits(args.TxDetail.Reference)
 	if err != nil {
-		return errors.Wrap(err, "unable to get commit object")
+		return errors.Wrap(err, "failed to check for merge commits in issue")
+	} else if hasMerges {
+		return fmt.Errorf("issue history must not include merge commits")
 	}
 
 	// Check the latest commit using standard commit validation rules
-	if err = args.CheckCommit(commit.UnWrap(), args.TxDetail, args.PushKeyGetter); err != nil {
+	unwrapped := commit.UnWrap()
+	if err = args.CheckCommit(unwrapped, args.TxDetail, args.PushKeyGetter); err != nil {
 		return err
 	}
 
-	// Now, check that the recent commit down to the old (pre-push) commit
-	// pass issue commit validation
-	for {
-		issueBody, err := args.CheckIssueCommit(commit, args.TxDetail.Reference, args.OldHash, localRepo)
+	// Collect the ancestors of the latest issue commit that were pushed along and were
+	// not part of the issue history prior to the push request that introduced this issue commit.
+	ancestors, err := repo.GetAncestors(unwrapped, args.OldHash, true)
+	if err != nil {
+		return err
+	}
+
+	// Validate the new issue commits by replaying the commits
+	// individually beginning from the first ancestor.
+	issueCommits := append(ancestors, unwrapped)
+	for i, issueCommit := range issueCommits {
+
+		// Define the issie commit checker arguments
+		icArgs := &CheckIssueCommitArgs{
+			Reference:  args.TxDetail.Reference,
+			OldHash:    args.OldHash,
+			IsNewIssue: !repo.GetState().References.Has(args.TxDetail.Reference),
+		}
+
+		// If there are ancestors, set IsNewIssue to false at index > 0.
+		// Is ensures CheckIssueCommit does not treat the issue reference as
+		// a new one. Also, set OldHash to the previous ancestor to mimic
+		// an already persisted issue reference history.
+		if i > 0 {
+			icArgs.IsNewIssue = false
+			icArgs.OldHash = issueCommits[i-1].Hash.String()
+		}
+
+		issueBody, err := args.CheckIssueCommit(repo, repo2.WrapCommit(issueCommit), icArgs)
 		if err != nil {
 			return err
 		}
@@ -61,31 +88,34 @@ func ValidateIssueCommit(localRepo core.BareRepo, args *ValidateIssueCommitArg) 
 			args.TxDetail.FlagCheckIssueUpdatePolicy = true
 		}
 
-		if commit.NumParents() == 0 {
-			break
+		// Set Close field in the reference data. Do this for only the latest commit
+		if issueCommit.Hash.String() == args.Change.Item.GetData() && issueBody.Close > 0 {
+			args.TxDetail.Data().Close = issueBody.Close
 		}
-
-		parent, err := commit.Parent(0)
-		if err != nil {
-			return err
-		}
-		if parent.GetHash().String() == args.OldHash {
-			break
-		}
-		commit = parent
 	}
 
 	return nil
 }
 
-// IssueCommitChecker describes a function for validating an issue commit.
-type IssueCommitChecker func(commit core.Commit, reference, oldHash string, repo core.BareRepo) (*plumbing2.IssueBody, error)
+// CheckIssueCommitArgs includes arguments for CheckIssueCommit function
+type CheckIssueCommitArgs struct {
+	Reference  string
+	OldHash    string
+	IsNewIssue bool
+}
 
-// CheckIssueCommit checks commits of an issue branch.
-func CheckIssueCommit(commit core.Commit, reference, oldHash string, repo core.BareRepo) (*plumbing2.IssueBody, error) {
+// IssueCommitChecker describes a function for validating an issue commit.
+type IssueCommitChecker func(
+	repo core.BareRepo,
+	commit core.Commit,
+	args *CheckIssueCommitArgs) (*plumbing2.IssueBody, error)
+
+// CheckIssueCommit validates new commits of an issue branch. It returns nil issue body
+// and error if validation failed or an issue body and nil if validation passed.
+func CheckIssueCommit(repo core.BareRepo, commit core.Commit, args *CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
 
 	// Issue reference name must be valid
-	if !plumbing2.IsIssueReference(reference) {
+	if !plumbing2.IsIssueReference(args.Reference) {
 		return nil, fmt.Errorf("issue number is not valid. Must be numeric")
 	}
 
@@ -94,22 +124,13 @@ func CheckIssueCommit(commit core.Commit, reference, oldHash string, repo core.B
 		return nil, fmt.Errorf("issue commit cannot have more than one parent")
 	}
 
-	// Issue commit history cannot have merge commits in it (merge commit not permitted)
-	hasMerges, err := repo.HasMergeCommits(reference)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to check for merges in issue commit history")
-	} else if hasMerges {
-		return nil, fmt.Errorf("issue commit history must not include a merge commit")
-	}
-
 	// New issue's first commit must have zero hash parent (orphan commit)
-	isNewIssue := !repo.GetState().References.Has(reference)
-	if isNewIssue && commit.NumParents() != 0 {
+	if args.IsNewIssue && commit.NumParents() != 0 {
 		return nil, fmt.Errorf("first commit of a new issue must have no parent")
 	}
 
 	// Issue commit history must not alter the current history (rebasing not permitted)
-	if !isNewIssue && repo.IsAncestor(oldHash, commit.GetHash().String()) != nil {
+	if !args.IsNewIssue && repo.IsAncestor(args.OldHash, commit.GetHash().String()) != nil {
 		return nil, fmt.Errorf("issue commit must not alter history")
 	}
 
@@ -147,7 +168,7 @@ func CheckIssueCommit(commit core.Commit, reference, oldHash string, repo core.B
 	}
 
 	// Validate extracted front matter
-	if err = CheckIssueBody(repo, commit, isNewIssue, cfm.FrontMatter, cfm.Content); err != nil {
+	if err = CheckIssueBody(repo, commit, args.IsNewIssue, cfm.FrontMatter, cfm.Content); err != nil {
 		return nil, err
 	}
 
@@ -155,12 +176,18 @@ func CheckIssueCommit(commit core.Commit, reference, oldHash string, repo core.B
 }
 
 // CheckIssueBody checks whether the front matter and content extracted from an issue body is ok.
+// repo: The target repo
+// commit: The commit whose content is the be checked according to issue comment rules.
+// isNewIssue: indicates that the issue reference where the commit resides is new.
+// fm: The front matter data.
+// content: The content from the issue commit.
+//
 // Valid front matter fields:
-// - title: The title of the issue (optional)
-// - labels: Labels categorize issues into arbitrary or conceptual units
-// - replyTo: Indicates the issue is a response an earlier comment.
-// - assignees: List push keys assigned to the issue and open for interpretation by clients.
-// - fixers: List push keys assigned to fix an issue and is enforced by the protocol.
+//  title: The title of the issue (optional).
+//  labels: Labels categorize issues into arbitrary or conceptual units.
+//  replyTo: Indicates the issue is a response an earlier comment.
+//  assignees: List push keys assigned to the issue and open for interpretation by clients.
+//  fixers: List push keys assigned to fix an issue and is enforced by the protocol.
 func CheckIssueBody(
 	repo core.BareRepo,
 	commit core.Commit,

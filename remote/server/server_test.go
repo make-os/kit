@@ -51,7 +51,7 @@ var _ = Describe("Server", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = repo2.GetRepo(path)
+		repo, err = repo2.Get(path)
 		Expect(err).To(BeNil())
 	})
 

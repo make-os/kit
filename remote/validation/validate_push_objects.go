@@ -15,7 +15,6 @@ import (
 	"gitlab.com/makeos/mosdef/params"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
@@ -162,12 +161,12 @@ func CheckPushedReferenceConsistency(
 
 // GetTxDetailsFromNote creates a slice of TxDetail objects from a push note.
 // Limit to references specified in targetRefs
-func GetTxDetailsFromNote(note *core.PushNote, targetRefs ...string) (details []*types.TxDetail) {
+func GetTxDetailsFromNote(note *core.PushNote, targetRefs ...string) (details []*core.TxDetail) {
 	for _, ref := range note.References {
 		if len(targetRefs) > 0 && !funk.ContainsString(targetRefs, ref.Name) {
 			continue
 		}
-		detail := &types.TxDetail{
+		detail := &core.TxDetail{
 			RepoName:        note.RepoName,
 			RepoNamespace:   note.Namespace,
 			Reference:       ref.Name,

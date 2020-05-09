@@ -13,7 +13,6 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -97,7 +96,7 @@ var _ = Describe("SignNote", func() {
 			hash := plumbing.NewHash("25560419583cd1eb46e322528597f94404e0b7be")
 			mockRepo.EXPECT().Reference(refname, true).Return(plumbing.NewHashReference(refname, hash), nil)
 			args.GetNextNonce = testGetNextNonce2("1", nil)
-			args.RemoteURLTokenUpdater = func(targetRepo core.BareRepo, targetRemote string, txDetail *types.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
+			args.RemoteURLTokenUpdater = func(targetRepo core.BareRepo, targetRemote string, txDetail *core.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
 				return "", fmt.Errorf("error")
 			}
 			err := SignNoteCmd(cfg, mockRepo, args)
@@ -114,7 +113,7 @@ var _ = Describe("SignNote", func() {
 			hash := plumbing.NewHash("25560419583cd1eb46e322528597f94404e0b7be")
 			mockRepo.EXPECT().Reference(refname, true).Return(plumbing.NewHashReference(refname, hash), nil)
 			args.GetNextNonce = testGetNextNonce2("1", nil)
-			args.RemoteURLTokenUpdater = func(targetRepo core.BareRepo, targetRemote string, txDetail *types.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
+			args.RemoteURLTokenUpdater = func(targetRepo core.BareRepo, targetRemote string, txDetail *core.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
 				return "", nil
 			}
 			err := SignNoteCmd(cfg, mockRepo, args)

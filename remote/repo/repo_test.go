@@ -44,7 +44,7 @@ var _ = Describe("RepoContext", func() {
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		dotGitPath = filepath.Join(path, ".git")
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = repo2.GetRepoWithLiteGit(cfg.Node.GitBinPath, path)
+		repo, err = repo2.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 
@@ -372,6 +372,53 @@ var _ = Describe("RepoContext", func() {
 			n, err := repo.GetFreeIssueNum(start)
 			Expect(err).To(BeNil())
 			Expect(n).To(Equal(2))
+		})
+	})
+
+	Describe(".GetAncestors", func() {
+		var recentHash, c1, c2 string
+
+		BeforeEach(func() {
+			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
+			c1 = testutil2.GetRecentCommitHash(path, "refs/heads/master")
+			testutil2.AppendCommit(path, "file.txt", "some text 2", "commit msg 2")
+			c2 = testutil2.GetRecentCommitHash(path, "refs/heads/master")
+			testutil2.AppendCommit(path, "file.txt", "some text 3", "commit msg 2")
+			recentHash = testutil2.GetRecentCommitHash(path, "refs/heads/master")
+		})
+
+		It("should return two hashes (c2, c1)", func() {
+			commit, err := repo.CommitObject(plumbing.NewHash(recentHash))
+			Expect(err).To(BeNil())
+			ancestors, err := repo.GetAncestors(commit, "", false)
+			Expect(err).To(BeNil())
+			Expect(ancestors).To(HaveLen(2))
+			Expect(ancestors[0].Hash.String()).To(Equal(c2))
+			Expect(ancestors[0].Hash.String()).To(Equal(c2))
+			Expect(ancestors[1].Hash.String()).To(Equal(c1))
+			Expect(ancestors[1].Hash.String()).To(Equal(c1))
+		})
+
+		It("should return two hashes (c1, c2) when reverse=true", func() {
+			commit, err := repo.CommitObject(plumbing.NewHash(recentHash))
+			Expect(err).To(BeNil())
+			ancestors, err := repo.GetAncestors(commit, "", true)
+			Expect(err).To(BeNil())
+			Expect(ancestors).To(HaveLen(2))
+			Expect(ancestors[0].Hash.String()).To(Equal(c1))
+			Expect(ancestors[0].Hash.String()).To(Equal(c1))
+			Expect(ancestors[1].Hash.String()).To(Equal(c2))
+			Expect(ancestors[1].Hash.String()).To(Equal(c2))
+		})
+
+		It("should return 1 hashes (c2) when stopHash=c1", func() {
+			commit, err := repo.CommitObject(plumbing.NewHash(recentHash))
+			Expect(err).To(BeNil())
+			ancestors, err := repo.GetAncestors(commit, c1, false)
+			Expect(err).To(BeNil())
+			Expect(ancestors).To(HaveLen(1))
+			Expect(ancestors[0].Hash.String()).To(Equal(c2))
+			Expect(ancestors[0].Hash.String()).To(Equal(c2))
 		})
 	})
 })

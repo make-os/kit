@@ -93,7 +93,7 @@ func (a *RepoKeeper) GetNoPopulate(name string, blockNum ...uint64) *state.Repos
 	// Otherwise, we decode the repo bytes to types.Repository
 	repo, err := state.NewRepositoryFromBytes(bs)
 	if err != nil {
-		panic(errors.Wrap(err, "failed to decode repo byte slice"))
+		panic(errors.Wrap(err, "failed to decode repo"))
 	}
 
 	return repo

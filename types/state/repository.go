@@ -33,6 +33,9 @@ type Reference struct {
 	// It is used to enforce order of operation to the reference.
 	Nonce uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce,omitempty"`
 
+	// Closed indicates that the reference is closed
+	Closed bool `json:"closed" mapstructure:"closed" msgpack:"closed,omitempty"`
+
 	// Hash is the current hash of the reference
 	Hash []byte `json:"hash" mapstructure:"hash" msgpack:"hash,omitempty"`
 }
@@ -43,11 +46,11 @@ func (r *Reference) IsNil() bool {
 }
 
 func (r *Reference) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return r.EncodeMulti(enc, r.Creator, r.Nonce, r.Hash)
+	return r.EncodeMulti(enc, r.Creator, r.Nonce, r.Hash, r.Closed)
 }
 
 func (r *Reference) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return r.DecodeMulti(dec, &r.Creator, &r.Nonce, &r.Hash)
+	return r.DecodeMulti(dec, &r.Creator, &r.Nonce, &r.Hash, &r.Closed)
 }
 
 // References represents a collection of references

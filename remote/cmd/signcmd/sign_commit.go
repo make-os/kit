@@ -15,7 +15,6 @@ import (
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/server"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -149,7 +148,7 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo core.BareRepo, args *SignCo
 	}
 
 	// Make the transaction parameter object
-	txDetail := &types.TxDetail{
+	txDetail := &core.TxDetail{
 		Fee:             util.String(args.Fee),
 		Nonce:           args.Nonce,
 		PushKeyID:       args.PushKeyID,

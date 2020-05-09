@@ -12,7 +12,7 @@ type WrappedCommit struct {
 }
 
 // wrapCommit creates a WrappedCommit that wraps a go-git commit object
-func NewWrappedCommit(gc *object.Commit) *WrappedCommit {
+func WrapCommit(gc *object.Commit) *WrappedCommit {
 	return &WrappedCommit{gc}
 }
 

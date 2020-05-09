@@ -1,4 +1,4 @@
-package types
+package core
 
 import (
 	"bytes"
@@ -62,8 +62,15 @@ func (td ReferenceTxDetails) GetNonce() uint64 {
 	return 0
 }
 
-// TxDetail represents transaction information usually included in commits, notes
-// and tag objects
+// ReferenceData stores non-git generated data about a reference
+type ReferenceData struct {
+	Close int `json:"close" msgpack:"close,omitempty"` // Close indicates that the reference is closed
+}
+
+// TxDetail represents transaction information required to generate
+// a network transaction for updating a repository. It includes
+// basic network transaction fields, flags and post validation
+// data required to construct a valid push transaction.
 type TxDetail struct {
 	util.SerializerHelper
 	RepoName        string      `json:"repo" msgpack:"repo,omitempty" mapstructure:"repo"`                // The target repo name
@@ -77,8 +84,20 @@ type TxDetail struct {
 	Head            string      `json:"head" msgpack:"head,omitempty" mapstructure:"head"`                // Indicates the HEAD hash of the target reference
 
 	// FlagCheckIssueUpdatePolicy instructs the authorization function to check whether the
-	// pusher has 'issue-update' permission for the reference
+	// pusher has 'issue update' permission for the target reference
 	FlagCheckIssueUpdatePolicy bool `json:"-" msgpack:"-" mapstructure:"-"`
+
+	// ReferenceData includes data that generated from the processing and validation
+	// of the target reference
+	ReferenceData *ReferenceData `json:"-" msgpack:"-" mapstructure:"-"`
+}
+
+// Data initializes and returns the reference data
+func (tp *TxDetail) Data() *ReferenceData {
+	if tp.ReferenceData == nil {
+		tp.ReferenceData = &ReferenceData{}
+	}
+	return tp.ReferenceData
 }
 
 // MustSignatureAsBytes returns the decoded signature.

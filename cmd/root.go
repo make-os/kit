@@ -123,7 +123,7 @@ var fallbackCmd = &cobra.Command{
 		if isGitSignRequest(args) {
 			if err := gitcmd.GitSignCmd(cfg, os.Stdin, &gitcmd.GitSignArgs{
 				Args:            os.Args,
-				RepoGetter:      repo.GetRepo,
+				RepoGetter:      repo.Get,
 				PushKeyUnlocker: cmd2.UnlockPushKey,
 				StdErr:          os.Stderr,
 				StdOut:          os.Stdout,
@@ -136,7 +136,7 @@ var fallbackCmd = &cobra.Command{
 		if isGitVerifyRequest(args) {
 			if err := gitcmd.GitVerifyCmd(cfg, &gitcmd.GitVerifyArgs{
 				Args:            args,
-				RepoGetter:      repo.GetRepo,
+				RepoGetter:      repo.Get,
 				PushKeyUnlocker: cmd2.UnlockPushKey,
 				PemDecoder:      pem.Decode,
 				StdOut:          os.Stdout,

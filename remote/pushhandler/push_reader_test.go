@@ -46,7 +46,7 @@ var _ = Describe("PushReader", func() {
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = repo3.GetRepoWithLiteGit(cfg.Node.GitBinPath, path)
+		repo, err = repo3.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 

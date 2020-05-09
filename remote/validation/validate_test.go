@@ -18,7 +18,6 @@ import (
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
@@ -43,7 +42,7 @@ var _ = Describe("Validation", func() {
 	var pubKey *crypto.PubKey
 	var privKey *crypto.Key
 	var ctrl *gomock.Controller
-	var baseTxDetail *types.TxDetail
+	var baseTxDetail *core.TxDetail
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -52,13 +51,13 @@ var _ = Describe("Validation", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
 		privKey = crypto.NewKeyFromIntSeed(1)
-		baseTxDetail = &types.TxDetail{PushKeyID: privKey.PushAddr().String()}
+		baseTxDetail = &core.TxDetail{PushKeyID: privKey.PushAddr().String()}
 		pubKey = privKey.PubKey()
 
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		testRepo, err = repo.GetRepoWithLiteGit(cfg.Node.GitBinPath, path)
+		testRepo, err = repo.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 
@@ -139,7 +138,7 @@ var _ = Describe("Validation", func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1", "commit message")
 				commitHash, _ := testRepo.GetRecentCommitHash()
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(strings.TrimSpace(commitHash)))
-				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
+				txDetail := &core.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				commit.PGPSignature = string(pem.EncodeToMemory(&pem.Block{
 					Bytes:   []byte{1, 2, 3},
 					Headers: txDetail.ToMapForPEMHeader(),
@@ -162,7 +161,7 @@ var _ = Describe("Validation", func() {
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
 				sigMsg := validation.GetCommitOrTagSigMsg(commit)
 
-				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
+				txDetail := &core.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				pemHeader := txDetail.ToMapForPEMHeader()
 
 				sig, err = privKey.PrivKey().Sign(append([]byte(sigMsg), txDetail.BytesNoSig()...))
@@ -187,7 +186,7 @@ var _ = Describe("Validation", func() {
 				commit, _ = testRepo.CommitObject(plumbing.NewHash(commitHash))
 				sigMsg := validation.GetCommitOrTagSigMsg(commit)
 
-				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
+				txDetail := &core.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				pemHeader := txDetail.ToMapForPEMHeader()
 
 				sig, err = privKey.PrivKey().Sign(append([]byte(sigMsg), txDetail.BytesNoSig()...))
@@ -257,7 +256,7 @@ var _ = Describe("Validation", func() {
 				tagRef, _ := testRepo.Tag("v1")
 				tob, _ = testRepo.TagObject(tagRef.Hash())
 
-				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
+				txDetail := &core.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				sig := pem.EncodeToMemory(&pem.Block{Bytes: []byte("invalid sig"), Headers: txDetail.ToMapForPEMHeader(), Type: "SIGNATURE"})
 				tob.PGPSignature = string(sig)
 
@@ -276,7 +275,7 @@ var _ = Describe("Validation", func() {
 				tagRef, _ := testRepo.Tag("v1")
 				tob, _ = testRepo.TagObject(tagRef.Hash())
 
-				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
+				txDetail := &core.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				msg := validation.GetCommitOrTagSigMsg(tob)
 				sig, _ := privKey.PrivKey().Sign(append([]byte(msg), txDetail.BytesNoSig()...))
 				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.ToMapForPEMHeader(), Type: "SIGNATURE"})
@@ -297,7 +296,7 @@ var _ = Describe("Validation", func() {
 				tagRef, _ := testRepo.Tag("v1")
 				tob, _ = testRepo.TagObject(tagRef.Hash())
 
-				txDetail := &types.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
+				txDetail := &core.TxDetail{Fee: "0", PushKeyID: pubKey.PushAddr().String()}
 				msg := validation.GetCommitOrTagSigMsg(tob)
 				sig, _ := privKey.PrivKey().Sign(append([]byte(msg), txDetail.BytesNoSig()...))
 				pemData := pem.EncodeToMemory(&pem.Block{Bytes: sig, Headers: txDetail.ToMapForPEMHeader(), Type: "SIGNATURE"})
@@ -318,7 +317,7 @@ var _ = Describe("Validation", func() {
 
 		When("unable to get note", func() {
 			BeforeEach(func() {
-				detail := &types.TxDetail{Reference: "refs/notes/note1"}
+				detail := &core.TxDetail{Reference: "refs/notes/note1"}
 				mockRepo := mocks.NewMockBareRepo(ctrl)
 				mockRepo.EXPECT().RefGet(detail.Reference).Return("", fmt.Errorf("bad error"))
 				err = validation.CheckNote(mockRepo, detail)
@@ -333,7 +332,7 @@ var _ = Describe("Validation", func() {
 		When("current note hash is different from tx detail hash", func() {
 			BeforeEach(func() {
 				hash := util.RandString(40)
-				detail := &types.TxDetail{Reference: "refs/notes/note1", Head: hash}
+				detail := &core.TxDetail{Reference: "refs/notes/note1", Head: hash}
 				mockRepo := mocks.NewMockBareRepo(ctrl)
 				noteHash := util.RandString(40)
 				mockRepo.EXPECT().RefGet(detail.Reference).Return(noteHash, nil)
@@ -390,56 +389,56 @@ var _ = Describe("Validation", func() {
 	Describe(".IsBlockedByScope", func() {
 		It("should return true when scopes has r/repo1 and tx repo=repo2 and namespace=''", func() {
 			scopes := []string{"r/repo1"}
-			detail := &types.TxDetail{RepoName: "repo2", RepoNamespace: ""}
+			detail := &core.TxDetail{RepoName: "repo2", RepoNamespace: ""}
 			ns := state.BareNamespace()
 			Expect(validation.IsBlockedByScope(scopes, detail, ns)).To(BeTrue())
 		})
 
 		It("should return false when scopes has r/repo1 and tx repo=repo1 and namespace=''", func() {
 			scopes := []string{"r/repo1"}
-			detail := &types.TxDetail{RepoName: "repo1", RepoNamespace: ""}
+			detail := &core.TxDetail{RepoName: "repo1", RepoNamespace: ""}
 			ns := state.BareNamespace()
 			Expect(validation.IsBlockedByScope(scopes, detail, ns)).To(BeFalse())
 		})
 
 		It("should return true when scopes has ns1/repo1 and tx repo=repo1 and namespace=ns2", func() {
 			scopes := []string{"ns1/repo1"}
-			detail := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns2"}
+			detail := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns2"}
 			ns := state.BareNamespace()
 			Expect(validation.IsBlockedByScope(scopes, detail, ns)).To(BeTrue())
 		})
 
 		It("should return false when scopes has ns1/repo1 and tx repo=repo1 and namespace=ns1", func() {
 			scopes := []string{"ns1/repo1"}
-			detail := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1"}
+			detail := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1"}
 			ns := state.BareNamespace()
 			Expect(validation.IsBlockedByScope(scopes, detail, ns)).To(BeFalse())
 		})
 
 		It("should return true when scopes has ns1/ and tx repo=repo1 and namespace=ns2", func() {
 			scopes := []string{"ns1/"}
-			detail := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns2"}
+			detail := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns2"}
 			ns := state.BareNamespace()
 			Expect(validation.IsBlockedByScope(scopes, detail, ns)).To(BeTrue())
 		})
 
 		It("should return false when scopes has ns1/ and tx repo=repo1 and namespace=ns1", func() {
 			scopes := []string{"ns1/"}
-			detail := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1"}
+			detail := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1"}
 			ns := state.BareNamespace()
 			Expect(validation.IsBlockedByScope(scopes, detail, ns)).To(BeFalse())
 		})
 
 		It("should return false when scopes has repo1 and tx repo=repo1 and namespace=''", func() {
 			scopes := []string{"repo1"}
-			detail := &types.TxDetail{RepoName: "repo1", RepoNamespace: ""}
+			detail := &core.TxDetail{RepoName: "repo1", RepoNamespace: ""}
 			ns := state.BareNamespace()
 			Expect(validation.IsBlockedByScope(scopes, detail, ns)).To(BeFalse())
 		})
 
 		It("should return true when scopes has repo1 and tx repo=repo2 and namespace=''", func() {
 			scopes := []string{"repo1"}
-			detail := &types.TxDetail{RepoName: "repo2", RepoNamespace: ""}
+			detail := &core.TxDetail{RepoName: "repo2", RepoNamespace: ""}
 			ns := state.BareNamespace()
 			Expect(validation.IsBlockedByScope(scopes, detail, ns)).To(BeTrue())
 		})
@@ -448,7 +447,7 @@ var _ = Describe("Validation", func() {
 			"namespace='ns1' "+
 			"but ns1/repo2 does not point to repo1", func() {
 			scopes := []string{"repo1"}
-			detail := &types.TxDetail{RepoName: "repo2", RepoNamespace: "ns1"}
+			detail := &core.TxDetail{RepoName: "repo2", RepoNamespace: "ns1"}
 			ns := state.BareNamespace()
 			ns.Domains["repo2"] = "repo100"
 			Expect(validation.IsBlockedByScope(scopes, detail, ns)).To(BeTrue())
@@ -458,7 +457,7 @@ var _ = Describe("Validation", func() {
 			"namespace='ns1' "+
 			"but ns1/repo2 does not point to r/repo1", func() {
 			scopes := []string{"repo1"}
-			detail := &types.TxDetail{RepoName: "repo2", RepoNamespace: "ns1"}
+			detail := &core.TxDetail{RepoName: "repo2", RepoNamespace: "ns1"}
 			ns := state.BareNamespace()
 			ns.Domains["repo2"] = "r/repo1"
 			Expect(validation.IsBlockedByScope(scopes, detail, ns)).To(BeFalse())

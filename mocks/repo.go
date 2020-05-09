@@ -951,6 +951,21 @@ func (mr *MockBareRepoMockRecorder) GetFreeIssueNum(startID interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFreeIssueNum", reflect.TypeOf((*MockBareRepo)(nil).GetFreeIssueNum), startID)
 }
 
+// GetAncestors mocks base method
+func (m *MockBareRepo) GetAncestors(commit *object.Commit, stopHash string, reverse bool) ([]*object.Commit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAncestors", commit, stopHash, reverse)
+	ret0, _ := ret[0].([]*object.Commit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAncestors indicates an expected call of GetAncestors
+func (mr *MockBareRepoMockRecorder) GetAncestors(commit, stopHash, reverse interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAncestors", reflect.TypeOf((*MockBareRepo)(nil).GetAncestors), commit, stopHash, reverse)
+}
+
 // MockCommit is a mock of Commit interface
 type MockCommit struct {
 	ctrl     *gomock.Controller

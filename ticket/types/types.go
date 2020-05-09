@@ -42,8 +42,7 @@ type TicketManager interface {
 
 	// GetByProposer finds tickets belonging to the
 	// given proposer public key.
-	GetByProposer(ticketType int, proposerPubKey util.Bytes32,
-		queryOpt ...interface{}) ([]*Ticket, error)
+	GetByProposer(ticketType int, proposerPubKey util.Bytes32, queryOpt ...interface{}) ([]*Ticket, error)
 
 	// CountActiveValidatorTickets returns the number of matured and non-decayed tickets.
 	CountActiveValidatorTickets() (int, error)

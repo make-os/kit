@@ -21,7 +21,6 @@ import (
 	"gitlab.com/makeos/mosdef/remote/pushpool"
 	repo2 "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/validation"
-	types2 "gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -255,6 +254,13 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
 	sv.log.Debug("New request", "Method", r.Method, "URL", r.URL.String())
 
+	defer func() {
+		if rcv, ok := recover().(error); ok {
+			w.WriteHeader(http.StatusInternalServerError)
+			sv.log.Error("Request error", "Err", rcv.Error())
+		}
+	}()
+
 	// De-construct the URL to get the repo name and operation
 	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 	namespaceName := pathParts[0]
@@ -375,7 +381,7 @@ func (sv *Server) GetPushKeyGetter() core.PushKeyGetter {
 // createPushHandler creates an instance of Handler
 func (sv *Server) createPushHandler(
 	targetRepo core.BareRepo,
-	txDetails []*types2.TxDetail,
+	txDetails []*core.TxDetail,
 	enforcer policy.EnforcerFunc) *pushhandler.Handler {
 	return pushhandler.NewHandler(targetRepo, txDetails, enforcer, sv)
 }
@@ -412,7 +418,7 @@ func (sv *Server) FindObject(key []byte) ([]byte, error) {
 		return nil, fmt.Errorf("invalid object hash")
 	}
 
-	repo, err := repo2.GetRepo(sv.getRepoPath(repoName))
+	repo, err := repo2.Get(sv.getRepoPath(repoName))
 	if err != nil {
 		return nil, err
 	}
@@ -427,7 +433,7 @@ func (sv *Server) FindObject(key []byte) ([]byte, error) {
 
 // Get returns a repo handle
 func (sv *Server) GetRepo(name string) (core.BareRepo, error) {
-	return repo2.GetRepoWithLiteGit(sv.gitBinPath, sv.getRepoPath(name))
+	return repo2.GetWithLiteGit(sv.gitBinPath, sv.getRepoPath(name))
 }
 
 // Shutdown shuts down the server

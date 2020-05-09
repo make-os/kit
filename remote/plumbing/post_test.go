@@ -33,7 +33,7 @@ var _ = Describe("Post", func() {
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
 
-		repo, err = repo2.GetRepoWithLiteGit(cfg.Node.GitBinPath, path)
+		repo, err = repo2.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 

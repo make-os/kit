@@ -433,7 +433,7 @@ func (sv *Server) updateWithPushTx(tx *core.TxPush) error {
 	repoPath := sv.getRepoPath(tx.PushNote.GetRepoName())
 
 	// Get the repository
-	repo, err := repo2.GetRepo(repoPath)
+	repo, err := repo2.Get(repoPath)
 	if err != nil {
 		return err
 	}

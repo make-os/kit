@@ -20,15 +20,14 @@ import (
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 	gogitcfg "gopkg.in/src-d/go-git.v4/config"
 )
 
-func testCheckTxDetail(err error) func(params *types.TxDetail, keepers core.Keepers, index int) error {
-	return func(params *types.TxDetail, keepers core.Keepers, index int) error { return err }
+func testCheckTxDetail(err error) func(params *core.TxDetail, keepers core.Keepers, index int) error {
+	return func(params *core.TxDetail, keepers core.Keepers, index int) error { return err }
 }
 
 var _ = Describe("Auth", func() {
@@ -50,7 +49,7 @@ var _ = Describe("Auth", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		_, err = repo.GetRepo(path)
+		_, err = repo.Get(path)
 		Expect(err).To(BeNil())
 
 		ctrl = gomock.NewController(GinkgoT())
@@ -73,11 +72,11 @@ var _ = Describe("Auth", func() {
 		When("there are two or more transaction details", func() {
 			When("they are signed with different push keys", func() {
 				BeforeEach(func() {
-					txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
-					txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key2.PushAddr().String()}
+					txD := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+					txD2 := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key2.PushAddr().String()}
 					repoState := state.BareRepository()
 					repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
-					txDetails := []*types.TxDetail{txD, txD2}
+					txDetails := []*core.TxDetail{txD, txD2}
 					_, err = authenticate(txDetails, repoState, state.BareNamespace(), mockLogic, testCheckTxDetail(nil))
 				})
 
@@ -90,9 +89,9 @@ var _ = Describe("Auth", func() {
 
 		When("the details have different target repository name", func() {
 			BeforeEach(func() {
-				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
-				txD2 := &types.TxDetail{RepoName: "repo2", RepoNamespace: "ns1", Nonce: 2, PushKeyID: key.PushAddr().String()}
-				txDetails := []*types.TxDetail{txD, txD2}
+				txD := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+				txD2 := &core.TxDetail{RepoName: "repo2", RepoNamespace: "ns1", Nonce: 2, PushKeyID: key.PushAddr().String()}
+				txDetails := []*core.TxDetail{txD, txD2}
 				repoState := state.BareRepository()
 				repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
 				_, err = authenticate(txDetails, repoState, state.BareNamespace(), mockLogic, testCheckTxDetail(nil))
@@ -106,9 +105,9 @@ var _ = Describe("Auth", func() {
 
 		When("the details have different nonce", func() {
 			BeforeEach(func() {
-				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
-				txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 2, PushKeyID: key.PushAddr().String()}
-				txDetails := []*types.TxDetail{txD, txD2}
+				txD := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+				txD2 := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 2, PushKeyID: key.PushAddr().String()}
+				txDetails := []*core.TxDetail{txD, txD2}
 				repoState := state.BareRepository()
 				repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
 				_, err = authenticate(txDetails, repoState, state.BareNamespace(), mockLogic, testCheckTxDetail(nil))
@@ -122,9 +121,9 @@ var _ = Describe("Auth", func() {
 
 		When("the details have different target namespace", func() {
 			BeforeEach(func() {
-				txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
-				txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns2", Nonce: 1, PushKeyID: key.PushAddr().String()}
-				txDetails := []*types.TxDetail{txD, txD2}
+				txD := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+				txD2 := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns2", Nonce: 1, PushKeyID: key.PushAddr().String()}
+				txDetails := []*core.TxDetail{txD, txD2}
 				repoState := state.BareRepository()
 				repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
 				_, err = authenticate(txDetails, repoState, state.BareNamespace(), mockLogic, testCheckTxDetail(nil))
@@ -137,8 +136,8 @@ var _ = Describe("Auth", func() {
 		})
 
 		It("should return error when a reference transaction detail failed validation", func() {
-			txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
-			txDetails := []*types.TxDetail{txD}
+			txD := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+			txDetails := []*core.TxDetail{txD}
 			repoState := state.BareRepository()
 			repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
 			_, err := authenticate(txDetails, repoState, &state.Namespace{}, mockLogic, testCheckTxDetail(fmt.Errorf("bad error")))
@@ -149,9 +148,9 @@ var _ = Describe("Auth", func() {
 		Context("on success", func() {
 			When("push key is a repo contributor", func() {
 				BeforeEach(func() {
-					txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
-					txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
-					txDetails := []*types.TxDetail{txD, txD2}
+					txD := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+					txD2 := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+					txDetails := []*core.TxDetail{txD, txD2}
 					repoState := state.BareRepository()
 					repoState.Contributors = map[string]*state.RepoContributor{key.PushAddr().String(): {}}
 					_, err = authenticate(txDetails, repoState, &state.Namespace{}, mockLogic, testCheckTxDetail(nil))
@@ -164,9 +163,9 @@ var _ = Describe("Auth", func() {
 
 			When("push key is a namespace contributor", func() {
 				BeforeEach(func() {
-					txD := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
-					txD2 := &types.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
-					txDetails := []*types.TxDetail{txD, txD2}
+					txD := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+					txD2 := &core.TxDetail{RepoName: "repo1", RepoNamespace: "ns1", Nonce: 1, PushKeyID: key.PushAddr().String()}
+					txDetails := []*core.TxDetail{txD, txD2}
 					ns := &state.Namespace{}
 					ns.Contributors = map[string]*state.BaseContributor{key.PushAddr().String(): {}}
 					_, err = authenticate(txDetails, state.BareRepository(), ns, mockLogic, testCheckTxDetail(nil))
@@ -326,11 +325,11 @@ var _ = Describe("Auth", func() {
 
 		When("a push token is ok but failed authentication (and validation)", func() {
 			It("should return error", func() {
-				txDetail := &types.TxDetail{RepoName: "repo1"}
+				txDetail := &core.TxDetail{RepoName: "repo1"}
 				token := base58.Encode(util.ToBytes(txDetail))
 				req := httptest.NewRequest("POST", "https://127.0.0.1", bytes.NewReader(nil))
 				req.SetBasicAuth(token, "")
-				svr.authenticate = func([]*types.TxDetail, *state.Repository, *state.Namespace, core.Keepers, validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
+				svr.authenticate = func([]*core.TxDetail, *state.Repository, *state.Namespace, core.Keepers, validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, fmt.Errorf("auth error")
 				}
 				_, _, err := svr.handleAuth(req, w, &state.Repository{}, &state.Namespace{})
@@ -341,12 +340,12 @@ var _ = Describe("Auth", func() {
 
 		When("a push token is ok and authentication passes", func() {
 			It("should return enforcer", func() {
-				txDetail := &types.TxDetail{RepoName: "repo1"}
+				txDetail := &core.TxDetail{RepoName: "repo1"}
 				token := base58.Encode(util.ToBytes(txDetail))
 				req := httptest.NewRequest("POST", "https://127.0.0.1", bytes.NewReader(nil))
 				req.SetBasicAuth(token, "")
 				enforcer := policy.GetPolicyEnforcer([][]*state.Policy{{{Object: "obj", Subject: "sub", Action: "ac"}}})
-				svr.authenticate = func([]*types.TxDetail, *state.Repository, *state.Namespace, core.Keepers, validation.TxDetailChecker) (policy.EnforcerFunc, error) {
+				svr.authenticate = func([]*core.TxDetail, *state.Repository, *state.Namespace, core.Keepers, validation.TxDetailChecker) (policy.EnforcerFunc, error) {
 					return enforcer, nil
 				}
 				_, enc, err := svr.handleAuth(req, w, &state.Repository{}, &state.Namespace{})
@@ -585,7 +584,7 @@ var _ = Describe("Auth", func() {
 
 		When("token is valid", func() {
 			It("should return no error and transaction detail object", func() {
-				txDetail := &types.TxDetail{RepoName: "repo1"}
+				txDetail := &core.TxDetail{RepoName: "repo1"}
 				token := base58.Encode(txDetail.Bytes())
 				res, err := DecodePushToken(token)
 				Expect(err).To(BeNil())
@@ -596,10 +595,10 @@ var _ = Describe("Auth", func() {
 
 	Describe(".MakePushToken", func() {
 		var token string
-		var txDetail *types.TxDetail
+		var txDetail *core.TxDetail
 
 		BeforeEach(func() {
-			txDetail = &types.TxDetail{RepoName: "repo1"}
+			txDetail = &core.TxDetail{RepoName: "repo1"}
 			mockStoreKey := mocks.NewMockStoredKey(ctrl)
 			mockStoreKey.EXPECT().GetKey().Return(key)
 			token = MakePushToken(mockStoreKey, txDetail)
@@ -618,13 +617,13 @@ var _ = Describe("Auth", func() {
 
 	Describe(".UpdateRemoteURLsWithPushToken", func() {
 		var mockRepo *mocks.MockBareRepo
-		var txDetail *types.TxDetail
+		var txDetail *core.TxDetail
 		var mockStoreKey *mocks.MockStoredKey
 		var token string
 
 		BeforeEach(func() {
 			mockRepo = mocks.NewMockBareRepo(ctrl)
-			txDetail = &types.TxDetail{RepoName: "repo1"}
+			txDetail = &core.TxDetail{RepoName: "repo1"}
 			mockStoreKey = mocks.NewMockStoredKey(ctrl)
 		})
 

@@ -9,13 +9,12 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 )
 
-func testCheckTxDetail(err error) func(params *types.TxDetail, keepers core.Keepers, index int) error {
-	return func(params *types.TxDetail, keepers core.Keepers, index int) error { return err }
+func testCheckTxDetail(err error) func(params *core.TxDetail, keepers core.Keepers, index int) error {
+	return func(params *core.TxDetail, keepers core.Keepers, index int) error { return err }
 }
 
 var _ = Describe("Auth", func() {

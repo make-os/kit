@@ -18,7 +18,6 @@ import (
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -58,7 +57,7 @@ var _ = Describe("Reactor", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		_, err = repo.GetRepoWithLiteGit(cfg.Node.GitBinPath, path)
+		_, err = repo.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
 		mockObjects := testutil.MockLogic(ctrl)
@@ -137,7 +136,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
 
 				svr.authenticate = func(
-					txDetails []*types.TxDetail,
+					txDetails []*core.TxDetail,
 					repo *state.Repository,
 					namespace *state.Namespace,
 					keepers core.Keepers,
@@ -163,7 +162,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
 
 				svr.authenticate = func(
-					txDetails []*types.TxDetail,
+					txDetails []*core.TxDetail,
 					repo *state.Repository,
 					namespace *state.Namespace,
 					keepers core.Keepers,
@@ -192,7 +191,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
 				svr.authenticate = func(
-					txDetails []*types.TxDetail,
+					txDetails []*core.TxDetail,
 					repo *state.Repository,
 					namespace *state.Namespace,
 					keepers core.Keepers,
@@ -228,7 +227,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
 				svr.authenticate = func(
-					txDetails []*types.TxDetail,
+					txDetails []*core.TxDetail,
 					repo *state.Repository,
 					namespace *state.Namespace,
 					keepers core.Keepers,
@@ -262,7 +261,7 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				svr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
+				svr.authenticate = func(txDetails []*core.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
 				svr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
@@ -277,7 +276,7 @@ var _ = Describe("Reactor", func() {
 					return packfile, nil
 				}
 
-				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					mockRemoteSrv.EXPECT().GetRepoState(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
 					return &pushhandler.Handler{Server: mockRemoteSrv}
 				}
@@ -302,7 +301,7 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				svr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
+				svr.authenticate = func(txDetails []*core.TxDetail, repo *state.Repository, namespace *state.Namespace,
 					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
@@ -320,7 +319,7 @@ var _ = Describe("Reactor", func() {
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					return pushHandler
 				}
 
@@ -352,7 +351,7 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				svr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
+				svr.authenticate = func(txDetails []*core.TxDetail, repo *state.Repository, namespace *state.Namespace,
 					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
@@ -370,7 +369,7 @@ var _ = Describe("Reactor", func() {
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					return pushHandler
 				}
 
@@ -409,7 +408,7 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				svr.authenticate = func(txDetails []*types.TxDetail, repo *state.Repository, namespace *state.Namespace,
+				svr.authenticate = func(txDetails []*core.TxDetail, repo *state.Repository, namespace *state.Namespace,
 					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
@@ -427,7 +426,7 @@ var _ = Describe("Reactor", func() {
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*types.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					return pushHandler
 				}
 
