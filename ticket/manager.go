@@ -3,12 +3,11 @@ package ticket
 import (
 	"sort"
 
+	"github.com/shopspring/decimal"
+	"gitlab.com/makeos/mosdef/storage"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
-
-	"github.com/shopspring/decimal"
-	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/util"
 
 	"gitlab.com/makeos/mosdef/crypto"
@@ -93,7 +92,7 @@ func (m *Manager) GetTopValidators(limit int) (tickettypes.SelectedTickets, erro
 }
 
 // getTopTickets finds tickets with the most delegated value
-func (m *Manager) getTopTickets(ticketType, limit int) (tickettypes.SelectedTickets, error) {
+func (m *Manager) getTopTickets(ticketType types.TxCode, limit int) (tickettypes.SelectedTickets, error) {
 
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()
@@ -150,7 +149,7 @@ func (m *Manager) Remove(hash util.Bytes32) error {
 
 // GetByProposer finds tickets belonging to the given proposer public key.
 func (m *Manager) GetByProposer(
-	ticketType int,
+	ticketType types.TxCode,
 	proposerPubKey util.Bytes32,
 	queryOpt ...interface{}) ([]*tickettypes.Ticket, error) {
 
@@ -239,7 +238,7 @@ func (m *Manager) CountActiveValidatorTickets() (int, error) {
 // ticketType: Filter the search to a specific ticket type
 func (m *Manager) GetNonDelegatedTickets(
 	pubKey util.Bytes32,
-	ticketType int) ([]*tickettypes.Ticket, error) {
+	ticketType types.TxCode) ([]*tickettypes.Ticket, error) {
 
 	// Get the last committed block
 	bi, err := m.logic.SysKeeper().GetLastBlockInfo()

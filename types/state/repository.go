@@ -196,7 +196,7 @@ var (
 func MakeDefaultRepoConfig() *RepoConfig {
 	return &RepoConfig{
 		Governance: &RepoConfigGovernance{
-			Voter:                    VoteByOwner,
+			Voter:                    VoterOwner,
 			ProposalCreator:          ProposalCreatorAny,
 			VoterAgeAsCurHeight:      false,
 			DurOfProposal:            params.RepoProposalDur,

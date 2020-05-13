@@ -7,7 +7,7 @@ import (
 
 // Ticket represents a validator ticket
 type Ticket struct {
-	Type           int          `json:"type"`           // The type of ticket
+	Type           types.TxCode `json:"type"`           // The type of ticket
 	Hash           util.Bytes32 `json:"hash"`           // Hash of the ticket purchase transaction
 	DecayBy        uint64       `json:"decayBy"`        // Block height when the ticket becomes decayed
 	MatureBy       uint64       `json:"matureBy"`       // Block height when the ticket enters maturity.
@@ -42,7 +42,7 @@ type TicketManager interface {
 
 	// GetByProposer finds tickets belonging to the
 	// given proposer public key.
-	GetByProposer(ticketType int, proposerPubKey util.Bytes32, queryOpt ...interface{}) ([]*Ticket, error)
+	GetByProposer(ticketType types.TxCode, proposerPubKey util.Bytes32, queryOpt ...interface{}) ([]*Ticket, error)
 
 	// CountActiveValidatorTickets returns the number of matured and non-decayed tickets.
 	CountActiveValidatorTickets() (int, error)
@@ -52,7 +52,7 @@ type TicketManager interface {
 	//
 	// pubKey: The public key of the pubKey
 	// ticketType: Filter the search to a specific ticket type
-	GetNonDelegatedTickets(pubKey util.Bytes32, ticketType int) ([]*Ticket, error)
+	GetNonDelegatedTickets(pubKey util.Bytes32, ticketType types.TxCode) ([]*Ticket, error)
 
 	// Query finds and returns tickets that match the given query
 	Query(qf func(t *Ticket) bool, queryOpt ...interface{}) []*Ticket

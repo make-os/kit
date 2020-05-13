@@ -6,11 +6,13 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
+type TxCode int
+
 // BaseTx describes a base transaction
 type BaseTx interface {
 	msgpack.CustomEncoder
 	msgpack.CustomDecoder
-	GetType() int                         // Returns the type of the transaction
+	GetType() TxCode                      // Returns the type of the transaction
 	GetSignature() []byte                 // Returns the transaction signature
 	SetSignature(s []byte)                // Sets the transaction signature
 	GetSenderPubKey() crypto.PublicKey    // Returns the transaction sender public key
@@ -33,5 +35,5 @@ type BaseTx interface {
 	ToMap() map[string]interface{}        // Returns a map equivalent of the transaction
 	FromMap(map[string]interface{}) error // Populate the fields from a map
 	GetMeta() map[string]interface{}      // Returns the meta information of the transaction
-	Is(txType int) bool                   // Checks if the tx is a given type
+	Is(txType TxCode) bool                // Checks if the tx is a given type
 }

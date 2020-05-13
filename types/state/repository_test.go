@@ -22,11 +22,7 @@ var _ = Describe("Repository", func() {
 		Context("Decode References", func() {
 			BeforeEach(func() {
 				r = BareRepository()
-				r.References = map[string]*Reference{
-					"refs/heads/master": {
-						Nonce: 20,
-					},
-				}
+				r.References = map[string]*Reference{"refs/heads/master": {Nonce: 20}}
 				expectedBz = r.Bytes()
 			})
 
@@ -37,9 +33,9 @@ var _ = Describe("Repository", func() {
 			It("should return object", func() {
 				res, err := NewRepositoryFromBytes(expectedBz)
 				Expect(err).To(BeNil())
-				Expect(res).To(Equal(r))
+				Expect(res.References).To(HaveKey("refs/heads/master"))
+				Expect(res.References.Get("refs/heads/master").Nonce).To(Equal(uint64(20)))
 			})
-
 		})
 
 		Context("Decode Proposals", func() {

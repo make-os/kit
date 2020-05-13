@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"gitlab.com/makeos/mosdef/types/core"
-
 	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/golang/mock/gomock"
 

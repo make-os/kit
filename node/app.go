@@ -270,7 +270,12 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	}
 
 	// Execute the transaction (does not commit the state changes yet)
-	resp := a.logic.Tx().ExecTx(tx, uint64(a.curWorkingBlock.Height-1))
+	// tx, uint64(a.curWorkingBlock.Height-1)
+	resp := a.logic.ExecTx(&core.ExecArgs{
+		Tx:          tx,
+		ChainHeight: uint64(a.curWorkingBlock.Height - 1),
+		ValidateTx:  validators.ValidateTx,
+	})
 
 	// If the transaction returns an ErrCodeReExecBlock code, discard current
 	// uncommitted state updates and return immediately because the current

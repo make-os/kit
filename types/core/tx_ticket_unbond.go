@@ -6,6 +6,7 @@ import (
 	"github.com/fatih/structs"
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -18,7 +19,7 @@ type TxTicketUnbond struct {
 }
 
 // NewBareTxTicketUnbond returns an instance of TxTicketUnbond with zero values
-func NewBareTxTicketUnbond(ticketType int) *TxTicketUnbond {
+func NewBareTxTicketUnbond(ticketType types.TxCode) *TxTicketUnbond {
 	return &TxTicketUnbond{
 		TxType:     &TxType{Type: ticketType},
 		TxCommon:   NewBareTxCommon(),

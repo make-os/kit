@@ -6,9 +6,8 @@ import (
 	"sort"
 	"sync"
 
-	"gitlab.com/makeos/mosdef/types"
-
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/types"
 
 	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/util"

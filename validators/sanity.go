@@ -73,8 +73,8 @@ func checkPositiveValue(tx *core.TxValue, index int) error {
 	return nil
 }
 
-func checkType(tx *core.TxType, expected int, index int) error {
-	if tx.Type != expected {
+func checkType(tx *core.TxType, expected types.TxCode, index int) error {
+	if !tx.Is(expected) {
 		return feI(index, "type", "type is invalid")
 	}
 	return nil
@@ -226,9 +226,9 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 
 	// Ensure the voter type is known
 	allowedVoterChoices := []state.VoterType{0,
-		state.VoteByOwner,
-		state.VoteByNetStakers,
-		state.VoteByNetStakersAndVetoOwner}
+		state.VoterOwner,
+		state.VoterNetStakers,
+		state.VoterNetStakersAndVetoOwner}
 	if !funk.Contains(allowedVoterChoices, govCfg.Voter) {
 		return feI(index, "config.gov.propVoter", fmt.Sprintf("unknown value"))
 	}
@@ -277,7 +277,7 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 	}
 
 	// When proposer is ProposerOwner, tally method cannot be CoinWeighted or Identity
-	isNotOwnerProposer := govCfg.Voter != state.VoteByOwner
+	isNotOwnerProposer := govCfg.Voter != state.VoterOwner
 	if isNotOwnerProposer &&
 		(govCfg.TallyMethodOfProposal == state.ProposalTallyMethodCoinWeighted ||
 			govCfg.TallyMethodOfProposal == state.ProposalTallyMethodIdentity) {

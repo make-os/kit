@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"gitlab.com/makeos/mosdef/types"
-
 	"github.com/stretchr/objx"
+	"gitlab.com/makeos/mosdef/types"
 
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
@@ -15,24 +14,24 @@ import (
 )
 
 // All Transaction type
-var (
-	TxTypeCoinTransfer                = 1  // For native coin transfer to/between accounts
-	TxTypeValidatorTicket             = 2  // For validator ticket purchase
-	TxTypeSetDelegatorCommission      = 3  // For setting delegator commission
-	TxTypeHostTicket                  = 4  // For purchasing host ticket
-	TxTypeUnbondHostTicket            = 5  // For unbonding host ticket
-	TxTypeRepoCreate                  = 6  // For creating a repository
-	TxTypeRegisterPushKey             = 7  // For adding a GPG public key
-	TxTypePush                        = 8  // For pushing updates to a repository
-	TxTypeNSAcquire                   = 9  // For namespace purchase
-	TxTypeNSDomainUpdate              = 10 // For setting namespace domains
-	TxTypeRepoProposalUpsertOwner     = 11 // For creating a proposal to add repo owner
-	TxTypeRepoProposalVote            = 12 // For voting on a repo proposal
-	TxTypeRepoProposalUpdate          = 13 // For creating a repo update proposal
-	TxTypeRepoProposalSendFee         = 14 // For native coin transfer to repo as proposal fee
-	TxTypeRepoProposalMergeRequest    = 15 // For merge request
-	TxTypeRepoProposalRegisterPushKey = 16 // For adding push keys to a repo
-	TxTypeUpDelPushKey                = 17 // For updating or deleting a push key
+const (
+	TxTypeCoinTransfer                types.TxCode = iota + 1 // For native coin transfer to/between accounts
+	TxTypeValidatorTicket                                     // For validator ticket purchase
+	TxTypeSetDelegatorCommission                              // For setting delegator commission
+	TxTypeHostTicket                                          // For purchasing host ticket
+	TxTypeUnbondHostTicket                                    // For unbonding host ticket
+	TxTypeRepoCreate                                          // For creating a repository
+	TxTypeRegisterPushKey                                     // For adding a GPG public key
+	TxTypePush                                                // For pushing updates to a repository
+	TxTypeNSAcquire                                           // For namespace purchase
+	TxTypeNSDomainUpdate                                      // For setting namespace domains
+	TxTypeRepoProposalUpsertOwner                             // For creating a proposal to add repo owner
+	TxTypeRepoProposalVote                                    // For voting on a repo proposal
+	TxTypeRepoProposalUpdate                                  // For creating a repo update proposal
+	TxTypeRepoProposalSendFee                                 // For native coin transfer to repo as proposal fee
+	TxTypeRepoProposalMergeRequest                            // For merge request
+	TxTypeRepoProposalRegisterPushKey                         // For adding push keys to a repo
+	TxTypeUpDelPushKey                                        // For updating or deleting a push key
 )
 
 // TxMeta stores arbitrary, self-contained state information for a transaction
@@ -47,16 +46,16 @@ func (m *TxMeta) GetMeta() map[string]interface{} {
 
 // TxType implements some of BaseTx, it includes type information about a transaction
 type TxType struct {
-	Type int `json:"type" msgpack:"type" mapstructure:"type"`
+	Type types.TxCode `json:"type" msgpack:"type" mapstructure:"type"`
 }
 
 // GetType returns the type of the transaction
-func (tx *TxType) GetType() int {
+func (tx *TxType) GetType() types.TxCode {
 	return tx.Type
 }
 
 // Is checks if the tx is a given type
-func (tx *TxType) Is(txType int) bool {
+func (tx *TxType) Is(txType types.TxCode) bool {
 	return tx.Type == txType
 }
 
@@ -70,11 +69,11 @@ func (tx *TxType) FromMap(data map[string]interface{}) (err error) {
 	// Type: expects int, int64 or float64 types in map
 	if typeVal := o.Get("type"); !typeVal.IsNil() {
 		if typeVal.IsInt64() {
-			tx.Type = int(typeVal.Int64())
+			tx.Type = types.TxCode(typeVal.Int64())
 		} else if typeVal.IsInt() {
-			tx.Type = typeVal.Int()
+			tx.Type = types.TxCode(typeVal.Int())
 		} else if typeVal.IsFloat64() {
-			tx.Type = int(typeVal.Float64())
+			tx.Type = types.TxCode(typeVal.Float64())
 		} else {
 			return util.FieldError("type", fmt.Sprintf("invalid value type: has %T, "+
 				"wants int", typeVal.Inter()))
@@ -401,7 +400,7 @@ func DecodeTx(txBz []byte) (types.BaseTx, error) {
 		return nil, fmt.Errorf("failed to decode tx type")
 	}
 
-	tx, err := getBareTxObject(txType)
+	tx, err := getBareTxObject(types.TxCode(txType))
 	if err != nil {
 		return nil, err
 	}
@@ -409,7 +408,7 @@ func DecodeTx(txBz []byte) (types.BaseTx, error) {
 	return tx, util.ToObject(txBz, tx)
 }
 
-func getBareTxObject(txType int) (types.BaseTx, error) {
+func getBareTxObject(txType types.TxCode) (types.BaseTx, error) {
 	var tx interface{}
 	switch txType {
 	case TxTypeCoinTransfer:

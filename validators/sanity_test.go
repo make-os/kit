@@ -618,7 +618,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:           state.VoteByOwner,
+						Voter:           state.VoterOwner,
 						ProposalCreator: 10,
 					},
 				}
@@ -632,7 +632,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                 state.VoteByOwner,
+						Voter:                 state.VoterOwner,
 						TallyMethodOfProposal: 1000,
 					},
 				}
@@ -646,7 +646,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                 state.VoteByOwner,
+						Voter:                 state.VoterOwner,
 						TallyMethodOfProposal: state.ProposalTallyMethodNetStake,
 						ProposalQuorum:        -1,
 					},
@@ -661,7 +661,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                 state.VoteByOwner,
+						Voter:                 state.VoterOwner,
 						TallyMethodOfProposal: state.ProposalTallyMethodNetStake,
 						ProposalQuorum:        1,
 						ProposalThreshold:     -1,
@@ -677,7 +677,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                 state.VoteByOwner,
+						Voter:                 state.VoterOwner,
 						TallyMethodOfProposal: state.ProposalTallyMethodNetStake,
 						ProposalQuorum:        1,
 						ProposalThreshold:     1,
@@ -694,7 +694,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                    state.VoteByOwner,
+						Voter:                    state.VoterOwner,
 						TallyMethodOfProposal:    state.ProposalTallyMethodNetStake,
 						ProposalQuorum:           1,
 						ProposalThreshold:        1,
@@ -713,7 +713,7 @@ var _ = Describe("TxValidator", func() {
 				params.MinProposalFee = float64(400)
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                    state.VoteByOwner,
+						Voter:                    state.VoterOwner,
 						TallyMethodOfProposal:    state.ProposalTallyMethodNetStake,
 						ProposalQuorum:           1,
 						ProposalThreshold:        1,
@@ -733,7 +733,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                 state.VoteByNetStakers,
+						Voter:                 state.VoterNetStakers,
 						TallyMethodOfProposal: state.ProposalTallyMethodCoinWeighted,
 					},
 				}
@@ -748,7 +748,7 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                 state.VoteByNetStakers,
+						Voter:                 state.VoterNetStakers,
 						TallyMethodOfProposal: state.ProposalTallyMethodIdentity,
 					},
 				}
@@ -1667,8 +1667,8 @@ var _ = Describe("TxValidator", func() {
 			tx.RepoName = "*&^"
 			err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("field:name, msg:invalid characters in name. " +
-				"Only alphanumeric, _ and - characters are allowed"))
+			Expect(err).To(MatchError("field:name, msg:invalid characters in identifier. " +
+				"Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
 		})
 
 		It("should return error when proposal id is unset", func() {

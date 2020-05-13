@@ -5,14 +5,13 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.com/makeos/mosdef/dht/types"
-	"gitlab.com/makeos/mosdef/remote/validation"
-	"gitlab.com/makeos/mosdef/types/core"
-
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/remote/validation"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 

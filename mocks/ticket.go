@@ -64,7 +64,7 @@ func (mr *MockTicketManagerMockRecorder) Remove(hash interface{}) *gomock.Call {
 }
 
 // GetByProposer mocks base method
-func (m *MockTicketManager) GetByProposer(ticketType int, proposerPubKey util.Bytes32, queryOpt ...interface{}) ([]*types.Ticket, error) {
+func (m *MockTicketManager) GetByProposer(ticketType types0.TxCode, proposerPubKey util.Bytes32, queryOpt ...interface{}) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ticketType, proposerPubKey}
 	for _, a := range queryOpt {
@@ -99,7 +99,7 @@ func (mr *MockTicketManagerMockRecorder) CountActiveValidatorTickets() *gomock.C
 }
 
 // GetNonDelegatedTickets mocks base method
-func (m *MockTicketManager) GetNonDelegatedTickets(pubKey util.Bytes32, ticketType int) ([]*types.Ticket, error) {
+func (m *MockTicketManager) GetNonDelegatedTickets(pubKey util.Bytes32, ticketType types0.TxCode) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNonDelegatedTickets", pubKey, ticketType)
 	ret0, _ := ret[0].([]*types.Ticket)

@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/tendermint/tendermint/privval"
 	types4 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
-
-	"github.com/tendermint/tendermint/privval"
 
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
@@ -443,7 +442,8 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				tx := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
+
+				mockLogic.AtomicLogic.EXPECT().ExecTx(gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
 				app.DeliverTx(req)
 			})
@@ -463,7 +463,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				tx := core.NewBareTxTicketPurchase(core.TxTypeHostTicket)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
+				mockLogic.AtomicLogic.EXPECT().ExecTx(gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
 				Expect(app.DeliverTx(req).Code).To(Equal(uint32(0)))
 			})
@@ -484,7 +484,7 @@ var _ = Describe("App", func() {
 				tx := core.NewBareTxTicketUnbond(core.TxTypeUnbondHostTicket)
 				tx.TicketHash = util.StrToBytes32("tid")
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
-				mockLogic.Tx.EXPECT().ExecTx(tx, gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
+				mockLogic.AtomicLogic.EXPECT().ExecTx(gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
 				Expect(app.DeliverTx(req).Code).To(Equal(uint32(0)))
 			})

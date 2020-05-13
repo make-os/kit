@@ -1,9 +1,14 @@
 package logic
 
 import (
+	"fmt"
+
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/logic/contracts"
+	"gitlab.com/makeos/mosdef/logic/contracts/transfercoin"
 	"gitlab.com/makeos/mosdef/logic/keepers"
+	"gitlab.com/makeos/mosdef/logic/proposals"
 	"gitlab.com/makeos/mosdef/pkgs/tree"
 	"gitlab.com/makeos/mosdef/storage"
 	types2 "gitlab.com/makeos/mosdef/ticket/types"
@@ -28,12 +33,6 @@ type Logic struct {
 
 	// stateTree is the chain's state tree
 	stateTree *tree.SafeTree
-
-	// tx is the transaction logic for handling transactions of all kinds
-	tx core.TxLogic
-
-	// sys provides functionalities for handling and accessing system information
-	sys core.SysLogic
 
 	// validator provides functionalities for managing validator information
 	validator core.ValidatorLogic
@@ -98,8 +97,6 @@ func newLogicWithTx(dbTx, stateTreeDBTx storage.Tx, cfg *config.AppConfig) *Logi
 
 	// Create the logic instances
 	l := &Logic{stateTree: safeTree, cfg: cfg, db: dbTx}
-	l.sys = &System{logic: l}
-	l.tx = &Transaction{logic: l}
 	l.validator = &Validator{logic: l}
 
 	// Create the keepers
@@ -190,14 +187,17 @@ func (l *Logic) GetTicketManager() types2.TicketManager {
 	return l.ticketMgr
 }
 
-// Tx returns the transaction logic
-func (l *Logic) Tx() core.TxLogic {
-	return l.tx
+// DrySend checks whether the given sender can execute the transaction
+func (l *Logic) DrySend(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
+	tx := &core.TxCoinTransfer{TxValue: &core.TxValue{Value: value}, TxCommon: &core.TxCommon{Fee: fee, Nonce: nonce}}
+	ct := transfercoin.NewContract()
+	ct.Init(l, tx, chainHeight)
+	return ct.DryExec(sender)
 }
 
-// Sys returns system logic
-func (l *Logic) Sys() core.SysLogic {
-	return l.sys
+// Tx returns the transaction logic
+func (l *Logic) Tx() core.TxLogic {
+	return nil
 }
 
 // DB returns the hubs db reference
@@ -296,8 +296,31 @@ func (l *Logic) WriteGenesisState() error {
 // Do things that need to happen after each block transactions are processed;
 // Note: The ABCI will panic if an error is returned.
 func (l *Logic) OnEndBlock(block *core.BlockInfo) error {
-	if err := maybeApplyEndedProposals(l, uint64(block.Height)); err != nil {
-		return err
+
+	repoKeeper := l.RepoKeeper()
+	nextChainHeight := uint64(block.Height)
+
+	// Get proposals ending at the given height
+	endingProps := repoKeeper.GetProposalsEndingAt(nextChainHeight)
+
+	// Attempt to apply and close the proposal
+	for _, ep := range endingProps {
+		repo := repoKeeper.Get(ep.RepoName)
+		if repo.IsNil() {
+			return fmt.Errorf("repo not found") // should never happen
+		}
+		_, err := proposals.MaybeApplyProposal(&proposals.ApplyProposalArgs{
+			Keepers:     l,
+			Proposal:    repo.Proposals.Get(ep.ProposalID),
+			Repo:        repo,
+			ChainHeight: nextChainHeight - 1,
+			Contracts:   contracts.SystemContracts,
+		})
+		if err != nil {
+			return err
+		}
+		repoKeeper.Update(ep.RepoName, repo)
 	}
+
 	return nil
 }

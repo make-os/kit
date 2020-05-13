@@ -3,6 +3,7 @@ package state
 import (
 	"github.com/shopspring/decimal"
 	"github.com/vmihailenco/msgpack"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -10,9 +11,9 @@ import (
 type VoterType int
 
 const (
-	VoteByOwner                  VoterType = iota + 1 // Describes a repo where only owners can vote
-	VoteByNetStakers                                  // Describes a repo where only network stakeholders can vote.
-	VoteByNetStakersAndVetoOwner                      // Describes a repo whether only network stakeholders and veto owners can vote.
+	VoterOwner                  VoterType = iota + 1 // Describes a repo where only owners can vote
+	VoterNetStakers                                  // Describes a repo where only network stakeholders can vote.
+	VoterNetStakersAndVetoOwner                      // Describes a repo whether only network stakeholders and veto owners can vote.
 )
 
 // ProposalCreatorType describes types of proposal creators
@@ -92,12 +93,12 @@ const (
 // Proposal describes a repository proposal
 type Proposal interface {
 	GetCreator() string
-	GetProposerType() VoterType
-	GetProposerMaxJoinHeight() uint64
+	GetVoterType() VoterType
+	GetVoterMaxJoinHeight() uint64
 	GetEndAt() uint64
 	GetQuorum() float64
 	GetTallyMethod() ProposalTallyMethod
-	GetAction() int
+	GetAction() types.TxCode
 	GetActionData() map[string][]byte
 	GetThreshold() float64
 	GetVetoQuorum() float64
@@ -134,7 +135,7 @@ const (
 type RepoProposal struct {
 	util.SerializerHelper `json:"-" msgpack:"-"`
 	ID                    string                `json:"-" mapstructure:"-" msgpack:"-"`
-	Action                int                   `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
+	Action                types.TxCode          `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
 	ActionData            map[string][]byte     `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
 	Creator               string                `json:"creator" mapstructure:"creator" msgpack:"creator"`                                           // The creator is the address of the proposal creator.
 	Height                uint64                `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
@@ -256,13 +257,13 @@ func (p *RepoProposal) IncrAccept() {
 	p.Yes++
 }
 
-// GetProposerType implements Proposal
-func (p *RepoProposal) GetProposerType() VoterType {
+// GetVoterType implements Proposal
+func (p *RepoProposal) GetVoterType() VoterType {
 	return p.Config.Voter
 }
 
-// GetProposerMaxJoinHeight implements Proposal
-func (p *RepoProposal) GetProposerMaxJoinHeight() uint64 {
+// GetVoterMaxJoinHeight implements Proposal
+func (p *RepoProposal) GetVoterMaxJoinHeight() uint64 {
 	return p.ProposerMaxJoinHeight
 }
 
@@ -292,7 +293,7 @@ func (p *RepoProposal) GetTallyMethod() ProposalTallyMethod {
 }
 
 // GetAction implements Proposal
-func (p *RepoProposal) GetAction() int {
+func (p *RepoProposal) GetAction() types.TxCode {
 	return p.Action
 }
 

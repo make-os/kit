@@ -22,7 +22,7 @@ type TxTicketPurchase struct {
 }
 
 // NewBareTxTicketPurchase returns an instance of TxTicketPurchase with zero values
-func NewBareTxTicketPurchase(ticketType int) *TxTicketPurchase {
+func NewBareTxTicketPurchase(ticketType types.TxCode) *TxTicketPurchase {
 	return &TxTicketPurchase{
 		TxType:    &TxType{Type: ticketType},
 		TxCommon:  NewBareTxCommon(),
@@ -34,7 +34,7 @@ func NewBareTxTicketPurchase(ticketType int) *TxTicketPurchase {
 
 // NewCoinTransferTx creates and populates a ticket purchase transaction
 func NewTicketPurchaseTx(
-	ticketType int,
+	ticketType types.TxCode,
 	nonce uint64,
 	senderKey *crypto.Key,
 	value util.String,

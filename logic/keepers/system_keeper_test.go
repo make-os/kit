@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"gitlab.com/makeos/mosdef/types/core"
-
 	storagemocks "gitlab.com/makeos/mosdef/storage/mocks"
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"

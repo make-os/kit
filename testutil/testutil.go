@@ -75,8 +75,6 @@ func GetDB(cfg *config.AppConfig) (appDB *storage.Badger, stateTreeDB *storage.B
 type MockObjects struct {
 	Logic           *mocks.MockLogic
 	AtomicLogic     *mocks.MockAtomicLogic
-	Sys             *mocks.MockSysLogic
-	Tx              *mocks.MockTxLogic
 	Validator       *mocks.MockValidatorLogic
 	SysKeeper       *mocks.MockSystemKeeper
 	AccountKeeper   *mocks.MockAccountKeeper
@@ -97,8 +95,6 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.Logic = mocks.NewMockLogic(ctrl)
 	mo.AtomicLogic = mocks.NewMockAtomicLogic(ctrl)
 
-	mo.Sys = mocks.NewMockSysLogic(ctrl)
-	mo.Tx = mocks.NewMockTxLogic(ctrl)
 	mo.Validator = mocks.NewMockValidatorLogic(ctrl)
 	mo.SysKeeper = mocks.NewMockSystemKeeper(ctrl)
 	mo.AccountKeeper = mocks.NewMockAccountKeeper(ctrl)
@@ -112,8 +108,6 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.NamespaceKeeper = mocks.NewMockNamespaceKeeper(ctrl)
 	mo.BlockGetter = mocks.NewMockBlockGetter(ctrl)
 
-	mo.Logic.EXPECT().Sys().Return(mo.Sys).MinTimes(0)
-	mo.Logic.EXPECT().Tx().Return(mo.Tx).MinTimes(0)
 	mo.Logic.EXPECT().Validator().Return(mo.Validator).MinTimes(0)
 	mo.Logic.EXPECT().SysKeeper().Return(mo.SysKeeper).MinTimes(0)
 	mo.Logic.EXPECT().AccountKeeper().Return(mo.AccountKeeper).MinTimes(0)
@@ -127,8 +121,6 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.Logic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
 	mo.Logic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
 
-	mo.AtomicLogic.EXPECT().Sys().Return(mo.Sys).MinTimes(0)
-	mo.AtomicLogic.EXPECT().Tx().Return(mo.Tx).MinTimes(0)
 	mo.AtomicLogic.EXPECT().Validator().Return(mo.Validator).MinTimes(0)
 	mo.AtomicLogic.EXPECT().SysKeeper().Return(mo.SysKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().AccountKeeper().Return(mo.AccountKeeper).MinTimes(0)

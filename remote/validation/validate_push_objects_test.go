@@ -35,7 +35,6 @@ var _ = Describe("Validation", func() {
 	var mockPushKeyKeeper *mocks.MockPushKeyKeeper
 	var mockAcctKeeper *mocks.MockAccountKeeper
 	var mockSysKeeper *mocks.MockSystemKeeper
-	var mockTxLogic *mocks.MockTxLogic
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
@@ -52,7 +51,6 @@ var _ = Describe("Validation", func() {
 		mockPushKeyKeeper = mockObjs.PushKeyKeeper
 		mockAcctKeeper = mockObjs.AccountKeeper
 		mockSysKeeper = mockObjs.SysKeeper
-		mockTxLogic = mockObjs.Tx
 		mockNSKeeper = mockObjs.NamespaceKeeper
 	})
 
@@ -414,8 +412,7 @@ var _ = Describe("Validation", func() {
 				mockAcctKeeper.EXPECT().Get(tx.PusherAddress).Return(acct)
 
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockTxLogic.EXPECT().
-					CanExecCoinTransfer(tx.PusherAddress, util.String("0"), tx.GetFee(), uint64(2), uint64(1)).
+				mockLogic.EXPECT().DrySend(tx.PusherAddress, util.String("0"), tx.GetFee(), uint64(2), uint64(1)).
 					Return(fmt.Errorf("insufficient"))
 
 				err = validation.CheckPushNoteConsistency(tx, mockLogic)

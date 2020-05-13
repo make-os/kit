@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"sync"
 
-	"gitlab.com/makeos/mosdef/types/core"
-
 	"gitlab.com/makeos/mosdef/storage"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 

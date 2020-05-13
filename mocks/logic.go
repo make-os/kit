@@ -777,34 +777,6 @@ func (mr *MockAtomicLogicMockRecorder) NamespaceKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NamespaceKeeper", reflect.TypeOf((*MockAtomicLogic)(nil).NamespaceKeeper))
 }
 
-// Tx mocks base method
-func (m *MockAtomicLogic) Tx() core.TxLogic {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Tx")
-	ret0, _ := ret[0].(core.TxLogic)
-	return ret0
-}
-
-// Tx indicates an expected call of Tx
-func (mr *MockAtomicLogicMockRecorder) Tx() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tx", reflect.TypeOf((*MockAtomicLogic)(nil).Tx))
-}
-
-// Sys mocks base method
-func (m *MockAtomicLogic) Sys() core.SysLogic {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Sys")
-	ret0, _ := ret[0].(core.SysLogic)
-	return ret0
-}
-
-// Sys indicates an expected call of Sys
-func (mr *MockAtomicLogicMockRecorder) Sys() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sys", reflect.TypeOf((*MockAtomicLogic)(nil).Sys))
-}
-
 // Validator mocks base method
 func (m *MockAtomicLogic) Validator() core.ValidatorLogic {
 	m.ctrl.T.Helper()
@@ -897,6 +869,34 @@ func (m *MockAtomicLogic) GetRepoManager() core.RemoteServer {
 func (mr *MockAtomicLogicMockRecorder) GetRepoManager() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoManager", reflect.TypeOf((*MockAtomicLogic)(nil).GetRepoManager))
+}
+
+// DrySend mocks base method
+func (m *MockAtomicLogic) DrySend(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DrySend", sender, value, fee, nonce, chainHeight)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DrySend indicates an expected call of DrySend
+func (mr *MockAtomicLogicMockRecorder) DrySend(sender, value, fee, nonce, chainHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DrySend", reflect.TypeOf((*MockAtomicLogic)(nil).DrySend), sender, value, fee, nonce, chainHeight)
+}
+
+// ExecTx mocks base method
+func (m *MockAtomicLogic) ExecTx(args *core.ExecArgs) types.ResponseDeliverTx {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExecTx", args)
+	ret0, _ := ret[0].(types.ResponseDeliverTx)
+	return ret0
+}
+
+// ExecTx indicates an expected call of ExecTx
+func (mr *MockAtomicLogicMockRecorder) ExecTx(args interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecTx", reflect.TypeOf((*MockAtomicLogic)(nil).ExecTx), args)
 }
 
 // Cfg mocks base method
@@ -1142,34 +1142,6 @@ func (mr *MockLogicMockRecorder) NamespaceKeeper() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NamespaceKeeper", reflect.TypeOf((*MockLogic)(nil).NamespaceKeeper))
 }
 
-// Tx mocks base method
-func (m *MockLogic) Tx() core.TxLogic {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Tx")
-	ret0, _ := ret[0].(core.TxLogic)
-	return ret0
-}
-
-// Tx indicates an expected call of Tx
-func (mr *MockLogicMockRecorder) Tx() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Tx", reflect.TypeOf((*MockLogic)(nil).Tx))
-}
-
-// Sys mocks base method
-func (m *MockLogic) Sys() core.SysLogic {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Sys")
-	ret0, _ := ret[0].(core.SysLogic)
-	return ret0
-}
-
-// Sys indicates an expected call of Sys
-func (mr *MockLogicMockRecorder) Sys() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Sys", reflect.TypeOf((*MockLogic)(nil).Sys))
-}
-
 // Validator mocks base method
 func (m *MockLogic) Validator() core.ValidatorLogic {
 	m.ctrl.T.Helper()
@@ -1262,6 +1234,34 @@ func (m *MockLogic) GetRepoManager() core.RemoteServer {
 func (mr *MockLogicMockRecorder) GetRepoManager() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoManager", reflect.TypeOf((*MockLogic)(nil).GetRepoManager))
+}
+
+// DrySend mocks base method
+func (m *MockLogic) DrySend(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DrySend", sender, value, fee, nonce, chainHeight)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DrySend indicates an expected call of DrySend
+func (mr *MockLogicMockRecorder) DrySend(sender, value, fee, nonce, chainHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DrySend", reflect.TypeOf((*MockLogic)(nil).DrySend), sender, value, fee, nonce, chainHeight)
+}
+
+// ExecTx mocks base method
+func (m *MockLogic) ExecTx(args *core.ExecArgs) types.ResponseDeliverTx {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExecTx", args)
+	ret0, _ := ret[0].(types.ResponseDeliverTx)
+	return ret0
+}
+
+// ExecTx indicates an expected call of ExecTx
+func (mr *MockLogicMockRecorder) ExecTx(args interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecTx", reflect.TypeOf((*MockLogic)(nil).ExecTx), args)
 }
 
 // Cfg mocks base method
@@ -1600,69 +1600,4 @@ func NewMockTxLogic(ctrl *gomock.Controller) *MockTxLogic {
 // EXPECT returns an object that allows the caller to indicate expected use
 func (m *MockTxLogic) EXPECT() *MockTxLogicMockRecorder {
 	return m.recorder
-}
-
-// ExecTx mocks base method
-func (m *MockTxLogic) ExecTx(tx types1.BaseTx, chainHeight uint64) types.ResponseDeliverTx {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExecTx", tx, chainHeight)
-	ret0, _ := ret[0].(types.ResponseDeliverTx)
-	return ret0
-}
-
-// ExecTx indicates an expected call of ExecTx
-func (mr *MockTxLogicMockRecorder) ExecTx(tx, chainHeight interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecTx", reflect.TypeOf((*MockTxLogic)(nil).ExecTx), tx, chainHeight)
-}
-
-// CanExecCoinTransfer mocks base method
-func (m *MockTxLogic) CanExecCoinTransfer(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CanExecCoinTransfer", sender, value, fee, nonce, chainHeight)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// CanExecCoinTransfer indicates an expected call of CanExecCoinTransfer
-func (mr *MockTxLogicMockRecorder) CanExecCoinTransfer(sender, value, fee, nonce, chainHeight interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanExecCoinTransfer", reflect.TypeOf((*MockTxLogic)(nil).CanExecCoinTransfer), sender, value, fee, nonce, chainHeight)
-}
-
-// MockSysLogic is a mock of SysLogic interface
-type MockSysLogic struct {
-	ctrl     *gomock.Controller
-	recorder *MockSysLogicMockRecorder
-}
-
-// MockSysLogicMockRecorder is the mock recorder for MockSysLogic
-type MockSysLogicMockRecorder struct {
-	mock *MockSysLogic
-}
-
-// NewMockSysLogic creates a new mock instance
-func NewMockSysLogic(ctrl *gomock.Controller) *MockSysLogic {
-	mock := &MockSysLogic{ctrl: ctrl}
-	mock.recorder = &MockSysLogicMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockSysLogic) EXPECT() *MockSysLogicMockRecorder {
-	return m.recorder
-}
-
-// GetCurValidatorTicketPrice mocks base method
-func (m *MockSysLogic) GetCurValidatorTicketPrice() float64 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCurValidatorTicketPrice")
-	ret0, _ := ret[0].(float64)
-	return ret0
-}
-
-// GetCurValidatorTicketPrice indicates an expected call of GetCurValidatorTicketPrice
-func (mr *MockSysLogicMockRecorder) GetCurValidatorTicketPrice() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurValidatorTicketPrice", reflect.TypeOf((*MockSysLogic)(nil).GetCurValidatorTicketPrice))
 }

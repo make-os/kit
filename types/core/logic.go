@@ -256,16 +256,20 @@ type AtomicLogic interface {
 	Discard()
 }
 
+// ValidateTxFunc represents a function for validating a transaction
+type ValidateTxFunc func(tx types.BaseTx, i int, logic Logic) error
+
+type ExecArgs struct {
+	Tx             types.BaseTx
+	ChainHeight    uint64
+	ValidateTx     ValidateTxFunc
+	SystemContract []SystemContract
+}
+
 // Logic provides an interface that allows
 // access and modification to the state of the blockchain.
 type Logic interface {
 	Keepers
-
-	// Tx returns the transaction logic
-	Tx() TxLogic
-
-	// SysLogic returns the app logic
-	Sys() SysLogic
 
 	// Validator returns the validator logic
 	Validator() ValidatorLogic
@@ -287,6 +291,13 @@ type Logic interface {
 
 	// GetRepoManager returns the repository manager
 	GetRepoManager() RemoteServer
+
+	// DrySend checks whether the given sender can execute the transaction
+	DrySend(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error
+
+	// ExecTx executes a transaction.
+	// chainHeight: The height of the block chain
+	ExecTx(args *ExecArgs) abcitypes.ResponseDeliverTx
 
 	// Cfg returns the application config
 	Cfg() *config.AppConfig
@@ -360,32 +371,4 @@ type ValidatorLogic interface {
 
 // TxLogic provides an interface for executing transactions
 type TxLogic interface {
-	LogicCommon
-
-	// ExecTx decodes the transaction from the abci request,
-	// performs final validation before executing the transaction.
-	// chainHeight: The height of the block chain
-	ExecTx(tx types.BaseTx, chainHeight uint64) abcitypes.ResponseDeliverTx
-
-	// CanExecCoinTransfer checks whether the sender can transfer the value
-	// and fee of the transaction based on the current state of their
-	// keystore. It also ensures that the transaction's nonce is the
-	// next/expected nonce value.
-	//
-	// ARGS:
-	// sender: The address of the sender or *crypto.PubKey of the sender
-	// value: The value of the transaction
-	// fee: The fee paid by the sender.
-	// chainHeight: The height of the block chain
-	CanExecCoinTransfer(sender interface{},
-		value, fee util.String, nonce, chainHeight uint64) error
-}
-
-// SysLogic provides an interface for managing system/app information
-type SysLogic interface {
-	LogicCommon
-
-	// GetCurValidatorTicketPrice returns the current
-	// price for a validator ticket
-	GetCurValidatorTicketPrice() float64
 }

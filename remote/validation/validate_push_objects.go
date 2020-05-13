@@ -245,12 +245,8 @@ func CheckPushNoteConsistency(note *core.PushNote, logic core.Logic) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
-	if err = logic.Tx().CanExecCoinTransfer(
-		note.PusherAddress,
-		"0",
-		note.GetFee(),
-		note.PusherAcctNonce,
-		uint64(bi.Height)); err != nil {
+	if err = logic.DrySend(note.PusherAddress, "0", note.GetFee(),
+		note.PusherAcctNonce, uint64(bi.Height)); err != nil {
 		return err
 	}
 

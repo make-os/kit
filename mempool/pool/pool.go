@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"gitlab.com/makeos/mosdef/types"
-
 	"gitlab.com/makeos/mosdef/util"
 
 	"gitlab.com/makeos/mosdef/params"

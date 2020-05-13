@@ -10,6 +10,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto/bls"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/remote/validation"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
@@ -50,7 +51,7 @@ check:
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(pubKey, tx.Value, tx.Fee,
+	if err = logic.DrySend(pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -83,7 +84,7 @@ func CheckTxTicketPurchaseConsistency(
 	// For non-delegated validator ticket transaction, the value
 	// must not be lesser than the current price per ticket
 	if tx.Type == core.TxTypeValidatorTicket && tx.Delegate.IsEmpty() {
-		curTicketPrice := logic.Sys().GetCurValidatorTicketPrice()
+		curTicketPrice := params.MinValidatorsTicketPrice
 		if tx.Value.Decimal().LessThan(decimal.NewFromFloat(curTicketPrice)) {
 			return feI(index, "value", fmt.Sprintf("value is lower than the"+
 				" minimum ticket price (%f)", curTicketPrice))
@@ -91,7 +92,7 @@ func CheckTxTicketPurchaseConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(pubKey, tx.Value, tx.Fee,
+	if err = logic.DrySend(pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -136,7 +137,7 @@ func CheckTxUnbondTicketConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
+	if err = logic.DrySend(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -162,7 +163,7 @@ func CheckTxRepoCreateConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(pubKey, tx.Value, tx.Fee,
+	if err = logic.DrySend(pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -182,7 +183,7 @@ func CheckTxSetDelegateCommissionConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
+	if err = logic.DrySend(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -209,7 +210,7 @@ func CheckTxRegisterPushKeyConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
+	if err = logic.DrySend(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -248,7 +249,7 @@ func CheckTxUpDelPushKeyConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
+	if err = logic.DrySend(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -361,7 +362,7 @@ func CheckTxNSAcquireConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(pubKey, tx.Value, tx.Fee,
+	if err = logic.DrySend(pubKey, tx.Value, tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -393,7 +394,7 @@ func CheckTxNamespaceDomainUpdateConsistency(
 		return feI(index, "senderPubKey", "sender not permitted to perform this operation")
 	}
 
-	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
+	if err = logic.DrySend(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -404,7 +405,7 @@ func CheckTxNamespaceDomainUpdateConsistency(
 // CheckProposalCommonConsistency includes common consistency checks for
 // proposal transactions.
 func CheckProposalCommonConsistency(
-	proposalType int,
+	proposalType types.TxCode,
 	txProposal *core.TxProposalCommon,
 	txCommon *core.TxCommon,
 	index int,
@@ -457,7 +458,7 @@ func CheckProposalCommonConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(txCommon.GetSenderPubKey().Bytes())
-	if err := logic.Tx().CanExecCoinTransfer(pubKey, txProposal.Value, txCommon.Fee,
+	if err := logic.DrySend(pubKey, txProposal.Value, txCommon.Fee,
 		txCommon.GetNonce(), uint64(currentHeight)); err != nil {
 		return nil, err
 	}
@@ -527,13 +528,13 @@ func CheckTxVoteConsistency(
 	// If the proposal is targeted at repo owners, then
 	// the sender must be an owner
 	senderOwner := repoState.Owners.Get(tx.GetFrom().String())
-	if proposal.GetProposerType() == state.VoteByOwner && senderOwner == nil {
+	if proposal.GetVoterType() == state.VoterOwner && senderOwner == nil {
 		return feI(index, "senderPubKey", "sender is not one of the repo owners")
 	}
 
 	// If the proposal is targetted at repo owners and
 	// the vote is a NoWithVeto, then the sender must have veto rights.
-	if proposal.GetProposerType() == state.VoteByOwner &&
+	if proposal.GetVoterType() == state.VoterOwner &&
 		tx.Vote == state.ProposalVoteNoWithVeto && !senderOwner.Veto {
 		return feI(index, "senderPubKey", "sender cannot vote 'no with veto' because "+
 			"they have no veto right")
@@ -549,7 +550,7 @@ func CheckTxVoteConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
+	if err = logic.DrySend(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
@@ -596,7 +597,7 @@ func CheckTxRepoProposalSendFeeConsistency(
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(tx.GetSenderPubKey().Bytes())
-	if err = logic.Tx().CanExecCoinTransfer(pubKey, "0", tx.Fee,
+	if err = logic.DrySend(pubKey, "0", tx.Fee,
 		tx.GetNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
