@@ -42,9 +42,6 @@ type IssueCreateArgs struct {
 	// Assignees may include push keys that may be interpreted by an application
 	Assignees []string
 
-	// Fixers may include push keys of indicating who should fix the Issue
-	Fixers []string
-
 	// UseEditor indicates that the body of the Issue should be collected using a text editor.
 	UseEditor bool
 
@@ -55,7 +52,7 @@ type IssueCreateArgs struct {
 	NoBody bool
 
 	// Close sets close status to 1.
-	Close bool
+	Close *bool
 
 	// Open sets close status to 0
 	Open bool
@@ -142,13 +139,6 @@ input:
 		}
 	}
 
-	// Ensure fixers are valid push address
-	for _, fixer := range args.Fixers {
-		if !util.IsValidPushAddr(strings.TrimPrefix(fixer, "-")) {
-			return fmt.Errorf("fixer (%s) is not a valid push key address", fixer)
-		}
-	}
-
 	// When intent is to reply to a comment, an issue number is required
 	if args.IssueNumber == 0 && args.ReplyHash != "" {
 		return fmt.Errorf("issue number is required when adding a comment")
@@ -195,23 +185,15 @@ input:
 		return ErrBodyRequired
 	}
 
-	var closeState int
-	if args.Close {
-		closeState = plumbing.IssueStateClose
-	} else if args.Open {
-		closeState = plumbing.IssueStateOpen
-	}
-
 	// Create the Issue body and prompt user to confirm
 	issueBody := plumbing.IssueBodyToString(&plumbing.IssueBody{
 		Content:   []byte(args.Body),
 		Title:     args.Title,
 		ReplyTo:   args.ReplyHash,
 		Reactions: args.Reactions,
-		Labels:    args.Labels,
-		Assignees: args.Assignees,
-		Fixers:    args.Fixers,
-		Close:     closeState,
+		Labels:    &args.Labels,
+		Assignees: &args.Assignees,
+		Close:     args.Close,
 	})
 
 	// Create a new Issue or add comment commit to existing Issue

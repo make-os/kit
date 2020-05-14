@@ -62,9 +62,20 @@ func (td ReferenceTxDetails) GetNonce() uint64 {
 	return 0
 }
 
-// ReferenceData stores non-git generated data about a reference
+// ReferenceData stores additional data extracted from a pushed reference.
 type ReferenceData struct {
-	Close int `json:"close" msgpack:"close,omitempty"` // Close indicates that the reference is closed
+	// Close indicates that the reference is closed
+	Close *bool `json:"close" msgpack:"close,omitempty"`
+
+	// Labels describes and classifies the issue using keywords
+	Labels *[]string `json:"labels" msgpack:"labels,omitempty"`
+
+	// Assignees are the push keys assigned to do a task
+	Assignees *[]string `json:"assignees" msgpack:"assignees,omitempty"`
+}
+
+func (rd *ReferenceData) ToMap() map[string]interface{} {
+	return util.StructToMap(rd)
 }
 
 // TxDetail represents transaction information required to generate
@@ -87,8 +98,7 @@ type TxDetail struct {
 	// pusher has 'issue update' permission for the target reference
 	FlagCheckIssueUpdatePolicy bool `json:"-" msgpack:"-" mapstructure:"-"`
 
-	// ReferenceData includes data that generated from the processing and validation
-	// of the target reference
+	// ReferenceData includes data that were extracted from the pushed reference content.
 	ReferenceData *ReferenceData `json:"-" msgpack:"-" mapstructure:"-"`
 }
 

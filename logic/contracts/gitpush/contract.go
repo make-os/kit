@@ -3,6 +3,7 @@ package gitpush
 import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/logic/contracts/common"
+	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
@@ -54,7 +55,19 @@ func (c *GitPush) Exec() error {
 			curRef.Creator = c.tx.PushNote.PushKeyID
 		}
 
-		curRef.Closed = ref.Data.Close == 1
+		// Set issue data for issue reference
+		if plumbing.IsIssueReference(ref.Name) {
+			if ref.Data.Close != nil {
+				curRef.IssueData.Closed = *ref.Data.Close
+			}
+			if ref.Data.Labels != nil {
+				curRef.IssueData.Labels = *ref.Data.Labels
+			}
+			if ref.Data.Assignees != nil {
+				curRef.IssueData.Assignees = *ref.Data.Assignees
+			}
+		}
+
 		curRef.Nonce = curRef.Nonce + 1
 		curRef.Hash = util.MustFromHex(ref.NewHash)
 		repo.References[ref.Name] = curRef
@@ -73,5 +86,5 @@ func (c *GitPush) Exec() error {
 	// Deduct the pusher's fee
 	common.DebitAccountObject(c, pushKey.Address, pusherAcct, c.tx.Fee.Decimal(), c.chainHeight)
 
-	return nil
+	return c.GetRepoManager().ExecTxPush(c.tx)
 }

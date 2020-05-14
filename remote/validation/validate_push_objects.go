@@ -198,8 +198,12 @@ func CheckPushNoteConsistency(note *core.PushNote, logic core.Logic) error {
 
 	// If namespace is provide, ensure it exists
 	if note.Namespace != "" {
-		if logic.NamespaceKeeper().Get(util.HashNamespace(note.Namespace)).IsNil() {
+		ns := logic.NamespaceKeeper().Get(util.HashNamespace(note.Namespace))
+		if ns.IsNil() {
 			return util.FieldError("namespace", fmt.Sprintf("namespace '%s' is unknown", note.Namespace))
+		}
+		if !funk.ContainsString(funk.Values(ns.Domains).([]string), util.RepoIDPrefix+note.GetRepoName()) {
+			return util.FieldError("repo", fmt.Sprintf("repo not a target in namespace '%s'", note.Namespace))
 		}
 	}
 

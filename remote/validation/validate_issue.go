@@ -92,13 +92,15 @@ func ValidateIssueCommit(repo core.BareRepo, commit core.Commit, args *ValidateI
 
 		// Set Close field in the reference data. Do this for only the latest commit
 		isRecentIssueCommit := issueCommit.Hash.String() == args.Change.Item.GetData()
-		if isRecentIssueCommit && issueBody.Close > 0 {
+		if isRecentIssueCommit {
 			args.TxDetail.Data().Close = issueBody.Close
+			args.TxDetail.Data().Assignees = issueBody.Assignees
+			args.TxDetail.Data().Labels = issueBody.Labels
 		}
 
 		// When an issue reference exist and it is closed, the next pushed commit is expected
 		// to set the close option to 'open'.
-		if isRecentIssueCommit && refState.Closed && issueBody.Close != plumbing2.IssueStateOpen {
+		if isRecentIssueCommit && refState.IssueData.Closed && !issueBody.WantOpen() {
 			return ErrCannotWriteToClosedIssue
 		}
 	}
@@ -196,7 +198,6 @@ func CheckIssueCommit(repo core.BareRepo, commit core.Commit, args *CheckIssueCo
 //  labels: Labels categorize issues into arbitrary or conceptual units.
 //  replyTo: Indicates the issue is a response an earlier comment.
 //  assignees: List push keys assigned to the issue and open for interpretation by clients.
-//  fixers: List push keys assigned to fix an issue and is enforced by the protocol.
 func CheckIssueBody(
 	repo core.BareRepo,
 	commit core.Commit,
@@ -216,7 +217,6 @@ func CheckIssueBody(
 		"labels",
 		"replyTo",
 		"assignees",
-		"fixers",
 		"close"}
 	for k := range fm {
 		if !funk.ContainsString(validFields, k) {
@@ -249,11 +249,6 @@ func CheckIssueBody(
 	assignees := obj.Get("assignees")
 	if !assignees.IsNil() && !assignees.IsInterSlice() {
 		return fe(-1, makeField("assignees"), "expected a list of string values")
-	}
-
-	fixers := obj.Get("fixers")
-	if !fixers.IsNil() && !fixers.IsInterSlice() {
-		return fe(-1, makeField("fixers"), "expected a list of string values")
 	}
 
 	// Ensure issue commit do not have a replyTo value
@@ -332,21 +327,6 @@ func CheckIssueBody(
 		for i, assignee := range val {
 			if !util.IsValidPushAddr(strings.TrimPrefix(assignee.(string), "-")) {
 				return fe(i, makeField("assignees"), "invalid push key ID")
-			}
-		}
-	}
-
-	// Check fixers if set.
-	if val := fixers.InterSlice(); len(val) > 0 {
-		if len(val) > 10 {
-			return fe(-1, makeField("fixers"), "too many fixers. Cannot exceed 10")
-		}
-		if !util.IsString(val[0]) {
-			return fe(-1, makeField("fixers"), "expected a string list")
-		}
-		for i, fixer := range val {
-			if !util.IsValidPushAddr(strings.TrimPrefix(fixer.(string), "-")) {
-				return fe(i, makeField("fixers"), "invalid push key ID")
 			}
 		}
 	}

@@ -468,7 +468,7 @@ func ParseSimpleArgs(args []string) (m map[string]string) {
 // Interrupt is used to signal program interruption
 type Interrupt chan struct{}
 
-// IsClosed checks if the channel is closed
+// CloseIsTrue checks if the channel is closed
 func (i *Interrupt) IsClosed() bool {
 	return IsStructChanClosed(*i)
 }

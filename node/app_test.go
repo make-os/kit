@@ -413,12 +413,7 @@ var _ = Describe("App", func() {
 			var res abcitypes.ResponseDeliverTx
 
 			BeforeEach(func() {
-				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
-					return nil
-				}
-			})
-
-			BeforeEach(func() {
+				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error { return nil }
 				params.MaxValTicketsPerBlock = 1
 				app.unIdxValidatorTickets = append(app.unIdxValidatorTickets, &ticketInfo{})
 				tx := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
@@ -434,12 +429,7 @@ var _ = Describe("App", func() {
 
 		When("tx type is TxTypeValidatorTicket and is successfully executed", func() {
 			BeforeEach(func() {
-				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
-					return nil
-				}
-			})
-
-			BeforeEach(func() {
+				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error { return nil }
 				tx := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 
@@ -455,12 +445,7 @@ var _ = Describe("App", func() {
 
 		When("tx type is TxTypeHostTicket and response code=0", func() {
 			BeforeEach(func() {
-				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
-					return nil
-				}
-			})
-
-			BeforeEach(func() {
+				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error { return nil }
 				tx := core.NewBareTxTicketPurchase(core.TxTypeHostTicket)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.AtomicLogic.EXPECT().ExecTx(gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
@@ -474,13 +459,10 @@ var _ = Describe("App", func() {
 		})
 
 		When("tx type is TxTypeUnbondHostTicket and response code=0", func() {
-			BeforeEach(func() {
-				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
-					return nil
-				}
-			})
 
 			BeforeEach(func() {
+				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error { return nil }
+				app.curWorkingBlock.Height = int64(10)
 				tx := core.NewBareTxTicketUnbond(core.TxTypeUnbondHostTicket)
 				tx.TicketHash = util.StrToBytes32("tid")
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}

@@ -78,7 +78,7 @@ var _ = Describe("UpdateRepoContract", func() {
 					Governance: &state.RepoConfigGovernance{DurOfProposal: 1000},
 				}
 
-				err = updaterepo.NewContract(contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpdate{
+				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpdate{
 					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Config:           config.ToMap(),
@@ -131,7 +131,7 @@ var _ = Describe("UpdateRepoContract", func() {
 				config := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{DurOfProposal: 1000},
 				}
-				err = updaterepo.NewContract(contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpdate{
+				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpdate{
 					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Config:           config.ToMap(),
@@ -183,7 +183,7 @@ var _ = Describe("UpdateRepoContract", func() {
 				config := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{DurOfProposal: 2000},
 				}
-				err = updaterepo.NewContract(contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpdate{
+				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpdate{
 					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Config:           config.ToMap(),

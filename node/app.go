@@ -270,7 +270,6 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	}
 
 	// Execute the transaction (does not commit the state changes yet)
-	// tx, uint64(a.curWorkingBlock.Height-1)
 	resp := a.logic.ExecTx(&core.ExecArgs{
 		Tx:          tx,
 		ChainHeight: uint64(a.curWorkingBlock.Height - 1),

@@ -37,9 +37,9 @@ func init() {
 		gitpush.NewContract(),
 		voteproposal.NewContract(),
 		depositproposalfee.NewContract(),
-		upsertowner.NewContract(SystemContracts),
-		updaterepo.NewContract(SystemContracts),
-		registerrepopushkeys.NewContract(SystemContracts),
+		upsertowner.NewContract(&SystemContracts),
+		updaterepo.NewContract(&SystemContracts),
+		registerrepopushkeys.NewContract(&SystemContracts),
 		mergerequest.NewContract(),
 	}...)
 }

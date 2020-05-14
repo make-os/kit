@@ -17,11 +17,11 @@ type UpdateRepoContract struct {
 	core.Logic
 	tx          *core.TxRepoProposalUpdate
 	chainHeight uint64
-	contracts   []core.SystemContract
+	contracts   *[]core.SystemContract
 }
 
 // NewContract creates a new instance of UpdateRepoContract
-func NewContract(contracts []core.SystemContract) *UpdateRepoContract {
+func NewContract(contracts *[]core.SystemContract) *UpdateRepoContract {
 	return &UpdateRepoContract{contracts: contracts}
 }
 
@@ -60,7 +60,7 @@ func (c *UpdateRepoContract) Exec() error {
 		Proposal:    proposal,
 		Repo:        repo,
 		ChainHeight: c.chainHeight,
-		Contracts:   c.contracts,
+		Contracts:   *c.contracts,
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to apply proposal")

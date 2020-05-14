@@ -6,8 +6,8 @@ import (
 
 // Address constants
 const (
-	addressPrefixRepo                = "r/"
-	addressPrefixAddressUser         = "a/"
+	RepoIDPrefix                     = "r/"
+	AddressIDPrefix                  = "a/"
 	addressPrefixedIdentifierRegexp  = "^[ar]{1}/[a-zA-Z0-9_-]+$"                  // e.g r/abc-xyz or a/abc-xyz
 	AddressNamespaceDomainNameRegexp = "^[a-zA-Z0-9_-]+$"                          // e.g abc-xyz_
 	addressNonDefaultNamespaceRegexp = "^[a-zA-Z0-9_-]{3,}/[a-zA-Z0-9_-]{0,}$"     // e.g namespace/abc-xyz_ (excluding: r/abc-xyz)
@@ -24,7 +24,7 @@ func IsPrefixedAddressRepo(addr string) bool {
 	if !IsPrefixedAddr(addr) {
 		return false
 	}
-	return addr[:2] == addressPrefixRepo
+	return addr[:2] == RepoIDPrefix
 }
 
 // IsPrefixedAddressUserAccount checks whether the given address is a prefixed repo address
@@ -32,7 +32,7 @@ func IsPrefixedAddressUserAccount(addr string) bool {
 	if !IsPrefixedAddr(addr) {
 		return false
 	}
-	return addr[:2] == addressPrefixAddressUser &&
+	return addr[:2] == AddressIDPrefix &&
 		IsValidAddr(addr[2:]) == nil
 }
 
@@ -85,7 +85,7 @@ func (a Address) IsPrefixedRepoAddress() bool {
 	if !a.IsPrefixed() {
 		return false
 	}
-	return string(a)[:2] == addressPrefixRepo
+	return string(a)[:2] == RepoIDPrefix
 }
 
 // IsPrefixedUserAddress checks if the address is prefixed by
@@ -94,7 +94,7 @@ func (a Address) IsPrefixedUserAddress() bool {
 	if !a.IsPrefixed() {
 		return false
 	}
-	return string(a)[:2] == addressPrefixAddressUser
+	return string(a)[:2] == AddressIDPrefix
 }
 
 // IsBech32MakerAddress checks whether the address is a

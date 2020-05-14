@@ -11,17 +11,39 @@ import (
 // PushNote implements types.PushNote
 type PushNote struct {
 	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	TargetRepo            BareRepo         `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
-	RepoName              string           `json:"repo,omitempty" msgpack:"repo,omitempty"`                 // The name of the repo
-	Namespace             string           `json:"namespace,omitempty" msgpack:"namespace,omitempty"`       // The namespace which the repo is under.
-	References            PushedReferences `json:"references,omitempty" msgpack:"references,omitempty"`     // A list of references pushed
-	PushKeyID             []byte           `json:"pusherKeyId,omitempty" msgpack:"pusherKeyId,omitempty"`   // The PGP key of the pusher
-	PusherAddress         util.Address     `json:"pusherAddr,omitempty" msgpack:"pusherAddr,omitempty"`     // The Address of the pusher
-	Size                  uint64           `json:"size,omitempty" msgpack:"size,omitempty"`                 // Total size of all objects pushed
-	Timestamp             int64            `json:"timestamp,omitempty" msgpack:"timestamp,omitempty"`       // Unix timestamp
-	PusherAcctNonce       uint64           `json:"accountNonce,omitempty" msgpack:"accountNonce,omitempty"` // Next nonce of the pusher's account
-	NodeSig               []byte           `json:"nodeSig,omitempty" msgpack:"nodeSig,omitempty"`           // The signature of the node that created the PushNote
-	NodePubKey            util.Bytes32     `json:"nodePubKey,omitempty" msgpack:"nodePubKey,omitempty"`     // The public key of the push note signer
+
+	// TargetRepo is the target repo local instance
+	TargetRepo BareRepo `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
+
+	// RepoName is the name of the repo
+	RepoName string `json:"repo,omitempty" msgpack:"repo,omitempty"`
+
+	// Namespace is the namespace which the pusher is targeting.
+	Namespace string `json:"namespace,omitempty" msgpack:"namespace,omitempty"`
+
+	// References contains all references pushed
+	References PushedReferences `json:"references,omitempty" msgpack:"references,omitempty"`
+
+	// PushKeyID is the push key ID of the pusher
+	PushKeyID []byte `json:"pusherKeyId,omitempty" msgpack:"pusherKeyId,omitempty"`
+
+	// PusherAddress is the Address of the pusher
+	PusherAddress util.Address `json:"pusherAddr,omitempty" msgpack:"pusherAddr,omitempty"`
+
+	// Size is thet otal size of all objects pushed
+	Size uint64 `json:"size,omitempty" msgpack:"size,omitempty"`
+
+	// Timestamp is the unix timestamp
+	Timestamp int64 `json:"timestamp,omitempty" msgpack:"timestamp,omitempty"`
+
+	// PusherAcctNonce is the next nonce of the pusher's account
+	PusherAcctNonce uint64 `json:"accountNonce,omitempty" msgpack:"accountNonce,omitempty"`
+
+	// NodeSig is the signature of the node that created the PushNote
+	NodeSig []byte `json:"nodeSig,omitempty" msgpack:"nodeSig,omitempty"`
+
+	// NodePubKey is the public key of the push note signer
+	NodePubKey util.Bytes32 `json:"nodePubKey,omitempty" msgpack:"nodePubKey,omitempty"`
 }
 
 // GetTargetRepo returns the target repository

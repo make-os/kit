@@ -18,11 +18,11 @@ type UpsertOwnerContract struct {
 	core.Logic
 	tx          *core.TxRepoProposalUpsertOwner
 	chainHeight uint64
-	contracts   []core.SystemContract
+	contracts   *[]core.SystemContract
 }
 
 // NewContract creates a new instance of UpsertOwnerContract
-func NewContract(contracts []core.SystemContract) *UpsertOwnerContract {
+func NewContract(contracts *[]core.SystemContract) *UpsertOwnerContract {
 	return &UpsertOwnerContract{contracts: contracts}
 }
 
@@ -64,7 +64,7 @@ func (c *UpsertOwnerContract) Exec() error {
 		Proposal:    proposal,
 		Repo:        repo,
 		ChainHeight: c.chainHeight,
-		Contracts:   c.contracts,
+		Contracts:   *c.contracts,
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to apply proposal")

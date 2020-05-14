@@ -282,6 +282,22 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
+		When("namespace is set but repo not a target of any domain", func() {
+			BeforeEach(func() {
+				tx := &core.PushNote{Namespace: "ns1"}
+				mockRepoKeeper.EXPECT().Get(gomock.Any()).Return(&state.Repository{Balance: "10"})
+				ns := state.BareNamespace()
+				ns.Domains["domain1"] = "r/some_repo"
+				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.Namespace)).Return(ns)
+				err = validation.CheckPushNoteConsistency(tx, mockLogic)
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("field:repo, msg:repo not a target in namespace 'ns1'"))
+			})
+		})
+
 		When("pusher public key id is unknown", func() {
 			BeforeEach(func() {
 				tx := &core.PushNote{RepoName: "repo1", PushKeyID: util.RandBytes(20)}

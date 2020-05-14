@@ -19,7 +19,26 @@ const (
 
 // BareReference returns an empty reference object
 func BareReference() *Reference {
-	return &Reference{}
+	return &Reference{
+		IssueData: &IssueReferenceData{},
+	}
+}
+
+// IssueReferenceData contain data specific to an issue reference
+type IssueReferenceData struct {
+	// Labels are keywords that describe the reference
+	Labels []string `json:"labels" mapstructure:"labels" msgpack:"labels,omitempty"`
+
+	// Assignees contains pushers assigned to the reference
+	Assignees []string `json:"assignees" mapstructure:"assignees" msgpack:"assignees,omitempty"`
+
+	// Closed indicates that the reference is closed
+	Closed bool `json:"closed" mapstructure:"closed" msgpack:"closed,omitempty"`
+}
+
+// IsNil checks whether the object's fields are have zero values
+func (i *IssueReferenceData) IsNil() bool {
+	return len(i.Assignees) == 0 && len(i.Labels) == 0 && i.Closed == false
 }
 
 // Reference represents a git reference
@@ -33,8 +52,8 @@ type Reference struct {
 	// It is used to enforce order of operation to the reference.
 	Nonce uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce,omitempty"`
 
-	// Closed indicates that the reference is closed
-	Closed bool `json:"closed" mapstructure:"closed" msgpack:"closed,omitempty"`
+	// IssueReferenceData contains data for issue reference
+	IssueData *IssueReferenceData `json:"issueData" mapstructure:"issueData" msgpack:"issueData,omitempty"`
 
 	// Hash is the current hash of the reference
 	Hash []byte `json:"hash" mapstructure:"hash" msgpack:"hash,omitempty"`
@@ -42,15 +61,15 @@ type Reference struct {
 
 // IsNil checks whether the reference fields are all empty
 func (r *Reference) IsNil() bool {
-	return len(r.Creator) == 0 && len(r.Hash) == 0 && r.Nonce == 0
+	return len(r.Creator) == 0 && len(r.Hash) == 0 && r.Nonce == 0 && r.IssueData.IsNil()
 }
 
 func (r *Reference) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return r.EncodeMulti(enc, r.Creator, r.Nonce, r.Hash, r.Closed)
+	return r.EncodeMulti(enc, r.Creator, r.Nonce, r.Hash, r.IssueData)
 }
 
 func (r *Reference) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return r.DecodeMulti(dec, &r.Creator, &r.Nonce, &r.Hash, &r.Closed)
+	return r.DecodeMulti(dec, &r.Creator, &r.Nonce, &r.Hash, &r.IssueData)
 }
 
 // References represents a collection of references

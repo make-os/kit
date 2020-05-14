@@ -75,9 +75,9 @@ func (m *RepoModule) funcs() []*modules.ModuleFunc {
 			Description: "Create a merge request proposal",
 		},
 		{
-			Name:        "registerKey",
+			Name:        "addContributor",
 			Value:       m.RegisterPushKey,
-			Description: "Register one or more push keys to a repository",
+			Description: "Register one or more contributors",
 		},
 	}
 }

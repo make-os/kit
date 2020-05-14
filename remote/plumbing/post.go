@@ -134,23 +134,24 @@ type IssueBody struct {
 	Reactions []string
 
 	// Labels describes and classifies the issue using keywords
-	Labels []string
+	Labels *[]string
 
 	// Assignees are the push keys assigned to do a task
-	Assignees []string
-
-	// Fixers are the push keys that should fix the issue
-	Fixers []string
+	Assignees *[]string
 
 	// Close indicates that the issue should be closed.
-	// 0: Default (open), 1: Close, 2: Open
-	Close int
+	Close *bool
+}
+
+// WantOpen checks whether close=false
+func (b *IssueBody) WantOpen() bool {
+	return b.Close != nil && *b.Close == false
 }
 
 // RequiresUpdatePolicy checks whether the issue body will require an 'issue-update' policy
 // if the contents need to be added to the issue.
 func (b *IssueBody) RequiresUpdatePolicy() bool {
-	return len(b.Labels) > 0 || len(b.Assignees) > 0 || len(b.Fixers) > 0 || b.Close > 0
+	return b.Labels != nil || b.Assignees != nil || b.Close != nil
 }
 
 // IssueBodyFromContentFrontMatter attempts to load the instance from
@@ -163,19 +164,25 @@ func IssueBodyFromContentFrontMatter(cfm *pageparser.ContentFrontMatter) *IssueB
 	b.Content = cfm.Content
 	b.Title = ob.Get("title").String()
 	b.ReplyTo = ob.Get("replyTo").String()
-	b.Close = ob.Get("close").Int()
+
+	close := ob.Get("close").Bool()
+	b.Close = &close
 
 	b.Reactions = cast.ToStringSlice(ob.Get("reactions").
 		StringSlice(cast.ToStringSlice(ob.Get("reactions").InterSlice())))
 
-	b.Labels = cast.ToStringSlice(ob.Get("labels").
-		StringSlice(cast.ToStringSlice(ob.Get("labels").InterSlice())))
+	if ob.Has("labels") {
+		labels := cast.ToStringSlice(ob.Get("labels").
+			StringSlice(cast.ToStringSlice(ob.Get("labels").InterSlice())))
+		b.Labels = &labels
+	}
 
-	b.Assignees = cast.ToStringSlice(ob.Get("assignees").
-		StringSlice(cast.ToStringSlice(ob.Get("assignees").InterSlice())))
+	if ob.Has("assignees") {
+		assignees := cast.ToStringSlice(ob.Get("assignees").
+			StringSlice(cast.ToStringSlice(ob.Get("assignees").InterSlice())))
+		b.Assignees = &assignees
+	}
 
-	b.Fixers = cast.ToStringSlice(ob.Get("fixers").
-		StringSlice(cast.ToStringSlice(ob.Get("fixers").InterSlice())))
 	return b
 }
 
@@ -195,20 +202,16 @@ func IssueBodyToString(body *IssueBody) string {
 		reactionsStr, _ := json.Marshal(body.Reactions)
 		args += fmt.Sprintf("reactions: %s\n", reactionsStr)
 	}
-	if len(body.Labels) > 0 {
+	if body.Labels != nil && len(*body.Labels) > 0 {
 		labelsStr, _ := json.Marshal(body.Labels)
 		args += fmt.Sprintf("labels: %s\n", labelsStr)
 	}
-	if len(body.Assignees) > 0 {
+	if body.Assignees != nil && len(*body.Assignees) > 0 {
 		assigneesStr, _ := json.Marshal(body.Assignees)
 		args += fmt.Sprintf("assignees: %s\n", assigneesStr)
 	}
-	if len(body.Fixers) > 0 {
-		fixersStr, _ := json.Marshal(body.Fixers)
-		args += fmt.Sprintf("fixers: %s\n", fixersStr)
-	}
-	if body.Close > 0 {
-		args += fmt.Sprintf("close: %d\n", body.Close)
+	if body.Close != nil {
+		args += fmt.Sprintf("close: %v\n", *body.Close)
 	}
 
 	return fmt.Sprintf(str, args) + string(body.Content)

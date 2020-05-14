@@ -78,7 +78,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 			BeforeEach(func() {
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
-				err = upsertowner.NewContract(contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpsertOwner{
+				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpsertOwner{
 					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Addresses:        address,
@@ -128,7 +128,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				err = upsertowner.NewContract(contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpsertOwner{
+				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpsertOwner{
 					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Addresses:        addresses,
@@ -180,7 +180,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 				repoUpd.AddOwner(key2.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				err = upsertowner.NewContract(contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpsertOwner{
+				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpsertOwner{
 					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Addresses:        addresses,
@@ -239,7 +239,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				err = upsertowner.NewContract(contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpsertOwner{
+				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpsertOwner{
 					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Addresses:        addresses,

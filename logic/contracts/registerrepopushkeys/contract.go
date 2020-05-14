@@ -18,11 +18,11 @@ type RegisterRepoPushKeysContract struct {
 	core.Logic
 	tx          *core.TxRepoProposalRegisterPushKey
 	chainHeight uint64
-	contracts   []core.SystemContract
+	contracts   *[]core.SystemContract
 }
 
 // NewContract creates a new instance of RegisterRepoPushKeysContract
-func NewContract(contracts []core.SystemContract) *RegisterRepoPushKeysContract {
+func NewContract(contracts *[]core.SystemContract) *RegisterRepoPushKeysContract {
 	return &RegisterRepoPushKeysContract{contracts: contracts}
 }
 
@@ -72,7 +72,7 @@ func (c *RegisterRepoPushKeysContract) Exec() error {
 		Proposal:    proposal,
 		Repo:        repo,
 		ChainHeight: c.chainHeight,
-		Contracts:   c.contracts,
+		Contracts:   *c.contracts,
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to apply proposal")

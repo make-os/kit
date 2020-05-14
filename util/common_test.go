@@ -442,7 +442,7 @@ var _ = Describe("Common", func() {
 	})
 
 	Describe("Interrupt", func() {
-		Describe(".IsClosed", func() {
+		Describe(".CloseIsTrue", func() {
 			It("should return true when closed and false when not", func() {
 				itr := Interrupt(make(chan struct{}))
 				Expect(itr.IsClosed()).To(BeFalse())

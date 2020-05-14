@@ -29,11 +29,11 @@ func (sv *Server) Receive(chID byte, peer p2p.Peer, msgBytes []byte) {
 	switch chID {
 	case PushNoteReactorChannel:
 		if err := sv.onPushNote(peer, msgBytes); err != nil {
-			sv.log.Error(err.Error())
+			sv.log.Error("failed to handle push note", "Err", err.Error())
 		}
 	case PushEndReactorChannel:
 		if err := sv.onPushEnd(peer, msgBytes); err != nil {
-			sv.log.Error(err.Error())
+			sv.log.Error("failed to handle push endorsement", "Err", err.Error())
 		}
 	}
 }
@@ -67,7 +67,7 @@ func (sv *Server) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	// If namespace is set, get it and ensure it exists
 	var namespace *state.Namespace
 	if note.Namespace != "" {
-		namespace = sv.logic.NamespaceKeeper().Get(note.Namespace)
+		namespace = sv.logic.NamespaceKeeper().Get(util.HashNamespace(note.Namespace))
 		if namespace.IsNil() {
 			return fmt.Errorf("namespace '%s' not found", note.Namespace)
 		}
@@ -504,15 +504,14 @@ func (sv *Server) ExecTxPush(tx *core.TxPush) error {
 // execTxPush executes a push transaction
 func execTxPush(m core.RemoteServer, tx *core.TxPush) error {
 
+	if m.Cfg().IsValidatorNode() {
+		return nil
+	}
+
 	repoName := tx.PushNote.RepoName
 	repo, err := m.GetRepo(repoName)
 	if err != nil {
 		return errors.Wrap(err, "unable to find repo locally")
-	}
-
-	// As a validator, move straight to updating the state of the references
-	if m.Cfg().IsValidatorNode() {
-		goto update
 	}
 
 	for _, objHash := range tx.PushNote.GetPushedObjects() {
@@ -548,8 +547,6 @@ func execTxPush(m core.RemoteServer, tx *core.TxPush) error {
 		m.Log().Debug("Fetched object for repo", "ObjHash", objHash, "RepoName", repoName)
 	}
 
-update:
-
 	// Attempt to update the local repository using the push transaction
 	if err = m.UpdateRepoWithTxPush(tx); err != nil {
 		return err
@@ -557,7 +554,7 @@ update:
 
 	// If delete request and we are not a validator, delete the reference from the local repo.
 	for _, ref := range tx.PushNote.GetPushedReferences() {
-		if plumbing.IsZeroHash(ref.NewHash) && !m.Cfg().IsValidatorNode() {
+		if plumbing.IsZeroHash(ref.NewHash) {
 			if err = repo.RefDelete(ref.Name); err != nil {
 				return errors.Wrapf(err, "failed to delete reference (%s)", ref.Name)
 			}
