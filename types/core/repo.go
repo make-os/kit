@@ -244,18 +244,12 @@ type RepoPushNote interface {
 	// RepoName returns the name of the repo receiving the push
 	GetRepoName() string
 
-	// Bytes returns a serialized version of the object
-	Bytes() []byte
-
 	// GetEcoSize returns the length of the serialized tx minus
 	// the total length of fee fields.
 	GetEcoSize() uint64
 
 	// Len returns the length of the serialized tx
 	Len() uint64
-
-	// ID returns the hash of the push note
-	ID() util.Bytes32
 
 	// TxSize is the size of the transaction
 	TxSize() uint
@@ -287,8 +281,24 @@ type RepoPushNote interface {
 	// ignoreDelRefs cause deleted references' objects to not be include in the result
 	GetPushedObjects() (objs []string)
 
+	// ID returns the hash of the push note
+	// Set recompute to true to force re-serialization.
+	ID(recompute ...bool) util.Bytes32
+
+	// Bytes returns a serialized version of the object. If this function was previously called,
+	// the cached output from the previous call is returned instead of re-serializing the object.
+	// Set recompute to true to force re-serialization.
+	Bytes(recompute ...bool) []byte
+
 	// BytesAndID returns the serialized version of the tx and the id
-	BytesAndID() ([]byte, util.Bytes32)
+	// Set recompute to true to force re-serialization.
+	BytesAndID(recompute ...bool) ([]byte, util.Bytes32)
+
+	// BytesNoCache returns the serialized version of the object but does not cache it.
+	BytesNoCache() []byte
+
+	// BytesNoSig returns a serialized version of the object without the signature
+	BytesNoSig() []byte
 }
 
 // Pruner provides repository pruning functionality

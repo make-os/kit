@@ -44,6 +44,9 @@ type PushNote struct {
 
 	// NodePubKey is the public key of the push note signer
 	NodePubKey util.Bytes32 `json:"nodePubKey,omitempty" msgpack:"nodePubKey,omitempty"`
+
+	// serialized caches the serialized bytes of object
+	bytes []byte `json:"-" msgpack:"-"`
 }
 
 // GetTargetRepo returns the target repository
@@ -56,8 +59,7 @@ func (pt *PushNote) GetPusherKeyID() []byte {
 	return pt.PushKeyID
 }
 
-// GetPusherKeyIDString is like GetPusherKeyID but returns hex string, prefixed
-// with 0x
+// GetPusherKeyIDString is like GetPusherKeyID but returns hex string, prefixed with 0x
 func (pt *PushNote) GetPusherKeyIDString() string {
 	return crypto.BytesToPushKeyID(pt.PushKeyID)
 }
@@ -92,8 +94,19 @@ func (pt *PushNote) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&pt.NodePubKey)
 }
 
-// Bytes returns a serialized version of the object
-func (pt *PushNote) Bytes() []byte {
+// Bytes returns a serialized version of the object. If this function was previously called,
+// the cached output from the previous call is returned instead of re-serializing the object.
+// Set recompute to true to force re-serialization.
+func (pt *PushNote) Bytes(recompute ...bool) []byte {
+	if (len(recompute) > 0 && recompute[0]) || len(pt.bytes) == 0 {
+		pt.bytes = pt.BytesNoCache()
+		return pt.bytes
+	}
+	return pt.bytes
+}
+
+// BytesNoCache returns the serialized version of the object but does not cache it.
+func (pt *PushNote) BytesNoCache() []byte {
 	return util.ToBytes(pt)
 }
 
@@ -101,7 +114,7 @@ func (pt *PushNote) Bytes() []byte {
 func (pt *PushNote) BytesNoSig() []byte {
 	sig := pt.NodeSig
 	pt.NodeSig = nil
-	bz := pt.Bytes()
+	bz := pt.BytesNoCache()
 	pt.NodeSig = sig
 	return bz
 }
@@ -140,13 +153,13 @@ func (pt *PushNote) Len() uint64 {
 }
 
 // ID returns the hash of the push note
-func (pt *PushNote) ID() util.Bytes32 {
-	return util.BytesToBytes32(util.Blake2b256(pt.Bytes()))
+func (pt *PushNote) ID(recompute ...bool) util.Bytes32 {
+	return util.BytesToBytes32(util.Blake2b256(pt.Bytes(recompute...)))
 }
 
 // BytesAndID returns the serialized version of the tx and the id
-func (pt *PushNote) BytesAndID() ([]byte, util.Bytes32) {
-	bz := pt.Bytes()
+func (pt *PushNote) BytesAndID(recompute ...bool) ([]byte, util.Bytes32) {
+	bz := pt.Bytes(recompute...)
 	return bz, util.BytesToBytes32(util.Blake2b256(bz))
 }
 

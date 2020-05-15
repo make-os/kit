@@ -1391,20 +1391,6 @@ func (mr *MockRepoPushNoteMockRecorder) GetRepoName() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoName", reflect.TypeOf((*MockRepoPushNote)(nil).GetRepoName))
 }
 
-// Bytes mocks base method
-func (m *MockRepoPushNote) Bytes() []byte {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Bytes")
-	ret0, _ := ret[0].([]byte)
-	return ret0
-}
-
-// Bytes indicates an expected call of Bytes
-func (mr *MockRepoPushNoteMockRecorder) Bytes() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockRepoPushNote)(nil).Bytes))
-}
-
 // GetEcoSize mocks base method
 func (m *MockRepoPushNote) GetEcoSize() uint64 {
 	m.ctrl.T.Helper()
@@ -1431,20 +1417,6 @@ func (m *MockRepoPushNote) Len() uint64 {
 func (mr *MockRepoPushNoteMockRecorder) Len() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Len", reflect.TypeOf((*MockRepoPushNote)(nil).Len))
-}
-
-// ID mocks base method
-func (m *MockRepoPushNote) ID() util.Bytes32 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ID")
-	ret0, _ := ret[0].(util.Bytes32)
-	return ret0
-}
-
-// ID indicates an expected call of ID
-func (mr *MockRepoPushNoteMockRecorder) ID() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockRepoPushNote)(nil).ID))
 }
 
 // TxSize mocks base method
@@ -1573,19 +1545,87 @@ func (mr *MockRepoPushNoteMockRecorder) GetPushedObjects() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushedObjects", reflect.TypeOf((*MockRepoPushNote)(nil).GetPushedObjects))
 }
 
-// BytesAndID mocks base method
-func (m *MockRepoPushNote) BytesAndID() ([]byte, util.Bytes32) {
+// ID mocks base method
+func (m *MockRepoPushNote) ID(recompute ...bool) util.Bytes32 {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BytesAndID")
+	varargs := []interface{}{}
+	for _, a := range recompute {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "ID", varargs...)
+	ret0, _ := ret[0].(util.Bytes32)
+	return ret0
+}
+
+// ID indicates an expected call of ID
+func (mr *MockRepoPushNoteMockRecorder) ID(recompute ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ID", reflect.TypeOf((*MockRepoPushNote)(nil).ID), recompute...)
+}
+
+// Bytes mocks base method
+func (m *MockRepoPushNote) Bytes(recompute ...bool) []byte {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range recompute {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "Bytes", varargs...)
+	ret0, _ := ret[0].([]byte)
+	return ret0
+}
+
+// Bytes indicates an expected call of Bytes
+func (mr *MockRepoPushNoteMockRecorder) Bytes(recompute ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Bytes", reflect.TypeOf((*MockRepoPushNote)(nil).Bytes), recompute...)
+}
+
+// BytesAndID mocks base method
+func (m *MockRepoPushNote) BytesAndID(recompute ...bool) ([]byte, util.Bytes32) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{}
+	for _, a := range recompute {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "BytesAndID", varargs...)
 	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(util.Bytes32)
 	return ret0, ret1
 }
 
 // BytesAndID indicates an expected call of BytesAndID
-func (mr *MockRepoPushNoteMockRecorder) BytesAndID() *gomock.Call {
+func (mr *MockRepoPushNoteMockRecorder) BytesAndID(recompute ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockRepoPushNote)(nil).BytesAndID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesAndID", reflect.TypeOf((*MockRepoPushNote)(nil).BytesAndID), recompute...)
+}
+
+// BytesNoCache mocks base method
+func (m *MockRepoPushNote) BytesNoCache() []byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BytesNoCache")
+	ret0, _ := ret[0].([]byte)
+	return ret0
+}
+
+// BytesNoCache indicates an expected call of BytesNoCache
+func (mr *MockRepoPushNoteMockRecorder) BytesNoCache() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesNoCache", reflect.TypeOf((*MockRepoPushNote)(nil).BytesNoCache))
+}
+
+// BytesNoSig mocks base method
+func (m *MockRepoPushNote) BytesNoSig() []byte {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BytesNoSig")
+	ret0, _ := ret[0].([]byte)
+	return ret0
+}
+
+// BytesNoSig indicates an expected call of BytesNoSig
+func (mr *MockRepoPushNoteMockRecorder) BytesNoSig() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BytesNoSig", reflect.TypeOf((*MockRepoPushNote)(nil).BytesNoSig))
 }
 
 // MockPruner is a mock of Pruner interface

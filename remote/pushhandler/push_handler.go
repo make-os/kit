@@ -297,7 +297,7 @@ func (h *Handler) createPushNote() (*core.PushNote, error) {
 	}
 
 	// Sign the push transaction
-	note.NodeSig, err = h.Server.GetPrivateValidatorKey().PrivKey().Sign(note.Bytes())
+	note.NodeSig, err = h.Server.GetPrivateValidatorKey().PrivKey().Sign(note.BytesNoCache())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to sign push note")
 	}

@@ -31,6 +31,7 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/gohugoio/hugo v0.69.0
 	github.com/golang/mock v1.3.1
+	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/google/go-cmp v0.4.0
 	github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 // indirect
 	github.com/gorilla/rpc v1.2.0
@@ -86,15 +87,17 @@ require (
 	github.com/tendermint/tm-db v0.2.0
 	github.com/thoas/go-funk v0.4.0
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
+	github.com/vmihailenco/msgpack/v4 v4.3.11 // indirect
 	go.dedis.ch/kyber/v3 v3.0.11
 	go.uber.org/atomic v1.5.1 // indirect
 	go.uber.org/multierr v1.4.0 // indirect
 	go.uber.org/zap v1.13.0 // indirect
 	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
+	golang.org/x/net v0.0.0-20200513185701-a91f0712d120 // indirect
 	golang.org/x/sys v0.0.0-20200430082407-1f5687305801 // indirect
 	golang.org/x/tools v0.0.0-20191206204035-259af5ff87bd // indirect
 	gonum.org/v1/gonum v0.7.0 // indirect
-	google.golang.org/protobuf v1.21.0 // indirect
+	google.golang.org/appengine v1.6.6 // indirect
 	gopkg.in/jdkato/prose.v2 v2.0.0-20190814032740-822d591a158c
 	gopkg.in/neurosnap/sentences.v1 v1.0.6 // indirect
 	gopkg.in/oleiade/lane.v1 v1.0.0

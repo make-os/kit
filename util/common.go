@@ -120,8 +120,7 @@ func ToBytes(s interface{}) []byte {
 	return buf.Bytes()
 }
 
-// ToObject decodes bytes produced
-// by ToObject to the given dest object
+// ToObject decodes bytes produced by ToBytes to the given dest object
 func ToObject(bs []byte, dest interface{}) error {
 	return msgpack.NewDecoder(bytes.NewBuffer(bs)).Decode(dest)
 }

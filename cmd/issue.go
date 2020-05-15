@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -53,9 +54,9 @@ var issueCreateCmd = &cobra.Command{
 		cls, _ := cmd.Flags().GetBool("close")
 		open, _ := cmd.Flags().GetBool("open")
 		editorPath, _ := cmd.Flags().GetString("editor")
-		labels, _ := cmd.Flags().GetStringSlice("labels")
+		labels, _ := cmd.Flags().GetString("labels")
 		reactions, _ := cmd.Flags().GetStringSlice("reactions")
-		assignees, _ := cmd.Flags().GetStringSlice("assignees")
+		assignees, _ := cmd.Flags().GetString("assignees")
 		issueID, _ := cmd.Flags().GetInt("issue-id")
 
 		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
@@ -70,8 +71,6 @@ var issueCreateCmd = &cobra.Command{
 			NoBody:              noBody,
 			ReplyHash:           commentCommitID,
 			Reactions:           funk.UniqString(reactions),
-			Labels:              funk.UniqString(labels),
-			Assignees:           funk.UniqString(assignees),
 			UseEditor:           useEditor,
 			EditorPath:          editorPath,
 			Open:                open,
@@ -83,6 +82,22 @@ var issueCreateCmd = &cobra.Command{
 
 		if cmd.Flags().Changed("close") {
 			issueCreateArgs.Close = &cls
+		}
+
+		if cmd.Flags().Changed("labels") {
+			if labels == "" {
+				issueCreateArgs.Labels = []string{}
+			} else {
+				issueCreateArgs.Labels = funk.UniqString(strings.Split(labels, ","))
+			}
+		}
+
+		if cmd.Flags().Changed("assignees") {
+			if assignees == "" {
+				issueCreateArgs.Assignees = []string{}
+			} else {
+				issueCreateArgs.Assignees = funk.UniqString(strings.Split(assignees, ","))
+			}
 		}
 
 		if err := issuecmd.IssueCreateCmd(targetRepo, issueCreateArgs); err != nil {
@@ -131,8 +146,8 @@ func init() {
 	issueCreateCmd.Flags().StringP("body", "b", "", "The issue message (max. 8 KB)")
 	issueCreateCmd.Flags().StringP("reply", "r", "", "Specify the hash of a comment to respond to")
 	issueCreateCmd.Flags().StringSliceP("reactions", "e", nil, "Add reactions to a reply (max. 10)")
-	issueCreateCmd.Flags().StringSliceP("labels", "l", nil, "Specify labels to add to the issue/comment (max. 10)")
-	issueCreateCmd.Flags().StringSliceP("assignees", "a", nil, "Specify push key of assignees to add to the issue/comment (max. 10)")
+	issueCreateCmd.Flags().StringP("labels", "l", "", "Specify labels to add to the issue/comment (max. 10)")
+	issueCreateCmd.Flags().StringP("assignees", "a", "", "Specify push key of assignees to add to the issue/comment (max. 10)")
 	issueCreateCmd.Flags().BoolP("use-editor", "u", false, "Use git configured editor to write body")
 	issueCreateCmd.Flags().Bool("no-body", false, "Skip prompt for issue body")
 	issueCreateCmd.Flags().String("editor", "", "GetPath an editor to use instead of the git configured editor")

@@ -175,8 +175,8 @@ var _ = Describe("AcquireNamespaceContract", func() {
 
 			It("should not alter issue data fields not specified in pushed reference", func() {
 				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
-				close := true
-				refs = []*core.PushedReference{{Name: issueRef1, Data: (&core.ReferenceData{Close: &close})}}
+				cls := true
+				refs = []*core.PushedReference{{Name: issueRef1, Data: (&core.ReferenceData{Close: &cls})}}
 				err = gitpush.NewContract().Init(logic, &core.TxPush{
 					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 					PushNote: &core.PushNote{RepoName: repo, References: refs, PushKeyID: creator},

@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/mr-tron/base58"
+	"github.com/spf13/cast"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -64,6 +66,7 @@ func (td ReferenceTxDetails) GetNonce() uint64 {
 
 // ReferenceData stores additional data extracted from a pushed reference.
 type ReferenceData struct {
+
 	// Close indicates that the reference is closed
 	Close *bool `json:"close" msgpack:"close,omitempty"`
 
@@ -74,8 +77,48 @@ type ReferenceData struct {
 	Assignees *[]string `json:"assignees" msgpack:"assignees,omitempty"`
 }
 
-func (rd *ReferenceData) ToMap() map[string]interface{} {
-	return util.StructToMap(rd)
+func (rd *ReferenceData) EncodeMsgpack(enc *msgpack.Encoder) error {
+
+	var labels, assignees interface{} = nil, nil
+
+	if rd.Labels != nil {
+		labels = strings.Join(*rd.Labels, " ")
+	}
+
+	if rd.Assignees != nil {
+		assignees = strings.Join(*rd.Assignees, " ")
+	}
+
+	return enc.Encode([]interface{}{
+		rd.Close,
+		labels,
+		assignees,
+	})
+}
+
+func (rd *ReferenceData) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
+
+	var data []interface{}
+	if err = dec.Decode(&data); err != nil {
+		return
+	}
+
+	if v := data[0]; v != nil {
+		cls := cast.ToBool(v)
+		rd.Close = &cls
+	}
+
+	if v := data[1]; v != nil {
+		labels := strings.Fields(cast.ToString(v))
+		rd.Labels = &labels
+	}
+
+	if v := data[2]; v != nil {
+		assignees := strings.Fields(cast.ToString(v))
+		rd.Assignees = &assignees
+	}
+
+	return
 }
 
 // TxDetail represents transaction information required to generate

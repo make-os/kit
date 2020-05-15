@@ -202,11 +202,11 @@ func IssueBodyToString(body *IssueBody) string {
 		reactionsStr, _ := json.Marshal(body.Reactions)
 		args += fmt.Sprintf("reactions: %s\n", reactionsStr)
 	}
-	if body.Labels != nil && len(*body.Labels) > 0 {
+	if body.Labels != nil && *body.Labels != nil {
 		labelsStr, _ := json.Marshal(body.Labels)
 		args += fmt.Sprintf("labels: %s\n", labelsStr)
 	}
-	if body.Assignees != nil && len(*body.Assignees) > 0 {
+	if body.Assignees != nil && *body.Assignees != nil {
 		assigneesStr, _ := json.Marshal(body.Assignees)
 		args += fmt.Sprintf("assignees: %s\n", assigneesStr)
 	}
