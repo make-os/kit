@@ -25,7 +25,7 @@ var (
 )
 
 type ChangeValidatorFunc func(
-	repo core.BareRepo,
+	repo core.LocalRepo,
 	oldHash string,
 	change *core.ItemChange,
 	txDetail *core.TxDetail,
@@ -38,7 +38,7 @@ type ChangeValidatorFunc func(
 // txDetail: The pusher transaction detail
 // getPushKey: Getter function for reading push key public key
 func ValidateChange(
-	localRepo core.BareRepo,
+	localRepo core.LocalRepo,
 	oldHash string,
 	change *core.ItemChange,
 	detail *core.TxDetail,
@@ -112,7 +112,7 @@ func ValidateChange(
 // repo: The repo where the tag exists in.
 // txDetail: The pusher transaction detail
 func CheckNote(
-	repo core.BareRepo,
+	repo core.LocalRepo,
 	txDetail *core.TxDetail) error {
 
 	// Get the note current hash

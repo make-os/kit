@@ -25,7 +25,7 @@ type RequestContext struct {
 	TxDetails   []*core.TxDetail
 	PolEnforcer policy.EnforcerFunc
 	PushHandler *pushhandler.Handler
-	Repo        core.BareRepo
+	Repo        core.LocalRepo
 	RepoDir     string
 	Operation   string
 	ServiceName string

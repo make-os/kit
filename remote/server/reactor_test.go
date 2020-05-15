@@ -237,7 +237,7 @@ var _ = Describe("Reactor", func() {
 				svr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
 					return nil
 				}
-				svr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+				svr.packfileMaker = func(repo core.LocalRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
 					return nil, fmt.Errorf("bad error")
 				}
 
@@ -267,7 +267,7 @@ var _ = Describe("Reactor", func() {
 				svr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
 					return nil
 				}
-				svr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+				svr.packfileMaker = func(repo core.LocalRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
 					oldState := plumbing2.GetRepoState(repo)
 					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
 					newState := plumbing2.GetRepoState(repo)
@@ -276,7 +276,7 @@ var _ = Describe("Reactor", func() {
 					return packfile, nil
 				}
 
-				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo core.LocalRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					mockRemoteSrv.EXPECT().GetRepoState(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
 					return &pushhandler.Handler{Server: mockRemoteSrv}
 				}
@@ -310,7 +310,7 @@ var _ = Describe("Reactor", func() {
 				}
 
 				pushHandler := &pushhandler.Handler{Server: mockRemoteSrv}
-				svr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+				svr.packfileMaker = func(repo core.LocalRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
 					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
@@ -319,7 +319,7 @@ var _ = Describe("Reactor", func() {
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo core.LocalRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					return pushHandler
 				}
 
@@ -360,7 +360,7 @@ var _ = Describe("Reactor", func() {
 				}
 
 				pushHandler := &pushhandler.Handler{Server: mockRemoteSrv}
-				svr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+				svr.packfileMaker = func(repo core.LocalRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
 					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
@@ -369,7 +369,7 @@ var _ = Describe("Reactor", func() {
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo core.LocalRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					return pushHandler
 				}
 
@@ -417,7 +417,7 @@ var _ = Describe("Reactor", func() {
 				}
 
 				pushHandler := &pushhandler.Handler{Server: mockRemoteSrv}
-				svr.packfileMaker = func(repo core.BareRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+				svr.packfileMaker = func(repo core.LocalRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
 					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
@@ -426,7 +426,7 @@ var _ = Describe("Reactor", func() {
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo core.BareRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo core.LocalRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					return pushHandler
 				}
 
@@ -679,7 +679,7 @@ var _ = Describe("Reactor", func() {
 					{Objects: []string{obj}},
 				}
 
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(true)
 				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
 				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
@@ -702,7 +702,7 @@ var _ = Describe("Reactor", func() {
 					{Objects: []string{obj}},
 				}
 
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(true)
 				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(fmt.Errorf("error"))
 				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
@@ -726,7 +726,7 @@ var _ = Describe("Reactor", func() {
 					{Objects: []string{obj}},
 				}
 
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(false)
 				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
 				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
@@ -750,7 +750,7 @@ var _ = Describe("Reactor", func() {
 					{Objects: []string{obj}},
 				}
 
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(false)
 
 				objBz := util.RandBytes(10)
@@ -777,7 +777,7 @@ var _ = Describe("Reactor", func() {
 					{Objects: []string{obj}},
 				}
 
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(false)
 
 				objBz := util.RandBytes(10)
@@ -804,7 +804,7 @@ var _ = Describe("Reactor", func() {
 					{NewHash: plumbing.ZeroHash.String(), Name: "refs/heads/master"},
 				}
 
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().RefDelete("refs/heads/master").Return(fmt.Errorf("failed to delete"))
 
 				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
@@ -823,7 +823,7 @@ var _ = Describe("Reactor", func() {
 					{NewHash: plumbing.ZeroHash.String(), Name: "refs/heads/master"},
 				}
 
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().RefDelete("refs/heads/master").Return(nil)
 
 				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)

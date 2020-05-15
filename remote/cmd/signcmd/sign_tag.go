@@ -56,7 +56,7 @@ type SignTagArgs struct {
 
 // SignTagCmd creates an annotated tag, appends transaction information to its
 // message and signs it.
-func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo core.BareRepo, args *SignTagArgs) error {
+func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo core.LocalRepo, args *SignTagArgs) error {
 
 	gitFlags := pflag.NewFlagSet("git-tag", pflag.ExitOnError)
 	gitFlags.ParseErrorsWhitelist.UnknownFlags = true

@@ -54,7 +54,7 @@ func getJSONRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 // getRemoteAPIClients gets REST clients for every  http(s) remote
 // URL set on the given repository. Immediately returns nothing if
 // --no.remote is true.
-func getRemoteAPIClients(cmd *cobra.Command, repo core.BareRepo) (clients []restclient.RestClient) {
+func getRemoteAPIClients(cmd *cobra.Command, repo core.LocalRepo) (clients []restclient.RestClient) {
 	noRemote, _ := cmd.Flags().GetBool("no.remote")
 	if noRemote {
 		return
@@ -77,7 +77,7 @@ func getRemoteAPIClients(cmd *cobra.Command, repo core.BareRepo) (clients []rest
 }
 
 // getClients returns RPCClient and Remote API clients
-func getRepoAndClients(cmd *cobra.Command) (core.BareRepo,
+func getRepoAndClients(cmd *cobra.Command) (core.LocalRepo,
 	*client.RPCClient, []restclient.RestClient) {
 
 	// Get the repository

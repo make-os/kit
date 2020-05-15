@@ -2,14 +2,17 @@ package core
 
 import (
 	"context"
+	"io"
 	"time"
 
 	config2 "gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	types2 "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/mosdef/types/mempool"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/util"
@@ -25,8 +28,8 @@ const (
 	RepoObjectModule = "repo-object"
 )
 
-// BareRepo represents a local git repository on disk
-type BareRepo interface {
+// LocalRepo represents a local git repository on disk
+type LocalRepo interface {
 	LiteGit
 
 	// GetName returns the name of the repo
@@ -187,14 +190,14 @@ type PoolGetter interface {
 	GetPushPool() PushPool
 
 	// GetMempool returns the transaction pool
-	GetMempool() Mempool
+	GetMempool() mempool.Mempool
 }
 
 // RepoGetter describes an interface for getting a local repository
 type RepoGetter interface {
 
 	// Get returns a repo handle
-	GetRepo(name string) (BareRepo, error)
+	GetRepo(name string) (LocalRepo, error)
 }
 
 // RepoUpdater describes an interface for updating a repository from a push transaction
@@ -271,7 +274,7 @@ type RepoPushNote interface {
 	GetPusherKeyIDString() string
 
 	// GetTargetRepo returns the target repository
-	GetTargetRepo() BareRepo
+	GetTargetRepo() LocalRepo
 
 	// GetSize returns the total pushed objects size
 	GetSize() uint64
@@ -477,7 +480,7 @@ type RemoteServer interface {
 
 	// GetRepoState returns the state of the repository at the given path
 	// options: Allows the caller to configure how and what state are gathered
-	GetRepoState(target BareRepo, options ...KVOption) (BareRepoState, error)
+	GetRepoState(target LocalRepo, options ...KVOption) (BareRepoState, error)
 
 	// GetPushKeyGetter returns getter function for fetching a push key
 	GetPushKeyGetter() PushKeyGetter
@@ -564,4 +567,11 @@ type CommitTree interface {
 	Type() plumbing.ObjectType
 	Decode(o plumbing.EncodedObject) (err error)
 	Encode(o plumbing.EncodedObject) (err error)
+}
+
+type PushHandler interface {
+	HandleStream(packfile io.Reader, gitReceivePack io.WriteCloser) error
+	HandleAuthorization(ur *packp.ReferenceUpdateRequest) error
+	HandleReferences() error
+	HandleUpdate() error
 }

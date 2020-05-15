@@ -49,7 +49,7 @@ var _ = Describe("Validation", func() {
 	Describe(".CheckMergeCompliance", func() {
 		When("pushed reference is not a branch", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/others/name", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
@@ -63,7 +63,7 @@ var _ = Describe("Validation", func() {
 
 		When("target merge proposal does not exist", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetState().Return(state.BareRepository())
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -78,7 +78,7 @@ var _ = Describe("Validation", func() {
 
 		When("signer did not create the proposal", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.Creator = "address_of_creator"
@@ -101,7 +101,7 @@ var _ = Describe("Validation", func() {
 
 		When("unable to check whether proposal is closed", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				repoState.Proposals.Add("0001", state.BareRepoProposal())
@@ -124,7 +124,7 @@ var _ = Describe("Validation", func() {
 
 		When("target merge proposal is closed", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				repoState.Proposals.Add("0001", state.BareRepoProposal())
@@ -147,7 +147,7 @@ var _ = Describe("Validation", func() {
 
 		When("target merge proposal's base branch name does not match the pushed branch name", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
@@ -175,7 +175,7 @@ var _ = Describe("Validation", func() {
 
 		When("target merge proposal outcome has not been decided", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
@@ -202,7 +202,7 @@ var _ = Describe("Validation", func() {
 
 		When("target merge proposal outcome has been decided but not approved", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
@@ -230,7 +230,7 @@ var _ = Describe("Validation", func() {
 
 		When("unable to get pushed commit", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
@@ -259,7 +259,7 @@ var _ = Describe("Validation", func() {
 
 		When("pushed commit is a merge commit (has multiple parents) but proposal target hash is not a parent", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
@@ -296,7 +296,7 @@ var _ = Describe("Validation", func() {
 		When("pushed commit modified worktree history of parent", func() {
 			When("tree hash is modified", func() {
 				BeforeEach(func() {
-					repo := mocks.NewMockBareRepo(ctrl)
+					repo := mocks.NewMockLocalRepo(ctrl)
 					repo.EXPECT().GetName().Return("repo1")
 					repoState := state.BareRepository()
 					prop := state.BareRepoProposal()
@@ -335,7 +335,7 @@ var _ = Describe("Validation", func() {
 
 			When("author is modified", func() {
 				BeforeEach(func() {
-					repo := mocks.NewMockBareRepo(ctrl)
+					repo := mocks.NewMockLocalRepo(ctrl)
 					repo.EXPECT().GetName().Return("repo1")
 					repoState := state.BareRepository()
 					prop := state.BareRepoProposal()
@@ -379,7 +379,7 @@ var _ = Describe("Validation", func() {
 
 			When("committer is modified", func() {
 				BeforeEach(func() {
-					repo := mocks.NewMockBareRepo(ctrl)
+					repo := mocks.NewMockLocalRepo(ctrl)
 					repo.EXPECT().GetName().Return("repo1")
 					repoState := state.BareRepository()
 					prop := state.BareRepoProposal()
@@ -429,7 +429,7 @@ var _ = Describe("Validation", func() {
 
 		When("old pushed branch hash is different from old branch hash described in the merge proposal", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
@@ -479,7 +479,7 @@ var _ = Describe("Validation", func() {
 
 		When("merge proposal target hash does not match the expected target hash", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
@@ -532,7 +532,7 @@ var _ = Describe("Validation", func() {
 
 		When("pushed commit hash matches proposal target hash and pushed commit history is compliant with merge proposal", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
@@ -575,7 +575,7 @@ var _ = Describe("Validation", func() {
 
 		When("pushed commit history is compliant with merge proposal", func() {
 			BeforeEach(func() {
-				repo := mocks.NewMockBareRepo(ctrl)
+				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()

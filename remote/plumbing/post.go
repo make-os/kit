@@ -33,12 +33,12 @@ type Post struct {
 }
 
 // PostGetter describes a function for finding posts
-type PostGetter func(targetRepo core.BareRepo, filter func(ref *plumbing.Reference) bool) (posts []Post, err error)
+type PostGetter func(targetRepo core.LocalRepo, filter func(ref *plumbing.Reference) bool) (posts []Post, err error)
 
 // GetPosts returns references that conform to the post protocol
 // filter is used to check whether a reference is a post reference.
 // Returns a slice of posts
-func GetPosts(targetRepo core.BareRepo, filter func(ref *plumbing.Reference) bool) (posts []Post, err error) {
+func GetPosts(targetRepo core.LocalRepo, filter func(ref *plumbing.Reference) bool) (posts []Post, err error) {
 	itr, err := targetRepo.References()
 	if err != nil {
 		return nil, err

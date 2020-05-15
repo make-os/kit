@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
+	types2 "gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
 )
 
 var _ = Describe("Reveal", func() {
@@ -50,7 +50,7 @@ var _ = Describe("Reveal", func() {
 
 			BeforeEach(func() {
 				key = crypto.NewKeyFromIntSeed(1)
-				err := ks.CreateKey(key, core.KeyTypeAccount, "")
+				err := ks.CreateKey(key, types2.KeyTypeAccount, "")
 				Expect(err).To(BeNil())
 			})
 
@@ -67,7 +67,7 @@ var _ = Describe("Reveal", func() {
 
 			BeforeEach(func() {
 				key = crypto.NewKeyFromIntSeed(1)
-				err := ks.CreateKey(key, core.KeyTypeAccount, "my_pass")
+				err := ks.CreateKey(key, types2.KeyTypeAccount, "my_pass")
 				Expect(err).To(BeNil())
 			})
 

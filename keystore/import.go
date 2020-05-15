@@ -9,7 +9,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/keystore/types"
 )
 
 // ImportCmd creates a new key from a private key stored in a file.
@@ -17,7 +17,7 @@ import (
 // the passphrase. Otherwise, the file is read and used as the
 // passphrase. When pass is not set, the user is prompted to
 // provide the passphrase.
-func (ks *Keystore) ImportCmd(keyfile string, keyType core.KeyType, pass string) error {
+func (ks *Keystore) ImportCmd(keyfile string, keyType types.KeyType, pass string) error {
 
 	if keyfile == "" {
 		return fmt.Errorf("key file path is required")
@@ -72,9 +72,9 @@ create:
 	}
 
 	fmt.Fprintln(ks.out, "Import successful. New key created, encrypted and stored")
-	if keyType == core.KeyTypeAccount {
+	if keyType == types.KeyTypeAccount {
 		fmt.Fprintln(ks.out, "Address:", color.CyanString(key.Addr().String()))
-	} else if keyType == core.KeyTypePush {
+	} else if keyType == types.KeyTypePush {
 		fmt.Fprintln(ks.out, "Address:", color.CyanString(key.PushAddr().String()))
 	}
 

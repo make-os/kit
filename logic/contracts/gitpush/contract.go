@@ -91,5 +91,5 @@ func (c *GitPush) Exec() error {
 	// Deduct the pusher's fee
 	common.DebitAccountObject(c, pushKey.Address, pusherAcct, c.tx.Fee.Decimal(), c.chainHeight)
 
-	return c.GetRepoManager().ExecTxPush(c.tx)
+	return c.GetRemoteServer().ExecTxPush(c.tx)
 }

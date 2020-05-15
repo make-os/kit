@@ -37,7 +37,7 @@ var _ = Describe("AcquireNamespaceContract", func() {
 		logic = logic2.New(appDB, stateTreeDB, cfg)
 		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
 		mockRepoMgr = mocks.NewMockRemoteServer(ctrl)
-		logic.SetRepoManager(mockRepoMgr)
+		logic.SetRemoteServer(mockRepoMgr)
 		Expect(err).To(BeNil())
 	})
 

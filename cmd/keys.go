@@ -24,7 +24,7 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/keystore/types"
 )
 
 // keysCmd represents the parent command for all key related commands
@@ -72,9 +72,9 @@ Always backup your keeps regularly.`,
 		pushType, _ := cmd.Flags().GetBool("push")
 
 		ks := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))
-		kt := core.KeyTypeAccount
+		kt := types.KeyTypeAccount
 		if pushType {
-			kt = core.KeyTypePush
+			kt = types.KeyTypePush
 		}
 		_, err := ks.CreateCmd(kt, seed, pass, nopass)
 		if err != nil {
@@ -144,9 +144,9 @@ key.
 
 		pass, _ := cmd.Flags().GetString("pass")
 		pushType, _ := cmd.Flags().GetBool("push")
-		kt := core.KeyTypeAccount
+		kt := types.KeyTypeAccount
 		if pushType {
-			kt = core.KeyTypePush
+			kt = types.KeyTypePush
 		}
 
 		ks := keystore.New(path.Join(cfg.DataDir(), config.KeystoreDirName))

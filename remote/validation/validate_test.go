@@ -37,7 +37,7 @@ var testPushKeyGetter = func(pubKey *crypto.PubKey, err error) func(pushKeyID st
 var _ = Describe("Validation", func() {
 	var err error
 	var cfg *config.AppConfig
-	var testRepo core.BareRepo
+	var testRepo core.LocalRepo
 	var path string
 	var pubKey *crypto.PubKey
 	var privKey *crypto.Key
@@ -318,7 +318,7 @@ var _ = Describe("Validation", func() {
 		When("unable to get note", func() {
 			BeforeEach(func() {
 				detail := &core.TxDetail{Reference: "refs/notes/note1"}
-				mockRepo := mocks.NewMockBareRepo(ctrl)
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().RefGet(detail.Reference).Return("", fmt.Errorf("bad error"))
 				err = validation.CheckNote(mockRepo, detail)
 			})
@@ -333,7 +333,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				hash := util.RandString(40)
 				detail := &core.TxDetail{Reference: "refs/notes/note1", Head: hash}
-				mockRepo := mocks.NewMockBareRepo(ctrl)
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				noteHash := util.RandString(40)
 				mockRepo.EXPECT().RefGet(detail.Reference).Return(noteHash, nil)
 				err = validation.CheckNote(mockRepo, detail)

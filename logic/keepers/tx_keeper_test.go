@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	storagemocks "gitlab.com/makeos/mosdef/storage/mocks"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
-
-	storagemocks "gitlab.com/makeos/mosdef/storage/mocks"
 
 	"github.com/golang/mock/gomock"
 

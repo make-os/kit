@@ -193,7 +193,7 @@ func (n *Node) Start() error {
 	// Create repository manager and pass it to logic
 	repoMgr := server.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht, memp, n)
 	n.repoMgr = repoMgr
-	n.logic.SetRepoManager(repoMgr)
+	n.logic.SetRemoteServer(repoMgr)
 
 	// Create node
 	tmNode, err := nm.NewNodeWithCustomMempool(
@@ -227,7 +227,7 @@ func (n *Node) Start() error {
 	n.dht.RegisterObjFinder(core.RepoObjectModule, repoMgr)
 
 	// Pass repo manager to logic manager
-	n.logic.SetRepoManager(repoMgr)
+	n.logic.SetRemoteServer(repoMgr)
 
 	// Start tendermint
 	if err := n.tm.Start(); err != nil {

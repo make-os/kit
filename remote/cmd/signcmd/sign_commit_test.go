@@ -11,6 +11,7 @@ import (
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/testutil"
@@ -23,16 +24,16 @@ var testGetNextNonce = func(pushKeyID string, rpcClient *client.RPCClient, remot
 	return "1", nil
 }
 
-func testPushKeyUnlocker(key core.StoredKey, err error) func(cfg *config.AppConfig, pushKeyID,
-	defaultPassphrase string, targetRepo core.BareRepo) (core.StoredKey, error) {
-	return func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo core.BareRepo) (core.StoredKey, error) {
+func testPushKeyUnlocker(key types.StoredKey, err error) func(cfg *config.AppConfig, pushKeyID,
+	defaultPassphrase string, targetRepo core.LocalRepo) (types.StoredKey, error) {
+	return func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo core.LocalRepo) (types.StoredKey, error) {
 		return key, err
 	}
 }
 
-func testRemoteURLTokenUpdater(token string, err error) func(targetRepo core.BareRepo, targetRemote string,
-	txDetail *core.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
-	return func(targetRepo core.BareRepo, targetRemote string, txDetail *core.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
+func testRemoteURLTokenUpdater(token string, err error) func(targetRepo core.LocalRepo, targetRemote string,
+	txDetail *core.TxDetail, pushKey types.StoredKey, reset bool) (string, error) {
+	return func(targetRepo core.LocalRepo, targetRemote string, txDetail *core.TxDetail, pushKey types.StoredKey, reset bool) (string, error) {
 		return token, err
 	}
 }
@@ -41,14 +42,14 @@ var _ = Describe("SignCommit", func() {
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
-	var mockRepo *mocks.MockBareRepo
+	var mockRepo *mocks.MockLocalRepo
 	var key *crypto.Key
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
-		mockRepo = mocks.NewMockBareRepo(ctrl)
+		mockRepo = mocks.NewMockLocalRepo(ctrl)
 		key = crypto.NewKeyFromIntSeed(1)
 	})
 
@@ -179,7 +180,7 @@ var _ = Describe("SignCommit", func() {
 		When("args.Head is set to 'refs/heads/some_branch'", func() {
 			It("the generated tx detail should set Reference to 'refs/heads/some_branch'", func() {
 				args := &SignCommitArgs{Fee: "1", PushKeyID: key.PushAddr().String(), Message: "some message", GetNextNonce: testGetNextNonce, AmendCommit: false, Head: "refs/heads/some_branch"}
-				args.RemoteURLTokenUpdater = func(targetRepo core.BareRepo, targetRemote string, txDetail *core.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
+				args.RemoteURLTokenUpdater = func(targetRepo core.LocalRepo, targetRemote string, txDetail *core.TxDetail, pushKey types.StoredKey, reset bool) (string, error) {
 					Expect(txDetail.Reference).To(Equal("refs/heads/some_branch"))
 					return "", nil
 				}

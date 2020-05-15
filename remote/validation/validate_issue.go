@@ -34,7 +34,7 @@ type ValidateIssueCommitArg struct {
 
 // ValidateIssueCommit validates pushed issue commits.
 // commit is the latest commit in the issue reference.
-func ValidateIssueCommit(repo core.BareRepo, commit core.Commit, args *ValidateIssueCommitArg) error {
+func ValidateIssueCommit(repo core.LocalRepo, commit core.Commit, args *ValidateIssueCommitArg) error {
 
 	// Issue reference history cannot have merge commits (merge commit not permitted)
 	hasMerges, err := repo.HasMergeCommits(args.TxDetail.Reference)
@@ -117,13 +117,13 @@ type CheckIssueCommitArgs struct {
 
 // IssueCommitChecker describes a function for validating an issue commit.
 type IssueCommitChecker func(
-	repo core.BareRepo,
+	repo core.LocalRepo,
 	commit core.Commit,
 	args *CheckIssueCommitArgs) (*plumbing2.IssueBody, error)
 
 // CheckIssueCommit validates new commits of an issue branch. It returns nil issue body
 // and error if validation failed or an issue body and nil if validation passed.
-func CheckIssueCommit(repo core.BareRepo, commit core.Commit, args *CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+func CheckIssueCommit(repo core.LocalRepo, commit core.Commit, args *CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
 
 	// Issue reference name must be valid
 	if !plumbing2.IsIssueReference(args.Reference) {
@@ -199,7 +199,7 @@ func CheckIssueCommit(repo core.BareRepo, commit core.Commit, args *CheckIssueCo
 //  replyTo: Indicates the issue is a response an earlier comment.
 //  assignees: List push keys assigned to the issue and open for interpretation by clients.
 func CheckIssueBody(
-	repo core.BareRepo,
+	repo core.LocalRepo,
 	commit core.Commit,
 	isNewIssue bool,
 	fm map[string]interface{},

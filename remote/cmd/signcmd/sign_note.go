@@ -55,7 +55,7 @@ type SignNoteArgs struct {
 }
 
 // SignNoteCmd creates adds transaction information to a note and signs it.
-func SignNoteCmd(cfg *config.AppConfig, targetRepo core.BareRepo, args *SignNoteArgs) error {
+func SignNoteCmd(cfg *config.AppConfig, targetRepo core.LocalRepo, args *SignNoteArgs) error {
 
 	// Get the signing key id from the git config if not passed as an argument
 	if args.PushKeyID == "" {

@@ -11,6 +11,7 @@ import (
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -27,14 +28,14 @@ var _ = Describe("SignNote", func() {
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
-	var mockRepo *mocks.MockBareRepo
+	var mockRepo *mocks.MockLocalRepo
 	var key *crypto.Key
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
-		mockRepo = mocks.NewMockBareRepo(ctrl)
+		mockRepo = mocks.NewMockLocalRepo(ctrl)
 		key = crypto.NewKeyFromIntSeed(1)
 	})
 
@@ -96,7 +97,7 @@ var _ = Describe("SignNote", func() {
 			hash := plumbing.NewHash("25560419583cd1eb46e322528597f94404e0b7be")
 			mockRepo.EXPECT().Reference(refname, true).Return(plumbing.NewHashReference(refname, hash), nil)
 			args.GetNextNonce = testGetNextNonce2("1", nil)
-			args.RemoteURLTokenUpdater = func(targetRepo core.BareRepo, targetRemote string, txDetail *core.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
+			args.RemoteURLTokenUpdater = func(targetRepo core.LocalRepo, targetRemote string, txDetail *core.TxDetail, pushKey types.StoredKey, reset bool) (string, error) {
 				return "", fmt.Errorf("error")
 			}
 			err := SignNoteCmd(cfg, mockRepo, args)
@@ -113,7 +114,7 @@ var _ = Describe("SignNote", func() {
 			hash := plumbing.NewHash("25560419583cd1eb46e322528597f94404e0b7be")
 			mockRepo.EXPECT().Reference(refname, true).Return(plumbing.NewHashReference(refname, hash), nil)
 			args.GetNextNonce = testGetNextNonce2("1", nil)
-			args.RemoteURLTokenUpdater = func(targetRepo core.BareRepo, targetRemote string, txDetail *core.TxDetail, pushKey core.StoredKey, reset bool) (string, error) {
+			args.RemoteURLTokenUpdater = func(targetRepo core.LocalRepo, targetRemote string, txDetail *core.TxDetail, pushKey types.StoredKey, reset bool) (string, error) {
 				return "", nil
 			}
 			err := SignNoteCmd(cfg, mockRepo, args)

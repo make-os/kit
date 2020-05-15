@@ -5,11 +5,10 @@ import (
 	"os"
 
 	"github.com/tendermint/tendermint/privval"
-	types4 "gitlab.com/makeos/mosdef/ticket/types"
-	"gitlab.com/makeos/mosdef/types/core"
-
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
+	types4 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 
 	"gitlab.com/makeos/mosdef/logic/keepers"

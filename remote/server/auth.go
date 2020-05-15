@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/validation"
@@ -147,7 +148,7 @@ func DecodePushToken(v string) (*core.TxDetail, error) {
 }
 
 // MakePushToken creates a push request token
-func MakePushToken(key core.StoredKey, txDetail *core.TxDetail) string {
+func MakePushToken(key types.StoredKey, txDetail *core.TxDetail) string {
 	sig, _ := key.GetKey().PrivKey().Sign(txDetail.BytesNoSig())
 	txDetail.Signature = base58.Encode(sig)
 	return base58.Encode(txDetail.Bytes())
@@ -155,10 +156,10 @@ func MakePushToken(key core.StoredKey, txDetail *core.TxDetail) string {
 
 // RemoteURLsPushTokenUpdater describes a function for setting push tokens on remote URL
 type RemoteURLsPushTokenUpdater func(
-	targetRepo core.BareRepo,
+	targetRepo core.LocalRepo,
 	targetRemote string,
 	txDetail *core.TxDetail,
-	pushKey core.StoredKey,
+	pushKey types.StoredKey,
 	reset bool) (string, error)
 
 // UpdateRemoteURLsWithPushToken creates a push request token and updates the URLs of all remotes.
@@ -167,10 +168,10 @@ type RemoteURLsPushTokenUpdater func(
 // txDetail: The push request parameters
 // pushKey: The push key to use to sign the token.
 func UpdateRemoteURLsWithPushToken(
-	targetRepo core.BareRepo,
+	targetRepo core.LocalRepo,
 	targetRemote string,
 	txDetail *core.TxDetail,
-	pushKey core.StoredKey,
+	pushKey types.StoredKey,
 	reset bool) (string, error) {
 
 	repoCfg, err := targetRepo.Config()

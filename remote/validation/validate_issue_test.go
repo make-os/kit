@@ -25,7 +25,7 @@ var _ = Describe("Validation", func() {
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
-	var mockRepo *mocks.MockBareRepo
+	var mockRepo *mocks.MockLocalRepo
 	var commit *mocks.MockCommit
 
 	BeforeEach(func() {
@@ -35,7 +35,7 @@ var _ = Describe("Validation", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
 		commit = mocks.NewMockCommit(ctrl)
-		mockRepo = mocks.NewMockBareRepo(ctrl)
+		mockRepo = mocks.NewMockLocalRepo(ctrl)
 	})
 
 	AfterEach(func() {
@@ -98,9 +98,11 @@ var _ = Describe("Validation", func() {
 
 			mockRepo.EXPECT().GetAncestors(commit.UnWrap(), args.OldHash, true).Return(nil, fmt.Errorf("ancestor get error"))
 			args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
-				TxDetail:    detail,
-				CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
-				CheckIssueCommit: func(r core.BareRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+				TxDetail: detail,
+				CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+					return nil
+				},
+				CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
 					return nil, nil
 				},
 			}
@@ -124,7 +126,7 @@ var _ = Describe("Validation", func() {
 				CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
 					return nil
 				},
-				CheckIssueCommit: func(r core.BareRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+				CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
 					callCount++
 					Expect(commit).To(Equal(commit))
 					Expect(args.Reference).To(Equal(detail.Reference))
@@ -155,9 +157,11 @@ var _ = Describe("Validation", func() {
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 				callCount := 0
 				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
-					TxDetail:    &core.TxDetail{Reference: "refs/heads/issues/1"},
-					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
-					CheckIssueCommit: func(r core.BareRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+					TxDetail: &core.TxDetail{Reference: "refs/heads/issues/1"},
+					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+						return nil
+					},
+					CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
@@ -174,9 +178,11 @@ var _ = Describe("Validation", func() {
 				detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
 				callCount := 0
 				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
-					TxDetail:    detail,
-					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
-					CheckIssueCommit: func(r core.BareRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+					TxDetail: detail,
+					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+						return nil
+					},
+					CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
@@ -195,9 +201,11 @@ var _ = Describe("Validation", func() {
 				detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
 				callCount := 0
 				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
-					TxDetail:    detail,
-					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
-					CheckIssueCommit: func(r core.BareRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+					TxDetail: detail,
+					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+						return nil
+					},
+					CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
@@ -228,9 +236,11 @@ var _ = Describe("Validation", func() {
 				}
 				callCount := 0
 				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
-					TxDetail:    detail,
-					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
-					CheckIssueCommit: func(r core.BareRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+					TxDetail: detail,
+					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+						return nil
+					},
+					CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
@@ -250,9 +260,11 @@ var _ = Describe("Validation", func() {
 				mockRepoState.References[detail.Reference] = &state.Reference{IssueData: &state.IssueReferenceData{Closed: true}, Hash: []byte("hash")}
 				callCount := 0
 				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
-					TxDetail:    detail,
-					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
-					CheckIssueCommit: func(r core.BareRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+					TxDetail: detail,
+					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+						return nil
+					},
+					CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
@@ -283,9 +295,11 @@ var _ = Describe("Validation", func() {
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: child.Hash.String()}}
 				callCount := 0
 				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
-					TxDetail:    &core.TxDetail{Reference: "refs/heads/issues/1"},
-					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error { return nil },
-					CheckIssueCommit: func(r core.BareRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+					TxDetail: &core.TxDetail{Reference: "refs/heads/issues/1"},
+					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+						return nil
+					},
+					CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
 						callCount++
 
 						if callCount == 1 {
@@ -493,7 +507,7 @@ var _ = Describe("Validation", func() {
 
 		It("should return error when replyTo hash is not an ancestor", func() {
 			replyTo := plumbing2.MakeCommitHash("hash").String()
-			mockRepo := mocks.NewMockBareRepo(ctrl)
+			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().IsAncestor(commit.Hash.String(), replyTo).Return(fmt.Errorf("error"))
 			err := validation.CheckIssueBody(mockRepo, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": replyTo}, nil)
 			Expect(err).NotTo(BeNil())

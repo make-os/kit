@@ -3,10 +3,9 @@ package pool
 import (
 	"time"
 
+	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
-
-	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
 
 	. "github.com/onsi/ginkgo"

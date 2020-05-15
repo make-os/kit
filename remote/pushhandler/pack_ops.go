@@ -19,7 +19,7 @@ import (
 )
 
 // makePackfileFromPushNote creates a packfile from a PushNote
-func makePackfileFromPushNote(repo core.BareRepo, tx *core.PushNote) (io.ReadSeeker, error) {
+func makePackfileFromPushNote(repo core.LocalRepo, tx *core.PushNote) (io.ReadSeeker, error) {
 
 	var buf = bytes.NewBuffer(nil)
 	enc := packfile.NewEncoder(buf, repo.GetHost(), true)
@@ -40,11 +40,11 @@ func makePackfileFromPushNote(repo core.BareRepo, tx *core.PushNote) (io.ReadSee
 }
 
 // ReferenceUpdateRequestMaker describes a function for create git packfile from a push note and a target repository
-type ReferenceUpdateRequestMaker func(repo core.BareRepo, tx *core.PushNote) (io.ReadSeeker, error)
+type ReferenceUpdateRequestMaker func(repo core.LocalRepo, tx *core.PushNote) (io.ReadSeeker, error)
 
 // MakeReferenceUpdateRequest creates a git reference update request from a push
 // transaction. This is what git push sends to the git-receive-pack.
-func MakeReferenceUpdateRequest(repo core.BareRepo, tx *core.PushNote) (io.ReadSeeker, error) {
+func MakeReferenceUpdateRequest(repo core.LocalRepo, tx *core.PushNote) (io.ReadSeeker, error) {
 
 	// Generate a packFile
 	packFile, err := makePackfileFromPushNote(repo, tx)
@@ -79,7 +79,7 @@ func MakeReferenceUpdateRequest(repo core.BareRepo, tx *core.PushNote) (io.ReadS
 // makePushNoteFromStateChange creates a PushNote object from changes between two
 // states. Only the reference information is set in the PushNote object returned.
 func makePushNoteFromStateChange(
-	repo core.BareRepo,
+	repo core.LocalRepo,
 	oldState,
 	newState core.BareRepoState) (*core.PushNote, error) {
 
@@ -213,7 +213,7 @@ func makePushNoteFromStateChange(
 // MakePackfile creates a git reference update request packfile from state
 // changes between old and new repository state.
 func MakePackfile(
-	repo core.BareRepo,
+	repo core.LocalRepo,
 	oldState,
 	newState core.BareRepoState) (io.ReadSeeker, error) {
 

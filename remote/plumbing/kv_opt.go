@@ -1,6 +1,8 @@
 package plumbing
 
-import "gitlab.com/makeos/mosdef/types/core"
+import (
+	"gitlab.com/makeos/mosdef/types/core"
+)
 
 // GetKVOpt finds and returns an option matching the given key
 func GetKVOpt(key string, options []core.KVOption) interface{} {

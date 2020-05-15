@@ -12,7 +12,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -21,7 +21,7 @@ const (
 )
 
 // CreateKey creates a new key
-func (ks *Keystore) CreateKey(key *crypto.Key, keyType core.KeyType, passphrase string) error {
+func (ks *Keystore) CreateKey(key *crypto.Key, keyType types.KeyType, passphrase string) error {
 
 	// Check whether the key already exists. Return error if true.
 	exist, err := ks.Exist(key.Addr().String())
@@ -41,7 +41,7 @@ func (ks *Keystore) CreateKey(key *crypto.Key, keyType core.KeyType, passphrase 
 	passphraseHardened := hardenPassword([]byte(passphrase))
 
 	// Create the serialized key payload
-	keyData := util.ToBytes(core.KeyPayload{
+	keyData := util.ToBytes(types.KeyPayload{
 		SecretKey:     key.PrivKey().Base58(),
 		Type:          int(keyType),
 		FormatVersion: Version,
@@ -55,7 +55,7 @@ func (ks *Keystore) CreateKey(key *crypto.Key, keyType core.KeyType, passphrase 
 	}
 
 	addr := key.Addr()
-	if keyType == core.KeyTypePush {
+	if keyType == types.KeyTypePush {
 		addr = key.PushAddr()
 	}
 
@@ -87,7 +87,7 @@ func createKeyFileName(timeNow int64, addr, passphrase string) string {
 // If nopass is true, the default encryption passphrase is
 // used and the key will be marked 'unprotected'
 func (ks *Keystore) CreateCmd(
-	keyType core.KeyType,
+	keyType types.KeyType,
 	seed int64,
 	passphrase string,
 	nopass bool) (*crypto.Key, error) {
@@ -131,9 +131,9 @@ func (ks *Keystore) CreateCmd(
 	}
 
 	fmt.Fprintln(ks.out, "New key created, encrypted and stored.")
-	if keyType == core.KeyTypeAccount {
+	if keyType == types.KeyTypeAccount {
 		fmt.Fprintln(ks.out, "Address:", color.CyanString(key.Addr().String()))
-	} else if keyType == core.KeyTypePush {
+	} else if keyType == types.KeyTypePush {
 		fmt.Fprintln(ks.out, "Address:", color.CyanString(key.PushAddr().String()))
 	}
 

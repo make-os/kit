@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -35,7 +35,7 @@ var _ = Describe("Create", func() {
 			BeforeEach(func() {
 				ks := New(keyDir)
 				key := crypto.NewKeyFromIntSeed(1)
-				err = ks.CreateKey(key, core.KeyTypeAccount, "")
+				err = ks.CreateKey(key, types.KeyTypeAccount, "")
 				Expect(err).To(BeNil())
 			})
 
@@ -55,9 +55,9 @@ var _ = Describe("Create", func() {
 			BeforeEach(func() {
 				ks := New(keyDir)
 				key := crypto.NewKeyFromIntSeed(1)
-				err = ks.CreateKey(key, core.KeyTypeAccount, "")
+				err = ks.CreateKey(key, types.KeyTypeAccount, "")
 				Expect(err).To(BeNil())
-				err = ks.CreateKey(key, core.KeyTypeAccount, "")
+				err = ks.CreateKey(key, types.KeyTypeAccount, "")
 			})
 
 			It("should return error about an existing key", func() {
@@ -72,7 +72,7 @@ var _ = Describe("Create", func() {
 			BeforeEach(func() {
 				ks := New(keyDir)
 				key := crypto.NewKeyFromIntSeed(1)
-				err = ks.CreateKey(key, core.KeyTypeAccount, pass)
+				err = ks.CreateKey(key, types.KeyTypeAccount, pass)
 				Expect(err).To(BeNil())
 			})
 

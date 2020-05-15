@@ -10,14 +10,14 @@ import (
 )
 
 // IssueCommentCreator is a function type for creating an issue or adding comments to an issue
-type IssueCommentCreator func(targetRepo core.BareRepo,
+type IssueCommentCreator func(targetRepo core.LocalRepo,
 	issueID int,
 	issueBody string,
 	isComment bool) (isNewIssue bool, issueReference string, err error)
 
 // CreateIssueComment creates a new issue and/or adds a comment commit to a new/existing issue.
 func CreateIssueComment(
-	targetRepo core.BareRepo,
+	targetRepo core.LocalRepo,
 	issueID int,
 	issueBody string,
 	isComment bool) (isNewIssue bool, issueReference string, err error) {

@@ -26,7 +26,7 @@ type authorizationHandler func(ur *packp.ReferenceUpdateRequest) error
 type Handler struct {
 	log                  logger.Logger
 	op                   string                              // The current git operation
-	Repo                 core.BareRepo                       // The target repository
+	Repo                 core.LocalRepo                      // The target repository
 	Server               core.RemoteServer                   // The repository remote server
 	OldState             core.BareRepoState                  // The old state of the repo before the current push was written
 	PushReader           *PushReader                         // The push reader for reading pushed git objects
@@ -43,13 +43,13 @@ type Handler struct {
 
 // PushHandlerFunc describes a function for creating a push handler
 type PushHandlerFunc func(
-	targetRepo core.BareRepo,
+	targetRepo core.LocalRepo,
 	txDetails []*core.TxDetail,
 	enforcer policy.EnforcerFunc) *Handler
 
 // NewHandler returns an instance of Handler
 func NewHandler(
-	repo core.BareRepo,
+	repo core.LocalRepo,
 	txDetails []*core.TxDetail,
 	polEnforcer policy.EnforcerFunc,
 	rMgr core.RemoteServer) *Handler {

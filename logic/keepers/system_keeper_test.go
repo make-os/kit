@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	storagemocks "gitlab.com/makeos/mosdef/storage/mocks"
-	"gitlab.com/makeos/mosdef/types/core"
-
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/storage"
+	storagemocks "gitlab.com/makeos/mosdef/storage/mocks"
 	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/types/core"
 )
 
 var _ = Describe("SystemKeeper", func() {

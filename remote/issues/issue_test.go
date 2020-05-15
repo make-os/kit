@@ -35,10 +35,10 @@ var _ = Describe("Issue", func() {
 	})
 
 	Describe(".CreateIssueComment", func() {
-		var mockRepo *mocks.MockBareRepo
+		var mockRepo *mocks.MockLocalRepo
 
 		BeforeEach(func() {
-			mockRepo = mocks.NewMockBareRepo(ctrl)
+			mockRepo = mocks.NewMockLocalRepo(ctrl)
 		})
 
 		When("issue number is not provided", func() {

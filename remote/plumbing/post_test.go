@@ -21,7 +21,7 @@ import (
 var _ = Describe("Post", func() {
 	var err error
 	var cfg *config.AppConfig
-	var repo core.BareRepo
+	var repo core.LocalRepo
 	var repoName, path string
 	var close = true
 	var dontClose = false

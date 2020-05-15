@@ -25,13 +25,13 @@ var _ = Describe("IssueList", func() {
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
-	var mockRepo *mocks.MockBareRepo
+	var mockRepo *mocks.MockLocalRepo
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
-		mockRepo = mocks.NewMockBareRepo(ctrl)
+		mockRepo = mocks.NewMockLocalRepo(ctrl)
 	})
 
 	AfterEach(func() {
@@ -43,7 +43,7 @@ var _ = Describe("IssueList", func() {
 	Describe(".IssueListCmd", func() {
 		It("should return err when unable to fetch issues", func() {
 			args := &issuecmd.IssueListArgs{
-				PostGetter: func(core.BareRepo, func(ref *plumbing.Reference) bool) ([]plumbing2.Post, error) {
+				PostGetter: func(core.LocalRepo, func(ref *plumbing.Reference) bool) ([]plumbing2.Post, error) {
 					return nil, fmt.Errorf("error")
 				},
 			}
@@ -77,7 +77,7 @@ var _ = Describe("IssueList", func() {
 			args := &issuecmd.IssueListArgs{
 				StdErr: out, StdOut: out,
 				Format:     "%H%",
-				PostGetter: func(core.BareRepo, func(ref *plumbing.Reference) bool) ([]plumbing2.Post, error) { return posts, nil },
+				PostGetter: func(core.LocalRepo, func(ref *plumbing.Reference) bool) ([]plumbing2.Post, error) { return posts, nil },
 				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
 					out.ReadFrom(content)
 					Expect(pagerCmd).To(Equal("pager_program"))
@@ -115,7 +115,7 @@ var _ = Describe("IssueList", func() {
 				StdErr: out, StdOut: out,
 				Format:     "%H%",
 				Reverse:    true,
-				PostGetter: func(core.BareRepo, func(ref *plumbing.Reference) bool) ([]plumbing2.Post, error) { return posts, nil },
+				PostGetter: func(core.LocalRepo, func(ref *plumbing.Reference) bool) ([]plumbing2.Post, error) { return posts, nil },
 				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
 					out.ReadFrom(content)
 					Expect(pagerCmd).To(Equal("pager_program"))
@@ -153,7 +153,7 @@ var _ = Describe("IssueList", func() {
 				StdErr: out, StdOut: out,
 				Format:     "%H%",
 				Limit:      1,
-				PostGetter: func(core.BareRepo, func(ref *plumbing.Reference) bool) ([]plumbing2.Post, error) { return posts, nil },
+				PostGetter: func(core.LocalRepo, func(ref *plumbing.Reference) bool) ([]plumbing2.Post, error) { return posts, nil },
 				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
 					out.ReadFrom(content)
 					Expect(pagerCmd).To(Equal("pager_program"))

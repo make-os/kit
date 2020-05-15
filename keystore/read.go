@@ -9,8 +9,8 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
+	types2 "gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -18,7 +18,7 @@ import (
 type StoredKey struct {
 
 	// Type indicates the key type
-	Type core.KeyType
+	Type types2.KeyType
 
 	// Address is the key's address
 	Address string
@@ -34,7 +34,7 @@ type StoredKey struct {
 	privKey *crypto.Key
 
 	// key is the actual key content stored on disk
-	key *core.KeyPayload
+	key *types2.KeyPayload
 
 	// CreatedAt represents the time the key was created and stored on disk
 	CreatedAt time.Time
@@ -47,11 +47,11 @@ type StoredKey struct {
 	Filename string
 
 	// Store arbitrary, non-persistent information about the key
-	meta core.StoredKeyMeta
+	meta types2.StoredKeyMeta
 }
 
 // GetMeta returns the meta information of the key
-func (sk *StoredKey) GetMeta() core.StoredKeyMeta {
+func (sk *StoredKey) GetMeta() types2.StoredKeyMeta {
 	return sk.meta
 }
 
@@ -66,7 +66,7 @@ func (sk *StoredKey) GetFilename() string {
 }
 
 // GetType returns the key type
-func (sk *StoredKey) GetType() core.KeyType {
+func (sk *StoredKey) GetType() types2.KeyType {
 	return sk.Type
 }
 
@@ -82,7 +82,7 @@ func (sk *StoredKey) GetKey() *crypto.Key {
 }
 
 // GetKey returns the key object that is serialized and persisted.
-func (sk *StoredKey) GetPayload() *core.KeyPayload {
+func (sk *StoredKey) GetPayload() *types2.KeyPayload {
 	return sk.key
 }
 
@@ -118,7 +118,7 @@ func (sk *StoredKey) Unlock(passphrase string) error {
 	}
 
 	// Decode from msgpack
-	var key core.KeyPayload
+	var key types2.KeyPayload
 	if err := util.ToObject(keyData, &key); err != nil {
 		return fmt.Errorf("unable to parse key payload")
 	}
@@ -153,7 +153,7 @@ func (ks *Keystore) Exist(address string) (bool, error) {
 
 // GetByIndex returns a key by its current position in the
 // list of accounts which is ordered by the time of creation.
-func (ks *Keystore) GetByIndex(i int) (core.StoredKey, error) {
+func (ks *Keystore) GetByIndex(i int) (types2.StoredKey, error) {
 
 	accounts, err := ks.List()
 	if err != nil {
@@ -168,7 +168,7 @@ func (ks *Keystore) GetByIndex(i int) (core.StoredKey, error) {
 }
 
 // GetByIndexOrAddress gets a key by either its address or index
-func (ks *Keystore) GetByIndexOrAddress(idxOrAddr string) (core.StoredKey, error) {
+func (ks *Keystore) GetByIndexOrAddress(idxOrAddr string) (types2.StoredKey, error) {
 	if crypto.IsValidAccountAddr(idxOrAddr) == nil || crypto.IsValidPushAddr(idxOrAddr) == nil {
 		return ks.GetByAddress(idxOrAddr)
 	}
@@ -180,14 +180,14 @@ func (ks *Keystore) GetByIndexOrAddress(idxOrAddr string) (core.StoredKey, error
 }
 
 // GetByAddress gets a key by its address in the list of accounts.
-func (ks *Keystore) GetByAddress(addr string) (core.StoredKey, error) {
+func (ks *Keystore) GetByAddress(addr string) (types2.StoredKey, error) {
 
 	accounts, err := ks.List()
 	if err != nil {
 		return nil, err
 	}
 
-	account := funk.Find(accounts, func(x core.StoredKey) bool {
+	account := funk.Find(accounts, func(x types2.StoredKey) bool {
 		return x.GetAddress() == addr
 	})
 

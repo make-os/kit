@@ -7,6 +7,7 @@ import (
 	"gitlab.com/makeos/mosdef/storage"
 	types2 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/mempool"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -286,11 +287,11 @@ type Logic interface {
 	// SetTicketManager sets the ticket manager
 	SetTicketManager(tm types2.TicketManager)
 
-	// SetRepoManager sets the repository manager
-	SetRepoManager(m RemoteServer)
+	// SetRemoteServer sets the repository server manager
+	SetRemoteServer(m RemoteServer)
 
-	// GetRepoManager returns the repository manager
-	GetRepoManager() RemoteServer
+	// GetRemoteServer returns the repository server manager
+	GetRemoteServer() RemoteServer
 
 	// DrySend checks whether the given sender can execute the transaction
 	DrySend(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error
@@ -303,10 +304,10 @@ type Logic interface {
 	Cfg() *config.AppConfig
 
 	// GetMempoolReactor returns the mempool reactor
-	GetMempoolReactor() MempoolReactor
+	GetMempoolReactor() mempool.MempoolReactor
 
 	// SetMempoolReactor sets the mempool reactor
-	SetMempoolReactor(mr MempoolReactor)
+	SetMempoolReactor(mr mempool.MempoolReactor)
 
 	// OnEndBlock is called within the ABCI EndBlock method;
 	// Do things that need to happen after each block transactions are processed.
@@ -369,6 +370,35 @@ type ValidatorLogic interface {
 	Index(height int64, valUpdates []abcitypes.ValidatorUpdate) error
 }
 
-// TxLogic provides an interface for executing transactions
-type TxLogic interface {
+// SystemContract represents a system contract
+type SystemContract interface {
+
+	// Init initializes the contract
+	// logic is the logic manager
+	// tx is the transaction to execute.
+	// curChainHeight is the current height of the chain
+	Init(logic Logic, tx types.BaseTx, curChainHeight uint64) SystemContract
+
+	// CanExec checks whether the given tx type can be executed by the contract.
+	CanExec(tx types.TxCode) bool
+
+	// Exec executes the transaction
+	Exec() error
+}
+
+// ProposalApplyArgs contains arguments passed to a proposal contract Apply function
+type ProposalApplyArgs struct {
+	Proposal    state.Proposal
+	Repo        *state.Repository
+	Keepers     Keepers
+	ChainHeight uint64
+}
+
+// ProposalContract represents a system contract that is able to execute proposal transactions
+// and apply proposal changes to the world state.
+type ProposalContract interface {
+	SystemContract
+
+	// Apply is called when the proposal needs to be applied to the state.
+	Apply(args *ProposalApplyArgs) error
 }

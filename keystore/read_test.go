@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/crypto"
+	types2 "gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
 )
 
 var _ = Describe("Read", func() {
@@ -35,7 +35,7 @@ var _ = Describe("Read", func() {
 				seed := int64(1)
 				address, _ := crypto.NewKey(&seed)
 				passphrase := "edge123"
-				err := ks.CreateKey(address, core.KeyTypeAccount, passphrase)
+				err := ks.CreateKey(address, types2.KeyTypeAccount, passphrase)
 				Expect(err).To(BeNil())
 
 				exist, err := ks.Exist(address.Addr().String())
@@ -62,14 +62,14 @@ var _ = Describe("Read", func() {
 				seed := int64(1)
 				address, _ = crypto.NewKey(&seed)
 				passphrase := "edge123"
-				err := am.CreateKey(address, core.KeyTypeAccount, passphrase)
+				err := am.CreateKey(address, types2.KeyTypeAccount, passphrase)
 				Expect(err).To(BeNil())
 				time.Sleep(1 * time.Second)
 
 				seed = int64(2)
 				address2, _ = crypto.NewKey(&seed)
 				passphrase = "edge123"
-				err = am.CreateKey(address2, core.KeyTypeAccount, passphrase)
+				err = am.CreateKey(address2, types2.KeyTypeAccount, passphrase)
 				Expect(err).To(BeNil())
 			})
 
@@ -97,7 +97,7 @@ var _ = Describe("Read", func() {
 				seed := int64(1)
 				address, _ = crypto.NewKey(&seed)
 				passphrase := "edge123"
-				err := am.CreateKey(address, core.KeyTypeAccount, passphrase)
+				err := am.CreateKey(address, types2.KeyTypeAccount, passphrase)
 				Expect(err).To(BeNil())
 			})
 
@@ -123,7 +123,7 @@ var _ = Describe("Read", func() {
 				seed := int64(1)
 				address, _ = crypto.NewKey(&seed)
 				passphrase := "edge123"
-				err := am.CreateKey(address, core.KeyTypeAccount, passphrase)
+				err := am.CreateKey(address, types2.KeyTypeAccount, passphrase)
 				Expect(err).To(BeNil())
 			})
 
@@ -144,7 +144,7 @@ var _ = Describe("Read", func() {
 	Describe("StoredKey", func() {
 
 		Describe(".Unlock", func() {
-			var account core.StoredKey
+			var account types2.StoredKey
 			var passphrase string
 			am := New(accountPath)
 
@@ -154,7 +154,7 @@ var _ = Describe("Read", func() {
 
 				address, _ := crypto.NewKey(&seed)
 				passphrase = "edge123"
-				err = am.CreateKey(address, core.KeyTypeAccount, passphrase)
+				err = am.CreateKey(address, types2.KeyTypeAccount, passphrase)
 				Expect(err).To(BeNil())
 
 				accounts, err := am.List()

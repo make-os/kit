@@ -76,7 +76,7 @@ var (
 )
 
 // IssueCreateCmd create a new Issue or adds a comment commit to an existing Issue
-func IssueCreateCmd(r core.BareRepo, args *IssueCreateArgs) error {
+func IssueCreateCmd(r core.LocalRepo, args *IssueCreateArgs) error {
 
 	var nComments int
 	var issueRef, issueRefHash string

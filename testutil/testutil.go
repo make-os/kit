@@ -116,7 +116,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.Logic.EXPECT().TxKeeper().Return(mo.TxKeeper).MinTimes(0)
 	mo.Logic.EXPECT().GetTicketManager().Return(mo.TicketManager).MinTimes(0)
 	mo.Logic.EXPECT().StateTree().Return(mo.StateTree).MinTimes(0)
-	mo.Logic.EXPECT().GetRepoManager().Return(mo.RemoteServer).MinTimes(0)
+	mo.Logic.EXPECT().GetRemoteServer().Return(mo.RemoteServer).MinTimes(0)
 	mo.Logic.EXPECT().PushKeyKeeper().Return(mo.PushKeyKeeper).MinTimes(0)
 	mo.Logic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
 	mo.Logic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
@@ -129,7 +129,7 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 	mo.AtomicLogic.EXPECT().TxKeeper().Return(mo.TxKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().GetTicketManager().Return(mo.TicketManager).MinTimes(0)
 	mo.AtomicLogic.EXPECT().StateTree().Return(mo.StateTree).MinTimes(0)
-	mo.AtomicLogic.EXPECT().GetRepoManager().Return(mo.RemoteServer).MinTimes(0)
+	mo.AtomicLogic.EXPECT().GetRemoteServer().Return(mo.RemoteServer).MinTimes(0)
 	mo.AtomicLogic.EXPECT().PushKeyKeeper().Return(mo.PushKeyKeeper).MinTimes(0)
 	mo.AtomicLogic.EXPECT().NamespaceKeeper().Return(mo.NamespaceKeeper).MinTimes(0)
 

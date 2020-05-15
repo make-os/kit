@@ -3,10 +3,10 @@ package mempool
 import (
 	"fmt"
 
+	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
-
-	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/types/mempool"
 
 	"gitlab.com/makeos/mosdef/pkgs/cache"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
@@ -90,8 +90,8 @@ func (r *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 }
 
 // GetPoolSize returns the size information of the pool
-func (r *Reactor) GetPoolSize() *core.PoolSizeInfo {
-	return &core.PoolSizeInfo{
+func (r *Reactor) GetPoolSize() *mempool.PoolSizeInfo {
+	return &mempool.PoolSizeInfo{
 		TotalTxSize: r.mempool.TxsBytes(),
 		TxCount:     r.mempool.Size(),
 	}

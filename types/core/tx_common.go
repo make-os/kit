@@ -6,10 +6,9 @@ import (
 	"strconv"
 
 	"github.com/stretchr/objx"
-	"gitlab.com/makeos/mosdef/types"
-
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 

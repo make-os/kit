@@ -78,7 +78,7 @@ var ErrMissingPushKeyID = fmt.Errorf("push key ID is required")
 // SignCommitCmd adds transaction information to a new or recent commit and signs it.
 // cfg: App config object
 // targetRepo: The target repository at the working directory
-func SignCommitCmd(cfg *config.AppConfig, targetRepo core.BareRepo, args *SignCommitArgs) error {
+func SignCommitCmd(cfg *config.AppConfig, targetRepo core.LocalRepo, args *SignCommitArgs) error {
 
 	// Get the signing key id from the git config if not passed as an argument
 	if args.PushKeyID == "" {

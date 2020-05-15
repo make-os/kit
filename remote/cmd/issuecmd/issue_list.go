@@ -50,7 +50,7 @@ type IssueListArgs struct {
 }
 
 // IssueListCmd list all issues
-func IssueListCmd(targetRepo core.BareRepo, args *IssueListArgs) error {
+func IssueListCmd(targetRepo core.LocalRepo, args *IssueListArgs) error {
 
 	// Get issue posts
 	issues, err := args.PostGetter(targetRepo, func(ref *plumbing.Reference) bool {

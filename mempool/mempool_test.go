@@ -4,11 +4,10 @@ import (
 	"os"
 	"time"
 
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
-
 	"github.com/golang/mock/gomock"
 	tmtypes "github.com/tendermint/tendermint/types"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 

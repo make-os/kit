@@ -4,13 +4,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
-	"gitlab.com/makeos/mosdef/types/core"
-
 	"github.com/bitfield/script"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gitlab.com/makeos/mosdef/remote/plumbing"
+	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	"gitlab.com/makeos/mosdef/types/core"
 
 	"gitlab.com/makeos/mosdef/config"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
@@ -21,7 +20,7 @@ import (
 var _ = Describe("plumbing.Revert", func() {
 	var err error
 	var cfg *config.AppConfig
-	var repo core.BareRepo
+	var repo core.LocalRepo
 	var repoName, path string
 
 	BeforeEach(func() {

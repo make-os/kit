@@ -31,7 +31,7 @@ var _ = Describe("Handler", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
-	var repo core.BareRepo
+	var repo core.LocalRepo
 	var mockRemoteSrv *mocks.MockRemoteServer
 	var svr core.RemoteServer
 	var handler *pushhandler.Handler
@@ -362,7 +362,7 @@ var _ = Describe("Handler", func() {
 				handler.PushReader.References = map[string]*pushhandler.PackedReferenceObject{
 					"refs/heads/master": {NewHash: util.RandString(40)},
 				}
-				handler.ChangeValidator = func(core.BareRepo, string, *core.ItemChange, *core.TxDetail, core.PushKeyGetter) (err error) {
+				handler.ChangeValidator = func(core.LocalRepo, string, *core.ItemChange, *core.TxDetail, core.PushKeyGetter) (err error) {
 					return fmt.Errorf("bad reference change")
 				}
 
@@ -389,10 +389,10 @@ var _ = Describe("Handler", func() {
 					handler.PushReader.References = map[string]*pushhandler.PackedReferenceObject{
 						"refs/heads/master": {NewHash: util.RandString(40)},
 					}
-					handler.ChangeValidator = func(core.BareRepo, string, *core.ItemChange, *core.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(core.LocalRepo, string, *core.ItemChange, *core.TxDetail, core.PushKeyGetter) (err error) {
 						return fmt.Errorf("bad reference change")
 					}
-					handler.Reverter = func(repo core.BareRepo, prevState core.BareRepoState, options ...core.KVOption) (changes *core.Changes, err error) {
+					handler.Reverter = func(repo core.LocalRepo, prevState core.BareRepoState, options ...core.KVOption) (changes *core.Changes, err error) {
 						return nil, fmt.Errorf("failed revert")
 					}
 
@@ -415,7 +415,7 @@ var _ = Describe("Handler", func() {
 					handler.PushReader.References = map[string]*pushhandler.PackedReferenceObject{
 						"refs/heads/master": {NewHash: util.RandString(40)},
 					}
-					handler.ChangeValidator = func(core.BareRepo, string, *core.ItemChange, *core.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(core.LocalRepo, string, *core.ItemChange, *core.TxDetail, core.PushKeyGetter) (err error) {
 						return fmt.Errorf("bad reference change")
 					}
 
@@ -442,7 +442,7 @@ var _ = Describe("Handler", func() {
 					handler.PushReader.References = map[string]*pushhandler.PackedReferenceObject{
 						"refs/heads/master": {NewHash: util.RandString(40)},
 					}
-					handler.ChangeValidator = func(core.BareRepo, string, *core.ItemChange, *core.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(core.LocalRepo, string, *core.ItemChange, *core.TxDetail, core.PushKeyGetter) (err error) {
 						return fmt.Errorf("bad reference change")
 					}
 
@@ -471,7 +471,7 @@ var _ = Describe("Handler", func() {
 					handler.PushReader.References = map[string]*pushhandler.PackedReferenceObject{
 						"refs/heads/master": {NewHash: util.RandString(40)},
 					}
-					handler.ChangeValidator = func(core.BareRepo, string, *core.ItemChange, *core.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(core.LocalRepo, string, *core.ItemChange, *core.TxDetail, core.PushKeyGetter) (err error) {
 						return nil
 					}
 
@@ -501,10 +501,10 @@ var _ = Describe("Handler", func() {
 				handler.PushReader.References = map[string]*pushhandler.PackedReferenceObject{
 					"refs/heads/master": {NewHash: strings.Repeat("0", 40)},
 				}
-				handler.ChangeValidator = func(core.BareRepo, string, *core.ItemChange, *core.TxDetail, core.PushKeyGetter) (err error) {
+				handler.ChangeValidator = func(core.LocalRepo, string, *core.ItemChange, *core.TxDetail, core.PushKeyGetter) (err error) {
 					return nil
 				}
-				handler.MergeChecker = func(repo core.BareRepo, change *core.ItemChange, oldRef core.Item, mergeProposalID, pushKeyID string, keepers core.Keepers) error {
+				handler.MergeChecker = func(repo core.LocalRepo, change *core.ItemChange, oldRef core.Item, mergeProposalID, pushKeyID string, keepers core.Keepers) error {
 					return fmt.Errorf("failed merge check")
 				}
 

@@ -3,13 +3,12 @@ package pool
 import (
 	"time"
 
-	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 )
 
 var _ = Describe("pool", func() {

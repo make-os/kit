@@ -117,7 +117,7 @@ func CheckPushNoteSyntax(tx *core.PushNote) error {
 
 // CheckPushedReferenceConsistency validates pushed references
 func CheckPushedReferenceConsistency(
-	targetRepo core.BareRepo,
+	targetRepo core.LocalRepo,
 	ref *core.PushedReference,
 	repo *state.Repository) error {
 

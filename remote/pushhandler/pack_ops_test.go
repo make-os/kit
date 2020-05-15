@@ -6,15 +6,14 @@ import (
 	"os"
 	"path/filepath"
 
-	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	repo3 "gitlab.com/makeos/mosdef/remote/repo"
-	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
+	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
+	repo3 "gitlab.com/makeos/mosdef/remote/repo"
+	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
@@ -23,7 +22,7 @@ import (
 var _ = Describe("PushNote", func() {
 	var pushNote *core.PushNote
 	var cfg *config.AppConfig
-	var repo core.BareRepo
+	var repo core.LocalRepo
 	var path string
 	var err error
 

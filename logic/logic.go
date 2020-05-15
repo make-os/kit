@@ -13,6 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/storage"
 	types2 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/mempool"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -65,7 +66,7 @@ type Logic struct {
 	repoMgr core.RemoteServer
 
 	// mempoolReactor provides access to mempool operations
-	mempoolReactor core.MempoolReactor
+	mempoolReactor mempool.MempoolReactor
 }
 
 // New creates an instance of Logic
@@ -117,22 +118,22 @@ func (l *Logic) ManagedSysKeeper() core.SystemKeeper {
 }
 
 // SetMempoolReactor sets the mempool reactor
-func (l *Logic) SetMempoolReactor(mr core.MempoolReactor) {
+func (l *Logic) SetMempoolReactor(mr mempool.MempoolReactor) {
 	l.mempoolReactor = mr
 }
 
 // GetMempoolReactor returns the mempool reactor
-func (l *Logic) GetMempoolReactor() core.MempoolReactor {
+func (l *Logic) GetMempoolReactor() mempool.MempoolReactor {
 	return l.mempoolReactor
 }
 
-// SetRepoManager sets the repository manager
-func (l *Logic) SetRepoManager(m core.RemoteServer) {
+// SetRemoteServer sets the repository manager
+func (l *Logic) SetRemoteServer(m core.RemoteServer) {
 	l.repoMgr = m
 }
 
-// GetRepoManager returns the repository manager
-func (l *Logic) GetRepoManager() core.RemoteServer {
+// GetRemoteServer returns the repository manager
+func (l *Logic) GetRemoteServer() core.RemoteServer {
 	return l.repoMgr
 }
 
@@ -193,11 +194,6 @@ func (l *Logic) DrySend(sender interface{}, value, fee util.String, nonce, chain
 	ct := transfercoin.NewContract()
 	ct.Init(l, tx, chainHeight)
 	return ct.DryExec(sender)
-}
-
-// Tx returns the transaction logic
-func (l *Logic) Tx() core.TxLogic {
-	return nil
 }
 
 // DB returns the hubs db reference

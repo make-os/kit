@@ -6,14 +6,14 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/keystore/types"
 )
 
 // UIUnlockKey renders a CLI UI to unlock a target key..
 // addressOrIndex: The address or index of the key.
 // passphrase: The user supplied passphrase. If not provided, an
 // interactive session will be started to collect the passphrase
-func (ks *Keystore) UIUnlockKey(addressOrIndex, passphrase string) (core.StoredKey, error) {
+func (ks *Keystore) UIUnlockKey(addressOrIndex, passphrase string) (types.StoredKey, error) {
 
 	var err error
 

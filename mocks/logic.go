@@ -13,6 +13,7 @@ import (
 	types0 "gitlab.com/makeos/mosdef/ticket/types"
 	types1 "gitlab.com/makeos/mosdef/types"
 	core "gitlab.com/makeos/mosdef/types/core"
+	mempool "gitlab.com/makeos/mosdef/types/mempool"
 	state "gitlab.com/makeos/mosdef/types/state"
 	util "gitlab.com/makeos/mosdef/util"
 	reflect "reflect"
@@ -845,30 +846,30 @@ func (mr *MockAtomicLogicMockRecorder) SetTicketManager(tm interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTicketManager", reflect.TypeOf((*MockAtomicLogic)(nil).SetTicketManager), tm)
 }
 
-// SetRepoManager mocks base method
-func (m_2 *MockAtomicLogic) SetRepoManager(m core.RemoteServer) {
+// SetRemoteServer mocks base method
+func (m_2 *MockAtomicLogic) SetRemoteServer(m core.RemoteServer) {
 	m_2.ctrl.T.Helper()
-	m_2.ctrl.Call(m_2, "SetRepoManager", m)
+	m_2.ctrl.Call(m_2, "SetRemoteServer", m)
 }
 
-// SetRepoManager indicates an expected call of SetRepoManager
-func (mr *MockAtomicLogicMockRecorder) SetRepoManager(m interface{}) *gomock.Call {
+// SetRemoteServer indicates an expected call of SetRemoteServer
+func (mr *MockAtomicLogicMockRecorder) SetRemoteServer(m interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRepoManager", reflect.TypeOf((*MockAtomicLogic)(nil).SetRepoManager), m)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRemoteServer", reflect.TypeOf((*MockAtomicLogic)(nil).SetRemoteServer), m)
 }
 
-// GetRepoManager mocks base method
-func (m *MockAtomicLogic) GetRepoManager() core.RemoteServer {
+// GetRemoteServer mocks base method
+func (m *MockAtomicLogic) GetRemoteServer() core.RemoteServer {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRepoManager")
+	ret := m.ctrl.Call(m, "GetRemoteServer")
 	ret0, _ := ret[0].(core.RemoteServer)
 	return ret0
 }
 
-// GetRepoManager indicates an expected call of GetRepoManager
-func (mr *MockAtomicLogicMockRecorder) GetRepoManager() *gomock.Call {
+// GetRemoteServer indicates an expected call of GetRemoteServer
+func (mr *MockAtomicLogicMockRecorder) GetRemoteServer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoManager", reflect.TypeOf((*MockAtomicLogic)(nil).GetRepoManager))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemoteServer", reflect.TypeOf((*MockAtomicLogic)(nil).GetRemoteServer))
 }
 
 // DrySend mocks base method
@@ -914,10 +915,10 @@ func (mr *MockAtomicLogicMockRecorder) Cfg() *gomock.Call {
 }
 
 // GetMempoolReactor mocks base method
-func (m *MockAtomicLogic) GetMempoolReactor() core.MempoolReactor {
+func (m *MockAtomicLogic) GetMempoolReactor() mempool.MempoolReactor {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMempoolReactor")
-	ret0, _ := ret[0].(core.MempoolReactor)
+	ret0, _ := ret[0].(mempool.MempoolReactor)
 	return ret0
 }
 
@@ -928,7 +929,7 @@ func (mr *MockAtomicLogicMockRecorder) GetMempoolReactor() *gomock.Call {
 }
 
 // SetMempoolReactor mocks base method
-func (m *MockAtomicLogic) SetMempoolReactor(mr core.MempoolReactor) {
+func (m *MockAtomicLogic) SetMempoolReactor(mr mempool.MempoolReactor) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetMempoolReactor", mr)
 }
@@ -1210,30 +1211,30 @@ func (mr *MockLogicMockRecorder) SetTicketManager(tm interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTicketManager", reflect.TypeOf((*MockLogic)(nil).SetTicketManager), tm)
 }
 
-// SetRepoManager mocks base method
-func (m_2 *MockLogic) SetRepoManager(m core.RemoteServer) {
+// SetRemoteServer mocks base method
+func (m_2 *MockLogic) SetRemoteServer(m core.RemoteServer) {
 	m_2.ctrl.T.Helper()
-	m_2.ctrl.Call(m_2, "SetRepoManager", m)
+	m_2.ctrl.Call(m_2, "SetRemoteServer", m)
 }
 
-// SetRepoManager indicates an expected call of SetRepoManager
-func (mr *MockLogicMockRecorder) SetRepoManager(m interface{}) *gomock.Call {
+// SetRemoteServer indicates an expected call of SetRemoteServer
+func (mr *MockLogicMockRecorder) SetRemoteServer(m interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRepoManager", reflect.TypeOf((*MockLogic)(nil).SetRepoManager), m)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetRemoteServer", reflect.TypeOf((*MockLogic)(nil).SetRemoteServer), m)
 }
 
-// GetRepoManager mocks base method
-func (m *MockLogic) GetRepoManager() core.RemoteServer {
+// GetRemoteServer mocks base method
+func (m *MockLogic) GetRemoteServer() core.RemoteServer {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRepoManager")
+	ret := m.ctrl.Call(m, "GetRemoteServer")
 	ret0, _ := ret[0].(core.RemoteServer)
 	return ret0
 }
 
-// GetRepoManager indicates an expected call of GetRepoManager
-func (mr *MockLogicMockRecorder) GetRepoManager() *gomock.Call {
+// GetRemoteServer indicates an expected call of GetRemoteServer
+func (mr *MockLogicMockRecorder) GetRemoteServer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoManager", reflect.TypeOf((*MockLogic)(nil).GetRepoManager))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRemoteServer", reflect.TypeOf((*MockLogic)(nil).GetRemoteServer))
 }
 
 // DrySend mocks base method
@@ -1279,10 +1280,10 @@ func (mr *MockLogicMockRecorder) Cfg() *gomock.Call {
 }
 
 // GetMempoolReactor mocks base method
-func (m *MockLogic) GetMempoolReactor() core.MempoolReactor {
+func (m *MockLogic) GetMempoolReactor() mempool.MempoolReactor {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMempoolReactor")
-	ret0, _ := ret[0].(core.MempoolReactor)
+	ret0, _ := ret[0].(mempool.MempoolReactor)
 	return ret0
 }
 
@@ -1293,7 +1294,7 @@ func (mr *MockLogicMockRecorder) GetMempoolReactor() *gomock.Call {
 }
 
 // SetMempoolReactor mocks base method
-func (m *MockLogic) SetMempoolReactor(mr core.MempoolReactor) {
+func (m *MockLogic) SetMempoolReactor(mr mempool.MempoolReactor) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetMempoolReactor", mr)
 }
@@ -1579,25 +1580,146 @@ func (mr *MockValidatorLogicMockRecorder) Index(height, valUpdates interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Index", reflect.TypeOf((*MockValidatorLogic)(nil).Index), height, valUpdates)
 }
 
-// MockTxLogic is a mock of TxLogic interface
-type MockTxLogic struct {
+// MockSystemContract is a mock of SystemContract interface
+type MockSystemContract struct {
 	ctrl     *gomock.Controller
-	recorder *MockTxLogicMockRecorder
+	recorder *MockSystemContractMockRecorder
 }
 
-// MockTxLogicMockRecorder is the mock recorder for MockTxLogic
-type MockTxLogicMockRecorder struct {
-	mock *MockTxLogic
+// MockSystemContractMockRecorder is the mock recorder for MockSystemContract
+type MockSystemContractMockRecorder struct {
+	mock *MockSystemContract
 }
 
-// NewMockTxLogic creates a new mock instance
-func NewMockTxLogic(ctrl *gomock.Controller) *MockTxLogic {
-	mock := &MockTxLogic{ctrl: ctrl}
-	mock.recorder = &MockTxLogicMockRecorder{mock}
+// NewMockSystemContract creates a new mock instance
+func NewMockSystemContract(ctrl *gomock.Controller) *MockSystemContract {
+	mock := &MockSystemContract{ctrl: ctrl}
+	mock.recorder = &MockSystemContractMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockTxLogic) EXPECT() *MockTxLogicMockRecorder {
+func (m *MockSystemContract) EXPECT() *MockSystemContractMockRecorder {
 	return m.recorder
+}
+
+// Init mocks base method
+func (m *MockSystemContract) Init(logic core.Logic, tx types1.BaseTx, curChainHeight uint64) core.SystemContract {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Init", logic, tx, curChainHeight)
+	ret0, _ := ret[0].(core.SystemContract)
+	return ret0
+}
+
+// Init indicates an expected call of Init
+func (mr *MockSystemContractMockRecorder) Init(logic, tx, curChainHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockSystemContract)(nil).Init), logic, tx, curChainHeight)
+}
+
+// CanExec mocks base method
+func (m *MockSystemContract) CanExec(tx types1.TxCode) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CanExec", tx)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CanExec indicates an expected call of CanExec
+func (mr *MockSystemContractMockRecorder) CanExec(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanExec", reflect.TypeOf((*MockSystemContract)(nil).CanExec), tx)
+}
+
+// Exec mocks base method
+func (m *MockSystemContract) Exec() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exec")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Exec indicates an expected call of Exec
+func (mr *MockSystemContractMockRecorder) Exec() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exec", reflect.TypeOf((*MockSystemContract)(nil).Exec))
+}
+
+// MockProposalContract is a mock of ProposalContract interface
+type MockProposalContract struct {
+	ctrl     *gomock.Controller
+	recorder *MockProposalContractMockRecorder
+}
+
+// MockProposalContractMockRecorder is the mock recorder for MockProposalContract
+type MockProposalContractMockRecorder struct {
+	mock *MockProposalContract
+}
+
+// NewMockProposalContract creates a new mock instance
+func NewMockProposalContract(ctrl *gomock.Controller) *MockProposalContract {
+	mock := &MockProposalContract{ctrl: ctrl}
+	mock.recorder = &MockProposalContractMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockProposalContract) EXPECT() *MockProposalContractMockRecorder {
+	return m.recorder
+}
+
+// Init mocks base method
+func (m *MockProposalContract) Init(logic core.Logic, tx types1.BaseTx, curChainHeight uint64) core.SystemContract {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Init", logic, tx, curChainHeight)
+	ret0, _ := ret[0].(core.SystemContract)
+	return ret0
+}
+
+// Init indicates an expected call of Init
+func (mr *MockProposalContractMockRecorder) Init(logic, tx, curChainHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockProposalContract)(nil).Init), logic, tx, curChainHeight)
+}
+
+// CanExec mocks base method
+func (m *MockProposalContract) CanExec(tx types1.TxCode) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CanExec", tx)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CanExec indicates an expected call of CanExec
+func (mr *MockProposalContractMockRecorder) CanExec(tx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CanExec", reflect.TypeOf((*MockProposalContract)(nil).CanExec), tx)
+}
+
+// Exec mocks base method
+func (m *MockProposalContract) Exec() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Exec")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Exec indicates an expected call of Exec
+func (mr *MockProposalContractMockRecorder) Exec() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Exec", reflect.TypeOf((*MockProposalContract)(nil).Exec))
+}
+
+// Apply mocks base method
+func (m *MockProposalContract) Apply(args *core.ProposalApplyArgs) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Apply", args)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Apply indicates an expected call of Apply
+func (mr *MockProposalContractMockRecorder) Apply(args interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Apply", reflect.TypeOf((*MockProposalContract)(nil).Apply), args)
 }

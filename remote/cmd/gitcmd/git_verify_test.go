@@ -12,6 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -21,14 +22,14 @@ var _ = Describe("GitVerify", func() {
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
-	var mockRepo *mocks.MockBareRepo
+	var mockRepo *mocks.MockLocalRepo
 	var key *crypto.Key
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
-		mockRepo = mocks.NewMockBareRepo(ctrl)
+		mockRepo = mocks.NewMockLocalRepo(ctrl)
 		key = crypto.NewKeyFromIntSeed(1)
 	})
 
@@ -97,7 +98,7 @@ var _ = Describe("GitVerify", func() {
 					"pkID": key.PushAddr().String(),
 				}}, nil
 			}
-			args.RepoGetter = func(path string) (core.BareRepo, error) {
+			args.RepoGetter = func(path string) (core.LocalRepo, error) {
 				return nil, fmt.Errorf("error")
 			}
 
@@ -116,10 +117,10 @@ var _ = Describe("GitVerify", func() {
 					"pkID": key.PushAddr().String(),
 				}}, nil
 			}
-			args.RepoGetter = func(path string) (core.BareRepo, error) {
+			args.RepoGetter = func(path string) (core.LocalRepo, error) {
 				return mockRepo, nil
 			}
-			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo core.BareRepo) (core.StoredKey, error) {
+			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo core.LocalRepo) (types.StoredKey, error) {
 				return nil, fmt.Errorf("error")
 			}
 
@@ -145,13 +146,13 @@ var _ = Describe("GitVerify", func() {
 				}, nil
 			}
 
-			args.RepoGetter = func(path string) (core.BareRepo, error) {
+			args.RepoGetter = func(path string) (core.LocalRepo, error) {
 				return mockRepo, nil
 			}
 
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetKey().Return(key)
-			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo core.BareRepo) (core.StoredKey, error) {
+			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo core.LocalRepo) (types.StoredKey, error) {
 				return mockStoredKey, nil
 			}
 
@@ -184,14 +185,14 @@ var _ = Describe("GitVerify", func() {
 				}, nil
 			}
 
-			args.RepoGetter = func(path string) (core.BareRepo, error) {
+			args.RepoGetter = func(path string) (core.LocalRepo, error) {
 				return mockRepo, nil
 			}
 
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetKey().Return(key)
 			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string,
-				targetRepo core.BareRepo) (core.StoredKey, error) {
+				targetRepo core.LocalRepo) (types.StoredKey, error) {
 				return mockStoredKey, nil
 			}
 

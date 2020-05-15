@@ -291,7 +291,7 @@ func (r *Repo) GetAncestors(commit *object.Commit, stopHash string, reverse bool
 }
 
 // Get returns a repository
-func Get(path string) (core.BareRepo, error) {
+func Get(path string) (core.LocalRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
@@ -302,7 +302,7 @@ func Get(path string) (core.BareRepo, error) {
 	}, nil
 }
 
-func GetWithLiteGit(gitBinPath, path string) (core.BareRepo, error) {
+func GetWithLiteGit(gitBinPath, path string) (core.LocalRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
@@ -316,7 +316,7 @@ func GetWithLiteGit(gitBinPath, path string) (core.BareRepo, error) {
 
 // GetAtWorkingDir returns a RepoContext instance pointed to the repository
 // in the current working directory.
-func GetAtWorkingDir(gitBinDir string) (core.BareRepo, error) {
+func GetAtWorkingDir(gitBinDir string) (core.LocalRepo, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current working directory")
@@ -335,7 +335,7 @@ func GetAtWorkingDir(gitBinDir string) (core.BareRepo, error) {
 }
 
 // GetTreeEntries returns all entries in a tree.
-func GetTreeEntries(repo core.BareRepo, treeHash string) ([]string, error) {
+func GetTreeEntries(repo core.LocalRepo, treeHash string) ([]string, error) {
 	entries, err := repo.ListTreeObjectsSlice(treeHash, true, true)
 	if err != nil {
 		return nil, err
@@ -348,7 +348,7 @@ func GetTreeEntries(repo core.BareRepo, treeHash string) ([]string, error) {
 // repo: The target repository
 // commit: The target commit
 // stopCommitHash: A commit hash that when found triggers the end of the search.
-func GetCommitHistory(repo core.BareRepo, commit *object.Commit, stopCommitHash string) ([]string, error) {
+func GetCommitHistory(repo core.LocalRepo, commit *object.Commit, stopCommitHash string) ([]string, error) {
 	var hashes []string
 
 	// Stop if commit hash matches the stop hash
@@ -381,7 +381,7 @@ func GetCommitHistory(repo core.BareRepo, commit *object.Commit, stopCommitHash 
 }
 
 // GetObjectsSize returns the total size of the given objects.
-func GetObjectsSize(repo core.BareRepo, objects []string) (uint64, error) {
+func GetObjectsSize(repo core.LocalRepo, objects []string) (uint64, error) {
 	var size int64
 	for _, hash := range objects {
 		objSize, err := repo.GetObjectSize(hash)

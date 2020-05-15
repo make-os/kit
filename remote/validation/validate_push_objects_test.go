@@ -105,12 +105,12 @@ var _ = Describe("Validation", func() {
 	})
 
 	Describe(".CheckPushedReferenceConsistency", func() {
-		var mockRepo *mocks.MockBareRepo
+		var mockRepo *mocks.MockLocalRepo
 		var oldHash = fmt.Sprintf("%x", util.RandBytes(20))
 		var newHash = fmt.Sprintf("%x", util.RandBytes(20))
 
 		BeforeEach(func() {
-			mockRepo = mocks.NewMockBareRepo(ctrl)
+			mockRepo = mocks.NewMockLocalRepo(ctrl)
 		})
 
 		When("old hash is non-zero and pushed reference does not exist", func() {
@@ -570,7 +570,7 @@ var _ = Describe("Validation", func() {
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}}
 
-				mockRepo := mocks.NewMockBareRepo(ctrl)
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
 				tx.TargetRepo = mockRepo
 
@@ -598,7 +598,7 @@ var _ = Describe("Validation", func() {
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}}
 
-				mockRepo := mocks.NewMockBareRepo(ctrl)
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
 				tx.TargetRepo = mockRepo
 
@@ -629,7 +629,7 @@ var _ = Describe("Validation", func() {
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}, Size: 7}
 
-				mockRepo := mocks.NewMockBareRepo(ctrl)
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
 				tx.TargetRepo = mockRepo
 
@@ -660,7 +660,7 @@ var _ = Describe("Validation", func() {
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}, Size: 10}
 
-				mockRepo := mocks.NewMockBareRepo(ctrl)
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
 				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
 				tx.TargetRepo = mockRepo
 

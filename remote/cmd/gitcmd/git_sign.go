@@ -20,7 +20,7 @@ type GitSignArgs struct {
 	Args []string
 
 	// RepoGetter is the function for getting a local repository
-	RepoGetter func(path string) (core.BareRepo, error)
+	RepoGetter func(path string) (core.LocalRepo, error)
 
 	// PushKeyUnlocker is a function for getting and unlocking a push key from keystore
 	PushKeyUnlocker cmd.PushKeyUnlocker

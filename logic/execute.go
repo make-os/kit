@@ -2,13 +2,12 @@ package logic
 
 import (
 	"github.com/pkg/errors"
+	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/state"
 	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/logic/contracts"
-	"gitlab.com/makeos/mosdef/types/core"
-
-	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/core"
 )
 
 // ExecTx executes a transaction.

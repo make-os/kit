@@ -14,11 +14,11 @@ import (
 	"github.com/fatih/color"
 	"github.com/olekukonko/tablewriter"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/keystore/types"
 )
 
 // List returns the accounts stored on disk.
-func (ks *Keystore) List() (accounts []core.StoredKey, err error) {
+func (ks *Keystore) List() (accounts []types.StoredKey, err error) {
 
 	files, err := ioutil.ReadDir(ks.dir)
 	if err != nil {
@@ -40,9 +40,9 @@ func (ks *Keystore) List() (accounts []core.StoredKey, err error) {
 		timeCreated := time.Unix(unixTime, 0)
 		cipher, _ := ioutil.ReadFile(filepath.Join(ks.dir, f.Name()))
 		address := nameParts[1]
-		keyType := core.KeyTypeAccount
+		keyType := types.KeyTypeAccount
 		if crypto.IsValidPushAddr(address) == nil {
-			keyType = core.KeyTypePush
+			keyType = types.KeyTypePush
 		}
 
 		accounts = append(accounts, &StoredKey{

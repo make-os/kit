@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/keystore/types"
 )
 
 var _ = Describe("List", func() {
@@ -33,10 +33,10 @@ var _ = Describe("List", func() {
 			BeforeEach(func() {
 				ks = New(keyDir)
 				key := crypto.NewKeyFromIntSeed(1)
-				err = ks.CreateKey(key, core.KeyTypeAccount, "")
+				err = ks.CreateKey(key, types.KeyTypeAccount, "")
 				Expect(err).To(BeNil())
 				key2 := crypto.NewKeyFromIntSeed(2)
-				err = ks.CreateKey(key2, core.KeyTypePush, "")
+				err = ks.CreateKey(key2, types.KeyTypePush, "")
 				Expect(err).To(BeNil())
 			})
 
@@ -44,8 +44,8 @@ var _ = Describe("List", func() {
 				keys, err := ks.List()
 				Expect(err).To(BeNil())
 				Expect(keys).To(HaveLen(2))
-				Expect(keys[0].GetType()).To(Equal(core.KeyTypeAccount))
-				Expect(keys[1].GetType()).To(Equal(core.KeyTypePush))
+				Expect(keys[0].GetType()).To(Equal(types.KeyTypeAccount))
+				Expect(keys[1].GetType()).To(Equal(types.KeyTypePush))
 			})
 		})
 	})

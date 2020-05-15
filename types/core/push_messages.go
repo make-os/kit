@@ -13,7 +13,7 @@ type PushNote struct {
 	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
 
 	// TargetRepo is the target repo local instance
-	TargetRepo BareRepo `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
+	TargetRepo LocalRepo `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
 
 	// RepoName is the name of the repo
 	RepoName string `json:"repo,omitempty" msgpack:"repo,omitempty"`
@@ -46,11 +46,11 @@ type PushNote struct {
 	NodePubKey util.Bytes32 `json:"nodePubKey,omitempty" msgpack:"nodePubKey,omitempty"`
 
 	// serialized caches the serialized bytes of object
-	bytes []byte `json:"-" msgpack:"-"`
+	bytes []byte `msgpack:"-"`
 }
 
 // GetTargetRepo returns the target repository
-func (pt *PushNote) GetTargetRepo() BareRepo {
+func (pt *PushNote) GetTargetRepo() LocalRepo {
 	return pt.TargetRepo
 }
 

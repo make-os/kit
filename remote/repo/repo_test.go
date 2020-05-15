@@ -29,7 +29,7 @@ var _ = Describe("RepoContext", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path, dotGitPath string
-	var repo core.BareRepo
+	var repo core.LocalRepo
 	var key *crypto.Key
 
 	BeforeEach(func() {

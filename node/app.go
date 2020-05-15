@@ -439,7 +439,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 
 	// Create new repositories
 	for _, repoName := range a.newRepos {
-		if err := a.logic.GetRepoManager().CreateRepository(repoName); err != nil {
+		if err := a.logic.GetRemoteServer().CreateRepository(repoName); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to create repository"))
 		}
 	}

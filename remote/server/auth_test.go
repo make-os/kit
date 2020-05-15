@@ -616,13 +616,13 @@ var _ = Describe("Auth", func() {
 	})
 
 	Describe(".UpdateRemoteURLsWithPushToken", func() {
-		var mockRepo *mocks.MockBareRepo
+		var mockRepo *mocks.MockLocalRepo
 		var txDetail *core.TxDetail
 		var mockStoreKey *mocks.MockStoredKey
 		var token string
 
 		BeforeEach(func() {
-			mockRepo = mocks.NewMockBareRepo(ctrl)
+			mockRepo = mocks.NewMockLocalRepo(ctrl)
 			txDetail = &core.TxDetail{RepoName: "repo1"}
 			mockStoreKey = mocks.NewMockStoredKey(ctrl)
 		})

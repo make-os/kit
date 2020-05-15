@@ -18,9 +18,9 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 )
 
-func testIssueCommentCreator(isNewIssue bool, issueReference string, err error) func(targetRepo core.BareRepo,
+func testIssueCommentCreator(isNewIssue bool, issueReference string, err error) func(targetRepo core.LocalRepo,
 	issueID int, issueBody string, isComment bool) (bool, string, error) {
-	return func(targetRepo core.BareRepo, issueID int, issueBody string, isComment bool) (bool, string, error) {
+	return func(targetRepo core.LocalRepo, issueID int, issueBody string, isComment bool) (bool, string, error) {
 		return isNewIssue, issueReference, err
 	}
 }
@@ -39,13 +39,13 @@ var _ = Describe("IssueCreate", func() {
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
-	var mockRepo *mocks.MockBareRepo
+	var mockRepo *mocks.MockLocalRepo
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
-		mockRepo = mocks.NewMockBareRepo(ctrl)
+		mockRepo = mocks.NewMockLocalRepo(ctrl)
 	})
 
 	AfterEach(func() {

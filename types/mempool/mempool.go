@@ -1,4 +1,4 @@
-package core
+package mempool
 
 import (
 	abci "github.com/tendermint/tendermint/abci/types"

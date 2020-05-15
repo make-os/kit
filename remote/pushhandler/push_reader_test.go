@@ -34,7 +34,7 @@ var _ = Describe("PushReader", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
-	var repo core.BareRepo
+	var repo core.LocalRepo
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()

@@ -11,7 +11,7 @@ import (
 )
 
 type MergeComplianceCheckFunc func(
-	repo core.BareRepo,
+	repo core.LocalRepo,
 	change *core.ItemChange,
 	oldRef core.Item,
 	mergeProposalID,
@@ -21,7 +21,7 @@ type MergeComplianceCheckFunc func(
 // CheckMergeCompliance checks whether push to a branch satisfied
 // an accepted merge proposal
 func CheckMergeCompliance(
-	repo core.BareRepo,
+	repo core.LocalRepo,
 	change *core.ItemChange,
 	oldRef core.Item,
 	mergeProposalID,

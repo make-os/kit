@@ -22,6 +22,7 @@ import (
 	repo2 "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types/core"
+	mempool2 "gitlab.com/makeos/mosdef/types/mempool"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/state"
 
@@ -67,7 +68,7 @@ type Server struct {
 	addr                     string                                  // addr is the listening address for the http server
 	gitBinPath               string                                  // gitBinPath is the path of the git executable
 	pushPool                 core.PushPool                           // The transaction pool for push transactions
-	mempool                  core.Mempool                            // The general transaction pool for block-bound transaction
+	mempool                  mempool2.Mempool                        // The general transaction pool for block-bound transaction
 	logic                    core.Logic                              // logic is the application logic provider
 	privValidatorKey         *crypto.Key                             // the node's private validator key for signing transactions
 	pushKeyGetter            core.PushKeyGetter                      // finds and returns PGP public key
@@ -91,7 +92,7 @@ func NewManager(
 	addr string,
 	logic core.Logic,
 	dht dhttypes.DHTNode,
-	mempool core.Mempool,
+	mempool mempool2.Mempool,
 	blockGetter types.BlockGetter) *Server {
 
 	wg := &sync.WaitGroup{}
@@ -231,7 +232,7 @@ func (sv *Server) GetPushPool() core.PushPool {
 }
 
 // GetMempool returns the transaction pool
-func (sv *Server) GetMempool() core.Mempool {
+func (sv *Server) GetMempool() mempool2.Mempool {
 	return sv.mempool
 }
 
@@ -380,7 +381,7 @@ func (sv *Server) GetPushKeyGetter() core.PushKeyGetter {
 
 // createPushHandler creates an instance of Handler
 func (sv *Server) createPushHandler(
-	targetRepo core.BareRepo,
+	targetRepo core.LocalRepo,
 	txDetails []*core.TxDetail,
 	enforcer policy.EnforcerFunc) *pushhandler.Handler {
 	return pushhandler.NewHandler(targetRepo, txDetails, enforcer, sv)
@@ -397,7 +398,7 @@ func (sv *Server) SetPGPPubKeyGetter(pkGetter core.PushKeyGetter) {
 }
 
 // GetRepoState implements RepositoryManager
-func (sv *Server) GetRepoState(repo core.BareRepo, options ...core.KVOption) (core.BareRepoState, error) {
+func (sv *Server) GetRepoState(repo core.LocalRepo, options ...core.KVOption) (core.BareRepoState, error) {
 	return plumbing.GetRepoState(repo, options...), nil
 }
 
@@ -432,7 +433,7 @@ func (sv *Server) FindObject(key []byte) ([]byte, error) {
 }
 
 // Get returns a repo handle
-func (sv *Server) GetRepo(name string) (core.BareRepo, error) {
+func (sv *Server) GetRepo(name string) (core.LocalRepo, error) {
 	return repo2.GetWithLiteGit(sv.gitBinPath, sv.getRepoPath(name))
 }
 

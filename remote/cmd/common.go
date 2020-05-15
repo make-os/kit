@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/keystore"
+	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/types/core"
 )
 
@@ -18,7 +19,7 @@ type PushKeyUnlocker func(
 	cfg *config.AppConfig,
 	pushKeyID,
 	defaultPassphrase string,
-	targetRepo core.BareRepo) (core.StoredKey, error)
+	targetRepo core.LocalRepo) (types.StoredKey, error)
 
 // UnlockPushKey takes a push key ID and unlocks it using the default passphrase
 // or one obtained from the git config of the repository or from an environment variable.
@@ -26,7 +27,7 @@ func UnlockPushKey(
 	cfg *config.AppConfig,
 	pushKeyID,
 	defaultPassphrase string,
-	targetRepo core.BareRepo) (core.StoredKey, error) {
+	targetRepo core.LocalRepo) (types.StoredKey, error) {
 
 	// Get the push key from the key store
 	ks := keystore.New(cfg.KeystoreDir())
