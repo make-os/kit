@@ -6,6 +6,7 @@ import (
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -34,6 +35,38 @@ func (c *GitPush) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64)
 	return c
 }
 
+func (c *GitPush) updateReference(repo *state.Repository, ref *core.PushedReference) {
+
+	// When the reference needs to be deleted, remove from repo reference
+	r := repo.References.Get(ref.Name)
+	if ref.IsDeletable() && !r.IsNil() {
+		delete(repo.References, ref.Name)
+		return
+	}
+
+	// Set pusher as creator if reference is new
+	if r.IsNil() {
+		r.Creator = c.tx.PushNote.PushKeyID
+	}
+
+	// Set issue data for issue reference
+	if plumbing.IsIssueReference(ref.Name) {
+		if ref.Data.Close != nil {
+			r.IssueData.Closed = *ref.Data.Close
+		}
+		if ref.Data.Labels != nil {
+			r.IssueData.Labels = *ref.Data.Labels
+		}
+		if ref.Data.Assignees != nil {
+			r.IssueData.Assignees = *ref.Data.Assignees
+		}
+	}
+
+	r.Nonce = r.Nonce + 1
+	r.Hash = util.MustFromHex(ref.NewHash)
+	repo.References[ref.Name] = r
+}
+
 // Exec executes the contract
 func (c *GitPush) Exec() error {
 
@@ -42,35 +75,7 @@ func (c *GitPush) Exec() error {
 
 	// Register or update references
 	for _, ref := range c.tx.PushNote.References {
-
-		// When the reference needs to be deleted, remove from repo reference
-		curRef := repo.References.Get(ref.Name)
-		if ref.IsDeletable() && !curRef.IsNil() {
-			delete(repo.References, ref.Name)
-			continue
-		}
-
-		// Set pusher as creator if reference is new
-		if curRef.IsNil() {
-			curRef.Creator = c.tx.PushNote.PushKeyID
-		}
-
-		// Set issue data for issue reference
-		if plumbing.IsIssueReference(ref.Name) {
-			if ref.Data.Close != nil {
-				curRef.IssueData.Closed = *ref.Data.Close
-			}
-			if ref.Data.Labels != nil {
-				curRef.IssueData.Labels = *ref.Data.Labels
-			}
-			if ref.Data.Assignees != nil {
-				curRef.IssueData.Assignees = *ref.Data.Assignees
-			}
-		}
-
-		curRef.Nonce = curRef.Nonce + 1
-		curRef.Hash = util.MustFromHex(ref.NewHash)
-		repo.References[ref.Name] = curRef
+		c.updateReference(repo, ref)
 	}
 
 	// Get the push key of the pusher
