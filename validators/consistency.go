@@ -347,7 +347,7 @@ func CheckTxNSAcquireConsistency(
 
 	// If transfer recipient is a repo name
 	if tx.TransferTo != "" &&
-		util.IsValidIdentifierName(tx.TransferTo) == nil &&
+		util.IsValidName(tx.TransferTo) == nil &&
 		crypto.IsValidAccountAddr(tx.TransferTo) != nil {
 		if logic.RepoKeeper().Get(tx.TransferTo).IsNil() {
 			return feI(index, "to", "repo does not exist")

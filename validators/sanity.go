@@ -353,7 +353,7 @@ func CheckTxRegisterPushKey(tx *core.TxRegisterPushKey, index int) error {
 
 func checkScopes(scopes []string, index int) error {
 	for i, s := range scopes {
-		if (!util.IsNamespaceURI(s) && util.IsValidIdentifierName(s) != nil) || util.IsValidAddr(s) == nil {
+		if (!util.IsNamespaceURI(s) && util.IsValidName(s) != nil) || util.IsValidAddr(s) == nil {
 			return feI(index, fmt.Sprintf("scopes[%d]", i), "not an acceptable scope. "+
 				"Expects a namespace URI or repository name")
 		}
@@ -521,7 +521,7 @@ func CheckTxNSAcquire(tx *core.TxNamespaceAcquire, index int) error {
 	}
 
 	if tx.TransferTo != "" {
-		if crypto.IsValidAccountAddr(tx.TransferTo) != nil && util.IsValidIdentifierName(tx.TransferTo) != nil {
+		if crypto.IsValidAccountAddr(tx.TransferTo) != nil && util.IsValidName(tx.TransferTo) != nil {
 			return feI(index, "to", "invalid value. Expected an address or a repository name")
 		}
 	}
@@ -839,7 +839,7 @@ func CheckTxRepoProposalRegisterPushKey(tx *core.TxRepoProposalRegisterPushKey, 
 	// When namespace target is set, ensure a valid namespace name is provided.
 	// If valid and NamespaceOnly is set, return an error
 	if tx.Namespace != "" {
-		if util.IsValidIdentifierName(tx.Namespace) != nil {
+		if util.IsValidName(tx.Namespace) != nil {
 			return feI(index, "namespace", "value format is not valid")
 		}
 		if tx.NamespaceOnly != "" {
@@ -849,7 +849,7 @@ func CheckTxRepoProposalRegisterPushKey(tx *core.TxRepoProposalRegisterPushKey, 
 
 	// When namespaceOnly target is set, ensure a valid namespace name is provided.
 	if tx.NamespaceOnly != "" {
-		if util.IsValidIdentifierName(tx.NamespaceOnly) != nil {
+		if util.IsValidName(tx.NamespaceOnly) != nil {
 			return feI(index, "namespaceOnly", "value format is not valid")
 		}
 	}

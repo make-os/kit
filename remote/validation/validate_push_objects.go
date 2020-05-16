@@ -27,11 +27,11 @@ func CheckPushNoteSyntax(tx *core.PushNote) error {
 	if tx.RepoName == "" {
 		return util.FieldError("repo", "repo name is required")
 	}
-	if util.IsValidIdentifierName(tx.RepoName) != nil {
+	if util.IsValidName(tx.RepoName) != nil {
 		return util.FieldError("repo", "repo name is not valid")
 	}
 
-	if tx.Namespace != "" && util.IsValidIdentifierName(tx.Namespace) != nil {
+	if tx.Namespace != "" && util.IsValidName(tx.Namespace) != nil {
 		return util.FieldError("namespace", "namespace is not valid")
 	}
 

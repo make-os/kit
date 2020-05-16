@@ -1,6 +1,7 @@
 package gitpush
 
 import (
+	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/logic/contracts/common"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
@@ -54,11 +55,31 @@ func (c *GitPush) updateReference(repo *state.Repository, ref *core.PushedRefere
 		if ref.Data.Close != nil {
 			r.IssueData.Closed = *ref.Data.Close
 		}
+
+		// Process labels (new and negated labels)
 		if ref.Data.Labels != nil {
-			r.IssueData.Labels = *ref.Data.Labels
+			for _, label := range *ref.Data.Labels {
+				if label[0] == '-' {
+					r.IssueData.Labels = util.RemoveFromStringSlice(r.IssueData.Labels, label[1:])
+					continue
+				}
+				if !funk.ContainsString(r.IssueData.Labels, label) {
+					r.IssueData.Labels = append(r.IssueData.Labels, label)
+				}
+			}
 		}
+
+		// Process assignees (new and negated assignees)
 		if ref.Data.Assignees != nil {
-			r.IssueData.Assignees = *ref.Data.Assignees
+			for _, assignee := range *ref.Data.Assignees {
+				if assignee[0] == '-' {
+					r.IssueData.Assignees = util.RemoveFromStringSlice(r.IssueData.Assignees, assignee[1:])
+					continue
+				}
+				if !funk.ContainsString(r.IssueData.Assignees, assignee) {
+					r.IssueData.Assignees = append(r.IssueData.Assignees, assignee)
+				}
+			}
 		}
 	}
 

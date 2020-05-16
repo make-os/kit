@@ -71,7 +71,7 @@ var validValueRule = func(field string, index int) func(interface{}) error {
 var validObjectNameRule = func(field string, index int) func(interface{}) error {
 	return func(val interface{}) error {
 		name := val.(string)
-		err := util.IsValidIdentifierName(name)
+		err := util.IsValidName(name)
 		if err != nil {
 			return util.FieldErrorWithIndex(index, field, err.Error())
 		}

@@ -127,7 +127,7 @@ input:
 
 	// Ensure labels are valid identifiers
 	for _, label := range args.Labels {
-		if err := util.IsValidIdentifierName(strings.TrimPrefix(label, "-")); err != nil {
+		if err := util.IsValidNameNoLen(strings.TrimPrefix(label, "-")); err != nil {
 			return fmt.Errorf("label (%s) is not valid", label)
 		}
 	}

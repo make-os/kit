@@ -534,61 +534,6 @@ var _ = Describe("Common", func() {
 		})
 	})
 
-	Describe(".StructSliceToMapSlice", func() {
-		It("should panic if arg is not a slice", func() {
-			Expect(func() {
-				arr := [2]string{"a", "b"}
-				StructSliceToMapSlice(arr)
-			}).To(Panic())
-		})
-
-		It("should return empty slice element type is not map or struct", func() {
-			Expect(func() {
-				var arg []string
-				StructSliceToMapSlice(arg)
-			}).To(Panic())
-		})
-
-		It("should return empty slice of map[string]interface{} when slice arg is empty", func() {
-			var arg = []map[string]interface{}{}
-			out := StructSliceToMapSlice(arg)
-			Expect(out).To(Equal(arg))
-		})
-
-		type testStruct struct{ Name string }
-		It("should return slice of map[string]interface{} when arg is slice of *struct", func() {
-			arg := []*testStruct{{Name: "ben"}}
-			out := StructSliceToMapSlice(arg)
-			Expect(out).To(Equal([]map[string]interface{}{{"Name": "ben"}}))
-		})
-
-		It("should return slice of map[string]interface{} when arg is slice of struct", func() {
-			arg := []testStruct{{Name: "ben"}}
-			out := StructSliceToMapSlice(arg)
-			Expect(out).To(Equal([]map[string]interface{}{{"Name": "ben"}}))
-		})
-
-		It("should return slice of map[string]interface{} when arg is slice of map[string]struct", func() {
-			arg := []map[string]testStruct{
-				{"person1": {Name: "ben"}},
-			}
-			out := StructSliceToMapSlice(arg)
-			Expect(out).To(Equal([]map[string]interface{}{
-				{"person1": map[string]interface{}{"Name": "ben"}},
-			}))
-		})
-
-		It("should return slice of map[string]interface{} when arg is slice of map[string]*struct", func() {
-			arg := []map[string]*testStruct{
-				{"person1": {Name: "ben"}},
-			}
-			out := StructSliceToMapSlice(arg)
-			Expect(out).To(Equal([]map[string]interface{}{
-				{"person1": map[string]interface{}{"Name": "ben"}},
-			}))
-		})
-	})
-
 	Describe("IsZeroString", func() {
 		It("should return true when value is empty or '0' or false when not", func() {
 			Expect(IsZeroString("")).To(BeTrue())
@@ -597,39 +542,48 @@ var _ = Describe("Common", func() {
 		})
 	})
 
-	Describe(".IsValidIdentifierName", func() {
+	Describe(".IsValidName", func() {
 		Specify("cases", func() {
-			err := IsValidIdentifierName("abc&*")
+			err := IsValidName("abc&*")
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
 
-			err = IsValidIdentifierName(strings.Repeat("a", 129))
+			err = IsValidName(strings.Repeat("a", 129))
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("name is too long. Maximum character length is 128"))
 
-			err = IsValidIdentifierName("a")
+			err = IsValidName("a")
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("name is too short. Must be at least 3 characters long"))
 
-			err = IsValidIdentifierName("abcdef_-")
+			err = IsValidName("abcdef_-")
 			Expect(err).To(BeNil())
 
-			err = IsValidIdentifierName("-abc")
+			err = IsValidName("-abc")
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
 
-			err = IsValidIdentifierName("_abc")
+			err = IsValidName("_abc")
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
+		})
+	})
+
+	Describe(".IsValidNameNoLen", func() {
+		It("cases", func() {
+			Expect(IsValidNameNoLen("myname")).To(BeNil())
+			Expect(IsValidNameNoLen("_myname")).ToNot(BeNil())
+			Expect(IsValidNameNoLen("a")).To(BeNil())
+			Expect(IsValidNameNoLen("a_b_c")).To(BeNil())
+			Expect(IsValidNameNoLen("_")).ToNot(BeNil())
+			Expect(IsValidNameNoLen("")).ToNot(BeNil())
 		})
 	})
 
 	Describe(".XorBytes", func() {
 		It("should return '4' for '6' and '2'", func() {
 			r := XorBytes([]byte("6"), []byte("2"))
-			Expect(r).To(Equal([]uint8{
-				0x04,
-			}))
+			Expect(r).To(Equal([]uint8{0x04}))
 		})
 	})
 
@@ -660,39 +614,6 @@ var _ = Describe("Common", func() {
 		Specify("case 6", func() {
 			res := RemoveFlag([]string{"--nickname", "logan", "xmen", "--sex", "female"}, []string{"nickname"})
 			Expect(res).To(Equal([]string{"xmen", "--sex", "female"}))
-		})
-	})
-
-	Describe(".ParseSimpleArgs", func() {
-		Specify("that '--nickname, abc, --age, 12' map {nickname:abc, age:12} is returned", func() {
-			res := ParseSimpleArgs([]string{"-nickname", "abc", "--age", "12"})
-			Expect(res).To(Equal(map[string]string{
-				"nickname": "abc",
-				"age":      "12",
-			}))
-		})
-		Specify("that '--nickname=abc, --age, 12' map {nickname:abc, age:12} is returned", func() {
-			res := ParseSimpleArgs([]string{"--nickname=abc", "--age", "12"})
-			Expect(res).To(Equal(map[string]string{
-				"nickname": "abc",
-				"age":      "12",
-			}))
-		})
-
-		Specify("that '--nickname, \"abc xyz\", --age, 12' map {nickname:abc xyz, age:12} is returned", func() {
-			res := ParseSimpleArgs([]string{"--nickname", "abc xyz", "--age", "12"})
-			Expect(res).To(Equal(map[string]string{
-				"nickname": "abc xyz",
-				"age":      "12",
-			}))
-		})
-
-		Specify("that '--nickname, abc, xyz, --age, 12' map {nickname:abc xyz, age:12} is returned", func() {
-			res := ParseSimpleArgs([]string{"--nickname", "abc", "xyz", "--age", "12"})
-			Expect(res).To(Equal(map[string]string{
-				"nickname": "abc",
-				"age":      "12",
-			}))
 		})
 	})
 
@@ -785,6 +706,15 @@ var _ = Describe("Common", func() {
 			Expect(err).ToNot(BeNil())
 			err = IsValidAddr("maker1dhlnq5dt488huxs8nyzd7mu20ujw6zddjv3w4w")
 			Expect(err).To(BeNil())
+		})
+	})
+
+	Describe(".RemoveFromStringSlice", func() {
+		It("should return [a,c] when b is removed from [a,b,c]", func() {
+			Expect(RemoveFromStringSlice([]string{"a", "b", "c"}, "b")).To(Equal([]string{"a", "c"}))
+		})
+		It("should return [a,b,c] when d is supposed to be removed from [a,b,c]", func() {
+			Expect(RemoveFromStringSlice([]string{"a", "b", "c"}, "d")).To(Equal([]string{"a", "b", "c"}))
 		})
 	})
 })

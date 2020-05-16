@@ -310,7 +310,7 @@ func CheckIssueBody(
 			return fe(-1, makeField("labels"), "expected a string list")
 		}
 		for i, val := range labels.InterSlice() {
-			if err := util.IsValidIdentifierName(strings.TrimPrefix(val.(string), "-")); err != nil {
+			if err := util.IsValidNameNoLen(strings.TrimPrefix(val.(string), "-")); err != nil {
 				return fe(i, makeField("labels"), err.Error())
 			}
 		}

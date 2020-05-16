@@ -256,38 +256,6 @@ func StructToMap(s interface{}, tagName ...string) map[string]interface{} {
 	return st.Map()
 }
 
-// StructSliceToMapSlice converts a slice of map or struct into a slice of map[string]interface{}
-func StructSliceToMapSlice(ss interface{}, tagName ...string) []map[string]interface{} {
-	val := reflect.ValueOf(ss)
-
-	if val.Kind() != reflect.Slice {
-		panic("arg is not a slice")
-	}
-
-	sliceKind := val.Type().Elem().Kind()
-	if sliceKind == reflect.Ptr {
-		sliceKind = val.Type().Elem().Elem().Kind()
-	}
-	if sliceKind != reflect.Map && sliceKind != reflect.Struct {
-		panic("slice must contain map or struct")
-	}
-
-	if val.Len() == 0 {
-		return []map[string]interface{}{}
-	}
-
-	res := make([]map[string]interface{}, val.Len())
-	for i := 0; i < val.Len(); i++ {
-		if sliceKind == reflect.Map {
-			res[i] = ToStringMapInter(val.Index(i).Interface(), true)
-			continue
-		}
-		res[i] = StructToMap(val.Index(i).Interface(), tagName...)
-	}
-
-	return res
-}
-
 // GetPtrAddr takes a pointer and returns the address
 func GetPtrAddr(ptrAddr interface{}) *big.Int {
 	ptrAddrInt, ok := new(big.Int).SetString(fmt.Sprintf("%d", &ptrAddr), 10)
@@ -434,34 +402,6 @@ func RemoveFlag(args []string, flags []string) []string {
 		}
 	}
 	return newArgs
-}
-
-// ParseSimpleArgs passes a programs argument into string
-// key and value map.
-func ParseSimpleArgs(args []string) (m map[string]string) {
-	m = make(map[string]string)
-	curFlag := ""
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		if arg[:1] == "-" {
-			curFlag = strings.Trim(arg[1:], "-")
-			curFlagParts := strings.Split(curFlag, "=")
-			curFlag = curFlagParts[0]
-			val := ""
-			if len(curFlagParts) >= 2 {
-				val = curFlagParts[1]
-				m[curFlag] = val
-				curFlag = ""
-			}
-			continue
-		}
-		if curFlag != "" {
-			m[curFlag] = arg
-			curFlag = ""
-			continue
-		}
-	}
-	return
 }
 
 // Interrupt is used to signal program interruption
@@ -615,12 +555,23 @@ func IsZeroString(str string) bool {
 	return str == "" || str == "0"
 }
 
-// IsValidIdentifierName checks whether an identifier is valid
-func IsValidIdentifierName(name string) error {
+// IsValidName checks whether a user-defined identifier/name is valid
+func IsValidName(name string) error {
 	if len(name) <= 2 {
 		return fmt.Errorf("name is too short. Must be at least 3 characters long")
 	}
 	if !govalidator.Matches(name, "^[a-z0-9][a-zA-Z0-9_-]+$") {
+		return fmt.Errorf("invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars")
+	}
+	if len(name) > 128 {
+		return fmt.Errorf("name is too long. Maximum character length is 128")
+	}
+	return nil
+}
+
+// IsValidNameNoLen checks whether a user-defined identifier/name is valid but it does not enforce a length requirement
+func IsValidNameNoLen(name string) error {
+	if !govalidator.Matches(name, "^[a-z0-9]([a-zA-Z0-9_-]+)?$") {
 		return fmt.Errorf("invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars")
 	}
 	if len(name) > 128 {
@@ -679,4 +630,9 @@ func MustacheParseString(format string, ctx map[string]interface{}, opt Mustache
 // IsString checks whether the interface is a string
 func IsString(v interface{}) bool {
 	return reflect.TypeOf(v).Kind() == reflect.String
+}
+
+// RemoveFromStringSlice removes str from the given string slice
+func RemoveFromStringSlice(slice []string, str string) []string {
+	return funk.FilterString(slice, func(s string) bool { return s != str })
 }
