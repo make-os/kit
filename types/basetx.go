@@ -12,28 +12,77 @@ type TxCode int
 type BaseTx interface {
 	msgpack.CustomEncoder
 	msgpack.CustomDecoder
-	GetType() TxCode                      // Returns the type of the transaction
-	GetSignature() []byte                 // Returns the transaction signature
-	SetSignature(s []byte)                // Sets the transaction signature
-	GetSenderPubKey() crypto.PublicKey    // Returns the transaction sender public key
-	SetSenderPubKey(pk []byte)            // Set the transaction sender public key
-	GetTimestamp() int64                  // Return the transaction creation unix timestamp
-	SetTimestamp(t int64)                 // Set the transaction creation unix timestamp
-	GetNonce() uint64                     // Returns the transaction nonce
-	SetNonce(nonce uint64)                // Set the transaction nonce
-	SetFee(fee util.String)               // Set the fee
-	GetFee() util.String                  // Returns the transaction fee
-	GetFrom() util.Address                // Returns the address of the transaction sender
-	GetHash() util.Bytes32                // Returns the hash of the transaction
-	GetBytesNoSig() []byte                // Returns the serialized the tx excluding the signature
-	Bytes() []byte                        // Returns the serialized transaction
-	ComputeHash() util.Bytes32            // Computes the hash of the transaction
-	GetID() string                        // Returns the id of the transaction (also the hash)
-	Sign(privKey string) ([]byte, error)  // Signs the transaction
-	GetEcoSize() int64                    // Returns the size of the tx for use in proto economics
-	GetSize() int64                       // Returns the size of the tx object (excluding nothing)
-	ToMap() map[string]interface{}        // Returns a map equivalent of the transaction
-	FromMap(map[string]interface{}) error // Populate the fields from a map
-	GetMeta() map[string]interface{}      // Returns the meta information of the transaction
-	Is(txType TxCode) bool                // Checks if the tx is a given type
+
+	// GetType returns the type of the transaction
+	GetType() TxCode
+
+	// GetSignature returns the transaction signature
+	GetSignature() []byte
+
+	// SetSignature sets the transaction signature
+	SetSignature(s []byte)
+
+	// GetSenderPubKey returns the transaction sender public key
+	GetSenderPubKey() crypto.PublicKey
+
+	// SetSenderPubKey sets the transaction sender public key
+	SetSenderPubKey(pk []byte)
+
+	// GetTimestamp return the transaction creation unix timestamp
+	GetTimestamp() int64
+
+	// SetTimestamp sets the transaction creation unix timestamp
+	SetTimestamp(t int64)
+
+	// GetNonce returns the transaction nonce
+	GetNonce() uint64
+
+	// SetNonce set the transaction nonce
+	SetNonce(nonce uint64)
+
+	// SetFee sets the transaction fee
+	SetFee(fee util.String)
+
+	// GetFee returns the transaction fee
+	GetFee() util.String
+
+	// GetFrom returns the address of the transaction sender
+	GetFrom() util.Address
+
+	// GetHash returns the hash of the transaction
+	GetHash() util.Bytes32
+
+	// GetBytesNoSig returns the serialized the tx excluding the signature
+	GetBytesNoSig() []byte
+
+	//  Bytes Returns the serialized transaction
+	Bytes() []byte
+
+	// ComputeHash computes the hash of the transaction
+	ComputeHash() util.Bytes32
+
+	// GetID returns the id of the transaction (also the hash)
+	GetID() string
+
+	// Sign signs the transaction
+	Sign(privKey string) ([]byte, error)
+
+	// GetEcoSize returns the size of the tx for use in fee calculation.
+	// Size returned here may not be the actual tx size.
+	GetEcoSize() int64
+
+	// GetSize returns the size of the tx object (excluding nothing)
+	GetSize() int64
+
+	// ToMap returns a map equivalent of the transaction
+	ToMap() map[string]interface{}
+
+	// FromMap populate the fields from a map
+	FromMap(map[string]interface{}) error
+
+	// GetMeta returns the meta information of the transaction
+	GetMeta() map[string]interface{}
+
+	// Id checks if the tx is a given type
+	Is(txType TxCode) bool
 }

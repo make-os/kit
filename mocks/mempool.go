@@ -5,14 +5,15 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/tendermint/tendermint/abci/types"
 	mempool "github.com/tendermint/tendermint/mempool"
 	types0 "github.com/tendermint/tendermint/types"
-	types1 "gitlab.com/makeos/mosdef/types"
+	types2 "gitlab.com/makeos/mosdef/types"
 	mempool0 "gitlab.com/makeos/mosdef/types/mempool"
 	util "gitlab.com/makeos/mosdef/util"
-	reflect "reflect"
 )
 
 // MockMempool is a mock of Mempool interface
@@ -237,7 +238,7 @@ func (mr *MockMempoolMockRecorder) CloseWAL() *gomock.Call {
 }
 
 // Add mocks base method
-func (m *MockMempool) Add(tx types1.BaseTx) error {
+func (m *MockMempool) Add(tx types2.BaseTx) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", tx)
 	ret0, _ := ret[0].(error)
@@ -288,10 +289,10 @@ func (mr *MockMempoolReactorMockRecorder) GetPoolSize() *gomock.Call {
 }
 
 // GetTop mocks base method
-func (m *MockMempoolReactor) GetTop(n int) []types1.BaseTx {
+func (m *MockMempoolReactor) GetTop(n int) []types2.BaseTx {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTop", n)
-	ret0, _ := ret[0].([]types1.BaseTx)
+	ret0, _ := ret[0].([]types2.BaseTx)
 	return ret0
 }
 
@@ -302,7 +303,7 @@ func (mr *MockMempoolReactorMockRecorder) GetTop(n interface{}) *gomock.Call {
 }
 
 // AddTx mocks base method
-func (m *MockMempoolReactor) AddTx(tx types1.BaseTx) (util.Bytes32, error) {
+func (m *MockMempoolReactor) AddTx(tx types2.BaseTx) (util.Bytes32, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddTx", tx)
 	ret0, _ := ret[0].(util.Bytes32)

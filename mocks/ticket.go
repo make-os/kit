@@ -5,11 +5,12 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	types "gitlab.com/makeos/mosdef/ticket/types"
-	types0 "gitlab.com/makeos/mosdef/types"
+	types2 "gitlab.com/makeos/mosdef/types"
 	util "gitlab.com/makeos/mosdef/util"
-	reflect "reflect"
 )
 
 // MockTicketManager is a mock of TicketManager interface
@@ -36,7 +37,7 @@ func (m *MockTicketManager) EXPECT() *MockTicketManagerMockRecorder {
 }
 
 // Index mocks base method
-func (m *MockTicketManager) Index(tx types0.BaseTx, blockHeight uint64, txIndex int) error {
+func (m *MockTicketManager) Index(tx types2.BaseTx, blockHeight uint64, txIndex int) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Index", tx, blockHeight, txIndex)
 	ret0, _ := ret[0].(error)
@@ -64,7 +65,7 @@ func (mr *MockTicketManagerMockRecorder) Remove(hash interface{}) *gomock.Call {
 }
 
 // GetByProposer mocks base method
-func (m *MockTicketManager) GetByProposer(ticketType types0.TxCode, proposerPubKey util.Bytes32, queryOpt ...interface{}) ([]*types.Ticket, error) {
+func (m *MockTicketManager) GetByProposer(ticketType types2.TxCode, proposerPubKey util.Bytes32, queryOpt ...interface{}) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{ticketType, proposerPubKey}
 	for _, a := range queryOpt {
@@ -99,7 +100,7 @@ func (mr *MockTicketManagerMockRecorder) CountActiveValidatorTickets() *gomock.C
 }
 
 // GetNonDelegatedTickets mocks base method
-func (m *MockTicketManager) GetNonDelegatedTickets(pubKey util.Bytes32, ticketType types0.TxCode) ([]*types.Ticket, error) {
+func (m *MockTicketManager) GetNonDelegatedTickets(pubKey util.Bytes32, ticketType types2.TxCode) ([]*types.Ticket, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetNonDelegatedTickets", pubKey, ticketType)
 	ret0, _ := ret[0].([]*types.Ticket)

@@ -6,10 +6,9 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/types"
-
-	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/util"
 )
 

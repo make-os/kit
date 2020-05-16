@@ -5,18 +5,19 @@
 package mocks
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	types "github.com/tendermint/tendermint/abci/types"
 	config "gitlab.com/makeos/mosdef/config"
 	tree "gitlab.com/makeos/mosdef/pkgs/tree"
 	storage "gitlab.com/makeos/mosdef/storage"
 	types0 "gitlab.com/makeos/mosdef/ticket/types"
-	types1 "gitlab.com/makeos/mosdef/types"
+	types2 "gitlab.com/makeos/mosdef/types"
 	core "gitlab.com/makeos/mosdef/types/core"
 	mempool "gitlab.com/makeos/mosdef/types/mempool"
 	state "gitlab.com/makeos/mosdef/types/state"
 	util "gitlab.com/makeos/mosdef/util"
-	reflect "reflect"
 )
 
 // MockSystemKeeper is a mock of SystemKeeper interface
@@ -168,7 +169,7 @@ func (m *MockTxKeeper) EXPECT() *MockTxKeeperMockRecorder {
 }
 
 // Index mocks base method
-func (m *MockTxKeeper) Index(tx types1.BaseTx) error {
+func (m *MockTxKeeper) Index(tx types2.BaseTx) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Index", tx)
 	ret0, _ := ret[0].(error)
@@ -182,10 +183,10 @@ func (mr *MockTxKeeperMockRecorder) Index(tx interface{}) *gomock.Call {
 }
 
 // GetTx mocks base method
-func (m *MockTxKeeper) GetTx(hash []byte) (types1.BaseTx, error) {
+func (m *MockTxKeeper) GetTx(hash []byte) (types2.BaseTx, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTx", hash)
-	ret0, _ := ret[0].(types1.BaseTx)
+	ret0, _ := ret[0].(types2.BaseTx)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1604,7 +1605,7 @@ func (m *MockSystemContract) EXPECT() *MockSystemContractMockRecorder {
 }
 
 // Init mocks base method
-func (m *MockSystemContract) Init(logic core.Logic, tx types1.BaseTx, curChainHeight uint64) core.SystemContract {
+func (m *MockSystemContract) Init(logic core.Logic, tx types2.BaseTx, curChainHeight uint64) core.SystemContract {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Init", logic, tx, curChainHeight)
 	ret0, _ := ret[0].(core.SystemContract)
@@ -1618,7 +1619,7 @@ func (mr *MockSystemContractMockRecorder) Init(logic, tx, curChainHeight interfa
 }
 
 // CanExec mocks base method
-func (m *MockSystemContract) CanExec(tx types1.TxCode) bool {
+func (m *MockSystemContract) CanExec(tx types2.TxCode) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanExec", tx)
 	ret0, _ := ret[0].(bool)
@@ -1669,7 +1670,7 @@ func (m *MockProposalContract) EXPECT() *MockProposalContractMockRecorder {
 }
 
 // Init mocks base method
-func (m *MockProposalContract) Init(logic core.Logic, tx types1.BaseTx, curChainHeight uint64) core.SystemContract {
+func (m *MockProposalContract) Init(logic core.Logic, tx types2.BaseTx, curChainHeight uint64) core.SystemContract {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Init", logic, tx, curChainHeight)
 	ret0, _ := ret[0].(core.SystemContract)
@@ -1683,7 +1684,7 @@ func (mr *MockProposalContractMockRecorder) Init(logic, tx, curChainHeight inter
 }
 
 // CanExec mocks base method
-func (m *MockProposalContract) CanExec(tx types1.TxCode) bool {
+func (m *MockProposalContract) CanExec(tx types2.TxCode) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CanExec", tx)
 	ret0, _ := ret[0].(bool)
