@@ -449,6 +449,21 @@ func (mr *MockLocalRepoMockRecorder) Var(name interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Var", reflect.TypeOf((*MockLocalRepo)(nil).Var), name)
 }
 
+// ExpandShortHash mocks base method
+func (m *MockLocalRepo) ExpandShortHash(hash string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExpandShortHash", hash)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ExpandShortHash indicates an expected call of ExpandShortHash
+func (mr *MockLocalRepoMockRecorder) ExpandShortHash(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpandShortHash", reflect.TypeOf((*MockLocalRepo)(nil).ExpandShortHash), hash)
+}
+
 // GetName mocks base method
 func (m *MockLocalRepo) GetName() string {
 	m.ctrl.T.Helper()
@@ -736,6 +751,21 @@ func (m *MockLocalRepo) SetPath(path string) {
 func (mr *MockLocalRepoMockRecorder) SetPath(path interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPath", reflect.TypeOf((*MockLocalRepo)(nil).SetPath), path)
+}
+
+// GetReferences mocks base method
+func (m *MockLocalRepo) GetReferences() ([]plumbing.ReferenceName, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetReferences")
+	ret0, _ := ret[0].([]plumbing.ReferenceName)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetReferences indicates an expected call of GetReferences
+func (mr *MockLocalRepoMockRecorder) GetReferences() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferences", reflect.TypeOf((*MockLocalRepo)(nil).GetReferences))
 }
 
 // GetPath mocks base method
@@ -1119,6 +1149,21 @@ func (m *MockCommit) GetTree() (*object.Tree, error) {
 func (mr *MockCommitMockRecorder) GetTree() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTree", reflect.TypeOf((*MockCommit)(nil).GetTree))
+}
+
+// File mocks base method
+func (m *MockCommit) File(path string) (*object.File, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "File", path)
+	ret0, _ := ret[0].(*object.File)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// File indicates an expected call of File
+func (mr *MockCommitMockRecorder) File(path interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "File", reflect.TypeOf((*MockCommit)(nil).File), path)
 }
 
 // MockPoolGetter is a mock of PoolGetter interface
@@ -1704,31 +1749,31 @@ func (mr *MockPrunerMockRecorder) Stop() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Stop", reflect.TypeOf((*MockPruner)(nil).Stop))
 }
 
-// MockLocalRepoState is a mock of BareRepoState interface
-type MockLocalRepoState struct {
+// MockBareRepoState is a mock of BareRepoState interface
+type MockBareRepoState struct {
 	ctrl     *gomock.Controller
-	recorder *MockLocalRepoStateMockRecorder
+	recorder *MockBareRepoStateMockRecorder
 }
 
-// MockLocalRepoStateMockRecorder is the mock recorder for MockLocalRepoState
-type MockLocalRepoStateMockRecorder struct {
-	mock *MockLocalRepoState
+// MockBareRepoStateMockRecorder is the mock recorder for MockBareRepoState
+type MockBareRepoStateMockRecorder struct {
+	mock *MockBareRepoState
 }
 
-// NewMockLocalRepoState creates a new mock instance
-func NewMockLocalRepoState(ctrl *gomock.Controller) *MockLocalRepoState {
-	mock := &MockLocalRepoState{ctrl: ctrl}
-	mock.recorder = &MockLocalRepoStateMockRecorder{mock}
+// NewMockBareRepoState creates a new mock instance
+func NewMockBareRepoState(ctrl *gomock.Controller) *MockBareRepoState {
+	mock := &MockBareRepoState{ctrl: ctrl}
+	mock.recorder = &MockBareRepoStateMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockLocalRepoState) EXPECT() *MockLocalRepoStateMockRecorder {
+func (m *MockBareRepoState) EXPECT() *MockBareRepoStateMockRecorder {
 	return m.recorder
 }
 
 // GetReferences mocks base method
-func (m *MockLocalRepoState) GetReferences() core.Items {
+func (m *MockBareRepoState) GetReferences() core.Items {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetReferences")
 	ret0, _ := ret[0].(core.Items)
@@ -1736,13 +1781,13 @@ func (m *MockLocalRepoState) GetReferences() core.Items {
 }
 
 // GetReferences indicates an expected call of GetReferences
-func (mr *MockLocalRepoStateMockRecorder) GetReferences() *gomock.Call {
+func (mr *MockBareRepoStateMockRecorder) GetReferences() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferences", reflect.TypeOf((*MockLocalRepoState)(nil).GetReferences))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetReferences", reflect.TypeOf((*MockBareRepoState)(nil).GetReferences))
 }
 
 // IsEmpty mocks base method
-func (m *MockLocalRepoState) IsEmpty() bool {
+func (m *MockBareRepoState) IsEmpty() bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsEmpty")
 	ret0, _ := ret[0].(bool)
@@ -1750,13 +1795,13 @@ func (m *MockLocalRepoState) IsEmpty() bool {
 }
 
 // IsEmpty indicates an expected call of IsEmpty
-func (mr *MockLocalRepoStateMockRecorder) IsEmpty() *gomock.Call {
+func (mr *MockBareRepoStateMockRecorder) IsEmpty() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEmpty", reflect.TypeOf((*MockLocalRepoState)(nil).IsEmpty))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsEmpty", reflect.TypeOf((*MockBareRepoState)(nil).IsEmpty))
 }
 
 // GetChanges mocks base method
-func (m *MockLocalRepoState) GetChanges(y core.BareRepoState) *core.Changes {
+func (m *MockBareRepoState) GetChanges(y core.BareRepoState) *core.Changes {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetChanges", y)
 	ret0, _ := ret[0].(*core.Changes)
@@ -1764,9 +1809,9 @@ func (m *MockLocalRepoState) GetChanges(y core.BareRepoState) *core.Changes {
 }
 
 // GetChanges indicates an expected call of GetChanges
-func (mr *MockLocalRepoStateMockRecorder) GetChanges(y interface{}) *gomock.Call {
+func (mr *MockBareRepoStateMockRecorder) GetChanges(y interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChanges", reflect.TypeOf((*MockLocalRepoState)(nil).GetChanges), y)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChanges", reflect.TypeOf((*MockBareRepoState)(nil).GetChanges), y)
 }
 
 // MockItem is a mock of Item interface
@@ -2781,6 +2826,21 @@ func (m *MockLiteGit) Var(name string) (string, error) {
 func (mr *MockLiteGitMockRecorder) Var(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Var", reflect.TypeOf((*MockLiteGit)(nil).Var), name)
+}
+
+// ExpandShortHash mocks base method
+func (m *MockLiteGit) ExpandShortHash(hash string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExpandShortHash", hash)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ExpandShortHash indicates an expected call of ExpandShortHash
+func (mr *MockLiteGitMockRecorder) ExpandShortHash(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExpandShortHash", reflect.TypeOf((*MockLiteGit)(nil).ExpandShortHash), hash)
 }
 
 // MockCommitTree is a mock of CommitTree interface

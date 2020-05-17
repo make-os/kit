@@ -92,6 +92,20 @@ var _ = Describe("RepoContext", func() {
 		})
 	})
 
+	Describe(".GetReferences", func() {
+		It("should return all references", func() {
+			testutil2.AppendCommit(path, "body", "content", "m1")
+			testutil2.CreateCheckoutBranch(path, "issues/1")
+			testutil2.AppendCommit(path, "body", "content", "m2")
+			refs, err := repo.GetReferences()
+			Expect(err).To(BeNil())
+			Expect(refs).To(HaveLen(3))
+			Expect(refs[0].String()).To(Equal("refs/heads/issues/1"))
+			Expect(refs[1].String()).To(Equal("refs/heads/master"))
+			Expect(refs[2].String()).To(Equal("HEAD"))
+		})
+	})
+
 	Describe(".NumIssueBranches", func() {
 		It("should return 1 when only one issue branch exists", func() {
 			testutil2.CreateCheckoutBranch(path, "issues/1")

@@ -93,6 +93,9 @@ type LocalRepo interface {
 	// SetPath sets the repository root path
 	SetPath(path string)
 
+	// GetReferences returns all references in the repo
+	GetReferences() (refs []plumbing.ReferenceName, err error)
+
 	// GetPath returns the repository's path
 	GetPath() string
 
@@ -173,6 +176,10 @@ type Commit interface {
 
 	// GetTree returns the tree from the commit
 	GetTree() (*object.Tree, error)
+
+	// File returns the file with the specified "path" in the commit and a
+	// nil error if the file exists.
+	File(path string) (*object.File, error)
 }
 
 type Remote struct {
@@ -554,6 +561,7 @@ type LiteGit interface {
 	GetRefRootCommit(ref string) (string, error)
 	GetRefCommits(ref string, noMerges bool) ([]string, error)
 	Var(name string) (string, error)
+	ExpandShortHash(hash string) (string, error)
 }
 
 type CommitTree interface {

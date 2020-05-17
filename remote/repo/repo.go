@@ -78,6 +78,20 @@ func (r *Repo) SetConfig(cfg *config.Config) error {
 	return r.Storer.SetConfig(cfg)
 }
 
+// GetReferences returns all references in the repo
+func (r *Repo) GetReferences() (refs []plumbing.ReferenceName, err error) {
+	itr, err := r.References()
+	if err != nil {
+		return nil, err
+	}
+	itr.ForEach(func(reference *plumbing.Reference) error {
+		refName := reference.Name()
+		refs = append(refs, refName)
+		return nil
+	})
+	return
+}
+
 // GetName returns the name of the repo
 func (r *Repo) GetName() string {
 	return r.Name

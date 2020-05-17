@@ -1,14 +1,18 @@
 package plumbing_test
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gohugoio/hugo/parser/pageparser"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	repo2 "gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
@@ -16,6 +20,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var _ = Describe("Post", func() {
@@ -25,8 +30,11 @@ var _ = Describe("Post", func() {
 	var repoName, path string
 	var close = true
 	var dontClose = false
+	var ctrl *gomock.Controller
+	var mockRepo *mocks.MockLocalRepo
 
 	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		cfg.Node.GitBinPath = "/usr/bin/git"
@@ -37,16 +45,106 @@ var _ = Describe("Post", func() {
 
 		repo, err = repo2.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
+
+		mockRepo = mocks.NewMockLocalRepo(ctrl)
 	})
 
 	AfterEach(func() {
+		ctrl.Finish()
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})
 
+	Describe("Posts.Reverse", func() {
+		It("should reverse posts", func() {
+			posts := plumbing.Posts{
+				{Title: "t1", First: nil},
+				{Title: "t2", First: nil},
+			}
+			posts.Reverse()
+			Expect(posts[0].Title).To(Equal("t2"))
+			Expect(posts[1].Title).To(Equal("t1"))
+		})
+	})
+
+	Describe("Posts.SortByFirstPostCreationTimeDesc", func() {
+		It("should sort by first post creation time", func() {
+			posts := plumbing.Posts{
+				{Title: "t1", First: &plumbing.Comment{Created: time.Now().Add(-1 * time.Minute)}},
+				{Title: "t2", First: &plumbing.Comment{Created: time.Now()}},
+			}
+			posts.SortByFirstPostCreationTimeDesc()
+			Expect(posts[0].Title).To(Equal("t2"))
+			Expect(posts[1].Title).To(Equal("t1"))
+		})
+	})
+
+	Describe("Comments.Reverse", func() {
+		It("should reverse posts", func() {
+			posts := plumbing.Comments{
+				{Author: "a1"},
+				{Author: "a2"},
+			}
+			posts.Reverse()
+			Expect(posts[0].Author).To(Equal("a2"))
+			Expect(posts[1].Author).To(Equal("a1"))
+		})
+	})
+
+	Describe("Comments.SortByFirstPostCreationTimeDesc", func() {
+		It("should sort by first post creation time", func() {
+			posts := plumbing.Comments{
+				{Author: "a1", Created: time.Now().Add(-1 * time.Minute)},
+				{Author: "a2", Created: time.Now()},
+			}
+			posts.SortByCreationTimeDesc()
+			Expect(posts[0].Author).To(Equal("a2"))
+			Expect(posts[1].Author).To(Equal("a1"))
+		})
+	})
+
 	Describe(".GetPosts", func() {
+		It("should return error when unable to get repo references", func() {
+			mockRepo.EXPECT().GetReferences().Return(nil, fmt.Errorf("error"))
+			_, err := plumbing.GetPosts(mockRepo, nil)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return error when unable to get an issue reference root commit hash", func() {
+			refs := []plumbing2.ReferenceName{plumbing2.ReferenceName("refs/heads/issues/1")}
+			mockRepo.EXPECT().GetReferences().Return(refs, nil)
+			mockRepo.EXPECT().GetRefRootCommit(refs[0].String()).Return("", fmt.Errorf("error"))
+			_, err := plumbing.GetPosts(mockRepo, func(ref plumbing2.ReferenceName) bool { return true })
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return error when unable to get first comment of issue reference", func() {
+			refs := []plumbing2.ReferenceName{plumbing2.ReferenceName("refs/heads/issues/1")}
+			mockRepo.EXPECT().GetReferences().Return(refs, nil)
+			rootHash := "e41db497eff0acf90c32a3a2560b76682a262fb4"
+			mockRepo.EXPECT().GetRefRootCommit(refs[0].String()).Return(rootHash, nil)
+			mockRepo.EXPECT().CommitObject(plumbing2.NewHash(rootHash)).Return(nil, fmt.Errorf("error"))
+			_, err := plumbing.GetPosts(mockRepo, func(ref plumbing2.ReferenceName) bool { return true })
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to get first comment: error"))
+		})
+
+		It("should return error when first comment commit signature cannot be decoded", func() {
+			refs := []plumbing2.ReferenceName{plumbing2.ReferenceName("refs/heads/issues/1")}
+			mockRepo.EXPECT().GetReferences().Return(refs, nil)
+			rootHash := "e41db497eff0acf90c32a3a2560b76682a262fb4"
+			mockRepo.EXPECT().GetRefRootCommit(refs[0].String()).Return(rootHash, nil)
+			commit := &object.Commit{PGPSignature: "malformed_signature"}
+			mockRepo.EXPECT().CommitObject(plumbing2.NewHash(rootHash)).Return(commit, nil)
+			_, err := plumbing.GetPosts(mockRepo, func(ref plumbing2.ReferenceName) bool { return true })
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("unable to decode first comment commit signature"))
+		})
+
 		It("should return empty slice when no post reference is found by filter", func() {
-			post, err := plumbing.GetPosts(repo, func(ref *plumbing2.Reference) bool { return false })
+			post, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool { return false })
 			Expect(err).To(BeNil())
 			Expect(post).To(BeEmpty())
 		})
@@ -55,8 +153,8 @@ var _ = Describe("Post", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text 1", "commit 1")
 			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
 			testutil2.AppendCommit(path, "body", "some text 1", "commit 1")
-			posts, err := plumbing.GetPosts(repo, func(ref *plumbing2.Reference) bool {
-				return strings.Contains(ref.Name().String(), "issues")
+			posts, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool {
+				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
 			})
 			Expect(err).To(BeNil())
 			Expect(posts).To(HaveLen(1))
@@ -66,8 +164,8 @@ var _ = Describe("Post", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text 1", "commit 1")
 			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
 			testutil2.AppendCommit(path, "some_file", "some text 1", "commit 1")
-			_, err := plumbing.GetPosts(repo, func(ref *plumbing2.Reference) bool {
-				return strings.Contains(ref.Name().String(), "issues")
+			_, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool {
+				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
 			})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("body file is missing in refs/heads/issues/1"))
@@ -77,11 +175,124 @@ var _ = Describe("Post", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text 1", "commit 1")
 			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
 			testutil2.AppendCommit(path, "body", "---\nbad body: {{}123\n---", "commit 2")
-			_, err := plumbing.GetPosts(repo, func(ref *plumbing2.Reference) bool {
-				return strings.Contains(ref.Name().String(), "issues")
+			_, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool {
+				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
 			})
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring("root commit of refs/heads/issues/1 has bad body file"))
+		})
+	})
+
+	Describe(".GetComments", func() {
+
+		It("should return error when unable to query comment commits", func() {
+			var post = &plumbing.Post{Repo: mockRepo, Name: plumbing.MakeIssueReference(1)}
+			mockRepo.EXPECT().GetRefCommits(post.Name, true).Return(nil, fmt.Errorf("error"))
+			_, err := post.GetComments()
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return error when unable to read a comment commit", func() {
+			var post = &plumbing.Post{Repo: mockRepo, Name: plumbing.MakeIssueReference(1)}
+			var commentHashes = []string{"e41db497eff0acf90c32a3a2560b76682a262fb4", "ce6fe17ea12b1c313c4868b4320cee41b9e20c07"}
+			mockRepo.EXPECT().GetRefCommits(post.Name, true).Return(commentHashes, nil)
+			mockRepo.EXPECT().CommitObject(plumbing2.NewHash(commentHashes[0])).Return(nil, fmt.Errorf("error"))
+			_, err := post.GetComments()
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("unable to read commit (" + commentHashes[0] + ")"))
+		})
+
+		It("should return error when comment commit has a signature the cannot be decoded", func() {
+			var post = &plumbing.Post{Repo: mockRepo, Name: plumbing.MakeIssueReference(1)}
+			var commentHashes = []string{"e41db497eff0acf90c32a3a2560b76682a262fb4"}
+			mockRepo.EXPECT().GetRefCommits(post.Name, true).Return(commentHashes, nil)
+			commit := &object.Commit{PGPSignature: "malformed signature"}
+			mockRepo.EXPECT().CommitObject(plumbing2.NewHash(commentHashes[0])).Return(commit, nil)
+			_, err := post.GetComments()
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("unable to decode commit (" + commentHashes[0] + ") signature"))
+		})
+
+		It("should return error when commit body file cannot be read", func() {
+			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
+			testutil2.AppendCommit(path, "useless_file", "---\n\n---\nthe content", "commit 1")
+			var post = &plumbing.Post{Repo: repo, Name: plumbing.MakeIssueReference(1)}
+			_, err := post.GetComments()
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(MatchRegexp("body file of commit (.*) is missing"))
+		})
+
+		It("should return error when commit body content cannot be parsed", func() {
+			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
+			testutil2.AppendCommit(path, "body", "---\nfield: {bad value}:a\n---", "commit 1")
+			var post = &plumbing.Post{Repo: repo, Name: plumbing.MakeIssueReference(1)}
+			_, err := post.GetComments()
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(MatchRegexp("commit (.*) has bad body file.*"))
+		})
+
+		It("should return error when attempt to expand ReplyTo hash fails", func() {
+			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
+			testutil2.AppendCommit(path, "body", "", "commit 1")
+			testutil2.AppendCommit(path, "body", "---\nreplyTo: bad_short_hash\n---\ncontent", "commit 1")
+			var post = &plumbing.Post{Repo: repo, Name: plumbing.MakeIssueReference(1)}
+			_, err := post.GetComments()
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(MatchRegexp("commit (.*) reply hash could not be expanded"))
+		})
+
+		It("should expand ReplyTo hash if it is short", func() {
+			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
+			testutil2.AppendCommit(path, "body", "", "commit 1")
+			recentHash := testutil2.GetRecentCommitHash(path, "issues/1")
+			testutil2.AppendCommit(path, "body", "---\nreplyTo: "+recentHash[:7]+"\n---\ncontent", "commit 1")
+			var post = &plumbing.Post{Repo: repo, Name: plumbing.MakeIssueReference(1)}
+			comments, err := post.GetComments()
+			Expect(err).To(BeNil())
+			Expect(comments[0].Body.ReplyTo).To(Equal(recentHash))
+		})
+
+		It("should return one comment when issue contains only one commit", func() {
+			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
+			testutil2.AppendCommit(path, "body", "---\n\n---\nthe content", "commit 1")
+			posts, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool {
+				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
+			})
+			Expect(err).To(BeNil())
+			Expect(posts[0].GetComments()).To(HaveLen(1))
+		})
+
+		It("should return two comments when issue contains two commits", func() {
+			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
+			testutil2.AppendCommit(path, "body", "---\n\n---\nthe content", "commit 1")
+			testutil2.AppendCommit(path, "body", "---\n\n---\ncontent updated", "commit 2")
+			posts, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool {
+				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
+			})
+			Expect(err).To(BeNil())
+			Expect(posts[0].GetComments()).To(HaveLen(2))
+		})
+
+		It("should return process reaction when a commit comment is a reply", func() {
+			testutil2.CreateCheckoutOrphanBranch(path, "issues/1")
+			testutil2.AppendCommit(path, "body", "", "commit 1")
+			recentHash := testutil2.GetRecentCommitHash(path, "issues/1")
+			testutil2.AppendCommit(path, "body", `---
+replyTo: `+recentHash+`
+reactions: ["smile","anger"]
+---
+content`, "commit 2")
+
+			posts, err := plumbing.GetPosts(repo, func(ref plumbing2.ReferenceName) bool {
+				return strings.Contains(ref.String(), plumbing.IssueBranchPrefix)
+			})
+			Expect(err).To(BeNil())
+			Expect(posts).To(HaveLen(1))
+			comments, err := posts[0].GetComments()
+			Expect(err).To(BeNil())
+			Expect(comments).To(HaveLen(2))
+			Expect(comments[1].GetReactions()).To(Equal(map[string]int{"smile": 1, "anger": 1}))
 		})
 	})
 
@@ -159,6 +370,134 @@ var _ = Describe("Post", func() {
 			Expect((&plumbing.IssueBody{}).RequiresUpdatePolicy()).To(BeFalse())
 			Expect((&plumbing.IssueBody{Close: &close}).RequiresUpdatePolicy()).To(BeTrue())
 			Expect((&plumbing.IssueBody{Close: &dontClose}).RequiresUpdatePolicy()).To(BeTrue())
+		})
+	})
+
+	Describe(".GetReactionsForComment", func() {
+		It("case 1", func() {
+			reactions := plumbing.ReactionMap{
+				"hash1": map[string]map[string]int{
+					"smile": {"push1": 1, "push2": 1},
+					"anger": {"push2": 1},
+				},
+			}
+			res := plumbing.GetReactionsForComment(reactions, "hash1")
+			Expect(res).To(Equal(map[string]int{"smile": 2, "anger": 1}))
+		})
+
+		It("should return zero (0) for a reaction whose total count is below zero", func() {
+			reactions := plumbing.ReactionMap{
+				"hash1": map[string]map[string]int{
+					"smile": {"push1": -2, "push2": 1},
+					"anger": {"push2": 1},
+				},
+			}
+			res := plumbing.GetReactionsForComment(reactions, "hash1")
+			Expect(res).To(Equal(map[string]int{"smile": 0, "anger": 1}))
+		})
+	})
+
+	Describe(".UpdateReactions", func() {
+		It("case 1", func() {
+			dst := map[string]map[string]map[string]int{}
+			plumbing.UpdateReactions([]string{"smile", "anger"}, "target1", "pusher1", dst)
+			Expect(dst).To(HaveKey("target1"))
+			Expect(dst["target1"]).To(HaveKey("smile"))
+			Expect(dst["target1"]).To(HaveKey("anger"))
+			Expect(dst["target1"]["smile"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["anger"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["smile"]["pusher1"]).To(Equal(1))
+			Expect(dst["target1"]["anger"]["pusher1"]).To(Equal(1))
+		})
+
+		It("case 2", func() {
+			dst := map[string]map[string]map[string]int{}
+			plumbing.UpdateReactions([]string{"smile", "anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"smile", "anger"}, "target1", "pusher1", dst)
+			Expect(dst).To(HaveKey("target1"))
+			Expect(dst["target1"]).To(HaveKey("smile"))
+			Expect(dst["target1"]).To(HaveKey("anger"))
+			Expect(dst["target1"]["smile"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["anger"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["smile"]["pusher1"]).To(Equal(2))
+			Expect(dst["target1"]["anger"]["pusher1"]).To(Equal(2))
+		})
+
+		It("case 3", func() {
+			dst := map[string]map[string]map[string]int{}
+			plumbing.UpdateReactions([]string{"smile", "anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"smile"}, "target1", "pusher1", dst)
+			Expect(dst).To(HaveKey("target1"))
+			Expect(dst["target1"]).To(HaveKey("smile"))
+			Expect(dst["target1"]).To(HaveKey("anger"))
+			Expect(dst["target1"]["smile"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["anger"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["smile"]["pusher1"]).To(Equal(2))
+			Expect(dst["target1"]["anger"]["pusher1"]).To(Equal(1))
+		})
+
+		It("case 4 - negation test", func() {
+			dst := map[string]map[string]map[string]int{}
+			plumbing.UpdateReactions([]string{"smile", "anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"smile", "anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"-anger"}, "target1", "pusher1", dst)
+			Expect(dst).To(HaveKey("target1"))
+			Expect(dst["target1"]).To(HaveKey("smile"))
+			Expect(dst["target1"]).To(HaveKey("anger"))
+			Expect(dst["target1"]["smile"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["anger"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["smile"]["pusher1"]).To(Equal(2))
+			Expect(dst["target1"]["anger"]["pusher1"]).To(Equal(1))
+		})
+
+		It("case 5 - negation test", func() {
+			dst := map[string]map[string]map[string]int{}
+			plumbing.UpdateReactions([]string{"smile", "anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"smile", "anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"-anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"-anger"}, "target1", "pusher1", dst)
+			Expect(dst).To(HaveKey("target1"))
+			Expect(dst["target1"]).To(HaveKey("smile"))
+			Expect(dst["target1"]).To(HaveKey("anger"))
+			Expect(dst["target1"]["smile"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["anger"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["smile"]["pusher1"]).To(Equal(2))
+			Expect(dst["target1"]["anger"]["pusher1"]).To(Equal(0))
+		})
+
+		It("case 6 - negation test", func() {
+			dst := map[string]map[string]map[string]int{}
+			plumbing.UpdateReactions([]string{"smile", "anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"smile", "anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"-anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"-anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"-anger"}, "target1", "pusher1", dst)
+			Expect(dst).To(HaveKey("target1"))
+			Expect(dst["target1"]).To(HaveKey("smile"))
+			Expect(dst["target1"]).To(HaveKey("anger"))
+			Expect(dst["target1"]["smile"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["anger"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["smile"]["pusher1"]).To(Equal(2))
+			Expect(dst["target1"]["anger"]["pusher1"]).To(Equal(-1))
+		})
+
+		It("case 7 - negation test", func() {
+			dst := map[string]map[string]map[string]int{}
+			plumbing.UpdateReactions([]string{"-anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"-anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"-anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"anger"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"smile"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"smile"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"smile"}, "target1", "pusher1", dst)
+			plumbing.UpdateReactions([]string{"anger"}, "target1", "pusher1", dst)
+			Expect(dst).To(HaveKey("target1"))
+			Expect(dst["target1"]).To(HaveKey("smile"))
+			Expect(dst["target1"]).To(HaveKey("anger"))
+			Expect(dst["target1"]["smile"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["anger"]).To(HaveKey("pusher1"))
+			Expect(dst["target1"]["smile"]["pusher1"]).To(Equal(3))
+			Expect(dst["target1"]["anger"]["pusher1"]).To(Equal(-1))
 		})
 	})
 })

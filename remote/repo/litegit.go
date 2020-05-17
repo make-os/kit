@@ -484,3 +484,15 @@ func (lg *LiteGit) Var(name string) (string, error) {
 	}
 	return strings.TrimSpace(string(out)), nil
 }
+
+// ExpandShortHash expands a short hash into its longer variant
+func (lg *LiteGit) ExpandShortHash(hash string) (string, error) {
+	args := []string{"rev-parse", hash}
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf(string(out))
+	}
+	return strings.TrimSpace(string(out)), nil
+}

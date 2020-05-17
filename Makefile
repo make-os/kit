@@ -43,7 +43,6 @@ genmocks:
 	mockgen -source=types/core/logic.go -destination=mocks/logic.go -package mocks && \
 	mockgen -source=dht/types/types.go -destination=mocks/dht.go -package mocks && \
 	mockgen -source=types/core/remote.go -destination=mocks/remote.go -package mocks && \
-    mockgen -source=types/tendermint.go -destination=mocks/tendermint.go -package mocks && \
     mockgen -source=ticket/types/types.go -destination=mocks/ticket.go -package mocks && \
     mockgen -source=types/mempool/mempool.go -destination=mocks/mempool.go -package mocks && \
     mockgen -source=keystore/types/types.go -destination=mocks/keystore.go -package mocks && \

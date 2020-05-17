@@ -537,4 +537,15 @@ var _ = Describe("Gitops", func() {
 			Expect(err).To(Equal(repo.ErrGitVarNotFound))
 		})
 	})
+
+	Describe(".ExpandShortHash", func() {
+		It("should return long version", func() {
+			testutil2.AppendCommit(path, "file.txt", "some text 1", "commit 1")
+			hash := testutil2.GetRecentCommitHash(path, "master")
+			Expect(hash).To(HaveLen(40))
+			res, err := r.ExpandShortHash(hash[:7])
+			Expect(err).To(BeNil())
+			Expect(res).To(Equal(hash))
+		})
+	})
 })

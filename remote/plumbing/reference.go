@@ -40,8 +40,8 @@ func IsNote(name string) bool {
 }
 
 // MakeIssueReference creates an issue reference
-func MakeIssueReference(id int) string {
-	return fmt.Sprintf("refs/heads/%s/%d", IssueBranchPrefix, id)
+func MakeIssueReference(id interface{}) string {
+	return fmt.Sprintf("refs/heads/%s/%v", IssueBranchPrefix, id)
 }
 
 // MakeIssueReferencePath returns the full issue reference path

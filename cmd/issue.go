@@ -15,6 +15,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -137,8 +138,52 @@ var issueListCmd = &cobra.Command{
 	},
 }
 
+// issueReadCmd represents a sub-command to read an issue
+var issueReadCmd = &cobra.Command{
+	Use:   "read",
+	Short: "Read all comments in an issue",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		limit, _ := cmd.Flags().GetInt("limit")
+		reverse, _ := cmd.Flags().GetBool("reverse")
+		dateFmt, _ := cmd.Flags().GetString("date")
+		format, _ := cmd.Flags().GetString("format")
+
+		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		issuePath := strings.ToLower(args[0])
+		if strings.HasPrefix(issuePath, plumbing.IssueBranchPrefix) {
+			issuePath = fmt.Sprintf("refs/heads/%s", issuePath)
+		}
+		if !plumbing.IsIssueReferencePath(issuePath) {
+			issuePath = plumbing.MakeIssueReference(issuePath)
+		}
+		if !plumbing.IsIssueReference(issuePath) {
+			log.Fatal(fmt.Sprintf("invalid issue name (%s)", args[0]))
+		}
+
+		if err = issuecmd.IssueReadCmd(targetRepo, &issuecmd.IssueReadArgs{
+			IssuePath:  issuePath,
+			Limit:      limit,
+			Reverse:    reverse,
+			DateFmt:    dateFmt,
+			Format:     format,
+			PagerWrite: issuecmd.WriteToPager,
+			PostGetter: plumbing.GetPosts,
+			StdOut:     os.Stdout,
+			StdErr:     os.Stderr,
+		}); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
 func init() {
 	issueCmd.AddCommand(issueCreateCmd)
+	issueCmd.AddCommand(issueReadCmd)
 	issueCmd.AddCommand(issueListCmd)
 	rootCmd.AddCommand(issueCmd)
 
@@ -155,8 +200,14 @@ func init() {
 	issueCreateCmd.Flags().BoolP("close", "c", false, "Close the issue")
 	issueCreateCmd.Flags().BoolP("open", "o", false, "Open a closed issue")
 
-	issueListCmd.Flags().IntP("limit", "n", 0, "Limit the number of issues returned")
-	issueListCmd.Flags().Bool("reverse", false, "Return the result in reversed order")
-	issueListCmd.Flags().StringP("date", "d", "Mon Jan _2 15:04:05 2006 -0700", "Set date format")
-	issueListCmd.Flags().StringP("format", "f", "", "Set output format")
+	var commonIssueFlags = func(commands ...*cobra.Command) {
+		for _, cmd := range commands {
+			cmd.Flags().IntP("limit", "n", 0, "Limit the number of records to returned")
+			cmd.Flags().Bool("reverse", false, "Return the result in reversed order")
+			cmd.Flags().StringP("date", "d", "Mon Jan _2 15:04:05 2006 -0700", "Set date format")
+			cmd.Flags().StringP("format", "f", "", "Set output format")
+		}
+	}
+
+	commonIssueFlags(issueListCmd, issueReadCmd)
 }

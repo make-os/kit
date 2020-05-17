@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
-	"sort"
 	"strings"
 	"time"
 
@@ -36,13 +35,16 @@ type IssueListArgs struct {
 
 	// Format specifies a format to use for generating each post output to Stdout.
 	// The following place holders are supported:
+	// - %i%    - Index of the post
 	// - %a% 	- Author of the post
 	// - %e% 	- Author email
 	// - %t% 	- Title of the post
-	// - %p% 	- A preview of the body
+	// - %c% 	- The body/preview of the post
 	// - %d% 	- Date of creation
 	// - %H%    - The full hash of the first comment
 	// - %h%    - The short hash of the first comment
+	// - %n%  	- The reference name of the post
+	// - %pk% 	- The pushers push key ID
 	Format string
 
 	StdOut io.Writer
@@ -53,23 +55,19 @@ type IssueListArgs struct {
 func IssueListCmd(targetRepo core.LocalRepo, args *IssueListArgs) error {
 
 	// Get issue posts
-	issues, err := args.PostGetter(targetRepo, func(ref *plumbing.Reference) bool {
-		return plumbing2.IsIssueReference(ref.Name().String())
+	issues, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
+		return plumbing2.IsIssueReference(ref.String())
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to get issue posts")
 	}
 
-	// Sort by latest
-	sort.Slice(issues, func(i, j int) bool {
-		return issues[i].Comment.Created.UnixNano() > issues[j].Comment.Created.UnixNano()
-	})
+	// Sort by their first post time
+	issues.SortByFirstPostCreationTimeDesc()
 
 	// Reverse issues if requested
 	if args.Reverse {
-		for i, j := 0, len(issues)-1; i < j; i, j = i+1, j-1 {
-			issues[i], issues[j] = issues[j], issues[i]
-		}
+		issues.Reverse()
 	}
 
 	// Limited the issues if requested
@@ -77,49 +75,61 @@ func IssueListCmd(targetRepo core.LocalRepo, args *IssueListArgs) error {
 		issues = issues[:args.Limit]
 	}
 
+	return formatAndPrintIssueList(targetRepo, args, issues)
+}
+
+func formatAndPrintIssueList(targetRepo core.LocalRepo, args *IssueListArgs, issues plumbing2.Posts) error {
 	buf := bytes.NewBuffer(nil)
 	for i, issue := range issues {
 
 		// Format date if date format is specified
-		date := issue.Comment.Created.String()
+		date := issue.First.Created.String()
 		if args.DateFmt != "" {
 			switch args.DateFmt {
 			case "unix":
-				date = fmt.Sprintf("%d", issue.Comment.Created.Unix())
+				date = fmt.Sprintf("%d", issue.First.Created.Unix())
 			case "utc":
-				date = issue.Comment.Created.UTC().String()
+				date = issue.First.Created.UTC().String()
 			case "rfc3339":
-				date = issue.Comment.Created.Format(time.RFC3339)
+				date = issue.First.Created.Format(time.RFC3339)
 			case "rfc822":
-				date = issue.Comment.Created.Format(time.RFC822)
+				date = issue.First.Created.Format(time.RFC822)
 			default:
-				date = issue.Comment.Created.Format(args.DateFmt)
+				date = issue.First.Created.Format(args.DateFmt)
 			}
 		}
 
+		pusherKeyFmt := ""
+		if issue.First.Pusher != "" {
+			pusherKeyFmt = "\nPusher: %pk%"
+		}
+
 		// Extract preview
-		preview := plumbing2.GetCommentPreview(issue.Comment)
+		preview := plumbing2.GetCommentPreview(issue.First)
 
 		// Get format or use default
 		var format = args.Format
 		if format == "" {
-			format = `` + color.YellowString("issue %H%") + `
-Author: %a% <%e%>
+			format = `` + color.YellowString("issue %H% %n%") + `
+Author: %a% <%e%>` + pusherKeyFmt + `
 Title:  %t%
 Date:   %d%
-%p%
+%c%
 `
 		}
 
 		// Define the data for format parsing
 		data := map[string]interface{}{
-			"a": issue.Comment.Author,
-			"e": issue.Comment.AuthorEmail,
-			"t": issue.Title,
-			"p": preview,
-			"d": date,
-			"H": issue.Comment.Hash,
-			"h": issue.Comment.Hash[:7],
+			"i":  i,
+			"a":  issue.First.Author,
+			"e":  issue.First.AuthorEmail,
+			"t":  issue.Title,
+			"c":  preview,
+			"d":  date,
+			"H":  issue.First.Hash,
+			"h":  issue.First.Hash[:7],
+			"n":  plumbing.ReferenceName(issue.Name).Short(),
+			"pk": issue.First.Pusher,
 		}
 
 		if i > 0 {
@@ -144,7 +154,6 @@ Date:   %d%
 	}
 
 	args.PagerWrite(pagerCmd, buf, args.StdOut, args.StdErr)
-
 	return nil
 }
 

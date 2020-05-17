@@ -53,6 +53,8 @@ var _ = Describe("Common", func() {
 		It("should create a valid issue reference", func() {
 			ref := plumbing.MakeIssueReference(1)
 			Expect(plumbing.IsIssueReference(ref)).To(BeTrue())
+			ref = plumbing.MakeIssueReference("1")
+			Expect(plumbing.IsIssueReference(ref)).To(BeTrue())
 		})
 	})
 

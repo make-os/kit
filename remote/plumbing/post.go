@@ -2,7 +2,10 @@ package plumbing
 
 import (
 	"encoding/json"
+	"encoding/pem"
 	"fmt"
+	"math"
+	"sort"
 	"strings"
 	"time"
 
@@ -10,90 +13,308 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
+	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/jdkato/prose.v2"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
+// Comments is a collection of Comment objects
+type Comments []*Comment
+
+// Reverse reverse the posts
+func (c *Comments) Reverse() {
+	for i, j := 0, len(*c)-1; i < j; i, j = i+1, j-1 {
+		(*c)[i], (*c)[j] = (*c)[j], (*c)[i]
+	}
+}
+
+// SortByCreationTimeDesc sorts the posts by their creation time in descending order
+func (c *Comments) SortByCreationTimeDesc() {
+	sort.Slice(*c, func(i, j int) bool {
+		return (*c)[i].Created.UnixNano() > (*c)[j].Created.UnixNano()
+	})
+}
+
 // Comment represent a reference post comment
 type Comment struct {
-	Created     time.Time
-	Hash        string
-	Author      string
-	AuthorEmail string
-	Signature   string
-	Body        *IssueBody
+	Created      time.Time
+	Reference    string
+	Hash         string
+	Author       string
+	AuthorEmail  string
+	Signature    string
+	Pusher       string
+	Body         *IssueBody
+	GetReactions func() map[string]int
 }
 
 // Post represents a reference post
 type Post struct {
-	Title   string
-	Comment *Comment
+	Repo core.LocalRepo
+
+	// Title is the title of the post
+	Title string
+
+	// Name is the full reference name of the post
+	Name string
+
+	// First is the first comment in the post (main comment).
+	First *Comment
 }
 
-// PostGetter describes a function for finding posts
-type PostGetter func(targetRepo core.LocalRepo, filter func(ref *plumbing.Reference) bool) (posts []Post, err error)
+// ReadBodyFromCommit reads the body file of a commit
+func ReadBodyFromCommit(repo core.LocalRepo, hash string) (*IssueBody, *object.Commit, error) {
+	commit, err := repo.CommitObject(plumbing.NewHash(hash))
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to read commit (%s)", hash)
+	}
 
-// GetPosts returns references that conform to the post protocol
-// filter is used to check whether a reference is a post reference.
-// Returns a slice of posts
-func GetPosts(targetRepo core.LocalRepo, filter func(ref *plumbing.Reference) bool) (posts []Post, err error) {
-	itr, err := targetRepo.References()
+	// Read the commit body file
+	f, err := commit.File("body")
+	if err != nil {
+		if err == object.ErrFileNotFound {
+			return nil, nil, fmt.Errorf("body file of commit (%s) is missing", hash)
+		}
+		return nil, nil, err
+	}
+
+	// Parse the body file
+	rdr, err := f.Reader()
+	if err != nil {
+		return nil, nil, err
+	}
+	cfm, err := pageparser.ParseFrontMatterAndContent(rdr)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "commit (%s) has bad body file", hash)
+	}
+
+	return IssueBodyFromContentFrontMatter(&cfm), commit, nil
+}
+
+// GetComment returns the comments in the post
+func (p *Post) GetComments() (comments Comments, err error) {
+	hashes, err := p.Repo.GetRefCommits(p.Name, true)
 	if err != nil {
 		return nil, err
 	}
 
-	err = itr.ForEach(func(ref *plumbing.Reference) error {
+	var reactions = ReactionMap{}
+	var pusherKeyID string
+
+	// process each comment commit
+	for _, hash := range hashes {
+		issueBody, commit, err := ReadBodyFromCommit(p.Repo, hash)
+		if err != nil {
+			return nil, err
+		}
+
+		// Get the pusher key from the signature header
+		if commit.PGPSignature != "" {
+			p, _ := pem.Decode([]byte(commit.PGPSignature))
+			if p == nil {
+				return nil, fmt.Errorf("unable to decode commit (%s) signature", hash)
+			}
+			pusherKeyID = p.Headers["pkID"]
+		}
+
+		// Expand reply hash
+		if issueBody.ReplyTo != "" {
+			issueBody.ReplyTo, err = p.Repo.ExpandShortHash(issueBody.ReplyTo)
+			if err != nil {
+				return nil, errors.Wrapf(err, "commit (%s) reply hash could not be expanded", hash)
+			}
+		}
+
+		comments = append(comments, &Comment{
+			Body:        issueBody,
+			Hash:        commit.Hash.String(),
+			Reference:   p.Name,
+			Created:     commit.Committer.When,
+			Author:      commit.Author.Name,
+			AuthorEmail: commit.Author.Email,
+			Signature:   commit.PGPSignature,
+			Pusher:      pusherKeyID,
+			GetReactions: func() map[string]int {
+				return GetReactionsForComment(reactions, commit.Hash.String())
+			},
+		})
+
+		// Compute and updates reactions if this comment replied with reaction(s)
+		if issueBody.ReplyTo != "" && len(issueBody.Reactions) > 0 {
+			UpdateReactions(issueBody.Reactions, issueBody.ReplyTo, pusherKeyID, reactions)
+		}
+	}
+
+	return
+}
+
+// IsClosed tells whether the post is closed by checking if the last
+// comment includes a "closed" directive.
+func (p *Post) IsClosed() (bool, error) {
+	ref, err := p.Repo.Reference(plumbing.ReferenceName(p.Name), false)
+	if err != nil {
+		return false, err
+	}
+
+	body, _, err := ReadBodyFromCommit(p.Repo, ref.Hash().String())
+	if err != nil {
+		return false, err
+	}
+
+	if body.Close != nil {
+		return *body.Close, nil
+	}
+
+	return false, nil
+}
+
+// GetReactionsForComment returns summed reactions of a comment.
+func GetReactionsForComment(reactions ReactionMap, hash string) map[string]int {
+	res := map[string]int{}
+	if commentReactions, ok := reactions[hash]; ok {
+		for r, pushersReactions := range commentReactions {
+			if _, ok := res[r]; !ok {
+				res[r] = 0
+			}
+			res[r] = int(math.Max(funk.Sum(funk.Values(pushersReactions)), 0))
+		}
+	}
+	return res
+}
+
+// ReactionMap represents mapping for reactions in an issue
+// commentHash: (reactionName: (pusherKeyID: count))
+type ReactionMap map[string]map[string]map[string]int
+
+// UpdateReactions calculates reactions for a target comment.
+// newReactions: are new reactions from a comment.
+// targetHash: the unique hash of the comment being reacted to.
+// pusherKeyID: the unique push key ID of the reactor.
+// dest: the map that contains the reaction data of which this function must update.
+func UpdateReactions(newReactions []string, targetHash, pusherKeyID string, dest ReactionMap) {
+	for _, reaction := range newReactions {
+		nonNegated := strings.TrimLeft(reaction, "-")
+
+		// Add target hash reactions map if not set
+		if dest[targetHash] == nil {
+			dest[targetHash] = map[string]map[string]int{}
+		}
+
+		// Add reaction map in the target map if not set
+		if dest[targetHash][nonNegated] == nil {
+			dest[targetHash][nonNegated] = map[string]int{}
+		}
+
+		// Add the pusher
+		if _, ok := dest[targetHash][nonNegated][pusherKeyID]; !ok {
+			dest[targetHash][nonNegated][pusherKeyID] = 0
+		}
+
+		// For negated reaction, decrement reaction count for the pusher.
+		if reaction[0] == '-' {
+			if _, ok := dest[targetHash][nonNegated]; ok {
+				dest[targetHash][nonNegated][pusherKeyID] -= 1
+			}
+			continue
+		}
+
+		// For non-negated reaction, increment reaction count for the pusher.
+		dest[targetHash][reaction][pusherKeyID] += 1
+	}
+}
+
+// Posts is a collection of Post
+type Posts []*Post
+
+// Reverse reverse the posts
+func (p *Posts) Reverse() {
+	for i, j := 0, len(*p)-1; i < j; i, j = i+1, j-1 {
+		(*p)[i], (*p)[j] = (*p)[j], (*p)[i]
+	}
+}
+
+// SortByFirstPostCreationTimeDesc sorts the posts by their first post creation time in descending order
+func (p *Posts) SortByFirstPostCreationTimeDesc() {
+	sort.Slice(*p, func(i, j int) bool {
+		return (*p)[i].First.Created.UnixNano() > (*p)[j].First.Created.UnixNano()
+	})
+}
+
+// PostGetter describes a function for finding posts
+type PostGetter func(targetRepo core.LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error)
+
+// GetPosts returns references that conform to the post protocol
+// filter is used to check whether a reference is a post reference.
+// Returns a slice of posts
+func GetPosts(targetRepo core.LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error) {
+	refs, err := targetRepo.GetReferences()
+	if err != nil {
+		return nil, err
+	}
+
+	var pusherKeyID string
+	for _, ref := range refs {
+		if ref.String() == "HEAD" {
+			continue
+		}
 
 		// Ignore references that the filter did not return true for
 		if filter != nil && !filter(ref) {
-			return nil
+			continue
 		}
 
-		root, err := targetRepo.GetRefRootCommit(ref.Name().String())
+		root, err := targetRepo.GetRefRootCommit(ref.String())
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		commit, err := targetRepo.CommitObject(plumbing.NewHash(root))
 		if err != nil {
-			return err
+			return nil, errors.Wrap(err, "failed to get first comment")
+		}
+
+		// Get the pusher key from the signature header
+		if commit.PGPSignature != "" {
+			p, _ := pem.Decode([]byte(commit.PGPSignature))
+			if p == nil {
+				return nil, fmt.Errorf("unable to decode first comment commit signature")
+			}
+			pusherKeyID = p.Headers["pkID"]
 		}
 
 		f, err := commit.File("body")
 		if err != nil {
 			if err == object.ErrFileNotFound {
-				return fmt.Errorf("body file is missing in %s", ref.Name().String())
+				return nil, fmt.Errorf("body file is missing in %s", ref.String())
 			}
-			return err
+			return nil, err
 		}
 		rdr, err := f.Reader()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		cfm, err := pageparser.ParseFrontMatterAndContent(rdr)
 		if err != nil {
-			return errors.Wrapf(err, "root commit of %s has bad body file", ref.Name().String())
+			return nil, errors.Wrapf(err, "root commit of %s has bad body file", ref.String())
 		}
 
 		fm := objx.New(cfm.FrontMatter)
-		posts = append(posts, Post{
+		posts = append(posts, &Post{
+			Name:  ref.String(),
 			Title: fm.Get("title").String(),
-			Comment: &Comment{
+			First: &Comment{
 				Body:        IssueBodyFromContentFrontMatter(&cfm),
 				Hash:        commit.Hash.String(),
 				Created:     commit.Committer.When,
 				Author:      commit.Author.Name,
 				AuthorEmail: commit.Author.Email,
 				Signature:   commit.PGPSignature,
+				Pusher:      pusherKeyID,
 			},
+			Repo: targetRepo,
 		})
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
 	}
 
 	return
@@ -112,11 +333,6 @@ func GetCommentPreview(comment *Comment) string {
 	}
 	return preview
 }
-
-const (
-	IssueStateClose = iota + 1
-	IssueStateOpen
-)
 
 type IssueBody struct {
 
