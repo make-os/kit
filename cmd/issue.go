@@ -151,6 +151,7 @@ var issueReadCmd = &cobra.Command{
 		dateFmt, _ := cmd.Flags().GetString("date")
 		format, _ := cmd.Flags().GetString("format")
 		noPager, _ := cmd.Flags().GetBool("no-pager")
+		noCloseStatus, _ := cmd.Flags().GetBool("no-close-status")
 
 		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
@@ -169,16 +170,17 @@ var issueReadCmd = &cobra.Command{
 		}
 
 		if err = issuecmd.IssueReadCmd(targetRepo, &issuecmd.IssueReadArgs{
-			IssuePath:  issuePath,
-			Limit:      limit,
-			Reverse:    reverse,
-			DateFmt:    dateFmt,
-			Format:     format,
-			PagerWrite: issuecmd.WriteToPager,
-			PostGetter: plumbing.GetPosts,
-			NoPager:    noPager,
-			StdOut:     os.Stdout,
-			StdErr:     os.Stderr,
+			IssuePath:     issuePath,
+			Limit:         limit,
+			Reverse:       reverse,
+			DateFmt:       dateFmt,
+			Format:        format,
+			PagerWrite:    issuecmd.WriteToPager,
+			PostGetter:    plumbing.GetPosts,
+			NoPager:       noPager,
+			NoCloseStatus: noCloseStatus,
+			StdOut:        os.Stdout,
+			StdErr:        os.Stderr,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -204,6 +206,7 @@ func init() {
 	issueCreateCmd.Flags().IntP("issue-id", "i", 0, "Specify a target issue number to create or add a comment")
 	issueCreateCmd.Flags().BoolP("close", "c", false, "Close the issue")
 	issueCreateCmd.Flags().BoolP("open", "o", false, "Open a closed issue")
+	issueReadCmd.Flags().Bool("no-close-status", false, "Hide the close status indicator")
 
 	var commonIssueFlags = func(commands ...*cobra.Command) {
 		for _, cmd := range commands {

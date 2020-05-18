@@ -60,6 +60,9 @@ type IssueReadArgs struct {
 	// NoPager indicates that output must not be piped into a pager
 	NoPager bool
 
+	// NoCloseStatus indicates that the close status must not be rendered
+	NoCloseStatus bool
+
 	StdOut io.Writer
 	StdErr io.Writer
 }
@@ -112,7 +115,7 @@ func formatAndPrintIssueComments(
 
 	padding := strings.Repeat(" ", 25)
 	closeFmt := color.New(color.Bold, color.BgBlue, color.FgWhite).Sprintf(padding + "CLOSED" + padding)
-	if isClosed {
+	if isClosed && !args.NoCloseStatus {
 		buf.WriteString(closeFmt)
 		buf.WriteString("\n")
 	}
@@ -232,7 +235,7 @@ Date:       %d%` + replyToFmt + `` + assigneeFmt + `` + labelsFmt + `` + reactio
 		buf.WriteString("\n")
 	}
 
-	if isClosed {
+	if isClosed && !args.NoCloseStatus {
 		buf.WriteString(closeFmt)
 	}
 
