@@ -57,6 +57,9 @@ type IssueReadArgs struct {
 	// - %cl% 	- Flag for close status of the post (true/false)
 	Format string
 
+	// NoPager indicates that output must not be piped into a pager
+	NoPager bool
+
 	StdOut io.Writer
 	StdErr io.Writer
 }
@@ -238,6 +241,11 @@ Date:       %d%` + replyToFmt + `` + assigneeFmt + `` + labelsFmt + `` + reactio
 		return err
 	}
 
-	args.PagerWrite(pagerCmd, buf, args.StdOut, args.StdErr)
+	if args.NoPager {
+		fmt.Fprint(args.StdOut, buf)
+	} else {
+		args.PagerWrite(pagerCmd, buf, args.StdOut, args.StdErr)
+	}
+
 	return nil
 }

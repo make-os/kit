@@ -117,6 +117,7 @@ var issueListCmd = &cobra.Command{
 		reverse, _ := cmd.Flags().GetBool("reverse")
 		dateFmt, _ := cmd.Flags().GetString("date")
 		format, _ := cmd.Flags().GetString("format")
+		noPager, _ := cmd.Flags().GetBool("no-pager")
 
 		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
@@ -130,6 +131,7 @@ var issueListCmd = &cobra.Command{
 			PostGetter: plumbing.GetPosts,
 			PagerWrite: issuecmd.WriteToPager,
 			Format:     format,
+			NoPager:    noPager,
 			StdOut:     os.Stdout,
 			StdErr:     os.Stderr,
 		}); err != nil {
@@ -148,6 +150,7 @@ var issueReadCmd = &cobra.Command{
 		reverse, _ := cmd.Flags().GetBool("reverse")
 		dateFmt, _ := cmd.Flags().GetString("date")
 		format, _ := cmd.Flags().GetString("format")
+		noPager, _ := cmd.Flags().GetBool("no-pager")
 
 		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
@@ -173,6 +176,7 @@ var issueReadCmd = &cobra.Command{
 			Format:     format,
 			PagerWrite: issuecmd.WriteToPager,
 			PostGetter: plumbing.GetPosts,
+			NoPager:    noPager,
 			StdOut:     os.Stdout,
 			StdErr:     os.Stderr,
 		}); err != nil {
@@ -187,6 +191,7 @@ func init() {
 	issueCmd.AddCommand(issueListCmd)
 	rootCmd.AddCommand(issueCmd)
 
+	issueCmd.PersistentFlags().Bool("no-pager", false, "Prevent output from being piped into a pager")
 	issueCreateCmd.Flags().StringP("title", "t", "", "The issue title (max. 250 B)")
 	issueCreateCmd.Flags().StringP("body", "b", "", "The issue message (max. 8 KB)")
 	issueCreateCmd.Flags().StringP("reply", "r", "", "Specify the hash of a comment to respond to")
