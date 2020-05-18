@@ -64,8 +64,20 @@ type Post struct {
 	First *Comment
 }
 
-// ReadBodyFromCommit reads the body file of a commit
-func ReadBodyFromCommit(repo core.LocalRepo, hash string) (*IssueBody, *object.Commit, error) {
+func (p *Post) FirstComment() *Comment {
+	return p.First
+}
+
+func (p *Post) GetTitle() string {
+	return p.Title
+}
+
+func (p *Post) GetName() string {
+	return p.Name
+}
+
+// ReadBody reads the body file of a commit
+func ReadBody(repo core.LocalRepo, hash string) (*IssueBody, *object.Commit, error) {
 	commit, err := repo.CommitObject(plumbing.NewHash(hash))
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to read commit (%s)", hash)
@@ -105,7 +117,7 @@ func (p *Post) GetComments() (comments Comments, err error) {
 
 	// process each comment commit
 	for _, hash := range hashes {
-		issueBody, commit, err := ReadBodyFromCommit(p.Repo, hash)
+		issueBody, commit, err := ReadBody(p.Repo, hash)
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +170,7 @@ func (p *Post) IsClosed() (bool, error) {
 		return false, err
 	}
 
-	body, _, err := ReadBodyFromCommit(p.Repo, ref.Hash().String())
+	body, _, err := ReadBody(p.Repo, ref.Hash().String())
 	if err != nil {
 		return false, err
 	}
@@ -226,7 +238,7 @@ func UpdateReactions(newReactions []string, targetHash, pusherKeyID string, dest
 }
 
 // Posts is a collection of Post
-type Posts []*Post
+type Posts []IPost
 
 // Reverse reverse the posts
 func (p *Posts) Reverse() {
@@ -238,7 +250,7 @@ func (p *Posts) Reverse() {
 // SortByFirstPostCreationTimeDesc sorts the posts by their first post creation time in descending order
 func (p *Posts) SortByFirstPostCreationTimeDesc() {
 	sort.Slice(*p, func(i, j int) bool {
-		return (*p)[i].First.Created.UnixNano() > (*p)[j].First.Created.UnixNano()
+		return (*p)[i].(*Post).First.Created.UnixNano() > (*p)[j].FirstComment().Created.UnixNano()
 	})
 }
 
@@ -431,4 +443,12 @@ func IssueBodyToString(body *IssueBody) string {
 	}
 
 	return fmt.Sprintf(str, args) + string(body.Content)
+}
+
+type IPost interface {
+	GetComments() (comments Comments, err error)
+	IsClosed() (bool, error)
+	GetTitle() string
+	GetName() string
+	FirstComment() *Comment
 }

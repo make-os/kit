@@ -86,29 +86,29 @@ func formatAndPrintIssueList(targetRepo core.LocalRepo, args *IssueListArgs, iss
 	for i, issue := range issues {
 
 		// Format date if date format is specified
-		date := issue.First.Created.String()
+		date := issue.FirstComment().Created.String()
 		if args.DateFmt != "" {
 			switch args.DateFmt {
 			case "unix":
-				date = fmt.Sprintf("%d", issue.First.Created.Unix())
+				date = fmt.Sprintf("%d", issue.FirstComment().Created.Unix())
 			case "utc":
-				date = issue.First.Created.UTC().String()
+				date = issue.FirstComment().Created.UTC().String()
 			case "rfc3339":
-				date = issue.First.Created.Format(time.RFC3339)
+				date = issue.FirstComment().Created.Format(time.RFC3339)
 			case "rfc822":
-				date = issue.First.Created.Format(time.RFC822)
+				date = issue.FirstComment().Created.Format(time.RFC822)
 			default:
-				date = issue.First.Created.Format(args.DateFmt)
+				date = issue.FirstComment().Created.Format(args.DateFmt)
 			}
 		}
 
 		pusherKeyFmt := ""
-		if issue.First.Pusher != "" {
+		if issue.FirstComment().Pusher != "" {
 			pusherKeyFmt = "\nPusher: %pk%"
 		}
 
 		// Extract preview
-		preview := plumbing2.GetCommentPreview(issue.First)
+		preview := plumbing2.GetCommentPreview(issue.FirstComment())
 
 		// Get format or use default
 		var format = args.Format
@@ -124,15 +124,15 @@ Date:   %d%
 		// Define the data for format parsing
 		data := map[string]interface{}{
 			"i":  i,
-			"a":  issue.First.Author,
-			"e":  issue.First.AuthorEmail,
-			"t":  issue.Title,
+			"a":  issue.FirstComment().Author,
+			"e":  issue.FirstComment().AuthorEmail,
+			"t":  issue.GetTitle(),
 			"c":  preview,
 			"d":  date,
-			"H":  issue.First.Hash,
-			"h":  issue.First.Hash[:7],
-			"n":  plumbing.ReferenceName(issue.Name).Short(),
-			"pk": issue.First.Pusher,
+			"H":  issue.FirstComment().Hash,
+			"h":  issue.FirstComment().Hash[:7],
+			"n":  plumbing.ReferenceName(issue.GetName()).Short(),
+			"pk": issue.FirstComment().Pusher,
 		}
 
 		if i > 0 {

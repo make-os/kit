@@ -88,7 +88,7 @@ func IssueReadCmd(targetRepo core.LocalRepo, args *IssueReadArgs) error {
 	// Get all comments in the issue
 	comments, err := issues[0].GetComments()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get comments")
 	}
 
 	// Reverse issues if requested
@@ -101,7 +101,7 @@ func IssueReadCmd(targetRepo core.LocalRepo, args *IssueReadArgs) error {
 		comments = comments[:args.Limit]
 	}
 
-	return formatAndPrintIssueComments(targetRepo, args, isClosed, issues[0].Title, comments)
+	return formatAndPrintIssueComments(targetRepo, args, isClosed, issues[0].GetTitle(), comments)
 }
 
 func formatAndPrintIssueComments(

@@ -55,8 +55,8 @@ var _ = Describe("IssueList", func() {
 		It("should sort issue posts by latest", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
-			posts := []*plumbing2.Post{
-				{
+			posts := []plumbing2.IPost{
+				&plumbing2.Post{
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
 						Body:    &plumbing2.IssueBody{},
@@ -64,7 +64,7 @@ var _ = Describe("IssueList", func() {
 						Hash:    hash1,
 					},
 				},
-				{
+				&plumbing2.Post{
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
 						Body:    &plumbing2.IssueBody{},
@@ -94,8 +94,8 @@ var _ = Describe("IssueList", func() {
 		It("should reverse issue when Reverse=true", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
-			posts := []*plumbing2.Post{
-				{
+			posts := []plumbing2.IPost{
+				&plumbing2.Post{
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
 						Body:    &plumbing2.IssueBody{},
@@ -103,7 +103,7 @@ var _ = Describe("IssueList", func() {
 						Hash:    hash1,
 					},
 				},
-				{
+				&plumbing2.Post{
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
 						Body:    &plumbing2.IssueBody{},
@@ -134,8 +134,8 @@ var _ = Describe("IssueList", func() {
 		It("should limit issue when Limit=1", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
-			posts := []*plumbing2.Post{
-				{
+			posts := []plumbing2.IPost{
+				&plumbing2.Post{
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
 						Body:    &plumbing2.IssueBody{},
@@ -143,7 +143,7 @@ var _ = Describe("IssueList", func() {
 						Hash:    hash1,
 					},
 				},
-				{
+				&plumbing2.Post{
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
 						Body:    &plumbing2.IssueBody{},

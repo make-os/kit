@@ -58,24 +58,24 @@ var _ = Describe("Post", func() {
 	Describe("Posts.Reverse", func() {
 		It("should reverse posts", func() {
 			posts := plumbing.Posts{
-				{Title: "t1", First: nil},
-				{Title: "t2", First: nil},
+				&plumbing.Post{Title: "t1", First: nil},
+				&plumbing.Post{Title: "t2", First: nil},
 			}
 			posts.Reverse()
-			Expect(posts[0].Title).To(Equal("t2"))
-			Expect(posts[1].Title).To(Equal("t1"))
+			Expect(posts[0].GetTitle()).To(Equal("t2"))
+			Expect(posts[1].GetTitle()).To(Equal("t1"))
 		})
 	})
 
 	Describe("Posts.SortByFirstPostCreationTimeDesc", func() {
 		It("should sort by first post creation time", func() {
 			posts := plumbing.Posts{
-				{Title: "t1", First: &plumbing.Comment{Created: time.Now().Add(-1 * time.Minute)}},
-				{Title: "t2", First: &plumbing.Comment{Created: time.Now()}},
+				&plumbing.Post{Title: "t1", First: &plumbing.Comment{Created: time.Now().Add(-1 * time.Minute)}},
+				&plumbing.Post{Title: "t2", First: &plumbing.Comment{Created: time.Now()}},
 			}
 			posts.SortByFirstPostCreationTimeDesc()
-			Expect(posts[0].Title).To(Equal("t2"))
-			Expect(posts[1].Title).To(Equal("t1"))
+			Expect(posts[0].(*plumbing.Post).Title).To(Equal("t2"))
+			Expect(posts[1].(*plumbing.Post).Title).To(Equal("t1"))
 		})
 	})
 
@@ -201,17 +201,6 @@ var _ = Describe("Post", func() {
 			_, err := post.GetComments()
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("unable to read commit (" + commentHashes[0] + ")"))
-		})
-
-		It("should return error when comment commit has a signature the cannot be decoded", func() {
-			var post = &plumbing.Post{Repo: mockRepo, Name: plumbing.MakeIssueReference(1)}
-			var commentHashes = []string{"e41db497eff0acf90c32a3a2560b76682a262fb4"}
-			mockRepo.EXPECT().GetRefCommits(post.Name, true).Return(commentHashes, nil)
-			commit := &object.Commit{PGPSignature: "malformed signature"}
-			mockRepo.EXPECT().CommitObject(plumbing2.NewHash(commentHashes[0])).Return(commit, nil)
-			_, err := post.GetComments()
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("unable to decode commit (" + commentHashes[0] + ") signature"))
 		})
 
 		It("should return error when commit body file cannot be read", func() {
