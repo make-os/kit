@@ -30,13 +30,6 @@ func (c *Comments) Reverse() {
 	}
 }
 
-// SortByCreationTimeDesc sorts the posts by their creation time in descending order
-func (c *Comments) SortByCreationTimeDesc() {
-	sort.Slice(*c, func(i, j int) bool {
-		return (*c)[i].Created.UnixNano() > (*c)[j].Created.UnixNano()
-	})
-}
-
 // Comment represent a reference post comment
 type Comment struct {
 	Created      time.Time

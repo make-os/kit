@@ -91,18 +91,6 @@ var _ = Describe("Post", func() {
 		})
 	})
 
-	Describe("Comments.SortByFirstPostCreationTimeDesc", func() {
-		It("should sort by first post creation time", func() {
-			posts := plumbing.Comments{
-				{Author: "a1", Created: time.Now().Add(-1 * time.Minute)},
-				{Author: "a2", Created: time.Now()},
-			}
-			posts.SortByCreationTimeDesc()
-			Expect(posts[0].Author).To(Equal("a2"))
-			Expect(posts[1].Author).To(Equal("a1"))
-		})
-	})
-
 	Describe(".GetPosts", func() {
 		It("should return error when unable to get repo references", func() {
 			mockRepo.EXPECT().GetReferences().Return(nil, fmt.Errorf("error"))
