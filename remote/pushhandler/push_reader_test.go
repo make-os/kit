@@ -8,9 +8,9 @@ import (
 
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/pushhandler"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	repo3 "gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	. "github.com/onsi/ginkgo"
@@ -34,7 +34,7 @@ var _ = Describe("PushReader", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
-	var repo core.LocalRepo
+	var repo types2.LocalRepo
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()

@@ -9,6 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -16,7 +17,7 @@ import (
 // insert a repo owner. UpsertOwnerContract implements ProposalContract.
 type UpsertOwnerContract struct {
 	core.Logic
-	tx          *core.TxRepoProposalUpsertOwner
+	tx          *txns.TxRepoProposalUpsertOwner
 	chainHeight uint64
 	contracts   *[]core.SystemContract
 }
@@ -27,13 +28,13 @@ func NewContract(contracts *[]core.SystemContract) *UpsertOwnerContract {
 }
 
 func (c *UpsertOwnerContract) CanExec(typ types.TxCode) bool {
-	return typ == core.TxTypeRepoProposalUpsertOwner
+	return typ == txns.TxTypeRepoProposalUpsertOwner
 }
 
 // Init initialize the contract
 func (c *UpsertOwnerContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*core.TxRepoProposalUpsertOwner)
+	c.tx = tx.(*txns.TxRepoProposalUpsertOwner)
 	c.chainHeight = curChainHeight
 	return c
 }
@@ -48,7 +49,7 @@ func (c *UpsertOwnerContract) Exec() error {
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	proposal := common2.MakeProposal(spk, repo, c.tx.ProposalID, c.tx.Value, c.chainHeight)
-	proposal.Action = core.TxTypeRepoProposalUpsertOwner
+	proposal.Action = txns.TxTypeRepoProposalUpsertOwner
 	proposal.ActionData = map[string][]byte{
 		constants.ActionDataKeyAddrs: util.ToBytes(c.tx.Addresses),
 		constants.ActionDataKeyVeto:  util.ToBytes(c.tx.Veto),

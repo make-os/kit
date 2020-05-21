@@ -10,8 +10,9 @@ import (
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/cmd"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/server"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -56,7 +57,7 @@ type SignTagArgs struct {
 
 // SignTagCmd creates an annotated tag, appends transaction information to its
 // message and signs it.
-func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo core.LocalRepo, args *SignTagArgs) error {
+func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo types2.LocalRepo, args *SignTagArgs) error {
 
 	gitFlags := pflag.NewFlagSet("git-tag", pflag.ExitOnError)
 	gitFlags.ParseErrorsWhitelist.UnknownFlags = true
@@ -101,7 +102,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo core.LocalRe
 	}
 
 	// Make the transaction parameter object
-	txDetail := &core.TxDetail{
+	txDetail := &types.TxDetail{
 		Fee:       util.String(args.Fee),
 		Nonce:     args.Nonce,
 		PushKeyID: args.PushKeyID,

@@ -5,6 +5,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 
 	"gitlab.com/makeos/mosdef/crypto"
@@ -41,37 +42,37 @@ func ValidateTx(tx types.BaseTx, i int, logic core.Logic) error {
 // Use -1 if tx is not part of a collection.
 func ValidateTxSanity(tx types.BaseTx, index int) error {
 	switch o := tx.(type) {
-	case *core.TxCoinTransfer:
+	case *txns.TxCoinTransfer:
 		return CheckTxCoinTransfer(o, index)
-	case *core.TxTicketPurchase:
+	case *txns.TxTicketPurchase:
 		return CheckTxTicketPurchase(o, index)
-	case *core.TxSetDelegateCommission:
+	case *txns.TxSetDelegateCommission:
 		return CheckTxSetDelegateCommission(o, index)
-	case *core.TxTicketUnbond:
+	case *txns.TxTicketUnbond:
 		return CheckTxUnbondTicket(o, index)
-	case *core.TxRepoCreate:
+	case *txns.TxRepoCreate:
 		return CheckTxRepoCreate(o, index)
-	case *core.TxRegisterPushKey:
+	case *txns.TxRegisterPushKey:
 		return CheckTxRegisterPushKey(o, index)
-	case *core.TxUpDelPushKey:
+	case *txns.TxUpDelPushKey:
 		return CheckTxUpDelPushKey(o, index)
-	case *core.TxPush:
+	case *txns.TxPush:
 		return CheckTxPush(o, index)
-	case *core.TxNamespaceAcquire:
+	case *txns.TxNamespaceAcquire:
 		return CheckTxNSAcquire(o, index)
-	case *core.TxNamespaceDomainUpdate:
+	case *txns.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdate(o, index)
-	case *core.TxRepoProposalUpsertOwner:
+	case *txns.TxRepoProposalUpsertOwner:
 		return CheckTxRepoProposalUpsertOwner(o, index)
-	case *core.TxRepoProposalVote:
+	case *txns.TxRepoProposalVote:
 		return CheckTxVote(o, index)
-	case *core.TxRepoProposalUpdate:
+	case *txns.TxRepoProposalUpdate:
 		return CheckTxRepoProposalUpdate(o, index)
-	case *core.TxRepoProposalSendFee:
+	case *txns.TxRepoProposalSendFee:
 		return CheckTxRepoProposalSendFee(o, index)
-	case *core.TxRepoProposalMergeRequest:
-		return CheckTxRepoProposalMergeRequest(o, index)
-	case *core.TxRepoProposalRegisterPushKey:
+	// case *core.TxRepoProposalMergeRequest:  TODO: remove?
+	// 	return CheckTxRepoProposalMergeRequest(o, index)
+	case *txns.TxRepoProposalRegisterPushKey:
 		return CheckTxRepoProposalRegisterPushKey(o, index)
 	default:
 		return feI(index, "type", "unsupported transaction type")
@@ -84,37 +85,37 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 // CONTRACT: Sender public key must be validated by the caller.
 func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 	switch o := tx.(type) {
-	case *core.TxCoinTransfer:
+	case *txns.TxCoinTransfer:
 		return CheckTxCoinTransferConsistency(o, index, logic)
-	case *core.TxTicketPurchase:
+	case *txns.TxTicketPurchase:
 		return CheckTxTicketPurchaseConsistency(o, index, logic)
-	case *core.TxSetDelegateCommission:
+	case *txns.TxSetDelegateCommission:
 		return CheckTxSetDelegateCommissionConsistency(o, index, logic)
-	case *core.TxTicketUnbond:
+	case *txns.TxTicketUnbond:
 		return CheckTxUnbondTicketConsistency(o, index, logic)
-	case *core.TxRepoCreate:
+	case *txns.TxRepoCreate:
 		return CheckTxRepoCreateConsistency(o, index, logic)
-	case *core.TxRegisterPushKey:
+	case *txns.TxRegisterPushKey:
 		return CheckTxRegisterPushKeyConsistency(o, index, logic)
-	case *core.TxUpDelPushKey:
+	case *txns.TxUpDelPushKey:
 		return CheckTxUpDelPushKeyConsistency(o, index, logic)
-	case *core.TxPush:
+	case *txns.TxPush:
 		return CheckTxPushConsistency(o, index, logic)
-	case *core.TxNamespaceAcquire:
+	case *txns.TxNamespaceAcquire:
 		return CheckTxNSAcquireConsistency(o, index, logic)
-	case *core.TxNamespaceDomainUpdate:
+	case *txns.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdateConsistency(o, index, logic)
-	case *core.TxRepoProposalUpsertOwner:
+	case *txns.TxRepoProposalUpsertOwner:
 		return CheckTxRepoProposalUpsertOwnerConsistency(o, index, logic)
-	case *core.TxRepoProposalVote:
+	case *txns.TxRepoProposalVote:
 		return CheckTxVoteConsistency(o, index, logic)
-	case *core.TxRepoProposalUpdate:
+	case *txns.TxRepoProposalUpdate:
 		return CheckTxRepoProposalUpdateConsistency(o, index, logic)
-	case *core.TxRepoProposalSendFee:
+	case *txns.TxRepoProposalSendFee:
 		return CheckTxRepoProposalSendFeeConsistency(o, index, logic)
-	case *core.TxRepoProposalMergeRequest:
-		return CheckTxRepoProposalMergeRequestConsistency(o, index, logic)
-	case *core.TxRepoProposalRegisterPushKey:
+	// case *core.TxRepoProposalMergeRequest: TODO: remove?
+	// 	return CheckTxRepoProposalMergeRequestConsistency(o, index, logic)
+	case *txns.TxRepoProposalRegisterPushKey:
 		return CheckTxRepoProposalRegisterPushKeyConsistency(o, index, logic)
 	default:
 		return feI(index, "type", "unsupported transaction type")

@@ -4,6 +4,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -11,7 +12,7 @@ import (
 // NamespaceDomainUpdateContract implements SystemContract.
 type NamespaceDomainUpdateContract struct {
 	core.Logic
-	tx          *core.TxNamespaceDomainUpdate
+	tx          *txns.TxNamespaceDomainUpdate
 	chainHeight uint64
 }
 
@@ -21,13 +22,13 @@ func NewContract() *NamespaceDomainUpdateContract {
 }
 
 func (c *NamespaceDomainUpdateContract) CanExec(typ types.TxCode) bool {
-	return typ == core.TxTypeNSDomainUpdate
+	return typ == txns.TxTypeNSDomainUpdate
 }
 
 // Init initialize the contract
 func (c *NamespaceDomainUpdateContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*core.TxNamespaceDomainUpdate)
+	c.tx = tx.(*txns.TxNamespaceDomainUpdate)
 	c.chainHeight = curChainHeight
 	return c
 }

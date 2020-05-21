@@ -10,6 +10,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/c-bata/go-prompt"
@@ -126,7 +127,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx = core.NewBareTxRegisterPushKey()
+	var tx = txns.NewBareTxRegisterPushKey()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
@@ -172,7 +173,7 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx = core.NewBareTxUpDelPushKey()
+	var tx = txns.NewBareTxUpDelPushKey()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
@@ -213,7 +214,7 @@ func (m *PushKeyModule) UnRegister(params map[string]interface{}, options ...int
 	var err error
 
 	// Decode parameters into a transaction object
-	var tx = core.NewBareTxUpDelPushKey()
+	var tx = txns.NewBareTxUpDelPushKey()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}

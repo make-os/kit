@@ -8,9 +8,8 @@ import (
 	"os"
 
 	"github.com/fatih/color"
+	"gitlab.com/makeos/mosdef/util"
 	"golang.org/x/crypto/scrypt"
-
-	"github.com/ellcrys/go-prompt"
 )
 
 var (
@@ -34,7 +33,10 @@ type Keystore struct {
 func New(dir string) *Keystore {
 	am := new(Keystore)
 	am.dir = dir
-	am.getPassword = prompt.Password
+	am.getPassword = func(s string, args ...interface{}) string {
+		s = fmt.Sprintf("\033[33m%s:\033[0m ", s)
+		return util.ReadInput(fmt.Sprintf(s, args...), &util.InputReaderArgs{Password: true})
+	}
 	am.out = os.Stdout
 	return am
 }

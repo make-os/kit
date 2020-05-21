@@ -717,4 +717,37 @@ var _ = Describe("Common", func() {
 			Expect(RemoveFromStringSlice([]string{"a", "b", "c"}, "d")).To(Equal([]string{"a", "b", "c"}))
 		})
 	})
+
+	Describe(".ParseContentFrontMatter", func() {
+		It("should return content only when content does not contain front matter", func() {
+			str := "content only"
+			cfm, err := ParseContentFrontMatter(strings.NewReader(str))
+			Expect(err).To(BeNil())
+			Expect(cfm.Content).To(Equal([]byte(str)))
+		})
+
+		It("should return content only when content does not contain front matter (case 2)", func() {
+			str := "co"
+			cfm, err := ParseContentFrontMatter(strings.NewReader(str))
+			Expect(err).To(BeNil())
+			Expect(cfm.Content).To(Equal([]byte(str)))
+		})
+
+		It("should return nil content when content is malformed", func() {
+			str := "---\nco"
+			cfm, err := ParseContentFrontMatter(strings.NewReader(str))
+			Expect(err).To(BeNil())
+			Expect(cfm.Content).To(BeNil())
+		})
+
+		It("should return front matter and content", func() {
+			str := "---\nage: 1000\n---\nxyz"
+			cfm, err := ParseContentFrontMatter(strings.NewReader(str))
+			Expect(err).To(BeNil())
+			Expect(cfm.Content).To(Equal([]byte("xyz")))
+			Expect(cfm.FrontMatter).To(Equal(map[string]interface{}{
+				"age": 1000,
+			}))
+		})
+	})
 })

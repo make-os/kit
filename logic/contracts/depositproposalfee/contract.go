@@ -5,13 +5,14 @@ import (
 	"gitlab.com/makeos/mosdef/logic/contracts/common"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 )
 
 // DepositProposalFeeContract is a system contract for adding deposit fee to a proposal.
 // DepositProposalFeeContract implements SystemContract.
 type DepositProposalFeeContract struct {
 	core.Logic
-	tx          *core.TxRepoProposalSendFee
+	tx          *txns.TxRepoProposalSendFee
 	chainHeight uint64
 	contracts   []core.SystemContract
 }
@@ -22,13 +23,13 @@ func NewContract() *DepositProposalFeeContract {
 }
 
 func (c *DepositProposalFeeContract) CanExec(typ types.TxCode) bool {
-	return typ == core.TxTypeRepoProposalSendFee
+	return typ == txns.TxTypeRepoProposalSendFee
 }
 
 // Init initialize the contract
 func (c *DepositProposalFeeContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*core.TxRepoProposalSendFee)
+	c.tx = tx.(*txns.TxRepoProposalSendFee)
 	c.chainHeight = curChainHeight
 	return c
 }

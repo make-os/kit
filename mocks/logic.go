@@ -13,7 +13,6 @@ import (
 	types0 "gitlab.com/makeos/mosdef/ticket/types"
 	types1 "gitlab.com/makeos/mosdef/types"
 	core "gitlab.com/makeos/mosdef/types/core"
-	mempool "gitlab.com/makeos/mosdef/types/mempool"
 	state "gitlab.com/makeos/mosdef/types/state"
 	util "gitlab.com/makeos/mosdef/util"
 	reflect "reflect"
@@ -915,10 +914,10 @@ func (mr *MockAtomicLogicMockRecorder) Cfg() *gomock.Call {
 }
 
 // GetMempoolReactor mocks base method
-func (m *MockAtomicLogic) GetMempoolReactor() mempool.MempoolReactor {
+func (m *MockAtomicLogic) GetMempoolReactor() core.MempoolReactor {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMempoolReactor")
-	ret0, _ := ret[0].(mempool.MempoolReactor)
+	ret0, _ := ret[0].(core.MempoolReactor)
 	return ret0
 }
 
@@ -929,7 +928,7 @@ func (mr *MockAtomicLogicMockRecorder) GetMempoolReactor() *gomock.Call {
 }
 
 // SetMempoolReactor mocks base method
-func (m *MockAtomicLogic) SetMempoolReactor(mr mempool.MempoolReactor) {
+func (m *MockAtomicLogic) SetMempoolReactor(mr core.MempoolReactor) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetMempoolReactor", mr)
 }
@@ -1280,10 +1279,10 @@ func (mr *MockLogicMockRecorder) Cfg() *gomock.Call {
 }
 
 // GetMempoolReactor mocks base method
-func (m *MockLogic) GetMempoolReactor() mempool.MempoolReactor {
+func (m *MockLogic) GetMempoolReactor() core.MempoolReactor {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMempoolReactor")
-	ret0, _ := ret[0].(mempool.MempoolReactor)
+	ret0, _ := ret[0].(core.MempoolReactor)
 	return ret0
 }
 
@@ -1294,7 +1293,7 @@ func (mr *MockLogicMockRecorder) GetMempoolReactor() *gomock.Call {
 }
 
 // SetMempoolReactor mocks base method
-func (m *MockLogic) SetMempoolReactor(mr mempool.MempoolReactor) {
+func (m *MockLogic) SetMempoolReactor(mr core.MempoolReactor) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetMempoolReactor", mr)
 }
@@ -1604,17 +1603,17 @@ func (m *MockSystemContract) EXPECT() *MockSystemContractMockRecorder {
 }
 
 // Init mocks base method
-func (m *MockSystemContract) Init(logic core.Logic, tx types1.BaseTx, curChainHeight uint64) core.SystemContract {
+func (m *MockSystemContract) Init(arg0 core.Logic, arg1 types1.BaseTx, arg2 uint64) core.SystemContract {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Init", logic, tx, curChainHeight)
+	ret := m.ctrl.Call(m, "Init", arg0, arg1, arg2)
 	ret0, _ := ret[0].(core.SystemContract)
 	return ret0
 }
 
 // Init indicates an expected call of Init
-func (mr *MockSystemContractMockRecorder) Init(logic, tx, curChainHeight interface{}) *gomock.Call {
+func (mr *MockSystemContractMockRecorder) Init(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockSystemContract)(nil).Init), logic, tx, curChainHeight)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockSystemContract)(nil).Init), arg0, arg1, arg2)
 }
 
 // CanExec mocks base method
@@ -1669,17 +1668,17 @@ func (m *MockProposalContract) EXPECT() *MockProposalContractMockRecorder {
 }
 
 // Init mocks base method
-func (m *MockProposalContract) Init(logic core.Logic, tx types1.BaseTx, curChainHeight uint64) core.SystemContract {
+func (m *MockProposalContract) Init(arg0 core.Logic, arg1 types1.BaseTx, arg2 uint64) core.SystemContract {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Init", logic, tx, curChainHeight)
+	ret := m.ctrl.Call(m, "Init", arg0, arg1, arg2)
 	ret0, _ := ret[0].(core.SystemContract)
 	return ret0
 }
 
 // Init indicates an expected call of Init
-func (mr *MockProposalContractMockRecorder) Init(logic, tx, curChainHeight interface{}) *gomock.Call {
+func (mr *MockProposalContractMockRecorder) Init(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockProposalContract)(nil).Init), logic, tx, curChainHeight)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockProposalContract)(nil).Init), arg0, arg1, arg2)
 }
 
 // CanExec mocks base method

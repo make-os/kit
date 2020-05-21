@@ -16,6 +16,7 @@ import (
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 )
 
 var _ = Describe("ProposalVoteContract", func() {
@@ -50,8 +51,8 @@ var _ = Describe("ProposalVoteContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := voteproposal.NewContract()
-			Expect(ct.CanExec(core.TxTypeRepoProposalVote)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeRegisterPushKey)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeRepoProposalVote)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeRegisterPushKey)).To(BeFalse())
 		})
 	})
 
@@ -80,8 +81,8 @@ var _ = Describe("ProposalVoteContract", func() {
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-					TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+				err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					RepoName:   repoName,
 					ProposalID: propID,
 					Vote:       state.ProposalVoteYes,
@@ -106,8 +107,8 @@ var _ = Describe("ProposalVoteContract", func() {
 					logic.RepoKeeper().Update(repoName, repoUpd)
 
 					// Vote 1
-					err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-						TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+						TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 						RepoName:   repoName,
 						ProposalID: propID,
 						Vote:       state.ProposalVoteNoWithVeto,
@@ -115,8 +116,8 @@ var _ = Describe("ProposalVoteContract", func() {
 					Expect(err).To(BeNil())
 
 					// Vote 2
-					err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-						TxCommon:   &core.TxCommon{SenderPubKey: key2.PubKey().ToPublicKey(), Fee: "1.5"},
+					err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+						TxCommon:   &txns.TxCommon{SenderPubKey: key2.PubKey().ToPublicKey(), Fee: "1.5"},
 						RepoName:   repoName,
 						ProposalID: propID,
 						Vote:       state.ProposalVoteYes,
@@ -144,8 +145,8 @@ var _ = Describe("ProposalVoteContract", func() {
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-					TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+				err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					RepoName:   repoName,
 					ProposalID: propID,
 					Vote:       state.ProposalVoteYes,
@@ -173,8 +174,8 @@ var _ = Describe("ProposalVoteContract", func() {
 				mockTickMgr.EXPECT().ValueOfNonDelegatedTickets(sender.PubKey().MustBytes32(), uint64(0)).Return(float64(100), nil)
 				logic.SetTicketManager(mockTickMgr)
 
-				err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-					TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+				err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					RepoName:   repoName,
 					ProposalID: propID,
 					Vote:       state.ProposalVoteYes,
@@ -202,8 +203,8 @@ var _ = Describe("ProposalVoteContract", func() {
 				mockTickMgr.EXPECT().ValueOfDelegatedTickets(sender.PubKey().MustBytes32(), uint64(0)).Return(float64(100), nil)
 				logic.SetTicketManager(mockTickMgr)
 
-				err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-					TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+				err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					RepoName:   repoName,
 					ProposalID: propID,
 					Vote:       state.ProposalVoteYes,
@@ -241,8 +242,8 @@ var _ = Describe("ProposalVoteContract", func() {
 
 				When("vote is ProposalVoteYes", func() {
 					It("should increment proposal.Yes by 30", func() {
-						err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-							TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+						err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+							TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 							RepoName:   repoName,
 							ProposalID: propID,
 							Vote:       state.ProposalVoteYes,
@@ -254,8 +255,8 @@ var _ = Describe("ProposalVoteContract", func() {
 
 				When("vote is ProposalVoteNo", func() {
 					It("should increment proposal.Yes by 30", func() {
-						err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-							TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+						err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+							TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 							RepoName:   repoName,
 							ProposalID: propID,
 							Vote:       state.ProposalVoteNo,
@@ -268,8 +269,8 @@ var _ = Describe("ProposalVoteContract", func() {
 
 				When("vote is Abstain", func() {
 					It("should increment proposal.Yes by 30", func() {
-						err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-							TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+						err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+							TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 							RepoName:   repoName,
 							ProposalID: propID,
 							Vote:       state.ProposalVoteAbstain,
@@ -282,8 +283,8 @@ var _ = Describe("ProposalVoteContract", func() {
 
 				When("vote is NoWithVeto", func() {
 					It("should increment proposal.Yes by 30", func() {
-						err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-							TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+						err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+							TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 							RepoName:   repoName,
 							ProposalID: propID,
 							Vote:       state.ProposalVoteNoWithVeto,
@@ -321,8 +322,8 @@ var _ = Describe("ProposalVoteContract", func() {
 					MustBytes32(), uint64(0)).Return(tickets, nil)
 				logic.SetTicketManager(mockTickMgr)
 
-				err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-					TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+				err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					RepoName:   repoName,
 					ProposalID: propID,
 					Vote:       state.ProposalVoteYes,
@@ -363,8 +364,8 @@ var _ = Describe("ProposalVoteContract", func() {
 					MustBytes32(), uint64(0)).Return(tickets, nil)
 				logic.SetTicketManager(mockTickMgr)
 
-				err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-					TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+				err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					RepoName:   repoName,
 					ProposalID: propID,
 					Vote:       state.ProposalVoteYes,
@@ -408,8 +409,8 @@ var _ = Describe("ProposalVoteContract", func() {
 				logic.RepoKeeper().IndexProposalVote(repoName, propID,
 					key2.Addr().String(), state.ProposalVoteYes)
 
-				err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-					TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+				err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					RepoName:   repoName,
 					ProposalID: propID,
 					Vote:       state.ProposalVoteYes,
@@ -450,8 +451,8 @@ var _ = Describe("ProposalVoteContract", func() {
 					MustBytes32(), uint64(0)).Return(tickets, nil)
 				logic.SetTicketManager(mockTickMgr)
 
-				err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-					TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+				err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					RepoName:   repoName,
 					ProposalID: propID,
 					Vote:       state.ProposalVoteYes,
@@ -494,8 +495,8 @@ var _ = Describe("ProposalVoteContract", func() {
 				logic.RepoKeeper().IndexProposalVote(repoName, propID,
 					key2.Addr().String(), state.ProposalVoteYes)
 
-				err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-					TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+				err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					RepoName:   repoName,
 					ProposalID: propID,
 					Vote:       state.ProposalVoteNo,
@@ -536,8 +537,8 @@ var _ = Describe("ProposalVoteContract", func() {
 					MustBytes32(), uint64(0)).Return(tickets, nil)
 				logic.SetTicketManager(mockTickMgr)
 
-				err = voteproposal.NewContract().Init(logic, &core.TxRepoProposalVote{
-					TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+				err = voteproposal.NewContract().Init(logic, &txns.TxRepoProposalVote{
+					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
 					RepoName:   repoName,
 					ProposalID: propID,
 					Vote:       state.ProposalVoteNoWithVeto,

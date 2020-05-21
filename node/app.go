@@ -16,6 +16,7 @@ import (
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 	"gitlab.com/makeos/mosdef/validators"
 )
@@ -47,7 +48,7 @@ type App struct {
 	unsavedValidators         []*core.Validator
 	heightToSaveNewValidators int64
 	unIdxTxs                  []types.BaseTx
-	unIdxRepoPropVotes        []*core.TxRepoProposalVote
+	unIdxRepoPropVotes        []*txns.TxRepoProposalVote
 	newRepos                  []string
 	unIdxClosedMergeProposal  []*mergeProposalInfo
 }
@@ -139,7 +140,7 @@ func (a *App) SetOption(req abcitypes.RequestSetOption) abcitypes.ResponseSetOpt
 func (a *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 
 	// Decode the transaction in byte form to types.BaseTx
-	tx, err := core.DecodeTx(req.Tx)
+	tx, err := txns.DecodeTx(req.Tx)
 	if err != nil {
 		return abcitypes.ResponseCheckTx{
 			Code: types.ErrCodeTxBadEncode,
@@ -191,7 +192,7 @@ func (a *App) preExecChecks(tx types.BaseTx) *abcitypes.ResponseDeliverTx {
 	// Invalidate the transaction if it is a validator ticket acquisition tx and
 	// we have reached the maximum per block.
 	// TODO: Slash proposer for violating the rule.
-	if tx.Is(core.TxTypeValidatorTicket) &&
+	if tx.Is(txns.TxTypeValidatorTicket) &&
 		len(a.unIdxValidatorTickets) == params.MaxValTicketsPerBlock {
 		return respDeliverTx(types.ErrCodeMaxTxTypeReached,
 			"failed to execute tx: validator ticket capacity reached")
@@ -211,27 +212,27 @@ func (a *App) postExecChecks(
 	}
 
 	switch o := tx.(type) {
-	case *core.TxTicketPurchase:
-		if o.Is(core.TxTypeValidatorTicket) {
+	case *txns.TxTicketPurchase:
+		if o.Is(txns.TxTypeValidatorTicket) {
 			a.unIdxValidatorTickets = append(a.unIdxValidatorTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 		} else {
 			a.unIdxHostTickets = append(a.unIdxHostTickets, &ticketInfo{Tx: tx, index: a.txIndex})
 		}
 
-	case *core.TxTicketUnbond:
+	case *txns.TxTicketUnbond:
 		a.unbondHostReqs = append(a.unbondHostReqs, o.TicketHash)
 
-	case *core.TxRepoCreate:
+	case *txns.TxRepoCreate:
 		a.newRepos = append(a.newRepos, o.Name)
 
-	case *core.TxRepoProposalVote:
+	case *txns.TxRepoProposalVote:
 		a.unIdxRepoPropVotes = append(a.unIdxRepoPropVotes, o)
 
-	case *core.TxPush:
+	case *txns.TxPush:
 		for _, ref := range o.PushNote.GetPushedReferences() {
 			if ref.MergeProposalID != "" {
 				a.unIdxClosedMergeProposal = append(a.unIdxClosedMergeProposal, &mergeProposalInfo{
-					repo:       o.PushNote.RepoName,
+					repo:       o.PushNote.GetRepoName(),
 					proposalID: ref.MergeProposalID,
 				})
 			}
@@ -253,7 +254,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	a.txIndex++
 
 	// Decode transaction to types.BaseTx
-	tx, err := core.DecodeTx(req.Tx)
+	tx, err := txns.DecodeTx(req.Tx)
 	if err != nil {
 		return *respDeliverTx(types.ErrCodeTxBadEncode, "unable to decode to types.BaseTx")
 	}
@@ -475,7 +476,7 @@ func (a *App) reset() {
 	a.txIndex = 0
 	a.isCurrentBlockProposer = false
 	a.unIdxTxs = []types.BaseTx{}
-	a.unIdxRepoPropVotes = []*core.TxRepoProposalVote{}
+	a.unIdxRepoPropVotes = []*txns.TxRepoProposalVote{}
 	a.newRepos = []string{}
 	a.unIdxClosedMergeProposal = []*mergeProposalInfo{}
 

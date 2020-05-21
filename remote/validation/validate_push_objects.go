@@ -14,6 +14,8 @@ import (
 	types2 "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/params"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
+	"gitlab.com/makeos/mosdef/remote/pushpool/types"
+	types4 "gitlab.com/makeos/mosdef/remote/types"
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -22,21 +24,21 @@ import (
 )
 
 // CheckPushNoteSyntax performs syntactic checks on the fields of a push transaction
-func CheckPushNoteSyntax(tx *core.PushNote) error {
+func CheckPushNoteSyntax(tx types.PushNotice) error {
 
-	if tx.RepoName == "" {
+	if tx.GetRepoName() == "" {
 		return util.FieldError("repo", "repo name is required")
 	}
-	if util.IsValidName(tx.RepoName) != nil {
+	if util.IsValidName(tx.GetRepoName()) != nil {
 		return util.FieldError("repo", "repo name is not valid")
 	}
 
-	if tx.Namespace != "" && util.IsValidName(tx.Namespace) != nil {
+	if tx.GetNamespace() != "" && util.IsValidName(tx.GetNamespace()) != nil {
 		return util.FieldError("namespace", "namespace is not valid")
 	}
 
 	fe := fe
-	for i, ref := range tx.References {
+	for i, ref := range tx.GetPushedReferences() {
 		if ref.Name == "" {
 			return fe(i, "references.name", "name is required")
 		}
@@ -77,38 +79,38 @@ func CheckPushNoteSyntax(tx *core.PushNote) error {
 		}
 	}
 
-	if len(tx.PushKeyID) == 0 {
+	if len(tx.GetPusherKeyID()) == 0 {
 		return util.FieldError("pusherKeyId", "push key id is required")
 	}
-	if len(tx.PushKeyID) != 20 {
+	if len(tx.GetPusherKeyID()) != 20 {
 		return util.FieldError("pusherKeyId", "push key id is not valid")
 	}
 
-	if tx.Timestamp == 0 {
+	if tx.GetTimestamp() == 0 {
 		return util.FieldError("timestamp", "timestamp is required")
 	}
-	if tx.Timestamp > time.Now().Unix() {
+	if tx.GetTimestamp() > time.Now().Unix() {
 		return util.FieldError("timestamp", "timestamp cannot be a future time")
 	}
 
-	if tx.PusherAcctNonce == 0 {
+	if tx.GetPusherAccountNonce() == 0 {
 		return util.FieldError("accountNonce", "account nonce must be greater than zero")
 	}
 
-	if tx.NodePubKey.IsEmpty() {
+	if tx.GetNodePubKey().IsEmpty() {
 		return util.FieldError("nodePubKey", "push node public key is required")
 	}
 
-	pk, err := crypto.PubKeyFromBytes(tx.NodePubKey.Bytes())
+	pk, err := crypto.PubKeyFromBytes(tx.GetNodePubKey().Bytes())
 	if err != nil {
 		return util.FieldError("nodePubKey", "push node public key is not valid")
 	}
 
-	if len(tx.NodeSig) == 0 {
+	if len(tx.GetNodeSignature()) == 0 {
 		return util.FieldError("nodeSig", "push node signature is required")
 	}
 
-	if ok, err := pk.Verify(tx.BytesNoSig(), tx.NodeSig); err != nil || !ok {
+	if ok, err := pk.Verify(tx.BytesNoSig(), tx.GetNodeSignature()); err != nil || !ok {
 		return util.FieldError("nodeSig", "failed to verify signature")
 	}
 
@@ -117,8 +119,8 @@ func CheckPushNoteSyntax(tx *core.PushNote) error {
 
 // CheckPushedReferenceConsistency validates pushed references
 func CheckPushedReferenceConsistency(
-	targetRepo core.LocalRepo,
-	ref *core.PushedReference,
+	targetRepo types.LocalRepo,
+	ref *types.PushedReference,
 	repo *state.Repository) error {
 
 	name, nonce := ref.Name, ref.Nonce
@@ -161,18 +163,18 @@ func CheckPushedReferenceConsistency(
 
 // GetTxDetailsFromNote creates a slice of TxDetail objects from a push note.
 // Limit to references specified in targetRefs
-func GetTxDetailsFromNote(note *core.PushNote, targetRefs ...string) (details []*core.TxDetail) {
-	for _, ref := range note.References {
+func GetTxDetailsFromNote(note types.PushNotice, targetRefs ...string) (details []*types4.TxDetail) {
+	for _, ref := range note.GetPushedReferences() {
 		if len(targetRefs) > 0 && !funk.ContainsString(targetRefs, ref.Name) {
 			continue
 		}
-		detail := &core.TxDetail{
-			RepoName:        note.RepoName,
-			RepoNamespace:   note.Namespace,
+		detail := &types4.TxDetail{
+			RepoName:        note.GetRepoName(),
+			RepoNamespace:   note.GetNamespace(),
 			Reference:       ref.Name,
 			Fee:             ref.Fee,
-			Nonce:           note.PusherAcctNonce,
-			PushKeyID:       crypto.BytesToPushKeyID(note.PushKeyID),
+			Nonce:           note.GetPusherAccountNonce(),
+			PushKeyID:       crypto.BytesToPushKeyID(note.GetPusherKeyID()),
 			Signature:       base58.Encode(ref.PushSig),
 			MergeProposalID: ref.MergeProposalID,
 		}
@@ -187,7 +189,7 @@ func GetTxDetailsFromNote(note *core.PushNote, targetRefs ...string) (details []
 // CheckPushNoteConsistency performs consistency checks against the state of the
 // repository as seen by the node. If the target repo object is not set in tx,
 // local reference hash comparision is not performed.
-func CheckPushNoteConsistency(note *core.PushNote, logic core.Logic) error {
+func CheckPushNoteConsistency(note types.PushNotice, logic core.Logic) error {
 
 	// Ensure the repository exist
 	repo := logic.RepoKeeper().Get(note.GetRepoName())
@@ -197,35 +199,35 @@ func CheckPushNoteConsistency(note *core.PushNote, logic core.Logic) error {
 	}
 
 	// If namespace is provide, ensure it exists
-	if note.Namespace != "" {
-		ns := logic.NamespaceKeeper().Get(util.HashNamespace(note.Namespace))
+	if note.GetNamespace() != "" {
+		ns := logic.NamespaceKeeper().Get(util.HashNamespace(note.GetNamespace()))
 		if ns.IsNil() {
-			return util.FieldError("namespace", fmt.Sprintf("namespace '%s' is unknown", note.Namespace))
+			return util.FieldError("namespace", fmt.Sprintf("namespace '%s' is unknown", note.GetNamespace()))
 		}
 		if !funk.ContainsString(funk.Values(ns.Domains).([]string), util.RepoIDPrefix+note.GetRepoName()) {
-			return util.FieldError("repo", fmt.Sprintf("repo not a target in namespace '%s'", note.Namespace))
+			return util.FieldError("repo", fmt.Sprintf("repo not a target in namespace '%s'", note.GetNamespace()))
 		}
 	}
 
 	// Get push key of the pusher
-	pushKey := logic.PushKeyKeeper().Get(crypto.BytesToPushKeyID(note.PushKeyID))
+	pushKey := logic.PushKeyKeeper().Get(crypto.BytesToPushKeyID(note.GetPusherKeyID()))
 	if pushKey.IsNil() {
-		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", note.PushKeyID)
+		msg := fmt.Sprintf("pusher's public key id '%s' is unknown", note.GetPusherKeyID())
 		return util.FieldError("pusherKeyId", msg)
 	}
 
 	// Ensure the push key linked address matches the pusher address
-	if pushKey.Address != note.PusherAddress {
+	if pushKey.Address != note.GetPusherAddress() {
 		return util.FieldError("pusherAddr", "push key does not belong to pusher")
 	}
 
 	// Ensure next pusher account nonce matches the note's account nonce
-	pusherAcct := logic.AccountKeeper().Get(note.PusherAddress)
+	pusherAcct := logic.AccountKeeper().Get(note.GetPusherAddress())
 	if pusherAcct.IsNil() {
 		return util.FieldError("pusherAddr", "pusher account not found")
-	} else if note.PusherAcctNonce != pusherAcct.Nonce+1 {
+	} else if note.GetPusherAccountNonce() != pusherAcct.Nonce+1 {
 		msg := fmt.Sprintf("wrong account nonce '%d', expecting '%d'",
-			note.PusherAcctNonce, pusherAcct.Nonce+1)
+			note.GetPusherAccountNonce(), pusherAcct.Nonce+1)
 		return util.FieldError("accountNonce", msg)
 	}
 
@@ -249,8 +251,8 @@ func CheckPushNoteConsistency(note *core.PushNote, logic core.Logic) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
-	if err = logic.DrySend(note.PusherAddress, "0", note.GetFee(),
-		note.PusherAcctNonce, uint64(bi.Height)); err != nil {
+	if err = logic.DrySend(note.GetPusherAddress(), "0", note.GetFee(),
+		note.GetPusherAccountNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}
 
@@ -258,16 +260,16 @@ func CheckPushNoteConsistency(note *core.PushNote, logic core.Logic) error {
 }
 
 // PushNoteCheckFunc describes a function for checking a push note
-type PushNoteCheckFunc func(tx core.RepoPushNote, dht types2.DHTNode, logic core.Logic) error
+type PushNoteCheckFunc func(tx types.PushNotice, dht types2.DHTNode, logic core.Logic) error
 
 // CheckPushNote performs validation checks on a push transaction
-func CheckPushNote(tx core.RepoPushNote, dht types2.DHTNode, logic core.Logic) error {
+func CheckPushNote(tx types.PushNotice, dht types2.DHTNode, logic core.Logic) error {
 
-	if err := CheckPushNoteSyntax(tx.(*core.PushNote)); err != nil {
+	if err := CheckPushNoteSyntax(tx.(*types.PushNote)); err != nil {
 		return err
 	}
 
-	if err := CheckPushNoteConsistency(tx.(*core.PushNote), logic); err != nil {
+	if err := CheckPushNoteConsistency(tx.(*types.PushNote), logic); err != nil {
 		return err
 	}
 
@@ -280,7 +282,7 @@ func CheckPushNote(tx core.RepoPushNote, dht types2.DHTNode, logic core.Logic) e
 }
 
 // CheckPushEndorsement performs sanity checks on the given PushEndorsement object
-func CheckPushEndorsement(pushEnd *core.PushEndorsement, index int) error {
+func CheckPushEndorsement(pushEnd *types.PushEndorsement, index int) error {
 
 	// Push note id must be set
 	if pushEnd.NoteID.IsEmpty() {
@@ -300,7 +302,7 @@ func CheckPushEndorsement(pushEnd *core.PushEndorsement, index int) error {
 // EXPECT: Sanity check to have been performed using CheckPushEndorsement
 func CheckPushEndConsistencyUsingHost(
 	hosts types3.SelectedTickets,
-	pushEnd *core.PushEndorsement,
+	pushEnd *types.PushEndorsement,
 	logic core.Logic,
 	noSigCheck bool,
 	index int) error {
@@ -330,7 +332,7 @@ func CheckPushEndConsistencyUsingHost(
 // CheckPushEndConsistency performs consistency checks on the given PushEndorsement object
 // against the current state of the network.
 // EXPECT: Sanity check to have been performed using CheckPushEndorsement
-func CheckPushEndConsistency(pushEnd *core.PushEndorsement, logic core.Logic, noSigCheck bool, index int) error {
+func CheckPushEndConsistency(pushEnd *types.PushEndorsement, logic core.Logic, noSigCheck bool, index int) error {
 	hosts, err := logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
 	if err != nil {
 		return errors.Wrap(err, "failed to get top hosts")
@@ -339,7 +341,7 @@ func CheckPushEndConsistency(pushEnd *core.PushEndorsement, logic core.Logic, no
 }
 
 // CheckPushEnd performs sanity and state consistency checks on the given PushEndorsement object
-func CheckPushEnd(pushEnd *core.PushEndorsement, logic core.Logic, index int) error {
+func CheckPushEnd(pushEnd *types.PushEndorsement, logic core.Logic, index int) error {
 	if err := CheckPushEndorsement(pushEnd, index); err != nil {
 		return err
 	}
@@ -352,7 +354,7 @@ func CheckPushEnd(pushEnd *core.PushEndorsement, logic core.Logic, index int) er
 // FetchAndCheckReferenceObjects attempts to fetch and store new objects
 // introduced by the pushed references. After fetching it performs checks
 // on the objects
-func FetchAndCheckReferenceObjects(tx core.RepoPushNote, dhtnode types2.DHTNode) error {
+func FetchAndCheckReferenceObjects(tx types.PushNotice, dhtnode types2.DHTNode) error {
 	objectsSize := int64(0)
 
 	for _, objHash := range tx.GetPushedObjects() {

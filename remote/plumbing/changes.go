@@ -3,6 +3,7 @@ package plumbing
 import (
 	"strings"
 
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -245,7 +246,7 @@ func (s *State) GetChanges(y core.BareRepoState) *core.Changes {
 // GetRepoState returns the state of the repository
 // repo: The target repository
 // options: Allows the caller to configure how and what state are gathered
-func GetRepoState(repo core.LocalRepo, options ...core.KVOption) core.BareRepoState {
+func GetRepoState(repo types2.LocalRepo, options ...core.KVOption) core.BareRepoState {
 
 	refMatch := ""
 	if opt := GetKVOpt("match", options); opt != nil {

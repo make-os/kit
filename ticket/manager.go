@@ -8,6 +8,7 @@ import (
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 
 	"gitlab.com/makeos/mosdef/crypto"
@@ -35,7 +36,7 @@ func NewManager(db storage.Tx, cfg *config.AppConfig, logic core.Logic) *Manager
 // Index takes a tx and creates a ticket out of it
 func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error {
 
-	t := tx.(*core.TxTicketPurchase)
+	t := tx.(*txns.TxTicketPurchase)
 
 	ticket := &tickettypes.Ticket{
 		Type:           tx.GetType(),
@@ -69,7 +70,7 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 	ticket.MatureBy = blockHeight + uint64(params.MinTicketMatDur)
 
 	// Only validator tickets have a pre-determined decay height
-	if t.Is(core.TxTypeValidatorTicket) {
+	if t.Is(txns.TxTypeValidatorTicket) {
 		ticket.DecayBy = ticket.MatureBy + uint64(params.MaxTicketActiveDur)
 	}
 
@@ -83,12 +84,12 @@ func (m *Manager) Index(tx types.BaseTx, blockHeight uint64, txIndex int) error 
 
 // GetTopHosts gets host tickets with the most total delegated value.
 func (m *Manager) GetTopHosts(limit int) (tickettypes.SelectedTickets, error) {
-	return m.getTopTickets(core.TxTypeHostTicket, limit)
+	return m.getTopTickets(txns.TxTypeHostTicket, limit)
 }
 
 // GetTopValidators gets validator tickets with the most total delegated value.
 func (m *Manager) GetTopValidators(limit int) (tickettypes.SelectedTickets, error) {
-	return m.getTopTickets(core.TxTypeValidatorTicket, limit)
+	return m.getTopTickets(txns.TxTypeValidatorTicket, limit)
 }
 
 // getTopTickets finds tickets with the most delegated value
@@ -206,7 +207,7 @@ func (m *Manager) GetNonDecayedTickets(pubKey util.Bytes32, maturityHeight uint6
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) && // not decayed
+				(t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) && // not decayed
 			(t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String()) // is delegator or not
 	})
 
@@ -223,7 +224,7 @@ func (m *Manager) CountActiveValidatorTickets() (int, error) {
 	}
 
 	count := m.s.Count(func(t *tickettypes.Ticket) bool {
-		return t.Type == core.TxTypeValidatorTicket &&
+		return t.Type == txns.TxTypeValidatorTicket &&
 			t.MatureBy <= uint64(bi.Height) &&
 			t.DecayBy > uint64(bi.Height)
 	})
@@ -249,7 +250,7 @@ func (m *Manager) GetNonDelegatedTickets(
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.Type == ticketType &&
 			t.MatureBy <= uint64(bi.Height) &&
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) &&
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator == ""
 	})
@@ -280,7 +281,7 @@ func (m *Manager) ValueOfNonDelegatedTickets(
 
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight &&
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) &&
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator == ""
 	})
@@ -317,7 +318,7 @@ func (m *Manager) ValueOfDelegatedTickets(
 
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight &&
-			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) &&
+			(t.DecayBy > uint64(bi.Height) || (t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) &&
 			t.ProposerPubKey == pubKey &&
 			t.Delegator != ""
 	})
@@ -360,7 +361,7 @@ func (m *Manager) ValueOfTickets(
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) && // not decayed
+				(t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) && // not decayed
 			(t.ProposerPubKey == pubKey || t.Delegator == pk.Addr().String()) // is delegated or not
 	})
 
@@ -393,7 +394,7 @@ func (m *Manager) ValueOfAllTickets(maturityHeight uint64) (float64, error) {
 	result := m.s.Query(func(t *tickettypes.Ticket) bool {
 		return t.MatureBy <= maturityHeight && // is mature
 			(t.DecayBy > uint64(bi.Height) ||
-				(t.DecayBy == 0 && t.Type == core.TxTypeHostTicket)) // not decayed
+				(t.DecayBy == 0 && t.Type == txns.TxTypeHostTicket)) // not decayed
 	})
 
 	var sum = decimal.Zero

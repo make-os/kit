@@ -7,8 +7,10 @@ import (
 	"github.com/tendermint/tendermint/privval"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
+	pushpool2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	types4 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 
 	"gitlab.com/makeos/mosdef/logic/keepers"
@@ -327,7 +329,7 @@ var _ = Describe("App", func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return nil
 				}
-				tx := core.NewCoinTransferTx(0, sender.Addr(), sender, "10", "1", 1)
+				tx := txns.NewCoinTransferTx(0, sender.Addr(), sender, "10", "1", 1)
 				expectedHash = tx.GetHash()
 				res = app.CheckTx(abcitypes.RequestCheckTx{Tx: tx.Bytes()})
 			})
@@ -344,7 +346,7 @@ var _ = Describe("App", func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return fmt.Errorf("bad error")
 				}
-				tx := core.NewCoinTransferTx(0, sender.Addr(), sender, "10", "1", 1)
+				tx := txns.NewCoinTransferTx(0, sender.Addr(), sender, "10", "1", 1)
 				res = app.CheckTx(abcitypes.RequestCheckTx{Tx: tx.Bytes()})
 			})
 
@@ -398,7 +400,7 @@ var _ = Describe("App", func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return fmt.Errorf("validation error")
 				}
-				tx := core.NewCoinTransferTx(0, sender.Addr(), sender, "10", "1", 1)
+				tx := txns.NewCoinTransferTx(0, sender.Addr(), sender, "10", "1", 1)
 				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
 			})
 
@@ -415,7 +417,7 @@ var _ = Describe("App", func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error { return nil }
 				params.MaxValTicketsPerBlock = 1
 				app.unIdxValidatorTickets = append(app.unIdxValidatorTickets, &ticketInfo{})
-				tx := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
+				tx := txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 				res = app.DeliverTx(abcitypes.RequestDeliverTx{Tx: tx.Bytes()})
 			})
 
@@ -429,7 +431,7 @@ var _ = Describe("App", func() {
 		When("tx type is TxTypeValidatorTicket and is successfully executed", func() {
 			BeforeEach(func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error { return nil }
-				tx := core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
+				tx := txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 
 				mockLogic.AtomicLogic.EXPECT().ExecTx(gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
@@ -445,7 +447,7 @@ var _ = Describe("App", func() {
 		When("tx type is TxTypeHostTicket and response code=0", func() {
 			BeforeEach(func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error { return nil }
-				tx := core.NewBareTxTicketPurchase(core.TxTypeHostTicket)
+				tx := txns.NewBareTxTicketPurchase(txns.TxTypeHostTicket)
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.AtomicLogic.EXPECT().ExecTx(gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
@@ -462,7 +464,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error { return nil }
 				app.curWorkingBlock.Height = int64(10)
-				tx := core.NewBareTxTicketUnbond(core.TxTypeUnbondHostTicket)
+				tx := txns.NewBareTxTicketUnbond(txns.TxTypeUnbondHostTicket)
 				tx.TicketHash = util.StrToBytes32("tid")
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.AtomicLogic.EXPECT().ExecTx(gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
@@ -478,10 +480,10 @@ var _ = Describe("App", func() {
 
 	Describe(".postExecChecks", func() {
 		When("tx is TxRepoCreate", func() {
-			var tx *core.TxRepoCreate
+			var tx *txns.TxRepoCreate
 
 			BeforeEach(func() {
-				tx = core.NewBareTxRepoCreate()
+				tx = txns.NewBareTxRepoCreate()
 				tx.Name = "repo1"
 				resp := &abcitypes.ResponseDeliverTx{}
 				app.postExecChecks(tx, resp)
@@ -498,10 +500,10 @@ var _ = Describe("App", func() {
 		})
 
 		When("tx is TxRepoProposalVote", func() {
-			var tx *core.TxRepoProposalVote
+			var tx *txns.TxRepoProposalVote
 
 			BeforeEach(func() {
-				tx = core.NewBareRepoProposalVote()
+				tx = txns.NewBareRepoProposalVote()
 				tx.RepoName = "repo1"
 				resp := &abcitypes.ResponseDeliverTx{}
 				app.postExecChecks(tx, resp)
@@ -518,12 +520,12 @@ var _ = Describe("App", func() {
 		})
 
 		When("tx is TxPush with a reference with merge proposal id", func() {
-			var tx *core.TxPush
+			var tx *txns.TxPush
 
 			BeforeEach(func() {
-				tx = core.NewBareTxPush()
-				tx.PushNote.RepoName = "repo1"
-				tx.PushNote.References = []*core.PushedReference{
+				tx = txns.NewBareTxPush()
+				tx.PushNote.(*pushpool2.PushNote).RepoName = "repo1"
+				tx.PushNote.(*pushpool2.PushNote).References = []*pushpool2.PushedReference{
 					{MergeProposalID: "0001"},
 				}
 				resp := &abcitypes.ResponseDeliverTx{}
@@ -572,7 +574,7 @@ var _ = Describe("App", func() {
 				mockLogic.AtomicLogic.EXPECT().Discard().Return()
 				mockLogic.AtomicLogic.EXPECT().TxKeeper().Return(mockLogic.TxKeeper).AnyTimes()
 				app.logic = mockLogic.AtomicLogic
-				app.unIdxTxs = append(app.unIdxTxs, core.NewBareTxCoinTransfer())
+				app.unIdxTxs = append(app.unIdxTxs, txns.NewBareTxCoinTransfer())
 			})
 
 			It("should panic", func() {
@@ -623,14 +625,14 @@ var _ = Describe("App", func() {
 
 			var valTicketInfo *ticketInfo
 			var hostTicketInfo *ticketInfo
-			var valTicketTx, hostTicketTx *core.TxTicketPurchase
+			var valTicketTx, hostTicketTx *txns.TxTicketPurchase
 
 			BeforeEach(func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("app_hash")).Times(1)
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 
-				valTicketTx = core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
-				hostTicketTx = core.NewBareTxTicketPurchase(core.TxTypeHostTicket)
+				valTicketTx = txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
+				hostTicketTx = txns.NewBareTxTicketPurchase(txns.TxTypeHostTicket)
 				valTicketInfo = &ticketInfo{Tx: valTicketTx, index: 1}
 				hostTicketInfo = &ticketInfo{Tx: hostTicketTx, index: 2}
 				app.unIdxValidatorTickets = append(app.unIdxValidatorTickets, valTicketInfo)

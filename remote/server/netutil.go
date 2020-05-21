@@ -14,7 +14,8 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/remote/pushhandler"
-	"gitlab.com/makeos/mosdef/types/core"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp/sideband"
 )
 
@@ -22,10 +23,10 @@ import (
 type RequestContext struct {
 	W           http.ResponseWriter
 	R           *http.Request
-	TxDetails   []*core.TxDetail
+	TxDetails   []*types.TxDetail
 	PolEnforcer policy.EnforcerFunc
 	PushHandler *pushhandler.Handler
-	Repo        core.LocalRepo
+	Repo        types2.LocalRepo
 	RepoDir     string
 	Operation   string
 	ServiceName string

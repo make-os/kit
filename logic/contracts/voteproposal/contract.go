@@ -8,13 +8,14 @@ import (
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 )
 
 // ProposalVoteContract is a system contract for adding a vote on a proposal.
 // ProposalVoteContract implements SystemContract.
 type ProposalVoteContract struct {
 	core.Logic
-	tx          *core.TxRepoProposalVote
+	tx          *txns.TxRepoProposalVote
 	chainHeight uint64
 	contracts   []core.SystemContract
 }
@@ -25,13 +26,13 @@ func NewContract() *ProposalVoteContract {
 }
 
 func (c *ProposalVoteContract) CanExec(typ types.TxCode) bool {
-	return typ == core.TxTypeRepoProposalVote
+	return typ == txns.TxTypeRepoProposalVote
 }
 
 // Init initialize the contract
 func (c *ProposalVoteContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*core.TxRepoProposalVote)
+	c.tx = tx.(*txns.TxRepoProposalVote)
 	c.chainHeight = curChainHeight
 	return c
 }

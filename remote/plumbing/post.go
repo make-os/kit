@@ -1,7 +1,6 @@
 package plumbing
 
 import (
-	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"math"
@@ -14,10 +13,13 @@ import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/types/core"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/types/common"
+	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/jdkato/prose.v2"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
+	"gopkg.in/yaml.v2"
 )
 
 // Comments is a collection of Comment objects
@@ -39,13 +41,13 @@ type Comment struct {
 	AuthorEmail  string
 	Signature    string
 	Pusher       string
-	Body         *IssueBody
+	Body         *PostBody
 	GetReactions func() map[string]int
 }
 
 // Post represents a reference post
 type Post struct {
-	Repo core.LocalRepo
+	Repo types2.LocalRepo
 
 	// Title is the title of the post
 	Title string
@@ -70,7 +72,7 @@ func (p *Post) GetName() string {
 }
 
 // ReadBody reads the body file of a commit
-func ReadBody(repo core.LocalRepo, hash string) (*IssueBody, *object.Commit, error) {
+func ReadBody(repo types2.LocalRepo, hash string) (*PostBody, *object.Commit, error) {
 	commit, err := repo.CommitObject(plumbing.NewHash(hash))
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to read commit (%s)", hash)
@@ -90,12 +92,12 @@ func ReadBody(repo core.LocalRepo, hash string) (*IssueBody, *object.Commit, err
 	if err != nil {
 		return nil, nil, err
 	}
-	cfm, err := pageparser.ParseFrontMatterAndContent(rdr)
+	cfm, err := util.ParseContentFrontMatter(rdr)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "commit (%s) has bad body file", hash)
 	}
 
-	return IssueBodyFromContentFrontMatter(&cfm), commit, nil
+	return PostBodyFromContentFrontMatter(&cfm), commit, nil
 }
 
 // GetComment returns the comments in the post
@@ -110,7 +112,7 @@ func (p *Post) GetComments() (comments Comments, err error) {
 
 	// process each comment commit
 	for _, hash := range hashes {
-		issueBody, commit, err := ReadBody(p.Repo, hash)
+		body, commit, err := ReadBody(p.Repo, hash)
 		if err != nil {
 			return nil, err
 		}
@@ -125,15 +127,15 @@ func (p *Post) GetComments() (comments Comments, err error) {
 		}
 
 		// Expand reply hash
-		if issueBody.ReplyTo != "" {
-			issueBody.ReplyTo, err = p.Repo.ExpandShortHash(issueBody.ReplyTo)
+		if body.ReplyTo != "" {
+			body.ReplyTo, err = p.Repo.ExpandShortHash(body.ReplyTo)
 			if err != nil {
 				return nil, errors.Wrapf(err, "commit (%s) reply hash could not be expanded", hash)
 			}
 		}
 
 		comments = append(comments, &Comment{
-			Body:        issueBody,
+			Body:        body,
 			Hash:        commit.Hash.String(),
 			Reference:   p.Name,
 			Created:     commit.Committer.When,
@@ -147,8 +149,8 @@ func (p *Post) GetComments() (comments Comments, err error) {
 		})
 
 		// Compute and updates reactions if this comment replied with reaction(s)
-		if issueBody.ReplyTo != "" && len(issueBody.Reactions) > 0 {
-			UpdateReactions(issueBody.Reactions, issueBody.ReplyTo, pusherKeyID, reactions)
+		if body.ReplyTo != "" && len(body.Reactions) > 0 {
+			UpdateReactions(body.Reactions, body.ReplyTo, pusherKeyID, reactions)
 		}
 	}
 
@@ -189,7 +191,7 @@ func GetReactionsForComment(reactions ReactionMap, hash string) map[string]int {
 	return res
 }
 
-// ReactionMap represents mapping for reactions in an issue
+// ReactionMap represents mapping for reactions of posts.
 // commentHash: (reactionName: (pusherKeyID: count))
 type ReactionMap map[string]map[string]map[string]int
 
@@ -231,7 +233,7 @@ func UpdateReactions(newReactions []string, targetHash, pusherKeyID string, dest
 }
 
 // Posts is a collection of Post
-type Posts []IPost
+type Posts []PostEntry
 
 // Reverse reverse the posts
 func (p *Posts) Reverse() {
@@ -248,12 +250,12 @@ func (p *Posts) SortByFirstPostCreationTimeDesc() {
 }
 
 // PostGetter describes a function for finding posts
-type PostGetter func(targetRepo core.LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error)
+type PostGetter func(targetRepo types2.LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error)
 
 // GetPosts returns references that conform to the post protocol
 // filter is used to check whether a reference is a post reference.
 // Returns a slice of posts
-func GetPosts(targetRepo core.LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error) {
+func GetPosts(targetRepo types2.LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error) {
 	refs, err := targetRepo.GetReferences()
 	if err != nil {
 		return nil, err
@@ -300,7 +302,7 @@ func GetPosts(targetRepo core.LocalRepo, filter func(ref plumbing.ReferenceName)
 		if err != nil {
 			return nil, err
 		}
-		cfm, err := pageparser.ParseFrontMatterAndContent(rdr)
+		cfm, err := util.ParseContentFrontMatter(rdr)
 		if err != nil {
 			return nil, errors.Wrapf(err, "root commit of %s has bad body file", ref.String())
 		}
@@ -310,7 +312,7 @@ func GetPosts(targetRepo core.LocalRepo, filter func(ref plumbing.ReferenceName)
 			Name:  ref.String(),
 			Title: fm.Get("title").String(),
 			First: &Comment{
-				Body:        IssueBodyFromContentFrontMatter(&cfm),
+				Body:        PostBodyFromContentFrontMatter(&cfm),
 				Hash:        commit.Hash.String(),
 				Created:     commit.Committer.When,
 				Author:      commit.Author.Name,
@@ -339,55 +341,53 @@ func GetCommentPreview(comment *Comment) string {
 	return preview
 }
 
-type IssueBody struct {
+type PostBody struct {
 
-	// Content is the issue content
-	Content []byte
+	// Content is the post's main content
+	Content []byte `yaml:"-" msgpack:"content,omitempty"`
 
-	// Title is the issue title
-	Title string
+	// Title is the post's title
+	Title string `yaml:"title,omitempty" msgpack:"title,omitempty"`
 
 	// ReplyTo is used to set the comment commit hash to reply to.
-	ReplyTo string
+	ReplyTo string `yaml:"replyTo,omitempty" msgpack:"replyTo,omitempty"`
 
-	// Reactions are emoji short names used to describe an emotion
-	// towards an issue comment
-	Reactions []string
+	// Reactions are emoji directed at a comment being replied to
+	Reactions []string `yaml:"reactions,flow,omitempty" msgpack:"reactions,omitempty"`
 
-	// Labels describes and classifies the issue using keywords
-	Labels *[]string
+	// Close indicates that the post's thread should be closed.
+	Close *bool `yaml:"close,omitempty" msgpack:"close,omitempty"`
 
-	// Assignees are the push keys assigned to do a task
-	Assignees *[]string
+	// Issue Specific Fields
+	common.IssueFields `yaml:",omitempty,inline" msgpack:",omitempty"`
 
-	// Close indicates that the issue should be closed.
-	Close *bool
+	// Merge Request Fields
+	common.MergeRequestFields `yaml:",omitempty,inline" msgpack:",omitempty"`
 }
 
 // WantOpen checks whether close=false
-func (b *IssueBody) WantOpen() bool {
+func (b *PostBody) WantOpen() bool {
 	return b.Close != nil && *b.Close == false
 }
 
-// RequiresUpdatePolicy checks whether the issue body will require an 'issue-update' policy
-// if the contents need to be added to the issue.
-func (b *IssueBody) RequiresUpdatePolicy() bool {
-	return b.Labels != nil || b.Assignees != nil || b.Close != nil
+// IsAdminUpdate checks whether administrative fields where set
+func (b *PostBody) IsAdminUpdate() bool {
+	return b.Labels != nil || b.Assignees != nil || b.Close != nil || b.MergeRequestFields != (common.MergeRequestFields{})
 }
 
-// IssueBodyFromContentFrontMatter attempts to load the instance from
+// PostBodyFromContentFrontMatter attempts to load the instance from
 // the specified content front matter object; It will find expected
 // fields and try to cast the their expected type. It will not validate
 // or return any error.
-func IssueBodyFromContentFrontMatter(cfm *pageparser.ContentFrontMatter) *IssueBody {
+func PostBodyFromContentFrontMatter(cfm *pageparser.ContentFrontMatter) *PostBody {
 	ob := objx.New(cfm.FrontMatter)
-	b := &IssueBody{}
+	b := &PostBody{}
 	b.Content = cfm.Content
 	b.Title = ob.Get("title").String()
 	b.ReplyTo = ob.Get("replyTo").String()
 
-	close := ob.Get("close").Bool()
-	b.Close = &close
+	cls := ob.Get("close").Bool()
+	b.Close = &cls
 
 	b.Reactions = cast.ToStringSlice(ob.Get("reactions").
 		StringSlice(cast.ToStringSlice(ob.Get("reactions").InterSlice())))
@@ -407,41 +407,107 @@ func IssueBodyFromContentFrontMatter(cfm *pageparser.ContentFrontMatter) *IssueB
 	return b
 }
 
-// IssueBodyToString creates a formatted issue body from an IssueBody object
-func IssueBodyToString(body *IssueBody) string {
-
-	args := ""
-	str := "---\n%s---\n"
-
-	if len(body.Title) > 0 {
-		args += fmt.Sprintf("title: %s\n", body.Title)
+// PostBodyToString creates a formatted post body from an PostBody object
+func PostBodyToString(body *PostBody) string {
+	out, _ := yaml.Marshal(body)
+	if len(out) == 3 && strings.TrimSpace(string(out)) == "{}" {
+		return string(body.Content)
 	}
-	if body.ReplyTo != "" {
-		args += fmt.Sprintf("replyTo: %s\n", body.ReplyTo)
-	}
-	if len(body.Reactions) > 0 {
-		reactionsStr, _ := json.Marshal(body.Reactions)
-		args += fmt.Sprintf("reactions: %s\n", reactionsStr)
-	}
-	if body.Labels != nil && *body.Labels != nil {
-		labelsStr, _ := json.Marshal(body.Labels)
-		args += fmt.Sprintf("labels: %s\n", labelsStr)
-	}
-	if body.Assignees != nil && *body.Assignees != nil {
-		assigneesStr, _ := json.Marshal(body.Assignees)
-		args += fmt.Sprintf("assignees: %s\n", assigneesStr)
-	}
-	if body.Close != nil {
-		args += fmt.Sprintf("close: %v\n", *body.Close)
-	}
-
-	return fmt.Sprintf(str, args) + string(body.Content)
+	return fmt.Sprintf("---\n%s---\n", out) + string(body.Content)
 }
 
-type IPost interface {
+type PostEntry interface {
 	GetComments() (comments Comments, err error)
 	IsClosed() (bool, error)
 	GetTitle() string
 	GetName() string
 	FirstComment() *Comment
+}
+
+type FreePostIDFinder func(repo types2.LocalRepo, startID int, postRefType string) (int, error)
+
+// GetFreePostID finds and returns an ID that is unused within the post reference type
+func GetFreePostID(repo types2.LocalRepo, startID int, postRefType string) (int, error) {
+	for {
+		var ref string
+		switch postRefType {
+		case IssueBranchPrefix:
+			ref = MakeIssueReference(startID)
+		case MergeRequestBranchPrefix:
+			ref = MakeMergeRequestReference(startID)
+		default:
+			return 0, fmt.Errorf("unknown post reference type")
+		}
+		hash, err := repo.RefGet(ref)
+		if err != nil && err != ErrRefNotFound {
+			return 0, err
+		}
+		if hash == "" {
+			return startID, nil
+		}
+		startID++
+	}
+}
+
+// PostCommitCreator is a function type for creating a post commit or adding comments to an existing post reference
+type PostCommitCreator func(r types2.LocalRepo, args *CreatePostCommitArgs) (isNew bool, reference string, err error)
+
+// CreatePostCommitArgs includes argument for CreatePostCommit
+type CreatePostCommitArgs struct {
+	Type             string
+	PostRefID        int
+	Body             string
+	IsComment        bool
+	FreePostIDGetter FreePostIDFinder
+}
+
+// CreatePostCommit creates a new post reference or adds a comment commit to an existing one.
+func CreatePostCommit(r types2.LocalRepo, args *CreatePostCommitArgs) (isNew bool, reference string, err error) {
+
+	var ref string
+
+	// When the post reference ID is not provided, find an unused number, increment it
+	// and use it to generate a post reference name
+	if args.PostRefID == 0 {
+		args.PostRefID, err = args.FreePostIDGetter(r, 1, args.Type)
+		if err != nil {
+			return false, "", errors.Wrap(err, "failed to find free post number")
+		}
+	}
+
+	// Generate the full reference name
+	switch args.Type {
+	case IssueBranchPrefix:
+		ref = MakeIssueReference(args.PostRefID)
+	case MergeRequestBranchPrefix:
+		ref = MakeMergeRequestReference(args.PostRefID)
+	default:
+		return false, "", fmt.Errorf("unknown post reference type")
+	}
+
+	// Check if the post reference already exist exist
+	hash, err := r.RefGet(ref)
+	if err != nil {
+		if err != ErrRefNotFound {
+			return false, "", errors.Wrap(err, "failed to check post reference existence")
+		}
+	}
+
+	// For comments, the post reference must already exist
+	if hash == "" && args.IsComment {
+		return false, "", fmt.Errorf("can't add comment to a non-existing post")
+	}
+
+	// Create an post commit (pass the current reference hash as parent)
+	commitHash, err := r.CreateSingleFileCommit("body", args.Body, "", hash)
+	if err != nil {
+		return false, "", errors.Wrap(err, "failed to create post commit")
+	}
+
+	// Update the current hash of the post reference
+	if err = r.RefUpdate(ref, commitHash); err != nil {
+		return false, "", errors.Wrap(err, "failed to update post reference target hash")
+	}
+
+	return hash == "", ref, nil
 }

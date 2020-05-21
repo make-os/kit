@@ -1,21 +1,18 @@
 package issuecmd
 
 import (
-	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
-	"github.com/fatih/color"
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/remote/issues"
+	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/repo"
-	"gitlab.com/makeos/mosdef/types/core"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	common2 "gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -63,20 +60,18 @@ type IssueCreateArgs struct {
 	// StdIn receives input
 	StdIn io.ReadCloser
 
-	// IssueOrCommentCommitCreatorFunc is the issue commit creating function
-	IssueCommentCreator issues.IssueCommentCreator
+	// PostCommentCreator is the post commit creating function
+	PostCommentCreator plumbing.PostCommitCreator
 
 	// EditorReader is used to read from an editor program
-	EditorReader func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error)
+	EditorReader util.EditorReaderFunc
+
+	// InputReader is a function that reads input from stdin
+	InputReader util.InputReader
 }
 
-var (
-	ErrBodyRequired  = fmt.Errorf("body is required")
-	ErrTitleRequired = fmt.Errorf("title is required")
-)
-
 // IssueCreateCmd create a new Issue or adds a comment commit to an existing Issue
-func IssueCreateCmd(r core.LocalRepo, args *IssueCreateArgs) error {
+func IssueCreateCmd(r types2.LocalRepo, args *IssueCreateArgs) error {
 
 	var nComments int
 	var issueRef, issueRefHash string
@@ -93,9 +88,9 @@ func IssueCreateCmd(r core.LocalRepo, args *IssueCreateArgs) error {
 	issueRefHash, err = r.RefGet(issueRef)
 
 	// When issue does not exist and this is a reply intent, return error
-	if err != nil && err == repo.ErrRefNotFound && args.ReplyHash != "" {
+	if err != nil && err == plumbing.ErrRefNotFound && args.ReplyHash != "" {
 		return fmt.Errorf("issue (%d) was not found", args.IssueNumber)
-	} else if err != nil && err != repo.ErrRefNotFound {
+	} else if err != nil && err != plumbing.ErrRefNotFound {
 		return err
 	}
 
@@ -144,28 +139,24 @@ input:
 		return fmt.Errorf("issue number is required when adding a comment")
 	}
 
-	// Hook to syscall.SIGINT signal so we close args.StdIn
+	// Hook to syscall.SIGINT signal to close args.StdIn on interrupt
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT)
 	go func() { <-sigs; args.StdIn.Close() }()
-	rdr := bufio.NewReader(args.StdIn)
 
 	// Prompt user for title only if was not provided via flag and this is not a comment
 	if len(args.Title) == 0 && args.ReplyHash == "" && nComments == 0 {
-		fmt.Fprintln(args.StdOut, color.HiBlackString("Title: (256 chars) - Press enter to continue"))
-		args.Title, _ = rdr.ReadString('\n')
-		args.Title = strings.TrimSpace(args.Title)
+		args.Title = args.InputReader("\033[1;33m? Title: (256 chars max.)\u001B[0m\n  ", &util.InputReaderArgs{})
 		if len(args.Title) == 0 {
-			return ErrTitleRequired
+			return common.ErrTitleRequired
 		}
 	}
 
 	// Read body from stdIn only if an editor is not requested and --no-body is unset
 	if len(args.Body) == 0 && args.UseEditor == false && !args.NoBody {
-		fmt.Fprintln(args.StdOut, color.HiBlackString("Body: (8192 chars) - Press ctrl-D to continue"))
-		bz, _ := ioutil.ReadAll(rdr)
-		fmt.Fprint(args.StdOut, "\n")
-		args.Body = strings.TrimSpace(string(bz))
+		args.Body = args.InputReader("\033[1;33m? Body: (8192 chars max. | Tap enter thrice to exit)\u001B[0m\n  ",
+			&util.InputReaderArgs{Multiline: true})
+		fmt.Fprint(args.StdOut, "\010\010")
 	}
 
 	// Read body from editor if requested
@@ -182,22 +173,30 @@ input:
 
 	// Body is required for a new issue
 	if nComments == 0 && args.Body == "" {
-		return ErrBodyRequired
+		return common.ErrBodyRequired
 	}
 
-	// Create the Issue body and prompt user to confirm
-	issueBody := plumbing.IssueBodyToString(&plumbing.IssueBody{
+	// Create the post body
+	postBody := plumbing.PostBodyToString(&plumbing.PostBody{
 		Content:   []byte(args.Body),
 		Title:     args.Title,
 		ReplyTo:   args.ReplyHash,
 		Reactions: args.Reactions,
-		Labels:    &args.Labels,
-		Assignees: &args.Assignees,
-		Close:     args.Close,
+		IssueFields: common2.IssueFields{
+			Labels:    &args.Labels,
+			Assignees: &args.Assignees,
+		},
+		Close: args.Close,
 	})
 
 	// Create a new Issue or add comment commit to existing Issue
-	newIssue, ref, err := args.IssueCommentCreator(r, args.IssueNumber, issueBody, args.ReplyHash != "")
+	newIssue, ref, err := args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
+		Type:             plumbing.IssueBranchPrefix,
+		PostRefID:        args.IssueNumber,
+		Body:             postBody,
+		IsComment:        args.ReplyHash != "",
+		FreePostIDGetter: plumbing.GetFreePostID,
+	})
 	if err != nil {
 		return errors.Wrap(err, "failed to add issue or comment")
 	}

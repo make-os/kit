@@ -4,7 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 )
 
 // TxKeeper manages transaction data
@@ -36,5 +36,5 @@ func (tk *TxKeeper) GetTx(hash []byte) (types.BaseTx, error) {
 		}
 		return nil, types.ErrTxNotFound
 	}
-	return core.DecodeTx(rec.Value)
+	return txns.DecodeTx(rec.Value)
 }

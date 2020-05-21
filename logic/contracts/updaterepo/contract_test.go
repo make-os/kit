@@ -16,6 +16,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -49,8 +50,8 @@ var _ = Describe("UpdateRepoContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := updaterepo.NewContract(nil)
-			Expect(ct.CanExec(core.TxTypeRepoProposalUpdate)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeHostTicket)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeRepoProposalUpdate)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeHostTicket)).To(BeFalse())
 		})
 	})
 
@@ -78,9 +79,9 @@ var _ = Describe("UpdateRepoContract", func() {
 					Governance: &state.RepoConfigGovernance{DurOfProposal: 1000},
 				}
 
-				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpdate{
-					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
+					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Config:           config.ToMap(),
 				}, 0).Exec()
 				Expect(err).To(BeNil())
@@ -131,9 +132,9 @@ var _ = Describe("UpdateRepoContract", func() {
 				config := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{DurOfProposal: 1000},
 				}
-				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpdate{
-					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
+					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Config:           config.ToMap(),
 				}, 0).Exec()
 				Expect(err).To(BeNil())
@@ -183,9 +184,9 @@ var _ = Describe("UpdateRepoContract", func() {
 				config := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{DurOfProposal: 2000},
 				}
-				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpdate{
-					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
+					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Config:           config.ToMap(),
 				}, 200).Exec()
 				Expect(err).To(BeNil())

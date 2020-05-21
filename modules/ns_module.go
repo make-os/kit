@@ -9,6 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -173,7 +174,7 @@ func (m *NamespaceModule) Register(
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = core.NewBareTxNamespaceAcquire()
+	var tx = txns.NewBareTxNamespaceAcquire()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
@@ -217,7 +218,7 @@ func (m *NamespaceModule) UpdateDomain(
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = core.NewBareTxNamespaceDomainUpdate()
+	var tx = txns.NewBareTxNamespaceDomainUpdate()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}

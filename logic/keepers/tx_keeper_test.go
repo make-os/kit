@@ -6,7 +6,7 @@ import (
 
 	storagemocks "gitlab.com/makeos/mosdef/storage/mocks"
 	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 
 	"github.com/golang/mock/gomock"
 
@@ -49,7 +49,7 @@ var _ = Describe("TxKeeper", func() {
 			})
 
 			It("should return err='failed to index tx: error'", func() {
-				tx := core.NewBareTxCoinTransfer()
+				tx := txns.NewBareTxCoinTransfer()
 				err := txKeeper.Index(tx)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to index tx: error"))
@@ -57,7 +57,7 @@ var _ = Describe("TxKeeper", func() {
 		})
 
 		When("index is successful", func() {
-			tx := core.NewBareTxCoinTransfer()
+			tx := txns.NewBareTxCoinTransfer()
 
 			BeforeEach(func() {
 				err := txKeeper.Index(tx)
@@ -81,7 +81,7 @@ var _ = Describe("TxKeeper", func() {
 			})
 
 			It("should return err='failed to get tx: error'", func() {
-				tx := core.NewBareTxCoinTransfer()
+				tx := txns.NewBareTxCoinTransfer()
 				_, err := txKeeper.GetTx(tx.GetHash().Bytes())
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("failed to get tx: error"))
@@ -89,7 +89,7 @@ var _ = Describe("TxKeeper", func() {
 		})
 
 		When("tx is found", func() {
-			tx := core.NewBareTxCoinTransfer()
+			tx := txns.NewBareTxCoinTransfer()
 
 			BeforeEach(func() {
 				err := txKeeper.Index(tx)

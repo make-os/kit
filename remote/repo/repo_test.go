@@ -1,7 +1,6 @@
 package repo_test
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -9,9 +8,8 @@ import (
 	"time"
 
 	"gitlab.com/makeos/mosdef/crypto"
-	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	repo2 "gitlab.com/makeos/mosdef/remote/repo"
-	"gitlab.com/makeos/mosdef/types/core"
 	state2 "gitlab.com/makeos/mosdef/types/state"
 
 	. "github.com/onsi/ginkgo"
@@ -29,7 +27,7 @@ var _ = Describe("RepoContext", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path, dotGitPath string
-	var repo core.LocalRepo
+	var repo types2.LocalRepo
 	var key *crypto.Key
 
 	BeforeEach(func() {
@@ -369,23 +367,6 @@ var _ = Describe("RepoContext", func() {
 			It("should have 3 history hashes", func() {
 				Expect(history).To(HaveLen(3))
 			})
-		})
-	})
-
-	Describe(".GetFreeIssueNum", func() {
-		It("should return start point if free", func() {
-			n, err := repo.GetFreeIssueNum(1)
-			Expect(err).To(BeNil())
-			Expect(n).To(Equal(1))
-		})
-
-		It("should return next monotonic number if start number is not free", func() {
-			start := 1
-			testutil2.CreateCheckoutBranch(path, fmt.Sprintf("%s/%d", plumbing2.IssueBranchPrefix, start))
-			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-			n, err := repo.GetFreeIssueNum(start)
-			Expect(err).To(BeNil())
-			Expect(n).To(Equal(2))
 		})
 	})
 

@@ -7,20 +7,20 @@ import (
 	"github.com/bitfield/script"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
-	"gitlab.com/makeos/mosdef/types/core"
-
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/remote/plumbing"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	repo2 "gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("plumbing.Revert", func() {
 	var err error
 	var cfg *config.AppConfig
-	var repo core.LocalRepo
+	var repo types2.LocalRepo
 	var repoName, path string
 
 	BeforeEach(func() {

@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 
 	"gitlab.com/makeos/mosdef/config"
 
@@ -158,7 +158,7 @@ func (mp *Mempool) addTx(bs []byte, res *abci.Response) {
 	switch r := res.Value.(type) {
 	case *abci.Response_CheckTx:
 
-		tx, _ := core.DecodeTx(bs)
+		tx, _ := txns.DecodeTx(bs)
 
 		// At this point, the transaction failed the ABCI check
 		if r.CheckTx.Code != abci.CodeTypeOK {
@@ -222,7 +222,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 		// if tx is a validator ticket and we already reaped n
 		// validator tickets, we cache and ignore it. We will
 		// flush them back to the pool after reaping.
-		if memTx.GetType() == core.TxTypeValidatorTicket &&
+		if memTx.GetType() == txns.TxTypeValidatorTicket &&
 			numValTicketTxReaped == params.MaxValTicketsPerBlock {
 			ignoredTx = append(ignoredTx, memTx)
 			continue
@@ -239,7 +239,7 @@ func (mp *Mempool) ReapMaxBytesMaxGas(maxBytes, maxGas int64) types.Txs {
 		txs = append(txs, txBs)
 
 		// Increment num validator tickets seen
-		if memTx.GetType() == core.TxTypeValidatorTicket {
+		if memTx.GetType() == txns.TxTypeValidatorTicket {
 			numValTicketTxReaped++
 		}
 	}
@@ -282,7 +282,7 @@ func (mp *Mempool) Update(blockHeight int64, txs types.Txs,
 
 	// Remove the transactions
 	for i, txBs := range txs {
-		tx, _ := core.DecodeTx(txBs)
+		tx, _ := txns.DecodeTx(txBs)
 		mp.pool.Remove(tx)
 		mp.cfg.G().Bus.Emit(EvtMempoolTxRemoved, nil, tx)
 

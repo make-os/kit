@@ -11,8 +11,8 @@ import (
 	"github.com/thoas/go-funk"
 	restclient "gitlab.com/makeos/mosdef/api/rest/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	repo2 "gitlab.com/makeos/mosdef/remote/repo"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
 
@@ -54,7 +54,7 @@ func getJSONRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 // getRemoteAPIClients gets REST clients for every  http(s) remote
 // URL set on the given repository. Immediately returns nothing if
 // --no.remote is true.
-func getRemoteAPIClients(cmd *cobra.Command, repo core.LocalRepo) (clients []restclient.RestClient) {
+func getRemoteAPIClients(cmd *cobra.Command, repo types2.LocalRepo) (clients []restclient.RestClient) {
 	noRemote, _ := cmd.Flags().GetBool("no.remote")
 	if noRemote {
 		return
@@ -77,7 +77,7 @@ func getRemoteAPIClients(cmd *cobra.Command, repo core.LocalRepo) (clients []res
 }
 
 // getClients returns RPCClient and Remote API clients
-func getRepoAndClients(cmd *cobra.Command) (core.LocalRepo,
+func getRepoAndClients(cmd *cobra.Command) (types2.LocalRepo,
 	*client.RPCClient, []restclient.RestClient) {
 
 	// Get the repository
@@ -117,6 +117,15 @@ func rejectFlagCombo(cmd *cobra.Command, flags ...string) {
 				str += "|-" + fShort
 			}
 			found = append(found, str)
+		}
+	}
+}
+
+// requireFlag enforces flag requirement
+func requireFlag(cmd *cobra.Command, flags ...string) {
+	for _, f := range flags {
+		if !cmd.Flags().Changed(f) {
+			log.Fatal(fmt.Sprintf("flag (--%s) is required", f))
 		}
 	}
 }

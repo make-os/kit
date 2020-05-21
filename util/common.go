@@ -1,6 +1,7 @@
 package util
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
@@ -21,6 +22,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/cbroglie/mustache"
+	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/robertkrimen/otto"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -580,6 +582,9 @@ func IsValidNameNoLen(name string) error {
 	return nil
 }
 
+// EditorReaderFunc describes a function that collects input from an editor program
+type EditorReaderFunc func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error)
+
 // ReadFromEditor reads input from the specified editor program
 func ReadFromEditor(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) {
 	file, err := ioutil.TempFile(os.TempDir(), "")
@@ -635,4 +640,22 @@ func IsString(v interface{}) bool {
 // RemoveFromStringSlice removes str from the given string slice
 func RemoveFromStringSlice(slice []string, str string) []string {
 	return funk.FilterString(slice, func(s string) bool { return s != str })
+}
+
+// ParseFrontMatterContent parses a reader containing front matter + content.
+func ParseContentFrontMatter(rdr io.Reader) (pageparser.ContentFrontMatter, error) {
+	buf := bufio.NewReader(rdr)
+	d, err := buf.Peek(4)
+	if err != nil && err != io.EOF {
+		return pageparser.ContentFrontMatter{}, err
+	}
+
+	// If first 4 characters does not begin with `---\n`, then the reader
+	// contains only content (no front matter), just return ContentFrontMatter with content set
+	if string(d) != "---\n" || err == io.EOF {
+		bz, _ := ioutil.ReadAll(buf)
+		return pageparser.ContentFrontMatter{Content: bz}, nil
+	}
+
+	return pageparser.ParseFrontMatterAndContent(buf)
 }

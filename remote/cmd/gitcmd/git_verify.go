@@ -11,7 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/cmd"
-	"gitlab.com/makeos/mosdef/types/core"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/types"
 )
 
 type GitVerifyArgs struct {
@@ -19,7 +20,7 @@ type GitVerifyArgs struct {
 	Args []string
 
 	// RepoGetter is the function for getting a local repository
-	RepoGetter func(path string) (core.LocalRepo, error)
+	RepoGetter func(path string) (types2.LocalRepo, error)
 
 	// PushKeyUnlocker is a function for getting and unlocking a push key from keystore
 	PushKeyUnlocker cmd.PushKeyUnlocker
@@ -58,7 +59,7 @@ func GitVerifyCmd(cfg *config.AppConfig, args *GitVerifyArgs) error {
 	}
 
 	// Get tx parameters from the header
-	txDetail, err := core.TxDetailFromPEMHeader(decSig.Headers)
+	txDetail, err := types.TxDetailFromPEMHeader(decSig.Headers)
 	if err != nil {
 		fmt.Fprintf(args.StdOut, "[GNUPG:] BADSIG 0\n")
 		err = fmt.Errorf("invalid header: %s", err)

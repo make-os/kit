@@ -10,8 +10,9 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/cmd"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/server"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -55,7 +56,7 @@ type SignNoteArgs struct {
 }
 
 // SignNoteCmd creates adds transaction information to a note and signs it.
-func SignNoteCmd(cfg *config.AppConfig, targetRepo core.LocalRepo, args *SignNoteArgs) error {
+func SignNoteCmd(cfg *config.AppConfig, targetRepo types2.LocalRepo, args *SignNoteArgs) error {
 
 	// Get the signing key id from the git config if not passed as an argument
 	if args.PushKeyID == "" {
@@ -92,7 +93,7 @@ func SignNoteCmd(cfg *config.AppConfig, targetRepo core.LocalRepo, args *SignNot
 	}
 
 	// Make the transaction parameter object
-	txDetail := &core.TxDetail{
+	txDetail := &types.TxDetail{
 		Fee:       util.String(args.Fee),
 		Nonce:     args.Nonce,
 		PushKeyID: args.PushKeyID,

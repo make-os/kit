@@ -11,6 +11,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -70,11 +71,6 @@ func (m *RepoModule) funcs() []*modules.ModuleFunc {
 			Description: "Register fees to a deposit-enabled repository proposal",
 		},
 		{
-			Name:        "createMergeRequest",
-			Value:       m.CreateMergeRequest,
-			Description: "Create a merge request proposal",
-		},
-		{
 			Name:        "addContributor",
 			Value:       m.RegisterPushKey,
 			Description: "Register one or more contributors",
@@ -132,7 +128,7 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 func (m *RepoModule) Create(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = core.NewBareTxRepoCreate()
+	var tx = txns.NewBareTxRepoCreate()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
@@ -174,7 +170,7 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
-	var tx = core.NewBareRepoProposalUpsertOwner()
+	var tx = txns.NewBareRepoProposalUpsertOwner()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
@@ -214,7 +210,7 @@ func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...inter
 func (m *RepoModule) VoteOnProposal(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
-	var tx = core.NewBareRepoProposalVote()
+	var tx = txns.NewBareRepoProposalVote()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
@@ -309,7 +305,7 @@ func (m *RepoModule) Get(name string, opts ...map[string]interface{}) util.Map {
 func (m *RepoModule) Update(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
-	var tx = core.NewBareRepoProposalUpdate()
+	var tx = txns.NewBareRepoProposalUpdate()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
@@ -349,52 +345,7 @@ func (m *RepoModule) Update(params map[string]interface{}, options ...interface{
 func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
-	var tx = core.NewBareRepoProposalFeeSend()
-	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
-	}
-
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
-	}
-
-	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
-	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
-	}
-
-	return EncodeForJS(map[string]interface{}{
-		"hash": hash,
-	})
-}
-
-// CreateMergeRequest creates a merge request proposal
-//
-// ARGS:
-// params <map>
-// params.name 			<string>: 				The name of the repository
-// params.id 			<string>: 				A unique proposal ID
-// params.base 			<string>:				The base branch name
-// params.baseHash 		<string>:				The base branch pre-merge hash
-// params.target 		<string>:				The target branch name
-// params.targetHash	<string>:				The target branch hash
-// params.nonce 		<number|string>: 		The senders next account nonce
-// params.fee 			<number|string>: 		The transaction fee to pay
-// params.timestamp 	<number>: 				The unix timestamp
-//
-// options <[]interface{}>
-// options[0] key <string>: 					The signer's private key
-// options[1] payloadOnly <bool>: 				When true, returns the payload only, without sending the tx.
-//
-// RETURNS object <map>
-// object.hash <string>: 						The transaction hash
-func (m *RepoModule) CreateMergeRequest(
-	params map[string]interface{},
-	options ...interface{}) interface{} {
-	var err error
-
-	var tx = core.NewBareRepoProposalMergeRequest()
+	var tx = txns.NewBareRepoProposalFeeSend()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
@@ -443,7 +394,7 @@ func (m *RepoModule) RegisterPushKey(
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = core.NewBareRepoProposalRegisterPushKey()
+	var tx = txns.NewBareRepoProposalRegisterPushKey()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}

@@ -7,14 +7,17 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-var IssueBranchPrefix = "issues"
+var (
+	IssueBranchPrefix        = "issues"
+	MergeRequestBranchPrefix = "merges"
+)
 
 // isBranch checks whether a reference name indicates a branch
 func IsBranch(name string) bool {
 	return plumbing.ReferenceName(name).IsBranch()
 }
 
-// isIssueBranch checks whether a branch is an issue branch
+// IsIssueReference checks whether a branch is an issue branch
 func IsIssueReference(name string) bool {
 	return regexp.MustCompile(fmt.Sprintf("^refs/heads/%s/[1-9]+([0-9]+)?$", IssueBranchPrefix)).MatchString(name)
 }
@@ -24,9 +27,22 @@ func IsIssueReferencePath(name string) bool {
 	return regexp.MustCompile(fmt.Sprintf("^refs/heads/%s(/|$)?", IssueBranchPrefix)).MatchString(name)
 }
 
+// IsMergeRequestReference checks whether a branch is a merge request branch
+func IsMergeRequestReference(name string) bool {
+	re := "^refs/heads/%s/[1-9]+([0-9]+)?$"
+	return regexp.MustCompile(fmt.Sprintf(re, MergeRequestBranchPrefix)).MatchString(name)
+}
+
+// IsMergeRequestReferencePath checks if the specified reference matches a merge request reference path
+func IsMergeRequestReferencePath(name string) bool {
+	re := "^refs/heads/%s(/|$)?"
+	return regexp.MustCompile(fmt.Sprintf(re, MergeRequestBranchPrefix)).MatchString(name)
+}
+
 // isReference checks the given name is a reference path or full reference name
 func IsReference(name string) bool {
-	return regexp.MustCompile("^refs/(heads|tags|notes)((/[a-z0-9_-]+)+)?$").MatchString(name)
+	re := "^refs/(heads|tags|notes)((/[a-z0-9_-]+)+)?$"
+	return regexp.MustCompile(re).MatchString(name)
 }
 
 // isTag checks whether a reference name indicates a tag
@@ -47,4 +63,14 @@ func MakeIssueReference(id interface{}) string {
 // MakeIssueReferencePath returns the full issue reference path
 func MakeIssueReferencePath() string {
 	return fmt.Sprintf("refs/heads/%s", IssueBranchPrefix)
+}
+
+// MakeMergeRequestReference creates a merge request reference
+func MakeMergeRequestReference(id interface{}) string {
+	return fmt.Sprintf("refs/heads/%s/%v", MergeRequestBranchPrefix, id)
+}
+
+// MakeIssueReferencePath returns the full merge request reference path
+func MakeMergeRequestReferencePath() string {
+	return fmt.Sprintf("refs/heads/%s", MergeRequestBranchPrefix)
 }

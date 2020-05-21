@@ -14,6 +14,7 @@ import (
 	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/mocks"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
+	"gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/testutil"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
@@ -62,43 +63,43 @@ var _ = Describe("Validation", func() {
 
 	Describe(".validation.CheckPushNoteSyntax", func() {
 		key := crypto.NewKeyFromIntSeed(1)
-		okTx := &core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().MustBytes32()}
+		okTx := &types.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), NodePubKey: key.PubKey().MustBytes32()}
 		bz, _ := key.PrivKey().Sign(okTx.Bytes())
 		okTx.NodeSig = bz
 
 		var cases = [][]interface{}{
-			{&core.PushNote{}, "field:repo, msg:repo name is required"},
-			{&core.PushNote{RepoName: "repo"}, "field:pusherKeyId, msg:push key id is required"},
-			{&core.PushNote{RepoName: "re*&po"}, "field:repo, msg:repo name is not valid"},
-			{&core.PushNote{RepoName: "repo", Namespace: "*&ns"}, "field:namespace, msg:namespace is not valid"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: []byte("xyz")}, "field:pusherKeyId, msg:push key id is not valid"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: 0}, "field:timestamp, msg:timestamp is required"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: 2000000000}, "field:timestamp, msg:timestamp cannot be a future time"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, "field:accountNonce, msg:account nonce must be greater than zero"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1}, "field:nodePubKey, msg:push node public key is required"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1, NodePubKey: key.PubKey().MustBytes32()}, "field:nodeSig, msg:push node signature is required"},
-			{&core.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1, NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid signature")}, "field:nodeSig, msg:failed to verify signature"},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{}}}, "index:0, field:references.name, msg:name is required"},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1"}}}, "index:0, field:references.oldHash, msg:old hash is required"},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: "invalid"}}}, "index:0, field:references.oldHash, msg:old hash is not valid"},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40)}}}, "index:0, field:references.newHash, msg:new hash is required"},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: "invalid"}}}, "index:0, field:references.newHash, msg:new hash is not valid"},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40)}}}, "index:0, field:references.nonce, msg:reference nonce must be greater than zero"},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Objects: []string{"invalid object"}}}}, "index:0, field:references.objects.0, msg:object hash is not valid"},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1}}}, "index:0, field:fee, msg:fee is required"},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Fee: "ten"}}}, "index:0, field:fee, msg:fee must be numeric"},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Fee: "0", MergeProposalID: "1a"}}}, "index:0, field:mergeID, msg:merge proposal id must be numeric"},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Fee: "0", MergeProposalID: "123456789"}}}, "index:0, field:mergeID, msg:merge proposal id exceeded 8 bytes limit"},
-			{&core.PushNote{RepoName: "repo", References: []*core.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Fee: "0"}}}, "index:0, field:pushSig, msg:signature is required"},
+			{&types.PushNote{}, "field:repo, msg:repo name is required"},
+			{&types.PushNote{RepoName: "repo"}, "field:pusherKeyId, msg:push key id is required"},
+			{&types.PushNote{RepoName: "re*&po"}, "field:repo, msg:repo name is not valid"},
+			{&types.PushNote{RepoName: "repo", Namespace: "*&ns"}, "field:namespace, msg:namespace is not valid"},
+			{&types.PushNote{RepoName: "repo", PushKeyID: []byte("xyz")}, "field:pusherKeyId, msg:push key id is not valid"},
+			{&types.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: 0}, "field:timestamp, msg:timestamp is required"},
+			{&types.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: 2000000000}, "field:timestamp, msg:timestamp cannot be a future time"},
+			{&types.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix()}, "field:accountNonce, msg:account nonce must be greater than zero"},
+			{&types.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1}, "field:nodePubKey, msg:push node public key is required"},
+			{&types.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1, NodePubKey: key.PubKey().MustBytes32()}, "field:nodeSig, msg:push node signature is required"},
+			{&types.PushNote{RepoName: "repo", PushKeyID: util.RandBytes(20), Timestamp: time.Now().Unix(), PusherAcctNonce: 1, NodePubKey: key.PubKey().MustBytes32(), NodeSig: []byte("invalid signature")}, "field:nodeSig, msg:failed to verify signature"},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{}}}, "index:0, field:references.name, msg:name is required"},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1"}}}, "index:0, field:references.oldHash, msg:old hash is required"},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: "invalid"}}}, "index:0, field:references.oldHash, msg:old hash is not valid"},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: util.RandString(40)}}}, "index:0, field:references.newHash, msg:new hash is required"},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: "invalid"}}}, "index:0, field:references.newHash, msg:new hash is not valid"},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40)}}}, "index:0, field:references.nonce, msg:reference nonce must be greater than zero"},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Objects: []string{"invalid object"}}}}, "index:0, field:references.objects.0, msg:object hash is not valid"},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1}}}, "index:0, field:fee, msg:fee is required"},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Fee: "ten"}}}, "index:0, field:fee, msg:fee must be numeric"},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Fee: "0", MergeProposalID: "1a"}}}, "index:0, field:mergeID, msg:merge proposal id must be numeric"},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Fee: "0", MergeProposalID: "123456789"}}}, "index:0, field:mergeID, msg:merge proposal id exceeded 8 bytes limit"},
+			{&types.PushNote{RepoName: "repo", References: []*types.PushedReference{{Name: "ref1", OldHash: util.RandString(40), NewHash: util.RandString(40), Nonce: 1, Fee: "0"}}}, "index:0, field:pushSig, msg:signature is required"},
 		}
 
 		It("should check cases", func() {
 			for _, c := range cases {
 				_c := c
 				if _c[1] != nil {
-					Expect(validation.CheckPushNoteSyntax(_c[0].(*core.PushNote)).Error()).To(Equal(_c[1]))
+					Expect(validation.CheckPushNoteSyntax(_c[0].(*types.PushNote)).Error()).To(Equal(_c[1]))
 				} else {
-					Expect(validation.CheckPushNoteSyntax(_c[0].(*core.PushNote))).To(BeNil())
+					Expect(validation.CheckPushNoteSyntax(_c[0].(*types.PushNote))).To(BeNil())
 				}
 			}
 		})
@@ -115,7 +116,7 @@ var _ = Describe("Validation", func() {
 
 		When("old hash is non-zero and pushed reference does not exist", func() {
 			BeforeEach(func() {
-				refs := &core.PushedReference{Name: "refs/heads/master", OldHash: oldHash}
+				refs := &types.PushedReference{Name: "refs/heads/master", OldHash: oldHash}
 				repository := &state.Repository{References: map[string]*state.Reference{}}
 				err = validation.CheckPushedReferenceConsistency(mockRepo, refs, repository)
 			})
@@ -128,7 +129,7 @@ var _ = Describe("Validation", func() {
 
 		When("old hash is zero and pushed reference does not exist", func() {
 			BeforeEach(func() {
-				refs := &core.PushedReference{Name: "refs/heads/master", OldHash: strings.Repeat("0", 40)}
+				refs := &types.PushedReference{Name: "refs/heads/master", OldHash: strings.Repeat("0", 40)}
 				repository := &state.Repository{References: map[string]*state.Reference{}}
 				err = validation.CheckPushedReferenceConsistency(mockRepo, refs, repository)
 			})
@@ -142,7 +143,7 @@ var _ = Describe("Validation", func() {
 		When("old hash of reference is different from the local hash of same reference", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				ref := &core.PushedReference{Name: refName, OldHash: oldHash}
+				ref := &types.PushedReference{Name: refName, OldHash: oldHash}
 				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
 					Return(plumbing.NewReferenceFromStrings("", util.RandString(40)), nil)
@@ -158,7 +159,7 @@ var _ = Describe("Validation", func() {
 		When("old hash of reference is non-zero and the local equivalent reference is not accessible", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				ref := &core.PushedReference{Name: refName, OldHash: oldHash}
+				ref := &types.PushedReference{Name: refName, OldHash: oldHash}
 				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
 					Return(nil, plumbing.ErrReferenceNotFound)
@@ -174,7 +175,7 @@ var _ = Describe("Validation", func() {
 		When("old hash of reference is non-zero and nil repo passed", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				ref := &core.PushedReference{Name: refName, OldHash: oldHash}
+				ref := &types.PushedReference{Name: refName, OldHash: oldHash}
 				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
 				err = validation.CheckPushedReferenceConsistency(nil, ref, repository)
 			})
@@ -188,7 +189,7 @@ var _ = Describe("Validation", func() {
 		When("old hash of reference is non-zero and it is different from the hash of the equivalent local reference", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				ref := &core.PushedReference{Name: refName, OldHash: oldHash}
+				ref := &types.PushedReference{Name: refName, OldHash: oldHash}
 				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
 				mockRepo.EXPECT().Reference(plumbing.ReferenceName(refName), false).
 					Return(plumbing.NewReferenceFromStrings("", util.RandString(40)), nil)
@@ -204,7 +205,7 @@ var _ = Describe("Validation", func() {
 		When("pushed reference nonce is unexpected", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				ref := &core.PushedReference{OldHash: oldHash, Name: refName, NewHash: newHash, Objects: []string{newHash}, Nonce: 2}
+				ref := &types.PushedReference{OldHash: oldHash, Name: refName, NewHash: newHash, Objects: []string{newHash}, Nonce: 2}
 				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
 				mockRepo.EXPECT().
 					Reference(plumbing.ReferenceName(refName), false).
@@ -221,7 +222,7 @@ var _ = Describe("Validation", func() {
 		When("nonce is unset", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
-				refs := &core.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Objects: []string{newHash}, Nonce: 0}
+				refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Objects: []string{newHash}, Nonce: 0}
 				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
 				mockRepo.EXPECT().
 					Reference(plumbing.ReferenceName(refName), false).
@@ -239,7 +240,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				refName := "refs/heads/master"
 				newHash := util.RandString(40)
-				refs := &core.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Objects: []string{newHash}, Nonce: 1, Fee: "1"}
+				refs := &types.PushedReference{Name: refName, OldHash: oldHash, NewHash: newHash, Objects: []string{newHash}, Nonce: 1, Fee: "1"}
 				repository := &state.Repository{References: map[string]*state.Reference{refName: {Nonce: 0}}}
 				mockRepo.EXPECT().
 					Reference(plumbing.ReferenceName(refName), false).
@@ -257,7 +258,7 @@ var _ = Describe("Validation", func() {
 	Describe(".validation.CheckPushNoteConsistency", func() {
 		When("no repository with matching name exist", func() {
 			BeforeEach(func() {
-				tx := &core.PushNote{RepoName: "unknown"}
+				tx := &types.PushNote{RepoName: "unknown"}
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(state.BareRepository())
 				err = validation.CheckPushNoteConsistency(tx, mockLogic)
 			})
@@ -270,7 +271,7 @@ var _ = Describe("Validation", func() {
 
 		When("namespace is set but does not exist", func() {
 			BeforeEach(func() {
-				tx := &core.PushNote{Namespace: "ns1"}
+				tx := &types.PushNote{Namespace: "ns1"}
 				mockRepoKeeper.EXPECT().Get(gomock.Any()).Return(&state.Repository{Balance: "10"})
 				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.Namespace)).Return(state.BareNamespace())
 				err = validation.CheckPushNoteConsistency(tx, mockLogic)
@@ -284,7 +285,7 @@ var _ = Describe("Validation", func() {
 
 		When("namespace is set but repo not a target of any domain", func() {
 			BeforeEach(func() {
-				tx := &core.PushNote{Namespace: "ns1"}
+				tx := &types.PushNote{Namespace: "ns1"}
 				mockRepoKeeper.EXPECT().Get(gomock.Any()).Return(&state.Repository{Balance: "10"})
 				ns := state.BareNamespace()
 				ns.Domains["domain1"] = "r/some_repo"
@@ -300,7 +301,7 @@ var _ = Describe("Validation", func() {
 
 		When("pusher public key id is unknown", func() {
 			BeforeEach(func() {
-				tx := &core.PushNote{RepoName: "repo1", PushKeyID: util.RandBytes(20)}
+				tx := &types.PushNote{RepoName: "repo1", PushKeyID: util.RandBytes(20)}
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 				mockPushKeyKeeper.EXPECT().Get(crypto.BytesToPushKeyID(tx.PushKeyID)).Return(state.BarePushKey())
 				err = validation.CheckPushNoteConsistency(tx, mockLogic)
@@ -314,7 +315,7 @@ var _ = Describe("Validation", func() {
 
 		When("push owner address not the same as the pusher address", func() {
 			BeforeEach(func() {
-				tx := &core.PushNote{
+				tx := &types.PushNote{
 					RepoName:      "repo1",
 					PushKeyID:     util.RandBytes(20),
 					PusherAddress: "address1",
@@ -335,7 +336,7 @@ var _ = Describe("Validation", func() {
 
 		When("unable to find pusher account", func() {
 			BeforeEach(func() {
-				tx := &core.PushNote{
+				tx := &types.PushNote{
 					RepoName:      "repo1",
 					PushKeyID:     util.RandBytes(20),
 					PusherAddress: "address1",
@@ -359,7 +360,7 @@ var _ = Describe("Validation", func() {
 
 		When("pusher account nonce is not correct", func() {
 			BeforeEach(func() {
-				tx := &core.PushNote{RepoName: "repo1", PushKeyID: util.RandBytes(20), PusherAddress: "address1", PusherAcctNonce: 3}
+				tx := &types.PushNote{RepoName: "repo1", PushKeyID: util.RandBytes(20), PusherAddress: "address1", PusherAcctNonce: 3}
 				mockRepoKeeper.EXPECT().Get(tx.RepoName).Return(&state.Repository{Balance: "10"})
 
 				pushKey := state.BarePushKey()
@@ -381,8 +382,8 @@ var _ = Describe("Validation", func() {
 
 		When("reference signature is invalid", func() {
 			BeforeEach(func() {
-				tx := &core.PushNote{RepoName: "repo1", PushKeyID: util.RandBytes(20), PusherAddress: "address1", PusherAcctNonce: 2}
-				tx.References = append(tx.References, &core.PushedReference{
+				tx := &types.PushNote{RepoName: "repo1", PushKeyID: util.RandBytes(20), PusherAddress: "address1", PusherAcctNonce: 2}
+				tx.References = append(tx.References, &types.PushedReference{
 					Name:    "refs/heads/master",
 					Nonce:   1,
 					PushSig: util.RandBytes(64),
@@ -410,7 +411,7 @@ var _ = Describe("Validation", func() {
 		When("pusher account balance not sufficient to pay fee", func() {
 			BeforeEach(func() {
 
-				tx := &core.PushNote{
+				tx := &types.PushNote{
 					RepoName:        "repo1",
 					PushKeyID:       util.RandBytes(20),
 					PusherAddress:   "address1",
@@ -443,13 +444,13 @@ var _ = Describe("Validation", func() {
 
 	Describe(".CheckPushEndorsement", func() {
 		It("should return error when push note id is not set", func() {
-			err := validation.CheckPushEndorsement(&core.PushEndorsement{}, -1)
+			err := validation.CheckPushEndorsement(&types.PushEndorsement{}, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("field:endorsements.pushNoteID, msg:push note id is required"))
 		})
 
 		It("should return error when public key is not valid", func() {
-			err := validation.CheckPushEndorsement(&core.PushEndorsement{
+			err := validation.CheckPushEndorsement(&types.PushEndorsement{
 				NoteID:         util.StrToBytes32("id"),
 				EndorserPubKey: util.EmptyBytes32,
 			}, -1)
@@ -462,7 +463,7 @@ var _ = Describe("Validation", func() {
 		When("unable to fetch top hosts", func() {
 			BeforeEach(func() {
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(nil, fmt.Errorf("error"))
-				err = validation.CheckPushEndConsistency(&core.PushEndorsement{
+				err = validation.CheckPushEndConsistency(&types.PushEndorsement{
 					NoteID:         util.StrToBytes32("id"),
 					EndorserPubKey: util.EmptyBytes32,
 				}, mockLogic, false, -1)
@@ -478,7 +479,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				key := crypto.NewKeyFromIntSeed(1)
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{}, nil)
-				err = validation.CheckPushEndConsistency(&core.PushEndorsement{
+				err = validation.CheckPushEndConsistency(&types.PushEndorsement{
 					NoteID:         util.StrToBytes32("id"),
 					EndorserPubKey: key.PubKey().MustBytes32(),
 				}, mockLogic, false, -1)
@@ -501,7 +502,7 @@ var _ = Describe("Validation", func() {
 						},
 					},
 				}, nil)
-				err = validation.CheckPushEndConsistency(&core.PushEndorsement{
+				err = validation.CheckPushEndConsistency(&types.PushEndorsement{
 					NoteID:         util.StrToBytes32("id"),
 					EndorserPubKey: key.PubKey().MustBytes32(),
 				}, mockLogic, false, -1)
@@ -525,7 +526,7 @@ var _ = Describe("Validation", func() {
 						},
 					},
 				}, nil)
-				err = validation.CheckPushEndConsistency(&core.PushEndorsement{
+				err = validation.CheckPushEndConsistency(&types.PushEndorsement{
 					NoteID:         util.StrToBytes32("id"),
 					EndorserPubKey: key.PubKey().MustBytes32(),
 				}, mockLogic, false, -1)
@@ -549,7 +550,7 @@ var _ = Describe("Validation", func() {
 						},
 					},
 				}, nil)
-				err = validation.CheckPushEndConsistency(&core.PushEndorsement{
+				err = validation.CheckPushEndConsistency(&types.PushEndorsement{
 					NoteID:         util.StrToBytes32("id"),
 					EndorserPubKey: key.PubKey().MustBytes32(),
 				}, mockLogic, true, -1)
@@ -566,7 +567,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				objHash := "obj_hash"
 
-				tx := &core.PushNote{RepoName: "repo1", References: []*core.PushedReference{
+				tx := &types.PushNote{RepoName: "repo1", References: []*types.PushedReference{
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}}
 
@@ -594,7 +595,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				objHash := "obj_hash"
 
-				tx := &core.PushNote{RepoName: "repo1", References: []*core.PushedReference{
+				tx := &types.PushNote{RepoName: "repo1", References: []*types.PushedReference{
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}}
 
@@ -625,7 +626,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				objHash := "obj_hash"
 
-				tx := &core.PushNote{RepoName: "repo1", References: []*core.PushedReference{
+				tx := &types.PushNote{RepoName: "repo1", References: []*types.PushedReference{
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}, Size: 7}
 
@@ -656,7 +657,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				objHash := "obj_hash"
 
-				tx := &core.PushNote{RepoName: "repo1", References: []*core.PushedReference{
+				tx := &types.PushNote{RepoName: "repo1", References: []*types.PushedReference{
 					{Name: "refs/heads/master", Objects: []string{objHash}},
 				}, Size: 10}
 

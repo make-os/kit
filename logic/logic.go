@@ -13,8 +13,8 @@ import (
 	"gitlab.com/makeos/mosdef/storage"
 	types2 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/mempool"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -66,7 +66,7 @@ type Logic struct {
 	repoMgr core.RemoteServer
 
 	// mempoolReactor provides access to mempool operations
-	mempoolReactor mempool.MempoolReactor
+	mempoolReactor core.MempoolReactor
 }
 
 // New creates an instance of Logic
@@ -118,12 +118,12 @@ func (l *Logic) ManagedSysKeeper() core.SystemKeeper {
 }
 
 // SetMempoolReactor sets the mempool reactor
-func (l *Logic) SetMempoolReactor(mr mempool.MempoolReactor) {
+func (l *Logic) SetMempoolReactor(mr core.MempoolReactor) {
 	l.mempoolReactor = mr
 }
 
 // GetMempoolReactor returns the mempool reactor
-func (l *Logic) GetMempoolReactor() mempool.MempoolReactor {
+func (l *Logic) GetMempoolReactor() core.MempoolReactor {
 	return l.mempoolReactor
 }
 
@@ -190,7 +190,7 @@ func (l *Logic) GetTicketManager() types2.TicketManager {
 
 // DrySend checks whether the given sender can execute the transaction
 func (l *Logic) DrySend(sender interface{}, value, fee util.String, nonce, chainHeight uint64) error {
-	tx := &core.TxCoinTransfer{TxValue: &core.TxValue{Value: value}, TxCommon: &core.TxCommon{Fee: fee, Nonce: nonce}}
+	tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: value}, TxCommon: &txns.TxCommon{Fee: fee, Nonce: nonce}}
 	ct := transfercoin.NewContract()
 	ct.Init(l, tx, chainHeight)
 	return ct.DryExec(sender)

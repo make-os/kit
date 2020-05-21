@@ -30,22 +30,35 @@ var _ = Describe("Common", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe("isIssueReference", func() {
-		It("should return false if not an issue branch name", func() {
+	Describe("IsIssueReference", func() {
+		It("should return false if not an issue branch name or true if otherwise", func() {
 			Expect(plumbing.IsIssueReference("refs/heads/abc")).To(BeFalse())
 			Expect(plumbing.IsIssueReference(fmt.Sprintf("refs/heads/%s/0001", plumbing.IssueBranchPrefix))).To(BeFalse())
-		})
-
-		It("should return true if it is an issue branch name", func() {
 			Expect(plumbing.IsIssueReference(fmt.Sprintf("refs/heads/%s/1", plumbing.IssueBranchPrefix))).To(BeTrue())
 		})
 	})
 
 	Describe(".IsIssueReferencePath", func() {
-		It("should return true if string has issue reference path", func() {
+		It("should return true if string has issue reference path or false if otherwise", func() {
 			Expect(plumbing.IsIssueReferencePath(fmt.Sprintf("refs/heads/%s/", plumbing.IssueBranchPrefix))).To(BeTrue())
 			Expect(plumbing.IsIssueReferencePath(fmt.Sprintf("refs/heads/%s", plumbing.IssueBranchPrefix))).To(BeTrue())
 			Expect(plumbing.IsIssueReferencePath("refs/heads/stuffs")).To(BeFalse())
+		})
+	})
+
+	Describe(".IsMergeRequestReference", func() {
+		It("should return false if not an merge request branch name or true if otherwise", func() {
+			Expect(plumbing.IsMergeRequestReference("refs/heads/abc")).To(BeFalse())
+			Expect(plumbing.IsMergeRequestReference(fmt.Sprintf("refs/heads/%s/0001", plumbing.MergeRequestBranchPrefix))).To(BeFalse())
+			Expect(plumbing.IsMergeRequestReference(fmt.Sprintf("refs/heads/%s/1", plumbing.MergeRequestBranchPrefix))).To(BeTrue())
+		})
+	})
+
+	Describe(".IsMergeRequestReferencePath", func() {
+		It("should return true if string has issue reference path or false if otherwise", func() {
+			Expect(plumbing.IsMergeRequestReferencePath(fmt.Sprintf("refs/heads/%s/", plumbing.MergeRequestBranchPrefix))).To(BeTrue())
+			Expect(plumbing.IsMergeRequestReferencePath(fmt.Sprintf("refs/heads/%s", plumbing.MergeRequestBranchPrefix))).To(BeTrue())
+			Expect(plumbing.IsMergeRequestReferencePath("refs/heads/stuffs")).To(BeFalse())
 		})
 	})
 
@@ -103,6 +116,21 @@ var _ = Describe("Common", func() {
 	Describe(".MakeIssueReferencePath", func() {
 		It("should return refs/heads/<issues_branch_prefix>", func() {
 			Expect(plumbing.MakeIssueReferencePath()).To(Equal(fmt.Sprintf("refs/heads/" + plumbing.IssueBranchPrefix)))
+		})
+	})
+
+	Describe(".MakeMergeRequestReference", func() {
+		It("should create a valid merge request reference", func() {
+			ref := plumbing.MakeMergeRequestReference(1)
+			Expect(plumbing.IsMergeRequestReference(ref)).To(BeTrue())
+			ref = plumbing.MakeMergeRequestReference("1")
+			Expect(plumbing.IsMergeRequestReference(ref)).To(BeTrue())
+		})
+	})
+
+	Describe(".MakeMergeRequestReferencePath()", func() {
+		It("should return refs/heads/<merge_request_branch_prefix>", func() {
+			Expect(plumbing.MakeMergeRequestReferencePath()).To(Equal(fmt.Sprintf("refs/heads/" + plumbing.MergeRequestBranchPrefix)))
 		})
 	})
 })

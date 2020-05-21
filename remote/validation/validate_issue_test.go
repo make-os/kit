@@ -10,7 +10,10 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/mocks"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/repo"
+	"gitlab.com/makeos/mosdef/remote/types"
+	"gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -44,46 +47,46 @@ var _ = Describe("Validation", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".ValidateIssueCommit", func() {
-		var detail *core.TxDetail
-		var args *validation.ValidateIssueCommitArg
+	Describe(".ValidatePostCommit", func() {
+		var detail *types.TxDetail
+		var args *validation.ValidatePostCommitArg
 
 		BeforeEach(func() {
-			detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
-			args = &validation.ValidateIssueCommitArg{OldHash: "", TxDetail: detail}
+			detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
+			args = &validation.ValidatePostCommitArg{OldHash: "", TxDetail: detail}
 		})
 
 		It("should return error when unable to check for merge commits", func() {
 			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-			detail := &core.TxDetail{Reference: "refs/heads/issues/1"}
-			args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change, TxDetail: detail}
+			detail := &types.TxDetail{Reference: "refs/heads/issues/1"}
+			args := &validation.ValidatePostCommitArg{OldHash: "", Change: change, TxDetail: detail}
 			mockRepo.EXPECT().HasMergeCommits(detail.Reference).Return(false, fmt.Errorf("error"))
-			err := validation.ValidateIssueCommit(mockRepo, nil, args)
+			err := validation.ValidatePostCommit(mockRepo, nil, args)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to check for merge commits in issue: error"))
+			Expect(err).To(MatchError("failed to check for merge commits in post reference: error"))
 		})
 
 		It("should return error when issue has merge commits", func() {
 			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-			detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
-			args = &validation.ValidateIssueCommitArg{OldHash: "", Change: change, TxDetail: detail}
+			detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
+			args = &validation.ValidatePostCommitArg{OldHash: "", Change: change, TxDetail: detail}
 			commit := repo.WrapCommit(&object.Commit{})
 			mockRepo.EXPECT().HasMergeCommits(detail.Reference).Return(true, nil)
-			err := validation.ValidateIssueCommit(mockRepo, commit, args)
+			err := validation.ValidatePostCommit(mockRepo, commit, args)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("issue history must not include merge commits"))
+			Expect(err).To(MatchError("post history must not include merge commits"))
 		})
 
 		It("should return error when commit failed commit validation", func() {
 			commit := repo.WrapCommit(&object.Commit{})
 			mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
 			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-			args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change, TxDetail: detail,
-				CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+			args := &validation.ValidatePostCommitArg{OldHash: "", Change: change, TxDetail: detail,
+				CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 					return fmt.Errorf("check error")
 				},
 			}
-			err := validation.ValidateIssueCommit(mockRepo, commit, args)
+			err := validation.ValidatePostCommit(mockRepo, commit, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("check error"))
 		})
@@ -92,21 +95,21 @@ var _ = Describe("Validation", func() {
 			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 			commit := repo.WrapCommit(&object.Commit{Message: "commit 1"})
 			mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
-			detail := &core.TxDetail{
+			detail := &types.TxDetail{
 				Reference: "refs/heads/issues/1",
 			}
 
 			mockRepo.EXPECT().GetAncestors(commit.UnWrap(), args.OldHash, true).Return(nil, fmt.Errorf("ancestor get error"))
-			args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
+			args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
 				TxDetail: detail,
-				CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+				CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 					return nil
 				},
-				CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+				CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 					return nil, nil
 				},
 			}
-			err := validation.ValidateIssueCommit(mockRepo, commit, args)
+			err := validation.ValidatePostCommit(mockRepo, commit, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("ancestor get error"))
 		})
@@ -115,25 +118,25 @@ var _ = Describe("Validation", func() {
 			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 			commit := repo.WrapCommit(&object.Commit{Message: "commit 1"})
 			mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
-			detail := &core.TxDetail{Reference: "refs/heads/issues/1"}
+			detail := &types.TxDetail{Reference: "refs/heads/issues/1"}
 			mockRepo.EXPECT().GetAncestors(commit.UnWrap(), args.OldHash, true).Return([]*object.Commit{}, nil)
 			mockRepoState := state.BareRepository()
 			mockRepo.EXPECT().GetState().Return(mockRepoState)
 
 			callCount := 0
-			args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
+			args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
 				TxDetail: detail,
-				CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+				CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 					return nil
 				},
-				CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+				CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 					callCount++
 					Expect(commit).To(Equal(commit))
 					Expect(args.Reference).To(Equal(detail.Reference))
 					return nil, fmt.Errorf("issue check error")
 				},
 			}
-			err := validation.ValidateIssueCommit(mockRepo, commit, args)
+			err := validation.ValidatePostCommit(mockRepo, commit, args)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("issue check error"))
 			Expect(callCount).To(Equal(1))
@@ -156,69 +159,75 @@ var _ = Describe("Validation", func() {
 				"issue checker func must be called once", func() {
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 				callCount := 0
-				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
-					TxDetail: &core.TxDetail{Reference: "refs/heads/issues/1"},
-					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
+					TxDetail: &types.TxDetail{Reference: "refs/heads/issues/1"},
+					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+					CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
-						return &plumbing2.IssueBody{}, nil
+						return &plumbing2.PostBody{}, nil
 					},
 				}
-				err := validation.ValidateIssueCommit(mockRepo, commit, args)
+				err := validation.ValidatePostCommit(mockRepo, commit, args)
 				Expect(err).To(BeNil())
 				Expect(callCount).To(Equal(1))
 			})
 
-			It("should set tx detail FlagCheckIssueUpdatePolicy to true if issue body updates admin fields like 'labels'", func() {
+			It("should set tx detail FlagCheckIssueUpdatePolicy to true if post body updates admin fields like 'labels'", func() {
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-				detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
+				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
 				callCount := 0
-				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
+				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
 					TxDetail: detail,
-					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+					CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
-						return &plumbing2.IssueBody{Labels: &[]string{"label_update"}}, nil
+						return &plumbing2.PostBody{
+							IssueFields: common.IssueFields{
+								Labels: &[]string{"label_update"},
+							},
+						}, nil
 					},
 				}
-				err := validation.ValidateIssueCommit(mockRepo, commit, args)
+				err := validation.ValidatePostCommit(mockRepo, commit, args)
 				Expect(err).To(BeNil())
 				Expect(callCount).To(Equal(1))
-				Expect(detail.FlagCheckIssueUpdatePolicy).To(BeTrue())
+				Expect(detail.FlagCheckAdminUpdatePolicy).To(BeTrue())
 			})
 
-			It("should populate tx detail reference data fields from issue body", func() {
+			It("should populate tx detail reference data fields from post body", func() {
 				commitObj.Hash = plumbing.NewHash("069199ae527ca118368d93af02feefa80432e563")
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-				detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
+				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
 				callCount := 0
-				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
+				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
 					TxDetail: detail,
-					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+					CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
 						cls := true
-						return &plumbing2.IssueBody{
-							Close:     &cls,
-							Labels:    &[]string{"l1", "l2"},
-							Assignees: &[]string{"key1", "key2"},
+						return &plumbing2.PostBody{
+							Close: &cls,
+							IssueFields: common.IssueFields{
+								Labels:    &[]string{"l1", "l2"},
+								Assignees: &[]string{"key1", "key2"},
+							},
 						}, nil
 					},
 				}
 
-				err := validation.ValidateIssueCommit(mockRepo, commit, args)
+				err := validation.ValidatePostCommit(mockRepo, commit, args)
 				Expect(err).To(BeNil())
 				Expect(callCount).To(Equal(1))
 				Expect(*detail.Data().Close).To(Equal(true))
@@ -229,51 +238,51 @@ var _ = Describe("Validation", func() {
 			It("should return error when issue reference has been previously closed and new issue commit did not set close=2", func() {
 				commitObj.Hash = plumbing.NewHash("069199ae527ca118368d93af02feefa80432e563")
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-				detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
+				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
 				mockRepoState.References[detail.Reference] = &state.Reference{
-					Hash:      []byte("hash"),
-					IssueData: &state.IssueReferenceData{Closed: true},
+					Hash: []byte("hash"),
+					Data: &state.ReferenceData{Closed: true},
 				}
 				callCount := 0
-				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
+				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
 					TxDetail: detail,
-					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+					CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
-						return &plumbing2.IssueBody{}, nil
+						return &plumbing2.PostBody{}, nil
 					},
 				}
 
-				err := validation.ValidateIssueCommit(mockRepo, commit, args)
+				err := validation.ValidatePostCommit(mockRepo, commit, args)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(validation.ErrCannotWriteToClosedIssue))
+				Expect(err).To(Equal(validation.ErrCannotWriteToClosedRef))
 			})
 
 			It("should return no error when issue reference has been previously closed and new issue commit set close=2", func() {
 				commitObj.Hash = plumbing.NewHash("069199ae527ca118368d93af02feefa80432e563")
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
-				detail = &core.TxDetail{Reference: "refs/heads/issues/1"}
-				mockRepoState.References[detail.Reference] = &state.Reference{IssueData: &state.IssueReferenceData{Closed: true}, Hash: []byte("hash")}
+				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
+				mockRepoState.References[detail.Reference] = &state.Reference{Data: &state.ReferenceData{Closed: true}, Hash: []byte("hash")}
 				callCount := 0
-				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
+				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
 					TxDetail: detail,
-					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+					CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
 						cls := false
-						return &plumbing2.IssueBody{Close: &cls}, nil
+						return &plumbing2.PostBody{Close: &cls}, nil
 					},
 				}
 
-				err := validation.ValidateIssueCommit(mockRepo, commit, args)
+				err := validation.ValidatePostCommit(mockRepo, commit, args)
 				Expect(err).To(BeNil())
 			})
 		})
@@ -294,57 +303,57 @@ var _ = Describe("Validation", func() {
 			Specify("that issue checker is called twice for both the commit and its ancestor", func() {
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: child.Hash.String()}}
 				callCount := 0
-				args := &validation.ValidateIssueCommitArg{OldHash: "", Change: change,
-					TxDetail: &core.TxDetail{Reference: "refs/heads/issues/1"},
-					CheckCommit: func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
+					TxDetail: &types.TxDetail{Reference: "refs/heads/issues/1"},
+					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckIssueCommit: func(r core.LocalRepo, commit core.Commit, args *validation.CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+					CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 						callCount++
 
 						if callCount == 1 {
 							Expect(commit.UnWrap()).To(Equal(ancestor))
-							Expect(args.IsNewIssue).To(BeTrue())
+							Expect(args.IsNew).To(BeTrue())
 						} else {
 							Expect(commit.UnWrap()).To(Equal(child))
-							Expect(args.IsNewIssue).To(BeFalse())
+							Expect(args.IsNew).To(BeFalse())
 						}
 
 						Expect(args.Reference).To(Equal(detail.Reference))
-						return &plumbing2.IssueBody{}, nil
+						return &plumbing2.PostBody{}, nil
 					},
 				}
-				err := validation.ValidateIssueCommit(mockRepo, commit, args)
+				err := validation.ValidatePostCommit(mockRepo, commit, args)
 				Expect(err).To(BeNil())
 				Expect(callCount).To(Equal(2))
 			})
 		})
 	})
 
-	Describe(".CheckIssueCommit", func() {
+	Describe(".CheckPostCommit", func() {
 		It("should return error when issue number is not valid", func() {
-			args := &validation.CheckIssueCommitArgs{Reference: "refs/heads/" + plumbing2.IssueBranchPrefix + "/abc"}
-			_, err := validation.CheckIssueCommit(mockRepo, commit, args)
+			args := &validation.CheckPostCommitArgs{Reference: "refs/heads/" + plumbing2.IssueBranchPrefix + "/abc"}
+			_, err := validation.CheckPostCommit(mockRepo, commit, args)
 			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError("issue number is not valid. Must be numeric"))
+			Expect(err).To(MatchError("post number is not valid. Must be numeric"))
 		})
 
 		It("should return error when issue commit has more than 1 parents", func() {
 			issueBranch := plumbing2.MakeIssueReference(1)
 			commit.EXPECT().NumParents().Return(2)
-			args := &validation.CheckIssueCommitArgs{Reference: issueBranch}
-			_, err := validation.CheckIssueCommit(mockRepo, commit, args)
+			args := &validation.CheckPostCommitArgs{Reference: issueBranch}
+			_, err := validation.CheckPostCommit(mockRepo, commit, args)
 			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError("issue commit cannot have more than one parent"))
+			Expect(err).To(MatchError("post commit cannot have more than one parent"))
 		})
 
 		It("should return error when the reference of the issue commit is new but the issue commit has multiple parents ", func() {
 			issueBranch := plumbing2.MakeIssueReference(1)
 			commit.EXPECT().NumParents().Return(1).Times(2)
-			args := &validation.CheckIssueCommitArgs{Reference: issueBranch, IsNewIssue: true}
-			_, err := validation.CheckIssueCommit(mockRepo, commit, args)
+			args := &validation.CheckPostCommitArgs{Reference: issueBranch, IsNew: true}
+			_, err := validation.CheckPostCommit(mockRepo, commit, args)
 			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError("first commit of a new issue must have no parent"))
+			Expect(err).To(MatchError("first commit of a new post must have no parent"))
 		})
 
 		It("should return error when the issue commit alters history", func() {
@@ -352,10 +361,10 @@ var _ = Describe("Validation", func() {
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
-			args := &validation.CheckIssueCommitArgs{Reference: issueBranch}
-			_, err := validation.CheckIssueCommit(mockRepo, commit, args)
+			args := &validation.CheckPostCommitArgs{Reference: issueBranch}
+			_, err := validation.CheckPostCommit(mockRepo, commit, args)
 			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError("issue commit must not alter history"))
+			Expect(err).To(MatchError("post commit must not alter history"))
 		})
 
 		It("should return error when unable to get commit tree", func() {
@@ -364,10 +373,10 @@ var _ = Describe("Validation", func() {
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			commit.EXPECT().GetTree().Return(nil, fmt.Errorf("bad query"))
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
-			args := &validation.CheckIssueCommitArgs{Reference: issueBranch}
-			_, err := validation.CheckIssueCommit(mockRepo, commit, args)
+			args := &validation.CheckPostCommitArgs{Reference: issueBranch}
+			_, err := validation.CheckPostCommit(mockRepo, commit, args)
 			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError("unable to read issue commit tree"))
+			Expect(err).To(MatchError("unable to read post commit tree"))
 		})
 
 		It("should return error when issue commit tree does not have 'body' file", func() {
@@ -377,10 +386,10 @@ var _ = Describe("Validation", func() {
 			tree := &object.Tree{Entries: []object.TreeEntry{}}
 			commit.EXPECT().GetTree().Return(tree, nil)
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
-			args := &validation.CheckIssueCommitArgs{Reference: issueBranch}
-			_, err := validation.CheckIssueCommit(mockRepo, commit, args)
+			args := &validation.CheckPostCommitArgs{Reference: issueBranch}
+			_, err := validation.CheckPostCommit(mockRepo, commit, args)
 			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError("issue commit must have a 'body' file"))
+			Expect(err).To(MatchError("post commit must have a 'body' file"))
 		})
 
 		It("should return error when issue commit tree has more than 1 files", func() {
@@ -390,10 +399,10 @@ var _ = Describe("Validation", func() {
 			tree := &object.Tree{Entries: []object.TreeEntry{{}, {}}}
 			commit.EXPECT().GetTree().Return(tree, nil)
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
-			args := &validation.CheckIssueCommitArgs{Reference: issueBranch}
-			_, err := validation.CheckIssueCommit(mockRepo, commit, args)
+			args := &validation.CheckPostCommitArgs{Reference: issueBranch}
+			_, err := validation.CheckPostCommit(mockRepo, commit, args)
 			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError("issue commit tree must only include a 'body' file"))
+			Expect(err).To(MatchError("post commit tree must only include a 'body' file"))
 		})
 
 		It("should return error when issue commit tree has a body entry that isn't a regular file", func() {
@@ -403,14 +412,14 @@ var _ = Describe("Validation", func() {
 			tree := &object.Tree{Entries: []object.TreeEntry{{Name: "body", Mode: filemode.Dir}}}
 			commit.EXPECT().GetTree().Return(tree, nil)
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
-			args := &validation.CheckIssueCommitArgs{Reference: issueBranch}
-			_, err := validation.CheckIssueCommit(mockRepo, commit, args)
+			args := &validation.CheckPostCommitArgs{Reference: issueBranch}
+			_, err := validation.CheckPostCommit(mockRepo, commit, args)
 			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError("issue body file is not a regular file"))
+			Expect(err).To(MatchError("post body file is not a regular file"))
 		})
 	})
 
-	Describe(".CheckIssueBody", func() {
+	Describe(".CheckPostBody", func() {
 		var commit *object.Commit
 
 		BeforeEach(func() {
@@ -418,31 +427,31 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when an unexpected field exists", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"field1": "xyz"}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"field1": "xyz"}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.field1, msg:unknown field"))
 		})
 
 		It("should return error when an 'title' value is not string", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": 1}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": 1}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:expected a string value"))
 		})
 
 		It("should return error when an 'replyTo' value is not string", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"replyTo": 1}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"replyTo": 1}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:expected a string value"))
 		})
 
 		It("should return error when a 'labels' value is not a string slice", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"labels": []int{1}}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"labels": []int{1}}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.labels, msg:expected a list of string values"))
 		})
 
 		It("should return error when a 'labels' are not valid", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true,
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true,
 				map[string]interface{}{
 					"title":  "title here",
 					"labels": []interface{}{"bad_*la%bel"},
@@ -454,53 +463,53 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when an 'assignees' value is not a string slice", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"assignees": []int{1}}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"assignees": []int{1}}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.assignees, msg:expected a list of string values"))
 		})
 
 		It("should return error when a 'reactions' value is not a string slice", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"reactions": []int{1}}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"reactions": []int{1}}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.reactions, msg:expected a list of string values"))
 		})
 
 		It("should return error when a 'replyTo' field is set and issue commit is new", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"replyTo": "xyz"}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"replyTo": "xyz"}, nil)
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:not expected in a new issue commit"))
+			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:not expected in a new post commit"))
 		})
 
 		It("should return error when issue is not new, a 'replyTo' field is set and title is set", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": "xyz", "title": "abc"}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": "xyz", "title": "abc"}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is not required when replying"))
 		})
 
 		It("should return error when issue is new and title is not set", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is required"))
 		})
 
 		It("should return error when issue is not new and title is set", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), false, map[string]interface{}{"title": "xyz"}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), false, map[string]interface{}{"title": "xyz"}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is not required for comment commit"))
 		})
 
 		It("should return error when title length is greater than max.", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": util.RandString(validation.MaxIssueTitleLen + 1)}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": util.RandString(validation.MaxIssueTitleLen + 1)}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is too long and cannot exceed 256 characters"))
 		})
 
 		It("should return error when replyTo value has length < 4 or > 40", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": "abc"}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": "abc"}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:invalid hash value"))
 
-			err = validation.CheckIssueBody(nil, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": util.RandString(41)}, nil)
+			err = validation.CheckPostBody(nil, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": util.RandString(41)}, nil)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:invalid hash value"))
 		})
@@ -509,13 +518,13 @@ var _ = Describe("Validation", func() {
 			replyTo := plumbing2.MakeCommitHash("hash").String()
 			mockRepo := mocks.NewMockLocalRepo(ctrl)
 			mockRepo.EXPECT().IsAncestor(commit.Hash.String(), replyTo).Return(fmt.Errorf("error"))
-			err := validation.CheckIssueBody(mockRepo, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": replyTo}, nil)
+			err := validation.CheckPostBody(mockRepo, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": replyTo}, nil)
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:not a valid hash of a commit in the issue"))
+			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:hash is not a known ancestor"))
 		})
 
 		It("should return error when reactions field is not slice of string", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
 				"title":     util.RandString(10),
 				"reactions": []interface{}{1, 2, 3},
 			}, nil)
@@ -524,7 +533,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when reactions exceed max", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
 				"title":     util.RandString(10),
 				"reactions": []interface{}{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"},
 			}, nil)
@@ -533,7 +542,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when a reaction is unknown", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
 				"title":     util.RandString(10),
 				"reactions": []interface{}{"unknown"},
 			}, nil)
@@ -542,7 +551,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when labels exceed max", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
 				"title":  util.RandString(10),
 				"labels": []interface{}{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"},
 			}, nil)
@@ -551,7 +560,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when labels does not include string values", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
 				"title":  util.RandString(10),
 				"labels": []interface{}{1, 2},
 			}, nil)
@@ -560,7 +569,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when assignees does not include string values", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
 				"title":     util.RandString(10),
 				"assignees": []interface{}{1, 2},
 			}, nil)
@@ -569,7 +578,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when assignees exceed max", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
 				"title":     util.RandString(10),
 				"assignees": []interface{}{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"},
 			}, nil)
@@ -578,7 +587,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when assignees includes invalid push keys", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
 				"title":     util.RandString(10),
 				"assignees": []interface{}{"invalid_push_key"},
 			}, nil)
@@ -587,19 +596,19 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when issue is new but content is unset", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": util.RandString(10)}, nil)
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": util.RandString(10)}, nil)
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.content, msg:issue content is required"))
+			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.content, msg:post commit content is required"))
 		})
 
 		It("should return error when content surpassed max. limit", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": util.RandString(10)}, util.RandBytes(validation.MaxIssueContentLen+1))
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": util.RandString(10)}, util.RandBytes(validation.MaxIssueContentLen+1))
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.content, msg:issue content length exceeded max character limit"))
+			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.content, msg:post commit content length exceeded max character limit"))
 		})
 
 		It("should return no error when fields are acceptable", func() {
-			err := validation.CheckIssueBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": util.RandString(10)}, []byte("abc"))
+			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": util.RandString(10)}, []byte("abc"))
 			Expect(err).To(BeNil())
 		})
 	})

@@ -11,7 +11,7 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/keystore"
 	"gitlab.com/makeos/mosdef/keystore/types"
-	"gitlab.com/makeos/mosdef/types/core"
+	types3 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 )
 
 // PushKeyUnlocker describes a function for fetching and unlocking a push key from the keystore
@@ -19,7 +19,7 @@ type PushKeyUnlocker func(
 	cfg *config.AppConfig,
 	pushKeyID,
 	defaultPassphrase string,
-	targetRepo core.LocalRepo) (types.StoredKey, error)
+	targetRepo types3.LocalRepo) (types.StoredKey, error)
 
 // UnlockPushKey takes a push key ID and unlocks it using the default passphrase
 // or one obtained from the git config of the repository or from an environment variable.
@@ -27,7 +27,7 @@ func UnlockPushKey(
 	cfg *config.AppConfig,
 	pushKeyID,
 	defaultPassphrase string,
-	targetRepo core.LocalRepo) (types.StoredKey, error) {
+	targetRepo types3.LocalRepo) (types.StoredKey, error) {
 
 	// Get the push key from the key store
 	ks := keystore.New(cfg.KeystoreDir())

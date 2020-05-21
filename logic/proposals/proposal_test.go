@@ -15,6 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -178,7 +179,7 @@ var _ = Describe("ProposalHandler", func() {
 				}
 				proposal.Config.Voter = state.VoterOwner
 				proposal.Creator = key.Addr().String()
-				proposal.Action = core.TxTypeRepoProposalUpsertOwner
+				proposal.Action = txns.TxTypeRepoProposalUpsertOwner
 				proposal.ActionData = map[string][]byte{
 					"addresses": util.ToBytes("addr"),
 					"veto":      util.ToBytes(false),
@@ -223,7 +224,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
 					proposal.Config.Voter = state.VoterOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Action = core.TxTypeRepoProposalUpsertOwner
+					proposal.Action = txns.TxTypeRepoProposalUpsertOwner
 					proposal.Fees = map[string]string{
 						"addr":  "100",
 						"addr2": "50",
@@ -262,7 +263,7 @@ var _ = Describe("ProposalHandler", func() {
 					proposal = &state.RepoProposal{Config: state.MakeDefaultRepoConfig().Governance}
 					proposal.Config.Voter = state.VoterOwner
 					proposal.Creator = key.Addr().String()
-					proposal.Action = core.TxTypeRepoProposalUpsertOwner
+					proposal.Action = txns.TxTypeRepoProposalUpsertOwner
 					proposal.Fees = map[string]string{
 						"addr":  "100",
 						"addr2": "50",

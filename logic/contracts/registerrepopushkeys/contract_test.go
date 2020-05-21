@@ -16,6 +16,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -48,8 +49,8 @@ var _ = Describe("UpsertOwnerContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := registerrepopushkeys.NewContract(nil)
-			Expect(ct.CanExec(core.TxTypeRepoProposalRegisterPushKey)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeHostTicket)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeRepoProposalRegisterPushKey)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeHostTicket)).To(BeFalse())
 		})
 	})
 
@@ -73,9 +74,9 @@ var _ = Describe("UpsertOwnerContract", func() {
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				err = registerrepopushkeys.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalRegisterPushKey{
-					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &core.TxProposalCommon{RepoName: repoName, Value: proposalFee, ProposalID: propID},
+				err = registerrepopushkeys.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalRegisterPushKey{
+					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{RepoName: repoName, Value: proposalFee, ProposalID: propID},
 					FeeMode:          state.FeeModePusherPays,
 					FeeCap:           "0",
 					KeyIDs:           []string{"push1_abc"},

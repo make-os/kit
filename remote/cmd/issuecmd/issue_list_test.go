@@ -15,8 +15,8 @@ import (
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/cmd/issuecmd"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -43,7 +43,7 @@ var _ = Describe("IssueList", func() {
 	Describe(".IssueListCmd", func() {
 		It("should return err when unable to fetch issues", func() {
 			args := &issuecmd.IssueListArgs{
-				PostGetter: func(core.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(types2.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return nil, fmt.Errorf("error")
 				},
 			}
@@ -55,11 +55,11 @@ var _ = Describe("IssueList", func() {
 		It("should sort issue posts by latest", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
-			posts := []plumbing2.IPost{
+			posts := []plumbing2.PostEntry{
 				&plumbing2.Post{
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
-						Body:    &plumbing2.IssueBody{},
+						Body:    &plumbing2.PostBody{},
 						Created: time.Now().Add(-10 * time.Second),
 						Hash:    hash1,
 					},
@@ -67,7 +67,7 @@ var _ = Describe("IssueList", func() {
 				&plumbing2.Post{
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
-						Body:    &plumbing2.IssueBody{},
+						Body:    &plumbing2.PostBody{},
 						Created: time.Now().Add(-5 * time.Second),
 						Hash:    hash2,
 					},
@@ -77,7 +77,7 @@ var _ = Describe("IssueList", func() {
 			args := &issuecmd.IssueListArgs{
 				StdErr: out, StdOut: out,
 				Format: "%H%",
-				PostGetter: func(core.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(types2.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
 				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
@@ -94,11 +94,11 @@ var _ = Describe("IssueList", func() {
 		It("should reverse issue when Reverse=true", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
-			posts := []plumbing2.IPost{
+			posts := []plumbing2.PostEntry{
 				&plumbing2.Post{
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
-						Body:    &plumbing2.IssueBody{},
+						Body:    &plumbing2.PostBody{},
 						Created: time.Now().Add(-10 * time.Second),
 						Hash:    hash1,
 					},
@@ -106,7 +106,7 @@ var _ = Describe("IssueList", func() {
 				&plumbing2.Post{
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
-						Body:    &plumbing2.IssueBody{},
+						Body:    &plumbing2.PostBody{},
 						Created: time.Now().Add(-5 * time.Second),
 						Hash:    hash2,
 					},
@@ -117,7 +117,7 @@ var _ = Describe("IssueList", func() {
 				StdErr: out, StdOut: out,
 				Format:  "%H%",
 				Reverse: true,
-				PostGetter: func(core.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(types2.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
 				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
@@ -134,11 +134,11 @@ var _ = Describe("IssueList", func() {
 		It("should limit issue when Limit=1", func() {
 			hash1 := util.RandString(40)
 			hash2 := util.RandString(40)
-			posts := []plumbing2.IPost{
+			posts := []plumbing2.PostEntry{
 				&plumbing2.Post{
 					Title: "How to open a file",
 					First: &plumbing2.Comment{
-						Body:    &plumbing2.IssueBody{},
+						Body:    &plumbing2.PostBody{},
 						Created: time.Now().Add(-10 * time.Second),
 						Hash:    hash1,
 					},
@@ -146,7 +146,7 @@ var _ = Describe("IssueList", func() {
 				&plumbing2.Post{
 					Title: "Remove examples",
 					First: &plumbing2.Comment{
-						Body:    &plumbing2.IssueBody{},
+						Body:    &plumbing2.PostBody{},
 						Created: time.Now().Add(-5 * time.Second),
 						Hash:    hash2,
 					},
@@ -157,7 +157,7 @@ var _ = Describe("IssueList", func() {
 				StdErr: out, StdOut: out,
 				Format: "%H%",
 				Limit:  1,
-				PostGetter: func(core.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(types2.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
 				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {

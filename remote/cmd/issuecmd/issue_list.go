@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/types/core"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -31,7 +30,7 @@ type IssueListArgs struct {
 	PostGetter plumbing2.PostGetter
 
 	// PagerWrite is the function used to write to a pager
-	PagerWrite pagerWriter
+	PagerWrite common.PagerWriter
 
 	// Format specifies a format to use for generating each post output to Stdout.
 	// The following place holders are supported:
@@ -55,7 +54,7 @@ type IssueListArgs struct {
 }
 
 // IssueListCmd list all issues
-func IssueListCmd(targetRepo core.LocalRepo, args *IssueListArgs) error {
+func IssueListCmd(targetRepo types2.LocalRepo, args *IssueListArgs) error {
 
 	// Get issue posts
 	issues, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
@@ -81,7 +80,7 @@ func IssueListCmd(targetRepo core.LocalRepo, args *IssueListArgs) error {
 	return formatAndPrintIssueList(targetRepo, args, issues)
 }
 
-func formatAndPrintIssueList(targetRepo core.LocalRepo, args *IssueListArgs, issues plumbing2.Posts) error {
+func formatAndPrintIssueList(targetRepo types2.LocalRepo, args *IssueListArgs, issues plumbing2.Posts) error {
 	buf := bytes.NewBuffer(nil)
 	for i, issue := range issues {
 
@@ -162,21 +161,4 @@ Date:   %d%
 		args.PagerWrite(pagerCmd, buf, args.StdOut, args.StdErr)
 	}
 	return nil
-}
-
-// pagerWriter describes a function for writing a specified content to a pager program
-type pagerWriter func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer)
-
-// WriteToPager spawns the specified page, passing the given content to it
-func WriteToPager(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
-	args := strings.Split(pagerCmd, " ")
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdout = stdOut
-	cmd.Stderr = stdErr
-	cmd.Stdin = content
-	if err := cmd.Run(); err != nil {
-		fmt.Fprintln(stdOut, err.Error())
-		fmt.Fprint(stdOut, content)
-		return
-	}
 }

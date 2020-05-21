@@ -14,10 +14,11 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	repo2 "gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
+	"gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -26,9 +27,9 @@ import (
 var _ = Describe("Post", func() {
 	var err error
 	var cfg *config.AppConfig
-	var repo core.LocalRepo
+	var repo types2.LocalRepo
 	var repoName, path string
-	var close = true
+	var cls = true
 	var dontClose = false
 	var ctrl *gomock.Controller
 	var mockRepo *mocks.MockLocalRepo
@@ -81,13 +82,40 @@ var _ = Describe("Post", func() {
 
 	Describe("Comments.Reverse", func() {
 		It("should reverse posts", func() {
-			posts := plumbing.Comments{
-				{Author: "a1"},
-				{Author: "a2"},
-			}
+			posts := plumbing.Comments{{Author: "a1"}, {Author: "a2"}}
 			posts.Reverse()
 			Expect(posts[0].Author).To(Equal("a2"))
 			Expect(posts[1].Author).To(Equal("a1"))
+		})
+	})
+
+	Describe(".GetFreePostID", func() {
+		It("should return error when post reference type is unknown", func() {
+			_, err := plumbing.GetFreePostID(mockRepo, 1, "unknown")
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("unknown post reference type"))
+		})
+
+		It("should return error when unable to query post reference", func() {
+			mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference("1")).Return("", fmt.Errorf("error"))
+			_, err := plumbing.GetFreePostID(mockRepo, 1, plumbing.IssueBranchPrefix)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		It("should return 1 when the post reference has no entries", func() {
+			mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference("1")).Return("", plumbing.ErrRefNotFound)
+			n, err := plumbing.GetFreePostID(mockRepo, 1, plumbing.IssueBranchPrefix)
+			Expect(err).To(BeNil())
+			Expect(n).To(Equal(1))
+		})
+
+		It("should return 2 when the post reference has entry at index 1", func() {
+			mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference("1")).Return("hash1", plumbing.ErrRefNotFound)
+			mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference("2")).Return("", plumbing.ErrRefNotFound)
+			n, err := plumbing.GetFreePostID(mockRepo, 1, plumbing.IssueBranchPrefix)
+			Expect(err).To(BeNil())
+			Expect(n).To(Equal(2))
 		})
 	})
 
@@ -275,17 +303,17 @@ content`, "commit 2")
 
 	Describe(".GetCommentPreview", func() {
 		It("should return sentence", func() {
-			prev := plumbing.GetCommentPreview(&plumbing.Comment{Body: &plumbing.IssueBody{Content: []byte("This is a simulation. We are in a simulation.")}})
+			prev := plumbing.GetCommentPreview(&plumbing.Comment{Body: &plumbing.PostBody{Content: []byte("This is a simulation. We are in a simulation.")}})
 			Expect(strings.TrimSpace(prev)).To(Equal("This is a simulation..."))
 
-			prev = plumbing.GetCommentPreview(&plumbing.Comment{Body: &plumbing.IssueBody{Content: []byte("This is a simulation.")}})
+			prev = plumbing.GetCommentPreview(&plumbing.Comment{Body: &plumbing.PostBody{Content: []byte("This is a simulation.")}})
 			Expect(strings.TrimSpace(prev)).To(Equal("This is a simulation."))
 		})
 	})
 
-	Describe(".IssueBodyFromContentFrontMatter", func() {
+	Describe(".PostBodyFromContentFrontMatter", func() {
 		It("case 1", func() {
-			issue := plumbing.IssueBodyFromContentFrontMatter(&pageparser.ContentFrontMatter{
+			issue := plumbing.PostBodyFromContentFrontMatter(&pageparser.ContentFrontMatter{
 				Content: []byte("content"),
 				FrontMatter: map[string]interface{}{
 					"title":     "My Title",
@@ -308,45 +336,77 @@ content`, "commit 2")
 		})
 	})
 
-	Describe(".IssueBodyToString", func() {
-		It("cases", func() {
-			body := &plumbing.IssueBody{Content: nil, Title: "my title", ReplyTo: "", Reactions: nil, Labels: nil, Assignees: nil}
-			str := plumbing.IssueBodyToString(body)
+	Describe(".PostBodyToString", func() {
+		It("should set only 'title' when only 'title' is set", func() {
+			body := &plumbing.PostBody{Title: "my title"}
+			str := plumbing.PostBodyToString(body)
 			Expect(str).To(Equal("---\ntitle: my title\n---\n"))
+		})
 
-			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: ""}
-			str = plumbing.IssueBodyToString(body)
-			Expect(str).To(Equal("---\ntitle: my title\n---\nmy body"))
+		It("should set only 'content' when only 'content' is set", func() {
+			body := &plumbing.PostBody{Content: []byte("xyz")}
+			str := plumbing.PostBodyToString(body)
+			Expect(str).To(Equal("xyz"))
+		})
 
-			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: "xyz"}
-			str = plumbing.IssueBodyToString(body)
-			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\n---\nmy body"))
+		It("should set only 'replyTo' when only 'replyTo' is set", func() {
+			body := &plumbing.PostBody{ReplyTo: "0x123"}
+			str := plumbing.PostBodyToString(body)
+			Expect(str).To(Equal("---\nreplyTo: \"0x123\"\n---\n"))
+		})
 
-			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: "xyz", Labels: &[]string{"a", "b"}}
-			str = plumbing.IssueBodyToString(body)
-			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nlabels: [\"a\",\"b\"]\n---\nmy body"))
+		It("should not 'reactions' when empty", func() {
+			body := &plumbing.PostBody{Reactions: []string{}}
+			str := plumbing.PostBodyToString(body)
+			Expect(str).To(Equal(""))
+		})
 
-			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: "xyz", Assignees: &[]string{"a", "b"}}
-			str = plumbing.IssueBodyToString(body)
-			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nassignees: [\"a\",\"b\"]\n---\nmy body"))
+		It("should set only 'reactions' when only 'reactions' is set", func() {
+			body := &plumbing.PostBody{Reactions: []string{"smile"}}
+			str := plumbing.PostBodyToString(body)
+			Expect(str).To(Equal("---\nreactions: [smile]\n---\n"))
+		})
 
-			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: "xyz", Reactions: []string{"a", "b"}}
-			str = plumbing.IssueBodyToString(body)
-			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nreactions: [\"a\",\"b\"]\n---\nmy body"))
+		It("should not set 'close' when it is nil", func() {
+			body := &plumbing.PostBody{Close: nil}
+			str := plumbing.PostBodyToString(body)
+			Expect(str).To(Equal(""))
+		})
 
-			body = &plumbing.IssueBody{Content: []byte("my body"), Title: "my title", ReplyTo: "xyz", Close: &close}
-			str = plumbing.IssueBodyToString(body)
-			Expect(str).To(Equal("---\ntitle: my title\nreplyTo: xyz\nclose: true\n---\nmy body"))
+		It("should set 'close' when it is false/true", func() {
+			cls := false
+			body := &plumbing.PostBody{Close: &cls}
+			str := plumbing.PostBodyToString(body)
+			Expect(str).To(Equal("---\nclose: false\n---\n"))
+			cls = true
+			body = &plumbing.PostBody{Close: &cls}
+			str = plumbing.PostBodyToString(body)
+			Expect(str).To(Equal("---\nclose: true\n---\n"))
+		})
+
+		It("should not set 'label' when it is nil", func() {
+			body := &plumbing.PostBody{Close: nil, IssueFields: common.IssueFields{Labels: nil}}
+			str := plumbing.PostBodyToString(body)
+			Expect(str).To(Equal(""))
+		})
+
+		It("should set 'label' when it is not nil", func() {
+			lbls := []string{}
+			body := &plumbing.PostBody{Close: nil, IssueFields: common.IssueFields{Labels: &lbls}}
+			str := plumbing.PostBodyToString(body)
+			Expect(str).To(Equal("---\nlabels: []\n---\n"))
 		})
 	})
 
-	Describe("IssueBody.RequiresUpdatePolicy", func() {
+	Describe("PostBody.IsAdminUpdate", func() {
 		It("should return true when labels, assignees and close are set", func() {
-			Expect((&plumbing.IssueBody{Labels: &[]string{"val"}}).RequiresUpdatePolicy()).To(BeTrue())
-			Expect((&plumbing.IssueBody{Assignees: &[]string{"val"}}).RequiresUpdatePolicy()).To(BeTrue())
-			Expect((&plumbing.IssueBody{}).RequiresUpdatePolicy()).To(BeFalse())
-			Expect((&plumbing.IssueBody{Close: &close}).RequiresUpdatePolicy()).To(BeTrue())
-			Expect((&plumbing.IssueBody{Close: &dontClose}).RequiresUpdatePolicy()).To(BeTrue())
+			Expect((&plumbing.PostBody{IssueFields: common.IssueFields{Labels: &[]string{"val"}}}).IsAdminUpdate()).To(BeTrue())
+			Expect((&plumbing.PostBody{IssueFields: common.IssueFields{Assignees: &[]string{"val"}}}).IsAdminUpdate()).To(BeTrue())
+			Expect((&plumbing.PostBody{}).IsAdminUpdate()).To(BeFalse())
+			Expect((&plumbing.PostBody{Close: &cls}).IsAdminUpdate()).To(BeTrue())
+			Expect((&plumbing.PostBody{Close: &dontClose}).IsAdminUpdate()).To(BeTrue())
+			Expect((&plumbing.PostBody{MergeRequestFields: common.MergeRequestFields{}}).IsAdminUpdate()).To(BeFalse())
+			Expect((&plumbing.PostBody{MergeRequestFields: common.MergeRequestFields{BaseBranch: "base1"}}).IsAdminUpdate()).To(BeTrue())
 		})
 	})
 
@@ -475,6 +535,104 @@ content`, "commit 2")
 			Expect(dst["target1"]["anger"]).To(HaveKey("pusher1"))
 			Expect(dst["target1"]["smile"]["pusher1"]).To(Equal(3))
 			Expect(dst["target1"]["anger"]["pusher1"]).To(Equal(-1))
+		})
+	})
+
+	Describe(".CreatePostCommit", func() {
+		When("post ref number is not provided", func() {
+			It("should return err when unable to get free post number", func() {
+				args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, PostRefID: 0, Body: "", IsComment: false,
+					FreePostIDGetter: func(repo types2.LocalRepo, startID int, postRefType string) (int, error) {
+						return 0, fmt.Errorf("error")
+					},
+				}
+				_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to find free post number: error"))
+			})
+		})
+
+		It("should return err when reference type is unknown", func() {
+			args := &plumbing.CreatePostCommitArgs{Type: "unknown", PostRefID: 1, Body: "", IsComment: false,
+				FreePostIDGetter: func(repo types2.LocalRepo, startID int, postRefType string) (int, error) {
+					return 0, fmt.Errorf("error")
+				},
+			}
+			_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("unknown post reference type"))
+		})
+
+		It("should return error when unable to query post reference", func() {
+			args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, PostRefID: 0, Body: "", IsComment: false,
+				FreePostIDGetter: func(repo types2.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+			}
+			mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return("", fmt.Errorf("error"))
+			_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to check post reference existence: error"))
+		})
+
+		When("comment is requested but issue does not exist", func() {
+			It("should return err", func() {
+				args := &plumbing.CreatePostCommitArgs{
+					Type: plumbing.IssueBranchPrefix, PostRefID: 0,
+					Body: "", IsComment: true,
+					FreePostIDGetter: func(repo types2.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+				}
+				mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return("", plumbing.ErrRefNotFound)
+				_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("can't add comment to a non-existing post"))
+			})
+		})
+
+		It("should return err when unable to create a single file commit", func() {
+			args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, PostRefID: 0,
+				Body: "body content", IsComment: false,
+				FreePostIDGetter: func(repo types2.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+			}
+			hash := util.RandString(40)
+			mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return(hash, nil)
+			mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return("", fmt.Errorf("error"))
+			_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to create post commit: error"))
+		})
+
+		It("should return err when unable to update issue reference target hash", func() {
+			refname := plumbing.MakeMergeRequestReference(1)
+			hash := util.RandString(40)
+			issueHash := util.RandString(40)
+			mockRepo.EXPECT().RefGet(refname).Return(hash, nil)
+			mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return(issueHash, nil)
+			mockRepo.EXPECT().RefUpdate(refname, issueHash).Return(fmt.Errorf("error"))
+
+			args := &plumbing.CreatePostCommitArgs{Type: plumbing.MergeRequestBranchPrefix, PostRefID: 0,
+				Body: "body content", IsComment: false,
+				FreePostIDGetter: func(repo types2.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+			}
+			_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to update post reference target hash: error"))
+		})
+
+		It("should return no error when successful", func() {
+			refname := plumbing.MakeIssueReference(1)
+			hash := util.RandString(40)
+			issueHash := util.RandString(40)
+			mockRepo.EXPECT().RefGet(refname).Return(hash, nil)
+			mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return(issueHash, nil)
+			mockRepo.EXPECT().RefUpdate(refname, issueHash).Return(nil)
+
+			args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, PostRefID: 0,
+				Body: "body content", IsComment: false,
+				FreePostIDGetter: func(repo types2.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+			}
+			isNewIssue, issueReference, err := plumbing.CreatePostCommit(mockRepo, args)
+			Expect(err).To(BeNil())
+			Expect(isNewIssue).To(BeFalse())
+			Expect(issueReference).To(Equal(refname))
 		})
 	})
 })

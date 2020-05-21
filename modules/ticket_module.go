@@ -13,6 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -154,7 +155,7 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 func (m *TicketModule) Buy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = core.NewBareTxTicketPurchase(core.TxTypeValidatorTicket)
+	var tx = txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
@@ -194,7 +195,7 @@ func (m *TicketModule) Buy(params map[string]interface{}, options ...interface{}
 func (m *TicketModule) HostBuy(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
-	var tx = core.NewBareTxTicketPurchase(core.TxTypeHostTicket)
+	var tx = txns.NewBareTxTicketPurchase(txns.TxTypeHostTicket)
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
@@ -258,7 +259,7 @@ func (m *TicketModule) ListValidatorTicketsOfProposer(
 		panic(util.NewStatusError(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 	}
 
-	res, err := m.ticketmgr.GetByProposer(core.TxTypeValidatorTicket, pk.MustBytes32(), qopts)
+	res, err := m.ticketmgr.GetByProposer(txns.TxTypeValidatorTicket, pk.MustBytes32(), qopts)
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
@@ -294,7 +295,7 @@ func (m *TicketModule) ListHostTicketsOfProposer(
 		panic(util.NewStatusError(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 	}
 
-	res, err := m.ticketmgr.GetByProposer(core.TxTypeHostTicket, pk.MustBytes32(), qopts)
+	res, err := m.ticketmgr.GetByProposer(txns.TxTypeHostTicket, pk.MustBytes32(), qopts)
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
@@ -417,7 +418,7 @@ func (m *TicketModule) UnbondHostTicket(params map[string]interface{},
 	options ...interface{}) interface{} {
 	var err error
 
-	var tx = core.NewBareTxTicketUnbond(core.TxTypeUnbondHostTicket)
+	var tx = txns.NewBareTxTicketUnbond(txns.TxTypeUnbondHostTicket)
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}

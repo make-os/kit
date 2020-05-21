@@ -14,6 +14,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -46,8 +47,8 @@ var _ = Describe("PushKeyUpdateDeleteContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := updatedelpushkey.NewContract()
-			Expect(ct.CanExec(core.TxTypeUpDelPushKey)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeCoinTransfer)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeUpDelPushKey)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeCoinTransfer)).To(BeFalse())
 		})
 	})
 
@@ -66,8 +67,8 @@ var _ = Describe("PushKeyUpdateDeleteContract", func() {
 				logic.PushKeyKeeper().Update(pushKeyID, key)
 				Expect(logic.PushKeyKeeper().Get(pushKeyID).IsNil()).To(BeFalse())
 
-				err = updatedelpushkey.NewContract().Init(logic, &core.TxUpDelPushKey{
-					TxCommon: &core.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+				err = updatedelpushkey.NewContract().Init(logic, &txns.TxUpDelPushKey{
+					TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					ID:       pushKeyID,
 					Delete:   true,
 				}, 0).Exec()
@@ -94,8 +95,8 @@ var _ = Describe("PushKeyUpdateDeleteContract", func() {
 				Expect(logic.PushKeyKeeper().Get(pushKeyID).IsNil()).To(BeFalse())
 
 				rmScopes := []int{0, 2}
-				err = updatedelpushkey.NewContract().Init(logic, &core.TxUpDelPushKey{
-					TxCommon:     &core.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+				err = updatedelpushkey.NewContract().Init(logic, &txns.TxUpDelPushKey{
+					TxCommon:     &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					ID:           pushKeyID,
 					Delete:       false,
 					RemoveScopes: rmScopes,
@@ -121,8 +122,8 @@ var _ = Describe("PushKeyUpdateDeleteContract", func() {
 					Expect(logic.PushKeyKeeper().Get(pushKeyID).IsNil()).To(BeFalse())
 
 					rmScopes := indicesSlice
-					err = updatedelpushkey.NewContract().Init(logic, &core.TxUpDelPushKey{
-						TxCommon:     &core.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+					err = updatedelpushkey.NewContract().Init(logic, &txns.TxUpDelPushKey{
+						TxCommon:     &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 						ID:           pushKeyID,
 						Delete:       false,
 						RemoveScopes: rmScopes,
@@ -150,8 +151,8 @@ var _ = Describe("PushKeyUpdateDeleteContract", func() {
 				Expect(logic.PushKeyKeeper().Get(pushKeyID).IsNil()).To(BeFalse())
 
 				addScopes := []string{"scope10", "scope11"}
-				err = updatedelpushkey.NewContract().Init(logic, &core.TxUpDelPushKey{
-					TxCommon:  &core.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+				err = updatedelpushkey.NewContract().Init(logic, &txns.TxUpDelPushKey{
+					TxCommon:  &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					ID:        pushKeyID,
 					Delete:    false,
 					AddScopes: addScopes,
@@ -175,8 +176,8 @@ var _ = Describe("PushKeyUpdateDeleteContract", func() {
 				logic.PushKeyKeeper().Update(pushKeyID, key)
 				Expect(logic.PushKeyKeeper().Get(pushKeyID).IsNil()).To(BeFalse())
 
-				err = updatedelpushkey.NewContract().Init(logic, &core.TxUpDelPushKey{
-					TxCommon: &core.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+				err = updatedelpushkey.NewContract().Init(logic, &txns.TxUpDelPushKey{
+					TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					ID:       pushKeyID,
 					Delete:   false,
 					FeeCap:   "100",

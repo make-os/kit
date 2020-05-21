@@ -7,13 +7,14 @@ import (
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 )
 
 // CreateRepoContract is a system contract for creating a repository.
 // CreateRepoContract implements SystemContract.
 type CreateRepoContract struct {
 	core.Logic
-	tx          *core.TxRepoCreate
+	tx          *txns.TxRepoCreate
 	chainHeight uint64
 }
 
@@ -23,13 +24,13 @@ func NewContract() *CreateRepoContract {
 }
 
 func (c *CreateRepoContract) CanExec(typ types.TxCode) bool {
-	return typ == core.TxTypeRepoCreate
+	return typ == txns.TxTypeRepoCreate
 }
 
 // Init initialize the contract
 func (c *CreateRepoContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*core.TxRepoCreate)
+	c.tx = tx.(*txns.TxRepoCreate)
 	c.chainHeight = curChainHeight
 	return c
 }

@@ -5,15 +5,14 @@ import (
 	"os"
 
 	"github.com/golang/mock/gomock"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/types/core"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/storage"
 	storagemocks "gitlab.com/makeos/mosdef/storage/mocks"
 	"gitlab.com/makeos/mosdef/testutil"
+	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 

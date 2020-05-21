@@ -7,22 +7,21 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/remote/pruner"
-	repo3 "gitlab.com/makeos/mosdef/remote/repo"
-	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
-
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/remote/pruner"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	repo3 "gitlab.com/makeos/mosdef/remote/repo"
+	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-var _ = Describe("Pruner", func() {
+var _ = Describe("RepoPruner", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
-	var repo core.LocalRepo
+	var repo types2.LocalRepo
 	var ctrl *gomock.Controller
 	var repoName string
 	var prn *pruner.Pruner

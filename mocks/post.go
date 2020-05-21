@@ -10,31 +10,31 @@ import (
 	reflect "reflect"
 )
 
-// MockIPost is a mock of IPost interface
-type MockIPost struct {
+// MockPostEntry is a mock of PostEntry interface
+type MockPostEntry struct {
 	ctrl     *gomock.Controller
-	recorder *MockIPostMockRecorder
+	recorder *MockPostEntryMockRecorder
 }
 
-// MockIPostMockRecorder is the mock recorder for MockIPost
-type MockIPostMockRecorder struct {
-	mock *MockIPost
+// MockPostEntryMockRecorder is the mock recorder for MockPostEntry
+type MockPostEntryMockRecorder struct {
+	mock *MockPostEntry
 }
 
-// NewMockIPost creates a new mock instance
-func NewMockIPost(ctrl *gomock.Controller) *MockIPost {
-	mock := &MockIPost{ctrl: ctrl}
-	mock.recorder = &MockIPostMockRecorder{mock}
+// NewMockPostEntry creates a new mock instance
+func NewMockPostEntry(ctrl *gomock.Controller) *MockPostEntry {
+	mock := &MockPostEntry{ctrl: ctrl}
+	mock.recorder = &MockPostEntryMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockIPost) EXPECT() *MockIPostMockRecorder {
+func (m *MockPostEntry) EXPECT() *MockPostEntryMockRecorder {
 	return m.recorder
 }
 
 // GetComments mocks base method
-func (m *MockIPost) GetComments() (plumbing.Comments, error) {
+func (m *MockPostEntry) GetComments() (plumbing.Comments, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetComments")
 	ret0, _ := ret[0].(plumbing.Comments)
@@ -43,13 +43,13 @@ func (m *MockIPost) GetComments() (plumbing.Comments, error) {
 }
 
 // GetComments indicates an expected call of GetComments
-func (mr *MockIPostMockRecorder) GetComments() *gomock.Call {
+func (mr *MockPostEntryMockRecorder) GetComments() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComments", reflect.TypeOf((*MockIPost)(nil).GetComments))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetComments", reflect.TypeOf((*MockPostEntry)(nil).GetComments))
 }
 
 // IsClosed mocks base method
-func (m *MockIPost) IsClosed() (bool, error) {
+func (m *MockPostEntry) IsClosed() (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsClosed")
 	ret0, _ := ret[0].(bool)
@@ -58,13 +58,13 @@ func (m *MockIPost) IsClosed() (bool, error) {
 }
 
 // IsClosed indicates an expected call of IsClosed
-func (mr *MockIPostMockRecorder) IsClosed() *gomock.Call {
+func (mr *MockPostEntryMockRecorder) IsClosed() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsClosed", reflect.TypeOf((*MockIPost)(nil).IsClosed))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsClosed", reflect.TypeOf((*MockPostEntry)(nil).IsClosed))
 }
 
 // GetTitle mocks base method
-func (m *MockIPost) GetTitle() string {
+func (m *MockPostEntry) GetTitle() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTitle")
 	ret0, _ := ret[0].(string)
@@ -72,13 +72,13 @@ func (m *MockIPost) GetTitle() string {
 }
 
 // GetTitle indicates an expected call of GetTitle
-func (mr *MockIPostMockRecorder) GetTitle() *gomock.Call {
+func (mr *MockPostEntryMockRecorder) GetTitle() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTitle", reflect.TypeOf((*MockIPost)(nil).GetTitle))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTitle", reflect.TypeOf((*MockPostEntry)(nil).GetTitle))
 }
 
 // GetName mocks base method
-func (m *MockIPost) GetName() string {
+func (m *MockPostEntry) GetName() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetName")
 	ret0, _ := ret[0].(string)
@@ -86,13 +86,13 @@ func (m *MockIPost) GetName() string {
 }
 
 // GetName indicates an expected call of GetName
-func (mr *MockIPostMockRecorder) GetName() *gomock.Call {
+func (mr *MockPostEntryMockRecorder) GetName() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetName", reflect.TypeOf((*MockIPost)(nil).GetName))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetName", reflect.TypeOf((*MockPostEntry)(nil).GetName))
 }
 
 // FirstComment mocks base method
-func (m *MockIPost) FirstComment() *plumbing.Comment {
+func (m *MockPostEntry) FirstComment() *plumbing.Comment {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FirstComment")
 	ret0, _ := ret[0].(*plumbing.Comment)
@@ -100,7 +100,7 @@ func (m *MockIPost) FirstComment() *plumbing.Comment {
 }
 
 // FirstComment indicates an expected call of FirstComment
-func (mr *MockIPostMockRecorder) FirstComment() *gomock.Call {
+func (mr *MockPostEntryMockRecorder) FirstComment() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstComment", reflect.TypeOf((*MockIPost)(nil).FirstComment))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FirstComment", reflect.TypeOf((*MockPostEntry)(nil).FirstComment))
 }

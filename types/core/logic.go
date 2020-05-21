@@ -7,7 +7,6 @@ import (
 	"gitlab.com/makeos/mosdef/storage"
 	types2 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/mempool"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -304,10 +303,10 @@ type Logic interface {
 	Cfg() *config.AppConfig
 
 	// GetMempoolReactor returns the mempool reactor
-	GetMempoolReactor() mempool.MempoolReactor
+	GetMempoolReactor() MempoolReactor
 
 	// SetMempoolReactor sets the mempool reactor
-	SetMempoolReactor(mr mempool.MempoolReactor)
+	SetMempoolReactor(mr MempoolReactor)
 
 	// OnEndBlock is called within the ABCI EndBlock method;
 	// Do things that need to happen after each block transactions are processed.
@@ -377,7 +376,7 @@ type SystemContract interface {
 	// logic is the logic manager
 	// tx is the transaction to execute.
 	// curChainHeight is the current height of the chain
-	Init(logic Logic, tx types.BaseTx, curChainHeight uint64) SystemContract
+	Init(Logic, types.BaseTx, uint64) SystemContract
 
 	// CanExec checks whether the given tx type can be executed by the contract.
 	CanExec(tx types.TxCode) bool

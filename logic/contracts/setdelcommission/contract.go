@@ -4,6 +4,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -11,7 +12,7 @@ import (
 // SetDelegateCommissionContract implements SystemContract.
 type SetDelegateCommissionContract struct {
 	core.Logic
-	tx          *core.TxSetDelegateCommission
+	tx          *txns.TxSetDelegateCommission
 	chainHeight uint64
 }
 
@@ -21,13 +22,13 @@ func NewContract() *SetDelegateCommissionContract {
 }
 
 func (c *SetDelegateCommissionContract) CanExec(typ types.TxCode) bool {
-	return typ == core.TxTypeSetDelegatorCommission
+	return typ == txns.TxTypeSetDelegatorCommission
 }
 
 // Init initialize the contract
 func (c *SetDelegateCommissionContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*core.TxSetDelegateCommission)
+	c.tx = tx.(*txns.TxSetDelegateCommission)
 	c.chainHeight = curChainHeight
 	return c
 }

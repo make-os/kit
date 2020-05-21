@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/testutil"
@@ -142,7 +143,7 @@ var _ = Describe("Gitops", func() {
 			})
 
 			It("should return err=ErrRefNotFound", func() {
-				Expect(err).To(Equal(repo.ErrRefNotFound))
+				Expect(err).To(Equal(plumbing.ErrRefNotFound))
 			})
 		})
 
@@ -228,7 +229,7 @@ var _ = Describe("Gitops", func() {
 			It("should return err", func() {
 				hash, err := r.GetRecentCommitHash()
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(repo.ErrNoCommits))
+				Expect(err).To(Equal(plumbing.ErrNoCommits))
 				Expect(hash).To(BeEmpty())
 			})
 		})
@@ -447,7 +448,7 @@ var _ = Describe("Gitops", func() {
 		It("should return error if unable to checkout a non-existing branch", func() {
 			err := r.Checkout("refs/heads/unknown", false, false)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(repo.ErrRefNotFound))
+			Expect(err).To(Equal(plumbing.ErrRefNotFound))
 		})
 
 		It("should return no error and create branch if it does not exist but create=true", func() {
@@ -520,7 +521,7 @@ var _ = Describe("Gitops", func() {
 		It("should return the commit with no parent", func() {
 			_, err := r.GetRefRootCommit("dev")
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(repo.ErrRefNotFound))
+			Expect(err).To(Equal(plumbing.ErrRefNotFound))
 		})
 	})
 

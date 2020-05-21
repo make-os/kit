@@ -19,10 +19,11 @@ import (
 	"gitlab.com/makeos/mosdef/remote/pruner"
 	"gitlab.com/makeos/mosdef/remote/pushhandler"
 	"gitlab.com/makeos/mosdef/remote/pushpool"
+	pushpool2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	types2 "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types/core"
-	mempool2 "gitlab.com/makeos/mosdef/types/mempool"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/state"
 
@@ -67,20 +68,20 @@ type Server struct {
 	rootDir                  string                                  // the root directory where all repos are stored
 	addr                     string                                  // addr is the listening address for the http server
 	gitBinPath               string                                  // gitBinPath is the path of the git executable
-	pushPool                 core.PushPool                           // The transaction pool for push transactions
-	mempool                  mempool2.Mempool                        // The general transaction pool for block-bound transaction
+	pushPool                 pushpool2.PushPool                      // The transaction pool for push transactions
+	mempool                  core.Mempool                            // The general transaction pool for block-bound transaction
 	logic                    core.Logic                              // logic is the application logic provider
 	privValidatorKey         *crypto.Key                             // the node's private validator key for signing transactions
 	pushKeyGetter            core.PushKeyGetter                      // finds and returns PGP public key
 	dht                      dhttypes.DHTNode                        // The dht service
-	pruner                   core.Pruner                             // The repo runner
+	pruner                   types2.RepoPruner                       // The repo runner
 	blockGetter              types.BlockGetter                       // Provides access to blocks
 	pushNoteSenders          *cache.Cache                            // Store senders of push notes
 	pushEndSenders           *cache.Cache                            // Stores senders of PushEndorsement messages
 	pushEndorsements         *cache.Cache                            // Store PushEnds
 	modulesAgg               modules.ModuleHub                       // Modules aggregator
 	authenticate             AuthenticatorFunc                       // Function for performing authentication
-	checkPushNote            validation.PushNoteCheckFunc            // Function for performing PushNote validation
+	checkPushNote            validation.PushNoteCheckFunc            // Function for performing PushNotice validation
 	packfileMaker            pushhandler.ReferenceUpdateRequestMaker // Function for creating a packfile for updating a repository
 	makePushHandler          pushhandler.PushHandlerFunc             // Function for creating a push handler
 	pushedObjectsBroadcaster pushedObjectsBroadcaster                // Function for broadcasting a push note and pushed objects
@@ -92,7 +93,7 @@ func NewManager(
 	addr string,
 	logic core.Logic,
 	dht dhttypes.DHTNode,
-	mempool mempool2.Mempool,
+	mempool core.Mempool,
 	blockGetter types.BlockGetter) *Server {
 
 	wg := &sync.WaitGroup{}
@@ -175,12 +176,12 @@ func (sv *Server) isPushEndSender(senderID string, pushEndID string) bool {
 }
 
 // addPushNoteEndorsement indexes a PushEndorsement for a given push note
-func (sv *Server) addPushNoteEndorsement(noteID string, pushEnd *core.PushEndorsement) {
+func (sv *Server) addPushNoteEndorsement(noteID string, pushEnd *pushpool2.PushEndorsement) {
 	pushEndList := sv.pushEndorsements.Get(noteID)
 	if pushEndList == nil {
-		pushEndList = map[string]*core.PushEndorsement{}
+		pushEndList = map[string]*pushpool2.PushEndorsement{}
 	}
-	pushEndList.(map[string]*core.PushEndorsement)[pushEnd.ID().String()] = pushEnd
+	pushEndList.(map[string]*pushpool2.PushEndorsement)[pushEnd.ID().String()] = pushEnd
 	sv.pushEndorsements.Add(noteID, pushEndList)
 }
 
@@ -222,17 +223,17 @@ func (sv *Server) GetPrivateValidatorKey() *crypto.Key {
 }
 
 // GetPruner returns the repo pruner
-func (sv *Server) GetPruner() core.Pruner {
+func (sv *Server) GetPruner() types2.RepoPruner {
 	return sv.pruner
 }
 
 // GetPushPool returns the push pool
-func (sv *Server) GetPushPool() core.PushPool {
+func (sv *Server) GetPushPool() pushpool2.PushPool {
 	return sv.pushPool
 }
 
 // GetMempool returns the transaction pool
-func (sv *Server) GetMempool() mempool2.Mempool {
+func (sv *Server) GetMempool() core.Mempool {
 	return sv.mempool
 }
 
@@ -381,8 +382,8 @@ func (sv *Server) GetPushKeyGetter() core.PushKeyGetter {
 
 // createPushHandler creates an instance of Handler
 func (sv *Server) createPushHandler(
-	targetRepo core.LocalRepo,
-	txDetails []*core.TxDetail,
+	targetRepo pushpool2.LocalRepo,
+	txDetails []*types2.TxDetail,
 	enforcer policy.EnforcerFunc) *pushhandler.Handler {
 	return pushhandler.NewHandler(targetRepo, txDetails, enforcer, sv)
 }
@@ -392,13 +393,13 @@ func (sv *Server) Log() logger.Logger {
 	return sv.log
 }
 
-// SetPGPPubKeyGetter implements SetPGPPubKeyGetter
-func (sv *Server) SetPGPPubKeyGetter(pkGetter core.PushKeyGetter) {
+// SetPushKeyPubKeyGetter implements SetPushKeyPubKeyGetter
+func (sv *Server) SetPushKeyPubKeyGetter(pkGetter core.PushKeyGetter) {
 	sv.pushKeyGetter = pkGetter
 }
 
 // GetRepoState implements RepositoryManager
-func (sv *Server) GetRepoState(repo core.LocalRepo, options ...core.KVOption) (core.BareRepoState, error) {
+func (sv *Server) GetRepoState(repo pushpool2.LocalRepo, options ...core.KVOption) (core.BareRepoState, error) {
 	return plumbing.GetRepoState(repo, options...), nil
 }
 
@@ -433,7 +434,7 @@ func (sv *Server) FindObject(key []byte) ([]byte, error) {
 }
 
 // Get returns a repo handle
-func (sv *Server) GetRepo(name string) (core.LocalRepo, error) {
+func (sv *Server) GetRepo(name string) (pushpool2.LocalRepo, error) {
 	return repo2.GetWithLiteGit(sv.gitBinPath, sv.getRepoPath(name))
 }
 

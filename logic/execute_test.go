@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/validators"
 
 	"gitlab.com/makeos/mosdef/types"
@@ -17,7 +18,7 @@ import (
 )
 
 type unknownTxType struct {
-	*core.TxCoinTransfer
+	*txns.TxCoinTransfer
 }
 
 type testSystemContract struct {
@@ -66,7 +67,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("when tx failed validation", func() {
 			It("should return err", func() {
-				tx := core.NewBareTxCoinTransfer()
+				tx := txns.NewBareTxCoinTransfer()
 				tx.Sig = []byte("sig")
 				resp := logic.ExecTx(&core.ExecArgs{
 					Tx:          tx,
@@ -80,7 +81,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("when tx has no contract to execute it", func() {
 			It("should return error", func() {
-				tx := core.NewBareTxCoinTransfer()
+				tx := txns.NewBareTxCoinTransfer()
 				resp := logic.ExecTx(&core.ExecArgs{
 					Tx:             tx,
 					ChainHeight:    1,
@@ -94,7 +95,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("with unknown transaction type", func() {
 			It("should return err", func() {
-				tx := &unknownTxType{TxCoinTransfer: core.NewBareTxCoinTransfer()}
+				tx := &unknownTxType{TxCoinTransfer: txns.NewBareTxCoinTransfer()}
 				resp := logic.ExecTx(&core.ExecArgs{
 					Tx:          tx,
 					ChainHeight: 1,
@@ -107,7 +108,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("with unknown ticket purchase tx type", func() {
 			It("should return err", func() {
-				tx := core.NewBareTxTicketPurchase(1000)
+				tx := txns.NewBareTxTicketPurchase(1000)
 				resp := logic.ExecTx(&core.ExecArgs{
 					Tx:          tx,
 					ChainHeight: 1,
@@ -120,7 +121,7 @@ var _ = Describe("Transaction", func() {
 
 		Context("when tx execution failed", func() {
 			It("should return error", func() {
-				tx := core.NewBareTxCoinTransfer()
+				tx := txns.NewBareTxCoinTransfer()
 				resp := logic.ExecTx(&core.ExecArgs{
 					Tx:             tx,
 					ChainHeight:    1,

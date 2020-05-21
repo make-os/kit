@@ -135,3 +135,12 @@ func MockLogic(ctrl *gomock.Controller) *MockObjects {
 
 	return mo
 }
+
+// ReturnStringOnCallCount returns the element in ret that correspond with the callCount value.
+// Use this in repeatedly called callback functions when you want to determine what value to
+// return at a given call count.
+func ReturnStringOnCallCount(callCount *int, ret ...string) string {
+	str := ret[*callCount]
+	*callCount++
+	return str
+}

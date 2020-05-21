@@ -9,6 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -16,7 +17,7 @@ import (
 // push keys to a repo. RegisterRepoPushKeysContract implements ProposalContract.
 type RegisterRepoPushKeysContract struct {
 	core.Logic
-	tx          *core.TxRepoProposalRegisterPushKey
+	tx          *txns.TxRepoProposalRegisterPushKey
 	chainHeight uint64
 	contracts   *[]core.SystemContract
 }
@@ -27,13 +28,13 @@ func NewContract(contracts *[]core.SystemContract) *RegisterRepoPushKeysContract
 }
 
 func (c *RegisterRepoPushKeysContract) CanExec(typ types.TxCode) bool {
-	return typ == core.TxTypeRepoProposalRegisterPushKey
+	return typ == txns.TxTypeRepoProposalRegisterPushKey
 }
 
 // Init initialize the contract
 func (c *RegisterRepoPushKeysContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*core.TxRepoProposalRegisterPushKey)
+	c.tx = tx.(*txns.TxRepoProposalRegisterPushKey)
 	c.chainHeight = curChainHeight
 	return c
 }
@@ -48,7 +49,7 @@ func (c *RegisterRepoPushKeysContract) Exec() error {
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	proposal := proposals.MakeProposal(spk, repo, c.tx.ProposalID, c.tx.Value, c.chainHeight)
-	proposal.Action = core.TxTypeRepoProposalRegisterPushKey
+	proposal.Action = txns.TxTypeRepoProposalRegisterPushKey
 	proposal.ActionData = map[string][]byte{
 		constants.ActionDataKeyIDs:      util.ToBytes(c.tx.KeyIDs),
 		constants.ActionDataKeyPolicies: util.ToBytes(c.tx.Policies),

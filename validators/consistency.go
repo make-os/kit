@@ -13,12 +13,13 @@ import (
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 // CheckTxCoinTransferConsistency performs consistency checks on TxCoinTransfer
 func CheckTxCoinTransferConsistency(
-	tx *core.TxCoinTransfer,
+	tx *txns.TxCoinTransfer,
 	index int,
 	logic core.Logic) error {
 
@@ -61,7 +62,7 @@ check:
 
 // CheckTxTicketPurchaseConsistency performs consistency checks on TxTicketPurchase
 func CheckTxTicketPurchaseConsistency(
-	tx *core.TxTicketPurchase,
+	tx *txns.TxTicketPurchase,
 	index int,
 	logic core.Logic) error {
 
@@ -83,7 +84,7 @@ func CheckTxTicketPurchaseConsistency(
 
 	// For non-delegated validator ticket transaction, the value
 	// must not be lesser than the current price per ticket
-	if tx.Type == core.TxTypeValidatorTicket && tx.Delegate.IsEmpty() {
+	if tx.Type == txns.TxTypeValidatorTicket && tx.Delegate.IsEmpty() {
 		curTicketPrice := params.MinValidatorsTicketPrice
 		if tx.Value.Decimal().LessThan(decimal.NewFromFloat(curTicketPrice)) {
 			return feI(index, "value", fmt.Sprintf("value is lower than the"+
@@ -102,7 +103,7 @@ func CheckTxTicketPurchaseConsistency(
 
 // CheckTxUnbondTicketConsistency performs consistency checks on TxTicketUnbond
 func CheckTxUnbondTicketConsistency(
-	tx *core.TxTicketUnbond,
+	tx *txns.TxTicketUnbond,
 	index int,
 	logic core.Logic) error {
 
@@ -147,7 +148,7 @@ func CheckTxUnbondTicketConsistency(
 
 // CheckTxRepoCreateConsistency performs consistency checks on TxRepoCreate
 func CheckTxRepoCreateConsistency(
-	tx *core.TxRepoCreate,
+	tx *txns.TxRepoCreate,
 	index int,
 	logic core.Logic) error {
 
@@ -173,7 +174,7 @@ func CheckTxRepoCreateConsistency(
 
 // CheckTxSetDelegateCommissionConsistency performs consistency checks on TxSetDelegateCommission
 func CheckTxSetDelegateCommissionConsistency(
-	tx *core.TxSetDelegateCommission,
+	tx *txns.TxSetDelegateCommission,
 	index int,
 	logic core.Logic) error {
 
@@ -193,7 +194,7 @@ func CheckTxSetDelegateCommissionConsistency(
 
 // CheckTxRegisterPushKeyConsistency performs consistency checks on TxRegisterPushKey
 func CheckTxRegisterPushKeyConsistency(
-	tx *core.TxRegisterPushKey,
+	tx *txns.TxRegisterPushKey,
 	index int,
 	logic core.Logic) error {
 
@@ -220,7 +221,7 @@ func CheckTxRegisterPushKeyConsistency(
 
 // CheckTxRegisterPushKeyConsistency performs consistency checks on TxUpDelPushKey
 func CheckTxUpDelPushKeyConsistency(
-	tx *core.TxUpDelPushKey,
+	tx *txns.TxUpDelPushKey,
 	index int,
 	logic core.Logic) error {
 
@@ -259,7 +260,7 @@ func CheckTxUpDelPushKeyConsistency(
 
 // CheckTxPushConsistency performs consistency checks on TxPush.
 // EXPECTS: sanity check using CheckTxPush to have been performed.
-func CheckTxPushConsistency(tx *core.TxPush, index int, logic core.Logic) error {
+func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error {
 
 	hosts, err := logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
 	if err != nil {
@@ -295,7 +296,7 @@ func CheckTxPushConsistency(tx *core.TxPush, index int, logic core.Logic) error 
 
 		// Verify the endorsements
 		for i, endorsement := range pushEnd.References {
-			ref := tx.PushNote.References[i]
+			ref := tx.PushNote.GetPushedReferences()[i]
 
 			// If reference doesnt exist in the repo state, we don't expect
 			// the endorsement to include a hash.
@@ -331,7 +332,7 @@ func CheckTxPushConsistency(tx *core.TxPush, index int, logic core.Logic) error 
 
 // CheckTxNSAcquireConsistency performs consistency checks on TxNamespaceAcquire
 func CheckTxNSAcquireConsistency(
-	tx *core.TxNamespaceAcquire,
+	tx *txns.TxNamespaceAcquire,
 	index int,
 	logic core.Logic) error {
 
@@ -373,7 +374,7 @@ func CheckTxNSAcquireConsistency(
 // CheckTxNamespaceDomainUpdateConsistency performs consistency
 // checks on TxNamespaceDomainUpdate
 func CheckTxNamespaceDomainUpdateConsistency(
-	tx *core.TxNamespaceDomainUpdate,
+	tx *txns.TxNamespaceDomainUpdate,
 	index int,
 	logic core.Logic) error {
 
@@ -406,8 +407,8 @@ func CheckTxNamespaceDomainUpdateConsistency(
 // proposal transactions.
 func CheckProposalCommonConsistency(
 	proposalType types.TxCode,
-	txProposal *core.TxProposalCommon,
-	txCommon *core.TxCommon,
+	txProposal *txns.TxProposalCommon,
+	txCommon *txns.TxCommon,
 	index int,
 	logic core.Logic,
 	currentHeight int64) (*state.Repository, error) {
@@ -451,11 +452,12 @@ func CheckProposalCommonConsistency(
 
 	// ... But if proposal creator parameter is ProposalCreatorOwnerAndAnyForMerge, the sender is only permitted
 	// if there are an owner or this proposal is a merge request.
-	if propCreator == state.ProposalCreatorOwnerAndAnyForMerge && owner == nil {
-		if proposalType != core.TxTypeRepoProposalMergeRequest {
-			return nil, feI(index, "senderPubKey", "sender is not permitted to create proposal")
-		}
-	}
+	// TODO: may no longer be needed but state.ProposalCreatorOwnerAndAnyForMerge may be required.
+	// if propCreator == state.ProposalCreatorOwnerAndAnyForMerge && owner == nil {
+	// 	if proposalType != core.TxTypeRepoProposalMergeRequest {
+	// 		return nil, feI(index, "senderPubKey", "sender is not permitted to create proposal")
+	// 	}
+	// }
 
 	pubKey, _ := crypto.PubKeyFromBytes(txCommon.GetSenderPubKey().Bytes())
 	if err := logic.DrySend(pubKey, txProposal.Value, txCommon.Fee,
@@ -469,7 +471,7 @@ func CheckProposalCommonConsistency(
 // CheckTxRepoProposalUpsertOwnerConsistency performs consistency
 // checks on CheckTxRepoProposalUpsertOwner
 func CheckTxRepoProposalUpsertOwnerConsistency(
-	tx *core.TxRepoProposalUpsertOwner,
+	tx *txns.TxRepoProposalUpsertOwner,
 	index int,
 	logic core.Logic) error {
 
@@ -488,7 +490,7 @@ func CheckTxRepoProposalUpsertOwnerConsistency(
 
 // CheckTxVoteConsistency performs consistency checks on CheckTxVote
 func CheckTxVoteConsistency(
-	tx *core.TxRepoProposalVote,
+	tx *txns.TxRepoProposalVote,
 	index int,
 	logic core.Logic) error {
 
@@ -560,7 +562,7 @@ func CheckTxVoteConsistency(
 
 // CheckTxRepoProposalSendFeeConsistency performs consistency checks on TxRepoProposalSendFee
 func CheckTxRepoProposalSendFeeConsistency(
-	tx *core.TxRepoProposalSendFee,
+	tx *txns.TxRepoProposalSendFee,
 	index int,
 	logic core.Logic) error {
 
@@ -605,29 +607,30 @@ func CheckTxRepoProposalSendFeeConsistency(
 	return nil
 }
 
+// TODO: check code is still required
 // CheckTxRepoProposalMergeRequestConsistency performs consistency
 // checks on TxRepoProposalMergeRequest
-func CheckTxRepoProposalMergeRequestConsistency(
-	tx *core.TxRepoProposalMergeRequest,
-	index int,
-	logic core.Logic) error {
-
-	bi, err := logic.SysKeeper().GetLastBlockInfo()
-	if err != nil {
-		return errors.Wrap(err, "failed to fetch current block info")
-	}
-
-	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
+// func CheckTxRepoProposalMergeRequestConsistency(
+// 	tx *core.TxRepoProposalMergeRequest,
+// 	index int,
+// 	logic core.Logic) error {
+//
+// 	bi, err := logic.SysKeeper().GetLastBlockInfo()
+// 	if err != nil {
+// 		return errors.Wrap(err, "failed to fetch current block info")
+// 	}
+//
+// 	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	return nil
+// }
 
 // CheckTxRepoProposalUpdateConsistency performs consistency checks on CheckTxRepoProposalUpdate
 func CheckTxRepoProposalUpdateConsistency(
-	tx *core.TxRepoProposalUpdate,
+	tx *txns.TxRepoProposalUpdate,
 	index int,
 	logic core.Logic) error {
 
@@ -646,7 +649,7 @@ func CheckTxRepoProposalUpdateConsistency(
 
 // CheckTxRepoProposalRegisterPushKeyConsistency performs consistency checks on TxRepoProposalRegisterPushKey
 func CheckTxRepoProposalRegisterPushKeyConsistency(
-	tx *core.TxRepoProposalRegisterPushKey,
+	tx *txns.TxRepoProposalRegisterPushKey,
 	index int,
 	logic core.Logic) error {
 

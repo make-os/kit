@@ -14,6 +14,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -47,8 +48,8 @@ var _ = Describe("DepositProposalFeeContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := depositproposalfee.NewContract()
-			Expect(ct.CanExec(core.TxTypeRepoProposalSendFee)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeValidatorTicket)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeRepoProposalSendFee)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeValidatorTicket)).To(BeFalse())
 		})
 	})
 
@@ -73,9 +74,9 @@ var _ = Describe("DepositProposalFeeContract", func() {
 				repoUpd.Proposals.Add(propID, &state.RepoProposal{Fees: map[string]string{}})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				err = depositproposalfee.NewContract().Init(logic, &core.TxRepoProposalSendFee{
-					TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxValue:    &core.TxValue{Value: proposalFee},
+				err = depositproposalfee.NewContract().Init(logic, &txns.TxRepoProposalSendFee{
+					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxValue:    &txns.TxValue{Value: proposalFee},
 					RepoName:   repoName,
 					ProposalID: propID,
 				}, 0).Exec()
@@ -98,9 +99,9 @@ var _ = Describe("DepositProposalFeeContract", func() {
 				proposalFee := util.String("2")
 
 				BeforeEach(func() {
-					err = depositproposalfee.NewContract().Init(logic, &core.TxRepoProposalSendFee{
-						TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-						TxValue:    &core.TxValue{Value: proposalFee},
+					err = depositproposalfee.NewContract().Init(logic, &txns.TxRepoProposalSendFee{
+						TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+						TxValue:    &txns.TxValue{Value: proposalFee},
 						RepoName:   repoName,
 						ProposalID: propID,
 					}, 0).Exec()
@@ -130,17 +131,17 @@ var _ = Describe("DepositProposalFeeContract", func() {
 				repoUpd.Proposals.Add(propID, &state.RepoProposal{Fees: map[string]string{}})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				err = depositproposalfee.NewContract().Init(logic, &core.TxRepoProposalSendFee{
-					TxCommon:   &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxValue:    &core.TxValue{Value: proposalFee},
+				err = depositproposalfee.NewContract().Init(logic, &txns.TxRepoProposalSendFee{
+					TxCommon:   &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxValue:    &txns.TxValue{Value: proposalFee},
 					RepoName:   repoName,
 					ProposalID: propID,
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 
-				err = depositproposalfee.NewContract().Init(logic, &core.TxRepoProposalSendFee{
-					TxCommon:   &core.TxCommon{SenderPubKey: key2.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxValue:    &core.TxValue{Value: proposalFee},
+				err = depositproposalfee.NewContract().Init(logic, &txns.TxRepoProposalSendFee{
+					TxCommon:   &txns.TxCommon{SenderPubKey: key2.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxValue:    &txns.TxValue{Value: proposalFee},
 					RepoName:   repoName,
 					ProposalID: propID,
 				}, 0).Exec()

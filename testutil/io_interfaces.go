@@ -1,8 +1,17 @@
 package testutil
 
+import "io"
+
 type ReadCloser interface {
 	Read(p []byte) (n int, err error)
 	Close() error
+}
+
+// FileReader provides a minimal interface for Stdout.
+type FileReader interface {
+	io.Reader
+	io.Closer
+	Fd() uintptr
 }
 
 // WrapReadCloser implements ReadCloser
@@ -18,4 +27,10 @@ func (w WrapReadCloser) Read(p []byte) (n int, err error) {
 
 func (w WrapReadCloser) Close() error {
 	return nil
+}
+
+// FileWriter provides a minimal interface for Stdin.
+type FileWriter interface {
+	io.Writer
+	Fd() uintptr
 }

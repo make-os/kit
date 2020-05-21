@@ -9,7 +9,7 @@ import (
 	"time"
 
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/types/core"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/types/state"
 
 	"gopkg.in/src-d/go-git.v4/config"
@@ -65,7 +65,7 @@ func (r *Repo) SetPath(path string) {
 }
 
 // WrappedCommitObject returns commit that implements types.WrappedCommit interface.
-func (r *Repo) WrappedCommitObject(h plumbing.Hash) (core.Commit, error) {
+func (r *Repo) WrappedCommitObject(h plumbing.Hash) (types2.Commit, error) {
 	commit, err := r.CommitObject(h)
 	if err != nil {
 		return nil, err
@@ -234,21 +234,6 @@ func (r *Repo) GetHost() storage.Storer {
 	return r.Storer
 }
 
-// GetFreeIssueNum finds an issue number that has not been used
-func (r *Repo) GetFreeIssueNum(startID int) (int, error) {
-	for {
-		ref := plumbing2.MakeIssueReference(startID)
-		hash, err := r.RefGet(ref)
-		if err != nil && err != ErrRefNotFound {
-			return 0, err
-		}
-		if hash == "" {
-			return startID, nil
-		}
-		startID++
-	}
-}
-
 // Prune deletes objects older than the given time
 func (r *Repo) Prune(olderThan time.Time) error {
 	return r.Repository.Prune(git.PruneOptions{
@@ -305,7 +290,7 @@ func (r *Repo) GetAncestors(commit *object.Commit, stopHash string, reverse bool
 }
 
 // Get returns a repository
-func Get(path string) (core.LocalRepo, error) {
+func Get(path string) (types2.LocalRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
@@ -316,7 +301,7 @@ func Get(path string) (core.LocalRepo, error) {
 	}, nil
 }
 
-func GetWithLiteGit(gitBinPath, path string) (core.LocalRepo, error) {
+func GetWithLiteGit(gitBinPath, path string) (types2.LocalRepo, error) {
 	repo, err := git.PlainOpen(path)
 	if err != nil {
 		return nil, err
@@ -330,7 +315,7 @@ func GetWithLiteGit(gitBinPath, path string) (core.LocalRepo, error) {
 
 // GetAtWorkingDir returns a RepoContext instance pointed to the repository
 // in the current working directory.
-func GetAtWorkingDir(gitBinDir string) (core.LocalRepo, error) {
+func GetAtWorkingDir(gitBinDir string) (types2.LocalRepo, error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get current working directory")
@@ -349,7 +334,7 @@ func GetAtWorkingDir(gitBinDir string) (core.LocalRepo, error) {
 }
 
 // GetTreeEntries returns all entries in a tree.
-func GetTreeEntries(repo core.LocalRepo, treeHash string) ([]string, error) {
+func GetTreeEntries(repo types2.LocalRepo, treeHash string) ([]string, error) {
 	entries, err := repo.ListTreeObjectsSlice(treeHash, true, true)
 	if err != nil {
 		return nil, err
@@ -362,7 +347,7 @@ func GetTreeEntries(repo core.LocalRepo, treeHash string) ([]string, error) {
 // repo: The target repository
 // commit: The target commit
 // stopCommitHash: A commit hash that when found triggers the end of the search.
-func GetCommitHistory(repo core.LocalRepo, commit *object.Commit, stopCommitHash string) ([]string, error) {
+func GetCommitHistory(repo types2.LocalRepo, commit *object.Commit, stopCommitHash string) ([]string, error) {
 	var hashes []string
 
 	// Stop if commit hash matches the stop hash
@@ -395,7 +380,7 @@ func GetCommitHistory(repo core.LocalRepo, commit *object.Commit, stopCommitHash
 }
 
 // GetObjectsSize returns the total size of the given objects.
-func GetObjectsSize(repo core.LocalRepo, objects []string) (uint64, error) {
+func GetObjectsSize(repo types2.LocalRepo, objects []string) (uint64, error) {
 	var size int64
 	for _, hash := range objects {
 		objSize, err := repo.GetObjectSize(hash)

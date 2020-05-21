@@ -10,6 +10,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
+	"gitlab.com/makeos/mosdef/types/txns"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
@@ -115,7 +116,7 @@ func (m *TxModule) Configure() []prompt.Suggest {
 func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
-	var tx = core.NewBareTxCoinTransfer()
+	var tx = txns.NewBareTxCoinTransfer()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}
@@ -167,7 +168,7 @@ func (m *TxModule) Get(hash string) util.Map {
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
 func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
-	tx, err := core.DecodeTxFromMap(params)
+	tx, err := txns.DecodeTxFromMap(params)
 	if err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
 	}

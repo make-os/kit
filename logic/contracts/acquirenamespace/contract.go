@@ -5,6 +5,7 @@ import (
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -12,7 +13,7 @@ import (
 // AcquireNamespaceContract implements SystemContract.
 type AcquireNamespaceContract struct {
 	core.Logic
-	tx          *core.TxNamespaceAcquire
+	tx          *txns.TxNamespaceAcquire
 	chainHeight uint64
 }
 
@@ -22,13 +23,13 @@ func NewContract() *AcquireNamespaceContract {
 }
 
 func (c *AcquireNamespaceContract) CanExec(typ types.TxCode) bool {
-	return typ == core.TxTypeNSAcquire
+	return typ == txns.TxTypeNSAcquire
 }
 
 // Init initialize the contract
 func (c *AcquireNamespaceContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*core.TxNamespaceAcquire)
+	c.tx = tx.(*txns.TxNamespaceAcquire)
 	c.chainHeight = curChainHeight
 	return c
 }

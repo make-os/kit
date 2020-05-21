@@ -15,6 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -47,8 +48,8 @@ var _ = Describe("CreateRepoContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := createrepo.NewContract()
-			Expect(ct.CanExec(core.TxTypeRepoCreate)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeValidatorTicket)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeRepoCreate)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeValidatorTicket)).To(BeFalse())
 		})
 	})
 
@@ -63,8 +64,8 @@ var _ = Describe("CreateRepoContract", func() {
 
 		When("successful", func() {
 			BeforeEach(func() {
-				createrepo.NewContract().Init(logic, &core.TxRepoCreate{Name: "repo", Config: repoCfg.ToMap(),
-					TxCommon: &core.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+				createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg.ToMap(),
+					TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -89,8 +90,8 @@ var _ = Describe("CreateRepoContract", func() {
 			When("voter type is VoteByOwner", func() {
 				BeforeEach(func() {
 					repoCfg.Governance.Voter = state.VoterOwner
-					createrepo.NewContract().Init(logic, &core.TxRepoCreate{Name: "repo", Config: repoCfg.ToMap(),
-						TxCommon: &core.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg.ToMap(),
+						TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
 				})
@@ -105,8 +106,8 @@ var _ = Describe("CreateRepoContract", func() {
 			When("voter type is not VoteByOwner", func() {
 				BeforeEach(func() {
 					repoCfg.Governance.Voter = state.VoterNetStakers
-					createrepo.NewContract().Init(logic, &core.TxRepoCreate{Name: "repo", Config: repoCfg.ToMap(),
-						TxCommon: &core.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg.ToMap(),
+						TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
 				})
@@ -120,8 +121,8 @@ var _ = Describe("CreateRepoContract", func() {
 			When("non-nil repo config is provided", func() {
 				repoCfg2 := &state.RepoConfig{Governance: &state.RepoConfigGovernance{DurOfProposal: 1000}}
 				BeforeEach(func() {
-					createrepo.NewContract().Init(logic, &core.TxRepoCreate{Name: "repo", Config: repoCfg2.ToMap(),
-						TxCommon: &core.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg2.ToMap(),
+						TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
 				})

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/types/core"
 )
 
@@ -26,13 +27,13 @@ const (
 	ActionTypeNoteUpdate
 )
 
-type RevertFunc func(repo core.LocalRepo, prevState core.BareRepoState, options ...core.KVOption) (*core.Changes, error)
+type RevertFunc func(repo types2.LocalRepo, prevState core.BareRepoState, options ...core.KVOption) (*core.Changes, error)
 
 // Revert reverts the repository from its current state to the previous state.
 // options: Additional options. prefixOpt forces the operation to ignore
 // any reference that does not contain the provided prefix.
 func Revert(
-	repo core.LocalRepo,
+	repo types2.LocalRepo,
 	prevState core.BareRepoState,
 	options ...core.KVOption) (*core.Changes, error) {
 
@@ -88,7 +89,7 @@ func Revert(
 // execActions executes the given actions against the repository
 // CONTRACT: Git objects of older state are not altered/removed, they remain as
 // loose objects till garbage collection is performed.
-func execActions(repo core.LocalRepo, actions []*Action) (err error) {
+func execActions(repo types2.LocalRepo, actions []*Action) (err error) {
 	for _, action := range actions {
 		switch action.Type {
 		case ActionTypeBranchDelete:

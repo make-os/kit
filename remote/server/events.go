@@ -6,7 +6,7 @@ import (
 	"github.com/olebedev/emitter"
 	"gitlab.com/makeos/mosdef/mempool"
 	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -22,8 +22,8 @@ func (sv *Server) subscribe() {
 		if !ok {
 			return fmt.Errorf("unexpected type (types.BaseTx)")
 		}
-		if tx.Is(core.TxTypePush) {
-			sv.pushPool.Remove(tx.(*core.TxPush).PushNote)
+		if tx.Is(txns.TxTypePush) {
+			sv.pushPool.Remove(tx.(*txns.TxPush).PushNote)
 		}
 		return nil
 	}

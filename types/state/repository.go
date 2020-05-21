@@ -20,12 +20,13 @@ const (
 // BareReference returns an empty reference object
 func BareReference() *Reference {
 	return &Reference{
-		IssueData: &IssueReferenceData{},
+		Data: &ReferenceData{},
 	}
 }
 
-// IssueReferenceData contain data specific to an issue reference
-type IssueReferenceData struct {
+// ReferenceData contain data specific to a reference
+type ReferenceData struct {
+
 	// Labels are keywords that describe the reference
 	Labels []string `json:"labels" mapstructure:"labels" msgpack:"labels,omitempty"`
 
@@ -37,7 +38,7 @@ type IssueReferenceData struct {
 }
 
 // IsNil checks whether the object's fields are have zero values
-func (i *IssueReferenceData) IsNil() bool {
+func (i *ReferenceData) IsNil() bool {
 	return len(i.Assignees) == 0 && len(i.Labels) == 0 && i.Closed == false
 }
 
@@ -52,8 +53,8 @@ type Reference struct {
 	// It is used to enforce order of operation to the reference.
 	Nonce uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce,omitempty"`
 
-	// IssueReferenceData contains data for issue reference
-	IssueData *IssueReferenceData `json:"issueData" mapstructure:"issueData" msgpack:"issueData,omitempty"`
+	// ReferenceData contains extra data
+	Data *ReferenceData `json:"data" mapstructure:"data" msgpack:"data,omitempty"`
 
 	// Hash is the current hash of the reference
 	Hash []byte `json:"hash" mapstructure:"hash" msgpack:"hash,omitempty"`
@@ -61,15 +62,15 @@ type Reference struct {
 
 // IsNil checks whether the reference fields are all empty
 func (r *Reference) IsNil() bool {
-	return len(r.Creator) == 0 && len(r.Hash) == 0 && r.Nonce == 0 && r.IssueData.IsNil()
+	return len(r.Creator) == 0 && len(r.Hash) == 0 && r.Nonce == 0 && r.Data.IsNil()
 }
 
 func (r *Reference) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return r.EncodeMulti(enc, r.Creator, r.Nonce, r.Hash, r.IssueData)
+	return r.EncodeMulti(enc, r.Creator, r.Nonce, r.Hash, r.Data)
 }
 
 func (r *Reference) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return r.DecodeMulti(dec, &r.Creator, &r.Nonce, &r.Hash, &r.IssueData)
+	return r.DecodeMulti(dec, &r.Creator, &r.Nonce, &r.Hash, &r.Data)
 }
 
 // References represents a collection of references

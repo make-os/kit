@@ -38,14 +38,20 @@ release-linux:
 install:
 	cd cmd/mosdef && go install
 
+vet:
+	go vet ./...
 
 genmocks:
 	mockgen -source=types/core/logic.go -destination=mocks/logic.go -package mocks && \
-	mockgen -source=dht/types/types.go -destination=mocks/dht.go -package mocks && \
 	mockgen -source=types/core/remote.go -destination=mocks/remote.go -package mocks && \
+    mockgen -source=types/core/mempool.go -destination=mocks/mempool.go -package mocks && \
+	mockgen -source=remote/pushpool/types/pushpool.go -destination=mocks/pushpool.go -package mocks && \
+	mockgen -source=remote/server/types.go -destination=mocks/servertypes.go -package mocks && \
+	mockgen -source=dht/types/types.go -destination=mocks/dht.go -package mocks && \
+	mockgen -source=remote/types/pruner.go -destination=mocks/pruner.go -package mocks && \
 	mockgen -source=remote/plumbing/post.go -destination=mocks/post.go -package mocks && \
+	mockgen -source=remote/pushpool/types/pushnote.go -destination=mocks/pushnote.go -package mocks && \
     mockgen -source=ticket/types/types.go -destination=mocks/ticket.go -package mocks && \
-    mockgen -source=types/mempool/mempool.go -destination=mocks/mempool.go -package mocks && \
     mockgen -source=keystore/types/types.go -destination=mocks/keystore.go -package mocks && \
     mockgen -source=api/rest/client/types.go -destination=mocks/rest_client.go -package mocks && \
     mockgen -source=api/rpc/client/client.go -destination=api/rpc/client/mocks.go -package client && \

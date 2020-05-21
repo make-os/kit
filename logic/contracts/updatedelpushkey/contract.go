@@ -5,13 +5,14 @@ import (
 	"gitlab.com/makeos/mosdef/logic/contracts/common"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/types/txns"
 )
 
 // PushKeyUpdateDeleteContract is a system contract to update or delete a push key.
 // PushKeyUpdateDeleteContract implements SystemContract.
 type PushKeyUpdateDeleteContract struct {
 	core.Logic
-	tx          *core.TxUpDelPushKey
+	tx          *txns.TxUpDelPushKey
 	chainHeight uint64
 }
 
@@ -21,13 +22,13 @@ func NewContract() *PushKeyUpdateDeleteContract {
 }
 
 func (c *PushKeyUpdateDeleteContract) CanExec(typ types.TxCode) bool {
-	return typ == core.TxTypeUpDelPushKey
+	return typ == txns.TxTypeUpDelPushKey
 }
 
 // Init initialize the contract
 func (c *PushKeyUpdateDeleteContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*core.TxUpDelPushKey)
+	c.tx = tx.(*txns.TxUpDelPushKey)
 	c.chainHeight = curChainHeight
 	return c
 }

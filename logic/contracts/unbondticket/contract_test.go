@@ -16,6 +16,7 @@ import (
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -50,8 +51,8 @@ var _ = Describe("TicketUnbondContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := unbondticket.NewContract()
-			Expect(ct.CanExec(core.TxTypeUnbondHostTicket)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeCoinTransfer)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeUnbondHostTicket)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeCoinTransfer)).To(BeFalse())
 		})
 	})
 
@@ -65,9 +66,9 @@ var _ = Describe("TicketUnbondContract", func() {
 				mockLogic.AccountKeeper.EXPECT().Get(sender.Addr(), uint64(0)).Return(acct)
 				mockLogic.TicketManager.EXPECT().GetByHash(gomock.Any()).Return(nil)
 
-				err = unbondticket.NewContract().Init(mockLogic.Logic, &core.TxTicketUnbond{
+				err = unbondticket.NewContract().Init(mockLogic.Logic, &txns.TxTicketUnbond{
 					TicketHash: util.StrToBytes32("ticket_id"),
-					TxCommon:   &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					TxCommon:   &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 				}, 0).Exec()
 				Expect(err).ToNot(BeNil())
 			})
@@ -93,9 +94,9 @@ var _ = Describe("TicketUnbondContract", func() {
 				returnTicket := &types3.Ticket{Hash: util.StrToBytes32("ticket_id"), Value: "100"}
 				mockLogic.TicketManager.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
 
-				err = unbondticket.NewContract().Init(mockLogic.Logic, &core.TxTicketUnbond{
+				err = unbondticket.NewContract().Init(mockLogic.Logic, &txns.TxTicketUnbond{
 					TicketHash: returnTicket.Hash,
-					TxCommon:   &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					TxCommon:   &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 				}, 1).Exec()
 				Expect(err).To(BeNil())
 			})

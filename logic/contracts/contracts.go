@@ -5,7 +5,6 @@ import (
 	"gitlab.com/makeos/mosdef/logic/contracts/createrepo"
 	"gitlab.com/makeos/mosdef/logic/contracts/depositproposalfee"
 	"gitlab.com/makeos/mosdef/logic/contracts/gitpush"
-	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
 	"gitlab.com/makeos/mosdef/logic/contracts/purchaseticket"
 	"gitlab.com/makeos/mosdef/logic/contracts/registerpushkey"
 	"gitlab.com/makeos/mosdef/logic/contracts/registerrepopushkeys"
@@ -40,6 +39,5 @@ func init() {
 		upsertowner.NewContract(&SystemContracts),
 		updaterepo.NewContract(&SystemContracts),
 		registerrepopushkeys.NewContract(&SystemContracts),
-		mergerequest.NewContract(),
 	}...)
 }

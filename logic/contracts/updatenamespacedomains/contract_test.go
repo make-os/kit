@@ -15,6 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -47,8 +48,8 @@ var _ = Describe("NamespaceDomainUpdateContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := updatenamespacedomains.NewContract()
-			Expect(ct.CanExec(core.TxTypeNSDomainUpdate)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeCoinTransfer)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeNSDomainUpdate)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeCoinTransfer)).To(BeFalse())
 		})
 	})
 
@@ -66,8 +67,8 @@ var _ = Describe("NamespaceDomainUpdateContract", func() {
 				})
 
 				update := map[string]string{"domain1": "target_update"}
-				err = updatenamespacedomains.NewContract().Init(logic, &core.TxNamespaceDomainUpdate{
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+				err = updatenamespacedomains.NewContract().Init(logic, &txns.TxNamespaceDomainUpdate{
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 					Name:     nsName,
 					Domains:  update,
 				}, 0).Exec()
@@ -99,8 +100,8 @@ var _ = Describe("NamespaceDomainUpdateContract", func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Nonce: 1})
 
 				update := map[string]string{"domain1": "target_update"}
-				err = updatenamespacedomains.NewContract().Init(logic, &core.TxNamespaceDomainUpdate{
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+				err = updatenamespacedomains.NewContract().Init(logic, &txns.TxNamespaceDomainUpdate{
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 					Name:     nsName,
 					Domains:  update,
 				}, 0).Exec()
@@ -131,8 +132,8 @@ var _ = Describe("NamespaceDomainUpdateContract", func() {
 				})
 
 				update := map[string]string{"domain1": ""}
-				err = updatenamespacedomains.NewContract().Init(logic, &core.TxNamespaceDomainUpdate{
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+				err = updatenamespacedomains.NewContract().Init(logic, &txns.TxNamespaceDomainUpdate{
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 					Name:     nsName,
 					Domains:  update,
 				}, 0).Exec()

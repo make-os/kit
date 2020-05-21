@@ -1066,25 +1066,6 @@ func (mr *MockRepoModuleMockRecorder) DepositFee(params interface{}, options ...
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DepositFee", reflect.TypeOf((*MockRepoModule)(nil).DepositFee), varargs...)
 }
 
-// CreateMergeRequest mocks base method
-func (m *MockRepoModule) CreateMergeRequest(params map[string]interface{}, options ...interface{}) interface{} {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{params}
-	for _, a := range options {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "CreateMergeRequest", varargs...)
-	ret0, _ := ret[0].(interface{})
-	return ret0
-}
-
-// CreateMergeRequest indicates an expected call of CreateMergeRequest
-func (mr *MockRepoModuleMockRecorder) CreateMergeRequest(params interface{}, options ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{params}, options...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateMergeRequest", reflect.TypeOf((*MockRepoModule)(nil).CreateMergeRequest), varargs...)
-}
-
 // MockNamespaceModule is a mock of NamespaceModule interface
 type MockNamespaceModule struct {
 	ctrl     *gomock.Controller

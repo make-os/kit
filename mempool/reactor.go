@@ -6,7 +6,7 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/mempool"
+	"gitlab.com/makeos/mosdef/types/txns"
 
 	"gitlab.com/makeos/mosdef/pkgs/cache"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
@@ -69,7 +69,7 @@ func (r *Reactor) RemovePeer(peer p2p.Peer, reason interface{}) {}
 // It adds any received transactions to the mempool.
 func (r *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 
-	tx, err := core.DecodeTx(msgBytes)
+	tx, err := txns.DecodeTx(msgBytes)
 	if err != nil {
 		r.log.Error("Failed to decode received transaction", "Err", err)
 		return
@@ -90,8 +90,8 @@ func (r *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 }
 
 // GetPoolSize returns the size information of the pool
-func (r *Reactor) GetPoolSize() *mempool.PoolSizeInfo {
-	return &mempool.PoolSizeInfo{
+func (r *Reactor) GetPoolSize() *core.PoolSizeInfo {
+	return &core.PoolSizeInfo{
 		TotalTxSize: r.mempool.TxsBytes(),
 		TxCount:     r.mempool.Size(),
 	}

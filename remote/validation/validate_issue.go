@@ -5,43 +5,44 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gohugoio/hugo/parser/pageparser"
 	"github.com/pkg/errors"
 	"github.com/stretchr/objx"
 	"github.com/thoas/go-funk"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
 )
 
 var (
-	MaxIssueContentLen          = 1024 * 8 // 8KB
-	MaxIssueTitleLen            = 256
-	ErrCannotWriteToClosedIssue = fmt.Errorf("cannot write to a closed issue reference")
+	MaxIssueContentLen        = 1024 * 8 // 8KB
+	MaxIssueTitleLen          = 256
+	ErrCannotWriteToClosedRef = fmt.Errorf("cannot write to a closed reference")
 )
 
-// ValidateIssueCommitArg contains arguments for ValidateIssueCommit
-type ValidateIssueCommitArg struct {
-	OldHash          string
-	Change           *core.ItemChange
-	TxDetail         *core.TxDetail
-	PushKeyGetter    core.PushKeyGetter
-	CheckIssueCommit IssueCommitChecker
-	CheckCommit      CommitChecker
+// ValidatePostCommitArg contains arguments for ValidatePostCommit
+type ValidatePostCommitArg struct {
+	OldHash         string
+	Change          *core.ItemChange
+	TxDetail        *types.TxDetail
+	PushKeyGetter   core.PushKeyGetter
+	CheckPostCommit PostCommitChecker
+	CheckCommit     CommitChecker
 }
 
-// ValidateIssueCommit validates pushed issue commits.
-// commit is the latest commit in the issue reference.
-func ValidateIssueCommit(repo core.LocalRepo, commit core.Commit, args *ValidateIssueCommitArg) error {
+// ValidatePostCommit validate a pushed post commit.
+// commit is the recent post commit in the post reference.
+func ValidatePostCommit(repo types2.LocalRepo, commit types2.Commit, args *ValidatePostCommitArg) error {
 
-	// Issue reference history cannot have merge commits (merge commit not permitted)
+	// Post reference history cannot have merge commits (merge commit not permitted)
 	hasMerges, err := repo.HasMergeCommits(args.TxDetail.Reference)
 	if err != nil {
-		return errors.Wrap(err, "failed to check for merge commits in issue")
+		return errors.Wrap(err, "failed to check for merge commits in post reference")
 	} else if hasMerges {
-		return fmt.Errorf("issue history must not include merge commits")
+		return fmt.Errorf("post history must not include merge commits")
 	}
 
 	// Check the latest commit using standard commit validation rules
@@ -50,158 +51,163 @@ func ValidateIssueCommit(repo core.LocalRepo, commit core.Commit, args *Validate
 		return err
 	}
 
-	// Collect the ancestors of the latest issue commit that were pushed along and were
-	// not part of the issue history prior to the push request that introduced this issue commit.
+	// Collect the ancestors of the latest commit that were pushed along and
+	// not part of the post history prior to the current push
 	ancestors, err := repo.GetAncestors(unwrapped, args.OldHash, true)
 	if err != nil {
 		return err
 	}
 
-	// Validate the new issue commits by replaying the commits
-	// individually beginning from the first ancestor.
-	issueCommits := append(ancestors, unwrapped)
+	// Validate the new post commits by replaying the commits individually
+	// beginning from the first ancestor.
+	postCommits := append(ancestors, unwrapped)
 	refState := repo.GetState().References.Get(args.TxDetail.Reference)
-	for i, issueCommit := range issueCommits {
+	for i, postCommit := range postCommits {
 
-		// Define the issie commit checker arguments
-		icArgs := &CheckIssueCommitArgs{
-			Reference:  args.TxDetail.Reference,
-			OldHash:    args.OldHash,
-			IsNewIssue: refState.IsNil(),
+		// Define the post commit checker arguments
+		icArgs := &CheckPostCommitArgs{
+			Reference: args.TxDetail.Reference,
+			OldHash:   args.OldHash,
+			IsNew:     refState.IsNil(),
 		}
 
-		// If there are ancestors, set IsNewIssue to false at index > 0.
-		// Is ensures CheckIssueCommit does not treat the issue reference as
+		// If there are ancestors, set IsNew to false at index > 0.
+		// It ensures CheckPostCommit does not treat the post reference as
 		// a new one. Also, set OldHash to the previous ancestor to mimic
-		// an already persisted issue reference history.
+		// an already persisted post reference history.
 		if i > 0 {
-			icArgs.IsNewIssue = false
-			icArgs.OldHash = issueCommits[i-1].Hash.String()
+			icArgs.IsNew = false
+			icArgs.OldHash = postCommits[i-1].Hash.String()
 		}
 
-		issueBody, err := args.CheckIssueCommit(repo, repo2.WrapCommit(issueCommit), icArgs)
+		post, err := args.CheckPostCommit(repo, repo2.WrapCommit(postCommit), icArgs)
 		if err != nil {
 			return err
 		}
 
-		// Flag the authorizer function to check for issue update policy
-		// if the issue body includes restricted fields
-		if issueBody.RequiresUpdatePolicy() {
-			args.TxDetail.FlagCheckIssueUpdatePolicy = true
+		// Set flag for the authorizer function to check for admin update policy
+		if post.IsAdminUpdate() {
+			args.TxDetail.FlagCheckAdminUpdatePolicy = true
 		}
 
-		// Set Close field in the reference data. Do this for only the latest commit
-		isRecentIssueCommit := issueCommit.Hash.String() == args.Change.Item.GetData()
-		if isRecentIssueCommit {
-			args.TxDetail.Data().Close = issueBody.Close
-			args.TxDetail.Data().Assignees = issueBody.Assignees
-			args.TxDetail.Data().Labels = issueBody.Labels
+		// Set post data to reference object. Since we only acknowledge the recent (signed) commit
+		// as the one that can change the reference state, we do this for only the latest commit.
+		isRecentCommit := postCommit.Hash.String() == args.Change.Item.GetData()
+		if isRecentCommit {
+			data := args.TxDetail.Data()
+			data.Close = post.Close
+			data.Assignees = post.Assignees
+			data.Labels = post.Labels
+			data.BaseBranch = post.BaseBranch
+			data.BaseBranchHash = post.BaseBranchHash
+			data.TargetBranch = post.TargetBranch
+			data.TargetBranchHash = post.TargetBranchHash
 		}
 
-		// When an issue reference exist and it is closed, the next pushed commit is expected
-		// to set the close option to 'open'.
-		if isRecentIssueCommit && refState.IssueData.Closed && !issueBody.WantOpen() {
-			return ErrCannotWriteToClosedIssue
+		// When a reference exist and it is closed, the next pushed commit is expected
+		// to reopen it by setting the 'close' field to 'open'.
+		if isRecentCommit && refState.Data.Closed && !post.WantOpen() {
+			return ErrCannotWriteToClosedRef
 		}
 	}
 
 	return nil
 }
 
-// CheckIssueCommitArgs includes arguments for CheckIssueCommit function
-type CheckIssueCommitArgs struct {
-	Reference  string
-	OldHash    string
-	IsNewIssue bool
+// CheckPostCommitArgs includes arguments for CheckPostCommit function
+type CheckPostCommitArgs struct {
+	Reference string
+	OldHash   string
+	IsNew     bool
 }
 
-// IssueCommitChecker describes a function for validating an issue commit.
-type IssueCommitChecker func(
-	repo core.LocalRepo,
-	commit core.Commit,
-	args *CheckIssueCommitArgs) (*plumbing2.IssueBody, error)
+// PostCommitChecker describes a function for validating a post commit.
+type PostCommitChecker func(
+	repo types2.LocalRepo,
+	commit types2.Commit,
+	args *CheckPostCommitArgs) (*plumbing2.PostBody, error)
 
-// CheckIssueCommit validates new commits of an issue branch. It returns nil issue body
-// and error if validation failed or an issue body and nil if validation passed.
-func CheckIssueCommit(repo core.LocalRepo, commit core.Commit, args *CheckIssueCommitArgs) (*plumbing2.IssueBody, error) {
+// CheckPostCommit validates new commits of a post reference. It returns nil post body
+// and error if validation failed or a post body and nil if validation passed.
+func CheckPostCommit(repo types2.LocalRepo, commit types2.Commit, args *CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 
-	// Issue reference name must be valid
-	if !plumbing2.IsIssueReference(args.Reference) {
-		return nil, fmt.Errorf("issue number is not valid. Must be numeric")
+	// Reference name must be valid
+	if !plumbing2.IsIssueReference(args.Reference) && !plumbing2.IsMergeRequestReference(args.Reference) {
+		return nil, fmt.Errorf("post number is not valid. Must be numeric")
 	}
 
-	// Issue commits can't have multiple parents (merge commit not permitted)
+	// Post commits can't have multiple parents (merge commit not permitted)
 	if commit.NumParents() > 1 {
-		return nil, fmt.Errorf("issue commit cannot have more than one parent")
+		return nil, fmt.Errorf("post commit cannot have more than one parent")
 	}
 
-	// New issue's first commit must have zero hash parent (orphan commit)
-	if args.IsNewIssue && commit.NumParents() != 0 {
-		return nil, fmt.Errorf("first commit of a new issue must have no parent")
+	// Post's first commit must have zero hash parent (orphan commit)
+	if args.IsNew && commit.NumParents() != 0 {
+		return nil, fmt.Errorf("first commit of a new post must have no parent")
 	}
 
-	// Issue commit history must not alter the current history (rebasing not permitted)
-	if !args.IsNewIssue && repo.IsAncestor(args.OldHash, commit.GetHash().String()) != nil {
-		return nil, fmt.Errorf("issue commit must not alter history")
+	// Post commit history must not alter the current history (rebasing not permitted)
+	if !args.IsNew && repo.IsAncestor(args.OldHash, commit.GetHash().String()) != nil {
+		return nil, fmt.Errorf("post commit must not alter history")
 	}
 
 	tree, err := commit.GetTree()
 	if err != nil {
-		return nil, fmt.Errorf("unable to read issue commit tree")
+		return nil, fmt.Errorf("unable to read post commit tree")
 	}
 
-	// Issue commit tree cannot be left empty
+	// Post commit tree cannot be left empty
 	if len(tree.Entries) == 0 {
-		return nil, fmt.Errorf("issue commit must have a 'body' file")
+		return nil, fmt.Errorf("post commit must have a 'body' file")
 	}
 
-	// Issue commit must include one file
+	// Post commit must include one file
 	if len(tree.Entries) > 1 {
-		return nil, fmt.Errorf("issue commit tree must only include a 'body' file")
+		return nil, fmt.Errorf("post commit tree must only include a 'body' file")
 	}
 
-	// Issue commit must include only a body file
+	// Post commit must include only a body file
 	body := tree.Entries[0]
 	if body.Mode != filemode.Regular {
-		return nil, fmt.Errorf("issue body file is not a regular file")
+		return nil, fmt.Errorf("post body file is not a regular file")
 	}
 
 	file, _ := tree.File(body.Name)
 	content, err := file.Contents()
 	if err != nil {
-		return nil, fmt.Errorf("issue body file could not be read")
+		return nil, fmt.Errorf("post body file could not be read")
 	}
 
 	// The body file must be parsable (extract front matter and content)
-	cfm, err := pageparser.ParseFrontMatterAndContent(bytes.NewBufferString(content))
+	cfm, err := util.ParseContentFrontMatter(bytes.NewBufferString(content))
 	if err != nil {
-		return nil, fmt.Errorf("issue body could not be parsed")
+		return nil, fmt.Errorf("post body could not be parsed")
 	}
 
 	// Validate extracted front matter
-	if err = CheckIssueBody(repo, commit, args.IsNewIssue, cfm.FrontMatter, cfm.Content); err != nil {
+	if err = CheckPostBody(repo, commit, args.IsNew, cfm.FrontMatter, cfm.Content); err != nil {
 		return nil, err
 	}
 
-	return plumbing2.IssueBodyFromContentFrontMatter(&cfm), nil
+	return plumbing2.PostBodyFromContentFrontMatter(&cfm), nil
 }
 
-// CheckIssueBody checks whether the front matter and content extracted from an issue body is ok.
+// CheckPostBody checks whether the front matter and content extracted from a post body is ok.
 // repo: The target repo
-// commit: The commit whose content is the be checked according to issue comment rules.
-// isNewIssue: indicates that the issue reference where the commit resides is new.
+// commit: The commit whose content needs to be checked.
+// isNew: indicates that the post reference is new.
 // fm: The front matter data.
-// content: The content from the issue commit.
+// content: The content from the post commit.
 //
 // Valid front matter fields:
-//  title: The title of the issue (optional).
-//  labels: Labels categorize issues into arbitrary or conceptual units.
-//  replyTo: Indicates the issue is a response an earlier comment.
-//  assignees: List push keys assigned to the issue and open for interpretation by clients.
-func CheckIssueBody(
-	repo core.LocalRepo,
-	commit core.Commit,
-	isNewIssue bool,
+//  title: The title of the post (optional).
+//  labels: Labels categorize posts into arbitrary or conceptual units.
+//  replyTo: Indicates a post is a response an ancestor (a comment).
+//  assignees: List push keys assigned to the posts.
+func CheckPostBody(
+	repo types2.LocalRepo,
+	commit types2.Commit,
+	isNew bool,
 	fm map[string]interface{},
 	content []byte) error {
 
@@ -251,9 +257,9 @@ func CheckIssueBody(
 		return fe(-1, makeField("assignees"), "expected a list of string values")
 	}
 
-	// Ensure issue commit do not have a replyTo value
-	if isNewIssue && len(replyTo.String()) > 0 {
-		return fe(-1, makeField("replyTo"), "not expected in a new issue commit")
+	// Ensure post commit does not have a replyTo value if the post reference is new
+	if isNew && len(replyTo.String()) > 0 {
+		return fe(-1, makeField("replyTo"), "not expected in a new post commit")
 	}
 
 	// Ensure title is unset when replyTo is set
@@ -261,10 +267,10 @@ func CheckIssueBody(
 		return fe(-1, makeField("title"), "title is not required when replying")
 	}
 
-	// Ensure title is provided if issue is new
-	if isNewIssue && len(title.String()) == 0 {
+	// Ensure title is provided if the post reference is new
+	if isNew && len(title.String()) == 0 {
 		return fe(-1, makeField("title"), "title is required")
-	} else if !isNewIssue && len(title.String()) > 0 {
+	} else if !isNew && len(title.String()) > 0 {
 		return fe(-1, makeField("title"), "title is not required for comment commit")
 	}
 
@@ -279,10 +285,10 @@ func CheckIssueBody(
 		return fe(-1, makeField("replyTo"), "invalid hash value")
 	}
 
-	// When ReplyTo is set, ensure the issue commit is a descendant of the replyTo
+	// When ReplyTo is set, ensure the post commit is a descendant of the replyTo
 	if len(replyToVal) > 0 {
 		if repo.IsAncestor(replyToVal, commit.GetHash().String()) != nil {
-			return fe(-1, makeField("replyTo"), "not a valid hash of a commit in the issue")
+			return fe(-1, makeField("replyTo"), "hash is not a known ancestor")
 		}
 	}
 
@@ -331,14 +337,14 @@ func CheckIssueBody(
 		}
 	}
 
-	// Issue content is required for a new issue
-	if isNewIssue && len(content) == 0 {
-		return fe(-1, makeField("content"), "issue content is required")
+	// Post commit content is required for a new post reference
+	if isNew && len(content) == 0 {
+		return fe(-1, makeField("content"), "post commit content is required")
 	}
 
-	// Issue content cannot be greater than the maximum allowed
+	// Post commit content cannot be greater than the maximum allowed
 	if len(content) > MaxIssueContentLen {
-		return fe(-1, makeField("content"), "issue content length exceeded max character limit")
+		return fe(-1, makeField("content"), "post commit content length exceeded max character limit")
 	}
 
 	return nil

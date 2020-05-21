@@ -9,11 +9,7 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-)
-
-var (
-	ErrRefNotFound = fmt.Errorf("ref not found")
-	ErrNoCommits   = fmt.Errorf("no commits")
+	"gitlab.com/makeos/mosdef/remote/plumbing"
 )
 
 // execGitCmd executes git commands and returns the output
@@ -77,7 +73,7 @@ func (lg *LiteGit) RefGet(refname string) (string, error) {
 	out, err := ExecGitCmd(lg.gitBinPath, lg.path, "rev-parse", "--verify", refname)
 	if err != nil {
 		if strings.Contains(err.Error(), "fatal: Needed a single revision") {
-			return "", ErrRefNotFound
+			return "", plumbing.ErrRefNotFound
 		}
 		return "", errors.Wrap(err, "failed to get ref hash")
 	}
@@ -100,7 +96,7 @@ func (lg *LiteGit) GetRecentCommitHash() (string, error) {
 	}
 
 	if numCommits == 0 {
-		return "", ErrNoCommits
+		return "", plumbing.ErrNoCommits
 	}
 
 	out, err := ExecGitCmd(lg.gitBinPath, lg.path, "rev-parse", "HEAD")
@@ -422,7 +418,7 @@ func (lg *LiteGit) Checkout(refname string, create, force bool) error {
 	if err != nil {
 		outStr := out.String()
 		if strings.Contains(outStr, "did not match any file(s) known to git") {
-			return ErrRefNotFound
+			return plumbing.ErrRefNotFound
 		}
 		return errors.Wrap(err, outStr)
 	}
@@ -444,7 +440,7 @@ func (lg *LiteGit) GetRefCommits(ref string, noMerges bool) ([]string, error) {
 	if err != nil {
 		outStr := out.String()
 		if strings.Contains(outStr, "unknown revision or path") {
-			return nil, ErrRefNotFound
+			return nil, plumbing.ErrRefNotFound
 		}
 		return nil, errors.Wrap(err, outStr)
 	}
@@ -464,7 +460,7 @@ func (lg *LiteGit) GetRefRootCommit(ref string) (string, error) {
 	if err != nil {
 		outStr := out.String()
 		if strings.Contains(outStr, "unknown revision or path") {
-			return "", ErrRefNotFound
+			return "", plumbing.ErrRefNotFound
 		}
 		return "", errors.Wrap(err, outStr)
 	}

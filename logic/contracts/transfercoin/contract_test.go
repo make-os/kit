@@ -14,6 +14,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -47,8 +48,8 @@ var _ = Describe("CoinTransferContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := transfercoin.NewContract()
-			Expect(ct.CanExec(core.TxTypeCoinTransfer)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeRegisterPushKey)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeCoinTransfer)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeRegisterPushKey)).To(BeFalse())
 		})
 	})
 
@@ -56,7 +57,7 @@ var _ = Describe("CoinTransferContract", func() {
 
 		Context("when sender variable type is not valid", func() {
 			It("should return type error", func() {
-				tx := &core.TxCoinTransfer{TxValue: &core.TxValue{Value: "100"}, TxCommon: &core.TxCommon{Fee: "0", Nonce: 1}}
+				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "100"}, TxCommon: &txns.TxCommon{Fee: "0", Nonce: 1}}
 				ct := transfercoin.NewContract()
 				ct.Init(logic, tx, 1)
 				err = ct.DryExec(123)
@@ -67,7 +68,7 @@ var _ = Describe("CoinTransferContract", func() {
 
 		Context("when sender account has insufficient spendable balance", func() {
 			It("should not return err='sender's spendable account balance is insufficient'", func() {
-				tx := &core.TxCoinTransfer{TxValue: &core.TxValue{Value: "100"}, TxCommon: &core.TxCommon{Fee: "0", Nonce: 1}}
+				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "100"}, TxCommon: &txns.TxCommon{Fee: "0", Nonce: 1}}
 				ct := transfercoin.NewContract()
 				ct.Init(logic, tx, 1)
 				err := ct.DryExec(sender.PubKey())
@@ -78,7 +79,7 @@ var _ = Describe("CoinTransferContract", func() {
 
 		Context("when nonce is invalid", func() {
 			It("should return no error", func() {
-				tx := &core.TxCoinTransfer{TxValue: &core.TxValue{Value: "100"}, TxCommon: &core.TxCommon{Fee: "0", Nonce: 3}}
+				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "100"}, TxCommon: &txns.TxCommon{Fee: "0", Nonce: 3}}
 				ct := transfercoin.NewContract()
 				ct.Init(logic, tx, 1)
 				err := ct.DryExec(sender.PubKey())
@@ -96,7 +97,7 @@ var _ = Describe("CoinTransferContract", func() {
 			})
 
 			It("should return no error", func() {
-				tx := &core.TxCoinTransfer{TxValue: &core.TxValue{Value: "100"}, TxCommon: &core.TxCommon{Fee: "0", Nonce: 1}}
+				tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "100"}, TxCommon: &txns.TxCommon{Fee: "0", Nonce: 1}}
 				ct := transfercoin.NewContract()
 				ct.Init(logic, tx, 0)
 				err := ct.DryExec(sender.PubKey())
@@ -115,9 +116,9 @@ var _ = Describe("CoinTransferContract", func() {
 
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
-					tx := &core.TxCoinTransfer{TxValue: &core.TxValue{Value: "10"},
-						TxRecipient: &core.TxRecipient{To: recipientKey.Addr()},
-						TxCommon:    &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
+					tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "10"},
+						TxRecipient: &txns.TxRecipient{To: recipientKey.Addr()},
+						TxCommon:    &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
 					ct := transfercoin.NewContract().Init(logic, tx, 0)
 					err = ct.Exec()
 					Expect(err).To(BeNil())
@@ -144,9 +145,9 @@ var _ = Describe("CoinTransferContract", func() {
 
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
-					tx := &core.TxCoinTransfer{TxValue: &core.TxValue{Value: "10"},
-						TxRecipient: &core.TxRecipient{To: sender.Addr()},
-						TxCommon:    &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
+					tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "10"},
+						TxRecipient: &txns.TxRecipient{To: sender.Addr()},
+						TxCommon:    &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
 					ct := transfercoin.NewContract().Init(logic, tx, 0)
 					err = ct.Exec()
 					Expect(err).To(BeNil())
@@ -172,9 +173,9 @@ var _ = Describe("CoinTransferContract", func() {
 
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
-					tx := &core.TxCoinTransfer{TxValue: &core.TxValue{Value: "10"},
-						TxRecipient: &core.TxRecipient{To: senderNamespaceURI},
-						TxCommon:    &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
+					tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "10"},
+						TxRecipient: &txns.TxRecipient{To: senderNamespaceURI},
+						TxCommon:    &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
 					ct := transfercoin.NewContract().Init(logic, tx, 0)
 					err = ct.Exec()
 					Expect(err).To(BeNil())
@@ -196,9 +197,9 @@ var _ = Describe("CoinTransferContract", func() {
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
 					recipient := "a/" + sender.Addr()
-					tx := &core.TxCoinTransfer{TxValue: &core.TxValue{Value: "10"},
-						TxRecipient: &core.TxRecipient{To: recipient},
-						TxCommon:    &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
+					tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "10"},
+						TxRecipient: &txns.TxRecipient{To: recipient},
+						TxCommon:    &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
 					ct := transfercoin.NewContract().Init(logic, tx, 0)
 					err = ct.Exec()
 					Expect(err).To(BeNil())
@@ -225,9 +226,9 @@ var _ = Describe("CoinTransferContract", func() {
 
 			Context("sender creates a tx with value=10, fee=1", func() {
 				BeforeEach(func() {
-					tx := &core.TxCoinTransfer{TxValue: &core.TxValue{Value: "10"},
-						TxRecipient: &core.TxRecipient{To: senderNamespaceURI},
-						TxCommon:    &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
+					tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "10"},
+						TxRecipient: &txns.TxRecipient{To: senderNamespaceURI},
+						TxCommon:    &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
 					ct := transfercoin.NewContract().Init(logic, tx, 0)
 					err = ct.Exec()
 					Expect(err).To(BeNil())
@@ -256,9 +257,9 @@ var _ = Describe("CoinTransferContract", func() {
 
 				BeforeEach(func() {
 					recipient := util.Address("r/" + repoName)
-					tx := &core.TxCoinTransfer{TxValue: &core.TxValue{Value: "10"},
-						TxRecipient: &core.TxRecipient{To: recipient},
-						TxCommon:    &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
+					tx := &txns.TxCoinTransfer{TxValue: &txns.TxValue{Value: "10"},
+						TxRecipient: &txns.TxRecipient{To: recipient},
+						TxCommon:    &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()}}
 					ct := transfercoin.NewContract().Init(logic, tx, 0)
 					err = ct.Exec()
 					Expect(err).To(BeNil())

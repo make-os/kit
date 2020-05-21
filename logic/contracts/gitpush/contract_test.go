@@ -13,10 +13,14 @@ import (
 	"gitlab.com/makeos/mosdef/logic/contracts/gitpush"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
+	"gitlab.com/makeos/mosdef/remote/pushpool/types"
+	types2 "gitlab.com/makeos/mosdef/remote/types"
+	"gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -52,8 +56,8 @@ var _ = Describe("AcquireNamespaceContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := gitpush.NewContract()
-			Expect(ct.CanExec(core.TxTypePush)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeCoinTransfer)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypePush)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeCoinTransfer)).To(BeFalse())
 		})
 	})
 
@@ -62,9 +66,9 @@ var _ = Describe("AcquireNamespaceContract", func() {
 		var pushKeyID = crypto.CreatePushKeyID(crypto.StrToPublicKey("pushKeyID"))
 		var creator = util.MustDecodePushKeyID(pushKeyID)
 		var pushKeyID2 = crypto.CreatePushKeyID(crypto.StrToPublicKey("pushKeyID2"))
-		var refs []*core.PushedReference
+		var refs []*types.PushedReference
 		var issueRef1 = plumbing.MakeIssueReference(1)
-		var issue1RefData = &state.IssueReferenceData{Labels: []string{"label1", "label2"}, Assignees: []string{"key1", "key2"}}
+		var issue1RefData = &state.ReferenceData{Labels: []string{"label1", "label2"}, Assignees: []string{"key1", "key2"}}
 
 		BeforeEach(func() {
 			logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Nonce: 1})
@@ -72,7 +76,7 @@ var _ = Describe("AcquireNamespaceContract", func() {
 			logic.RepoKeeper().Update(repo, &state.Repository{
 				References: map[string]*state.Reference{
 					"refs/heads/master": {Nonce: 1, Creator: creator},
-					issueRef1:           {Nonce: 1, Creator: creator, IssueData: issue1RefData},
+					issueRef1:           {Nonce: 1, Creator: creator, Data: issue1RefData},
 				},
 			})
 		})
@@ -80,11 +84,11 @@ var _ = Describe("AcquireNamespaceContract", func() {
 		When("pushed reference did not previously exist (new reference)", func() {
 			It("should add pusher as creator of the reference", func() {
 				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
-				refs = []*core.PushedReference{{Name: "refs/heads/dev", Data: (&core.ReferenceData{})}}
+				refs = []*types.PushedReference{{Name: "refs/heads/dev", Data: &types2.ReferenceData{}}}
 				rawPkID := util.MustDecodePushKeyID(pushKeyID2)
-				err = gitpush.NewContract().Init(logic, &core.TxPush{
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &core.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
+				err = gitpush.NewContract().Init(logic, &txns.TxPush{
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
@@ -95,11 +99,11 @@ var _ = Describe("AcquireNamespaceContract", func() {
 		When("pushed reference new hash is zero (meaning delete is required)", func() {
 			It("should remove the reference from the repo", func() {
 				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
-				refs = []*core.PushedReference{{Name: "refs/heads/master", NewHash: strings.Repeat("0", 40)}}
+				refs = []*types.PushedReference{{Name: "refs/heads/master", NewHash: strings.Repeat("0", 40)}}
 				rawPkID := util.MustDecodePushKeyID(pushKeyID2)
-				err = gitpush.NewContract().Init(logic, &core.TxPush{
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &core.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
+				err = gitpush.NewContract().Init(logic, &txns.TxPush{
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
@@ -110,11 +114,11 @@ var _ = Describe("AcquireNamespaceContract", func() {
 		When("pushed reference already exist", func() {
 			It("should not update reference creator", func() {
 				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
-				refs = []*core.PushedReference{{Name: "refs/heads/master", Data: (&core.ReferenceData{})}}
+				refs = []*types.PushedReference{{Name: "refs/heads/master", Data: (&types2.ReferenceData{})}}
 				rawPkID := util.MustDecodePushKeyID(pushKeyID2)
-				err = gitpush.NewContract().Init(logic, &core.TxPush{
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &core.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
+				err = gitpush.NewContract().Init(logic, &txns.TxPush{
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
@@ -127,11 +131,11 @@ var _ = Describe("AcquireNamespaceContract", func() {
 		When("reference has nonce = 1. After a successful exec:", func() {
 			BeforeEach(func() {
 				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
-				refs = []*core.PushedReference{{Name: "refs/heads/master", Data: (&core.ReferenceData{})}}
+				refs = []*types.PushedReference{{Name: "refs/heads/master", Data: (&types2.ReferenceData{})}}
 				rawPkID := util.MustDecodePushKeyID(pushKeyID)
-				err = gitpush.NewContract().Init(logic, &core.TxPush{
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &core.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
+				err = gitpush.NewContract().Init(logic, &txns.TxPush{
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -159,63 +163,63 @@ var _ = Describe("AcquireNamespaceContract", func() {
 				labels := []string{"lbl1"}
 				assignees := []string{"key1"}
 				cls := true
-				refs = []*core.PushedReference{{Name: ref, Data: (&core.ReferenceData{Close: &cls, Labels: &labels, Assignees: &assignees})}}
+				refs = []*types.PushedReference{{Name: ref, Data: &types2.ReferenceData{Close: &cls, IssueFields: common.IssueFields{Labels: &labels, Assignees: &assignees}}}}
 				rawPkID := util.MustDecodePushKeyID(pushKeyID2)
-				err = gitpush.NewContract().Init(logic, &core.TxPush{
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &core.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
+				err = gitpush.NewContract().Init(logic, &txns.TxPush{
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
 				Expect(rep.References.Get(ref).Creator).To(Equal(crypto.PushKey(rawPkID)))
-				Expect(rep.References[ref].IssueData.Closed).To(BeTrue())
-				Expect(rep.References[ref].IssueData.Labels).To(Equal(labels))
-				Expect(rep.References[ref].IssueData.Assignees).To(Equal(assignees))
+				Expect(rep.References[ref].Data.Closed).To(BeTrue())
+				Expect(rep.References[ref].Data.Labels).To(Equal(labels))
+				Expect(rep.References[ref].Data.Assignees).To(Equal(assignees))
 			})
 
 			It("should not alter issue data fields not specified in pushed reference", func() {
 				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
 				cls := true
-				refs = []*core.PushedReference{{Name: issueRef1, Data: (&core.ReferenceData{Close: &cls})}}
-				err = gitpush.NewContract().Init(logic, &core.TxPush{
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &core.PushNote{RepoName: repo, References: refs, PushKeyID: creator},
+				refs = []*types.PushedReference{{Name: issueRef1, Data: (&types2.ReferenceData{Close: &cls})}}
+				err = gitpush.NewContract().Init(logic, &txns.TxPush{
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: creator},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
 				Expect(rep.References.Get(issueRef1).Creator).To(Equal(crypto.PushKey(creator)))
-				Expect(rep.References[issueRef1].IssueData.Closed).To(BeTrue())
-				Expect(rep.References[issueRef1].IssueData.Labels).To(Equal(issue1RefData.Labels))
-				Expect(rep.References[issueRef1].IssueData.Assignees).To(Equal(issue1RefData.Assignees))
+				Expect(rep.References[issueRef1].Data.Closed).To(BeTrue())
+				Expect(rep.References[issueRef1].Data.Labels).To(Equal(issue1RefData.Labels))
+				Expect(rep.References[issueRef1].Data.Assignees).To(Equal(issue1RefData.Assignees))
 			})
 
 			When("pushed reference label include a negated entry", func() {
 				It("should remove the negated entry from the reference", func() {
 					mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
-					refs = []*core.PushedReference{{Name: issueRef1, Data: (&core.ReferenceData{Labels: &[]string{"-label1"}})}}
-					err = gitpush.NewContract().Init(logic, &core.TxPush{
-						TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-						PushNote: &core.PushNote{RepoName: repo, References: refs, PushKeyID: creator},
+					refs = []*types.PushedReference{{Name: issueRef1, Data: &types2.ReferenceData{IssueFields: common.IssueFields{Labels: &[]string{"-label1"}}}}}
+					err = gitpush.NewContract().Init(logic, &txns.TxPush{
+						TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+						PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: creator},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
 					rep := logic.RepoKeeper().Get(repo)
-					Expect(rep.References[issueRef1].IssueData.Labels).To(HaveLen(1))
-					Expect(rep.References[issueRef1].IssueData.Labels).To(ContainElement(issue1RefData.Labels[1]))
+					Expect(rep.References[issueRef1].Data.Labels).To(HaveLen(1))
+					Expect(rep.References[issueRef1].Data.Labels).To(ContainElement(issue1RefData.Labels[1]))
 				})
 			})
 
 			When("pushed reference assignee include a negated entry", func() {
 				It("should remove the negated entry from the reference", func() {
 					mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
-					refs = []*core.PushedReference{{Name: issueRef1, Data: (&core.ReferenceData{Assignees: &[]string{"-key1"}})}}
-					err = gitpush.NewContract().Init(logic, &core.TxPush{
-						TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-						PushNote: &core.PushNote{RepoName: repo, References: refs, PushKeyID: creator},
+					refs = []*types.PushedReference{{Name: issueRef1, Data: &types2.ReferenceData{IssueFields: common.IssueFields{Assignees: &[]string{"-key1"}}}}}
+					err = gitpush.NewContract().Init(logic, &txns.TxPush{
+						TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+						PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: creator},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
 					rep := logic.RepoKeeper().Get(repo)
-					Expect(rep.References[issueRef1].IssueData.Assignees).To(HaveLen(1))
-					Expect(rep.References[issueRef1].IssueData.Assignees).To(ContainElement(issue1RefData.Assignees[1]))
+					Expect(rep.References[issueRef1].Data.Assignees).To(HaveLen(1))
+					Expect(rep.References[issueRef1].Data.Assignees).To(ContainElement(issue1RefData.Assignees[1]))
 				})
 			})
 		})

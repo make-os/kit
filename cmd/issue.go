@@ -22,8 +22,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	"gitlab.com/makeos/mosdef/remote/cmd/issuecmd"
-	"gitlab.com/makeos/mosdef/remote/issues"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/util"
@@ -45,7 +45,7 @@ var issueCreateCmd = &cobra.Command{
 	Short: "Create an issue or add a comment to an existing issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		rejectFlagCombo(cmd, "close", "open")
+		rejectFlagCombo(cmd, "close", "reopen")
 
 		title, _ := cmd.Flags().GetString("title")
 		body, _ := cmd.Flags().GetString("body")
@@ -53,32 +53,37 @@ var issueCreateCmd = &cobra.Command{
 		useEditor, _ := cmd.Flags().GetBool("use-editor")
 		noBody, _ := cmd.Flags().GetBool("no-body")
 		cls, _ := cmd.Flags().GetBool("close")
-		open, _ := cmd.Flags().GetBool("open")
+		open, _ := cmd.Flags().GetBool("reopen")
 		editorPath, _ := cmd.Flags().GetString("editor")
 		labels, _ := cmd.Flags().GetString("labels")
 		reactions, _ := cmd.Flags().GetStringSlice("reactions")
 		assignees, _ := cmd.Flags().GetString("assignees")
-		issueID, _ := cmd.Flags().GetInt("issue-id")
+		issueID, _ := cmd.Flags().GetInt("id")
 
 		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
+		if editorPath != "" {
+			useEditor = true
+		}
+
 		issueCreateArgs := &issuecmd.IssueCreateArgs{
-			IssueNumber:         issueID,
-			Title:               title,
-			Body:                body,
-			NoBody:              noBody,
-			ReplyHash:           commentCommitID,
-			Reactions:           funk.UniqString(reactions),
-			UseEditor:           useEditor,
-			EditorPath:          editorPath,
-			Open:                open,
-			StdOut:              os.Stdout,
-			StdIn:               os.Stdin,
-			IssueCommentCreator: issues.CreateIssueComment,
-			EditorReader:        util.ReadFromEditor,
+			IssueNumber:        issueID,
+			Title:              title,
+			Body:               body,
+			NoBody:             noBody,
+			ReplyHash:          commentCommitID,
+			Reactions:          funk.UniqString(reactions),
+			UseEditor:          useEditor,
+			EditorPath:         editorPath,
+			Open:               open,
+			StdOut:             os.Stdout,
+			StdIn:              os.Stdin,
+			PostCommentCreator: plumbing.CreatePostCommit,
+			EditorReader:       util.ReadFromEditor,
+			InputReader:        util.ReadInput,
 		}
 
 		if cmd.Flags().Changed("close") {
@@ -129,7 +134,7 @@ var issueListCmd = &cobra.Command{
 			Reverse:    reverse,
 			DateFmt:    dateFmt,
 			PostGetter: plumbing.GetPosts,
-			PagerWrite: issuecmd.WriteToPager,
+			PagerWrite: common.WriteToPager,
 			Format:     format,
 			NoPager:    noPager,
 			StdOut:     os.Stdout,
@@ -175,7 +180,7 @@ var issueReadCmd = &cobra.Command{
 			Reverse:       reverse,
 			DateFmt:       dateFmt,
 			Format:        format,
-			PagerWrite:    issuecmd.WriteToPager,
+			PagerWrite:    common.WriteToPager,
 			PostGetter:    plumbing.GetPosts,
 			NoPager:       noPager,
 			NoCloseStatus: noCloseStatus,
@@ -202,10 +207,10 @@ func init() {
 	issueCreateCmd.Flags().StringP("assignees", "a", "", "Specify push key of assignees to add to the issue/comment (max. 10)")
 	issueCreateCmd.Flags().BoolP("use-editor", "u", false, "Use git configured editor to write body")
 	issueCreateCmd.Flags().Bool("no-body", false, "Skip prompt for issue body")
-	issueCreateCmd.Flags().String("editor", "", "GetPath an editor to use instead of the git configured editor")
-	issueCreateCmd.Flags().IntP("issue-id", "i", 0, "Specify a target issue number to create or add a comment")
+	issueCreateCmd.Flags().String("editor", "", "Specify an editor to use instead of the git configured editor")
+	issueCreateCmd.Flags().IntP("id", "i", 0, "Specify a target issue number")
 	issueCreateCmd.Flags().BoolP("close", "c", false, "Close the issue")
-	issueCreateCmd.Flags().BoolP("open", "o", false, "Open a closed issue")
+	issueCreateCmd.Flags().BoolP("reopen", "o", false, "Open a closed issue")
 	issueReadCmd.Flags().Bool("no-close-status", false, "Hide the close status indicator")
 
 	var commonIssueFlags = func(commands ...*cobra.Command) {

@@ -14,12 +14,15 @@ import (
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/remote/pushhandler"
+	"gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
+	types2 "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	types3 "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 
@@ -101,7 +104,7 @@ var _ = Describe("Reactor", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				mockRepoKeeper.EXPECT().Get("unknown").Return(state.BareRepository())
-				pn := &core.PushNote{RepoName: "unknown"}
+				pn := &types.PushNote{RepoName: "unknown"}
 				err = svr.onPushNote(mockPeer, pn.Bytes())
 			})
 
@@ -118,7 +121,7 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
 				mockNS.EXPECT().Get(util.HashNamespace("ns1")).Return(state.BareNamespace())
-				pn := &core.PushNote{RepoName: "repo1", Namespace: "ns1"}
+				pn := &types.PushNote{RepoName: "repo1", Namespace: "ns1"}
 				err = svr.onPushNote(mockPeer, pn.Bytes())
 			})
 
@@ -136,7 +139,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
 
 				svr.authenticate = func(
-					txDetails []*core.TxDetail,
+					txDetails []*types2.TxDetail,
 					repo *state.Repository,
 					namespace *state.Namespace,
 					keepers core.Keepers,
@@ -144,7 +147,7 @@ var _ = Describe("Reactor", func() {
 					return nil, fmt.Errorf("bad error")
 				}
 
-				pn := &core.PushNote{RepoName: "repo1"}
+				pn := &types.PushNote{RepoName: "repo1"}
 				err = svr.onPushNote(mockPeer, pn.Bytes())
 			})
 
@@ -162,7 +165,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
 
 				svr.authenticate = func(
-					txDetails []*core.TxDetail,
+					txDetails []*types2.TxDetail,
 					repo *state.Repository,
 					namespace *state.Namespace,
 					keepers core.Keepers,
@@ -170,7 +173,7 @@ var _ = Describe("Reactor", func() {
 					return nil, nil
 				}
 
-				pn := &core.PushNote{RepoName: "repo1"}
+				pn := &types.PushNote{RepoName: "repo1"}
 				err = svr.onPushNote(mockPeer, pn.Bytes())
 			})
 
@@ -182,7 +185,7 @@ var _ = Describe("Reactor", func() {
 
 		When("push note failed validation", func() {
 			var peerID = p2p.ID("peer-id")
-			var pn *core.PushNote
+			var pn *types.PushNote
 
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(peerID)
@@ -191,18 +194,18 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
 				svr.authenticate = func(
-					txDetails []*core.TxDetail,
+					txDetails []*types2.TxDetail,
 					repo *state.Repository,
 					namespace *state.Namespace,
 					keepers core.Keepers,
 					checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
+				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
 					return fmt.Errorf("error")
 				}
 
-				pn = &core.PushNote{RepoName: repoName}
+				pn = &types.PushNote{RepoName: repoName}
 				err = svr.onPushNote(mockPeer, pn.Bytes())
 			})
 
@@ -218,7 +221,7 @@ var _ = Describe("Reactor", func() {
 
 		When("unable to create packfile from push note", func() {
 			var peerID = p2p.ID("peer-id")
-			var pn *core.PushNote
+			var pn *types.PushNote
 
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(peerID)
@@ -227,21 +230,21 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
 				svr.authenticate = func(
-					txDetails []*core.TxDetail,
+					txDetails []*types2.TxDetail,
 					repo *state.Repository,
 					namespace *state.Namespace,
 					keepers core.Keepers,
 					checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
+				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
 					return nil
 				}
-				svr.packfileMaker = func(repo core.LocalRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+				svr.packfileMaker = func(repo types.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
 					return nil, fmt.Errorf("bad error")
 				}
 
-				pn = &core.PushNote{RepoName: repoName}
+				pn = &types.PushNote{RepoName: repoName}
 				err = svr.onPushNote(mockPeer, pn.Bytes())
 			})
 
@@ -253,7 +256,7 @@ var _ = Describe("Reactor", func() {
 
 		When("push handler failed to handle packfile stream", func() {
 			var peerID = p2p.ID("peer-id")
-			var pn *core.PushNote
+			var pn *types.PushNote
 
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(peerID)
@@ -261,13 +264,13 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				svr.authenticate = func(txDetails []*core.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
+				svr.authenticate = func(txDetails []*types2.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
+				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
 					return nil
 				}
-				svr.packfileMaker = func(repo core.LocalRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+				svr.packfileMaker = func(repo types.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
 					oldState := plumbing2.GetRepoState(repo)
 					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
 					newState := plumbing2.GetRepoState(repo)
@@ -276,12 +279,12 @@ var _ = Describe("Reactor", func() {
 					return packfile, nil
 				}
 
-				svr.makePushHandler = func(targetRepo core.LocalRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo types.LocalRepo, txDetails []*types2.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					mockRemoteSrv.EXPECT().GetRepoState(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
 					return &pushhandler.Handler{Server: mockRemoteSrv}
 				}
 
-				pn = &core.PushNote{RepoName: repoName}
+				pn = &types.PushNote{RepoName: repoName}
 				err = svr.onPushNote(mockPeer, pn.Bytes())
 			})
 
@@ -293,7 +296,7 @@ var _ = Describe("Reactor", func() {
 
 		When("push handler failed to handle reference without error", func() {
 			var peerID = p2p.ID("peer-id")
-			var pn *core.PushNote
+			var pn *types.PushNote
 
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(peerID)
@@ -301,16 +304,16 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				svr.authenticate = func(txDetails []*core.TxDetail, repo *state.Repository, namespace *state.Namespace,
+				svr.authenticate = func(txDetails []*types2.TxDetail, repo *state.Repository, namespace *state.Namespace,
 					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
+				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
 					return nil
 				}
 
 				pushHandler := &pushhandler.Handler{Server: mockRemoteSrv}
-				svr.packfileMaker = func(repo core.LocalRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+				svr.packfileMaker = func(repo types.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
 					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
@@ -319,7 +322,7 @@ var _ = Describe("Reactor", func() {
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo core.LocalRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo types.LocalRepo, txDetails []*types2.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					return pushHandler
 				}
 
@@ -331,7 +334,7 @@ var _ = Describe("Reactor", func() {
 					return []error{fmt.Errorf("bad reference")}
 				}
 
-				pn = &core.PushNote{RepoName: repoName}
+				pn = &types.PushNote{RepoName: repoName}
 				err = svr.onPushNote(mockPeer, pn.Bytes())
 			})
 
@@ -343,7 +346,7 @@ var _ = Describe("Reactor", func() {
 
 		When("push pool addition failed", func() {
 			var peerID = p2p.ID("peer-id")
-			var pn *core.PushNote
+			var pn *types.PushNote
 
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(peerID)
@@ -351,16 +354,16 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				svr.authenticate = func(txDetails []*core.TxDetail, repo *state.Repository, namespace *state.Namespace,
+				svr.authenticate = func(txDetails []*types2.TxDetail, repo *state.Repository, namespace *state.Namespace,
 					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
+				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
 					return nil
 				}
 
 				pushHandler := &pushhandler.Handler{Server: mockRemoteSrv}
-				svr.packfileMaker = func(repo core.LocalRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+				svr.packfileMaker = func(repo types.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
 					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
@@ -369,7 +372,7 @@ var _ = Describe("Reactor", func() {
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo core.LocalRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo types.LocalRepo, txDetails []*types2.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					return pushHandler
 				}
 
@@ -380,7 +383,7 @@ var _ = Describe("Reactor", func() {
 					Expect(ref).To(Equal("refs/heads/master"))
 					return nil
 				}
-				svr.pushedObjectsBroadcaster = func(pn *core.PushNote) (err error) {
+				svr.pushedObjectsBroadcaster = func(pn *types.PushNote) (err error) {
 					return nil
 				}
 
@@ -388,7 +391,7 @@ var _ = Describe("Reactor", func() {
 				mockPushPool.EXPECT().Add(gomock.Any(), true).Return(fmt.Errorf("push pool error"))
 				svr.pushPool = mockPushPool
 
-				pn = &core.PushNote{RepoName: repoName}
+				pn = &types.PushNote{RepoName: repoName}
 				err = svr.onPushNote(mockPeer, pn.Bytes())
 			})
 
@@ -400,7 +403,7 @@ var _ = Describe("Reactor", func() {
 
 		When("push note is successfully processed", func() {
 			var peerID = p2p.ID("peer-id")
-			var pn *core.PushNote
+			var pn *types.PushNote
 
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(peerID)
@@ -408,16 +411,16 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				svr.authenticate = func(txDetails []*core.TxDetail, repo *state.Repository, namespace *state.Namespace,
+				svr.authenticate = func(txDetails []*types2.TxDetail, repo *state.Repository, namespace *state.Namespace,
 					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx core.RepoPushNote, dht dhttypes.DHTNode, logic core.Logic) error {
+				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
 					return nil
 				}
 
 				pushHandler := &pushhandler.Handler{Server: mockRemoteSrv}
-				svr.packfileMaker = func(repo core.LocalRepo, tx *core.PushNote) (seeker io.ReadSeeker, err error) {
+				svr.packfileMaker = func(repo types.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
 					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
@@ -426,7 +429,7 @@ var _ = Describe("Reactor", func() {
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo core.LocalRepo, txDetails []*core.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo types.LocalRepo, txDetails []*types2.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
 					return pushHandler
 				}
 
@@ -437,7 +440,7 @@ var _ = Describe("Reactor", func() {
 					Expect(ref).To(Equal("refs/heads/master"))
 					return nil
 				}
-				svr.pushedObjectsBroadcaster = func(pn *core.PushNote) (err error) {
+				svr.pushedObjectsBroadcaster = func(pn *types.PushNote) (err error) {
 					return nil
 				}
 
@@ -445,7 +448,7 @@ var _ = Describe("Reactor", func() {
 				mockPushPool.EXPECT().Add(gomock.Any(), true).Return(nil)
 				svr.pushPool = mockPushPool
 
-				pn = &core.PushNote{RepoName: repoName}
+				pn = &types.PushNote{RepoName: repoName}
 				err = svr.onPushNote(mockPeer, pn.Bytes())
 			})
 
@@ -485,7 +488,7 @@ var _ = Describe("Reactor", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 2
-				svr.addPushNoteEndorsement(pushNoteID, &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))})
+				svr.addPushNoteEndorsement(pushNoteID, &types.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = svr.MaybeCreatePushTx(pushNoteID)
 			})
 
@@ -495,11 +498,11 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("PushNote does not exist in the pool", func() {
+		When("PushNotice does not exist in the pool", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
-				svr.addPushNoteEndorsement(pushNoteID, &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))})
+				svr.addPushNoteEndorsement(pushNoteID, &types.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = svr.MaybeCreatePushTx(pushNoteID)
 			})
 
@@ -512,12 +515,12 @@ var _ = Describe("Reactor", func() {
 		When("unable to get top hosts", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
-				var pushNote = &core.PushNote{RepoName: "repo1"}
+				var pushNote = &types.PushNote{RepoName: "repo1"}
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(nil, fmt.Errorf("error"))
-				svr.addPushNoteEndorsement(pushNote.ID().String(), &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))})
+				svr.addPushNoteEndorsement(pushNote.ID().String(), &types.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))})
 				err = svr.MaybeCreatePushTx(pushNote.ID().String())
 			})
 
@@ -530,12 +533,12 @@ var _ = Describe("Reactor", func() {
 		When("unable to get ticket of push endorsement sender", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
-				var pushNote = &core.PushNote{RepoName: "repo1"}
+				var pushNote = &types.PushNote{RepoName: "repo1"}
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{}, nil)
-				pushEnd := &core.PushEndorsement{
+				pushEnd := &types.PushEndorsement{
 					Sig:            util.BytesToBytes64(util.RandBytes(5)),
 					EndorserPubKey: util.BytesToBytes32(util.RandBytes(32)),
 				}
@@ -552,7 +555,7 @@ var _ = Describe("Reactor", func() {
 		When("a push endorsement has invalid bls public key", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
-				var pushNote = &core.PushNote{RepoName: "repo1"}
+				var pushNote = &types.PushNote{RepoName: "repo1"}
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
@@ -564,7 +567,7 @@ var _ = Describe("Reactor", func() {
 						},
 					},
 				}, nil)
-				pushEnd := &core.PushEndorsement{
+				pushEnd := &types.PushEndorsement{
 					EndorserPubKey: key.PubKey().MustBytes32(),
 				}
 
@@ -581,7 +584,7 @@ var _ = Describe("Reactor", func() {
 		When("endorsement signature is invalid", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
-				var pushNote = &core.PushNote{RepoName: "repo1"}
+				var pushNote = &types.PushNote{RepoName: "repo1"}
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
@@ -593,7 +596,7 @@ var _ = Describe("Reactor", func() {
 						},
 					},
 				}, nil)
-				pushEnd := &core.PushEndorsement{
+				pushEnd := &types.PushEndorsement{
 					EndorserPubKey: key.PubKey().MustBytes32(),
 				}
 				pushEnd.Sig = util.BytesToBytes64(util.RandBytes(64))
@@ -611,7 +614,7 @@ var _ = Describe("Reactor", func() {
 		When("push note is ok", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
-				var pushNote = &core.PushNote{RepoName: "repo1"}
+				var pushNote = &types.PushNote{RepoName: "repo1"}
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
@@ -623,7 +626,7 @@ var _ = Describe("Reactor", func() {
 						},
 					},
 				}, nil)
-				pushEnd := &core.PushEndorsement{
+				pushEnd := &types.PushEndorsement{
 					EndorserPubKey: key.PubKey().MustBytes32(),
 				}
 				var pushEndSig []byte
@@ -631,7 +634,7 @@ var _ = Describe("Reactor", func() {
 				Expect(err).To(BeNil())
 				pushEnd.Sig = util.BytesToBytes64(pushEndSig)
 
-				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&core.TxPush{})).Return(nil)
+				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&txns.TxPush{})).Return(nil)
 				svr.addPushNoteEndorsement(pushNote.ID().String(), pushEnd)
 				err = svr.MaybeCreatePushTx(pushNote.ID().String())
 			})
@@ -650,16 +653,16 @@ var _ = Describe("Reactor", func() {
 			mockRemoteSrv.EXPECT().GetDHT().Return(mockDHT).AnyTimes()
 			mockRemoteSrv.EXPECT().Log().Return(cfg.G().Log).AnyTimes()
 
-			mockPruner := mocks.NewMockPruner(ctrl)
+			mockPruner := mocks.NewMockRepoPruner(ctrl)
 			mockPruner.EXPECT().Schedule(gomock.Any()).AnyTimes()
 			mockRemoteSrv.EXPECT().GetPruner().Return(mockPruner).AnyTimes()
 		})
 
 		When("target repo does not exist locally", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxPush()
-				tx.PushNote.RepoName = "unknown"
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(nil, fmt.Errorf("error"))
+				tx := txns.NewBareTxPush()
+				tx.PushNote.(*types.PushNote).RepoName = "unknown"
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(nil, fmt.Errorf("error"))
 				err = execTxPush(mockRemoteSrv, tx)
 			})
 
@@ -671,18 +674,18 @@ var _ = Describe("Reactor", func() {
 
 		When("object existed locally", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxPush()
-				tx.PushNote.RepoName = "repo1"
+				tx := txns.NewBareTxPush()
+				tx.PushNote.(*types.PushNote).RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = []*core.PushedReference{
+				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
 					{Objects: []string{obj}},
 				}
 
 				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(true)
 				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
 
 				err = execTxPush(mockRemoteSrv, tx)
 			})
@@ -694,18 +697,18 @@ var _ = Describe("Reactor", func() {
 
 		When("tx merge operation fail", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxPush()
-				tx.PushNote.RepoName = "repo1"
+				tx := txns.NewBareTxPush()
+				tx.PushNote.(*types.PushNote).RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = []*core.PushedReference{
+				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
 					{Objects: []string{obj}},
 				}
 
 				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(true)
 				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(fmt.Errorf("error"))
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
 
 				err = execTxPush(mockRemoteSrv, tx)
 			})
@@ -718,18 +721,18 @@ var _ = Describe("Reactor", func() {
 
 		When("an object does not exist and dht download failed", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxPush()
-				tx.PushNote.RepoName = "repo1"
+				tx := txns.NewBareTxPush()
+				tx.PushNote.(*types.PushNote).RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = []*core.PushedReference{
+				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
 					{Objects: []string{obj}},
 				}
 
 				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().ObjectExist(obj).Return(false)
 				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
 
 				err = execTxPush(mockRemoteSrv, tx)
 			})
@@ -742,11 +745,11 @@ var _ = Describe("Reactor", func() {
 
 		When("downloaded object cannot be written to disk", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxPush()
-				tx.PushNote.RepoName = "repo1"
+				tx := txns.NewBareTxPush()
+				tx.PushNote.(*types.PushNote).RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = []*core.PushedReference{
+				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
 					{Objects: []string{obj}},
 				}
 
@@ -756,7 +759,7 @@ var _ = Describe("Reactor", func() {
 				objBz := util.RandBytes(10)
 				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(objBz, nil)
 				repo.EXPECT().WriteObjectToFile(obj, objBz).Return(fmt.Errorf("error"))
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
 
 				err = execTxPush(mockRemoteSrv, tx)
 			})
@@ -769,11 +772,11 @@ var _ = Describe("Reactor", func() {
 
 		When("object download succeeded but object announcement fails", func() {
 			BeforeEach(func() {
-				tx := core.NewBareTxPush()
-				tx.PushNote.RepoName = "repo1"
+				tx := txns.NewBareTxPush()
+				tx.PushNote.(*types.PushNote).RepoName = "repo1"
 
 				obj := util.RandString(40)
-				tx.PushNote.References = []*core.PushedReference{
+				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
 					{Objects: []string{obj}},
 				}
 
@@ -786,7 +789,7 @@ var _ = Describe("Reactor", func() {
 
 				mockDHT.EXPECT().Announce(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
 				err = execTxPush(mockRemoteSrv, tx)
 			})
 
@@ -797,10 +800,10 @@ var _ = Describe("Reactor", func() {
 
 		When("push note contains a pushed reference new hash set to zero-hash", func() {
 			It("should attempt to delete the pushed reference and return error if it failed", func() {
-				tx := core.NewBareTxPush()
-				tx.PushNote.RepoName = repoName
+				tx := txns.NewBareTxPush()
+				tx.PushNote.(*types.PushNote).RepoName = repoName
 
-				tx.PushNote.References = []*core.PushedReference{
+				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
 					{NewHash: plumbing.ZeroHash.String(), Name: "refs/heads/master"},
 				}
 
@@ -808,7 +811,7 @@ var _ = Describe("Reactor", func() {
 				repo.EXPECT().RefDelete("refs/heads/master").Return(fmt.Errorf("failed to delete"))
 
 				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
 				err = execTxPush(mockRemoteSrv, tx)
 
 				Expect(err).ToNot(BeNil())
@@ -816,10 +819,10 @@ var _ = Describe("Reactor", func() {
 			})
 
 			It("should attempt to delete the pushed reference and return nil if it succeeded", func() {
-				tx := core.NewBareTxPush()
-				tx.PushNote.RepoName = repoName
+				tx := txns.NewBareTxPush()
+				tx.PushNote.(*types.PushNote).RepoName = repoName
 
-				tx.PushNote.References = []*core.PushedReference{
+				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
 					{NewHash: plumbing.ZeroHash.String(), Name: "refs/heads/master"},
 				}
 
@@ -827,7 +830,7 @@ var _ = Describe("Reactor", func() {
 				repo.EXPECT().RefDelete("refs/heads/master").Return(nil)
 
 				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.RepoName).Return(repo, nil)
+				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
 				err = execTxPush(mockRemoteSrv, tx)
 
 				Expect(err).To(BeNil())

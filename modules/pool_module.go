@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"gitlab.com/makeos/mosdef/mempool"
+	"gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
 
 	"github.com/c-bata/go-prompt"
@@ -17,11 +17,11 @@ import (
 type PoolModule struct {
 	vm       *otto.Otto
 	reactor  *mempool.Reactor
-	pushPool core.PushPool
+	pushPool types.PushPool
 }
 
 // NewPoolModule creates an instance of PoolModule
-func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor, pushPool core.PushPool) *PoolModule {
+func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor, pushPool types.PushPool) *PoolModule {
 	return &PoolModule{vm: vm, reactor: reactor, pushPool: pushPool}
 }
 

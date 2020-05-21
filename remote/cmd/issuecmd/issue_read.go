@@ -10,8 +10,9 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/types/core"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -35,7 +36,7 @@ type IssueReadArgs struct {
 	PostGetter plumbing2.PostGetter
 
 	// PagerWrite is the function used to write to a pager
-	PagerWrite pagerWriter
+	PagerWrite common.PagerWriter
 
 	// Format specifies a format to use for generating each comment output to Stdout.
 	// The following place holders are supported:
@@ -68,7 +69,7 @@ type IssueReadArgs struct {
 }
 
 // IssueReadCmd read comments in an issue
-func IssueReadCmd(targetRepo core.LocalRepo, args *IssueReadArgs) error {
+func IssueReadCmd(targetRepo types2.LocalRepo, args *IssueReadArgs) error {
 
 	// Find the target issue
 	issues, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
@@ -105,7 +106,7 @@ func IssueReadCmd(targetRepo core.LocalRepo, args *IssueReadArgs) error {
 }
 
 func formatAndPrintIssueComments(
-	targetRepo core.LocalRepo,
+	targetRepo types2.LocalRepo,
 	args *IssueReadArgs,
 	isClosed bool,
 	title string,

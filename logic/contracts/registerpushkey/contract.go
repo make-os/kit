@@ -6,13 +6,14 @@ import (
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 )
 
 // RegisterPushKeyContract is a system contract for creating a repository.
 // RegisterPushKeyContract implements SystemContract.
 type RegisterPushKeyContract struct {
 	core.Logic
-	tx          *core.TxRegisterPushKey
+	tx          *txns.TxRegisterPushKey
 	chainHeight uint64
 }
 
@@ -22,13 +23,13 @@ func NewContract() *RegisterPushKeyContract {
 }
 
 func (c *RegisterPushKeyContract) CanExec(typ types.TxCode) bool {
-	return typ == core.TxTypeRegisterPushKey
+	return typ == txns.TxTypeRegisterPushKey
 }
 
 // Init initialize the contract
 func (c *RegisterPushKeyContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*core.TxRegisterPushKey)
+	c.tx = tx.(*txns.TxRegisterPushKey)
 	c.chainHeight = curChainHeight
 	return c
 }

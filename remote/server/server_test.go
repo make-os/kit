@@ -10,13 +10,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/phayes/freeport"
-	"gitlab.com/makeos/mosdef/remote/plumbing"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
-	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
-
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/remote/plumbing"
+	"gitlab.com/makeos/mosdef/remote/pushpool/types"
+	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -26,7 +25,7 @@ var _ = Describe("Server", func() {
 	var cfg *config.AppConfig
 	var repoMgr *Server
 	var path, repoName string
-	var repo core.LocalRepo
+	var repo types.LocalRepo
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
 	var mockDHT *mocks.MockDHTNode
@@ -230,7 +229,7 @@ var _ = Describe("Server", func() {
 	Describe(".addPushNoteEndorsement", func() {
 		When("1 PushEndorsement for id=abc is added", func() {
 			BeforeEach(func() {
-				pushEnd := &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushEnd := &types.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
 				repoMgr.addPushNoteEndorsement("abc", pushEnd)
 			})
 
@@ -243,8 +242,8 @@ var _ = Describe("Server", func() {
 
 		When("2 PushEnds for id=abc are added", func() {
 			BeforeEach(func() {
-				pushEnd := &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
-				pushEnd2 := &core.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushEnd := &types.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
+				pushEnd2 := &types.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
 				repoMgr.addPushNoteEndorsement("abc", pushEnd)
 				repoMgr.addPushNoteEndorsement("abc", pushEnd2)
 			})

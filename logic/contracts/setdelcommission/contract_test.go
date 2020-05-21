@@ -14,6 +14,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -46,8 +47,8 @@ var _ = Describe("SetDelegateCommissionContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := setdelcommission.NewContract()
-			Expect(ct.CanExec(core.TxTypeSetDelegatorCommission)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeCoinTransfer)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeSetDelegatorCommission)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeCoinTransfer)).To(BeFalse())
 		})
 	})
 
@@ -56,9 +57,9 @@ var _ = Describe("SetDelegateCommissionContract", func() {
 		Context("when tx has incorrect nonce", func() {
 			BeforeEach(func() {
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Stakes: state.BareAccountStakes(), DelegatorCommission: 15.4})
-				tx := &core.TxSetDelegateCommission{
+				tx := &txns.TxSetDelegateCommission{
 					Commission: "23.5",
-					TxCommon:   &core.TxCommon{Fee: "2", SenderPubKey: sender.PubKey().ToPublicKey()}}
+					TxCommon:   &txns.TxCommon{Fee: "2", SenderPubKey: sender.PubKey().ToPublicKey()}}
 				ct := setdelcommission.NewContract().Init(logic, tx, 0)
 				err = ct.Exec()
 				Expect(err).To(BeNil())

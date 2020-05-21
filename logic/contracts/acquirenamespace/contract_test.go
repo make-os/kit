@@ -15,6 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -47,8 +48,8 @@ var _ = Describe("AcquireNamespaceContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := acquirenamespace.NewContract()
-			Expect(ct.CanExec(core.TxTypeNSAcquire)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeHostTicket)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeNSAcquire)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeHostTicket)).To(BeFalse())
 		})
 	})
 
@@ -62,10 +63,10 @@ var _ = Describe("AcquireNamespaceContract", func() {
 				params.NamespaceGraceDur = 10
 
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Nonce: 1})
-				err = acquirenamespace.NewContract().Init(logic, &core.TxNamespaceAcquire{
+				err = acquirenamespace.NewContract().Init(logic, &txns.TxNamespaceAcquire{
 					Name:     nsName,
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-					TxValue:  &core.TxValue{Value: "1"},
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					TxValue:  &txns.TxValue{Value: "1"},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -111,10 +112,10 @@ var _ = Describe("AcquireNamespaceContract", func() {
 
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Nonce: 1})
 
-				err = acquirenamespace.NewContract().Init(logic, &core.TxNamespaceAcquire{
+				err = acquirenamespace.NewContract().Init(logic, &txns.TxNamespaceAcquire{
 					Name:       nsName,
-					TxCommon:   &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-					TxValue:    &core.TxValue{Value: "1"},
+					TxCommon:   &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					TxValue:    &txns.TxValue{Value: "1"},
 					TransferTo: transferAcct,
 				}, 0).Exec()
 				Expect(err).To(BeNil())
@@ -135,10 +136,10 @@ var _ = Describe("AcquireNamespaceContract", func() {
 
 				logic.AccountKeeper().Update(sender.Addr(), &state.Account{Balance: "10", Nonce: 1})
 
-				err = acquirenamespace.NewContract().Init(logic, &core.TxNamespaceAcquire{
+				err = acquirenamespace.NewContract().Init(logic, &txns.TxNamespaceAcquire{
 					Name:       nsName,
-					TxCommon:   &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
-					TxValue:    &core.TxValue{Value: "1"},
+					TxCommon:   &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+					TxValue:    &txns.TxValue{Value: "1"},
 					TransferTo: transferToRepo,
 				}, 0).Exec()
 				Expect(err).To(BeNil())

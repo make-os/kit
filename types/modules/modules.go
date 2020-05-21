@@ -108,7 +108,6 @@ type RepoModule interface {
 	Get(name string, opts ...map[string]interface{}) util.Map
 	Update(params map[string]interface{}, options ...interface{}) util.Map
 	DepositFee(params map[string]interface{}, options ...interface{}) util.Map
-	CreateMergeRequest(params map[string]interface{}, options ...interface{}) interface{}
 }
 type NamespaceModule interface {
 	Configure() []prompt.Suggest

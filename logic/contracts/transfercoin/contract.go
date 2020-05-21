@@ -7,6 +7,7 @@ import (
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -15,7 +16,7 @@ import (
 // CoinTransferContract implements SystemContract.
 type CoinTransferContract struct {
 	core.Logic
-	tx          *core.TxCoinTransfer
+	tx          *txns.TxCoinTransfer
 	chainHeight uint64
 }
 
@@ -25,13 +26,13 @@ func NewContract() *CoinTransferContract {
 }
 
 func (c *CoinTransferContract) CanExec(typ types.TxCode) bool {
-	return typ == core.TxTypeCoinTransfer
+	return typ == txns.TxTypeCoinTransfer
 }
 
 // Init initialize the contract
 func (c *CoinTransferContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*core.TxCoinTransfer)
+	c.tx = tx.(*txns.TxCoinTransfer)
 	c.chainHeight = curChainHeight
 	return c
 }

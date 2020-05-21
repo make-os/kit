@@ -14,6 +14,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -46,8 +47,8 @@ var _ = Describe("RegisterPushKeyContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := registerpushkey.NewContract()
-			Expect(ct.CanExec(core.TxTypeRegisterPushKey)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeCoinTransfer)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeRegisterPushKey)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeCoinTransfer)).To(BeFalse())
 		})
 	})
 
@@ -65,8 +66,8 @@ var _ = Describe("RegisterPushKeyContract", func() {
 
 			BeforeEach(func() {
 				pushKey = crypto.NewKeyFromIntSeed(1).PubKey()
-				err = registerpushkey.NewContract().Init(logic, &core.TxRegisterPushKey{
-					TxCommon:  &core.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
+				err = registerpushkey.NewContract().Init(logic, &txns.TxRegisterPushKey{
+					TxCommon:  &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
 					Scopes:    scopes,
 					FeeCap:    feeCap,
 					PublicKey: pushKey.ToPublicKey(),

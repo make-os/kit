@@ -14,6 +14,7 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -46,9 +47,9 @@ var _ = Describe("TicketPurchaseContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := purchaseticket.NewContract()
-			Expect(ct.CanExec(core.TxTypeValidatorTicket)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeHostTicket)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeCoinTransfer)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeValidatorTicket)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeHostTicket)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeCoinTransfer)).To(BeFalse())
 		})
 	})
 
@@ -66,10 +67,10 @@ var _ = Describe("TicketPurchaseContract", func() {
 				Expect(acct.GetBalance()).To(Equal(util.String("100")))
 				Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("100")))
 
-				err = purchaseticket.NewContract().Init(logic, &core.TxTicketPurchase{
-					TxType:   &core.TxType{Type: core.TxTypeValidatorTicket},
-					TxValue:  &core.TxValue{Value: "10"},
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+				err = purchaseticket.NewContract().Init(logic, &txns.TxTicketPurchase{
+					TxType:   &txns.TxType{Type: txns.TxTypeValidatorTicket},
+					TxValue:  &txns.TxValue{Value: "10"},
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -98,10 +99,10 @@ var _ = Describe("TicketPurchaseContract", func() {
 				Expect(acct.GetBalance()).To(Equal(util.String("100")))
 				Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("50")))
 
-				err = purchaseticket.NewContract().Init(logic, &core.TxTicketPurchase{
-					TxType:   &core.TxType{Type: core.TxTypeValidatorTicket},
-					TxValue:  &core.TxValue{Value: "10"},
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+				err = purchaseticket.NewContract().Init(logic, &txns.TxTicketPurchase{
+					TxType:   &txns.TxType{Type: txns.TxTypeValidatorTicket},
+					TxValue:  &txns.TxValue{Value: "10"},
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -126,10 +127,10 @@ var _ = Describe("TicketPurchaseContract", func() {
 				Expect(acct.GetBalance()).To(Equal(util.String("100")))
 				Expect(acct.GetSpendableBalance(1)).To(Equal(util.String("100")))
 
-				err = purchaseticket.NewContract().Init(logic, &core.TxTicketPurchase{
-					TxType:   &core.TxType{Type: core.TxTypeHostTicket},
-					TxValue:  &core.TxValue{Value: "10"},
-					TxCommon: &core.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
+				err = purchaseticket.NewContract().Init(logic, &txns.TxTicketPurchase{
+					TxType:   &txns.TxType{Type: txns.TxTypeHostTicket},
+					TxValue:  &txns.TxValue{Value: "10"},
+					TxCommon: &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})

@@ -13,9 +13,9 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/cmd"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/repo"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/server"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -78,7 +78,7 @@ var ErrMissingPushKeyID = fmt.Errorf("push key ID is required")
 // SignCommitCmd adds transaction information to a new or recent commit and signs it.
 // cfg: App config object
 // targetRepo: The target repository at the working directory
-func SignCommitCmd(cfg *config.AppConfig, targetRepo core.LocalRepo, args *SignCommitArgs) error {
+func SignCommitCmd(cfg *config.AppConfig, targetRepo types2.LocalRepo, args *SignCommitArgs) error {
 
 	// Get the signing key id from the git config if not passed as an argument
 	if args.PushKeyID == "" {
@@ -148,7 +148,7 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo core.LocalRepo, args *SignC
 	}
 
 	// Make the transaction parameter object
-	txDetail := &core.TxDetail{
+	txDetail := &types.TxDetail{
 		Fee:             util.String(args.Fee),
 		Nonce:           args.Nonce,
 		PushKeyID:       args.PushKeyID,
@@ -173,7 +173,7 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo core.LocalRepo, args *SignC
 	// Get recent commit hash of the current branch.
 	hash, err := targetRepo.GetRecentCommitHash()
 	if err != nil {
-		if err == repo.ErrNoCommits {
+		if err == plumbing2.ErrNoCommits {
 			return errors.New("no commits have been created yet")
 		}
 		return err

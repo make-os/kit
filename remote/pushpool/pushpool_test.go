@@ -8,27 +8,28 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/dht/types"
+	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-func txCheckNoIssue(tx core.RepoPushNote, dht types.DHTNode, logic core.Logic) error {
+func txCheckNoIssue(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
 	return nil
 }
 
-func txCheckErr(err error) func(tx core.RepoPushNote, dht types.DHTNode, logic core.Logic) error {
-	return func(tx core.RepoPushNote, dht types.DHTNode, logic core.Logic) error {
+func txCheckErr(err error) func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
+	return func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
 		return err
 	}
 }
 
 var _ = Describe("PushPool", func() {
 	var pool *PushPool
-	var tx *core.PushNote
-	var tx2 *core.PushNote
+	var tx *types.PushNote
+	var tx2 *types.PushNote
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var mockDHT *mocks.MockDHTNode
@@ -47,21 +48,21 @@ var _ = Describe("PushPool", func() {
 	})
 
 	BeforeEach(func() {
-		tx = &core.PushNote{
+		tx = &types.PushNote{
 			RepoName:        "repo",
 			NodeSig:         []byte("sig"),
 			PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
 			PusherAcctNonce: 2,
-			References: []*core.PushedReference{
+			References: []*types.PushedReference{
 				{Name: "refs/heads/master", Fee: "0.2", Nonce: 1},
 			},
 		}
-		tx2 = &core.PushNote{
+		tx2 = &types.PushNote{
 			RepoName:        "repo2",
 			NodeSig:         []byte("sig_2"),
 			PushKeyID:       util.MustDecodePushKeyID(pushKeyID2),
 			PusherAcctNonce: 2,
-			References: []*core.PushedReference{
+			References: []*types.PushedReference{
 				{Name: "refs/heads/master", Fee: "0.2", Nonce: 1},
 			},
 		}
@@ -93,10 +94,10 @@ var _ = Describe("PushPool", func() {
 
 	Describe(".Add", func() {
 		var err error
-		var baseNote *core.PushNote
+		var baseNote *types.PushNote
 
 		BeforeEach(func() {
-			baseNote = &core.PushNote{
+			baseNote = &types.PushNote{
 				RepoName:  "repo",
 				NodeSig:   []byte("sig"),
 				PushKeyID: util.MustDecodePushKeyID(pushKeyID),
@@ -162,7 +163,7 @@ var _ = Describe("PushPool", func() {
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
-				baseNote.References = append(baseNote.References, &core.PushedReference{Name: "refs/heads/master", Fee: "0.2", Nonce: 1})
+				baseNote.References = append(baseNote.References, &types.PushedReference{Name: "refs/heads/master", Fee: "0.2", Nonce: 1})
 				tx_X := baseNote
 
 				err = pool.Add(tx_X)
@@ -182,7 +183,7 @@ var _ = Describe("PushPool", func() {
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
-				baseNote.References = append(baseNote.References, &core.PushedReference{Name: "refs/heads/master", Fee: "0.01", Nonce: 2})
+				baseNote.References = append(baseNote.References, &types.PushedReference{Name: "refs/heads/master", Fee: "0.01", Nonce: 2})
 				tx_X := baseNote
 
 				pool.refIndex = map[string]*containerItem{}
@@ -197,13 +198,13 @@ var _ = Describe("PushPool", func() {
 
 		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool but failed to read the ref index of the existing reference", func() {
-			var tx_X *core.PushNote
+			var tx_X *types.PushNote
 			BeforeEach(func() {
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
-				baseNote.References = append(baseNote.References, &core.PushedReference{Name: "refs/heads/master", Fee: "0.01", Nonce: 1})
+				baseNote.References = append(baseNote.References, &types.PushedReference{Name: "refs/heads/master", Fee: "0.01", Nonce: 1})
 				tx_X = baseNote
 				pool.refIndex = map[string]*containerItem{}
 			})
@@ -222,7 +223,7 @@ var _ = Describe("PushPool", func() {
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
-				baseNote.References = append(baseNote.References, &core.PushedReference{Name: "refs/heads/master", Fee: "0.01", Nonce: 1})
+				baseNote.References = append(baseNote.References, &types.PushedReference{Name: "refs/heads/master", Fee: "0.01", Nonce: 1})
 				tx_X := baseNote
 
 				err = pool.Add(tx_X)
@@ -237,13 +238,13 @@ var _ = Describe("PushPool", func() {
 
 		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool and tx_X has a higher fee", func() {
-			var tx_X *core.PushNote
+			var tx_X *types.PushNote
 			BeforeEach(func() {
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
 
-				baseNote.References = append(baseNote.References, &core.PushedReference{Name: "refs/heads/master", Fee: "0.5", Nonce: 1})
+				baseNote.References = append(baseNote.References, &types.PushedReference{Name: "refs/heads/master", Fee: "0.5", Nonce: 1})
 				tx_X = baseNote
 
 				err = pool.Add(tx_X)
@@ -264,37 +265,37 @@ var _ = Describe("PushPool", func() {
 
 		When("a reference (ref0) in new tx (tx_X) match identical references (ref0) of tx (tx_Y) and (ref0) of tx (tx_Z) "+
 			"that already exist in the pool and tx_X has a higher total fee", func() {
-			var txX, txY, txZ *core.PushNote
+			var txX, txY, txZ *types.PushNote
 			BeforeEach(func() {
-				txY = &core.PushNote{
+				txY = &types.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
 					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
-					References: []*core.PushedReference{
+					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01"},
 					},
 				}
 
-				txZ = &core.PushNote{
+				txZ = &types.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
 					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
-					References: []*core.PushedReference{
+					References: []*types.PushedReference{
 						{Name: "refs/heads/update", Nonce: 1, Fee: "0.01"},
 					},
 				}
 
-				txX = &core.PushNote{
+				txX = &types.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
 					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
-					References: []*core.PushedReference{
+					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.02"},
 						{Name: "refs/heads/update", Nonce: 1, Fee: "0.01"},
 					},
@@ -324,37 +325,37 @@ var _ = Describe("PushPool", func() {
 
 		When("references (ref0, ref1) in new tx (tx_X) match identical references (ref0) of tx (tx_Y) and (ref0) of tx (tx_Z) "+
 			"that already exist in the pool and tx_X has lower total fee", func() {
-			var txX, txY, txZ *core.PushNote
+			var txX, txY, txZ *types.PushNote
 			BeforeEach(func() {
-				txY = &core.PushNote{
+				txY = &types.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
 					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
-					References: []*core.PushedReference{
+					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.4"},
 					},
 				}
 
-				txZ = &core.PushNote{
+				txZ = &types.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
 					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
-					References: []*core.PushedReference{
+					References: []*types.PushedReference{
 						{Name: "refs/heads/update", Nonce: 1, Fee: "0.4"},
 					},
 				}
 
-				txX = &core.PushNote{
+				txX = &types.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
 					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
-					References: []*core.PushedReference{
+					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.6"},
 						{Name: "refs/heads/update", Nonce: 1, Fee: "0.1"},
 					},
@@ -375,13 +376,13 @@ var _ = Describe("PushPool", func() {
 		})
 
 		When("validation check fails", func() {
-			var txX *core.PushNote
+			var txX *types.PushNote
 			BeforeEach(func() {
-				txX = &core.PushNote{
+				txX = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
-					References: []*core.PushedReference{
+					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01"},
 					},
 				}
@@ -397,13 +398,13 @@ var _ = Describe("PushPool", func() {
 		})
 
 		When("noValidation argument is true", func() {
-			var txX *core.PushNote
+			var txX *types.PushNote
 			BeforeEach(func() {
-				txX = &core.PushNote{
+				txX = &types.PushNote{
 					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
-					References: []*core.PushedReference{
+					References: []*types.PushedReference{
 						{Name: "refs/heads/master", Nonce: 1, Fee: "0.01"},
 					},
 				}
@@ -636,9 +637,9 @@ var _ = Describe("repoNotesIndex", func() {
 		var idx repoNotesIndex
 
 		When("repo has 1 txA and txA is removed", func() {
-			var txA *core.PushNote
+			var txA *types.PushNote
 			BeforeEach(func() {
-				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
+				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
 				idx = map[string][]*containerItem{}
 				idx.add("repo1", &containerItem{Note: txA})
 				Expect(idx["repo1"]).To(HaveLen(1))
@@ -651,10 +652,10 @@ var _ = Describe("repoNotesIndex", func() {
 		})
 
 		When("repo has 2 txs (txA and TxB) and txA is removed", func() {
-			var txA, txB *core.PushNote
+			var txA, txB *types.PushNote
 			BeforeEach(func() {
-				txA = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
-				txB = &core.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID), Timestamp: 200000000}
+				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
+				txB = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID), Timestamp: 200000000}
 				idx = map[string][]*containerItem{}
 				idx.add("repo1", &containerItem{Note: txA})
 				idx.add("repo1", &containerItem{Note: txB})

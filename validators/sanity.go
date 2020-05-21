@@ -7,8 +7,8 @@ import (
 
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/thoas/go-funk"
@@ -21,7 +21,7 @@ import (
 )
 
 // CheckRecipient validates the recipient address
-func CheckRecipient(tx *core.TxRecipient, index int) error {
+func CheckRecipient(tx *txns.TxRecipient, index int) error {
 
 	recipient := tx.To
 
@@ -51,7 +51,7 @@ bad:
 	return feI(index, "to", "recipient address is not valid")
 }
 
-func checkValue(tx *core.TxValue, index int) error {
+func checkValue(tx *txns.TxValue, index int) error {
 	if err := v.Validate(tx.Value, v.Required.Error(feI(index, "value",
 		"value is required").Error()), v.By(validValueRule("value", index)),
 	); err != nil {
@@ -60,7 +60,7 @@ func checkValue(tx *core.TxValue, index int) error {
 	return nil
 }
 
-func checkPositiveValue(tx *core.TxValue, index int) error {
+func checkPositiveValue(tx *txns.TxValue, index int) error {
 	if err := v.Validate(tx.Value,
 		v.Required.Error(feI(index, "value", "value is required").Error()),
 		v.By(validValueRule("value", index)),
@@ -73,7 +73,7 @@ func checkPositiveValue(tx *core.TxValue, index int) error {
 	return nil
 }
 
-func checkType(tx *core.TxType, expected types.TxCode, index int) error {
+func checkType(tx *txns.TxType, expected types.TxCode, index int) error {
 	if !tx.Is(expected) {
 		return feI(index, "type", "type is invalid")
 	}
@@ -132,9 +132,9 @@ func checkCommon(tx types.BaseTx, index int) error {
 }
 
 // CheckTxCoinTransfer performs sanity checks on TxCoinTransfer
-func CheckTxCoinTransfer(tx *core.TxCoinTransfer, index int) error {
+func CheckTxCoinTransfer(tx *txns.TxCoinTransfer, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeCoinTransfer, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeCoinTransfer, index); err != nil {
 		return err
 	}
 
@@ -154,9 +154,9 @@ func CheckTxCoinTransfer(tx *core.TxCoinTransfer, index int) error {
 }
 
 // CheckTxTicketPurchase performs sanity checks on TxTicketPurchase
-func CheckTxTicketPurchase(tx *core.TxTicketPurchase, index int) error {
+func CheckTxTicketPurchase(tx *txns.TxTicketPurchase, index int) error {
 
-	if tx.Type != core.TxTypeValidatorTicket && tx.Type != core.TxTypeHostTicket {
+	if tx.Type != txns.TxTypeValidatorTicket && tx.Type != txns.TxTypeHostTicket {
 		return feI(index, "type", "type is invalid")
 	}
 
@@ -165,7 +165,7 @@ func CheckTxTicketPurchase(tx *core.TxTicketPurchase, index int) error {
 	}
 
 	// Non-delegate host ticket value must reach the minimum stake
-	if tx.Is(core.TxTypeHostTicket) && tx.Delegate.IsEmpty() {
+	if tx.Is(txns.TxTypeHostTicket) && tx.Delegate.IsEmpty() {
 		if tx.Value.Decimal().LessThan(params.MinHostStake) {
 			return feI(index, "value", fmt.Sprintf("value is lower than minimum host stake"))
 		}
@@ -179,7 +179,7 @@ func CheckTxTicketPurchase(tx *core.TxTicketPurchase, index int) error {
 		}
 	}
 
-	if tx.Is(core.TxTypeHostTicket) {
+	if tx.Is(txns.TxTypeHostTicket) {
 		if len(tx.BLSPubKey) == 0 {
 			return feI(index, "blsPubKey", "BLS public key is required")
 		}
@@ -196,9 +196,9 @@ func CheckTxTicketPurchase(tx *core.TxTicketPurchase, index int) error {
 }
 
 // CheckTxUnbondTicket performs sanity checks on TxTicketUnbond
-func CheckTxUnbondTicket(tx *core.TxTicketUnbond, index int) error {
+func CheckTxUnbondTicket(tx *txns.TxTicketUnbond, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeHostTicket, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeHostTicket, index); err != nil {
 		return err
 	}
 
@@ -289,9 +289,9 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 }
 
 // CheckTxRepoCreate performs sanity checks on TxRepoCreate
-func CheckTxRepoCreate(tx *core.TxRepoCreate, index int) error {
+func CheckTxRepoCreate(tx *txns.TxRepoCreate, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeRepoCreate, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeRepoCreate, index); err != nil {
 		return err
 	}
 
@@ -318,9 +318,9 @@ func CheckTxRepoCreate(tx *core.TxRepoCreate, index int) error {
 }
 
 // CheckTxRegisterPushKey performs sanity checks on TxRegisterPushKey
-func CheckTxRegisterPushKey(tx *core.TxRegisterPushKey, index int) error {
+func CheckTxRegisterPushKey(tx *txns.TxRegisterPushKey, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeRegisterPushKey, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeRegisterPushKey, index); err != nil {
 		return err
 	}
 
@@ -362,9 +362,9 @@ func checkScopes(scopes []string, index int) error {
 }
 
 // CheckTxUpDelPushKey performs sanity checks on TxRegisterPushKey
-func CheckTxUpDelPushKey(tx *core.TxUpDelPushKey, index int) error {
+func CheckTxUpDelPushKey(tx *txns.TxUpDelPushKey, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeUpDelPushKey, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeUpDelPushKey, index); err != nil {
 		return err
 	}
 
@@ -395,9 +395,9 @@ func CheckTxUpDelPushKey(tx *core.TxUpDelPushKey, index int) error {
 }
 
 // CheckTxSetDelegateCommission performs sanity checks on TxSetDelegateCommission
-func CheckTxSetDelegateCommission(tx *core.TxSetDelegateCommission, index int) error {
+func CheckTxSetDelegateCommission(tx *txns.TxSetDelegateCommission, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeSetDelegatorCommission, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeSetDelegatorCommission, index); err != nil {
 		return err
 	}
 
@@ -424,9 +424,9 @@ func CheckTxSetDelegateCommission(tx *core.TxSetDelegateCommission, index int) e
 }
 
 // CheckTxPush performs sanity checks on TxPush
-func CheckTxPush(tx *core.TxPush, index int) error {
+func CheckTxPush(tx *txns.TxPush, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypePush, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypePush, index); err != nil {
 		return err
 	}
 
@@ -503,9 +503,9 @@ func CheckNamespaceDomains(domains map[string]string, index int) error {
 }
 
 // CheckTxNSAcquire performs sanity checks on TxNamespaceAcquire
-func CheckTxNSAcquire(tx *core.TxNamespaceAcquire, index int) error {
+func CheckTxNSAcquire(tx *txns.TxNamespaceAcquire, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeNSAcquire, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeNSAcquire, index); err != nil {
 		return err
 	}
 
@@ -545,9 +545,9 @@ func CheckTxNSAcquire(tx *core.TxNamespaceAcquire, index int) error {
 }
 
 // CheckTxNamespaceDomainUpdate performs sanity checks on TxNamespaceDomainUpdate
-func CheckTxNamespaceDomainUpdate(tx *core.TxNamespaceDomainUpdate, index int) error {
+func CheckTxNamespaceDomainUpdate(tx *txns.TxNamespaceDomainUpdate, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeNSDomainUpdate, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeNSDomainUpdate, index); err != nil {
 		return err
 	}
 
@@ -572,9 +572,9 @@ func CheckTxNamespaceDomainUpdate(tx *core.TxNamespaceDomainUpdate, index int) e
 }
 
 // CheckTxRepoProposalUpsertOwner performs sanity checks on TxRepoProposalUpsertOwner
-func CheckTxRepoProposalUpsertOwner(tx *core.TxRepoProposalUpsertOwner, index int) error {
+func CheckTxRepoProposalUpsertOwner(tx *txns.TxRepoProposalUpsertOwner, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeRepoProposalUpsertOwner, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeRepoProposalUpsertOwner, index); err != nil {
 		return err
 	}
 
@@ -615,9 +615,9 @@ func CheckTxRepoProposalUpsertOwner(tx *core.TxRepoProposalUpsertOwner, index in
 }
 
 // CheckTxVote performs sanity checks on TxRepoProposalVote
-func CheckTxVote(tx *core.TxRepoProposalVote, index int) error {
+func CheckTxVote(tx *txns.TxRepoProposalVote, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeRepoProposalVote, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeRepoProposalVote, index); err != nil {
 		return err
 	}
 
@@ -643,9 +643,9 @@ func CheckTxVote(tx *core.TxRepoProposalVote, index int) error {
 }
 
 // CheckTxRepoProposalSendFee performs sanity checks on TxRepoProposalSendFee
-func CheckTxRepoProposalSendFee(tx *core.TxRepoProposalSendFee, index int) error {
+func CheckTxRepoProposalSendFee(tx *txns.TxRepoProposalSendFee, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeRepoProposalSendFee, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeRepoProposalSendFee, index); err != nil {
 		return err
 	}
 
@@ -657,7 +657,7 @@ func CheckTxRepoProposalSendFee(tx *core.TxRepoProposalSendFee, index int) error
 		return err
 	}
 
-	if err := checkValue(&core.TxValue{Value: tx.Value}, index); err != nil {
+	if err := checkValue(&txns.TxValue{Value: tx.Value}, index); err != nil {
 		return err
 	}
 
@@ -690,7 +690,7 @@ func checkRepoName(name string, index int) error {
 
 // checkProposalFee performs sanity checks on a proposal fee
 func checkProposalFee(fee util.String, index int) error {
-	if err := checkValue(&core.TxValue{Value: fee}, index); err != nil {
+	if err := checkValue(&txns.TxValue{Value: fee}, index); err != nil {
 		return err
 	} else if fee.Decimal().LessThan(decimal.NewFromFloat(params.MinProposalFee)) {
 		return feI(index, "value", "proposal creation fee cannot be "+
@@ -714,54 +714,55 @@ func checkFeeCap(fee util.String, index int) error {
 	return nil
 }
 
-// CheckTxRepoProposalMergeRequest performs sanity checks on TxRepoProposalMergeRequest
-func CheckTxRepoProposalMergeRequest(tx *core.TxRepoProposalMergeRequest, index int) error {
-
-	if err := checkType(tx.TxType, core.TxTypeRepoProposalMergeRequest, index); err != nil {
-		return err
-	}
-
-	if err := checkRepoName(tx.RepoName, index); err != nil {
-		return err
-	}
-
-	if err := checkProposalID(tx.ProposalID, index); err != nil {
-		return err
-	}
-
-	if err := checkProposalFee(tx.Value, index); err != nil {
-		return err
-	}
-
-	if tx.BaseBranch == "" {
-		return feI(index, "base", "base branch name is required")
-	}
-
-	if len(tx.BaseBranchHash) > 0 && len(tx.BaseBranchHash) != 40 {
-		return feI(index, "baseHash", "base branch hash is not valid")
-	}
-
-	if tx.TargetBranch == "" {
-		return feI(index, "target", "target branch name is required")
-	}
-
-	if tx.TargetBranchHash == "" {
-		return feI(index, "targetHash", "target branch hash is required")
-	} else if len(tx.TargetBranchHash) != 40 {
-		return feI(index, "targetHash", "target branch hash is not valid")
-	}
-
-	if err := checkCommon(tx, index); err != nil {
-		return err
-	}
-
-	return nil
-}
+// TODO: check
+// // CheckTxRepoProposalMergeRequest performs sanity checks on TxRepoProposalMergeRequest
+// func CheckTxRepoProposalMergeRequest(tx *core.TxRepoProposalMergeRequest, index int) error {
+//
+// 	if err := checkType(tx.TxType, core.TxTypeRepoProposalMergeRequest, index); err != nil {
+// 		return err
+// 	}
+//
+// 	if err := checkRepoName(tx.RepoName, index); err != nil {
+// 		return err
+// 	}
+//
+// 	if err := checkProposalID(tx.ProposalID, index); err != nil {
+// 		return err
+// 	}
+//
+// 	if err := checkProposalFee(tx.Value, index); err != nil {
+// 		return err
+// 	}
+//
+// 	if tx.BaseBranch == "" {
+// 		return feI(index, "base", "base branch name is required")
+// 	}
+//
+// 	if len(tx.BaseBranchHash) > 0 && len(tx.BaseBranchHash) != 40 {
+// 		return feI(index, "baseHash", "base branch hash is not valid")
+// 	}
+//
+// 	if tx.TargetBranch == "" {
+// 		return feI(index, "target", "target branch name is required")
+// 	}
+//
+// 	if tx.TargetBranchHash == "" {
+// 		return feI(index, "targetHash", "target branch hash is required")
+// 	} else if len(tx.TargetBranchHash) != 40 {
+// 		return feI(index, "targetHash", "target branch hash is not valid")
+// 	}
+//
+// 	if err := checkCommon(tx, index); err != nil {
+// 		return err
+// 	}
+//
+// 	return nil
+// }
 
 // CheckTxRepoProposalUpdate performs sanity checks on TxRepoProposalUpdate
-func CheckTxRepoProposalUpdate(tx *core.TxRepoProposalUpdate, index int) error {
+func CheckTxRepoProposalUpdate(tx *txns.TxRepoProposalUpdate, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeRepoProposalUpdate, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeRepoProposalUpdate, index); err != nil {
 		return err
 	}
 
@@ -789,9 +790,9 @@ func CheckTxRepoProposalUpdate(tx *core.TxRepoProposalUpdate, index int) error {
 }
 
 // CheckTxRepoProposalRegisterPushKey performs sanity checks on TxRepoProposalRegisterPushKey
-func CheckTxRepoProposalRegisterPushKey(tx *core.TxRepoProposalRegisterPushKey, index int) error {
+func CheckTxRepoProposalRegisterPushKey(tx *txns.TxRepoProposalRegisterPushKey, index int) error {
 
-	if err := checkType(tx.TxType, core.TxTypeRepoProposalRegisterPushKey, index); err != nil {
+	if err := checkType(tx.TxType, txns.TxTypeRepoProposalRegisterPushKey, index); err != nil {
 		return err
 	}
 

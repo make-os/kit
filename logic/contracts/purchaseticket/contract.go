@@ -8,6 +8,7 @@ import (
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -15,7 +16,7 @@ import (
 // TicketPurchaseContract implements SystemContract.
 type TicketPurchaseContract struct {
 	core.Logic
-	tx          *core.TxTicketPurchase
+	tx          *txns.TxTicketPurchase
 	chainHeight uint64
 }
 
@@ -25,12 +26,12 @@ func NewContract() *TicketPurchaseContract {
 }
 
 func (c *TicketPurchaseContract) CanExec(typ types.TxCode) bool {
-	return typ == core.TxTypeValidatorTicket || typ == core.TxTypeHostTicket
+	return typ == txns.TxTypeValidatorTicket || typ == txns.TxTypeHostTicket
 }
 
 func (c *TicketPurchaseContract) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64) core.SystemContract {
 	c.Logic = logic
-	c.tx = tx.(*core.TxTicketPurchase)
+	c.tx = tx.(*txns.TxTicketPurchase)
 	c.chainHeight = curChainHeight
 	return c
 }
@@ -55,7 +56,7 @@ func (c *TicketPurchaseContract) Exec() error {
 	// Register a stake entry
 	unbondHeight := uint64(0)
 	switch txType {
-	case core.TxTypeValidatorTicket:
+	case txns.TxTypeValidatorTicket:
 
 		// Determine unbond height. The unbond height is height of the next block
 		// (or proposed block) plus minimum ticket maturation duration, max ticket
@@ -65,7 +66,7 @@ func (c *TicketPurchaseContract) Exec() error {
 			uint64(params.NumBlocksInThawPeriod)
 		senderAcct.Stakes.Add(state.StakeTypeValidator, value, unbondHeight)
 
-	case core.TxTypeHostTicket:
+	case txns.TxTypeHostTicket:
 		senderAcct.Stakes.Add(state.StakeTypeHost, value, unbondHeight)
 
 	default:

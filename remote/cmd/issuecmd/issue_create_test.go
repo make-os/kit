@@ -11,16 +11,17 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	"gitlab.com/makeos/mosdef/remote/cmd/issuecmd"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/repo"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/util"
 )
 
-func testIssueCommentCreator(isNewIssue bool, issueReference string, err error) func(targetRepo core.LocalRepo,
-	issueID int, issueBody string, isComment bool) (bool, string, error) {
-	return func(targetRepo core.LocalRepo, issueID int, issueBody string, isComment bool) (bool, string, error) {
+func testIssueCommentCreator(isNewIssue bool, issueReference string, err error) func(targetRepo types2.LocalRepo,
+	args *plumbing.CreatePostCommitArgs) (bool, string, error) {
+	return func(targetRepo types2.LocalRepo, args *plumbing.CreatePostCommitArgs) (bool, string, error) {
 		return isNewIssue, issueReference, err
 	}
 }
@@ -28,24 +29,19 @@ func testIssueCommentCreator(isNewIssue bool, issueReference string, err error) 
 var noopIssueCommentCreator = testIssueCommentCreator(false, "", nil)
 var errorIssueCommentCreator = testIssueCommentCreator(false, "", fmt.Errorf("error"))
 
-func mockReadFunc(data []byte, err error) func(b []byte) (int, error) {
-	return func(b []byte) (int, error) {
-		copy(b, data[:])
-		return len(data), err
-	}
-}
-
 var _ = Describe("IssueCreate", func() {
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
 	var mockRepo *mocks.MockLocalRepo
+	var inpReaderCallCount int
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
 		Expect(err).To(BeNil())
 		ctrl = gomock.NewController(GinkgoT())
 		mockRepo = mocks.NewMockLocalRepo(ctrl)
+		inpReaderCallCount = 0
 	})
 
 	AfterEach(func() {
@@ -86,10 +82,16 @@ var _ = Describe("IssueCreate", func() {
 
 			When("title is not set AND reply hash is not set AND issues did not previously exist", func() {
 				It("should read title and body from stdIn", func() {
-					mockStdIn := mocks.NewMockReadCloser(ctrl)
-					mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my title\n"), nil))
-					mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my body"), io.EOF))
-					args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn, IssueCommentCreator: noopIssueCommentCreator}
+					mockStdOut := mocks.NewMockFileWriter(ctrl)
+					mockStdOut.EXPECT().Write(gomock.Any()).AnyTimes()
+
+					args := &issuecmd.IssueCreateArgs{
+						StdOut:             mockStdOut,
+						PostCommentCreator: noopIssueCommentCreator,
+						InputReader: func(title string, args *util.InputReaderArgs) string {
+							return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "my body")
+						},
+					}
 					err := issuecmd.IssueCreateCmd(mockRepo, args)
 					Expect(err).To(BeNil())
 					Expect(args.Title).To(Equal("my title"))
@@ -98,42 +100,45 @@ var _ = Describe("IssueCreate", func() {
 			})
 
 			It("should return error when title is not provided from stdin", func() {
-				mockStdIn := mocks.NewMockReadCloser(ctrl)
-				mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc(nil, nil))
-				mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc(nil, io.EOF))
-				args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn}
+				args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil),
+					InputReader: func(title string, args *util.InputReaderArgs) string { return "" }}
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(Equal(issuecmd.ErrTitleRequired))
+				Expect(err).To(Equal(common.ErrTitleRequired))
 			})
 
 			It("should return error when body is not provided from stdin", func() {
-				mockStdIn := mocks.NewMockReadCloser(ctrl)
-				mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my title\n"), nil))
-				mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc(nil, io.EOF))
-				args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn}
+				args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil),
+					InputReader: func(title string, args *util.InputReaderArgs) string {
+						return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "")
+					},
+				}
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(args.Title).To(Equal("my title"))
-				Expect(err).To(Equal(issuecmd.ErrBodyRequired))
+				Expect(err).To(Equal(common.ErrBodyRequired))
 			})
 
-			It("should return error when body is not provided from stdin even is NoBody is true", func() {
-				mockStdIn := mocks.NewMockReadCloser(ctrl)
-				mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my title\n"), nil))
-				args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn, NoBody: true}
+			It("should return error when body is not provided from stdin even when NoBody is true", func() {
+				args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), NoBody: true,
+					InputReader: func(title string, args *util.InputReaderArgs) string {
+						return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "")
+					},
+				}
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(args.Title).To(Equal("my title"))
-				Expect(err).To(Equal(issuecmd.ErrBodyRequired))
+				Expect(err).To(Equal(common.ErrBodyRequired))
 			})
 
 			When("custom editor is requested", func() {
 				var args *issuecmd.IssueCreateArgs
 				BeforeEach(func() {
-					mockStdIn := mocks.NewMockReadCloser(ctrl)
-					mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my title\n"), nil))
-					args = &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn, UseEditor: true}
+					args = &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), UseEditor: true,
+						InputReader: func(title string, args *util.InputReaderArgs) string {
+							return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "")
+						},
+					}
 				})
 
 				It("should request fetch core.editor from git config", func() {
@@ -166,7 +171,7 @@ var _ = Describe("IssueCreate", func() {
 					args.EditorReader = func(editor string, stdIn io.Reader, stdOut, stdErr io.Writer) (string, error) { return "", nil }
 					err := issuecmd.IssueCreateCmd(mockRepo, args)
 					Expect(err).ToNot(BeNil())
-					Expect(err).To(Equal(issuecmd.ErrBodyRequired))
+					Expect(err).To(Equal(common.ErrBodyRequired))
 				})
 			})
 
@@ -176,7 +181,7 @@ var _ = Describe("IssueCreate", func() {
 			It("should return error when issue does not exist and reply hash is set", func() {
 				args := &issuecmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "xyz"}
 				ref := plumbing.MakeIssueReference(args.IssueNumber)
-				mockRepo.EXPECT().RefGet(ref).Return("", repo.ErrRefNotFound)
+				mockRepo.EXPECT().RefGet(ref).Return("", plumbing.ErrRefNotFound)
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("issue (1) was not found"))
@@ -223,13 +228,11 @@ var _ = Describe("IssueCreate", func() {
 			})
 
 			It("should not return ErrBodyRequired when NoBody=true and intent is a reply", func() {
-				mockStdIn := mocks.NewMockReadCloser(ctrl)
-
 				issueNumber := 1
 				ref := plumbing.MakeIssueReference(issueNumber)
 				args := &issuecmd.IssueCreateArgs{IssueNumber: issueNumber, ReplyHash: "comment_hash", NoBody: true,
-					StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn,
-					IssueCommentCreator: testIssueCommentCreator(true, ref, nil)}
+					StdOut:             bytes.NewBuffer(nil),
+					PostCommentCreator: testIssueCommentCreator(true, ref, nil)}
 
 				mockRepo.EXPECT().RefGet(ref).Return("ref_hash", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(1, nil)
@@ -240,10 +243,13 @@ var _ = Describe("IssueCreate", func() {
 		})
 
 		It("should return error when unable to create issue/comment", func() {
-			mockStdIn := mocks.NewMockReadCloser(ctrl)
-			mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my title\n"), nil))
-			mockStdIn.EXPECT().Read(gomock.Any()).DoAndReturn(mockReadFunc([]byte("my body"), io.EOF))
-			args := &issuecmd.IssueCreateArgs{StdOut: bytes.NewBuffer(nil), StdIn: mockStdIn, IssueCommentCreator: errorIssueCommentCreator}
+			args := &issuecmd.IssueCreateArgs{
+				StdOut:             bytes.NewBuffer(nil),
+				PostCommentCreator: errorIssueCommentCreator,
+				InputReader: func(title string, args *util.InputReaderArgs) string {
+					return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "my body")
+				},
+			}
 			err := issuecmd.IssueCreateCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
 			Expect(args.Title).To(Equal("my title"))

@@ -16,6 +16,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -49,8 +50,8 @@ var _ = Describe("UpsertOwnerContract", func() {
 	Describe(".CanExec", func() {
 		It("should return true when able to execute tx type", func() {
 			ct := upsertowner.NewContract(nil)
-			Expect(ct.CanExec(core.TxTypeRepoProposalUpsertOwner)).To(BeTrue())
-			Expect(ct.CanExec(core.TxTypeHostTicket)).To(BeFalse())
+			Expect(ct.CanExec(txns.TxTypeRepoProposalUpsertOwner)).To(BeTrue())
+			Expect(ct.CanExec(txns.TxTypeHostTicket)).To(BeFalse())
 		})
 	})
 
@@ -78,9 +79,9 @@ var _ = Describe("UpsertOwnerContract", func() {
 			BeforeEach(func() {
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
-				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpsertOwner{
-					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpsertOwner{
+					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Addresses:        address,
 					Veto:             false,
 				}, 0).Exec()
@@ -128,9 +129,9 @@ var _ = Describe("UpsertOwnerContract", func() {
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpsertOwner{
-					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpsertOwner{
+					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Addresses:        addresses,
 					Veto:             false,
 				}, 0).Exec()
@@ -180,9 +181,9 @@ var _ = Describe("UpsertOwnerContract", func() {
 				repoUpd.AddOwner(key2.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpsertOwner{
-					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpsertOwner{
+					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Addresses:        addresses,
 					Veto:             false,
 				}, 0).Exec()
@@ -239,9 +240,9 @@ var _ = Describe("UpsertOwnerContract", func() {
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &core.TxRepoProposalUpsertOwner{
-					TxCommon:         &core.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &core.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpsertOwner{
+					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
+					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
 					Addresses:        addresses,
 					Veto:             false,
 				}, currentHeight).Exec()

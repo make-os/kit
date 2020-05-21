@@ -9,6 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/c-bata/go-prompt"
@@ -348,7 +349,7 @@ func (m *UserModule) GetPrivateValidator(includePrivKey ...bool) util.Map {
 func (m *UserModule) SetCommission(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
-	var tx = core.NewBareTxSetDelegateCommission()
+	var tx = txns.NewBareTxSetDelegateCommission()
 	if err = tx.FromMap(params); err != nil {
 		panic(util.NewStatusError(400, StatusCodeInvalidParams, "", err.Error()))
 	}

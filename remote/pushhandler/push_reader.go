@@ -9,8 +9,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	repo2 "gitlab.com/makeos/mosdef/remote/repo"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -69,14 +69,14 @@ type PushReader struct {
 	References    PackedReferences
 	Objects       []*PackObject
 	ObjectsRefs   ObjRefMap
-	repo          core.LocalRepo
+	repo          types2.LocalRepo
 	refsUpdateReq *packp.ReferenceUpdateRequest
 	updateReqCB   func(ur *packp.ReferenceUpdateRequest) error
 }
 
 // NewPushReader creates an instance of PushReader, and after inspection, the
 // written content will be copied to dst.
-func NewPushReader(dst io.WriteCloser, repo core.LocalRepo) (*PushReader, error) {
+func NewPushReader(dst io.WriteCloser, repo types2.LocalRepo) (*PushReader, error) {
 	packFile, err := ioutil.TempFile(os.TempDir(), "pack")
 	if err != nil {
 		return nil, err

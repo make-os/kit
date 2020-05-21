@@ -9,7 +9,9 @@ import (
 	"github.com/asaskevich/govalidator"
 	"gitlab.com/makeos/mosdef/crypto"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
+	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/repo"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
@@ -25,10 +27,10 @@ var (
 )
 
 type ChangeValidatorFunc func(
-	repo core.LocalRepo,
+	repo types2.LocalRepo,
 	oldHash string,
 	change *core.ItemChange,
-	txDetail *core.TxDetail,
+	txDetail *types.TxDetail,
 	getPushKey core.PushKeyGetter) error
 
 // ValidateChange validates a change to a repository
@@ -38,14 +40,15 @@ type ChangeValidatorFunc func(
 // txDetail: The pusher transaction detail
 // getPushKey: Getter function for reading push key public key
 func ValidateChange(
-	localRepo core.LocalRepo,
+	localRepo types2.LocalRepo,
 	oldHash string,
 	change *core.ItemChange,
-	detail *core.TxDetail,
+	detail *types.TxDetail,
 	getPushKey core.PushKeyGetter) error {
 
 	refname := change.Item.GetName()
 	isIssueRef := plumbing2.IsIssueReferencePath(refname)
+	isMergeRequestRef := plumbing2.IsMergeRequestReferencePath(refname)
 
 	// Handle branch validation
 	if plumbing2.IsBranch(refname) && !isIssueRef {
@@ -56,19 +59,19 @@ func ValidateChange(
 		return CheckCommit(commit, detail, getPushKey)
 	}
 
-	// Handle issue branch validation.
-	if plumbing2.IsBranch(refname) && isIssueRef {
+	// Handle issue or merge request branch validation.
+	if plumbing2.IsBranch(refname) && (isIssueRef || isMergeRequestRef) {
 		commit, err := localRepo.WrappedCommitObject(plumbing.NewHash(change.Item.GetData()))
 		if err != nil {
 			return errors.Wrap(err, "unable to get commit object")
 		}
-		return ValidateIssueCommit(localRepo, commit, &ValidateIssueCommitArg{
-			OldHash:          oldHash,
-			Change:           change,
-			TxDetail:         detail,
-			PushKeyGetter:    getPushKey,
-			CheckCommit:      CheckCommit,
-			CheckIssueCommit: CheckIssueCommit,
+		return ValidatePostCommit(localRepo, commit, &ValidatePostCommitArg{
+			OldHash:         oldHash,
+			Change:          change,
+			TxDetail:        detail,
+			PushKeyGetter:   getPushKey,
+			CheckCommit:     CheckCommit,
+			CheckPostCommit: CheckPostCommit,
 		})
 	}
 
@@ -112,8 +115,8 @@ func ValidateChange(
 // repo: The repo where the tag exists in.
 // txDetail: The pusher transaction detail
 func CheckNote(
-	repo core.LocalRepo,
-	txDetail *core.TxDetail) error {
+	repo types2.LocalRepo,
+	txDetail *types.TxDetail) error {
 
 	// Get the note current hash
 	noteHash, err := repo.RefGet(txDetail.Reference)
@@ -133,7 +136,7 @@ func CheckNote(
 // tag: The target annotated tag
 // txDetail: The pusher transaction detail
 // getPushKey: Getter function for reading push key public key
-func CheckAnnotatedTag(tag *object.Tag, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+func CheckAnnotatedTag(tag *object.Tag, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 
 	if tag.PGPSignature == "" {
 		msg := "tag (%s) is unsigned. Sign the tag with your push key"
@@ -182,7 +185,7 @@ func GetCommitOrTagSigMsg(obj object.Object) string {
 }
 
 // verifyCommitSignature verifies commit and tag signatures
-func VerifyCommitOrTagSignature(obj object.Object, pubKey crypto.PublicKey) (*core.TxDetail, error) {
+func VerifyCommitOrTagSignature(obj object.Object, pubKey crypto.PublicKey) (*types.TxDetail, error) {
 	var sig, hash string
 
 	// Extract the signature for commit or tag object
@@ -205,7 +208,7 @@ func VerifyCommitOrTagSignature(obj object.Object, pubKey crypto.PublicKey) (*co
 	}
 
 	// Re-construct the transaction parameters
-	txDetail, err := core.TxDetailFromPEMHeader(pemBlock.Headers)
+	txDetail, err := types.TxDetailFromPEMHeader(pemBlock.Headers)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode PEM header")
 	}
@@ -225,14 +228,14 @@ func VerifyCommitOrTagSignature(obj object.Object, pubKey crypto.PublicKey) (*co
 }
 
 // CommitChecker describes a function for checking a standard commit
-type CommitChecker func(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error
+type CommitChecker func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error
 
 // CheckCommit validates a commit
 // repo: The target repo
 // commit: The target commit object
 // txDetail: The push transaction detail
 // getPushKey: Getter function for fetching push public key
-func CheckCommit(commit *object.Commit, txDetail *core.TxDetail, getPushKey core.PushKeyGetter) error {
+func CheckCommit(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 
 	// Signature must be set
 	if commit.PGPSignature == "" {
@@ -261,7 +264,7 @@ func CheckCommit(commit *object.Commit, txDetail *core.TxDetail, getPushKey core
 }
 
 // IsBlockedByScope checks whether the given tx parameter satisfy a given scope
-func IsBlockedByScope(scopes []string, params *core.TxDetail, namespaceFromParams *state.Namespace) bool {
+func IsBlockedByScope(scopes []string, params *types.TxDetail, namespaceFromParams *state.Namespace) bool {
 	blocked := true
 	for _, scope := range scopes {
 		if util.IsNamespaceURI(scope) {

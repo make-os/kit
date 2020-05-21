@@ -9,7 +9,9 @@ import (
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/policy"
+	"gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/repo"
+	types2 "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
@@ -26,7 +28,7 @@ type authorizationHandler func(ur *packp.ReferenceUpdateRequest) error
 type Handler struct {
 	log                  logger.Logger
 	op                   string                              // The current git operation
-	Repo                 core.LocalRepo                      // The target repository
+	Repo                 types.LocalRepo                     // The target repository
 	Server               core.RemoteServer                   // The repository remote server
 	OldState             core.BareRepoState                  // The old state of the repo before the current push was written
 	PushReader           *PushReader                         // The push reader for reading pushed git objects
@@ -35,7 +37,7 @@ type Handler struct {
 	Reverter             plumbing.RevertFunc                 // Repository state reverser function
 	MergeChecker         validation.MergeComplianceCheckFunc // Merge request checker function
 	polEnforcer          policy.EnforcerFunc                 // Authorization policy enforcer function for the repository
-	TxDetails            core.ReferenceTxDetails             // Map of references to their transaction details
+	TxDetails            types2.ReferenceTxDetails           // Map of references to their transaction details
 	ReferenceHandler     refHandler                          // Pushed reference handler function
 	AuthorizationHandler authorizationHandler                // Authorization handler function
 	PolicyChecker        policy.PolicyChecker                // Policy checker function
@@ -43,14 +45,14 @@ type Handler struct {
 
 // PushHandlerFunc describes a function for creating a push handler
 type PushHandlerFunc func(
-	targetRepo core.LocalRepo,
-	txDetails []*core.TxDetail,
+	targetRepo types.LocalRepo,
+	txDetails []*types2.TxDetail,
 	enforcer policy.EnforcerFunc) *Handler
 
 // NewHandler returns an instance of Handler
 func NewHandler(
-	repo core.LocalRepo,
-	txDetails []*core.TxDetail,
+	repo types.LocalRepo,
+	txDetails []*types2.TxDetail,
 	polEnforcer policy.EnforcerFunc,
 	rMgr core.RemoteServer) *Handler {
 
@@ -60,7 +62,7 @@ func NewHandler(
 		log:             rMgr.Log().Module("push-handler"),
 		polEnforcer:     polEnforcer,
 		PushReader:      &PushReader{},
-		TxDetails:       core.ToReferenceTxDetails(txDetails),
+		TxDetails:       types2.ToReferenceTxDetails(txDetails),
 		ChangeValidator: validation.ValidateChange,
 		Reverter:        plumbing.Revert,
 		MergeChecker:    validation.CheckMergeCompliance,
@@ -116,9 +118,9 @@ func (h *Handler) EnsureReferencesHaveTxDetail() error {
 	return nil
 }
 
-// DoAuthCheck performs authorization checks on the specified target reference.
+// doAuthCheck performs authorization checks on the specified target reference.
 // If targetRef is unset, all references are checked.
-func (h *Handler) DoAuthCheck(ur *packp.ReferenceUpdateRequest, targetRef string) error {
+func (h *Handler) doAuthCheck(ur *packp.ReferenceUpdateRequest, targetRef string) error {
 
 	// Check whether the pusher is a contributor
 	pusher := h.TxDetails.GetPushKeyID()
@@ -168,7 +170,7 @@ func (h *Handler) DoAuthCheck(ur *packp.ReferenceUpdateRequest, targetRef string
 
 			// When there is a tx detail flag requesting for issue update policy check,
 			// set action to 'issue-update'. Ignore if reference is new.
-			if detail.FlagCheckIssueUpdatePolicy && !refState.IsNil() {
+			if detail.FlagCheckAdminUpdatePolicy && !refState.IsNil() {
 				action = policy.PolicyActionIssueUpdate
 			}
 		}
@@ -190,7 +192,7 @@ func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 		return err
 	}
 
-	return h.DoAuthCheck(ur, "")
+	return h.doAuthCheck(ur, "")
 }
 
 // HandleReferences processes all pushed references
@@ -258,9 +260,9 @@ func (h *Handler) HandleUpdate() error {
 }
 
 // createPushNote creates a note that describes a push operation.
-func (h *Handler) createPushNote() (*core.PushNote, error) {
+func (h *Handler) createPushNote() (*types.PushNote, error) {
 
-	var note = &core.PushNote{
+	var note = &types.PushNote{
 		TargetRepo:      h.Repo,
 		PushKeyID:       util.MustDecodePushKeyID(h.TxDetails.GetPushKeyID()),
 		RepoName:        h.TxDetails.GetRepoName(),
@@ -269,13 +271,13 @@ func (h *Handler) createPushNote() (*core.PushNote, error) {
 		PusherAddress:   h.Server.GetLogic().PushKeyKeeper().Get(h.TxDetails.GetPushKeyID()).Address,
 		Timestamp:       time.Now().Unix(),
 		NodePubKey:      h.Server.GetPrivateValidatorKey().PubKey().MustBytes32(),
-		References:      core.PushedReferences{},
+		References:      types.PushedReferences{},
 	}
 
 	// Add references
 	for refName, ref := range h.PushReader.References {
 		detail := h.TxDetails.Get(refName)
-		note.References = append(note.References, &core.PushedReference{
+		note.References = append(note.References, &types.PushedReference{
 			Name:            refName,
 			OldHash:         ref.OldHash,
 			NewHash:         ref.NewHash,
@@ -375,8 +377,8 @@ func (h *Handler) HandleReference(ref string, revertOnly bool) []error {
 
 	// Re-perform authorization checks for issue references that have been
 	// flagged for issue update policy check
-	if plumbing.IsIssueReference(ref) && detail.FlagCheckIssueUpdatePolicy {
-		if err = h.DoAuthCheck(h.PushReader.GetUpdateRequest(), ref); err != nil {
+	if plumbing.IsIssueReference(ref) && detail.FlagCheckAdminUpdatePolicy {
+		if err = h.doAuthCheck(h.PushReader.GetUpdateRequest(), ref); err != nil {
 			errs = append(errs, errors.Wrap(err, "authorization"))
 		}
 	}

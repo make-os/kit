@@ -14,8 +14,9 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/mocks"
+	types3 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	types2 "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
 )
 
 var _ = Describe("GitVerify", func() {
@@ -98,7 +99,7 @@ var _ = Describe("GitVerify", func() {
 					"pkID": key.PushAddr().String(),
 				}}, nil
 			}
-			args.RepoGetter = func(path string) (core.LocalRepo, error) {
+			args.RepoGetter = func(path string) (types3.LocalRepo, error) {
 				return nil, fmt.Errorf("error")
 			}
 
@@ -117,10 +118,10 @@ var _ = Describe("GitVerify", func() {
 					"pkID": key.PushAddr().String(),
 				}}, nil
 			}
-			args.RepoGetter = func(path string) (core.LocalRepo, error) {
+			args.RepoGetter = func(path string) (types3.LocalRepo, error) {
 				return mockRepo, nil
 			}
-			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo core.LocalRepo) (types.StoredKey, error) {
+			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo types3.LocalRepo) (types.StoredKey, error) {
 				return nil, fmt.Errorf("error")
 			}
 
@@ -146,13 +147,13 @@ var _ = Describe("GitVerify", func() {
 				}, nil
 			}
 
-			args.RepoGetter = func(path string) (core.LocalRepo, error) {
+			args.RepoGetter = func(path string) (types3.LocalRepo, error) {
 				return mockRepo, nil
 			}
 
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetKey().Return(key)
-			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo core.LocalRepo) (types.StoredKey, error) {
+			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo types3.LocalRepo) (types.StoredKey, error) {
 				return mockStoredKey, nil
 			}
 
@@ -173,7 +174,7 @@ var _ = Describe("GitVerify", func() {
 			}
 
 			// Create signature
-			txDetail := &core.TxDetail{RepoName: "repo1", RepoNamespace: "namespace", Fee: "1.2", PushKeyID: key.PushAddr().String(), Reference: "refs/heads/master", Nonce: 1}
+			txDetail := &types2.TxDetail{RepoName: "repo1", RepoNamespace: "namespace", Fee: "1.2", PushKeyID: key.PushAddr().String(), Reference: "refs/heads/master", Nonce: 1}
 			msg := append(gitObjectData, txDetail.BytesNoSig()...)
 			sig, err := key.PrivKey().Sign(msg)
 			Expect(err).To(BeNil())
@@ -185,14 +186,14 @@ var _ = Describe("GitVerify", func() {
 				}, nil
 			}
 
-			args.RepoGetter = func(path string) (core.LocalRepo, error) {
+			args.RepoGetter = func(path string) (types3.LocalRepo, error) {
 				return mockRepo, nil
 			}
 
 			mockStoredKey := mocks.NewMockStoredKey(ctrl)
 			mockStoredKey.EXPECT().GetKey().Return(key)
 			args.PushKeyUnlocker = func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string,
-				targetRepo core.LocalRepo) (types.StoredKey, error) {
+				targetRepo types3.LocalRepo) (types.StoredKey, error) {
 				return mockStoredKey, nil
 			}
 
