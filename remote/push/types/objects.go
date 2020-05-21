@@ -5,7 +5,9 @@ import (
 	"github.com/thoas/go-funk"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 // PushNotice implements types.PushNotice
@@ -13,7 +15,7 @@ type PushNote struct {
 	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
 
 	// TargetRepo is the target repo local instance
-	TargetRepo LocalRepo `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
+	TargetRepo types.LocalRepo `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
 
 	// RepoName is the name of the repo
 	RepoName string `json:"repo,omitempty" msgpack:"repo,omitempty"`
@@ -50,12 +52,12 @@ type PushNote struct {
 }
 
 // GetTargetRepo returns the target repository
-func (pt *PushNote) GetTargetRepo() LocalRepo {
+func (pt *PushNote) GetTargetRepo() types.LocalRepo {
 	return pt.TargetRepo
 }
 
 // GetTargetRepo returns the target repository
-func (pt *PushNote) SetTargetRepo(repo LocalRepo) {
+func (pt *PushNote) SetTargetRepo(repo types.LocalRepo) {
 	pt.TargetRepo = repo
 }
 
@@ -307,4 +309,135 @@ func (e *PushEndorsement) Clone() *PushEndorsement {
 		cp.References = append(cp.References, cpEndorsement)
 	}
 	return cp
+}
+
+// Pool represents a pool for holding and ordering git push transactions
+type Pool interface {
+
+	// Register a push transaction to the pool.
+	//
+	// Check all the references to ensure there are no identical (same repo,
+	// reference and nonce) references with same nonce in the pool. A valid
+	// reference is one which has no identical reference with a higher fee rate in
+	// the pool. If an identical reference exist in the pool with an inferior fee
+	// rate, the existing tx holding the reference is eligible for replacable by tx
+	// holding the reference with a superior fee rate. In cases where more than one
+	// reference of tx is superior to multiple references in multiple transactions,
+	// replacement will only happen if the fee rate of tx is higher than the
+	// combined fee rate of the replaceable transactions.
+	//
+	// noValidation disables tx validation
+	Add(tx PushNotice, noValidation ...bool) error
+
+	// Full returns true if the pool is full
+	Full() bool
+
+	// RepoHasPushNote returns true if the given repo has a transaction in the pool
+	RepoHasPushNote(repo string) bool
+
+	// Get finds and returns a push note
+	Get(noteID string) *PushNote
+
+	// Len returns the number of items in the pool
+	Len() int
+
+	// Remove removes a push note
+	Remove(pushNote PushNotice)
+}
+
+type PushNotice interface {
+	GetTargetRepo() types.LocalRepo
+	SetTargetRepo(repo types.LocalRepo)
+	GetPusherKeyID() []byte
+	GetPusherAddress() util.Address
+	GetPusherAccountNonce() uint64
+	GetPusherKeyIDString() string
+	EncodeMsgpack(enc *msgpack.Encoder) error
+	DecodeMsgpack(dec *msgpack.Decoder) error
+	Bytes(recompute ...bool) []byte
+	BytesNoCache() []byte
+	BytesNoSig() []byte
+	GetPushedObjects() []string
+	GetEcoSize() uint64
+	GetNodePubKey() util.Bytes32
+	GetNodeSignature() []byte
+	GetRepoName() string
+	GetNamespace() string
+	GetTimestamp() int64
+	GetPushedReferences() PushedReferences
+	Len() uint64
+	ID(recompute ...bool) util.Bytes32
+	BytesAndID(recompute ...bool) ([]byte, util.Bytes32)
+	TxSize() uint
+	BillableSize() uint64
+	GetSize() uint64
+	GetFee() util.String
+}
+
+// PushedReference represents a reference that was pushed by git client
+type PushedReference struct {
+	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
+	Name                  string               `json:"name" msgpack:"name,omitempty"`       // The full name of the reference
+	OldHash               string               `json:"oldHash" msgpack:"oldHash,omitempty"` // The hash of the reference before the push
+	NewHash               string               `json:"newHash" msgpack:"newHash,omitempty"` // The hash of the reference after the push
+	Nonce                 uint64               `json:"nonce" msgpack:"nonce,omitempty"`     // The next repo nonce of the reference
+	Objects               []string             `json:"objects" msgpack:"objects,omitempty"` // A list of objects pushed to the reference
+	MergeProposalID       string               `json:"mergeID" msgpack:"mergeID,omitempty"` // The merge proposal ID the reference is complaint with.
+	Fee                   util.String          `json:"fee" msgpack:"fee,omitempty"`         // The merge proposal ID the reference is complaint with.
+	PushSig               []byte               `json:"pushSig" msgpack:"pushSig,omitempty"` // The signature of from the push request token
+	Data                  *types.ReferenceData `json:"data" msgpack:"data,omitempty"`       // Contains updates to the reference data
+}
+
+// EncodeMsgpack implements msgpack.CustomEncoder
+func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeMulti(
+		pr.Name,
+		pr.OldHash,
+		pr.NewHash,
+		pr.Nonce,
+		pr.Objects,
+		pr.MergeProposalID,
+		pr.Fee,
+		pr.Data,
+		pr.PushSig)
+}
+
+// DecodeMsgpack implements msgpack.CustomDecoder
+func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return pr.DecodeMulti(dec,
+		&pr.Name,
+		&pr.OldHash,
+		&pr.NewHash,
+		&pr.Nonce,
+		&pr.Objects,
+		&pr.MergeProposalID,
+		&pr.Fee,
+		&pr.Data,
+		&pr.PushSig)
+}
+
+// IsDeletable checks whether the pushed reference can be deleted
+func (pr *PushedReference) IsDeletable() bool {
+	return pr.NewHash == plumbing.ZeroHash.String()
+}
+
+// PushedReferences represents a collection of pushed references
+type PushedReferences []*PushedReference
+
+// GetByName finds a pushed reference by name
+func (pf *PushedReferences) GetByName(name string) *PushedReference {
+	for _, r := range *pf {
+		if r.Name == name {
+			return r
+		}
+	}
+	return nil
+}
+
+// Names returns the names of the references
+func (pf *PushedReferences) Names() (names []string) {
+	for _, r := range *pf {
+		names = append(names, r.Name)
+	}
+	return
 }

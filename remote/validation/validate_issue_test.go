@@ -10,7 +10,6 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/mocks"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/types/common"
@@ -105,7 +104,7 @@ var _ = Describe("Validation", func() {
 				CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 					return nil
 				},
-				CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+				CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 					return nil, nil
 				},
 			}
@@ -129,7 +128,7 @@ var _ = Describe("Validation", func() {
 				CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 					return nil
 				},
-				CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+				CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 					callCount++
 					Expect(commit).To(Equal(commit))
 					Expect(args.Reference).To(Equal(detail.Reference))
@@ -164,7 +163,7 @@ var _ = Describe("Validation", func() {
 					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+					CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
@@ -185,7 +184,7 @@ var _ = Describe("Validation", func() {
 					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+					CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
@@ -212,7 +211,7 @@ var _ = Describe("Validation", func() {
 					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+					CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
@@ -249,7 +248,7 @@ var _ = Describe("Validation", func() {
 					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+					CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
@@ -273,7 +272,7 @@ var _ = Describe("Validation", func() {
 					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+					CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 						callCount++
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
@@ -308,7 +307,7 @@ var _ = Describe("Validation", func() {
 					CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 						return nil
 					},
-					CheckPostCommit: func(r types2.LocalRepo, commit types2.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+					CheckPostCommit: func(r types.LocalRepo, commit types.Commit, args *validation.CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 						callCount++
 
 						if callCount == 1 {

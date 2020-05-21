@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -54,7 +54,7 @@ type IssueListArgs struct {
 }
 
 // IssueListCmd list all issues
-func IssueListCmd(targetRepo types2.LocalRepo, args *IssueListArgs) error {
+func IssueListCmd(targetRepo types.LocalRepo, args *IssueListArgs) error {
 
 	// Get issue posts
 	issues, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
@@ -80,7 +80,7 @@ func IssueListCmd(targetRepo types2.LocalRepo, args *IssueListArgs) error {
 	return formatAndPrintIssueList(targetRepo, args, issues)
 }
 
-func formatAndPrintIssueList(targetRepo types2.LocalRepo, args *IssueListArgs, issues plumbing2.Posts) error {
+func formatAndPrintIssueList(targetRepo types.LocalRepo, args *IssueListArgs, issues plumbing2.Posts) error {
 	buf := bytes.NewBuffer(nil)
 	for i, issue := range issues {
 

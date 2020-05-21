@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
@@ -12,7 +12,7 @@ import (
 )
 
 type MergeComplianceCheckFunc func(
-	repo types2.LocalRepo,
+	repo types.LocalRepo,
 	change *core.ItemChange,
 	oldRef core.Item,
 	mergeProposalID,
@@ -22,7 +22,7 @@ type MergeComplianceCheckFunc func(
 // CheckMergeCompliance checks whether push to a branch satisfied
 // an accepted merge proposal
 func CheckMergeCompliance(
-	repo types2.LocalRepo,
+	repo types.LocalRepo,
 	change *core.ItemChange,
 	oldRef core.Item,
 	mergeProposalID,

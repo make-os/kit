@@ -13,9 +13,10 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/pushpool/types"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	"gitlab.com/makeos/mosdef/remote/push/types"
+	rr "gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
+	types2 "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -25,7 +26,7 @@ var _ = Describe("Server", func() {
 	var cfg *config.AppConfig
 	var repoMgr *Server
 	var path, repoName string
-	var repo types.LocalRepo
+	var repo types2.LocalRepo
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
 	var mockDHT *mocks.MockDHTNode
@@ -48,7 +49,7 @@ var _ = Describe("Server", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = repo2.Get(path)
+		repo, err = rr.Get(path)
 		Expect(err).To(BeNil())
 	})
 

@@ -1,7 +1,7 @@
 package repo
 
 import (
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
@@ -22,7 +22,7 @@ func (c *WrappedCommit) UnWrap() *object.Commit {
 }
 
 // Parent returns the ith parent of a commit.
-func (c *WrappedCommit) Parent(i int) (types2.Commit, error) {
+func (c *WrappedCommit) Parent(i int) (types.Commit, error) {
 	parent, err := c.Commit.Parent(i)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func (c *WrappedCommit) Parent(i int) (types2.Commit, error) {
 }
 
 // IsParent checks whether the specified hash is a parent of the commit
-func (c *WrappedCommit) IsParent(hash string) (bool, types2.Commit) {
+func (c *WrappedCommit) IsParent(hash string) (bool, types.Commit) {
 	for i := 0; i < c.NumParents(); i++ {
 		if parent, _ := c.Parent(i); parent != nil && parent.GetHash().String() == hash {
 			return true, parent

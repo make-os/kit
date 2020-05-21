@@ -12,11 +12,11 @@ import (
 	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/pushhandler"
-	"gitlab.com/makeos/mosdef/remote/pushpool/types"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	"gitlab.com/makeos/mosdef/remote/push"
+	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
+	rr "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/validation"
-	types3 "gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
@@ -50,7 +50,7 @@ func (sv *Server) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Attempt to decode message to PushNotice
-	var note types.PushNote
+	var note pushtypes.PushNote
 	if err := util.ToObject(msgBytes, &note); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
@@ -95,10 +95,10 @@ func (sv *Server) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	sv.cacheNoteSender(string(peerID), note.ID().String())
 
 	// Set the target repository object
-	note.TargetRepo = &repo2.Repo{
+	note.TargetRepo = &rr.Repo{
 		Name:          repoName,
 		Repository:    repo,
-		LiteGit:       repo2.NewLiteGit(sv.gitBinPath, repoPath),
+		LiteGit:       rr.NewLiteGit(sv.gitBinPath, repoPath),
 		Path:          repoPath,
 		NamespaceName: note.Namespace,
 		State:         repoState,
@@ -174,9 +174,9 @@ func (sv *Server) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 }
 
 // pushedObjectsBroadcaster describes an object for broadcasting pushed objects
-type pushedObjectsBroadcaster func(pn *types.PushNote) (err error)
+type pushedObjectsBroadcaster func(pn *pushtypes.PushNote) (err error)
 
-func (sv *Server) broadcastPushedObjects(pn *types.PushNote) (err error) {
+func (sv *Server) broadcastPushedObjects(pn *pushtypes.PushNote) (err error) {
 
 	// Announce all pushed objects to the DHT
 	for _, hash := range pn.GetPushedObjects() {
@@ -208,7 +208,7 @@ func (sv *Server) onPushEnd(peer p2p.Peer, msgBytes []byte) error {
 	}
 
 	// Attempt to decode message to PushEndorsement object
-	var pushEnd types.PushEndorsement
+	var pushEnd pushtypes.PushEndorsement
 	if err := util.ToObject(msgBytes, &pushEnd); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
@@ -241,7 +241,7 @@ func (sv *Server) onPushEnd(peer p2p.Peer, msgBytes []byte) error {
 
 // BroadcastPushObjects broadcasts repo push notes and PushEndorsement; PushEndorsement is only
 // created and broadcast only if the node is a top host.
-func (sv *Server) BroadcastPushObjects(note types.PushNotice) error {
+func (sv *Server) BroadcastPushObjects(note pushtypes.PushNotice) error {
 
 	// Broadcast the push note to peers
 	sv.broadcastPushNote(note)
@@ -277,15 +277,15 @@ func (sv *Server) BroadcastPushObjects(note types.PushNotice) error {
 }
 
 // createEndorsement creates a PushEndorsement for a push note
-func (sv *Server) createEndorsement(note types.PushNotice) (*types.PushEndorsement, error) {
+func (sv *Server) createEndorsement(note pushtypes.PushNotice) (*pushtypes.PushEndorsement, error) {
 
-	pe := &types.PushEndorsement{}
+	pe := &pushtypes.PushEndorsement{}
 	pe.NoteID = note.ID()
 	pe.EndorserPubKey = util.BytesToBytes32(sv.privValidatorKey.PubKey().MustBytes())
 
 	// Set the hash of the endorsement equal the local hash of the reference
 	for _, pushedRef := range note.GetPushedReferences() {
-		endorsement := &types.EndorsedReference{}
+		endorsement := &pushtypes.EndorsedReference{}
 
 		// Get the current reference hash
 		refHash, err := note.GetTargetRepo().RefGet(pushedRef.Name)
@@ -308,7 +308,7 @@ func (sv *Server) createEndorsement(note types.PushNotice) (*types.PushEndorseme
 
 // broadcastPushNote broadcast push transaction to peers.
 // It will not send to original sender of the push note.
-func (sv *Server) broadcastPushNote(pushNote types.PushNotice) {
+func (sv *Server) broadcastPushNote(pushNote pushtypes.PushNotice) {
 	for _, peer := range sv.Switch.Peers().List() {
 		bz, id := pushNote.BytesAndID()
 		if sv.isPushNoteSender(string(peer.ID()), id.String()) {
@@ -360,7 +360,7 @@ func (sv *Server) MaybeCreatePushTx(noteID string) error {
 	}
 
 	// Ensure there are enough push endorsements
-	endorsementIdx := endorsements.(map[string]*types.PushEndorsement)
+	endorsementIdx := endorsements.(map[string]*pushtypes.PushEndorsement)
 	if len(endorsementIdx) < params.PushEndorseQuorumSize {
 		return fmt.Errorf("not enough push endorsements to satisfy quorum size")
 	}
@@ -379,7 +379,7 @@ func (sv *Server) MaybeCreatePushTx(noteID string) error {
 
 	// Collect the BLS public keys of all PushEndorsement senders.
 	// We need them for the construction of BLS aggregated signature.
-	noteEndorsements := funk.Values(endorsementIdx).([]*types.PushEndorsement)
+	noteEndorsements := funk.Values(endorsementIdx).([]*pushtypes.PushEndorsement)
 	var endorsementsPubKey []*bls.PublicKey
 	var endorsementsSig [][]byte
 	for i, ed := range noteEndorsements {
@@ -436,13 +436,13 @@ func (sv *Server) updateWithPushTx(tx *txns.TxPush) error {
 	repoPath := sv.getRepoPath(tx.PushNote.GetRepoName())
 
 	// Get the repository
-	repo, err := repo2.Get(repoPath)
+	repo, err := rr.Get(repoPath)
 	if err != nil {
 		return err
 	}
 
 	// Create a reference update request packfile from the push note
-	packfile, err := pushhandler.MakeReferenceUpdateRequest(repo, tx.PushNote)
+	packfile, err := push.MakeReferenceUpdateRequest(repo, tx.PushNote)
 	if err != nil {
 		return errors.Wrap(err, "failed to create packfile")
 	}
@@ -485,7 +485,7 @@ func (sv *Server) updateWithPushTx(tx *txns.TxPush) error {
 }
 
 // UpdateRepoWithTxPush attempts to update a repository using a push transaction
-func (sv *Server) UpdateRepoWithTxPush(tx types3.BaseTx) error {
+func (sv *Server) UpdateRepoWithTxPush(tx types.BaseTx) error {
 
 	if sv.cfg.IsValidatorNode() {
 		return nil
@@ -500,7 +500,7 @@ func (sv *Server) UpdateRepoWithTxPush(tx types3.BaseTx) error {
 }
 
 // ExecTxPush executes a push transaction
-func (sv *Server) ExecTxPush(tx types3.BaseTx) error {
+func (sv *Server) ExecTxPush(tx types.BaseTx) error {
 	return execTxPush(sv, tx.(*txns.TxPush))
 }
 

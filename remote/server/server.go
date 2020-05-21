@@ -17,11 +17,10 @@ import (
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/remote/pruner"
-	"gitlab.com/makeos/mosdef/remote/pushhandler"
-	"gitlab.com/makeos/mosdef/remote/pushpool"
-	pushpool2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
-	types2 "gitlab.com/makeos/mosdef/remote/types"
+	"gitlab.com/makeos/mosdef/remote/push"
+	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
+	rr "gitlab.com/makeos/mosdef/remote/repo"
+	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
@@ -62,29 +61,29 @@ var services = [][]interface{}{
 type Server struct {
 	p2p.BaseReactor
 	cfg                      *config.AppConfig
-	log                      logger.Logger                           // log is the application logger
-	wg                       *sync.WaitGroup                         // wait group for waiting for the remote server
-	srv                      *http.Server                            // the http server
-	rootDir                  string                                  // the root directory where all repos are stored
-	addr                     string                                  // addr is the listening address for the http server
-	gitBinPath               string                                  // gitBinPath is the path of the git executable
-	pushPool                 pushpool2.PushPool                      // The transaction pool for push transactions
-	mempool                  core.Mempool                            // The general transaction pool for block-bound transaction
-	logic                    core.Logic                              // logic is the application logic provider
-	privValidatorKey         *crypto.Key                             // the node's private validator key for signing transactions
-	pushKeyGetter            core.PushKeyGetter                      // finds and returns PGP public key
-	dht                      dhttypes.DHTNode                        // The dht service
-	pruner                   types2.RepoPruner                       // The repo runner
-	blockGetter              types.BlockGetter                       // Provides access to blocks
-	pushNoteSenders          *cache.Cache                            // Store senders of push notes
-	pushEndSenders           *cache.Cache                            // Stores senders of PushEndorsement messages
-	pushEndorsements         *cache.Cache                            // Store PushEnds
-	modulesAgg               modules.ModuleHub                       // Modules aggregator
-	authenticate             AuthenticatorFunc                       // Function for performing authentication
-	checkPushNote            validation.PushNoteCheckFunc            // Function for performing PushNotice validation
-	packfileMaker            pushhandler.ReferenceUpdateRequestMaker // Function for creating a packfile for updating a repository
-	makePushHandler          pushhandler.PushHandlerFunc             // Function for creating a push handler
-	pushedObjectsBroadcaster pushedObjectsBroadcaster                // Function for broadcasting a push note and pushed objects
+	log                      logger.Logger                    // log is the application logger
+	wg                       *sync.WaitGroup                  // wait group for waiting for the remote server
+	srv                      *http.Server                     // the http server
+	rootDir                  string                           // the root directory where all repos are stored
+	addr                     string                           // addr is the listening address for the http server
+	gitBinPath               string                           // gitBinPath is the path of the git executable
+	pushPool                 pushtypes.Pool                   // The transaction pool for push transactions
+	mempool                  core.Mempool                     // The general transaction pool for block-bound transaction
+	logic                    core.Logic                       // logic is the application logic provider
+	privValidatorKey         *crypto.Key                      // the node's private validator key for signing transactions
+	pushKeyGetter            core.PushKeyGetter               // finds and returns PGP public key
+	dht                      dhttypes.DHTNode                 // The dht service
+	pruner                   remotetypes.RepoPruner           // The repo runner
+	blockGetter              types.BlockGetter                // Provides access to blocks
+	pushNoteSenders          *cache.Cache                     // Store senders of push notes
+	pushEndSenders           *cache.Cache                     // Stores senders of PushEndorsement messages
+	pushEndorsements         *cache.Cache                     // Store PushEnds
+	modulesAgg               modules.ModuleHub                // Modules aggregator
+	authenticate             AuthenticatorFunc                // Function for performing authentication
+	checkPushNote            validation.PushNoteCheckFunc     // Function for performing PushNotice validation
+	packfileMaker            push.ReferenceUpdateRequestMaker // Function for creating a packfile for updating a repository
+	makePushHandler          push.PushHandlerFunc             // Function for creating a push handler
+	pushedObjectsBroadcaster pushedObjectsBroadcaster         // Function for broadcasting a push note and pushed objects
 }
 
 // NewManager creates an instance of Server
@@ -107,7 +106,7 @@ func NewManager(
 		rootDir:          cfg.GetRepoRoot(),
 		gitBinPath:       cfg.Node.GitBinPath,
 		wg:               wg,
-		pushPool:         pushpool.NewPushPool(params.PushPoolCap, logic, dht),
+		pushPool:         push.NewPushPool(params.PushPoolCap, logic, dht),
 		logic:            logic,
 		privValidatorKey: key,
 		dht:              dht,
@@ -115,7 +114,7 @@ func NewManager(
 		blockGetter:      blockGetter,
 		authenticate:     authenticate,
 		checkPushNote:    validation.CheckPushNote,
-		packfileMaker:    pushhandler.MakeReferenceUpdateRequest,
+		packfileMaker:    push.MakeReferenceUpdateRequest,
 		pushNoteSenders:  cache.NewActiveCache(params.PushObjectsSendersCacheSize),
 		pushEndSenders:   cache.NewActiveCache(params.PushObjectsSendersCacheSize),
 		pushEndorsements: cache.NewActiveCache(params.PushNotesEndorsementsCacheSize),
@@ -176,12 +175,12 @@ func (sv *Server) isPushEndSender(senderID string, pushEndID string) bool {
 }
 
 // addPushNoteEndorsement indexes a PushEndorsement for a given push note
-func (sv *Server) addPushNoteEndorsement(noteID string, pushEnd *pushpool2.PushEndorsement) {
+func (sv *Server) addPushNoteEndorsement(noteID string, pushEnd *pushtypes.PushEndorsement) {
 	pushEndList := sv.pushEndorsements.Get(noteID)
 	if pushEndList == nil {
-		pushEndList = map[string]*pushpool2.PushEndorsement{}
+		pushEndList = map[string]*pushtypes.PushEndorsement{}
 	}
-	pushEndList.(map[string]*pushpool2.PushEndorsement)[pushEnd.ID().String()] = pushEnd
+	pushEndList.(map[string]*pushtypes.PushEndorsement)[pushEnd.ID().String()] = pushEnd
 	sv.pushEndorsements.Add(noteID, pushEndList)
 }
 
@@ -223,12 +222,12 @@ func (sv *Server) GetPrivateValidatorKey() *crypto.Key {
 }
 
 // GetPruner returns the repo pruner
-func (sv *Server) GetPruner() types2.RepoPruner {
+func (sv *Server) GetPruner() remotetypes.RepoPruner {
 	return sv.pruner
 }
 
 // GetPushPool returns the push pool
-func (sv *Server) GetPushPool() pushpool2.PushPool {
+func (sv *Server) GetPushPool() pushtypes.Pool {
 	return sv.pushPool
 }
 
@@ -271,7 +270,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Resolve the namespace if the given namespace is not the default
 	var namespace *state.Namespace
-	if namespaceName != repo2.DefaultNS {
+	if namespaceName != rr.DefaultNS {
 
 		// Get the namespace, return 404 if not found
 		namespace = sv.logic.NamespaceKeeper().Get(util.HashNamespace(namespaceName))
@@ -334,10 +333,10 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 		Operation:   op,
 		TxDetails:   txDetails,
 		PolEnforcer: polEnforcer,
-		Repo: &repo2.Repo{
+		Repo: &rr.Repo{
 			Name:          repoName,
 			Repository:    repo,
-			LiteGit:       repo2.NewLiteGit(sv.gitBinPath, fullRepoDir),
+			LiteGit:       rr.NewLiteGit(sv.gitBinPath, fullRepoDir),
 			Path:          fullRepoDir,
 			State:         repoState,
 			NamespaceName: namespaceName,
@@ -382,10 +381,10 @@ func (sv *Server) GetPushKeyGetter() core.PushKeyGetter {
 
 // createPushHandler creates an instance of Handler
 func (sv *Server) createPushHandler(
-	targetRepo pushpool2.LocalRepo,
-	txDetails []*types2.TxDetail,
-	enforcer policy.EnforcerFunc) *pushhandler.Handler {
-	return pushhandler.NewHandler(targetRepo, txDetails, enforcer, sv)
+	targetRepo remotetypes.LocalRepo,
+	txDetails []*remotetypes.TxDetail,
+	enforcer policy.EnforcerFunc) *push.Handler {
+	return push.NewHandler(targetRepo, txDetails, enforcer, sv)
 }
 
 // Log returns the logger
@@ -399,7 +398,7 @@ func (sv *Server) SetPushKeyPubKeyGetter(pkGetter core.PushKeyGetter) {
 }
 
 // GetRepoState implements RepositoryManager
-func (sv *Server) GetRepoState(repo pushpool2.LocalRepo, options ...core.KVOption) (core.BareRepoState, error) {
+func (sv *Server) GetRepoState(repo remotetypes.LocalRepo, options ...core.KVOption) (core.BareRepoState, error) {
 	return plumbing.GetRepoState(repo, options...), nil
 }
 
@@ -420,7 +419,7 @@ func (sv *Server) FindObject(key []byte) ([]byte, error) {
 		return nil, fmt.Errorf("invalid object hash")
 	}
 
-	repo, err := repo2.Get(sv.getRepoPath(repoName))
+	repo, err := rr.Get(sv.getRepoPath(repoName))
 	if err != nil {
 		return nil, err
 	}
@@ -434,8 +433,8 @@ func (sv *Server) FindObject(key []byte) ([]byte, error) {
 }
 
 // Get returns a repo handle
-func (sv *Server) GetRepo(name string) (pushpool2.LocalRepo, error) {
-	return repo2.GetWithLiteGit(sv.gitBinPath, sv.getRepoPath(name))
+func (sv *Server) GetRepo(name string) (remotetypes.LocalRepo, error) {
+	return rr.GetWithLiteGit(sv.gitBinPath, sv.getRepoPath(name))
 }
 
 // Shutdown shuts down the server

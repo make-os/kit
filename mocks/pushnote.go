@@ -5,9 +5,13 @@
 package mocks
 
 import (
+	reflect "reflect"
+	time "time"
+
 	gomock "github.com/golang/mock/gomock"
 	msgpack "github.com/vmihailenco/msgpack"
-	types "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/push/types"
+	types2 "gitlab.com/makeos/mosdef/remote/types"
 	state "gitlab.com/makeos/mosdef/types/state"
 	util "gitlab.com/makeos/mosdef/util"
 	config "gopkg.in/src-d/go-git.v4/config"
@@ -15,8 +19,6 @@ import (
 	object "gopkg.in/src-d/go-git.v4/plumbing/object"
 	storer "gopkg.in/src-d/go-git.v4/plumbing/storer"
 	storage "gopkg.in/src-d/go-git.v4/storage"
-	reflect "reflect"
-	time "time"
 )
 
 // MockPushNotice is a mock of PushNotice interface
@@ -43,10 +45,10 @@ func (m *MockPushNotice) EXPECT() *MockPushNoticeMockRecorder {
 }
 
 // GetTargetRepo mocks base method
-func (m *MockPushNotice) GetTargetRepo() types.LocalRepo {
+func (m *MockPushNotice) GetTargetRepo() types2.LocalRepo {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTargetRepo")
-	ret0, _ := ret[0].(types.LocalRepo)
+	ret0, _ := ret[0].(types2.LocalRepo)
 	return ret0
 }
 
@@ -57,7 +59,7 @@ func (mr *MockPushNoticeMockRecorder) GetTargetRepo() *gomock.Call {
 }
 
 // SetTargetRepo mocks base method
-func (m *MockPushNotice) SetTargetRepo(repo types.LocalRepo) {
+func (m *MockPushNotice) SetTargetRepo(repo types2.LocalRepo) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetTargetRepo", repo)
 }
@@ -1043,10 +1045,10 @@ func (mr *MockLocalRepoMockRecorder) CommitObject(h interface{}) *gomock.Call {
 }
 
 // WrappedCommitObject mocks base method
-func (m *MockLocalRepo) WrappedCommitObject(h plumbing.Hash) (types.Commit, error) {
+func (m *MockLocalRepo) WrappedCommitObject(h plumbing.Hash) (types2.Commit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "WrappedCommitObject", h)
-	ret0, _ := ret[0].(types.Commit)
+	ret0, _ := ret[0].(types2.Commit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1849,10 +1851,10 @@ func (mr *MockCommitMockRecorder) NumParents() *gomock.Call {
 }
 
 // Parent mocks base method
-func (m *MockCommit) Parent(i int) (types.Commit, error) {
+func (m *MockCommit) Parent(i int) (types2.Commit, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Parent", i)
-	ret0, _ := ret[0].(types.Commit)
+	ret0, _ := ret[0].(types2.Commit)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -1864,11 +1866,11 @@ func (mr *MockCommitMockRecorder) Parent(i interface{}) *gomock.Call {
 }
 
 // IsParent mocks base method
-func (m *MockCommit) IsParent(hash string) (bool, types.Commit) {
+func (m *MockCommit) IsParent(hash string) (bool, types2.Commit) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsParent", hash)
 	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(types.Commit)
+	ret1, _ := ret[1].(types2.Commit)
 	return ret0, ret1
 }
 

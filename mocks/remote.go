@@ -6,18 +6,19 @@ package mocks
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	config "gitlab.com/makeos/mosdef/config"
 	crypto "gitlab.com/makeos/mosdef/crypto"
 	types "gitlab.com/makeos/mosdef/dht/types"
 	logger "gitlab.com/makeos/mosdef/pkgs/logger"
-	types0 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	types0 "gitlab.com/makeos/mosdef/remote/push/types"
 	types1 "gitlab.com/makeos/mosdef/remote/types"
 	types2 "gitlab.com/makeos/mosdef/types"
 	core "gitlab.com/makeos/mosdef/types/core"
 	modules "gitlab.com/makeos/mosdef/types/modules"
 	util "gitlab.com/makeos/mosdef/util"
-	reflect "reflect"
 )
 
 // MockPoolGetter is a mock of PoolGetter interface
@@ -44,10 +45,10 @@ func (m *MockPoolGetter) EXPECT() *MockPoolGetterMockRecorder {
 }
 
 // GetPushPool mocks base method
-func (m *MockPoolGetter) GetPushPool() types0.PushPool {
+func (m *MockPoolGetter) GetPushPool() types0.Pool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types0.PushPool)
+	ret0, _ := ret[0].(types0.Pool)
 	return ret0
 }
 
@@ -95,10 +96,10 @@ func (m *MockRepoGetter) EXPECT() *MockRepoGetterMockRecorder {
 }
 
 // GetRepo mocks base method
-func (m *MockRepoGetter) GetRepo(name string) (types0.LocalRepo, error) {
+func (m *MockRepoGetter) GetRepo(name string) (types1.LocalRepo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRepo", name)
-	ret0, _ := ret[0].(types0.LocalRepo)
+	ret0, _ := ret[0].(types1.LocalRepo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -499,10 +500,10 @@ func (m *MockRemoteServer) EXPECT() *MockRemoteServerMockRecorder {
 }
 
 // GetPushPool mocks base method
-func (m *MockRemoteServer) GetPushPool() types0.PushPool {
+func (m *MockRemoteServer) GetPushPool() types0.Pool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types0.PushPool)
+	ret0, _ := ret[0].(types0.Pool)
 	return ret0
 }
 
@@ -527,10 +528,10 @@ func (mr *MockRemoteServerMockRecorder) GetMempool() *gomock.Call {
 }
 
 // GetRepo mocks base method
-func (m *MockRemoteServer) GetRepo(name string) (types0.LocalRepo, error) {
+func (m *MockRemoteServer) GetRepo(name string) (types1.LocalRepo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetRepo", name)
-	ret0, _ := ret[0].(types0.LocalRepo)
+	ret0, _ := ret[0].(types1.LocalRepo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -584,7 +585,7 @@ func (mr *MockRemoteServerMockRecorder) Cfg() *gomock.Call {
 }
 
 // GetRepoState mocks base method
-func (m *MockRemoteServer) GetRepoState(target types0.LocalRepo, options ...core.KVOption) (core.BareRepoState, error) {
+func (m *MockRemoteServer) GetRepoState(target types1.LocalRepo, options ...core.KVOption) (core.BareRepoState, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{target}
 	for _, a := range options {

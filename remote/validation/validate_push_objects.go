@@ -11,12 +11,12 @@ import (
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/crypto/bls"
-	types2 "gitlab.com/makeos/mosdef/dht/types"
+	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/params"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/pushpool/types"
-	types4 "gitlab.com/makeos/mosdef/remote/types"
-	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/remote/push/types"
+	remotetypes "gitlab.com/makeos/mosdef/remote/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
@@ -119,7 +119,7 @@ func CheckPushNoteSyntax(tx types.PushNotice) error {
 
 // CheckPushedReferenceConsistency validates pushed references
 func CheckPushedReferenceConsistency(
-	targetRepo types.LocalRepo,
+	targetRepo remotetypes.LocalRepo,
 	ref *types.PushedReference,
 	repo *state.Repository) error {
 
@@ -163,12 +163,12 @@ func CheckPushedReferenceConsistency(
 
 // GetTxDetailsFromNote creates a slice of TxDetail objects from a push note.
 // Limit to references specified in targetRefs
-func GetTxDetailsFromNote(note types.PushNotice, targetRefs ...string) (details []*types4.TxDetail) {
+func GetTxDetailsFromNote(note types.PushNotice, targetRefs ...string) (details []*remotetypes.TxDetail) {
 	for _, ref := range note.GetPushedReferences() {
 		if len(targetRefs) > 0 && !funk.ContainsString(targetRefs, ref.Name) {
 			continue
 		}
-		detail := &types4.TxDetail{
+		detail := &remotetypes.TxDetail{
 			RepoName:        note.GetRepoName(),
 			RepoNamespace:   note.GetNamespace(),
 			Reference:       ref.Name,
@@ -260,10 +260,10 @@ func CheckPushNoteConsistency(note types.PushNotice, logic core.Logic) error {
 }
 
 // PushNoteCheckFunc describes a function for checking a push note
-type PushNoteCheckFunc func(tx types.PushNotice, dht types2.DHTNode, logic core.Logic) error
+type PushNoteCheckFunc func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error
 
 // CheckPushNote performs validation checks on a push transaction
-func CheckPushNote(tx types.PushNotice, dht types2.DHTNode, logic core.Logic) error {
+func CheckPushNote(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
 
 	if err := CheckPushNoteSyntax(tx.(*types.PushNote)); err != nil {
 		return err
@@ -301,7 +301,7 @@ func CheckPushEndorsement(pushEnd *types.PushEndorsement, index int) error {
 // against the current state of the network.
 // EXPECT: Sanity check to have been performed using CheckPushEndorsement
 func CheckPushEndConsistencyUsingHost(
-	hosts types3.SelectedTickets,
+	hosts tickettypes.SelectedTickets,
 	pushEnd *types.PushEndorsement,
 	logic core.Logic,
 	noSigCheck bool,
@@ -354,7 +354,7 @@ func CheckPushEnd(pushEnd *types.PushEndorsement, logic core.Logic, index int) e
 // FetchAndCheckReferenceObjects attempts to fetch and store new objects
 // introduced by the pushed references. After fetching it performs checks
 // on the objects
-func FetchAndCheckReferenceObjects(tx types.PushNotice, dhtnode types2.DHTNode) error {
+func FetchAndCheckReferenceObjects(tx types.PushNotice, dhtnode dhttypes.DHTNode) error {
 	objectsSize := int64(0)
 
 	for _, objHash := range tx.GetPushedObjects() {
@@ -370,7 +370,7 @@ func FetchAndCheckReferenceObjects(tx types.PushNotice, dhtnode types2.DHTNode) 
 		// Since the object doesn't exist locally, read the object from the DHTNode
 		dhtKey := plumbing2.MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
 		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
-		objValue, err := dhtnode.GetObject(ctx, &types2.DHTObjectQuery{
+		objValue, err := dhtnode.GetObject(ctx, &dhttypes.DHTObjectQuery{
 			Module:    core.RepoObjectModule,
 			ObjectKey: []byte(dhtKey),
 		})

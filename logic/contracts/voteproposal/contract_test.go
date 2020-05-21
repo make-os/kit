@@ -13,7 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
-	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
@@ -232,9 +232,9 @@ var _ = Describe("ProposalVoteContract", func() {
 					repoUpd.Proposals.Add(propID, proposal)
 					logic.RepoKeeper().Update(repoName, repoUpd)
 
-					ticketA := &types3.Ticket{Value: "10"}
-					ticketB := &types3.Ticket{Value: "20"}
-					tickets := []*types3.Ticket{ticketA, ticketB}
+					ticketA := &tickettypes.Ticket{Value: "10"}
+					ticketB := &tickettypes.Ticket{Value: "20"}
+					tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
 					mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().MustBytes32(), uint64(0)).Return(tickets, nil)
 					logic.SetTicketManager(mockTickMgr)
@@ -310,13 +310,13 @@ var _ = Describe("ProposalVoteContract", func() {
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				ticketA := &types3.Ticket{Value: "10"}
-				ticketB := &types3.Ticket{
+				ticketA := &tickettypes.Ticket{Value: "10"}
+				ticketB := &tickettypes.Ticket{
 					Value:          "20",
 					ProposerPubKey: sender.PubKey().MustBytes32(),
 					Delegator:      sender.Addr().String(),
 				}
-				tickets := []*types3.Ticket{ticketA, ticketB}
+				tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
 				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
 					MustBytes32(), uint64(0)).Return(tickets, nil)
@@ -352,13 +352,13 @@ var _ = Describe("ProposalVoteContract", func() {
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				ticketA := &types3.Ticket{Value: "10"}
-				ticketB := &types3.Ticket{
+				ticketA := &tickettypes.Ticket{Value: "10"}
+				ticketB := &tickettypes.Ticket{
 					Value:          "20",
 					ProposerPubKey: sender.PubKey().MustBytes32(),
 					Delegator:      key2.Addr().String(),
 				}
-				tickets := []*types3.Ticket{ticketA, ticketB}
+				tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
 				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
 					MustBytes32(), uint64(0)).Return(tickets, nil)
@@ -394,13 +394,13 @@ var _ = Describe("ProposalVoteContract", func() {
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				ticketA := &types3.Ticket{Value: "10"}
-				ticketB := &types3.Ticket{
+				ticketA := &tickettypes.Ticket{Value: "10"}
+				ticketB := &tickettypes.Ticket{
 					Value:          "20",
 					ProposerPubKey: sender.PubKey().MustBytes32(),
 					Delegator:      key2.Addr().String(),
 				}
-				tickets := []*types3.Ticket{ticketA, ticketB}
+				tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
 				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
 					MustBytes32(), uint64(0)).Return(tickets, nil)
@@ -439,13 +439,13 @@ var _ = Describe("ProposalVoteContract", func() {
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				ticketA := &types3.Ticket{Value: "10"}
-				ticketB := &types3.Ticket{
+				ticketA := &tickettypes.Ticket{Value: "10"}
+				ticketB := &tickettypes.Ticket{
 					Value:          "20",
 					ProposerPubKey: key2.PubKey().MustBytes32(),
 					Delegator:      sender.Addr().String(),
 				}
-				tickets := []*types3.Ticket{ticketA, ticketB}
+				tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
 				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
 					MustBytes32(), uint64(0)).Return(tickets, nil)
@@ -480,13 +480,13 @@ var _ = Describe("ProposalVoteContract", func() {
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				ticketA := &types3.Ticket{Value: "10"}
-				ticketB := &types3.Ticket{
+				ticketA := &tickettypes.Ticket{Value: "10"}
+				ticketB := &tickettypes.Ticket{
 					Value:          "20",
 					ProposerPubKey: key2.PubKey().MustBytes32(),
 					Delegator:      sender.Addr().String(),
 				}
-				tickets := []*types3.Ticket{ticketA, ticketB}
+				tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
 				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
 					MustBytes32(), uint64(0)).Return(tickets, nil)
@@ -529,9 +529,9 @@ var _ = Describe("ProposalVoteContract", func() {
 				repoUpd.Proposals.Add(propID, proposal)
 				logic.RepoKeeper().Update(repoName, repoUpd)
 
-				ticketA := &types3.Ticket{Value: "10"}
-				ticketB := &types3.Ticket{Value: "20"}
-				tickets := []*types3.Ticket{ticketA, ticketB}
+				ticketA := &tickettypes.Ticket{Value: "10"}
+				ticketB := &tickettypes.Ticket{Value: "20"}
+				tickets := []*tickettypes.Ticket{ticketA, ticketB}
 
 				mockTickMgr.EXPECT().GetNonDecayedTickets(sender.PubKey().
 					MustBytes32(), uint64(0)).Return(tickets, nil)

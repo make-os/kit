@@ -3,13 +3,13 @@ package core
 import (
 	"context"
 
-	config2 "gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
-	types2 "gitlab.com/makeos/mosdef/dht/types"
+	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
-	types4 "gitlab.com/makeos/mosdef/remote/pushpool/types"
-	"gitlab.com/makeos/mosdef/remote/types"
-	types3 "gitlab.com/makeos/mosdef/types"
+	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
+	remotetypes "gitlab.com/makeos/mosdef/remote/types"
+	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -26,7 +26,7 @@ type PushKeyGetter func(pushKeyID string) (crypto.PublicKey, error)
 type PoolGetter interface {
 
 	// GetPushPool returns the push pool
-	GetPushPool() types4.PushPool
+	GetPushPool() pushtypes.Pool
 
 	// GetMempool returns the transaction pool
 	GetMempool() Mempool
@@ -36,14 +36,14 @@ type PoolGetter interface {
 type RepoGetter interface {
 
 	// Get returns a repo handle
-	GetRepo(name string) (types4.LocalRepo, error)
+	GetRepo(name string) (remotetypes.LocalRepo, error)
 }
 
 // RepoUpdater describes an interface for updating a repository from a push transaction
 type RepoUpdater interface {
 	// UpdateRepoWithTxPush attempts to merge a push transaction to a repository and
 	// also update the repository's state tree.
-	UpdateRepoWithTxPush(tx types3.BaseTx) error
+	UpdateRepoWithTxPush(tx types.BaseTx) error
 }
 
 type (
@@ -132,11 +132,11 @@ type RemoteServer interface {
 	Log() logger.Logger
 
 	// Cfg returns the application config
-	Cfg() *config2.AppConfig
+	Cfg() *config.AppConfig
 
 	// GetRepoState returns the state of the repository at the given path
 	// options: Allows the caller to configure how and what state are gathered
-	GetRepoState(target types4.LocalRepo, options ...KVOption) (BareRepoState, error)
+	GetRepoState(target remotetypes.LocalRepo, options ...KVOption) (BareRepoState, error)
 
 	// GetPushKeyGetter returns getter function for fetching a push key
 	GetPushKeyGetter() PushKeyGetter
@@ -160,7 +160,7 @@ type RemoteServer interface {
 	BroadcastMsg(ch byte, msg []byte)
 
 	// BroadcastPushObjects broadcasts repo push note and push endorsement
-	BroadcastPushObjects(note types4.PushNotice) error
+	BroadcastPushObjects(note pushtypes.PushNotice) error
 
 	// SetPushKeyPubKeyGetter sets the PGP public key query function
 	SetPushKeyPubKeyGetter(pkGetter PushKeyGetter)
@@ -169,14 +169,14 @@ type RemoteServer interface {
 	RegisterAPIHandlers(agg modules.ModuleHub)
 
 	// GetPruner returns the repo pruner
-	GetPruner() types.RepoPruner
+	GetPruner() remotetypes.RepoPruner
 
 	// GetDHT returns the dht service
-	GetDHT() types2.DHTNode
+	GetDHT() dhttypes.DHTNode
 
 	// ExecTxPush applies a push transaction to the local repository.
 	// If the node is a validator, only the target reference trees are updated.
-	ExecTxPush(tx types3.BaseTx) error
+	ExecTxPush(tx types.BaseTx) error
 
 	// Shutdown shuts down the server
 	Shutdown(ctx context.Context)

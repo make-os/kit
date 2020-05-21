@@ -14,9 +14,8 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/remote/policy"
-	types3 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/repo"
-	types2 "gitlab.com/makeos/mosdef/remote/types"
+	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -35,7 +34,7 @@ var (
 // namespace: The target namespace.
 // keepers: The application states keeper
 type AuthenticatorFunc func(
-	txDetails []*types2.TxDetail,
+	txDetails []*remotetypes.TxDetail,
 	repo *state.Repository,
 	namespace *state.Namespace,
 	keepers core.Keepers,
@@ -44,7 +43,7 @@ type AuthenticatorFunc func(
 // authenticate performs authentication checks and returns a policy
 // enforcer for later authorization checks.
 func authenticate(
-	txDetails []*types2.TxDetail,
+	txDetails []*remotetypes.TxDetail,
 	repoState *state.Repository,
 	namespace *state.Namespace,
 	keepers core.Keepers,
@@ -98,7 +97,7 @@ func (sv *Server) handleAuth(
 	r *http.Request,
 	w http.ResponseWriter,
 	repo *state.Repository,
-	namespace *state.Namespace) (txDetails []*types2.TxDetail, polEnforcer policy.EnforcerFunc, err error) {
+	namespace *state.Namespace) (txDetails []*remotetypes.TxDetail, polEnforcer policy.EnforcerFunc, err error) {
 
 	// Do not require auth for pull request (yet)
 	if isPullRequest(r) {
@@ -114,7 +113,7 @@ func (sv *Server) handleAuth(
 	}
 
 	// Decode the push request token(s)
-	txDetails = []*types2.TxDetail{}
+	txDetails = []*remotetypes.TxDetail{}
 	for i, token := range strings.Split(tokens, ",") {
 		txDetail, err := DecodePushToken(token)
 		if err != nil {
@@ -136,13 +135,13 @@ func (sv *Server) handleAuth(
 }
 
 // DecodePushToken decodes a push request token.
-func DecodePushToken(v string) (*types2.TxDetail, error) {
+func DecodePushToken(v string) (*remotetypes.TxDetail, error) {
 	bz, err := base58.Decode(v)
 	if err != nil {
 		return nil, ErrMalformedToken
 	}
 
-	var txDetail types2.TxDetail
+	var txDetail remotetypes.TxDetail
 	if err = util.ToObject(bz, &txDetail); err != nil {
 		return nil, ErrMalformedToken
 	}
@@ -151,7 +150,7 @@ func DecodePushToken(v string) (*types2.TxDetail, error) {
 }
 
 // MakePushToken creates a push request token
-func MakePushToken(key types.StoredKey, txDetail *types2.TxDetail) string {
+func MakePushToken(key types.StoredKey, txDetail *remotetypes.TxDetail) string {
 	sig, _ := key.GetKey().PrivKey().Sign(txDetail.BytesNoSig())
 	txDetail.Signature = base58.Encode(sig)
 	return base58.Encode(txDetail.Bytes())
@@ -159,9 +158,9 @@ func MakePushToken(key types.StoredKey, txDetail *types2.TxDetail) string {
 
 // RemoteURLsPushTokenUpdater describes a function for setting push tokens on remote URL
 type RemoteURLsPushTokenUpdater func(
-	targetRepo types3.LocalRepo,
+	targetRepo remotetypes.LocalRepo,
 	targetRemote string,
-	txDetail *types2.TxDetail,
+	txDetail *remotetypes.TxDetail,
 	pushKey types.StoredKey,
 	reset bool) (string, error)
 
@@ -171,9 +170,9 @@ type RemoteURLsPushTokenUpdater func(
 // txDetail: The push request parameters
 // pushKey: The push key to use to sign the token.
 func UpdateRemoteURLsWithPushToken(
-	targetRepo types3.LocalRepo,
+	targetRepo remotetypes.LocalRepo,
 	targetRemote string,
-	txDetail *types2.TxDetail,
+	txDetail *remotetypes.TxDetail,
 	pushKey types.StoredKey,
 	reset bool) (string, error) {
 

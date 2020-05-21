@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"gitlab.com/makeos/mosdef/crypto"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	rr "gitlab.com/makeos/mosdef/remote/repo"
+	"gitlab.com/makeos/mosdef/remote/types"
 	state2 "gitlab.com/makeos/mosdef/types/state"
 
 	. "github.com/onsi/ginkgo"
@@ -27,7 +27,7 @@ var _ = Describe("RepoContext", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path, dotGitPath string
-	var repo types2.LocalRepo
+	var repo types.LocalRepo
 	var key *crypto.Key
 
 	BeforeEach(func() {
@@ -42,7 +42,7 @@ var _ = Describe("RepoContext", func() {
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		dotGitPath = filepath.Join(path, ".git")
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		repo, err = repo2.GetWithLiteGit(cfg.Node.GitBinPath, path)
+		repo, err = rr.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 
@@ -207,7 +207,7 @@ var _ = Describe("RepoContext", func() {
 		})
 
 		It("should return expected size", func() {
-			size, err := repo2.GetObjectsSize(repo, objs)
+			size, err := rr.GetObjectsSize(repo, objs)
 			Expect(err).To(BeNil())
 			Expect(size).To(Equal(uint64(expectedSize)))
 		})
@@ -215,12 +215,12 @@ var _ = Describe("RepoContext", func() {
 
 	Describe(".IsContributor", func() {
 		It("should return true when push key is a repo contributor", func() {
-			repo.(*repo2.Repo).State = &state2.Repository{Contributors: map[string]*state2.RepoContributor{key.PushAddr().String(): {}}}
+			repo.(*rr.Repo).State = &state2.Repository{Contributors: map[string]*state2.RepoContributor{key.PushAddr().String(): {}}}
 			Expect(repo.IsContributor(key.PushAddr().String())).To(BeTrue())
 		})
 
 		It("should return true when push key is a namespace contributor", func() {
-			repo.(*repo2.Repo).Namespace = &state2.Namespace{Contributors: map[string]*state2.BaseContributor{key.PushAddr().String(): {}}}
+			repo.(*rr.Repo).Namespace = &state2.Namespace{Contributors: map[string]*state2.BaseContributor{key.PushAddr().String(): {}}}
 			Expect(repo.IsContributor(key.PushAddr().String())).To(BeTrue())
 		})
 
@@ -236,7 +236,7 @@ var _ = Describe("RepoContext", func() {
 				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 				ci, _ := repo.CommitObjects()
 				commit, _ := ci.Next()
-				entries, err = repo2.GetTreeEntries(repo, commit.TreeHash.String())
+				entries, err = rr.GetTreeEntries(repo, commit.TreeHash.String())
 				Expect(err).To(BeNil())
 			})
 
@@ -250,7 +250,7 @@ var _ = Describe("RepoContext", func() {
 				testutil2.AppendDirAndCommitFile(path, "my_dir", "file_x.txt", "some data", "commit 2")
 				ci, _ := repo.CommitObjects()
 				commit, _ := ci.Next()
-				entries, err = repo2.GetTreeEntries(repo, commit.TreeHash.String())
+				entries, err = rr.GetTreeEntries(repo, commit.TreeHash.String())
 				Expect(err).To(BeNil())
 			})
 
@@ -273,7 +273,7 @@ var _ = Describe("RepoContext", func() {
 					return nil
 				})
 				Expect(commits).To(HaveLen(1))
-				history, err = repo2.GetCommitHistory(repo, commits[0], "")
+				history, err = rr.GetCommitHistory(repo, commits[0], "")
 				Expect(err).To(BeNil())
 			})
 
@@ -302,7 +302,7 @@ var _ = Describe("RepoContext", func() {
 					return commits[i].NumParents() < commits[j].NumParents()
 				})
 
-				history, err = repo2.GetCommitHistory(repo, commits[1], "")
+				history, err = rr.GetCommitHistory(repo, commits[1], "")
 				Expect(err).To(BeNil())
 			})
 
@@ -331,7 +331,7 @@ var _ = Describe("RepoContext", func() {
 				})
 
 				Expect(commits).To(HaveLen(2))
-				history, err = repo2.GetCommitHistory(repo, commits[1], commits[1].Hash.String())
+				history, err = rr.GetCommitHistory(repo, commits[1], commits[1].Hash.String())
 				Expect(err).To(BeNil())
 			})
 
@@ -360,7 +360,7 @@ var _ = Describe("RepoContext", func() {
 					return commits[i].NumParents() < commits[j].NumParents()
 				})
 
-				history, err = repo2.GetCommitHistory(repo, commits[1], commits[0].Hash.String())
+				history, err = rr.GetCommitHistory(repo, commits[1], commits[0].Hash.String())
 				Expect(err).To(BeNil())
 			})
 

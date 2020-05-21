@@ -7,8 +7,8 @@ import (
 	"github.com/tendermint/tendermint/privval"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
-	pushpool2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
-	types4 "gitlab.com/makeos/mosdef/ticket/types"
+	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
@@ -157,7 +157,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				mockTicketMgr := mockLogic.TicketManager
-				var selected []*types4.SelectedTicket
+				var selected []*tickettypes.SelectedTicket
 				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(selected, nil)
 				app.ticketMgr = mockTicketMgr
 			})
@@ -176,9 +176,9 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				mockTicketMgr := mockLogic.TicketManager
-				selected := []*types4.SelectedTicket{
-					{Ticket: &types4.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}},
-					{Ticket: &types4.Ticket{ProposerPubKey: key2.PubKey().MustBytes32()}},
+				selected := []*tickettypes.SelectedTicket{
+					{Ticket: &tickettypes.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}},
+					{Ticket: &tickettypes.Ticket{ProposerPubKey: key2.PubKey().MustBytes32()}},
 				}
 				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(selected, nil)
 				app.ticketMgr = mockTicketMgr
@@ -201,8 +201,8 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				mockTicketMgr := mockLogic.TicketManager
-				selected := []*types4.SelectedTicket{
-					{Ticket: &types4.Ticket{ProposerPubKey: keyOfNewTicket.PubKey().MustBytes32()}},
+				selected := []*tickettypes.SelectedTicket{
+					{Ticket: &tickettypes.Ticket{ProposerPubKey: keyOfNewTicket.PubKey().MustBytes32()}},
 				}
 				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(selected, nil)
 				app.ticketMgr = mockTicketMgr
@@ -242,8 +242,8 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				mockTicketMgr := mockLogic.TicketManager
-				selected := []*types4.SelectedTicket{
-					{Ticket: &types4.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}},
+				selected := []*tickettypes.SelectedTicket{
+					{Ticket: &tickettypes.Ticket{ProposerPubKey: key.PubKey().MustBytes32()}},
 				}
 				mockTicketMgr.EXPECT().GetTopValidators(gomock.Any()).Return(selected, nil)
 				app.ticketMgr = mockTicketMgr
@@ -524,8 +524,8 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				tx = txns.NewBareTxPush()
-				tx.PushNote.(*pushpool2.PushNote).RepoName = "repo1"
-				tx.PushNote.(*pushpool2.PushNote).References = []*pushpool2.PushedReference{
+				tx.PushNote.(*pushtypes.PushNote).RepoName = "repo1"
+				tx.PushNote.(*pushtypes.PushNote).References = []*pushtypes.PushedReference{
 					{MergeProposalID: "0001"},
 				}
 				resp := &abcitypes.ResponseDeliverTx{}

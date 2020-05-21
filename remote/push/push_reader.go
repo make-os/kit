@@ -1,4 +1,4 @@
-package pushhandler
+package push
 
 import (
 	"fmt"
@@ -9,8 +9,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	rr "gitlab.com/makeos/mosdef/remote/repo"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -69,14 +69,14 @@ type PushReader struct {
 	References    PackedReferences
 	Objects       []*PackObject
 	ObjectsRefs   ObjRefMap
-	repo          types2.LocalRepo
+	repo          types.LocalRepo
 	refsUpdateReq *packp.ReferenceUpdateRequest
 	updateReqCB   func(ur *packp.ReferenceUpdateRequest) error
 }
 
 // NewPushReader creates an instance of PushReader, and after inspection, the
 // written content will be copied to dst.
-func NewPushReader(dst io.WriteCloser, repo types2.LocalRepo) (*PushReader, error) {
+func NewPushReader(dst io.WriteCloser, repo types.LocalRepo) (*PushReader, error) {
 	packFile, err := ioutil.TempFile(os.TempDir(), "pack")
 	if err != nil {
 		return nil, err
@@ -264,7 +264,7 @@ func (r *PushReader) mapObjectsToRef() (ObjRefMap, error) {
 		objType := obj.Type()
 
 		if objType == plumbing.CommitObject {
-			entries, err = repo2.GetCommitHistory(r.repo, obj.(*object.Commit), "")
+			entries, err = rr.GetCommitHistory(r.repo, obj.(*object.Commit), "")
 			if err != nil {
 				return nil, err
 			}
@@ -275,7 +275,7 @@ func (r *PushReader) mapObjectsToRef() (ObjRefMap, error) {
 			if err != nil {
 				return nil, err
 			}
-			entries, err = repo2.GetCommitHistory(r.repo, commit, "")
+			entries, err = rr.GetCommitHistory(r.repo, commit, "")
 			if err != nil {
 				return nil, err
 			}

@@ -11,7 +11,7 @@ import (
 	"gitlab.com/makeos/mosdef/logic/proposals"
 	"gitlab.com/makeos/mosdef/pkgs/tree"
 	"gitlab.com/makeos/mosdef/storage"
-	types2 "gitlab.com/makeos/mosdef/ticket/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
@@ -39,7 +39,7 @@ type Logic struct {
 	validator core.ValidatorLogic
 
 	// ticketMgr provides functionalities for managing tickets
-	ticketMgr types2.TicketManager
+	ticketMgr tickettypes.TicketManager
 
 	// systemKeeper provides functionalities for managing system data
 	systemKeeper *keepers.SystemKeeper
@@ -179,12 +179,12 @@ func (l *Logic) Discard() {
 }
 
 // SetTicketManager sets the ticket manager
-func (l *Logic) SetTicketManager(tm types2.TicketManager) {
+func (l *Logic) SetTicketManager(tm tickettypes.TicketManager) {
 	l.ticketMgr = tm
 }
 
 // GetTicketManager returns the ticket manager
-func (l *Logic) GetTicketManager() types2.TicketManager {
+func (l *Logic) GetTicketManager() tickettypes.TicketManager {
 	return l.ticketMgr
 }
 

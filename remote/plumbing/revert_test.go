@@ -9,9 +9,9 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	r "gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
@@ -20,7 +20,7 @@ import (
 var _ = Describe("plumbing.Revert", func() {
 	var err error
 	var cfg *config.AppConfig
-	var repo types2.LocalRepo
+	var repo types.LocalRepo
 	var repoName, path string
 
 	BeforeEach(func() {
@@ -32,7 +32,7 @@ var _ = Describe("plumbing.Revert", func() {
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
 
-		repo, err = repo2.GetWithLiteGit(cfg.Node.GitBinPath, path)
+		repo, err = r.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 	})
 

@@ -1,4 +1,4 @@
-package pushpool
+package push
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/thoas/go-funk"
 	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
@@ -120,7 +120,7 @@ func newItem(note *types.PushNote) *containerItem {
 
 type pushPoolValidator func(note types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error
 
-// PushPool implements types.PushPool.
+// Pool implements types.Pool.
 type PushPool struct {
 	gmx          *sync.RWMutex     // general lock
 	cap          int               // The number of transaction the pool is capable of holding.
@@ -134,7 +134,7 @@ type PushPool struct {
 	noteChecker  pushPoolValidator // Function used to validate a transaction
 }
 
-// NewPushPool creates an instance of PushPool
+// NewPushPool creates an instance of Pool
 func NewPushPool(cap int, logic core.Logic, dht dhttypes.DHTNode) *PushPool {
 	pool := &PushPool{
 		gmx:          &sync.RWMutex{},

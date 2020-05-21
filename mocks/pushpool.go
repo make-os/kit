@@ -5,12 +5,13 @@
 package mocks
 
 import (
-	gomock "github.com/golang/mock/gomock"
-	types "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
+	types "gitlab.com/makeos/mosdef/remote/push/types"
 )
 
-// MockPushPool is a mock of PushPool interface
+// MockPushPool is a mock of Pool interface
 type MockPushPool struct {
 	ctrl     *gomock.Controller
 	recorder *MockPushPoolMockRecorder

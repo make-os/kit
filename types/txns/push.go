@@ -3,7 +3,7 @@ package txns
 import (
 	"github.com/fatih/structs"
 	"github.com/vmihailenco/msgpack"
-	pptyp "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	pptyp "gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 

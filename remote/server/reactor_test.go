@@ -13,13 +13,13 @@ import (
 	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/policy"
-	"gitlab.com/makeos/mosdef/remote/pushhandler"
-	"gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/push"
+	"gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
-	types2 "gitlab.com/makeos/mosdef/remote/types"
+	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
-	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
@@ -139,7 +139,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
 
 				svr.authenticate = func(
-					txDetails []*types2.TxDetail,
+					txDetails []*remotetypes.TxDetail,
 					repo *state.Repository,
 					namespace *state.Namespace,
 					keepers core.Keepers,
@@ -165,7 +165,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
 
 				svr.authenticate = func(
-					txDetails []*types2.TxDetail,
+					txDetails []*remotetypes.TxDetail,
 					repo *state.Repository,
 					namespace *state.Namespace,
 					keepers core.Keepers,
@@ -194,7 +194,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
 				svr.authenticate = func(
-					txDetails []*types2.TxDetail,
+					txDetails []*remotetypes.TxDetail,
 					repo *state.Repository,
 					namespace *state.Namespace,
 					keepers core.Keepers,
@@ -230,7 +230,7 @@ var _ = Describe("Reactor", func() {
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
 				svr.authenticate = func(
-					txDetails []*types2.TxDetail,
+					txDetails []*remotetypes.TxDetail,
 					repo *state.Repository,
 					namespace *state.Namespace,
 					keepers core.Keepers,
@@ -240,7 +240,7 @@ var _ = Describe("Reactor", func() {
 				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
 					return nil
 				}
-				svr.packfileMaker = func(repo types.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
+				svr.packfileMaker = func(repo remotetypes.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
 					return nil, fmt.Errorf("bad error")
 				}
 
@@ -264,24 +264,24 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				svr.authenticate = func(txDetails []*types2.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
 				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
 					return nil
 				}
-				svr.packfileMaker = func(repo types.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
+				svr.packfileMaker = func(repo remotetypes.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
 					oldState := plumbing2.GetRepoState(repo)
 					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
 					newState := plumbing2.GetRepoState(repo)
-					packfile, err := pushhandler.MakePackfile(repo, oldState, newState)
+					packfile, err := push.MakePackfile(repo, oldState, newState)
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
 
-				svr.makePushHandler = func(targetRepo types.LocalRepo, txDetails []*types2.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) *push.Handler {
 					mockRemoteSrv.EXPECT().GetRepoState(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
-					return &pushhandler.Handler{Server: mockRemoteSrv}
+					return &push.Handler{Server: mockRemoteSrv}
 				}
 
 				pn = &types.PushNote{RepoName: repoName}
@@ -304,7 +304,7 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				svr.authenticate = func(txDetails []*types2.TxDetail, repo *state.Repository, namespace *state.Namespace,
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace,
 					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
@@ -312,17 +312,17 @@ var _ = Describe("Reactor", func() {
 					return nil
 				}
 
-				pushHandler := &pushhandler.Handler{Server: mockRemoteSrv}
-				svr.packfileMaker = func(repo types.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
+				pushHandler := &push.Handler{Server: mockRemoteSrv}
+				svr.packfileMaker = func(repo remotetypes.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
 					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
 					newState := plumbing2.GetRepoState(repo)
-					packfile, err := pushhandler.MakePackfile(repo, pushHandler.OldState, newState)
+					packfile, err := push.MakePackfile(repo, pushHandler.OldState, newState)
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo types.LocalRepo, txDetails []*types2.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) *push.Handler {
 					return pushHandler
 				}
 
@@ -354,7 +354,7 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				svr.authenticate = func(txDetails []*types2.TxDetail, repo *state.Repository, namespace *state.Namespace,
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace,
 					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
@@ -362,17 +362,17 @@ var _ = Describe("Reactor", func() {
 					return nil
 				}
 
-				pushHandler := &pushhandler.Handler{Server: mockRemoteSrv}
-				svr.packfileMaker = func(repo types.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
+				pushHandler := &push.Handler{Server: mockRemoteSrv}
+				svr.packfileMaker = func(repo remotetypes.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
 					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
 					newState := plumbing2.GetRepoState(repo)
-					packfile, err := pushhandler.MakePackfile(repo, pushHandler.OldState, newState)
+					packfile, err := push.MakePackfile(repo, pushHandler.OldState, newState)
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo types.LocalRepo, txDetails []*types2.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) *push.Handler {
 					return pushHandler
 				}
 
@@ -411,7 +411,7 @@ var _ = Describe("Reactor", func() {
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
 
-				svr.authenticate = func(txDetails []*types2.TxDetail, repo *state.Repository, namespace *state.Namespace,
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace,
 					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
@@ -419,17 +419,17 @@ var _ = Describe("Reactor", func() {
 					return nil
 				}
 
-				pushHandler := &pushhandler.Handler{Server: mockRemoteSrv}
-				svr.packfileMaker = func(repo types.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
+				pushHandler := &push.Handler{Server: mockRemoteSrv}
+				svr.packfileMaker = func(repo remotetypes.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
 					pushHandler.OldState = plumbing2.GetRepoState(repo)
 					pushHandler.Repo = repo
 					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
 					newState := plumbing2.GetRepoState(repo)
-					packfile, err := pushhandler.MakePackfile(repo, pushHandler.OldState, newState)
+					packfile, err := push.MakePackfile(repo, pushHandler.OldState, newState)
 					Expect(err).To(BeNil())
 					return packfile, nil
 				}
-				svr.makePushHandler = func(targetRepo types.LocalRepo, txDetails []*types2.TxDetail, enforcer policy.EnforcerFunc) *pushhandler.Handler {
+				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) *push.Handler {
 					return pushHandler
 				}
 
@@ -537,7 +537,7 @@ var _ = Describe("Reactor", func() {
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{}, nil)
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{}, nil)
 				pushEnd := &types.PushEndorsement{
 					Sig:            util.BytesToBytes64(util.RandBytes(5)),
 					EndorserPubKey: util.BytesToBytes32(util.RandBytes(32)),
@@ -559,9 +559,9 @@ var _ = Describe("Reactor", func() {
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{
 					{
-						Ticket: &types3.Ticket{
+						Ticket: &tickettypes.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      []byte("invalid bls public key"),
 						},
@@ -588,9 +588,9 @@ var _ = Describe("Reactor", func() {
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{
 					{
-						Ticket: &types3.Ticket{
+						Ticket: &tickettypes.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
 						},
@@ -618,9 +618,9 @@ var _ = Describe("Reactor", func() {
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
-				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*types3.SelectedTicket{
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{
 					{
-						Ticket: &types3.Ticket{
+						Ticket: &tickettypes.Ticket{
 							ProposerPubKey: key.PubKey().MustBytes32(),
 							BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
 						},

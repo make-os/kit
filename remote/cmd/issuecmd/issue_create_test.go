@@ -14,14 +14,14 @@ import (
 	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	"gitlab.com/makeos/mosdef/remote/cmd/issuecmd"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-func testIssueCommentCreator(isNewIssue bool, issueReference string, err error) func(targetRepo types2.LocalRepo,
+func testIssueCommentCreator(isNewIssue bool, issueReference string, err error) func(targetRepo types.LocalRepo,
 	args *plumbing.CreatePostCommitArgs) (bool, string, error) {
-	return func(targetRepo types2.LocalRepo, args *plumbing.CreatePostCommitArgs) (bool, string, error) {
+	return func(targetRepo types.LocalRepo, args *plumbing.CreatePostCommitArgs) (bool, string, error) {
 		return isNewIssue, issueReference, err
 	}
 }

@@ -13,7 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/storage"
-	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/txns"
@@ -43,7 +43,7 @@ type App struct {
 	unIdxValidatorTickets     []*ticketInfo
 	unIdxHostTickets          []*ticketInfo
 	unbondHostReqs            []util.Bytes32
-	ticketMgr                 types3.TicketManager
+	ticketMgr                 tickettypes.TicketManager
 	isCurrentBlockProposer    bool
 	unsavedValidators         []*core.Validator
 	heightToSaveNewValidators int64
@@ -58,7 +58,7 @@ func NewApp(
 	cfg *config.AppConfig,
 	db storage.Engine,
 	logic core.AtomicLogic,
-	ticketMgr types3.TicketManager) *App {
+	ticketMgr tickettypes.TicketManager) *App {
 	return &App{
 		db:              db,
 		logic:           logic,

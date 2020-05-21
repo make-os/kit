@@ -15,7 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/cmd/issuecmd"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -43,7 +43,7 @@ var _ = Describe("IssueList", func() {
 	Describe(".IssueListCmd", func() {
 		It("should return err when unable to fetch issues", func() {
 			args := &issuecmd.IssueListArgs{
-				PostGetter: func(types2.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return nil, fmt.Errorf("error")
 				},
 			}
@@ -77,7 +77,7 @@ var _ = Describe("IssueList", func() {
 			args := &issuecmd.IssueListArgs{
 				StdErr: out, StdOut: out,
 				Format: "%H%",
-				PostGetter: func(types2.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
 				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
@@ -117,7 +117,7 @@ var _ = Describe("IssueList", func() {
 				StdErr: out, StdOut: out,
 				Format:  "%H%",
 				Reverse: true,
-				PostGetter: func(types2.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
 				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {
@@ -157,7 +157,7 @@ var _ = Describe("IssueList", func() {
 				StdErr: out, StdOut: out,
 				Format: "%H%",
 				Limit:  1,
-				PostGetter: func(types2.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
+				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return posts, nil
 				},
 				PagerWrite: func(pagerCmd string, content io.Reader, stdOut, stdErr io.Writer) {

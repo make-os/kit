@@ -13,7 +13,6 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/cmd"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/server"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
@@ -78,7 +77,7 @@ var ErrMissingPushKeyID = fmt.Errorf("push key ID is required")
 // SignCommitCmd adds transaction information to a new or recent commit and signs it.
 // cfg: App config object
 // targetRepo: The target repository at the working directory
-func SignCommitCmd(cfg *config.AppConfig, targetRepo types2.LocalRepo, args *SignCommitArgs) error {
+func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *SignCommitArgs) error {
 
 	// Get the signing key id from the git config if not passed as an argument
 	if args.PushKeyID == "" {

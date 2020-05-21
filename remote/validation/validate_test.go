@@ -14,7 +14,6 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/mocks"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/remote/types"
@@ -39,7 +38,7 @@ var testPushKeyGetter = func(pubKey *crypto.PubKey, err error) func(pushKeyID st
 var _ = Describe("Validation", func() {
 	var err error
 	var cfg *config.AppConfig
-	var testRepo types2.LocalRepo
+	var testRepo types.LocalRepo
 	var path string
 	var pubKey *crypto.PubKey
 	var privKey *crypto.Key

@@ -8,7 +8,7 @@ import (
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
-	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
@@ -58,7 +58,7 @@ func MakeProposal(
 // whose voters are only network stakeholders; If the proposal requires
 // a proposer max join height, only stakeholders whose tickets became mature
 // before the proposer max join height
-func GetProposalOutcome(tickmgr types3.TicketManager, prop state.Proposal,
+func GetProposalOutcome(tickmgr tickettypes.TicketManager, prop state.Proposal,
 	repo *state.Repository) state.ProposalOutcome {
 
 	var err error

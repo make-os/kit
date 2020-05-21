@@ -13,7 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
-	types3 "gitlab.com/makeos/mosdef/ticket/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
@@ -91,7 +91,7 @@ var _ = Describe("TicketUnbondContract", func() {
 				mockLogic.AccountKeeper.EXPECT().Update(sender.Addr(), acct)
 				mockLogic.AccountKeeper.EXPECT().Get(sender.Addr(), uint64(1)).Return(acct)
 
-				returnTicket := &types3.Ticket{Hash: util.StrToBytes32("ticket_id"), Value: "100"}
+				returnTicket := &tickettypes.Ticket{Hash: util.StrToBytes32("ticket_id"), Value: "100"}
 				mockLogic.TicketManager.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
 
 				err = unbondticket.NewContract().Init(mockLogic.Logic, &txns.TxTicketUnbond{

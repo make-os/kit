@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
@@ -69,7 +69,7 @@ type IssueReadArgs struct {
 }
 
 // IssueReadCmd read comments in an issue
-func IssueReadCmd(targetRepo types2.LocalRepo, args *IssueReadArgs) error {
+func IssueReadCmd(targetRepo types.LocalRepo, args *IssueReadArgs) error {
 
 	// Find the target issue
 	issues, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
@@ -106,7 +106,7 @@ func IssueReadCmd(targetRepo types2.LocalRepo, args *IssueReadArgs) error {
 }
 
 func formatAndPrintIssueComments(
-	targetRepo types2.LocalRepo,
+	targetRepo types.LocalRepo,
 	args *IssueReadArgs,
 	isClosed bool,
 	title string,

@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/types"
 	common2 "gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -71,7 +71,7 @@ type IssueCreateArgs struct {
 }
 
 // IssueCreateCmd create a new Issue or adds a comment commit to an existing Issue
-func IssueCreateCmd(r types2.LocalRepo, args *IssueCreateArgs) error {
+func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) error {
 
 	var nComments int
 	var issueRef, issueRefHash string

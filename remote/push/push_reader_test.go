@@ -1,4 +1,4 @@
-package pushhandler_test
+package push_test
 
 import (
 	"bytes"
@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/pushhandler"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/push"
 	repo3 "gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	. "github.com/onsi/ginkgo"
@@ -34,7 +34,7 @@ var _ = Describe("PushReader", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
-	var repo types2.LocalRepo
+	var repo types.LocalRepo
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -58,7 +58,7 @@ var _ = Describe("PushReader", func() {
 	Describe("PackedReferences", func() {
 		Describe(".Names", func() {
 			It("should return the Names of references", func() {
-				packedRefs := pushhandler.PackedReferences{
+				packedRefs := push.PackedReferences{
 					"ref1": {OldHash: plumbing.ZeroHash.String()},
 					"ref2": {OldHash: plumbing.ZeroHash.String()},
 				}
@@ -71,7 +71,7 @@ var _ = Describe("PushReader", func() {
 	Describe("pushhandler.ObjRefMap", func() {
 		Describe(".GetObjectsOf", func() {
 			It("should return expected objects", func() {
-				m := pushhandler.ObjRefMap(map[string][]string{
+				m := push.ObjRefMap(map[string][]string{
 					"obj1": {"ref1", "ref2"},
 					"obj2": {"ref", "ref2"},
 					"obj3": {"ref1", "ref3"},
@@ -85,7 +85,7 @@ var _ = Describe("PushReader", func() {
 		Describe(".RemoveRef", func() {
 			Describe(".GetObjectsOf", func() {
 				It("should remove ref2 from obj2 ", func() {
-					m := pushhandler.ObjRefMap(map[string][]string{
+					m := push.ObjRefMap(map[string][]string{
 						"obj1": {"ref1", "ref2"},
 						"obj2": {"ref", "ref2"},
 						"obj3": {"ref1", "ref3"},
@@ -97,7 +97,7 @@ var _ = Describe("PushReader", func() {
 				})
 
 				It("should return err if object is not found", func() {
-					m := pushhandler.ObjRefMap(map[string][]string{
+					m := push.ObjRefMap(map[string][]string{
 						"obj1": {"ref1", "ref2"},
 					})
 					err := m.RemoveRef("obj2", "ref2")
@@ -109,7 +109,7 @@ var _ = Describe("PushReader", func() {
 	})
 
 	Describe("pushReader", func() {
-		var pr *pushhandler.PushReader
+		var pr *push.PushReader
 		var dst = bytes.NewBuffer(nil)
 		var err error
 
@@ -118,12 +118,12 @@ var _ = Describe("PushReader", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 			newState := plumbing2.GetRepoState(repo)
 
-			reader, err := pushhandler.MakePackfile(repo, oldState, newState)
+			reader, err := push.MakePackfile(repo, oldState, newState)
 			Expect(err).To(BeNil())
 			packData, err := ioutil.ReadAll(reader)
 			Expect(err).To(BeNil())
 
-			pr, err = pushhandler.NewPushReader(&WriteCloser{Buffer: dst}, repo)
+			pr, err = push.NewPushReader(&WriteCloser{Buffer: dst}, repo)
 			pr.Write(packData)
 			err = pr.Read()
 		})

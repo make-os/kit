@@ -1,4 +1,4 @@
-package pushhandler
+package push
 
 import (
 	"bytes"
@@ -10,9 +10,10 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/push/types"
 	repo3 "gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
+	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
@@ -23,7 +24,7 @@ import (
 var _ = Describe("PushNote", func() {
 	var pushNote *types.PushNote
 	var cfg *config.AppConfig
-	var repo types.LocalRepo
+	var repo remotetypes.LocalRepo
 	var path string
 	var err error
 

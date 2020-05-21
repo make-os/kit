@@ -13,7 +13,7 @@ import (
 	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 	"github.com/thoas/go-funk"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/jdkato/prose.v2"
@@ -47,7 +47,7 @@ type Comment struct {
 
 // Post represents a reference post
 type Post struct {
-	Repo types2.LocalRepo
+	Repo types.LocalRepo
 
 	// Title is the title of the post
 	Title string
@@ -72,7 +72,7 @@ func (p *Post) GetName() string {
 }
 
 // ReadBody reads the body file of a commit
-func ReadBody(repo types2.LocalRepo, hash string) (*PostBody, *object.Commit, error) {
+func ReadBody(repo types.LocalRepo, hash string) (*PostBody, *object.Commit, error) {
 	commit, err := repo.CommitObject(plumbing.NewHash(hash))
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to read commit (%s)", hash)
@@ -250,12 +250,12 @@ func (p *Posts) SortByFirstPostCreationTimeDesc() {
 }
 
 // PostGetter describes a function for finding posts
-type PostGetter func(targetRepo types2.LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error)
+type PostGetter func(targetRepo types.LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error)
 
 // GetPosts returns references that conform to the post protocol
 // filter is used to check whether a reference is a post reference.
 // Returns a slice of posts
-func GetPosts(targetRepo types2.LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error) {
+func GetPosts(targetRepo types.LocalRepo, filter func(ref plumbing.ReferenceName) bool) (posts Posts, err error) {
 	refs, err := targetRepo.GetReferences()
 	if err != nil {
 		return nil, err
@@ -424,10 +424,10 @@ type PostEntry interface {
 	FirstComment() *Comment
 }
 
-type FreePostIDFinder func(repo types2.LocalRepo, startID int, postRefType string) (int, error)
+type FreePostIDFinder func(repo types.LocalRepo, startID int, postRefType string) (int, error)
 
 // GetFreePostID finds and returns an ID that is unused within the post reference type
-func GetFreePostID(repo types2.LocalRepo, startID int, postRefType string) (int, error) {
+func GetFreePostID(repo types.LocalRepo, startID int, postRefType string) (int, error) {
 	for {
 		var ref string
 		switch postRefType {
@@ -450,7 +450,7 @@ func GetFreePostID(repo types2.LocalRepo, startID int, postRefType string) (int,
 }
 
 // PostCommitCreator is a function type for creating a post commit or adding comments to an existing post reference
-type PostCommitCreator func(r types2.LocalRepo, args *CreatePostCommitArgs) (isNew bool, reference string, err error)
+type PostCommitCreator func(r types.LocalRepo, args *CreatePostCommitArgs) (isNew bool, reference string, err error)
 
 // CreatePostCommitArgs includes argument for CreatePostCommit
 type CreatePostCommitArgs struct {
@@ -462,7 +462,7 @@ type CreatePostCommitArgs struct {
 }
 
 // CreatePostCommit creates a new post reference or adds a comment commit to an existing one.
-func CreatePostCommit(r types2.LocalRepo, args *CreatePostCommitArgs) (isNew bool, reference string, err error) {
+func CreatePostCommit(r types.LocalRepo, args *CreatePostCommitArgs) (isNew bool, reference string, err error) {
 
 	var ref string
 

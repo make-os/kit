@@ -1,4 +1,4 @@
-package pushpool
+package push
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -26,7 +26,7 @@ func txCheckErr(err error) func(tx types.PushNotice, dht dhttypes.DHTNode, logic
 	}
 }
 
-var _ = Describe("PushPool", func() {
+var _ = Describe("Pool", func() {
 	var pool *PushPool
 	var tx *types.PushNote
 	var tx2 *types.PushNote

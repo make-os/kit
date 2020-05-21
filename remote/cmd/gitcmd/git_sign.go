@@ -11,8 +11,8 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/cmd"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/server"
+	"gitlab.com/makeos/mosdef/remote/types"
 )
 
 type GitSignArgs struct {
@@ -20,7 +20,7 @@ type GitSignArgs struct {
 	Args []string
 
 	// RepoGetter is the function for getting a local repository
-	RepoGetter func(path string) (types2.LocalRepo, error)
+	RepoGetter func(path string) (types.LocalRepo, error)
 
 	// PushKeyUnlocker is a function for getting and unlocking a push key from keystore
 	PushKeyUnlocker cmd.PushKeyUnlocker

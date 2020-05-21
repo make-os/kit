@@ -5,7 +5,7 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/pkgs/tree"
 	"gitlab.com/makeos/mosdef/storage"
-	types2 "gitlab.com/makeos/mosdef/ticket/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
@@ -284,7 +284,7 @@ type Logic interface {
 	WriteGenesisState() error
 
 	// SetTicketManager sets the ticket manager
-	SetTicketManager(tm types2.TicketManager)
+	SetTicketManager(tm tickettypes.TicketManager)
 
 	// SetRemoteServer sets the repository server manager
 	SetRemoteServer(m RemoteServer)
@@ -339,7 +339,7 @@ type Keepers interface {
 	PushKeyKeeper() PushKeyKeeper
 
 	// GetTicketManager manages and provides access to ticket information
-	GetTicketManager() types2.TicketManager
+	GetTicketManager() tickettypes.TicketManager
 
 	// NamespaceKeeper manages and provides access to namespace information
 	NamespaceKeeper() NamespaceKeeper

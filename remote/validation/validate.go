@@ -9,7 +9,6 @@ import (
 	"github.com/asaskevich/govalidator"
 	"gitlab.com/makeos/mosdef/crypto"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -27,7 +26,7 @@ var (
 )
 
 type ChangeValidatorFunc func(
-	repo types2.LocalRepo,
+	repo types.LocalRepo,
 	oldHash string,
 	change *core.ItemChange,
 	txDetail *types.TxDetail,
@@ -40,7 +39,7 @@ type ChangeValidatorFunc func(
 // txDetail: The pusher transaction detail
 // getPushKey: Getter function for reading push key public key
 func ValidateChange(
-	localRepo types2.LocalRepo,
+	localRepo types.LocalRepo,
 	oldHash string,
 	change *core.ItemChange,
 	detail *types.TxDetail,
@@ -115,7 +114,7 @@ func ValidateChange(
 // repo: The repo where the tag exists in.
 // txDetail: The pusher transaction detail
 func CheckNote(
-	repo types2.LocalRepo,
+	repo types.LocalRepo,
 	txDetail *types.TxDetail) error {
 
 	// Get the note current hash

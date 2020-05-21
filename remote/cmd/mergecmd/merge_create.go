@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/types"
 	common2 "gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -77,7 +77,7 @@ type MergeRequestCreateArgs struct {
 }
 
 // MergeRequestCreateCmd create a new merge request or adds a comment to an existing one
-func MergeRequestCreateCmd(r types2.LocalRepo, args *MergeRequestCreateArgs) error {
+func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) error {
 
 	var nComments int
 	var mrRef, mrRefHash string

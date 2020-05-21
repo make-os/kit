@@ -13,8 +13,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/policy"
-	"gitlab.com/makeos/mosdef/remote/pushhandler"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/push"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp/sideband"
 )
@@ -25,8 +24,8 @@ type RequestContext struct {
 	R           *http.Request
 	TxDetails   []*types.TxDetail
 	PolEnforcer policy.EnforcerFunc
-	PushHandler *pushhandler.Handler
-	Repo        types2.LocalRepo
+	PushHandler *push.Handler
+	Repo        types.LocalRepo
 	RepoDir     string
 	Operation   string
 	ServiceName string

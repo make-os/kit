@@ -10,9 +10,9 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/pruner"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
 	repo3 "gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -21,7 +21,7 @@ var _ = Describe("RepoPruner", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
-	var repo types2.LocalRepo
+	var repo types.LocalRepo
 	var ctrl *gomock.Controller
 	var repoName string
 	var prn *pruner.Pruner

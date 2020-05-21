@@ -1,4 +1,4 @@
-package pushhandler
+package push
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/policy"
-	"gitlab.com/makeos/mosdef/remote/pushpool/types"
+	"gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	types2 "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
@@ -28,7 +28,7 @@ type authorizationHandler func(ur *packp.ReferenceUpdateRequest) error
 type Handler struct {
 	log                  logger.Logger
 	op                   string                              // The current git operation
-	Repo                 types.LocalRepo                     // The target repository
+	Repo                 types2.LocalRepo                    // The target repository
 	Server               core.RemoteServer                   // The repository remote server
 	OldState             core.BareRepoState                  // The old state of the repo before the current push was written
 	PushReader           *PushReader                         // The push reader for reading pushed git objects
@@ -45,13 +45,13 @@ type Handler struct {
 
 // PushHandlerFunc describes a function for creating a push handler
 type PushHandlerFunc func(
-	targetRepo types.LocalRepo,
+	targetRepo types2.LocalRepo,
 	txDetails []*types2.TxDetail,
 	enforcer policy.EnforcerFunc) *Handler
 
 // NewHandler returns an instance of Handler
 func NewHandler(
-	repo types.LocalRepo,
+	repo types2.LocalRepo,
 	txDetails []*types2.TxDetail,
 	polEnforcer policy.EnforcerFunc,
 	rMgr core.RemoteServer) *Handler {

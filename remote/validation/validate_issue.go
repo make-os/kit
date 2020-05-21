@@ -9,8 +9,7 @@ import (
 	"github.com/stretchr/objx"
 	"github.com/thoas/go-funk"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	rr "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
@@ -35,7 +34,7 @@ type ValidatePostCommitArg struct {
 
 // ValidatePostCommit validate a pushed post commit.
 // commit is the recent post commit in the post reference.
-func ValidatePostCommit(repo types2.LocalRepo, commit types2.Commit, args *ValidatePostCommitArg) error {
+func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *ValidatePostCommitArg) error {
 
 	// Post reference history cannot have merge commits (merge commit not permitted)
 	hasMerges, err := repo.HasMergeCommits(args.TxDetail.Reference)
@@ -80,7 +79,7 @@ func ValidatePostCommit(repo types2.LocalRepo, commit types2.Commit, args *Valid
 			icArgs.OldHash = postCommits[i-1].Hash.String()
 		}
 
-		post, err := args.CheckPostCommit(repo, repo2.WrapCommit(postCommit), icArgs)
+		post, err := args.CheckPostCommit(repo, rr.WrapCommit(postCommit), icArgs)
 		if err != nil {
 			return err
 		}
@@ -123,13 +122,13 @@ type CheckPostCommitArgs struct {
 
 // PostCommitChecker describes a function for validating a post commit.
 type PostCommitChecker func(
-	repo types2.LocalRepo,
-	commit types2.Commit,
+	repo types.LocalRepo,
+	commit types.Commit,
 	args *CheckPostCommitArgs) (*plumbing2.PostBody, error)
 
 // CheckPostCommit validates new commits of a post reference. It returns nil post body
 // and error if validation failed or a post body and nil if validation passed.
-func CheckPostCommit(repo types2.LocalRepo, commit types2.Commit, args *CheckPostCommitArgs) (*plumbing2.PostBody, error) {
+func CheckPostCommit(repo types.LocalRepo, commit types.Commit, args *CheckPostCommitArgs) (*plumbing2.PostBody, error) {
 
 	// Reference name must be valid
 	if !plumbing2.IsIssueReference(args.Reference) && !plumbing2.IsMergeRequestReference(args.Reference) {
@@ -205,8 +204,8 @@ func CheckPostCommit(repo types2.LocalRepo, commit types2.Commit, args *CheckPos
 //  replyTo: Indicates a post is a response an ancestor (a comment).
 //  assignees: List push keys assigned to the posts.
 func CheckPostBody(
-	repo types2.LocalRepo,
-	commit types2.Commit,
+	repo types.LocalRepo,
+	commit types.Commit,
 	isNew bool,
 	fm map[string]interface{},
 	content []byte) error {

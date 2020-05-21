@@ -5,7 +5,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/logic/contracts/common"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
-	types3 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -38,7 +38,7 @@ func (c *GitPush) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64)
 	return c
 }
 
-func (c *GitPush) updateReference(repo *state.Repository, ref *types3.PushedReference) {
+func (c *GitPush) updateReference(repo *state.Repository, ref *pushtypes.PushedReference) {
 
 	// When the reference needs to be deleted, remove from repo reference
 	r := repo.References.Get(ref.Name)

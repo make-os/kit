@@ -3,45 +3,13 @@ package types
 import (
 	"time"
 
-	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 	"gopkg.in/src-d/go-git.v4/storage"
 )
-
-type PushNotice interface {
-	GetTargetRepo() LocalRepo
-	SetTargetRepo(repo LocalRepo)
-	GetPusherKeyID() []byte
-	GetPusherAddress() util.Address
-	GetPusherAccountNonce() uint64
-	GetPusherKeyIDString() string
-	EncodeMsgpack(enc *msgpack.Encoder) error
-	DecodeMsgpack(dec *msgpack.Decoder) error
-	Bytes(recompute ...bool) []byte
-	BytesNoCache() []byte
-	BytesNoSig() []byte
-	GetPushedObjects() []string
-	GetEcoSize() uint64
-	GetNodePubKey() util.Bytes32
-	GetNodeSignature() []byte
-	GetRepoName() string
-	GetNamespace() string
-	GetTimestamp() int64
-	GetPushedReferences() PushedReferences
-	Len() uint64
-	ID(recompute ...bool) util.Bytes32
-	BytesAndID(recompute ...bool) ([]byte, util.Bytes32)
-	TxSize() uint
-	BillableSize() uint64
-	GetSize() uint64
-	GetFee() util.String
-}
 
 // LocalRepo represents a local git repository on disk
 type LocalRepo interface {
@@ -185,74 +153,6 @@ type LiteGit interface {
 	GetRefCommits(ref string, noMerges bool) ([]string, error)
 	Var(name string) (string, error)
 	ExpandShortHash(hash string) (string, error)
-}
-
-// PushedReference represents a reference that was pushed by git client
-type PushedReference struct {
-	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	Name                  string               `json:"name" msgpack:"name,omitempty"`       // The full name of the reference
-	OldHash               string               `json:"oldHash" msgpack:"oldHash,omitempty"` // The hash of the reference before the push
-	NewHash               string               `json:"newHash" msgpack:"newHash,omitempty"` // The hash of the reference after the push
-	Nonce                 uint64               `json:"nonce" msgpack:"nonce,omitempty"`     // The next repo nonce of the reference
-	Objects               []string             `json:"objects" msgpack:"objects,omitempty"` // A list of objects pushed to the reference
-	MergeProposalID       string               `json:"mergeID" msgpack:"mergeID,omitempty"` // The merge proposal ID the reference is complaint with.
-	Fee                   util.String          `json:"fee" msgpack:"fee,omitempty"`         // The merge proposal ID the reference is complaint with.
-	PushSig               []byte               `json:"pushSig" msgpack:"pushSig,omitempty"` // The signature of from the push request token
-	Data                  *types.ReferenceData `json:"data" msgpack:"data,omitempty"`       // Contains updates to the reference data
-}
-
-// EncodeMsgpack implements msgpack.CustomEncoder
-func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
-		pr.Name,
-		pr.OldHash,
-		pr.NewHash,
-		pr.Nonce,
-		pr.Objects,
-		pr.MergeProposalID,
-		pr.Fee,
-		pr.Data,
-		pr.PushSig)
-}
-
-// DecodeMsgpack implements msgpack.CustomDecoder
-func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return pr.DecodeMulti(dec,
-		&pr.Name,
-		&pr.OldHash,
-		&pr.NewHash,
-		&pr.Nonce,
-		&pr.Objects,
-		&pr.MergeProposalID,
-		&pr.Fee,
-		&pr.Data,
-		&pr.PushSig)
-}
-
-// IsDeletable checks whether the pushed reference can be deleted
-func (pr *PushedReference) IsDeletable() bool {
-	return pr.NewHash == plumbing.ZeroHash.String()
-}
-
-// PushedReferences represents a collection of pushed references
-type PushedReferences []*PushedReference
-
-// GetByName finds a pushed reference by name
-func (pf *PushedReferences) GetByName(name string) *PushedReference {
-	for _, r := range *pf {
-		if r.Name == name {
-			return r
-		}
-	}
-	return nil
-}
-
-// Names returns the names of the references
-func (pf *PushedReferences) Names() (names []string) {
-	for _, r := range *pf {
-		names = append(names, r.Name)
-	}
-	return
 }
 
 // Commit represents a Commit.

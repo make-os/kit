@@ -1,4 +1,4 @@
-package pushhandler
+package push
 
 import (
 	"bytes"
@@ -8,8 +8,9 @@ import (
 
 	"github.com/pkg/errors"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
+	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
 	repo3 "gitlab.com/makeos/mosdef/remote/repo"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -20,7 +21,7 @@ import (
 )
 
 // makePackfileFromPushNote creates a packfile from a PushNotice
-func makePackfileFromPushNote(repo types2.LocalRepo, tx types2.PushNotice) (io.ReadSeeker, error) {
+func makePackfileFromPushNote(repo types.LocalRepo, tx pushtypes.PushNotice) (io.ReadSeeker, error) {
 
 	var buf = bytes.NewBuffer(nil)
 	enc := packfile.NewEncoder(buf, repo.GetHost(), true)
@@ -41,11 +42,11 @@ func makePackfileFromPushNote(repo types2.LocalRepo, tx types2.PushNotice) (io.R
 }
 
 // ReferenceUpdateRequestMaker describes a function for create git packfile from a push note and a target repository
-type ReferenceUpdateRequestMaker func(repo types2.LocalRepo, tx types2.PushNotice) (io.ReadSeeker, error)
+type ReferenceUpdateRequestMaker func(repo types.LocalRepo, tx pushtypes.PushNotice) (io.ReadSeeker, error)
 
 // MakeReferenceUpdateRequest creates a git reference update request from a push
 // transaction. This is what git push sends to the git-receive-pack.
-func MakeReferenceUpdateRequest(repo types2.LocalRepo, tx types2.PushNotice) (io.ReadSeeker, error) {
+func MakeReferenceUpdateRequest(repo types.LocalRepo, tx pushtypes.PushNotice) (io.ReadSeeker, error) {
 
 	// Generate a packFile
 	packFile, err := makePackfileFromPushNote(repo, tx)
@@ -80,12 +81,12 @@ func MakeReferenceUpdateRequest(repo types2.LocalRepo, tx types2.PushNotice) (io
 // makePushNoteFromStateChange creates a PushNotice object from changes between two
 // states. Only the reference information is set in the PushNotice object returned.
 func makePushNoteFromStateChange(
-	repo types2.LocalRepo,
+	repo types.LocalRepo,
 	oldState,
-	newState core.BareRepoState) (*types2.PushNote, error) {
+	newState core.BareRepoState) (*pushtypes.PushNote, error) {
 
 	// Compute the changes between old and new states
-	tx := &types2.PushNote{References: []*types2.PushedReference{}}
+	tx := &pushtypes.PushNote{References: []*pushtypes.PushedReference{}}
 	changes := oldState.GetChanges(newState)
 
 	// For each changed references, generate a PushedReference object
@@ -180,7 +181,7 @@ func makePushNoteFromStateChange(
 			if err != nil {
 				return nil, err
 			}
-			tx.References = append(tx.References, &types2.PushedReference{
+			tx.References = append(tx.References, &pushtypes.PushedReference{
 				Name:    change.Item.GetName(),
 				NewHash: newHash,
 				OldHash: plumbing.ZeroHash.String(),
@@ -192,7 +193,7 @@ func makePushNoteFromStateChange(
 			if err != nil {
 				return nil, err
 			}
-			tx.References = append(tx.References, &types2.PushedReference{
+			tx.References = append(tx.References, &pushtypes.PushedReference{
 				Name:    change.Item.GetName(),
 				Objects: append(objHashes, histHashes...),
 				NewHash: newHash,
@@ -200,7 +201,7 @@ func makePushNoteFromStateChange(
 			})
 
 		case core.ChangeTypeRemove:
-			tx.References = append(tx.References, &types2.PushedReference{
+			tx.References = append(tx.References, &pushtypes.PushedReference{
 				Name:    change.Item.GetName(),
 				NewHash: plumbing.ZeroHash.String(),
 				OldHash: changedRefOldVerHash,
@@ -214,7 +215,7 @@ func makePushNoteFromStateChange(
 // MakePackfile creates a git reference update request packfile from state
 // changes between old and new repository state.
 func MakePackfile(
-	repo types2.LocalRepo,
+	repo types.LocalRepo,
 	oldState,
 	newState core.BareRepoState) (io.ReadSeeker, error) {
 

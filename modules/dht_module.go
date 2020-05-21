@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"gitlab.com/makeos/mosdef/config"
-	types2 "gitlab.com/makeos/mosdef/dht/types"
+	dhttypes "gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
@@ -20,11 +20,11 @@ import (
 type DHTModule struct {
 	cfg *config.AppConfig
 	vm  *otto.Otto
-	dht types2.DHTNode
+	dht dhttypes.DHTNode
 }
 
 // NewDHTModule creates an instance of DHTModule
-func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht types2.DHTNode) *DHTModule {
+func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht dhttypes.DHTNode) *DHTModule {
 	return &DHTModule{
 		cfg: cfg,
 		vm:  vm,
@@ -164,7 +164,7 @@ func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
 // ARGS:
 // objURI: The repo object URI
 func (m *DHTModule) GetRepoObject(objURI string) []byte {
-	bz, err := m.dht.GetObject(context.Background(), &types2.DHTObjectQuery{
+	bz, err := m.dht.GetObject(context.Background(), &dhttypes.DHTObjectQuery{
 		Module:    core.RepoObjectModule,
 		ObjectKey: []byte(objURI),
 	})

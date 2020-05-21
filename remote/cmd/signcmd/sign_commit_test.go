@@ -14,8 +14,7 @@ import (
 	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/mocks"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	types3 "gitlab.com/makeos/mosdef/remote/pushpool/types"
-	types2 "gitlab.com/makeos/mosdef/remote/types"
+	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -26,15 +25,15 @@ var testGetNextNonce = func(pushKeyID string, rpcClient *client.RPCClient, remot
 }
 
 func testPushKeyUnlocker(key types.StoredKey, err error) func(cfg *config.AppConfig, pushKeyID,
-	defaultPassphrase string, targetRepo types3.LocalRepo) (types.StoredKey, error) {
-	return func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo types3.LocalRepo) (types.StoredKey, error) {
+	defaultPassphrase string, targetRepo remotetypes.LocalRepo) (types.StoredKey, error) {
+	return func(cfg *config.AppConfig, pushKeyID, defaultPassphrase string, targetRepo remotetypes.LocalRepo) (types.StoredKey, error) {
 		return key, err
 	}
 }
 
-func testRemoteURLTokenUpdater(token string, err error) func(targetRepo types3.LocalRepo, targetRemote string,
-	txDetail *types2.TxDetail, pushKey types.StoredKey, reset bool) (string, error) {
-	return func(targetRepo types3.LocalRepo, targetRemote string, txDetail *types2.TxDetail, pushKey types.StoredKey, reset bool) (string, error) {
+func testRemoteURLTokenUpdater(token string, err error) func(targetRepo remotetypes.LocalRepo, targetRemote string,
+	txDetail *remotetypes.TxDetail, pushKey types.StoredKey, reset bool) (string, error) {
+	return func(targetRepo remotetypes.LocalRepo, targetRemote string, txDetail *remotetypes.TxDetail, pushKey types.StoredKey, reset bool) (string, error) {
 		return token, err
 	}
 }
@@ -181,7 +180,7 @@ var _ = Describe("SignCommit", func() {
 		When("args.Head is set to 'refs/heads/some_branch'", func() {
 			It("the generated tx detail should set Reference to 'refs/heads/some_branch'", func() {
 				args := &SignCommitArgs{Fee: "1", PushKeyID: key.PushAddr().String(), Message: "some message", GetNextNonce: testGetNextNonce, AmendCommit: false, Head: "refs/heads/some_branch"}
-				args.RemoteURLTokenUpdater = func(targetRepo types3.LocalRepo, targetRemote string, txDetail *types2.TxDetail, pushKey types.StoredKey, reset bool) (string, error) {
+				args.RemoteURLTokenUpdater = func(targetRepo remotetypes.LocalRepo, targetRemote string, txDetail *remotetypes.TxDetail, pushKey types.StoredKey, reset bool) (string, error) {
 					Expect(txDetail.Reference).To(Equal("refs/heads/some_branch"))
 					return "", nil
 				}

@@ -11,8 +11,8 @@ import (
 	"github.com/thoas/go-funk"
 	restclient "gitlab.com/makeos/mosdef/api/rest/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
-	types2 "gitlab.com/makeos/mosdef/remote/pushpool/types"
-	repo2 "gitlab.com/makeos/mosdef/remote/repo"
+	rr "gitlab.com/makeos/mosdef/remote/repo"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
 
@@ -54,7 +54,7 @@ func getJSONRPCClient(cmd *cobra.Command) (*client.RPCClient, error) {
 // getRemoteAPIClients gets REST clients for every  http(s) remote
 // URL set on the given repository. Immediately returns nothing if
 // --no.remote is true.
-func getRemoteAPIClients(cmd *cobra.Command, repo types2.LocalRepo) (clients []restclient.RestClient) {
+func getRemoteAPIClients(cmd *cobra.Command, repo types.LocalRepo) (clients []restclient.RestClient) {
 	noRemote, _ := cmd.Flags().GetBool("no.remote")
 	if noRemote {
 		return
@@ -77,11 +77,11 @@ func getRemoteAPIClients(cmd *cobra.Command, repo types2.LocalRepo) (clients []r
 }
 
 // getClients returns RPCClient and Remote API clients
-func getRepoAndClients(cmd *cobra.Command) (types2.LocalRepo,
+func getRepoAndClients(cmd *cobra.Command) (types.LocalRepo,
 	*client.RPCClient, []restclient.RestClient) {
 
 	// Get the repository
-	targetRepo, err := repo2.GetAtWorkingDir(cfg.Node.GitBinPath)
+	targetRepo, err := rr.GetAtWorkingDir(cfg.Node.GitBinPath)
 	if err != nil {
 		log.Fatal(err.Error())
 	}

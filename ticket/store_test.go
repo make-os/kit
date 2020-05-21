@@ -3,7 +3,7 @@ package ticket
 import (
 	"os"
 
-	types2 "gitlab.com/makeos/mosdef/ticket/types"
+	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -33,8 +33,8 @@ var _ = Describe("Store", func() {
 
 	Describe(".Register", func() {
 		var err error
-		var ticket = &types2.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
-		var ticket2 = &types2.Ticket{Hash: util.StrToBytes32("hash2"), DecayBy: 101, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 11, Index: 4}
+		var ticket = &tickettypes.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
+		var ticket2 = &tickettypes.Ticket{Hash: util.StrToBytes32("hash2"), DecayBy: 101, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 11, Index: 4}
 
 		BeforeEach(func() {
 			Expect(err).To(BeNil())
@@ -45,7 +45,7 @@ var _ = Describe("Store", func() {
 		Context("add 1 record", func() {
 			It("should successfully add the ticket", func() {
 				key := MakeKey(ticket.Hash.Bytes(), ticket.Height, ticket.Index)
-				var t types2.Ticket
+				var t tickettypes.Ticket
 				rec, err := store.db.Get(key)
 				Expect(err).To(BeNil())
 				rec.Scan(&t)
@@ -61,7 +61,7 @@ var _ = Describe("Store", func() {
 			})
 
 			It("should successfully add the ticket", func() {
-				var t, t2 types2.Ticket
+				var t, t2 tickettypes.Ticket
 
 				key := MakeKey(ticket.Hash.Bytes(), ticket.Height, ticket.Index)
 				rec, err := store.db.Get(key)
@@ -81,7 +81,7 @@ var _ = Describe("Store", func() {
 	Describe(".GetByHash", func() {
 		var store *Store
 		var err error
-		var ticket = &types2.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
+		var ticket = &tickettypes.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
 
 		BeforeEach(func() {
 			store = NewStore(appDB.NewTx(true, true))
@@ -108,7 +108,7 @@ var _ = Describe("Store", func() {
 		When("an entry with hash='hash1' exist", func() {
 			var store *Store
 			var err error
-			var ticket = &types2.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
+			var ticket = &tickettypes.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
 
 			BeforeEach(func() {
 				store = NewStore(appDB.NewTx(true, true))
@@ -127,7 +127,7 @@ var _ = Describe("Store", func() {
 		When("no entry with hash='hash1' exist", func() {
 			var store *Store
 			var err error
-			var ticket = &types2.Ticket{Hash: util.StrToBytes32("hash2"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
+			var ticket = &tickettypes.Ticket{Hash: util.StrToBytes32("hash2"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
 
 			BeforeEach(func() {
 				store = NewStore(appDB.NewTx(true, true))
@@ -148,7 +148,7 @@ var _ = Describe("Store", func() {
 		When("an entry with hash='hash1' exist", func() {
 			var store *Store
 			var err error
-			var ticket = &types2.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
+			var ticket = &tickettypes.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
 
 			BeforeEach(func() {
 				store = NewStore(appDB.NewTx(true, true))
@@ -158,7 +158,7 @@ var _ = Describe("Store", func() {
 			})
 
 			It("should successfully find the entry with a predicate", func() {
-				var entry = store.QueryOne(func(t *types2.Ticket) bool { return t.Hash == ticket.Hash })
+				var entry = store.QueryOne(func(t *tickettypes.Ticket) bool { return t.Hash == ticket.Hash })
 				Expect(entry).To(Equal(ticket))
 			})
 		})
@@ -166,7 +166,7 @@ var _ = Describe("Store", func() {
 		When("an entry with hash='hash1' exist", func() {
 			var store *Store
 			var err error
-			var ticket = &types2.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
+			var ticket = &tickettypes.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
 
 			BeforeEach(func() {
 				store = NewStore(appDB.NewTx(true, true))
@@ -176,7 +176,7 @@ var _ = Describe("Store", func() {
 			})
 
 			It("should return nil when predicate fails to return true", func() {
-				entry := store.QueryOne(func(t *types2.Ticket) bool { return t.Hash == util.StrToBytes32("hash2") })
+				entry := store.QueryOne(func(t *tickettypes.Ticket) bool { return t.Hash == util.StrToBytes32("hash2") })
 				Expect(entry).To(BeNil())
 			})
 		})
@@ -186,8 +186,8 @@ var _ = Describe("Store", func() {
 		When("two entries exist", func() {
 			var store *Store
 			var err error
-			var ticket = &types2.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
-			var ticket2 = &types2.Ticket{Hash: util.StrToBytes32("hash2"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 11, Index: 2}
+			var ticket = &tickettypes.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
+			var ticket2 = &tickettypes.Ticket{Hash: util.StrToBytes32("hash2"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 11, Index: 2}
 
 			BeforeEach(func() {
 				store = NewStore(appDB.NewTx(true, true))
@@ -197,26 +197,26 @@ var _ = Describe("Store", func() {
 			})
 
 			It("should return two entries when predicate returns only true", func() {
-				entries := store.Query(func(t *types2.Ticket) bool { return true })
+				entries := store.Query(func(t *tickettypes.Ticket) bool { return true })
 				Expect(entries).To(HaveLen(2))
 			})
 
 			It("should return one entries when predicate returns only true for hash2", func() {
-				entries := store.Query(func(t *types2.Ticket) bool { return t.Hash == util.StrToBytes32("hash2") })
+				entries := store.Query(func(t *tickettypes.Ticket) bool { return t.Hash == util.StrToBytes32("hash2") })
 				Expect(entries).To(HaveLen(1))
 				Expect(entries[0]).To(Equal(ticket2))
 			})
 
 			When("limit is set", func() {
 				It("should return 1 entry", func() {
-					entries := store.Query(func(t *types2.Ticket) bool { return true }, types2.QueryOptions{Limit: 1})
+					entries := store.Query(func(t *tickettypes.Ticket) bool { return true }, tickettypes.QueryOptions{Limit: 1})
 					Expect(entries).To(HaveLen(1))
 				})
 			})
 
 			When("sorted by height in descending order", func() {
 				It("should return entries in the following order => hash2, hash1", func() {
-					entries := store.Query(func(t *types2.Ticket) bool { return true }, types2.QueryOptions{SortByHeight: -1})
+					entries := store.Query(func(t *tickettypes.Ticket) bool { return true }, tickettypes.QueryOptions{SortByHeight: -1})
 					Expect(entries).To(HaveLen(2))
 					Expect(entries[0].Height).To(Equal(uint64(11)))
 					Expect(entries[1].Height).To(Equal(uint64(10)))
@@ -229,8 +229,8 @@ var _ = Describe("Store", func() {
 		When("two entries exist", func() {
 			var store *Store
 			var err error
-			var ticket = &types2.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
-			var ticket2 = &types2.Ticket{Hash: util.StrToBytes32("hash2"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
+			var ticket = &tickettypes.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
+			var ticket2 = &tickettypes.Ticket{Hash: util.StrToBytes32("hash2"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
 
 			BeforeEach(func() {
 				store = NewStore(appDB.NewTx(true, true))
@@ -240,12 +240,12 @@ var _ = Describe("Store", func() {
 			})
 
 			It("should return 2 when predicate returns only true", func() {
-				count := store.Count(func(t *types2.Ticket) bool { return true })
+				count := store.Count(func(t *tickettypes.Ticket) bool { return true })
 				Expect(count).To(Equal(2))
 			})
 
 			It("should return 1 when predicate returns only true for hash2", func() {
-				count := store.Count(func(t *types2.Ticket) bool { return t.Hash == util.StrToBytes32("hash2") })
+				count := store.Count(func(t *tickettypes.Ticket) bool { return t.Hash == util.StrToBytes32("hash2") })
 				Expect(count).To(Equal(1))
 			})
 		})
@@ -255,7 +255,7 @@ var _ = Describe("Store", func() {
 		When("one entry exist", func() {
 			var store *Store
 			var err error
-			var ticket = &types2.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
+			var ticket = &tickettypes.Ticket{Hash: util.StrToBytes32("hash1"), DecayBy: 100, MatureBy: 40, ProposerPubKey: util.StrToBytes32("pubkey"), Height: 10, Index: 2}
 
 			BeforeEach(func() {
 				store = NewStore(appDB.NewTx(true, true))
@@ -264,18 +264,18 @@ var _ = Describe("Store", func() {
 			})
 
 			It("should update decay height", func() {
-				qp := func(t *types2.Ticket) bool {
+				qp := func(t *tickettypes.Ticket) bool {
 					return t.Hash == util.StrToBytes32("hash1")
 				}
-				store.UpdateOne(types2.Ticket{DecayBy: 200}, qp)
+				store.UpdateOne(tickettypes.Ticket{DecayBy: 200}, qp)
 				res := store.QueryOne(qp)
 				Expect(res.DecayBy).To(Equal(uint64(200)))
 				Expect(store.Count(qp)).To(Equal(1))
 			})
 
 			It("should update nothing if predicate returns false", func() {
-				qp := func(t *types2.Ticket) bool { return t.Hash == util.StrToBytes32("hash2") }
-				store.UpdateOne(types2.Ticket{DecayBy: 200}, qp)
+				qp := func(t *tickettypes.Ticket) bool { return t.Hash == util.StrToBytes32("hash2") }
+				store.UpdateOne(tickettypes.Ticket{DecayBy: 200}, qp)
 				res := store.QueryOne(qp)
 				Expect(res).To(BeNil())
 			})
