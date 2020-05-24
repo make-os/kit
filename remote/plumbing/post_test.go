@@ -318,9 +318,9 @@ content`, "commit 2")
 				FrontMatter: map[string]interface{}{
 					"title":     "My Title",
 					"replyTo":   "12345",
-					"reactions": []string{"smile"},
-					"labels":    []string{"help"},
-					"assignees": []string{"push1abc"},
+					"reactions": []interface{}{"smile"},
+					"labels":    []interface{}{"help"},
+					"assignees": []interface{}{"push1abc"},
 					"close":     true,
 				},
 				FrontMatterFormat: "",

@@ -73,7 +73,7 @@ var _ = Describe("CoinTransferContract", func() {
 				ct.Init(logic, tx, 1)
 				err := ct.DryExec(sender.PubKey())
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, msg:sender's spendable account balance is insufficient"))
+				Expect(err.Error()).To(Equal("field:value+fee, msg:sender's spendable account balance is insufficient"))
 			})
 		})
 
@@ -84,7 +84,7 @@ var _ = Describe("CoinTransferContract", func() {
 				ct.Init(logic, tx, 1)
 				err := ct.DryExec(sender.PubKey())
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, msg:tx has invalid nonce (3); expected (1)"))
+				Expect(err.Error()).To(Equal("field:value+fee, msg:tx has invalid nonce (3); expected (1)"))
 			})
 		})
 

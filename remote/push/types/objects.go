@@ -32,7 +32,7 @@ type PushNote struct {
 	// PusherAddress is the Address of the pusher
 	PusherAddress util.Address `json:"pusherAddr,omitempty" msgpack:"pusherAddr,omitempty"`
 
-	// Size is thet otal size of all objects pushed
+	// Size is the size of all objects pushed
 	Size uint64 `json:"size,omitempty" msgpack:"size,omitempty"`
 
 	// Timestamp is the unix timestamp
@@ -226,6 +226,17 @@ func (pt *PushNote) GetFee() util.String {
 	return util.String(fee.String())
 }
 
+// GetValue returns the total value
+func (pt *PushNote) GetValue() util.String {
+	var value = decimal.Zero
+	for _, ref := range pt.References {
+		if !ref.Value.Empty() {
+			value = value.Add(ref.Value.Decimal())
+		}
+	}
+	return util.String(value.String())
+}
+
 // EndorsedReference describes the current state of a reference endorsed by a host
 type EndorsedReference struct {
 	Hash []byte `json:"hash" msgpack:"hash,omitempty" mapstructure:"hash"`
@@ -372,6 +383,7 @@ type PushNotice interface {
 	BillableSize() uint64
 	GetSize() uint64
 	GetFee() util.String
+	GetValue() util.String
 }
 
 // PushedReference represents a reference that was pushed by git client
@@ -383,7 +395,8 @@ type PushedReference struct {
 	Nonce                 uint64               `json:"nonce" msgpack:"nonce,omitempty"`     // The next repo nonce of the reference
 	Objects               []string             `json:"objects" msgpack:"objects,omitempty"` // A list of objects pushed to the reference
 	MergeProposalID       string               `json:"mergeID" msgpack:"mergeID,omitempty"` // The merge proposal ID the reference is complaint with.
-	Fee                   util.String          `json:"fee" msgpack:"fee,omitempty"`         // The merge proposal ID the reference is complaint with.
+	Fee                   util.String          `json:"fee" msgpack:"fee,omitempty"`         // The network fee to pay for pushing the reference
+	Value                 util.String          `json:"value" msgpack:"value,omitempty"`     // Additional fee to pay for special operation
 	PushSig               []byte               `json:"pushSig" msgpack:"pushSig,omitempty"` // The signature of from the push request token
 	Data                  *types.ReferenceData `json:"data" msgpack:"data,omitempty"`       // Contains updates to the reference data
 }
@@ -398,6 +411,7 @@ func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
 		pr.Objects,
 		pr.MergeProposalID,
 		pr.Fee,
+		pr.Value,
 		pr.Data,
 		pr.PushSig)
 }
@@ -412,6 +426,7 @@ func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&pr.Objects,
 		&pr.MergeProposalID,
 		&pr.Fee,
+		&pr.Value,
 		&pr.Data,
 		&pr.PushSig)
 }

@@ -17,14 +17,17 @@ import (
 )
 
 type SignTagArgs struct {
-	// Message is a custom tag message
-	Message string
-
-	// Fee is the transaction fee
+	// Fee is the network transaction fee
 	Fee string
 
 	// Nonce is the signer's next account nonce
 	Nonce uint64
+
+	// Value is for sending special fee
+	Value string
+
+	// Message is a custom tag message
+	Message string
 
 	// PushKeyID is the signers push key ID
 	PushKeyID string
@@ -103,6 +106,7 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo types.LocalR
 	// Make the transaction parameter object
 	txDetail := &types.TxDetail{
 		Fee:       util.String(args.Fee),
+		Value:     util.String(args.Value),
 		Nonce:     args.Nonce,
 		PushKeyID: args.PushKeyID,
 		Reference: plumbing.NewTagReferenceName(gitFlags.Arg(0)).String(),

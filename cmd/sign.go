@@ -29,6 +29,7 @@ var signCommitCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
+		value, _ := cmd.Flags().GetString("value")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		sk, _ := cmd.Flags().GetString("signing-key")
 		mergeID, _ := cmd.Flags().GetString("merge-id")
@@ -46,6 +47,7 @@ var signCommitCmd = &cobra.Command{
 			Message:               msg,
 			Fee:                   fee,
 			Nonce:                 nonce,
+			Value:                 value,
 			AmendCommit:           amend,
 			MergeID:               mergeID,
 			Head:                  head,
@@ -72,6 +74,7 @@ var signTagCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
+		value, _ := cmd.Flags().GetString("value")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		sk, _ := cmd.Flags().GetString("signing-key")
 		pass, _ := cmd.Flags().GetString("pass")
@@ -86,6 +89,7 @@ var signTagCmd = &cobra.Command{
 			Message:               msg,
 			Fee:                   fee,
 			Nonce:                 nonce,
+			Value:                 value,
 			PushKeyID:             sk,
 			PushKeyPass:           pass,
 			Remote:                targetRemotes,
@@ -107,6 +111,7 @@ var signNoteCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		fee, _ := cmd.Flags().GetString("fee")
+		value, _ := cmd.Flags().GetString("value")
 		nonce, _ := cmd.Flags().GetUint64("nonce")
 		sk, _ := cmd.Flags().GetString("signing-key")
 		pass, _ := cmd.Flags().GetString("pass")
@@ -122,6 +127,7 @@ var signNoteCmd = &cobra.Command{
 			Name:                  args[0],
 			Fee:                   fee,
 			Nonce:                 nonce,
+			Value:                 value,
 			PushKeyID:             sk,
 			PushKeyPass:           pass,
 			Remote:                targetRemotes,
@@ -166,7 +172,8 @@ func init() {
 
 	// Transaction information
 	pf.StringP("message", "m", "", "commit or tag message")
-	pf.StringP("fee", "f", "0", "Set the transaction fee")
+	pf.StringP("fee", "f", "0", "Set the network transaction fee")
+	pf.StringP("value", "v", "", "Set a value for paying additional fees")
 	pf.Uint64P("nonce", "n", 0, "Set the transaction nonce")
 	pf.StringP("signing-key", "s", "", "Set the signing key ID")
 	pf.StringP("remote", "r", "origin", "Set push token to a remote")

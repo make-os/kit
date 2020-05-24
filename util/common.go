@@ -150,9 +150,17 @@ func RandBytes(n int) []byte {
 	return b
 }
 
-// NonZeroOrDefIn64 checks if v is 0 so it returns def, otherwise returns v
+// NonZeroOrDefIn64 returns v if non-zero, otherwise it returns def
 func NonZeroOrDefIn64(v int64, def int64) int64 {
 	if v == 0 {
+		return def
+	}
+	return v
+}
+
+// NonZeroOrDefString returns v if non-zero, otherwise it returns def
+func NonZeroOrDefString(v string, def string) string {
+	if v == "" {
 		return def
 	}
 	return v
@@ -563,7 +571,10 @@ func IsValidName(name string) error {
 		return fmt.Errorf("name is too short. Must be at least 3 characters long")
 	}
 	if !govalidator.Matches(name, "^[a-z0-9][a-zA-Z0-9_-]+$") {
-		return fmt.Errorf("invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars")
+		if name != "" && (name[0] == '_' || name[0] == '-') {
+			return fmt.Errorf("invalid identifier; identifier cannot start with _ or - character")
+		}
+		return fmt.Errorf("invalid identifier; only alphanumeric, _, and - characters are allowed")
 	}
 	if len(name) > 128 {
 		return fmt.Errorf("name is too long. Maximum character length is 128")
@@ -574,7 +585,10 @@ func IsValidName(name string) error {
 // IsValidNameNoLen checks whether a user-defined identifier/name is valid but it does not enforce a length requirement
 func IsValidNameNoLen(name string) error {
 	if !govalidator.Matches(name, "^[a-z0-9]([a-zA-Z0-9_-]+)?$") {
-		return fmt.Errorf("invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars")
+		if name != "" && (name[0] == '_' || name[0] == '-') {
+			return fmt.Errorf("invalid identifier; identifier cannot start with _ or - character")
+		}
+		return fmt.Errorf("invalid identifier; only alphanumeric, _, and - characters are allowed")
 	}
 	if len(name) > 128 {
 		return fmt.Errorf("name is too long. Maximum character length is 128")

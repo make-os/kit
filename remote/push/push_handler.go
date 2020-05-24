@@ -284,6 +284,7 @@ func (h *Handler) createPushNote() (*types.PushNote, error) {
 			Nonce:           h.Repo.GetState().References.Get(refName).Nonce + 1,
 			Objects:         h.PushReader.ObjectsRefs.GetObjectsOf(refName),
 			Fee:             h.TxDetails.Get(refName).Fee,
+			Value:           h.TxDetails.Get(refName).Value,
 			MergeProposalID: h.TxDetails.Get(refName).MergeProposalID,
 			PushSig:         h.TxDetails.Get(refName).MustSignatureAsBytes(),
 			Data:            detail.ReferenceData,

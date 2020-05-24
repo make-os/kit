@@ -133,4 +133,13 @@ var _ = Describe("Common", func() {
 			Expect(plumbing.MakeMergeRequestReferencePath()).To(Equal(fmt.Sprintf("refs/heads/" + plumbing.MergeRequestBranchPrefix)))
 		})
 	})
+
+	Describe(".GetReferenceShortName", func() {
+		It("should return expected result", func() {
+			Expect(plumbing.GetReferenceShortName("refs/heads/master")).To(Equal("master"))
+			Expect(plumbing.GetReferenceShortName("refs/heads/main/master")).To(Equal("main/master"))
+			Expect(plumbing.GetReferenceShortName(plumbing.MakeIssueReference(1))).To(Equal("1"))
+			Expect(plumbing.GetReferenceShortName(plumbing.MakeMergeRequestReference(1))).To(Equal("1"))
+		})
+	})
 })

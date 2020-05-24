@@ -103,6 +103,16 @@ var _ = Describe("Common", func() {
 		})
 	})
 
+	Describe(".NonZeroOrDefString", func() {
+		It("should return def when v is empty", func() {
+			Expect(NonZeroOrDefString("", "default")).To(Equal("default"))
+		})
+
+		It("should return val when v is non-empty", func() {
+			Expect(NonZeroOrDefString("val", "def")).To(Equal("val"))
+		})
+	})
+
 	Describe(".StrToDec", func() {
 		It("should panic if value is not numeric", func() {
 			val := "129.1a"
@@ -546,7 +556,7 @@ var _ = Describe("Common", func() {
 		Specify("cases", func() {
 			err := IsValidName("abc&*")
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
+			Expect(err).To(MatchError("invalid identifier; only alphanumeric, _, and - characters are allowed"))
 
 			err = IsValidName(strings.Repeat("a", 129))
 			Expect(err).ToNot(BeNil())
@@ -561,11 +571,11 @@ var _ = Describe("Common", func() {
 
 			err = IsValidName("-abc")
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
+			Expect(err).To(MatchError("invalid identifier; identifier cannot start with _ or - character"))
 
 			err = IsValidName("_abc")
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("invalid characters in identifier. Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
+			Expect(err).To(MatchError("invalid identifier; identifier cannot start with _ or - character"))
 		})
 	})
 

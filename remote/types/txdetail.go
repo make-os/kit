@@ -145,6 +145,7 @@ type TxDetail struct {
 	RepoNamespace   string      `json:"namespace" msgpack:"namespace,omitempty" mapstructure:"namespace"` // The target repo namespace
 	Reference       string      `json:"reference" msgpack:"reference,omitempty" mapstructure:"reference"` // The target reference
 	Fee             util.String `json:"fee" msgpack:"fee,omitempty" mapstructure:"fee"`                   // Network fee to be paid for update to the target ref
+	Value           util.String `json:"value" msgpack:"value,omitempty" mapstructure:"value"`             // Additional value for paying for special operations
 	Nonce           uint64      `json:"nonce" msgpack:"nonce,omitempty" mapstructure:"nonce"`             // Nonce of the account paying the network fee and signing the update.
 	PushKeyID       string      `json:"pkID" msgpack:"pkID,omitempty" mapstructure:"pkID"`                // The pusher public key ID.
 	Signature       string      `json:"sig" msgpack:"sig,omitempty" mapstructure:"sig"`                   // The signature of the tx parameter
@@ -185,15 +186,18 @@ func (tp *TxDetail) Equal(o *TxDetail) bool {
 	return bytes.Equal(tp.BytesNoSig(), o.BytesNoSig())
 }
 
-// ToMapForPEMHeader returns a map version of the object suitable for use in a PEM header
-func (tp *TxDetail) ToMapForPEMHeader() map[string]string {
+// GetPEMHeader returns a map version of the object suitable for use in a PEM header
+func (tp *TxDetail) GetPEMHeader() map[string]string {
 	hdr := map[string]string{
 		"repo":      tp.RepoName,
 		"namespace": tp.RepoNamespace,
 		"reference": tp.Reference,
 		"pkID":      tp.PushKeyID,
 		"nonce":     fmt.Sprintf("%d", tp.Nonce),
-		"fee":       fmt.Sprintf("%s", tp.Fee),
+		"fee":       tp.Fee.String(),
+	}
+	if tp.Value != "" {
+		hdr["value"] = tp.Value.String()
 	}
 	if tp.MergeProposalID != "" {
 		hdr["mergeID"] = tp.MergeProposalID
@@ -215,6 +219,10 @@ func TxDetailFromPEMHeader(hdr map[string]string) (*TxDetail, error) {
 		return nil, fmt.Errorf("nonce must be numeric")
 	} else {
 		params.Nonce, _ = strconv.ParseUint(hdr["nonce"], 10, 64)
+	}
+
+	if value, ok := hdr["value"]; ok {
+		params.Value = util.String(value)
 	}
 
 	if mergeID, ok := hdr["mergeID"]; ok {
@@ -245,6 +253,7 @@ func (tp *TxDetail) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tp.RepoNamespace,
 		tp.Reference,
 		tp.Fee,
+		tp.Value,
 		tp.Nonce,
 		tp.PushKeyID,
 		sig,
@@ -259,6 +268,7 @@ func (tp *TxDetail) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 		&tp.RepoNamespace,
 		&tp.Reference,
 		&tp.Fee,
+		&tp.Value,
 		&tp.Nonce,
 		&tp.PushKeyID,
 		&sig,

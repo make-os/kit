@@ -17,14 +17,17 @@ import (
 )
 
 type SignNoteArgs struct {
-	// Name is the name of the target note
-	Name string
-
-	// Fee is the transaction fee
+	// Fee is the network transaction fee
 	Fee string
 
 	// Nonce is the signer's next account nonce
 	Nonce uint64
+
+	// Value is for sending special fee
+	Value string
+
+	// Name is the name of the target note
+	Name string
 
 	// PushKeyID is the signers push key ID
 	PushKeyID string
@@ -94,6 +97,7 @@ func SignNoteCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *SignNo
 	// Make the transaction parameter object
 	txDetail := &types.TxDetail{
 		Fee:       util.String(args.Fee),
+		Value:     util.String(args.Value),
 		Nonce:     args.Nonce,
 		PushKeyID: args.PushKeyID,
 		Reference: noteRef.Name().String(),

@@ -2,8 +2,8 @@ package gitpush
 
 import (
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/logic/contracts/common"
+	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/types"
@@ -38,17 +38,18 @@ func (c *GitPush) Init(logic core.Logic, tx types.BaseTx, curChainHeight uint64)
 	return c
 }
 
-func (c *GitPush) updateReference(repo *state.Repository, ref *pushtypes.PushedReference) {
+func (c *GitPush) execReference(repo *state.Repository, repoName string, ref *pushtypes.PushedReference) error {
 
 	// When the reference needs to be deleted, remove from repo reference
 	r := repo.References.Get(ref.Name)
-	if ref.IsDeletable() && !r.IsNil() {
+	if !r.IsNil() && ref.IsDeletable() {
 		delete(repo.References, ref.Name)
-		return
+		return nil
 	}
 
 	// Set pusher as creator if reference is new
-	if r.IsNil() {
+	isNewRef := r.IsNil()
+	if isNewRef {
 		r.Creator = c.tx.PushNote.GetPusherKeyID()
 	}
 
@@ -85,34 +86,56 @@ func (c *GitPush) updateReference(repo *state.Repository, ref *pushtypes.PushedR
 		}
 	}
 
+	// For only new merge request reference, call the merge request contract to handle it
+	if plumbing.IsMergeRequestReference(ref.Name) {
+		if err := mergerequest.NewContract(&mergerequest.MergeRequestData{
+			Repo:             repo,
+			RepoName:         repoName,
+			ProposalID:       plumbing.GetReferenceShortName(ref.Name),
+			ProposerFee:      ref.Value,
+			Fee:              ref.Fee,
+			CreatorAddress:   c.tx.GetFrom(),
+			BaseBranch:       ref.Data.BaseBranch,
+			BaseBranchHash:   ref.Data.BaseBranchHash,
+			TargetBranch:     ref.Data.TargetBranch,
+			TargetBranchHash: ref.Data.TargetBranchHash,
+		}).Init(c.Logic, nil, c.chainHeight).Exec(); err != nil {
+			return err
+		}
+
+		// If there is a secondary fee, deduct it only when reference is new
+		if isNewRef && ref.Value != "" {
+			totalFee := ref.Value.Decimal()
+			common.DebitAccountByAddress(c, c.tx.GetFrom(), totalFee, c.chainHeight)
+		}
+	}
+
+	// Deduct reference push fee
+	totalFee := ref.Fee.Decimal()
+	common.DebitAccountByAddress(c, c.tx.GetFrom(), totalFee, c.chainHeight)
+
 	r.Nonce = r.Nonce + 1
 	r.Hash = util.MustFromHex(ref.NewHash)
 	repo.References[ref.Name] = r
+
+	return nil
 }
 
 // Exec executes the contract
 func (c *GitPush) Exec() error {
-
+	repoName := c.tx.PushNote.GetRepoName()
 	repoKeeper := c.RepoKeeper()
-	repo := repoKeeper.Get(c.tx.PushNote.GetRepoName())
+	repo := repoKeeper.Get(repoName)
 
 	// Register or update references
 	for _, ref := range c.tx.PushNote.GetPushedReferences() {
-		c.updateReference(repo, ref)
+		if err := c.execReference(repo, repoName, ref); err != nil {
+			return err
+		}
 	}
 
-	// Get the push key of the pusher
-	pushKey := c.PushKeyKeeper().Get(crypto.BytesToPushKeyID(c.tx.PushNote.GetPusherKeyID()), c.chainHeight)
-
-	// Get the account of the pusher
-	acctKeeper := c.AccountKeeper()
-	pusherAcct := acctKeeper.Get(pushKey.Address)
-
 	// Update the repo
-	repoKeeper.Update(c.tx.PushNote.GetRepoName(), repo)
-
-	// Deduct the pusher's fee
-	common.DebitAccountObject(c, pushKey.Address, pusherAcct, c.tx.Fee.Decimal(), c.chainHeight)
+	repoKeeper.Update(repoName, repo)
 
 	return c.GetRemoteServer().ExecTxPush(c.tx)
 }

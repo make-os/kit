@@ -6,7 +6,6 @@ import (
 
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -15,7 +14,7 @@ import (
 )
 
 func MakeProposal(
-	spk *crypto.PubKey,
+	creatorAddress string,
 	repo *state.Repository,
 	id string,
 	proposalFee util.String,
@@ -24,7 +23,7 @@ func MakeProposal(
 	proposal := &state.RepoProposal{
 		ID:         id,
 		Config:     repo.Config.Clone().Governance,
-		Creator:    spk.Addr().String(),
+		Creator:    creatorAddress,
 		Height:     chainHeight,
 		EndAt:      repo.Config.Governance.DurOfProposal + chainHeight + 1,
 		Fees:       map[string]string{},
@@ -33,7 +32,7 @@ func MakeProposal(
 
 	// Register proposal fee if set
 	if proposalFee != "0" {
-		proposal.Fees.Add(spk.Addr().String(), proposalFee.String())
+		proposal.Fees.Add(creatorAddress, proposalFee.String())
 	}
 
 	// Set the max. join height for voters.

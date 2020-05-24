@@ -30,6 +30,7 @@ const (
 	TxTypeRepoProposalSendFee                                 // For native coin transfer to repo as proposal fee
 	TxTypeRepoProposalRegisterPushKey                         // For adding push keys to a repo
 	TxTypeUpDelPushKey                                        // For updating or deleting a push key
+	MergeRequestProposalAction                                // For identifying merge request proposal
 )
 
 // TxMeta stores arbitrary, self-contained state information for a transaction

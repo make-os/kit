@@ -6,6 +6,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/mr-tron/base58"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -30,7 +31,8 @@ func CheckTxDetailSanity(params *types.TxDetail, index int) error {
 	// Push key is required and must be valid
 	if params.PushKeyID == "" {
 		return fe(index, "pkID", "push key id is required")
-	} else if !util.IsValidPushAddr(params.PushKeyID) {
+	}
+	if !util.IsValidPushAddr(params.PushKeyID) {
 		return fe(index, "pkID", "push key id is not valid")
 	}
 
@@ -40,8 +42,13 @@ func CheckTxDetailSanity(params *types.TxDetail, index int) error {
 	}
 
 	// Fee must be set
-	if params.Fee.String() == "" {
+	if params.Fee.Empty() {
 		return fe(index, "fee", "fee is required")
+	}
+
+	// Value field not expected for non-merge request reference
+	if !params.Value.Empty() && !plumbing.IsMergeRequestReference(params.Reference) {
+		return fe(index, "value", "field not expected")
 	}
 
 	// Fee must be numeric

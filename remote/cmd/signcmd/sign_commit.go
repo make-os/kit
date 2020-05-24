@@ -20,14 +20,17 @@ import (
 )
 
 type SignCommitArgs struct {
-	// Message is a custom commit message
-	Message string
-
-	// Fee is the transaction fee
+	// Fee is the network transaction fee
 	Fee string
 
 	// Nonce is the signer's next account nonce
 	Nonce uint64
+
+	// Value is for sending special fee
+	Value string
+
+	// Message is a custom commit message
+	Message string
 
 	// AmendCommit indicates whether to amend the last commit or create an empty commit
 	AmendCommit bool
@@ -149,6 +152,7 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *Sign
 	// Make the transaction parameter object
 	txDetail := &types.TxDetail{
 		Fee:             util.String(args.Fee),
+		Value:           util.String(args.Value),
 		Nonce:           args.Nonce,
 		PushKeyID:       args.PushKeyID,
 		MergeProposalID: args.MergeID,

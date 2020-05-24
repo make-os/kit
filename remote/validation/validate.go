@@ -49,15 +49,6 @@ func ValidateChange(
 	isIssueRef := plumbing2.IsIssueReferencePath(refname)
 	isMergeRequestRef := plumbing2.IsMergeRequestReferencePath(refname)
 
-	// Handle branch validation
-	if plumbing2.IsBranch(refname) && !isIssueRef {
-		commit, err := localRepo.CommitObject(plumbing.NewHash(change.Item.GetData()))
-		if err != nil {
-			return errors.Wrap(err, "unable to get commit object")
-		}
-		return CheckCommit(commit, detail, getPushKey)
-	}
-
 	// Handle issue or merge request branch validation.
 	if plumbing2.IsBranch(refname) && (isIssueRef || isMergeRequestRef) {
 		commit, err := localRepo.WrappedCommitObject(plumbing.NewHash(change.Item.GetData()))
@@ -72,6 +63,15 @@ func ValidateChange(
 			CheckCommit:     CheckCommit,
 			CheckPostCommit: CheckPostCommit,
 		})
+	}
+
+	// Handle regular branch validation
+	if plumbing2.IsBranch(refname) {
+		commit, err := localRepo.CommitObject(plumbing.NewHash(change.Item.GetData()))
+		if err != nil {
+			return errors.Wrap(err, "unable to get commit object")
+		}
+		return CheckCommit(commit, detail, getPushKey)
 	}
 
 	// Handle tag validation

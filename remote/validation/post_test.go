@@ -1,8 +1,10 @@
 package validation_test
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
@@ -17,7 +19,6 @@ import (
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -420,195 +421,283 @@ var _ = Describe("Validation", func() {
 
 	Describe(".CheckPostBody", func() {
 		var commit *object.Commit
+		var wc *repo.WrappedCommit
 
 		BeforeEach(func() {
 			commit = &object.Commit{Hash: plumbing2.MakeCommitHash("hash")}
+			wc = repo.WrapCommit(commit)
 		})
 
-		It("should return error when an unexpected field exists", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"field1": "xyz"}, nil)
+		It("should return error when an unexpected issue field exists", func() {
+			ref := plumbing2.MakeIssueReference(1)
+			err := validation.CheckPostBody(nil, ref, wc, true, map[string]interface{}{"field1": "xyz"}, nil)
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.field1, msg:unknown field"))
+			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.field1, msg:unexpected field"))
 		})
 
-		It("should return error when an 'title' value is not string", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": 1}, nil)
+		It("should return error when an issue reference type is unknown", func() {
+			ref := "refs/heads/unknown"
+			err := validation.CheckPostBody(nil, ref, repo.WrapCommit(commit), true, map[string]interface{}{"field1": "xyz"}, nil)
 			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:expected a string value"))
+			Expect(err.Error()).To(MatchRegexp("unsupported post type"))
 		})
 
-		It("should return error when an 'replyTo' value is not string", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"replyTo": 1}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:expected a string value"))
+		Context("common post body check", func() {
+			var ref = plumbing2.MakeIssueReference(1)
+
+			It("should return error when 'title' is not string", func() {
+				fm := map[string]interface{}{"title": 123}
+				err := validation.CheckPostBody(nil, ref, wc, false, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:expected a string value"))
+			})
+
+			It("should return error when 'replyTo' is not string", func() {
+				fm := map[string]interface{}{"replyTo": 123}
+				err := validation.CheckPostBody(nil, ref, wc, false, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:expected a string value"))
+			})
+
+			It("should return error when 'reactions' is not string", func() {
+				fm := map[string]interface{}{"reactions": "smile"}
+				err := validation.CheckPostBody(nil, ref, wc, false, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.reactions," +
+					" msg:expected a list of string values"))
+			})
+
+			It("should return error when 'replyTo' is set in a new reference", func() {
+				fm := map[string]interface{}{"replyTo": "0x123"}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, " +
+					"msg:not expected in a new post commit"))
+			})
+
+			It("should return error when 'title' is set in a reply", func() {
+				fm := map[string]interface{}{"replyTo": "0x123", "title": "a title"}
+				err := validation.CheckPostBody(nil, ref, wc, false, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, " +
+					"msg:title is not required when replying"))
+			})
+
+			It("should return error when 'title' is not provided in new reference", func() {
+				fm := map[string]interface{}{}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is required"))
+			})
+
+			It("should return error when 'title' is provided but reference is not new", func() {
+				fm := map[string]interface{}{"title": "a title"}
+				err := validation.CheckPostBody(nil, ref, wc, false, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is not required when replying"))
+			})
+
+			It("should return error when 'title' exceeds max. characters", func() {
+				fm := map[string]interface{}{"title": strings.Repeat("a", validation.MaxIssueTitleLen+1)}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is too long; cannot exceed .* characters"))
+			})
+
+			It("should return error when 'replyTo' length is too low or too high", func() {
+				fm := map[string]interface{}{"replyTo": "0x1"}
+				err := validation.CheckPostBody(nil, ref, wc, false, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:invalid hash value"))
+				fm = map[string]interface{}{"replyTo": strings.Repeat("a", 41)}
+				err = validation.CheckPostBody(nil, ref, wc, false, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:invalid hash value"))
+			})
+
+			It("should return error when 'replyTo' hash does not point to an ancestor", func() {
+				ancestor := "hash_of_ancestor"
+				mockRepo.EXPECT().IsAncestor(ancestor, commit.Hash.String()).Return(fmt.Errorf("error"))
+				fm := map[string]interface{}{"replyTo": "hash_of_ancestor"}
+				err := validation.CheckPostBody(mockRepo, ref, wc, false, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:hash is not a known ancestor"))
+			})
+
+			It("should return error when 'reaction' values exceed max", func() {
+				fm := map[string]interface{}{"reactions": []interface{}{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"}}
+				err := validation.CheckPostBody(nil, ref, wc, false, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.reactions, msg:too many reactions; cannot exceed 10"))
+			})
+
+			It("should return error when 'reaction' does not contain string entries", func() {
+				fm := map[string]interface{}{"reactions": []interface{}{1}}
+				err := validation.CheckPostBody(nil, ref, wc, false, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.reactions, msg:expected a string list"))
+			})
+
+			It("should return error when 'reaction' includes an unknown reaction", func() {
+				fm := map[string]interface{}{"reactions": []interface{}{"unknown_reaction"}}
+				err := validation.CheckPostBody(nil, ref, wc, false, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("index:0, field:<commit#.*>.reactions, msg:reaction 'unknown_reaction' is unknown"))
+			})
+
+			It("should return error when reference is new and 'content' is unset", func() {
+				fm := map[string]interface{}{"title": "a title"}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.content, msg:post content is required"))
+			})
+
+			It("should return error when reference is new and 'content' exceeds max", func() {
+				fm := map[string]interface{}{"title": "a title"}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, bytes.Repeat([]byte{1}, validation.MaxIssueContentLen+1))
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.content, msg:post content length exceeded max character limit"))
+			})
+
+			It("should return nil on success", func() {
+				fm := map[string]interface{}{"title": "a title"}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).To(BeNil())
+			})
 		})
 
-		It("should return error when a 'labels' value is not a string slice", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"labels": []int{1}}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.labels, msg:expected a list of string values"))
+		Context("issue post body check", func() {
+			var ref = plumbing2.MakeIssueReference(1)
+
+			It("should return error when 'labels' is not a list of strings", func() {
+				fm := map[string]interface{}{"title": "title", "labels": "help,feature"}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.labels, msg:expected a list of string values"))
+			})
+
+			It("should return error when 'assignees' is not a list of strings", func() {
+				fm := map[string]interface{}{"title": "title", "assignees": "help,feature"}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.assignees, msg:expected a list of string values"))
+			})
+
+			It("should return error when 'labels' entries exceeded max", func() {
+				fm := map[string]interface{}{"title": "title", "labels": []interface{}{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"}}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.labels, msg:too many labels; cannot exceed 10"))
+			})
+
+			It("should return error when 'labels' entry type is not string", func() {
+				fm := map[string]interface{}{"title": "title", "labels": []interface{}{1}}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.labels, msg:expected a string list"))
+			})
+
+			It("should return error when 'labels' entry is not a valid label name", func() {
+				fm := map[string]interface{}{"title": "title", "labels": []interface{}{"&&bad_label"}}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("index:0, field:<commit#.*>.labels, msg:invalid " +
+					"identifier; only alphanumeric, _, and - characters are allowed"))
+			})
+
+			It("should return error when 'assignees' entries exceeded max", func() {
+				fm := map[string]interface{}{"title": "title", "assignees": []interface{}{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"}}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.assignees, msg:too many assignees; cannot exceed 10"))
+			})
+
+			It("should return error when 'assignees' entry type is not string", func() {
+				fm := map[string]interface{}{"title": "title", "assignees": []interface{}{1}}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.assignees, msg:expected a string list"))
+			})
+
+			It("should return error when 'assignees' entry is not a push key", func() {
+				fm := map[string]interface{}{"title": "title", "assignees": []interface{}{"invalid_key"}}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("index:0, field:<commit#.*>.assignees, msg:invalid push key ID"))
+			})
 		})
 
-		It("should return error when a 'labels' are not valid", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true,
-				map[string]interface{}{
-					"title":  "title here",
-					"labels": []interface{}{"bad_*la%bel"},
-				}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#5efba81>.labels, msg:invalid characters in " +
-				"identifier. Only alphanumeric, _, and - chars are allowed, " +
-				"but _, - cannot be first chars"))
-		})
+		Context("merge request post body check", func() {
+			var ref = plumbing2.MakeMergeRequestReference(1)
 
-		It("should return error when an 'assignees' value is not a string slice", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"assignees": []int{1}}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.assignees, msg:expected a list of string values"))
-		})
+			It("should return error when 'base' is not a string", func() {
+				fm := map[string]interface{}{"title": "title", "base": 123}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.base, msg:expected a string value"))
+			})
 
-		It("should return error when a 'reactions' value is not a string slice", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"reactions": []int{1}}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.reactions, msg:expected a list of string values"))
-		})
+			It("should return error when 'baseHash' is not a string", func() {
+				fm := map[string]interface{}{"title": "title", "baseHash": 123}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.baseHash, msg:expected a string value"))
+			})
 
-		It("should return error when a 'replyTo' field is set and issue commit is new", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"replyTo": "xyz"}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:not expected in a new post commit"))
-		})
+			It("should return error when 'target' is not a string", func() {
+				fm := map[string]interface{}{"title": "title", "target": 123}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.target, msg:expected a string value"))
+			})
 
-		It("should return error when issue is not new, a 'replyTo' field is set and title is set", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": "xyz", "title": "abc"}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is not required when replying"))
-		})
+			It("should return error when 'targetHash' is not a string", func() {
+				fm := map[string]interface{}{"title": "title", "targetHash": 123}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.targetHash, msg:expected a string value"))
+			})
 
-		It("should return error when issue is new and title is not set", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is required"))
-		})
+			It("should return error when 'base' branch is unset", func() {
+				fm := map[string]interface{}{"title": "title", "base": ""}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.base, msg:base branch name is required"))
+			})
 
-		It("should return error when issue is not new and title is set", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), false, map[string]interface{}{"title": "xyz"}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is not required for comment commit"))
-		})
+			It("should return error when 'baseHash' is set but invalid", func() {
+				fm := map[string]interface{}{"title": "title", "base": "master", "baseHash": "0x_invalid"}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.baseHash, msg:base branch hash is not valid"))
+			})
 
-		It("should return error when title length is greater than max.", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": util.RandString(validation.MaxIssueTitleLen + 1)}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.title, msg:title is too long and cannot exceed 256 characters"))
-		})
+			It("should return error when 'target' branch is unset", func() {
+				fm := map[string]interface{}{"title": "title", "base": "master", "target": ""}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.target, msg:target branch name is required"))
+			})
 
-		It("should return error when replyTo value has length < 4 or > 40", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": "abc"}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:invalid hash value"))
+			It("should return error when 'targetHash' is unset", func() {
+				fm := map[string]interface{}{"title": "title", "base": "master", "target": "dev", "targetHash": ""}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.targetHash, msg:target branch hash is required"))
+			})
 
-			err = validation.CheckPostBody(nil, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": util.RandString(41)}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:invalid hash value"))
-		})
+			It("should return error when 'targetHash' is not valid", func() {
+				fm := map[string]interface{}{"title": "title", "base": "master", "target": "dev", "targetHash": "0x_invalid"}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.targetHash, msg:target branch hash is not valid"))
+			})
 
-		It("should return error when replyTo hash is not an ancestor", func() {
-			replyTo := plumbing2.MakeCommitHash("hash").String()
-			mockRepo := mocks.NewMockLocalRepo(ctrl)
-			mockRepo.EXPECT().IsAncestor(commit.Hash.String(), replyTo).Return(fmt.Errorf("error"))
-			err := validation.CheckPostBody(mockRepo, repo.WrapCommit(commit), false, map[string]interface{}{"replyTo": replyTo}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.replyTo, msg:hash is not a known ancestor"))
-		})
-
-		It("should return error when reactions field is not slice of string", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
-				"title":     util.RandString(10),
-				"reactions": []interface{}{1, 2, 3},
-			}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.reactions, msg:expected a string list"))
-		})
-
-		It("should return error when reactions exceed max", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
-				"title":     util.RandString(10),
-				"reactions": []interface{}{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"},
-			}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.reactions, msg:too many reactions. Cannot exceed 10"))
-		})
-
-		It("should return error when a reaction is unknown", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
-				"title":     util.RandString(10),
-				"reactions": []interface{}{"unknown"},
-			}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.reactions, msg:unknown reaction"))
-		})
-
-		It("should return error when labels exceed max", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
-				"title":  util.RandString(10),
-				"labels": []interface{}{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"},
-			}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.labels, msg:too many labels. Cannot exceed 10"))
-		})
-
-		It("should return error when labels does not include string values", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
-				"title":  util.RandString(10),
-				"labels": []interface{}{1, 2},
-			}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.labels, msg:expected a string list"))
-		})
-
-		It("should return error when assignees does not include string values", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
-				"title":     util.RandString(10),
-				"assignees": []interface{}{1, 2},
-			}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.assignees, msg:expected a string list"))
-		})
-
-		It("should return error when assignees exceed max", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
-				"title":     util.RandString(10),
-				"assignees": []interface{}{"a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k"},
-			}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.assignees, msg:too many assignees. Cannot exceed 10"))
-		})
-
-		It("should return error when assignees includes invalid push keys", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{
-				"title":     util.RandString(10),
-				"assignees": []interface{}{"invalid_push_key"},
-			}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("index:0, field:<commit#.*>.assignees, msg:invalid push key ID"))
-		})
-
-		It("should return error when issue is new but content is unset", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": util.RandString(10)}, nil)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.content, msg:post commit content is required"))
-		})
-
-		It("should return error when content surpassed max. limit", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": util.RandString(10)}, util.RandBytes(validation.MaxIssueContentLen+1))
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.content, msg:post commit content length exceeded max character limit"))
-		})
-
-		It("should return no error when fields are acceptable", func() {
-			err := validation.CheckPostBody(nil, repo.WrapCommit(commit), true, map[string]interface{}{"title": util.RandString(10)}, []byte("abc"))
-			Expect(err).To(BeNil())
+			It("should return no error when successful", func() {
+				fm := map[string]interface{}{"title": "title", "base": "master", "target": "dev", "targetHash": "7f92315bdc59a859aefd0d932173cd00fd1ec310"}
+				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
+				Expect(err).To(BeNil())
+			})
 		})
 	})
 })

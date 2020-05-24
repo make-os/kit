@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jinzhu/copier"
 	"github.com/pkg/errors"
 	"github.com/stretchr/objx"
 	"github.com/thoas/go-funk"
@@ -93,14 +94,7 @@ func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *Validat
 		// as the one that can change the reference state, we do this for only the latest commit.
 		isRecentCommit := postCommit.Hash.String() == args.Change.Item.GetData()
 		if isRecentCommit {
-			data := args.TxDetail.Data()
-			data.Close = post.Close
-			data.Assignees = post.Assignees
-			data.Labels = post.Labels
-			data.BaseBranch = post.BaseBranch
-			data.BaseBranchHash = post.BaseBranchHash
-			data.TargetBranch = post.TargetBranch
-			data.TargetBranchHash = post.TargetBranchHash
+			copier.Copy(args.TxDetail.Data(), post)
 		}
 
 		// When a reference exist and it is closed, the next pushed commit is expected
@@ -184,139 +178,131 @@ func CheckPostCommit(repo types.LocalRepo, commit types.Commit, args *CheckPostC
 	}
 
 	// Validate extracted front matter
-	if err = CheckPostBody(repo, commit, args.IsNew, cfm.FrontMatter, cfm.Content); err != nil {
+	if err = CheckPostBody(repo, args.Reference, commit, args.IsNew, cfm.FrontMatter, cfm.Content); err != nil {
 		return nil, err
 	}
 
 	return plumbing2.PostBodyFromContentFrontMatter(&cfm), nil
 }
 
-// CheckPostBody checks whether the front matter and content extracted from a post body is ok.
-// repo: The target repo
-// commit: The commit whose content needs to be checked.
-// isNew: indicates that the post reference is new.
-// fm: The front matter data.
-// content: The content from the post commit.
-//
-// Valid front matter fields:
-//  title: The title of the post (optional).
-//  labels: Labels categorize posts into arbitrary or conceptual units.
-//  replyTo: Indicates a post is a response an ancestor (a comment).
-//  assignees: List push keys assigned to the posts.
-func CheckPostBody(
+// CheckCommonPostBody performs sanity checks on common fields of a post body
+func CheckCommonPostBody(
 	repo types.LocalRepo,
 	commit types.Commit,
-	isNew bool,
+	isNewRef bool,
 	fm map[string]interface{},
 	content []byte) error {
 
-	commitHash := commit.GetHash().String()
-	var makeField = func(name string) string {
-		return fmt.Sprintf("<commit#%s>.%s", commitHash[:7], name)
-	}
-
-	// Ensure only valid fields are included
-	var validFields = []string{
-		"title",
-		"reactions",
-		"labels",
-		"replyTo",
-		"assignees",
-		"close"}
-	for k := range fm {
-		if !funk.ContainsString(validFields, k) {
-			return fe(-1, makeField(k), "unknown field")
-		}
-	}
+	var commitHash = commit.GetHash().String()
 
 	obj := objx.New(fm)
-
 	title := obj.Get("title")
 	if !title.IsNil() && !title.IsStr() {
-		return fe(-1, makeField("title"), "expected a string value")
+		return fe(-1, makeField("title", commitHash), "expected a string value")
 	}
 
 	replyTo := obj.Get("replyTo")
 	if !replyTo.IsNil() && !replyTo.IsStr() {
-		return fe(-1, makeField("replyTo"), "expected a string value")
+		return fe(-1, makeField("replyTo", commitHash), "expected a string value")
 	}
 
 	reactions := obj.Get("reactions")
 	if !reactions.IsNil() && !reactions.IsInterSlice() {
-		return fe(-1, makeField("reactions"), "expected a list of string values")
-	}
-
-	labels := obj.Get("labels")
-	if !labels.IsNil() && !labels.IsInterSlice() {
-		return fe(-1, makeField("labels"), "expected a list of string values")
-	}
-
-	assignees := obj.Get("assignees")
-	if !assignees.IsNil() && !assignees.IsInterSlice() {
-		return fe(-1, makeField("assignees"), "expected a list of string values")
+		return fe(-1, makeField("reactions", commitHash), "expected a list of string values")
 	}
 
 	// Ensure post commit does not have a replyTo value if the post reference is new
-	if isNew && len(replyTo.String()) > 0 {
-		return fe(-1, makeField("replyTo"), "not expected in a new post commit")
+	if isNewRef && len(replyTo.String()) > 0 {
+		return fe(-1, makeField("replyTo", commitHash), "not expected in a new post commit")
 	}
 
 	// Ensure title is unset when replyTo is set
 	if len(replyTo.String()) > 0 && len(title.String()) > 0 {
-		return fe(-1, makeField("title"), "title is not required when replying")
+		return fe(-1, makeField("title", commitHash), "title is not required when replying")
 	}
 
 	// Ensure title is provided if the post reference is new
-	if isNew && len(title.String()) == 0 {
-		return fe(-1, makeField("title"), "title is required")
-	} else if !isNew && len(title.String()) > 0 {
-		return fe(-1, makeField("title"), "title is not required for comment commit")
+	if isNewRef && len(title.String()) == 0 {
+		return fe(-1, makeField("title", commitHash), "title is required")
+	} else if !isNewRef && len(title.String()) > 0 {
+		return fe(-1, makeField("title", commitHash), "title is not required when replying")
 	}
 
 	// Title cannot exceed max.
 	if len(title.String()) > MaxIssueTitleLen {
-		return fe(-1, makeField("title"), "title is too long and cannot exceed 256 characters")
+		msg := fmt.Sprintf("title is too long; cannot exceed %d characters", MaxIssueTitleLen)
+		return fe(-1, makeField("title", commitHash), msg)
 	}
 
 	// ReplyTo must have len >= 4 or < 40
 	replyToVal := replyTo.String()
 	if len(replyToVal) > 0 && (len(replyToVal) < 4 || len(replyToVal) > 40) {
-		return fe(-1, makeField("replyTo"), "invalid hash value")
+		return fe(-1, makeField("replyTo", commitHash), "invalid hash value")
 	}
 
 	// When ReplyTo is set, ensure the post commit is a descendant of the replyTo
 	if len(replyToVal) > 0 {
 		if repo.IsAncestor(replyToVal, commit.GetHash().String()) != nil {
-			return fe(-1, makeField("replyTo"), "hash is not a known ancestor")
+			return fe(-1, makeField("replyTo", commitHash), "hash is not a known ancestor")
 		}
 	}
 
 	// Check reactions if set.
 	if val := reactions.InterSlice(); len(val) > 0 {
 		if len(val) > 10 {
-			return fe(-1, makeField("reactions"), "too many reactions. Cannot exceed 10")
+			return fe(-1, makeField("reactions", commitHash), "too many reactions; cannot exceed 10")
 		}
 		if !util.IsString(val[0]) {
-			return fe(-1, makeField("reactions"), "expected a string list")
+			return fe(-1, makeField("reactions", commitHash), "expected a string list")
 		}
 		for i, name := range reactions.InterSlice() {
 			if !util.IsEmojiValid(strings.TrimPrefix(name.(string), "-")) {
-				return fe(i, makeField("reactions"), "unknown reaction")
+				return fe(i, makeField("reactions", commitHash), "reaction '"+name.(string)+"' is unknown")
 			}
 		}
+	}
+
+	// Post commit content is required for a new post reference
+	if isNewRef && len(content) == 0 {
+		return fe(-1, makeField("content", commitHash), "post content is required")
+	}
+
+	// Post commit content cannot be greater than the maximum allowed
+	if len(content) > MaxIssueContentLen {
+		return fe(-1, makeField("content", commitHash), "post content "+
+			"length exceeded max character limit")
+	}
+
+	return nil
+}
+
+// CheckIssuePostBody performs sanity checks on fields of an issue post body
+func CheckIssuePostBody(commit types.Commit, fm map[string]interface{}) error {
+
+	commitHash := commit.GetHash().String()
+
+	obj := objx.New(fm)
+	labels := obj.Get("labels")
+	if !labels.IsNil() && !labels.IsInterSlice() {
+		return fe(-1, makeField("labels", commitHash), "expected a list of string values")
+	}
+
+	assignees := obj.Get("assignees")
+	if !assignees.IsNil() && !assignees.IsInterSlice() {
+		return fe(-1, makeField("assignees", commitHash), "expected a list of string values")
 	}
 
 	// Check labels if set.
 	if size := len(labels.InterSlice()); size > 0 {
 		if size > 10 {
-			return fe(-1, makeField("labels"), "too many labels. Cannot exceed 10")
+			return fe(-1, makeField("labels", commitHash), "too many labels; cannot exceed 10")
 		}
 		if !util.IsString(labels.InterSlice()[0]) {
-			return fe(-1, makeField("labels"), "expected a string list")
+			return fe(-1, makeField("labels", commitHash), "expected a string list")
 		}
 		for i, val := range labels.InterSlice() {
 			if err := util.IsValidNameNoLen(strings.TrimPrefix(val.(string), "-")); err != nil {
-				return fe(i, makeField("labels"), err.Error())
+				return fe(i, makeField("labels", commitHash), err.Error())
 			}
 		}
 	}
@@ -324,26 +310,125 @@ func CheckPostBody(
 	// Check assignees if set.
 	if val := assignees.InterSlice(); len(val) > 0 {
 		if len(val) > 10 {
-			return fe(-1, makeField("assignees"), "too many assignees. Cannot exceed 10")
+			return fe(-1, makeField("assignees", commitHash), "too many assignees; cannot exceed 10")
 		}
 		if !util.IsString(val[0]) {
-			return fe(-1, makeField("assignees"), "expected a string list")
+			return fe(-1, makeField("assignees", commitHash), "expected a string list")
 		}
 		for i, assignee := range val {
 			if !util.IsValidPushAddr(strings.TrimPrefix(assignee.(string), "-")) {
-				return fe(i, makeField("assignees"), "invalid push key ID")
+				return fe(i, makeField("assignees", commitHash), "invalid push key ID")
 			}
 		}
 	}
 
-	// Post commit content is required for a new post reference
-	if isNew && len(content) == 0 {
-		return fe(-1, makeField("content"), "post commit content is required")
+	return nil
+}
+
+// CheckMergeRequestPostBody performs sanity checks on fields of an merge request post body
+func CheckMergeRequestPostBody(
+	commit types.Commit,
+	fm map[string]interface{}) error {
+
+	var commitHash = commit.GetHash().String()
+
+	obj := objx.New(fm)
+	base := obj.Get("base")
+	if !base.IsNil() && !base.IsStr() {
+		return fe(-1, makeField("base", commitHash), "expected a string value")
 	}
 
-	// Post commit content cannot be greater than the maximum allowed
-	if len(content) > MaxIssueContentLen {
-		return fe(-1, makeField("content"), "post commit content length exceeded max character limit")
+	baseHash := obj.Get("baseHash")
+	if !baseHash.IsNil() && !baseHash.IsStr() {
+		return fe(-1, makeField("baseHash", commitHash), "expected a string value")
+	}
+
+	target := obj.Get("target")
+	if !target.IsNil() && !target.IsStr() {
+		return fe(-1, makeField("target", commitHash), "expected a string value")
+	}
+
+	targetHash := obj.Get("targetHash")
+	if !targetHash.IsNil() && !targetHash.IsStr() {
+		return fe(-1, makeField("targetHash", commitHash), "expected a string value")
+	}
+
+	if base.String() == "" {
+		return fe(-1, makeField("base", commitHash), "base branch name is required")
+	}
+
+	if val := baseHash.String(); len(val) > 0 && len(val) != 40 {
+		return fe(-1, makeField("baseHash", commitHash), "base branch hash is not valid")
+	}
+
+	if target.String() == "" {
+		return fe(-1, makeField("target", commitHash), "target branch name is required")
+	}
+
+	th := targetHash.String()
+	if th == "" {
+		return fe(-1, makeField("targetHash", commitHash), "target branch hash is required")
+	} else if len(th) != 40 {
+		return fe(-1, makeField("targetHash", commitHash), "target branch hash is not valid")
+	}
+
+	return nil
+}
+
+var makeField = func(name, commitHash string) string {
+	return fmt.Sprintf("<commit#%s>.%s", commitHash[:7], name)
+}
+
+// CheckPostBody checks whether the front matter and content extracted from a post body is ok.
+// repo: The target repo
+// commit: The commit whose content needs to be checked.
+// isNewRef: indicates that the post reference is new.
+// fm: The front matter data.
+// content: The content from the post commit.
+func CheckPostBody(
+	repo types.LocalRepo,
+	reference string,
+	commit types.Commit,
+	isNewRef bool,
+	fm map[string]interface{},
+	content []byte) error {
+
+	var commonFields = []string{"title", "reactions", "replyTo", "close"}
+	var mergeReqFields = []string{"base", "baseHash", "target", "targetHash"}
+	var issueFields = []string{"labels", "assignees"}
+	var allowedFields []string
+	var isIssuePost = plumbing2.IsIssueReference(reference)
+	var isMergeReqPost = plumbing2.IsMergeRequestReference(reference)
+
+	// Check whether the fields are allowed for the type of post reference
+	if isIssuePost {
+		allowedFields = append(allowedFields, append(commonFields, issueFields...)...)
+	} else if isMergeReqPost {
+		allowedFields = append(allowedFields, append(commonFields, mergeReqFields...)...)
+	} else {
+		return fmt.Errorf("unsupported post type")
+	}
+
+	// Ensure only valid fields are included
+	for k := range fm {
+		if !funk.ContainsString(allowedFields, k) {
+			return fe(-1, makeField(k, commit.GetHash().String()), "unexpected field")
+		}
+	}
+
+	// Perform common checks
+	if err := CheckCommonPostBody(repo, commit, isNewRef, fm, content); err != nil {
+		return err
+	}
+
+	// Perform checks for issue post
+	if isIssuePost {
+		return CheckIssuePostBody(commit, fm)
+	}
+
+	// Perform checks for merge request post
+	if isMergeReqPost {
+		return CheckMergeRequestPostBody(commit, fm)
 	}
 
 	return nil

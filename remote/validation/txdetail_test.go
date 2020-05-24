@@ -103,6 +103,13 @@ var _ = Describe("Validation", func() {
 			Expect(err.Error()).To(Equal("index:0, field:fee, msg:fee is required"))
 		})
 
+		It("should return error when value is set for non-merge request reference", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: "1", Value: "1", Reference: "refs/heads/master"}
+			err := validation.CheckTxDetailSanity(detail, 0)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("index:0, field:value, msg:field not expected"))
+		})
+
 		It("should return error when fee is not numeric", func() {
 			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 1, Fee: "1_invalid"}
 			err := validation.CheckTxDetailSanity(detail, 0)

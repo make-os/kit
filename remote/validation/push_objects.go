@@ -126,6 +126,15 @@ func CheckPushedReferenceConsistency(
 	name, nonce := ref.Name, ref.Nonce
 	oldHashIsZero := plumbing.NewHash(ref.OldHash).IsZero()
 
+	// For new merge request reference, ensure there is no merge request proposal with
+	// an ID that matches the reference's ID
+	// if plumbing2.IsMergeRequestReference(name) && !targetRepo.GetState().References.Has(name) {
+	// 	id := plumbing2.GetReferenceShortName(name)
+	// 	if targetRepo.GetState().Proposals.Has(mergerequest.MakeMergeRequestID(id)) {
+	// 		return util.FieldError("references", "merge request with matching ID already exist")
+	// 	}
+	// }
+
 	// We need to check if the reference exists in the repo.
 	// Ignore references whose old hash is a 0-hash, these are new
 	// references and as such we don't expect to find it in the repo.
@@ -173,6 +182,7 @@ func GetTxDetailsFromNote(note types.PushNotice, targetRefs ...string) (details 
 			RepoNamespace:   note.GetNamespace(),
 			Reference:       ref.Name,
 			Fee:             ref.Fee,
+			Value:           ref.Value,
 			Nonce:           note.GetPusherAccountNonce(),
 			PushKeyID:       crypto.BytesToPushKeyID(note.GetPusherKeyID()),
 			Signature:       base58.Encode(ref.PushSig),
@@ -251,7 +261,7 @@ func CheckPushNoteConsistency(note types.PushNotice, logic core.Logic) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
-	if err = logic.DrySend(note.GetPusherAddress(), "0", note.GetFee(),
+	if err = logic.DrySend(note.GetPusherAddress(), note.GetValue(), note.GetFee(),
 		note.GetPusherAccountNonce(), uint64(bi.Height)); err != nil {
 		return err
 	}

@@ -11,6 +11,10 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
+var (
+	fe = util.FieldError
+)
+
 // CoinTransferContract is a system contract for handling credit and debit
 // operation from between user accounts and/or repo accounts.
 // CoinTransferContract implements SystemContract.
@@ -137,24 +141,18 @@ func (c *CoinTransferContract) DryExec(sender interface{}) error {
 	acctKeeper := c.AccountKeeper()
 	senderAcct := acctKeeper.Get(util.Address(senderAddr))
 
-	field := "value"
-	if c.tx.Value == "0" && c.tx.Fee != "0" {
-		field = "fee"
-	}
-
 	// Ensure the transaction nonce is the next expected nonce
+	field := "value+fee"
 	expectedNonce := senderAcct.Nonce + 1
 	if expectedNonce != c.tx.Nonce {
-		return util.FieldError(field, fmt.Sprintf("tx has invalid nonce (%d); expected (%d)",
-			c.tx.Nonce, expectedNonce))
+		return fe(field, fmt.Sprintf("tx has invalid nonce (%d); expected (%d)", c.tx.Nonce, expectedNonce))
 	}
 
 	// Ensure sender has enough spendable balance to pay transfer value + fee
 	spendAmt := c.tx.Value.Decimal().Add(c.tx.Fee.Decimal())
 	senderBal := senderAcct.GetSpendableBalance(c.chainHeight).Decimal()
 	if !senderBal.GreaterThanOrEqual(spendAmt) {
-		msg := fmt.Sprintf("sender's spendable account balance is insufficient")
-		return util.FieldError(field, msg)
+		return fe(field, fmt.Sprintf("sender's spendable account balance is insufficient"))
 	}
 
 	return nil

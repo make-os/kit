@@ -47,7 +47,7 @@ func (c *UpdateRepoContract) Exec() error {
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
-	proposal := proposals.MakeProposal(spk, repo, c.tx.ProposalID, c.tx.Value, c.chainHeight)
+	proposal := proposals.MakeProposal(spk.Addr().String(), repo, c.tx.ProposalID, c.tx.Value, c.chainHeight)
 	proposal.Action = txns.TxTypeRepoProposalUpdate
 	proposal.ActionData[constants.ActionDataKeyCFG] = util.ToBytes(c.tx.Config)
 
@@ -64,7 +64,7 @@ func (c *UpdateRepoContract) Exec() error {
 		Contracts:   *c.contracts,
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to apply proposal")
+		return errors.Wrap(err, common.ErrFailedToApplyProposal)
 	} else if applied {
 		goto update
 	}
@@ -72,7 +72,7 @@ func (c *UpdateRepoContract) Exec() error {
 	// Index the proposal against its end height so it
 	// can be tracked and finalized at that height.
 	if err = repoKeeper.IndexProposalEnd(c.tx.RepoName, proposal.ID, proposal.EndAt); err != nil {
-		return errors.Wrap(err, "failed to index proposal against end height")
+		return errors.Wrap(err, common.ErrFailedToIndexProposal)
 	}
 
 update:

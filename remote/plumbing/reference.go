@@ -2,6 +2,7 @@ package plumbing
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -31,6 +32,15 @@ func IsIssueReferencePath(name string) bool {
 func IsMergeRequestReference(name string) bool {
 	re := "^refs/heads/%s/[1-9]+([0-9]+)?$"
 	return regexp.MustCompile(fmt.Sprintf(re, MergeRequestBranchPrefix)).MatchString(name)
+}
+
+// GetReferenceShortName returns the short name of a reference
+func GetReferenceShortName(name string) string {
+	if IsMergeRequestReference(name) || IsIssueReference(name) {
+		_, file := filepath.Split(name)
+		return file
+	}
+	return plumbing.ReferenceName(name).Short()
 }
 
 // IsMergeRequestReferencePath checks if the specified reference matches a merge request reference path

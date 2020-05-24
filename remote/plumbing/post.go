@@ -385,22 +385,22 @@ func PostBodyFromContentFrontMatter(cfm *pageparser.ContentFrontMatter) *PostBod
 	b.Content = cfm.Content
 	b.Title = ob.Get("title").String()
 	b.ReplyTo = ob.Get("replyTo").String()
+	b.BaseBranch = ob.Get("base").String()
+	b.BaseBranchHash = ob.Get("baseHash").String()
+	b.TargetBranch = ob.Get("target").String()
+	b.TargetBranchHash = ob.Get("targetHash").String()
+	b.Reactions = cast.ToStringSlice(ob.Get("reactions").InterSlice())
 
 	cls := ob.Get("close").Bool()
 	b.Close = &cls
 
-	b.Reactions = cast.ToStringSlice(ob.Get("reactions").
-		StringSlice(cast.ToStringSlice(ob.Get("reactions").InterSlice())))
-
 	if ob.Has("labels") {
-		labels := cast.ToStringSlice(ob.Get("labels").
-			StringSlice(cast.ToStringSlice(ob.Get("labels").InterSlice())))
+		labels := cast.ToStringSlice(ob.Get("labels").InterSlice())
 		b.Labels = &labels
 	}
 
 	if ob.Has("assignees") {
-		assignees := cast.ToStringSlice(ob.Get("assignees").
-			StringSlice(cast.ToStringSlice(ob.Get("assignees").InterSlice())))
+		assignees := cast.ToStringSlice(ob.Get("assignees").InterSlice())
 		b.Assignees = &assignees
 	}
 
