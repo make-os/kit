@@ -47,7 +47,7 @@ func (c *UpdateRepoContract) Exec() error {
 
 	// Create a proposal
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
-	proposal := proposals.MakeProposal(spk.Addr().String(), repo, c.tx.ProposalID, c.tx.Value, c.chainHeight)
+	proposal := proposals.MakeProposal(spk.Addr().String(), repo, c.tx.ID, c.tx.Value, c.chainHeight)
 	proposal.Action = txns.TxTypeRepoProposalUpdate
 	proposal.ActionData[constants.ActionDataKeyCFG] = util.ToBytes(c.tx.Config)
 

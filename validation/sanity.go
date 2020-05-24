@@ -581,7 +581,7 @@ func CheckTxRepoProposalUpsertOwner(tx *txns.TxRepoProposalUpsertOwner, index in
 		return err
 	}
 
-	if err := checkProposalID(tx.ProposalID, index); err != nil {
+	if err := checkProposalID(tx.ID, index); err != nil {
 		return err
 	}
 
@@ -724,7 +724,7 @@ func CheckTxRepoProposalUpdate(tx *txns.TxRepoProposalUpdate, index int) error {
 		return err
 	}
 
-	if err := checkProposalID(tx.ProposalID, index); err != nil {
+	if err := checkProposalID(tx.ID, index); err != nil {
 		return err
 	}
 
@@ -754,7 +754,7 @@ func CheckTxRepoProposalRegisterPushKey(tx *txns.TxRepoProposalRegisterPushKey, 
 		return err
 	}
 
-	if err := checkProposalID(tx.ProposalID, index); err != nil {
+	if err := checkProposalID(tx.ID, index); err != nil {
 		return err
 	}
 

@@ -329,9 +329,9 @@ func (tx *TxValue) FromMap(data map[string]interface{}) (err error) {
 
 // TxProposalCommon describes proposal fields
 type TxProposalCommon struct {
-	RepoName   string      `json:"name" msgpack:"name" mapstructure:"name"`
-	Value      util.String `json:"value" msgpack:"value" mapstructure:"value"`
-	ProposalID string      `json:"id,omitempty" msgpack:"id" mapstructure:"id"`
+	RepoName string      `json:"name" msgpack:"name" mapstructure:"name"`
+	Value    util.String `json:"value" msgpack:"value" mapstructure:"value"`
+	ID       string      `json:"id,omitempty" msgpack:"id" mapstructure:"id"`
 }
 
 // FromMap populates fields from a map.
@@ -354,7 +354,7 @@ func (tx *TxProposalCommon) FromMap(data map[string]interface{}) (err error) {
 	// ProposalID: expects string type in map
 	if propIDVal := o.Get("id"); !propIDVal.IsNil() {
 		if propIDVal.IsStr() {
-			tx.ProposalID = propIDVal.Str()
+			tx.ID = propIDVal.Str()
 		} else {
 			return util.FieldError("id", fmt.Sprintf("invalid value type: has %T, "+
 				"wants string", propIDVal.Inter()))

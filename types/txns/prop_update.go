@@ -23,7 +23,7 @@ func NewBareRepoProposalUpdate() *TxRepoProposalUpdate {
 	return &TxRepoProposalUpdate{
 		TxCommon:         NewBareTxCommon(),
 		TxType:           &TxType{Type: TxTypeRepoProposalUpdate},
-		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: "", ProposalID: ""},
+		TxProposalCommon: &TxProposalCommon{Value: "0", RepoName: "", ID: ""},
 		Config:           make(map[string]interface{}),
 	}
 }
@@ -39,7 +39,7 @@ func (tx *TxRepoProposalUpdate) EncodeMsgpack(enc *msgpack.Encoder) error {
 		tx.Timestamp,
 		tx.SenderPubKey,
 		tx.RepoName,
-		tx.ProposalID,
+		tx.ID,
 		tx.Config)
 }
 
@@ -54,7 +54,7 @@ func (tx *TxRepoProposalUpdate) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&tx.Timestamp,
 		&tx.SenderPubKey,
 		&tx.RepoName,
-		&tx.ProposalID,
+		&tx.ID,
 		&tx.Config)
 }
 

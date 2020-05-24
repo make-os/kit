@@ -407,56 +407,57 @@ func CheckTxNamespaceDomainUpdateConsistency(
 // proposal transactions.
 func CheckProposalCommonConsistency(
 	proposalType types.TxCode,
-	txProposal *txns.TxProposalCommon,
+	prop *txns.TxProposalCommon,
 	txCommon *txns.TxCommon,
 	index int,
 	logic core.Logic,
 	currentHeight int64) (*state.Repository, error) {
 
 	// Find the repository
-	targetRepo := logic.RepoKeeper().Get(txProposal.RepoName, uint64(currentHeight))
-	if targetRepo.IsNil() {
+	repo := logic.RepoKeeper().Get(prop.RepoName, uint64(currentHeight))
+	if repo.IsNil() {
 		return nil, feI(index, "name", "repo not found")
 	}
 
 	// Ensure no proposal with matching ID exist
-	if targetRepo.Proposals.Get(txProposal.ProposalID) != nil {
+	if repo.Proposals.Get(prop.ID) != nil {
 		return nil, feI(index, "id", "proposal id has been used, choose another")
 	}
 
-	repoPropFee := decimal.NewFromFloat(targetRepo.Config.Governance.ProposalFee)
+	repoPropFee := repo.Config.Governance.ProposalFee
+	propFeeDec := decimal.NewFromFloat(repoPropFee)
 
 	// When the repo does not require a proposal deposit,
 	// ensure a proposal fee is not set.
-	if repoPropFee.Equal(decimal.Zero) &&
-		!txProposal.Value.Decimal().Equal(decimal.Zero) {
+	if propFeeDec.Equal(decimal.Zero) &&
+		!prop.Value.Decimal().Equal(decimal.Zero) {
 		return nil, feI(index, "value", "proposal fee is not required but was provided")
 	}
 
 	// When the repo does not support a fee deposit duration period,
 	// ensure the minimum fee was paid in the current transaction.
-	if targetRepo.Config.Governance.FeeDepositDurOfProposal == 0 {
-		if repoPropFee.GreaterThan(decimal.Zero) &&
-			txProposal.Value.Decimal().LessThan(repoPropFee) {
-			return nil, feI(index, "value", "proposal fee cannot be less than repo minimum")
+	if repo.Config.Governance.FeeDepositDurOfProposal == 0 {
+		if propFeeDec.GreaterThan(decimal.Zero) && prop.Value.Decimal().LessThan(propFeeDec) {
+			msg := fmt.Sprintf("proposal fee cannot be less than repo minimum (%f)", repoPropFee)
+			return nil, feI(index, "value", msg)
 		}
 	}
 
 	// Check if the sender is permitted to create the proposal.
 	// When proposal creator parameter is ProposalCreatorOwner, the sender is permitted only if they are an owner...
-	owner := targetRepo.Owners.Get(txCommon.GetFrom().String())
-	propCreator := targetRepo.Config.Governance.ProposalCreator
+	owner := repo.Owners.Get(txCommon.GetFrom().String())
+	propCreator := repo.Config.Governance.ProposalCreator
 	if propCreator == state.ProposalCreatorOwner && owner == nil {
 		return nil, feI(index, "senderPubKey", "sender is not permitted to create proposal")
 	}
 
 	pubKey, _ := crypto.PubKeyFromBytes(txCommon.GetSenderPubKey().Bytes())
-	if err := logic.DrySend(pubKey, txProposal.Value, txCommon.Fee,
+	if err := logic.DrySend(pubKey, prop.Value, txCommon.Fee,
 		txCommon.GetNonce(), uint64(currentHeight)); err != nil {
 		return nil, err
 	}
 
-	return targetRepo, nil
+	return repo, nil
 }
 
 // CheckTxRepoProposalUpsertOwnerConsistency performs consistency

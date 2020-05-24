@@ -1386,7 +1386,7 @@ var _ = Describe("TxValidator", func() {
 			tx = txns.NewBareRepoProposalUpsertOwner()
 			tx.Timestamp = time.Now().Unix()
 			tx.Value = "11"
-			tx.ProposalID = "123"
+			tx.ID = "123"
 		})
 
 		It("should return error when repo name is not provided", func() {
@@ -1404,7 +1404,7 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id is unset", func() {
 			tx.RepoName = "good-repo"
-			tx.ProposalID = ""
+			tx.ID = ""
 			err := validation.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, msg:proposal id is required"))
@@ -1412,7 +1412,7 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id is not valid", func() {
 			tx.RepoName = "good-repo"
-			tx.ProposalID = "abc123"
+			tx.ID = "abc123"
 			err := validation.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, msg:proposal id is not valid"))
@@ -1420,7 +1420,7 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id length exceeds max", func() {
 			tx.RepoName = "good-repo"
-			tx.ProposalID = "123456789"
+			tx.ID = "123456789"
 			err := validation.CheckTxRepoProposalUpsertOwner(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
@@ -1584,7 +1584,7 @@ var _ = Describe("TxValidator", func() {
 		BeforeEach(func() {
 			tx = txns.NewBareRepoProposalUpdate()
 			tx.Timestamp = time.Now().Unix()
-			tx.ProposalID = "123"
+			tx.ID = "123"
 		})
 
 		It("should return error when repo name is not provided", func() {
@@ -1602,7 +1602,7 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id is unset", func() {
 			tx.RepoName = "good-repo"
-			tx.ProposalID = ""
+			tx.ID = ""
 			err := validation.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, msg:proposal id is required"))
@@ -1610,7 +1610,7 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id is not valid", func() {
 			tx.RepoName = "good-repo"
-			tx.ProposalID = "abc123"
+			tx.ID = "abc123"
 			err := validation.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, msg:proposal id is not valid"))
@@ -1618,7 +1618,7 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id length exceeds max", func() {
 			tx.RepoName = "good-repo"
-			tx.ProposalID = "123456789"
+			tx.ID = "123456789"
 			err := validation.CheckTxRepoProposalUpdate(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
@@ -1758,7 +1758,7 @@ var _ = Describe("TxValidator", func() {
 		BeforeEach(func() {
 			tx = txns.NewBareRepoProposalRegisterPushKey()
 			tx.Timestamp = time.Now().Unix()
-			tx.ProposalID = "123"
+			tx.ID = "123"
 		})
 
 		It("should return error='type is invalid'", func() {
@@ -1783,7 +1783,7 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id is unset", func() {
 			tx.RepoName = "good-repo"
-			tx.ProposalID = ""
+			tx.ID = ""
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, msg:proposal id is required"))
@@ -1791,7 +1791,7 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id is not valid", func() {
 			tx.RepoName = "good-repo"
-			tx.ProposalID = "abc123"
+			tx.ID = "abc123"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, msg:proposal id is not valid"))
@@ -1799,7 +1799,7 @@ var _ = Describe("TxValidator", func() {
 
 		It("should return error when proposal id length exceeds max", func() {
 			tx.RepoName = "good-repo"
-			tx.ProposalID = "123456789"
+			tx.ID = "123456789"
 			err := validation.CheckTxRepoProposalRegisterPushKey(tx, -1)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))

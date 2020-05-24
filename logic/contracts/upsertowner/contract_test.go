@@ -81,7 +81,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 				logic.RepoKeeper().Update(repoName, repoUpd)
 				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpsertOwner{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
 					Addresses:        address,
 					Veto:             false,
 				}, 0).Exec()
@@ -131,7 +131,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpsertOwner{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
 					Addresses:        addresses,
 					Veto:             false,
 				}, 0).Exec()
@@ -183,7 +183,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpsertOwner{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
 					Addresses:        addresses,
 					Veto:             false,
 				}, 0).Exec()
@@ -242,7 +242,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 				err = upsertowner.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpsertOwner{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
 					Addresses:        addresses,
 					Veto:             false,
 				}, currentHeight).Exec()

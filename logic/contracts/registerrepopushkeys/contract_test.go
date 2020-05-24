@@ -76,7 +76,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 				err = registerrepopushkeys.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalRegisterPushKey{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &txns.TxProposalCommon{RepoName: repoName, Value: proposalFee, ProposalID: propID},
+					TxProposalCommon: &txns.TxProposalCommon{RepoName: repoName, Value: proposalFee, ID: propID},
 					FeeMode:          state.FeeModePusherPays,
 					FeeCap:           "0",
 					KeyIDs:           []string{"push1_abc"},

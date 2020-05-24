@@ -1456,9 +1456,9 @@ var _ = Describe("TxValidator", func() {
 				txProposal := &txns.TxProposalCommon{RepoName: "repo1"}
 				txCommon := &txns.TxCommon{}
 				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				txProposal.ProposalID = "1"
+				txProposal.ID = "1"
 				repo := state.BareRepository()
-				repo.Proposals[txProposal.ProposalID] = &state.RepoProposal{EndAt: 1000}
+				repo.Proposals[txProposal.ID] = &state.RepoProposal{EndAt: 1000}
 
 				bi := &core.BlockInfo{Height: 1}
 				mockRepoKeeper.EXPECT().Get(txProposal.RepoName, uint64(bi.Height)).Return(repo)
@@ -1473,7 +1473,7 @@ var _ = Describe("TxValidator", func() {
 
 		When("proposal does not need a proposal fee but it is set", func() {
 			BeforeEach(func() {
-				txProposal := &txns.TxProposalCommon{RepoName: "repo1", ProposalID: "1", Value: "10"}
+				txProposal := &txns.TxProposalCommon{RepoName: "repo1", ID: "1", Value: "10"}
 				txCommon := &txns.TxCommon{}
 				txCommon.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				repo := state.BareRepository()
@@ -1507,7 +1507,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("field:value, msg:proposal fee cannot be less than repo minimum"))
+				Expect(err).To(MatchError("field:value, msg:proposal fee cannot be less than repo minimum (100.000000)"))
 			})
 		})
 

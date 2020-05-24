@@ -81,7 +81,7 @@ var _ = Describe("UpdateRepoContract", func() {
 
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
 					Config:           config.ToMap(),
 				}, 0).Exec()
 				Expect(err).To(BeNil())
@@ -134,7 +134,7 @@ var _ = Describe("UpdateRepoContract", func() {
 				}
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
 					Config:           config.ToMap(),
 				}, 0).Exec()
 				Expect(err).To(BeNil())
@@ -186,7 +186,7 @@ var _ = Describe("UpdateRepoContract", func() {
 				}
 				err = updaterepo.NewContract(&contracts.SystemContracts).Init(logic, &txns.TxRepoProposalUpdate{
 					TxCommon:         &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey(), Fee: "1.5"},
-					TxProposalCommon: &txns.TxProposalCommon{ProposalID: propID, Value: proposalFee, RepoName: repoName},
+					TxProposalCommon: &txns.TxProposalCommon{ID: propID, Value: proposalFee, RepoName: repoName},
 					Config:           config.ToMap(),
 				}, 200).Exec()
 				Expect(err).To(BeNil())
