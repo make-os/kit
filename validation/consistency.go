@@ -1,4 +1,4 @@
-package validators
+package validation
 
 import (
 	"bytes"
@@ -449,15 +449,6 @@ func CheckProposalCommonConsistency(
 	if propCreator == state.ProposalCreatorOwner && owner == nil {
 		return nil, feI(index, "senderPubKey", "sender is not permitted to create proposal")
 	}
-
-	// ... But if proposal creator parameter is ProposalCreatorOwnerAndAnyForMerge, the sender is only permitted
-	// if there are an owner or this proposal is a merge request.
-	// TODO: may no longer be needed but state.ProposalCreatorOwnerAndAnyForMerge may be required.
-	// if propCreator == state.ProposalCreatorOwnerAndAnyForMerge && owner == nil {
-	// 	if proposalType != core.TxTypeRepoProposalMergeRequest {
-	// 		return nil, feI(index, "senderPubKey", "sender is not permitted to create proposal")
-	// 	}
-	// }
 
 	pubKey, _ := crypto.PubKeyFromBytes(txCommon.GetSenderPubKey().Bytes())
 	if err := logic.DrySend(pubKey, txProposal.Value, txCommon.Fee,

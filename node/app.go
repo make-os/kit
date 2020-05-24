@@ -18,7 +18,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
-	"gitlab.com/makeos/mosdef/validators"
+	"gitlab.com/makeos/mosdef/validation"
 )
 
 type ticketInfo struct {
@@ -36,7 +36,7 @@ type App struct {
 	db                        storage.Engine
 	logic                     core.AtomicLogic
 	cfg                       *config.AppConfig
-	validateTx                validators.ValidateTxFunc
+	validateTx                validation.ValidateTxFunc
 	curWorkingBlock           *core.BlockInfo
 	log                       logger.Logger
 	txIndex                   int
@@ -66,7 +66,7 @@ func NewApp(
 		curWorkingBlock: &core.BlockInfo{},
 		log:             cfg.G().Log.Module("app"),
 		ticketMgr:       ticketMgr,
-		validateTx:      validators.ValidateTx,
+		validateTx:      validation.ValidateTx,
 	}
 }
 
@@ -274,7 +274,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	resp := a.logic.ExecTx(&core.ExecArgs{
 		Tx:          tx,
 		ChainHeight: uint64(a.curWorkingBlock.Height - 1),
-		ValidateTx:  validators.ValidateTx,
+		ValidateTx:  validation.ValidateTx,
 	})
 
 	// If the transaction returns an ErrCodeReExecBlock code, discard current

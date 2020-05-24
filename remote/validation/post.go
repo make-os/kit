@@ -352,7 +352,7 @@ func CheckMergeRequestPostBodyConsistency(
 	isNewRef bool,
 	body map[string]interface{}) error {
 
-	// For non-new reference, get the merge request proposal and check if
+	// For a non-new reference, get the merge request proposal and check if
 	// it has been finalized; if it has, ensure the body does not include
 	// merge request fields since a finalized merge request cannot be changed.
 	if !isNewRef {

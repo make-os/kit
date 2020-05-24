@@ -703,7 +703,11 @@ var _ = Describe("Validation", func() {
 			When("merge request reference is not new", func() {
 				It("should not return error when merge fields (base, baseHash, target, targetHash) are unset", func() {
 					fm := map[string]interface{}{}
-					err := validation.CheckPostBody(nil, ref, wc, false, fm, []byte{1})
+					ref := plumbing2.MakeMergeRequestReference(1)
+					mockRepo.EXPECT().GetState().Return(&state.Repository{Proposals: map[string]*state.RepoProposal{
+						mergerequest.MakeMergeRequestID(1): {Outcome: state.ProposalOutcomeAccepted},
+					}})
+					err := validation.CheckPostBody(mockRepo, ref, wc, false, fm, []byte{1})
 					Expect(err).To(BeNil())
 				})
 			})

@@ -6,7 +6,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/validators"
+	"gitlab.com/makeos/mosdef/validation"
 
 	"gitlab.com/makeos/mosdef/types"
 
@@ -72,7 +72,7 @@ var _ = Describe("Transaction", func() {
 				resp := logic.ExecTx(&core.ExecArgs{
 					Tx:          tx,
 					ChainHeight: 1,
-					ValidateTx:  validators.ValidateTx,
+					ValidateTx:  validation.ValidateTx,
 				})
 				Expect(resp.Code).To(Equal(types.ErrCodeFailedDecode))
 				Expect(resp.Log).To(ContainSubstring("tx failed validation"))
@@ -99,7 +99,7 @@ var _ = Describe("Transaction", func() {
 				resp := logic.ExecTx(&core.ExecArgs{
 					Tx:          tx,
 					ChainHeight: 1,
-					ValidateTx:  validators.ValidateTx,
+					ValidateTx:  validation.ValidateTx,
 				})
 				Expect(resp.GetCode()).ToNot(BeZero())
 				Expect(resp.GetLog()).To(Equal("tx failed validation: field:type, msg:unsupported transaction type"))
@@ -112,7 +112,7 @@ var _ = Describe("Transaction", func() {
 				resp := logic.ExecTx(&core.ExecArgs{
 					Tx:          tx,
 					ChainHeight: 1,
-					ValidateTx:  validators.ValidateTx,
+					ValidateTx:  validation.ValidateTx,
 				})
 				Expect(resp.GetCode()).ToNot(BeZero())
 				Expect(resp.Log).To(Equal("tx failed validation: field:type, msg:type is invalid"))

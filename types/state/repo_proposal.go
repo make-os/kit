@@ -22,10 +22,9 @@ type ProposalCreatorType int
 const (
 	ProposalCreatorAny ProposalCreatorType = iota + 1
 	ProposalCreatorOwner
-	ProposalCreatorOwnerAndAnyForMerge
 )
 
-// ProposalFeeRefundType describes the type of refund scheme supported
+// ProposalFeeRefundType describes the typeof refund scheme supported
 type ProposalFeeRefundType int
 
 const (

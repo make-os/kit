@@ -1,4 +1,4 @@
-package validators
+package validation
 
 import (
 	"fmt"
@@ -236,8 +236,7 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 	// Ensure the proposal creator type is known
 	allowedPropCreator := []state.ProposalCreatorType{0,
 		state.ProposalCreatorAny,
-		state.ProposalCreatorOwner,
-		state.ProposalCreatorOwnerAndAnyForMerge}
+		state.ProposalCreatorOwner}
 	if !funk.Contains(allowedPropCreator, govCfg.ProposalCreator) {
 		return feI(index, "config.gov.propCreator", fmt.Sprintf("unknown value"))
 	}
@@ -713,51 +712,6 @@ func checkFeeCap(fee util.String, index int) error {
 	}
 	return nil
 }
-
-// TODO: check
-// // CheckTxRepoProposalMergeRequest performs sanity checks on TxRepoProposalMergeRequest
-// func CheckTxRepoProposalMergeRequest(tx *core.TxRepoProposalMergeRequest, index int) error {
-//
-// 	if err := checkType(tx.TxType, core.TxTypeRepoProposalMergeRequest, index); err != nil {
-// 		return err
-// 	}
-//
-// 	if err := checkRepoName(tx.RepoName, index); err != nil {
-// 		return err
-// 	}
-//
-// 	if err := checkProposalID(tx.ProposalID, index); err != nil {
-// 		return err
-// 	}
-//
-// 	if err := checkProposalFee(tx.Value, index); err != nil {
-// 		return err
-// 	}
-//
-// 	if tx.BaseBranch == "" {
-// 		return feI(index, "base", "base branch name is required")
-// 	}
-//
-// 	if len(tx.BaseBranchHash) > 0 && len(tx.BaseBranchHash) != 40 {
-// 		return feI(index, "baseHash", "base branch hash is not valid")
-// 	}
-//
-// 	if tx.TargetBranch == "" {
-// 		return feI(index, "target", "target branch name is required")
-// 	}
-//
-// 	if tx.TargetBranchHash == "" {
-// 		return feI(index, "targetHash", "target branch hash is required")
-// 	} else if len(tx.TargetBranchHash) != 40 {
-// 		return feI(index, "targetHash", "target branch hash is not valid")
-// 	}
-//
-// 	if err := checkCommon(tx, index); err != nil {
-// 		return err
-// 	}
-//
-// 	return nil
-// }
 
 // CheckTxRepoProposalUpdate performs sanity checks on TxRepoProposalUpdate
 func CheckTxRepoProposalUpdate(tx *txns.TxRepoProposalUpdate, index int) error {
