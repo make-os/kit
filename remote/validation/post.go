@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/objx"
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	rr "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/types"
@@ -21,6 +22,7 @@ var (
 	MaxIssueContentLen        = 1024 * 8 // 8KB
 	MaxIssueTitleLen          = 256
 	ErrCannotWriteToClosedRef = fmt.Errorf("cannot write to a closed reference")
+	mergeReqFields            = []string{"base", "baseHash", "target", "targetHash"}
 )
 
 // ValidatePostCommitArg contains arguments for ValidatePostCommit
@@ -325,14 +327,60 @@ func CheckIssuePostBody(commit types.Commit, fm map[string]interface{}) error {
 	return nil
 }
 
-// CheckMergeRequestPostBody performs sanity checks on fields of an merge request post body
+// CheckMergeRequestPostBody performs sanity and consistency checks on
+// fields of a merge request post body
 func CheckMergeRequestPostBody(
+	repo types.LocalRepo,
 	commit types.Commit,
-	fm map[string]interface{}) error {
+	reference string,
+	isNewRef bool,
+	body map[string]interface{}) error {
+	if err := checkMergeRequestPostBodySanity(commit, body, isNewRef); err != nil {
+		return err
+	}
+	if err := CheckMergeRequestPostBodyConsistency(repo, reference, isNewRef, body); err != nil {
+		return err
+	}
+	return nil
+}
+
+// CheckMergeRequestPostBodyConsistency performs consistency checks on
+// fields of a merge request post body against the network state
+func CheckMergeRequestPostBodyConsistency(
+	repo types.LocalRepo,
+	reference string,
+	isNewRef bool,
+	body map[string]interface{}) error {
+
+	// For non-new reference, get the merge request proposal and check if
+	// it has been finalized; if it has, ensure the body does not include
+	// merge request fields since a finalized merge request cannot be changed.
+	if !isNewRef {
+		id := mergerequest.MakeMergeRequestID(plumbing2.GetReferenceShortName(reference))
+		proposal := repo.GetState().Proposals.Get(id)
+		if proposal == nil {
+			return fmt.Errorf("merge request proposal not found") // should not happen
+		} else if proposal.IsFinalized() {
+			for _, f := range mergeReqFields {
+				if _, ok := body[f]; ok {
+					return fmt.Errorf("cannot update '%s' field of a finalized merge request proposal", f)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// CheckMergeRequestPostBody performs sanity checks on fields of an merge request post body
+func checkMergeRequestPostBodySanity(
+	commit types.Commit,
+	body map[string]interface{},
+	isNewRef bool) error {
 
 	var commitHash = commit.GetHash().String()
 
-	obj := objx.New(fm)
+	obj := objx.New(body)
 	base := obj.Get("base")
 	if !base.IsNil() && !base.IsStr() {
 		return fe(-1, makeField("base", commitHash), "expected a string value")
@@ -353,7 +401,8 @@ func CheckMergeRequestPostBody(
 		return fe(-1, makeField("targetHash", commitHash), "expected a string value")
 	}
 
-	if base.String() == "" {
+	// Base branch name is required for only new merge request reference
+	if base.String() == "" && isNewRef {
 		return fe(-1, makeField("base", commitHash), "base branch name is required")
 	}
 
@@ -361,14 +410,17 @@ func CheckMergeRequestPostBody(
 		return fe(-1, makeField("baseHash", commitHash), "base branch hash is not valid")
 	}
 
-	if target.String() == "" {
+	// Target branch name is required for only new merge request reference
+	if target.String() == "" && isNewRef {
 		return fe(-1, makeField("target", commitHash), "target branch name is required")
 	}
 
+	// Target branch hash is required for only new merge request reference
 	th := targetHash.String()
-	if th == "" {
+	if th == "" && isNewRef {
 		return fe(-1, makeField("targetHash", commitHash), "target branch hash is required")
-	} else if len(th) != 40 {
+	}
+	if len(th) > 0 && len(th) != 40 {
 		return fe(-1, makeField("targetHash", commitHash), "target branch hash is not valid")
 	}
 
@@ -394,7 +446,6 @@ func CheckPostBody(
 	content []byte) error {
 
 	var commonFields = []string{"title", "reactions", "replyTo", "close"}
-	var mergeReqFields = []string{"base", "baseHash", "target", "targetHash"}
 	var issueFields = []string{"labels", "assignees"}
 	var allowedFields []string
 	var isIssuePost = plumbing2.IsIssueReference(reference)
@@ -428,7 +479,7 @@ func CheckPostBody(
 
 	// Perform checks for merge request post
 	if isMergeReqPost {
-		return CheckMergeRequestPostBody(commit, fm)
+		return CheckMergeRequestPostBody(repo, commit, reference, isNewRef, fm)
 	}
 
 	return nil

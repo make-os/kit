@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
 	"gitlab.com/makeos/mosdef/mocks"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/repo"
@@ -658,35 +659,35 @@ var _ = Describe("Validation", func() {
 				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.targetHash, msg:expected a string value"))
 			})
 
-			It("should return error when 'base' branch is unset", func() {
+			It("should return error when 'base' branch is unset and merge request reference is new", func() {
 				fm := map[string]interface{}{"title": "title", "base": ""}
 				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.base, msg:base branch name is required"))
 			})
 
-			It("should return error when 'baseHash' is set but invalid", func() {
+			It("should return error when 'baseHash' is set but invalid and merge request reference is new", func() {
 				fm := map[string]interface{}{"title": "title", "base": "master", "baseHash": "0x_invalid"}
 				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.baseHash, msg:base branch hash is not valid"))
 			})
 
-			It("should return error when 'target' branch is unset", func() {
+			It("should return error when 'target' branch is unset and merge request reference is new", func() {
 				fm := map[string]interface{}{"title": "title", "base": "master", "target": ""}
 				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.target, msg:target branch name is required"))
 			})
 
-			It("should return error when 'targetHash' is unset", func() {
+			It("should return error when 'targetHash' is unsetand merge request reference is new", func() {
 				fm := map[string]interface{}{"title": "title", "base": "master", "target": "dev", "targetHash": ""}
 				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(MatchRegexp("field:<commit#.*>.targetHash, msg:target branch hash is required"))
 			})
 
-			It("should return error when 'targetHash' is not valid", func() {
+			It("should return error when 'targetHash' is not valid and merge request reference is new", func() {
 				fm := map[string]interface{}{"title": "title", "base": "master", "target": "dev", "targetHash": "0x_invalid"}
 				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
 				Expect(err).ToNot(BeNil())
@@ -697,6 +698,47 @@ var _ = Describe("Validation", func() {
 				fm := map[string]interface{}{"title": "title", "base": "master", "target": "dev", "targetHash": "7f92315bdc59a859aefd0d932173cd00fd1ec310"}
 				err := validation.CheckPostBody(nil, ref, wc, true, fm, []byte{1})
 				Expect(err).To(BeNil())
+			})
+
+			When("merge request reference is not new", func() {
+				It("should not return error when merge fields (base, baseHash, target, targetHash) are unset", func() {
+					fm := map[string]interface{}{}
+					err := validation.CheckPostBody(nil, ref, wc, false, fm, []byte{1})
+					Expect(err).To(BeNil())
+				})
+			})
+		})
+	})
+
+	Describe(".CheckMergeRequestPostBodyConsistency", func() {
+		When("merge request reference is not new", func() {
+			It("should return error when there is not merge proposal for the reference", func() {
+				ref := plumbing2.MakeMergeRequestReference(1)
+				mockRepo.EXPECT().GetState().Return(&state.Repository{Proposals: map[string]*state.RepoProposal{}})
+				err := validation.CheckMergeRequestPostBodyConsistency(mockRepo, ref, false, map[string]interface{}{})
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("merge request proposal not found"))
+			})
+
+			When("merge request proposal is finalized", func() {
+				It("should return error when post body include merge request a field (base, baseHash, target, targetHash)", func() {
+					ref := plumbing2.MakeMergeRequestReference(1)
+					mockRepo.EXPECT().GetState().Return(&state.Repository{Proposals: map[string]*state.RepoProposal{
+						mergerequest.MakeMergeRequestID(1): {Outcome: state.ProposalOutcomeAccepted},
+					}})
+					err := validation.CheckMergeRequestPostBodyConsistency(mockRepo, ref, false, map[string]interface{}{"base": "master"})
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("cannot update 'base' field of a finalized merge request proposal"))
+				})
+
+				It("should return no error when post body does not contain merge request field", func() {
+					ref := plumbing2.MakeMergeRequestReference(1)
+					mockRepo.EXPECT().GetState().Return(&state.Repository{Proposals: map[string]*state.RepoProposal{
+						mergerequest.MakeMergeRequestID(1): {Outcome: state.ProposalOutcomeAccepted},
+					}})
+					err := validation.CheckMergeRequestPostBodyConsistency(mockRepo, ref, false, map[string]interface{}{})
+					Expect(err).To(BeNil())
+				})
 			})
 		})
 	})

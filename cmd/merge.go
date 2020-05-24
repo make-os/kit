@@ -43,7 +43,6 @@ var mergeReqCreateCmd = &cobra.Command{
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		rejectFlagCombo(cmd, "close", "reopen")
-		requireFlag(cmd, "base", "target")
 
 		title, _ := cmd.Flags().GetString("title")
 		body, _ := cmd.Flags().GetString("body")
@@ -69,9 +68,12 @@ var mergeReqCreateCmd = &cobra.Command{
 			useEditor = true
 		}
 
-		// When target branch hash is not provided or is equal to '.', automatically
-		// read the latest reference hash of the target branch.
-		if targetBranchHash == "" || targetBranchHash == "." {
+		// When target branch hash is equal to '.', read the latest reference
+		// hash of the target branch.
+		if targetBranchHash == "." {
+			if targetBranch == "" {
+				log.Fatal("flag (--target) is required")
+			}
 			ref, err := r.RefGet(targetBranch)
 			if err != nil {
 				log.Fatal(errors.Wrap(err, "failed to get target branch").Error())
@@ -84,6 +86,9 @@ var mergeReqCreateCmd = &cobra.Command{
 		// this convention over an empty value because an empty base hash is interpreted
 		// as zero hash value by the network.
 		if baseBranchHash == "." {
+			if baseBranch == "" {
+				log.Fatal("flag (--base) is required")
+			}
 			ref, err := r.RefGet(baseBranch)
 			if err != nil {
 				log.Fatal(errors.Wrap(err, "failed to get base branch").Error())
