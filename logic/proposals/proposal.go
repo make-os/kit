@@ -25,7 +25,7 @@ func MakeProposal(
 		Config:     repo.Config.Clone().Governance,
 		Creator:    creatorAddress,
 		Height:     chainHeight,
-		EndAt:      repo.Config.Governance.DurOfProposal + chainHeight + 1,
+		EndAt:      repo.Config.Governance.ProposalDuration + chainHeight + 1,
 		Fees:       map[string]string{},
 		ActionData: map[string][]byte{},
 	}
@@ -42,9 +42,9 @@ func MakeProposal(
 
 	// Set the fee deposit end height and also update the proposal end height to
 	// be after the fee deposit height
-	if repo.Config.Governance.FeeDepositDurOfProposal > 0 {
-		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governance.FeeDepositDurOfProposal
-		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governance.DurOfProposal
+	if repo.Config.Governance.ProposalFeeDepositDur > 0 {
+		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governance.ProposalFeeDepositDur
+		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governance.ProposalDuration
 	}
 
 	// Register the proposal to the repo

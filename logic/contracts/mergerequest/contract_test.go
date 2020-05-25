@@ -166,7 +166,7 @@ var _ = Describe("MergeRequestContract", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repo.Config.Governance.DurOfProposal + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(repo.Config.Governance.ProposalDuration + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})

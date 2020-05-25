@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/asaskevich/govalidator"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/crypto/bls"
@@ -17,6 +17,7 @@ import (
 	"gitlab.com/makeos/mosdef/remote/push/types"
 	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
@@ -37,7 +38,6 @@ func CheckPushNoteSyntax(tx types.PushNotice) error {
 		return util.FieldError("namespace", "namespace is not valid")
 	}
 
-	fe := fe
 	for i, ref := range tx.GetPushedReferences() {
 		if ref.Name == "" {
 			return fe(i, "references.name", "name is required")
@@ -65,9 +65,12 @@ func CheckPushNoteSyntax(tx types.PushNotice) error {
 
 		if ref.Fee == "" {
 			return fe(i, "fee", "fee is required")
-		}
-		if !govalidator.IsFloat(ref.Fee.String()) {
+		} else if !ref.Fee.IsNumeric() {
 			return fe(i, "fee", "fee must be numeric")
+		}
+
+		if ref.Value != "" && !ref.Value.IsNumeric() {
+			return fe(i, "value", "value must be numeric")
 		}
 
 		if ref.MergeProposalID != "" {
@@ -121,26 +124,17 @@ func CheckPushNoteSyntax(tx types.PushNotice) error {
 func CheckPushedReferenceConsistency(
 	targetRepo remotetypes.LocalRepo,
 	ref *types.PushedReference,
-	repo *state.Repository) error {
+	repoState *state.Repository) error {
 
 	name, nonce := ref.Name, ref.Nonce
 	oldHashIsZero := plumbing.NewHash(ref.OldHash).IsZero()
 
-	// For new merge request reference, ensure there is no merge request proposal with
-	// an ID that matches the reference's ID
-	// if plumbing2.IsMergeRequestReference(name) && !targetRepo.GetState().References.Has(name) {
-	// 	id := plumbing2.GetReferenceShortName(name)
-	// 	if targetRepo.GetState().Proposals.Has(mergerequest.MakeMergeRequestID(id)) {
-	// 		return util.FieldError("references", "merge request with matching ID already exist")
-	// 	}
-	// }
-
 	// We need to check if the reference exists in the repo.
 	// Ignore references whose old hash is a 0-hash, these are new
 	// references and as such we don't expect to find it in the repo.
-	if !oldHashIsZero && !repo.References.Has(name) {
+	if !oldHashIsZero && !repoState.References.Has(name) {
 		msg := fmt.Sprintf("reference '%s' is unknown", name)
-		return util.FieldError("references", msg)
+		return fe(-1, "references", msg)
 	}
 
 	// If target repo is set and old hash is non-zero, we need to ensure
@@ -150,23 +144,58 @@ func CheckPushedReferenceConsistency(
 		localRef, err := targetRepo.Reference(plumbing.ReferenceName(name), false)
 		if err != nil {
 			msg := fmt.Sprintf("reference '%s' does not exist locally", name)
-			return util.FieldError("references", msg)
+			return fe(-1, "references", msg)
 		}
 		if ref.OldHash != localRef.Hash().String() {
 			msg := fmt.Sprintf("reference '%s' old hash does not match its local version", name)
-			return util.FieldError("references", msg)
+			return fe(-1, "references", msg)
 		}
 	}
 
 	// We need to check that the nonce is the expected next nonce of the
 	// reference, otherwise we return an error.
-	refInfo := repo.References.Get(name)
+	refInfo := repoState.References.Get(name)
 	nextNonce := refInfo.Nonce + 1
+	refPropFee := ref.Value
 	if nextNonce != ref.Nonce {
 		msg := fmt.Sprintf("reference '%s' has nonce '%d', expecting '%d'", name, nonce, nextNonce)
-		return util.FieldError("references", msg)
+		return fe(-1, "references", msg)
 	}
 
+	// For new merge request, ensure a proposal fee is provided
+	isNewRef := !repoState.References.Has(ref.Name)
+	if plumbing2.IsMergeRequestReference(ref.Name) && isNewRef {
+
+		govCfg := repoState.Config.Governance
+
+		// When repo does not require a proposal fee, it must not be provided.
+		// Skip to end when repo does not require proposal fee
+		repoPropFee := govCfg.ProposalFee
+		if repoPropFee == 0 {
+			if !refPropFee.Empty() {
+				return fe(-1, "value", constants.ErrProposalFeeNotExpected.Error())
+			}
+			goto end
+		}
+
+		// When merge request proposal is exempted from paying proposal fee, skip to end
+		if govCfg.NoProposalFeeForMergeReq {
+			goto end
+		}
+
+		if refPropFee.Empty() {
+			refPropFee = "0"
+		}
+
+		// When repo requires a proposal fee and a deposit period is not allowed,
+		// the full proposal fee must be provided.
+		hasDepositPeriod := govCfg.ProposalFeeDepositDur > 0
+		if !hasDepositPeriod && refPropFee.Decimal().LessThan(decimal.NewFromFloat(repoPropFee)) {
+			return fe(-1, "value", constants.ErrFullProposalFeeRequired.Error())
+		}
+	}
+
+end:
 	return nil
 }
 

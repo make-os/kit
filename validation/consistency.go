@@ -11,6 +11,7 @@ import (
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
@@ -431,12 +432,12 @@ func CheckProposalCommonConsistency(
 	// ensure a proposal fee is not set.
 	if propFeeDec.Equal(decimal.Zero) &&
 		!prop.Value.Decimal().Equal(decimal.Zero) {
-		return nil, feI(index, "value", "proposal fee is not required but was provided")
+		return nil, feI(index, "value", constants.ErrProposalFeeNotExpected.Error())
 	}
 
 	// When the repo does not support a fee deposit duration period,
 	// ensure the minimum fee was paid in the current transaction.
-	if repo.Config.Governance.FeeDepositDurOfProposal == 0 {
+	if repo.Config.Governance.ProposalFeeDepositDur == 0 {
 		if propFeeDec.GreaterThan(decimal.Zero) && prop.Value.Decimal().LessThan(propFeeDec) {
 			msg := fmt.Sprintf("proposal fee cannot be less than repo minimum (%f)", repoPropFee)
 			return nil, feI(index, "value", msg)

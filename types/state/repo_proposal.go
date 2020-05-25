@@ -288,7 +288,7 @@ func (p *RepoProposal) GetQuorum() float64 {
 
 // GetTallyMethod implements Proposal
 func (p *RepoProposal) GetTallyMethod() ProposalTallyMethod {
-	return p.Config.TallyMethodOfProposal
+	return p.Config.ProposalTallyMethod
 }
 
 // GetAction implements Proposal

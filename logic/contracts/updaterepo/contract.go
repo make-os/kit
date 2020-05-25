@@ -80,10 +80,12 @@ update:
 	return nil
 }
 
-// Apply applies the proposal
+// Apply applies the proposal action
 func (c *UpdateRepoContract) Apply(args *core.ProposalApplyArgs) error {
 	var cfgUpd map[string]interface{}
-	util.ToObject(args.Proposal.GetActionData()[constants.ActionDataKeyCFG], &cfgUpd)
+	if err := util.ToObject(args.Proposal.GetActionData()[constants.ActionDataKeyCFG], &cfgUpd); err != nil {
+		return err
+	}
 	args.Repo.Config.MergeMap(cfgUpd)
 	return nil
 }

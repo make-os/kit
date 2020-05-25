@@ -222,7 +222,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governance.DurOfProposal + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governance.ProposalDuration + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})
@@ -235,8 +235,8 @@ var _ = Describe("UpsertOwnerContract", func() {
 			propID := "1"
 
 			BeforeEach(func() {
-				repoUpd.Config.Governance.DurOfProposal = 1000
-				repoUpd.Config.Governance.FeeDepositDurOfProposal = 100
+				repoUpd.Config.Governance.ProposalDuration = 1000
+				repoUpd.Config.Governance.ProposalFeeDepositDur = 100
 				repoUpd.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				logic.RepoKeeper().Update(repoName, repoUpd)
 

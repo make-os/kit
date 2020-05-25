@@ -251,7 +251,7 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 		state.ProposalTallyMethodNetStakeOfDelegators,
 		state.ProposalTallyMethodNetStake,
 	}
-	if !funk.Contains(allowedTallyMethod, govCfg.TallyMethodOfProposal) {
+	if !funk.Contains(allowedTallyMethod, govCfg.ProposalTallyMethod) {
 		return feI(index, "config.gov.propTallyMethod", sf("unknown value"))
 	}
 
@@ -278,8 +278,8 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 	// When proposer is ProposerOwner, tally method cannot be CoinWeighted or Identity
 	isNotOwnerProposer := govCfg.Voter != state.VoterOwner
 	if isNotOwnerProposer &&
-		(govCfg.TallyMethodOfProposal == state.ProposalTallyMethodCoinWeighted ||
-			govCfg.TallyMethodOfProposal == state.ProposalTallyMethodIdentity) {
+		(govCfg.ProposalTallyMethod == state.ProposalTallyMethodCoinWeighted ||
+			govCfg.ProposalTallyMethod == state.ProposalTallyMethodIdentity) {
 		return feI(index, "config", "when proposer type is not 'ProposerOwner', tally methods "+
 			"'CoinWeighted' and 'Identity' are not allowed")
 	}

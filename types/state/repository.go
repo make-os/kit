@@ -1,7 +1,6 @@
 package state
 
 import (
-	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
@@ -123,15 +122,16 @@ type RepoConfigGovernance struct {
 	Voter                    VoterType             `json:"propVoter" mapstructure:"propVoter,omitempty" msgpack:"propVoter"`
 	ProposalCreator          ProposalCreatorType   `json:"propCreator" mapstructure:"propCreator,omitempty" msgpack:"propCreator"`
 	VoterAgeAsCurHeight      bool                  `json:"voterAgeAsCurHeight" mapstructure:"voterAgeAsCurHeight" msgpack:"voterAgeAsCurHeight"`
-	DurOfProposal            uint64                `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur"`
-	FeeDepositDurOfProposal  uint64                `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur"`
-	TallyMethodOfProposal    ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod"`
+	ProposalDuration         uint64                `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur"`
+	ProposalFeeDepositDur    uint64                `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur"`
+	ProposalTallyMethod      ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod"`
 	ProposalQuorum           float64               `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum"`
 	ProposalThreshold        float64               `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold"`
 	ProposalVetoQuorum       float64               `json:"propVetoQuorum" mapstructure:"propVetoQuorum,omitempty" msgpack:"propVetoQuorum"`
 	ProposalVetoOwnersQuorum float64               `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum,omitempty" msgpack:"propVetoOwnersQuorum"`
 	ProposalFee              float64               `json:"propFee" mapstructure:"propFee,omitempty" msgpack:"propFee"`
 	ProposalFeeRefundType    ProposalFeeRefundType `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType"`
+	NoProposalFeeForMergeReq bool                  `json:"noPropFeeForMergeReq" mapstructure:"noPropFeeForMergeReq" msgpack:"noPropFeeForMergeReq"`
 }
 
 // Policy describes a repository access policy
@@ -155,8 +155,8 @@ type RepoPolicies []*Policy
 // RepoConfig contains repo-specific configuration settings
 type RepoConfig struct {
 	util.SerializerHelper `json:"-" mapstructure:"-" msgpack:"-"`
-	Governance            *RepoConfigGovernance `json:"governance" mapstructure:"governance,omitempty" msgpack:"governance"`
-	Policies              RepoPolicies          `json:"policies" mapstructure:"policies" msgpack:"policies"`
+	Governance            *RepoConfigGovernance `json:"governance" mapstructure:"governance,omitempty" msgpack:"governance,omitempty"`
+	Policies              RepoPolicies          `json:"policies" mapstructure:"policies" msgpack:"policies,omitempty"`
 }
 
 func (c *RepoConfig) EncodeMsgpack(enc *msgpack.Encoder) error {
@@ -181,19 +181,7 @@ func (c *RepoConfig) Clone() *RepoConfig {
 
 // MergeMap merges the specified map into c
 func (c *RepoConfig) MergeMap(m map[string]interface{}) {
-
-	// Decode the specified map to RepoConfig so
-	// that we get a compatible source type
-	mCfg := RepoConfig{}
-	mapstructure.Decode(m, &mCfg)
-	src := util.StructToMap(mCfg, "mapstructure")
-
-	dst := util.StructToMap(c, "mapstructure")
-	mergo.Merge(&dst, src, mergo.WithOverride, mergo.WithOverwriteWithEmptyValue)
-	newCfg := RepoConfig{}
-	mapstructure.Decode(dst, &newCfg)
-
-	*c = newCfg
+	mapstructure.Decode(m, &c)
 }
 
 // IsNil checks if the object's field all have zero value
@@ -219,15 +207,16 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			Voter:                    VoterOwner,
 			ProposalCreator:          ProposalCreatorAny,
 			VoterAgeAsCurHeight:      false,
-			DurOfProposal:            params.RepoProposalDur,
-			TallyMethodOfProposal:    ProposalTallyMethodIdentity,
+			ProposalDuration:         params.RepoProposalDur,
+			ProposalTallyMethod:      ProposalTallyMethodIdentity,
 			ProposalQuorum:           params.RepoProposalQuorum,
 			ProposalThreshold:        params.RepoProposalThreshold,
 			ProposalVetoQuorum:       params.RepoProposalVetoQuorum,
 			ProposalVetoOwnersQuorum: params.RepoProposalVetoOwnersQuorum,
 			ProposalFee:              params.MinProposalFee,
 			ProposalFeeRefundType:    ProposalFeeRefundNo,
-			FeeDepositDurOfProposal:  0,
+			ProposalFeeDepositDur:    0,
+			NoProposalFeeForMergeReq: true,
 		},
 		Policies: []*Policy{},
 	}

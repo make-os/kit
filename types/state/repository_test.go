@@ -81,7 +81,7 @@ var _ = Describe("Repository", func() {
 				r = BareRepository()
 				r.Balance = "100"
 				config := BareRepoConfig()
-				config.Governance = &RepoConfigGovernance{DurOfProposal: 100}
+				config.Governance = &RepoConfigGovernance{ProposalDuration: 100}
 				config.Policies = []*Policy{{"obj", "sub", "deny"}}
 				r.Config = config
 				expectedBz = r.Bytes()
@@ -226,21 +226,40 @@ var _ = Describe("Repository", func() {
 
 			Context("Policies merge", func() {
 				When("Policies includes one policy named `user1_dev`", func() {
-					base := &RepoConfig{
-						Policies: []*Policy{{Subject: "user1", Object: "dev", Action: "deny"}},
-					}
+					var base *RepoConfig
 
-					It("should replace existing policy if their name matches", func() {
+					BeforeEach(func() {
+						base = &RepoConfig{
+							Governance: &RepoConfigGovernance{Voter: 1, ProposalDuration: 100, ProposalFee: 12},
+							Policies:   []*Policy{{Subject: "user1", Object: "dev", Action: "deny"}},
+						}
+					})
+
+					It("should replace existing policy only", func() {
 						base.MergeMap(map[string]interface{}{
-							"policies": []map[string]interface{}{
-								{"sub": "sub2", "obj": "branch_dev", "act": "delete"},
-							},
+							"policies": []map[string]interface{}{{"sub": "sub2", "obj": "branch_dev", "act": "delete"}},
 						})
 						Expect(base.Policies).To(HaveLen(1))
 						Expect(base.Policies[0].Subject).To(Equal("sub2"))
 						Expect(base.Policies[0].Object).To(Equal("branch_dev"))
 						Expect(base.Policies[0].Action).To(Equal("delete"))
+						Expect(base.Governance.Voter).To(Equal(VoterType(1)))
+						Expect(base.Governance.ProposalDuration).To(Equal(uint64(100)))
 					})
+
+					It("should replace governance config only", func() {
+						base.MergeMap(map[string]interface{}{
+							"governance": map[string]interface{}{"propVoter": 2, "propDur": 10},
+						})
+						Expect(base.Policies).To(HaveLen(1))
+						Expect(base.Policies[0].Subject).To(Equal("user1"))
+						Expect(base.Policies[0].Object).To(Equal("dev"))
+						Expect(base.Policies[0].Action).To(Equal("deny"))
+						Expect(base.Governance.Voter).To(Equal(VoterType(2)))
+						Expect(base.Governance.ProposalDuration).To(Equal(uint64(10)))
+						Expect(base.Governance.ProposalFee).To(Equal(float64(12)))
+					})
+
 				})
 
 			})

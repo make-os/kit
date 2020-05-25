@@ -6,6 +6,7 @@ import (
 
 	"gitlab.com/makeos/mosdef/remote/push/types"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
@@ -1487,7 +1488,7 @@ var _ = Describe("TxValidator", func() {
 
 			It("should return err", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:value, msg:proposal fee is not required but was provided"))
+				Expect(err.Error()).To(Equal("field:value, msg:" + constants.ErrProposalFeeNotExpected.Error()))
 			})
 		})
 

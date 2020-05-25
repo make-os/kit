@@ -119,7 +119,7 @@ var _ = Describe("CreateRepoContract", func() {
 			})
 
 			When("non-nil repo config is provided", func() {
-				repoCfg2 := &state.RepoConfig{Governance: &state.RepoConfigGovernance{DurOfProposal: 1000}}
+				repoCfg2 := &state.RepoConfig{Governance: &state.RepoConfigGovernance{ProposalDuration: 1000}}
 				BeforeEach(func() {
 					createrepo.NewContract().Init(logic, &txns.TxRepoCreate{Name: "repo", Config: repoCfg2.ToMap(),
 						TxCommon: &txns.TxCommon{Fee: "1.5", SenderPubKey: sender.PubKey().ToPublicKey()},
@@ -130,7 +130,7 @@ var _ = Describe("CreateRepoContract", func() {
 				Specify("that repo config is not the default", func() {
 					repo := logic.RepoKeeper().Get("repo")
 					Expect(repo.Config).ToNot(Equal(state.DefaultRepoConfig))
-					Expect(repo.Config.Governance.DurOfProposal).To(Equal(uint64(1000)))
+					Expect(repo.Config.Governance.ProposalDuration).To(Equal(uint64(1000)))
 				})
 			})
 		})

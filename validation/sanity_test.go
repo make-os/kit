@@ -633,8 +633,8 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                 state.VoterOwner,
-						TallyMethodOfProposal: 1000,
+						Voter:               state.VoterOwner,
+						ProposalTallyMethod: 1000,
 					},
 				}
 				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -647,9 +647,9 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                 state.VoterOwner,
-						TallyMethodOfProposal: state.ProposalTallyMethodNetStake,
-						ProposalQuorum:        -1,
+						Voter:               state.VoterOwner,
+						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
+						ProposalQuorum:      -1,
 					},
 				}
 				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -662,10 +662,10 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                 state.VoterOwner,
-						TallyMethodOfProposal: state.ProposalTallyMethodNetStake,
-						ProposalQuorum:        1,
-						ProposalThreshold:     -1,
+						Voter:               state.VoterOwner,
+						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
+						ProposalQuorum:      1,
+						ProposalThreshold:   -1,
 					},
 				}
 				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -678,11 +678,11 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                 state.VoterOwner,
-						TallyMethodOfProposal: state.ProposalTallyMethodNetStake,
-						ProposalQuorum:        1,
-						ProposalThreshold:     1,
-						ProposalVetoQuorum:    -1,
+						Voter:               state.VoterOwner,
+						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
+						ProposalQuorum:      1,
+						ProposalThreshold:   1,
+						ProposalVetoQuorum:  -1,
 					},
 				}
 				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -696,7 +696,7 @@ var _ = Describe("TxValidator", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
 						Voter:                    state.VoterOwner,
-						TallyMethodOfProposal:    state.ProposalTallyMethodNetStake,
+						ProposalTallyMethod:      state.ProposalTallyMethodNetStake,
 						ProposalQuorum:           1,
 						ProposalThreshold:        1,
 						ProposalVetoQuorum:       1,
@@ -715,7 +715,7 @@ var _ = Describe("TxValidator", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
 						Voter:                    state.VoterOwner,
-						TallyMethodOfProposal:    state.ProposalTallyMethodNetStake,
+						ProposalTallyMethod:      state.ProposalTallyMethodNetStake,
 						ProposalQuorum:           1,
 						ProposalThreshold:        1,
 						ProposalVetoQuorum:       1,
@@ -734,8 +734,8 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                 state.VoterNetStakers,
-						TallyMethodOfProposal: state.ProposalTallyMethodCoinWeighted,
+						Voter:               state.VoterNetStakers,
+						ProposalTallyMethod: state.ProposalTallyMethodCoinWeighted,
 					},
 				}
 				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
@@ -749,8 +749,8 @@ var _ = Describe("TxValidator", func() {
 			It("should return error", func() {
 				repoCfg := &state.RepoConfig{
 					Governance: &state.RepoConfigGovernance{
-						Voter:                 state.VoterNetStakers,
-						TallyMethodOfProposal: state.ProposalTallyMethodIdentity,
+						Voter:               state.VoterNetStakers,
+						ProposalTallyMethod: state.ProposalTallyMethodIdentity,
 					},
 				}
 				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)

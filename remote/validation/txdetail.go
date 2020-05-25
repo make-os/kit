@@ -10,6 +10,7 @@ import (
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -89,16 +90,13 @@ func CheckTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, inde
 	}
 
 	// Ensure push key scope grants access to the destination repo namespace and repo name.
-	if len(pushKey.Scopes) > 0 {
-		if IsBlockedByScope(pushKey.Scopes, params, paramNS) {
-			msg := fmt.Sprintf("push key (%s) not permitted due to scope limitation", params.PushKeyID)
-			return fe(index, "repo|namespace", msg)
-		}
+	if len(pushKey.Scopes) > 0 && IsBlockedByScope(pushKey.Scopes, params, paramNS) {
+		msg := fmt.Sprintf("push key (%s) not permitted due to scope limitation", params.PushKeyID)
+		return fe(index, "repo|namespace", msg)
 	}
 
 	// Ensure the nonce is a future nonce (> current nonce of pusher's account)
-	keyOwner := keepers.AccountKeeper().Get(pushKey.Address)
-	if params.Nonce <= keyOwner.Nonce {
+	if keyOwner := keepers.AccountKeeper().Get(pushKey.Address); params.Nonce <= keyOwner.Nonce {
 		msg := fmt.Sprintf("nonce (%d) must be greater than current key owner nonce (%d)", params.Nonce,
 			keyOwner.Nonce)
 		return fe(index, "nonce", msg)
@@ -106,20 +104,19 @@ func CheckTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, inde
 
 	// When merge proposal ID is set, check if merge proposal exist and
 	// whether it was created by the owner of the push key
-	// TODO: Fix this
-	// if params.MergeProposalID != "" {
-	// 	repoState := keepers.RepoKeeper().Get(params.RepoName)
-	// 	mp := repoState.Proposals.Get(params.MergeProposalID)
-	// 	if mp == nil {
-	// 		return fe(index, "mergeID", "merge proposal not found")
-	// 	}
-	// 	if mp.Action != core.TxTypeRepoProposalMergeRequest {
-	// 		return fe(index, "mergeID", "proposal is not a merge request")
-	// 	}
-	// 	if mp.Creator != pushKey.Address.String() {
-	// 		return fe(index, "mergeID", "merge error: signer did not create the proposal")
-	// 	}
-	// }
+	if params.MergeProposalID != "" {
+		repoState := keepers.RepoKeeper().Get(params.RepoName)
+		mp := repoState.Proposals.Get(params.MergeProposalID)
+		if mp == nil {
+			return fe(index, "mergeID", "merge proposal not found")
+		}
+		if mp.Action != txns.MergeRequestProposalAction {
+			return fe(index, "mergeID", "proposal is not a merge request")
+		}
+		if mp.Creator != pushKey.Address.String() {
+			return fe(index, "mergeID", "merge error: signer did not create the proposal")
+		}
+	}
 
 	// Use the key to verify the tx params signature
 	pubKey, _ := crypto.PubKeyFromBytes(pushKey.PubKey.Bytes())

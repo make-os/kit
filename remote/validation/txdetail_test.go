@@ -14,15 +14,16 @@ import (
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gitlab.com/makeos/mosdef/types/txns"
 )
 
 var _ = Describe("Validation", func() {
 	var err error
 	var cfg *config.AppConfig
-	var privKey *crypto.Key
+	var privKey, privKey2 *crypto.Key
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
-	// var mockRepoKeeper *mocks.MockRepoKeeper
+	var mockRepoKeeper *mocks.MockRepoKeeper
 	var mockNSKeeper *mocks.MockNamespaceKeeper
 	var mockPushKeyKeeper *mocks.MockPushKeyKeeper
 	var mockAcctKeeper *mocks.MockAccountKeeper
@@ -34,10 +35,11 @@ var _ = Describe("Validation", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 
 		privKey = crypto.NewKeyFromIntSeed(1)
+		privKey2 = crypto.NewKeyFromIntSeed(2)
 
 		mockObjs := testutil.MockLogic(ctrl)
 		mockLogic = mockObjs.Logic
-		// mockRepoKeeper = mockObjs.RepoKeeper
+		mockRepoKeeper = mockObjs.RepoKeeper
 		mockPushKeyKeeper = mockObjs.PushKeyKeeper
 		mockAcctKeeper = mockObjs.AccountKeeper
 		mockNSKeeper = mockObjs.NamespaceKeeper
@@ -247,104 +249,103 @@ var _ = Describe("Validation", func() {
 		})
 
 		When("merge proposal ID is set", func() {
-			// It("should return error when the proposal does not exist", func() {
-			// 	detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, MergeProposalID: "100"}
-			//
-			// 	pk := state.BarePushKey()
-			// 	pk.Address = privKey.Addr()
-			// 	mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
-			//
-			// 	acct := state.BareAccount()
-			// 	acct.Nonce = 8
-			// 	mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
-			//
-			// 	mockRepoKeeper.EXPECT().Get(detail.RepoName).Return(state.BareRepository())
-			//
-			// 	err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
-			// 	Expect(err).ToNot(BeNil())
-			// 	Expect(err.Error()).To(Equal("index:0, field:mergeID, msg:merge proposal not found"))
-			// })
-			//
-			// It("should return error when the proposal is not a merge request", func() {
-			// 	detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, MergeProposalID: "100"}
-			//
-			// 	pk := state.BarePushKey()
-			// 	pk.Address = privKey.Addr()
-			// 	mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
-			//
-			// 	acct := state.BareAccount()
-			// 	acct.Nonce = 8
-			// 	mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
-			//
-			// 	repoState := state.BareRepository()
-			// 	repoState.Proposals["100"] = &state.RepoProposal{Action: 100000}
-			// 	mockRepoKeeper.EXPECT().Get(detail.RepoName).Return(repoState)
-			//
-			// 	err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
-			// 	Expect(err).ToNot(BeNil())
-			// 	Expect(err.Error()).To(Equal("index:0, field:mergeID, msg:proposal is not a merge request"))
-			// })
+			It("should return error when the proposal does not exist", func() {
+				detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, MergeProposalID: "100"}
 
-			// TODO: fix
-			// It("should return error when the proposal creator is not the push key owner", func() {
-			// 	detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, MergeProposalID: "100"}
-			//
-			// 	pk := state.BarePushKey()
-			// 	pk.Address = privKey.Addr()
-			// 	mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
-			//
-			// 	acct := state.BareAccount()
-			// 	acct.Nonce = 8
-			// 	mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
-			//
-			// 	repoState := state.BareRepository()
-			// 	repoState.Proposals["100"] = &state.RepoProposal{Action: core.TxTypeRepoProposalMergeRequest, Creator: privKey2.Addr().String()}
-			// 	mockRepoKeeper.EXPECT().Get(detail.RepoName).Return(repoState)
-			//
-			// 	err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
-			// 	Expect(err).ToNot(BeNil())
-			// 	Expect(err.Error()).To(Equal("index:0, field:mergeID, msg:merge error: signer did not create the proposal"))
-			// })
+				pk := state.BarePushKey()
+				pk.Address = privKey.Addr()
+				mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+				acct := state.BareAccount()
+				acct.Nonce = 8
+				mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
+
+				mockRepoKeeper.EXPECT().Get(detail.RepoName).Return(state.BareRepository())
+
+				err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("index:0, field:mergeID, msg:merge proposal not found"))
+			})
+
+			It("should return error when the proposal is not a merge request", func() {
+				detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, MergeProposalID: "100"}
+
+				pk := state.BarePushKey()
+				pk.Address = privKey.Addr()
+				mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+				acct := state.BareAccount()
+				acct.Nonce = 8
+				mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
+
+				repoState := state.BareRepository()
+				repoState.Proposals["100"] = &state.RepoProposal{Action: 100000}
+				mockRepoKeeper.EXPECT().Get(detail.RepoName).Return(repoState)
+
+				err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("index:0, field:mergeID, msg:proposal is not a merge request"))
+			})
+
+			It("should return error when the proposal creator is not the push key owner", func() {
+				detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9, MergeProposalID: "100"}
+
+				pk := state.BarePushKey()
+				pk.Address = privKey.Addr()
+				mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+				acct := state.BareAccount()
+				acct.Nonce = 8
+				mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
+
+				repoState := state.BareRepository()
+				repoState.Proposals["100"] = &state.RepoProposal{Action: txns.MergeRequestProposalAction, Creator: privKey2.Addr().String()}
+				mockRepoKeeper.EXPECT().Get(detail.RepoName).Return(repoState)
+
+				err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("index:0, field:mergeID, msg:merge error: signer did not create the proposal"))
+			})
 		})
 
-		// It("should return error when signature could not be verified", func() {
-		// 	detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
-		// 	sig, err := privKey.PrivKey().Sign(detail.BytesNoSig())
-		// 	Expect(err).To(BeNil())
-		// 	detail.Signature = base58.Encode(sig)
-		//
-		// 	pk := state.BarePushKey()
-		// 	pk.Address = privKey.Addr()
-		// 	pk.PubKey = crypto.BytesToPublicKey([]byte("bad key"))
-		// 	mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
-		//
-		// 	acct := state.BareAccount()
-		// 	acct.Nonce = 8
-		// 	mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
-		//
-		// 	err = validation.CheckTxDetailConsistency(detail, mockLogic, 0)
-		// 	Expect(err).ToNot(BeNil())
-		// 	Expect(err.Error()).To(Equal("index:0, field:sig, msg:signature is not valid"))
-		// })
-		//
-		// It("should return nil when signature is valid", func() {
-		// 	detail := &core.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
-		// 	sig, err := privKey.PrivKey().Sign(detail.BytesNoSig())
-		// 	Expect(err).To(BeNil())
-		// 	detail.Signature = base58.Encode(sig)
-		//
-		// 	pk := state.BarePushKey()
-		// 	pk.Address = privKey.Addr()
-		// 	pk.PubKey = privKey.PubKey().ToPublicKey()
-		// 	mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
-		//
-		// 	acct := state.BareAccount()
-		// 	acct.Nonce = 8
-		// 	mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
-		//
-		// 	err = validation.CheckTxDetailConsistency(detail, mockLogic, 0)
-		// 	Expect(err).To(BeNil())
-		// })
+		It("should return error when signature could not be verified", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
+			sig, err := privKey.PrivKey().Sign(detail.BytesNoSig())
+			Expect(err).To(BeNil())
+			detail.Signature = base58.Encode(sig)
+
+			pk := state.BarePushKey()
+			pk.Address = privKey.Addr()
+			pk.PubKey = crypto.BytesToPublicKey([]byte("bad key"))
+			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+			acct := state.BareAccount()
+			acct.Nonce = 8
+			mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
+
+			err = validation.CheckTxDetailConsistency(detail, mockLogic, 0)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("index:0, field:sig, msg:signature is not valid"))
+		})
+
+		It("should return nil when signature is valid", func() {
+			detail := &types.TxDetail{PushKeyID: privKey.PushAddr().String(), Nonce: 9}
+			sig, err := privKey.PrivKey().Sign(detail.BytesNoSig())
+			Expect(err).To(BeNil())
+			detail.Signature = base58.Encode(sig)
+
+			pk := state.BarePushKey()
+			pk.Address = privKey.Addr()
+			pk.PubKey = privKey.PubKey().ToPublicKey()
+			mockPushKeyKeeper.EXPECT().Get(detail.PushKeyID).Return(pk)
+
+			acct := state.BareAccount()
+			acct.Nonce = 8
+			mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
+
+			err = validation.CheckTxDetailConsistency(detail, mockLogic, 0)
+			Expect(err).To(BeNil())
+		})
 	})
 
 })
