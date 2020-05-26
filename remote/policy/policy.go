@@ -35,9 +35,12 @@ type PolicyChecker func(enforcer EnforcerFunc, reference string, isRefCreator bo
 // is permitted to perform the given action on the reference subject.
 func CheckPolicy(enforcer EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContributor bool, action string) error {
 
+	// Determine the reference root
 	rootDir := "refs/"
 	if plumbing.IsIssueReference(reference) {
 		rootDir = plumbing.MakeIssueReferencePath()
+	} else if plumbing.IsMergeRequestReference(reference) {
+		rootDir = plumbing.MakeMergeRequestReferencePath()
 	} else if plumbing.IsBranch(reference) {
 		rootDir = rootDir + "heads"
 	} else if plumbing.IsTag(reference) {

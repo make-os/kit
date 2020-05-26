@@ -118,81 +118,97 @@ func (h *Handler) EnsureReferencesHaveTxDetail() error {
 	return nil
 }
 
-// doAuthCheck performs authorization checks on the specified target reference.
-// If targetRef is unset, all references are checked.
-func (h *Handler) doAuthCheck(ur *packp.ReferenceUpdateRequest, targetRef string) error {
+// enforcePolicy enforces authorization policies against a reference command
+func (h *Handler) enforcePolicy(cmd *packp.Command) error {
 
-	// Check whether the pusher is a contributor
+	ref := cmd.Name.String()
 	pusher := h.TxDetails.GetPushKeyID()
 	isContrib := h.Repo.IsContributor(pusher)
+	detail := h.TxDetails.Get(ref)
+	isIssueRef := plumbing.IsIssueReference(ref)
+	isMergeReqRef := plumbing.IsMergeRequestReference(ref)
+	deleteRef := cmd.New.IsZero()
+	refState := h.Repo.GetState().References.Get(ref)
+	isRefCreator := !refState.IsNil() && refState.Creator.String() == pusher
 
-	for _, cmd := range ur.Commands {
-		ref := cmd.Name.String()
-		refState := h.Repo.GetState().References.Get(ref)
+	// Default action is set to 'write'
+	action := policy.PolicyActionWrite
 
-		// Skip command if its reference did not match the target reference
-		if targetRef != "" && targetRef != ref {
-			continue
+	// For delete command, set action to 'delete'.
+	if deleteRef {
+		action = policy.PolicyActionDelete
+	}
+
+	// For merge push, set action to 'merge-write'
+	if detail.MergeProposalID != "" {
+		action = policy.PolicyActionMergeRequestWrite
+	}
+
+	// For issue update, set default action to 'issue-write'.
+	if isIssueRef {
+		action = policy.PolicyActionIssueWrite
+
+		// But if reference to delete is an issue reference, set action to 'issue-delete'
+		if deleteRef {
+			action = policy.PolicyActionIssueDelete
 		}
 
-		detail := h.TxDetails.Get(ref)
-		isIssueRef := plumbing.IsIssueReference(ref)
-		isRefDelete := cmd.New.IsZero()
+		// When the push updated an admin field, set action to 'issue-update'. Ignore if reference is new.
+		if detail.FlagCheckAdminUpdatePolicy && !refState.IsNil() {
+			action = policy.PolicyActionIssueUpdate
+		}
+	}
 
-		// Determine whether the reference is/was created by the pusher.
-		// It is true for existing reference where the pusher is the creator.
-		isRefCreator := false
-		if !refState.IsNil() {
-			isRefCreator = refState.Creator.String() == pusher
+	// For merge request update, set default action to 'merge-write'.
+	if isMergeReqRef {
+		action = policy.PolicyActionMergeRequestWrite
+
+		// But if reference to delete is a merge request reference, set action to 'merge-delete'
+		if deleteRef {
+			action = policy.PolicyActionMergeRequestDelete
 		}
 
-		// Default action is set to 'write'
-		action := policy.PolicyActionWrite
-
-		// For delete command, set action to 'delete'.
-		if isRefDelete {
-			action = policy.PolicyActionDelete
+		// When the push updated an admin field, set action to 'merge-update'. Ignore if reference is new.
+		if detail.FlagCheckAdminUpdatePolicy && !refState.IsNil() {
+			action = policy.PolicyActionMergeRequestUpdate
 		}
+	}
 
-		// For merge update, set action to 'merge-write'
-		if detail.MergeProposalID != "" {
-			action = policy.PolicyActionMergeWrite
-		}
-
-		// For issue update, set action to 'issue-write'.
-		if isIssueRef {
-			action = policy.PolicyActionIssueWrite
-
-			// But if reference to delete is an issue reference, set action to 'issue-delete'
-			if isRefDelete {
-				action = policy.PolicyActionIssueDelete
-			}
-
-			// When there is a tx detail flag requesting for issue update policy check,
-			// set action to 'issue-update'. Ignore if reference is new.
-			if detail.FlagCheckAdminUpdatePolicy && !refState.IsNil() {
-				action = policy.PolicyActionIssueUpdate
-			}
-		}
-
-		err := h.PolicyChecker(h.polEnforcer, ref, isRefCreator, pusher, isContrib, action)
-		if err != nil {
-			return err
-		}
+	err := h.PolicyChecker(h.polEnforcer, ref, isRefCreator, pusher, isContrib, action)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
+// DoAuth performs authorization checks on the specified target reference.
+// If targetRef is unset, all references are checked.
+// If ignorePostRefs is true, post references like issue and merge references are not checked.
+func (h *Handler) DoAuth(ur *packp.ReferenceUpdateRequest, targetRef string, ignorePostRefs bool) error {
+	for _, cmd := range ur.Commands {
+		if targetRef != "" && targetRef != cmd.Name.String() {
+			continue
+		}
+
+		if ignorePostRefs && (plumbing.IsIssueReference(cmd.Name.String()) ||
+			plumbing.IsMergeRequestReference(cmd.Name.String())) {
+			continue
+		}
+
+		if err := h.enforcePolicy(cmd); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // HandleAuthorization performs authorization checks
 func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
-
-	// Make sure every pushed references has a tx detail
 	if err := h.EnsureReferencesHaveTxDetail(); err != nil {
 		return err
 	}
-
-	return h.doAuthCheck(ur, "")
+	return h.DoAuth(ur, "", true)
 }
 
 // HandleReferences processes all pushed references
@@ -205,15 +221,9 @@ func (h *Handler) HandleReferences() error {
 
 	var errs = []error{}
 	for _, ref := range h.PushReader.References.Names() {
-
-		// When the previous reference handling failed, the only handling operation
-		// to perform on the current reference is a revert of new changes introduced
-		revertOnly := false
-		if len(errs) > 0 {
-			revertOnly = true
-		}
-
-		errs = append(errs, h.ReferenceHandler(ref, revertOnly)...)
+		// When the previous reference handling returned errors, the only handling operation
+		// to perform on the current and future references is a revert operation only
+		errs = append(errs, h.ReferenceHandler(ref, len(errs) > 0)...)
 	}
 
 	if len(errs) > 0 {
@@ -376,10 +386,9 @@ func (h *Handler) HandleReference(ref string, revertOnly bool) []error {
 		}
 	}
 
-	// Re-perform authorization checks for issue references that have been
-	// flagged for issue update policy check
-	if plumbing.IsIssueReference(ref) && detail.FlagCheckAdminUpdatePolicy {
-		if err = h.doAuthCheck(h.PushReader.GetUpdateRequest(), ref); err != nil {
+	// Re-perform authorization checks for post references that have been flagged for update policy check
+	if plumbing.IsPostReference(ref) && detail.FlagCheckAdminUpdatePolicy {
+		if err = h.DoAuth(h.PushReader.GetUpdateRequest(), ref, false); err != nil {
 			errs = append(errs, errors.Wrap(err, "authorization"))
 		}
 	}

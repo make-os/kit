@@ -54,6 +54,15 @@ var _ = Describe("Common", func() {
 		})
 	})
 
+	Describe(".IsPostReference", func() {
+		It("should return false if not an issue branch name or true if otherwise", func() {
+			Expect(plumbing.IsPostReference("refs/heads/abc")).To(BeFalse())
+			Expect(plumbing.IsPostReference(fmt.Sprintf("refs/heads/%s/0001", plumbing.IssueBranchPrefix))).To(BeFalse())
+			Expect(plumbing.IsPostReference(fmt.Sprintf("refs/heads/%s/1", plumbing.MergeRequestBranchPrefix))).To(BeTrue())
+			Expect(plumbing.IsPostReference(fmt.Sprintf("refs/heads/%s/1", plumbing.IssueBranchPrefix))).To(BeTrue())
+		})
+	})
+
 	Describe(".IsMergeRequestReferencePath", func() {
 		It("should return true if string has issue reference path or false if otherwise", func() {
 			Expect(plumbing.IsMergeRequestReferencePath(fmt.Sprintf("refs/heads/%s/", plumbing.MergeRequestBranchPrefix))).To(BeTrue())

@@ -104,6 +104,11 @@ func (r *PushReader) OnReferenceUpdateRequestRead(cb func(ur *packp.ReferenceUpd
 	r.updateReqCB = cb
 }
 
+// SetUpdateRequest sets the reference update request
+func (r *PushReader) SetUpdateRequest(request *packp.ReferenceUpdateRequest) {
+	r.refsUpdateReq = request
+}
+
 // GetUpdateRequest returns the reference update request object
 func (r *PushReader) GetUpdateRequest() *packp.ReferenceUpdateRequest {
 	return r.refsUpdateReq

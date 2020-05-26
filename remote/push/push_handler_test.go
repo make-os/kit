@@ -155,43 +155,67 @@ var _ = Describe("Handler", func() {
 			ur = &packp.ReferenceUpdateRequest{}
 		})
 
-		It("should return no error if a tx detail include a merge ID", func() {
-			handler.TxDetails["refs/heads/master"] = &types.TxDetail{MergeProposalID: "xyz"}
+		It("should return error if a reference has no tx detail", func() {
 			err = handler.HandleAuthorization(ur)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("reference (refs/heads/master) has no transaction information"))
+		})
+	})
+
+	Describe(".DoAuth", func() {
+		var ur *packp.ReferenceUpdateRequest
+		BeforeEach(func() {
+			handler.Repo.SetState(state.BareRepository())
+			handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {}}
+			ur = &packp.ReferenceUpdateRequest{}
+		})
+
+		Specify("that for branch reference with new hash = zero hash, policy is 'PolicyActionDelete'", func() {
+			ref := "refs/heads/master"
+			handler.TxDetails[ref] = &types.TxDetail{}
+			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: plumbing.ZeroHash})
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
+				Expect(reference).To(Equal(ref))
+				Expect(action).To(Equal(policy.PolicyActionDelete))
+				return nil
+			}
+			err = handler.DoAuth(ur, "", false)
 			Expect(err).To(BeNil())
 		})
 
-		It("should return error when command is a delete request and policy check failed", func() {
-			handler.TxDetails["refs/heads/master"] = &types.TxDetail{}
-			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: plumbing.ZeroHash})
+		Specify("that for merge reference, with non-zero new hash, and "+
+			"tx detail has MergeProposalID set, "+
+			"policy is 'PolicyActionIssueWrite'", func() {
+			ref := plumbing2.MakeMergeRequestReference(1)
+			handler.PushReader.References[ref] = &push.PackedReferenceObject{}
+			handler.TxDetails[ref] = &types.TxDetail{MergeProposalID: "123"}
+			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
-				Expect(reference).To(Equal("refs/heads/master"))
-				Expect(action).To(Equal(policy.PolicyActionDelete))
-				return fmt.Errorf("unauthorized")
+				Expect(reference).To(Equal(ref))
+				Expect(action).To(Equal(policy.PolicyActionMergeRequestWrite))
+				return nil
 			}
-			err = handler.HandleAuthorization(ur)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("unauthorized"))
+			err = handler.DoAuth(ur, "", false)
+			Expect(err).To(BeNil())
 		})
 
-		It("should return error when command is a issue update request and policy check failed", func() {
+		Specify("that for issue reference with non-zero new hash, policy is 'PolicyActionIssueWrite'", func() {
 			issueBranch := plumbing2.MakeIssueReference(1)
 			handler.PushReader.References[issueBranch] = &push.PackedReferenceObject{}
-			handler.TxDetails[issueBranch] = &types.TxDetail{MergeProposalID: "123"}
-			handler.TxDetails["refs/heads/master"] = &types.TxDetail{MergeProposalID: "234"}
+			handler.TxDetails[issueBranch] = &types.TxDetail{MergeProposalID: ""}
 			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
 			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(issueBranch), New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal(issueBranch))
-				Expect(action).To(Or(Equal(policy.PolicyActionIssueWrite), Equal("merge-write")))
-				return fmt.Errorf("unauthorized")
+				Expect(action).To(Equal(policy.PolicyActionIssueWrite))
+				return nil
 			}
-			err = handler.HandleAuthorization(ur)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("unauthorized"))
+			err = handler.DoAuth(ur, "", false)
+			Expect(err).To(BeNil())
 		})
 
-		It("should return error when command is a delete request, reference is an issue reference and policy check failed", func() {
+		Specify("that for issue reference with zero new hash, policy is 'PolicyActionIssueDelete'", func() {
 			issueBranch := plumbing2.MakeIssueReference(1)
 			handler.PushReader.References = map[string]*push.PackedReferenceObject{issueBranch: {}}
 			handler.TxDetails[plumbing2.MakeIssueReference(1)] = &types.TxDetail{}
@@ -199,18 +223,16 @@ var _ = Describe("Handler", func() {
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
 				Expect(reference).To(Equal(issueBranch))
 				Expect(action).To(Equal(policy.PolicyActionIssueDelete))
-				return fmt.Errorf("unauthorized")
+				return nil
 			}
-			err = handler.HandleAuthorization(ur)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("unauthorized"))
+			err = handler.DoAuth(ur, "", false)
+			Expect(err).To(BeNil())
 		})
 
-		Specify("that policy iis PolicyActionIssueUpdate when "+
-			"command is an update request and"+
-			"reference is an issue reference and"+
-			"the reference previously exist"+
-			"FlagCheckIssueUpdatePolicy is set in tx detail", func() {
+		Specify("that for issue reference with non-zero new hash and"+
+			"the reference previously exist and"+
+			"tx detail FlagCheckIssueUpdatePolicy is true, "+
+			"policy is 'PolicyActionIssueUpdate'", func() {
 			issueBranch := plumbing2.MakeIssueReference(1)
 			handler.Repo.GetState().References[issueBranch] = &state.Reference{Hash: []byte("hash")}
 			handler.PushReader.References = map[string]*push.PackedReferenceObject{issueBranch: {}}
@@ -222,7 +244,7 @@ var _ = Describe("Handler", func() {
 				Expect(action).To(Equal(policy.PolicyActionIssueUpdate))
 				return nil
 			}
-			err = handler.HandleAuthorization(ur)
+			err = handler.DoAuth(ur, "", false)
 			Expect(err).To(BeNil())
 		})
 
@@ -241,49 +263,105 @@ var _ = Describe("Handler", func() {
 				Expect(action).To(Equal(policy.PolicyActionIssueWrite))
 				return nil
 			}
-			err = handler.HandleAuthorization(ur)
+			err = handler.DoAuth(ur, "", false)
 			Expect(err).To(BeNil())
 		})
 
-		It("should return error when command is a merge update request and policy check failed", func() {
-			handler.TxDetails["refs/heads/master"] = &types.TxDetail{MergeProposalID: "123"}
+		Specify("that for merge reference with non-zero new hash, policy is 'PolicyActionMergeWrite'", func() {
+			ref := plumbing2.MakeMergeRequestReference(1)
+			handler.TxDetails[ref] = &types.TxDetail{}
 			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
-			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
+			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: hash})
 			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
-				Expect(reference).To(Equal("refs/heads/master"))
-				Expect(action).To(Equal(policy.PolicyActionMergeWrite))
-				return fmt.Errorf("unauthorized")
-			}
-			err = handler.HandleAuthorization(ur)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("unauthorized"))
-		})
-
-		It("should return error when command is a write request and policy check failed", func() {
-			handler.TxDetails["refs/heads/master"] = &types.TxDetail{}
-			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
-			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
-			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
-				Expect(reference).To(Equal("refs/heads/master"))
-				Expect(action).To(Equal(policy.PolicyActionWrite))
-				return fmt.Errorf("unauthorized")
-			}
-			err = handler.HandleAuthorization(ur)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("unauthorized"))
-		})
-
-		It("should return nil when policy check passes", func() {
-			handler.TxDetails["refs/heads/master"] = &types.TxDetail{}
-			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
-			ur.Commands = append(ur.Commands, &packp.Command{Name: "refs/heads/master", New: hash})
-			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
-				Expect(reference).To(Equal("refs/heads/master"))
-				Expect(action).To(Equal(policy.PolicyActionWrite))
+				Expect(reference).To(Equal(ref))
+				Expect(action).To(Equal(policy.PolicyActionMergeRequestWrite))
 				return nil
 			}
-			err = handler.HandleAuthorization(ur)
+			err = handler.DoAuth(ur, "", false)
 			Expect(err).To(BeNil())
+		})
+
+		Specify("that for merge reference with newHash=zero, policy is 'PolicyActionMergeDelete'", func() {
+			ref := plumbing2.MakeMergeRequestReference(1)
+			handler.TxDetails[ref] = &types.TxDetail{}
+			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: plumbing.ZeroHash})
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
+				Expect(reference).To(Equal(ref))
+				Expect(action).To(Equal(policy.PolicyActionMergeRequestDelete))
+				return nil
+			}
+			err = handler.DoAuth(ur, "", false)
+			Expect(err).To(BeNil())
+		})
+
+		Specify("that for merge reference with newHash=non-zero and "+
+			"reference is not new and "+
+			"FlagCheckAdminUpdatePolicy is true, "+
+			"policy is 'PolicyActionMergeUpdate'", func() {
+			ref := plumbing2.MakeMergeRequestReference(1)
+			handler.TxDetails[ref] = &types.TxDetail{FlagCheckAdminUpdatePolicy: true}
+			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+			handler.Repo.GetState().References[ref] = &state.Reference{Hash: []byte("hash")}
+			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: hash})
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
+				Expect(reference).To(Equal(ref))
+				Expect(action).To(Equal(policy.PolicyActionMergeRequestUpdate))
+				return nil
+			}
+			err = handler.DoAuth(ur, "", false)
+			Expect(err).To(BeNil())
+		})
+
+		Specify("that when policy checker function return error, DoAuth returns the error", func() {
+			ref := plumbing2.MakeMergeRequestReference(1)
+			handler.TxDetails[ref] = &types.TxDetail{FlagCheckAdminUpdatePolicy: true}
+			hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: hash})
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
+				return fmt.Errorf("error")
+			}
+			err = handler.DoAuth(ur, "", false)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		When("target reference is provided, only the reference is checked", func() {
+			It("should check only ref2 when ref2 is the target reference", func() {
+				ref, ref2 := "refs/heads/master", "refs/heads/dev"
+				handler.TxDetails[ref] = &types.TxDetail{}
+				handler.TxDetails[ref2] = &types.TxDetail{}
+				hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+				hash2 := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+				ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: hash})
+				ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref2), New: hash2})
+				handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
+					Expect(reference).To(Equal(ref2))
+					return nil
+				}
+				err = handler.DoAuth(ur, ref2, false)
+				Expect(err).To(BeNil())
+			})
+		})
+
+		When("ignorePostRefs is true, only the non-post references are checked", func() {
+			It("should check only ref3 since it is not a post reference", func() {
+				ref, ref2, ref3 := plumbing2.MakeIssueReference(1), plumbing2.MakeMergeRequestReference(1), "refs/heads/dev"
+				handler.TxDetails[ref] = &types.TxDetail{}
+				handler.TxDetails[ref2] = &types.TxDetail{}
+				handler.TxDetails[ref3] = &types.TxDetail{}
+				hash := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+				hash2 := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+				hash3 := plumbing.ComputeHash(plumbing.CommitObject, util.RandBytes(20))
+				ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: hash})
+				ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref2), New: hash2})
+				ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref3), New: hash3})
+				handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
+					Expect(reference).To(Equal(ref3))
+					return nil
+				}
+				err = handler.DoAuth(ur, "", true)
+				Expect(err).To(BeNil())
+			})
 		})
 	})
 
@@ -328,9 +406,7 @@ var _ = Describe("Handler", func() {
 				handler.ReferenceHandler = func(ref string, revertOnly bool) []error {
 					return []error{fmt.Errorf("bad error")}
 				}
-				handler.PushReader.References = map[string]*push.PackedReferenceObject{
-					"refs/heads/master": {},
-				}
+				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {}}
 
 				err = handler.HandleReferences()
 			})
@@ -360,9 +436,7 @@ var _ = Describe("Handler", func() {
 		Describe("when a reference failed change validation check", func() {
 			BeforeEach(func() {
 				handler.Server = svr
-				handler.PushReader.References = map[string]*push.PackedReferenceObject{
-					"refs/heads/master": {NewHash: util.RandString(40)},
-				}
+				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
 				handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 					return fmt.Errorf("bad reference change")
 				}
@@ -387,9 +461,7 @@ var _ = Describe("Handler", func() {
 			Describe("when a reference failed change validation and reversion failed", func() {
 				BeforeEach(func() {
 					handler.Server = svr
-					handler.PushReader.References = map[string]*push.PackedReferenceObject{
-						"refs/heads/master": {NewHash: util.RandString(40)},
-					}
+					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
 					handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return fmt.Errorf("bad reference change")
 					}
@@ -413,9 +485,7 @@ var _ = Describe("Handler", func() {
 			Describe("when a reference failed change validation and reversion succeeds", func() {
 				BeforeEach(func() {
 					handler.Server = svr
-					handler.PushReader.References = map[string]*push.PackedReferenceObject{
-						"refs/heads/master": {NewHash: util.RandString(40)},
-					}
+					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
 					handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return fmt.Errorf("bad reference change")
 					}
@@ -440,9 +510,7 @@ var _ = Describe("Handler", func() {
 			Describe("when a reference failed change validation but revertOnly is true", func() {
 				BeforeEach(func() {
 					handler.Server = svr
-					handler.PushReader.References = map[string]*push.PackedReferenceObject{
-						"refs/heads/master": {NewHash: util.RandString(40)},
-					}
+					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
 					handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return fmt.Errorf("bad reference change")
 					}
@@ -466,12 +534,8 @@ var _ = Describe("Handler", func() {
 			Describe("when a reference passed change validation and reversion succeeds", func() {
 				BeforeEach(func() {
 					handler.Server = svr
-					handler.TxDetails = map[string]*types.TxDetail{
-						"refs/heads/master": {},
-					}
-					handler.PushReader.References = map[string]*push.PackedReferenceObject{
-						"refs/heads/master": {NewHash: util.RandString(40)},
-					}
+					handler.TxDetails = map[string]*types.TxDetail{"refs/heads/master": {}}
+					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
 					handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return nil
 					}
@@ -491,17 +555,81 @@ var _ = Describe("Handler", func() {
 					Expect(curState).To(Equal(handler.OldState))
 				})
 			})
+
+			Describe("when a reference is a post reference and update policy is required", func() {
+				var policyChecked bool
+				BeforeEach(func() {
+					ref := plumbing2.MakeIssueReference(1)
+
+					handler.Server = svr
+					handler.Repo.SetState(state.BareRepository())
+					handler.TxDetails = map[string]*types.TxDetail{ref: {FlagCheckAdminUpdatePolicy: true}}
+					handler.PushReader.References = map[string]*push.PackedReferenceObject{ref: {NewHash: util.RandString(40)}}
+					handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+						return nil
+					}
+
+					handler.PushReader.SetUpdateRequest(&packp.ReferenceUpdateRequest{Commands: []*packp.Command{{Name: plumbing.ReferenceName(ref)}}})
+					handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContributor bool, action string) error {
+						policyChecked = true
+						return nil
+					}
+
+					testutil2.CreateCheckoutOrphanBranch(path, plumbing.ReferenceName(ref).Short())
+					testutil2.AppendCommit(path, "body", "hello world", "commit 1")
+					handler.OldState = plumbing2.GetRepoState(repo)
+					testutil2.AppendCommit(path, "body", "hello world, again", "commit 1")
+					errs = handler.HandleReference(ref, false)
+					Expect(errs).To(HaveLen(0))
+				})
+
+				Specify("that policy was enforced", func() {
+					Expect(policyChecked).To(BeTrue())
+				})
+			})
+
+			Describe("when a reference is a post reference and update policy is required and policy enforcement is failed", func() {
+				var policyChecked bool
+				BeforeEach(func() {
+					ref := plumbing2.MakeIssueReference(1)
+
+					handler.Server = svr
+					handler.Repo.SetState(state.BareRepository())
+					handler.TxDetails = map[string]*types.TxDetail{ref: {FlagCheckAdminUpdatePolicy: true}}
+					handler.PushReader.References = map[string]*push.PackedReferenceObject{ref: {NewHash: util.RandString(40)}}
+					handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+						return nil
+					}
+
+					handler.PushReader.SetUpdateRequest(&packp.ReferenceUpdateRequest{Commands: []*packp.Command{{Name: plumbing.ReferenceName(ref)}}})
+					handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContributor bool, action string) error {
+						policyChecked = true
+						return fmt.Errorf("policy failed")
+					}
+
+					testutil2.CreateCheckoutOrphanBranch(path, plumbing.ReferenceName(ref).Short())
+					testutil2.AppendCommit(path, "body", "hello world", "commit 1")
+					handler.OldState = plumbing2.GetRepoState(repo)
+					testutil2.AppendCommit(path, "body", "hello world, again", "commit 1")
+					errs = handler.HandleReference(ref, false)
+				})
+
+				Specify("that policy was enforced", func() {
+					Expect(policyChecked).To(BeTrue())
+				})
+
+				Specify("that policy was enforced", func() {
+					Expect(errs).To(HaveLen(1))
+					Expect(errs[0].Error()).To(Equal("authorization: policy failed"))
+				})
+			})
 		})
 
 		Describe("when merge id is set in transaction info but merge compliance failed", func() {
 			BeforeEach(func() {
 				handler.Server = svr
-				handler.TxDetails = map[string]*types.TxDetail{
-					"refs/heads/master": {MergeProposalID: "001"},
-				}
-				handler.PushReader.References = map[string]*push.PackedReferenceObject{
-					"refs/heads/master": {NewHash: strings.Repeat("0", 40)},
-				}
+				handler.TxDetails = map[string]*types.TxDetail{"refs/heads/master": {MergeProposalID: "001"}}
+				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: strings.Repeat("0", 40)}}
 				handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 					return nil
 				}
