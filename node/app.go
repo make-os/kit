@@ -9,6 +9,7 @@ import (
 	abcitypes "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/state"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
 	"gitlab.com/makeos/mosdef/logic/keepers"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
@@ -233,7 +234,7 @@ func (a *App) postExecChecks(
 			if ref.MergeProposalID != "" {
 				a.unIdxClosedMergeProposal = append(a.unIdxClosedMergeProposal, &mergeProposalInfo{
 					repo:       o.PushNote.GetRepoName(),
-					proposalID: ref.MergeProposalID,
+					proposalID: mergerequest.MakeMergeRequestProposalID(ref.MergeProposalID),
 				})
 			}
 		}

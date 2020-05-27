@@ -122,9 +122,15 @@ func (h *Handler) EnsureReferencesHaveTxDetail() error {
 func (h *Handler) enforcePolicy(cmd *packp.Command) error {
 
 	ref := cmd.Name.String()
+	detail := h.TxDetails.Get(ref)
+
+	// Skip policy check for merge proposal fulfilment
+	if detail.MergeProposalID != "" {
+		return nil
+	}
+
 	pusher := h.TxDetails.GetPushKeyID()
 	isContrib := h.Repo.IsContributor(pusher)
-	detail := h.TxDetails.Get(ref)
 	isIssueRef := plumbing.IsIssueReference(ref)
 	isMergeReqRef := plumbing.IsMergeRequestReference(ref)
 	deleteRef := cmd.New.IsZero()
@@ -137,11 +143,6 @@ func (h *Handler) enforcePolicy(cmd *packp.Command) error {
 	// For delete command, set action to 'delete'.
 	if deleteRef {
 		action = policy.PolicyActionDelete
-	}
-
-	// For merge push, set action to 'merge-write'
-	if detail.MergeProposalID != "" {
-		action = policy.PolicyActionMergeRequestWrite
 	}
 
 	// For issue update, set default action to 'issue-write'.

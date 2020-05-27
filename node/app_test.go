@@ -6,6 +6,7 @@ import (
 
 	"github.com/tendermint/tendermint/privval"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
 	"gitlab.com/makeos/mosdef/params"
 	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
@@ -534,7 +535,7 @@ var _ = Describe("App", func() {
 
 			It("should add repo and proposal id to closable proposals", func() {
 				Expect(app.unIdxClosedMergeProposal).To(HaveLen(1))
-				Expect(app.unIdxClosedMergeProposal).To(ContainElement(&mergeProposalInfo{"repo1", "0001"}))
+				Expect(app.unIdxClosedMergeProposal).To(ContainElement(&mergeProposalInfo{"repo1", mergerequest.MakeMergeRequestProposalID("0001")}))
 			})
 
 			It("should add tx to un-indexed cache", func() {

@@ -356,7 +356,7 @@ func CheckMergeRequestPostBodyConsistency(
 	// it has been finalized; if it has, ensure the body does not include
 	// merge request fields since a finalized merge request cannot be changed.
 	if !isNewRef {
-		id := mergerequest.MakeMergeRequestID(plumbing2.GetReferenceShortName(reference))
+		id := mergerequest.MakeMergeRequestProposalID(plumbing2.GetReferenceShortName(reference))
 		proposal := repo.GetState().Proposals.Get(id)
 		if proposal == nil {
 			return fmt.Errorf("merge request proposal not found") // should not happen

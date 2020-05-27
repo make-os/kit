@@ -6,6 +6,7 @@ import (
 	"github.com/asaskevich/govalidator"
 	"github.com/mr-tron/base58"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -106,7 +107,7 @@ func CheckTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, inde
 	// whether it was created by the owner of the push key
 	if params.MergeProposalID != "" {
 		repoState := keepers.RepoKeeper().Get(params.RepoName)
-		mp := repoState.Proposals.Get(params.MergeProposalID)
+		mp := repoState.Proposals.Get(mergerequest.MakeMergeRequestProposalID(params.MergeProposalID))
 		if mp == nil {
 			return fe(index, "mergeID", "merge proposal not found")
 		}

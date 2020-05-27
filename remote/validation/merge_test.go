@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
+	mr "gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
 	"gitlab.com/makeos/mosdef/mocks"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/validation"
@@ -20,7 +21,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-var _ = Describe("Validation", func() {
+var _ = Describe("Merge", func() {
 	var err error
 	var cfg *config.AppConfig
 	var ctrl *gomock.Controller
@@ -52,7 +53,7 @@ var _ = Describe("Validation", func() {
 				repo := mocks.NewMockLocalRepo(ctrl)
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/others/name", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -67,7 +68,7 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().GetState().Return(state.BareRepository())
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -82,7 +83,7 @@ var _ = Describe("Validation", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.Creator = "address_of_creator"
-				repoState.Proposals.Add("0001", prop)
+				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{Address: "address_xyz"})
@@ -90,7 +91,7 @@ var _ = Describe("Validation", func() {
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -104,16 +105,17 @@ var _ = Describe("Validation", func() {
 				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
-				repoState.Proposals.Add("0001", state.BareRepoProposal())
+				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), state.BareRepoProposal())
 				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, fmt.Errorf("error"))
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).
+					Return(false, fmt.Errorf("error"))
 
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -127,16 +129,16 @@ var _ = Describe("Validation", func() {
 				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
-				repoState.Proposals.Add("0001", state.BareRepoProposal())
+				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), state.BareRepoProposal())
 				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(true, nil)
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(true, nil)
 
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -155,16 +157,16 @@ var _ = Describe("Validation", func() {
 				prop.ActionData = map[string][]byte{
 					constants.ActionDataKeyBaseBranch: util.ToBytes("release"),
 				}
-				repoState.Proposals.Add("0001", prop)
+				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -180,18 +182,18 @@ var _ = Describe("Validation", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.ActionData = map[string][]byte{
-					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
+					constants.ActionDataKeyBaseBranch: []byte("master"),
 				}
-				repoState.Proposals.Add("0001", prop)
+				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -207,19 +209,19 @@ var _ = Describe("Validation", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.ActionData = map[string][]byte{
-					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
+					constants.ActionDataKeyBaseBranch: []byte("master"),
 				}
 				prop.Outcome = 3
-				repoState.Proposals.Add("0001", prop)
+				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -236,19 +238,19 @@ var _ = Describe("Validation", func() {
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
 				prop.ActionData = map[string][]byte{
-					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
+					constants.ActionDataKeyBaseBranch: []byte("master"),
 				}
-				repoState.Proposals.Add("0001", prop)
+				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(nil, fmt.Errorf("error"))
 
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -265,14 +267,14 @@ var _ = Describe("Validation", func() {
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
 				prop.ActionData = map[string][]byte{
-					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
-					constants.ActionDataKeyTargetHash: util.ToBytes("target_xyz"),
+					constants.ActionDataKeyBaseBranch: []byte("master"),
+					constants.ActionDataKeyTargetHash: []byte("target_xyz"),
 				}
-				repoState.Proposals.Add("0001", prop)
+				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
 				pushedCommit := mocks.NewMockCommit(ctrl)
 				pushedCommit.EXPECT().NumParents().Return(2)
@@ -284,7 +286,7 @@ var _ = Describe("Validation", func() {
 				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -302,13 +304,13 @@ var _ = Describe("Validation", func() {
 					prop := state.BareRepoProposal()
 					prop.Outcome = state.ProposalOutcomeAccepted
 					prop.ActionData = map[string][]byte{
-						constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
+						constants.ActionDataKeyBaseBranch: []byte("master"),
 					}
-					repoState.Proposals.Add("0001", prop)
+					repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 					repo.EXPECT().GetState().Return(repoState)
 
 					mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
 					pushedCommit := mocks.NewMockCommit(ctrl)
 					pushedCommit.EXPECT().NumParents().Return(1)
@@ -324,7 +326,7 @@ var _ = Describe("Validation", func() {
 					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
 					oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-					err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+					err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 				})
 
 				It("should return error", func() {
@@ -341,13 +343,13 @@ var _ = Describe("Validation", func() {
 					prop := state.BareRepoProposal()
 					prop.Outcome = state.ProposalOutcomeAccepted
 					prop.ActionData = map[string][]byte{
-						constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
+						constants.ActionDataKeyBaseBranch: []byte("master"),
 					}
-					repoState.Proposals.Add("0001", prop)
+					repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 					repo.EXPECT().GetState().Return(repoState)
 
 					mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
 					pushedCommit := mocks.NewMockCommit(ctrl)
 					pushedCommit.EXPECT().NumParents().Return(1)
@@ -368,7 +370,7 @@ var _ = Describe("Validation", func() {
 					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
 					oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
-					err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+					err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 				})
 
 				It("should return error", func() {
@@ -385,13 +387,13 @@ var _ = Describe("Validation", func() {
 					prop := state.BareRepoProposal()
 					prop.Outcome = state.ProposalOutcomeAccepted
 					prop.ActionData = map[string][]byte{
-						constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
+						constants.ActionDataKeyBaseBranch: []byte("master"),
 					}
-					repoState.Proposals.Add("0001", prop)
+					repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 					repo.EXPECT().GetState().Return(repoState)
 
 					mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+					mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
 					oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
@@ -417,7 +419,7 @@ var _ = Describe("Validation", func() {
 					change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
-					err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+					err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 				})
 
 				It("should return error", func() {
@@ -435,14 +437,14 @@ var _ = Describe("Validation", func() {
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
 				prop.ActionData = map[string][]byte{
-					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
-					constants.ActionDataKeyBaseHash:   util.ToBytes("xyz"),
+					constants.ActionDataKeyBaseBranch: []byte("master"),
+					constants.ActionDataKeyBaseHash:   []byte("xyz"),
 				}
-				repoState.Proposals.Add("0001", prop)
+				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "abc"}
@@ -468,7 +470,7 @@ var _ = Describe("Validation", func() {
 				pushedCommit.EXPECT().Parent(0).Return(targetCommit, nil)
 				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -485,15 +487,15 @@ var _ = Describe("Validation", func() {
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
 				prop.ActionData = map[string][]byte{
-					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
-					constants.ActionDataKeyBaseHash:   util.ToBytes("abc"),
-					constants.ActionDataKeyTargetHash: util.ToBytes("target_xyz"),
+					constants.ActionDataKeyBaseBranch: []byte("master"),
+					constants.ActionDataKeyBaseHash:   []byte("abc"),
+					constants.ActionDataKeyTargetHash: []byte("target_xyz"),
 				}
-				repoState.Proposals.Add("0001", prop)
+				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "abc"}
@@ -521,7 +523,7 @@ var _ = Describe("Validation", func() {
 				pushedCommit.EXPECT().Parent(0).Return(targetCommit, nil)
 				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return error", func() {
@@ -539,15 +541,15 @@ var _ = Describe("Validation", func() {
 				prop.Outcome = state.ProposalOutcomeAccepted
 				propTargetHash := plumbing2.MakeCommitHash(util.RandString(20))
 				prop.ActionData = map[string][]byte{
-					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
-					constants.ActionDataKeyBaseHash:   util.ToBytes("abc"),
-					constants.ActionDataKeyTargetHash: util.ToBytes(propTargetHash.String()),
+					constants.ActionDataKeyBaseBranch: []byte("master"),
+					constants.ActionDataKeyBaseHash:   []byte("abc"),
+					constants.ActionDataKeyTargetHash: []byte(propTargetHash.String()),
 				}
-				repoState.Proposals.Add("0001", prop)
+				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "abc"}
@@ -565,7 +567,7 @@ var _ = Describe("Validation", func() {
 
 				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return no error", func() {
@@ -582,15 +584,15 @@ var _ = Describe("Validation", func() {
 				prop.Outcome = state.ProposalOutcomeAccepted
 				propTargetHash := plumbing2.MakeCommitHash(util.RandString(20))
 				prop.ActionData = map[string][]byte{
-					constants.ActionDataKeyBaseBranch: util.ToBytes("master"),
-					constants.ActionDataKeyBaseHash:   util.ToBytes("abc"),
-					constants.ActionDataKeyTargetHash: util.ToBytes(propTargetHash.String()),
+					constants.ActionDataKeyBaseBranch: []byte("master"),
+					constants.ActionDataKeyBaseHash:   []byte("abc"),
+					constants.ActionDataKeyTargetHash: []byte(propTargetHash.String()),
 				}
-				repoState.Proposals.Add("0001", prop)
+				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
 				repo.EXPECT().GetState().Return(repoState)
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
-				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", "0001").Return(false, nil)
+				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
 				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "abc"}
@@ -617,7 +619,7 @@ var _ = Describe("Validation", func() {
 				pushedCommit.EXPECT().Parent(0).Return(targetCommit, nil)
 				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
-				err = validation.CheckMergeCompliance(repo, change, oldRef, "0001", "push_key_id", mockLogic)
+				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
 
 			It("should return no error", func() {

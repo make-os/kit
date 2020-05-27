@@ -705,7 +705,7 @@ var _ = Describe("Validation", func() {
 					fm := map[string]interface{}{}
 					ref := plumbing2.MakeMergeRequestReference(1)
 					mockRepo.EXPECT().GetState().Return(&state.Repository{Proposals: map[string]*state.RepoProposal{
-						mergerequest.MakeMergeRequestID(1): {Outcome: state.ProposalOutcomeAccepted},
+						mergerequest.MakeMergeRequestProposalID(1): {Outcome: state.ProposalOutcomeAccepted},
 					}})
 					err := validation.CheckPostBody(mockRepo, ref, wc, false, fm, []byte{1})
 					Expect(err).To(BeNil())
@@ -728,7 +728,7 @@ var _ = Describe("Validation", func() {
 				It("should return error when post body include merge request a field (base, baseHash, target, targetHash)", func() {
 					ref := plumbing2.MakeMergeRequestReference(1)
 					mockRepo.EXPECT().GetState().Return(&state.Repository{Proposals: map[string]*state.RepoProposal{
-						mergerequest.MakeMergeRequestID(1): {Outcome: state.ProposalOutcomeAccepted},
+						mergerequest.MakeMergeRequestProposalID(1): {Outcome: state.ProposalOutcomeAccepted},
 					}})
 					err := validation.CheckMergeRequestPostBodyConsistency(mockRepo, ref, false, map[string]interface{}{"base": "master"})
 					Expect(err).ToNot(BeNil())
@@ -738,7 +738,7 @@ var _ = Describe("Validation", func() {
 				It("should return no error when post body does not contain merge request field", func() {
 					ref := plumbing2.MakeMergeRequestReference(1)
 					mockRepo.EXPECT().GetState().Return(&state.Repository{Proposals: map[string]*state.RepoProposal{
-						mergerequest.MakeMergeRequestID(1): {Outcome: state.ProposalOutcomeAccepted},
+						mergerequest.MakeMergeRequestProposalID(1): {Outcome: state.ProposalOutcomeAccepted},
 					}})
 					err := validation.CheckMergeRequestPostBodyConsistency(mockRepo, ref, false, map[string]interface{}{})
 					Expect(err).To(BeNil())

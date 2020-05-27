@@ -3,6 +3,7 @@ package mergerequest
 import (
 	"fmt"
 
+	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/logic/contracts/common"
 	"gitlab.com/makeos/mosdef/logic/proposals"
@@ -14,8 +15,8 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// MakeMergeRequestID returns the full proposal ID of a given merge request ID
-func MakeMergeRequestID(id interface{}) string {
+// MakeMergeRequestProposalID returns the full proposal ID of a given merge request ID
+func MakeMergeRequestProposalID(id interface{}) string {
 	return fmt.Sprintf("MR%v", id)
 }
 
@@ -79,8 +80,9 @@ func (c *MergeRequestContract) Init(logic core.Logic, tx types.BaseTx, curChainH
 // Exec executes the contract
 func (c *MergeRequestContract) Exec() error {
 
-	var id = MakeMergeRequestID(c.data.ProposalID)
+	var id = MakeMergeRequestProposalID(c.data.ProposalID)
 	var proposal = c.data.Repo.Proposals.Get(id)
+	pp.Println(id)
 
 	// Create new proposal if it does not exist already
 	if proposal == nil {

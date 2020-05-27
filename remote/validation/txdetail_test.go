@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
@@ -279,7 +280,7 @@ var _ = Describe("Validation", func() {
 				mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
 
 				repoState := state.BareRepository()
-				repoState.Proposals["100"] = &state.RepoProposal{Action: 100000}
+				repoState.Proposals[mergerequest.MakeMergeRequestProposalID("100")] = &state.RepoProposal{Action: 100000}
 				mockRepoKeeper.EXPECT().Get(detail.RepoName).Return(repoState)
 
 				err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)
@@ -299,7 +300,7 @@ var _ = Describe("Validation", func() {
 				mockAcctKeeper.EXPECT().Get(pk.Address).Return(acct)
 
 				repoState := state.BareRepository()
-				repoState.Proposals["100"] = &state.RepoProposal{Action: txns.MergeRequestProposalAction, Creator: privKey2.Addr().String()}
+				repoState.Proposals[mergerequest.MakeMergeRequestProposalID("100")] = &state.RepoProposal{Action: txns.MergeRequestProposalAction, Creator: privKey2.Addr().String()}
 				mockRepoKeeper.EXPECT().Get(detail.RepoName).Return(repoState)
 
 				err := validation.CheckTxDetailConsistency(detail, mockLogic, 0)

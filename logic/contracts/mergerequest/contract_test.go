@@ -99,7 +99,7 @@ var _ = Describe("MergeRequestContract", func() {
 
 			Specify("that the proposal is finalized and self accepted", func() {
 				Expect(repo.Proposals).To(HaveLen(1))
-				propID := mergerequest.MakeMergeRequestID(id)
+				propID := mergerequest.MakeMergeRequestProposalID(id)
 				Expect(repo.Proposals.Get(propID).IsFinalized()).To(BeTrue())
 				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(1)))
 			})
@@ -110,7 +110,7 @@ var _ = Describe("MergeRequestContract", func() {
 			})
 
 			Specify("that the proposal fee by the sender is registered on the proposal", func() {
-				propID := mergerequest.MakeMergeRequestID(id)
+				propID := mergerequest.MakeMergeRequestProposalID(id)
 				Expect(repo.Proposals.Get(propID).Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get(propID).Fees).To(HaveKey(sender.Addr().String()))
 				Expect(repo.Proposals.Get(propID).Fees[sender.Addr().String()]).To(Equal(id))
@@ -148,7 +148,7 @@ var _ = Describe("MergeRequestContract", func() {
 
 			Specify("that the proposal is not finalized or self accepted", func() {
 				Expect(repo.Proposals).To(HaveLen(1))
-				propID := mergerequest.MakeMergeRequestID(id)
+				propID := mergerequest.MakeMergeRequestProposalID(id)
 				Expect(repo.Proposals.Get(propID).IsFinalized()).To(BeFalse())
 				Expect(repo.Proposals.Get(propID).Yes).To(Equal(float64(0)))
 			})
@@ -159,7 +159,7 @@ var _ = Describe("MergeRequestContract", func() {
 			})
 
 			Specify("that the proposal fee by the sender is registered on the proposal", func() {
-				propID := mergerequest.MakeMergeRequestID(id)
+				propID := mergerequest.MakeMergeRequestProposalID(id)
 				Expect(repo.Proposals.Get(propID).Fees).To(HaveLen(1))
 				Expect(repo.Proposals.Get(propID).Fees).To(HaveKey(sender.Addr().String()))
 				Expect(repo.Proposals.Get(propID).Fees[sender.Addr().String()]).To(Equal(id))
@@ -179,7 +179,7 @@ var _ = Describe("MergeRequestContract", func() {
 
 			BeforeEach(func() {
 				repo.AddOwner(sender.Addr().String(), &state.RepoOwner{})
-				repo.Proposals.Add(mergerequest.MakeMergeRequestID(id), &state.RepoProposal{
+				repo.Proposals.Add(mergerequest.MakeMergeRequestProposalID(id), &state.RepoProposal{
 					ActionData: map[string][]byte{
 						constants.ActionDataKeyBaseBranch:   []byte("base"),
 						constants.ActionDataKeyBaseHash:     []byte("baseHash"),
@@ -209,7 +209,7 @@ var _ = Describe("MergeRequestContract", func() {
 
 			It("should update proposal action data", func() {
 				Expect(repo.Proposals).To(HaveLen(1))
-				id := mergerequest.MakeMergeRequestID(id)
+				id := mergerequest.MakeMergeRequestProposalID(id)
 				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseBranch]).To(Equal([]byte("base2")))
 				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseHash]).To(Equal([]byte("baseHash2")))
 				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetBranch]).To(Equal([]byte("target2")))
@@ -225,7 +225,7 @@ var _ = Describe("MergeRequestContract", func() {
 
 			BeforeEach(func() {
 				repo.AddOwner(sender.Addr().String(), &state.RepoOwner{})
-				repo.Proposals.Add(mergerequest.MakeMergeRequestID(id), &state.RepoProposal{
+				repo.Proposals.Add(mergerequest.MakeMergeRequestProposalID(id), &state.RepoProposal{
 					Outcome: state.ProposalOutcomeAccepted,
 					ActionData: map[string][]byte{
 						constants.ActionDataKeyBaseBranch:   []byte("base"),
@@ -256,7 +256,7 @@ var _ = Describe("MergeRequestContract", func() {
 
 			It("should not update proposal action data", func() {
 				Expect(repo.Proposals).To(HaveLen(1))
-				id := mergerequest.MakeMergeRequestID(id)
+				id := mergerequest.MakeMergeRequestProposalID(id)
 				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseBranch]).To(Equal([]byte("base")))
 				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseHash]).To(Equal([]byte("baseHash")))
 				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetBranch]).To(Equal([]byte("target")))

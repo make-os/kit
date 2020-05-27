@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -34,7 +34,8 @@ func CheckMergeCompliance(
 		return fmt.Errorf("merge error: pushed reference must be a branch")
 	}
 
-	prop := repo.GetState().Proposals.Get(mergeProposalID)
+	fullMergePropID := mergerequest.MakeMergeRequestProposalID(mergeProposalID)
+	prop := repo.GetState().Proposals.Get(fullMergePropID)
 	if prop == nil {
 		return fmt.Errorf("merge error: target merge proposal was not found")
 	}
@@ -46,7 +47,7 @@ func CheckMergeCompliance(
 	}
 
 	// Check if the merge proposal has been closed
-	closed, err := keepers.RepoKeeper().IsProposalClosed(repo.GetName(), mergeProposalID)
+	closed, err := keepers.RepoKeeper().IsProposalClosed(repo.GetName(), fullMergePropID)
 	if err != nil {
 		return fmt.Errorf("merge error: %s", err)
 	} else if closed {
@@ -54,8 +55,7 @@ func CheckMergeCompliance(
 	}
 
 	// Ensure the proposal's base branch matches the pushed branch
-	var propBaseBranch string
-	_ = util.ToObject(prop.ActionData[constants.ActionDataKeyBaseBranch], &propBaseBranch)
+	var propBaseBranch = string(prop.ActionData[constants.ActionDataKeyBaseBranch])
 	if ref.Short() != propBaseBranch {
 		return fmt.Errorf("merge error: pushed branch name and proposal base branch name must match")
 	}
@@ -78,14 +78,12 @@ func CheckMergeCompliance(
 		return errors.Wrap(err, "unable to get commit object")
 	}
 
-	var propTargetHash string
-	util.ToObject(prop.ActionData[constants.ActionDataKeyTargetHash], &propTargetHash)
-
 	// By default, the parent of the merge commit is target commit...
 	targetCommit, _ := commit.Parent(0)
 
 	// ...unless the merge commit is the proposal target, in which case
 	// we use the commit as the target hash.
+	var propTargetHash = string(prop.ActionData[constants.ActionDataKeyTargetHash])
 	if propTargetHash == commit.GetHash().String() {
 		targetCommit = commit
 	}
@@ -117,8 +115,7 @@ func CheckMergeCompliance(
 	}
 
 	// When no base hash is given, set default hash value to zero hash
-	var propBaseHash string
-	_ = util.ToObject(prop.ActionData[constants.ActionDataKeyBaseHash], &propBaseHash)
+	var propBaseHash = string(prop.ActionData[constants.ActionDataKeyBaseHash])
 	propBaseHashStr := plumbing.ZeroHash.String()
 	if propBaseHash != "" {
 		propBaseHashStr = propBaseHash

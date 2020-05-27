@@ -164,10 +164,25 @@ var _ = Describe("Handler", func() {
 
 	Describe(".DoAuth", func() {
 		var ur *packp.ReferenceUpdateRequest
+
 		BeforeEach(func() {
 			handler.Repo.SetState(state.BareRepository())
 			handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {}}
 			ur = &packp.ReferenceUpdateRequest{}
+		})
+
+		Specify("that policy is not checked when tx detail has a merge proposal ID set", func() {
+			ref := "refs/heads/master"
+			handler.TxDetails[ref] = &types.TxDetail{MergeProposalID: "111"}
+			ur.Commands = append(ur.Commands, &packp.Command{Name: plumbing.ReferenceName(ref), New: plumbing.ZeroHash})
+			policyChecked := false
+			handler.PolicyChecker = func(enforcer policy.EnforcerFunc, reference string, isRefCreator bool, pushKeyID string, isContrib bool, action string) error {
+				policyChecked = true
+				return nil
+			}
+			err = handler.DoAuth(ur, "", false)
+			Expect(err).To(BeNil())
+			Expect(policyChecked).To(BeFalse())
 		})
 
 		Specify("that for branch reference with new hash = zero hash, policy is 'PolicyActionDelete'", func() {
