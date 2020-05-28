@@ -198,7 +198,7 @@ input:
 		FreePostIDGetter: plumbing.GetFreePostID,
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to add issue or comment")
+		return errors.Wrap(err, "failed to create or add new comment to issue")
 	}
 
 	if newIssue {

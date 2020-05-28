@@ -115,7 +115,7 @@ var issueCreateCmd = &cobra.Command{
 // issueListCmd represents a sub-command to list all issues
 var issueListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all issues",
+	Short: "List issues",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		limit, _ := cmd.Flags().GetInt("limit")
@@ -148,7 +148,7 @@ var issueListCmd = &cobra.Command{
 // issueReadCmd represents a sub-command to read an issue
 var issueReadCmd = &cobra.Command{
 	Use:   "read",
-	Short: "Read all comments in an issue",
+	Short: "Read comments in an issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		limit, _ := cmd.Flags().GetInt("limit")

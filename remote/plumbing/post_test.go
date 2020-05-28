@@ -302,12 +302,17 @@ content`, "commit 2")
 	})
 
 	Describe(".GetCommentPreview", func() {
-		It("should return sentence", func() {
-			prev := plumbing.GetCommentPreview(&plumbing.Comment{Body: &plumbing.PostBody{Content: []byte("This is a simulation. We are in a simulation.")}})
-			Expect(strings.TrimSpace(prev)).To(Equal("This is a simulation..."))
+		It("should return short version (with ellipsis) when content length is above 80", func() {
+			text := `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.`
+			prev := plumbing.GetCommentPreview(&plumbing.Comment{Body: &plumbing.PostBody{Content: []byte(text)}})
+			Expect(strings.TrimSpace(prev)).To(Equal("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor i..."))
+			Expect(len(strings.TrimSpace(prev))).To(Equal(80 + 3))
+		})
 
-			prev = plumbing.GetCommentPreview(&plumbing.Comment{Body: &plumbing.PostBody{Content: []byte("This is a simulation.")}})
-			Expect(strings.TrimSpace(prev)).To(Equal("This is a simulation."))
+		It("should return full version when content length is below/equal 80", func() {
+			text := `Lorem ipsum dolor sit amet, consectetur adipiscing elit`
+			prev := plumbing.GetCommentPreview(&plumbing.Comment{Body: &plumbing.PostBody{Content: []byte(text)}})
+			Expect(strings.TrimSpace(prev)).To(Equal(text))
 		})
 	})
 

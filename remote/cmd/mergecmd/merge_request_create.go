@@ -192,7 +192,7 @@ input:
 		FreePostIDGetter: plumbing.GetFreePostID,
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to create new merge request or new comment")
+		return errors.Wrap(err, "failed to create or add new comment to merge request request")
 	}
 
 	if newPost {

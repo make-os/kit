@@ -15,18 +15,21 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	"gitlab.com/makeos/mosdef/remote/cmd/mergecmd"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// mergeReqCmd represents the issue command
+// mergeReqCmd represents the merge request command
 var mergeReqCmd = &cobra.Command{
 	Use:   "mr",
 	Short: "Create, read, list and respond to merge requests",
@@ -36,7 +39,7 @@ var mergeReqCmd = &cobra.Command{
 	},
 }
 
-// mergeReqCreateCmd represents a sub-command to create an issue
+// mergeReqCreateCmd represents a sub-command to create a merge request
 var mergeReqCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a merge request or add a comment to an existing one",
@@ -127,6 +130,86 @@ var mergeReqCreateCmd = &cobra.Command{
 	},
 }
 
+// mergeListCmd represents a sub-command to list all merge requests
+var mergeReqListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List merge requests",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		limit, _ := cmd.Flags().GetInt("limit")
+		reverse, _ := cmd.Flags().GetBool("reverse")
+		dateFmt, _ := cmd.Flags().GetString("date")
+		format, _ := cmd.Flags().GetString("format")
+		noPager, _ := cmd.Flags().GetBool("no-pager")
+
+		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		if err = mergecmd.MergeRequestListCmd(targetRepo, &mergecmd.MergeRequestListArgs{
+			Limit:      limit,
+			Reverse:    reverse,
+			DateFmt:    dateFmt,
+			PostGetter: plumbing.GetPosts,
+			PagerWrite: common.WriteToPager,
+			Format:     format,
+			NoPager:    noPager,
+			StdOut:     os.Stdout,
+			StdErr:     os.Stderr,
+		}); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
+// mergeReqReadCmd represents a sub-command to read a merge request
+var mergeReqReadCmd = &cobra.Command{
+	Use:   "read",
+	Short: "Read a merge request",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		limit, _ := cmd.Flags().GetInt("limit")
+		reverse, _ := cmd.Flags().GetBool("reverse")
+		dateFmt, _ := cmd.Flags().GetString("date")
+		format, _ := cmd.Flags().GetString("format")
+		noPager, _ := cmd.Flags().GetBool("no-pager")
+		noCloseStatus, _ := cmd.Flags().GetBool("no-close-status")
+
+		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		mergeReqPath := strings.ToLower(args[0])
+		if strings.HasPrefix(mergeReqPath, plumbing.MergeRequestBranchPrefix) {
+			mergeReqPath = fmt.Sprintf("refs/heads/%s", mergeReqPath)
+		}
+		if !plumbing.IsMergeRequestReferencePath(mergeReqPath) {
+			mergeReqPath = plumbing.MakeMergeRequestReference(mergeReqPath)
+		}
+		if !plumbing.IsMergeRequestReference(mergeReqPath) {
+			log.Fatal(fmt.Sprintf("invalid merge request name (%s)", args[0]))
+		}
+
+		if err = mergecmd.MergeRequestReadCmd(targetRepo, &mergecmd.MergeRequestReadArgs{
+			MergeRequestPath: mergeReqPath,
+			Limit:            limit,
+			Reverse:          reverse,
+			DateFmt:          dateFmt,
+			Format:           format,
+			PagerWrite:       common.WriteToPager,
+			PostGetter:       plumbing.GetPosts,
+			NoPager:          noPager,
+			NoCloseStatus:    noCloseStatus,
+			StdOut:           os.Stdout,
+			StdErr:           os.Stderr,
+		}); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(mergeReqCmd)
 
@@ -134,32 +217,34 @@ func init() {
 	mergeReqCmd.Flags().SortFlags = false
 	mergeReqCmd.PersistentFlags().Bool("no-pager", false, "Prevent output from being piped into a pager")
 	mergeReqCmd.AddCommand(mergeReqCreateCmd)
+	mergeReqCmd.AddCommand(mergeReqListCmd)
+	mergeReqCmd.AddCommand(mergeReqReadCmd)
 
 	mergeReqCreateCmd.Flags().StringP("title", "t", "", "The merge request title (max. 250 B)")
 	mergeReqCreateCmd.Flags().StringP("body", "b", "", "The merge request message (max. 8 KB)")
 	mergeReqCreateCmd.Flags().StringP("reply", "r", "", "Specify the hash of a comment to respond to")
 	mergeReqCreateCmd.Flags().StringSliceP("reactions", "e", nil, "Add reactions to a reply (max. 10)")
 	mergeReqCreateCmd.Flags().BoolP("use-editor", "u", false, "Use git configured editor to write body")
-	mergeReqCreateCmd.Flags().Bool("no-body", false, "Skip prompt for issue body")
+	mergeReqCreateCmd.Flags().Bool("no-body", false, "Skip prompt for merge request body")
 	mergeReqCreateCmd.Flags().String("editor", "", "Specify an editor to use instead of the git configured editor")
 	mergeReqCreateCmd.Flags().IntP("id", "i", 0, "Specify a unique merge request number")
-	mergeReqCreateCmd.Flags().BoolP("close", "c", false, "Close the issue")
-	mergeReqCreateCmd.Flags().BoolP("reopen", "o", false, "Open a closed issue")
+	mergeReqCreateCmd.Flags().BoolP("close", "c", false, "Close the merge request")
+	mergeReqCreateCmd.Flags().BoolP("reopen", "o", false, "Re-open a closed merge request")
 	mergeReqCreateCmd.Flags().String("base", "", "Specify the base branch name")
 	mergeReqCreateCmd.Flags().String("baseHash", "", "Specify the current hash of the base branch")
 	mergeReqCreateCmd.Flags().String("target", "", "Specify the target branch name")
 	mergeReqCreateCmd.Flags().String("targetHash", "", "Specify the hash of the target branch")
 
-	// issueReadCmd.Flags().Bool("no-close-status", false, "Hide the close status indicator")
+	mergeReqReadCmd.Flags().Bool("no-close-status", false, "Hide the close status indicator")
 
-	// var commonIssueFlags = func(commands ...*cobra.Command) {
-	// 	for _, cmd := range commands {
-	// 		cmd.Flags().IntP("limit", "n", 0, "Limit the number of records to returned")
-	// 		cmd.Flags().Bool("reverse", false, "Return the result in reversed order")
-	// 		cmd.Flags().StringP("date", "d", "Mon Jan _2 15:04:05 2006 -0700", "Set date format")
-	// 		cmd.Flags().StringP("format", "f", "", "Set output format")
-	// 	}
-	// }
-	//
-	// commonIssueFlags(issueListCmd, issueReadCmd)
+	var commonFlags = func(commands ...*cobra.Command) {
+		for _, cmd := range commands {
+			cmd.Flags().IntP("limit", "n", 0, "Limit the number of records to returned")
+			cmd.Flags().Bool("reverse", false, "Return the result in reversed order")
+			cmd.Flags().StringP("date", "d", "Mon Jan _2 15:04:05 2006 -0700", "Set date format")
+			cmd.Flags().StringP("format", "f", "", "Set output format")
+		}
+	}
+
+	commonFlags(mergeReqListCmd, mergeReqReadCmd)
 }

@@ -85,36 +85,36 @@ func formatAndPrintIssueList(targetRepo types.LocalRepo, args *IssueListArgs, is
 	for i, issue := range issues {
 
 		// Format date if date format is specified
-		date := issue.FirstComment().Created.String()
+		date := issue.Comment().Created.String()
 		if args.DateFmt != "" {
 			switch args.DateFmt {
 			case "unix":
-				date = fmt.Sprintf("%d", issue.FirstComment().Created.Unix())
+				date = fmt.Sprintf("%d", issue.Comment().Created.Unix())
 			case "utc":
-				date = issue.FirstComment().Created.UTC().String()
+				date = issue.Comment().Created.UTC().String()
 			case "rfc3339":
-				date = issue.FirstComment().Created.Format(time.RFC3339)
+				date = issue.Comment().Created.Format(time.RFC3339)
 			case "rfc822":
-				date = issue.FirstComment().Created.Format(time.RFC822)
+				date = issue.Comment().Created.Format(time.RFC822)
 			default:
-				date = issue.FirstComment().Created.Format(args.DateFmt)
+				date = issue.Comment().Created.Format(args.DateFmt)
 			}
 		}
 
 		pusherKeyFmt := ""
-		if issue.FirstComment().Pusher != "" {
+		if issue.Comment().Pusher != "" {
 			pusherKeyFmt = "\nPusher: %pk%"
 		}
 
 		// Extract preview
-		preview := plumbing2.GetCommentPreview(issue.FirstComment())
+		preview := plumbing2.GetCommentPreview(issue.Comment())
 
 		// Get format or use default
 		var format = args.Format
 		if format == "" {
 			format = `` + color.YellowString("issue %H% %n%") + `
-Author: %a% <%e%>` + pusherKeyFmt + `
 Title:  %t%
+Author: %a% <%e%>` + pusherKeyFmt + `
 Date:   %d%
 %c%
 `
@@ -123,15 +123,15 @@ Date:   %d%
 		// Define the data for format parsing
 		data := map[string]interface{}{
 			"i":  i,
-			"a":  issue.FirstComment().Author,
-			"e":  issue.FirstComment().AuthorEmail,
+			"a":  issue.Comment().Author,
+			"e":  issue.Comment().AuthorEmail,
 			"t":  issue.GetTitle(),
 			"c":  preview,
 			"d":  date,
-			"H":  issue.FirstComment().Hash,
-			"h":  issue.FirstComment().Hash[:7],
+			"H":  issue.Comment().Hash,
+			"h":  issue.Comment().Hash[:7],
 			"n":  plumbing.ReferenceName(issue.GetName()).Short(),
-			"pk": issue.FirstComment().Pusher,
+			"pk": issue.Comment().Pusher,
 		}
 
 		if i > 0 {

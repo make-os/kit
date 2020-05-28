@@ -16,7 +16,6 @@ import (
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/util"
-	"gopkg.in/jdkato/prose.v2"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/yaml.v2"
@@ -59,7 +58,7 @@ type Post struct {
 	First *Comment
 }
 
-func (p *Post) FirstComment() *Comment {
+func (p *Post) Comment() *Comment {
 	return p.First
 }
 
@@ -245,7 +244,7 @@ func (p *Posts) Reverse() {
 // SortByFirstPostCreationTimeDesc sorts the posts by their first post creation time in descending order
 func (p *Posts) SortByFirstPostCreationTimeDesc() {
 	sort.Slice(*p, func(i, j int) bool {
-		return (*p)[i].(*Post).First.Created.UnixNano() > (*p)[j].FirstComment().Created.UnixNano()
+		return (*p)[i].(*Post).First.Created.UnixNano() > (*p)[j].Comment().Created.UnixNano()
 	})
 }
 
@@ -329,16 +328,11 @@ func GetPosts(targetRepo types.LocalRepo, filter func(ref plumbing.ReferenceName
 
 // GetCommentPreview returns a preview of a comment
 func GetCommentPreview(comment *Comment) string {
-	doc, _ := prose.NewDocument(string(comment.Body.Content))
-	var preview = ""
-	if sentences := doc.Sentences(); len(sentences) > 0 {
-		preview = "\n    " + sentences[0].Text
-		if len(sentences) > 1 {
-			preview = strings.TrimRight(preview, ".")
-			preview += "..."
-		}
+	content := string(comment.Body.Content)
+	if len(content) > 80 {
+		content = content[:80] + "..."
 	}
-	return preview
+	return "\n    " + content
 }
 
 type PostBody struct {
@@ -421,7 +415,7 @@ type PostEntry interface {
 	IsClosed() (bool, error)
 	GetTitle() string
 	GetName() string
-	FirstComment() *Comment
+	Comment() *Comment
 }
 
 type FreePostIDFinder func(repo types.LocalRepo, startID int, postRefType string) (int, error)
