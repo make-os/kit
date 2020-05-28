@@ -17,6 +17,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -54,9 +55,10 @@ var mergeReqCreateCmd = &cobra.Command{
 		noBody, _ := cmd.Flags().GetBool("no-body")
 		cls, _ := cmd.Flags().GetBool("close")
 		open, _ := cmd.Flags().GetBool("reopen")
+		forceNew, _ := cmd.Flags().GetBool("new")
 		editorPath, _ := cmd.Flags().GetString("editor")
 		reactions, _ := cmd.Flags().GetStringSlice("reactions")
-		mergeReqID, _ := cmd.Flags().GetInt("id")
+		targetPostID, _ := cmd.Flags().GetInt("id")
 		baseBranch, _ := cmd.Flags().GetString("base")
 		baseBranchHash, _ := cmd.Flags().GetString("baseHash")
 		targetBranch, _ := cmd.Flags().GetString("target")
@@ -65,6 +67,20 @@ var mergeReqCreateCmd = &cobra.Command{
 		r, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		// When target post ID is unset and the current HEAD is a post reference,
+		// use the reference short name as the post ID
+		if !forceNew && targetPostID == 0 {
+			HEAD, err := r.Head()
+			if err != nil {
+				log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
+			} else if plumbing.IsMergeRequestReference(HEAD) {
+				id := plumbing.GetReferenceShortName(HEAD)
+				targetPostID, _ = strconv.Atoi(id)
+			} else {
+				log.Fatal("HEAD is not a merge request reference")
+			}
 		}
 
 		if editorPath != "" {
@@ -100,7 +116,7 @@ var mergeReqCreateCmd = &cobra.Command{
 		}
 
 		mrCreateArgs := &mergecmd.MergeRequestCreateArgs{
-			MergeRequestNumber: mergeReqID,
+			ID:                 targetPostID,
 			Title:              title,
 			Body:               body,
 			NoBody:             noBody,
@@ -229,6 +245,7 @@ func init() {
 	mergeReqCreateCmd.Flags().String("editor", "", "Specify an editor to use instead of the git configured editor")
 	mergeReqCreateCmd.Flags().IntP("id", "i", 0, "Specify a unique merge request number")
 	mergeReqCreateCmd.Flags().BoolP("close", "c", false, "Close the merge request")
+	mergeReqCreateCmd.Flags().Bool("new", false, "Force new issue to be created instead of adding a comment to HEAD")
 	mergeReqCreateCmd.Flags().BoolP("reopen", "o", false, "Re-open a closed merge request")
 	mergeReqCreateCmd.Flags().String("base", "", "Specify the base branch name")
 	mergeReqCreateCmd.Flags().String("baseHash", "", "Specify the current hash of the base branch")

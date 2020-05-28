@@ -179,8 +179,8 @@ var _ = Describe("IssueCreate", func() {
 
 		When("issue number is set (new issue creation or comment)", func() {
 			It("should return error when issue does not exist and reply hash is set", func() {
-				args := &issuecmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "xyz"}
-				ref := plumbing.MakeIssueReference(args.IssueNumber)
+				args := &issuecmd.IssueCreateArgs{ID: 1, ReplyHash: "xyz"}
+				ref := plumbing.MakeIssueReference(args.ID)
 				mockRepo.EXPECT().RefGet(ref).Return("", plumbing.ErrRefNotFound)
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
@@ -188,8 +188,8 @@ var _ = Describe("IssueCreate", func() {
 			})
 
 			It("should return error when unable to get issue reference", func() {
-				args := &issuecmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "xyz"}
-				ref := plumbing.MakeIssueReference(args.IssueNumber)
+				args := &issuecmd.IssueCreateArgs{ID: 1, ReplyHash: "xyz"}
+				ref := plumbing.MakeIssueReference(args.ID)
 				mockRepo.EXPECT().RefGet(ref).Return("", fmt.Errorf("error"))
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
@@ -197,8 +197,8 @@ var _ = Describe("IssueCreate", func() {
 			})
 
 			It("should return error when unable to count number of comments in reference", func() {
-				args := &issuecmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "xyz"}
-				ref := plumbing.MakeIssueReference(args.IssueNumber)
+				args := &issuecmd.IssueCreateArgs{ID: 1, ReplyHash: "xyz"}
+				ref := plumbing.MakeIssueReference(args.ID)
 				mockRepo.EXPECT().RefGet(ref).Return("xyz", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(0, fmt.Errorf("error"))
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
@@ -207,8 +207,8 @@ var _ = Describe("IssueCreate", func() {
 			})
 
 			It("should return error when issue has commits and title is provided", func() {
-				args := &issuecmd.IssueCreateArgs{IssueNumber: 1, Title: "Some Title"}
-				ref := plumbing.MakeIssueReference(args.IssueNumber)
+				args := &issuecmd.IssueCreateArgs{ID: 1, Title: "Some Title"}
+				ref := plumbing.MakeIssueReference(args.ID)
 				mockRepo.EXPECT().RefGet(ref).Return("xyz", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(1, nil)
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
@@ -217,8 +217,8 @@ var _ = Describe("IssueCreate", func() {
 			})
 
 			It("should return error when reply hash does not exist in issue branch", func() {
-				args := &issuecmd.IssueCreateArgs{IssueNumber: 1, ReplyHash: "reply_hash"}
-				ref := plumbing.MakeIssueReference(args.IssueNumber)
+				args := &issuecmd.IssueCreateArgs{ID: 1, ReplyHash: "reply_hash"}
+				ref := plumbing.MakeIssueReference(args.ID)
 				mockRepo.EXPECT().RefGet(ref).Return("xyz", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(1, nil)
 				mockRepo.EXPECT().IsAncestor("reply_hash", "xyz").Return(fmt.Errorf("bad"))
@@ -230,7 +230,7 @@ var _ = Describe("IssueCreate", func() {
 			It("should not return ErrBodyRequired when NoBody=true and intent is a reply", func() {
 				issueNumber := 1
 				ref := plumbing.MakeIssueReference(issueNumber)
-				args := &issuecmd.IssueCreateArgs{IssueNumber: issueNumber, ReplyHash: "comment_hash", NoBody: true,
+				args := &issuecmd.IssueCreateArgs{ID: issueNumber, ReplyHash: "comment_hash", NoBody: true,
 					StdOut:             bytes.NewBuffer(nil),
 					PostCommentCreator: testIssueCommentCreator(true, ref, nil)}
 

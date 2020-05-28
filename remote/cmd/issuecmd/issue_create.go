@@ -18,7 +18,7 @@ import (
 
 type IssueCreateArgs struct {
 	// IssueID is the unique Issue ID
-	IssueNumber int
+	ID int
 
 	// Title is the title of the Issue
 	Title string
@@ -77,41 +77,36 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) error {
 	var issueRef, issueRefHash string
 	var err error
 
-	// If issue number is not set, it means a new issue should be created.
-	// Go directly to input collection.
-	if args.IssueNumber == 0 {
-		goto input
+	if args.ID != 0 {
+
+		// Get the issue reference
+		issueRef = plumbing.MakeIssueReference(args.ID)
+		issueRefHash, err = r.RefGet(issueRef)
+
+		// When issue does not exist and this is a reply intent, return error
+		if err != nil && err == plumbing.ErrRefNotFound && args.ReplyHash != "" {
+			return fmt.Errorf("issue (%d) was not found", args.ID)
+		} else if err != nil && err != plumbing.ErrRefNotFound {
+			return err
+		}
+
+		// Get the number of comments
+		nComments, err = r.NumCommits(issueRef, false)
+		if err != nil {
+			return errors.Wrap(err, "failed to count comments in issue")
+		}
+
+		// Title is not required when the intent is to add a comment
+		if nComments > 0 && args.Title != "" {
+			return fmt.Errorf("title not required when adding a comment to an issue")
+		}
+
+		// When the intent is to reply to a specific comment, ensure the target
+		// comment hash exist in the issue
+		if args.ReplyHash != "" && r.IsAncestor(args.ReplyHash, issueRefHash) != nil {
+			return fmt.Errorf("target comment hash (%s) is unknown", args.ReplyHash)
+		}
 	}
-
-	// Get the issue reference
-	issueRef = plumbing.MakeIssueReference(args.IssueNumber)
-	issueRefHash, err = r.RefGet(issueRef)
-
-	// When issue does not exist and this is a reply intent, return error
-	if err != nil && err == plumbing.ErrRefNotFound && args.ReplyHash != "" {
-		return fmt.Errorf("issue (%d) was not found", args.IssueNumber)
-	} else if err != nil && err != plumbing.ErrRefNotFound {
-		return err
-	}
-
-	// Get the number of comments
-	nComments, err = r.NumCommits(issueRef, false)
-	if err != nil {
-		return errors.Wrap(err, "failed to count comments in issue")
-	}
-
-	// Title is not required when the intent is to add a comment
-	if nComments > 0 && args.Title != "" {
-		return fmt.Errorf("title not required when adding a comment to an issue")
-	}
-
-	// When the intent is to reply to a specific comment, ensure the target
-	// comment hash exist in the issue
-	if args.ReplyHash != "" && r.IsAncestor(args.ReplyHash, issueRefHash) != nil {
-		return fmt.Errorf("target comment hash (%s) is unknown", args.ReplyHash)
-	}
-
-input:
 
 	// Ensure the reactions are all supported
 	for _, reaction := range args.Reactions {
@@ -135,7 +130,7 @@ input:
 	}
 
 	// When intent is to reply to a comment, an issue number is required
-	if args.IssueNumber == 0 && args.ReplyHash != "" {
+	if args.ID == 0 && args.ReplyHash != "" {
 		return fmt.Errorf("issue number is required when adding a comment")
 	}
 
@@ -146,7 +141,9 @@ input:
 
 	// Prompt user for title only if was not provided via flag and this is not a comment
 	if len(args.Title) == 0 && args.ReplyHash == "" && nComments == 0 {
-		args.Title = args.InputReader("\033[1;33m? Title: (256 chars max.)\u001B[0m\n  ", &util.InputReaderArgs{})
+		args.Title = args.InputReader("\033[1;32m? \033[1;37mTitle> \u001B[0m", &util.InputReaderArgs{
+			After: func(input string) { fmt.Fprintf(args.StdOut, "\033[36m%s\033[0m\n", input) },
+		})
 		if len(args.Title) == 0 {
 			return common.ErrTitleRequired
 		}
@@ -154,9 +151,9 @@ input:
 
 	// Read body from stdIn only if an editor is not requested and --no-body is unset
 	if len(args.Body) == 0 && args.UseEditor == false && !args.NoBody {
-		args.Body = args.InputReader("\033[1;33m? Body: (8192 chars max. | Tap enter thrice to exit)\u001B[0m\n  ",
-			&util.InputReaderArgs{Multiline: true})
-		fmt.Fprint(args.StdOut, "\010\010")
+		args.Body = args.InputReader("\033[1;32m? \033[1;37mBody> \u001B[0m", &util.InputReaderArgs{
+			After: func(input string) { fmt.Fprintf(args.StdOut, "\033[36m%s\033[0m\n", input) },
+		})
 	}
 
 	// Read body from editor if requested
@@ -168,6 +165,9 @@ input:
 		args.Body, err = args.EditorReader(editor, args.StdIn, os.Stdout, os.Stderr)
 		if err != nil {
 			return errors.Wrap(err, "failed read body from editor")
+		}
+		if args.Body != "" {
+			fmt.Fprint(args.StdOut, "\u001B[1;32m? \u001B[1;37mBody> \033[0m\u001B[36m[Received]\u001B[0m\n")
 		}
 	}
 
@@ -192,7 +192,7 @@ input:
 	// Create a new Issue or add comment commit to existing Issue
 	newIssue, ref, err := args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
 		Type:             plumbing.IssueBranchPrefix,
-		PostRefID:        args.IssueNumber,
+		PostRefID:        args.ID,
 		Body:             postBody,
 		IsComment:        args.ReplyHash != "",
 		FreePostIDGetter: plumbing.GetFreePostID,

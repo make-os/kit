@@ -17,8 +17,8 @@ import (
 )
 
 type MergeRequestCreateArgs struct {
-	// IssueID is the unique merge request ID
-	MergeRequestNumber int
+	// ID is the unique post ID
+	ID int
 
 	// Title is the title of the merge request
 	Title string
@@ -83,41 +83,52 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) erro
 	var mrRef, mrRefHash string
 	var err error
 
-	// If merge-request number is not set, it means a new merge request should be created.
-	// Go directly to input collection.
-	if args.MergeRequestNumber == 0 {
-		goto input
+	if args.ID != 0 {
+
+		// Get the merge request reference name and attempt to get it
+		mrRef = plumbing.MakeMergeRequestReference(args.ID)
+		mrRefHash, err = r.RefGet(mrRef)
+
+		// When the merge request does not exist and this is a reply intent, return error
+		if err != nil && err == plumbing.ErrRefNotFound && args.ReplyHash != "" {
+			return fmt.Errorf("merge request (%d) was not found", args.ID)
+		} else if err != nil && err != plumbing.ErrRefNotFound {
+			return err
+		}
+
+		// Get the number of comments
+		nComments, err = r.NumCommits(mrRef, false)
+		if err != nil {
+			return errors.Wrap(err, "failed to count comments in merge request")
+		}
+
+		// Title is not required when the intent is to add a comment
+		if nComments > 0 && args.Title != "" {
+			return fmt.Errorf("title not required when adding a comment to a merge request")
+		}
+
+		// When the intent is to reply to a specific comment, ensure the target
+		// comment hash exist in the merge request
+		if args.ReplyHash != "" && r.IsAncestor(args.ReplyHash, mrRefHash) != nil {
+			return fmt.Errorf("target comment hash (%s) is unknown", args.ReplyHash)
+		}
+
+		// Base and target information are required for new merge request
+		if nComments == 0 {
+			if args.Base == "" {
+				return fmt.Errorf("base branch name is required")
+			}
+			if args.BaseHash == "" {
+				return fmt.Errorf("base branch hash is required")
+			}
+			if args.Target == "" {
+				return fmt.Errorf("target branch name is required")
+			}
+			if args.TargetHash == "" {
+				return fmt.Errorf("target branch hash is required")
+			}
+		}
 	}
-
-	// Get the merge request reference name and attempt to get it
-	mrRef = plumbing.MakeMergeRequestReference(args.MergeRequestNumber)
-	mrRefHash, err = r.RefGet(mrRef)
-
-	// When the merge request does not exist and this is a reply intent, return error
-	if err != nil && err == plumbing.ErrRefNotFound && args.ReplyHash != "" {
-		return fmt.Errorf("merge request (%d) was not found", args.MergeRequestNumber)
-	} else if err != nil && err != plumbing.ErrRefNotFound {
-		return err
-	}
-
-	// Get the number of comments
-	nComments, err = r.NumCommits(mrRef, false)
-	if err != nil {
-		return errors.Wrap(err, "failed to count comments in merge request")
-	}
-
-	// Title is not required when the intent is to add a comment
-	if nComments > 0 && args.Title != "" {
-		return fmt.Errorf("title not required when adding a comment to a merge request")
-	}
-
-	// When the intent is to reply to a specific comment, ensure the target
-	// comment hash exist in the merge request
-	if args.ReplyHash != "" && r.IsAncestor(args.ReplyHash, mrRefHash) != nil {
-		return fmt.Errorf("target comment hash (%s) is unknown", args.ReplyHash)
-	}
-
-input:
 
 	// Ensure the reactions are all supported
 	for _, reaction := range args.Reactions {
@@ -127,7 +138,7 @@ input:
 	}
 
 	// When intent is to reply to a comment, a merge request number is required
-	if args.MergeRequestNumber == 0 && args.ReplyHash != "" {
+	if args.ID == 0 && args.ReplyHash != "" {
 		return fmt.Errorf("merge request number is required when adding a comment")
 	}
 
@@ -138,7 +149,9 @@ input:
 
 	// Prompt user for title only if was not provided via flag and this is not a comment
 	if len(args.Title) == 0 && args.ReplyHash == "" && nComments == 0 {
-		args.Title = args.InputReader("\033[1;33m? Title: (256 chars max.)\u001B[0m\n  ", &util.InputReaderArgs{})
+		args.Title = args.InputReader("\033[1;32m? \033[1;37mTitle> \u001B[0m", &util.InputReaderArgs{
+			After: func(input string) { fmt.Fprintf(args.StdOut, "\033[36m%s\033[0m\n", input) },
+		})
 		if len(args.Title) == 0 {
 			return common.ErrTitleRequired
 		}
@@ -146,9 +159,9 @@ input:
 
 	// Read body from stdIn only if an editor is not requested and --no-body is unset
 	if len(args.Body) == 0 && args.UseEditor == false && !args.NoBody {
-		args.Body = args.InputReader("\033[1;33m? Body: (8192 chars max. | Tap enter thrice to exit)\033[0m\n  ",
-			&util.InputReaderArgs{Multiline: true})
-		fmt.Fprint(args.StdOut, "\010\010")
+		args.Body = args.InputReader("\033[1;32m? \033[1;37mBody> \u001B[0m", &util.InputReaderArgs{
+			After: func(input string) { fmt.Fprintf(args.StdOut, "\033[36m%s\033[0m\n", input) },
+		})
 	}
 
 	// Read body from editor if requested
@@ -160,6 +173,9 @@ input:
 		args.Body, err = args.EditorReader(editor, args.StdIn, os.Stdout, os.Stderr)
 		if err != nil {
 			return errors.Wrap(err, "failed read body from editor")
+		}
+		if args.Body != "" {
+			fmt.Fprint(args.StdOut, "\u001B[1;32m? \u001B[1;37mBody> \033[0m\u001B[36m[Received]\u001B[0m\n")
 		}
 	}
 
@@ -186,7 +202,7 @@ input:
 	// Create a new merge request reference or add comment commit to the existing one
 	newPost, ref, err := args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
 		Type:             plumbing.MergeRequestBranchPrefix,
-		PostRefID:        args.MergeRequestNumber,
+		PostRefID:        args.ID,
 		Body:             postBody,
 		IsComment:        args.ReplyHash != "",
 		FreePostIDGetter: plumbing.GetFreePostID,

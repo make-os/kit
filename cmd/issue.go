@@ -17,6 +17,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -53,16 +54,31 @@ var issueCreateCmd = &cobra.Command{
 		useEditor, _ := cmd.Flags().GetBool("use-editor")
 		noBody, _ := cmd.Flags().GetBool("no-body")
 		cls, _ := cmd.Flags().GetBool("close")
+		forceNew, _ := cmd.Flags().GetBool("new")
 		open, _ := cmd.Flags().GetBool("reopen")
 		editorPath, _ := cmd.Flags().GetString("editor")
 		labels, _ := cmd.Flags().GetString("labels")
 		reactions, _ := cmd.Flags().GetStringSlice("reactions")
 		assignees, _ := cmd.Flags().GetString("assignees")
-		issueID, _ := cmd.Flags().GetInt("id")
+		targetPostID, _ := cmd.Flags().GetInt("id")
 
 		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		// When target post ID is unset and the current HEAD is a post reference,
+		// use the reference short name as the post ID
+		if !forceNew && targetPostID == 0 {
+			HEAD, err := targetRepo.Head()
+			if err != nil {
+				log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
+			} else if plumbing.IsIssueReference(HEAD) {
+				id := plumbing.GetReferenceShortName(HEAD)
+				targetPostID, _ = strconv.Atoi(id)
+			} else {
+				log.Fatal("HEAD is not an issue reference")
+			}
 		}
 
 		if editorPath != "" {
@@ -70,7 +86,7 @@ var issueCreateCmd = &cobra.Command{
 		}
 
 		issueCreateArgs := &issuecmd.IssueCreateArgs{
-			IssueNumber:        issueID,
+			ID:                 targetPostID,
 			Title:              title,
 			Body:               body,
 			NoBody:             noBody,
@@ -207,6 +223,7 @@ func init() {
 	issueCreateCmd.Flags().StringP("assignees", "a", "", "Specify push key of assignees to add to the issue/comment (max. 10)")
 	issueCreateCmd.Flags().BoolP("use-editor", "u", false, "Use git configured editor to write body")
 	issueCreateCmd.Flags().Bool("no-body", false, "Skip prompt for issue body")
+	issueCreateCmd.Flags().Bool("new", false, "Force new issue to be created instead of adding a comment to HEAD")
 	issueCreateCmd.Flags().String("editor", "", "Specify an editor to use instead of the git configured editor")
 	issueCreateCmd.Flags().IntP("id", "i", 0, "Specify a target issue number")
 	issueCreateCmd.Flags().BoolP("close", "c", false, "Close the issue")
