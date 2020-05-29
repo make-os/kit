@@ -70,8 +70,11 @@ func (p *Post) GetName() string {
 	return p.Name
 }
 
-// ReadBody reads the body file of a commit
-func ReadBody(repo types.LocalRepo, hash string) (*PostBody, *object.Commit, error) {
+// PostBodyReader represents a function for reading a commit's post body
+type PostBodyReader func(repo types.LocalRepo, hash string) (*PostBody, *object.Commit, error)
+
+// ReadPostBody reads the body file of a commit
+func ReadPostBody(repo types.LocalRepo, hash string) (*PostBody, *object.Commit, error) {
 	commit, err := repo.CommitObject(plumbing.NewHash(hash))
 	if err != nil {
 		return nil, nil, fmt.Errorf("unable to read commit (%s)", hash)
@@ -111,7 +114,7 @@ func (p *Post) GetComments() (comments Comments, err error) {
 
 	// process each comment commit
 	for _, hash := range hashes {
-		body, commit, err := ReadBody(p.Repo, hash)
+		body, commit, err := ReadPostBody(p.Repo, hash)
 		if err != nil {
 			return nil, err
 		}
@@ -164,7 +167,7 @@ func (p *Post) IsClosed() (bool, error) {
 		return false, err
 	}
 
-	body, _, err := ReadBody(p.Repo, ref.Hash().String())
+	body, _, err := ReadPostBody(p.Repo, ref.Hash().String())
 	if err != nil {
 		return false, err
 	}
@@ -448,38 +451,51 @@ type PostCommitCreator func(r types.LocalRepo, args *CreatePostCommitArgs) (isNe
 
 // CreatePostCommitArgs includes argument for CreatePostCommit
 type CreatePostCommitArgs struct {
-	Type             string
-	PostRefID        int
-	Body             string
-	IsComment        bool
-	FreePostIDGetter FreePostIDFinder
+
+	// Type is the type of post reference
+	Type string
+
+	// ID is the unique ID of the target post reference.
+	// If unset, a free ID will be used.
+	// If ID is a string, it is expected that the call
+	// passed a full post reference path.
+	ID interface{}
+
+	// Body is the post's body file content
+	Body string
+
+	// IsComment indicates that the post is intended to be a comment
+	IsComment bool
+
+	// GetFreePostID is used to find a free post ID
+	GetFreePostID FreePostIDFinder
 }
 
 // CreatePostCommit creates a new post reference or adds a comment commit to an existing one.
 func CreatePostCommit(r types.LocalRepo, args *CreatePostCommitArgs) (isNew bool, reference string, err error) {
 
 	var ref string
-
-	// When the post reference ID is not provided, find an unused number, increment it
-	// and use it to generate a post reference name
-	if args.PostRefID == 0 {
-		args.PostRefID, err = args.FreePostIDGetter(r, 1, args.Type)
-		if err != nil {
-			return false, "", errors.Wrap(err, "failed to find free post number")
+	switch v := args.ID.(type) {
+	case string:
+		ref = v
+	case int:
+		if v == 0 {
+			v, err = args.GetFreePostID(r, 1, args.Type)
+			if err != nil {
+				return false, "", errors.Wrap(err, "failed to find free post number")
+			}
+		}
+		switch args.Type {
+		case IssueBranchPrefix:
+			ref = MakeIssueReference(v)
+		case MergeRequestBranchPrefix:
+			ref = MakeMergeRequestReference(v)
+		default:
+			return false, "", fmt.Errorf("unknown post reference type")
 		}
 	}
 
-	// Generate the full reference name
-	switch args.Type {
-	case IssueBranchPrefix:
-		ref = MakeIssueReference(args.PostRefID)
-	case MergeRequestBranchPrefix:
-		ref = MakeMergeRequestReference(args.PostRefID)
-	default:
-		return false, "", fmt.Errorf("unknown post reference type")
-	}
-
-	// Check if the post reference already exist exist
+	// Check if the post reference already exist
 	hash, err := r.RefGet(ref)
 	if err != nil {
 		if err != ErrRefNotFound {

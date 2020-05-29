@@ -60,22 +60,22 @@ var issueCreateCmd = &cobra.Command{
 		labels, _ := cmd.Flags().GetString("labels")
 		reactions, _ := cmd.Flags().GetStringSlice("reactions")
 		assignees, _ := cmd.Flags().GetString("assignees")
-		targetPostID, _ := cmd.Flags().GetInt("id")
+		targetID, _ := cmd.Flags().GetInt("id")
 
-		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
 		// When target post ID is unset and the current HEAD is a post reference,
 		// use the reference short name as the post ID
-		if !forceNew && targetPostID == 0 {
-			HEAD, err := targetRepo.Head()
+		if !forceNew && targetID == 0 {
+			head, err := curRepo.Head()
 			if err != nil {
 				log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
-			} else if plumbing.IsIssueReference(HEAD) {
-				id := plumbing.GetReferenceShortName(HEAD)
-				targetPostID, _ = strconv.Atoi(id)
+			} else if plumbing.IsIssueReference(head) {
+				id := plumbing.GetReferenceShortName(head)
+				targetID, _ = strconv.Atoi(id)
 			} else {
 				log.Fatal("HEAD is not an issue reference")
 			}
@@ -86,7 +86,7 @@ var issueCreateCmd = &cobra.Command{
 		}
 
 		issueCreateArgs := &issuecmd.IssueCreateArgs{
-			ID:                 targetPostID,
+			ID:                 targetID,
 			Title:              title,
 			Body:               body,
 			NoBody:             noBody,
@@ -122,7 +122,7 @@ var issueCreateCmd = &cobra.Command{
 			}
 		}
 
-		if err := issuecmd.IssueCreateCmd(targetRepo, issueCreateArgs); err != nil {
+		if err := issuecmd.IssueCreateCmd(curRepo, issueCreateArgs); err != nil {
 			log.Fatal(err.Error())
 		}
 	},
@@ -140,12 +140,12 @@ var issueListCmd = &cobra.Command{
 		format, _ := cmd.Flags().GetString("format")
 		noPager, _ := cmd.Flags().GetBool("no-pager")
 
-		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = issuecmd.IssueListCmd(targetRepo, &issuecmd.IssueListArgs{
+		if err = issuecmd.IssueListCmd(curRepo, &issuecmd.IssueListArgs{
 			Limit:      limit,
 			Reverse:    reverse,
 			DateFmt:    dateFmt,
@@ -164,7 +164,7 @@ var issueListCmd = &cobra.Command{
 // issueReadCmd represents a sub-command to read an issue
 var issueReadCmd = &cobra.Command{
 	Use:   "read",
-	Short: "Read comments in an issue",
+	Short: "Read an issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		limit, _ := cmd.Flags().GetInt("limit")
@@ -174,7 +174,7 @@ var issueReadCmd = &cobra.Command{
 		noPager, _ := cmd.Flags().GetBool("no-pager")
 		noCloseStatus, _ := cmd.Flags().GetBool("no-close-status")
 
-		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
@@ -190,8 +190,8 @@ var issueReadCmd = &cobra.Command{
 			log.Fatal(fmt.Sprintf("invalid issue name (%s)", args[0]))
 		}
 
-		if err = issuecmd.IssueReadCmd(targetRepo, &issuecmd.IssueReadArgs{
-			IssuePath:     issuePath,
+		if err = issuecmd.IssueReadCmd(curRepo, &issuecmd.IssueReadArgs{
+			Reference:     issuePath,
 			Limit:         limit,
 			Reverse:       reverse,
 			DateFmt:       dateFmt,
@@ -208,10 +208,100 @@ var issueReadCmd = &cobra.Command{
 	},
 }
 
+// issueCloseCmd represents a sub-command to close an issue
+var issueCloseCmd = &cobra.Command{
+	Use:   "close",
+	Short: "Close an issue",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		var targetID string
+		if len(args) > 0 {
+			targetID = args[0]
+		}
+
+		if targetID == "" {
+			targetID, err = curRepo.Head()
+			if err != nil {
+				log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
+			}
+		} else {
+			targetID = strings.ToLower(targetID)
+			if strings.HasPrefix(targetID, plumbing.IssueBranchPrefix) {
+				targetID = fmt.Sprintf("refs/heads/%s", targetID)
+			}
+			if !plumbing.IsIssueReferencePath(targetID) {
+				targetID = plumbing.MakeIssueReference(targetID)
+			}
+			if !plumbing.IsIssueReference(targetID) {
+				log.Fatal(fmt.Sprintf("invalid issue name (%s)", targetID))
+			}
+		}
+
+		if err = issuecmd.IssueCloseCmd(curRepo, &issuecmd.IssueCloseArgs{
+			Reference:          targetID,
+			PostCommentCreator: plumbing.CreatePostCommit,
+			ReadPostBody:       plumbing.ReadPostBody,
+		}); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
+// issueReopenCmd represents a sub-command to reopen a merge request
+var issueReopenCmd = &cobra.Command{
+	Use:   "reopen",
+	Short: "Reopen a closed issue",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		var targetID string
+		if len(args) > 0 {
+			targetID = args[0]
+		}
+
+		if targetID == "" {
+			targetID, err = curRepo.Head()
+			if err != nil {
+				log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
+			}
+		} else {
+			targetID = strings.ToLower(targetID)
+			if strings.HasPrefix(targetID, plumbing.IssueBranchPrefix) {
+				targetID = fmt.Sprintf("refs/heads/%s", targetID)
+			}
+			if !plumbing.IsMergeRequestReferencePath(targetID) {
+				targetID = plumbing.MakeMergeRequestReference(targetID)
+			}
+			if !plumbing.IsMergeRequestReference(targetID) {
+				log.Fatal(fmt.Sprintf("invalid merge request path (%s)", targetID))
+			}
+		}
+
+		if err = issuecmd.IssueReopenCmd(curRepo, &issuecmd.IssueReopenArgs{
+			Reference:          targetID,
+			PostCommentCreator: plumbing.CreatePostCommit,
+			ReadPostBody:       plumbing.ReadPostBody,
+		}); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
 func init() {
 	issueCmd.AddCommand(issueCreateCmd)
 	issueCmd.AddCommand(issueReadCmd)
 	issueCmd.AddCommand(issueListCmd)
+	issueCmd.AddCommand(issueCloseCmd)
+	issueCmd.AddCommand(issueReopenCmd)
 	rootCmd.AddCommand(issueCmd)
 
 	issueCmd.PersistentFlags().Bool("no-pager", false, "Prevent output from being piped into a pager")

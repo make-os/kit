@@ -226,15 +226,105 @@ var mergeReqReadCmd = &cobra.Command{
 	},
 }
 
+// mergeReqCloseCmd represents a sub-command to close a merge request
+var mergeReqCloseCmd = &cobra.Command{
+	Use:   "close",
+	Short: "Close a merge request",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		var targetID string
+		if len(args) > 0 {
+			targetID = args[0]
+		}
+
+		if targetID == "" {
+			targetID, err = curRepo.Head()
+			if err != nil {
+				log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
+			}
+		} else {
+			targetID = strings.ToLower(targetID)
+			if strings.HasPrefix(targetID, plumbing.IssueBranchPrefix) {
+				targetID = fmt.Sprintf("refs/heads/%s", targetID)
+			}
+			if !plumbing.IsMergeRequestReferencePath(targetID) {
+				targetID = plumbing.MakeMergeRequestReference(targetID)
+			}
+			if !plumbing.IsMergeRequestReference(targetID) {
+				log.Fatal(fmt.Sprintf("invalid merge request path (%s)", targetID))
+			}
+		}
+
+		if err = mergecmd.MergeReqCloseCmd(curRepo, &mergecmd.MergeReqCloseArgs{
+			Reference:          targetID,
+			PostCommentCreator: plumbing.CreatePostCommit,
+			ReadPostBody:       plumbing.ReadPostBody,
+		}); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
+// mergeReqReopenCmd represents a sub-command to reopen a merge request
+var mergeReqReopenCmd = &cobra.Command{
+	Use:   "reopen",
+	Short: "Reopen a closed issue",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		var targetID string
+		if len(args) > 0 {
+			targetID = args[0]
+		}
+
+		if targetID == "" {
+			targetID, err = curRepo.Head()
+			if err != nil {
+				log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
+			}
+		} else {
+			targetID = strings.ToLower(targetID)
+			if strings.HasPrefix(targetID, plumbing.IssueBranchPrefix) {
+				targetID = fmt.Sprintf("refs/heads/%s", targetID)
+			}
+			if !plumbing.IsMergeRequestReferencePath(targetID) {
+				targetID = plumbing.MakeMergeRequestReference(targetID)
+			}
+			if !plumbing.IsMergeRequestReference(targetID) {
+				log.Fatal(fmt.Sprintf("invalid merge request path (%s)", targetID))
+			}
+		}
+
+		if err = mergecmd.MergeReqReopenCmd(curRepo, &mergecmd.MergeReqReopenArgs{
+			Reference:          targetID,
+			PostCommentCreator: plumbing.CreatePostCommit,
+			ReadPostBody:       plumbing.ReadPostBody,
+		}); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(mergeReqCmd)
 
-	mergeReqCmd.PersistentFlags().SortFlags = false
 	mergeReqCmd.Flags().SortFlags = false
+	mergeReqCmd.PersistentFlags().SortFlags = false
 	mergeReqCmd.PersistentFlags().Bool("no-pager", false, "Prevent output from being piped into a pager")
 	mergeReqCmd.AddCommand(mergeReqCreateCmd)
 	mergeReqCmd.AddCommand(mergeReqListCmd)
 	mergeReqCmd.AddCommand(mergeReqReadCmd)
+	mergeReqCmd.AddCommand(mergeReqCloseCmd)
+	mergeReqCmd.AddCommand(mergeReqReopenCmd)
 
 	mergeReqCreateCmd.Flags().StringP("title", "t", "", "The merge request title (max. 250 B)")
 	mergeReqCreateCmd.Flags().StringP("body", "b", "", "The merge request message (max. 8 KB)")

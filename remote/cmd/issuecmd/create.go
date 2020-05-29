@@ -1,4 +1,4 @@
-package mergecmd
+package issuecmd
 
 import (
 	"fmt"
@@ -16,14 +16,14 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-type MergeRequestCreateArgs struct {
-	// ID is the unique post ID
+type IssueCreateArgs struct {
+	// IssueID is the unique Issue ID
 	ID int
 
-	// Title is the title of the merge request
+	// Title is the title of the Issue
 	Title string
 
-	// Body is the merge request body
+	// Body is the Issue's body
 	Body string
 
 	// ReplyHash is the hash of a comment commit
@@ -33,17 +33,11 @@ type MergeRequestCreateArgs struct {
 	// Negated reactions indicate removal request
 	Reactions []string
 
-	// Base is the base branch name
-	Base string
+	// Labels may include terms used to classify the Issue
+	Labels []string
 
-	// BaseHash is hash of the base branch
-	BaseHash string
-
-	// Target is the target branch name
-	Target string
-
-	// TargetHash is the target hash name
-	TargetHash string
+	// Assignees may include push keys that may be interpreted by an application
+	Assignees []string
 
 	// UseEditor indicates that the body of the Issue should be collected using a text editor.
 	UseEditor bool
@@ -51,7 +45,7 @@ type MergeRequestCreateArgs struct {
 	// EditorPath indicates the path to an editor program
 	EditorPath string
 
-	// NoBody prevents prompting user for comment body
+	// NoBody prevents prompting user for issue body
 	NoBody bool
 
 	// Close sets close status to 1.
@@ -76,57 +70,41 @@ type MergeRequestCreateArgs struct {
 	InputReader util.InputReader
 }
 
-// MergeRequestCreateCmd create a new merge request or adds a comment to an existing one
-func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) error {
+// IssueCreateCmd create a new Issue or adds a comment commit to an existing Issue
+func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) error {
 
 	var nComments int
-	var mrRef, mrRefHash string
+	var issueRef, issueRefHash string
 	var err error
 
 	if args.ID != 0 {
 
-		// Get the merge request reference name and attempt to get it
-		mrRef = plumbing.MakeMergeRequestReference(args.ID)
-		mrRefHash, err = r.RefGet(mrRef)
+		// Get the issue reference
+		issueRef = plumbing.MakeIssueReference(args.ID)
+		issueRefHash, err = r.RefGet(issueRef)
 
-		// When the merge request does not exist and this is a reply intent, return error
+		// When issue does not exist and this is a reply intent, return error
 		if err != nil && err == plumbing.ErrRefNotFound && args.ReplyHash != "" {
-			return fmt.Errorf("merge request (%d) was not found", args.ID)
+			return fmt.Errorf("issue (%d) was not found", args.ID)
 		} else if err != nil && err != plumbing.ErrRefNotFound {
 			return err
 		}
 
 		// Get the number of comments
-		nComments, err = r.NumCommits(mrRef, false)
+		nComments, err = r.NumCommits(issueRef, false)
 		if err != nil {
-			return errors.Wrap(err, "failed to count comments in merge request")
+			return errors.Wrap(err, "failed to count comments in issue")
 		}
 
 		// Title is not required when the intent is to add a comment
 		if nComments > 0 && args.Title != "" {
-			return fmt.Errorf("title not required when adding a comment to a merge request")
+			return fmt.Errorf("title not required when adding a comment to an issue")
 		}
 
 		// When the intent is to reply to a specific comment, ensure the target
-		// comment hash exist in the merge request
-		if args.ReplyHash != "" && r.IsAncestor(args.ReplyHash, mrRefHash) != nil {
+		// comment hash exist in the issue
+		if args.ReplyHash != "" && r.IsAncestor(args.ReplyHash, issueRefHash) != nil {
 			return fmt.Errorf("target comment hash (%s) is unknown", args.ReplyHash)
-		}
-
-		// Base and target information are required for new merge request
-		if nComments == 0 {
-			if args.Base == "" {
-				return fmt.Errorf("base branch name is required")
-			}
-			if args.BaseHash == "" {
-				return fmt.Errorf("base branch hash is required")
-			}
-			if args.Target == "" {
-				return fmt.Errorf("target branch name is required")
-			}
-			if args.TargetHash == "" {
-				return fmt.Errorf("target branch hash is required")
-			}
 		}
 	}
 
@@ -137,12 +115,26 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) erro
 		}
 	}
 
-	// When intent is to reply to a comment, a merge request number is required
-	if args.ID == 0 && args.ReplyHash != "" {
-		return fmt.Errorf("merge request number is required when adding a comment")
+	// Ensure labels are valid identifiers
+	for _, label := range args.Labels {
+		if err := util.IsValidNameNoLen(strings.TrimPrefix(label, "-")); err != nil {
+			return fmt.Errorf("label (%s) is not valid", label)
+		}
 	}
 
-	// Hook to syscall.SIGINT signal so we close args.StdIn
+	// Ensure assignees are valid push address
+	for _, assignee := range args.Assignees {
+		if !util.IsValidPushAddr(strings.TrimPrefix(assignee, "-")) {
+			return fmt.Errorf("assignee (%s) is not a valid push key address", assignee)
+		}
+	}
+
+	// When intent is to reply to a comment, an issue number is required
+	if args.ID == 0 && args.ReplyHash != "" {
+		return fmt.Errorf("issue number is required when adding a comment")
+	}
+
+	// Hook to syscall.SIGINT signal to close args.StdIn on interrupt
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT)
 	go func() { <-sigs; args.StdIn.Close() }()
@@ -179,7 +171,7 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) erro
 		}
 	}
 
-	// Body is required for a new merge request
+	// Body is required for a new issue
 	if nComments == 0 && args.Body == "" {
 		return common.ErrBodyRequired
 	}
@@ -190,28 +182,26 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) erro
 		Title:     args.Title,
 		ReplyTo:   args.ReplyHash,
 		Reactions: args.Reactions,
-		MergeRequestFields: common2.MergeRequestFields{
-			BaseBranch:       args.Base,
-			BaseBranchHash:   args.BaseHash,
-			TargetBranch:     args.Target,
-			TargetBranchHash: args.TargetHash,
+		IssueFields: common2.IssueFields{
+			Labels:    &args.Labels,
+			Assignees: &args.Assignees,
 		},
 		Close: args.Close,
 	})
 
-	// Create a new merge request reference or add comment commit to the existing one
-	newPost, ref, err := args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
-		Type:             plumbing.MergeRequestBranchPrefix,
-		PostRefID:        args.ID,
-		Body:             postBody,
-		IsComment:        args.ReplyHash != "",
-		FreePostIDGetter: plumbing.GetFreePostID,
+	// Create a new Issue or add comment commit to existing Issue
+	newIssue, ref, err := args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
+		Type:          plumbing.IssueBranchPrefix,
+		ID:            args.ID,
+		Body:          postBody,
+		IsComment:     args.ReplyHash != "",
+		GetFreePostID: plumbing.GetFreePostID,
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to create or add new comment to merge request request")
+		return errors.Wrap(err, "failed to create or add new comment to issue")
 	}
 
-	if newPost {
+	if newIssue {
 		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#0", ref))
 	} else {
 		fmt.Fprintln(args.StdOut, fmt.Sprintf("%s#%d", ref, nComments))

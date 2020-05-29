@@ -38,7 +38,7 @@ var _ = Describe("IssueReadCmd", func() {
 	Describe(".IssueReadCmd", func() {
 		It("should return err when unable to find the issue", func() {
 			args := &issuecmd.IssueReadArgs{
-				IssuePath: plumbing2.MakeIssueReference(1),
+				Reference: plumbing2.MakeIssueReference(1),
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return nil, fmt.Errorf("error")
 				},
@@ -50,7 +50,7 @@ var _ = Describe("IssueReadCmd", func() {
 
 		It("should return err when issue was not found", func() {
 			args := &issuecmd.IssueReadArgs{
-				IssuePath: plumbing2.MakeIssueReference(1),
+				Reference: plumbing2.MakeIssueReference(1),
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return plumbing2.Posts{}, nil
 				},
@@ -63,7 +63,7 @@ var _ = Describe("IssueReadCmd", func() {
 		It("should return err when unable to check `close` status of issue", func() {
 			issuePath := plumbing2.MakeIssueReference(1)
 			args := &issuecmd.IssueReadArgs{
-				IssuePath: issuePath,
+				Reference: issuePath,
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					post := mocks.NewMockPostEntry(ctrl)
 					post.EXPECT().IsClosed().Return(false, fmt.Errorf("error"))
@@ -78,7 +78,7 @@ var _ = Describe("IssueReadCmd", func() {
 		It("should return err when unable to get comments", func() {
 			issuePath := plumbing2.MakeIssueReference(1)
 			args := &issuecmd.IssueReadArgs{
-				IssuePath: issuePath,
+				Reference: issuePath,
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					post := mocks.NewMockPostEntry(ctrl)
 					post.EXPECT().IsClosed().Return(false, nil)

@@ -19,15 +19,15 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-func testIssueCommentCreator(isNewIssue bool, issueReference string, err error) func(targetRepo types.LocalRepo,
+func testPostCommentCreator(isNewIssue bool, issueReference string, err error) func(targetRepo types.LocalRepo,
 	args *plumbing.CreatePostCommitArgs) (bool, string, error) {
 	return func(targetRepo types.LocalRepo, args *plumbing.CreatePostCommitArgs) (bool, string, error) {
 		return isNewIssue, issueReference, err
 	}
 }
 
-var noopIssueCommentCreator = testIssueCommentCreator(false, "", nil)
-var errorIssueCommentCreator = testIssueCommentCreator(false, "", fmt.Errorf("error"))
+var noopPostCommentCreator = testPostCommentCreator(false, "", nil)
+var errorPostCommentCreator = testPostCommentCreator(false, "", fmt.Errorf("error"))
 
 var _ = Describe("IssueCreate", func() {
 	var err error
@@ -87,7 +87,7 @@ var _ = Describe("IssueCreate", func() {
 
 					args := &issuecmd.IssueCreateArgs{
 						StdOut:             mockStdOut,
-						PostCommentCreator: noopIssueCommentCreator,
+						PostCommentCreator: noopPostCommentCreator,
 						InputReader: func(title string, args *util.InputReaderArgs) string {
 							return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "my body")
 						},
@@ -232,7 +232,7 @@ var _ = Describe("IssueCreate", func() {
 				ref := plumbing.MakeIssueReference(issueNumber)
 				args := &issuecmd.IssueCreateArgs{ID: issueNumber, ReplyHash: "comment_hash", NoBody: true,
 					StdOut:             bytes.NewBuffer(nil),
-					PostCommentCreator: testIssueCommentCreator(true, ref, nil)}
+					PostCommentCreator: testPostCommentCreator(true, ref, nil)}
 
 				mockRepo.EXPECT().RefGet(ref).Return("ref_hash", nil)
 				mockRepo.EXPECT().NumCommits(ref, false).Return(1, nil)
@@ -245,7 +245,7 @@ var _ = Describe("IssueCreate", func() {
 		It("should return error when unable to create issue/comment", func() {
 			args := &issuecmd.IssueCreateArgs{
 				StdOut:             bytes.NewBuffer(nil),
-				PostCommentCreator: errorIssueCommentCreator,
+				PostCommentCreator: errorPostCommentCreator,
 				InputReader: func(title string, args *util.InputReaderArgs) string {
 					return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "my body")
 				},

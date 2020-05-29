@@ -20,8 +20,8 @@ import (
 // IssueReadArgs contains arguments used by IssueReadCmd function
 type IssueReadArgs struct {
 
-	// IssuePath is the full path to the issue
-	IssuePath string
+	// Reference is the full reference path to the issue
+	Reference string
 
 	// Limit sets a hard limit on the number of issues to display
 	Limit int
@@ -73,7 +73,7 @@ func IssueReadCmd(targetRepo types.LocalRepo, args *IssueReadArgs) error {
 
 	// Find the target issue
 	issues, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
-		return plumbing2.IsIssueReference(ref.String()) && ref.String() == args.IssuePath
+		return plumbing2.IsIssueReference(ref.String()) && ref.String() == args.Reference
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to find issue")
