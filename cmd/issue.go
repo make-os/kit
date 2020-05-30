@@ -15,7 +15,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -179,19 +178,8 @@ var issueReadCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		issuePath := strings.ToLower(args[0])
-		if strings.HasPrefix(issuePath, plumbing.IssueBranchPrefix) {
-			issuePath = fmt.Sprintf("refs/heads/%s", issuePath)
-		}
-		if !plumbing.IsIssueReferencePath(issuePath) {
-			issuePath = plumbing.MakeIssueReference(issuePath)
-		}
-		if !plumbing.IsIssueReference(issuePath) {
-			log.Fatal(fmt.Sprintf("invalid issue name (%s)", args[0]))
-		}
-
 		if err = issuecmd.IssueReadCmd(curRepo, &issuecmd.IssueReadArgs{
-			Reference:     issuePath,
+			Reference:     getRef(curRepo, args),
 			Limit:         limit,
 			Reverse:       reverse,
 			DateFmt:       dateFmt,
@@ -219,31 +207,8 @@ var issueCloseCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		var targetID string
-		if len(args) > 0 {
-			targetID = args[0]
-		}
-
-		if targetID == "" {
-			targetID, err = curRepo.Head()
-			if err != nil {
-				log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
-			}
-		} else {
-			targetID = strings.ToLower(targetID)
-			if strings.HasPrefix(targetID, plumbing.IssueBranchPrefix) {
-				targetID = fmt.Sprintf("refs/heads/%s", targetID)
-			}
-			if !plumbing.IsIssueReferencePath(targetID) {
-				targetID = plumbing.MakeIssueReference(targetID)
-			}
-			if !plumbing.IsIssueReference(targetID) {
-				log.Fatal(fmt.Sprintf("invalid issue name (%s)", targetID))
-			}
-		}
-
 		if err = issuecmd.IssueCloseCmd(curRepo, &issuecmd.IssueCloseArgs{
-			Reference:          targetID,
+			Reference:          getRef(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
 		}); err != nil {
@@ -263,33 +228,31 @@ var issueReopenCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		var targetID string
-		if len(args) > 0 {
-			targetID = args[0]
-		}
-
-		if targetID == "" {
-			targetID, err = curRepo.Head()
-			if err != nil {
-				log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
-			}
-		} else {
-			targetID = strings.ToLower(targetID)
-			if strings.HasPrefix(targetID, plumbing.IssueBranchPrefix) {
-				targetID = fmt.Sprintf("refs/heads/%s", targetID)
-			}
-			if !plumbing.IsMergeRequestReferencePath(targetID) {
-				targetID = plumbing.MakeMergeRequestReference(targetID)
-			}
-			if !plumbing.IsMergeRequestReference(targetID) {
-				log.Fatal(fmt.Sprintf("invalid merge request path (%s)", targetID))
-			}
-		}
-
 		if err = issuecmd.IssueReopenCmd(curRepo, &issuecmd.IssueReopenArgs{
-			Reference:          targetID,
+			Reference:          getRef(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
+		}); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
+// issueStatusCmd represents a sub-command to check status of an issue
+var issueStatusCmd = &cobra.Command{
+	Use:   "status",
+	Short: "Get the status of an issue",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		if err = issuecmd.IssueStatusCmd(curRepo, &issuecmd.IssueStatusArgs{
+			Reference:    getRef(curRepo, args),
+			ReadPostBody: plumbing.ReadPostBody,
+			StdOut:       os.Stdout,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -302,6 +265,7 @@ func init() {
 	issueCmd.AddCommand(issueListCmd)
 	issueCmd.AddCommand(issueCloseCmd)
 	issueCmd.AddCommand(issueReopenCmd)
+	issueCmd.AddCommand(issueStatusCmd)
 	rootCmd.AddCommand(issueCmd)
 
 	issueCmd.PersistentFlags().Bool("no-pager", false, "Prevent output from being piped into a pager")

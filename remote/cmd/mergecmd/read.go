@@ -21,7 +21,7 @@ import (
 type MergeRequestReadArgs struct {
 
 	// MergeRequestPath is the full path to the merge request post
-	MergeRequestPath string
+	Reference string
 
 	// Limit sets a hard limit on the number of merge requests to display
 	Limit int
@@ -78,7 +78,7 @@ func MergeRequestReadCmd(targetRepo types.LocalRepo, args *MergeRequestReadArgs)
 
 	// Find the target merge request
 	res, err := args.PostGetter(targetRepo, func(ref plumbing.ReferenceName) bool {
-		return plumbing2.IsMergeRequestReference(ref.String()) && ref.String() == args.MergeRequestPath
+		return plumbing2.IsMergeRequestReference(ref.String()) && ref.String() == args.Reference
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to find merge request")

@@ -38,7 +38,7 @@ var _ = Describe("MergeRequestRead", func() {
 	Describe(".MergeRequestReadCmd", func() {
 		It("should return err when unable to find the merge request", func() {
 			args := &mergecmd.MergeRequestReadArgs{
-				MergeRequestPath: plumbing2.MakeMergeRequestReference(1),
+				Reference: plumbing2.MakeMergeRequestReference(1),
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return nil, fmt.Errorf("error")
 				},
@@ -50,7 +50,7 @@ var _ = Describe("MergeRequestRead", func() {
 
 		It("should return err when merge request was not found", func() {
 			args := &mergecmd.MergeRequestReadArgs{
-				MergeRequestPath: plumbing2.MakeMergeRequestReference(1),
+				Reference: plumbing2.MakeMergeRequestReference(1),
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					return plumbing2.Posts{}, nil
 				},
@@ -63,7 +63,7 @@ var _ = Describe("MergeRequestRead", func() {
 		It("should return err when unable to check `close` status of merge request post", func() {
 			mrPath := plumbing2.MakeMergeRequestReference(1)
 			args := &mergecmd.MergeRequestReadArgs{
-				MergeRequestPath: mrPath,
+				Reference: mrPath,
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					post := mocks.NewMockPostEntry(ctrl)
 					post.EXPECT().IsClosed().Return(false, fmt.Errorf("error"))
@@ -78,7 +78,7 @@ var _ = Describe("MergeRequestRead", func() {
 		It("should return err when unable to get comments", func() {
 			mrPath := plumbing2.MakeMergeRequestReference(1)
 			args := &mergecmd.MergeRequestReadArgs{
-				MergeRequestPath: mrPath,
+				Reference: mrPath,
 				PostGetter: func(types.LocalRepo, func(ref plumbing.ReferenceName) bool) (plumbing2.Posts, error) {
 					post := mocks.NewMockPostEntry(ctrl)
 					post.EXPECT().IsClosed().Return(false, nil)

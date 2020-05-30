@@ -11,6 +11,7 @@ import (
 	"github.com/thoas/go-funk"
 	restclient "gitlab.com/makeos/mosdef/api/rest/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
+	"gitlab.com/makeos/mosdef/remote/plumbing"
 	rr "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
@@ -128,4 +129,33 @@ func requireFlag(cmd *cobra.Command, flags ...string) {
 			log.Fatal(fmt.Sprintf("flag (--%s) is required", f))
 		}
 	}
+}
+
+func getRef(curRepo types.LocalRepo, args []string) string {
+	var ref string
+	var err error
+
+	if len(args) > 0 {
+		ref = args[0]
+	}
+
+	if ref == "" {
+		ref, err = curRepo.Head()
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
+		}
+	} else {
+		ref = strings.ToLower(ref)
+		if strings.HasPrefix(ref, plumbing.IssueBranchPrefix) {
+			ref = fmt.Sprintf("refs/heads/%s", ref)
+		}
+		if !plumbing.IsMergeRequestReferencePath(ref) {
+			ref = plumbing.MakeMergeRequestReference(ref)
+		}
+		if !plumbing.IsMergeRequestReference(ref) {
+			log.Fatal(fmt.Sprintf("invalid issue path (%s)", ref))
+		}
+	}
+
+	return ref
 }

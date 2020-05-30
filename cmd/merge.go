@@ -15,10 +15,8 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -158,12 +156,12 @@ var mergeReqListCmd = &cobra.Command{
 		format, _ := cmd.Flags().GetString("format")
 		noPager, _ := cmd.Flags().GetBool("no-pager")
 
-		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		if err = mergecmd.MergeRequestListCmd(targetRepo, &mergecmd.MergeRequestListArgs{
+		if err = mergecmd.MergeRequestListCmd(curRepo, &mergecmd.MergeRequestListArgs{
 			Limit:      limit,
 			Reverse:    reverse,
 			DateFmt:    dateFmt,
@@ -192,34 +190,23 @@ var mergeReqReadCmd = &cobra.Command{
 		noPager, _ := cmd.Flags().GetBool("no-pager")
 		noCloseStatus, _ := cmd.Flags().GetBool("no-close-status")
 
-		targetRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		mergeReqPath := strings.ToLower(args[0])
-		if strings.HasPrefix(mergeReqPath, plumbing.MergeRequestBranchPrefix) {
-			mergeReqPath = fmt.Sprintf("refs/heads/%s", mergeReqPath)
-		}
-		if !plumbing.IsMergeRequestReferencePath(mergeReqPath) {
-			mergeReqPath = plumbing.MakeMergeRequestReference(mergeReqPath)
-		}
-		if !plumbing.IsMergeRequestReference(mergeReqPath) {
-			log.Fatal(fmt.Sprintf("invalid merge request name (%s)", args[0]))
-		}
-
-		if err = mergecmd.MergeRequestReadCmd(targetRepo, &mergecmd.MergeRequestReadArgs{
-			MergeRequestPath: mergeReqPath,
-			Limit:            limit,
-			Reverse:          reverse,
-			DateFmt:          dateFmt,
-			Format:           format,
-			PagerWrite:       common.WriteToPager,
-			PostGetter:       plumbing.GetPosts,
-			NoPager:          noPager,
-			NoCloseStatus:    noCloseStatus,
-			StdOut:           os.Stdout,
-			StdErr:           os.Stderr,
+		if err = mergecmd.MergeRequestReadCmd(curRepo, &mergecmd.MergeRequestReadArgs{
+			Reference:     getRef(curRepo, args),
+			Limit:         limit,
+			Reverse:       reverse,
+			DateFmt:       dateFmt,
+			Format:        format,
+			PagerWrite:    common.WriteToPager,
+			PostGetter:    plumbing.GetPosts,
+			NoPager:       noPager,
+			NoCloseStatus: noCloseStatus,
+			StdOut:        os.Stdout,
+			StdErr:        os.Stderr,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -237,31 +224,8 @@ var mergeReqCloseCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		var targetID string
-		if len(args) > 0 {
-			targetID = args[0]
-		}
-
-		if targetID == "" {
-			targetID, err = curRepo.Head()
-			if err != nil {
-				log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
-			}
-		} else {
-			targetID = strings.ToLower(targetID)
-			if strings.HasPrefix(targetID, plumbing.IssueBranchPrefix) {
-				targetID = fmt.Sprintf("refs/heads/%s", targetID)
-			}
-			if !plumbing.IsMergeRequestReferencePath(targetID) {
-				targetID = plumbing.MakeMergeRequestReference(targetID)
-			}
-			if !plumbing.IsMergeRequestReference(targetID) {
-				log.Fatal(fmt.Sprintf("invalid merge request path (%s)", targetID))
-			}
-		}
-
 		if err = mergecmd.MergeReqCloseCmd(curRepo, &mergecmd.MergeReqCloseArgs{
-			Reference:          targetID,
+			Reference:          getRef(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
 		}); err != nil {
@@ -273,7 +237,7 @@ var mergeReqCloseCmd = &cobra.Command{
 // mergeReqReopenCmd represents a sub-command to reopen a merge request
 var mergeReqReopenCmd = &cobra.Command{
 	Use:   "reopen",
-	Short: "Reopen a closed issue",
+	Short: "Reopen a closed merge request",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
 		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
@@ -281,33 +245,31 @@ var mergeReqReopenCmd = &cobra.Command{
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
 		}
 
-		var targetID string
-		if len(args) > 0 {
-			targetID = args[0]
-		}
-
-		if targetID == "" {
-			targetID, err = curRepo.Head()
-			if err != nil {
-				log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
-			}
-		} else {
-			targetID = strings.ToLower(targetID)
-			if strings.HasPrefix(targetID, plumbing.IssueBranchPrefix) {
-				targetID = fmt.Sprintf("refs/heads/%s", targetID)
-			}
-			if !plumbing.IsMergeRequestReferencePath(targetID) {
-				targetID = plumbing.MakeMergeRequestReference(targetID)
-			}
-			if !plumbing.IsMergeRequestReference(targetID) {
-				log.Fatal(fmt.Sprintf("invalid merge request path (%s)", targetID))
-			}
-		}
-
 		if err = mergecmd.MergeReqReopenCmd(curRepo, &mergecmd.MergeReqReopenArgs{
-			Reference:          targetID,
+			Reference:          getRef(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
+		}); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
+// mergeReqStatusCmd represents a sub-command to check status of a merge request
+var mergeReqStatusCmd = &cobra.Command{
+	Use:   "status",
+	Short: "Get the status of a merge request",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		if err = mergecmd.MergeReqStatusCmd(curRepo, &mergecmd.MergeReqStatusArgs{
+			Reference:    getRef(curRepo, args),
+			ReadPostBody: plumbing.ReadPostBody,
+			StdOut:       os.Stdout,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -325,6 +287,7 @@ func init() {
 	mergeReqCmd.AddCommand(mergeReqReadCmd)
 	mergeReqCmd.AddCommand(mergeReqCloseCmd)
 	mergeReqCmd.AddCommand(mergeReqReopenCmd)
+	mergeReqCmd.AddCommand(mergeReqStatusCmd)
 
 	mergeReqCreateCmd.Flags().StringP("title", "t", "", "The merge request title (max. 250 B)")
 	mergeReqCreateCmd.Flags().StringP("body", "b", "", "The merge request message (max. 8 KB)")
