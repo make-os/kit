@@ -196,7 +196,7 @@ var mergeReqReadCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeRequestReadCmd(curRepo, &mergecmd.MergeRequestReadArgs{
-			Reference:     getRef(curRepo, args),
+			Reference:     getMergeRef(curRepo, args),
 			Limit:         limit,
 			Reverse:       reverse,
 			DateFmt:       dateFmt,
@@ -225,7 +225,7 @@ var mergeReqCloseCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqCloseCmd(curRepo, &mergecmd.MergeReqCloseArgs{
-			Reference:          getRef(curRepo, args),
+			Reference:          getMergeRef(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
 		}); err != nil {
@@ -246,7 +246,7 @@ var mergeReqReopenCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqReopenCmd(curRepo, &mergecmd.MergeReqReopenArgs{
-			Reference:          getRef(curRepo, args),
+			Reference:          getMergeRef(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
 		}); err != nil {
@@ -267,7 +267,7 @@ var mergeReqStatusCmd = &cobra.Command{
 		}
 
 		if err = mergecmd.MergeReqStatusCmd(curRepo, &mergecmd.MergeReqStatusArgs{
-			Reference:    getRef(curRepo, args),
+			Reference:    getMergeRef(curRepo, args),
 			ReadPostBody: plumbing.ReadPostBody,
 			StdOut:       os.Stdout,
 		}); err != nil {

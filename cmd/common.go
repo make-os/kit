@@ -131,7 +131,36 @@ func requireFlag(cmd *cobra.Command, flags ...string) {
 	}
 }
 
-func getRef(curRepo types.LocalRepo, args []string) string {
+func getMergeRef(curRepo types.LocalRepo, args []string) string {
+	var ref string
+	var err error
+
+	if len(args) > 0 {
+		ref = args[0]
+	}
+
+	if ref == "" {
+		ref, err = curRepo.Head()
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
+		}
+	} else {
+		ref = strings.ToLower(ref)
+		if strings.HasPrefix(ref, plumbing.MergeRequestBranchPrefix) {
+			ref = fmt.Sprintf("refs/heads/%s", ref)
+		}
+		if !plumbing.IsMergeRequestReferencePath(ref) {
+			ref = plumbing.MakeMergeRequestReference(ref)
+		}
+		if !plumbing.IsMergeRequestReference(ref) {
+			log.Fatal(fmt.Sprintf("invalid issue path (%s)", ref))
+		}
+	}
+
+	return ref
+}
+
+func getIssueRef(curRepo types.LocalRepo, args []string) string {
 	var ref string
 	var err error
 
@@ -149,10 +178,10 @@ func getRef(curRepo types.LocalRepo, args []string) string {
 		if strings.HasPrefix(ref, plumbing.IssueBranchPrefix) {
 			ref = fmt.Sprintf("refs/heads/%s", ref)
 		}
-		if !plumbing.IsMergeRequestReferencePath(ref) {
-			ref = plumbing.MakeMergeRequestReference(ref)
+		if !plumbing.IsIssueReferencePath(ref) {
+			ref = plumbing.MakeIssueReference(ref)
 		}
-		if !plumbing.IsMergeRequestReference(ref) {
+		if !plumbing.IsIssueReference(ref) {
 			log.Fatal(fmt.Sprintf("invalid issue path (%s)", ref))
 		}
 	}
