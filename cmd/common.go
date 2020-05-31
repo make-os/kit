@@ -136,7 +136,7 @@ func getMergeRef(curRepo types.LocalRepo, args []string) string {
 	var err error
 
 	if len(args) > 0 {
-		ref = args[0]
+		ref = strings.ToLower(args[0])
 	}
 
 	if ref == "" {
@@ -144,17 +144,19 @@ func getMergeRef(curRepo types.LocalRepo, args []string) string {
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
 		}
-	} else {
-		ref = strings.ToLower(ref)
-		if strings.HasPrefix(ref, plumbing.MergeRequestBranchPrefix) {
-			ref = fmt.Sprintf("refs/heads/%s", ref)
-		}
-		if !plumbing.IsMergeRequestReferencePath(ref) {
-			ref = plumbing.MakeMergeRequestReference(ref)
-		}
 		if !plumbing.IsMergeRequestReference(ref) {
-			log.Fatal(fmt.Sprintf("invalid issue path (%s)", ref))
+			log.Fatal(fmt.Sprintf("not a merge request path (%s)", ref))
 		}
+	}
+
+	if strings.HasPrefix(ref, plumbing.MergeRequestBranchPrefix) {
+		ref = fmt.Sprintf("refs/heads/%s", ref)
+	}
+	if !plumbing.IsMergeRequestReferencePath(ref) {
+		ref = plumbing.MakeMergeRequestReference(ref)
+	}
+	if !plumbing.IsMergeRequestReference(ref) {
+		log.Fatal(fmt.Sprintf("not a merge request path (%s)", ref))
 	}
 
 	return ref
@@ -173,17 +175,20 @@ func getIssueRef(curRepo types.LocalRepo, args []string) string {
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
 		}
-	} else {
-		ref = strings.ToLower(ref)
-		if strings.HasPrefix(ref, plumbing.IssueBranchPrefix) {
-			ref = fmt.Sprintf("refs/heads/%s", ref)
-		}
-		if !plumbing.IsIssueReferencePath(ref) {
-			ref = plumbing.MakeIssueReference(ref)
-		}
 		if !plumbing.IsIssueReference(ref) {
-			log.Fatal(fmt.Sprintf("invalid issue path (%s)", ref))
+			log.Fatal(fmt.Sprintf("not an issue path (%s)", ref))
 		}
+	}
+
+	ref = strings.ToLower(ref)
+	if strings.HasPrefix(ref, plumbing.IssueBranchPrefix) {
+		ref = fmt.Sprintf("refs/heads/%s", ref)
+	}
+	if !plumbing.IsIssueReferencePath(ref) {
+		ref = plumbing.MakeIssueReference(ref)
+	}
+	if !plumbing.IsIssueReference(ref) {
+		log.Fatal(fmt.Sprintf("not an issue path (%s)", ref))
 	}
 
 	return ref

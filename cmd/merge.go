@@ -276,6 +276,43 @@ var mergeReqStatusCmd = &cobra.Command{
 	},
 }
 
+// mergeReqCheckoutCmd represents a sub-command to checkout a merge request
+var mergeReqCheckoutCmd = &cobra.Command{
+	Use:   "checkout [[remote] id]",
+	Short: "Checkout a merge request target",
+	Long:  ``,
+	Run: func(cmd *cobra.Command, args []string) {
+		force, _ := cmd.Flags().GetBool("force-checkout")
+		forceFetch, _ := cmd.Flags().GetBool("force-fetch")
+		base, _ := cmd.Flags().GetBool("base")
+		yes, _ := cmd.Flags().GetBool("yes")
+
+		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
+		if err != nil {
+			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
+		}
+
+		var remote string
+		if len(args) == 2 {
+			remote = args[0]
+			args = args[1:]
+		}
+
+		if err = mergecmd.MergeReqCheckoutCmd(curRepo, &mergecmd.MergeReqCheckoutArgs{
+			Reference:             getMergeRef(curRepo, args),
+			ReadPostBody:          plumbing.ReadPostBody,
+			ForceCheckout:         force,
+			ForceFetch:            forceFetch,
+			Remote:                remote,
+			Base:                  base,
+			YesCheckoutDiffTarget: yes,
+			StdOut:                os.Stdout,
+		}); err != nil {
+			log.Fatal(err.Error())
+		}
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(mergeReqCmd)
 
@@ -288,6 +325,7 @@ func init() {
 	mergeReqCmd.AddCommand(mergeReqCloseCmd)
 	mergeReqCmd.AddCommand(mergeReqReopenCmd)
 	mergeReqCmd.AddCommand(mergeReqStatusCmd)
+	mergeReqCmd.AddCommand(mergeReqCheckoutCmd)
 
 	mergeReqCreateCmd.Flags().StringP("title", "t", "", "The merge request title (max. 250 B)")
 	mergeReqCreateCmd.Flags().StringP("body", "b", "", "The merge request message (max. 8 KB)")
@@ -306,6 +344,11 @@ func init() {
 	mergeReqCreateCmd.Flags().String("targetHash", "", "Specify the hash of the target branch")
 
 	mergeReqReadCmd.Flags().Bool("no-close-status", false, "Hide the close status indicator")
+
+	mergeReqCheckoutCmd.Flags().BoolP("force-checkout", "f", false, "Forcefully checkout while ignoring unsaved local changes")
+	mergeReqCheckoutCmd.Flags().Bool("force-fetch", false, "Forcefully fetch the target branch")
+	mergeReqCheckoutCmd.Flags().BoolP("base", "b", false, "Checkout the base branch instead of the target branch")
+	mergeReqCheckoutCmd.Flags().BoolP("yes", "y", false, "Automatically select 'Yes' for all confirm prompts")
 
 	var commonFlags = func(commands ...*cobra.Command) {
 		for _, cmd := range commands {

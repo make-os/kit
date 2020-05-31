@@ -127,6 +127,14 @@ type LocalRepo interface {
 	GetAncestors(commit *object.Commit, stopHash string, reverse bool) (ancestors []*object.Commit, err error)
 }
 
+type RefFetchArgs struct {
+	Remote    string
+	RemoteRef string
+	LocalRef  string
+	Force     bool
+	Verbose   bool
+}
+
 type LiteGit interface {
 	RefDelete(refname string) error
 	RefUpdate(refname, commitHash string) error
@@ -153,6 +161,7 @@ type LiteGit interface {
 	GetRefCommits(ref string, noMerges bool) ([]string, error)
 	Var(name string) (string, error)
 	ExpandShortHash(hash string) (string, error)
+	RefFetch(args RefFetchArgs) error
 }
 
 // Commit represents a Commit.

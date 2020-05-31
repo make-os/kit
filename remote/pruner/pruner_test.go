@@ -73,7 +73,7 @@ var _ = Describe("RepoPruner", func() {
 
 		When("repo has tx in the push pool", func() {
 			BeforeEach(func() {
-				mockPushPool := mocks.NewMockPushPool(ctrl)
+				mockPushPool := mocks.NewMockPushPooler(ctrl)
 				mockPushPool.EXPECT().RepoHasPushNote(repoName).Return(true)
 				svr.EXPECT().GetPushPool().Return(mockPushPool)
 				err = prn.Prune(repoName, false)
@@ -91,7 +91,7 @@ var _ = Describe("RepoPruner", func() {
 				hash = testutil2.CreateBlob(path, "hello world")
 				Expect(repo.ObjectExist(hash)).To(BeTrue())
 
-				mockPushPool := mocks.NewMockPushPool(ctrl)
+				mockPushPool := mocks.NewMockPushPooler(ctrl)
 				mockPushPool.EXPECT().RepoHasPushNote(repoName).Return(false)
 				svr.EXPECT().GetPushPool().Return(mockPushPool)
 				err = prn.Prune(repoName, false)
@@ -110,7 +110,7 @@ var _ = Describe("RepoPruner", func() {
 				hash = testutil2.CreateBlob(path, "hello world")
 				Expect(repo.ObjectExist(hash)).To(BeTrue())
 
-				mockPushPool := mocks.NewMockPushPool(ctrl)
+				mockPushPool := mocks.NewMockPushPooler(ctrl)
 				mockPushPool.EXPECT().RepoHasPushNote(repoName).Return(true)
 				svr.EXPECT().GetPushPool().Return(mockPushPool)
 				err = prn.Prune(repoName, true)

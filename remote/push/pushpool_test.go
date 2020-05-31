@@ -26,7 +26,7 @@ func txCheckErr(err error) func(tx types.PushNotice, dht dhttypes.DHTNode, logic
 	}
 }
 
-var _ = Describe("Pool", func() {
+var _ = Describe("PushPooler", func() {
 	var pool *PushPool
 	var tx *types.PushNote
 	var tx2 *types.PushNote

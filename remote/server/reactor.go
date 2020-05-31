@@ -289,9 +289,10 @@ func (sv *Server) createEndorsement(note pushtypes.PushNotice) (*pushtypes.PushE
 
 		// Get the current reference hash
 		refHash, err := note.GetTargetRepo().RefGet(pushedRef.Name)
-		if err != nil && err.Error() != "ref not found" {
+		if err != nil && err != plumbing.ErrRefNotFound {
 			return nil, errors.Wrap(err, fmt.Sprintf("failed to get hash of reference (%s)", pushedRef.Name))
 		}
+
 		if err == nil {
 			endorsement.Hash = util.MustFromHex(refHash)
 		}

@@ -40,6 +40,18 @@ func ReadInput(title string, args *InputReaderArgs) string {
 	return inp
 }
 
+// ConfirmInputReader describes a function for reading user confirmation
+type ConfirmInputReader func(title string, def bool) bool
+
+// ConfirmInput renders a confirm console input
+func ConfirmInput(title string, def bool) bool {
+	confirm := false
+	survey.ConfirmQuestionTemplate = title + "{{if .Default}}(Y/n)> {{else}}(y/N)> {{.Answer}}{{end}}\n"
+	prompt := &survey.Confirm{Default: def}
+	survey.AskOne(prompt, &confirm)
+	return confirm
+}
+
 // readPasswordInput starts a prompt to collect single line password input
 func readPasswordInput() string {
 	password, err := gopass.GetPasswdMasked()

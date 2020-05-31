@@ -6,8 +6,6 @@ package mocks
 
 import (
 	context "context"
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	config "gitlab.com/makeos/mosdef/config"
 	crypto "gitlab.com/makeos/mosdef/crypto"
@@ -19,6 +17,7 @@ import (
 	core "gitlab.com/makeos/mosdef/types/core"
 	modules "gitlab.com/makeos/mosdef/types/modules"
 	util "gitlab.com/makeos/mosdef/util"
+	reflect "reflect"
 )
 
 // MockPoolGetter is a mock of PoolGetter interface
@@ -45,10 +44,10 @@ func (m *MockPoolGetter) EXPECT() *MockPoolGetterMockRecorder {
 }
 
 // GetPushPool mocks base method
-func (m *MockPoolGetter) GetPushPool() types0.Pool {
+func (m *MockPoolGetter) GetPushPool() types0.PushPooler {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types0.Pool)
+	ret0, _ := ret[0].(types0.PushPooler)
 	return ret0
 }
 
@@ -500,10 +499,10 @@ func (m *MockRemoteServer) EXPECT() *MockRemoteServerMockRecorder {
 }
 
 // GetPushPool mocks base method
-func (m *MockRemoteServer) GetPushPool() types0.Pool {
+func (m *MockRemoteServer) GetPushPool() types0.PushPooler {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types0.Pool)
+	ret0, _ := ret[0].(types0.PushPooler)
 	return ret0
 }
 

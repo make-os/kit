@@ -26,7 +26,7 @@ type PushKeyGetter func(pushKeyID string) (crypto.PublicKey, error)
 type PoolGetter interface {
 
 	// GetPushPool returns the push pool
-	GetPushPool() pushtypes.Pool
+	GetPushPool() pushtypes.PushPooler
 
 	// GetMempool returns the transaction pool
 	GetMempool() Mempool

@@ -67,7 +67,7 @@ type Server struct {
 	rootDir                  string                           // the root directory where all repos are stored
 	addr                     string                           // addr is the listening address for the http server
 	gitBinPath               string                           // gitBinPath is the path of the git executable
-	pushPool                 pushtypes.Pool                   // The transaction pool for push transactions
+	pushPool                 pushtypes.PushPooler             // The transaction pool for push transactions
 	mempool                  core.Mempool                     // The general transaction pool for block-bound transaction
 	logic                    core.Logic                       // logic is the application logic provider
 	privValidatorKey         *crypto.Key                      // the node's private validator key for signing transactions
@@ -227,7 +227,7 @@ func (sv *Server) GetPruner() remotetypes.RepoPruner {
 }
 
 // GetPushPool returns the push pool
-func (sv *Server) GetPushPool() pushtypes.Pool {
+func (sv *Server) GetPushPool() pushtypes.PushPooler {
 	return sv.pushPool
 }
 

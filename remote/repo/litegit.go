@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
+	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 )
 
 // execGitCmd executes git commands and returns the output
@@ -491,4 +492,20 @@ func (lg *LiteGit) ExpandShortHash(hash string) (string, error) {
 		return "", fmt.Errorf(string(out))
 	}
 	return strings.TrimSpace(string(out)), nil
+}
+
+// RefFetch fetches a remote branch into a local branch
+func (lg *LiteGit) RefFetch(params remotetypes.RefFetchArgs) error {
+	args := []string{"fetch", params.Remote, fmt.Sprintf("%s:%s", params.RemoteRef, params.LocalRef)}
+	if params.Verbose {
+		args = append(args, "-v")
+	}
+	if params.Force {
+		args = append(args, "-f")
+	}
+	cmd := exec.Command(lg.gitBinPath, args...)
+	cmd.Dir = lg.path
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return errors.Wrap(cmd.Run(), "failed to fetch")
 }

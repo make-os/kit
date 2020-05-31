@@ -387,7 +387,7 @@ var _ = Describe("Reactor", func() {
 					return nil
 				}
 
-				mockPushPool := mocks.NewMockPushPool(ctrl)
+				mockPushPool := mocks.NewMockPushPooler(ctrl)
 				mockPushPool.EXPECT().Add(gomock.Any(), true).Return(fmt.Errorf("push pool error"))
 				svr.pushPool = mockPushPool
 
@@ -444,7 +444,7 @@ var _ = Describe("Reactor", func() {
 					return nil
 				}
 
-				mockPushPool := mocks.NewMockPushPool(ctrl)
+				mockPushPool := mocks.NewMockPushPooler(ctrl)
 				mockPushPool.EXPECT().Add(gomock.Any(), true).Return(nil)
 				svr.pushPool = mockPushPool
 

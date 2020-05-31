@@ -322,8 +322,8 @@ func (e *PushEndorsement) Clone() *PushEndorsement {
 	return cp
 }
 
-// Pool represents a pool for holding and ordering git push transactions
-type Pool interface {
+// PushPooler represents a pool for holding and ordering git push transactions
+type PushPooler interface {
 
 	// Register a push transaction to the pool.
 	//

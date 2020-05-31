@@ -100,7 +100,7 @@ func (m *MockPostEntry) Comment() *plumbing.Comment {
 }
 
 // Comment indicates an expected call of Comment
-func (mr *MockPostEntryMockRecorder) FirstComment() *gomock.Call {
+func (mr *MockPostEntryMockRecorder) Comment() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Comment", reflect.TypeOf((*MockPostEntry)(nil).Comment))
 }

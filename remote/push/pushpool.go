@@ -120,7 +120,7 @@ func newItem(note *types.PushNote) *containerItem {
 
 type pushPoolValidator func(note types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error
 
-// Pool implements types.Pool.
+// PushPooler implements types.PushPooler.
 type PushPool struct {
 	gmx          *sync.RWMutex     // general lock
 	cap          int               // The number of transaction the pool is capable of holding.
@@ -134,7 +134,7 @@ type PushPool struct {
 	noteChecker  pushPoolValidator // Function used to validate a transaction
 }
 
-// NewPushPool creates an instance of Pool
+// NewPushPool creates an instance of PushPooler
 func NewPushPool(cap int, logic core.Logic, dht dhttypes.DHTNode) *PushPool {
 	pool := &PushPool{
 		gmx:          &sync.RWMutex{},
