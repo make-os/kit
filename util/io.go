@@ -46,7 +46,7 @@ type ConfirmInputReader func(title string, def bool) bool
 // ConfirmInput renders a confirm console input
 func ConfirmInput(title string, def bool) bool {
 	confirm := false
-	survey.ConfirmQuestionTemplate = title + "{{if .Default}}(Y/n)> {{else}}(y/N)> {{.Answer}}{{end}}\n"
+	survey.ConfirmQuestionTemplate = title + `{{if .Default}}(Y/n)>{{else}}(y/N)>{{" "}}{{- if .Answer}}{{.Answer}}{{"\n"}}{{end}}{{end}}`
 	prompt := &survey.Confirm{Default: def}
 	survey.AskOne(prompt, &confirm)
 	return confirm

@@ -145,7 +145,7 @@ func getMergeRef(curRepo types.LocalRepo, args []string) string {
 			log.Fatal(errors.Wrap(err, "failed to get HEAD").Error())
 		}
 		if !plumbing.IsMergeRequestReference(ref) {
-			log.Fatal(fmt.Sprintf("not a merge request path (%s)", ref))
+			log.Fatal(fmt.Sprintf("not a valid merge request path (%s)", ref))
 		}
 	}
 
@@ -156,7 +156,7 @@ func getMergeRef(curRepo types.LocalRepo, args []string) string {
 		ref = plumbing.MakeMergeRequestReference(ref)
 	}
 	if !plumbing.IsMergeRequestReference(ref) {
-		log.Fatal(fmt.Sprintf("not a merge request path (%s)", ref))
+		log.Fatal(fmt.Sprintf("not a valid merge request path (%s)", ref))
 	}
 
 	return ref

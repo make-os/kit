@@ -113,10 +113,10 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 				},
 			}
 			mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
-			mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "target", LocalRef: "target", Force: false, Verbose: false}).Return(fmt.Errorf("error"))
+			mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "target", LocalRef: "target", Force: false, Verbose: true}).Return(fmt.Errorf("error"))
 			err = mergecmd.MergeReqCheckoutCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to fetch target: error"))
+			Expect(err).To(MatchError("failed to fetch target branch: error"))
 		})
 
 		It("should return error when unable to get fetched branch in repo", func() {
@@ -129,7 +129,7 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 				},
 			}
 			mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
-			mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "target", LocalRef: "target", Force: false, Verbose: false}).Return(nil)
+			mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "target", LocalRef: "target", Force: false, Verbose: true}).Return(nil)
 			mockRepo.EXPECT().RefGet("target").Return("", fmt.Errorf("error"))
 			err = mergecmd.MergeReqCheckoutCmd(mockRepo, args)
 			Expect(err).ToNot(BeNil())
@@ -146,7 +146,8 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 				},
 			}
 			mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
-			mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "target", LocalRef: "target", Force: false, Verbose: false}).Return(nil)
+			mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "target",
+				LocalRef: "target", Force: false, Verbose: true}).Return(nil)
 			mockRepo.EXPECT().RefGet("target").Return("hash", nil)
 			mockRepo.EXPECT().Checkout("target", false, args.ForceCheckout)
 			err = mergecmd.MergeReqCheckoutCmd(mockRepo, args)
@@ -165,7 +166,8 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 					},
 				}
 				mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
-				mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "base", LocalRef: "base", Force: false, Verbose: false}).Return(nil)
+				mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin",
+					RemoteRef: "base", LocalRef: "base", Force: false, Verbose: true}).Return(nil)
 				mockRepo.EXPECT().RefGet("base").Return("hash", nil)
 				mockRepo.EXPECT().Checkout("base", false, args.ForceCheckout)
 				err = mergecmd.MergeReqCheckoutCmd(mockRepo, args)
@@ -187,7 +189,8 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 				StdOut: ioutil.Discard,
 			}
 			mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
-			mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "target", LocalRef: "target", Force: false, Verbose: false}).Return(nil)
+			mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin",
+				RemoteRef: "target", LocalRef: "target", Force: false, Verbose: true}).Return(nil)
 			mockRepo.EXPECT().RefGet("target").Return("hash2", nil)
 			mockRepo.EXPECT().Checkout("target", false, args.ForceCheckout)
 			err = mergecmd.MergeReqCheckoutCmd(mockRepo, args)
@@ -207,7 +210,8 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 					StdOut:       ioutil.Discard,
 				}
 				mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
-				mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "target", LocalRef: "target", Force: false, Verbose: false}).Return(nil)
+				mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin",
+					RemoteRef: "target", LocalRef: "target", Force: false, Verbose: true}).Return(nil)
 				mockRepo.EXPECT().RefGet("target").Return("hash2", nil)
 				err = mergecmd.MergeReqCheckoutCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
@@ -227,7 +231,8 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 					},
 				}
 				mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
-				mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "target", LocalRef: "target", Force: false, Verbose: false}).Return(nil)
+				mockRepo.EXPECT().RefFetch(types.RefFetchArgs{Remote: "origin", RemoteRef: "target",
+					LocalRef: "target", Force: false, Verbose: true}).Return(nil)
 				mockRepo.EXPECT().RefGet("target").Return("hash2", nil)
 				mockRepo.EXPECT().Checkout("target", false, args.ForceCheckout)
 				err = mergecmd.MergeReqCheckoutCmd(mockRepo, args)

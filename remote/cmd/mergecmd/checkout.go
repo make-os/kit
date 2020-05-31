@@ -41,25 +41,33 @@ type MergeReqCheckoutArgs struct {
 	StdOut io.Writer
 }
 
-// MergeReqCheckoutCmd checkouts a merge request target
-func MergeReqCheckoutCmd(r types.LocalRepo, args *MergeReqCheckoutArgs) error {
+// getMergeRequestTarget takes a merge request reference and extracts merge target.
+// r is the local repository.
+// reference is the merge request reference
+// postBodyReader is a function for reading post body
+// useBaseAsTarget will return the base branch and hash as target
+func getMergeRequestTarget(
+	r types.LocalRepo,
+	reference string,
+	postBodyReader plumbing.PostBodyReader,
+	useBaseAsTarget bool) (target string, targetHash string, err error) {
 
-	hashes, err := r.GetRefCommits(args.Reference, true)
+	hashes, err := r.GetRefCommits(reference, true)
 	if err != nil {
 		if err == plumbing.ErrRefNotFound {
-			return fmt.Errorf("merge request not found")
+			return "", "", fmt.Errorf("merge request not found")
 		}
-		return err
+		return "", "", err
 	}
 
 	// Get the target branch name and target hash.
-	// If args.Base is true, find only the base and base hash.
+	// If useBaseAsTarget is true, find only the base and base hash.
 	// Exit the search once we find what we are looking for.
-	var base, baseHash, target, targetHash, sBranch, sHash string
+	var base, baseHash, selectedBranch, selectedHash string
 	for _, hash := range hashes {
-		pb, _, err := args.ReadPostBody(r, hash)
+		pb, _, err := postBodyReader(r, hash)
 		if err != nil {
-			return errors.Wrapf(err, "failed to read commit (%s)", hash[:7])
+			return "", "", errors.Wrapf(err, "failed to read commit (%s)", hash[:7])
 		}
 		if base == "" && pb.BaseBranch != "" {
 			base = pb.BaseBranch
@@ -74,13 +82,24 @@ func MergeReqCheckoutCmd(r types.LocalRepo, args *MergeReqCheckoutArgs) error {
 			targetHash = pb.TargetBranchHash
 		}
 
-		if !args.Base {
-			sBranch = util.NonZeroOrDefString(target, sBranch)
-			sHash = util.NonZeroOrDefString(targetHash, sHash)
+		if !useBaseAsTarget {
+			selectedBranch = util.NonZeroOrDefString(target, selectedBranch)
+			selectedHash = util.NonZeroOrDefString(targetHash, selectedHash)
 		} else {
-			sBranch = util.NonZeroOrDefString(base, sBranch)
-			sHash = util.NonZeroOrDefString(baseHash, sHash)
+			selectedBranch = util.NonZeroOrDefString(base, selectedBranch)
+			selectedHash = util.NonZeroOrDefString(baseHash, selectedHash)
 		}
+	}
+
+	return selectedBranch, selectedHash, nil
+}
+
+// MergeReqCheckoutCmd checkouts a merge request target or base branch
+func MergeReqCheckoutCmd(r types.LocalRepo, args *MergeReqCheckoutArgs) error {
+
+	selectedBranch, selectedHash, err := getMergeRequestTarget(r, args.Reference, args.ReadPostBody, args.Base)
+	if err != nil {
+		return err
 	}
 
 	targetLbl := "target"
@@ -93,19 +112,20 @@ func MergeReqCheckoutCmd(r types.LocalRepo, args *MergeReqCheckoutArgs) error {
 	}
 
 	// Ensure we have a branch and branch hash to checkout
-	if sBranch == "" {
+	if selectedBranch == "" {
 		return fmt.Errorf("%s branch was not set in merge request", targetLbl)
-	} else if sHash == "" {
+	} else if selectedHash == "" {
 		return fmt.Errorf("%s branch hash was not set in merge request", targetLbl)
 	}
 
 	// Fetch the target branch
-	fetchArgs := types.RefFetchArgs{Remote: args.Remote, RemoteRef: sBranch, LocalRef: sBranch, Force: args.ForceFetch}
+	fetchArgs := types.RefFetchArgs{Remote: args.Remote, RemoteRef: selectedBranch,
+		LocalRef: selectedBranch, Force: args.ForceFetch, Verbose: true}
 	if err := r.RefFetch(fetchArgs); err != nil {
-		return errors.Wrap(err, "failed to fetch target")
+		return errors.Wrapf(err, "failed to fetch %s branch", targetLbl)
 	}
 
-	hash, err := r.RefGet(sBranch)
+	hash, err := r.RefGet(selectedBranch)
 	if err != nil {
 		return err
 	}
@@ -113,7 +133,7 @@ func MergeReqCheckoutCmd(r types.LocalRepo, args *MergeReqCheckoutArgs) error {
 	// If the branch hash from the merge request matches the
 	// current hash of the same branch locally or "Yes"
 	// is true, check it out
-	if sHash == hash || args.YesCheckoutDiffTarget {
+	if selectedHash == hash || args.YesCheckoutDiffTarget {
 		goto checkout
 	}
 
@@ -121,15 +141,14 @@ func MergeReqCheckoutCmd(r types.LocalRepo, args *MergeReqCheckoutArgs) error {
 	// are not in sync. We need to inform the user and ask them to
 	// confirm whether they want us to check it out
 	fmt.Fprintf(args.StdOut, color.YellowString("The %s merge request branch tip (%s) differs "+
-		"from the local tip. \n"), targetLbl, sBranch, sBranch)
+		"from the local tip. \n"), targetLbl, selectedBranch, selectedBranch)
 	if !args.ConfirmInput("\u001B[1;32m? \u001B[1;37mDo you wish to continue checkout? \u001B[0m", false) {
-		fmt.Fprint(args.StdOut, "\n")
 		return fmt.Errorf("aborted")
 	}
 
 checkout:
-	if err = r.Checkout(sBranch, false, args.ForceCheckout); err != nil {
-		return errors.Wrapf(err, "failed to checkout %s branch (%s)", targetLbl, sBranch)
+	if err = r.Checkout(selectedBranch, false, args.ForceCheckout); err != nil {
+		return errors.Wrapf(err, "failed to checkout %s branch (%s)", targetLbl, selectedBranch)
 	}
 
 	return nil
