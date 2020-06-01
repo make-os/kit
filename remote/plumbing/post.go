@@ -469,12 +469,26 @@ type CreatePostCommitArgs struct {
 	// IsComment indicates that the post is intended to be a comment
 	IsComment bool
 
+	// Force indicates that uncommitted changes can be ignored and lost
+	Force bool
+
 	// GetFreePostID is used to find a free post ID
 	GetFreePostID FreePostIDFinder
 }
 
 // CreatePostCommit creates a new post reference or adds a comment commit to an existing one.
 func CreatePostCommit(r types.LocalRepo, args *CreatePostCommitArgs) (isNew bool, reference string, err error) {
+
+	// Ensure we are working in a clean repository.
+	// If args.Force is true, uncommitted changes are ignored.
+	if !args.Force {
+		isClean, err := r.IsClean()
+		if err != nil {
+			return false, "", errors.Wrap(err, "failed to check repo status")
+		} else if !isClean {
+			return false, "", fmt.Errorf("dirty working tree; there are uncommitted changes")
+		}
+	}
 
 	var ref string
 	switch v := args.ID.(type) {
@@ -519,6 +533,17 @@ func CreatePostCommit(r types.LocalRepo, args *CreatePostCommitArgs) (isNew bool
 	// Update the current hash of the post reference
 	if err = r.RefUpdate(ref, commitHash); err != nil {
 		return false, "", errors.Wrap(err, "failed to update post reference target hash")
+	}
+
+	// If HEAD is the same as the post reference, check it out to force
+	// the working tree to be updated
+	head, err := r.Head()
+	if err != nil {
+		return false, "", errors.Wrap(err, "failed to get HEAD")
+	} else if head == ref {
+		if err = r.Checkout(plumbing.ReferenceName(ref).Short(), false, args.Force); err != nil {
+			return false, "", errors.Wrap(err, "failed to checkout post reference")
+		}
 	}
 
 	return hash == "", ref, nil

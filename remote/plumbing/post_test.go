@@ -553,8 +553,23 @@ content`, "commit 2")
 	})
 
 	Describe(".CreatePostCommit", func() {
+		It("should return error when unable to check if repo worktree is clean", func() {
+			mockRepo.EXPECT().IsClean().Return(false, fmt.Errorf("error"))
+			_, _, err := plumbing.CreatePostCommit(mockRepo, &plumbing.CreatePostCommitArgs{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to check repo status: error"))
+		})
+
+		It("should return error when repo worktree is not clean", func() {
+			mockRepo.EXPECT().IsClean().Return(false, nil)
+			_, _, err := plumbing.CreatePostCommit(mockRepo, &plumbing.CreatePostCommitArgs{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("dirty working tree; there are uncommitted changes"))
+		})
+
 		When("post ref number is not provided", func() {
 			It("should return err when unable to get free post number", func() {
+				mockRepo.EXPECT().IsClean().Return(true, nil)
 				args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, ID: 0, Body: "", IsComment: false,
 					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) {
 						return 0, fmt.Errorf("error")
@@ -566,87 +581,131 @@ content`, "commit 2")
 			})
 		})
 
-		It("should return err when reference type is unknown", func() {
-			args := &plumbing.CreatePostCommitArgs{Type: "unknown", ID: 1, Body: "", IsComment: false,
-				GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) {
-					return 0, fmt.Errorf("error")
-				},
-			}
-			_, _, err := plumbing.CreatePostCommit(mockRepo, args)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("unknown post reference type"))
-		})
-
-		It("should return error when unable to query post reference", func() {
-			args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, ID: 0, Body: "", IsComment: false,
-				GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
-			}
-			mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return("", fmt.Errorf("error"))
-			_, _, err := plumbing.CreatePostCommit(mockRepo, args)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to check post reference existence: error"))
-		})
-
-		When("comment is requested but issue does not exist", func() {
-			It("should return err", func() {
-				args := &plumbing.CreatePostCommitArgs{
-					Type: plumbing.IssueBranchPrefix, ID: 0,
-					Body: "", IsComment: true,
-					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+		When("args.Force=true", func() {
+			It("should return err when reference type is unknown", func() {
+				args := &plumbing.CreatePostCommitArgs{Type: "unknown", Force: true, ID: 1, Body: "", IsComment: false,
+					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) {
+						return 0, fmt.Errorf("error")
+					},
 				}
-				mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return("", plumbing.ErrRefNotFound)
 				_, _, err := plumbing.CreatePostCommit(mockRepo, args)
 				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("can't add comment to a non-existing post"))
+				Expect(err).To(MatchError("unknown post reference type"))
 			})
-		})
 
-		It("should return err when unable to create a single file commit", func() {
-			args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, ID: 0,
-				Body: "body content", IsComment: false,
-				GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
-			}
-			hash := util.RandString(40)
-			mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return(hash, nil)
-			mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return("", fmt.Errorf("error"))
-			_, _, err := plumbing.CreatePostCommit(mockRepo, args)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create post commit: error"))
-		})
+			It("should return error when unable to query post reference", func() {
+				args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, Force: true, ID: 0, Body: "", IsComment: false,
+					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+				}
+				mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return("", fmt.Errorf("error"))
+				_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to check post reference existence: error"))
+			})
 
-		It("should return err when unable to update issue reference target hash", func() {
-			refname := plumbing.MakeMergeRequestReference(1)
-			hash := util.RandString(40)
-			issueHash := util.RandString(40)
-			mockRepo.EXPECT().RefGet(refname).Return(hash, nil)
-			mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return(issueHash, nil)
-			mockRepo.EXPECT().RefUpdate(refname, issueHash).Return(fmt.Errorf("error"))
+			When("comment is requested but issue does not exist", func() {
+				It("should return err", func() {
+					args := &plumbing.CreatePostCommitArgs{
+						Type: plumbing.IssueBranchPrefix, ID: 0,
+						Force: true,
+						Body:  "", IsComment: true,
+						GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+					}
+					mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return("", plumbing.ErrRefNotFound)
+					_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("can't add comment to a non-existing post"))
+				})
+			})
 
-			args := &plumbing.CreatePostCommitArgs{Type: plumbing.MergeRequestBranchPrefix, ID: 0,
-				Body: "body content", IsComment: false,
-				GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
-			}
-			_, _, err := plumbing.CreatePostCommit(mockRepo, args)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to update post reference target hash: error"))
-		})
+			It("should return err when unable to create a single file commit", func() {
+				args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, Force: true, ID: 0,
+					Body: "body content", IsComment: false,
+					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+				}
+				hash := util.RandString(40)
+				mockRepo.EXPECT().RefGet(plumbing.MakeIssueReference(1)).Return(hash, nil)
+				mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return("", fmt.Errorf("error"))
+				_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to create post commit: error"))
+			})
 
-		It("should return no error when successful", func() {
-			refname := plumbing.MakeIssueReference(1)
-			hash := util.RandString(40)
-			issueHash := util.RandString(40)
-			mockRepo.EXPECT().RefGet(refname).Return(hash, nil)
-			mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return(issueHash, nil)
-			mockRepo.EXPECT().RefUpdate(refname, issueHash).Return(nil)
+			It("should return err when unable to update issue reference target hash", func() {
+				refname := plumbing.MakeMergeRequestReference(1)
+				hash := util.RandString(40)
+				issueHash := util.RandString(40)
+				mockRepo.EXPECT().RefGet(refname).Return(hash, nil)
+				mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return(issueHash, nil)
+				mockRepo.EXPECT().RefUpdate(refname, issueHash).Return(fmt.Errorf("error"))
 
-			args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, ID: 0,
-				Body: "body content", IsComment: false,
-				GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
-			}
-			isNewIssue, issueReference, err := plumbing.CreatePostCommit(mockRepo, args)
-			Expect(err).To(BeNil())
-			Expect(isNewIssue).To(BeFalse())
-			Expect(issueReference).To(Equal(refname))
+				args := &plumbing.CreatePostCommitArgs{Type: plumbing.MergeRequestBranchPrefix, Force: true, ID: 0,
+					Body: "body content", IsComment: false,
+					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+				}
+				_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to update post reference target hash: error"))
+			})
+
+			It("should return error when unable to get repo HEAD", func() {
+				refname := plumbing.MakeIssueReference(1)
+				hash := util.RandString(40)
+				issueHash := util.RandString(40)
+				mockRepo.EXPECT().RefGet(refname).Return(hash, nil)
+				mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return(issueHash, nil)
+				mockRepo.EXPECT().RefUpdate(refname, issueHash).Return(nil)
+				mockRepo.EXPECT().Head().Return("", fmt.Errorf("error"))
+
+				args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, Force: true, ID: 0,
+					Body: "body content", IsComment: false,
+					GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+				}
+				_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to get HEAD: error"))
+			})
+
+			When("HEAD and reference match", func() {
+				It("should return error when unable to checkout reference", func() {
+					refname := plumbing.MakeIssueReference(1)
+					hash := util.RandString(40)
+					issueHash := util.RandString(40)
+					mockRepo.EXPECT().RefGet(refname).Return(hash, nil)
+					mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return(issueHash, nil)
+					mockRepo.EXPECT().RefUpdate(refname, issueHash).Return(nil)
+					mockRepo.EXPECT().Head().Return(refname, nil)
+
+					args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, Force: true, ID: 0,
+						Body: "body content", IsComment: false,
+						GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+					}
+					mockRepo.EXPECT().Checkout(plumbing2.ReferenceName(refname).Short(), false, args.Force).Return(fmt.Errorf("error"))
+
+					_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("failed to checkout post reference: error"))
+				})
+
+				It("should return no error checkout succeeds", func() {
+					refname := plumbing.MakeIssueReference(1)
+					hash := util.RandString(40)
+					issueHash := util.RandString(40)
+					mockRepo.EXPECT().RefGet(refname).Return(hash, nil)
+					mockRepo.EXPECT().CreateSingleFileCommit("body", "body content", "", hash).Return(issueHash, nil)
+					mockRepo.EXPECT().RefUpdate(refname, issueHash).Return(nil)
+					mockRepo.EXPECT().Head().Return(refname, nil)
+
+					args := &plumbing.CreatePostCommitArgs{Type: plumbing.IssueBranchPrefix, Force: true, ID: 0,
+						Body: "body content", IsComment: false,
+						GetFreePostID: func(repo types.LocalRepo, startID int, postRefType string) (int, error) { return 1, nil },
+					}
+					mockRepo.EXPECT().Checkout(plumbing2.ReferenceName(refname).Short(), false, args.Force).Return(nil)
+
+					_, _, err := plumbing.CreatePostCommit(mockRepo, args)
+					Expect(err).To(BeNil())
+				})
+			})
 		})
 	})
 })

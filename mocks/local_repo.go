@@ -786,6 +786,21 @@ func (mr *MockLocalRepoMockRecorder) GetPath() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPath", reflect.TypeOf((*MockLocalRepo)(nil).GetPath))
 }
 
+// IsClean mocks base method
+func (m *MockLocalRepo) IsClean() (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsClean")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsClean indicates an expected call of IsClean
+func (mr *MockLocalRepoMockRecorder) IsClean() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsClean", reflect.TypeOf((*MockLocalRepo)(nil).IsClean))
+}
+
 // GetState mocks base method
 func (m *MockLocalRepo) GetState() *state.Repository {
 	m.ctrl.T.Helper()

@@ -61,6 +61,7 @@ var mergeReqCreateCmd = &cobra.Command{
 		baseBranchHash, _ := cmd.Flags().GetString("baseHash")
 		targetBranch, _ := cmd.Flags().GetString("target")
 		targetBranchHash, _ := cmd.Flags().GetString("targetHash")
+		force, _ := cmd.Flags().GetBool("force")
 
 		r, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
@@ -127,6 +128,7 @@ var mergeReqCreateCmd = &cobra.Command{
 			BaseHash:           baseBranchHash,
 			Target:             targetBranch,
 			TargetHash:         targetBranchHash,
+			Force:              force,
 			StdOut:             os.Stdout,
 			StdIn:              os.Stdin,
 			PostCommentCreator: plumbing.CreatePostCommit,
@@ -219,6 +221,8 @@ var mergeReqCloseCmd = &cobra.Command{
 	Short: "Close a merge request",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		force, _ := cmd.Flags().GetBool("force")
+
 		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
@@ -226,6 +230,7 @@ var mergeReqCloseCmd = &cobra.Command{
 
 		if err = mergecmd.MergeReqCloseCmd(curRepo, &mergecmd.MergeReqCloseArgs{
 			Reference:          getMergeRef(curRepo, args),
+			Force:              force,
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
 		}); err != nil {
@@ -240,6 +245,8 @@ var mergeReqReopenCmd = &cobra.Command{
 	Short: "Reopen a closed merge request",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		force, _ := cmd.Flags().GetBool("force")
+
 		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
@@ -247,6 +254,7 @@ var mergeReqReopenCmd = &cobra.Command{
 
 		if err = mergecmd.MergeReqReopenCmd(curRepo, &mergecmd.MergeReqReopenArgs{
 			Reference:          getMergeRef(curRepo, args),
+			Force:              force,
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
 		}); err != nil {
@@ -376,6 +384,7 @@ func init() {
 	mergeReqCreateCmd.Flags().String("baseHash", "", "Specify the current hash of the base branch")
 	mergeReqCreateCmd.Flags().String("target", "", "Specify the target branch name")
 	mergeReqCreateCmd.Flags().String("targetHash", "", "Specify the hash of the target branch")
+	mergeReqCreateCmd.Flags().BoolP("force", "f", false, "Forcefully create comment (uncommitted changes will be lost)")
 
 	mergeReqReadCmd.Flags().Bool("no-close-status", false, "Hide the close status indicator")
 
@@ -386,6 +395,9 @@ func init() {
 
 	mergeReqFetchCmd.Flags().Bool("force-fetch", false, "Forcefully fetch the branch (uncommitted changes will be lost)")
 	mergeReqFetchCmd.Flags().BoolP("base", "b", false, "Fetch the base branch instead of the target branch")
+
+	mergeReqCloseCmd.Flags().BoolP("force", "f", false, "Forcefully create comment (uncommitted changes will be lost)")
+	mergeReqReopenCmd.Flags().BoolP("force", "f", false, "Forcefully create comment (uncommitted changes will be lost)")
 
 	var commonFlags = func(commands ...*cobra.Command) {
 		for _, cmd := range commands {

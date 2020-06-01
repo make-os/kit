@@ -82,6 +82,9 @@ type LocalRepo interface {
 	// GetPath returns the repository's path
 	GetPath() string
 
+	// IsClean checks whether the working directory has no un-tracked, staged or modified files
+	IsClean() (bool, error)
+
 	// GetState returns the repository's network state
 	GetState() *state.Repository
 

@@ -60,6 +60,9 @@ type MergeRequestCreateArgs struct {
 	// Open sets close status to 0
 	Open bool
 
+	// Force indicates that uncommitted changes should be ignored
+	Force bool
+
 	// StdOut receives the output
 	StdOut io.Writer
 
@@ -205,6 +208,7 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) erro
 		ID:            args.ID,
 		Body:          postBody,
 		IsComment:     args.ReplyHash != "",
+		Force:         args.Force,
 		GetFreePostID: plumbing.GetFreePostID,
 	})
 	if err != nil {

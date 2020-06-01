@@ -59,6 +59,19 @@ func (r *Repo) GetPath() string {
 	return r.Path
 }
 
+// IsClean checks whether the working directory has no un-tracked, staged or modified files
+func (r *Repo) IsClean() (bool, error) {
+	wt, err := r.Repository.Worktree()
+	if err != nil {
+		return false, err
+	}
+	status, err := wt.Status()
+	if err != nil {
+		return false, err
+	}
+	return len(status) == 0, nil
+}
+
 // SetPath sets the repository root path
 func (r *Repo) SetPath(path string) {
 	r.Path = path

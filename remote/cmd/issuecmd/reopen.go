@@ -19,6 +19,9 @@ type IssueReopenArgs struct {
 
 	// ReadPostBody is a function for reading post body in a commit
 	ReadPostBody plumbing.PostBodyReader
+
+	// Force indicates that uncommitted changes should be ignored
+	Force bool
 }
 
 // IssueReopenCmd adds a negative close directive to an issue
@@ -46,9 +49,10 @@ func IssueReopenCmd(r types.LocalRepo, args *IssueReopenArgs) error {
 
 	// Create a new comment using the post body
 	_, _, err = args.PostCommentCreator(r, &plumbing.CreatePostCommitArgs{
-		Type: plumbing.IssueBranchPrefix,
-		ID:   args.Reference,
-		Body: postBody,
+		Type:  plumbing.IssueBranchPrefix,
+		ID:    args.Reference,
+		Body:  postBody,
+		Force: args.Force,
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to add comment")

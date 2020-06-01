@@ -1,17 +1,3 @@
-// Copyright © 2020 NAME HERE <EMAIL ADDRESS>
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
@@ -54,6 +40,7 @@ var issueCreateCmd = &cobra.Command{
 		noBody, _ := cmd.Flags().GetBool("no-body")
 		cls, _ := cmd.Flags().GetBool("close")
 		forceNew, _ := cmd.Flags().GetBool("new")
+		force, _ := cmd.Flags().GetBool("force")
 		open, _ := cmd.Flags().GetBool("reopen")
 		editorPath, _ := cmd.Flags().GetString("editor")
 		labels, _ := cmd.Flags().GetString("labels")
@@ -93,6 +80,7 @@ var issueCreateCmd = &cobra.Command{
 			Reactions:          funk.UniqString(reactions),
 			UseEditor:          useEditor,
 			EditorPath:         editorPath,
+			Force:              force,
 			StdOut:             os.Stdout,
 			StdIn:              os.Stdin,
 			PostCommentCreator: plumbing.CreatePostCommit,
@@ -207,6 +195,8 @@ var issueCloseCmd = &cobra.Command{
 	Short: "Close an issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		force, _ := cmd.Flags().GetBool("force")
+
 		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
@@ -216,6 +206,7 @@ var issueCloseCmd = &cobra.Command{
 			Reference:          getIssueRef(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
+			Force:              force,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -228,6 +219,8 @@ var issueReopenCmd = &cobra.Command{
 	Short: "Reopen a closed issue",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		force, _ := cmd.Flags().GetBool("force")
+
 		curRepo, err := repo.GetAtWorkingDir(cfg.Node.GitBinPath)
 		if err != nil {
 			log.Fatal(errors.Wrap(err, "failed to open repo at cwd").Error())
@@ -237,6 +230,7 @@ var issueReopenCmd = &cobra.Command{
 			Reference:          getIssueRef(curRepo, args),
 			PostCommentCreator: plumbing.CreatePostCommit,
 			ReadPostBody:       plumbing.ReadPostBody,
+			Force:              force,
 		}); err != nil {
 			log.Fatal(err.Error())
 		}
@@ -287,7 +281,11 @@ func init() {
 	issueCreateCmd.Flags().IntP("id", "i", 0, "Specify a target issue number")
 	issueCreateCmd.Flags().BoolP("close", "c", false, "Close the issue")
 	issueCreateCmd.Flags().BoolP("reopen", "o", false, "Open a closed issue")
+	issueCreateCmd.Flags().BoolP("force", "f", false, "Forcefully create comment (uncommitted changes will be lost)")
 	issueReadCmd.Flags().Bool("no-close-status", false, "Hide the close status indicator")
+
+	issueCloseCmd.Flags().BoolP("force", "f", false, "Forcefully create comment (uncommitted changes will be lost)")
+	issueReopenCmd.Flags().BoolP("force", "f", false, "Forcefully create comment (uncommitted changes will be lost)")
 
 	var commonIssueFlags = func(commands ...*cobra.Command) {
 		for _, cmd := range commands {

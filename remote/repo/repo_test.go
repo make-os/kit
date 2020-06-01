@@ -370,6 +370,36 @@ var _ = Describe("RepoContext", func() {
 		})
 	})
 
+	Describe(".IsClean", func() {
+		It("should return true when repo is empty", func() {
+			clean, err := repo.IsClean()
+			Expect(err).To(BeNil())
+			Expect(clean).To(BeTrue())
+		})
+
+		It("should return true when there is a commit", func() {
+			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
+			clean, err := repo.IsClean()
+			Expect(err).To(BeNil())
+			Expect(clean).To(BeTrue())
+		})
+
+		It("should return false when there is an un-staged file", func() {
+			testutil2.AppendToFile(path, "file.txt", "un-staged file")
+			clean, err := repo.IsClean()
+			Expect(err).To(BeNil())
+			Expect(clean).To(BeFalse())
+		})
+
+		It("should return false when there is a staged file", func() {
+			testutil2.AppendToFile(path, "file.txt", "staged file")
+			testutil2.ExecGitAdd(path, "file.txt")
+			clean, err := repo.IsClean()
+			Expect(err).To(BeNil())
+			Expect(clean).To(BeFalse())
+		})
+	})
+
 	Describe(".GetAncestors", func() {
 		var recentHash, c1, c2 string
 
