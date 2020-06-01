@@ -60,14 +60,14 @@ var _ = Describe("IssueCreate", func() {
 			})
 
 			It("should return error when a label is not valid", func() {
-				args := &issuecmd.IssueCreateArgs{Labels: []string{"*la&bel"}}
+				args := &issuecmd.IssueCreateArgs{Labels: &[]string{"*la&bel"}}
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("label (*la&bel) is not valid"))
 			})
 
 			It("should return error when a assignee is not valid", func() {
-				args := &issuecmd.IssueCreateArgs{Assignees: []string{"*assign&ee"}}
+				args := &issuecmd.IssueCreateArgs{Assignees: &[]string{"*assign&ee"}}
 				err := issuecmd.IssueCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("assignee (*assign&ee) is not a valid push key address"))

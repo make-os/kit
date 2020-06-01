@@ -34,10 +34,10 @@ type IssueCreateArgs struct {
 	Reactions []string
 
 	// Labels may include terms used to classify the Issue
-	Labels []string
+	Labels *[]string
 
 	// Assignees may include push keys that may be interpreted by an application
-	Assignees []string
+	Assignees *[]string
 
 	// UseEditor indicates that the body of the Issue should be collected using a text editor.
 	UseEditor bool
@@ -116,16 +116,20 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) error {
 	}
 
 	// Ensure labels are valid identifiers
-	for _, label := range args.Labels {
-		if err := util.IsValidNameNoLen(strings.TrimPrefix(label, "-")); err != nil {
-			return fmt.Errorf("label (%s) is not valid", label)
+	if args.Labels != nil {
+		for _, label := range *args.Labels {
+			if err := util.IsValidNameNoLen(strings.TrimPrefix(label, "-")); err != nil {
+				return fmt.Errorf("label (%s) is not valid", label)
+			}
 		}
 	}
 
 	// Ensure assignees are valid push address
-	for _, assignee := range args.Assignees {
-		if !util.IsValidPushAddr(strings.TrimPrefix(assignee, "-")) {
-			return fmt.Errorf("assignee (%s) is not a valid push key address", assignee)
+	if args.Assignees != nil {
+		for _, assignee := range *args.Assignees {
+			if !util.IsValidPushAddr(strings.TrimPrefix(assignee, "-")) {
+				return fmt.Errorf("assignee (%s) is not a valid push key address", assignee)
+			}
 		}
 	}
 
@@ -183,8 +187,8 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) error {
 		ReplyTo:   args.ReplyHash,
 		Reactions: args.Reactions,
 		IssueFields: common2.IssueFields{
-			Labels:    &args.Labels,
-			Assignees: &args.Assignees,
+			Labels:    args.Labels,
+			Assignees: args.Assignees,
 		},
 		Close: args.Close,
 	})

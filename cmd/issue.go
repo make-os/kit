@@ -107,17 +107,19 @@ var issueCreateCmd = &cobra.Command{
 
 		if cmd.Flags().Changed("labels") {
 			if labels == "" {
-				issueCreateArgs.Labels = []string{}
+				issueCreateArgs.Labels = &[]string{}
 			} else {
-				issueCreateArgs.Labels = funk.UniqString(strings.Split(labels, ","))
+				labels := funk.UniqString(strings.Split(labels, ","))
+				issueCreateArgs.Labels = &labels
 			}
 		}
 
 		if cmd.Flags().Changed("assignees") {
 			if assignees == "" {
-				issueCreateArgs.Assignees = []string{}
+				issueCreateArgs.Assignees = &[]string{}
 			} else {
-				issueCreateArgs.Assignees = funk.UniqString(strings.Split(assignees, ","))
+				assignees := funk.UniqString(strings.Split(assignees, ","))
+				issueCreateArgs.Assignees = &assignees
 			}
 		}
 
