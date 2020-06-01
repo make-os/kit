@@ -388,8 +388,10 @@ func PostBodyFromContentFrontMatter(cfm *pageparser.ContentFrontMatter) *PostBod
 	b.TargetBranchHash = ob.Get("targetHash").String()
 	b.Reactions = cast.ToStringSlice(ob.Get("reactions").InterSlice())
 
-	cls := ob.Get("close").Bool()
-	b.Close = &cls
+	if ob.Has("close") {
+		cls := ob.Get("close").Bool()
+		b.Close = &cls
+	}
 
 	if ob.Has("labels") {
 		labels := cast.ToStringSlice(ob.Get("labels").InterSlice())

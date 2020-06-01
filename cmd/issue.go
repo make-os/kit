@@ -93,7 +93,6 @@ var issueCreateCmd = &cobra.Command{
 			Reactions:          funk.UniqString(reactions),
 			UseEditor:          useEditor,
 			EditorPath:         editorPath,
-			Open:               open,
 			StdOut:             os.Stdout,
 			StdIn:              os.Stdin,
 			PostCommentCreator: plumbing.CreatePostCommit,
@@ -103,6 +102,10 @@ var issueCreateCmd = &cobra.Command{
 
 		if cmd.Flags().Changed("close") {
 			issueCreateArgs.Close = &cls
+		}
+
+		if cmd.Flags().Changed("reopen") {
+			issueCreateArgs.Open = &open
 		}
 
 		if cmd.Flags().Changed("labels") {

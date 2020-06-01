@@ -92,17 +92,24 @@ func ValidatePostCommit(repo types.LocalRepo, commit types.Commit, args *Validat
 			args.TxDetail.FlagCheckAdminUpdatePolicy = true
 		}
 
-		// Set post data to reference object. Since we only acknowledge the recent (signed) commit
-		// as the one that can change the reference state, we do this for only the latest commit.
-		isRecentCommit := postCommit.Hash.String() == args.Change.Item.GetData()
-		if isRecentCommit {
+		isTip := postCommit.Hash.String() == args.Change.Item.GetData()
+		if isTip {
+
+			// Update reference data in tx detail with post data from tip commit.
 			copier.Copy(args.TxDetail.Data(), post)
+
+			// When a reference exist and it is closed, the next pushed commit is expected
+			// to reopen it by setting the 'close' field to 'open'.
+			if refState.Data.Closed && !post.WantOpen() {
+				return ErrCannotWriteToClosedRef
+			}
 		}
 
-		// When a reference exist and it is closed, the next pushed commit is expected
-		// to reopen it by setting the 'close' field to 'open'.
-		if isRecentCommit && refState.Data.Closed && !post.WantOpen() {
-			return ErrCannotWriteToClosedRef
+		// When the current commit is not the tip but it includes admin updates, we need
+		// to reject it as only the tip can carry updates that require admin privileges
+		if !isTip && post.IsAdminUpdate() {
+			return fmt.Errorf("non-tip commit (%s) cannot update any field "+
+				"that requires admin permission", postCommit.Hash.String()[:7])
 		}
 	}
 

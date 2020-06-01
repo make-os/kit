@@ -177,7 +177,7 @@ var _ = Describe("Validation", func() {
 				Expect(callCount).To(Equal(1))
 			})
 
-			It("should set tx detail FlagCheckIssueUpdatePolicy to true if post body updates admin fields like 'labels'", func() {
+			It("should return error if post body updates admin fields like 'labels'", func() {
 				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
 				callCount := 0
@@ -198,7 +198,8 @@ var _ = Describe("Validation", func() {
 					},
 				}
 				err := validation.ValidatePostCommit(mockRepo, commit, args)
-				Expect(err).To(BeNil())
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("non-tip commit (.*) cannot update any field that requires admin permission"))
 				Expect(callCount).To(Equal(1))
 				Expect(detail.FlagCheckAdminUpdatePolicy).To(BeTrue())
 			})

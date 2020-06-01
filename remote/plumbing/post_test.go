@@ -339,6 +339,15 @@ content`, "commit 2")
 			Expect(*issue.Labels).To(Equal([]string{"help"}))
 			Expect(*issue.Assignees).To(Equal([]string{"push1abc"}))
 		})
+
+		It("case 2 - when close, labels, assignees are unset, it should be nil", func() {
+			issue := plumbing.PostBodyFromContentFrontMatter(&pageparser.ContentFrontMatter{
+				Content: []byte("content"), FrontMatter: map[string]interface{}{},
+			})
+			Expect(issue.Close).To(BeNil())
+			Expect(issue.Assignees).To(BeNil())
+			Expect(issue.Labels).To(BeNil())
+		})
 	})
 
 	Describe(".PostBodyToString", func() {

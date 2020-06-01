@@ -52,7 +52,7 @@ type IssueCreateArgs struct {
 	Close *bool
 
 	// Open sets close status to 0
-	Open bool
+	Open *bool
 
 	// StdOut receives the output
 	StdOut io.Writer
