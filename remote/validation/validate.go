@@ -28,7 +28,7 @@ var (
 type ChangeValidatorFunc func(
 	repo types.LocalRepo,
 	oldHash string,
-	change *core.ItemChange,
+	change *types.ItemChange,
 	txDetail *types.TxDetail,
 	getPushKey core.PushKeyGetter) error
 
@@ -41,7 +41,7 @@ type ChangeValidatorFunc func(
 func ValidateChange(
 	localRepo types.LocalRepo,
 	oldHash string,
-	change *core.ItemChange,
+	change *types.ItemChange,
 	detail *types.TxDetail,
 	getPushKey core.PushKeyGetter) error {
 

@@ -11,7 +11,7 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore/types"
-	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
 var _ = Describe("Create", func() {
@@ -86,7 +86,7 @@ var _ = Describe("Create", func() {
 				entries, _ := ioutil.ReadDir(keyDir)
 				bz, err := ioutil.ReadFile(filepath.Join(keyDir, entries[0].Name()))
 				Expect(err).To(BeNil())
-				bz, err = util.Decrypt(bz, hardenPassword([]byte(pass)))
+				bz, err = crypto2.Decrypt(bz, hardenPassword([]byte(pass)))
 				Expect(err).To(BeNil())
 				_, _, err = base58.CheckDecode(string(bz))
 				Expect(err).To(BeNil())

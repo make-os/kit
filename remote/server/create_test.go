@@ -20,7 +20,7 @@ var _ = Describe("Create", func() {
 	var repoMgr *Server
 	var ctrl *gomock.Controller
 	var mockLogic *testutil.MockObjects
-	var mockDHT *mocks.MockDHTNode
+	var mockDHT *mocks.MockDHT
 	var mockMempool *mocks.MockMempool
 	var mockBlockGetter *mocks.MockBlockGetter
 
@@ -30,7 +30,7 @@ var _ = Describe("Create", func() {
 		cfg.Node.GitBinPath = "/usr/bin/git"
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = testutil.MockLogic(ctrl)
-		mockDHT = mocks.NewMockDHTNode(ctrl)
+		mockDHT = mocks.NewMockDHT(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		repoMgr = NewManager(cfg, ":45000", mockLogic.Logic, mockDHT, mockMempool, mockBlockGetter)

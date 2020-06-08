@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/p2p"
-	dhttypes "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/dht"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/remote/push"
@@ -23,6 +23,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 
@@ -45,7 +46,7 @@ var _ = Describe("Reactor", func() {
 	var mockPeer *mocks.MockPeer
 	var mockRepoKeeper *mocks.MockRepoKeeper
 	var mockBlockGetter *mocks.MockBlockGetter
-	var mockDHT *mocks.MockDHTNode
+	var mockDHT *mocks.MockDHT
 	var mockRemoteSrv *mocks.MockRemoteServer
 	var mockTickMgr *mocks.MockTicketManager
 	var mockNS *mocks.MockNamespaceKeeper
@@ -67,7 +68,7 @@ var _ = Describe("Reactor", func() {
 		mockLogic = mockObjects.Logic
 		mockRemoteSrv = mockObjects.RemoteServer
 		mockRepoKeeper = mockObjects.RepoKeeper
-		mockDHT = mocks.NewMockDHTNode(ctrl)
+		mockDHT = mocks.NewMockDHT(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockTickMgr = mockObjects.TicketManager
@@ -120,7 +121,7 @@ var _ = Describe("Reactor", func() {
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
-				mockNS.EXPECT().Get(util.HashNamespace("ns1")).Return(state.BareNamespace())
+				mockNS.EXPECT().Get(crypto2.HashNamespace("ns1")).Return(state.BareNamespace())
 				pn := &types.PushNote{RepoName: "repo1", Namespace: "ns1"}
 				err = svr.onPushNote(mockPeer, pn.Bytes())
 			})
@@ -201,7 +202,7 @@ var _ = Describe("Reactor", func() {
 					checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
+				svr.checkPushNote = func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
 					return fmt.Errorf("error")
 				}
 
@@ -237,7 +238,7 @@ var _ = Describe("Reactor", func() {
 					checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
+				svr.checkPushNote = func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
 					return nil
 				}
 				svr.packfileMaker = func(repo remotetypes.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
@@ -267,7 +268,7 @@ var _ = Describe("Reactor", func() {
 				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
+				svr.checkPushNote = func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
 					return nil
 				}
 				svr.packfileMaker = func(repo remotetypes.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
@@ -308,7 +309,7 @@ var _ = Describe("Reactor", func() {
 					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
+				svr.checkPushNote = func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
 					return nil
 				}
 
@@ -358,7 +359,7 @@ var _ = Describe("Reactor", func() {
 					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
+				svr.checkPushNote = func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
 					return nil
 				}
 
@@ -415,7 +416,7 @@ var _ = Describe("Reactor", func() {
 					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
+				svr.checkPushNote = func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
 					return nil
 				}
 

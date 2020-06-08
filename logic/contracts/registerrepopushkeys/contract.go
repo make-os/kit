@@ -11,6 +11,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // RegisterRepoPushKeysContract is a system contract that creates a proposal to register
@@ -124,7 +125,7 @@ func (c *RegisterRepoPushKeysContract) Apply(args *core.ProposalApplyArgs) error
 		targetNS = namespaceOnly
 	}
 	if targetNS != "" {
-		ns = args.Keepers.NamespaceKeeper().Get(util.HashNamespace(targetNS))
+		ns = args.Keepers.NamespaceKeeper().Get(crypto2.HashNamespace(targetNS))
 		if ns.IsNil() {
 			panic("namespace must exist")
 		}
@@ -156,7 +157,7 @@ func (c *RegisterRepoPushKeysContract) Apply(args *core.ProposalApplyArgs) error
 	}
 
 	if ns != nil {
-		args.Keepers.NamespaceKeeper().Update(util.HashNamespace(targetNS), ns)
+		args.Keepers.NamespaceKeeper().Update(crypto2.HashNamespace(targetNS), ns)
 	}
 
 	return nil

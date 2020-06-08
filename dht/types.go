@@ -1,12 +1,12 @@
-package types
+package dht
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
-	"github.com/libp2p/go-libp2p-core/mux"
-	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -16,8 +16,8 @@ type ObjectFinder interface {
 	FindObject(key []byte) ([]byte, error)
 }
 
-// DHTNode represents a distributed hash table
-type DHTNode interface {
+// DHT represents a distributed hash table
+type DHT interface {
 
 	// Store adds a value corresponding to the given key
 	Store(ctx context.Context, key string, value []byte) error
@@ -37,7 +37,13 @@ type DHTNode interface {
 	// RegisterObjFinder registers a finder for an object type
 	RegisterObjFinder(objType string, finder ObjectFinder)
 
-	// Start starts the DHTNode
+	// BasicCommitStreamer returns the commit exchanger
+	CommitStreamer() CommitStreamer
+
+	// Host returns the wrapped IPFS host
+	Host() host.Host
+
+	// Start starts the DHT
 	Start() error
 
 	// Peers returns a list of all peers
@@ -63,20 +69,20 @@ type DHTObjectResponse struct {
 	Data []byte
 }
 
-// Stream represents a bidirectional channel between two agents in
-// a libp2p network. "agent" is as granular as desired, potentially
-// being a "request -> reply" pair, or whole protocols.
-//
-// Streams are backed by a multiplexer underneath the hood.
-type Stream interface {
-	mux.MuxedStream
+const (
+	GitObjectNamespace = "obj"
+)
 
-	Protocol() protocol.ID
-	SetProtocol(id protocol.ID)
+// MakeGitObjectKey returns a key for announcing a git object in a given repository
+func MakeGitObjectKey(repoName, hash string) string {
+	return fmt.Sprintf("/%s/%s/%s", GitObjectNamespace, repoName, hash)
+}
 
-	// Stat returns metadata pertaining to this stream.
-	Stat() network.Stat
-
-	// Conn returns the connection this stream is part of.
-	Conn() network.Conn
+// ParseGitObjectKey parses a key for finding git objects in a given repository
+func ParseGitObjectKey(key string) (repoName string, hash string, err error) {
+	parts := strings.Split(key, "/")
+	if len(parts) != 4 {
+		return "", "", fmt.Errorf("invalid repo object key")
+	}
+	return parts[2], parts[3], nil
 }

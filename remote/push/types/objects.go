@@ -7,6 +7,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -191,13 +192,13 @@ func (pt *PushNote) Len() uint64 {
 
 // ID returns the hash of the push note
 func (pt *PushNote) ID(recompute ...bool) util.Bytes32 {
-	return util.BytesToBytes32(util.Blake2b256(pt.Bytes(recompute...)))
+	return util.BytesToBytes32(crypto2.Blake2b256(pt.Bytes(recompute...)))
 }
 
 // BytesAndID returns the serialized version of the tx and the id
 func (pt *PushNote) BytesAndID(recompute ...bool) ([]byte, util.Bytes32) {
 	bz := pt.Bytes(recompute...)
-	return bz, util.BytesToBytes32(util.Blake2b256(bz))
+	return bz, util.BytesToBytes32(crypto2.Blake2b256(bz))
 }
 
 // TxSize is the size of the transaction
@@ -248,7 +249,7 @@ type EndorsedReferences []*EndorsedReference
 // ID returns the id of the collection
 func (r *EndorsedReferences) ID() util.Bytes32 {
 	bz := util.ToBytes(r)
-	return util.BytesToBytes32(util.Blake2b256(bz))
+	return util.BytesToBytes32(crypto2.Blake2b256(bz))
 }
 
 // PushEndorsement is used to endorse a push note
@@ -272,7 +273,7 @@ func (e *PushEndorsement) DecodeMsgpack(dec *msgpack.Decoder) error {
 
 // ID returns the hash of the object
 func (e *PushEndorsement) ID() util.Bytes32 {
-	return util.BytesToBytes32(util.Blake2b256(e.Bytes()))
+	return util.BytesToBytes32(crypto2.Blake2b256(e.Bytes()))
 }
 
 // Bytes returns a serialized version of the object
@@ -302,7 +303,7 @@ func (e *PushEndorsement) BytesNoSigAndSenderPubKey() []byte {
 // BytesAndID returns the serialized version of the tx and the id
 func (e *PushEndorsement) BytesAndID() ([]byte, util.Bytes32) {
 	bz := e.Bytes()
-	return bz, util.BytesToBytes32(util.Blake2b256(bz))
+	return bz, util.BytesToBytes32(crypto2.Blake2b256(bz))
 }
 
 // Clone clones the object

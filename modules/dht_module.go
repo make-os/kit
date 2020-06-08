@@ -3,11 +3,12 @@ package modules
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gitlab.com/makeos/mosdef/config"
-	dhttypes "gitlab.com/makeos/mosdef/dht/types"
+	dht2 "gitlab.com/makeos/mosdef/dht"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
 
 	"gitlab.com/makeos/mosdef/util"
@@ -20,11 +21,11 @@ import (
 type DHTModule struct {
 	cfg *config.AppConfig
 	vm  *otto.Otto
-	dht dhttypes.DHTNode
+	dht dht2.DHT
 }
 
 // NewDHTModule creates an instance of DHTModule
-func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht dhttypes.DHTNode) *DHTModule {
+func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht dht2.DHT) *DHTModule {
 	return &DHTModule{
 		cfg: cfg,
 		vm:  vm,
@@ -62,7 +63,7 @@ func (m *DHTModule) namespacedFuncs() []*modules.ModuleFunc {
 		{
 			Name:        "getPeers",
 			Value:       m.GetPeers,
-			Description: "Returns a list of all DHTNode peers",
+			Description: "Returns a list of all DHT peers",
 		},
 	}
 }
@@ -104,7 +105,9 @@ func (m *DHTModule) Configure() []prompt.Suggest {
 // key: The data query key
 // val: The data to be stored
 func (m *DHTModule) Store(key string, val string) {
-	if err := m.dht.Store(context.Background(), key, []byte(val)); err != nil {
+	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cn()
+	if err := m.dht.Store(ctx, key, []byte(val)); err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
 	}
 }
@@ -116,7 +119,9 @@ func (m *DHTModule) Store(key string, val string) {
 //
 // RETURNS: <[]bytes> - The data stored on the key
 func (m *DHTModule) Lookup(key string) interface{} {
-	bz, err := m.dht.Lookup(context.Background(), key)
+	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cn()
+	bz, err := m.dht.Lookup(ctx, key)
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
 	}
@@ -128,7 +133,9 @@ func (m *DHTModule) Lookup(key string) interface{} {
 // ARGS:
 // - key: The data query key
 func (m *DHTModule) Announce(key string) {
-	if err := m.dht.Announce(context.Background(), []byte(key)); err != nil {
+	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cn()
+	if err := m.dht.Announce(ctx, []byte(key)); err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
 	}
 }
@@ -142,7 +149,9 @@ func (m *DHTModule) Announce(key string) {
 // resp.id <string>: The libp2p ID of the provider
 // resp.addresses	<[]string>: A list of p2p multiaddrs of the provider
 func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
-	peers, err := m.dht.GetProviders(context.Background(), []byte(key))
+	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cn()
+	peers, err := m.dht.GetProviders(ctx, []byte(key))
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
 	}
@@ -164,8 +173,10 @@ func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
 // ARGS:
 // objURI: The repo object URI
 func (m *DHTModule) GetRepoObject(objURI string) []byte {
-	bz, err := m.dht.GetObject(context.Background(), &dhttypes.DHTObjectQuery{
-		Module:    core.RepoObjectModule,
+	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cn()
+	bz, err := m.dht.GetObject(ctx, &dht2.DHTObjectQuery{
+		Module:    types.RepoObjectModule,
 		ObjectKey: []byte(objURI),
 	})
 	if err != nil {

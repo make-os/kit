@@ -306,25 +306,6 @@ func (mr *MockLocalRepoMockRecorder) UpdateRecentCommitMsg(msg, signingKey inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRecentCommitMsg", reflect.TypeOf((*MockLocalRepo)(nil).UpdateRecentCommitMsg), varargs...)
 }
 
-// IsAncestor mocks base method
-func (m *MockLocalRepo) IsAncestor(commitA, commitB string, env ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{commitA, commitB}
-	for _, a := range env {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "IsAncestor", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// IsAncestor indicates an expected call of IsAncestor
-func (mr *MockLocalRepoMockRecorder) IsAncestor(commitA, commitB interface{}, env ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{commitA, commitB}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAncestor", reflect.TypeOf((*MockLocalRepo)(nil).IsAncestor), varargs...)
-}
-
 // HasMergeCommits mocks base method
 func (m *MockLocalRepo) HasMergeCommits(reference string, env ...string) (bool, error) {
 	m.ctrl.T.Helper()
@@ -745,6 +726,20 @@ func (mr *MockLocalRepoMockRecorder) SetConfig(cfg interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetConfig", reflect.TypeOf((*MockLocalRepo)(nil).SetConfig), cfg)
 }
 
+// IsAncestor mocks base method
+func (m *MockLocalRepo) IsAncestor(commitA, commitB string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsAncestor", commitA, commitB)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IsAncestor indicates an expected call of IsAncestor
+func (mr *MockLocalRepoMockRecorder) IsAncestor(commitA, commitB interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAncestor", reflect.TypeOf((*MockLocalRepo)(nil).IsAncestor), commitA, commitB)
+}
+
 // SetPath mocks base method
 func (m *MockLocalRepo) SetPath(path string) {
 	m.ctrl.T.Helper()
@@ -886,6 +881,21 @@ func (mr *MockLocalRepoMockRecorder) GetObjectDiskSize(objHash interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetObjectDiskSize", reflect.TypeOf((*MockLocalRepo)(nil).GetObjectDiskSize), objHash)
 }
 
+// ObjectsOfCommit mocks base method
+func (m *MockLocalRepo) ObjectsOfCommit(hash string) ([]plumbing.Hash, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ObjectsOfCommit", hash)
+	ret0, _ := ret[0].([]plumbing.Hash)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ObjectsOfCommit indicates an expected call of ObjectsOfCommit
+func (mr *MockLocalRepoMockRecorder) ObjectsOfCommit(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ObjectsOfCommit", reflect.TypeOf((*MockLocalRepo)(nil).ObjectsOfCommit), hash)
+}
+
 // GetEncodedObject mocks base method
 func (m *MockLocalRepo) GetEncodedObject(objHash string) (plumbing.EncodedObject, error) {
 	m.ctrl.T.Helper()
@@ -945,18 +955,18 @@ func (mr *MockLocalRepoMockRecorder) GetCompressedObject(hash interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCompressedObject", reflect.TypeOf((*MockLocalRepo)(nil).GetCompressedObject), hash)
 }
 
-// GetHost mocks base method
-func (m *MockLocalRepo) GetHost() storage.Storer {
+// GetStorer mocks base method
+func (m *MockLocalRepo) GetStorer() storage.Storer {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHost")
+	ret := m.ctrl.Call(m, "GetStorer")
 	ret0, _ := ret[0].(storage.Storer)
 	return ret0
 }
 
-// GetHost indicates an expected call of GetHost
-func (mr *MockLocalRepoMockRecorder) GetHost() *gomock.Call {
+// GetStorer indicates an expected call of GetStorer
+func (mr *MockLocalRepoMockRecorder) GetStorer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHost", reflect.TypeOf((*MockLocalRepo)(nil).GetHost))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStorer", reflect.TypeOf((*MockLocalRepo)(nil).GetStorer))
 }
 
 // Prune mocks base method
@@ -1290,25 +1300,6 @@ func (mr *MockLiteGitMockRecorder) UpdateRecentCommitMsg(msg, signingKey interfa
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{msg, signingKey}, env...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRecentCommitMsg", reflect.TypeOf((*MockLiteGit)(nil).UpdateRecentCommitMsg), varargs...)
-}
-
-// IsAncestor mocks base method
-func (m *MockLiteGit) IsAncestor(commitA, commitB string, env ...string) error {
-	m.ctrl.T.Helper()
-	varargs := []interface{}{commitA, commitB}
-	for _, a := range env {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "IsAncestor", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// IsAncestor indicates an expected call of IsAncestor
-func (mr *MockLiteGitMockRecorder) IsAncestor(commitA, commitB interface{}, env ...interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{commitA, commitB}, env...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsAncestor", reflect.TypeOf((*MockLiteGit)(nil).IsAncestor), varargs...)
 }
 
 // HasMergeCommits mocks base method

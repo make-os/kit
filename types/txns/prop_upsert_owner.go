@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // TxRepoProposalUpsertOwner implements BaseTx, it describes a repository proposal
@@ -79,7 +80,7 @@ func (tx *TxRepoProposalUpsertOwner) GetBytesNoSig() []byte {
 
 // ComputeHash computes the hash of the transaction
 func (tx *TxRepoProposalUpsertOwner) ComputeHash() util.Bytes32 {
-	return util.BytesToBytes32(util.Blake2b256(tx.Bytes()))
+	return util.BytesToBytes32(crypto.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction

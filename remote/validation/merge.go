@@ -13,8 +13,8 @@ import (
 
 type MergeComplianceCheckFunc func(
 	repo types.LocalRepo,
-	change *core.ItemChange,
-	oldRef core.Item,
+	change *types.ItemChange,
+	oldRef types.Item,
 	mergeProposalID,
 	pushKeyID string,
 	keepers core.Keepers) error
@@ -23,8 +23,8 @@ type MergeComplianceCheckFunc func(
 // an accepted merge proposal
 func CheckMergeCompliance(
 	repo types.LocalRepo,
-	change *core.ItemChange,
-	oldRef core.Item,
+	change *types.ItemChange,
+	oldRef types.Item,
 	mergeProposalID,
 	pushKeyID string,
 	keepers core.Keepers) error {

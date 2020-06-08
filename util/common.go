@@ -20,14 +20,11 @@ import (
 	"time"
 
 	"github.com/asaskevich/govalidator"
-	"github.com/btcsuite/btcutil/bech32"
 	"github.com/cbroglie/mustache"
 	"github.com/gohugoio/hugo/parser/pageparser"
+	"github.com/mitchellh/mapstructure"
 	"github.com/robertkrimen/otto"
 	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/types/constants"
-
-	"github.com/mitchellh/mapstructure"
 
 	"github.com/vmihailenco/msgpack"
 
@@ -233,8 +230,11 @@ func HexToStr(hexStr string) (string, error) {
 	return string(bs), nil
 }
 
-// ToHex encodes value to hex with a '0x' prefix
-func ToHex(value []byte) string {
+// ToHex encodes value to hex with a '0x' prefix only if noPrefix is unset
+func ToHex(value []byte, noPrefix ...bool) string {
+	if len(noPrefix) > 0 && noPrefix[0] {
+		return hex.EncodeToString(value)
+	}
 	return fmt.Sprintf("0x%s", hex.EncodeToString(value))
 }
 
@@ -485,24 +485,6 @@ func SplitNamespaceDomain(name string) (ns string, domain string, err error) {
 		return "", "", fmt.Errorf("invalid address format")
 	}
 	return parts[0], parts[1], nil
-}
-
-// IsValidAddr checks whether an address is valid
-func IsValidAddr(addr string) error {
-	if addr == "" {
-		return fmt.Errorf("empty address")
-	}
-
-	hrp, _, err := bech32.Decode(addr)
-	if err != nil {
-		return err
-	}
-
-	if hrp != constants.AddrHRP {
-		return fmt.Errorf("invalid hrp")
-	}
-
-	return nil
 }
 
 // WriteJSON encodes respObj to json and writes it to w

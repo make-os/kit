@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/fatih/color"
-	"gitlab.com/makeos/mosdef/util"
+	io2 "gitlab.com/makeos/mosdef/util/io"
 	"golang.org/x/crypto/scrypt"
 )
 
@@ -35,7 +35,7 @@ func New(dir string) *Keystore {
 	am.dir = dir
 	am.getPassword = func(s string, args ...interface{}) string {
 		s = fmt.Sprintf("\033[33m%s:\033[0m ", s)
-		return util.ReadInput(fmt.Sprintf(s, args...), &util.InputReaderArgs{Password: true})
+		return io2.ReadInput(fmt.Sprintf(s, args...), &io2.InputReaderArgs{Password: true})
 	}
 	am.out = os.Stdout
 	return am

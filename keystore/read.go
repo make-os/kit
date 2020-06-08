@@ -12,6 +12,7 @@ import (
 	types2 "gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // StoredKey represents an encrypted key stored on disk
@@ -102,7 +103,7 @@ func (sk *StoredKey) GetCreatedAt() time.Time {
 func (sk *StoredKey) Unlock(passphrase string) error {
 
 	passphraseBs := hardenPassword([]byte(passphrase))
-	decData, err := util.Decrypt(sk.Cipher, passphraseBs[:])
+	decData, err := crypto2.Decrypt(sk.Cipher, passphraseBs[:])
 	if err != nil {
 		if funk.Contains(err.Error(), "invalid key") {
 			return types.ErrInvalidPassphrase

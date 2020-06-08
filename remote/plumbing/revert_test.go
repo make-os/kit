@@ -13,7 +13,6 @@ import (
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -42,7 +41,7 @@ var _ = Describe("plumbing.Revert", func() {
 	})
 
 	Describe(".Revert (head references)", func() {
-		var prevState core.BareRepoState
+		var prevState types.BareRepoState
 
 		When("a repo has 1 ref and 4 commits; plumbing.Revert the 4th commit", func() {
 
@@ -96,7 +95,7 @@ var _ = Describe("plumbing.Revert", func() {
 				testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
 				testutil2.AppendCommit(path, "file.txt", "line 2\n", "commit 2")
 				prevState = &plumbing.State{
-					References: plumbing.NewObjCol(map[string]core.Item{
+					References: plumbing.NewObjCol(map[string]types.Item{
 						"refs/heads/master": &plumbing.Obj{
 							Type: "ref",
 							Name: "refs/heads/master",
@@ -186,7 +185,7 @@ var _ = Describe("plumbing.Revert", func() {
 	})
 
 	Describe(".Revert (annotated tags)", func() {
-		var prevState core.BareRepoState
+		var prevState types.BareRepoState
 
 		When("repo old state has 0 tags; new state has 1 tag", func() {
 			BeforeEach(func() {
@@ -289,7 +288,7 @@ var _ = Describe("plumbing.Revert", func() {
 	})
 
 	Describe(".Revert (notes)", func() {
-		var prevState core.BareRepoState
+		var prevState types.BareRepoState
 
 		When("repo old state has 0 notes; new state has 1 note", func() {
 
@@ -343,7 +342,7 @@ var _ = Describe("plumbing.Revert", func() {
 	Describe(".GetBranchRevertActions", func() {
 		When("change type is unknown", func() {
 			It("should return err=unknown change type", func() {
-				changeItem := &core.ItemChange{
+				changeItem := &types.ItemChange{
 					Action: 100,
 					Item:   &plumbing.Obj{Name: "refs/heads/branch"},
 				}
@@ -357,7 +356,7 @@ var _ = Describe("plumbing.Revert", func() {
 	Describe(".GetTagRevertActions", func() {
 		When("change type is unknown", func() {
 			It("should return err=unknown change type", func() {
-				changeItem := &core.ItemChange{
+				changeItem := &types.ItemChange{
 					Action: 100,
 					Item:   &plumbing.Obj{Name: "refs/tags/tagname"},
 				}
@@ -371,7 +370,7 @@ var _ = Describe("plumbing.Revert", func() {
 	Describe(".GetNoteRevertActions", func() {
 		When("change type is unknown", func() {
 			It("should return err=unknown change type", func() {
-				changeItem := &core.ItemChange{
+				changeItem := &types.ItemChange{
 					Action: 100,
 					Item:   &plumbing.Obj{Name: "refs/notes/notename"},
 				}

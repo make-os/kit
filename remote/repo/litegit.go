@@ -286,21 +286,6 @@ func (lg *LiteGit) UpdateRecentCommitMsg(msg, signingKey string, env ...string) 
 	return errors.Wrap(cmd.Run(), "failed to update recent commit msg")
 }
 
-// IsAncestor checks whether the commitA is an ancestor of commitB
-func (lg *LiteGit) IsAncestor(commitA string, commitB string, env ...string) error {
-	args := []string{"merge-base", "--is-ancestor", commitA, commitB}
-	cmd := exec.Command(lg.gitBinPath, args...)
-	cmd.Dir = lg.path
-	cmd.Env = append(os.Environ(), env...)
-	if err := cmd.Run(); err != nil {
-		if _, ok := err.(*exec.ExitError); ok {
-			return fmt.Errorf("not a descendant")
-		}
-		return err
-	}
-	return nil
-}
-
 // GetMergeCommits returns the hash of merge commits in a reference
 func (lg *LiteGit) GetMergeCommits(reference string, env ...string) ([]string, error) {
 	args := []string{"--no-pager", "log", "--merges", "--oneline", "--format=%H", reference}

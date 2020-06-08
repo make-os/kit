@@ -1,7 +1,11 @@
 package util
 
 import (
+	"fmt"
 	"regexp"
+
+	"github.com/btcsuite/btcutil/bech32"
+	"gitlab.com/makeos/mosdef/types/constants"
 )
 
 // Address constants
@@ -101,4 +105,22 @@ func (a Address) IsPrefixedUserAddress() bool {
 // bech32 address with the general HRP
 func (a Address) IsBech32MakerAddress() bool {
 	return IsValidAddr(string(a)) == nil
+}
+
+// IsValidAddr checks whether an address is valid
+func IsValidAddr(addr string) error {
+	if addr == "" {
+		return fmt.Errorf("empty address")
+	}
+
+	hrp, _, err := bech32.Decode(addr)
+	if err != nil {
+		return err
+	}
+
+	if hrp != constants.AddrHRP {
+		return fmt.Errorf("invalid hrp")
+	}
+
+	return nil
 }

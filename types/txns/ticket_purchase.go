@@ -9,6 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // TxTicketPurchase implements BaseTx, it describes a transaction that purchases
@@ -101,7 +102,7 @@ func (tx *TxTicketPurchase) GetBytesNoSig() []byte {
 
 // ComputeHash computes the hash of the transaction
 func (tx *TxTicketPurchase) ComputeHash() util.Bytes32 {
-	return util.BytesToBytes32(util.Blake2b256(tx.Bytes()))
+	return util.BytesToBytes32(crypto2.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction

@@ -9,6 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/thoas/go-funk"
@@ -369,7 +370,7 @@ func CheckTxUpDelPushKey(tx *txns.TxUpDelPushKey, index int) error {
 
 	if tx.ID == "" {
 		return feI(index, "id", "push key id is required")
-	} else if !util.IsValidPushAddr(tx.ID) {
+	} else if !crypto2.IsValidPushAddr(tx.ID) {
 		return feI(index, "id", "push key id is not valid")
 	}
 
@@ -765,7 +766,7 @@ func CheckTxRepoProposalRegisterPushKey(tx *txns.TxRepoProposalRegisterPushKey, 
 	// Ensure all push key ids are unique and valid
 	found := map[string]struct{}{}
 	for _, pkID := range tx.KeyIDs {
-		if !util.IsValidPushAddr(pkID) {
+		if !crypto2.IsValidPushAddr(pkID) {
 			return feI(index, "ids", fmt.Sprintf("push key id (%s) is not valid", pkID))
 		}
 		if _, ok := found[pkID]; ok {

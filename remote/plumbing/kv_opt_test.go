@@ -8,8 +8,8 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
 )
 
 var _ = Describe("Common", func() {
@@ -40,7 +40,7 @@ var _ = Describe("Common", func() {
 
 	Describe(".ChangesOpt", func() {
 		It("should create ChangesOpt with expected key and value", func() {
-			cs := &core.Changes{References: &core.ChangeResult{}}
+			cs := &types.Changes{References: &types.ChangeResult{}}
 			opt := plumbing.ChangesOpt(cs)
 			Expect(opt.Key).To(Equal("changes"))
 			Expect(opt.Value).To(Equal(cs))

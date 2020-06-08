@@ -11,7 +11,6 @@ import (
 	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
 	repo3 "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
@@ -24,7 +23,7 @@ import (
 func makePackfileFromPushNote(repo types.LocalRepo, tx pushtypes.PushNotice) (io.ReadSeeker, error) {
 
 	var buf = bytes.NewBuffer(nil)
-	enc := packfile.NewEncoder(buf, repo.GetHost(), true)
+	enc := packfile.NewEncoder(buf, repo.GetStorer(), true)
 
 	var hashes []plumbing.Hash
 	for _, ref := range tx.GetPushedReferences() {
@@ -83,7 +82,7 @@ func MakeReferenceUpdateRequest(repo types.LocalRepo, tx pushtypes.PushNotice) (
 func makePushNoteFromStateChange(
 	repo types.LocalRepo,
 	oldState,
-	newState core.BareRepoState) (*pushtypes.PushNote, error) {
+	newState types.BareRepoState) (*pushtypes.PushNote, error) {
 
 	// Compute the changes between old and new states
 	tx := &pushtypes.PushNote{References: []*pushtypes.PushedReference{}}
@@ -121,7 +120,7 @@ func makePushNoteFromStateChange(
 			// the reference addition section
 			tag, err := repo.Tag(nameParts[len(nameParts)-1])
 			if err != nil {
-				if err == git.ErrTagNotFound && change.Action == core.ChangeTypeRemove {
+				if err == git.ErrTagNotFound && change.Action == types.ChangeTypeRemove {
 					goto addRef
 				}
 				return nil, err
@@ -176,7 +175,7 @@ func makePushNoteFromStateChange(
 		// Generate the pushed reference object depending on the type of change
 		// that happened to the reference.
 		switch change.Action {
-		case core.ChangeTypeNew:
+		case types.ChangeTypeNew:
 			histHashes, err := repo3.GetCommitHistory(repo, commit, "")
 			if err != nil {
 				return nil, err
@@ -188,7 +187,7 @@ func makePushNoteFromStateChange(
 				Objects: append(objHashes, histHashes...),
 			})
 
-		case core.ChangeTypeUpdate:
+		case types.ChangeTypeUpdate:
 			histHashes, err := repo3.GetCommitHistory(repo, commit, changedRefOldVerHash)
 			if err != nil {
 				return nil, err
@@ -200,7 +199,7 @@ func makePushNoteFromStateChange(
 				OldHash: oldState.GetReferences().Get(change.Item.GetName()).GetData(),
 			})
 
-		case core.ChangeTypeRemove:
+		case types.ChangeTypeRemove:
 			tx.References = append(tx.References, &pushtypes.PushedReference{
 				Name:    change.Item.GetName(),
 				NewHash: plumbing.ZeroHash.String(),
@@ -217,7 +216,7 @@ func makePushNoteFromStateChange(
 func MakePackfile(
 	repo types.LocalRepo,
 	oldState,
-	newState core.BareRepoState) (io.ReadSeeker, error) {
+	newState types.BareRepoState) (io.ReadSeeker, error) {
 
 	pushNote, err := makePushNoteFromStateChange(repo, oldState, newState)
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/crypto/bls"
-	dhttypes "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/params"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/push/types"
@@ -21,6 +21,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -239,7 +240,7 @@ func CheckPushNoteConsistency(note types.PushNotice, logic core.Logic) error {
 
 	// If namespace is provide, ensure it exists
 	if note.GetNamespace() != "" {
-		ns := logic.NamespaceKeeper().Get(util.HashNamespace(note.GetNamespace()))
+		ns := logic.NamespaceKeeper().Get(crypto2.HashNamespace(note.GetNamespace()))
 		if ns.IsNil() {
 			return util.FieldError("namespace", fmt.Sprintf("namespace '%s' is unknown", note.GetNamespace()))
 		}
@@ -299,10 +300,10 @@ func CheckPushNoteConsistency(note types.PushNotice, logic core.Logic) error {
 }
 
 // PushNoteCheckFunc describes a function for checking a push note
-type PushNoteCheckFunc func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error
+type PushNoteCheckFunc func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error
 
 // CheckPushNote performs validation checks on a push transaction
-func CheckPushNote(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
+func CheckPushNote(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
 
 	if err := CheckPushNoteSyntax(tx.(*types.PushNote)); err != nil {
 		return err
@@ -393,7 +394,7 @@ func CheckPushEnd(pushEnd *types.PushEndorsement, logic core.Logic, index int) e
 // FetchAndCheckReferenceObjects attempts to fetch and store new objects
 // introduced by the pushed references. After fetching it performs checks
 // on the objects
-func FetchAndCheckReferenceObjects(tx types.PushNotice, dhtnode dhttypes.DHTNode) error {
+func FetchAndCheckReferenceObjects(tx types.PushNotice, dhtnode dht.DHT) error {
 	objectsSize := int64(0)
 
 	for _, objHash := range tx.GetPushedObjects() {
@@ -406,11 +407,11 @@ func FetchAndCheckReferenceObjects(tx types.PushNotice, dhtnode dhttypes.DHTNode
 			continue
 		}
 
-		// Since the object doesn't exist locally, read the object from the DHTNode
-		dhtKey := plumbing2.MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
+		// Since the object doesn't exist locally, read the object from the DHT
+		dhtKey := dht.MakeGitObjectKey(tx.GetRepoName(), objHash)
 		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
-		objValue, err := dhtnode.GetObject(ctx, &dhttypes.DHTObjectQuery{
-			Module:    core.RepoObjectModule,
+		objValue, err := dhtnode.GetObject(ctx, &dht.DHTObjectQuery{
+			Module:    remotetypes.RepoObjectModule,
 			ObjectKey: []byte(dhtKey),
 		})
 		if err != nil {

@@ -6,7 +6,6 @@ import (
 
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/types/core"
 )
 
 // ActionType represents a repo altering action
@@ -27,15 +26,15 @@ const (
 	ActionTypeNoteUpdate
 )
 
-type RevertFunc func(repo types.LocalRepo, prevState core.BareRepoState, options ...core.KVOption) (*core.Changes, error)
+type RevertFunc func(repo types.LocalRepo, prevState types.BareRepoState, options ...types.KVOption) (*types.Changes, error)
 
 // Revert reverts the repository from its current state to the previous state.
 // options: Additional options. prefixOpt forces the operation to ignore
 // any reference that does not contain the provided prefix.
 func Revert(
 	repo types.LocalRepo,
-	prevState core.BareRepoState,
-	options ...core.KVOption) (*core.Changes, error) {
+	prevState types.BareRepoState,
+	options ...types.KVOption) (*types.Changes, error) {
 
 	var actions []*Action
 	changes := GetKVOpt("changes", options)
@@ -46,7 +45,7 @@ func Revert(
 	}
 
 	// Determine actions required to Revert references to previous state
-	for _, ref := range changes.(*core.Changes).References.Changes {
+	for _, ref := range changes.(*types.Changes).References.Changes {
 		oldStateRef := findRefInCol(ref.Item.GetName(), prevState.GetReferences())
 		refname := ref.Item.GetName()
 
@@ -83,7 +82,7 @@ func Revert(
 		return nil, errors.Wrap(err, "exec failed")
 	}
 
-	return changes.(*core.Changes), nil
+	return changes.(*types.Changes), nil
 }
 
 // execActions executes the given actions against the repository
@@ -110,8 +109,8 @@ func execActions(repo types.LocalRepo, actions []*Action) (err error) {
 }
 
 // findRefInCol finds a reference in a reference collection
-func findRefInCol(refname string, refCol core.Items) (found core.Item) {
-	refCol.ForEach(func(i core.Item) bool {
+func findRefInCol(refname string, refCol types.Items) (found types.Item) {
+	refCol.ForEach(func(i types.Item) bool {
 		if i.GetName() == refname {
 			found = i
 			return true
@@ -124,7 +123,7 @@ func findRefInCol(refname string, refCol core.Items) (found core.Item) {
 // Action describes a repo action to be effected on a repo object
 type Action struct {
 	Data     string
-	DataItem core.Item
+	DataItem types.Item
 	Type     ActionType
 }
 
@@ -134,17 +133,17 @@ type Action struct {
 // branchRef: The reference that was changed in the repo.
 // oldRef: The version of ref that was in the old state (this one we want to
 // Revert to)
-func GetBranchRevertActions(branchRef *core.ItemChange, oldRef core.Item) ([]*Action, error) {
+func GetBranchRevertActions(branchRef *types.ItemChange, oldRef types.Item) ([]*Action, error) {
 
 	var actions []*Action
 	refname := branchRef.Item.GetName()
 
 	switch branchRef.Action {
-	case core.ChangeTypeUpdate:
+	case types.ChangeTypeUpdate:
 		actions = append(actions, &Action{Type: ActionTypeTagRefUpdate, DataItem: oldRef})
-	case core.ChangeTypeNew:
+	case types.ChangeTypeNew:
 		actions = append(actions, &Action{Type: ActionTypeBranchDelete, Data: refname})
-	case core.ChangeTypeRemove:
+	case types.ChangeTypeRemove:
 		actions = append(actions, &Action{Type: ActionTypeBranchUpdate, DataItem: branchRef.Item})
 	default:
 		return nil, fmt.Errorf("unknown change type")
@@ -159,18 +158,18 @@ func GetBranchRevertActions(branchRef *core.ItemChange, oldRef core.Item) ([]*Ac
 // tagRef: The reference that was changed in the repo.
 // oldRef: The version of ref that was in the old state (this one we want to
 // Revert to)
-func GetTagRevertActions(tagRef *core.ItemChange, oldRef core.Item) ([]*Action, error) {
+func GetTagRevertActions(tagRef *types.ItemChange, oldRef types.Item) ([]*Action, error) {
 
 	var actions []*Action
 	tagname := tagRef.Item.GetName()
 
 	switch tagRef.Action {
-	case core.ChangeTypeNew:
+	case types.ChangeTypeNew:
 		shortTagName := strings.ReplaceAll(tagname, "refs/tags/", "")
 		actions = append(actions, &Action{Type: ActionTypeTagDelete, Data: shortTagName})
-	case core.ChangeTypeUpdate:
+	case types.ChangeTypeUpdate:
 		actions = append(actions, &Action{Type: ActionTypeTagRefUpdate, DataItem: oldRef})
-	case core.ChangeTypeRemove:
+	case types.ChangeTypeRemove:
 		actions = append(actions, &Action{Type: ActionTypeTagRefUpdate, DataItem: tagRef.Item})
 	default:
 		return nil, fmt.Errorf("unknown change type")
@@ -185,17 +184,17 @@ func GetTagRevertActions(tagRef *core.ItemChange, oldRef core.Item) ([]*Action, 
 // noteRef: The note reference that was changed in the repo.
 // oldRef: The version of ref that was in the old state (this one we want to
 // Revert to)
-func GetNoteRevertActions(noteRef *core.ItemChange, oldRef core.Item) ([]*Action, error) {
+func GetNoteRevertActions(noteRef *types.ItemChange, oldRef types.Item) ([]*Action, error) {
 
 	var actions []*Action
 	tagname := noteRef.Item.GetName()
 
 	switch noteRef.Action {
-	case core.ChangeTypeNew:
+	case types.ChangeTypeNew:
 		actions = append(actions, &Action{Type: ActionTypeNoteDelete, Data: tagname})
-	case core.ChangeTypeUpdate:
+	case types.ChangeTypeUpdate:
 		actions = append(actions, &Action{Type: ActionTypeNoteUpdate, DataItem: oldRef})
-	case core.ChangeTypeRemove:
+	case types.ChangeTypeRemove:
 		actions = append(actions, &Action{Type: ActionTypeNoteUpdate, DataItem: noteRef.Item})
 	default:
 		return nil, fmt.Errorf("unknown change type")

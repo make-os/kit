@@ -7,6 +7,7 @@ import (
 	"gitlab.com/makeos/mosdef/pkgs/tree"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // NamespaceKeeper manages namespaces.
@@ -74,7 +75,7 @@ func (a *NamespaceKeeper) GetTarget(path string, blockNum ...uint64) (string, er
 		return "", err
 	}
 
-	actualName := util.HashNamespace(namespace)
+	actualName := crypto.HashNamespace(namespace)
 	ns := a.Get(actualName, version)
 	if ns.IsNil() {
 		return "", fmt.Errorf("namespace not found")

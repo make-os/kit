@@ -47,7 +47,9 @@ genmocks:
     mockgen -source=types/core/mempool.go -destination=mocks/mempool.go -package mocks && \
 	mockgen -source=remote/push/types/objects.go -destination=mocks/pushpool.go -package mocks && \
 	mockgen -source=remote/server/types.go -destination=mocks/servertypes.go -package mocks && \
-	mockgen -source=dht/types/types.go -destination=mocks/dht.go -package mocks && \
+	mockgen -source=dht/types.go -destination=mocks/dht.go -package mocks && \
+	mockgen -source=dht/commit_requester.go -destination=mocks/dht_commit_requester.go -package mocks && \
+	mockgen -source=dht/commit_streamer.go -destination=mocks/dht_commit_streamer.go -package mocks && \
 	mockgen -source=remote/types/pruner.go -destination=mocks/pruner.go -package mocks && \
 	mockgen -source=remote/types/local_repo.go -destination=mocks/local_repo.go -package mocks && \
 	mockgen -source=remote/plumbing/post.go -destination=mocks/post.go -package mocks && \
@@ -56,6 +58,7 @@ genmocks:
     mockgen -source=api/rest/client/types.go -destination=mocks/rest_client.go -package mocks && \
     mockgen -source=api/rpc/client/client.go -destination=api/rpc/client/mocks.go -package client && \
     mockgen -source=types/modules/modules.go -destination=mocks/modules.go -package mocks && \
+    mockgen -source=types/libp2p.go -destination=mocks/libp2p.go -package mocks && \
     mockgen -source=pkgs/tree/types.go -destination=mocks/tree.go -package mocks && \
     mockgen -source=node/types/types.go -destination=mocks/node.go -package mocks && \
     mockgen -source=util/serialize_helper.go -destination=util/mocks/serialize_helper.go -package mocks && \

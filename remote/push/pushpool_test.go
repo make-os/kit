@@ -8,20 +8,20 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/crypto"
-	dhttypes "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
-func txCheckNoIssue(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
+func txCheckNoIssue(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
 	return nil
 }
 
-func txCheckErr(err error) func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
-	return func(tx types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error {
+func txCheckErr(err error) func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
+	return func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
 		return err
 	}
 }
@@ -32,14 +32,14 @@ var _ = Describe("PushPooler", func() {
 	var tx2 *types.PushNote
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
-	var mockDHT *mocks.MockDHTNode
+	var mockDHT *mocks.MockDHT
 	var pushKeyID = "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"
 	var pushKeyID2 = "push1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = mocks.NewMockLogic(ctrl)
-		mockDHT = mocks.NewMockDHTNode(ctrl)
+		mockDHT = mocks.NewMockDHT(ctrl)
 		pool = NewPushPool(10, mockLogic, mockDHT)
 	})
 
@@ -51,7 +51,7 @@ var _ = Describe("PushPooler", func() {
 		tx = &types.PushNote{
 			RepoName:        "repo",
 			NodeSig:         []byte("sig"),
-			PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
+			PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 			PusherAcctNonce: 2,
 			References: []*types.PushedReference{
 				{Name: "refs/heads/master", Fee: "0.2", Nonce: 1},
@@ -60,7 +60,7 @@ var _ = Describe("PushPooler", func() {
 		tx2 = &types.PushNote{
 			RepoName:        "repo2",
 			NodeSig:         []byte("sig_2"),
-			PushKeyID:       util.MustDecodePushKeyID(pushKeyID2),
+			PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID2),
 			PusherAcctNonce: 2,
 			References: []*types.PushedReference{
 				{Name: "refs/heads/master", Fee: "0.2", Nonce: 1},
@@ -100,7 +100,7 @@ var _ = Describe("PushPooler", func() {
 			baseNote = &types.PushNote{
 				RepoName:  "repo",
 				NodeSig:   []byte("sig"),
-				PushKeyID: util.MustDecodePushKeyID(pushKeyID),
+				PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID),
 				Timestamp: 100000000,
 			}
 		})
@@ -270,7 +270,7 @@ var _ = Describe("PushPooler", func() {
 				txY = &types.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
-					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
+					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -281,7 +281,7 @@ var _ = Describe("PushPooler", func() {
 				txZ = &types.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
-					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
+					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -292,7 +292,7 @@ var _ = Describe("PushPooler", func() {
 				txX = &types.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
-					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
+					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -330,7 +330,7 @@ var _ = Describe("PushPooler", func() {
 				txY = &types.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
-					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
+					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -341,7 +341,7 @@ var _ = Describe("PushPooler", func() {
 				txZ = &types.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
-					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
+					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -352,7 +352,7 @@ var _ = Describe("PushPooler", func() {
 				txX = &types.PushNote{
 					RepoName:        "repo",
 					NodeSig:         []byte("sig"),
-					PushKeyID:       util.MustDecodePushKeyID(pushKeyID),
+					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -379,7 +379,7 @@ var _ = Describe("PushPooler", func() {
 			var txX *types.PushNote
 			BeforeEach(func() {
 				txX = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID),
+					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -401,7 +401,7 @@ var _ = Describe("PushPooler", func() {
 			var txX *types.PushNote
 			BeforeEach(func() {
 				txX = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID),
+					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -639,7 +639,7 @@ var _ = Describe("repoNotesIndex", func() {
 		When("repo has 1 txA and txA is removed", func() {
 			var txA *types.PushNote
 			BeforeEach(func() {
-				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
+				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
 				idx = map[string][]*containerItem{}
 				idx.add("repo1", &containerItem{Note: txA})
 				Expect(idx["repo1"]).To(HaveLen(1))
@@ -654,8 +654,8 @@ var _ = Describe("repoNotesIndex", func() {
 		When("repo has 2 txs (txA and TxB) and txA is removed", func() {
 			var txA, txB *types.PushNote
 			BeforeEach(func() {
-				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
-				txB = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: util.MustDecodePushKeyID(pushKeyID), Timestamp: 200000000}
+				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
+				txB = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID), Timestamp: 200000000}
 				idx = map[string][]*containerItem{}
 				idx.add("repo1", &containerItem{Note: txA})
 				idx.add("repo1", &containerItem{Note: txB})

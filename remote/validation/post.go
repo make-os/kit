@@ -15,6 +15,7 @@ import (
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/crypto"
 	"gopkg.in/src-d/go-git.v4/plumbing/filemode"
 )
 
@@ -28,7 +29,7 @@ var (
 // ValidatePostCommitArg contains arguments for ValidatePostCommit
 type ValidatePostCommitArg struct {
 	OldHash         string
-	Change          *core.ItemChange
+	Change          *types.ItemChange
 	TxDetail        *types.TxDetail
 	PushKeyGetter   core.PushKeyGetter
 	CheckPostCommit PostCommitChecker
@@ -325,7 +326,7 @@ func CheckIssuePostBody(commit types.Commit, fm map[string]interface{}) error {
 			return fe(-1, makeField("assignees", commitHash), "expected a string list")
 		}
 		for i, assignee := range val {
-			if !util.IsValidPushAddr(strings.TrimPrefix(assignee.(string), "-")) {
+			if !crypto.IsValidPushAddr(strings.TrimPrefix(assignee.(string), "-")) {
 				return fe(i, makeField("assignees", commitHash), "invalid push key ID")
 			}
 		}

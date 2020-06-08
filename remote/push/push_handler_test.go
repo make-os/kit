@@ -41,6 +41,7 @@ var _ = Describe("Handler", func() {
 	var repoName string
 	var mockMempool *mocks.MockMempool
 	var mockBlockGetter *mocks.MockBlockGetter
+	var mockDHT *mocks.MockDHT
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -55,7 +56,7 @@ var _ = Describe("Handler", func() {
 		Expect(err).To(BeNil())
 
 		mockLogic = mocks.NewMockLogic(ctrl)
-		mockDHT := mocks.NewMockDHTNode(ctrl)
+		mockDHT := mocks.NewMockDHT(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		svr = server.NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
@@ -381,10 +382,9 @@ var _ = Describe("Handler", func() {
 	})
 
 	Describe(".AnnounceObject", func() {
-		var mockDHT *mocks.MockDHTNode
 		BeforeEach(func() {
 			handler.Server = mockRemoteSrv
-			mockDHT = mocks.NewMockDHTNode(ctrl)
+			mockDHT = mocks.NewMockDHT(ctrl)
 			mockRemoteSrv.EXPECT().GetDHT().Return(mockDHT)
 		})
 
@@ -452,7 +452,7 @@ var _ = Describe("Handler", func() {
 			BeforeEach(func() {
 				handler.Server = svr
 				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-				handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+				handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 					return fmt.Errorf("bad reference change")
 				}
 
@@ -477,10 +477,10 @@ var _ = Describe("Handler", func() {
 				BeforeEach(func() {
 					handler.Server = svr
 					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return fmt.Errorf("bad reference change")
 					}
-					handler.Reverter = func(repo types.LocalRepo, prevState core.BareRepoState, options ...core.KVOption) (changes *core.Changes, err error) {
+					handler.Reverter = func(repo types.LocalRepo, prevState types.BareRepoState, options ...types.KVOption) (changes *types.Changes, err error) {
 						return nil, fmt.Errorf("failed revert")
 					}
 
@@ -501,7 +501,7 @@ var _ = Describe("Handler", func() {
 				BeforeEach(func() {
 					handler.Server = svr
 					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return fmt.Errorf("bad reference change")
 					}
 
@@ -526,7 +526,7 @@ var _ = Describe("Handler", func() {
 				BeforeEach(func() {
 					handler.Server = svr
 					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return fmt.Errorf("bad reference change")
 					}
 
@@ -551,7 +551,7 @@ var _ = Describe("Handler", func() {
 					handler.Server = svr
 					handler.TxDetails = map[string]*types.TxDetail{"refs/heads/master": {}}
 					handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return nil
 					}
 
@@ -580,7 +580,7 @@ var _ = Describe("Handler", func() {
 					handler.Repo.SetState(state.BareRepository())
 					handler.TxDetails = map[string]*types.TxDetail{ref: {FlagCheckAdminUpdatePolicy: true}}
 					handler.PushReader.References = map[string]*push.PackedReferenceObject{ref: {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return nil
 					}
 
@@ -612,7 +612,7 @@ var _ = Describe("Handler", func() {
 					handler.Repo.SetState(state.BareRepository())
 					handler.TxDetails = map[string]*types.TxDetail{ref: {FlagCheckAdminUpdatePolicy: true}}
 					handler.PushReader.References = map[string]*push.PackedReferenceObject{ref: {NewHash: util.RandString(40)}}
-					handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return nil
 					}
 
@@ -645,10 +645,10 @@ var _ = Describe("Handler", func() {
 				handler.Server = svr
 				handler.TxDetails = map[string]*types.TxDetail{"refs/heads/master": {MergeProposalID: "001"}}
 				handler.PushReader.References = map[string]*push.PackedReferenceObject{"refs/heads/master": {NewHash: strings.Repeat("0", 40)}}
-				handler.ChangeValidator = func(types.LocalRepo, string, *core.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
+				handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 					return nil
 				}
-				handler.MergeChecker = func(repo types.LocalRepo, change *core.ItemChange, oldRef core.Item, mergeProposalID, pushKeyID string, keepers core.Keepers) error {
+				handler.MergeChecker = func(repo types.LocalRepo, change *types.ItemChange, oldRef types.Item, mergeProposalID, pushKeyID string, keepers core.Keepers) error {
 					return fmt.Errorf("failed merge check")
 				}
 

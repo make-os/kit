@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/remote/push/types"
@@ -14,11 +15,11 @@ import (
 	types2 "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/util/crypto"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/util"
 )
 
 type refHandler func(ref string, revertOnly bool) []error
@@ -30,7 +31,7 @@ type Handler struct {
 	op                   string                              // The current git operation
 	Repo                 types2.LocalRepo                    // The target repository
 	Server               core.RemoteServer                   // The repository remote server
-	OldState             core.BareRepoState                  // The old state of the repo before the current push was written
+	OldState             types2.BareRepoState                // The old state of the repo before the current push was written
 	PushReader           *PushReader                         // The push reader for reading pushed git objects
 	NoteID               string                              // The push note unique ID
 	ChangeValidator      validation.ChangeValidatorFunc      // Repository state change validator
@@ -275,7 +276,7 @@ func (h *Handler) createPushNote() (*types.PushNote, error) {
 
 	var note = &types.PushNote{
 		TargetRepo:      h.Repo,
-		PushKeyID:       util.MustDecodePushKeyID(h.TxDetails.GetPushKeyID()),
+		PushKeyID:       crypto.MustDecodePushKeyID(h.TxDetails.GetPushKeyID()),
 		RepoName:        h.TxDetails.GetRepoName(),
 		Namespace:       h.TxDetails.GetRepoNamespace(),
 		PusherAcctNonce: h.TxDetails.GetNonce(),
@@ -324,7 +325,7 @@ func (h *Handler) createPushNote() (*types.PushNote, error) {
 
 // AnnounceObject announces a packed object to DHT peers
 func (h *Handler) AnnounceObject(objHash string) error {
-	dhtKey := plumbing.MakeRepoObjectDHTKey(h.Repo.GetName(), objHash)
+	dhtKey := dht.MakeGitObjectKey(h.Repo.GetName(), objHash)
 	ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
 	defer c()
 	if err := h.Server.GetDHT().Announce(ctx, []byte(dhtKey)); err != nil {
@@ -355,7 +356,7 @@ func (h *Handler) HandleReference(ref string, revertOnly bool) []error {
 
 	// Now, compute the changes from the target reference old state to its current.
 	changes := oldRefState.GetChanges(curState.(*plumbing.State))
-	var change *core.ItemChange
+	var change *types2.ItemChange
 	if len(changes.References.Changes) > 0 {
 		change = changes.References.Changes[0]
 	}

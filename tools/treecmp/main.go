@@ -14,6 +14,7 @@ import (
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/crypto"
 )
 
 func getAdapter(stateDBPath string) *storage.TMDBAdapter {
@@ -52,7 +53,7 @@ func cmpIndexKey(pathA, pathB string) string {
 	strs = append(strs, strings.Split(pathA, "")...)
 	strs = append(strs, strings.Split(pathB, "")...)
 	sort.Strings(strs)
-	return util.Hash20Hex([]byte(strings.Join(strs, "")))
+	return crypto.Hash20Hex([]byte(strings.Join(strs, "")))
 }
 
 func findAndPrintDiffKeys(version int64, paths ...string) []Diffs {

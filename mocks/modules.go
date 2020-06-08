@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	go_prompt "github.com/c-bata/go-prompt"
+	prompt "github.com/c-bata/go-prompt"
 	gomock "github.com/golang/mock/gomock"
 	otto "github.com/robertkrimen/otto"
 	modules "gitlab.com/makeos/mosdef/types/modules"
@@ -37,10 +37,10 @@ func (m *MockModuleHub) EXPECT() *MockModuleHubMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockModuleHub) ConfigureVM(vm *otto.Otto) []go_prompt.Suggest {
+func (m *MockModuleHub) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
@@ -88,10 +88,10 @@ func (m *MockChainModule) EXPECT() *MockChainModuleMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockChainModule) Configure() []go_prompt.Suggest {
+func (m *MockChainModule) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
@@ -181,10 +181,10 @@ func (m *MockTxModule) EXPECT() *MockTxModuleMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockTxModule) Configure() []go_prompt.Suggest {
+func (m *MockTxModule) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
@@ -265,10 +265,10 @@ func (m *MockPoolModule) EXPECT() *MockPoolModuleMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockPoolModule) Configure() []go_prompt.Suggest {
+func (m *MockPoolModule) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
@@ -344,10 +344,10 @@ func (m *MockAccountModule) EXPECT() *MockAccountModuleMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockAccountModule) Configure() []go_prompt.Suggest {
+func (m *MockAccountModule) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
@@ -546,10 +546,10 @@ func (m *MockPushKeyModule) EXPECT() *MockPushKeyModuleMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockPushKeyModule) Configure() []go_prompt.Suggest {
+func (m *MockPushKeyModule) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
@@ -654,10 +654,10 @@ func (m *MockUtilModule) EXPECT() *MockUtilModuleMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockUtilModule) Configure() []go_prompt.Suggest {
+func (m *MockUtilModule) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
@@ -723,10 +723,10 @@ func (m *MockTicketModule) EXPECT() *MockTicketModuleMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockTicketModule) Configure() []go_prompt.Suggest {
+func (m *MockTicketModule) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
@@ -927,10 +927,10 @@ func (m *MockRepoModule) EXPECT() *MockRepoModuleMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockRepoModule) Configure() []go_prompt.Suggest {
+func (m *MockRepoModule) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
@@ -1090,10 +1090,10 @@ func (m *MockNamespaceModule) EXPECT() *MockNamespaceModuleMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockNamespaceModule) Configure() []go_prompt.Suggest {
+func (m *MockNamespaceModule) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
@@ -1203,10 +1203,10 @@ func (m *MockDHTModule) EXPECT() *MockDHTModuleMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockDHTModule) Configure() []go_prompt.Suggest {
+func (m *MockDHTModule) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
@@ -1320,10 +1320,10 @@ func (m *MockExtManager) EXPECT() *MockExtManagerMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockExtManager) Configure() []go_prompt.Suggest {
+func (m *MockExtManager) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
@@ -1477,10 +1477,10 @@ func (m *MockRPCModule) EXPECT() *MockRPCModuleMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockRPCModule) Configure() []go_prompt.Suggest {
+func (m *MockRPCModule) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 

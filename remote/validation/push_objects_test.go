@@ -11,10 +11,11 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
-	dhttypes "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/mocks"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/push/types"
+	types2 "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/testutil"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
@@ -22,6 +23,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -314,7 +316,7 @@ var _ = Describe("Validation", func() {
 			BeforeEach(func() {
 				tx := &types.PushNote{Namespace: "ns1"}
 				mockRepoKeeper.EXPECT().Get(gomock.Any()).Return(&state.Repository{Balance: "10"})
-				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.Namespace)).Return(state.BareNamespace())
+				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.Namespace)).Return(state.BareNamespace())
 				err = validation.CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -330,7 +332,7 @@ var _ = Describe("Validation", func() {
 				mockRepoKeeper.EXPECT().Get(gomock.Any()).Return(&state.Repository{Balance: "10"})
 				ns := state.BareNamespace()
 				ns.Domains["domain1"] = "r/some_repo"
-				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.Namespace)).Return(ns)
+				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.Namespace)).Return(ns)
 				err = validation.CheckPushNoteConsistency(tx, mockLogic)
 			})
 
@@ -616,10 +618,10 @@ var _ = Describe("Validation", func() {
 				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
 				tx.TargetRepo = mockRepo
 
-				mockDHT := mocks.NewMockDHTNode(ctrl)
-				dhtKey := plumbing2.MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
-				mockDHT.EXPECT().GetObject(gomock.Any(), &dhttypes.DHTObjectQuery{
-					Module:    core.RepoObjectModule,
+				mockDHT := mocks.NewMockDHT(ctrl)
+				dhtKey := dht.MakeGitObjectKey(tx.GetRepoName(), objHash)
+				mockDHT.EXPECT().GetObject(gomock.Any(), &dht.DHTObjectQuery{
+					Module:    types2.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(nil, fmt.Errorf("object not found"))
 
@@ -644,11 +646,11 @@ var _ = Describe("Validation", func() {
 				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
 				tx.TargetRepo = mockRepo
 
-				mockDHT := mocks.NewMockDHTNode(ctrl)
-				dhtKey := plumbing2.MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
+				mockDHT := mocks.NewMockDHT(ctrl)
+				dhtKey := dht.MakeGitObjectKey(tx.GetRepoName(), objHash)
 				content := []byte("content")
-				mockDHT.EXPECT().GetObject(gomock.Any(), &dhttypes.DHTObjectQuery{
-					Module:    core.RepoObjectModule,
+				mockDHT.EXPECT().GetObject(gomock.Any(), &dht.DHTObjectQuery{
+					Module:    types2.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(content, nil)
 
@@ -675,11 +677,11 @@ var _ = Describe("Validation", func() {
 				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
 				tx.TargetRepo = mockRepo
 
-				mockDHT := mocks.NewMockDHTNode(ctrl)
-				dhtKey := plumbing2.MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
+				mockDHT := mocks.NewMockDHT(ctrl)
+				dhtKey := dht.MakeGitObjectKey(tx.GetRepoName(), objHash)
 				content := []byte("content")
-				mockDHT.EXPECT().GetObject(gomock.Any(), &dhttypes.DHTObjectQuery{
-					Module:    core.RepoObjectModule,
+				mockDHT.EXPECT().GetObject(gomock.Any(), &dht.DHTObjectQuery{
+					Module:    types2.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(content, nil)
 
@@ -706,11 +708,11 @@ var _ = Describe("Validation", func() {
 				mockRepo.EXPECT().GetObjectSize(objHash).Return(int64(0), fmt.Errorf("object not found"))
 				tx.TargetRepo = mockRepo
 
-				mockDHT := mocks.NewMockDHTNode(ctrl)
-				dhtKey := plumbing2.MakeRepoObjectDHTKey(tx.GetRepoName(), objHash)
+				mockDHT := mocks.NewMockDHT(ctrl)
+				dhtKey := dht.MakeGitObjectKey(tx.GetRepoName(), objHash)
 				content := []byte("content")
-				mockDHT.EXPECT().GetObject(gomock.Any(), &dhttypes.DHTObjectQuery{
-					Module:    core.RepoObjectModule,
+				mockDHT.EXPECT().GetObject(gomock.Any(), &dht.DHTObjectQuery{
+					Module:    types2.RepoObjectModule,
 					ObjectKey: []byte(dhtKey),
 				}).Return(content, nil)
 

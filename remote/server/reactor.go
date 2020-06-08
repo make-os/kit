@@ -9,17 +9,19 @@ import (
 
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto/bls"
-	dhttypes "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/push"
 	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
 	rr "gitlab.com/makeos/mosdef/remote/repo"
+	types2 "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
+	"gitlab.com/makeos/mosdef/util/crypto"
 
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/p2p"
@@ -70,7 +72,7 @@ func (sv *Server) onPushNote(peer p2p.Peer, msgBytes []byte) error {
 	// If namespace is set, get it and ensure it exists
 	var namespace *state.Namespace
 	if note.Namespace != "" {
-		namespace = sv.logic.NamespaceKeeper().Get(util.HashNamespace(note.Namespace))
+		namespace = sv.logic.NamespaceKeeper().Get(crypto.HashNamespace(note.Namespace))
 		if namespace.IsNil() {
 			return fmt.Errorf("namespace '%s' not found", note.Namespace)
 		}
@@ -180,7 +182,7 @@ func (sv *Server) broadcastPushedObjects(pn *pushtypes.PushNote) (err error) {
 
 	// Announce all pushed objects to the DHT
 	for _, hash := range pn.GetPushedObjects() {
-		dhtKey := plumbing.MakeRepoObjectDHTKey(pn.RepoName, hash)
+		dhtKey := dht.MakeGitObjectKey(pn.RepoName, hash)
 		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		if err := sv.GetDHT().Announce(ctx, []byte(dhtKey)); err != nil {
 			err = fmt.Errorf("unable to announce git object")
@@ -322,7 +324,7 @@ func (sv *Server) broadcastPushNote(pushNote pushtypes.PushNotice) {
 }
 
 // broadcastPushEnd sends out push endorsements (PushEndorsement) to peers
-func (sv *Server) broadcastPushEnd(pushEnd core.RepoPushEndorsement) {
+func (sv *Server) broadcastPushEnd(pushEnd types2.RepoPushEndorsement) {
 	for _, peer := range sv.Switch.Peers().List() {
 		bz, id := pushEnd.BytesAndID()
 		if sv.isPushEndSender(string(peer.ID()), id.String()) {
@@ -524,9 +526,9 @@ func execTxPush(m core.RemoteServer, tx *txns.TxPush) error {
 		}
 
 		// Fetch the object from the dht
-		dhtKey := plumbing.MakeRepoObjectDHTKey(repoName, objHash)
+		dhtKey := dht.MakeGitObjectKey(repoName, objHash)
 		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
-		query := &dhttypes.DHTObjectQuery{Module: core.RepoObjectModule, ObjectKey: []byte(dhtKey)}
+		query := &dht.DHTObjectQuery{Module: types2.RepoObjectModule, ObjectKey: []byte(dhtKey)}
 		objValue, err := m.GetDHT().GetObject(ctx, query)
 		if err != nil {
 			cn()

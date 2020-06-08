@@ -16,6 +16,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // CheckTxCoinTransferConsistency performs consistency checks on TxCoinTransfer
@@ -659,7 +660,7 @@ func CheckTxRepoProposalRegisterPushKeyConsistency(
 		nsField = "namespaceOnly"
 	}
 	if ns != "" {
-		ns = util.HashNamespace(ns)
+		ns = crypto2.HashNamespace(ns)
 		found := logic.NamespaceKeeper().Get(ns, uint64(bi.Height))
 		if found.IsNil() {
 			return feI(index, nsField, "namespace not found")

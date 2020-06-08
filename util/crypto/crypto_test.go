@@ -1,4 +1,4 @@
-package util
+package crypto
 
 import (
 	"encoding/hex"
@@ -7,6 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/libs/bech32"
 	"gitlab.com/makeos/mosdef/types/constants"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Crypto", func() {
@@ -45,9 +46,9 @@ var _ = Describe("Crypto", func() {
 
 	Describe(".HexToBytes32", func() {
 		It("", func() {
-			hash := StrToBytes32("something")
+			hash := util.StrToBytes32("something")
 			hex := hash.HexStr()
-			result, err := HexToBytes32(hex)
+			result, err := util.HexToBytes32(hex)
 			Expect(err).To(BeNil())
 			Expect(result.Equal(hash)).To(BeTrue())
 		})
@@ -71,12 +72,12 @@ var _ = Describe("Crypto", func() {
 
 	Describe("#Bytes32", func() {
 
-		var hash Bytes32
+		var hash util.Bytes32
 		var bs []byte
 
 		BeforeEach(func() {
 			bs = []byte{136, 225, 82, 38, 62, 228, 83, 58, 208, 206, 112, 72, 56, 67, 33, 237, 116, 123, 76, 149, 110, 48, 200, 21, 66, 213, 60, 114, 21, 246, 127, 211}
-			hash = BytesToBytes32(bs)
+			hash = util.BytesToBytes32(bs)
 		})
 
 		Describe(".Bytes", func() {
@@ -98,7 +99,7 @@ var _ = Describe("Crypto", func() {
 			})
 
 			It("should return false when not equal", func() {
-				hash2 := BytesToBytes32([]byte{23, 45})
+				hash2 := util.BytesToBytes32([]byte{23, 45})
 				Expect(hash.Equal(hash2)).To(BeFalse())
 			})
 		})
@@ -122,7 +123,7 @@ var _ = Describe("Crypto", func() {
 
 		Describe(".IsEmpty", func() {
 			It("should return true if empty", func() {
-				hash := BytesToBytes32([]byte{})
+				hash := util.BytesToBytes32([]byte{})
 				Expect(hash.IsEmpty()).To(BeTrue())
 			})
 		})

@@ -10,6 +10,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 
 	"gitlab.com/makeos/mosdef/params"
 
@@ -1697,7 +1698,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareRepoProposalRegisterPushKey()
 				tx.Namespace = "ns1"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.Namespace), uint64(1)).Return(state.BareNamespace())
+				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.Namespace), uint64(1)).Return(state.BareNamespace())
 				err = validation.CheckTxRepoProposalRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -1712,7 +1713,7 @@ var _ = Describe("TxValidator", func() {
 				tx := txns.NewBareRepoProposalRegisterPushKey()
 				tx.NamespaceOnly = "ns1"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.NamespaceOnly), uint64(1)).Return(state.BareNamespace())
+				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.NamespaceOnly), uint64(1)).Return(state.BareNamespace())
 				err = validation.CheckTxRepoProposalRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -1730,7 +1731,7 @@ var _ = Describe("TxValidator", func() {
 				ns := state.BareNamespace()
 				ns.Owner = "repo2"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.Namespace), uint64(1)).Return(ns)
+				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.Namespace), uint64(1)).Return(ns)
 				err = validation.CheckTxRepoProposalRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})
 
@@ -1748,7 +1749,7 @@ var _ = Describe("TxValidator", func() {
 				ns := state.BareNamespace()
 				ns.Owner = "repo1"
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{Height: 1}, nil)
-				mockNSKeeper.EXPECT().Get(util.HashNamespace(tx.Namespace), uint64(1)).Return(ns)
+				mockNSKeeper.EXPECT().Get(crypto2.HashNamespace(tx.Namespace), uint64(1)).Return(ns)
 				mockRepoKeeper.EXPECT().Get(gomock.Any(), gomock.Any()).Return(state.BareRepository())
 				err = validation.CheckTxRepoProposalRegisterPushKeyConsistency(tx, -1, mockLogic)
 			})

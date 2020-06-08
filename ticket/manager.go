@@ -22,7 +22,7 @@ import (
 type Manager struct {
 	cfg   *config.AppConfig
 	logic core.Logic
-	s     Host
+	s     TicketStore
 }
 
 // NewManager returns an instance of Manager.

@@ -18,6 +18,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
 var _ = Describe("UpsertOwnerContract", func() {
@@ -215,7 +216,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 				BeforeEach(func() {
 					nsObj = state.BareNamespace()
 					nsObj.Owner = "repo1"
-					logic.NamespaceKeeper().Update(util.HashNamespace(ns), nsObj)
+					logic.NamespaceKeeper().Update(crypto2.HashNamespace(ns), nsObj)
 					proposal = &state.RepoProposal{ActionData: map[string][]byte{
 						constants.ActionDataKeyPolicies:  util.ToBytes([]*state.Policy{}),
 						constants.ActionDataKeyIDs:       util.ToBytes([]string{"push1_abc"}),
@@ -236,7 +237,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 				})
 
 				It("should add 1 contributor to the namespace", func() {
-					nsKey := util.HashNamespace(ns)
+					nsKey := crypto2.HashNamespace(ns)
 					nsObj := logic.NamespaceKeeper().Get(nsKey)
 					Expect(nsObj.Contributors).To(HaveLen(1))
 					Expect(nsObj.Contributors["push1_abc"]).ToNot(BeNil())
@@ -277,7 +278,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 				BeforeEach(func() {
 					nsObj = state.BareNamespace()
 					nsObj.Owner = "repo1"
-					logic.NamespaceKeeper().Update(util.HashNamespace(ns), nsObj)
+					logic.NamespaceKeeper().Update(crypto2.HashNamespace(ns), nsObj)
 					proposal = &state.RepoProposal{ActionData: map[string][]byte{
 						constants.ActionDataKeyPolicies:      util.ToBytes([]*state.Policy{}),
 						constants.ActionDataKeyIDs:           util.ToBytes([]string{"push1_abc"}),
@@ -298,7 +299,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 				})
 
 				It("should add 1 contributor to the namespace", func() {
-					nsKey := util.HashNamespace(ns)
+					nsKey := crypto2.HashNamespace(ns)
 					nsObj := logic.NamespaceKeeper().Get(nsKey)
 					Expect(nsObj.Contributors).To(HaveLen(1))
 					Expect(nsObj.Contributors["push1_abc"]).ToNot(BeNil())

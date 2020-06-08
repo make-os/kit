@@ -73,6 +73,10 @@ type LocalRepo interface {
 	// SetConfig sets the repo config
 	SetConfig(cfg *config.Config) error
 
+	// IsAncestor checks whether commitA is an ancestor to commitB.
+	// It returns ErrNotAncestor when not an ancestor.
+	IsAncestor(commitA string, commitB string) error
+
 	// SetPath sets the repository root path
 	SetPath(path string)
 
@@ -103,6 +107,10 @@ type LocalRepo interface {
 	// GetObjectDiskSize returns the size of the object as it exist on the system
 	GetObjectDiskSize(objHash string) (int64, error)
 
+	// ObjectsOfCommit returns a hashes of objects a commit is composed of.
+	// This objects a the commit itself, its tree and the tree blobs.
+	ObjectsOfCommit(hash string) ([]plumbing.Hash, error)
+
 	// GetEncodedObject returns an object
 	GetEncodedObject(objHash string) (plumbing.EncodedObject, error)
 
@@ -115,8 +123,8 @@ type LocalRepo interface {
 	// GetCompressedObject compressed version of an object
 	GetCompressedObject(hash string) ([]byte, error)
 
-	// GetHost returns the storage engine of the repository
-	GetHost() storage.Storer
+	// GetStorer returns the storage engine of the repository
+	GetStorer() storage.Storer
 
 	// Prune prunes objects older than the given time
 	Prune(olderThan time.Time) error
@@ -155,7 +163,6 @@ type LiteGit interface {
 	AddEntryToNote(notename, objectHash, note string, env ...string) error
 	CreateBlob(content string) (string, error)
 	UpdateRecentCommitMsg(msg, signingKey string, env ...string) error
-	IsAncestor(commitA string, commitB string, env ...string) error
 	HasMergeCommits(reference string, env ...string) (bool, error)
 	GetMergeCommits(reference string, env ...string) ([]string, error)
 	CreateSingleFileCommit(filename, content, commitMsg, parent string) (string, error)

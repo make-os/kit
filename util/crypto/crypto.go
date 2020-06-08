@@ -1,4 +1,4 @@
-package util
+package crypto
 
 import (
 	"crypto/aes"
@@ -8,12 +8,10 @@ import (
 	"encoding/hex"
 	"io"
 
-	"gitlab.com/makeos/mosdef/types/constants"
-	"golang.org/x/crypto/ripemd160"
-
-	"golang.org/x/crypto/blake2b"
-
 	"github.com/tendermint/tendermint/libs/bech32"
+	"gitlab.com/makeos/mosdef/types/constants"
+	"golang.org/x/crypto/blake2b"
+	"golang.org/x/crypto/ripemd160"
 )
 
 // Encrypt encrypts a plaintext

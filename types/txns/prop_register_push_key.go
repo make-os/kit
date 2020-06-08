@@ -9,6 +9,7 @@ import (
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // TxRepoProposalRegisterPushKey implements BaseTx, it describes a repository proposal
@@ -93,7 +94,7 @@ func (tx *TxRepoProposalRegisterPushKey) GetBytesNoSig() []byte {
 
 // ComputeHash computes the hash of the transaction
 func (tx *TxRepoProposalRegisterPushKey) ComputeHash() util.Bytes32 {
-	return util.BytesToBytes32(util.Blake2b256(tx.Bytes()))
+	return util.BytesToBytes32(crypto.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction

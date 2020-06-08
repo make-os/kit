@@ -15,7 +15,6 @@ import (
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
@@ -305,7 +304,7 @@ var _ = Describe("PushNote", func() {
 		Context("annotated tag changes", func() {
 			When("old state is empty; new state has 1 annotated tag and 1 commit (with 1 file)", func() {
 				var tx *types.PushNote
-				var newState core.BareRepoState
+				var newState remotetypes.BareRepoState
 
 				BeforeEach(func() {
 					oldState := plumbing2.GetRepoState(repo)
@@ -327,7 +326,7 @@ var _ = Describe("PushNote", func() {
 
 			When("old state has tag A; new state updates tag A", func() {
 				var tx *types.PushNote
-				var oldState core.BareRepoState
+				var oldState remotetypes.BareRepoState
 
 				BeforeEach(func() {
 					testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "commit", "v1")
@@ -349,7 +348,7 @@ var _ = Describe("PushNote", func() {
 
 			When("old state has tag A; new state deletes tag A", func() {
 				var tx *types.PushNote
-				var oldState core.BareRepoState
+				var oldState remotetypes.BareRepoState
 
 				BeforeEach(func() {
 					testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "commit", "v1")
@@ -374,7 +373,7 @@ var _ = Describe("PushNote", func() {
 		Context("lightweight tag changes", func() {
 			When("old state is empty; new state has 1 tag and 1 commit (with 1 file)", func() {
 				var tx *types.PushNote
-				var newState core.BareRepoState
+				var newState remotetypes.BareRepoState
 
 				BeforeEach(func() {
 					oldState := plumbing2.GetRepoState(repo)
@@ -396,7 +395,7 @@ var _ = Describe("PushNote", func() {
 
 			When("old state has tag A; new state updates tag A", func() {
 				var tx *types.PushNote
-				var oldState core.BareRepoState
+				var oldState remotetypes.BareRepoState
 
 				BeforeEach(func() {
 					testutil2.CreateCommitAndLightWeightTag(path, "file.txt", "first file", "commit", "v1")
@@ -418,7 +417,7 @@ var _ = Describe("PushNote", func() {
 
 			When("old state has tag A; new state deletes tag A", func() {
 				var tx *types.PushNote
-				var oldState core.BareRepoState
+				var oldState remotetypes.BareRepoState
 
 				BeforeEach(func() {
 					testutil2.CreateCommitAndLightWeightTag(path, "file.txt", "first file", "commit", "v1")
@@ -443,7 +442,7 @@ var _ = Describe("PushNote", func() {
 		Context("note changes", func() {
 			When("an empty repo is updated with a note and 1 commit (with 1 file)", func() {
 				var tx *types.PushNote
-				var newState core.BareRepoState
+				var newState remotetypes.BareRepoState
 
 				BeforeEach(func() {
 					oldState := plumbing2.GetRepoState(repo)
@@ -465,7 +464,7 @@ var _ = Describe("PushNote", func() {
 
 			When("repo has note A for commit A and note A is updated for commit B", func() {
 				var tx *types.PushNote
-				var newState, oldState core.BareRepoState
+				var newState, oldState remotetypes.BareRepoState
 
 				BeforeEach(func() {
 					testutil2.CreateCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "noteA")
@@ -489,7 +488,7 @@ var _ = Describe("PushNote", func() {
 
 			When("repo has note A for commit A and note A's message is updated", func() {
 				var tx *types.PushNote
-				var newState, oldState core.BareRepoState
+				var newState, oldState remotetypes.BareRepoState
 
 				BeforeEach(func() {
 					testutil2.CreateCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "noteA")
@@ -513,7 +512,7 @@ var _ = Describe("PushNote", func() {
 
 			When("old state has note A and new state has no note A", func() {
 				var tx *types.PushNote
-				var newState, oldState core.BareRepoState
+				var newState, oldState remotetypes.BareRepoState
 
 				BeforeEach(func() {
 					testutil2.CreateCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "noteA")

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // TxRepoCreate implements BaseTx, it describes a transaction that creates a
@@ -74,7 +75,7 @@ func (tx *TxRepoCreate) GetBytesNoSig() []byte {
 
 // ComputeHash computes the hash of the transaction
 func (tx *TxRepoCreate) ComputeHash() util.Bytes32 {
-	return util.BytesToBytes32(util.Blake2b256(tx.Bytes()))
+	return util.BytesToBytes32(crypto.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction

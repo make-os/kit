@@ -1,11 +1,11 @@
 package plumbing
 
 import (
-	"gitlab.com/makeos/mosdef/types/core"
+	"gitlab.com/makeos/mosdef/remote/types"
 )
 
 // GetKVOpt finds and returns an option matching the given key
-func GetKVOpt(key string, options []core.KVOption) interface{} {
+func GetKVOpt(key string, options []types.KVOption) interface{} {
 	for _, opt := range options {
 		if opt.Key == key {
 			return opt.Value
@@ -15,11 +15,11 @@ func GetKVOpt(key string, options []core.KVOption) interface{} {
 }
 
 // MatchOpt creates a KVOption with 'match' as key
-func MatchOpt(val string) core.KVOption {
-	return core.KVOption{Key: "match", Value: val}
+func MatchOpt(val string) types.KVOption {
+	return types.KVOption{Key: "match", Value: val}
 }
 
 // Changes creates a KVOption with 'changes' as key
-func ChangesOpt(ch *core.Changes) core.KVOption {
-	return core.KVOption{Key: "changes", Value: ch}
+func ChangesOpt(ch *types.Changes) types.KVOption {
+	return types.KVOption{Key: "changes", Value: ch}
 }

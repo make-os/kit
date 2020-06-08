@@ -9,6 +9,7 @@ import (
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // TxRegisterPushKey implements BaseTx, it describes a transaction that registers a push key
@@ -72,7 +73,7 @@ func (tx *TxRegisterPushKey) GetBytesNoSig() []byte {
 
 // ComputeHash computes the hash of the transaction
 func (tx *TxRegisterPushKey) ComputeHash() util.Bytes32 {
-	return util.BytesToBytes32(util.Blake2b256(tx.Bytes()))
+	return util.BytesToBytes32(crypto2.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction

@@ -16,7 +16,7 @@ import (
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/util"
+	io2 "gitlab.com/makeos/mosdef/util/io"
 )
 
 func testPostCommentCreator(isNewPost bool, reference string, err error) func(targetRepo types.LocalRepo,
@@ -73,7 +73,7 @@ var _ = Describe("MergeRequestCreate", func() {
 					args := &mergecmd.MergeRequestCreateArgs{
 						StdOut:             mockStdOut,
 						PostCommentCreator: noopPostCommentCreator,
-						InputReader: func(title string, args *util.InputReaderArgs) string {
+						InputReader: func(title string, args *io2.InputReaderArgs) string {
 							return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "my body")
 						},
 					}
@@ -86,7 +86,7 @@ var _ = Describe("MergeRequestCreate", func() {
 
 			It("should return error when title is not provided from stdin", func() {
 				args := &mergecmd.MergeRequestCreateArgs{StdOut: bytes.NewBuffer(nil),
-					InputReader: func(title string, args *util.InputReaderArgs) string { return "" }}
+					InputReader: func(title string, args *io2.InputReaderArgs) string { return "" }}
 				err := mergecmd.MergeRequestCreateCmd(mockRepo, args)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(common.ErrTitleRequired))
@@ -94,7 +94,7 @@ var _ = Describe("MergeRequestCreate", func() {
 
 			It("should return error when body is not provided from stdin", func() {
 				args := &mergecmd.MergeRequestCreateArgs{StdOut: bytes.NewBuffer(nil),
-					InputReader: func(title string, args *util.InputReaderArgs) string {
+					InputReader: func(title string, args *io2.InputReaderArgs) string {
 						return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "")
 					},
 				}
@@ -106,7 +106,7 @@ var _ = Describe("MergeRequestCreate", func() {
 
 			It("should return error when body is not provided from stdin even when NoBody is true", func() {
 				args := &mergecmd.MergeRequestCreateArgs{StdOut: bytes.NewBuffer(nil), NoBody: true,
-					InputReader: func(title string, args *util.InputReaderArgs) string {
+					InputReader: func(title string, args *io2.InputReaderArgs) string {
 						return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "")
 					},
 				}
@@ -120,7 +120,7 @@ var _ = Describe("MergeRequestCreate", func() {
 				var args *mergecmd.MergeRequestCreateArgs
 				BeforeEach(func() {
 					args = &mergecmd.MergeRequestCreateArgs{StdOut: bytes.NewBuffer(nil), UseEditor: true,
-						InputReader: func(title string, args *util.InputReaderArgs) string {
+						InputReader: func(title string, args *io2.InputReaderArgs) string {
 							return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "")
 						},
 					}
@@ -266,7 +266,7 @@ var _ = Describe("MergeRequestCreate", func() {
 			args := &mergecmd.MergeRequestCreateArgs{
 				StdOut:             bytes.NewBuffer(nil),
 				PostCommentCreator: errorPostCommentCreator,
-				InputReader: func(title string, args *util.InputReaderArgs) string {
+				InputReader: func(title string, args *io2.InputReaderArgs) string {
 					return testutil.ReturnStringOnCallCount(&inpReaderCallCount, "my title", "my body")
 				},
 			}

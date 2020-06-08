@@ -24,6 +24,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
 var _ = Describe("GitPush", func() {
@@ -48,7 +49,7 @@ var _ = Describe("GitPush", func() {
 		mockRepoMgr = mocks.NewMockRemoteServer(ctrl)
 		logic.SetRemoteServer(mockRepoMgr)
 		Expect(err).To(BeNil())
-		rawPkID = util.MustDecodePushKeyID(pushKeyID2)
+		rawPkID = crypto2.MustDecodePushKeyID(pushKeyID2)
 	})
 
 	AfterEach(func() {
@@ -69,7 +70,7 @@ var _ = Describe("GitPush", func() {
 
 	Describe(".Exec", func() {
 		var repo = "repo1"
-		var creator = util.MustDecodePushKeyID(pushKeyID)
+		var creator = crypto2.MustDecodePushKeyID(pushKeyID)
 		var refs []*types.PushedReference
 		var issueRef1 = plumbing.MakeIssueReference(1)
 		var issue1RefData = &state.ReferenceData{Labels: []string{"label1", "label2"}, Assignees: []string{"key1", "key2"}}
@@ -125,7 +126,7 @@ var _ = Describe("GitPush", func() {
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
 				Expect(rep.References.Get("refs/heads/master").Creator).ToNot(Equal(rawPkID))
-				actual := util.MustDecodePushKeyID(pushKeyID)
+				actual := crypto2.MustDecodePushKeyID(pushKeyID)
 				Expect(rep.References.Get("refs/heads/master").Creator).To(Equal(crypto.PushKey(actual)))
 			})
 		})
@@ -134,7 +135,7 @@ var _ = Describe("GitPush", func() {
 			BeforeEach(func() {
 				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
 				refs = []*types.PushedReference{{Name: "refs/heads/master", Data: (&remotetypes.ReferenceData{}), Fee: "1"}}
-				rawPkID := util.MustDecodePushKeyID(pushKeyID)
+				rawPkID := crypto2.MustDecodePushKeyID(pushKeyID)
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
 					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID, PusherAddress: sender.Addr()},

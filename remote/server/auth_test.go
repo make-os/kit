@@ -57,10 +57,10 @@ var _ = Describe("Auth", func() {
 		mocksObjs := testutil.MockLogic(ctrl)
 		mockLogic = mocksObjs.Logic
 
-		mockDHTNode := mocks.NewMockDHTNode(ctrl)
+		mockDHT := mocks.NewMockDHT(ctrl)
 		mockMempool := mocks.NewMockMempool(ctrl)
 		mockBlockGetter := mocks.NewMockBlockGetter(ctrl)
-		svr = NewManager(cfg, "127.0.0.1:0000", mockLogic, mockDHTNode, mockMempool, mockBlockGetter)
+		svr = NewManager(cfg, "127.0.0.1:0000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 	})
 
 	AfterEach(func() {

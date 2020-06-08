@@ -58,7 +58,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when unable to check for merge commits", func() {
-			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+			change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 			detail := &types.TxDetail{Reference: "refs/heads/issues/1"}
 			args := &validation.ValidatePostCommitArg{OldHash: "", Change: change, TxDetail: detail}
 			mockRepo.EXPECT().HasMergeCommits(detail.Reference).Return(false, fmt.Errorf("error"))
@@ -68,7 +68,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when issue has merge commits", func() {
-			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+			change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 			detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
 			args = &validation.ValidatePostCommitArg{OldHash: "", Change: change, TxDetail: detail}
 			commit := repo.WrapCommit(&object.Commit{})
@@ -81,7 +81,7 @@ var _ = Describe("Validation", func() {
 		It("should return error when commit failed commit validation", func() {
 			commit := repo.WrapCommit(&object.Commit{})
 			mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
-			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+			change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 			args := &validation.ValidatePostCommitArg{OldHash: "", Change: change, TxDetail: detail,
 				CheckCommit: func(commit *object.Commit, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 					return fmt.Errorf("check error")
@@ -93,7 +93,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when unable to get ancestors", func() {
-			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+			change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 			commit := repo.WrapCommit(&object.Commit{Message: "commit 1"})
 			mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
 			detail := &types.TxDetail{
@@ -116,7 +116,7 @@ var _ = Describe("Validation", func() {
 		})
 
 		It("should return error when commit failed issue commit validation ", func() {
-			change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+			change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 			commit := repo.WrapCommit(&object.Commit{Message: "commit 1"})
 			mockRepo.EXPECT().HasMergeCommits(gomock.Any()).Return(false, nil)
 			detail := &types.TxDetail{Reference: "refs/heads/issues/1"}
@@ -158,7 +158,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return no error when issue commit check is passed and"+
 				"issue checker func must be called once", func() {
-				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 				callCount := 0
 				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
 					TxDetail: &types.TxDetail{Reference: "refs/heads/issues/1"},
@@ -178,7 +178,7 @@ var _ = Describe("Validation", func() {
 			})
 
 			It("should return error if post body updates admin fields like 'labels'", func() {
-				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
 				callCount := 0
 				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
@@ -206,7 +206,7 @@ var _ = Describe("Validation", func() {
 
 			It("should populate tx detail reference data fields from post body", func() {
 				commitObj.Hash = plumbing.NewHash("069199ae527ca118368d93af02feefa80432e563")
-				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
 				callCount := 0
 				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
@@ -239,7 +239,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return error when issue reference has been previously closed and new issue commit did not set close=2", func() {
 				commitObj.Hash = plumbing.NewHash("069199ae527ca118368d93af02feefa80432e563")
-				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
 				mockRepoState.References[detail.Reference] = &state.Reference{
 					Hash: []byte("hash"),
@@ -266,7 +266,7 @@ var _ = Describe("Validation", func() {
 
 			It("should return no error when issue reference has been previously closed and new issue commit set close=2", func() {
 				commitObj.Hash = plumbing.NewHash("069199ae527ca118368d93af02feefa80432e563")
-				change := &core.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Data: "069199ae527ca118368d93af02feefa80432e563"}}
 				detail = &types.TxDetail{Reference: "refs/heads/issues/1"}
 				mockRepoState.References[detail.Reference] = &state.Reference{Data: &state.ReferenceData{Closed: true}, Hash: []byte("hash")}
 				callCount := 0
@@ -303,7 +303,7 @@ var _ = Describe("Validation", func() {
 			})
 
 			Specify("that issue checker is called twice for both the commit and its ancestor", func() {
-				change := &core.ItemChange{Item: &plumbing2.Obj{Data: child.Hash.String()}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Data: child.Hash.String()}}
 				callCount := 0
 				args := &validation.ValidatePostCommitArg{OldHash: "", Change: change,
 					TxDetail: &types.TxDetail{Reference: "refs/heads/issues/1"},

@@ -26,6 +26,7 @@ import (
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/io"
 )
 
 // mergeReqCmd represents the merge request command
@@ -133,7 +134,7 @@ var mergeReqCreateCmd = &cobra.Command{
 			StdIn:              os.Stdin,
 			PostCommentCreator: plumbing.CreatePostCommit,
 			EditorReader:       util.ReadFromEditor,
-			InputReader:        util.ReadInput,
+			InputReader:        io.ReadInput,
 		}
 
 		if cmd.Flags().Changed("close") {
@@ -314,7 +315,7 @@ var mergeReqCheckoutCmd = &cobra.Command{
 			Remote:                remote,
 			Base:                  base,
 			YesCheckoutDiffTarget: yes,
-			ConfirmInput:          util.ConfirmInput,
+			ConfirmInput:          io.ConfirmInput,
 			StdOut:                os.Stdout,
 		}); err != nil {
 			log.Fatal(err.Error())

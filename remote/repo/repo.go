@@ -2,6 +2,7 @@ package repo
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -22,6 +23,8 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/format/objfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
+
+var ErrNotAnAncestor = fmt.Errorf("not an ancestor")
 
 // Repo provides functions for accessing and modifying
 // a repository loaded by the remote server.
@@ -89,6 +92,30 @@ func (r *Repo) WrappedCommitObject(h plumbing.Hash) (types.Commit, error) {
 // SetConfig sets the repo config
 func (r *Repo) SetConfig(cfg *config.Config) error {
 	return r.Storer.SetConfig(cfg)
+}
+
+// IsAncestor checks whether commitA is an ancestor to commitB.
+// It returns ErrNotAncestor when not an ancestor.
+// It returns ErrObjectNotFound if commit A or B does not exist.
+func (r *Repo) IsAncestor(commitA, commitB string) error {
+	cA, err := r.CommitObject(plumbing.NewHash(commitA))
+	if err != nil {
+		return err
+	}
+
+	cB, err := r.CommitObject(plumbing.NewHash(commitB))
+	if err != nil {
+		return err
+	}
+
+	yes, err := cA.IsAncestor(cB)
+	if err != nil {
+		return err
+	} else if !yes {
+		return ErrNotAnAncestor
+	}
+
+	return err
 }
 
 // GetReferences returns all references in the repo
@@ -199,6 +226,25 @@ func (r *Repo) GetObjectDiskSize(objHash string) (int64, error) {
 	return fi.Size(), nil
 }
 
+// ObjectsOfCommit returns a hashes of objects a commit is composed of.
+// This objects a the commit itself, its tree and the tree blobs.
+func (r *Repo) ObjectsOfCommit(hash string) ([]plumbing.Hash, error) {
+	commit, err := r.CommitObject(plumbing.NewHash(hash))
+	if err != nil {
+		return nil, err
+	}
+	tree, err := commit.Tree()
+	if err != nil {
+		return nil, err
+	}
+
+	hashes := []plumbing.Hash{commit.Hash, commit.TreeHash}
+	for _, e := range tree.Entries {
+		hashes = append(hashes, e.Hash)
+	}
+	return hashes, nil
+}
+
 // WriteObjectToFile writes an object to the repository's objects store
 func (r *Repo) WriteObjectToFile(objectHash string, content []byte) error {
 
@@ -242,8 +288,8 @@ func (r *Repo) GetCompressedObject(hash string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// GetHost returns the storage engine of the repository
-func (r *Repo) GetHost() storage.Storer {
+// GetStorer returns the storage engine of the repository
+func (r *Repo) GetStorer() storage.Storer {
 	return r.Storer
 }
 
@@ -313,6 +359,8 @@ func Get(path string) (types.LocalRepo, error) {
 		Path:       path,
 	}, nil
 }
+
+type LocalRepoGetter func(gitBinPath, path string) (types.LocalRepo, error)
 
 func GetWithLiteGit(gitBinPath, path string) (types.LocalRepo, error) {
 	repo, err := git.PlainOpen(path)

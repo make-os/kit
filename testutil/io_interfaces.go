@@ -34,3 +34,15 @@ type FileWriter interface {
 	io.Writer
 	Fd() uintptr
 }
+
+type WrapReadSeeker struct {
+	Rdr io.Reader
+}
+
+func (w WrapReadSeeker) Read(p []byte) (n int, err error) {
+	return w.Rdr.Read(p)
+}
+
+func (w WrapReadSeeker) Seek(offset int64, whence int) (int64, error) {
+	return 0, nil
+}

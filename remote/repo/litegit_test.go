@@ -367,25 +367,6 @@ var _ = Describe("Gitops", func() {
 		})
 	})
 
-	Describe(".IsAncestor", func() {
-		It("should return no error when child is a descendant of parent", func() {
-			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-			rootHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-			testutil2.AppendCommit(path, "file.txt", "some text appended", "commit msg")
-			childOfRootHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-			Expect(r.IsAncestor(rootHash, childOfRootHash)).To(BeNil())
-		})
-
-		It("should return error when child is not a descendant of parent", func() {
-			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-			rootHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-			testutil2.AppendCommit(path, "file.txt", "some text appended", "commit msg")
-			childOfRootHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
-			err = r.IsAncestor(childOfRootHash, rootHash)
-			Expect(err).ToNot(BeNil())
-		})
-	})
-
 	Describe(".GetMergeCommits", func() {
 		It("should return one hash when branch has a merge commit", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")

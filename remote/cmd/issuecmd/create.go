@@ -14,6 +14,8 @@ import (
 	"gitlab.com/makeos/mosdef/remote/types"
 	common2 "gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/crypto"
+	io2 "gitlab.com/makeos/mosdef/util/io"
 )
 
 type IssueCreateArgs struct {
@@ -70,7 +72,7 @@ type IssueCreateArgs struct {
 	EditorReader util.EditorReaderFunc
 
 	// InputReader is a function that reads input from stdin
-	InputReader util.InputReader
+	InputReader io2.InputReader
 }
 
 // IssueCreateCmd create a new Issue or adds a comment commit to an existing Issue
@@ -130,7 +132,7 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) error {
 	// Ensure assignees are valid push address
 	if args.Assignees != nil {
 		for _, assignee := range *args.Assignees {
-			if !util.IsValidPushAddr(strings.TrimPrefix(assignee, "-")) {
+			if !crypto.IsValidPushAddr(strings.TrimPrefix(assignee, "-")) {
 				return fmt.Errorf("assignee (%s) is not a valid push key address", assignee)
 			}
 		}
@@ -148,7 +150,7 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) error {
 
 	// Prompt user for title only if was not provided via flag and this is not a comment
 	if len(args.Title) == 0 && args.ReplyHash == "" && nComments == 0 {
-		args.Title = args.InputReader("\033[1;32m? \033[1;37mTitle> \u001B[0m", &util.InputReaderArgs{
+		args.Title = args.InputReader("\033[1;32m? \033[1;37mTitle> \u001B[0m", &io2.InputReaderArgs{
 			After: func(input string) { fmt.Fprintf(args.StdOut, "\033[36m%s\033[0m\n", input) },
 		})
 		if len(args.Title) == 0 {
@@ -158,7 +160,7 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) error {
 
 	// Read body from stdIn only if an editor is not requested and --no-body is unset
 	if len(args.Body) == 0 && args.UseEditor == false && !args.NoBody {
-		args.Body = args.InputReader("\033[1;32m? \033[1;37mBody> \u001B[0m", &util.InputReaderArgs{
+		args.Body = args.InputReader("\033[1;32m? \033[1;37mBody> \u001B[0m", &io2.InputReaderArgs{
 			After: func(input string) { fmt.Fprintf(args.StdOut, "\033[36m%s\033[0m\n", input) },
 		})
 	}

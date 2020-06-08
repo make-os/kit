@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // TxRepoProposalSendFee implements BaseTx, it describes a transaction for
@@ -74,7 +75,7 @@ func (tx *TxRepoProposalSendFee) GetBytesNoSig() []byte {
 
 // ComputeHash computes the hash of the transaction
 func (tx *TxRepoProposalSendFee) ComputeHash() util.Bytes32 {
-	return util.BytesToBytes32(util.Blake2b256(tx.Bytes()))
+	return util.BytesToBytes32(crypto.Blake2b256(tx.Bytes()))
 }
 
 // GetHash returns the hash of the transaction

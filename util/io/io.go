@@ -1,10 +1,17 @@
-package util
+package io
 
 import (
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+
 	"github.com/AlecAivazis/survey/v2"
-	// "github.com/c-bata/go-prompt"
 	"github.com/howeyc/gopass"
+	"github.com/pkg/errors"
 )
+
+var ErrSrcTooLarge = fmt.Errorf("source is too large")
 
 type InputReaderArgs struct {
 	Password bool
@@ -59,4 +66,44 @@ func readPasswordInput() string {
 		panic(err)
 	}
 	return string(password[0:])
+}
+
+// LimitedReadToTmpFile copies n bytes from src into a temporary file.
+// It returns ErrSizeTooLarge if the reader contains more than maxSize
+// and EOF is src has contains less bytes than maxSize.
+// The caller is responsible for closing the returned reader.
+func LimitedReadToTmpFile(src io.Reader, limit int64) (ReadSeekerCloser, error) {
+	w, err := ioutil.TempFile(os.TempDir(), "")
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create tmp file")
+	}
+
+	// Read max size. Return nil on EOF.
+	_, err = io.CopyN(w, src, limit)
+	if err != nil {
+		if err == io.EOF {
+			w.Seek(0, 0)
+			return w, nil
+		}
+		return nil, err
+	}
+	w.Seek(0, 0)
+
+	// Read additional to determine if there are more bytes after maxSize.
+	n2, err := src.Read([]byte{0})
+	if err != nil {
+		if err == io.EOF {
+			return w, nil
+		}
+		return nil, err
+	} else if n2 > 0 {
+		return nil, ErrSrcTooLarge
+	}
+
+	return w, nil
+}
+
+type ReadSeekerCloser interface {
+	io.ReadSeeker
+	io.Closer
 }

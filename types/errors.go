@@ -44,3 +44,5 @@ const (
 	ErrCodeExecFailure      = uint32(2)
 	ErrCodeMaxTxTypeReached = 3
 )
+
+var ErrExit = fmt.Errorf("exit")

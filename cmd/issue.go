@@ -13,6 +13,7 @@ import (
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/io"
 )
 
 // issueCmd represents the issue command
@@ -85,7 +86,7 @@ var issueCreateCmd = &cobra.Command{
 			StdIn:              os.Stdin,
 			PostCommentCreator: plumbing.CreatePostCommit,
 			EditorReader:       util.ReadFromEditor,
-			InputReader:        util.ReadInput,
+			InputReader:        io.ReadInput,
 		}
 
 		if cmd.Flags().Changed("close") {

@@ -9,6 +9,7 @@ import (
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/util"
+	io2 "gitlab.com/makeos/mosdef/util/io"
 )
 
 // MergeReqCheckoutArgs contains parameters for MergeReqCheckoutCmd
@@ -36,7 +37,7 @@ type MergeReqCheckoutArgs struct {
 	YesCheckoutDiffTarget bool
 
 	// ConfirmInput is a function for requesting user confirmation
-	ConfirmInput util.ConfirmInputReader
+	ConfirmInput io2.ConfirmInputReader
 
 	StdOut io.Writer
 }

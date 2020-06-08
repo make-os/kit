@@ -14,6 +14,7 @@ import (
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
 const (
@@ -49,7 +50,7 @@ func (ks *Keystore) CreateKey(key *crypto.Key, keyType types.KeyType, passphrase
 
 	// Encode the key payload with base58 checksum enabled and encrypt
 	b58AcctBs := base58.CheckEncode(keyData, 1)
-	ct, err := util.Encrypt([]byte(b58AcctBs), passphraseHardened[:])
+	ct, err := crypto2.Encrypt([]byte(b58AcctBs), passphraseHardened[:])
 	if err != nil {
 		return errors.Wrap(err, "key encryption failed")
 	}

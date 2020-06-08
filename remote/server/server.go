@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"gitlab.com/makeos/mosdef/api/rest"
-	dhttypes "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/node/types"
 	"gitlab.com/makeos/mosdef/pkgs/cache"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
@@ -25,13 +25,13 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/state"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 
 	"github.com/tendermint/tendermint/p2p"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -72,7 +72,7 @@ type Server struct {
 	logic                    core.Logic                       // logic is the application logic provider
 	privValidatorKey         *crypto.Key                      // the node's private validator key for signing transactions
 	pushKeyGetter            core.PushKeyGetter               // finds and returns PGP public key
-	dht                      dhttypes.DHTNode                 // The dht service
+	dht                      dht.DHT                          // The dht service
 	pruner                   remotetypes.RepoPruner           // The repo runner
 	blockGetter              types.BlockGetter                // Provides access to blocks
 	pushNoteSenders          *cache.Cache                     // Store senders of push notes
@@ -91,7 +91,7 @@ func NewManager(
 	cfg *config.AppConfig,
 	addr string,
 	logic core.Logic,
-	dht dhttypes.DHTNode,
+	dht dht.DHT,
 	mempool core.Mempool,
 	blockGetter types.BlockGetter) *Server {
 
@@ -150,26 +150,26 @@ func (sv *Server) getPushKey(pushKeyID string) (crypto.PublicKey, error) {
 
 // cacheNoteSender caches a push note sender
 func (sv *Server) cacheNoteSender(senderID string, noteID string) {
-	key := util.Hash20Hex([]byte(senderID + noteID))
+	key := crypto2.Hash20Hex([]byte(senderID + noteID))
 	sv.pushNoteSenders.AddWithExp(key, struct{}{}, time.Now().Add(10*time.Minute))
 }
 
 // cachePushEndSender caches a push endorsement sender
 func (sv *Server) cachePushEndSender(senderID string, pushEndID string) {
-	key := util.Hash20Hex([]byte(senderID + pushEndID))
+	key := crypto2.Hash20Hex([]byte(senderID + pushEndID))
 	sv.pushEndSenders.AddWithExp(key, struct{}{}, time.Now().Add(60*time.Minute))
 }
 
 // isPushNoteSender checks whether a push note was sent by the given sender ID
 func (sv *Server) isPushNoteSender(senderID string, noteID string) bool {
-	key := util.Hash20Hex([]byte(senderID + noteID))
+	key := crypto2.Hash20Hex([]byte(senderID + noteID))
 	v := sv.pushNoteSenders.Get(key)
 	return v == struct{}{}
 }
 
 // isPushEndSender checks whether a push endorsement was sent by the given sender ID
 func (sv *Server) isPushEndSender(senderID string, pushEndID string) bool {
-	key := util.Hash20Hex([]byte(senderID + pushEndID))
+	key := crypto2.Hash20Hex([]byte(senderID + pushEndID))
 	v := sv.pushEndSenders.Get(key)
 	return v == struct{}{}
 }
@@ -237,7 +237,7 @@ func (sv *Server) GetMempool() core.Mempool {
 }
 
 // GetDHT returns the dht service
-func (sv *Server) GetDHT() dhttypes.DHTNode {
+func (sv *Server) GetDHT() dht.DHT {
 	return sv.dht
 }
 
@@ -273,7 +273,7 @@ func (sv *Server) gitRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	if namespaceName != rr.DefaultNS {
 
 		// Get the namespace, return 404 if not found
-		namespace = sv.logic.NamespaceKeeper().Get(util.HashNamespace(namespaceName))
+		namespace = sv.logic.NamespaceKeeper().Get(crypto2.HashNamespace(namespaceName))
 		if namespace.IsNil() {
 			w.WriteHeader(http.StatusNotFound)
 			sv.log.Debug("Unknown repository", "Name", repoName, "Code", http.StatusNotFound,
@@ -398,7 +398,7 @@ func (sv *Server) SetPushKeyPubKeyGetter(pkGetter core.PushKeyGetter) {
 }
 
 // GetRepoState implements RepositoryManager
-func (sv *Server) GetRepoState(repo remotetypes.LocalRepo, options ...core.KVOption) (core.BareRepoState, error) {
+func (sv *Server) GetRepoState(repo remotetypes.LocalRepo, options ...remotetypes.KVOption) (remotetypes.BareRepoState, error) {
 	return plumbing.GetRepoState(repo, options...), nil
 }
 
@@ -410,7 +410,7 @@ func (sv *Server) Wait() {
 // FindObject implements dht.ObjectFinder
 func (sv *Server) FindObject(key []byte) ([]byte, error) {
 
-	repoName, objHash, err := plumbing.ParseRepoObjectDHTKey(string(key))
+	repoName, objHash, err := dht.ParseGitObjectKey(string(key))
 	if err != nil {
 		return nil, fmt.Errorf("invalid repo object key")
 	}

@@ -6,7 +6,7 @@ import (
 	tmdb "github.com/tendermint/tm-db"
 	"gitlab.com/makeos/mosdef/pkgs/tree"
 	state2 "gitlab.com/makeos/mosdef/types/state"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/crypto"
 )
 
 var _ = Describe("NamespaceKeeper", func() {
@@ -80,7 +80,7 @@ var _ = Describe("NamespaceKeeper", func() {
 
 			BeforeEach(func() {
 				testNS.Owner = "creator_addr"
-				nsKey := MakeNamespaceKey(util.HashNamespace("ns1"))
+				nsKey := MakeNamespaceKey(crypto.HashNamespace("ns1"))
 				state.Set(nsKey, testNS.Bytes())
 				_, _, err := state.SaveVersion()
 				Expect(err).To(BeNil())
@@ -100,7 +100,7 @@ var _ = Describe("NamespaceKeeper", func() {
 				testNS.Owner = "creator_addr"
 				testNS.Domains["domain"] = "target1"
 
-				nsKey := MakeNamespaceKey(util.HashNamespace("ns1"))
+				nsKey := MakeNamespaceKey(crypto.HashNamespace("ns1"))
 				state.Set(nsKey, testNS.Bytes())
 				_, _, err := state.SaveVersion()
 				Expect(err).To(BeNil())

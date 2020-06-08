@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // UpdateCmd fetches and lists all accounts
@@ -31,7 +31,7 @@ func (ks *Keystore) UpdateCmd(addressOrIndex, passphrase string) error {
 
 	// Re-encrypt with the new passphrase
 	newPassphraseHardened := hardenPassword([]byte(newPassphrase))
-	updatedCipher, err := util.Encrypt(account.GetUnlockedData(), newPassphraseHardened[:])
+	updatedCipher, err := crypto.Encrypt(account.GetUnlockedData(), newPassphraseHardened[:])
 	if err != nil {
 		return fmt.Errorf("unable to re-lock key")
 	}

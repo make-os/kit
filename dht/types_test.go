@@ -1,4 +1,4 @@
-package plumbing_test
+package dht_test
 
 import (
 	"os"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
-	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
+	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/testutil"
 )
 
@@ -29,22 +29,22 @@ var _ = Describe("Common", func() {
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".MakeRepoObjectDHTKey", func() {
+	Describe(".MakeGitObjectKey", func() {
 		It("should return a string in the format <repo name>/<object hash>", func() {
-			key := plumbing2.MakeRepoObjectDHTKey("facebook", "hash")
-			Expect(key).To(Equal("facebook/hash"))
+			key := dht.MakeGitObjectKey("facebook", "hash")
+			Expect(key).To(Equal("/obj/facebook/hash"))
 		})
 	})
 
-	Describe(".ParseRepoObjectDHTKey", func() {
+	Describe(".ParseGitObjectKey", func() {
 		It("should return error if key not formatted as <repo name>/<object hash", func() {
-			_, _, err := plumbing2.ParseRepoObjectDHTKey("invalid")
+			_, _, err := dht.ParseGitObjectKey("invalid")
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("invalid repo object dht key"))
+			Expect(err.Error()).To(Equal("invalid repo object key"))
 		})
 
 		It("should return repo name and object hash if formatted as <repo name>/<object hash", func() {
-			rn, on, err := plumbing2.ParseRepoObjectDHTKey("facebook/hash")
+			rn, on, err := dht.ParseGitObjectKey("/obj/facebook/hash")
 			Expect(err).To(BeNil())
 			Expect(rn).To(Equal("facebook"))
 			Expect(on).To(Equal("hash"))

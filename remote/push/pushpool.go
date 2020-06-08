@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
-	dhttypes "gitlab.com/makeos/mosdef/dht/types"
+	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
@@ -118,7 +118,7 @@ func newItem(note *types.PushNote) *containerItem {
 	return item
 }
 
-type pushPoolValidator func(note types.PushNotice, dht dhttypes.DHTNode, logic core.Logic) error
+type pushPoolValidator func(note types.PushNotice, dht dht.DHT, logic core.Logic) error
 
 // PushPooler implements types.PushPooler.
 type PushPool struct {
@@ -130,12 +130,12 @@ type PushPool struct {
 	refNonceIdx  refNonceIndex     // Helps keep track of the nonce of repo references
 	repoNotesIdx repoNotesIndex    // Helps keep track of repos and push notes target them
 	logic        core.Logic        // The application logic manager
-	dht          dhttypes.DHTNode  // The application's DHTNode provider
+	dht          dht.DHT           // The application's DHT provider
 	noteChecker  pushPoolValidator // Function used to validate a transaction
 }
 
 // NewPushPool creates an instance of PushPooler
-func NewPushPool(cap int, logic core.Logic, dht dhttypes.DHTNode) *PushPool {
+func NewPushPool(cap int, logic core.Logic, dht dht.DHT) *PushPool {
 	pool := &PushPool{
 		gmx:          &sync.RWMutex{},
 		cap:          cap,

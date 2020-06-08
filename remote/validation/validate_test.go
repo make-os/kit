@@ -19,7 +19,6 @@ import (
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -352,7 +351,7 @@ var _ = Describe("Validation", func() {
 
 		When("change item has a reference name format that is not known", func() {
 			BeforeEach(func() {
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/others/name", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/others/name", Data: "stuff"}}
 				err = validation.ValidateChange(testRepo, "", change, baseTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
@@ -364,7 +363,7 @@ var _ = Describe("Validation", func() {
 
 		When("change item referenced object is an unknown commit object", func() {
 			BeforeEach(func() {
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}}
 				err = validation.ValidateChange(testRepo, "", change, baseTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 
@@ -376,7 +375,7 @@ var _ = Describe("Validation", func() {
 
 		When("change item referenced object is an unknown tag object", func() {
 			BeforeEach(func() {
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/tags/unknown", Data: "unknown_hash"}}
 				err = validation.ValidateChange(testRepo, "", change, baseTxDetail, testPushKeyGetter(pubKey, nil))
 			})
 

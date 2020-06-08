@@ -2,7 +2,7 @@ package util
 
 // CheckEvtArgs checks whether the arguments of an event conforms
 // to the expected standard where only 2 arguments are expected;
-// Argument 0: Result
+// Argument 0: WaitForResult
 // Argument 1: Error
 // Panics if standard is not met
 func CheckEvtArgs(args []interface{}) error {

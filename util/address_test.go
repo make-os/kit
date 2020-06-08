@@ -1,6 +1,8 @@
 package util
 
 import (
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -114,6 +116,25 @@ var _ = Describe("Address", func() {
 				Expect(Address("r/abcdef").IsBech32MakerAddress()).To(BeFalse())
 				Expect(Address(bech32Addr).IsBech32MakerAddress()).To(BeTrue())
 			})
+		})
+	})
+
+	Describe("IsValidAddr", func() {
+		It("should return if address is unset", func() {
+			Expect(IsValidAddr("")).To(Equal(fmt.Errorf("empty address")))
+		})
+
+		It("should return if address is not valid", func() {
+			err := IsValidAddr("abc")
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("invalid bech32 string"))
+		})
+
+		It("should return nil when address is valid", func() {
+			err := IsValidAddr("push1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz")
+			Expect(err).ToNot(BeNil())
+			err = IsValidAddr("maker1dhlnq5dt488huxs8nyzd7mu20ujw6zddjv3w4w")
+			Expect(err).To(BeNil())
 		})
 	})
 })

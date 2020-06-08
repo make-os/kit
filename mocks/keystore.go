@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	go_prompt "github.com/c-bata/go-prompt"
+	prompt "github.com/c-bata/go-prompt"
 	gomock "github.com/golang/mock/gomock"
 	crypto "gitlab.com/makeos/mosdef/crypto"
 	types "gitlab.com/makeos/mosdef/keystore/types"
@@ -200,10 +200,10 @@ func (m *MockAccountManager) EXPECT() *MockAccountManagerMockRecorder {
 }
 
 // Configure mocks base method
-func (m *MockAccountManager) Configure() []go_prompt.Suggest {
+func (m *MockAccountManager) Configure() []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Configure")
-	ret0, _ := ret[0].([]go_prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 

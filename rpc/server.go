@@ -8,7 +8,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// Result represent a response to a service method call
+// WaitForResult represent a response to a service method call
 type Result struct {
 	Error   string
 	ErrCode int

@@ -12,7 +12,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
-	"gitlab.com/makeos/mosdef/util"
+	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
 // TxDetailChecker describes a function for checking a transaction detail
@@ -34,7 +34,7 @@ func CheckTxDetailSanity(params *types.TxDetail, index int) error {
 	if params.PushKeyID == "" {
 		return fe(index, "pkID", "push key id is required")
 	}
-	if !util.IsValidPushAddr(params.PushKeyID) {
+	if !crypto2.IsValidPushAddr(params.PushKeyID) {
 		return fe(index, "pkID", "push key id is not valid")
 	}
 

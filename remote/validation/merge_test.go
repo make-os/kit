@@ -11,10 +11,10 @@ import (
 	mr "gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
 	"gitlab.com/makeos/mosdef/mocks"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
+	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -51,7 +51,7 @@ var _ = Describe("Merge", func() {
 		When("pushed reference is not a branch", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockLocalRepo(ctrl)
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/others/name", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/others/name", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
@@ -66,7 +66,7 @@ var _ = Describe("Merge", func() {
 			BeforeEach(func() {
 				repo := mocks.NewMockLocalRepo(ctrl)
 				repo.EXPECT().GetState().Return(state.BareRepository())
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
 			})
@@ -88,7 +88,7 @@ var _ = Describe("Merge", func() {
 
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{Address: "address_xyz"})
 
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
@@ -112,7 +112,7 @@ var _ = Describe("Merge", func() {
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).
 					Return(false, fmt.Errorf("error"))
 
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
@@ -135,7 +135,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(true, nil)
 
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
@@ -163,7 +163,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
@@ -190,7 +190,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
@@ -218,7 +218,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 
 				err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
@@ -246,7 +246,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
 				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(nil, fmt.Errorf("error"))
 
@@ -282,7 +282,7 @@ var _ = Describe("Merge", func() {
 				pushedCommit.EXPECT().Parent(0).Return(pushedCommitParent, nil)
 				pushedCommit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("push_commit_hash"))
 				pushedCommit.EXPECT().IsParent("target_xyz").Return(false, nil)
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -322,7 +322,7 @@ var _ = Describe("Merge", func() {
 					targetCommit.EXPECT().GetTreeHash().Return(treeHash)
 					pushedCommit.EXPECT().Parent(0).Return(targetCommit, nil)
 
-					change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+					change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
 					oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -366,7 +366,7 @@ var _ = Describe("Merge", func() {
 					targetCommit.EXPECT().GetAuthor().Return(author)
 					pushedCommit.EXPECT().Parent(0).Return(targetCommit, nil)
 
-					change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+					change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
 					oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "unknown_hash"}
@@ -416,7 +416,7 @@ var _ = Describe("Merge", func() {
 					targetCommit.EXPECT().GetCommitter().Return(committer)
 					pushedCommit.EXPECT().Parent(0).Return(targetCommit, nil)
 
-					change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+					change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 					repo.EXPECT().WrappedCommitObject(plumbing.NewHash(change.Item.GetData())).Return(pushedCommit, nil)
 
 					err = validation.CheckMergeCompliance(repo, change, oldRef, "1", "push_key_id", mockLogic)
@@ -446,7 +446,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "abc"}
 
 				pushedCommit := mocks.NewMockCommit(ctrl)
@@ -497,7 +497,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "abc"}
 
 				pushedCommit := mocks.NewMockCommit(ctrl)
@@ -551,7 +551,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "abc"}
 
 				pushedCommit := mocks.NewMockCommit(ctrl)
@@ -594,7 +594,7 @@ var _ = Describe("Merge", func() {
 				mockPushKeyKeeper.EXPECT().Get("push_key_id").Return(&state.PushKey{})
 				mockRepoKeeper.EXPECT().IsProposalClosed("repo1", mr.MakeMergeRequestProposalID("1")).Return(false, nil)
 
-				change := &core.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
+				change := &types.ItemChange{Item: &plumbing2.Obj{Name: "refs/heads/master", Data: "stuff"}}
 				oldRef := &plumbing2.Obj{Name: "refs/heads/unknown", Data: "abc"}
 
 				pushedCommit := mocks.NewMockCommit(ctrl)

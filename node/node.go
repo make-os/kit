@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"os"
 
-	"gitlab.com/makeos/mosdef/dht/types"
 	"gitlab.com/makeos/mosdef/remote/server"
+	"gitlab.com/makeos/mosdef/remote/types"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	modules2 "gitlab.com/makeos/mosdef/types/modules"
@@ -52,7 +52,7 @@ import (
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 )
 
-// Node represents the client
+// Server represents the client
 type Node struct {
 	app            *App
 	cfg            *config.AppConfig
@@ -67,13 +67,13 @@ type Node struct {
 	logic          core.AtomicLogic
 	mempoolReactor *mempool.Reactor
 	ticketMgr      tickettypes.TicketManager
-	dht            types.DHTNode
+	dht            dht.DHT
 	modules        modules2.ModuleHub
 	rpcServer      *rpc.Server
 	repoMgr        core.RemoteServer
 }
 
-// NewNode creates an instance of Node
+// NewNode creates an instance of Server
 func NewNode(cfg *config.AppConfig, tmcfg *tmconfig.Config) *Node {
 
 	// Parse tendermint RPC address
@@ -159,7 +159,7 @@ func (n *Node) Start() error {
 	n.ticketMgr = ticket.NewManager(n.logic.GetDBTx(), n.cfg, n.logic)
 	n.logic.SetTicketManager(n.ticketMgr)
 
-	// Create DHTNode reactor and add it to the switch
+	// Create DHT reactor and add it to the switch
 	key, _ := n.cfg.G().PrivVal.GetKey()
 	n.dht, err = dht.New(
 		context.Background(),
@@ -217,14 +217,14 @@ func (n *Node) Start() error {
 	memp.SetProxyApp(tmNode.ProxyApp().Mempool())
 
 	fullAddr := fmt.Sprintf("%s@%s", n.nodeKey.ID(), n.tmcfg.P2P.ListenAddress)
-	n.log.Info("Node is now listening for connections", "Address", fullAddr)
+	n.log.Info("Server is now listening for connections", "Address", fullAddr)
 
 	// Set references of various instances on the node
 	n.tm = tmNode
 	n.mempoolReactor = mempR
 
 	// Register some object finder on the dht
-	n.dht.RegisterObjFinder(core.RepoObjectModule, repoMgr)
+	n.dht.RegisterObjFinder(types.RepoObjectModule, repoMgr)
 
 	// Pass repo manager to logic manager
 	n.logic.SetRemoteServer(repoMgr)
@@ -359,8 +359,8 @@ func (n *Node) GetLogic() core.Logic {
 	return n.logic
 }
 
-// GetDHT returns the DHTNode service
-func (n *Node) GetDHT() types.DHTNode {
+// GetDHT returns the DHT service
+func (n *Node) GetDHT() dht.DHT {
 	return n.dht
 }
 
