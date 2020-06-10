@@ -30,7 +30,7 @@ func NewBareTxTicketUnbond(ticketType types.TxCode) *TxTicketUnbond {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxTicketUnbond) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return tx.EncodeMulti(enc,
 		tx.Type,
 		tx.Nonce,
 		tx.Fee,

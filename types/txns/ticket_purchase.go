@@ -60,7 +60,7 @@ func NewTicketPurchaseTx(
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxTicketPurchase) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return tx.EncodeMulti(enc,
 		tx.Type,
 		tx.Nonce,
 		tx.Fee,

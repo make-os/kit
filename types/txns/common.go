@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
+	msgpack2 "github.com/vmihailenco/msgpack/v4"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/util"
@@ -84,13 +85,31 @@ func (tx *TxType) FromMap(data map[string]interface{}) (err error) {
 
 // TxCommon implements some of BaseTx, it includes some common fields and methods
 type TxCommon struct {
-	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	*TxMeta               `json:"-" msgpack:"-" mapstructure:"-"`
-	Nonce                 uint64           `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`
-	Fee                   util.String      `json:"fee" msgpack:"fee" mapstructure:"fee"`
-	Sig                   []byte           `json:"sig" msgpack:"sig" mapstructure:"sig"`
-	Timestamp             int64            `json:"timestamp" msgpack:"timestamp" mapstructure:"timestamp"`
-	SenderPubKey          crypto.PublicKey `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
+	util.CodecUtil `json:"-" msgpack:"-" mapstructure:"-"`
+	*TxMeta        `json:"-" msgpack:"-" mapstructure:"-"`
+	Nonce          uint64           `json:"nonce" msgpack:"nonce" mapstructure:"nonce"`
+	Fee            util.String      `json:"fee" msgpack:"fee" mapstructure:"fee"`
+	Sig            []byte           `json:"sig" msgpack:"sig" mapstructure:"sig"`
+	Timestamp      int64            `json:"timestamp" msgpack:"timestamp" mapstructure:"timestamp"`
+	SenderPubKey   crypto.PublicKey `json:"senderPubKey" msgpack:"senderPubKey" mapstructure:"senderPubKey"`
+}
+
+func (tx *TxCommon) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return tx.EncodeMulti(enc,
+		tx.Nonce,
+		tx.Fee,
+		tx.Sig,
+		tx.Timestamp,
+		tx.SenderPubKey.Bytes())
+}
+
+func (tx *TxCommon) DecodeMsgpack(dec *msgpack2.Decoder) error {
+	return tx.DecodeMulti(dec,
+		&tx.Nonce,
+		&tx.Fee,
+		&tx.Sig,
+		&tx.Timestamp,
+		&tx.SenderPubKey)
 }
 
 // NewBareTxCommon returns an instance of TxCommon with zero values
@@ -394,16 +413,23 @@ func DecodeTxFromMap(data map[string]interface{}) (types.BaseTx, error) {
 // DecodeTx decodes msgpack data to transactions.
 func DecodeTx(txBz []byte) (types.BaseTx, error) {
 	dec := msgpack.NewDecoder(bytes.NewBuffer(txBz))
+
+	// Skip object version
+	dec.Skip()
+
+	// Decode transaction type
 	txType, err := dec.DecodeInt()
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode tx type")
 	}
 
+	// Get the appropriate object for the transaction type
 	tx, err := getBareTxObject(types.TxCode(txType))
 	if err != nil {
 		return nil, err
 	}
 
+	// Decode and return any error
 	return tx, util.ToObject(txBz, tx)
 }
 

@@ -3,8 +3,6 @@ package cache
 import (
 	"time"
 
-	"gitlab.com/makeos/mosdef/util"
-
 	lru "github.com/hashicorp/golang-lru"
 )
 
@@ -22,13 +20,10 @@ type cacheValue struct {
 	expAt time.Time
 }
 
-// Cache represents a container for storing objects in memory.
-// Internally it uses an LRU cache allowing older items to be
-// removed eventually. It also supports expiring items that
-// are lazily removed during new insertions. To support active
-// expiry checks and removal, use NewActiveCache.
+// Cache is a thread-safe LRU cache.
 type Cache struct {
 	container *lru.Cache
+	rmExpired bool
 }
 
 // NewCache creates a new instance of Cache
@@ -38,9 +33,12 @@ func NewCache(capacity int) *Cache {
 	return cache
 }
 
-// NewActiveCache creates a new Cache instance with that removes expired cache items
-func NewActiveCache(capacity int) *Cache {
+// NewCacheWithExpiringEntry creates a new Cache instance that removes expired entries
+// periodically and during insertions. This cache is useful for when an item
+// needs to be removed even before it is evicted by the LRU logic.
+func NewCacheWithExpiringEntry(capacity int) *Cache {
 	cache := NewCache(capacity)
+	cache.rmExpired = true
 	go func() {
 		for {
 			<-time.NewTicker(DefaultRemovalInterval).C
@@ -50,42 +48,21 @@ func NewActiveCache(capacity int) *Cache {
 	return cache
 }
 
-// Register adds an item. It the cache becomes full, the oldest
-// item is deleted to make room for the new item.
-func (c *Cache) Add(key, val interface{}) {
-	c.add(key, val, time.Time{})
-}
+// Register adds an item. It the cache becomes full, the oldest item is evicted
+// to make room for the new item. If this cache supports removal of explicit
+// expiring entries, they are first removed before addition of a new entry.
+func (c *Cache) Add(key, val interface{}, expireAt ...time.Time) {
+	var expAt time.Time
+	if len(expireAt) > 0 {
+		expAt = expireAt[0]
+	}
 
-// AddValues adds multiple values.
-// The values are serialized and used as the key.
-func (c *Cache) AddValues(exp time.Time, values ...interface{}) {
 	c.removeExpired()
-	valueHex := util.ToHex(util.ToBytes(values))
-	c.AddWithExp(valueHex, values, exp)
-}
 
-// HasMulti checks whether a key derived from serializing
-// the given values exist in the cache. Used to find the
-// cache item added via AddValues
-func (c *Cache) HasMulti(values ...interface{}) bool {
-	c.removeExpired()
-	valueHex := util.ToHex(util.ToBytes(values))
-	return c.Has(valueHex)
-}
-
-func (c *Cache) add(key, val interface{}, expTime time.Time) {
-	c.removeExpired()
 	c.container.Add(key, &cacheValue{
 		value: val,
-		expAt: expTime,
+		expAt: expAt,
 	})
-}
-
-// AddWithExp adds an item with an expiration time.
-// Expired items are removed lazily - Whenever Register or AddWithExp are called.
-// An item with an expiry time does not need to be the oldest in the cache before it is removed.
-func (c *Cache) AddWithExp(key, val interface{}, expTime time.Time) {
-	c.add(key, val, expTime)
 }
 
 // Peek gets an item without updating the newness of the item
@@ -108,6 +85,9 @@ func (c *Cache) Get(key interface{}) interface{} {
 
 // removeExpired removes expired items
 func (c *Cache) removeExpired() {
+	if !c.rmExpired {
+		return
+	}
 	for _, k := range c.container.Keys() {
 
 		cVal, ok := c.container.Peek(k)

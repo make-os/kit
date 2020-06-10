@@ -15,7 +15,6 @@ import (
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -191,7 +190,7 @@ var _ = Describe("Validation", func() {
 						Expect(commit).To(Equal(commit))
 						Expect(args.Reference).To(Equal(detail.Reference))
 						return &plumbing2.PostBody{
-							IssueFields: common.IssueFields{
+							IssueFields: types.IssueFields{
 								Labels: &[]string{"label_update"},
 							},
 						}, nil
@@ -221,7 +220,7 @@ var _ = Describe("Validation", func() {
 						cls := true
 						return &plumbing2.PostBody{
 							Close: &cls,
-							IssueFields: common.IssueFields{
+							IssueFields: types.IssueFields{
 								Labels:    &[]string{"l1", "l2"},
 								Assignees: &[]string{"key1", "key2"},
 							},
@@ -373,7 +372,7 @@ var _ = Describe("Validation", func() {
 			issueBranch := plumbing2.MakeIssueReference(1)
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
-			commit.EXPECT().GetTree().Return(nil, fmt.Errorf("bad query"))
+			commit.EXPECT().Tree().Return(nil, fmt.Errorf("bad query"))
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
 			args := &validation.CheckPostCommitArgs{Reference: issueBranch}
 			_, err := validation.CheckPostCommit(mockRepo, commit, args)
@@ -386,7 +385,7 @@ var _ = Describe("Validation", func() {
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			tree := &object.Tree{Entries: []object.TreeEntry{}}
-			commit.EXPECT().GetTree().Return(tree, nil)
+			commit.EXPECT().Tree().Return(tree, nil)
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
 			args := &validation.CheckPostCommitArgs{Reference: issueBranch}
 			_, err := validation.CheckPostCommit(mockRepo, commit, args)
@@ -399,7 +398,7 @@ var _ = Describe("Validation", func() {
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			tree := &object.Tree{Entries: []object.TreeEntry{{}, {}}}
-			commit.EXPECT().GetTree().Return(tree, nil)
+			commit.EXPECT().Tree().Return(tree, nil)
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
 			args := &validation.CheckPostCommitArgs{Reference: issueBranch}
 			_, err := validation.CheckPostCommit(mockRepo, commit, args)
@@ -412,7 +411,7 @@ var _ = Describe("Validation", func() {
 			commit.EXPECT().NumParents().Return(1)
 			commit.EXPECT().GetHash().Return(plumbing2.MakeCommitHash("hash"))
 			tree := &object.Tree{Entries: []object.TreeEntry{{Name: "body", Mode: filemode.Dir}}}
-			commit.EXPECT().GetTree().Return(tree, nil)
+			commit.EXPECT().Tree().Return(tree, nil)
 			mockRepo.EXPECT().IsAncestor(gomock.Any(), gomock.Any()).Return(nil)
 			args := &validation.CheckPostCommitArgs{Reference: issueBranch}
 			_, err := validation.CheckPostCommit(mockRepo, commit, args)

@@ -12,6 +12,36 @@ const (
 	Length64 = 64
 )
 
+// Bytes represents a byte slice
+type Bytes []byte
+
+// Bytes returns a slice of bytes
+func (b Bytes) Bytes() []byte {
+	return b
+}
+
+// Big returns the bytes as big integer
+func (b Bytes) Big() *big.Int { return new(big.Int).SetBytes(b.Bytes()) }
+
+// Equal checks equality between h and o
+func (b Bytes) Equal(o Bytes32) bool { return bytes.Equal(b.Bytes(), o.Bytes()) }
+
+func (b Bytes) String() string { return b.HexStr() }
+
+// HexStr encodes the bytes to hex.
+// noPrefix removes '0x' prefix.
+func (b Bytes) HexStr(noPrefix ...bool) string { return ToHex(b.Bytes(), noPrefix...) }
+
+// Hex encodes the bytes to hex
+func (b Bytes) Hex() []byte {
+	dst := make([]byte, hex.EncodedLen(len(b)))
+	hex.Encode(dst, b.Bytes())
+	return dst
+}
+
+// IsEmpty checks whether the object is empty (having zero values)
+func (b Bytes) IsEmpty() bool { return len(b) == 0 }
+
 // Bytes32 represents a 32-bytes value
 type Bytes32 [Length32]byte
 

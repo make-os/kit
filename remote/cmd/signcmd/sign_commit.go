@@ -3,6 +3,7 @@ package signcmd
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/asaskevich/govalidator"
@@ -162,6 +163,15 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *Sign
 	// Create & set request token to remote URLs in config
 	if _, err = args.RemoteURLTokenUpdater(targetRepo, args.Remote, txDetail, key, args.ResetTokens); err != nil {
 		return err
+	}
+
+	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
+	// This is required to allow git-sign learn the passphrase for unlocking the push key.
+	// If we met it unset, set a deferred function to unset the var once done.
+	passVar := cmd.MakePassEnvVar(config.AppName, targetRepo.GetName())
+	if len(os.Getenv(passVar)) == 0 {
+		os.Setenv(passVar, args.PushKeyPass)
+		defer func() { os.Setenv(passVar, "") }()
 	}
 
 	// Create a new quiet commit if recent commit amendment is not desired

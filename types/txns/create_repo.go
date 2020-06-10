@@ -33,7 +33,7 @@ func NewBareTxRepoCreate() *TxRepoCreate {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxRepoCreate) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return tx.EncodeMulti(enc,
 		tx.Type,
 		tx.Nonce,
 		tx.Fee,

@@ -1,10 +1,7 @@
 package repo
 
 import (
-	"bytes"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -12,19 +9,75 @@ import (
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/state"
+	"gopkg.in/src-d/go-git.v4/plumbing/storer"
 
 	"gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/src-d/go-git.v4/storage"
 
 	"github.com/pkg/errors"
-	"github.com/thoas/go-funk"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/format/objfile"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
 var ErrNotAnAncestor = fmt.Errorf("not an ancestor")
+
+// Get opens a local repository and returns a handle.
+func Get(path string) (types.LocalRepo, error) {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return nil, err
+	}
+	return &Repo{
+		Repository: repo,
+		Path:       path,
+	}, nil
+}
+
+// GetLocalRepoFunc describes a function for getting a local repository handle
+type GetLocalRepoFunc func(gitBinPath, path string) (types.LocalRepo, error)
+
+func GetWithLiteGit(gitBinPath, path string) (types.LocalRepo, error) {
+	r, err := Get(path)
+	if err != nil {
+		return nil, err
+	}
+	r.(*Repo).LiteGit = NewLiteGit(gitBinPath, path)
+	return r, nil
+}
+
+// GetAtWorkingDir returns a RepoContext instance pointed to the repository
+// in the current working directory.
+func GetAtWorkingDir(gitBinDir string) (types.LocalRepo, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get current working directory")
+	}
+
+	// Since we expect the working directory to be a git working tree,
+	// we need to get a repo instance to verify it
+	repo, err := GetWithLiteGit(gitBinDir, wd)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open repository")
+	} else if repoCfg, _ := repo.Config(); repoCfg.Core.IsBare {
+		return nil, errors.New("expected a working tree. this is a bare repository")
+	}
+
+	return repo, nil
+}
+
+// GetObjectsSize returns the total size of the given objects.
+func GetObjectsSize(repo types.LocalRepo, objects []string) (uint64, error) {
+	var size int64
+	for _, hash := range objects {
+		objSize, err := repo.GetObjectSize(hash)
+		if err != nil {
+			return 0, err
+		}
+		size += objSize
+	}
+	return uint64(size), nil
+}
 
 // Repo provides functions for accessing and modifying
 // a repository loaded by the remote server.
@@ -32,7 +85,6 @@ type Repo struct {
 	*LiteGit
 	*git.Repository
 	Path          string
-	Name          string
 	NamespaceName string
 	Namespace     *state.Namespace
 	State         *state.Repository
@@ -41,6 +93,13 @@ type Repo struct {
 // GetState returns the repository's network state
 func (r *Repo) GetState() *state.Repository {
 	return r.State
+}
+
+// Tags return all tag references in the repository.
+// If you want to check to see if the tag is an annotated tag, you can call
+// TagObject on the hash Reference
+func (r *Repo) Tags() (storer.ReferenceIter, error) {
+	return r.Repository.Tags()
 }
 
 // SetState sets the repository's network state
@@ -57,7 +116,7 @@ func (r *Repo) Head() (string, error) {
 	return ref.Name().String(), nil
 }
 
-// GetPath returns the repository's path
+// GetPath returns the bare repository path.
 func (r *Repo) GetPath() string {
 	return r.Path
 }
@@ -134,11 +193,11 @@ func (r *Repo) GetReferences() (refs []plumbing.ReferenceName, err error) {
 
 // GetName returns the name of the repo
 func (r *Repo) GetName() string {
-	return r.Name
+	return r.getNameFromPath()
 }
 
-// GetNameFromPath returns the name of the repo
-func (r *Repo) GetNameFromPath() string {
+// getNameFromPath returns the name of the repo
+func (r *Repo) getNameFromPath() string {
 	_, name := filepath.Split(r.Path)
 	return name
 }
@@ -194,36 +253,9 @@ func (r *Repo) GetObject(objHash string) (object.Object, error) {
 	return obj, nil
 }
 
-// GetEncodedObject returns an object in decompressed state
-func (r *Repo) GetEncodedObject(objHash string) (plumbing.EncodedObject, error) {
-	obj, err := r.Object(plumbing.AnyObject, plumbing.NewHash(objHash))
-	if err != nil {
-		return nil, err
-	}
-	encoded := &plumbing.MemoryObject{}
-	if err = obj.Encode(encoded); err != nil {
-		return nil, err
-	}
-	return encoded, nil
-}
-
 // GetObjectSize returns the size of a decompressed object
 func (r *Repo) GetObjectSize(objHash string) (int64, error) {
-	obj, err := r.GetEncodedObject(objHash)
-	if err != nil {
-		return 0, err
-	}
-	return obj.Size(), nil
-}
-
-// GetObjectDiskSize returns the size of the object as it exist on the system
-func (r *Repo) GetObjectDiskSize(objHash string) (int64, error) {
-	path := filepath.Join(r.Path, "objects", objHash[:2], objHash[2:])
-	fi, err := os.Stat(path)
-	if err != nil {
-		return 0, err
-	}
-	return fi.Size(), nil
+	return r.Storer.EncodedObjectSize(plumbing.NewHash(objHash))
 }
 
 // ObjectsOfCommit returns a hashes of objects a commit is composed of.
@@ -243,49 +275,6 @@ func (r *Repo) ObjectsOfCommit(hash string) ([]plumbing.Hash, error) {
 		hashes = append(hashes, e.Hash)
 	}
 	return hashes, nil
-}
-
-// WriteObjectToFile writes an object to the repository's objects store
-func (r *Repo) WriteObjectToFile(objectHash string, content []byte) error {
-
-	objDir := filepath.Join(r.Path, "objects", objectHash[:2])
-	os.MkdirAll(objDir, 0700)
-
-	fullPath := filepath.Join(objDir, objectHash[2:])
-	err := ioutil.WriteFile(fullPath, content, 0644)
-	if err != nil {
-		return errors.Wrap(err, "failed to write object")
-	}
-
-	return nil
-}
-
-// GetCompressedObject compressed version of an object
-func (r *Repo) GetCompressedObject(hash string) ([]byte, error) {
-	obj, err := r.GetEncodedObject(hash)
-	if err != nil {
-		return nil, err
-	}
-
-	rdr, err := obj.Reader()
-	if err != nil {
-		return nil, err
-	}
-
-	var buf = bytes.NewBuffer(nil)
-	objW := objfile.NewWriter(buf)
-	defer objW.Close()
-	if err := objW.WriteHeader(obj.Type(), obj.Size()); err != nil {
-		return nil, err
-	}
-
-	if _, err := io.Copy(objW, rdr); err != nil {
-		return nil, err
-	}
-
-	objW.Close()
-
-	return buf.Bytes(), nil
 }
 
 // GetStorer returns the storage engine of the repository
@@ -346,109 +335,4 @@ func (r *Repo) GetAncestors(commit *object.Commit, stopHash string, reverse bool
 	}
 
 	return
-}
-
-// Get returns a repository
-func Get(path string) (types.LocalRepo, error) {
-	repo, err := git.PlainOpen(path)
-	if err != nil {
-		return nil, err
-	}
-	return &Repo{
-		Repository: repo,
-		Path:       path,
-	}, nil
-}
-
-type LocalRepoGetter func(gitBinPath, path string) (types.LocalRepo, error)
-
-func GetWithLiteGit(gitBinPath, path string) (types.LocalRepo, error) {
-	repo, err := git.PlainOpen(path)
-	if err != nil {
-		return nil, err
-	}
-	return &Repo{
-		LiteGit:    NewLiteGit(gitBinPath, path),
-		Repository: repo,
-		Path:       path,
-	}, nil
-}
-
-// GetAtWorkingDir returns a RepoContext instance pointed to the repository
-// in the current working directory.
-func GetAtWorkingDir(gitBinDir string) (types.LocalRepo, error) {
-	wd, err := os.Getwd()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get current working directory")
-	}
-
-	// Since we expect the working directory to be a git working tree,
-	// we need to get a repo instance to verify it
-	repo, err := GetWithLiteGit(gitBinDir, wd)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to open repository")
-	} else if repoCfg, _ := repo.Config(); repoCfg.Core.IsBare {
-		return nil, errors.New("expected a working tree. this is a bare repository")
-	}
-
-	return repo, nil
-}
-
-// GetTreeEntries returns all entries in a tree.
-func GetTreeEntries(repo types.LocalRepo, treeHash string) ([]string, error) {
-	entries, err := repo.ListTreeObjectsSlice(treeHash, true, true)
-	if err != nil {
-		return nil, err
-	}
-	return entries, nil
-}
-
-// GetCommitHistory gets all objects that led/make up to the given commit, such as
-// parent commits, trees and blobs.
-// repo: The target repository
-// commit: The target commit
-// stopCommitHash: A commit hash that when found triggers the end of the search.
-func GetCommitHistory(repo types.LocalRepo, commit *object.Commit, stopCommitHash string) ([]string, error) {
-	var hashes []string
-
-	// Stop if commit hash matches the stop hash
-	if commit.Hash.String() == stopCommitHash {
-		return hashes, nil
-	}
-
-	// Register the commit and the tree hash
-	hashes = append(hashes, commit.Hash.String())
-	hashes = append(hashes, commit.TreeHash.String())
-
-	// Get entries of the tree (blobs and sub-trees)
-	entries, err := GetTreeEntries(repo, commit.TreeHash.String())
-	if err != nil {
-		return nil, err
-	}
-	hashes = append(hashes, entries...)
-
-	// Perform same operation on the parents of the commit
-	err = commit.Parents().ForEach(func(parent *object.Commit) error {
-		childHashes, err := GetCommitHistory(repo, parent, stopCommitHash)
-		if err != nil {
-			return err
-		}
-		hashes = append(hashes, childHashes...)
-		return nil
-	})
-
-	return funk.UniqString(hashes), err
-}
-
-// GetObjectsSize returns the total size of the given objects.
-func GetObjectsSize(repo types.LocalRepo, objects []string) (uint64, error) {
-	var size int64
-	for _, hash := range objects {
-		objSize, err := repo.GetObjectSize(hash)
-		if err != nil {
-			return 0, err
-		}
-		size += objSize
-	}
-	return uint64(size), nil
 }

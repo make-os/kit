@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/objx"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/util"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -356,10 +355,10 @@ type PostBody struct {
 	Close *bool `yaml:"close,omitempty" msgpack:"close,omitempty"`
 
 	// Issue Specific Fields
-	common.IssueFields `yaml:",omitempty,inline" msgpack:",omitempty"`
+	types.IssueFields `yaml:",omitempty,inline" msgpack:",omitempty"`
 
 	// Merge Request Fields
-	common.MergeRequestFields `yaml:",omitempty,inline" msgpack:",omitempty"`
+	types.MergeRequestFields `yaml:",omitempty,inline" msgpack:",omitempty"`
 }
 
 // WantOpen checks whether close=false
@@ -369,7 +368,7 @@ func (b *PostBody) WantOpen() bool {
 
 // IsAdminUpdate checks whether administrative fields where set
 func (b *PostBody) IsAdminUpdate() bool {
-	return b.Labels != nil || b.Assignees != nil || b.Close != nil || b.MergeRequestFields != (common.MergeRequestFields{})
+	return b.Labels != nil || b.Assignees != nil || b.Close != nil || b.MergeRequestFields != (types.MergeRequestFields{})
 }
 
 // PostBodyFromContentFrontMatter attempts to load the instance from

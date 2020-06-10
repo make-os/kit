@@ -31,7 +31,7 @@ func NewBareRepoProposalUpdate() *TxRepoProposalUpdate {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxRepoProposalUpdate) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return tx.EncodeMulti(enc,
 		tx.Type,
 		tx.Nonce,
 		tx.Value,

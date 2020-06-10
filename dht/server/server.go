@@ -1,34 +1,32 @@
-package dht
+package server
 
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"strings"
 	"time"
 
-	"github.com/ipfs/go-cid"
 	badger "github.com/ipfs/go-ds-badger"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	record "github.com/libp2p/go-libp2p-record"
 	"github.com/multiformats/go-multiaddr"
-	"github.com/multiformats/go-multihash"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/config"
+	dht2 "gitlab.com/makeos/mosdef/dht"
+	announcer2 "gitlab.com/makeos/mosdef/dht/announcer"
+	"gitlab.com/makeos/mosdef/dht/streamer"
+	"gitlab.com/makeos/mosdef/dht/streamer/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
-	"gitlab.com/makeos/mosdef/util"
 )
 
 var (
 	ProtocolPrefix = dht.ProtocolPrefix("/makeos")
-	ErrObjNotFound = fmt.Errorf("object not found")
 )
 
 // Server provides distributed hash table functionalities.
@@ -37,9 +35,9 @@ type Server struct {
 	host           host.Host
 	dht            *dht.IpfsDHT
 	log            logger.Logger
-	objectFinders  map[string]ObjectFinder
 	connTicker     *time.Ticker
-	commitStreamer CommitStreamer
+	objectStreamer types.ObjectStreamer
+	announcer      announcer2.Announcer
 }
 
 // New creates a new Server
@@ -69,7 +67,7 @@ func New(
 	server, err := dht.New(ctx, h,
 		ProtocolPrefix,
 		dht.Validator(record.NamespacedValidator{}),
-		dht.NamespacedValidator(GitObjectNamespace, validator{}),
+		dht.NamespacedValidator(dht2.ObjectNamespace, validator{}),
 		dht.Mode(dht.ModeServer),
 		dht.Datastore(ds))
 	if err != nil {
@@ -81,15 +79,15 @@ func New(
 	log.Info("Server service has started", "Address", fullAddr)
 
 	node := &Server{
-		host:          h,
-		dht:           server,
-		cfg:           cfg,
-		log:           log,
-		connTicker:    time.NewTicker(5 * time.Second),
-		objectFinders: make(map[string]ObjectFinder),
+		host:       h,
+		dht:        server,
+		cfg:        cfg,
+		log:        log,
+		connTicker: time.NewTicker(5 * time.Second),
+		announcer:  announcer2.NewBasicAnnouncer(server, 10, log.Module("announcer")),
 	}
 
-	node.commitStreamer = NewCommitStreamer(node, cfg)
+	node.objectStreamer = streamer.NewObjectStreamer(node, cfg)
 
 	return node, err
 }
@@ -102,11 +100,6 @@ func (dht *Server) DHT() *dht.IpfsDHT {
 // Host returns the wrapped IPFS host
 func (dht *Server) Host() host.Host {
 	return dht.host
-}
-
-// Host returns the wrapped IPFS host
-func (dht *Server) Finders() map[string]ObjectFinder {
-	return dht.objectFinders
 }
 
 // Addr returns the p2p multiaddr of the dht host
@@ -164,23 +157,19 @@ func (dht *Server) Bootstrap() error {
 
 // Start starts the DHT
 func (dht *Server) Start() error {
-	go dht.tryConnect()
+	go dht.connector()
+	dht.announcer.Start()
 	return nil
 }
 
-// tryConnect periodically attempts to connect the node to a peer
+// connector periodically attempts to connect the node to a peer
 // if the routing table has no peer
-func (dht *Server) tryConnect() {
+func (dht *Server) connector() {
 	for range dht.connTicker.C {
 		if len(dht.dht.RoutingTable().ListPeers()) == 0 {
 			dht.Bootstrap()
 		}
 	}
-}
-
-// RegisterObjFinder registers a finder to handle module-targetted find operations
-func (dht *Server) RegisterObjFinder(module string, finder ObjectFinder) {
-	dht.objectFinders[module] = finder
 }
 
 // Peers returns a list of all peers
@@ -193,14 +182,14 @@ func (dht *Server) Peers() (peers []string) {
 
 // Store adds a value corresponding to the given key
 func (dht *Server) Store(ctx context.Context, key string, value []byte) error {
-	ctx, cancel := context.WithTimeout(ctx, time.Second*2)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	return dht.dht.PutValue(ctx, key, value)
 }
 
 // Lookup searches for a value corresponding to the given key
 func (dht *Server) Lookup(ctx context.Context, key string) ([]byte, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Second*15)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	return dht.dht.GetValue(ctx, key)
 }
@@ -208,7 +197,7 @@ func (dht *Server) Lookup(ctx context.Context, key string) ([]byte, error) {
 // GetProviders finds peers that have announced their capability to
 // provide a value for the given key.
 func (dht *Server) GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo, error) {
-	id, err := MakeCid(key)
+	id, err := dht2.MakeCid(key)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +207,7 @@ func (dht *Server) GetProviders(ctx context.Context, key []byte) ([]peer.AddrInf
 		return nil, err
 	}
 
-	// For providers whose address are not included, find their address(es) from the
+	// For providers whose addresses are not included, find their address(es) from the
 	// peer store and attach it to them.
 	// Note: We are doing this here because the DHT logic does not add them when
 	// it should have. (remove once fixed in go-libp2p-kad-dht)
@@ -233,144 +222,32 @@ func (dht *Server) GetProviders(ctx context.Context, key []byte) ([]peer.AddrInf
 	return peers, nil
 }
 
-// BasicCommitStreamer returns the commit streamer
-func (dht *Server) CommitStreamer() CommitStreamer {
-	return dht.commitStreamer
+// ObjectStreamer returns the commit streamer
+func (dht *Server) ObjectStreamer() types.ObjectStreamer {
+	return dht.objectStreamer
 }
 
-// MakeCid creates a content ID
-func MakeCid(data []byte) (cid.Cid, error) {
-	hash, err := multihash.Sum(data, multihash.BLAKE2B_MAX, -1)
-	if err != nil {
-		return cid.Cid{}, err
-	}
-	return cid.NewCidV1(cid.GitRaw, hash), nil
-}
-
-// Announce informs the network that it can provide value for the given key
-func (dht *Server) Announce(ctx context.Context, key []byte) error {
-	id, err := MakeCid(key)
-	if err != nil {
-		return err
-	}
-	return dht.dht.Provide(ctx, id, true)
+// Announce asynchronously informs the network that it can provide value for the given key
+func (dht *Server) Announce(key []byte) error {
+	dht.announcer.Announce(key)
+	return nil
 }
 
 // Close closes the host
-func (dht *Server) Close() error {
+func (dht *Server) Stop() error {
+	var err error
+
 	if dht.connTicker != nil {
 		dht.connTicker.Stop()
 	}
+
+	if dht.announcer != nil {
+		dht.announcer.Stop()
+	}
+
 	if dht.host != nil {
-		return dht.host.Close()
-	}
-	return nil
-}
-
-// fetchValue requests sends a query to a peer
-func (dht *Server) fetchValue(
-	ctx context.Context,
-	query *DHTObjectQuery,
-	peer peer.AddrInfo) ([]byte, error) {
-
-	if len(peer.Addrs) == 0 {
-		return nil, fmt.Errorf("no known provider")
+		err = dht.host.Close()
 	}
 
-	dht.host.Peerstore().AddAddr(peer.ID, peer.Addrs[0], peerstore.TempAddrTTL)
-	str, err := dht.host.NewStream(ctx, peer.ID, "/fetch/1")
-	if err != nil {
-		return nil, err
-	}
-	defer str.Close()
-
-	_, err = str.Write(query.Bytes())
-	if err != nil {
-		return nil, err
-	}
-
-	val, err := ioutil.ReadAll(str)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(val) == 0 {
-		return nil, ErrObjNotFound
-	}
-
-	return val, nil
-}
-
-// GetObject returns an object from a provider
-func (dht *Server) GetObject(
-	ctx context.Context,
-	query *DHTObjectQuery) (obj []byte, err error) {
-
-	addrs, err := dht.GetProviders(ctx, query.ObjectKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get providers")
-	}
-
-	err = ErrObjNotFound
-	for i := 0; i < len(addrs); i++ {
-		addr := addrs[i]
-
-		// If this address matches the local host, we should get the object locally
-		if addr.ID.String() == dht.host.ID().String() {
-			finder := dht.objectFinders[query.Module]
-			if finder == nil {
-				return nil, fmt.Errorf("finder for module `%s` not registered", query.Module)
-			}
-			obj, err = finder.FindObject(query.ObjectKey)
-			if err != nil {
-				err = errors.Wrap(err, "finder error")
-				continue
-			} else if obj == nil {
-				err = ErrObjNotFound
-				continue
-			}
-			return
-		}
-
-		obj, err = dht.fetchValue(ctx, query, addr)
-		if err != nil {
-			continue
-		}
-
-		return
-	}
-
-	return nil, err
-}
-
-// HandleFetch processes incoming fetch requests
-func (dht *Server) HandleFetch(s network.Stream) error {
-	defer s.Close()
-
-	bz := make([]byte, 256)
-	if _, err := s.Read(bz); err != nil {
-		return errors.Wrap(err, "failed to read query")
-	}
-
-	var query DHTObjectQuery
-	if err := util.ToObject(bz, &query); err != nil {
-		return errors.Wrap(err, "failed to decode query")
-	}
-
-	finder := dht.objectFinders[query.Module]
-	if finder == nil {
-		msg := fmt.Sprintf("finder for module `%s` not registered", query.Module)
-		return fmt.Errorf("failed to process query: %s", msg)
-	}
-
-	objBz, err := finder.FindObject(query.ObjectKey)
-	if err != nil {
-		return errors.Wrapf(err, "failed to find requested object (%s)", string(query.ObjectKey))
-	}
-
-	if _, err := s.Write(objBz); err != nil {
-		return errors.Wrap(err, "failed to Write back find result")
-	}
-
-	return nil
+	return err
 }

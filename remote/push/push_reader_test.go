@@ -2,12 +2,12 @@ package push_test
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 
-	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/push"
+	types2 "gitlab.com/makeos/mosdef/remote/push/types"
 	repo3 "gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/remote/types"
@@ -15,8 +15,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/thoas/go-funk"
-
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
@@ -47,6 +45,7 @@ var _ = Describe("PushReader", func() {
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
 		repo, err = repo3.GetWithLiteGit(cfg.Node.GitBinPath, path)
+		_ = repo
 		Expect(err).To(BeNil())
 	})
 
@@ -68,86 +67,43 @@ var _ = Describe("PushReader", func() {
 		})
 	})
 
-	Describe("pushhandler.ObjRefMap", func() {
-		Describe(".GetObjectsOf", func() {
-			It("should return expected objects", func() {
-				m := push.ObjRefMap(map[string][]string{
-					"obj1": {"ref1", "ref2"},
-					"obj2": {"ref", "ref2"},
-					"obj3": {"ref1", "ref3"},
-				})
-				objs := m.GetObjectsOf("ref1")
-				Expect(objs).To(HaveLen(2))
-				Expect(objs).To(ConsistOf("obj1", "obj3"))
-			})
-		})
-
-		Describe(".RemoveRef", func() {
-			Describe(".GetObjectsOf", func() {
-				It("should remove ref2 from obj2 ", func() {
-					m := push.ObjRefMap(map[string][]string{
-						"obj1": {"ref1", "ref2"},
-						"obj2": {"ref", "ref2"},
-						"obj3": {"ref1", "ref3"},
-					})
-					err := m.RemoveRef("obj2", "ref2")
-					Expect(err).To(BeNil())
-					Expect(m["obj2"]).To(HaveLen(1))
-					Expect(m["obj2"]).To(ConsistOf("ref"))
-				})
-
-				It("should return err if object is not found", func() {
-					m := push.ObjRefMap(map[string][]string{
-						"obj1": {"ref1", "ref2"},
-					})
-					err := m.RemoveRef("obj2", "ref2")
-					Expect(err).ToNot(BeNil())
-					Expect(err.Error()).To(Equal("object not found"))
-				})
-			})
-		})
-	})
-
-	Describe("pushReader", func() {
+	Describe(".Read", func() {
 		var pr *push.PushReader
 		var dst = bytes.NewBuffer(nil)
 		var err error
 
 		BeforeEach(func() {
-			oldState := plumbing2.GetRepoState(repo)
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-			newState := plumbing2.GetRepoState(repo)
+			commit1Hash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
+			note := types2.Note{
+				TargetRepo: repo,
+				References: []*types2.PushedReference{
+					{Name: "refs/heads/master", NewHash: commit1Hash, OldHash: plumbing.ZeroHash.String()},
+				},
+			}
 
-			reader, err := push.MakePackfile(repo, oldState, newState)
-			Expect(err).To(BeNil())
-			packData, err := ioutil.ReadAll(reader)
+			reader, err := push.MakeReferenceUpdateRequestPack(&note)
 			Expect(err).To(BeNil())
 
 			pr, err = push.NewPushReader(&WriteCloser{Buffer: dst}, repo)
-			pr.Write(packData)
-			err = pr.Read()
+			Expect(err).To(BeNil())
+
+			io.Copy(pr, reader)
+			err = pr.Read(nil)
 		})
 
 		It("should return no error", func() {
 			Expect(err).To(BeNil())
 		})
 
-		Specify("that the push reader decoded 3 objects", func() {
-			Expect(pr.Objects).To(HaveLen(3))
+		Specify("that the push reader decoded 1 object", func() {
+			Expect(pr.Objects).To(HaveLen(1))
 		})
 
 		Specify("that only 1 ref is decoded", func() {
 			refs := pr.References
 			Expect(refs).To(HaveLen(1))
 			Expect(refs.Names()).To(Equal([]string{"refs/heads/master"}))
-		})
-
-		Specify("object ref map has 3 objects with value 'refs/heads/master'", func() {
-			Expect(pr.ObjectsRefs).To(HaveLen(3))
-			Expect(funk.Values(pr.ObjectsRefs)).To(Equal([][]string{
-				{"refs/heads/master"},
-				{"refs/heads/master"},
-				{"refs/heads/master"}}))
 		})
 	})
 })

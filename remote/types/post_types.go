@@ -1,4 +1,4 @@
-package common
+package types
 
 // IssueFields contains post body fields specific to issue post
 type IssueFields struct {

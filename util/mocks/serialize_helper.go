@@ -50,6 +50,20 @@ func (mr *MockDecoderMockRecorder) DecodeMulti(v ...interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecodeMulti", reflect.TypeOf((*MockDecoder)(nil).DecodeMulti), v...)
 }
 
+// Skip mocks base method
+func (m *MockDecoder) Skip() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Skip")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Skip indicates an expected call of Skip
+func (mr *MockDecoderMockRecorder) Skip() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Skip", reflect.TypeOf((*MockDecoder)(nil).Skip))
+}
+
 // MockEncoder is a mock of Encoder interface
 type MockEncoder struct {
 	ctrl     *gomock.Controller

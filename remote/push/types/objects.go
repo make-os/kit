@@ -2,7 +2,6 @@ package types
 
 import (
 	"github.com/shopspring/decimal"
-	"github.com/thoas/go-funk"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/remote/types"
@@ -11,9 +10,9 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-// PushNotice implements types.PushNotice
-type PushNote struct {
-	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
+// PushNote implements types.PushNote
+type Note struct {
+	util.CodecUtil `json:"-" msgpack:"-" mapstructure:"-"`
 
 	// TargetRepo is the target repo local instance
 	TargetRepo types.LocalRepo `json:",flatten,omitempty" msgpack:"-" mapstructure:"-"`
@@ -42,64 +41,72 @@ type PushNote struct {
 	// PusherAcctNonce is the next nonce of the pusher's account
 	PusherAcctNonce uint64 `json:"accountNonce,omitempty" msgpack:"accountNonce,omitempty"`
 
-	// NodeSig is the signature of the node that created the PushNotice
-	NodeSig []byte `json:"nodeSig,omitempty" msgpack:"nodeSig,omitempty"`
+	// RemoteNodeSig is the signature of the note creator
+	RemoteNodeSig []byte `json:"creatorSig,omitempty" msgpack:"creatorSig,omitempty"`
 
-	// NodePubKey is the public key of the push note signer
-	NodePubKey util.Bytes32 `json:"nodePubKey,omitempty" msgpack:"nodePubKey,omitempty"`
+	// RemotePubKey is the public key of the note creator/signer
+	CreatorPubKey util.Bytes32 `json:"creatorPubKey,omitempty" msgpack:"creatorPubKey,omitempty"`
 
 	// serialized caches the serialized bytes of object
-	bytes []byte `msgpack:"-"`
+	bytes []byte
+
+	// FromPeer indicates that the note was received from a remote
+	// peer and not created by the local node
+	FromPeer bool `json:"-" msgpack:"-"`
+
+	// LocalSize is the actual size of the pushed objects from the push note receiver's perspective.
+	// This field is for local use; It will not be serialized along with other fields for transport.
+	LocalSize uint64 `json:"-" msgpack:"-"`
 }
 
 // GetTargetRepo returns the target repository
-func (pt *PushNote) GetTargetRepo() types.LocalRepo {
+func (pt *Note) GetTargetRepo() types.LocalRepo {
 	return pt.TargetRepo
 }
 
 // GetTargetRepo returns the target repository
-func (pt *PushNote) SetTargetRepo(repo types.LocalRepo) {
+func (pt *Note) SetTargetRepo(repo types.LocalRepo) {
 	pt.TargetRepo = repo
 }
 
-// GetNodePubKey returns the push node's public key
-func (pt *PushNote) GetNodePubKey() util.Bytes32 {
-	return pt.NodePubKey
+// GetCreatorPubKey returns the note creator's public key
+func (pt *Note) GetCreatorPubKey() util.Bytes32 {
+	return pt.CreatorPubKey
 }
 
 // GetNodeSignature returns the push note signature
-func (pt *PushNote) GetNodeSignature() []byte {
-	return pt.NodeSig
+func (pt *Note) GetNodeSignature() []byte {
+	return pt.RemoteNodeSig
 }
 
 // GetPusherKeyID returns the pusher pusher key ID
-func (pt *PushNote) GetPusherKeyID() []byte {
+func (pt *Note) GetPusherKeyID() []byte {
 	return pt.PushKeyID
 }
 
 // GetPusherAddress returns the pusher's address
-func (pt *PushNote) GetPusherAddress() util.Address {
+func (pt *Note) GetPusherAddress() util.Address {
 	return pt.PusherAddress
 }
 
 // GetPusherAccountNonce returns the pusher account nonce
-func (pt *PushNote) GetPusherAccountNonce() uint64 {
+func (pt *Note) GetPusherAccountNonce() uint64 {
 	return pt.PusherAcctNonce
 }
 
 // GetPusherKeyIDString is like GetPusherKeyID but returns hex string, prefixed with 0x
-func (pt *PushNote) GetPusherKeyIDString() string {
+func (pt *Note) GetPusherKeyIDString() string {
 	return crypto.BytesToPushKeyID(pt.PushKeyID)
 }
 
 // GetTimestamp returns the timestamp
-func (pt *PushNote) GetTimestamp() int64 {
+func (pt *Note) GetTimestamp() int64 {
 	return pt.Timestamp
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
-func (pt *PushNote) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+func (pt *Note) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return pt.EncodeMulti(enc,
 		pt.RepoName,
 		pt.Namespace,
 		pt.References,
@@ -108,12 +115,12 @@ func (pt *PushNote) EncodeMsgpack(enc *msgpack.Encoder) error {
 		pt.Size,
 		pt.Timestamp,
 		pt.PusherAcctNonce,
-		pt.NodeSig,
-		pt.NodePubKey)
+		pt.RemoteNodeSig,
+		pt.CreatorPubKey)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
-func (pt *PushNote) DecodeMsgpack(dec *msgpack.Decoder) error {
+func (pt *Note) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return pt.DecodeMulti(dec,
 		&pt.RepoName,
 		&pt.Namespace,
@@ -123,14 +130,14 @@ func (pt *PushNote) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&pt.Size,
 		&pt.Timestamp,
 		&pt.PusherAcctNonce,
-		&pt.NodeSig,
-		&pt.NodePubKey)
+		&pt.RemoteNodeSig,
+		&pt.CreatorPubKey)
 }
 
 // Bytes returns a serialized version of the object. If this function was previously called,
 // the cached output from the previous call is returned instead of re-serializing the object.
 // Set recompute to true to force re-serialization.
-func (pt *PushNote) Bytes(recompute ...bool) []byte {
+func (pt *Note) Bytes(recompute ...bool) []byte {
 	if (len(recompute) > 0 && recompute[0]) || len(pt.bytes) == 0 {
 		pt.bytes = pt.BytesNoCache()
 		return pt.bytes
@@ -139,85 +146,83 @@ func (pt *PushNote) Bytes(recompute ...bool) []byte {
 }
 
 // BytesNoCache returns the serialized version of the object but does not cache it.
-func (pt *PushNote) BytesNoCache() []byte {
+func (pt *Note) BytesNoCache() []byte {
 	return util.ToBytes(pt)
 }
 
 // BytesNoSig returns a serialized version of the object without the signature
-func (pt *PushNote) BytesNoSig() []byte {
-	sig := pt.NodeSig
-	pt.NodeSig = nil
+func (pt *Note) BytesNoSig() []byte {
+	sig := pt.RemoteNodeSig
+	pt.RemoteNodeSig = nil
 	bz := pt.BytesNoCache()
-	pt.NodeSig = sig
+	pt.RemoteNodeSig = sig
 	return bz
 }
 
-// GetPushedObjects returns all objects from non-deleted pushed references.
-// ignoreDelRefs cause deleted references' objects to not be include in the result
-func (pt *PushNote) GetPushedObjects() []string {
-	objs := make(map[string]struct{})
-	for _, ref := range pt.GetPushedReferences() {
-		for _, obj := range ref.Objects {
-			objs[obj] = struct{}{}
-		}
-	}
-	return funk.Keys(objs).([]string)
-}
-
 // GetEcoSize returns a size of the push note used for economics calculation.
-func (pt *PushNote) GetEcoSize() uint64 {
+func (pt *Note) GetEcoSize() uint64 {
 	size := len(pt.Bytes())
 	return uint64(size)
 }
 
 // GetRepoName returns the name of the repo receiving the push
-func (pt *PushNote) GetRepoName() string {
+func (pt *Note) GetRepoName() string {
 	return pt.RepoName
 }
 
 // GetNamespace returns the target namespace
-func (pt *PushNote) GetNamespace() string {
+func (pt *Note) GetNamespace() string {
 	return pt.Namespace
 }
 
 // GetPushedReferences returns the pushed references
-func (pt *PushNote) GetPushedReferences() PushedReferences {
+func (pt *Note) GetPushedReferences() PushedReferences {
 	return pt.References
 }
 
 // Len returns the length of the serialized tx
-func (pt *PushNote) Len() uint64 {
+func (pt *Note) Len() uint64 {
 	return uint64(len(pt.Bytes()))
 }
 
 // ID returns the hash of the push note
-func (pt *PushNote) ID(recompute ...bool) util.Bytes32 {
+func (pt *Note) ID(recompute ...bool) util.Bytes32 {
 	return util.BytesToBytes32(crypto2.Blake2b256(pt.Bytes(recompute...)))
 }
 
+// IsFromPeer checks whether the note was sent by a remote peer
+func (pt *Note) IsFromPeer() bool {
+	return pt.FromPeer
+}
+
 // BytesAndID returns the serialized version of the tx and the id
-func (pt *PushNote) BytesAndID(recompute ...bool) ([]byte, util.Bytes32) {
+func (pt *Note) BytesAndID(recompute ...bool) ([]byte, util.Bytes32) {
 	bz := pt.Bytes(recompute...)
 	return bz, util.BytesToBytes32(crypto2.Blake2b256(bz))
 }
 
 // TxSize is the size of the transaction
-func (pt *PushNote) TxSize() uint {
+func (pt *Note) TxSize() uint {
 	return uint(len(pt.Bytes()))
 }
 
-// BillableSize is the size of the transaction + pushed objects
-func (pt *PushNote) BillableSize() uint64 {
+// GetLocalSize returns the local size value
+func (pt *Note) GetLocalSize() uint64 {
+	return pt.LocalSize
+}
+
+// SizeForFeeCal is the size of the transaction + pushed objects
+func (pt *Note) SizeForFeeCal() uint64 {
 	return pt.GetEcoSize() + pt.Size
 }
 
 // GetSize returns the total pushed objects size
-func (pt *PushNote) GetSize() uint64 {
+func (pt *Note) GetSize() uint64 {
 	return pt.Size
 }
 
 // GetFee returns the total push fee
-func (pt *PushNote) GetFee() util.String {
+func (pt *Note) GetFee() util.String {
 	var fee = decimal.Zero
 	for _, ref := range pt.References {
 		if !ref.Fee.Empty() {
@@ -228,7 +233,7 @@ func (pt *PushNote) GetFee() util.String {
 }
 
 // GetValue returns the total value
-func (pt *PushNote) GetValue() util.String {
+func (pt *Note) GetValue() util.String {
 	var value = decimal.Zero
 	for _, ref := range pt.References {
 		if !ref.Value.Empty() {
@@ -252,23 +257,53 @@ func (r *EndorsedReferences) ID() util.Bytes32 {
 	return util.BytesToBytes32(crypto2.Blake2b256(bz))
 }
 
-// PushEndorsement is used to endorse a push note
+// Endorsement represents a push endorsement
+type Endorsement interface {
+	// ID returns the hash of the object
+	ID() util.Bytes32
+	// Bytes returns a serialized version of the object
+	Bytes() []byte
+	// BytesAndID returns the serialized version of the tx and the id
+	BytesAndID() ([]byte, util.Bytes32)
+}
+
+// Endorsement is used to endorse a push note
 type PushEndorsement struct {
-	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	NoteID                util.Bytes32       `json:"noteID" msgpack:"noteID,omitempty" mapstructure:"noteID"`
-	References            EndorsedReferences `json:"endorsedRefs" msgpack:"endorsedRefs,omitempty" mapstructure:"endorsedRefs"`
-	EndorserPubKey        util.Bytes32       `json:"endorser" msgpack:"endorser,omitempty" mapstructure:"endorser"`
-	Sig                   util.Bytes64       `json:"sig" msgpack:"sig,omitempty" mapstructure:"sig"`
+	util.CodecUtil `json:"-" msgpack:"-" mapstructure:"-"`
+
+	// NoteID is the ID of the push note to be endorsed.
+	NoteID util.Bytes `json:"noteID" msgpack:"noteID,omitempty" mapstructure:"noteID"`
+
+	// References contains the current hash of the push references
+	References EndorsedReferences `json:"refs" msgpack:"refs,omitempty" mapstructure:"refs"`
+
+	// EndorserPubKey is the public key of the endorser
+	EndorserPubKey util.Bytes32 `json:"pubKey" msgpack:"pubKey,omitempty" mapstructure:"pubKey"`
+
+	// SigBLS is a 64 bytes BLS signature created using the BLS key of the endorser.
+	SigBLS []byte `json:"sigBLS" msgpack:"sigBLS,omitempty" mapstructure:"sigBLS"`
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (e *PushEndorsement) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return e.EncodeMulti(enc, e.NoteID, e.References, e.EndorserPubKey.Bytes(), e.Sig.Bytes())
+	return e.EncodeMulti(enc,
+		e.NoteID,
+		e.References,
+		e.EndorserPubKey.Bytes(),
+		e.SigBLS)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (e *PushEndorsement) DecodeMsgpack(dec *msgpack.Decoder) error {
-	return e.DecodeMulti(dec, &e.NoteID, &e.References, &e.EndorserPubKey, &e.Sig)
+	err := e.DecodeMulti(dec,
+		&e.NoteID,
+		&e.References,
+		&e.EndorserPubKey,
+		&e.SigBLS)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // ID returns the hash of the object
@@ -281,22 +316,23 @@ func (e *PushEndorsement) Bytes() []byte {
 	return util.ToBytes(e)
 }
 
-// BytesNoSig returns the serialized version of
-func (e *PushEndorsement) BytesNoSig() []byte {
-	sig := e.Sig
-	e.Sig = util.EmptyBytes64
+// BytesForBLSSig returns the serialized version of the endorsement for creating BLS signature.
+// It will not include the following fields: SigBLS and EndorserPubKey.
+func (e *PushEndorsement) BytesForBLSSig() []byte {
+	sigBLS, spk := e.SigBLS, e.EndorserPubKey
+	e.SigBLS, e.EndorserPubKey = nil, util.EmptyBytes32
 	msg := e.Bytes()
-	e.Sig = sig
+	e.SigBLS, e.EndorserPubKey = sigBLS, spk
 	return msg
 }
 
-// BytesNoSigAndSenderPubKey returns the serialized version of
-func (e *PushEndorsement) BytesNoSigAndSenderPubKey() []byte {
-	sig, spk := e.Sig, e.EndorserPubKey
-	e.Sig = util.EmptyBytes64
-	e.EndorserPubKey = util.EmptyBytes32
+// BytesForSig returns the serialized version of the endorsement for creating BLS signature.
+// It will not include the following fields: SigBLS
+func (e *PushEndorsement) BytesForSig() []byte {
+	sigBLS := e.SigBLS
+	e.SigBLS = nil
 	msg := e.Bytes()
-	e.Sig, e.EndorserPubKey = sig, spk
+	e.SigBLS = sigBLS
 	return msg
 }
 
@@ -311,7 +347,7 @@ func (e *PushEndorsement) Clone() *PushEndorsement {
 	cp := &PushEndorsement{}
 	cp.NoteID = e.NoteID
 	cp.EndorserPubKey = util.BytesToBytes32(e.EndorserPubKey.Bytes())
-	cp.Sig = util.BytesToBytes64(e.Sig.Bytes())
+	cp.SigBLS = e.SigBLS
 	cp.References = []*EndorsedReference{}
 	for _, rh := range e.References {
 		cpEndorsement := &EndorsedReference{}
@@ -323,8 +359,8 @@ func (e *PushEndorsement) Clone() *PushEndorsement {
 	return cp
 }
 
-// PushPooler represents a pool for holding and ordering git push transactions
-type PushPooler interface {
+// PushPool represents a pool for ordering git push transactions
+type PushPool interface {
 
 	// Register a push transaction to the pool.
 	//
@@ -339,7 +375,7 @@ type PushPooler interface {
 	// combined fee rate of the replaceable transactions.
 	//
 	// noValidation disables tx validation
-	Add(tx PushNotice, noValidation ...bool) error
+	Add(tx PushNote, noValidation ...bool) error
 
 	// Full returns true if the pool is full
 	Full() bool
@@ -348,16 +384,16 @@ type PushPooler interface {
 	RepoHasPushNote(repo string) bool
 
 	// Get finds and returns a push note
-	Get(noteID string) *PushNote
+	Get(noteID string) *Note
 
 	// Len returns the number of items in the pool
 	Len() int
 
 	// Remove removes a push note
-	Remove(pushNote PushNotice)
+	Remove(pushNote PushNote)
 }
 
-type PushNotice interface {
+type PushNote interface {
 	GetTargetRepo() types.LocalRepo
 	SetTargetRepo(repo types.LocalRepo)
 	GetPusherKeyID() []byte
@@ -369,9 +405,9 @@ type PushNotice interface {
 	Bytes(recompute ...bool) []byte
 	BytesNoCache() []byte
 	BytesNoSig() []byte
-	GetPushedObjects() []string
+	GetLocalSize() uint64
 	GetEcoSize() uint64
-	GetNodePubKey() util.Bytes32
+	GetCreatorPubKey() util.Bytes32
 	GetNodeSignature() []byte
 	GetRepoName() string
 	GetNamespace() string
@@ -381,35 +417,34 @@ type PushNotice interface {
 	ID(recompute ...bool) util.Bytes32
 	BytesAndID(recompute ...bool) ([]byte, util.Bytes32)
 	TxSize() uint
-	BillableSize() uint64
+	SizeForFeeCal() uint64
 	GetSize() uint64
 	GetFee() util.String
 	GetValue() util.String
+	IsFromPeer() bool
 }
 
 // PushedReference represents a reference that was pushed by git client
 type PushedReference struct {
-	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	Name                  string               `json:"name" msgpack:"name,omitempty"`       // The full name of the reference
-	OldHash               string               `json:"oldHash" msgpack:"oldHash,omitempty"` // The hash of the reference before the push
-	NewHash               string               `json:"newHash" msgpack:"newHash,omitempty"` // The hash of the reference after the push
-	Nonce                 uint64               `json:"nonce" msgpack:"nonce,omitempty"`     // The next repo nonce of the reference
-	Objects               []string             `json:"objects" msgpack:"objects,omitempty"` // A list of objects pushed to the reference
-	MergeProposalID       string               `json:"mergeID" msgpack:"mergeID,omitempty"` // The merge proposal ID the reference is complaint with.
-	Fee                   util.String          `json:"fee" msgpack:"fee,omitempty"`         // The network fee to pay for pushing the reference
-	Value                 util.String          `json:"value" msgpack:"value,omitempty"`     // Additional fee to pay for special operation
-	PushSig               []byte               `json:"pushSig" msgpack:"pushSig,omitempty"` // The signature of from the push request token
-	Data                  *types.ReferenceData `json:"data" msgpack:"data,omitempty"`       // Contains updates to the reference data
+	util.CodecUtil  `json:"-" msgpack:"-" mapstructure:"-"`
+	Name            string               `json:"name" msgpack:"name,omitempty"`       // The full name of the reference
+	OldHash         string               `json:"oldHash" msgpack:"oldHash,omitempty"` // The hash of the reference before the push
+	NewHash         string               `json:"newHash" msgpack:"newHash,omitempty"` // The hash of the reference after the push
+	Nonce           uint64               `json:"nonce" msgpack:"nonce,omitempty"`     // The next repo nonce of the reference
+	MergeProposalID string               `json:"mergeID" msgpack:"mergeID,omitempty"` // The merge proposal ID the reference is complaint with.
+	Fee             util.String          `json:"fee" msgpack:"fee,omitempty"`         // The network fee to pay for pushing the reference
+	Value           util.String          `json:"value" msgpack:"value,omitempty"`     // Additional fee to pay for special operation
+	PushSig         []byte               `json:"pushSig" msgpack:"pushSig,omitempty"` // The signature of from the push request token
+	Data            *types.ReferenceData `json:"data" msgpack:"data,omitempty"`       // Contains updates to the reference data
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (pr *PushedReference) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return pr.EncodeMulti(enc,
 		pr.Name,
 		pr.OldHash,
 		pr.NewHash,
 		pr.Nonce,
-		pr.Objects,
 		pr.MergeProposalID,
 		pr.Fee,
 		pr.Value,
@@ -424,7 +459,6 @@ func (pr *PushedReference) DecodeMsgpack(dec *msgpack.Decoder) error {
 		&pr.OldHash,
 		&pr.NewHash,
 		&pr.Nonce,
-		&pr.Objects,
 		&pr.MergeProposalID,
 		&pr.Fee,
 		&pr.Value,

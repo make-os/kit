@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/dht"
+	types2 "gitlab.com/makeos/mosdef/dht/server/types"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/remote/push/types"
@@ -16,20 +16,20 @@ import (
 	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
-func txCheckNoIssue(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
+func txCheckNoIssue(tx types.PushNote, dht types2.DHT, logic core.Logic) error {
 	return nil
 }
 
-func txCheckErr(err error) func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
-	return func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
+func txCheckErr(err error) func(tx types.PushNote, dht types2.DHT, logic core.Logic) error {
+	return func(tx types.PushNote, dht types2.DHT, logic core.Logic) error {
 		return err
 	}
 }
 
-var _ = Describe("PushPooler", func() {
+var _ = Describe("PushPool", func() {
 	var pool *PushPool
-	var tx *types.PushNote
-	var tx2 *types.PushNote
+	var tx *types.Note
+	var tx2 *types.Note
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var mockDHT *mocks.MockDHT
@@ -48,18 +48,18 @@ var _ = Describe("PushPooler", func() {
 	})
 
 	BeforeEach(func() {
-		tx = &types.PushNote{
+		tx = &types.Note{
 			RepoName:        "repo",
-			NodeSig:         []byte("sig"),
+			RemoteNodeSig:   []byte("sig"),
 			PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 			PusherAcctNonce: 2,
 			References: []*types.PushedReference{
 				{Name: "refs/heads/master", Fee: "0.2", Nonce: 1},
 			},
 		}
-		tx2 = &types.PushNote{
+		tx2 = &types.Note{
 			RepoName:        "repo2",
-			NodeSig:         []byte("sig_2"),
+			RemoteNodeSig:   []byte("sig_2"),
 			PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID2),
 			PusherAcctNonce: 2,
 			References: []*types.PushedReference{
@@ -94,14 +94,14 @@ var _ = Describe("PushPooler", func() {
 
 	Describe(".Add", func() {
 		var err error
-		var baseNote *types.PushNote
+		var baseNote *types.Note
 
 		BeforeEach(func() {
-			baseNote = &types.PushNote{
-				RepoName:  "repo",
-				NodeSig:   []byte("sig"),
-				PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID),
-				Timestamp: 100000000,
+			baseNote = &types.Note{
+				RepoName:      "repo",
+				RemoteNodeSig: []byte("sig"),
+				PushKeyID:     crypto2.MustDecodePushKeyID(pushKeyID),
+				Timestamp:     100000000,
 			}
 		})
 
@@ -198,7 +198,7 @@ var _ = Describe("PushPooler", func() {
 
 		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool but failed to read the ref index of the existing reference", func() {
-			var tx_X *types.PushNote
+			var tx_X *types.Note
 			BeforeEach(func() {
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
@@ -238,7 +238,7 @@ var _ = Describe("PushPooler", func() {
 
 		When("a reference (ref0) in new tx (tx_X) match an identical reference (ref0) of tx (tx_Y) "+
 			"that already exist in the pool and tx_X has a higher fee", func() {
-			var tx_X *types.PushNote
+			var tx_X *types.Note
 			BeforeEach(func() {
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
@@ -265,11 +265,11 @@ var _ = Describe("PushPooler", func() {
 
 		When("a reference (ref0) in new tx (tx_X) match identical references (ref0) of tx (tx_Y) and (ref0) of tx (tx_Z) "+
 			"that already exist in the pool and tx_X has a higher total fee", func() {
-			var txX, txY, txZ *types.PushNote
+			var txX, txY, txZ *types.Note
 			BeforeEach(func() {
-				txY = &types.PushNote{
+				txY = &types.Note{
 					RepoName:        "repo",
-					NodeSig:         []byte("sig"),
+					RemoteNodeSig:   []byte("sig"),
 					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
@@ -278,9 +278,9 @@ var _ = Describe("PushPooler", func() {
 					},
 				}
 
-				txZ = &types.PushNote{
+				txZ = &types.Note{
 					RepoName:        "repo",
-					NodeSig:         []byte("sig"),
+					RemoteNodeSig:   []byte("sig"),
 					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
@@ -289,9 +289,9 @@ var _ = Describe("PushPooler", func() {
 					},
 				}
 
-				txX = &types.PushNote{
+				txX = &types.Note{
 					RepoName:        "repo",
-					NodeSig:         []byte("sig"),
+					RemoteNodeSig:   []byte("sig"),
 					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
@@ -325,11 +325,11 @@ var _ = Describe("PushPooler", func() {
 
 		When("references (ref0, ref1) in new tx (tx_X) match identical references (ref0) of tx (tx_Y) and (ref0) of tx (tx_Z) "+
 			"that already exist in the pool and tx_X has lower total fee", func() {
-			var txX, txY, txZ *types.PushNote
+			var txX, txY, txZ *types.Note
 			BeforeEach(func() {
-				txY = &types.PushNote{
+				txY = &types.Note{
 					RepoName:        "repo",
-					NodeSig:         []byte("sig"),
+					RemoteNodeSig:   []byte("sig"),
 					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
@@ -338,9 +338,9 @@ var _ = Describe("PushPooler", func() {
 					},
 				}
 
-				txZ = &types.PushNote{
+				txZ = &types.Note{
 					RepoName:        "repo",
-					NodeSig:         []byte("sig"),
+					RemoteNodeSig:   []byte("sig"),
 					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
@@ -349,9 +349,9 @@ var _ = Describe("PushPooler", func() {
 					},
 				}
 
-				txX = &types.PushNote{
+				txX = &types.Note{
 					RepoName:        "repo",
-					NodeSig:         []byte("sig"),
+					RemoteNodeSig:   []byte("sig"),
 					PushKeyID:       crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
@@ -376,10 +376,10 @@ var _ = Describe("PushPooler", func() {
 		})
 
 		When("validation check fails", func() {
-			var txX *types.PushNote
+			var txX *types.Note
 			BeforeEach(func() {
-				txX = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID),
+				txX = &types.Note{
+					RepoName: "repo", RemoteNodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -398,10 +398,10 @@ var _ = Describe("PushPooler", func() {
 		})
 
 		When("noValidation argument is true", func() {
-			var txX *types.PushNote
+			var txX *types.Note
 			BeforeEach(func() {
-				txX = &types.PushNote{
-					RepoName: "repo", NodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID),
+				txX = &types.Note{
+					RepoName: "repo", RemoteNodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID),
 					Timestamp:       100000000,
 					PusherAcctNonce: 2,
 					References: []*types.PushedReference{
@@ -637,9 +637,9 @@ var _ = Describe("repoNotesIndex", func() {
 		var idx repoNotesIndex
 
 		When("repo has 1 txA and txA is removed", func() {
-			var txA *types.PushNote
+			var txA *types.Note
 			BeforeEach(func() {
-				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
+				txA = &types.Note{RepoName: "repo1", RemoteNodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
 				idx = map[string][]*containerItem{}
 				idx.add("repo1", &containerItem{Note: txA})
 				Expect(idx["repo1"]).To(HaveLen(1))
@@ -652,10 +652,10 @@ var _ = Describe("repoNotesIndex", func() {
 		})
 
 		When("repo has 2 txs (txA and TxB) and txA is removed", func() {
-			var txA, txB *types.PushNote
+			var txA, txB *types.Note
 			BeforeEach(func() {
-				txA = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
-				txB = &types.PushNote{RepoName: "repo1", NodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID), Timestamp: 200000000}
+				txA = &types.Note{RepoName: "repo1", RemoteNodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID), Timestamp: 100000000}
+				txB = &types.Note{RepoName: "repo1", RemoteNodeSig: []byte("sig"), PushKeyID: crypto2.MustDecodePushKeyID(pushKeyID), Timestamp: 200000000}
 				idx = map[string][]*containerItem{}
 				idx.add("repo1", &containerItem{Note: txA})
 				idx.add("repo1", &containerItem{Note: txB})

@@ -50,8 +50,8 @@ var (
 	// DefaultDHTAddress is the default DHT listening address
 	DefaultDHTAddress = "127.0.0.1:9003"
 
-	// DefaultRepoManagerAddress is the default DHT listening address
-	DefaultRepoManagerAddress = "127.0.0.1:9004"
+	// DefaultRemoteServerAddress is the default remote server listening address
+	DefaultRemoteServerAddress = "127.0.0.1:9004"
 )
 
 // GenesisData returns the genesis data

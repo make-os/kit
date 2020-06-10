@@ -10,7 +10,6 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/spf13/cast"
 	"github.com/vmihailenco/msgpack"
-	"gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -67,8 +66,9 @@ func (td ReferenceTxDetails) GetNonce() uint64 {
 
 // ReferenceData stores additional data extracted from a pushed reference.
 type ReferenceData struct {
-	common.IssueFields
-	common.MergeRequestFields
+	util.CodecUtil
+	IssueFields
+	MergeRequestFields
 	// Close indicates that the reference is closed
 	Close *bool `json:"close" msgpack:"close,omitempty"`
 }
@@ -83,7 +83,7 @@ func (rd *ReferenceData) EncodeMsgpack(enc *msgpack.Encoder) error {
 		assignees = strings.Join(*rd.Assignees, " ")
 	}
 
-	return enc.Encode([]interface{}{
+	return rd.EncodeMulti(enc, []interface{}{
 		rd.Close,
 		rd.BaseBranch,
 		rd.BaseBranchHash,
@@ -97,7 +97,7 @@ func (rd *ReferenceData) EncodeMsgpack(enc *msgpack.Encoder) error {
 func (rd *ReferenceData) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 
 	var data []interface{}
-	if err = dec.Decode(&data); err != nil {
+	if err = rd.DecodeMulti(dec, &data); err != nil {
 		return
 	}
 
@@ -140,7 +140,7 @@ func (rd *ReferenceData) DecodeMsgpack(dec *msgpack.Decoder) (err error) {
 // basic network transaction fields, flags and post validation
 // data required to construct a valid push transaction.
 type TxDetail struct {
-	util.SerializerHelper
+	util.CodecUtil
 	RepoName        string      `json:"repo" msgpack:"repo,omitempty" mapstructure:"repo"`                // The target repo name
 	RepoNamespace   string      `json:"namespace" msgpack:"namespace,omitempty" mapstructure:"namespace"` // The target repo namespace
 	Reference       string      `json:"reference" msgpack:"reference,omitempty" mapstructure:"reference"` // The target reference

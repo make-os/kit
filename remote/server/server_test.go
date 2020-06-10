@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
@@ -43,7 +42,7 @@ var _ = Describe("Server", func() {
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
-		repoMgr = NewManager(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic,
+		repoMgr = NewRemoteServer(cfg, fmt.Sprintf(":%d", port), mockLogic.Logic,
 			mockDHT, mockMempool, mockBlockGetter)
 
 		repoName = util.RandString(5)
@@ -54,6 +53,7 @@ var _ = Describe("Server", func() {
 	})
 
 	AfterEach(func() {
+		repoMgr.Stop()
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})
@@ -149,109 +149,75 @@ var _ = Describe("Server", func() {
 		})
 	})
 
-	Describe(".FindObject", func() {
-		When("key is not valid", func() {
-			It("should return err", func() {
-				_, err := repoMgr.FindObject([]byte("invalid"))
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("invalid repo object key"))
-			})
-		})
-
-		When("key includes an object hash with unexpected length", func() {
-			It("should return err", func() {
-				_, err := repoMgr.FindObject([]byte("repo/object_hash"))
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("invalid object hash"))
-			})
-		})
-
-		When("target repo does not exist", func() {
-			It("should return err", func() {
-				_, err := repoMgr.FindObject([]byte("repo/" + strings.Repeat("0", 40)))
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("repository does not exist"))
-			})
-		})
-
-		When("target object does not exist", func() {
-			It("should return err", func() {
-				_, err := repoMgr.FindObject([]byte(repoName + "/" + strings.Repeat("0", 40)))
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("object not found"))
-			})
-		})
-	})
-
-	Describe(".cacheNoteSender", func() {
+	Describe(".registerNoteSender", func() {
 		It("should add to cache", func() {
-			Expect(repoMgr.pushNoteSenders.Len()).To(Equal(0))
-			repoMgr.cacheNoteSender("sender", "txID")
-			Expect(repoMgr.pushNoteSenders.Len()).To(Equal(1))
+			Expect(repoMgr.noteSenders.Len()).To(Equal(0))
+			repoMgr.registerNoteSender("sender", "txID")
+			Expect(repoMgr.noteSenders.Len()).To(Equal(1))
 		})
 	})
 
-	Describe(".isPushNoteSender", func() {
+	Describe(".isNoteSender", func() {
 		It("should return true if sender + txID is cached", func() {
-			repoMgr.cacheNoteSender("sender", "txID")
-			Expect(repoMgr.pushNoteSenders.Len()).To(Equal(1))
-			isSender := repoMgr.isPushNoteSender("sender", "txID")
+			repoMgr.registerNoteSender("sender", "txID")
+			Expect(repoMgr.noteSenders.Len()).To(Equal(1))
+			isSender := repoMgr.isNoteSender("sender", "txID")
 			Expect(isSender).To(BeTrue())
 		})
 
 		It("should return false if sender + txID is not cached", func() {
-			isSender := repoMgr.isPushNoteSender("sender", "txID")
+			isSender := repoMgr.isNoteSender("sender", "txID")
 			Expect(isSender).To(BeFalse())
 		})
 	})
 
-	Describe(".cachePushEndSender", func() {
+	Describe(".registerEndorsementSender", func() {
 		It("should add to cache", func() {
-			Expect(repoMgr.pushEndSenders.Len()).To(Equal(0))
-			repoMgr.cachePushEndSender("sender", "txID")
-			Expect(repoMgr.pushEndSenders.Len()).To(Equal(1))
+			Expect(repoMgr.endorsementSenders.Len()).To(Equal(0))
+			repoMgr.registerEndorsementSender("sender", "txID")
+			Expect(repoMgr.endorsementSenders.Len()).To(Equal(1))
 		})
 	})
 
-	Describe(".isPushEndSender", func() {
+	Describe(".isEndorsementSender", func() {
 		It("should return true if sender + txID is cached", func() {
-			repoMgr.cachePushEndSender("sender", "txID")
-			Expect(repoMgr.pushEndSenders.Len()).To(Equal(1))
-			isSender := repoMgr.isPushEndSender("sender", "txID")
+			repoMgr.registerEndorsementSender("sender", "txID")
+			Expect(repoMgr.endorsementSenders.Len()).To(Equal(1))
+			isSender := repoMgr.isEndorsementSender("sender", "txID")
 			Expect(isSender).To(BeTrue())
 		})
 
 		It("should return false if sender + txID is not cached", func() {
-			isSender := repoMgr.isPushEndSender("sender", "txID")
+			isSender := repoMgr.isEndorsementSender("sender", "txID")
 			Expect(isSender).To(BeFalse())
 		})
 	})
 
-	Describe(".addPushNoteEndorsement", func() {
-		When("1 PushEndorsement for id=abc is added", func() {
+	Describe(".registerEndorsementOfNote", func() {
+		When("1 Endorsement for id=abc is added", func() {
 			BeforeEach(func() {
-				pushEnd := &types.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
-				repoMgr.addPushNoteEndorsement("abc", pushEnd)
+				pushEnd := &types.PushEndorsement{SigBLS: util.RandBytes(5)}
+				repoMgr.registerEndorsementOfNote("abc", pushEnd)
 			})
 
-			Specify("that id=abc has 1 PushEndorsement", func() {
-				Expect(repoMgr.pushEndorsements.Len()).To(Equal(1))
-				pushEndList := repoMgr.pushEndorsements.Get("abc")
+			Specify("that id=abc has 1 Endorsement", func() {
+				Expect(repoMgr.endorsementsReceived.Len()).To(Equal(1))
+				pushEndList := repoMgr.endorsementsReceived.Get("abc")
 				Expect(pushEndList).To(HaveLen(1))
 			})
 		})
 
-		When("2 PushEnds for id=abc are added", func() {
+		When("2 endorsements for id=abc are added", func() {
 			BeforeEach(func() {
-				pushEnd := &types.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
-				pushEnd2 := &types.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))}
-				repoMgr.addPushNoteEndorsement("abc", pushEnd)
-				repoMgr.addPushNoteEndorsement("abc", pushEnd2)
+				pushEnd := &types.PushEndorsement{SigBLS: util.RandBytes(5)}
+				pushEnd2 := &types.PushEndorsement{SigBLS: util.RandBytes(5)}
+				repoMgr.registerEndorsementOfNote("abc", pushEnd)
+				repoMgr.registerEndorsementOfNote("abc", pushEnd2)
 			})
 
-			Specify("that id=abc has 2 PushEndorsement", func() {
-				Expect(repoMgr.pushEndorsements.Len()).To(Equal(1))
-				pushEndList := repoMgr.pushEndorsements.Get("abc")
+			Specify("that id=abc has 2 Endorsement", func() {
+				Expect(repoMgr.endorsementsReceived.Len()).To(Equal(1))
+				pushEndList := repoMgr.endorsementsReceived.Get("abc")
 				Expect(pushEndList).To(HaveLen(2))
 			})
 		})

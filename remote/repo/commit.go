@@ -60,7 +60,7 @@ func (c *WrappedCommit) GetHash() plumbing.Hash {
 	return c.Hash
 }
 
-// GetTree returns the tree from the commit
+// Tree returns the tree from the commit
 func (c *WrappedCommit) GetTree() (*object.Tree, error) {
 	return c.Tree()
 }

@@ -17,7 +17,6 @@ import (
 	r "gitlab.com/makeos/mosdef/remote/repo"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
 	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
@@ -399,14 +398,14 @@ content`, "commit 2")
 		})
 
 		It("should not set 'label' when it is nil", func() {
-			body := &plumbing.PostBody{Close: nil, IssueFields: common.IssueFields{Labels: nil}}
+			body := &plumbing.PostBody{Close: nil, IssueFields: types.IssueFields{Labels: nil}}
 			str := plumbing.PostBodyToString(body)
 			Expect(str).To(Equal(""))
 		})
 
 		It("should set 'label' when it is not nil", func() {
 			lbls := []string{}
-			body := &plumbing.PostBody{Close: nil, IssueFields: common.IssueFields{Labels: &lbls}}
+			body := &plumbing.PostBody{Close: nil, IssueFields: types.IssueFields{Labels: &lbls}}
 			str := plumbing.PostBodyToString(body)
 			Expect(str).To(Equal("---\nlabels: []\n---\n"))
 		})
@@ -414,13 +413,13 @@ content`, "commit 2")
 
 	Describe("PostBody.IsAdminUpdate", func() {
 		It("should return true when labels, assignees and close are set", func() {
-			Expect((&plumbing.PostBody{IssueFields: common.IssueFields{Labels: &[]string{"val"}}}).IsAdminUpdate()).To(BeTrue())
-			Expect((&plumbing.PostBody{IssueFields: common.IssueFields{Assignees: &[]string{"val"}}}).IsAdminUpdate()).To(BeTrue())
+			Expect((&plumbing.PostBody{IssueFields: types.IssueFields{Labels: &[]string{"val"}}}).IsAdminUpdate()).To(BeTrue())
+			Expect((&plumbing.PostBody{IssueFields: types.IssueFields{Assignees: &[]string{"val"}}}).IsAdminUpdate()).To(BeTrue())
 			Expect((&plumbing.PostBody{}).IsAdminUpdate()).To(BeFalse())
 			Expect((&plumbing.PostBody{Close: &cls}).IsAdminUpdate()).To(BeTrue())
 			Expect((&plumbing.PostBody{Close: &dontClose}).IsAdminUpdate()).To(BeTrue())
-			Expect((&plumbing.PostBody{MergeRequestFields: common.MergeRequestFields{}}).IsAdminUpdate()).To(BeFalse())
-			Expect((&plumbing.PostBody{MergeRequestFields: common.MergeRequestFields{BaseBranch: "base1"}}).IsAdminUpdate()).To(BeTrue())
+			Expect((&plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{}}).IsAdminUpdate()).To(BeFalse())
+			Expect((&plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{BaseBranch: "base1"}}).IsAdminUpdate()).To(BeTrue())
 		})
 	})
 

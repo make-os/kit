@@ -14,7 +14,6 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/keystore/types"
 	"gitlab.com/makeos/mosdef/remote/policy"
-	"gitlab.com/makeos/mosdef/remote/repo"
 	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types/core"
@@ -209,7 +208,7 @@ func UpdateRemoteURLsWithPushToken(
 		// Set repo name and namespace
 		txp := *txDetail
 		txp.RepoName = pathPath[1]
-		if pathPath[0] != repo.DefaultNS {
+		if pathPath[0] != remotetypes.DefaultNS {
 			txp.RepoNamespace = pathPath[0]
 		}
 

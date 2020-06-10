@@ -10,106 +10,52 @@ import (
 var _ = Describe("Cache", func() {
 
 	var cache *Cache
+	var expEntryCache *Cache
 
 	BeforeEach(func() {
+		DefaultRemovalInterval = 5 * time.Second
 		cache = NewCache(10)
+		expEntryCache = NewCacheWithExpiringEntry(10)
 	})
 
-	Describe(".Register", func() {
+	Describe(".Add", func() {
 		It("should successfully add an item", func() {
-			key := "myKey"
-			val := "myVal"
 			Expect(cache.container.Len()).To(Equal(0))
-			cache.Add(key, val)
-			Expect(cache.container.Len()).To(Equal(1))
-		})
-	})
-
-	Describe(".AddWithExp", func() {
-		It("should successfully add an item", func() {
-			key := "myKey"
-			val := "myVal"
-			Expect(cache.container.Len()).To(Equal(0))
-			cache.AddWithExp(key, val, time.Now().Add(time.Hour))
+			cache.Add("key", "val")
 			Expect(cache.container.Len()).To(Equal(1))
 		})
 
-		It("should successfully add an item and remove expired items", func() {
-			cache.AddWithExp("some_key", "some_value", time.Now().Add(time.Millisecond*100))
-			time.Sleep(100 * time.Millisecond)
-			Expect(cache.container.Len()).To(Equal(1))
-			cache.AddWithExp("key", "val", time.Now().Add(time.Hour))
-			Expect(cache.container.Len()).To(Equal(1))
-		})
-
-		It("should successfully add an item and not remove unexpired items", func() {
-			cache.AddWithExp("some_key", "some_value", time.Now().Add(time.Millisecond*100))
-			time.Sleep(10 * time.Millisecond)
-			Expect(cache.container.Len()).To(Equal(1))
-			cache.AddWithExp("key", "val", time.Now().Add(time.Hour))
-			Expect(cache.container.Len()).To(Equal(2))
-		})
-	})
-
-	Describe(".NewActiveCache", func() {
-
-		Context("cache should remove expired item", func() {
-			DefaultRemovalInterval = 50 * time.Millisecond
-			cache := NewActiveCache(1)
-
-			It("should successfully remove item", func() {
-				cache.AddWithExp("key1", "value1", time.Now().Add(10*time.Millisecond))
-				Expect(cache.Len()).To(Equal(1))
-				time.Sleep(100 * time.Millisecond)
-				Expect(cache.Len()).To(Equal(0))
-			})
-		})
-	})
-
-	Describe(".AddMulti", func() {
-
-		var cache *Cache
-		BeforeEach(func() {
-			cache = NewCache(10)
-		})
-
-		It("should successfully add multiple values", func() {
-			values := []interface{}{1, 2, "3"}
-			cache.AddValues(time.Time{}, values)
-			Expect(cache.Len()).To(Equal(1))
-		})
-	})
-
-	Describe(".HasMulti", func() {
-
-		var cache *Cache
-		var values []interface{}
-
-		Context("when multi-value serialized key exist in the cache", func() {
-			BeforeEach(func() {
-				cache = NewCache(10)
-				values = []interface{}{1, 2, "3"}
-				cache.AddValues(time.Time{}, values...)
-				Expect(cache.Len()).To(Equal(1))
+		Context("using expiring entry cache", func() {
+			It("should successfully add an item with an expiry time", func() {
+				expAt := time.Now().Add(20 * time.Second)
+				Expect(expEntryCache.container.Len()).To(Equal(0))
+				expEntryCache.Add("key", "val", expAt)
+				Expect(expEntryCache.container.Len()).To(Equal(1))
+				val, _ := expEntryCache.container.Get("key")
+				Expect(val.(*cacheValue).expAt).To(Equal(expAt))
 			})
 
-			It("should return true", func() {
-				has := cache.HasMulti(values...)
-				Expect(has).To(BeTrue())
-			})
-		})
-
-		Context("when multi-value serialized key does not exist in cache", func() {
-			BeforeEach(func() {
-				cache = NewCache(10)
-				values = []interface{}{1, 2, "3"}
-				cache.AddValues(time.Time{}, values...)
-				Expect(cache.Len()).To(Equal(1))
+			It("should remove previously expired entry", func() {
+				expAt := time.Now().Add(1 * time.Millisecond)
+				expEntryCache.Add("key", "val", expAt)
+				Expect(expEntryCache.container.Len()).To(Equal(1))
+				time.Sleep(2 * time.Millisecond)
+				expEntryCache.Add("key2", "val")
+				Expect(expEntryCache.container.Len()).To(Equal(1))
+				val, _ := expEntryCache.container.Get("key2")
+				Expect(val).ToNot(BeNil())
 			})
 
-			It("should when multi-value serialized key exist in the cache", func() {
-				has := cache.HasMulti([]interface{}{1, 2, 3})
-				Expect(has).To(BeFalse())
+			Context("periodic removal test", func() {
+				It("should remove expired entry", func() {
+					DefaultRemovalInterval = 1 * time.Millisecond
+					expEntryCache = NewCacheWithExpiringEntry(10)
+					expAt := time.Now().Add(1 * time.Millisecond)
+					expEntryCache.Add("key", "val", expAt)
+					Expect(expEntryCache.container.Len()).To(Equal(1))
+					time.Sleep(2 * time.Millisecond)
+					Expect(expEntryCache.container.Len()).To(Equal(0))
+				})
 			})
 		})
 	})

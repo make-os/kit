@@ -5,11 +5,11 @@ import (
 
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/dht"
+	"gitlab.com/makeos/mosdef/dht/server/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
+	"gitlab.com/makeos/mosdef/remote/fetcher"
 	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
 	remotetypes "gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/modules"
 )
 
@@ -20,31 +20,15 @@ type PushKeyGetter func(pushKeyID string) (crypto.PublicKey, error)
 type PoolGetter interface {
 
 	// GetPushPool returns the push pool
-	GetPushPool() pushtypes.PushPooler
+	GetPushPool() pushtypes.PushPool
 
 	// GetMempool returns the transaction pool
 	GetMempool() Mempool
 }
 
-// RepoGetter describes an interface for getting a local repository
-type RepoGetter interface {
-
-	// Get returns a repo handle
-	GetRepo(name string) (remotetypes.LocalRepo, error)
-}
-
-// RepoUpdater describes an interface for updating a repository from a push transaction
-type RepoUpdater interface {
-	// UpdateRepoWithTxPush attempts to merge a push transaction to a repository and
-	// also update the repository's state tree.
-	UpdateRepoWithTxPush(tx types.BaseTx) error
-}
-
 // RemoteServer provides functionality for manipulating repositories.
 type RemoteServer interface {
 	PoolGetter
-	RepoGetter
-	RepoUpdater
 
 	// Log returns the logger
 	Log() logger.Logger
@@ -54,7 +38,7 @@ type RemoteServer interface {
 
 	// GetRepoState returns the state of the repository at the given path
 	// options: Allows the caller to configure how and what state are gathered
-	GetRepoState(target remotetypes.LocalRepo, options ...remotetypes.KVOption) (remotetypes.BareRepoState, error)
+	GetRepoState(target remotetypes.LocalRepo, options ...remotetypes.KVOption) (remotetypes.BareRepoRefsState, error)
 
 	// GetPushKeyGetter returns getter function for fetching a push key
 	GetPushKeyGetter() PushKeyGetter
@@ -77,24 +61,26 @@ type RemoteServer interface {
 	// BroadcastMsg broadcast messages to peers
 	BroadcastMsg(ch byte, msg []byte)
 
-	// BroadcastPushObjects broadcasts repo push note and push endorsement
-	BroadcastPushObjects(note pushtypes.PushNotice) error
-
-	// SetPushKeyPubKeyGetter sets the PGP public key query function
-	SetPushKeyPubKeyGetter(pkGetter PushKeyGetter)
+	// BroadcastNoteAndEndorsement broadcasts repo push note and push endorsement
+	BroadcastNoteAndEndorsement(note pushtypes.PushNote) error
 
 	// RegisterAPIHandlers registers server API handlers
 	RegisterAPIHandlers(agg modules.ModuleHub)
+
+	// AnnounceObject announces a git object to the DHT network
+	AnnounceObject(hash []byte) error
+
+	// AnnounceRepoObjects announces all objects in a repository
+	AnnounceRepoObjects(repoName string) error
+
+	// GetFetcher returns the fetcher service
+	GetFetcher() fetcher.ObjectFetcher
 
 	// GetPruner returns the repo pruner
 	GetPruner() remotetypes.RepoPruner
 
 	// GetDHT returns the dht service
-	GetDHT() dht.DHT
-
-	// ExecTxPush applies a push transaction to the local repository.
-	// If the node is a validator, only the target reference trees are updated.
-	ExecTxPush(tx types.BaseTx) error
+	GetDHT() types.DHT
 
 	// Shutdown shuts down the server
 	Shutdown(ctx context.Context)

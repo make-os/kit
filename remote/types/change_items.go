@@ -2,11 +2,6 @@ package types
 
 import "gitlab.com/makeos/mosdef/util"
 
-// Constants
-const (
-	RepoObjectModule = "repo-object"
-)
-
 type (
 	// ColChangeType describes a change to a collection item
 	ColChangeType int
@@ -38,14 +33,14 @@ type ChangeResult struct {
 	Changes []*ItemChange
 }
 
-// BareRepoState represents a repositories state
-type BareRepoState interface {
+// BareRepoRefsState represents a repositories state
+type BareRepoRefsState interface {
 	// GetReferences returns the references.
 	GetReferences() Items
 	// IsEmpty checks whether the state is empty
 	IsEmpty() bool
 	// GetChanges summarizes the changes between GetState s and y.
-	GetChanges(y BareRepoState) *Changes
+	GetChanges(y BareRepoRefsState) *Changes
 }
 
 // Changes describes reference changes that happened to a repository
@@ -71,14 +66,4 @@ type Items interface {
 	Len() int64
 	Bytes() []byte
 	Hash() util.Bytes32
-}
-
-// RepoPushEndorsement represents a push endorsement
-type RepoPushEndorsement interface {
-	// ID returns the hash of the object
-	ID() util.Bytes32
-	// Bytes returns a serialized version of the object
-	Bytes() []byte
-	// BytesAndID returns the serialized version of the tx and the id
-	BytesAndID() ([]byte, util.Bytes32)
 }

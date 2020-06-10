@@ -1268,20 +1268,6 @@ func (mr *MockDHTModuleMockRecorder) GetProviders(key interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProviders", reflect.TypeOf((*MockDHTModule)(nil).GetProviders), key)
 }
 
-// GetRepoObject mocks base method
-func (m *MockDHTModule) GetRepoObject(objURI string) []byte {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRepoObject", objURI)
-	ret0, _ := ret[0].([]byte)
-	return ret0
-}
-
-// GetRepoObject indicates an expected call of GetRepoObject
-func (mr *MockDHTModuleMockRecorder) GetRepoObject(objURI interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepoObject", reflect.TypeOf((*MockDHTModule)(nil).GetRepoObject), objURI)
-}
-
 // GetPeers mocks base method
 func (m *MockDHTModule) GetPeers() []string {
 	m.ctrl.T.Helper()

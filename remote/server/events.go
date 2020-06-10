@@ -23,7 +23,7 @@ func (sv *Server) subscribe() {
 			return fmt.Errorf("unexpected type (types.BaseTx)")
 		}
 		if tx.Is(txns.TxTypePush) {
-			sv.pushPool.Remove(tx.(*txns.TxPush).PushNote)
+			sv.pushPool.Remove(tx.(*txns.TxPush).Note)
 		}
 		return nil
 	}

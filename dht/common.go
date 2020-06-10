@@ -3,6 +3,9 @@ package dht
 import (
 	"bytes"
 	"fmt"
+
+	"github.com/ipfs/go-cid"
+	"github.com/multiformats/go-multihash"
 )
 
 const (
@@ -13,15 +16,24 @@ const (
 	MsgTypePack = "PACK"
 )
 
-// MakeCommitKey creates a commit query key
-func MakeCommitKey(hash []byte) []byte {
-	key := []byte(fmt.Sprintf("%s/", CommitKeyID))
+const (
+	ObjectKeyID     = "/o"
+	ObjectNamespace = "obj"
+)
+
+var (
+	ErrObjNotFound = fmt.Errorf("object not found")
+)
+
+// MakeObjectKey creates an object key
+func MakeObjectKey(hash []byte) []byte {
+	key := []byte(fmt.Sprintf("%s/", ObjectKeyID))
 	return append(key, hash...)
 }
 
-// parseCommitKey parses a commit query key
-func parseCommitKey(key []byte) ([]byte, error) {
-	parts := bytes.Split(key, []byte("/"))
+// ParseObjectKey parses an object key
+func ParseObjectKey(key []byte) ([]byte, error) {
+	parts := bytes.SplitN(key, []byte("/"), 3)
 	if len(parts) != 3 {
 		return nil, fmt.Errorf("malformed commit key")
 	}
@@ -33,9 +45,9 @@ func MakeWantMsg(repoName string, hash []byte) []byte {
 	return append([]byte(fmt.Sprintf("%s %s ", MsgTypeWant, repoName)), hash...)
 }
 
-// parseWantOrSendMsg parses a 'WANT/SEND' message
-func parseWantOrSendMsg(msg []byte) (repoName string, hash []byte, err error) {
-	parts := bytes.Fields(msg)
+// ParseWantOrSendMsg parses a 'WANT/SEND' message
+func ParseWantOrSendMsg(msg []byte) (repoName string, hash []byte, err error) {
+	parts := bytes.SplitN(msg, []byte(" "), 3)
 	if len(parts) != 3 {
 		return "", nil, fmt.Errorf("malformed message")
 	}
@@ -55,4 +67,18 @@ func MakeNopeMsg() []byte {
 // MakeSendMsg creates a 'SEND' message
 func MakeSendMsg(repoName string, hash []byte) []byte {
 	return append([]byte(fmt.Sprintf("%s %s ", MsgTypeSend, repoName)), hash...)
+}
+
+// MakeCid creates a content ID
+func MakeCid(data []byte) (cid.Cid, error) {
+	hash, err := multihash.Sum(data, multihash.BLAKE2B_MAX, -1)
+	if err != nil {
+		return cid.Cid{}, err
+	}
+	return cid.NewCidV1(cid.Raw, hash), nil
+}
+
+// MakeKey returns a key for storing an object
+func MakeKey(key string) string {
+	return fmt.Sprintf("/%s/%s", ObjectNamespace, key)
 }

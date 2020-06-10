@@ -464,7 +464,7 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error { return nil }
-				app.curWorkingBlock.Height = int64(10)
+				app.curBlock.Height = int64(10)
 				tx := txns.NewBareTxTicketUnbond(txns.TxTypeUnbondHostTicket)
 				tx.TicketHash = util.StrToBytes32("tid")
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
@@ -525,8 +525,8 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				tx = txns.NewBareTxPush()
-				tx.PushNote.(*pushtypes.PushNote).RepoName = "repo1"
-				tx.PushNote.(*pushtypes.PushNote).References = []*pushtypes.PushedReference{
+				tx.Note.(*pushtypes.Note).RepoName = "repo1"
+				tx.Note.(*pushtypes.Note).References = []*pushtypes.PushedReference{
 					{MergeProposalID: "0001"},
 				}
 				resp := &abcitypes.ResponseDeliverTx{}
@@ -551,7 +551,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("working_hash"))
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
-				app.curWorkingBlock.Height = 10
+				app.curBlock.Height = 10
 				app.heightToSaveNewValidators = 10
 				mockLogic.ValidatorKeeper.EXPECT().Index(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
 				mockLogic.AtomicLogic.EXPECT().Discard().Return()
@@ -610,7 +610,7 @@ var _ = Describe("App", func() {
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 				app.heightToSaveNewValidators = 100
 				app.unbondHostReqs = append(app.unbondHostReqs, util.StrToBytes32("ticket_hash"))
-				mockLogic.TicketManager.EXPECT().UpdateDecayBy(util.StrToBytes32("ticket_hash"), uint64(app.curWorkingBlock.Height))
+				mockLogic.TicketManager.EXPECT().UpdateDecayBy(util.StrToBytes32("ticket_hash"), uint64(app.curBlock.Height))
 				mockLogic.AtomicLogic.EXPECT().Commit().Return(nil)
 				app.logic = mockLogic.AtomicLogic
 

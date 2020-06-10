@@ -3,7 +3,6 @@ package repo_test
 import (
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -14,13 +13,11 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
-
 	"gitlab.com/makeos/mosdef/config"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/util"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
 var _ = Describe("RepoContext", func() {
@@ -41,6 +38,7 @@ var _ = Describe("RepoContext", func() {
 		repoName := util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		dotGitPath = filepath.Join(path, ".git")
+		_ = dotGitPath
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
 		r, err = rr.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
@@ -130,44 +128,12 @@ var _ = Describe("RepoContext", func() {
 		})
 	})
 
-	Describe(".GetEncodedObject", func() {
-		It("should return object if it exists", func() {
-			hash := testutil2.CreateBlob(path, "hello world")
-			obj, err := r.GetEncodedObject(hash)
-			Expect(err).To(BeNil())
-			Expect(obj).NotTo(BeNil())
-			Expect(obj.Hash().String()).To(Equal(hash))
-		})
-
-		It("should return error if object does not exists", func() {
-			obj, err := r.GetEncodedObject("e69de29bb2d1d6434b8b29ae775ad8c2e48c5391")
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(plumbing.ErrObjectNotFound))
-			Expect(obj).To(BeNil())
-		})
-	})
-
 	Describe(".GetObjectSize", func() {
 		It("should return size of content", func() {
 			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
 			hash, err := r.GetRecentCommitHash()
 			Expect(err).To(BeNil())
 			size, err := r.GetObjectSize(hash)
-			Expect(err).To(BeNil())
-			Expect(size).ToNot(Equal(int64(0)))
-		})
-	})
-
-	Describe(".GetObjectDiskSize", func() {
-		BeforeEach(func() {
-			r.SetPath(dotGitPath)
-		})
-
-		It("should return size of content", func() {
-			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-			hash, err := r.GetRecentCommitHash()
-			Expect(err).To(BeNil())
-			size, err := r.GetObjectDiskSize(hash)
 			Expect(err).To(BeNil())
 			Expect(size).ToNot(Equal(int64(0)))
 		})
@@ -201,46 +167,6 @@ var _ = Describe("RepoContext", func() {
 		})
 	})
 
-	Describe(".WriteObjectToFile", func() {
-		hash := "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
-
-		BeforeEach(func() {
-			r.SetPath(dotGitPath)
-			Expect(r.ObjectExist(hash)).To(BeFalse())
-		})
-
-		It("should successfully write object", func() {
-			content := []byte("hello world")
-			err := r.WriteObjectToFile(hash, content)
-			Expect(err).To(BeNil())
-
-			objPath := filepath.Join(dotGitPath, "objects", hash[:2], hash[2:])
-			fi, err := os.Stat(objPath)
-			Expect(err).To(BeNil())
-			Expect(fi.Size()).To(Equal(int64(len(content))))
-		})
-	})
-
-	Describe(".GetObjectsSize", func() {
-		var objs []string
-		var expectedSize = int64(0)
-		BeforeEach(func() {
-			testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-			it, _ := r.Objects()
-			it.ForEach(func(obj object.Object) error {
-				size, _ := r.GetObjectDiskSize(obj.ID().String())
-				expectedSize += size
-				return nil
-			})
-		})
-
-		It("should return expected size", func() {
-			size, err := rr.GetObjectsSize(r, objs)
-			Expect(err).To(BeNil())
-			Expect(size).To(Equal(uint64(expectedSize)))
-		})
-	})
-
 	Describe(".IsContributor", func() {
 		It("should return true when push key is a repo contributor", func() {
 			r.(*rr.Repo).State = &state2.Repository{Contributors: map[string]*state2.RepoContributor{key.PushAddr().String(): {}}}
@@ -254,147 +180,6 @@ var _ = Describe("RepoContext", func() {
 
 		It("should return false when push key is a namespace or repo contributor", func() {
 			Expect(r.IsContributor(key.PushAddr().String())).To(BeFalse())
-		})
-	})
-
-	Describe(".GetTreeEntries", func() {
-		var entries []string
-		When("no directory exist in tree", func() {
-			BeforeEach(func() {
-				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-				ci, _ := r.CommitObjects()
-				commit, _ := ci.Next()
-				entries, err = rr.GetTreeEntries(r, commit.TreeHash.String())
-				Expect(err).To(BeNil())
-			})
-
-			It("should have 1 entry", func() {
-				Expect(entries).To(HaveLen(1))
-			})
-		})
-
-		When("one directory with one file exist in tree", func() {
-			BeforeEach(func() {
-				testutil2.AppendDirAndCommitFile(path, "my_dir", "file_x.txt", "some data", "commit 2")
-				ci, _ := r.CommitObjects()
-				commit, _ := ci.Next()
-				entries, err = rr.GetTreeEntries(r, commit.TreeHash.String())
-				Expect(err).To(BeNil())
-			})
-
-			It("should have 2 entries (one tree and one blob)", func() {
-				Expect(entries).To(HaveLen(2))
-			})
-		})
-	})
-
-	Describe(".GetCommitHistory", func() {
-		When("there is a single commit", func() {
-			var history []string
-
-			BeforeEach(func() {
-				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-				ci, _ := r.CommitObjects()
-				var commits []*object.Commit
-				ci.ForEach(func(c *object.Commit) error {
-					commits = append(commits, c)
-					return nil
-				})
-				Expect(commits).To(HaveLen(1))
-				history, err = rr.GetCommitHistory(r, commits[0], "")
-				Expect(err).To(BeNil())
-			})
-
-			It("should have 3 history hashes (1 commit, 1 tree, 1 blob)", func() {
-				Expect(history).To(HaveLen(3))
-			})
-		})
-
-		When("there are two commits", func() {
-			var history []string
-
-			BeforeEach(func() {
-				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-				testutil2.AppendCommit(path, "file2.txt", "some text 2", "commit msg 2")
-				ci, _ := r.CommitObjects()
-				var commits []*object.Commit
-
-				// order is not guaranteed
-				ci.ForEach(func(c *object.Commit) error {
-					commits = append(commits, c)
-					return nil
-				})
-				Expect(commits).To(HaveLen(2))
-
-				sort.Slice(commits, func(i, j int) bool {
-					return commits[i].NumParents() < commits[j].NumParents()
-				})
-
-				history, err = rr.GetCommitHistory(r, commits[1], "")
-				Expect(err).To(BeNil())
-			})
-
-			It("should have 6 history hashes (2 commits, 2 trees, 2 blobs)", func() {
-				Expect(history).To(HaveLen(6))
-			})
-		})
-
-		When("there are two commits and the stop commit is the target commit", func() {
-			var history []string
-
-			BeforeEach(func() {
-				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-				testutil2.AppendCommit(path, "file2.txt", "some text 2", "commit msg 2")
-				ci, _ := r.CommitObjects()
-				var commits []*object.Commit
-
-				// order is not guaranteed
-				ci.ForEach(func(c *object.Commit) error {
-					commits = append(commits, c)
-					return nil
-				})
-
-				sort.Slice(commits, func(i, j int) bool {
-					return commits[i].NumParents() < commits[j].NumParents()
-				})
-
-				Expect(commits).To(HaveLen(2))
-				history, err = rr.GetCommitHistory(r, commits[1], commits[1].Hash.String())
-				Expect(err).To(BeNil())
-			})
-
-			It("should have 0 history hashes", func() {
-				Expect(history).To(HaveLen(0))
-			})
-		})
-
-		When("there are two commits and the stop commit is the first commit", func() {
-			var history []string
-
-			BeforeEach(func() {
-				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
-				testutil2.AppendCommit(path, "file.txt", "some text 2", "commit msg 2")
-				ci, _ := r.CommitObjects()
-				var commits []*object.Commit
-
-				// order is not guaranteed
-				ci.ForEach(func(c *object.Commit) error {
-					commits = append(commits, c)
-					return nil
-				})
-				Expect(commits).To(HaveLen(2))
-
-				sort.Slice(commits, func(i, j int) bool {
-					return commits[i].NumParents() < commits[j].NumParents()
-				})
-
-				history, err = rr.GetCommitHistory(r, commits[1], commits[0].Hash.String())
-				Expect(err).To(BeNil())
-			})
-
-			It("should have 3 history hashes", func() {
-				Expect(history).To(HaveLen(3))
-			})
 		})
 	})
 

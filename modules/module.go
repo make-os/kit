@@ -4,7 +4,7 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/config"
-	dht2 "gitlab.com/makeos/mosdef/dht"
+	"gitlab.com/makeos/mosdef/dht/server/types"
 	"gitlab.com/makeos/mosdef/extensions"
 	"gitlab.com/makeos/mosdef/keystore"
 	"gitlab.com/makeos/mosdef/mempool"
@@ -24,7 +24,7 @@ type Module struct {
 	mempoolReactor *mempool.Reactor
 	acctmgr        *keystore.Keystore
 	ticketmgr      types2.TicketManager
-	dht            dht2.DHT
+	dht            types.DHT
 	extMgr         modules.ExtManager
 	rpcServer      *rpc.Server
 	repoMgr        core.RemoteServer
@@ -40,7 +40,7 @@ func New(
 	logic core.Logic,
 	mempoolReactor *mempool.Reactor,
 	ticketmgr types2.TicketManager,
-	dht dht2.DHT,
+	dht types.DHT,
 	extMgr *extensions.Manager,
 	rpcServer *rpc.Server,
 	repoMgr core.RemoteServer) *Module {

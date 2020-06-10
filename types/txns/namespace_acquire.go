@@ -34,7 +34,7 @@ func NewBareTxNamespaceAcquire() *TxNamespaceAcquire {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxNamespaceAcquire) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return tx.EncodeMulti(enc,
 		tx.Type,
 		tx.Nonce,
 		tx.Fee,

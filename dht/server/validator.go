@@ -1,4 +1,4 @@
-package dht
+package server
 
 import (
 	"errors"

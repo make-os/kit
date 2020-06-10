@@ -33,7 +33,7 @@ func NewBareRepoProposalFeeSend() *TxRepoProposalSendFee {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxRepoProposalSendFee) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return tx.EncodeMulti(enc,
 		tx.Type,
 		tx.Nonce,
 		tx.Value,

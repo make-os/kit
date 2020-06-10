@@ -12,7 +12,6 @@ import (
 	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
-	common2 "gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/util"
 	"gitlab.com/makeos/mosdef/util/crypto"
 	io2 "gitlab.com/makeos/mosdef/util/io"
@@ -191,7 +190,7 @@ func IssueCreateCmd(r types.LocalRepo, args *IssueCreateArgs) error {
 		Title:     args.Title,
 		ReplyTo:   args.ReplyHash,
 		Reactions: args.Reactions,
-		IssueFields: common2.IssueFields{
+		IssueFields: types.IssueFields{
 			Labels:    args.Labels,
 			Assignees: args.Assignees,
 		},

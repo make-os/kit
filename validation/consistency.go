@@ -264,41 +264,37 @@ func CheckTxUpDelPushKeyConsistency(
 // EXPECTS: sanity check using CheckTxPush to have been performed.
 func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error {
 
+	repoState := logic.RepoKeeper().Get(tx.Note.GetRepoName())
+	if repoState.IsNil() {
+		return fmt.Errorf("repo not found")
+	}
+
 	hosts, err := logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
 	if err != nil {
 		return errors.Wrap(err, "failed to get top hosts")
 	}
 
-	repoState := logic.RepoKeeper().Get(tx.PushNote.GetRepoName())
-	if repoState.IsNil() {
-		return fmt.Errorf("repo not found")
-	}
+	var endPubKeys []*bls.PublicKey
+	for index, end := range tx.Endorsements {
 
-	var pushEndPubKeys []*bls.PublicKey
-	for index, pushEnd := range tx.PushEnds {
-
-		// Perform consistency checks but don't check the signature as we don't
+		// Perform consistency checks but don't check the BLS signature as we don't
 		// care about that when dealing with a TxPush object, instead we care
-		// about checking the aggregated BLS signature
-		if err := validation.CheckPushEndConsistencyUsingHost(hosts, pushEnd,
-			logic, true, index); err != nil {
+		// about checking the aggregated BLS signature.
+		err := validation.CheckEndorsementConsistencyUsingHost(logic, hosts, end, true, index)
+		if err != nil {
 			return err
 		}
 
-		// Get the BLS public key of the PushEndorsement signer
-		signerTicket := hosts.Get(pushEnd.EndorserPubKey)
-		if signerTicket == nil {
-			return fmt.Errorf("push endorser not part of the top hosts")
-		}
+		signerTicket := hosts.Get(end.EndorserPubKey)
 		blsPubKey, err := bls.BytesToPublicKey(signerTicket.Ticket.BLSPubKey)
 		if err != nil {
 			return errors.Wrap(err, "failed to decode bls public key of endorser")
 		}
-		pushEndPubKeys = append(pushEndPubKeys, blsPubKey)
+		endPubKeys = append(endPubKeys, blsPubKey)
 
 		// Verify the endorsements
-		for i, endorsement := range pushEnd.References {
-			ref := tx.PushNote.GetPushedReferences()[i]
+		for i, endorsement := range end.References {
+			ref := tx.Note.GetPushedReferences()[i]
 
 			// If reference doesnt exist in the repo state, we don't expect
 			// the endorsement to include a hash.
@@ -316,16 +312,22 @@ func CheckTxPushConsistency(tx *txns.TxPush, index int, logic core.Logic) error 
 		}
 	}
 
-	// Generate an aggregated public key and use it to check
-	// the endorsers aggregated signature
-	aggPubKey, _ := bls.AggregatePublicKeys(pushEndPubKeys)
-	err = aggPubKey.Verify(tx.AggPushEndsSig, tx.PushEnds[0].BytesNoSigAndSenderPubKey())
+	// Temporarily set the endorser's NoteID to be the note ID.
+	// Endorsements are not expected to transmit the note ID but we need
+	// it to properly verify the BLS signature.
+	tx.Endorsements[0].NoteID = tx.Note.ID().Bytes()
+	defer tx.Endorsements.ClearNoteID()
+
+	// Generate an aggregated public key and use it to check the endorsers aggregated signature.
+	// Use the bytes output of the first endorsement since all endorsement are expected to be the same.
+	aggPubKey, _ := bls.AggregatePublicKeys(endPubKeys)
+	err = aggPubKey.Verify(tx.AggregatedSig, tx.Endorsements[0].BytesForBLSSig())
 	if err != nil {
 		return errors.Wrap(err, "could not verify aggregated endorsers' signature")
 	}
 
 	// Check push note
-	if err := validation.CheckPushNoteConsistency(tx.PushNote, logic); err != nil {
+	if err := validation.CheckPushNoteConsistency(tx.Note, logic); err != nil {
 		return err
 	}
 
@@ -600,27 +602,6 @@ func CheckTxRepoProposalSendFeeConsistency(
 
 	return nil
 }
-
-// TODO: check code is still required
-// CheckTxRepoProposalMergeRequestConsistency performs consistency
-// checks on TxRepoProposalMergeRequest
-// func CheckTxRepoProposalMergeRequestConsistency(
-// 	tx *core.TxRepoProposalMergeRequest,
-// 	index int,
-// 	logic core.Logic) error {
-//
-// 	bi, err := logic.SysKeeper().GetLastBlockInfo()
-// 	if err != nil {
-// 		return errors.Wrap(err, "failed to fetch current block info")
-// 	}
-//
-// 	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
-// 	if err != nil {
-// 		return err
-// 	}
-//
-// 	return nil
-// }
 
 // CheckTxRepoProposalUpdateConsistency performs consistency checks on CheckTxRepoProposalUpdate
 func CheckTxRepoProposalUpdateConsistency(

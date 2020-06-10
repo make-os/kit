@@ -59,7 +59,7 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 	case *txns.TxPush:
 		return CheckTxPush(o, index)
 	case *txns.TxNamespaceAcquire:
-		return CheckTxNSAcquire(o, index)
+		return CheckTxNamespaceAcquire(o, index)
 	case *txns.TxNamespaceDomainUpdate:
 		return CheckTxNamespaceDomainUpdate(o, index)
 	case *txns.TxRepoProposalUpsertOwner:
@@ -70,8 +70,6 @@ func ValidateTxSanity(tx types.BaseTx, index int) error {
 		return CheckTxRepoProposalUpdate(o, index)
 	case *txns.TxRepoProposalSendFee:
 		return CheckTxRepoProposalSendFee(o, index)
-	// case *core.TxRepoProposalMergeRequest:  TODO: remove?
-	// 	return CheckTxRepoProposalMergeRequest(o, index)
 	case *txns.TxRepoProposalRegisterPushKey:
 		return CheckTxRepoProposalRegisterPushKey(o, index)
 	default:
@@ -113,8 +111,6 @@ func ValidateTxConsistency(tx types.BaseTx, index int, logic core.Logic) error {
 		return CheckTxRepoProposalUpdateConsistency(o, index, logic)
 	case *txns.TxRepoProposalSendFee:
 		return CheckTxRepoProposalSendFeeConsistency(o, index, logic)
-	// case *core.TxRepoProposalMergeRequest: TODO: remove?
-	// 	return CheckTxRepoProposalMergeRequestConsistency(o, index, logic)
 	case *txns.TxRepoProposalRegisterPushKey:
 		return CheckTxRepoProposalRegisterPushKeyConsistency(o, index, logic)
 	default:

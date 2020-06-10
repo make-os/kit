@@ -11,6 +11,7 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
 	"gitlab.com/makeos/mosdef/logic/keepers"
+	nodetypes "gitlab.com/makeos/mosdef/node/types"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/storage"
@@ -38,7 +39,7 @@ type App struct {
 	logic                     core.AtomicLogic
 	cfg                       *config.AppConfig
 	validateTx                validation.ValidateTxFunc
-	curWorkingBlock           *core.BlockInfo
+	curBlock                  *core.BlockInfo
 	log                       logger.Logger
 	txIndex                   int
 	unIdxValidatorTickets     []*ticketInfo
@@ -61,13 +62,13 @@ func NewApp(
 	logic core.AtomicLogic,
 	ticketMgr tickettypes.TicketManager) *App {
 	return &App{
-		db:              db,
-		logic:           logic,
-		cfg:             cfg,
-		curWorkingBlock: &core.BlockInfo{},
-		log:             cfg.G().Log.Module("app"),
-		ticketMgr:       ticketMgr,
-		validateTx:      validation.ValidateTx,
+		db:         db,
+		logic:      logic,
+		cfg:        cfg,
+		curBlock:   &core.BlockInfo{},
+		log:        cfg.G().Log.Module("app"),
+		ticketMgr:  ticketMgr,
+		validateTx: validation.ValidateTx,
 	}
 }
 
@@ -94,7 +95,7 @@ func (a *App) InitChain(req abcitypes.RequestInitChain) abcitypes.ResponseInitCh
 	}
 
 	a.log.Info("Initial app state has been loaded",
-		"GenesisHash", util.BytesToBytes32(stateTree.WorkingHash()).HexStr(),
+		"GenesisHash", util.ToHex(stateTree.WorkingHash()),
 		"StateVersion", stateTree.Version())
 
 	return abcitypes.ResponseInitChain{}
@@ -162,13 +163,13 @@ func (a *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 
 // BeginBlock indicates the beginning of a new block.
 func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
-	a.curWorkingBlock.Height = req.GetHeader().Height
-	a.curWorkingBlock.Hash = req.GetHash()
-	a.curWorkingBlock.LastAppHash = req.GetHeader().AppHash
-	a.curWorkingBlock.ProposerAddress = req.GetHeader().ProposerAddress
-	a.curWorkingBlock.Time = req.GetHeader().Time.Unix()
+	a.curBlock.Height = req.GetHeader().Height
+	a.curBlock.Hash = req.GetHash()
+	a.curBlock.LastAppHash = req.GetHeader().AppHash
+	a.curBlock.ProposerAddress = req.GetHeader().ProposerAddress
+	a.curBlock.Time = req.GetHeader().Time.Unix()
 
-	if bytes.Equal(a.cfg.G().PrivVal.GetAddress().Bytes(), a.curWorkingBlock.ProposerAddress) {
+	if bytes.Equal(a.cfg.G().PrivVal.GetAddress().Bytes(), a.curBlock.ProposerAddress) {
 		a.isCurrentBlockProposer = true
 	}
 
@@ -209,6 +210,7 @@ func (a *App) postExecChecks(
 	resp *abcitypes.ResponseDeliverTx) *abcitypes.ResponseDeliverTx {
 
 	if !resp.IsOK() {
+		a.log.Error("Transaction execution failed", "Err", resp.Log)
 		return resp
 	}
 
@@ -230,14 +232,18 @@ func (a *App) postExecChecks(
 		a.unIdxRepoPropVotes = append(a.unIdxRepoPropVotes, o)
 
 	case *txns.TxPush:
-		for _, ref := range o.PushNote.GetPushedReferences() {
-			if ref.MergeProposalID != "" {
-				a.unIdxClosedMergeProposal = append(a.unIdxClosedMergeProposal, &mergeProposalInfo{
-					repo:       o.PushNote.GetRepoName(),
-					proposalID: mergerequest.MakeMergeRequestProposalID(ref.MergeProposalID),
-				})
+		for _, ref := range o.Note.GetPushedReferences() {
+			if ref.MergeProposalID == "" {
+				continue
 			}
+			a.unIdxClosedMergeProposal = append(a.unIdxClosedMergeProposal, &mergeProposalInfo{
+				repo:       o.Note.GetRepoName(),
+				proposalID: mergerequest.MakeMergeRequestProposalID(ref.MergeProposalID),
+			})
 		}
+
+		// Broadcast pushed transaction
+		a.cfg.G().Bus.Emit(nodetypes.EvtTxPushProcessed, o)
 	}
 
 	// Register the successfully processed tx to the un-indexed tx cache.
@@ -274,7 +280,7 @@ func (a *App) DeliverTx(req abcitypes.RequestDeliverTx) abcitypes.ResponseDelive
 	// Execute the transaction (does not commit the state changes yet)
 	resp := a.logic.ExecTx(&core.ExecArgs{
 		Tx:          tx,
-		ChainHeight: uint64(a.curWorkingBlock.Height - 1),
+		ChainHeight: uint64(a.curBlock.Height - 1),
 		ValidateTx:  validation.ValidateTx,
 	})
 
@@ -372,7 +378,7 @@ func (a *App) EndBlock(req abcitypes.RequestEndBlock) abcitypes.ResponseEndBlock
 		panic(errors.Wrap(err, "failed to update validators"))
 	}
 
-	if err := a.logic.OnEndBlock(a.curWorkingBlock); err != nil {
+	if err := a.logic.OnEndBlock(a.curBlock); err != nil {
 		panic(errors.Wrap(err, "logic.OnEndBlock"))
 	}
 
@@ -386,12 +392,12 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 
 	// Construct a new block information object
 	bi := &core.BlockInfo{
-		Height:          a.curWorkingBlock.Height,
-		Hash:            a.curWorkingBlock.Hash,
-		LastAppHash:     a.curWorkingBlock.LastAppHash,
-		ProposerAddress: a.curWorkingBlock.ProposerAddress,
+		Height:          a.curBlock.Height,
+		Hash:            a.curBlock.Hash,
+		LastAppHash:     a.curBlock.LastAppHash,
+		ProposerAddress: a.curBlock.ProposerAddress,
 		AppHash:         a.logic.StateTree().WorkingHash(),
-		Time:            a.curWorkingBlock.Time,
+		Time:            a.curBlock.Time,
 	}
 
 	// Save the block information
@@ -401,7 +407,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 
 	// Index tickets we have collected so far.
 	for _, ticket := range append(a.unIdxValidatorTickets, a.unIdxHostTickets...) {
-		if err := a.ticketMgr.Index(ticket.Tx, uint64(a.curWorkingBlock.Height),
+		if err := a.ticketMgr.Index(ticket.Tx, uint64(a.curBlock.Height),
 			ticket.index); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to index ticket"))
 		}
@@ -411,12 +417,12 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	// height is the height where the last validator update will take effect.
 	// Tendermint effects validator updates after 2 blocks; We need to index
 	// the validators to the real height when the validators were selected (2 blocks ago)
-	if a.curWorkingBlock.Height == a.heightToSaveNewValidators {
+	if a.curBlock.Height == a.heightToSaveNewValidators {
 		if err := a.logic.ValidatorKeeper().
-			Index(a.curWorkingBlock.Height, a.unsavedValidators); err != nil {
+			Index(a.curBlock.Height, a.unsavedValidators); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to update current validators"))
 		}
-		a.log.Info("Indexed new validators for the new epoch", "Height", a.curWorkingBlock.Height)
+		a.log.Info("Indexed new validators for the new epoch", "Height", a.curBlock.Height)
 	}
 
 	// Index the un-indexed txs
@@ -436,7 +442,7 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 
 	// Set the decay height for each host stake unbond request
 	for _, ticketHash := range a.unbondHostReqs {
-		a.logic.GetTicketManager().UpdateDecayBy(ticketHash, uint64(a.curWorkingBlock.Height))
+		a.logic.GetTicketManager().UpdateDecayBy(ticketHash, uint64(a.curBlock.Height))
 	}
 
 	// Create new repositories
@@ -483,11 +489,11 @@ func (a *App) reset() {
 
 	// Only reset heightToSaveNewValidators if the current height is
 	// same as it to avoid not triggering saving of new validators at the target height.
-	if a.curWorkingBlock.Height == a.heightToSaveNewValidators {
+	if a.curBlock.Height == a.heightToSaveNewValidators {
 		a.heightToSaveNewValidators = 0
 	}
 
-	a.curWorkingBlock = &core.BlockInfo{}
+	a.curBlock = &core.BlockInfo{}
 }
 
 // Query for data from the application.

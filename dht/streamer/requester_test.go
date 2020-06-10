@@ -1,4 +1,4 @@
-package dht_test
+package streamer_test
 
 import (
 	"context"
@@ -17,13 +17,14 @@ import (
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/dht"
+	"gitlab.com/makeos/mosdef/dht/streamer"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/testutil"
 	io2 "gitlab.com/makeos/mosdef/util/io"
 )
 
-var _ = Describe("BasicCommitRequester", func() {
+var _ = Describe("BasicObjectRequester", func() {
 	var err error
 	var cfg *config.AppConfig
 	var log logger.Logger
@@ -53,7 +54,7 @@ var _ = Describe("BasicCommitRequester", func() {
 			mockPeerstore.EXPECT().AddAddr(prov.ID, prov.Addrs[0], peerstore.ProviderAddrTTL)
 			mockHost.EXPECT().Peerstore().Return(mockPeerstore)
 			mockHost.EXPECT().NewStream(ctx, prov.ID, core.ProtocolID("")).Return(nil, fmt.Errorf("error"))
-			r := dht.NewCommitRequester(dht.CommitRequesterArgs{Host: mockHost})
+			r := streamer.NewBasicObjectRequester(streamer.RequestArgs{Host: mockHost})
 			_, err := r.Write(context.Background(), prov, "", nil)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("error"))
@@ -73,7 +74,7 @@ var _ = Describe("BasicCommitRequester", func() {
 			mockStream.EXPECT().Reset()
 			mockHost.EXPECT().NewStream(ctx, prov.ID, core.ProtocolID("")).Return(mockStream, nil)
 
-			r := dht.NewCommitRequester(dht.CommitRequesterArgs{Host: mockHost})
+			r := streamer.NewBasicObjectRequester(streamer.RequestArgs{Host: mockHost})
 			_, err := r.Write(context.Background(), prov, "", data)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("write error"))
@@ -92,7 +93,7 @@ var _ = Describe("BasicCommitRequester", func() {
 			mockStream.EXPECT().Write(data).Return(0, nil)
 			mockHost.EXPECT().NewStream(ctx, prov.ID, core.ProtocolID("")).Return(mockStream, nil)
 
-			r := dht.NewCommitRequester(dht.CommitRequesterArgs{Host: mockHost})
+			r := streamer.NewBasicObjectRequester(streamer.RequestArgs{Host: mockHost})
 			stream, err := r.Write(context.Background(), prov, "", data)
 			Expect(err).To(BeNil())
 			Expect(mockStream).To(Equal(stream))
@@ -106,7 +107,7 @@ var _ = Describe("BasicCommitRequester", func() {
 			mockStream := mocks.NewMockStream(ctrl)
 			mockStream.EXPECT().Write(data).Return(0, fmt.Errorf("write error"))
 
-			r := dht.NewCommitRequester(dht.CommitRequesterArgs{Host: mockHost})
+			r := streamer.NewBasicObjectRequester(streamer.RequestArgs{Host: mockHost})
 			err := r.WriteToStream(mockStream, data)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("write error"))
@@ -116,14 +117,14 @@ var _ = Describe("BasicCommitRequester", func() {
 	Describe(".DoWant", func() {
 		It("should return no error when there are no providers", func() {
 			ctx := context.Background()
-			r := dht.NewCommitRequester(dht.CommitRequesterArgs{Host: mockHost})
+			r := streamer.NewBasicObjectRequester(streamer.RequestArgs{Host: mockHost})
 			err := r.DoWant(ctx)
 			Expect(err).To(BeNil())
 		})
 
 		It("should return no error and skip provider if it has no address info", func() {
 			ctx := context.Background()
-			r := dht.NewCommitRequester(dht.CommitRequesterArgs{Host: mockHost, Providers: []peer.AddrInfo{{
+			r := streamer.NewBasicObjectRequester(streamer.RequestArgs{Host: mockHost, Providers: []peer.AddrInfo{{
 				Addrs: []multiaddr.Multiaddr{},
 			}}})
 			err := r.DoWant(ctx)
@@ -137,9 +138,9 @@ var _ = Describe("BasicCommitRequester", func() {
 			mockPeerstore := mocks.NewMockPeerstore(ctrl)
 			mockPeerstore.EXPECT().AddAddr(prov.ID, prov.Addrs[0], peerstore.ProviderAddrTTL)
 			mockHost.EXPECT().Peerstore().Return(mockPeerstore)
-			mockHost.EXPECT().NewStream(ctx, prov.ID, dht.CommitStreamProtocolID).Return(nil, fmt.Errorf("error"))
+			mockHost.EXPECT().NewStream(ctx, prov.ID, streamer.ObjectStreamerProtocolID).Return(nil, fmt.Errorf("error"))
 
-			r := dht.NewCommitRequester(dht.CommitRequesterArgs{Host: mockHost, Providers: []peer.AddrInfo{prov}, Log: log})
+			r := streamer.NewBasicObjectRequester(streamer.RequestArgs{Host: mockHost, Providers: []peer.AddrInfo{prov}, Log: log})
 			err := r.DoWant(ctx)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(Equal("error"))
@@ -148,7 +149,7 @@ var _ = Describe("BasicCommitRequester", func() {
 		It("should return error when 'WANT' message is sent, 'WANT' response handler must be called", func() {
 			ctx := context.Background()
 			repoName := "repo1"
-			key := []byte("commit_key")
+			key := []byte("object_key")
 			prov := peer.AddrInfo{Addrs: []multiaddr.Multiaddr{multiaddr.StringCast("/ip4/127.0.0.1")}}
 
 			mockPeerstore := mocks.NewMockPeerstore(ctrl)
@@ -157,14 +158,14 @@ var _ = Describe("BasicCommitRequester", func() {
 			mockStream := mocks.NewMockStream(ctrl)
 			mockStream.EXPECT().SetDeadline(gomock.Any())
 			mockStream.EXPECT().Write(dht.MakeWantMsg(repoName, key)).Return(0, nil)
-			mockHost.EXPECT().NewStream(ctx, prov.ID, dht.CommitStreamProtocolID).Return(mockStream, nil)
+			mockHost.EXPECT().NewStream(ctx, prov.ID, streamer.ObjectStreamerProtocolID).Return(mockStream, nil)
 
-			r := dht.NewCommitRequester(dht.CommitRequesterArgs{
-				Host:       mockHost,
-				Providers:  []peer.AddrInfo{prov},
-				RepoName:   repoName,
-				RequestKey: key,
-				Log:        log,
+			r := streamer.NewBasicObjectRequester(streamer.RequestArgs{
+				Host:      mockHost,
+				Providers: []peer.AddrInfo{prov},
+				RepoName:  repoName,
+				Key:       key,
+				Log:       log,
 			})
 			called := false
 			r.OnWantResponseHandler = func(stream network.Stream) error {
@@ -180,19 +181,18 @@ var _ = Describe("BasicCommitRequester", func() {
 
 	Describe(".Do", func() {
 		When("there is a provider stream", func() {
-			var reqArgs dht.CommitRequesterArgs
+			var reqArgs streamer.RequestArgs
 			var mockStream *mocks.MockStream
 			var repoName = "repo1"
-			var key = []byte("commit_key")
+			var key = []byte("object_key")
 
 			BeforeEach(func() {
 				mockStream = mocks.NewMockStream(ctrl)
-				reqArgs = dht.CommitRequesterArgs{
-					Host:            mockHost,
-					ProviderStreams: []network.Stream{mockStream},
-					RepoName:        repoName,
-					RequestKey:      key,
-					Log:             log,
+				reqArgs = streamer.RequestArgs{
+					Host:     mockHost,
+					RepoName: repoName,
+					Key:      key,
+					Log:      log,
 				}
 			})
 
@@ -200,7 +200,8 @@ var _ = Describe("BasicCommitRequester", func() {
 				ctx, cn := context.WithCancel(context.Background())
 				cn()
 				mockStream.EXPECT().Reset()
-				r := dht.NewCommitRequester(reqArgs)
+				r := streamer.NewBasicObjectRequester(reqArgs)
+				r.AddProviderStream(mockStream)
 				_, err := r.Do(ctx)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError(context.Canceled))
@@ -213,7 +214,8 @@ var _ = Describe("BasicCommitRequester", func() {
 				mockConn := mocks.NewMockConn(ctrl)
 				mockConn.EXPECT().RemotePeer().Return(core.PeerID("peer_id"))
 				mockStream.EXPECT().Conn().Return(mockConn)
-				r := dht.NewCommitRequester(reqArgs)
+				r := streamer.NewBasicObjectRequester(reqArgs)
+				r.AddProviderStream(mockStream)
 				_, err := r.Do(ctx)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(MatchError("error"))
@@ -226,7 +228,8 @@ var _ = Describe("BasicCommitRequester", func() {
 				mockConn := mocks.NewMockConn(ctrl)
 				mockConn.EXPECT().RemotePeer().Return(core.PeerID("peer_id"))
 				mockStream.EXPECT().Conn().Return(mockConn)
-				r := dht.NewCommitRequester(reqArgs)
+				r := streamer.NewBasicObjectRequester(reqArgs)
+				r.AddProviderStream(mockStream)
 				r.OnSendResponseHandler = func(network.Stream) (io2.ReadSeekerCloser, error) {
 					return nil, fmt.Errorf("bad error")
 				}
@@ -238,33 +241,40 @@ var _ = Describe("BasicCommitRequester", func() {
 			It("should return packfile when 'SEND' message response handler succeeds", func() {
 				ctx := context.Background()
 				mockStream.EXPECT().Write(dht.MakeSendMsg(repoName, key)).Return(0, nil)
-				r := dht.NewCommitRequester(reqArgs)
+				mockConn := mocks.NewMockConn(ctrl)
+				remotePeerID := core.PeerID("peer_id")
+				mockConn.EXPECT().RemotePeer().Return(remotePeerID)
+				mockStream.EXPECT().Conn().Return(mockConn)
+				r := streamer.NewBasicObjectRequester(reqArgs)
+				r.AddProviderStream(mockStream)
 
 				tmpFile, _ := ioutil.TempFile(os.TempDir(), "")
 				defer tmpFile.Close()
 				r.OnSendResponseHandler = func(network.Stream) (io2.ReadSeekerCloser, error) {
 					return tmpFile, nil
 				}
-				packfile, err := r.Do(ctx)
+
+				result, err := r.Do(ctx)
 				Expect(err).To(BeNil())
-				Expect(packfile).NotTo(BeNil())
-				Expect(packfile).To(Equal(tmpFile))
+				Expect(result.Pack).NotTo(BeNil())
+				Expect(result.Pack).To(Equal(tmpFile))
+				Expect(result.RemotePeer).To(Equal(remotePeerID))
 			})
 		})
 	})
 
 	Describe(".OnWantResponse", func() {
 		var mockStream *mocks.MockStream
-		var reqArgs dht.CommitRequesterArgs
+		var reqArgs streamer.RequestArgs
 
 		BeforeEach(func() {
 			mockStream = mocks.NewMockStream(ctrl)
-			reqArgs = dht.CommitRequesterArgs{}
+			reqArgs = streamer.RequestArgs{}
 		})
 
 		It("should return error when unable to read message type from stream", func() {
 			mockStream.EXPECT().Read(make([]byte, 4)).Return(0, fmt.Errorf("read error"))
-			r := dht.NewCommitRequester(reqArgs)
+			r := streamer.NewBasicObjectRequester(reqArgs)
 			err := r.OnWantResponse(mockStream)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to read message type: read error"))
@@ -275,7 +285,7 @@ var _ = Describe("BasicCommitRequester", func() {
 				copy(p, dht.MsgTypeHave)
 				return len(dht.MsgTypeHave), nil
 			})
-			r := dht.NewCommitRequester(reqArgs)
+			r := streamer.NewBasicObjectRequester(reqArgs)
 			err := r.OnWantResponse(mockStream)
 			Expect(err).To(BeNil())
 			Expect(r.GetProviderStreams()).To(HaveLen(1))
@@ -288,7 +298,7 @@ var _ = Describe("BasicCommitRequester", func() {
 				return len(dht.MsgTypeNope), nil
 			})
 			mockStream.EXPECT().Reset()
-			r := dht.NewCommitRequester(reqArgs)
+			r := streamer.NewBasicObjectRequester(reqArgs)
 			err := r.OnWantResponse(mockStream)
 			Expect(err).To(BeNil())
 			Expect(r.GetProviderStreams()).To(HaveLen(0))
@@ -300,7 +310,7 @@ var _ = Describe("BasicCommitRequester", func() {
 				return len("UNKNOWN"), nil
 			})
 			mockStream.EXPECT().Reset()
-			r := dht.NewCommitRequester(reqArgs)
+			r := streamer.NewBasicObjectRequester(reqArgs)
 			err := r.OnWantResponse(mockStream)
 			Expect(err).To(BeNil())
 			Expect(r.GetProviderStreams()).To(HaveLen(0))
@@ -309,17 +319,17 @@ var _ = Describe("BasicCommitRequester", func() {
 
 	Describe(".OnSendResponse", func() {
 		var mockStream *mocks.MockStream
-		var reqArgs dht.CommitRequesterArgs
+		var reqArgs streamer.RequestArgs
 
 		BeforeEach(func() {
 			mockStream = mocks.NewMockStream(ctrl)
 			mockStream.EXPECT().Reset()
-			reqArgs = dht.CommitRequesterArgs{}
+			reqArgs = streamer.RequestArgs{}
 		})
 
 		It("should return error when unable to read message type from stream", func() {
 			mockStream.EXPECT().Read(gomock.Any()).Return(0, fmt.Errorf("read error"))
-			r := dht.NewCommitRequester(reqArgs)
+			r := streamer.NewBasicObjectRequester(reqArgs)
 			_, err := r.OnSendResponse(mockStream)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("unable to read msg type: read error"))
@@ -330,7 +340,7 @@ var _ = Describe("BasicCommitRequester", func() {
 				copy(p, dht.MsgTypeNope)
 				return len(dht.MsgTypeNope), nil
 			})
-			r := dht.NewCommitRequester(reqArgs)
+			r := streamer.NewBasicObjectRequester(reqArgs)
 			_, err := r.OnSendResponse(mockStream)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(Equal(dht.ErrObjNotFound))
@@ -341,7 +351,7 @@ var _ = Describe("BasicCommitRequester", func() {
 				copy(p, dht.MsgTypePack)
 				return len(dht.MsgTypePack), io.EOF
 			})
-			r := dht.NewCommitRequester(reqArgs)
+			r := streamer.NewBasicObjectRequester(reqArgs)
 			packfile, err := r.OnSendResponse(mockStream)
 			Expect(err).To(BeNil())
 			Expect(packfile).ToNot(BeNil())
@@ -355,10 +365,10 @@ var _ = Describe("BasicCommitRequester", func() {
 				copy(p, "UNKNOWN")
 				return len("UNKNOWN"), nil
 			})
-			r := dht.NewCommitRequester(reqArgs)
+			r := streamer.NewBasicObjectRequester(reqArgs)
 			_, err := r.OnSendResponse(mockStream)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(Equal(dht.ErrUnknownMsgType))
+			Expect(err).To(Equal(streamer.ErrUnknownMsgType))
 		})
 	})
 })

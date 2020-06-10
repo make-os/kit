@@ -50,7 +50,7 @@ func (c *GitPush) execReference(repo *state.Repository, repoName string, ref *pu
 	// Set pusher as creator if reference is new
 	isNewRef := r.IsNil()
 	if isNewRef {
-		r.Creator = c.tx.PushNote.GetPusherKeyID()
+		r.Creator = c.tx.Note.GetPusherKeyID()
 	}
 
 	// Set issue data for issue reference
@@ -123,12 +123,12 @@ func (c *GitPush) execReference(repo *state.Repository, repoName string, ref *pu
 
 // Exec executes the contract
 func (c *GitPush) Exec() error {
-	repoName := c.tx.PushNote.GetRepoName()
+	repoName := c.tx.Note.GetRepoName()
 	repoKeeper := c.RepoKeeper()
 	repo := repoKeeper.Get(repoName)
 
 	// Register or update references
-	for _, ref := range c.tx.PushNote.GetPushedReferences() {
+	for _, ref := range c.tx.Note.GetPushedReferences() {
 		if err := c.execReference(repo, repoName, ref); err != nil {
 			return err
 		}
@@ -137,5 +137,5 @@ func (c *GitPush) Exec() error {
 	// Update the repo
 	repoKeeper.Update(repoName, repo)
 
-	return c.GetRemoteServer().ExecTxPush(c.tx)
+	return nil
 }

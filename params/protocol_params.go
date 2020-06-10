@@ -104,6 +104,9 @@ var (
 
 	// TreasuryAddress is the address where treasury-bound payments are deposited
 	TreasuryAddress = "e4Tkr4AMxhPPjptDSMzX98F2BwHvQM2DKx"
+
+	// MaxNoteObjectFetchAttempts is the number of times to attempt to fetch objects of a push note
+	MaxNoteObjectFetchAttempts = 15
 )
 
 // Repo config

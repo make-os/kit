@@ -40,7 +40,7 @@ func NewBareRepoProposalRegisterPushKey() *TxRepoProposalRegisterPushKey {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxRepoProposalRegisterPushKey) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return tx.EncodeMulti(enc,
 		tx.Type,
 		tx.Nonce,
 		tx.Value,

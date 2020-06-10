@@ -10,7 +10,11 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tendermint/tendermint/p2p"
-	"gitlab.com/makeos/mosdef/dht"
+	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/crypto"
+	types3 "gitlab.com/makeos/mosdef/dht/server/types"
+	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/params"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/remote/push"
@@ -19,21 +23,22 @@ import (
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
 	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
+	"gitlab.com/makeos/mosdef/testutil"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
+	types2 "gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
+	"gitlab.com/makeos/mosdef/util"
 	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 	"gopkg.in/src-d/go-git.v4/plumbing"
-	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
-
-	"gitlab.com/makeos/mosdef/config"
-	"gitlab.com/makeos/mosdef/crypto"
-	"gitlab.com/makeos/mosdef/mocks"
-	"gitlab.com/makeos/mosdef/params"
-	"gitlab.com/makeos/mosdef/testutil"
-	"gitlab.com/makeos/mosdef/util"
 )
+
+func configIgnoreDenyCurrentBranch(r remotetypes.LocalRepo) error {
+	c, _ := r.Config()
+	c.Raw.SetOption("receive", "", "denyCurrentBranch", "ignore")
+	return r.SetConfig(c)
+}
 
 var _ = Describe("Reactor", func() {
 	var err error
@@ -47,10 +52,10 @@ var _ = Describe("Reactor", func() {
 	var mockRepoKeeper *mocks.MockRepoKeeper
 	var mockBlockGetter *mocks.MockBlockGetter
 	var mockDHT *mocks.MockDHT
-	var mockRemoteSrv *mocks.MockRemoteServer
 	var mockTickMgr *mocks.MockTicketManager
 	var mockNS *mocks.MockNamespaceKeeper
 	var key = crypto.NewKeyFromIntSeed(1)
+	var testRepo remotetypes.LocalRepo
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -61,52 +66,52 @@ var _ = Describe("Reactor", func() {
 		repoName = util.RandString(5)
 		path = filepath.Join(cfg.GetRepoRoot(), repoName)
 		testutil2.ExecGit(cfg.GetRepoRoot(), "init", repoName)
-		_, err = repo.GetWithLiteGit(cfg.Node.GitBinPath, path)
+		testRepo, err = repo.GetWithLiteGit(cfg.Node.GitBinPath, path)
 		Expect(err).To(BeNil())
 
 		mockObjects := testutil.MockLogic(ctrl)
 		mockLogic = mockObjects.Logic
-		mockRemoteSrv = mockObjects.RemoteServer
 		mockRepoKeeper = mockObjects.RepoKeeper
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockTickMgr = mockObjects.TicketManager
 		mockNS = mockObjects.NamespaceKeeper
-		svr = NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
+		svr = NewRemoteServer(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 
 		mockPeer = mocks.NewMockPeer(ctrl)
 	})
 
 	AfterEach(func() {
+		svr.Stop()
 		ctrl.Finish()
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})
 
-	Describe(".onPushNote", func() {
+	Describe(".onPushNoteReceived", func() {
 		When("in validator mode", func() {
 			It("should return nil", func() {
 				cfg.Node.Validator = true
-				err = svr.onPushNote(mockPeer, util.RandBytes(10))
+				err = svr.onPushNoteReceived(mockPeer, util.RandBytes(10))
 				Expect(err).To(BeNil())
 			})
 		})
 
 		When("unable to decode msg", func() {
 			It("should return err=failed to decoded message...", func() {
-				err = svr.onPushNote(mockPeer, util.RandBytes(5))
+				err = svr.onPushNoteReceived(mockPeer, util.RandBytes(5))
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("failed to decoded message"))
 			})
 		})
 
-		When("repo is not found", func() {
+		When("target repo does not exist locally", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				mockRepoKeeper.EXPECT().Get("unknown").Return(state.BareRepository())
-				pn := &types.PushNote{RepoName: "unknown"}
-				err = svr.onPushNote(mockPeer, pn.Bytes())
+				pn := &types.Note{RepoName: "unknown"}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
 			It("should return err=`repo 'unknown' not found`", func() {
@@ -115,15 +120,15 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("namespace is set but not found", func() {
+		When("namespace is set but it is unknown", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
 				mockNS.EXPECT().Get(crypto2.HashNamespace("ns1")).Return(state.BareNamespace())
-				pn := &types.PushNote{RepoName: "repo1", Namespace: "ns1"}
-				err = svr.onPushNote(mockPeer, pn.Bytes())
+				pn := &types.Note{RepoName: "repo1", Namespace: "ns1"}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
 			It("should return err=`namespace 'ns1' not found`", func() {
@@ -148,8 +153,8 @@ var _ = Describe("Reactor", func() {
 					return nil, fmt.Errorf("bad error")
 				}
 
-				pn := &types.PushNote{RepoName: "repo1"}
-				err = svr.onPushNote(mockPeer, pn.Bytes())
+				pn := &types.Note{RepoName: "repo1"}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
 			It("should return err", func() {
@@ -174,8 +179,8 @@ var _ = Describe("Reactor", func() {
 					return nil, nil
 				}
 
-				pn := &types.PushNote{RepoName: "repo1"}
-				err = svr.onPushNote(mockPeer, pn.Bytes())
+				pn := &types.Note{RepoName: "repo1"}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
 			It("should return err", func() {
@@ -184,9 +189,9 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("push note failed validation", func() {
+		When("pre-checks succeed", func() {
 			var peerID = p2p.ID("peer-id")
-			var pn *types.PushNote
+			var pn *types.Note
 
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(peerID)
@@ -202,281 +207,396 @@ var _ = Describe("Reactor", func() {
 					checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-				svr.checkPushNote = func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
-					return fmt.Errorf("error")
-				}
-
-				pn = &types.PushNote{RepoName: repoName}
-				err = svr.onPushNote(mockPeer, pn.Bytes())
 			})
 
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed push note validation: error"))
-			})
-
-			Specify("that the peer is registered as the sender of the push note", func() {
-				Expect(svr.isPushNoteSender(string(peerID), pn.ID().String())).To(BeTrue())
-			})
-		})
-
-		When("unable to create packfile from push note", func() {
-			var peerID = p2p.ID("peer-id")
-			var pn *types.PushNote
-
-			BeforeEach(func() {
-				mockPeer.EXPECT().ID().Return(peerID)
-				repoState := state.BareRepository()
-				repoState.Balance = "100"
-				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
-
-				svr.authenticate = func(
-					txDetails []*remotetypes.TxDetail,
-					repo *state.Repository,
-					namespace *state.Namespace,
-					keepers core.Keepers,
-					checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
-					return nil, nil
-				}
-				svr.checkPushNote = func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
-					return nil
-				}
-				svr.packfileMaker = func(repo remotetypes.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
-					return nil, fmt.Errorf("bad error")
-				}
-
-				pn = &types.PushNote{RepoName: repoName}
-				err = svr.onPushNote(mockPeer, pn.Bytes())
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to create packfile from push note: bad error"))
-			})
-		})
-
-		When("push handler failed to handle packfile stream", func() {
-			var peerID = p2p.ID("peer-id")
-			var pn *types.PushNote
-
-			BeforeEach(func() {
-				mockPeer.EXPECT().ID().Return(peerID)
-				repoState := state.BareRepository()
-				repoState.Balance = "100"
-				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
-
-				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
-					return nil, nil
-				}
-				svr.checkPushNote = func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
-					return nil
-				}
-				svr.packfileMaker = func(repo remotetypes.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
-					oldState := plumbing2.GetRepoState(repo)
-					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
-					newState := plumbing2.GetRepoState(repo)
-					packfile, err := push.MakePackfile(repo, oldState, newState)
-					Expect(err).To(BeNil())
-					return packfile, nil
-				}
-
-				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) *push.Handler {
-					mockRemoteSrv.EXPECT().GetRepoState(gomock.Any()).Return(nil, fmt.Errorf("bad error"))
-					return &push.Handler{Server: mockRemoteSrv}
-				}
-
-				pn = &types.PushNote{RepoName: repoName}
-				err = svr.onPushNote(mockPeer, pn.Bytes())
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("HandleStream error: bad error"))
-			})
-		})
-
-		When("push handler failed to handle reference without error", func() {
-			var peerID = p2p.ID("peer-id")
-			var pn *types.PushNote
-
-			BeforeEach(func() {
-				mockPeer.EXPECT().ID().Return(peerID)
-				repoState := state.BareRepository()
-				repoState.Balance = "100"
-				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
-
-				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace,
-					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
-					return nil, nil
-				}
-				svr.checkPushNote = func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
-					return nil
-				}
-
-				pushHandler := &push.Handler{Server: mockRemoteSrv}
-				svr.packfileMaker = func(repo remotetypes.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
-					pushHandler.OldState = plumbing2.GetRepoState(repo)
-					pushHandler.Repo = repo
-					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
-					newState := plumbing2.GetRepoState(repo)
-					packfile, err := push.MakePackfile(repo, pushHandler.OldState, newState)
-					Expect(err).To(BeNil())
-					return packfile, nil
-				}
-				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) *push.Handler {
-					return pushHandler
-				}
-
-				pushHandler.AuthorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
-					return nil
-				}
-				pushHandler.ReferenceHandler = func(ref string, revertOnly bool) []error {
-					Expect(ref).To(Equal("refs/heads/master"))
-					return []error{fmt.Errorf("bad reference")}
-				}
-
-				pn = &types.PushNote{RepoName: repoName}
-				err = svr.onPushNote(mockPeer, pn.Bytes())
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("HandleReferences error: bad reference"))
-			})
-		})
-
-		When("push pool addition failed", func() {
-			var peerID = p2p.ID("peer-id")
-			var pn *types.PushNote
-
-			BeforeEach(func() {
-				mockPeer.EXPECT().ID().Return(peerID)
-				repoState := state.BareRepository()
-				repoState.Balance = "100"
-				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
-
-				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace,
-					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
-					return nil, nil
-				}
-				svr.checkPushNote = func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
-					return nil
-				}
-
-				pushHandler := &push.Handler{Server: mockRemoteSrv}
-				svr.packfileMaker = func(repo remotetypes.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
-					pushHandler.OldState = plumbing2.GetRepoState(repo)
-					pushHandler.Repo = repo
-					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
-					newState := plumbing2.GetRepoState(repo)
-					packfile, err := push.MakePackfile(repo, pushHandler.OldState, newState)
-					Expect(err).To(BeNil())
-					return packfile, nil
-				}
-				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) *push.Handler {
-					return pushHandler
-				}
-
-				pushHandler.AuthorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
-					return nil
-				}
-				pushHandler.ReferenceHandler = func(ref string, revertOnly bool) []error {
-					Expect(ref).To(Equal("refs/heads/master"))
-					return nil
-				}
-				svr.pushedObjectsBroadcaster = func(pn *types.PushNote) (err error) {
-					return nil
-				}
-
-				mockPushPool := mocks.NewMockPushPooler(ctrl)
-				mockPushPool.EXPECT().Add(gomock.Any(), true).Return(fmt.Errorf("push pool error"))
-				svr.pushPool = mockPushPool
-
-				pn = &types.PushNote{RepoName: repoName}
-				err = svr.onPushNote(mockPeer, pn.Bytes())
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to add push note to push pool: push pool error"))
-			})
-		})
-
-		When("push note is successfully processed", func() {
-			var peerID = p2p.ID("peer-id")
-			var pn *types.PushNote
-
-			BeforeEach(func() {
-				mockPeer.EXPECT().ID().Return(peerID)
-				repoState := state.BareRepository()
-				repoState.Balance = "100"
-				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
-
-				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace,
-					keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
-					return nil, nil
-				}
-				svr.checkPushNote = func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
-					return nil
-				}
-
-				pushHandler := &push.Handler{Server: mockRemoteSrv}
-				svr.packfileMaker = func(repo remotetypes.LocalRepo, tx types.PushNotice) (seeker io.ReadSeeker, err error) {
-					pushHandler.OldState = plumbing2.GetRepoState(repo)
-					pushHandler.Repo = repo
-					testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
-					newState := plumbing2.GetRepoState(repo)
-					packfile, err := push.MakePackfile(repo, pushHandler.OldState, newState)
-					Expect(err).To(BeNil())
-					return packfile, nil
-				}
-				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) *push.Handler {
-					return pushHandler
-				}
-
-				pushHandler.AuthorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
-					return nil
-				}
-				pushHandler.ReferenceHandler = func(ref string, revertOnly bool) []error {
-					Expect(ref).To(Equal("refs/heads/master"))
-					return nil
-				}
-				svr.pushedObjectsBroadcaster = func(pn *types.PushNote) (err error) {
-					return nil
-				}
-
-				mockPushPool := mocks.NewMockPushPooler(ctrl)
-				mockPushPool.EXPECT().Add(gomock.Any(), true).Return(nil)
-				svr.pushPool = mockPushPool
-
-				pn = &types.PushNote{RepoName: repoName}
-				err = svr.onPushNote(mockPeer, pn.Bytes())
-			})
-
-			It("should return nil", func() {
+			It("should call fetchers OnPackReceived && Fetch methods", func() {
+				mockObjFetcher := mocks.NewMockObjectFetcher(ctrl)
+				mockObjFetcher.EXPECT().OnFetched(gomock.Any())
+				mockObjFetcher.EXPECT().Fetch(gomock.Any(), gomock.Any())
+				mockObjFetcher.EXPECT().Stop()
+				svr.objfetcher = mockObjFetcher
+				pn = &types.Note{RepoName: repoName}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 				Expect(err).To(BeNil())
 			})
 		})
 	})
 
-	Describe(".onPushEnd", func() {
-		When("unable to decode msg", func() {
+	Describe(".createEndorsement", func() {
+		It("should return error when unable to get reference from repo", func() {
+			note := &types.Note{References: []*types.PushedReference{{Name: "refs/heads/master"}}}
+			mockRepo := mocks.NewMockLocalRepo(ctrl)
+			mockRepo.EXPECT().RefGet(note.References[0].Name).Return("", fmt.Errorf("error"))
+			note.SetTargetRepo(mockRepo)
+			_, err := createEndorsement(svr.validatorKey, note)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to get hash of reference (refs/heads/master): error"))
+		})
+
+		When("a pushed reference does not exist locally", func() {
+			var err error
+			var end *types.PushEndorsement
 			BeforeEach(func() {
-				err = svr.onPushEnd(mockPeer, util.RandBytes(5))
+				note := &types.Note{References: []*types.PushedReference{{Name: "refs/heads/master"}}}
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
+				mockRepo.EXPECT().RefGet(note.References[0].Name).Return("", plumbing2.ErrRefNotFound)
+				note.SetTargetRepo(mockRepo)
+				end, err = createEndorsement(svr.validatorKey, note)
 			})
 
-			It("should return err=failed to decoded message...", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("failed to decoded message"))
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+
+			It("should create endorsement with 1 reference", func() {
+				Expect(end.References).To(HaveLen(1))
+			})
+
+			Specify("that the reference hash is unset", func() {
+				Expect(end.References[0].Hash).To(BeEmpty())
+			})
+
+			Specify("that the endorsement is signed", func() {
+				Expect(end.SigBLS).To(HaveLen(64))
+			})
+		})
+
+		When("a pushed reference exists locally", func() {
+			var err error
+			var end *types.PushEndorsement
+			var refHash = "8d998c7de21bbe561f7992bb983cef4b1554993b"
+
+			BeforeEach(func() {
+				note := &types.Note{References: []*types.PushedReference{{Name: "refs/heads/master"}}}
+				mockRepo := mocks.NewMockLocalRepo(ctrl)
+				mockRepo.EXPECT().RefGet(note.References[0].Name).Return(refHash, nil)
+				note.SetTargetRepo(mockRepo)
+				end, err = createEndorsement(svr.validatorKey, note)
+			})
+
+			It("should return no error", func() {
+				Expect(err).To(BeNil())
+			})
+
+			It("should create endorsement with 1 reference", func() {
+				Expect(end.References).To(HaveLen(1))
+			})
+
+			Specify("that the reference hash is set", func() {
+				Expect(end.References[0].Hash).To(Equal(util.MustFromHex(refHash)))
 			})
 		})
 	})
 
-	Describe(".MaybeCreatePushTx", func() {
-		When("no PushEndorsement for the given note", func() {
+	Describe(".maybeProcessPushNote", func() {
+		It("should return error when push note failed validation", func() {
+			svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return fmt.Errorf("error") }
+			err := svr.maybeProcessPushNote(&types.Note{}, []*remotetypes.TxDetail{}, nil)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed push note validation: error"))
+		})
+
+		It("should return error when unable to create a packfile from push note", func() {
+			svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
+			svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return nil, fmt.Errorf("error") }
+			err := svr.maybeProcessPushNote(&types.Note{}, []*remotetypes.TxDetail{}, nil)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to create packfile from push note: error"))
+		})
+
+		When("push note is convertible to a packfile", func() {
+			var pack io.ReadSeeker
+
+			BeforeEach(func() {
+				testutil2.AppendCommit(path, "file.txt", "some text", "commit msg")
+				commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
+				commit, _ := testRepo.CommitObject(plumbing.NewHash(commitHash))
+				p, _, err := plumbing2.PackObject(testRepo, &plumbing2.PackObjectArgs{Obj: commit})
+				Expect(err).To(BeNil())
+				pack = testutil.WrapReadSeeker{Rdr: p}
+			})
+
+			It("should return error when unable to run git command", func() {
+				svr.gitBinPath = "unknown-cmd"
+				svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
+				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
+				note := &types.Note{}
+				note.SetTargetRepo(testRepo)
+				err := svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(MatchRegexp("failed to start git-receive-pack command"))
+			})
+
+			It("should return error if unable to handle incoming stream", func() {
+				svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
+				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
+				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) push.Handler {
+					mockHandler := mocks.NewMockHandler(ctrl)
+					mockHandler.EXPECT().SetGitReceivePackCmd(gomock.Any())
+					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
+					return mockHandler
+				}
+				note := &types.Note{}
+				note.SetTargetRepo(testRepo)
+				err := svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("HandleStream error: error"))
+			})
+
+			It("should return error if unable to handle references", func() {
+				svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
+				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
+				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
+					enforcer policy.EnforcerFunc) push.Handler {
+					mockHandler := mocks.NewMockHandler(ctrl)
+					mockHandler.EXPECT().SetGitReceivePackCmd(gomock.Any())
+					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any()).Return(nil)
+					mockHandler.EXPECT().HandleReferences().Return(fmt.Errorf("error"))
+					return mockHandler
+				}
+				note := &types.Note{}
+				note.SetTargetRepo(testRepo)
+				err := svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("HandleReferences error: error"))
+			})
+
+			It("should return error if unable to add note to push pool", func() {
+				svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
+				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
+				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
+					enforcer policy.EnforcerFunc) push.Handler {
+					mockHandler := mocks.NewMockHandler(ctrl)
+					mockHandler.EXPECT().SetGitReceivePackCmd(gomock.Any())
+					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any()).Return(nil)
+					mockHandler.EXPECT().HandleReferences().Return(nil)
+					return mockHandler
+				}
+				note := &types.Note{}
+				note.SetTargetRepo(testRepo)
+				mockPushPool := mocks.NewMockPushPool(ctrl)
+				mockPushPool.EXPECT().Add(note, true).Return(fmt.Errorf("error"))
+				svr.pushPool = mockPushPool
+				err = svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("failed to add push note to push pool: error"))
+			})
+
+			It("should broadcast note and return no error", func() {
+				svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
+				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
+				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
+					enforcer policy.EnforcerFunc) push.Handler {
+					mockHandler := mocks.NewMockHandler(ctrl)
+					mockHandler.EXPECT().SetGitReceivePackCmd(gomock.Any())
+					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any()).Return(nil)
+					mockHandler.EXPECT().HandleReferences().Return(nil)
+					return mockHandler
+				}
+				note := &types.Note{}
+				note.SetTargetRepo(testRepo)
+				mockPushPool := mocks.NewMockPushPool(ctrl)
+				mockPushPool.EXPECT().Add(note, true).Return(nil)
+				svr.pushPool = mockPushPool
+				broadcasted := false
+				svr.noteAndEndorserBroadcaster = func(types.PushNote) error {
+					broadcasted = true
+					return nil
+				}
+				err = svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
+				Expect(err).To(BeNil())
+				Expect(broadcasted).To(BeTrue())
+			})
+
+			It("should return no error if note failed broadcast", func() {
+				svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
+				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
+				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
+					enforcer policy.EnforcerFunc) push.Handler {
+					mockHandler := mocks.NewMockHandler(ctrl)
+					mockHandler.EXPECT().SetGitReceivePackCmd(gomock.Any())
+					mockHandler.EXPECT().HandleStream(gomock.Any(), gomock.Any()).Return(nil)
+					mockHandler.EXPECT().HandleReferences().Return(nil)
+					return mockHandler
+				}
+				note := &types.Note{}
+				note.SetTargetRepo(testRepo)
+				mockPushPool := mocks.NewMockPushPool(ctrl)
+				mockPushPool.EXPECT().Add(note, true).Return(nil)
+				svr.pushPool = mockPushPool
+				broadcastDone := false
+				svr.noteAndEndorserBroadcaster = func(types.PushNote) error {
+					broadcastDone = true
+					return fmt.Errorf("error")
+				}
+				err = svr.maybeProcessPushNote(note, []*remotetypes.TxDetail{}, nil)
+				Expect(err).To(BeNil())
+				Expect(broadcastDone).To(BeTrue())
+			})
+		})
+	})
+
+	Describe(".onEndorsementReceived", func() {
+		It("should return no error (do nothing) if node is a validator", func() {
+			cfg.Node.Validator = true
+			err = svr.onEndorsementReceived(mockPeer, util.RandBytes(5))
+			Expect(err).To(BeNil())
+		})
+
+		It("should return error when unable to decode endorsement", func() {
+			err = svr.onEndorsementReceived(mockPeer, util.RandBytes(5))
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("failed to decode endorsement"))
+		})
+
+		It("should return error when endorsement fail validation", func() {
+			svr.checkEndorsement = func(end *types.PushEndorsement, logic core.Logic, index int) error {
+				return fmt.Errorf("error")
+			}
+			end := &types.PushEndorsement{}
+			err = svr.onEndorsementReceived(mockPeer, end.Bytes())
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("endorsement validation failed: error"))
+		})
+
+		When("endorsement passed validation", func() {
+			var senderPeerID p2p.ID = "peer_id"
+			var end *types.PushEndorsement
+			var endorsementWasBroadcast bool
+
+			BeforeEach(func() {
+				svr.checkEndorsement = func(end *types.PushEndorsement, logic core.Logic, index int) error { return nil }
+				svr.endorsementBroadcaster = func(endorsement types.Endorsement) {
+					endorsementWasBroadcast = true
+				}
+				end = &types.PushEndorsement{NoteID: util.RandBytes(32)}
+				mockPeer.EXPECT().ID().Return(senderPeerID)
+				err = svr.onEndorsementReceived(mockPeer, end.Bytes())
+				Expect(err).To(BeNil())
+			})
+
+			Specify("that the sending peer is register as the sender of the push endorsement", func() {
+				Expect(svr.isEndorsementSender(string(senderPeerID), end.ID().String())).To(BeTrue())
+			})
+
+			Specify("that the endorsement was register to the push note", func() {
+				ends := svr.endorsementsReceived.Get(end.NoteID.String())
+				Expect(ends).ToNot(BeNil())
+				Expect(ends).To(HaveKey(end.ID().String()))
+				expected := ends.(map[string]*types.PushEndorsement)[end.ID().String()]
+				Expect(expected.Bytes()).To(Equal(end.Bytes()))
+			})
+
+			Specify("that the endorsement was broadcast", func() {
+				Expect(endorsementWasBroadcast).To(BeTrue())
+			})
+		})
+
+		When("unable to create push transaction in response to a valid endorsement", func() {
+			var senderPeerID p2p.ID = "peer_id"
+			var end *types.PushEndorsement
+			var endorsementWasBroadcast bool
+
+			Specify("that the endorsement was still broadcast to peers", func() {
+				svr.checkEndorsement = func(end *types.PushEndorsement, logic core.Logic, index int) error { return nil }
+				svr.endorsementBroadcaster = func(endorsement types.Endorsement) {
+					endorsementWasBroadcast = true
+				}
+				svr.makePushTx = func(noteID string) error {
+					return fmt.Errorf("error")
+				}
+				end = &types.PushEndorsement{NoteID: util.RandBytes(32)}
+				mockPeer.EXPECT().ID().Return(senderPeerID)
+				err = svr.onEndorsementReceived(mockPeer, end.Bytes())
+				Expect(err).To(BeNil())
+				Expect(endorsementWasBroadcast).To(BeTrue())
+			})
+		})
+	})
+
+	Describe(".BroadcastNoteAndEndorsement", func() {
+		It("should return error when unable to get top tickets", func() {
+			svr.noteBroadcaster = func(pushNote types.PushNote) {}
+			mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(nil, fmt.Errorf("error"))
+			err := svr.BroadcastNoteAndEndorsement(&types.Note{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to get top hosts: error"))
+		})
+
+		It("should return nil when no top selected tickets", func() {
+			svr.noteBroadcaster = func(pushNote types.PushNote) {}
+			tickets := tickettypes.SelectedTickets{}
+			mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(tickets, nil)
+			err := svr.BroadcastNoteAndEndorsement(&types.Note{})
+			Expect(err).To(BeNil())
+		})
+
+		It("should return error when unable to create endorsement", func() {
+			svr.noteBroadcaster = func(pushNote types.PushNote) {}
+			ticket := &tickettypes.SelectedTicket{Ticket: &tickettypes.Ticket{
+				ProposerPubKey: svr.validatorKey.PubKey().MustBytes32(),
+			}}
+			tickets := tickettypes.SelectedTickets{ticket}
+			svr.endorsementCreator = func(validatorKey *crypto.Key, note types.PushNote) (*types.PushEndorsement, error) {
+				return nil, fmt.Errorf("error")
+			}
+			mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(tickets, nil)
+			err := svr.BroadcastNoteAndEndorsement(&types.Note{})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("error"))
+		})
+
+		When("endorsement is created successfully", func() {
+			var endorsementBroadcast bool
+			var madePushTx bool
+			var note = &types.Note{RepoName: "repo1"}
+			var end = &types.PushEndorsement{NoteID: []byte{1, 2, 3}}
+
+			BeforeEach(func() {
+				svr.noteBroadcaster = func(pushNote types.PushNote) {}
+				ticket := &tickettypes.SelectedTicket{Ticket: &tickettypes.Ticket{
+					ProposerPubKey: svr.validatorKey.PubKey().MustBytes32(),
+				}}
+				tickets := tickettypes.SelectedTickets{ticket}
+
+				svr.endorsementCreator = func(validatorKey *crypto.Key, note types.PushNote) (*types.PushEndorsement, error) {
+					return end, nil
+				}
+
+				svr.endorsementBroadcaster = func(endorsement types.Endorsement) {
+					endorsementBroadcast = true
+				}
+
+				svr.makePushTx = func(noteID string) error {
+					madePushTx = true
+					return nil
+				}
+				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(tickets, nil)
+				err := svr.BroadcastNoteAndEndorsement(note)
+				Expect(err).To(BeNil())
+			})
+
+			It("should broadcast the endorsement", func() {
+				Expect(endorsementBroadcast).To(BeTrue())
+			})
+
+			It("should make push transaction", func() {
+				Expect(madePushTx).To(BeTrue())
+			})
+
+			It("should register endorsement to the push note", func() {
+				noteEnds := svr.endorsementsReceived.Get(note.ID().String())
+				Expect(noteEnds).To(HaveLen(1))
+				Expect(noteEnds).To(HaveKey(end.ID().String()))
+			})
+		})
+	})
+
+	Describe(".createPushTx", func() {
+		When("no Endorsement for the given note", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
-				err = svr.MaybeCreatePushTx(pushNoteID)
+				err = svr.createPushTx(pushNoteID)
 			})
 
 			It("should return err='no endorsements yet'", func() {
@@ -485,26 +605,26 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("PushEnds for the given note is not up to the quorum size", func() {
+		When("push endorsements for the given note is not up to the quorum size", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 2
-				svr.addPushNoteEndorsement(pushNoteID, &types.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))})
-				err = svr.MaybeCreatePushTx(pushNoteID)
+				svr.registerEndorsementOfNote(pushNoteID, &types.PushEndorsement{SigBLS: util.RandBytes(5)})
+				err = svr.createPushTx(pushNoteID)
 			})
 
-			It("should return err='Not enough push endorsements to satisfy quorum size'", func() {
+			It("should return error", func() {
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("not enough push endorsements to satisfy quorum size"))
+				Expect(err.Error()).To(Equal("cannot create push transaction; note has 1 endorsements, wants 2"))
 			})
 		})
 
-		When("PushNotice does not exist in the pool", func() {
+		When("PushNote does not exist in the pool", func() {
 			var pushNoteID = "note1"
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
-				svr.addPushNoteEndorsement(pushNoteID, &types.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))})
-				err = svr.MaybeCreatePushTx(pushNoteID)
+				svr.registerEndorsementOfNote(pushNoteID, &types.PushEndorsement{SigBLS: util.RandBytes(5)})
+				err = svr.createPushTx(pushNoteID)
 			})
 
 			It("should return err='push note not found in pool'", func() {
@@ -516,13 +636,13 @@ var _ = Describe("Reactor", func() {
 		When("unable to get top hosts", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
-				var pushNote = &types.PushNote{RepoName: "repo1"}
+				var pushNote = &types.Note{RepoName: "repo1"}
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return(nil, fmt.Errorf("error"))
-				svr.addPushNoteEndorsement(pushNote.ID().String(), &types.PushEndorsement{Sig: util.BytesToBytes64(util.RandBytes(5))})
-				err = svr.MaybeCreatePushTx(pushNote.ID().String())
+				svr.registerEndorsementOfNote(pushNote.ID().String(), &types.PushEndorsement{SigBLS: util.RandBytes(5)})
+				err = svr.createPushTx(pushNote.ID().String())
 			})
 
 			It("should return err", func() {
@@ -534,17 +654,17 @@ var _ = Describe("Reactor", func() {
 		When("unable to get ticket of push endorsement sender", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
-				var pushNote = &types.PushNote{RepoName: "repo1"}
+				var pushNote = &types.Note{RepoName: "repo1"}
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{}, nil)
-				pushEnd := &types.PushEndorsement{
-					Sig:            util.BytesToBytes64(util.RandBytes(5)),
+				end := &types.PushEndorsement{
+					SigBLS:         util.RandBytes(5),
 					EndorserPubKey: util.BytesToBytes32(util.RandBytes(32)),
 				}
-				svr.addPushNoteEndorsement(pushNote.ID().String(), pushEnd)
-				err = svr.MaybeCreatePushTx(pushNote.ID().String())
+				svr.registerEndorsementOfNote(pushNote.ID().String(), end)
+				err = svr.createPushTx(pushNote.ID().String())
 			})
 
 			It("should return err", func() {
@@ -556,24 +676,20 @@ var _ = Describe("Reactor", func() {
 		When("a push endorsement has invalid bls public key", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
-				var pushNote = &types.PushNote{RepoName: "repo1"}
+				var pushNote = &types.Note{RepoName: "repo1"}
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{
-					{
-						Ticket: &tickettypes.Ticket{
-							ProposerPubKey: key.PubKey().MustBytes32(),
-							BLSPubKey:      []byte("invalid bls public key"),
-						},
-					},
+					{Ticket: &tickettypes.Ticket{ProposerPubKey: key.PubKey().MustBytes32(), BLSPubKey: []byte("invalid bls public key")}},
 				}, nil)
-				pushEnd := &types.PushEndorsement{
+
+				end := &types.PushEndorsement{
 					EndorserPubKey: key.PubKey().MustBytes32(),
 				}
 
-				svr.addPushNoteEndorsement(pushNote.ID().String(), pushEnd)
-				err = svr.MaybeCreatePushTx(pushNote.ID().String())
+				svr.registerEndorsementOfNote(pushNote.ID().String(), end)
+				err = svr.createPushTx(pushNote.ID().String())
 			})
 
 			It("should return err", func() {
@@ -585,25 +701,21 @@ var _ = Describe("Reactor", func() {
 		When("endorsement signature is invalid", func() {
 			BeforeEach(func() {
 				params.PushEndorseQuorumSize = 1
-				var pushNote = &types.PushNote{RepoName: "repo1"}
+				var pushNote = &types.Note{RepoName: "repo1"}
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{
-					{
-						Ticket: &tickettypes.Ticket{
-							ProposerPubKey: key.PubKey().MustBytes32(),
-							BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
-						},
-					},
+					{Ticket: &tickettypes.Ticket{ProposerPubKey: key.PubKey().MustBytes32(), BLSPubKey: key.PrivKey().BLSKey().Public().Bytes()}},
 				}, nil)
-				pushEnd := &types.PushEndorsement{
-					EndorserPubKey: key.PubKey().MustBytes32(),
-				}
-				pushEnd.Sig = util.BytesToBytes64(util.RandBytes(64))
 
-				svr.addPushNoteEndorsement(pushNote.ID().String(), pushEnd)
-				err = svr.MaybeCreatePushTx(pushNote.ID().String())
+				end := &types.PushEndorsement{
+					EndorserPubKey: key.PubKey().MustBytes32(),
+					SigBLS:         util.RandBytes(5),
+				}
+
+				svr.registerEndorsementOfNote(pushNote.ID().String(), end)
+				err = svr.createPushTx(pushNote.ID().String())
 			})
 
 			It("should return err", func() {
@@ -613,226 +725,40 @@ var _ = Describe("Reactor", func() {
 		})
 
 		When("push note is ok", func() {
-			BeforeEach(func() {
+			It("should return no error", func() {
 				params.PushEndorseQuorumSize = 1
-				var pushNote = &types.PushNote{RepoName: "repo1"}
+				var pushNote = &types.Note{RepoName: "repo1"}
 				err = svr.pushPool.Add(pushNote, true)
 				Expect(err).To(BeNil())
 
 				mockTickMgr.EXPECT().GetTopHosts(gomock.Any()).Return([]*tickettypes.SelectedTicket{
-					{
-						Ticket: &tickettypes.Ticket{
-							ProposerPubKey: key.PubKey().MustBytes32(),
-							BLSPubKey:      key.PrivKey().BLSKey().Public().Bytes(),
-						},
-					},
+					{Ticket: &tickettypes.Ticket{ProposerPubKey: key.PubKey().MustBytes32(), BLSPubKey: key.PrivKey().BLSKey().Public().Bytes()}},
 				}, nil)
-				pushEnd := &types.PushEndorsement{
-					EndorserPubKey: key.PubKey().MustBytes32(),
-				}
-				var pushEndSig []byte
-				pushEndSig, err = key.PrivKey().BLSKey().Sign(pushEnd.BytesNoSigAndSenderPubKey())
+
+				end := &types.PushEndorsement{NoteID: []byte{1, 2, 3}, EndorserPubKey: key.PubKey().MustBytes32()}
+				end.SigBLS, err = key.PrivKey().BLSKey().Sign(end.BytesForBLSSig())
 				Expect(err).To(BeNil())
-				pushEnd.Sig = util.BytesToBytes64(pushEndSig)
+				svr.registerEndorsementOfNote(pushNote.ID().String(), end)
 
-				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&txns.TxPush{})).Return(nil)
-				svr.addPushNoteEndorsement(pushNote.ID().String(), pushEnd)
-				err = svr.MaybeCreatePushTx(pushNote.ID().String())
-			})
-
-			It("should return no error", func() {
+				end2 := &types.PushEndorsement{NoteID: []byte{1, 2, 4}, EndorserPubKey: key.PubKey().MustBytes32()}
+				end2.SigBLS, err = key.PrivKey().BLSKey().Sign(end2.BytesForBLSSig())
 				Expect(err).To(BeNil())
-			})
-		})
-	})
+				svr.registerEndorsementOfNote(pushNote.ID().String(), end2)
 
-	Describe(".execTxPush", func() {
-		var err error
+				mockMempool.EXPECT().Add(gomock.AssignableToTypeOf(&txns.TxPush{})).DoAndReturn(func(tx types2.BaseTx) error {
+					// NoteID and SigBLS fields must be unset
+					Expect(tx.(*txns.TxPush).Endorsements).To(HaveLen(2))
+					Expect(tx.(*txns.TxPush).Endorsements[0].NoteID).To(BeNil())
+					Expect(tx.(*txns.TxPush).Endorsements[0].SigBLS).To(BeNil())
+					Expect(tx.(*txns.TxPush).Endorsements[1].NoteID).To(BeNil())
+					Expect(tx.(*txns.TxPush).Endorsements[1].SigBLS).To(BeNil())
 
-		BeforeEach(func() {
-			mockRemoteSrv.EXPECT().Cfg().Return(cfg).AnyTimes()
-			mockRemoteSrv.EXPECT().GetDHT().Return(mockDHT).AnyTimes()
-			mockRemoteSrv.EXPECT().Log().Return(cfg.G().Log).AnyTimes()
-
-			mockPruner := mocks.NewMockRepoPruner(ctrl)
-			mockPruner.EXPECT().Schedule(gomock.Any()).AnyTimes()
-			mockRemoteSrv.EXPECT().GetPruner().Return(mockPruner).AnyTimes()
-		})
-
-		When("target repo does not exist locally", func() {
-			BeforeEach(func() {
-				tx := txns.NewBareTxPush()
-				tx.PushNote.(*types.PushNote).RepoName = "unknown"
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(nil, fmt.Errorf("error"))
-				err = execTxPush(mockRemoteSrv, tx)
-			})
-
-			It("should return err='unable to find repo locally: error'", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("unable to find repo locally: error"))
-			})
-		})
-
-		When("object existed locally", func() {
-			BeforeEach(func() {
-				tx := txns.NewBareTxPush()
-				tx.PushNote.(*types.PushNote).RepoName = "repo1"
-
-				obj := util.RandString(40)
-				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
-					{Objects: []string{obj}},
-				}
-
-				repo := mocks.NewMockLocalRepo(ctrl)
-				repo.EXPECT().ObjectExist(obj).Return(true)
-				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
-
-				err = execTxPush(mockRemoteSrv, tx)
-			})
-
-			It("should return no error", func() {
-				Expect(err).To(BeNil())
-			})
-		})
-
-		When("tx merge operation fail", func() {
-			BeforeEach(func() {
-				tx := txns.NewBareTxPush()
-				tx.PushNote.(*types.PushNote).RepoName = "repo1"
-
-				obj := util.RandString(40)
-				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
-					{Objects: []string{obj}},
-				}
-
-				repo := mocks.NewMockLocalRepo(ctrl)
-				repo.EXPECT().ObjectExist(obj).Return(true)
-				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(fmt.Errorf("error"))
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
-
-				err = execTxPush(mockRemoteSrv, tx)
-			})
-
-			It("should return error", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("error"))
-			})
-		})
-
-		When("an object does not exist and dht download failed", func() {
-			BeforeEach(func() {
-				tx := txns.NewBareTxPush()
-				tx.PushNote.(*types.PushNote).RepoName = "repo1"
-
-				obj := util.RandString(40)
-				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
-					{Objects: []string{obj}},
-				}
-
-				repo := mocks.NewMockLocalRepo(ctrl)
-				repo.EXPECT().ObjectExist(obj).Return(false)
-				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(nil, fmt.Errorf("error"))
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
-
-				err = execTxPush(mockRemoteSrv, tx)
-			})
-
-			It("should return error='failed to fetch object...'", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("failed to fetch object"))
-			})
-		})
-
-		When("downloaded object cannot be written to disk", func() {
-			BeforeEach(func() {
-				tx := txns.NewBareTxPush()
-				tx.PushNote.(*types.PushNote).RepoName = "repo1"
-
-				obj := util.RandString(40)
-				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
-					{Objects: []string{obj}},
-				}
-
-				repo := mocks.NewMockLocalRepo(ctrl)
-				repo.EXPECT().ObjectExist(obj).Return(false)
-
-				objBz := util.RandBytes(10)
-				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(objBz, nil)
-				repo.EXPECT().WriteObjectToFile(obj, objBz).Return(fmt.Errorf("error"))
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
-
-				err = execTxPush(mockRemoteSrv, tx)
-			})
-
-			It("should return error='failed to write fetched object...'", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("failed to write fetched object"))
-			})
-		})
-
-		When("object download succeeded but object announcement fails", func() {
-			BeforeEach(func() {
-				tx := txns.NewBareTxPush()
-				tx.PushNote.(*types.PushNote).RepoName = "repo1"
-
-				obj := util.RandString(40)
-				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
-					{Objects: []string{obj}},
-				}
-
-				repo := mocks.NewMockLocalRepo(ctrl)
-				repo.EXPECT().ObjectExist(obj).Return(false)
-
-				objBz := util.RandBytes(10)
-				mockDHT.EXPECT().GetObject(gomock.Any(), gomock.Any()).Return(objBz, nil)
-				repo.EXPECT().WriteObjectToFile(obj, objBz).Return(nil)
-
-				mockDHT.EXPECT().Announce(gomock.Any(), gomock.Any()).Return(fmt.Errorf("error"))
-				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
-				err = execTxPush(mockRemoteSrv, tx)
-			})
-
-			It("should return no error", func() {
-				Expect(err).To(BeNil())
-			})
-		})
-
-		When("push note contains a pushed reference new hash set to zero-hash", func() {
-			It("should attempt to delete the pushed reference and return error if it failed", func() {
-				tx := txns.NewBareTxPush()
-				tx.PushNote.(*types.PushNote).RepoName = repoName
-
-				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
-					{NewHash: plumbing.ZeroHash.String(), Name: "refs/heads/master"},
-				}
-
-				repo := mocks.NewMockLocalRepo(ctrl)
-				repo.EXPECT().RefDelete("refs/heads/master").Return(fmt.Errorf("failed to delete"))
-
-				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
-				err = execTxPush(mockRemoteSrv, tx)
-
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("failed to delete reference (refs/heads/master): failed to delete"))
-			})
-
-			It("should attempt to delete the pushed reference and return nil if it succeeded", func() {
-				tx := txns.NewBareTxPush()
-				tx.PushNote.(*types.PushNote).RepoName = repoName
-
-				tx.PushNote.(*types.PushNote).References = []*types.PushedReference{
-					{NewHash: plumbing.ZeroHash.String(), Name: "refs/heads/master"},
-				}
-
-				repo := mocks.NewMockLocalRepo(ctrl)
-				repo.EXPECT().RefDelete("refs/heads/master").Return(nil)
-
-				mockRemoteSrv.EXPECT().UpdateRepoWithTxPush(tx).Return(nil)
-				mockRemoteSrv.EXPECT().GetRepo(tx.PushNote.(*types.PushNote).RepoName).Return(repo, nil)
-				err = execTxPush(mockRemoteSrv, tx)
+					// 0-index reference must be non-nil. Greater than 0-index must be nil
+					Expect(tx.(*txns.TxPush).Endorsements[0].References).ToNot(BeNil())
+					Expect(tx.(*txns.TxPush).Endorsements[1].References).To(BeNil())
+					return nil
+				})
+				err = svr.createPushTx(pushNote.ID().String())
 
 				Expect(err).To(BeNil())
 			})

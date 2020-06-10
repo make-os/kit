@@ -98,8 +98,8 @@ type DHTConfig struct {
 	BootstrapPeers string `json:"addpeer" mapstructure:"addpeer"`
 }
 
-// RepoManagerConfig describes repository manager config parameters
-type RepoManagerConfig struct {
+// RemoteConfig describes repository manager config parameters
+type RemoteConfig struct {
 	Address string `json:"address" mapstructure:"address"`
 }
 
@@ -126,8 +126,8 @@ type AppConfig struct {
 	// DHT holds DHT configurations
 	DHT *DHTConfig `json:"dht" mapstructure:"dht"`
 
-	// RepoMan holds repository manager configurations
-	RepoMan *RepoManagerConfig `json:"repoman" mapstructure:"repoman"`
+	// Remote holds repository remote configurations
+	Remote *RemoteConfig `json:"remote" mapstructure:"remote"`
 
 	// Mempool holds mempool configurations
 	Mempool *MempoolConfig `json:"mempool" mapstructure:"mempool"`
@@ -173,7 +173,7 @@ func EmptyAppConfig() AppConfig {
 		Net:                &NetConfig{},
 		RPC:                &RPCConfig{},
 		DHT:                &DHTConfig{},
-		RepoMan:            &RepoManagerConfig{},
+		Remote:             &RemoteConfig{},
 		Mempool:            &MempoolConfig{},
 		GenesisFileEntries: []*GenDataEntry{},
 		VersionInfo:        &VersionInfo{},

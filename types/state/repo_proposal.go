@@ -132,7 +132,7 @@ const (
 
 // RepoProposal represents a repository proposal
 type RepoProposal struct {
-	util.SerializerHelper `json:"-" msgpack:"-"`
+	util.CodecUtil        `json:"-" msgpack:"-"`
 	ID                    string                `json:"-" mapstructure:"-" msgpack:"-"`
 	Action                types.TxCode          `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
 	ActionData            map[string][]byte     `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.

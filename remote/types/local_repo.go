@@ -18,9 +18,6 @@ type LocalRepo interface {
 	// GetName returns the name of the repo
 	GetName() string
 
-	// GetNameFromPath returns the name of the repo
-	GetNameFromPath() string
-
 	// GetNamespaceName returns the namespace this repo is associated to.
 	GetNamespaceName() string
 
@@ -51,6 +48,11 @@ type LocalRepo interface {
 
 	// CommitObjects returns an unsorted ObjectIter with all the objects in the repository.
 	CommitObjects() (object.CommitIter, error)
+
+	// Tags return all tag references in the repository.
+	// If you want to check to see if the tag is an annotated tag, you can call
+	// TagObject on the hash Reference
+	Tags() (storer.ReferenceIter, error)
 
 	// CommitObject returns a commit.
 	CommitObject(h plumbing.Hash) (*object.Commit, error)
@@ -104,24 +106,12 @@ type LocalRepo interface {
 	// GetObjectSize returns the size of an object
 	GetObjectSize(objHash string) (int64, error)
 
-	// GetObjectDiskSize returns the size of the object as it exist on the system
-	GetObjectDiskSize(objHash string) (int64, error)
-
 	// ObjectsOfCommit returns a hashes of objects a commit is composed of.
 	// This objects a the commit itself, its tree and the tree blobs.
 	ObjectsOfCommit(hash string) ([]plumbing.Hash, error)
 
-	// GetEncodedObject returns an object
-	GetEncodedObject(objHash string) (plumbing.EncodedObject, error)
-
-	// WriteObjectToFile writes an object to the repository's objects directory
-	WriteObjectToFile(objectHash string, content []byte) error
-
 	// GetObject returns an object
 	GetObject(objHash string) (object.Object, error)
-
-	// GetCompressedObject compressed version of an object
-	GetCompressedObject(hash string) ([]byte, error)
 
 	// GetStorer returns the storage engine of the repository
 	GetStorer() storage.Storer
@@ -176,6 +166,7 @@ type LiteGit interface {
 
 // Commit represents a Commit.
 type Commit interface {
+	object.Object
 
 	// NumParents returns the number of parents in a commit.
 	NumParents() int
@@ -201,8 +192,8 @@ type Commit interface {
 	// GetHash returns the hash of the commit object
 	GetHash() plumbing.Hash
 
-	// GetTree returns the tree from the commit
-	GetTree() (*object.Tree, error)
+	// Tree returns the tree from the commit
+	Tree() (*object.Tree, error)
 
 	// File returns the file with the specified "path" in the commit and a
 	// nil error if the file exists.

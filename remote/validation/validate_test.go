@@ -290,7 +290,7 @@ var _ = Describe("Validation", func() {
 			})
 		})
 
-		When("tag has signature and header are valid but the referenced commit is unsigned", func() {
+		When("tag has signature and header are valid", func() {
 			BeforeEach(func() {
 				testutil2.CreateCommitAndAnnotatedTag(path, "file.txt", "first file", "tag message", "v1")
 				tagRef, _ := testRepo.Tag("v1")
@@ -305,9 +305,8 @@ var _ = Describe("Validation", func() {
 				err = validation.CheckAnnotatedTag(tob, txDetail, testPushKeyGetter(pubKey, nil))
 			})
 
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(MatchRegexp("commit (.*) was not signed"))
+			It("should return nil", func() {
+				Expect(err).To(BeNil())
 			})
 		})
 	})

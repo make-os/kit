@@ -8,42 +8,81 @@ import (
 	"gitlab.com/makeos/mosdef/util/crypto"
 )
 
+type PushEndorsements []*pptyp.PushEndorsement
+
+// ClearNoteID clears the Note ID of all endorsements
+func (e PushEndorsements) ClearNoteID() {
+	for _, ends := range e {
+		ends.NoteID = nil
+	}
+}
+
+// SetNoteID sets the Note ID of all endorsements
+func (e PushEndorsements) SetNoteID(id []byte) {
+	for _, ends := range e {
+		ends.NoteID = id
+	}
+}
+
+// SetReferences sets the endorsed references for all endorsements
+func (e PushEndorsements) SetReferences(ef pptyp.EndorsedReferences) {
+	for _, ends := range e {
+		ends.References = ef
+	}
+}
+
+// ClearReferences sets the endorsed references for all endorsements except ignoreIndex.
+func (e PushEndorsements) ClearReferences(ignoreIndex int) {
+	for i, ends := range e {
+		if i == ignoreIndex {
+			continue
+		}
+		ends.References = nil
+	}
+}
+
 // TxPush implements BaseTx, it describes a transaction that creates a
 // repository for the signer
 type TxPush struct {
-	*TxCommon      `json:",flatten" mapstructure:"-"`
-	*TxType        `json:",flatten" msgpack:"-"`
-	PushNote       pptyp.PushNotice         `json:"pushNote" mapstructure:"pushNote"`
-	PushEnds       []*pptyp.PushEndorsement `json:"endorsements" mapstructure:"endorsements"`
-	AggPushEndsSig []byte                   `json:"aggEndorsersPubKey" mapstructure:"aggEndorsersPubKey"`
+	*TxCommon `json:",flatten" mapstructure:"-"`
+	*TxType   `json:",flatten" msgpack:"-"`
+
+	// Note is the push note
+	Note pptyp.PushNote `json:"note" mapstructure:"note"`
+
+	// Endorsements contain push endorsements
+	Endorsements PushEndorsements `json:"endorsements" mapstructure:"endorsements"`
+
+	// AggregatedSig contains aggregated BLS signature composed by endorsers
+	AggregatedSig []byte `json:"aggEndSig" mapstructure:"aggEndSig"`
 }
 
 // NewBareTxPush returns an instance of TxPush with zero values
 func NewBareTxPush() *TxPush {
 	return &TxPush{
-		TxCommon: NewBareTxCommon(),
-		TxType:   &TxType{Type: TxTypePush},
-		PushNote: &pptyp.PushNote{},
-		PushEnds: []*pptyp.PushEndorsement{},
+		TxCommon:     NewBareTxCommon(),
+		TxType:       &TxType{Type: TxTypePush},
+		Note:         &pptyp.Note{},
+		Endorsements: []*pptyp.PushEndorsement{},
 	}
 }
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxPush) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return tx.EncodeMulti(enc,
 		tx.Type,
-		tx.PushNote,
-		tx.PushEnds,
-		tx.AggPushEndsSig)
+		tx.Note,
+		tx.Endorsements,
+		tx.AggregatedSig)
 }
 
 // DecodeMsgpack implements msgpack.CustomDecoder
 func (tx *TxPush) DecodeMsgpack(dec *msgpack.Decoder) error {
 	return tx.DecodeMulti(dec,
 		&tx.Type,
-		&tx.PushNote,
-		&tx.PushEnds,
-		&tx.AggPushEndsSig)
+		&tx.Note,
+		&tx.Endorsements,
+		&tx.AggregatedSig)
 }
 
 // Bytes returns the serialized transaction
@@ -67,18 +106,18 @@ func (tx *TxPush) ComputeHash() util.Bytes32 {
 
 // GetHash returns the hash of the transaction
 func (tx *TxPush) GetHash() util.Bytes32 {
-	return tx.PushNote.ID()
+	return tx.Note.ID()
 }
 
 // GetID returns the id of the transaction (also the hash)
 func (tx *TxPush) GetID() string {
-	return tx.PushNote.ID().String()
+	return tx.Note.ID().String()
 }
 
 // GetEcoSize returns the size of the transaction for use in economic calculations
 func (tx *TxPush) GetEcoSize() int64 {
 	size := tx.GetSize()
-	pushedObjSize := tx.PushNote.GetSize()
+	pushedObjSize := tx.Note.GetSize()
 	return int64(uint64(size) + pushedObjSize)
 }
 
@@ -90,20 +129,20 @@ func (tx *TxPush) GetSize() int64 {
 // GetTimestamp return the transaction creation unix timestamp.
 // Because TxPush is a wrapper transaction, we use the push note timestamp
 func (tx *TxPush) GetTimestamp() int64 {
-	return tx.PushNote.GetTimestamp()
+	return tx.Note.GetTimestamp()
 }
 
 // GetNonce returns the transaction nonce.
 // Because TxPush is a wrapper transaction, we use the Account nonce of the pusher
 // which is found in anyone of the pushed reference
 func (tx *TxPush) GetNonce() uint64 {
-	return tx.PushNote.GetPusherAccountNonce()
+	return tx.Note.GetPusherAccountNonce()
 }
 
 // GetFrom returns the address of the transaction sender
 // Because TxPush is a wrapper transaction, we use the pusher's address.
 func (tx *TxPush) GetFrom() util.Address {
-	return tx.PushNote.GetPusherAddress()
+	return tx.Note.GetPusherAddress()
 }
 
 // Sign signs the transaction

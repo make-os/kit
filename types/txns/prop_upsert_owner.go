@@ -34,7 +34,7 @@ func NewBareRepoProposalUpsertOwner() *TxRepoProposalUpsertOwner {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxRepoProposalUpsertOwner) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return tx.EncodeMulti(enc,
 		tx.Type,
 		tx.Nonce,
 		tx.Value,

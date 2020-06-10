@@ -1,37 +1,72 @@
 package push
 
 import (
-	"context"
 	"fmt"
 	"io"
+	"os/exec"
 	"time"
 
-	"github.com/thoas/go-funk"
-	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/remote/push/types"
-	"gitlab.com/makeos/mosdef/remote/repo"
 	types2 "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util/crypto"
+	plumbing2 "gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 )
 
-type refHandler func(ref string, revertOnly bool) []error
-type authorizationHandler func(ur *packp.ReferenceUpdateRequest) error
+// Handler describes an interface for handling push updates,
+// pre-consensus dry run and authorization checks.
+type Handler interface {
 
-// Handler provides handles all phases of a push operation
-type Handler struct {
+	// HandleStream starts the process of handling a pushed packfile.
+	// If reads the packfile to extract details of the pushed references
+	// and finally writes the packfile to the git receive pack input stream.
+	HandleStream(packfile io.Reader, gitReceivePack io.WriteCloser) error
+
+	// EnsureReferencesHaveTxDetail checks that each pushed reference
+	// have a transaction detail that provide more information about
+	// the transaction.
+	EnsureReferencesHaveTxDetail() error
+
+	// DoAuth performs authorization checks on the specified target reference.
+	// If targetRef is unset, all references are checked. If ignorePostRefs is
+	// true, post references like issue and merge references are not checked.
+	DoAuth(ur *packp.ReferenceUpdateRequest, targetRef string, ignorePostRefs bool) error
+
+	// HandleAuthorization performs authorization checks on all pushed references.
+	HandleAuthorization(ur *packp.ReferenceUpdateRequest) error
+
+	// HandleReferences validates all pushed references and reverts changes
+	// introduced by HandleStream's processing of the references.
+	HandleReferences() error
+
+	// HandleUpdate creates a push note to represent the push operation and
+	// adds it to the push pool and then have it broadcast to peers.
+	HandleUpdate() error
+
+	// HandleReference performs validation and update reversion for a single
+	// pushed reference. When revertOnly is true, only reversion operation
+	// is performed.
+	HandleReference(ref string, revertOnly bool) []error
+
+	// SetGitReceivePackCmd sets the git receive command being used for
+	// updating the target repositories.
+	SetGitReceivePackCmd(cmd *exec.Cmd)
+}
+
+// BasicHandler implements Handler. It provides handles all phases of a push operation.
+type BasicHandler struct {
 	log                  logger.Logger
 	op                   string                              // The current git operation
 	Repo                 types2.LocalRepo                    // The target repository
 	Server               core.RemoteServer                   // The repository remote server
-	OldState             types2.BareRepoState                // The old state of the repo before the current push was written
+	OldState             types2.BareRepoRefsState            // The old state of the repo before the current push was written
 	PushReader           *PushReader                         // The push reader for reading pushed git objects
 	NoteID               string                              // The push note unique ID
 	ChangeValidator      validation.ChangeValidatorFunc      // Repository state change validator
@@ -39,25 +74,19 @@ type Handler struct {
 	MergeChecker         validation.MergeComplianceCheckFunc // Merge request checker function
 	polEnforcer          policy.EnforcerFunc                 // Authorization policy enforcer function for the repository
 	TxDetails            types2.ReferenceTxDetails           // Map of references to their transaction details
-	ReferenceHandler     refHandler                          // Pushed reference handler function
-	AuthorizationHandler authorizationHandler                // Authorization handler function
+	ReferenceHandler     RefHandler                          // Pushed reference handler function
+	AuthorizationHandler AuthorizationHandler                // Authorization handler function
 	PolicyChecker        policy.PolicyChecker                // Policy checker function
+	receivePackCmd       *exec.Cmd
 }
 
-// PushHandlerFunc describes a function for creating a push handler
-type PushHandlerFunc func(
-	targetRepo types2.LocalRepo,
-	txDetails []*types2.TxDetail,
-	enforcer policy.EnforcerFunc) *Handler
-
-// NewHandler returns an instance of Handler
+// NewHandler returns an instance of BasicHandler
 func NewHandler(
 	repo types2.LocalRepo,
 	txDetails []*types2.TxDetail,
 	polEnforcer policy.EnforcerFunc,
-	rMgr core.RemoteServer) *Handler {
-
-	h := &Handler{
+	rMgr core.RemoteServer) *BasicHandler {
+	h := &BasicHandler{
 		Repo:            repo,
 		Server:          rMgr,
 		log:             rMgr.Log().Module("push-handler"),
@@ -74,8 +103,16 @@ func NewHandler(
 	return h
 }
 
-// HandleStream processes git push request stream
-func (h *Handler) HandleStream(packfile io.Reader, gitReceivePack io.WriteCloser) error {
+// SetGitReceivePackCmd sets the git receive command being used for
+// updating the target repositories.
+func (h *BasicHandler) SetGitReceivePackCmd(cmd *exec.Cmd) {
+	h.receivePackCmd = cmd
+}
+
+// HandleStream starts the process of handling a pushed packfile.
+// If reads the packfile to extract details of the pushed references
+// and finally writes the packfile to the git receive pack input stream.
+func (h *BasicHandler) HandleStream(packfile io.Reader, gitReceivePack io.WriteCloser) error {
 
 	var err error
 
@@ -102,15 +139,17 @@ func (h *Handler) HandleStream(packfile io.Reader, gitReceivePack io.WriteCloser
 
 	// Write the packfile to the push reader and read it
 	io.Copy(h.PushReader, packfile)
-	if err = h.PushReader.Read(); err != nil {
+	if err = h.PushReader.Read(h.receivePackCmd); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// EnsureReferencesHaveTxDetail checks that each pushed reference has a transaction detail
-func (h *Handler) EnsureReferencesHaveTxDetail() error {
+// EnsureReferencesHaveTxDetail checks that each pushed reference
+// have a transaction detail that provide more information about
+// the transaction.
+func (h *BasicHandler) EnsureReferencesHaveTxDetail() error {
 	for _, ref := range h.PushReader.References.Names() {
 		if h.TxDetails.Get(ref) == nil {
 			return fmt.Errorf("reference (%s) has no transaction information", ref)
@@ -120,7 +159,7 @@ func (h *Handler) EnsureReferencesHaveTxDetail() error {
 }
 
 // enforcePolicy enforces authorization policies against a reference command
-func (h *Handler) enforcePolicy(cmd *packp.Command) error {
+func (h *BasicHandler) enforcePolicy(cmd *packp.Command) error {
 
 	ref := cmd.Name.String()
 	detail := h.TxDetails.Get(ref)
@@ -185,9 +224,9 @@ func (h *Handler) enforcePolicy(cmd *packp.Command) error {
 }
 
 // DoAuth performs authorization checks on the specified target reference.
-// If targetRef is unset, all references are checked.
-// If ignorePostRefs is true, post references like issue and merge references are not checked.
-func (h *Handler) DoAuth(ur *packp.ReferenceUpdateRequest, targetRef string, ignorePostRefs bool) error {
+// If targetRef is unset, all references are checked. If ignorePostRefs is
+// true, post references like issue and merge references are not checked.
+func (h *BasicHandler) DoAuth(ur *packp.ReferenceUpdateRequest, targetRef string, ignorePostRefs bool) error {
 	for _, cmd := range ur.Commands {
 		if targetRef != "" && targetRef != cmd.Name.String() {
 			continue
@@ -205,16 +244,20 @@ func (h *Handler) DoAuth(ur *packp.ReferenceUpdateRequest, targetRef string, ign
 	return nil
 }
 
-// HandleAuthorization performs authorization checks
-func (h *Handler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
+// AuthorizationHandler describes a function for checking authorization to access a reference
+type AuthorizationHandler func(ur *packp.ReferenceUpdateRequest) error
+
+// HandleAuthorization performs authorization checks on all pushed references.
+func (h *BasicHandler) HandleAuthorization(ur *packp.ReferenceUpdateRequest) error {
 	if err := h.EnsureReferencesHaveTxDetail(); err != nil {
 		return err
 	}
 	return h.DoAuth(ur, "", true)
 }
 
-// HandleReferences processes all pushed references
-func (h *Handler) HandleReferences() error {
+// HandleReferences validates all pushed references and reverts changes
+// introduced by HandleStream's processing of the references.
+func (h *BasicHandler) HandleReferences() error {
 
 	// Expect old state to have been captured before the push was processed
 	if h.OldState == nil {
@@ -235,11 +278,9 @@ func (h *Handler) HandleReferences() error {
 	return nil
 }
 
-// HandleUpdate is called after the pushed data have been analysed and
-// processed by git-receive-pack. Here, we attempt to determine what changed,
-// validate the pushed objects, construct a push transaction and broadcast to
-// the rest of the network
-func (h *Handler) HandleUpdate() error {
+// HandleUpdate creates a push note to represent the push operation and
+// adds it to the push pool and then have it broadcast to peers.
+func (h *BasicHandler) HandleUpdate() error {
 
 	// Validate and pass the references pushed
 	err := h.HandleReferences()
@@ -258,23 +299,25 @@ func (h *Handler) HandleUpdate() error {
 		return err
 	}
 
-	// Announce the pushed objects
+	// Announce the pushed commit or tag objects
 	for _, obj := range h.PushReader.Objects {
-		h.AnnounceObject(obj.Hash.String())
+		if obj.Type == plumbing2.CommitObject || obj.Type == plumbing2.TagObject {
+			h.Server.AnnounceObject(obj.Hash[:])
+		}
 	}
 
 	// Broadcast the push note
-	if err = h.Server.BroadcastPushObjects(note); err != nil {
+	if err = h.Server.BroadcastNoteAndEndorsement(note); err != nil {
 		h.log.Error("Failed to broadcast push note", "Err", err)
 	}
 
 	return nil
 }
 
-// createPushNote creates a note that describes a push operation.
-func (h *Handler) createPushNote() (*types.PushNote, error) {
+// createPushNote creates a note that describes a push request.
+func (h *BasicHandler) createPushNote() (*types.Note, error) {
 
-	var note = &types.PushNote{
+	var note = &types.Note{
 		TargetRepo:      h.Repo,
 		PushKeyID:       crypto.MustDecodePushKeyID(h.TxDetails.GetPushKeyID()),
 		RepoName:        h.TxDetails.GetRepoName(),
@@ -282,7 +325,7 @@ func (h *Handler) createPushNote() (*types.PushNote, error) {
 		PusherAcctNonce: h.TxDetails.GetNonce(),
 		PusherAddress:   h.Server.GetLogic().PushKeyKeeper().Get(h.TxDetails.GetPushKeyID()).Address,
 		Timestamp:       time.Now().Unix(),
-		NodePubKey:      h.Server.GetPrivateValidatorKey().PubKey().MustBytes32(),
+		CreatorPubKey:   h.Server.GetPrivateValidatorKey().PubKey().MustBytes32(),
 		References:      types.PushedReferences{},
 	}
 
@@ -294,7 +337,6 @@ func (h *Handler) createPushNote() (*types.PushNote, error) {
 			OldHash:         ref.OldHash,
 			NewHash:         ref.NewHash,
 			Nonce:           h.Repo.GetState().References.Get(refName).Nonce + 1,
-			Objects:         h.PushReader.ObjectsRefs.GetObjectsOf(refName),
 			Fee:             h.TxDetails.Get(refName).Fee,
 			Value:           h.TxDetails.Get(refName).Value,
 			MergeProposalID: h.TxDetails.Get(refName).MergeProposalID,
@@ -303,16 +345,16 @@ func (h *Handler) createPushNote() (*types.PushNote, error) {
 		})
 	}
 
-	// Calculate the size of all pushed objects
 	var err error
-	objs := funk.Keys(h.PushReader.ObjectsRefs).([]string)
-	note.Size, err = repo.GetObjectsSize(h.Repo, objs)
+
+	// Determine the size of the pushed reference objects
+	note.Size, err = GetSizeOfObjects(note)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get pushed objects size")
+		return nil, errors.Wrap(err, "failed to get size of pushed objects")
 	}
 
 	// Sign the push transaction
-	note.NodeSig, err = h.Server.GetPrivateValidatorKey().PrivKey().Sign(note.BytesNoCache())
+	note.RemoteNodeSig, err = h.Server.GetPrivateValidatorKey().PrivKey().Sign(note.BytesNoCache())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to sign push note")
 	}
@@ -323,21 +365,13 @@ func (h *Handler) createPushNote() (*types.PushNote, error) {
 	return note, nil
 }
 
-// AnnounceObject announces a packed object to DHT peers
-func (h *Handler) AnnounceObject(objHash string) error {
-	dhtKey := dht.MakeGitObjectKey(h.Repo.GetName(), objHash)
-	ctx, c := context.WithTimeout(context.Background(), 60*time.Second)
-	defer c()
-	if err := h.Server.GetDHT().Announce(ctx, []byte(dhtKey)); err != nil {
-		h.log.Warn("unable to announce git object", "Err", err)
-		return err
-	}
-	return nil
-}
+// RefHandler describes a function for processing a reference
+type RefHandler func(ref string, revertOnly bool) []error
 
-// HandleReference handles reference update validation and reversion.
-// When revertOnly is true, only reversion operation is performed.
-func (h *Handler) HandleReference(ref string, revertOnly bool) []error {
+// HandleReference performs validation and update reversion for a single
+// pushed reference. When revertOnly is true, only reversion operation
+// is performed.
+func (h *BasicHandler) HandleReference(ref string, revertOnly bool) []error {
 
 	var errs []error
 	var detail = h.TxDetails.Get(ref)

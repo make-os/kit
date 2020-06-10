@@ -26,7 +26,6 @@ var _ = Describe("TxValidator", func() {
 	var err error
 	var cfg *config.AppConfig
 	var key = crypto.NewKeyFromIntSeed(1)
-	var key2 = crypto.NewKeyFromIntSeed(2)
 
 	BeforeEach(func() {
 		cfg, err = testutil.SetTestCfg()
@@ -207,7 +206,7 @@ var _ = Describe("TxValidator", func() {
 		})
 	})
 
-	Describe(".CheckTxNSAcquire", func() {
+	Describe(".CheckTxNamespaceAcquire", func() {
 		var tx *txns.TxNamespaceAcquire
 		BeforeEach(func() {
 			params.CostOfNamespace = decimal.NewFromFloat(5)
@@ -221,42 +220,42 @@ var _ = Describe("TxValidator", func() {
 		When("it has invalid fields, it should return error when", func() {
 			It("should return error='type is invalid'", func() {
 				tx.Type = -10
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 			})
 
 			It("has invalid value", func() {
 				tx.Value = "invalid"
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, msg:invalid number; must be numeric"))
 			})
 
 			It("has no name", func() {
 				tx.Name = ""
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:name, msg:requires a unique name"))
 			})
 
 			It("has an invalid name", func() {
 				tx.Name = "invalid&"
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:name, msg:invalid identifier; only alphanumeric, _, and - characters are allowed"))
 			})
 
 			It("has invalid transfer destination", func() {
 				tx.TransferTo = "re&&^po"
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:to, msg:invalid value. Expected an address or a repository name"))
 			})
 
 			It("has value not equal to namespace price", func() {
 				tx.Value = "1"
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:value, msg:invalid value; has 1, want 5"))
 			})
@@ -264,7 +263,7 @@ var _ = Describe("TxValidator", func() {
 			It("has domain target with invalid format", func() {
 				tx.Value = "5"
 				tx.Domains["domain"] = "invalid:format"
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:domains, msg:domains.domain: target is invalid"))
 			})
@@ -272,7 +271,7 @@ var _ = Describe("TxValidator", func() {
 			It("has domain target with unknown target type", func() {
 				tx.Value = "5"
 				tx.Domains["domain"] = "unknown_type/name"
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:domains, msg:domains.domain: target is invalid"))
 			})
@@ -280,7 +279,7 @@ var _ = Describe("TxValidator", func() {
 			It("has domain target with account target type that has an invalid address", func() {
 				tx.Value = "5"
 				tx.Domains["domain"] = "a/invalid_addr"
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:domains, msg:domains.domain: target is not a valid address"))
 			})
@@ -288,7 +287,7 @@ var _ = Describe("TxValidator", func() {
 			It("has invalid fee", func() {
 				tx.Nonce = 1
 				tx.Fee = "invalid"
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:fee, msg:invalid number; must be numeric"))
 			})
@@ -296,21 +295,21 @@ var _ = Describe("TxValidator", func() {
 			It("has low fee", func() {
 				tx.Nonce = 1
 				tx.Fee = "0"
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring("field:fee, msg:fee cannot be lower than the base price"))
 			})
 
 			It("has no nonce", func() {
 				tx.Nonce = 0
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:nonce, msg:nonce is required"))
 			})
 
 			It("has no timestamp", func() {
 				tx.Nonce = 1
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:timestamp, msg:timestamp is required"))
 			})
@@ -318,7 +317,7 @@ var _ = Describe("TxValidator", func() {
 			It("has no public key", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:senderPubKey, msg:sender public key is required"))
 			})
@@ -327,7 +326,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Nonce = 1
 				tx.Timestamp = time.Now().Unix()
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, msg:signature is required"))
 			})
@@ -337,7 +336,7 @@ var _ = Describe("TxValidator", func() {
 				tx.Timestamp = time.Now().Unix()
 				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
 				tx.Sig = []byte("invalid")
-				err := validation.CheckTxNSAcquire(tx, -1)
+				err := validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(Equal("field:sig, msg:signature is not valid"))
 			})
@@ -352,7 +351,7 @@ var _ = Describe("TxValidator", func() {
 				sig, err := tx.Sign(key.PrivKey().Base58())
 				Expect(err).To(BeNil())
 				tx.Sig = sig
-				err = validation.CheckTxNSAcquire(tx, -1)
+				err = validation.CheckTxNamespaceAcquire(tx, -1)
 				Expect(err).To(BeNil())
 			})
 		})
@@ -1219,162 +1218,93 @@ var _ = Describe("TxValidator", func() {
 		BeforeEach(func() {
 			tx = txns.NewBareTxPush()
 			tx.Timestamp = time.Now().Unix()
-			tx.PushNote.(*types.PushNote).RepoName = "repo1"
-			tx.PushNote.(*types.PushNote).PushKeyID = util.RandBytes(20)
-			tx.PushNote.(*types.PushNote).Timestamp = time.Now().Unix()
-			tx.PushNote.(*types.PushNote).PusherAcctNonce = 1
-			tx.PushNote.(*types.PushNote).NodePubKey = key.PubKey().MustBytes32()
-			tx.PushNote.(*types.PushNote).NodeSig = key.PrivKey().MustSign(tx.PushNote.Bytes())
+			tx.Note.(*types.Note).RepoName = "repo1"
+			tx.Note.(*types.Note).PushKeyID = util.RandBytes(20)
+			tx.Note.(*types.Note).Timestamp = time.Now().Unix()
+			tx.Note.(*types.Note).PusherAcctNonce = 1
+			tx.Note.(*types.Note).CreatorPubKey = key.PubKey().MustBytes32()
+			tx.Note.(*types.Note).RemoteNodeSig = key.PrivKey().MustSign(tx.Note.Bytes())
 		})
 
-		When("it has invalid fields, it should return error when", func() {
-			It("should return error='type is invalid'", func() {
-				tx.Type = -10
-				err := validation.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
-			})
-
-			It("has no push note", func() {
-				tx.PushNote = nil
-				err := validation.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:pushNote, msg:push note is required"))
-			})
-
-			It("has an invalid push note (with no repo name)", func() {
-				tx.PushNote.(*types.PushNote).RepoName = ""
-				err := validation.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:repo, msg:repo name is required"))
-			})
-
-			It("has low endorsement (not up to quorum)", func() {
-				params.PushEndorseQuorumSize = 1
-				err := validation.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:endorsements, msg:not enough endorsements included"))
-			})
-
-			It("has a no push note id", func() {
-				params.PushEndorseQuorumSize = 1
-				tx.PushEnds = append(tx.PushEnds, &types.PushEndorsement{})
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				sig, _ := key.PrivKey().Sign(tx.Bytes())
-				tx.Sig = sig
-				err := validation.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:endorsements.pushNoteID, msg:push note id is required"))
-			})
-
-			It("has a PushEndorsement with no sender public key", func() {
-				params.PushEndorseQuorumSize = 1
-				tx.PushEnds = append(tx.PushEnds, &types.PushEndorsement{
-					NoteID:         util.StrToBytes32("id"),
-					EndorserPubKey: util.EmptyBytes32,
-				})
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				sig, _ := key.PrivKey().Sign(tx.Bytes())
-				tx.Sig = sig
-				err := validation.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:endorsements.senderPubKey, msg:sender public key is required"))
-			})
-
-			It("has a PushEndorsement with a push note id that is different from the PushTx.PushNoteID", func() {
-				params.PushEndorseQuorumSize = 1
-				tx.PushEnds = append(tx.PushEnds, &types.PushEndorsement{
-					NoteID:         util.StrToBytes32("id"),
-					EndorserPubKey: key.PubKey().MustBytes32(),
-				})
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				sig, _ := key.PrivKey().Sign(tx.Bytes())
-				tx.Sig = sig
-				err := validation.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:0, field:endorsements.pushNoteID, msg:push note id and push endorsement id must match"))
-			})
-
-			It("has multiple PushEnds from same sender", func() {
-				params.PushEndorseQuorumSize = 1
-
-				pushEnd1 := &types.PushEndorsement{
-					NoteID:         tx.PushNote.ID(),
-					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-				}
-				sig, _ := key.PrivKey().Sign(pushEnd1.Bytes())
-				pushEnd1.Sig = util.BytesToBytes64(sig)
-				tx.PushEnds = append(tx.PushEnds, pushEnd1)
-
-				pushEnd2 := &types.PushEndorsement{
-					NoteID:         tx.PushNote.ID(),
-					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-				}
-				sig, _ = key.PrivKey().Sign(pushEnd2.Bytes())
-				pushEnd2.Sig = util.BytesToBytes64(sig)
-				tx.PushEnds = append(tx.PushEnds, pushEnd2)
-
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				sig, _ = key.PrivKey().Sign(tx.Bytes())
-				tx.Sig = sig
-				err := validation.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:1, field:endorsements.senderPubKey, msg:multiple endorsement by a single sender not permitted"))
-			})
-
-			It("has PushEnds with different references hash set", func() {
-				params.PushEndorseQuorumSize = 1
-
-				pushEnd1 := &types.PushEndorsement{
-					NoteID:         tx.PushNote.ID(),
-					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-					References: []*types.EndorsedReference{
-						{Hash: util.RandBytes(20)},
-					},
-				}
-				sig, _ := key.PrivKey().Sign(pushEnd1.Bytes())
-				pushEnd1.Sig = util.BytesToBytes64(sig)
-				tx.PushEnds = append(tx.PushEnds, pushEnd1)
-
-				pushEnd2 := &types.PushEndorsement{
-					NoteID:         tx.PushNote.ID(),
-					EndorserPubKey: util.BytesToBytes32(key2.PubKey().MustBytes()),
-					References: []*types.EndorsedReference{
-						{Hash: util.RandBytes(20)},
-					},
-				}
-				sig, _ = key2.PrivKey().Sign(pushEnd2.Bytes())
-				pushEnd2.Sig = util.BytesToBytes64(sig)
-				tx.PushEnds = append(tx.PushEnds, pushEnd2)
-
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				sig, _ = key.PrivKey().Sign(tx.Bytes())
-				tx.Sig = sig
-				err := validation.CheckTxPush(tx, -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("index:1, field:endorsements.refsHash, msg:references of all endorsements must match"))
-			})
+		It("should return error when type is invalid", func() {
+			tx.Type = -10
+			err := validation.CheckTxPush(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
 		})
 
-		When("no error", func() {
-			It("should return no error", func() {
-				params.PushEndorseQuorumSize = 1
+		It("should return error when it has no push note", func() {
+			tx.Note = nil
+			err := validation.CheckTxPush(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:note, msg:push note is required"))
+		})
 
-				pushEnd := &types.PushEndorsement{
-					NoteID:         tx.PushNote.ID(),
-					EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
-				}
-				sig, _ := key.PrivKey().Sign(pushEnd.Bytes())
-				pushEnd.Sig = util.BytesToBytes64(sig)
+		It("should return error when it has an invalid push note (with no repo name)", func() {
+			tx.Note.(*types.Note).RepoName = ""
+			err := validation.CheckTxPush(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:repo, msg:repo name is required"))
+		})
 
-				tx.PushEnds = append(tx.PushEnds, pushEnd)
-				tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
-				sig, _ = key.PrivKey().Sign(tx.Bytes())
-				tx.Sig = sig
+		It("should return error when it has low endorsement (not up to quorum)", func() {
+			err := validation.CheckTxPush(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("field:endorsements, msg:not enough endorsements included"))
+		})
 
-				err := validation.CheckTxPush(tx, -1)
-				Expect(err).To(BeNil())
+		It("should return error when it has a push endorsement with no sender public key", func() {
+			params.PushEndorseQuorumSize = 1
+			tx.Endorsements = append(tx.Endorsements, &types.PushEndorsement{
+				EndorserPubKey: util.EmptyBytes32,
 			})
+			tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+			sig, _ := key.PrivKey().Sign(tx.Bytes())
+			tx.Sig = sig
+			err := validation.CheckTxPush(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("index:0, field:endorsements.pubKey, msg:endorser's public key is required"))
+		})
+
+		It("should return error when it has multiple push endorsements from same sender", func() {
+			params.PushEndorseQuorumSize = 1
+
+			end1 := &types.PushEndorsement{
+				EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+				References:     []*types.EndorsedReference{{}},
+			}
+			tx.Endorsements = append(tx.Endorsements, end1)
+
+			end2 := &types.PushEndorsement{
+				EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+				References:     []*types.EndorsedReference{},
+			}
+			tx.Endorsements = append(tx.Endorsements, end2)
+
+			tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+			sig, _ := key.PrivKey().Sign(tx.Bytes())
+			tx.Sig = sig
+			err := validation.CheckTxPush(tx, -1)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(Equal("index:1, field:endorsements.pubKey, " +
+				"msg:multiple endorsement by a single sender not permitted"))
+		})
+
+		It("should return no error when endorsement is valid", func() {
+			params.PushEndorseQuorumSize = 1
+
+			end := &types.PushEndorsement{
+				EndorserPubKey: util.BytesToBytes32(key.PubKey().MustBytes()),
+				References:     []*types.EndorsedReference{{}},
+			}
+			tx.Endorsements = append(tx.Endorsements, end)
+
+			tx.SenderPubKey = crypto.BytesToPublicKey(key.PubKey().MustBytes())
+			sig, _ := key.PrivKey().Sign(tx.Bytes())
+			tx.Sig = sig
+
+			err := validation.CheckTxPush(tx, -1)
+			Expect(err).To(BeNil())
 		})
 	})
 
@@ -1641,116 +1571,6 @@ var _ = Describe("TxValidator", func() {
 			Expect(err).To(MatchError("field:value, msg:proposal creation fee cannot be less than network minimum"))
 		})
 	})
-
-	// TODO:
-	// Describe(".CheckTxRepoProposalMergeRequest", func() {
-	// 	var tx *core.TxRepoProposalMergeRequest
-	//
-	// 	BeforeEach(func() {
-	// 		tx = core.NewBareRepoProposalMergeRequest()
-	// 		tx.Timestamp = time.Now().Unix()
-	// 		tx.ProposalID = "123"
-	// 	})
-	//
-	// 	It("should return error='type is invalid'", func() {
-	// 		tx.Type = -10
-	// 		err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-	// 		Expect(err).ToNot(BeNil())
-	// 		Expect(err.Error()).To(Equal("field:type, msg:type is invalid"))
-	// 	})
-	//
-	// 	It("should return error when repo name is not provided", func() {
-	// 		err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-	// 		Expect(err).ToNot(BeNil())
-	// 		Expect(err).To(MatchError("field:name, msg:repo name is required"))
-	// 	})
-	//
-	// 	It("should return error when repo name is not valid", func() {
-	// 		tx.RepoName = "*&^"
-	// 		err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-	// 		Expect(err).ToNot(BeNil())
-	// 		Expect(err).To(MatchError("field:name, msg:invalid characters in identifier. " +
-	// 			"Only alphanumeric, _, and - chars are allowed, but _, - cannot be first chars"))
-	// 	})
-	//
-	// 	It("should return error when proposal id is unset", func() {
-	// 		tx.RepoName = "good-repo"
-	// 		tx.ProposalID = ""
-	// 		err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-	// 		Expect(err).ToNot(BeNil())
-	// 		Expect(err).To(MatchError("field:id, msg:proposal id is required"))
-	// 	})
-	//
-	// 	It("should return error when proposal id is not valid", func() {
-	// 		tx.RepoName = "good-repo"
-	// 		tx.ProposalID = "abc123"
-	// 		err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-	// 		Expect(err).ToNot(BeNil())
-	// 		Expect(err).To(MatchError("field:id, msg:proposal id is not valid"))
-	// 	})
-	//
-	// 	It("should return error when proposal id length exceeds max", func() {
-	// 		tx.RepoName = "good-repo"
-	// 		tx.ProposalID = "123456789"
-	// 		err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-	// 		Expect(err).ToNot(BeNil())
-	// 		Expect(err).To(MatchError("field:id, msg:proposal id limit of 8 bytes exceeded"))
-	// 	})
-	//
-	// 	It("should return error when value is not provided", func() {
-	// 		tx.RepoName = "repo1"
-	// 		tx.Value = ""
-	// 		err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-	// 		Expect(err).ToNot(BeNil())
-	// 		Expect(err).To(MatchError("field:value, msg:value is required"))
-	// 	})
-	//
-	// 	It("should return error when base branch is not provided", func() {
-	// 		tx.RepoName = "repo1"
-	// 		err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-	// 		Expect(err).ToNot(BeNil())
-	// 		Expect(err).To(MatchError("field:base, msg:base branch name is required"))
-	// 	})
-	//
-	// 	It("should return error when base branch hash is not valid", func() {
-	// 		tx.RepoName = "repo1"
-	// 		tx.BaseBranch = "branch_base"
-	// 		tx.BaseBranchHash = "invalid"
-	// 		err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-	// 		Expect(err).ToNot(BeNil())
-	// 		Expect(err).To(MatchError("field:baseHash, msg:base branch hash is not valid"))
-	// 	})
-	//
-	// 	It("should return error when target branch is not provided", func() {
-	// 		tx.RepoName = "repo1"
-	// 		tx.BaseBranch = "branch_base"
-	// 		tx.BaseBranchHash = util.RandString(40)
-	// 		err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-	// 		Expect(err).ToNot(BeNil())
-	// 		Expect(err).To(MatchError("field:target, msg:target branch name is required"))
-	// 	})
-	//
-	// 	It("should return error when target branch hash is not provided", func() {
-	// 		tx.RepoName = "repo1"
-	// 		tx.BaseBranch = "branch_base"
-	// 		tx.BaseBranchHash = util.RandString(40)
-	// 		tx.TargetBranch = "branch_base"
-	// 		err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-	// 		Expect(err).ToNot(BeNil())
-	// 		Expect(err).To(MatchError("field:targetHash, msg:target branch hash is required"))
-	// 	})
-	//
-	// 	It("should return error when target branch hash is not valid", func() {
-	// 		tx.RepoName = "repo1"
-	// 		tx.BaseBranch = "branch_base"
-	// 		tx.BaseBranchHash = util.RandString(40)
-	// 		tx.TargetBranch = "branch_base"
-	// 		tx.TargetBranchHash = "invalid"
-	// 		err := validators.CheckTxRepoProposalMergeRequest(tx, -1)
-	// 		Expect(err).ToNot(BeNil())
-	// 		Expect(err).To(MatchError("field:targetHash, msg:target branch hash is not valid"))
-	// 	})
-	// })
 
 	Describe(".CheckTxRepoProposalRegisterPushKey", func() {
 		var tx *txns.TxRepoProposalRegisterPushKey

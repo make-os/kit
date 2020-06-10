@@ -1,4 +1,4 @@
-package dht
+package streamer
 
 import (
 	"bufio"
@@ -13,6 +13,8 @@ import (
 	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/dht"
+	"gitlab.com/makeos/mosdef/dht/providertracker"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/util/io"
 )
@@ -26,18 +28,32 @@ var (
 	ErrUnknownMsgType = fmt.Errorf("unknown message type")
 )
 
-type CommitRequester interface {
+type PackResult struct {
+	Pack       io.ReadSeekerCloser
+	RemotePeer peer.ID
+}
+
+type ObjectRequester interface {
 	Write(ctx context.Context, prov peer.AddrInfo, pid protocol.ID, data []byte) (network.Stream, error)
 	WriteToStream(str network.Stream, data []byte) error
 	DoWant(ctx context.Context) (err error)
-	Do(ctx context.Context) (packfile io.ReadSeekerCloser, err error)
+	Do(ctx context.Context) (result *PackResult, err error)
 	GetProviderStreams() []network.Stream
 	OnWantResponse(s network.Stream) error
 	OnSendResponse(s network.Stream) (io.ReadSeekerCloser, error)
+	AddProviderStream(streams ...network.Stream)
 }
 
-// CommitRequesterArgs contain arguments for NewCommitRequester function.
-type CommitRequesterArgs struct {
+// MakeObjectRequester describes a function type for creating an object requester
+type MakeObjectRequester func(args RequestArgs) ObjectRequester
+
+// makeRequester creates a new object requester
+func makeRequester(args RequestArgs) ObjectRequester {
+	return NewBasicObjectRequester(args)
+}
+
+// RequestArgs contain arguments for NewBasicObjectRequester function.
+type RequestArgs struct {
 
 	// Host is the libp2p network host
 	Host host.Host
@@ -45,24 +61,24 @@ type CommitRequesterArgs struct {
 	// Providers are addresses of providers
 	Providers []peer.AddrInfo
 
-	// ProvidersStream sets the initial provider's streams
-	ProviderStreams []network.Stream
-
 	// ReposDir is the root directory for all repos
 	ReposDir string
 
-	// RepoName is the name of the repo to query commit from
+	// RepoName is the name of the repo to query object from
 	RepoName string
 
-	// RequestKey is the requested commit key
-	RequestKey []byte
+	// Key is the requested object key
+	Key []byte
 
 	// Log is the app logger
 	Log logger.Logger
+
+	// BasicProviderTracker for recording and tracking provider behaviour
+	ProviderTracker *providertracker.BasicProviderTracker
 }
 
-// BasicCommitRequester manages object download sessions between multiple providers
-type BasicCommitRequester struct {
+// BasicObjectRequester manages object download sessions between multiple providers
+type BasicObjectRequester struct {
 	lck                   *sync.Mutex
 	providers             []peer.AddrInfo
 	repoName              string
@@ -71,30 +87,38 @@ type BasicCommitRequester struct {
 	log                   logger.Logger
 	reposDir              string
 	closed                bool
+	pTracker              *providertracker.BasicProviderTracker
 	providerStreams       []network.Stream
 	OnWantResponseHandler func(network.Stream) error
 	OnSendResponseHandler func(network.Stream) (io.ReadSeekerCloser, error)
 }
 
-// NewCommitRequester creates an instance of BasicCommitRequester
-func NewCommitRequester(args CommitRequesterArgs) *BasicCommitRequester {
-	r := BasicCommitRequester{
-		lck:             &sync.Mutex{},
-		providers:       args.Providers,
-		repoName:        args.RepoName,
-		key:             args.RequestKey,
-		host:            args.Host,
-		log:             args.Log,
-		reposDir:        args.ReposDir,
-		providerStreams: args.ProviderStreams,
+// NewBasicObjectRequester creates an instance of BasicObjectRequester
+func NewBasicObjectRequester(args RequestArgs) *BasicObjectRequester {
+	r := BasicObjectRequester{
+		lck:       &sync.Mutex{},
+		providers: args.Providers,
+		repoName:  args.RepoName,
+		key:       args.Key,
+		host:      args.Host,
+		log:       args.Log,
+		reposDir:  args.ReposDir,
+		pTracker:  args.ProviderTracker,
 	}
+
 	r.OnWantResponseHandler = r.OnWantResponse
 	r.OnSendResponseHandler = r.OnSendResponse
+
 	return &r
 }
 
+// AddProviderStream adds provider streams
+func (r *BasicObjectRequester) AddProviderStream(streams ...network.Stream) {
+	r.providerStreams = append(r.providerStreams, streams...)
+}
+
 // Write writes a message to a provider
-func (r *BasicCommitRequester) Write(ctx context.Context, prov peer.AddrInfo, pid protocol.ID, data []byte) (network.Stream, error) {
+func (r *BasicObjectRequester) Write(ctx context.Context, prov peer.AddrInfo, pid protocol.ID, data []byte) (network.Stream, error) {
 	r.host.Peerstore().AddAddr(prov.ID, prov.Addrs[0], peerstore.ProviderAddrTTL)
 	str, err := r.host.NewStream(ctx, prov.ID, pid)
 	if err != nil {
@@ -113,7 +137,7 @@ func (r *BasicCommitRequester) Write(ctx context.Context, prov peer.AddrInfo, pi
 }
 
 // WriteToStream writes a message to a stream
-func (r *BasicCommitRequester) WriteToStream(str network.Stream, data []byte) error {
+func (r *BasicObjectRequester) WriteToStream(str network.Stream, data []byte) error {
 	_, err := str.Write(data)
 	if err != nil {
 		return err
@@ -123,7 +147,7 @@ func (r *BasicCommitRequester) WriteToStream(str network.Stream, data []byte) er
 
 // DoWant sends 'WANT' messages to providers, then caches the
 // stream of providers that responded with 'HAVE' message.
-func (r *BasicCommitRequester) DoWant(ctx context.Context) (err error) {
+func (r *BasicObjectRequester) DoWant(ctx context.Context) (err error) {
 	var wg sync.WaitGroup
 	wg.Add(len(r.providers))
 
@@ -135,10 +159,13 @@ func (r *BasicCommitRequester) DoWant(ctx context.Context) (err error) {
 
 		// Send 'WANT' message to providers
 		var s network.Stream
-		s, err = r.Write(ctx, prov, CommitStreamProtocolID, MakeWantMsg(r.repoName, r.key))
+		s, err = r.Write(ctx, prov, ObjectStreamerProtocolID, dht.MakeWantMsg(r.repoName, r.key))
 		if err != nil {
 			wg.Done()
-			r.log.Error("unable to Write `WANT` message to peer", "ID", prov.ID.Pretty())
+			r.log.Error("unable to write `WANT` message to peer", "ID", prov.ID.Pretty(), "Err", err)
+			if r.pTracker != nil {
+				r.pTracker.MarkFailure(prov.ID)
+			}
 			continue
 		}
 
@@ -155,17 +182,20 @@ func (r *BasicCommitRequester) DoWant(ctx context.Context) (err error) {
 	return
 }
 
-// Do starts the commit object request protocol
-func (r *BasicCommitRequester) Do(ctx context.Context) (packfile io.ReadSeekerCloser, err error) {
+// Do starts the object request protocol
+func (r *BasicObjectRequester) Do(ctx context.Context) (result *PackResult, err error) {
 
 	// Send `WANT` message to providers
-	r.DoWant(ctx)
+	err = r.DoWant(ctx)
 
-	// Process streams that have the commit object. Synchronously send 'SEND'
+	// Return error if no provider stream
+	if len(r.providerStreams) == 0 {
+		return nil, fmt.Errorf("no provider stream")
+	}
+
+	// Process streams that have the requested object. Synchronously send 'SEND'
 	// message to each stream and stop when we receive a packfile the
 	// first stream. Once done, simply reset the unused provider streams.
-	// TODO: We should use an algorithm that tries to prioritizes highly available providers
-	//  and prevents the requester from overwhelming them.
 	for _, str := range r.providerStreams {
 
 		if err = ctx.Err(); err != nil {
@@ -174,36 +204,48 @@ func (r *BasicCommitRequester) Do(ctx context.Context) (packfile io.ReadSeekerCl
 		}
 
 		// Send a 'SEND' message to the stream.
-		if err = r.WriteToStream(str, MakeSendMsg(r.repoName, r.key)); err != nil {
+		if err = r.WriteToStream(str, dht.MakeSendMsg(r.repoName, r.key)); err != nil {
 			str.Reset()
-			r.log.Error("failed to Write 'SEND' message to peer", "Err", err,
+			r.log.Error("failed to write 'SEND' message to peer", "Err", err,
 				"Peer", str.Conn().RemotePeer().Pretty())
+
+			if r.pTracker != nil {
+				r.pTracker.MarkFailure(str.Conn().RemotePeer())
+			}
 			continue
 		}
 
 		// Handle 'SEND' response.
+		var packfile io.ReadSeekerCloser
 		packfile, err = r.OnSendResponseHandler(str)
 		if err != nil {
 			str.Reset()
 			r.log.Error("failed to read 'SEND' response", "Err", err,
 				"Peer", str.Conn().RemotePeer().Pretty())
+
+			if r.pTracker != nil {
+				r.pTracker.MarkFailure(str.Conn().RemotePeer())
+			}
 			continue
 		}
 
-		return packfile, nil
+		return &PackResult{
+			Pack:       packfile,
+			RemotePeer: str.Conn().RemotePeer(),
+		}, nil
 	}
 
 	return nil, err
 }
 
 // GetProviderStreams returns the provider's streams
-func (r *BasicCommitRequester) GetProviderStreams() []network.Stream {
+func (r *BasicObjectRequester) GetProviderStreams() []network.Stream {
 	return r.providerStreams
 }
 
 // OnWantResponse handles a remote peer's response to a WANT message.
 // Streams that responded with 'HAVE' will be cached while others are reset.
-func (r *BasicCommitRequester) OnWantResponse(s network.Stream) error {
+func (r *BasicObjectRequester) OnWantResponse(s network.Stream) error {
 
 	msg := make([]byte, 4)
 	_, err := s.Read(msg)
@@ -211,13 +253,18 @@ func (r *BasicCommitRequester) OnWantResponse(s network.Stream) error {
 		return errors.Wrap(err, "failed to read message type")
 	}
 
+	// Mark remote peer as seen.
+	if r.pTracker != nil {
+		r.pTracker.MarkSeen(s.Conn().RemotePeer())
+	}
+
 	switch string(msg[:4]) {
-	case MsgTypeHave:
+	case dht.MsgTypeHave:
 		r.lck.Lock()
 		r.providerStreams = append(r.providerStreams, s)
 		r.lck.Unlock()
 
-	case MsgTypeNope:
+	case dht.MsgTypeNope:
 		s.Reset()
 
 	default:
@@ -229,21 +276,29 @@ func (r *BasicCommitRequester) OnWantResponse(s network.Stream) error {
 
 // OnSendResponse handles incoming packfile data from remote peer.
 // The remote peer may respond with "NOPE", it means they no longer
-// have the requested commit and an ErrObjNotFound is returned.
-func (r *BasicCommitRequester) OnSendResponse(s network.Stream) (io.ReadSeekerCloser, error) {
+// have the requested object and an ErrObjNotFound is returned.
+func (r *BasicObjectRequester) OnSendResponse(s network.Stream) (io.ReadSeekerCloser, error) {
 	defer s.Reset()
 
 	var buf = bufio.NewReader(s)
 	op, err := buf.Peek(4)
 	if err != nil {
+		if r.pTracker != nil {
+			r.pTracker.MarkFailure(s.Conn().RemotePeer())
+		}
 		return nil, errors.Wrap(err, "unable to read msg type")
 	}
 
-	switch string(op) {
-	case MsgTypeNope:
-		return nil, ErrObjNotFound
+	// Mark remote peer as seen.
+	if r.pTracker != nil {
+		r.pTracker.MarkSeen(s.Conn().RemotePeer())
+	}
 
-	case MsgTypePack:
+	switch string(op) {
+	case dht.MsgTypeNope:
+		return nil, dht.ErrObjNotFound
+
+	case dht.MsgTypePack:
 		rdr, err := io.LimitedReadToTmpFile(buf, MaxPackSize)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to read pack data")

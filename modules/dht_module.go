@@ -6,8 +6,7 @@ import (
 	"time"
 
 	"gitlab.com/makeos/mosdef/config"
-	dht2 "gitlab.com/makeos/mosdef/dht"
-	"gitlab.com/makeos/mosdef/remote/types"
+	"gitlab.com/makeos/mosdef/dht/server/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/modules"
 
@@ -21,11 +20,11 @@ import (
 type DHTModule struct {
 	cfg *config.AppConfig
 	vm  *otto.Otto
-	dht dht2.DHT
+	dht types.DHT
 }
 
 // NewDHTModule creates an instance of DHTModule
-func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht dht2.DHT) *DHTModule {
+func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht types.DHT) *DHTModule {
 	return &DHTModule{
 		cfg: cfg,
 		vm:  vm,
@@ -54,11 +53,6 @@ func (m *DHTModule) namespacedFuncs() []*modules.ModuleFunc {
 			Name:        "getProviders",
 			Value:       m.GetProviders,
 			Description: "Get providers for a given key",
-		},
-		{
-			Name:        "getRepoObject",
-			Value:       m.GetRepoObject,
-			Description: "Get and return a repo object",
 		},
 		{
 			Name:        "getPeers",
@@ -131,11 +125,9 @@ func (m *DHTModule) Lookup(key string) interface{} {
 // announce announces to the network that the node can provide value for a given key
 //
 // ARGS:
-// - key: The data query key
+// key: The data query key
 func (m *DHTModule) Announce(key string) {
-	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cn()
-	if err := m.dht.Announce(ctx, []byte(key)); err != nil {
+	if err := m.dht.Announce([]byte(key)); err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
 	}
 }
@@ -166,24 +158,6 @@ func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
 		})
 	}
 	return
-}
-
-// getRepoObject finds a repository object from a provider
-//
-// ARGS:
-// objURI: The repo object URI
-func (m *DHTModule) GetRepoObject(objURI string) []byte {
-	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cn()
-	bz, err := m.dht.GetObject(ctx, &dht2.DHTObjectQuery{
-		Module:    types.RepoObjectModule,
-		ObjectKey: []byte(objURI),
-	})
-	if err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
-	}
-
-	return bz
 }
 
 // getPeers returns a list of all connected peers

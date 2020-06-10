@@ -12,7 +12,6 @@ import (
 	"gitlab.com/makeos/mosdef/remote/cmd/common"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
-	common2 "gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/util"
 	io2 "gitlab.com/makeos/mosdef/util/io"
 )
@@ -194,7 +193,7 @@ func MergeRequestCreateCmd(r types.LocalRepo, args *MergeRequestCreateArgs) erro
 		Title:     args.Title,
 		ReplyTo:   args.ReplyHash,
 		Reactions: args.Reactions,
-		MergeRequestFields: common2.MergeRequestFields{
+		MergeRequestFields: types.MergeRequestFields{
 			BaseBranch:       args.Base,
 			BaseBranchHash:   args.BaseHash,
 			TargetBranch:     args.Target,

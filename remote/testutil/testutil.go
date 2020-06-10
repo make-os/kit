@@ -1,12 +1,14 @@
 package testutil
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/bitfield/script"
+	"github.com/phayes/freeport"
 )
 
 var GitEnv = os.Environ()
@@ -18,12 +20,17 @@ func ExecGit(workDir string, args ...string) []byte {
 	cmd.Env = GitEnv
 	bz, err := cmd.CombinedOutput()
 	if err != nil {
+		fmt.Println(string(bz))
 		panic(err)
 	}
 	return bz
 }
 
 func AppendToFile(path, file string, data string) {
+	dir, _ := filepath.Split(file)
+	if dir != "" {
+		os.MkdirAll(filepath.Join(path, dir), os.ModePerm)
+	}
 	_, _ = script.Echo(data).AppendFile(filepath.Join(path, file))
 }
 
@@ -51,6 +58,10 @@ func CreateCommitAndAnnotatedTag(path, file, fileData, commitMsg, tagName string
 	AppendToFile(path, file, fileData)
 	ExecGitCommit(path, commitMsg)
 	ExecGit(path, "tag", "-a", tagName, "-m", commitMsg, "-f")
+}
+
+func CreateTagPointedToTag(path, msg, tagName, pointedTagName string) {
+	ExecGit(path, "tag", "-a", tagName, "-m", msg, "-f", pointedTagName)
 }
 
 func CreateCommitAndLightWeightTag(path, file, fileData, commitMsg, tagName string) {
@@ -90,7 +101,7 @@ func DeleteTag(path, name string) {
 	ExecGit(path, "tag", "-d", name)
 }
 
-func DeleteNote(path, name string) {
+func DeleteRef(path, name string) {
 	ExecGit(path, "update-ref", "-d", name)
 }
 
@@ -126,4 +137,12 @@ func ExecAnyCmd(workDir, name string, args ...string) []byte {
 
 func GetRecentCommitHash(path, ref string) string {
 	return strings.TrimSpace(string(ExecGit(path, "--no-pager", "log", ref, "-1", "--format=%H")))
+}
+
+func RandomAddr() string {
+	port, err := freeport.GetFreePort()
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("127.0.0.1:%d", port)
 }

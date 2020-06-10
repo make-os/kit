@@ -13,7 +13,6 @@ import (
 	"gitlab.com/makeos/mosdef/remote/cmd/mergecmd"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
@@ -91,7 +90,7 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
 					return &plumbing.PostBody{
-						MergeRequestFields: common.MergeRequestFields{
+						MergeRequestFields: types.MergeRequestFields{
 							TargetBranch: "target",
 						},
 					}, nil, nil
@@ -109,7 +108,7 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 				Reference: plumbing.MakeMergeRequestReference(1),
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
-					return &plumbing.PostBody{MergeRequestFields: common.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
+					return &plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
 				},
 			}
 			mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
@@ -125,7 +124,7 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 				Reference: plumbing.MakeMergeRequestReference(1),
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
-					return &plumbing.PostBody{MergeRequestFields: common.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
+					return &plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
 				},
 			}
 			mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
@@ -142,7 +141,7 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 				Reference: plumbing.MakeMergeRequestReference(1),
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
-					return &plumbing.PostBody{MergeRequestFields: common.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
+					return &plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
 				},
 			}
 			mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
@@ -162,7 +161,7 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 					Reference: plumbing.MakeMergeRequestReference(1),
 					ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 						Expect(hash).To(Equal(mergeReqCommits[0]))
-						return &plumbing.PostBody{MergeRequestFields: common.MergeRequestFields{BaseBranch: "base", BaseBranchHash: "hash"}}, nil, nil
+						return &plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{BaseBranch: "base", BaseBranchHash: "hash"}}, nil, nil
 					},
 				}
 				mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)
@@ -181,7 +180,7 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 				Reference: plumbing.MakeMergeRequestReference(1),
 				ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 					Expect(hash).To(Equal(mergeReqCommits[0]))
-					return &plumbing.PostBody{MergeRequestFields: common.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
+					return &plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
 				},
 				ConfirmInput: func(title string, def bool) bool {
 					return true
@@ -204,7 +203,7 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 					Reference: plumbing.MakeMergeRequestReference(1),
 					ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 						Expect(hash).To(Equal(mergeReqCommits[0]))
-						return &plumbing.PostBody{MergeRequestFields: common.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
+						return &plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
 					},
 					ConfirmInput: func(title string, def bool) bool { return false },
 					StdOut:       ioutil.Discard,
@@ -227,7 +226,7 @@ var _ = Describe("MergeReqCheckoutCmd", func() {
 					Reference:             plumbing.MakeMergeRequestReference(1),
 					ReadPostBody: func(repo types.LocalRepo, hash string) (*plumbing.PostBody, *object.Commit, error) {
 						Expect(hash).To(Equal(mergeReqCommits[0]))
-						return &plumbing.PostBody{MergeRequestFields: common.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
+						return &plumbing.PostBody{MergeRequestFields: types.MergeRequestFields{TargetBranch: "target", TargetBranchHash: "hash"}}, nil, nil
 					},
 				}
 				mockRepo.EXPECT().GetRefCommits(args.Reference, true).Return(mergeReqCommits, nil)

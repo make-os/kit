@@ -18,6 +18,7 @@ require (
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/c-bata/go-prompt v0.2.3
 	github.com/cbroglie/mustache v1.0.1
+	github.com/cenkalti/backoff/v4 v4.0.2
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e
 	github.com/davecgh/go-spew v1.1.1
 	github.com/deckarep/golang-set v1.7.1 // indirect
@@ -30,6 +31,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/gen2brain/beeep v0.0.0-20200420150314-13046a26d502
 	github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
+	github.com/go-stack/stack v1.8.0
 	github.com/gobuffalo/packr v1.30.1
 	github.com/gogo/protobuf v1.3.1
 	github.com/gohugoio/hugo v0.69.0
@@ -101,7 +103,8 @@ require (
 	github.com/tendermint/tm-db v0.2.0
 	github.com/thoas/go-funk v0.4.0
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
-	github.com/vmihailenco/msgpack/v4 v4.3.11 // indirect
+	github.com/vmihailenco/msgpack/v4 v4.3.11
+	github.com/ztrue/tracerr v0.3.0 // indirect
 	go.dedis.ch/kyber/v3 v3.0.11
 	go.uber.org/zap v1.15.0 // indirect
 	golang.org/x/crypto v0.0.0-20200510223506-06a226fb4e37

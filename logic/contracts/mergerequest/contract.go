@@ -3,7 +3,6 @@ package mergerequest
 import (
 	"fmt"
 
-	"github.com/k0kubun/pp"
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/logic/contracts/common"
 	"gitlab.com/makeos/mosdef/logic/proposals"
@@ -82,7 +81,6 @@ func (c *MergeRequestContract) Exec() error {
 
 	var id = MakeMergeRequestProposalID(c.data.ProposalID)
 	var proposal = c.data.Repo.Proposals.Get(id)
-	pp.Println(id)
 
 	// Create new proposal if it does not exist already
 	if proposal == nil {

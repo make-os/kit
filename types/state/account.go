@@ -29,11 +29,11 @@ func BareAccount() *Account {
 // Account represents a user's identity and includes
 // balance and other information.
 type Account struct {
-	util.SerializerHelper `json:"-" msgpack:"-"`
-	Balance               util.String   `json:"balance" msgpack:"balance"`
-	Nonce                 uint64        `json:"nonce" msgpack:"nonce"`
-	Stakes                AccountStakes `json:"stakes,omitempty" msgpack:"stakes"`
-	DelegatorCommission   float64       `json:"delegatorCommission" msgpack:"delegatorCommission"`
+	util.CodecUtil      `json:"-" msgpack:"-"`
+	Balance             util.String   `json:"balance" msgpack:"balance"`
+	Nonce               uint64        `json:"nonce" msgpack:"nonce"`
+	Stakes              AccountStakes `json:"stakes,omitempty" msgpack:"stakes"`
+	DelegatorCommission float64       `json:"delegatorCommission" msgpack:"delegatorCommission"`
 }
 
 // FromMap populates the object from a map

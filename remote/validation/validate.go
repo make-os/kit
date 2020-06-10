@@ -9,7 +9,6 @@ import (
 	"github.com/asaskevich/govalidator"
 	"gitlab.com/makeos/mosdef/crypto"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
-	"gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -138,8 +137,7 @@ func CheckNote(
 func CheckAnnotatedTag(tag *object.Tag, txDetail *types.TxDetail, getPushKey core.PushKeyGetter) error {
 
 	if tag.PGPSignature == "" {
-		msg := "tag (%s) is unsigned. Sign the tag with your push key"
-		return errors.Errorf(msg, tag.Hash.String())
+		return errors.Errorf("tag (%s) is unsigned. Sign the tag with your push key", tag.Hash.String())
 	}
 
 	pubKey, err := getPushKey(txDetail.PushKeyID)
@@ -159,14 +157,7 @@ func CheckAnnotatedTag(tag *object.Tag, txDetail *types.TxDetail, getPushKey cor
 		return ErrSigHeaderAndReqParamsMismatch
 	}
 
-	commit, err := tag.Commit()
-	if err != nil {
-		return errors.Wrap(err, "unable to get referenced commit")
-	}
-
-	return CheckCommit(commit, txDetail, func(string) (key crypto.PublicKey, err error) {
-		return pubKey, nil
-	})
+	return nil
 }
 
 // GetCommitOrTagSigMsg returns the message that is signed to create a commit or tag signature
@@ -271,20 +262,20 @@ func IsBlockedByScope(scopes []string, params *types.TxDetail, namespaceFromPara
 
 			// If scope is r/repo-name, make sure tx info namespace is unset and repo name is 'repo-name'.
 			// If scope is r/ only, make sure only tx info namespace is set
-			if ns == repo.DefaultNS && params.RepoNamespace == "" && (domain == "" || domain == params.RepoName) {
+			if ns == types.DefaultNS && params.RepoNamespace == "" && (domain == "" || domain == params.RepoName) {
 				blocked = false
 				break
 			}
 
 			// If scope is some_ns/repo-name, make sure tx info namespace and repo name matches the scope
 			// namespace and repo name.
-			if ns != repo.DefaultNS && ns == params.RepoNamespace && domain == params.RepoName {
+			if ns != types.DefaultNS && ns == params.RepoNamespace && domain == params.RepoName {
 				blocked = false
 				break
 			}
 
 			// If scope is just some_ns/, make sure tx info namespace matches
-			if ns != repo.DefaultNS && domain == "" && ns == params.RepoNamespace {
+			if ns != types.DefaultNS && domain == "" && ns == params.RepoNamespace {
 				blocked = false
 				break
 			}

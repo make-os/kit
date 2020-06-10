@@ -41,7 +41,7 @@ var _ = Describe("plumbing.Revert", func() {
 	})
 
 	Describe(".Revert (head references)", func() {
-		var prevState types.BareRepoState
+		var prevState types.BareRepoRefsState
 
 		When("a repo has 1 ref and 4 commits; plumbing.Revert the 4th commit", func() {
 
@@ -185,7 +185,7 @@ var _ = Describe("plumbing.Revert", func() {
 	})
 
 	Describe(".Revert (annotated tags)", func() {
-		var prevState types.BareRepoState
+		var prevState types.BareRepoRefsState
 
 		When("repo old state has 0 tags; new state has 1 tag", func() {
 			BeforeEach(func() {
@@ -288,7 +288,7 @@ var _ = Describe("plumbing.Revert", func() {
 	})
 
 	Describe(".Revert (notes)", func() {
-		var prevState types.BareRepoState
+		var prevState types.BareRepoRefsState
 
 		When("repo old state has 0 notes; new state has 1 note", func() {
 
@@ -327,7 +327,7 @@ var _ = Describe("plumbing.Revert", func() {
 			BeforeEach(func() {
 				testutil2.CreateCommitAndNote(path, "file.txt", "v1 file", "v1 commit", "note1")
 				prevState = plumbing.GetRepoState(repo)
-				testutil2.DeleteNote(path, "refs/notes/note1")
+				testutil2.DeleteRef(path, "refs/notes/note1")
 			})
 
 			It("should reset the note reference to the initial value and old state should equal current state", func() {

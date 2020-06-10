@@ -43,7 +43,7 @@ func (i *ReferenceData) IsNil() bool {
 
 // Reference represents a git reference
 type Reference struct {
-	util.SerializerHelper `json:"-" mapstructure:"-" msgpack:"-"`
+	util.CodecUtil `json:"-" mapstructure:"-" msgpack:"-"`
 
 	// Creator is the raw push key ID of the reference creator
 	Creator crypto.PushKey `json:"creator" mapstructure:"creator" msgpack:"creator,omitempty"`
@@ -154,9 +154,9 @@ type RepoPolicies []*Policy
 
 // RepoConfig contains repo-specific configuration settings
 type RepoConfig struct {
-	util.SerializerHelper `json:"-" mapstructure:"-" msgpack:"-"`
-	Governance            *RepoConfigGovernance `json:"governance" mapstructure:"governance,omitempty" msgpack:"governance,omitempty"`
-	Policies              RepoPolicies          `json:"policies" mapstructure:"policies" msgpack:"policies,omitempty"`
+	util.CodecUtil `json:"-" mapstructure:"-" msgpack:"-"`
+	Governance     *RepoConfigGovernance `json:"governance" mapstructure:"governance,omitempty" msgpack:"governance,omitempty"`
+	Policies       RepoPolicies          `json:"policies" mapstructure:"policies" msgpack:"policies,omitempty"`
 }
 
 func (c *RepoConfig) EncodeMsgpack(enc *msgpack.Encoder) error {
@@ -277,13 +277,13 @@ func BareRepository() *Repository {
 
 // Repository represents a git repository.
 type Repository struct {
-	util.SerializerHelper `json:"-" msgpack:"-" mapstructure:"-"`
-	Balance               util.String      `json:"balance" msgpack:"balance" mapstructure:"balance"`
-	References            References       `json:"references" msgpack:"references" mapstructure:"references"`
-	Owners                RepoOwners       `json:"owners" msgpack:"owners" mapstructure:"owners"`
-	Proposals             RepoProposals    `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
-	Contributors          RepoContributors `json:"contributors" msgpack:"contributors" mapstructure:"contributors"`
-	Config                *RepoConfig      `json:"config" msgpack:"config" mapstructure:"config"`
+	util.CodecUtil `json:"-" msgpack:"-" mapstructure:"-"`
+	Balance        util.String      `json:"balance" msgpack:"balance" mapstructure:"balance"`
+	References     References       `json:"references" msgpack:"references" mapstructure:"references"`
+	Owners         RepoOwners       `json:"owners" msgpack:"owners" mapstructure:"owners"`
+	Proposals      RepoProposals    `json:"proposals" msgpack:"proposals" mapstructure:"proposals"`
+	Contributors   RepoContributors `json:"contributors" msgpack:"contributors" mapstructure:"contributors"`
+	Config         *RepoConfig      `json:"config" msgpack:"config" mapstructure:"config"`
 }
 
 // GetBalance implements types.BalanceAccount

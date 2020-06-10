@@ -29,7 +29,7 @@ func (sv *Server) CreateRepository(name string) error {
 		{"gc.auto", "0"},
 	}
 	for _, opt := range options {
-		_, err = ExecGitCmd(sv.gitBinPath, path, append([]string{"config"}, opt...)...)
+		_, err = execGitCmd(sv.gitBinPath, path, append([]string{"config"}, opt...)...)
 		if err != nil {
 			return errors.Wrap(err, "failed to set config")
 		}

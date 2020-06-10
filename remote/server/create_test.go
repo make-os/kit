@@ -33,7 +33,7 @@ var _ = Describe("Create", func() {
 		mockDHT = mocks.NewMockDHT(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
-		repoMgr = NewManager(cfg, ":45000", mockLogic.Logic, mockDHT, mockMempool, mockBlockGetter)
+		repoMgr = NewRemoteServer(cfg, ":45000", mockLogic.Logic, mockDHT, mockMempool, mockBlockGetter)
 	})
 
 	AfterEach(func() {

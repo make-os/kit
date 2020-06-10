@@ -197,7 +197,7 @@ func getRefChanges(old, update types.Items) *types.ChangeResult {
 
 // GetState describes the current state of repository
 type State struct {
-	util.SerializerHelper
+	util.CodecUtil
 	References *ObjCol
 }
 
@@ -222,7 +222,7 @@ func (s *State) IsEmpty() bool {
 }
 
 // GetChanges summarizes the changes between GetState s and y.
-func (s *State) GetChanges(y types.BareRepoState) *types.Changes {
+func (s *State) GetChanges(y types.BareRepoRefsState) *types.Changes {
 
 	var refChange *types.ChangeResult
 
@@ -246,7 +246,7 @@ func (s *State) GetChanges(y types.BareRepoState) *types.Changes {
 // GetRepoState returns the state of the repository
 // repo: The target repository
 // options: Allows the caller to configure how and what state are gathered
-func GetRepoState(repo types.LocalRepo, options ...types.KVOption) types.BareRepoState {
+func GetRepoState(repo types.LocalRepo, options ...types.KVOption) types.BareRepoRefsState {
 
 	refMatch := ""
 	if opt := GetKVOpt("match", options); opt != nil {

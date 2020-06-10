@@ -8,12 +8,12 @@ import (
 // Namespace describes an object for storing human-readable names mapping to
 // various network resources
 type Namespace struct {
-	util.SerializerHelper `json:"-" msgpack:"-"`
-	Owner                 string           `json:"owner" mapstructure:"owner" msgpack:"owner"`
-	GraceEndAt            uint64           `json:"graceEndAt" mapstructure:"graceEndAt" msgpack:"graceEndAt"`
-	ExpiresAt             uint64           `json:"expiresAt" mapstructure:"expiresAt" msgpack:"expiresAt"`
-	Domains               NamespaceDomains `json:"domains" mapstructure:"domains" msgpack:"domains"`
-	Contributors          BaseContributors `json:"contributors" msgpack:"contributors" mapstructure:"contributors"`
+	util.CodecUtil `json:"-" msgpack:"-"`
+	Owner          string           `json:"owner" mapstructure:"owner" msgpack:"owner"`
+	GraceEndAt     uint64           `json:"graceEndAt" mapstructure:"graceEndAt" msgpack:"graceEndAt"`
+	ExpiresAt      uint64           `json:"expiresAt" mapstructure:"expiresAt" msgpack:"expiresAt"`
+	Domains        NamespaceDomains `json:"domains" mapstructure:"domains" msgpack:"domains"`
+	Contributors   BaseContributors `json:"contributors" msgpack:"contributors" mapstructure:"contributors"`
 }
 
 // NamespaceDomains represents a map of human-readable names to their original,

@@ -7,8 +7,9 @@ import (
 	"net/url"
 	"os"
 
+	server2 "gitlab.com/makeos/mosdef/dht/server"
+	"gitlab.com/makeos/mosdef/dht/server/types"
 	"gitlab.com/makeos/mosdef/remote/server"
-	"gitlab.com/makeos/mosdef/remote/types"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	modules2 "gitlab.com/makeos/mosdef/types/modules"
@@ -23,7 +24,6 @@ import (
 	"github.com/robertkrimen/otto"
 	"github.com/tendermint/tendermint/node"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/extensions"
 	"gitlab.com/makeos/mosdef/keystore"
 
@@ -67,10 +67,10 @@ type Node struct {
 	logic          core.AtomicLogic
 	mempoolReactor *mempool.Reactor
 	ticketMgr      tickettypes.TicketManager
-	dht            dht.DHT
+	dht            types.DHT
 	modules        modules2.ModuleHub
 	rpcServer      *rpc.Server
-	repoMgr        core.RemoteServer
+	remoteServer   core.RemoteServer
 }
 
 // NewNode creates an instance of Server
@@ -161,7 +161,7 @@ func (n *Node) Start() error {
 
 	// Create DHT reactor and add it to the switch
 	key, _ := n.cfg.G().PrivVal.GetKey()
-	n.dht, err = dht.New(
+	n.dht, err = server2.New(
 		context.Background(),
 		n.cfg, key.PrivKey().Key(),
 		n.cfg.DHT.Address)
@@ -173,10 +173,7 @@ func (n *Node) Start() error {
 	}
 
 	// Register custom reactor channels
-	node.AddChannels([]byte{
-		server.PushNoteReactorChannel,
-		server.PushEndReactorChannel,
-	})
+	// node.AddChannels([]byte{server.PushNoteReactorChannel, server.PushEndReactorChannel})
 
 	// Create the ABCI app and wrap with a ClientCreator
 	app := NewApp(n.cfg, n.db, n.logic, n.ticketMgr)
@@ -190,10 +187,14 @@ func (n *Node) Start() error {
 	// Pass mempool reactor to logic
 	n.logic.SetMempoolReactor(mempR)
 
-	// Create repository manager and pass it to logic
-	repoMgr := server.NewManager(n.cfg, n.cfg.RepoMan.Address, n.logic, n.dht, memp, n)
-	n.repoMgr = repoMgr
-	n.logic.SetRemoteServer(repoMgr)
+	// Create remote server and pass it to logic
+	remoteServer := server.NewRemoteServer(n.cfg, n.cfg.Remote.Address, n.logic, n.dht, memp, n)
+	n.remoteServer = remoteServer
+	n.logic.SetRemoteServer(remoteServer)
+
+	for _, ch := range remoteServer.GetChannels() {
+		node.AddChannels([]byte{ch.ID})
+	}
 
 	// Create node
 	tmNode, err := nm.NewNodeWithCustomMempool(
@@ -211,7 +212,7 @@ func (n *Node) Start() error {
 	}
 
 	// Register the custom reactors
-	tmNode.Switch().AddReactor("PushReactor", repoMgr)
+	tmNode.Switch().AddReactor("PushReactor", remoteServer)
 
 	// Pass the proxy app to the mempool
 	memp.SetProxyApp(tmNode.ProxyApp().Mempool())
@@ -223,11 +224,8 @@ func (n *Node) Start() error {
 	n.tm = tmNode
 	n.mempoolReactor = mempR
 
-	// Register some object finder on the dht
-	n.dht.RegisterObjFinder(types.RepoObjectModule, repoMgr)
-
 	// Pass repo manager to logic manager
-	n.logic.SetRemoteServer(repoMgr)
+	n.logic.SetRemoteServer(remoteServer)
 
 	// Start tendermint
 	if err := n.tm.Start(); err != nil {
@@ -242,7 +240,7 @@ func (n *Node) Start() error {
 	n.configureInterfaces()
 
 	// Pass the module aggregator to the repo manager
-	n.repoMgr.RegisterAPIHandlers(n.modules)
+	n.remoteServer.RegisterAPIHandlers(n.modules)
 
 	return nil
 }
@@ -291,7 +289,7 @@ func (n *Node) configureInterfaces() {
 		n.dht,
 		extMgr,
 		n.rpcServer,
-		n.repoMgr,
+		n.remoteServer,
 	)
 
 	// Register JSON RPC methods
@@ -360,7 +358,7 @@ func (n *Node) GetLogic() core.Logic {
 }
 
 // GetDHT returns the DHT service
-func (n *Node) GetDHT() dht.DHT {
+func (n *Node) GetDHT() types.DHT {
 	return n.dht
 }
 
@@ -375,7 +373,7 @@ func (n *Node) GetCurrentValidators() []*tmtypes.Validator {
 	return cv
 }
 
-// GetService returns the node's service
+// getService returns the node's service
 func (n *Node) GetService() services.Service {
 	return n.service
 }
@@ -385,7 +383,7 @@ func (n *Node) Stop() {
 	n.log.Info("mosdef is stopping...")
 
 	if n.dht != nil {
-		n.dht.Close()
+		n.dht.Stop()
 	}
 
 	if n.tm != nil && n.tm.IsRunning() {

@@ -1,6 +1,7 @@
 package signcmd
 
 import (
+	"os"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -116,6 +117,15 @@ func SignTagCmd(cfg *config.AppConfig, gitArgs []string, targetRepo types.LocalR
 	if _, err = args.RemoteURLTokenUpdater(targetRepo, args.Remote, txDetail,
 		key, args.ResetTokens); err != nil {
 		return err
+	}
+
+	// If the APPNAME_REPONAME_PASS var is unset, set it to the user-defined push key pass.
+	// This is required to allow git-sign learn the passphrase for unlocking the push key.
+	// If we met it unset, set a deferred function to unset the var once done.
+	passVar := cmd.MakePassEnvVar(config.AppName, targetRepo.GetName())
+	if len(os.Getenv(passVar)) == 0 {
+		os.Setenv(passVar, args.PushKeyPass)
+		defer func() { os.Setenv(passVar, "") }()
 	}
 
 	// Create the tag

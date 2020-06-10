@@ -12,11 +12,9 @@ import (
 	logic2 "gitlab.com/makeos/mosdef/logic"
 	"gitlab.com/makeos/mosdef/logic/contracts/gitpush"
 	"gitlab.com/makeos/mosdef/logic/contracts/mergerequest"
-	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/push/types"
 	remotetypes "gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/remote/types/common"
 	"gitlab.com/makeos/mosdef/storage"
 	"gitlab.com/makeos/mosdef/testutil"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -34,7 +32,6 @@ var _ = Describe("GitPush", func() {
 	var logic *logic2.Logic
 	var ctrl *gomock.Controller
 	var sender = crypto.NewKeyFromIntSeed(1)
-	var mockRepoMgr *mocks.MockRemoteServer
 	var pushKeyID = crypto.CreatePushKeyID(crypto.StrToPublicKey("pushKeyID"))
 	var pushKeyID2 = crypto.CreatePushKeyID(crypto.StrToPublicKey("pushKeyID2"))
 	var rawPkID []byte
@@ -46,8 +43,6 @@ var _ = Describe("GitPush", func() {
 		appDB, stateTreeDB = testutil.GetDB(cfg)
 		logic = logic2.New(appDB, stateTreeDB, cfg)
 		err := logic.SysKeeper().SaveBlockInfo(&core.BlockInfo{Height: 1})
-		mockRepoMgr = mocks.NewMockRemoteServer(ctrl)
-		logic.SetRemoteServer(mockRepoMgr)
 		Expect(err).To(BeNil())
 		rawPkID = crypto2.MustDecodePushKeyID(pushKeyID2)
 	})
@@ -89,11 +84,10 @@ var _ = Describe("GitPush", func() {
 
 		When("pushed reference did not previously exist (new reference)", func() {
 			It("should add pusher as creator of the reference", func() {
-				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
 				refs = []*types.PushedReference{{Name: "refs/heads/dev", Data: &remotetypes.ReferenceData{}, Fee: "1"}}
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
+					Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
@@ -103,11 +97,10 @@ var _ = Describe("GitPush", func() {
 
 		When("pushed reference new hash is zero (meaning delete is required)", func() {
 			It("should remove the reference from the repo", func() {
-				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
 				refs = []*types.PushedReference{{Name: "refs/heads/master", NewHash: strings.Repeat("0", 40), Fee: "1"}}
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
+					Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
@@ -117,11 +110,10 @@ var _ = Describe("GitPush", func() {
 
 		When("pushed reference already exist", func() {
 			It("should not update reference creator", func() {
-				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
 				refs = []*types.PushedReference{{Name: "refs/heads/master", Data: (&remotetypes.ReferenceData{}), Fee: "1"}}
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
+					Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
@@ -133,12 +125,11 @@ var _ = Describe("GitPush", func() {
 
 		When("reference has nonce = 1. After a successful exec:", func() {
 			BeforeEach(func() {
-				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
 				refs = []*types.PushedReference{{Name: "refs/heads/master", Data: (&remotetypes.ReferenceData{}), Fee: "1"}}
 				rawPkID := crypto2.MustDecodePushKeyID(pushKeyID)
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID, PusherAddress: sender.Addr()},
+					Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID, PusherAddress: sender.Addr()},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 			})
@@ -161,7 +152,6 @@ var _ = Describe("GitPush", func() {
 
 		When("pushed reference is an issue reference", func() {
 			It("should add issue data from pushed reference", func() {
-				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
 				ref := plumbing.MakeIssueReference(2)
 				labels := []string{"lbl1"}
 				assignees := []string{"key1"}
@@ -169,11 +159,11 @@ var _ = Describe("GitPush", func() {
 				refs = []*types.PushedReference{{
 					Name: ref,
 					Fee:  "1",
-					Data: &remotetypes.ReferenceData{Close: &cls, IssueFields: common.IssueFields{Labels: &labels, Assignees: &assignees}},
+					Data: &remotetypes.ReferenceData{Close: &cls, IssueFields: remotetypes.IssueFields{Labels: &labels, Assignees: &assignees}},
 				}}
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
+					Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
@@ -184,7 +174,6 @@ var _ = Describe("GitPush", func() {
 			})
 
 			It("should not alter issue data fields not specified in pushed reference", func() {
-				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
 				cls := true
 				refs = []*types.PushedReference{{
 					Name: issueRef1,
@@ -192,7 +181,7 @@ var _ = Describe("GitPush", func() {
 					Data: (&remotetypes.ReferenceData{Close: &cls})}}
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: creator},
+					Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: creator},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
@@ -204,15 +193,14 @@ var _ = Describe("GitPush", func() {
 
 			When("pushed reference label include a negated entry", func() {
 				It("should remove the negated entry from the reference", func() {
-					mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
 					refs = []*types.PushedReference{{
 						Name: issueRef1,
 						Fee:  "1",
-						Data: &remotetypes.ReferenceData{IssueFields: common.IssueFields{Labels: &[]string{"-label1"}}},
+						Data: &remotetypes.ReferenceData{IssueFields: remotetypes.IssueFields{Labels: &[]string{"-label1"}}},
 					}}
 					err = gitpush.NewContract().Init(logic, &txns.TxPush{
 						TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
-						PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: creator},
+						Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: creator},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
 					rep := logic.RepoKeeper().Get(repo)
@@ -223,14 +211,13 @@ var _ = Describe("GitPush", func() {
 
 			When("pushed reference assignee include a negated entry", func() {
 				It("should remove the negated entry from the reference", func() {
-					mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
 					refs = []*types.PushedReference{{
 						Name: issueRef1,
 						Fee:  "1",
-						Data: &remotetypes.ReferenceData{IssueFields: common.IssueFields{Assignees: &[]string{"-key1"}}}}}
+						Data: &remotetypes.ReferenceData{IssueFields: remotetypes.IssueFields{Assignees: &[]string{"-key1"}}}}}
 					err = gitpush.NewContract().Init(logic, &txns.TxPush{
 						TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
-						PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: creator},
+						Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: creator},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
 					rep := logic.RepoKeeper().Get(repo)
@@ -242,13 +229,12 @@ var _ = Describe("GitPush", func() {
 
 		When("pushed reference is a merge request reference", func() {
 			It("should add new proposal", func() {
-				mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
 				ref := plumbing.MakeMergeRequestReference(1)
-				mr := common.MergeRequestFields{BaseBranch: "master", BaseBranchHash: "hash1", TargetBranch: "dev", TargetBranchHash: "hash1"}
+				mr := remotetypes.MergeRequestFields{BaseBranch: "master", BaseBranchHash: "hash1", TargetBranch: "dev", TargetBranchHash: "hash1"}
 				refs = []*types.PushedReference{{Name: ref, Data: &remotetypes.ReferenceData{MergeRequestFields: mr}, Fee: "1", Value: "1"}}
 				err = gitpush.NewContract().Init(logic, &txns.TxPush{
 					TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
-					PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID},
+					Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID},
 				}, 0).Exec()
 				Expect(err).To(BeNil())
 				rep := logic.RepoKeeper().Get(repo)
@@ -273,13 +259,12 @@ var _ = Describe("GitPush", func() {
 						},
 					})
 
-					mockRepoMgr.EXPECT().ExecTxPush(gomock.Any())
 					ref := plumbing.MakeMergeRequestReference(1)
-					mr := common.MergeRequestFields{BaseBranch: "master", BaseBranchHash: "hash1", TargetBranch: "dev", TargetBranchHash: "hash1"}
+					mr := remotetypes.MergeRequestFields{BaseBranch: "master", BaseBranchHash: "hash1", TargetBranch: "dev", TargetBranchHash: "hash1"}
 					refs = []*types.PushedReference{{Name: ref, Data: &remotetypes.ReferenceData{MergeRequestFields: mr}, Fee: "1", Value: "1"}}
 					err = gitpush.NewContract().Init(logic, &txns.TxPush{
 						TxCommon: &txns.TxCommon{SenderPubKey: sender.PubKey().ToPublicKey()},
-						PushNote: &types.PushNote{RepoName: repo, References: refs, PushKeyID: rawPkID, PusherAddress: sender.Addr()},
+						Note:     &types.Note{RepoName: repo, References: refs, PushKeyID: rawPkID, PusherAddress: sender.Addr()},
 					}, 0).Exec()
 					Expect(err).To(BeNil())
 				})

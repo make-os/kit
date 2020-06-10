@@ -9,16 +9,16 @@ type TestStruct struct {
 	Name string
 }
 
-func (ts *TestStruct) ID() interface{} {
+func (ts *TestStruct) GetID() interface{} {
 	return ts.Name
 }
 
-var _ = Describe("Queue", func() {
+var _ = Describe("UniqueQueue", func() {
 
-	var queue *Queue
+	var queue *UniqueQueue
 
 	BeforeEach(func() {
-		queue = New()
+		queue = NewUnique()
 	})
 
 	Describe(".Append && Head", func() {
@@ -28,6 +28,7 @@ var _ = Describe("Queue", func() {
 			item2 := &TestStruct{Name: "glen"}
 			queue.Append(item)
 			queue.Append(item2)
+
 			Expect(queue.Head()).To(Equal(item))
 			Expect(queue.Head()).To(Equal(item2))
 			Expect(queue.Head()).To(BeNil())
@@ -57,8 +58,12 @@ var _ = Describe("Queue", func() {
 			item2 := &TestStruct{Name: "glen"}
 			queue.Append(item)
 			queue.Append(item2)
-			Expect(queue.Has(item)).To(BeTrue())
-			Expect(queue.Has(item2)).To(BeTrue())
+
+			queue.Head()
+			Expect(queue.Has(item)).To(BeFalse())
+
+			queue.Head()
+			Expect(queue.Has(item2)).To(BeFalse())
 		})
 	})
 

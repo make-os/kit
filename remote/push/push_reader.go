@@ -1,19 +1,15 @@
 package push
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"time"
+	"os/exec"
 
 	"github.com/pkg/errors"
-	"github.com/thoas/go-funk"
-	rr "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/types"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 	"gopkg.in/src-d/go-git.v4/plumbing/format/packfile"
-	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 )
 
@@ -59,19 +55,28 @@ func (o *ObjectObserver) OnInflatedObjectContent(h plumbing.Hash, pos int64,
 func (o *ObjectObserver) OnHeader(count uint32) error    { return nil }
 func (o *ObjectObserver) OnFooter(h plumbing.Hash) error { return nil }
 
+type PushedObjects []*PackObject
+
+// Hashes returns the string equivalent of the object hashes
+func (po *PushedObjects) Hashes() (objs []string) {
+	for _, o := range *po {
+		objs = append(objs, o.Hash.String())
+	}
+	return
+}
+
 // PushReader inspects push data from git client, extracting data such as the
 // pushed references, objects and object to reference mapping. It also pipes the
 // pushed stream to a destination (git-receive-pack) when finished.
 type PushReader struct {
-	dst           io.WriteCloser
-	packFile      *os.File
-	buf           []byte
-	References    PackedReferences
-	Objects       []*PackObject
-	ObjectsRefs   ObjRefMap
-	repo          types.LocalRepo
-	refsUpdateReq *packp.ReferenceUpdateRequest
-	updateReqCB   func(ur *packp.ReferenceUpdateRequest) error
+	dst         io.WriteCloser
+	packFile    *os.File
+	buf         []byte
+	References  PackedReferences
+	Objects     PushedObjects
+	repo        types.LocalRepo
+	request     *packp.ReferenceUpdateRequest
+	updateReqCB func(ur *packp.ReferenceUpdateRequest) error
 }
 
 // NewPushReader creates an instance of PushReader, and after inspection, the
@@ -83,12 +88,11 @@ func NewPushReader(dst io.WriteCloser, repo types.LocalRepo) (*PushReader, error
 	}
 
 	return &PushReader{
-		dst:         dst,
-		packFile:    packFile,
-		repo:        repo,
-		ObjectsRefs: make(map[string][]string),
-		Objects:     []*PackObject{},
-		References:  make(map[string]*PackedReferenceObject),
+		dst:        dst,
+		packFile:   packFile,
+		repo:       repo,
+		Objects:    []*PackObject{},
+		References: make(map[string]*PackedReferenceObject),
 	}, nil
 }
 
@@ -106,17 +110,17 @@ func (r *PushReader) OnReferenceUpdateRequestRead(cb func(ur *packp.ReferenceUpd
 
 // SetUpdateRequest sets the reference update request
 func (r *PushReader) SetUpdateRequest(request *packp.ReferenceUpdateRequest) {
-	r.refsUpdateReq = request
+	r.request = request
 }
 
 // GetUpdateRequest returns the reference update request object
 func (r *PushReader) GetUpdateRequest() *packp.ReferenceUpdateRequest {
-	return r.refsUpdateReq
+	return r.request
 }
 
 // Read reads the packfile, extracting object and reference information
 // and finally writes the read data to a provided destination
-func (r *PushReader) Read() error {
+func (r *PushReader) Read(gitCmd *exec.Cmd) error {
 
 	var err error
 
@@ -124,39 +128,56 @@ func (r *PushReader) Read() error {
 	r.packFile.Seek(0, 0)
 
 	// Decode the packfile into a ReferenceUpdateRequest
-	r.refsUpdateReq = packp.NewReferenceUpdateRequest()
-	if err = r.refsUpdateReq.Decode(r.packFile); err != nil {
+	r.request = packp.NewReferenceUpdateRequest()
+	if err = r.request.Decode(r.packFile); err != nil {
 		return errors.Wrap(err, "failed to decode request pack")
 	}
 
 	// Extract references from the packfile
-	r.References = r.getReferences(r.refsUpdateReq)
+	r.References = r.getReferences(r.request)
 
 	// Call OnReferenceUpdateRequestRead callback method
 	if r.updateReqCB != nil {
-		if err = r.updateReqCB(r.refsUpdateReq); err != nil {
+		if err = r.updateReqCB(r.request); err != nil {
 			return err
 		}
 	}
 
-	// Scan the packfile and extract objects hashes.
-	// Confirm if the next 4 bytes are indeed 'PACK', otherwise, the packfile is invalid
+	var scn *packfile.Scanner
+
+	// Confirm if the next 4 bytes say 'PACK', otherwise, the packfile is invalid
 	packSig := make([]byte, 4)
 	r.packFile.Read(packSig)
 	if string(packSig) != "PACK" {
-		return r.done()
+		goto write_input
 	}
 	r.packFile.Seek(-4, 1)
 
 	// Read the packfile
-	scn := packfile.NewScanner(r.packFile)
+	scn = packfile.NewScanner(r.packFile)
 	defer scn.Close()
 	r.Objects, err = r.getObjects(scn)
 	if err != nil {
 		return errors.Wrap(err, "failed to get objects")
 	}
 
-	return r.done()
+	// Copy to git input stream
+write_input:
+	defer r.packFile.Close()
+	defer r.dst.Close()
+	defer os.Remove(r.packFile.Name())
+
+	r.packFile.Seek(0, 0)
+	if _, err = io.Copy(r.dst, r.packFile); err != nil {
+		return err
+	}
+
+	// Wait for the git process to finish only if the git command is set
+	if gitCmd != nil {
+		gitCmd.Process.Wait()
+	}
+
+	return nil
 }
 
 // getObjects returns a list of objects in the packfile
@@ -182,125 +203,4 @@ func (r *PushReader) getReferences(ur *packp.ReferenceUpdateRequest) (references
 		}
 	}
 	return
-}
-
-// done copies the written content from the inspector to dst and closes the
-// destination and source readers and creates a mapping of objects to references.
-func (r *PushReader) done() (err error) {
-
-	r.packFile.Seek(0, 0)
-	if _, err = io.Copy(r.dst, r.packFile); err != nil {
-		return
-	}
-
-	if err = r.packFile.Close(); err != nil {
-		return
-	}
-
-	if err = r.dst.Close(); err != nil {
-		return
-	}
-
-	// Give git some time to process the input
-	time.Sleep(100 * time.Millisecond)
-
-	r.ObjectsRefs, err = r.mapObjectsToRef()
-	if err != nil {
-		return errors.Wrap(err, "failed to map objects to references")
-	}
-
-	os.Remove(r.packFile.Name())
-
-	return
-}
-
-// ObjRefMap maps objects to the references they belong to.
-type ObjRefMap map[string][]string
-
-// RemoveRef removes a reference from the list of references an object belongs to
-func (m *ObjRefMap) RemoveRef(objHash, ref string) error {
-	refs, ok := (*m)[objHash]
-	if !ok {
-		return fmt.Errorf("object not found")
-	}
-	var newRefs []string
-	for _, r := range refs {
-		if r != ref {
-			newRefs = append(newRefs, r)
-		}
-	}
-	(*m)[objHash] = newRefs
-	return nil
-}
-
-// getObjects returns a list of objects that map to the given ref
-func (m *ObjRefMap) GetObjectsOf(ref string) (objs []string) {
-	for obj, refs := range *m {
-		if funk.ContainsString(refs, ref) {
-			objs = append(objs, obj)
-		}
-	}
-	return
-}
-
-// mapObjectsToRef returns a map that pairs pushed objects to one or more
-// repository references they belong to.
-func (r *PushReader) mapObjectsToRef() (ObjRefMap, error) {
-	var mappings = make(map[string][]string)
-
-	if len(r.Objects) == 0 {
-		return mappings, nil
-	}
-
-	for _, ref := range r.References.Names() {
-		var entries []string
-		var err error
-
-		refObj, err := r.repo.Reference(plumbing.ReferenceName(ref), true)
-		if err != nil {
-			return nil, err
-		}
-
-		obj, err := r.repo.Object(plumbing.AnyObject, refObj.Hash())
-		if err != nil {
-			return nil, err
-		}
-
-		objType := obj.Type()
-
-		if objType == plumbing.CommitObject {
-			entries, err = rr.GetCommitHistory(r.repo, obj.(*object.Commit), "")
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		if objType == plumbing.TagObject {
-			commit, err := obj.(*object.Tag).Commit()
-			if err != nil {
-				return nil, err
-			}
-			entries, err = rr.GetCommitHistory(r.repo, commit, "")
-			if err != nil {
-				return nil, err
-			}
-			entries = append(entries, obj.(*object.Tag).ID().String())
-		}
-
-		for _, obj := range r.Objects {
-			if funk.ContainsString(entries, obj.Hash.String()) {
-				objRefs, ok := mappings[obj.Hash.String()]
-				if !ok {
-					objRefs = []string{}
-				}
-				if !funk.ContainsString(objRefs, ref) {
-					objRefs = append(objRefs, ref)
-				}
-				mappings[obj.Hash.String()] = objRefs
-
-			}
-		}
-	}
-
-	return mappings, nil
 }

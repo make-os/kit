@@ -31,7 +31,7 @@ func NewBareTxRegisterPushKey() *TxRegisterPushKey {
 
 // EncodeMsgpack implements msgpack.CustomEncoder
 func (tx *TxRegisterPushKey) EncodeMsgpack(enc *msgpack.Encoder) error {
-	return enc.EncodeMulti(
+	return tx.EncodeMulti(enc,
 		tx.Type,
 		tx.Nonce,
 		tx.Fee,

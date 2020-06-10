@@ -16,6 +16,7 @@ import (
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/policy"
 	"gitlab.com/makeos/mosdef/remote/push"
+	types2 "gitlab.com/makeos/mosdef/remote/push/types"
 	repo3 "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/server"
 	testutil2 "gitlab.com/makeos/mosdef/remote/testutil"
@@ -28,14 +29,14 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/protocol/packp"
 )
 
-var _ = Describe("Handler", func() {
+var _ = Describe("BasicHandler", func() {
 	var err error
 	var cfg *config.AppConfig
 	var path string
 	var repo types.LocalRepo
 	var mockRemoteSrv *mocks.MockRemoteServer
 	var svr core.RemoteServer
-	var handler *push.Handler
+	var handler *push.BasicHandler
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
 	var repoName string
@@ -56,10 +57,10 @@ var _ = Describe("Handler", func() {
 		Expect(err).To(BeNil())
 
 		mockLogic = mocks.NewMockLogic(ctrl)
-		mockDHT := mocks.NewMockDHT(ctrl)
+		mockDHT = mocks.NewMockDHT(ctrl)
 		mockMempool = mocks.NewMockMempool(ctrl)
 		mockBlockGetter = mocks.NewMockBlockGetter(ctrl)
-		svr = server.NewManager(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
+		svr = server.NewRemoteServer(cfg, ":9000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 		mockRemoteSrv = mocks.NewMockRemoteServer(ctrl)
 		mockRemoteSrv.EXPECT().Log().Return(cfg.G().Log)
 
@@ -67,6 +68,7 @@ var _ = Describe("Handler", func() {
 	})
 
 	AfterEach(func() {
+		svr.Stop()
 		ctrl.Finish()
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
@@ -100,17 +102,32 @@ var _ = Describe("Handler", func() {
 
 		When("packfile is valid", func() {
 			var packfile io.ReadSeeker
+
 			BeforeEach(func() {
-				oldState := plumbing2.GetRepoState(repo)
 				testutil2.AppendCommit(path, "file.txt", "line 1\n", "commit 1")
-				newState := plumbing2.GetRepoState(repo)
-				packfile, err = push.MakePackfile(repo, oldState, newState)
+				commitHash := testutil2.GetRecentCommitHash(path, "refs/heads/master")
+				note := &types2.Note{
+					TargetRepo: repo,
+					References: []*types2.PushedReference{
+						{Name: "refs/heads/master", NewHash: commitHash, OldHash: plumbing.ZeroHash.String()},
+					},
+				}
+				packfile, err = push.MakeReferenceUpdateRequestPack(note)
 				Expect(err).To(BeNil())
-				handler.OldState = oldState
+			})
+
+			When("old state is unset", func() {
+				It("should return error when unable to get repo state", func() {
+					mockRemoteSrv.EXPECT().GetRepoState(handler.Repo).Return(nil, fmt.Errorf("error"))
+					err = handler.HandleStream(packfile, &WriteCloser{Buffer: bytes.NewBuffer(nil)})
+					Expect(err).ToNot(BeNil())
+					Expect(err).To(MatchError("error"))
+				})
 			})
 
 			When("authorization failed", func() {
 				It("should return error returned from the authorization handler", func() {
+					handler.OldState = &plumbing2.State{}
 					handler.AuthorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
 						return fmt.Errorf("auth failed badly")
 					}
@@ -122,6 +139,7 @@ var _ = Describe("Handler", func() {
 
 			When("authorization succeeds", func() {
 				It("should return no error", func() {
+					handler.OldState = &plumbing2.State{}
 					handler.AuthorizationHandler = func(ur *packp.ReferenceUpdateRequest) error {
 						return nil
 					}
@@ -381,27 +399,6 @@ var _ = Describe("Handler", func() {
 		})
 	})
 
-	Describe(".AnnounceObject", func() {
-		BeforeEach(func() {
-			handler.Server = mockRemoteSrv
-			mockDHT = mocks.NewMockDHT(ctrl)
-			mockRemoteSrv.EXPECT().GetDHT().Return(mockDHT)
-		})
-
-		It("should return error when DHT failed to announce", func() {
-			mockDHT.EXPECT().Announce(gomock.Any(), gomock.Any()).Return(fmt.Errorf("failed to announce"))
-			err = handler.AnnounceObject(util.RandString(40))
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(Equal("failed to announce"))
-		})
-
-		It("should return no error when DHT did not fail", func() {
-			mockDHT.EXPECT().Announce(gomock.Any(), gomock.Any()).Return(nil)
-			err = handler.AnnounceObject(util.RandString(40))
-			Expect(err).To(BeNil())
-		})
-	})
-
 	Describe(".HandleReferences", func() {
 		When("old state is not set", func() {
 			BeforeEach(func() {
@@ -480,7 +477,7 @@ var _ = Describe("Handler", func() {
 					handler.ChangeValidator = func(types.LocalRepo, string, *types.ItemChange, *types.TxDetail, core.PushKeyGetter) (err error) {
 						return fmt.Errorf("bad reference change")
 					}
-					handler.Reverter = func(repo types.LocalRepo, prevState types.BareRepoState, options ...types.KVOption) (changes *types.Changes, err error) {
+					handler.Reverter = func(repo types.LocalRepo, prevState types.BareRepoRefsState, options ...types.KVOption) (changes *types.Changes, err error) {
 						return nil, fmt.Errorf("failed revert")
 					}
 

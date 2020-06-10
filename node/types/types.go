@@ -12,3 +12,8 @@ type BlockGetter interface {
 	// GetChainHeight returns the current chain height
 	GetChainHeight() int64
 }
+
+// Events
+const (
+	EvtTxPushProcessed = "tx_push_added"
+)

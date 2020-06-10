@@ -9,11 +9,11 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	config "gitlab.com/makeos/mosdef/config"
 	crypto "gitlab.com/makeos/mosdef/crypto"
-	dht "gitlab.com/makeos/mosdef/dht"
+	types "gitlab.com/makeos/mosdef/dht/server/types"
 	logger "gitlab.com/makeos/mosdef/pkgs/logger"
-	types "gitlab.com/makeos/mosdef/remote/push/types"
-	types0 "gitlab.com/makeos/mosdef/remote/types"
-	types1 "gitlab.com/makeos/mosdef/types"
+	fetcher "gitlab.com/makeos/mosdef/remote/fetcher"
+	types0 "gitlab.com/makeos/mosdef/remote/push/types"
+	types1 "gitlab.com/makeos/mosdef/remote/types"
 	core "gitlab.com/makeos/mosdef/types/core"
 	modules "gitlab.com/makeos/mosdef/types/modules"
 	reflect "reflect"
@@ -43,10 +43,10 @@ func (m *MockPoolGetter) EXPECT() *MockPoolGetterMockRecorder {
 }
 
 // GetPushPool mocks base method
-func (m *MockPoolGetter) GetPushPool() types.PushPooler {
+func (m *MockPoolGetter) GetPushPool() types0.PushPool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types.PushPooler)
+	ret0, _ := ret[0].(types0.PushPool)
 	return ret0
 }
 
@@ -68,81 +68,6 @@ func (m *MockPoolGetter) GetMempool() core.Mempool {
 func (mr *MockPoolGetterMockRecorder) GetMempool() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMempool", reflect.TypeOf((*MockPoolGetter)(nil).GetMempool))
-}
-
-// MockRepoGetter is a mock of RepoGetter interface
-type MockRepoGetter struct {
-	ctrl     *gomock.Controller
-	recorder *MockRepoGetterMockRecorder
-}
-
-// MockRepoGetterMockRecorder is the mock recorder for MockRepoGetter
-type MockRepoGetterMockRecorder struct {
-	mock *MockRepoGetter
-}
-
-// NewMockRepoGetter creates a new mock instance
-func NewMockRepoGetter(ctrl *gomock.Controller) *MockRepoGetter {
-	mock := &MockRepoGetter{ctrl: ctrl}
-	mock.recorder = &MockRepoGetterMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockRepoGetter) EXPECT() *MockRepoGetterMockRecorder {
-	return m.recorder
-}
-
-// GetRepo mocks base method
-func (m *MockRepoGetter) GetRepo(name string) (types0.LocalRepo, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRepo", name)
-	ret0, _ := ret[0].(types0.LocalRepo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetRepo indicates an expected call of GetRepo
-func (mr *MockRepoGetterMockRecorder) GetRepo(name interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockRepoGetter)(nil).GetRepo), name)
-}
-
-// MockRepoUpdater is a mock of RepoUpdater interface
-type MockRepoUpdater struct {
-	ctrl     *gomock.Controller
-	recorder *MockRepoUpdaterMockRecorder
-}
-
-// MockRepoUpdaterMockRecorder is the mock recorder for MockRepoUpdater
-type MockRepoUpdaterMockRecorder struct {
-	mock *MockRepoUpdater
-}
-
-// NewMockRepoUpdater creates a new mock instance
-func NewMockRepoUpdater(ctrl *gomock.Controller) *MockRepoUpdater {
-	mock := &MockRepoUpdater{ctrl: ctrl}
-	mock.recorder = &MockRepoUpdaterMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockRepoUpdater) EXPECT() *MockRepoUpdaterMockRecorder {
-	return m.recorder
-}
-
-// UpdateRepoWithTxPush mocks base method
-func (m *MockRepoUpdater) UpdateRepoWithTxPush(tx types1.BaseTx) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateRepoWithTxPush", tx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateRepoWithTxPush indicates an expected call of UpdateRepoWithTxPush
-func (mr *MockRepoUpdaterMockRecorder) UpdateRepoWithTxPush(tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRepoWithTxPush", reflect.TypeOf((*MockRepoUpdater)(nil).UpdateRepoWithTxPush), tx)
 }
 
 // MockRemoteServer is a mock of RemoteServer interface
@@ -169,10 +94,10 @@ func (m *MockRemoteServer) EXPECT() *MockRemoteServerMockRecorder {
 }
 
 // GetPushPool mocks base method
-func (m *MockRemoteServer) GetPushPool() types.PushPooler {
+func (m *MockRemoteServer) GetPushPool() types0.PushPool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPushPool")
-	ret0, _ := ret[0].(types.PushPooler)
+	ret0, _ := ret[0].(types0.PushPool)
 	return ret0
 }
 
@@ -194,35 +119,6 @@ func (m *MockRemoteServer) GetMempool() core.Mempool {
 func (mr *MockRemoteServerMockRecorder) GetMempool() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMempool", reflect.TypeOf((*MockRemoteServer)(nil).GetMempool))
-}
-
-// GetRepo mocks base method
-func (m *MockRemoteServer) GetRepo(name string) (types0.LocalRepo, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetRepo", name)
-	ret0, _ := ret[0].(types0.LocalRepo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetRepo indicates an expected call of GetRepo
-func (mr *MockRemoteServerMockRecorder) GetRepo(name interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRepo", reflect.TypeOf((*MockRemoteServer)(nil).GetRepo), name)
-}
-
-// UpdateRepoWithTxPush mocks base method
-func (m *MockRemoteServer) UpdateRepoWithTxPush(tx types1.BaseTx) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateRepoWithTxPush", tx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateRepoWithTxPush indicates an expected call of UpdateRepoWithTxPush
-func (mr *MockRemoteServerMockRecorder) UpdateRepoWithTxPush(tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateRepoWithTxPush", reflect.TypeOf((*MockRemoteServer)(nil).UpdateRepoWithTxPush), tx)
 }
 
 // Log mocks base method
@@ -254,14 +150,14 @@ func (mr *MockRemoteServerMockRecorder) Cfg() *gomock.Call {
 }
 
 // GetRepoState mocks base method
-func (m *MockRemoteServer) GetRepoState(target types0.LocalRepo, options ...types0.KVOption) (types0.BareRepoState, error) {
+func (m *MockRemoteServer) GetRepoState(target types1.LocalRepo, options ...types1.KVOption) (types1.BareRepoRefsState, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{target}
 	for _, a := range options {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetRepoState", varargs...)
-	ret0, _ := ret[0].(types0.BareRepoState)
+	ret0, _ := ret[0].(types1.BareRepoRefsState)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -367,30 +263,18 @@ func (mr *MockRemoteServerMockRecorder) BroadcastMsg(ch, msg interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastMsg", reflect.TypeOf((*MockRemoteServer)(nil).BroadcastMsg), ch, msg)
 }
 
-// BroadcastPushObjects mocks base method
-func (m *MockRemoteServer) BroadcastPushObjects(note types.PushNotice) error {
+// BroadcastNoteAndEndorsement mocks base method
+func (m *MockRemoteServer) BroadcastNoteAndEndorsement(note types0.PushNote) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BroadcastPushObjects", note)
+	ret := m.ctrl.Call(m, "BroadcastNoteAndEndorsement", note)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// BroadcastPushObjects indicates an expected call of BroadcastPushObjects
-func (mr *MockRemoteServerMockRecorder) BroadcastPushObjects(note interface{}) *gomock.Call {
+// BroadcastNoteAndEndorsement indicates an expected call of BroadcastNoteAndEndorsement
+func (mr *MockRemoteServerMockRecorder) BroadcastNoteAndEndorsement(note interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastPushObjects", reflect.TypeOf((*MockRemoteServer)(nil).BroadcastPushObjects), note)
-}
-
-// SetPushKeyPubKeyGetter mocks base method
-func (m *MockRemoteServer) SetPushKeyPubKeyGetter(pkGetter core.PushKeyGetter) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetPushKeyPubKeyGetter", pkGetter)
-}
-
-// SetPushKeyPubKeyGetter indicates an expected call of SetPushKeyPubKeyGetter
-func (mr *MockRemoteServerMockRecorder) SetPushKeyPubKeyGetter(pkGetter interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetPushKeyPubKeyGetter", reflect.TypeOf((*MockRemoteServer)(nil).SetPushKeyPubKeyGetter), pkGetter)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BroadcastNoteAndEndorsement", reflect.TypeOf((*MockRemoteServer)(nil).BroadcastNoteAndEndorsement), note)
 }
 
 // RegisterAPIHandlers mocks base method
@@ -405,11 +289,53 @@ func (mr *MockRemoteServerMockRecorder) RegisterAPIHandlers(agg interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterAPIHandlers", reflect.TypeOf((*MockRemoteServer)(nil).RegisterAPIHandlers), agg)
 }
 
+// AnnounceObject mocks base method
+func (m *MockRemoteServer) AnnounceObject(hash []byte) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AnnounceObject", hash)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AnnounceObject indicates an expected call of AnnounceObject
+func (mr *MockRemoteServerMockRecorder) AnnounceObject(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AnnounceObject", reflect.TypeOf((*MockRemoteServer)(nil).AnnounceObject), hash)
+}
+
+// AnnounceRepoObjects mocks base method
+func (m *MockRemoteServer) AnnounceRepoObjects(repoName string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AnnounceRepoObjects", repoName)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AnnounceRepoObjects indicates an expected call of AnnounceRepoObjects
+func (mr *MockRemoteServerMockRecorder) AnnounceRepoObjects(repoName interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AnnounceRepoObjects", reflect.TypeOf((*MockRemoteServer)(nil).AnnounceRepoObjects), repoName)
+}
+
+// GetFetcher mocks base method
+func (m *MockRemoteServer) GetFetcher() fetcher.ObjectFetcher {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFetcher")
+	ret0, _ := ret[0].(fetcher.ObjectFetcher)
+	return ret0
+}
+
+// GetFetcher indicates an expected call of GetFetcher
+func (mr *MockRemoteServerMockRecorder) GetFetcher() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFetcher", reflect.TypeOf((*MockRemoteServer)(nil).GetFetcher))
+}
+
 // GetPruner mocks base method
-func (m *MockRemoteServer) GetPruner() types0.RepoPruner {
+func (m *MockRemoteServer) GetPruner() types1.RepoPruner {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPruner")
-	ret0, _ := ret[0].(types0.RepoPruner)
+	ret0, _ := ret[0].(types1.RepoPruner)
 	return ret0
 }
 
@@ -420,10 +346,10 @@ func (mr *MockRemoteServerMockRecorder) GetPruner() *gomock.Call {
 }
 
 // GetDHT mocks base method
-func (m *MockRemoteServer) GetDHT() dht.DHT {
+func (m *MockRemoteServer) GetDHT() types.DHT {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetDHT")
-	ret0, _ := ret[0].(dht.DHT)
+	ret0, _ := ret[0].(types.DHT)
 	return ret0
 }
 
@@ -431,20 +357,6 @@ func (m *MockRemoteServer) GetDHT() dht.DHT {
 func (mr *MockRemoteServerMockRecorder) GetDHT() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDHT", reflect.TypeOf((*MockRemoteServer)(nil).GetDHT))
-}
-
-// ExecTxPush mocks base method
-func (m *MockRemoteServer) ExecTxPush(tx types1.BaseTx) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ExecTxPush", tx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// ExecTxPush indicates an expected call of ExecTxPush
-func (mr *MockRemoteServerMockRecorder) ExecTxPush(tx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecTxPush", reflect.TypeOf((*MockRemoteServer)(nil).ExecTxPush), tx)
 }
 
 // Shutdown mocks base method

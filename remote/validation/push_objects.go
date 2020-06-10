@@ -1,7 +1,6 @@
 package validation
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -11,7 +10,7 @@ import (
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/crypto/bls"
-	"gitlab.com/makeos/mosdef/dht"
+	types2 "gitlab.com/makeos/mosdef/dht/server/types"
 	"gitlab.com/makeos/mosdef/params"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/push/types"
@@ -25,21 +24,21 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-// CheckPushNoteSyntax performs syntactic checks on the fields of a push transaction
-func CheckPushNoteSyntax(tx types.PushNotice) error {
+// CheckPushNoteSanity performs syntactic checks on the fields of a push transaction
+func CheckPushNoteSanity(note types.PushNote) error {
 
-	if tx.GetRepoName() == "" {
+	if note.GetRepoName() == "" {
 		return util.FieldError("repo", "repo name is required")
 	}
-	if util.IsValidName(tx.GetRepoName()) != nil {
+	if util.IsValidName(note.GetRepoName()) != nil {
 		return util.FieldError("repo", "repo name is not valid")
 	}
 
-	if tx.GetNamespace() != "" && util.IsValidName(tx.GetNamespace()) != nil {
+	if note.GetNamespace() != "" && util.IsValidName(note.GetNamespace()) != nil {
 		return util.FieldError("namespace", "namespace is not valid")
 	}
 
-	for i, ref := range tx.GetPushedReferences() {
+	for i, ref := range note.GetPushedReferences() {
 		if ref.Name == "" {
 			return fe(i, "references.name", "name is required")
 		}
@@ -57,11 +56,6 @@ func CheckPushNoteSyntax(tx types.PushNotice) error {
 		}
 		if ref.Nonce == 0 {
 			return fe(i, "references.nonce", "reference nonce must be greater than zero")
-		}
-		for j, obj := range ref.Objects {
-			if len(obj) != 40 {
-				return fe(i, fmt.Sprintf("references.objects.%d", j), "object hash is not valid")
-			}
 		}
 
 		if ref.Fee == "" {
@@ -83,38 +77,42 @@ func CheckPushNoteSyntax(tx types.PushNotice) error {
 		}
 	}
 
-	if len(tx.GetPusherKeyID()) == 0 {
+	if note.IsFromPeer() && note.GetSize() != note.GetLocalSize() {
+		return util.FieldError("size", "size does not match local size")
+	}
+
+	if len(note.GetPusherKeyID()) == 0 {
 		return util.FieldError("pusherKeyId", "push key id is required")
 	}
-	if len(tx.GetPusherKeyID()) != 20 {
+	if len(note.GetPusherKeyID()) != 20 {
 		return util.FieldError("pusherKeyId", "push key id is not valid")
 	}
 
-	if tx.GetTimestamp() == 0 {
+	if note.GetTimestamp() == 0 {
 		return util.FieldError("timestamp", "timestamp is required")
 	}
-	if tx.GetTimestamp() > time.Now().Unix() {
+	if note.GetTimestamp() > time.Now().Unix() {
 		return util.FieldError("timestamp", "timestamp cannot be a future time")
 	}
 
-	if tx.GetPusherAccountNonce() == 0 {
+	if note.GetPusherAccountNonce() == 0 {
 		return util.FieldError("accountNonce", "account nonce must be greater than zero")
 	}
 
-	if tx.GetNodePubKey().IsEmpty() {
+	if note.GetCreatorPubKey().IsEmpty() {
 		return util.FieldError("nodePubKey", "push node public key is required")
 	}
 
-	pk, err := crypto.PubKeyFromBytes(tx.GetNodePubKey().Bytes())
+	pk, err := crypto.PubKeyFromBytes(note.GetCreatorPubKey().Bytes())
 	if err != nil {
 		return util.FieldError("nodePubKey", "push node public key is not valid")
 	}
 
-	if len(tx.GetNodeSignature()) == 0 {
+	if len(note.GetNodeSignature()) == 0 {
 		return util.FieldError("nodeSig", "push node signature is required")
 	}
 
-	if ok, err := pk.Verify(tx.BytesNoSig(), tx.GetNodeSignature()); err != nil || !ok {
+	if ok, err := pk.Verify(note.BytesNoSig(), note.GetNodeSignature()); err != nil || !ok {
 		return util.FieldError("nodeSig", "failed to verify signature")
 	}
 
@@ -202,7 +200,7 @@ end:
 
 // GetTxDetailsFromNote creates a slice of TxDetail objects from a push note.
 // Limit to references specified in targetRefs
-func GetTxDetailsFromNote(note types.PushNotice, targetRefs ...string) (details []*remotetypes.TxDetail) {
+func GetTxDetailsFromNote(note types.PushNote, targetRefs ...string) (details []*remotetypes.TxDetail) {
 	for _, ref := range note.GetPushedReferences() {
 		if len(targetRefs) > 0 && !funk.ContainsString(targetRefs, ref.Name) {
 			continue
@@ -229,7 +227,7 @@ func GetTxDetailsFromNote(note types.PushNotice, targetRefs ...string) (details 
 // CheckPushNoteConsistency performs consistency checks against the state of the
 // repository as seen by the node. If the target repo object is not set in tx,
 // local reference hash comparision is not performed.
-func CheckPushNoteConsistency(note types.PushNotice, logic core.Logic) error {
+func CheckPushNoteConsistency(note types.PushNote, logic core.Logic) error {
 
 	// Ensure the repository exist
 	repo := logic.RepoKeeper().Get(note.GetRepoName())
@@ -300,68 +298,47 @@ func CheckPushNoteConsistency(note types.PushNotice, logic core.Logic) error {
 }
 
 // PushNoteCheckFunc describes a function for checking a push note
-type PushNoteCheckFunc func(tx types.PushNotice, dht dht.DHT, logic core.Logic) error
+type PushNoteCheckFunc func(tx types.PushNote, dht types2.DHT, logic core.Logic) error
 
 // CheckPushNote performs validation checks on a push transaction
-func CheckPushNote(tx types.PushNotice, dht dht.DHT, logic core.Logic) error {
+func CheckPushNote(tx types.PushNote, dht types2.DHT, logic core.Logic) error {
 
-	if err := CheckPushNoteSyntax(tx.(*types.PushNote)); err != nil {
+	if err := CheckPushNoteSanity(tx.(*types.Note)); err != nil {
 		return err
 	}
 
-	if err := CheckPushNoteConsistency(tx.(*types.PushNote), logic); err != nil {
-		return err
-	}
-
-	err := FetchAndCheckReferenceObjects(tx, dht)
-	if err != nil {
+	if err := CheckPushNoteConsistency(tx.(*types.Note), logic); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// CheckPushEndorsement performs sanity checks on the given PushEndorsement object
-func CheckPushEndorsement(pushEnd *types.PushEndorsement, index int) error {
-
-	// Push note id must be set
-	if pushEnd.NoteID.IsEmpty() {
-		return fe(index, "endorsements.pushNoteID", "push note id is required")
-	}
-
-	// Sender public key must be set
-	if pushEnd.EndorserPubKey.IsEmpty() {
-		return fe(index, "endorsements.senderPubKey", "sender public key is required")
-	}
-
-	return nil
-}
-
-// CheckPushEndConsistencyUsingHost performs consistency checks on the given PushEndorsement object
-// against the current state of the network.
-// EXPECT: Sanity check to have been performed using CheckPushEndorsement
-func CheckPushEndConsistencyUsingHost(
-	hosts tickettypes.SelectedTickets,
-	pushEnd *types.PushEndorsement,
+// CheckEndorsementConsistencyUsingHost performs consistency checks on the given
+// push endorsement object against the current state of the network.
+// EXPECT: Sanity check to have been performed using CheckEndorsementSanity
+func CheckEndorsementConsistencyUsingHost(
 	logic core.Logic,
-	noSigCheck bool,
+	hosts tickettypes.SelectedTickets,
+	end *types.PushEndorsement,
+	noBLSSigCheck bool,
 	index int) error {
 
 	// Check if the sender is one of the top hosts.
-	// Ensure that the signers of the PushEndorsement are part of the hosts
-	signerSelectedTicket := hosts.Get(pushEnd.EndorserPubKey)
-	if signerSelectedTicket == nil {
+	// Ensure that the signers of the Endorsement are part of the hosts
+	selected := hosts.Get(end.EndorserPubKey)
+	if selected == nil {
 		return fe(index, "endorsements.senderPubKey",
 			"sender public key does not belong to an active host")
 	}
 
-	// Ensure the signature can be verified using the BLS public key of the selected ticket
-	if !noSigCheck {
-		blsPubKey, err := bls.BytesToPublicKey(signerSelectedTicket.Ticket.BLSPubKey)
+	// Ensure the BLS signature can be verified using the BLS public key of the selected ticket
+	if !noBLSSigCheck {
+		blsPubKey, err := bls.BytesToPublicKey(selected.Ticket.BLSPubKey)
 		if err != nil {
 			return errors.Wrap(err, "failed to decode bls public key of endorser")
 		}
-		if err = blsPubKey.Verify(pushEnd.Sig.Bytes(), pushEnd.BytesNoSigAndSenderPubKey()); err != nil {
+		if err = blsPubKey.Verify(end.SigBLS[:], end.BytesForBLSSig()); err != nil {
 			return fe(index, "endorsements.sig", "signature could not be verified")
 		}
 	}
@@ -369,72 +346,80 @@ func CheckPushEndConsistencyUsingHost(
 	return nil
 }
 
-// CheckPushEndConsistency performs consistency checks on the given PushEndorsement object
+// CheckEndorsementConsistency performs consistency checks on the given Endorsement object
 // against the current state of the network.
-// EXPECT: Sanity check to have been performed using CheckPushEndorsement
-func CheckPushEndConsistency(pushEnd *types.PushEndorsement, logic core.Logic, noSigCheck bool, index int) error {
+// EXPECT: Sanity check to have been performed using CheckEndorsementSanity
+func CheckEndorsementConsistency(end *types.PushEndorsement, logic core.Logic, noBLSSigCheck bool, index int) error {
 	hosts, err := logic.GetTicketManager().GetTopHosts(params.NumTopHostsLimit)
 	if err != nil {
 		return errors.Wrap(err, "failed to get top hosts")
 	}
-	return CheckPushEndConsistencyUsingHost(hosts, pushEnd, logic, noSigCheck, index)
+	return CheckEndorsementConsistencyUsingHost(logic, hosts, end, noBLSSigCheck, index)
 }
 
-// CheckPushEnd performs sanity and state consistency checks on the given PushEndorsement object
-func CheckPushEnd(pushEnd *types.PushEndorsement, logic core.Logic, index int) error {
-	if err := CheckPushEndorsement(pushEnd, index); err != nil {
-		return err
+// CheckEndorsementSanity performs sanity checks on the given Endorsement object.
+// fromPushTx indicates that the endorsement was retrieved from a push transaction.
+// noBLSSigRequiredCheck prevents BLS signature requirement check.
+func CheckEndorsementSanity(e *types.PushEndorsement, fromPushTx bool, index int) error {
+
+	// Push note id must be set
+	if !fromPushTx && len(e.NoteID) == 0 {
+		return fe(index, "endorsements.noteID", "push note ID is required")
 	}
-	if err := CheckPushEndConsistency(pushEnd, logic, false, index); err != nil {
-		return err
+
+	// Sender public key must be set
+	if e.EndorserPubKey.IsEmpty() {
+		return fe(index, "endorsements.pubKey", "endorser's public key is required")
 	}
+
+	// For endorsement at index 0, at least, one reference is required.
+	// Endorsements at > 0 index can have no references.
+	// For an endorsement not from a push transaction, ensure it has at least one reference.
+	if !fromPushTx && len(e.References) == 0 {
+		return fe(index, "endorsements.refs", "at least one reference is required")
+	}
+
+	if fromPushTx {
+		// For an endorsement that is the first in a push transaction,
+		// ensure it has at least one reference.
+		if index == 0 && len(e.References) == 0 {
+			return fe(index, "endorsements.refs", "at least one reference is required")
+		}
+
+		// Ensure BLS signature is not set.
+		if len(e.SigBLS) > 0 {
+			return fe(index, "endorsements.sigBLS", "BLS signature is not expected")
+		}
+
+		// Ensure NoteID is not set
+		if len(e.NoteID) > 0 {
+			return fe(index, "endorsements.noteID", "Note ID is not expected")
+		}
+
+		// At index > 0, ensure no reference is provided
+		if index > 0 && len(e.References) > 0 {
+			return fe(index, "endorsements.refs", "references not expected")
+		}
+	}
+
+	// Endorser's BLS signature is required
+	if !fromPushTx && e.SigBLS == nil {
+		return fe(index, "endorsements.sigBLS", "endorser's BLS signature is required")
+	}
+
 	return nil
 }
 
-// FetchAndCheckReferenceObjects attempts to fetch and store new objects
-// introduced by the pushed references. After fetching it performs checks
-// on the objects
-func FetchAndCheckReferenceObjects(tx types.PushNotice, dhtnode dht.DHT) error {
-	objectsSize := int64(0)
+// EndorsementChecker describes a function for validating a push endorsement
+type EndorsementChecker func(end *types.PushEndorsement, logic core.Logic, index int) error
 
-	for _, objHash := range tx.GetPushedObjects() {
-	getSize:
-		// Attempt to get the object's size. If we find it, it means the object
-		// already exist so we don't have to fetch it from the dht.
-		objSize, err := tx.GetTargetRepo().GetObjectSize(objHash)
-		if err == nil {
-			objectsSize += objSize
-			continue
-		}
-
-		// Since the object doesn't exist locally, read the object from the DHT
-		dhtKey := dht.MakeGitObjectKey(tx.GetRepoName(), objHash)
-		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
-		objValue, err := dhtnode.GetObject(ctx, &dht.DHTObjectQuery{
-			Module:    remotetypes.RepoObjectModule,
-			ObjectKey: []byte(dhtKey),
-		})
-		if err != nil {
-			cn()
-			msg := fmt.Sprintf("failed to fetch object '%s'", objHash)
-			return errors.Wrap(err, msg)
-		}
-		cn()
-
-		// Write the object's content to disk
-		if err := tx.GetTargetRepo().WriteObjectToFile(objHash, objValue); err != nil {
-			msg := fmt.Sprintf("failed to write fetched object '%s' to disk", objHash)
-			return errors.Wrap(err, msg)
-		}
-
-		goto getSize
+// CheckEndorsement performs sanity and state consistency checks on the given Endorsement object
+func CheckEndorsement(end *types.PushEndorsement, logic core.Logic, index int) error {
+	if err := CheckEndorsementSanity(end, false, index); err != nil {
+		return err
 	}
-
-	if objectsSize != int64(tx.GetSize()) {
-		msg := fmt.Sprintf("invalid size (%d bytes). "+
-			"actual object size (%d bytes) is different", tx.GetSize(), objectsSize)
-		return util.FieldError("size", msg)
+	if err := CheckEndorsementConsistency(end, logic, false, index); err != nil {
+		return err
 	}
-
 	return nil
 }

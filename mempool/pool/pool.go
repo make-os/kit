@@ -10,7 +10,7 @@ import (
 	"gitlab.com/makeos/mosdef/params"
 )
 
-// PushPooler stores transactions.
+// PushPool stores transactions.
 type Pool struct {
 	sync.RWMutex              // general mutex
 	container    *TxContainer // transaction queue

@@ -154,7 +154,7 @@ func CheckPostCommit(repo types.LocalRepo, commit types.Commit, args *CheckPostC
 		return nil, fmt.Errorf("post commit must not alter history")
 	}
 
-	tree, err := commit.GetTree()
+	tree, err := commit.Tree()
 	if err != nil {
 		return nil, fmt.Errorf("unable to read post commit tree")
 	}

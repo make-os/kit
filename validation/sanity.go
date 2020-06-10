@@ -426,59 +426,43 @@ func CheckTxSetDelegateCommission(tx *txns.TxSetDelegateCommission, index int) e
 // CheckTxPush performs sanity checks on TxPush
 func CheckTxPush(tx *txns.TxPush, index int) error {
 
+	// Expect transaction type to be TxTypePush
 	if err := checkType(tx.TxType, txns.TxTypePush, index); err != nil {
 		return err
 	}
 
-	if err := v.Validate(tx.PushNote,
-		v.Required.Error(feI(index, "pushNote", "push note is required").Error()),
-	); err != nil {
+	// The push note object must be set
+	err := v.Validate(tx.Note, v.Required.Error(feI(index, "note", "push note is required").Error()))
+	if err != nil {
 		return err
 	}
 
-	if err := validation.CheckPushNoteSyntax(tx.PushNote); err != nil {
+	// Perform sanity check on the push note
+	if err := validation.CheckPushNoteSanity(tx.Note); err != nil {
 		return err
 	}
 
-	if len(tx.PushEnds) < params.PushEndorseQuorumSize {
+	// Expect the number of endorsements to equal the number of endorsers quorum size
+	if len(tx.Endorsements) < params.PushEndorseQuorumSize {
 		return feI(index, "endorsements", "not enough endorsements included")
 	}
 
+	// Check each endorsements
 	senders := map[string]struct{}{}
-	pushEndRefHashesID := util.EmptyBytes32
-	for index, pushEnd := range tx.PushEnds {
+	for index, end := range tx.Endorsements {
 
-		if err := validation.CheckPushEndorsement(pushEnd, index); err != nil {
+		// Perform sanity checks on the endorsement.
+		// Indicate that the endorsement is from a push transaction.
+		if err := validation.CheckEndorsementSanity(end, true, index); err != nil {
 			return err
 		}
 
-		// Ensure push note id and the target pushEnd push note id match
-		if !pushEnd.NoteID.Equal(tx.PushNote.ID()) {
-			msg := "push note id and push endorsement id must match"
-			return feI(index, "endorsements.pushNoteID", msg)
-		}
-
-		// Make sure we haven't seen a PushEndorsement from this sender before
-		_, ok := senders[pushEnd.EndorserPubKey.HexStr()]
+		// Make sure we haven't seen an endorsement from this sender before
+		_, ok := senders[end.EndorserPubKey.HexStr()]
 		if !ok {
-			senders[pushEnd.EndorserPubKey.HexStr()] = struct{}{}
+			senders[end.EndorserPubKey.HexStr()] = struct{}{}
 		} else {
-			msg := "multiple endorsement by a single sender not permitted"
-			return feI(index, "endorsements.senderPubKey", msg)
-		}
-
-		_, err := crypto.PubKeyFromBytes(pushEnd.EndorserPubKey.Bytes())
-		if err != nil {
-			return feI(index, "endorsements.senderPubKey", "public key is not valid")
-		}
-
-		// Ensure the references hashes are all the same
-		if pushEndRefHashesID.IsEmpty() {
-			pushEndRefHashesID = pushEnd.References.ID()
-		}
-		if !pushEnd.References.ID().Equal(pushEndRefHashesID) {
-			msg := "references of all endorsements must match"
-			return feI(index, "endorsements.refsHash", msg)
+			return feI(index, "endorsements.pubKey", "multiple endorsement by a single sender not permitted")
 		}
 	}
 
@@ -502,8 +486,8 @@ func CheckNamespaceDomains(domains map[string]string, index int) error {
 	return nil
 }
 
-// CheckTxNSAcquire performs sanity checks on TxNamespaceAcquire
-func CheckTxNSAcquire(tx *txns.TxNamespaceAcquire, index int) error {
+// CheckTxNamespaceAcquire performs sanity checks on TxNamespaceAcquire
+func CheckTxNamespaceAcquire(tx *txns.TxNamespaceAcquire, index int) error {
 
 	if err := checkType(tx.TxType, txns.TxTypeNSAcquire, index); err != nil {
 		return err

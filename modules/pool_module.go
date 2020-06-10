@@ -17,11 +17,11 @@ import (
 type PoolModule struct {
 	vm       *otto.Otto
 	reactor  *mempool.Reactor
-	pushPool types.PushPooler
+	pushPool types.PushPool
 }
 
 // NewPoolModule creates an instance of PoolModule
-func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor, pushPool types.PushPooler) *PoolModule {
+func NewPoolModule(vm *otto.Otto, reactor *mempool.Reactor, pushPool types.PushPool) *PoolModule {
 	return &PoolModule{vm: vm, reactor: reactor, pushPool: pushPool}
 }
 

@@ -123,7 +123,6 @@ type DHTModule interface {
 	Lookup(key string) interface{}
 	Announce(key string)
 	GetProviders(key string) (res []map[string]interface{})
-	GetRepoObject(objURI string) []byte
 	GetPeers() []string
 }
 

@@ -60,11 +60,12 @@ var _ = Describe("Auth", func() {
 		mockDHT := mocks.NewMockDHT(ctrl)
 		mockMempool := mocks.NewMockMempool(ctrl)
 		mockBlockGetter := mocks.NewMockBlockGetter(ctrl)
-		svr = NewManager(cfg, "127.0.0.1:0000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
+		svr = NewRemoteServer(cfg, "127.0.0.1:0000", mockLogic, mockDHT, mockMempool, mockBlockGetter)
 	})
 
 	AfterEach(func() {
 		ctrl.Finish()
+		svr.Stop()
 		err = os.RemoveAll(cfg.DataDir())
 		Expect(err).To(BeNil())
 	})

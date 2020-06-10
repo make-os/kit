@@ -23,26 +23,37 @@ func AddDefaultPolicies(config *state.RepoConfig) {
 	mergeReqRefPath := plumbing.MakeMergeRequestReferencePath()
 	config.Policies = append(
 		config.Policies,
-		&state.Policy{Subject: "all", Object: "refs/heads", Action: PolicyActionMergeRequestWrite},
-		&state.Policy{Subject: "contrib", Object: "refs/heads", Action: PolicyActionWrite},
-		&state.Policy{Subject: "contrib", Object: "refs/heads", Action: PolicyActionDelete},
-		&state.Policy{Subject: "contrib", Object: "refs/heads/master", Action: PolicyActionDenyDelete},
+		// &state.Policy{Subject: "all", Object: "refs/heads", Action: PolicyActionMergeRequestWrite},
 
-		&state.Policy{Subject: "contrib", Object: "refs/tags", Action: PolicyActionWrite},
-		&state.Policy{Subject: "contrib", Object: "refs/tags", Action: PolicyActionDelete},
-		&state.Policy{Subject: "contrib", Object: "refs/notes", Action: PolicyActionWrite},
-		&state.Policy{Subject: "contrib", Object: "refs/notes", Action: PolicyActionDelete},
-
+		// Everyone can create issues or merge request
 		&state.Policy{Subject: "all", Object: issueRefPath, Action: PolicyActionIssueWrite},
-		&state.Policy{Subject: "creator", Object: issueRefPath, Action: PolicyActionIssueDelete},
-		&state.Policy{Subject: "contrib", Object: issueRefPath, Action: PolicyActionIssueDelete},
-		&state.Policy{Subject: "creator", Object: issueRefPath, Action: PolicyActionIssueUpdate},
-		&state.Policy{Subject: "contrib", Object: issueRefPath, Action: PolicyActionIssueUpdate},
-
 		&state.Policy{Subject: "all", Object: mergeReqRefPath, Action: PolicyActionMergeRequestWrite},
-		&state.Policy{Subject: "creator", Object: mergeReqRefPath, Action: PolicyActionMergeRequestDelete},
-		&state.Policy{Subject: "contrib", Object: mergeReqRefPath, Action: PolicyActionMergeRequestDelete},
-		&state.Policy{Subject: "creator", Object: mergeReqRefPath, Action: PolicyActionMergeRequestUpdate},
-		&state.Policy{Subject: "contrib", Object: mergeReqRefPath, Action: PolicyActionMergeRequestUpdate},
+
+		// Contributors default branch policies
+		&state.Policy{Subject: "contrib", Object: "refs/heads", Action: PolicyActionWrite},             // can create branches
+		&state.Policy{Subject: "contrib", Object: "refs/heads/master", Action: PolicyActionDenyDelete}, // cannot delete master branch
+		&state.Policy{Subject: "contrib", Object: "refs/heads", Action: PolicyActionDelete},            // can delete any branches
+
+		// Contributor default tag policies
+		&state.Policy{Subject: "contrib", Object: "refs/tags", Action: PolicyActionWrite},   // can create tags
+		&state.Policy{Subject: "contrib", Object: "refs/tags", Action: PolicyActionDelete},  // can delete any tags
+		&state.Policy{Subject: "contrib", Object: "refs/notes", Action: PolicyActionWrite},  // can create notes
+		&state.Policy{Subject: "contrib", Object: "refs/notes", Action: PolicyActionDelete}, // can delete any notes
+
+		// Contributor default issue policies
+		&state.Policy{Subject: "contrib", Object: issueRefPath, Action: PolicyActionIssueDelete}, // can delete issues
+		&state.Policy{Subject: "contrib", Object: issueRefPath, Action: PolicyActionIssueUpdate}, // can update issue admin fields.
+
+		// Creator default issue policies
+		&state.Policy{Subject: "creator", Object: issueRefPath, Action: PolicyActionIssueDelete}, // can delete own issue
+		&state.Policy{Subject: "creator", Object: issueRefPath, Action: PolicyActionIssueUpdate}, // can update own issue admin fields
+
+		// Creator default merge request policies
+		&state.Policy{Subject: "creator", Object: mergeReqRefPath, Action: PolicyActionMergeRequestDelete}, // can delete merge request
+		&state.Policy{Subject: "creator", Object: mergeReqRefPath, Action: PolicyActionMergeRequestUpdate}, // can update own merge request admin fields
+
+		// Contributor default merge request policies
+		&state.Policy{Subject: "contrib", Object: mergeReqRefPath, Action: PolicyActionMergeRequestUpdate}, // can update any merge requests
+		&state.Policy{Subject: "contrib", Object: mergeReqRefPath, Action: PolicyActionMergeRequestDelete}, // can delete any merge requests
 	)
 }
