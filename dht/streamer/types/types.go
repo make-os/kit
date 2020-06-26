@@ -13,7 +13,7 @@ import (
 type ObjectStreamer interface {
 
 	// Announce announces an object's hash
-	Announce(hash []byte) error
+	Announce(hash []byte, doneCB func(error))
 
 	// GetCommit gets a single commit by hash.
 	// It returns the packfile, the commit object and error.

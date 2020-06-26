@@ -177,7 +177,7 @@ func (m *NamespaceModule) Register(
 
 	var tx = txns.NewBareTxNamespaceAcquire()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	// Hash the name
@@ -221,7 +221,7 @@ func (m *NamespaceModule) UpdateDomain(
 
 	var tx = txns.NewBareTxNamespaceDomainUpdate()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	// Hash the name

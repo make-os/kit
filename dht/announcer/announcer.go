@@ -15,7 +15,7 @@ import (
 
 type Announcer interface {
 	// Announce adds a key to the queue to be announced
-	Announce(key []byte)
+	Announce(key []byte, doneCB func(error))
 
 	// Start starts the announcer.
 	// Panics if reference announcer is already started.
@@ -33,7 +33,8 @@ type Announcer interface {
 
 // Task represents a task
 type Task struct {
-	Key util.Bytes
+	Key  util.Bytes
+	Done func(err error)
 }
 
 func (t *Task) GetID() interface{} {
@@ -67,8 +68,11 @@ func NewBasicAnnouncer(dht *dht.IpfsDHT, nWorkers int, log logger.Logger) *Basic
 }
 
 // Announce adds a key to the queue to be announced
-func (a *BasicAnnouncer) Announce(key []byte) {
-	a.queue.Append(&Task{Key: key})
+func (a *BasicAnnouncer) Announce(key []byte, doneCB func(error)) {
+	if doneCB == nil {
+		doneCB = func(error) {}
+	}
+	a.queue.Append(&Task{Key: key, Done: doneCB})
 }
 
 // HasTask checks whether there are one or more unprocessed tasks.
@@ -147,13 +151,14 @@ func (a *BasicAnnouncer) Do(workerID int, task *Task) error {
 	key := task.Key
 	cid, err := dht2.MakeCid(key)
 	if err != nil {
+		task.Done(err)
 		return err
 	}
 
 	// Broadcast as provider of the key to the DHT.
 	// Allow exponential backoff retries on failure with a max. of 5 tries.
 	err = backoff.Retry(func() error {
-		ctx, cn := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
 		if err := a.dht.Provide(ctx, cid, true); err != nil {
 			cn()
 			return err
@@ -163,11 +168,14 @@ func (a *BasicAnnouncer) Do(workerID int, task *Task) error {
 	}, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 5))
 
 	if err != nil {
-		a.log.Debug("Failed to announce object", "Hash", key.HexStr(true))
+		a.log.Error("Failed to announce object", "Err", err, "Key", task.Key.HexStr(true))
+		task.Done(err)
 		return err
 	}
 
-	a.log.Debug("Announced new object", "Hash", key.HexStr(true), "Worker", workerID)
+	a.log.Debug("Announced an object", "Key", task.Key.HexStr(true))
+
+	task.Done(nil)
 
 	return nil
 }

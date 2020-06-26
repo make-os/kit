@@ -302,7 +302,7 @@ func (h *BasicHandler) HandleUpdate() error {
 	// Announce the pushed commit or tag objects
 	for _, obj := range h.PushReader.Objects {
 		if obj.Type == plumbing2.CommitObject || obj.Type == plumbing2.TagObject {
-			h.Server.AnnounceObject(obj.Hash[:])
+			h.Server.GetDHT().ObjectStreamer().Announce(obj.Hash[:], nil)
 		}
 	}
 

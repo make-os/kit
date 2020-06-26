@@ -86,16 +86,18 @@ var _ = Describe("BasicObjectStreamer", func() {
 
 	Describe(".Announce", func() {
 		It("should announce commit hash", func() {
-			mockDHT.EXPECT().Announce(dht.MakeObjectKey(hash[:]))
-			err := cs.Announce(hash[:])
-			Expect(err).To(BeNil())
+			mockDHT.EXPECT().Announce(dht.MakeObjectKey(hash[:]), gomock.Any())
+			cs.Announce(hash[:], nil)
 		})
 
 		It("should return error when announce attempt failed", func() {
-			mockDHT.EXPECT().Announce(dht.MakeObjectKey(hash[:])).Return(fmt.Errorf("error"))
-			err := cs.Announce(hash[:])
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("error"))
+			mockDHT.EXPECT().Announce(dht.MakeObjectKey(hash[:]), gomock.Any()).Do(func(key []byte, doneCB func(error)) {
+				doneCB(fmt.Errorf("error"))
+			})
+			cs.Announce(hash[:], func(err error) {
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("error"))
+			})
 		})
 	})
 

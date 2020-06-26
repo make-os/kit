@@ -211,7 +211,7 @@ var _ = Describe("Reactor", func() {
 
 			It("should call fetchers OnPackReceived && Fetch methods", func() {
 				mockObjFetcher := mocks.NewMockObjectFetcher(ctrl)
-				mockObjFetcher.EXPECT().OnFetched(gomock.Any())
+				mockObjFetcher.EXPECT().OnPackReceived(gomock.Any())
 				mockObjFetcher.EXPECT().Fetch(gomock.Any(), gomock.Any())
 				mockObjFetcher.EXPECT().Stop()
 				svr.objfetcher = mockObjFetcher

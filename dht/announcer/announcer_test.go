@@ -73,7 +73,7 @@ var _ = Describe("Announcer", func() {
 
 	Describe(".Announce", func() {
 		It("should add task to queue", func() {
-			ann.Announce([]byte("key"))
+			ann.Announce([]byte("key"), nil)
 			Expect(ann.HasTask()).To(BeTrue())
 		})
 	})
@@ -94,7 +94,7 @@ var _ = Describe("Announcer", func() {
 			cfg.DHT.BootstrapPeers = dhtB.Addr()
 			err = dhtA.Bootstrap()
 			Expect(err).To(BeNil())
-			err = ann.Do(0, &announcer.Task{key})
+			err = ann.Do(0, &announcer.Task{Key: key, Done: func(err error) {}})
 		})
 
 		It("should return nil announcement succeeds", func() {

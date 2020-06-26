@@ -129,7 +129,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 	// Decode parameters into a transaction object
 	var tx = txns.NewBareTxRegisterPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -175,7 +175,7 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 	// Decode parameters into a transaction object
 	var tx = txns.NewBareTxUpDelPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 	tx.Delete = false
 
@@ -216,7 +216,7 @@ func (m *PushKeyModule) UnRegister(params map[string]interface{}, options ...int
 	// Decode parameters into a transaction object
 	var tx = txns.NewBareTxUpDelPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 	tx.Delete = true
 	tx.FeeCap = ""
@@ -249,7 +249,7 @@ func (m *PushKeyModule) UnRegister(params map[string]interface{}, options ...int
 func (m *PushKeyModule) Get(id string, blockHeight ...uint64) util.Map {
 
 	if id == "" {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "id", "push key id is required"))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "id", "push key id is required"))
 	}
 
 	targetHeight := uint64(0)

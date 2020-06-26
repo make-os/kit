@@ -137,7 +137,7 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 
 	var tx = txns.NewBareTxRepoCreate()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -179,7 +179,7 @@ func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...inter
 
 	var tx = txns.NewBareRepoProposalUpsertOwner()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -219,7 +219,7 @@ func (m *RepoModule) VoteOnProposal(params map[string]interface{}, options ...in
 
 	var tx = txns.NewBareRepoProposalVote()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -314,7 +314,7 @@ func (m *RepoModule) Update(params map[string]interface{}, options ...interface{
 
 	var tx = txns.NewBareRepoProposalUpdate()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -354,7 +354,7 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 
 	var tx = txns.NewBareRepoProposalFeeSend()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -403,7 +403,7 @@ func (m *RepoModule) RegisterPushKey(
 
 	var tx = txns.NewBareRepoProposalRegisterPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)

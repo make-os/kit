@@ -106,8 +106,8 @@ func NewObjectStreamer(dht types4.DHT, cfg *config.AppConfig) *BasicObjectStream
 }
 
 // Announce announces an object's hash
-func (c *BasicObjectStreamer) Announce(hash []byte) error {
-	return c.dht.Announce(dht2.MakeObjectKey(hash))
+func (c *BasicObjectStreamer) Announce(hash []byte, doneCB func(error)) {
+	c.dht.Announce(dht2.MakeObjectKey(hash), doneCB)
 }
 
 // GetCommit gets a single commit by hash.

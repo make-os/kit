@@ -38,17 +38,15 @@ func (m *MockObjectStreamer) EXPECT() *MockObjectStreamerMockRecorder {
 }
 
 // Announce mocks base method
-func (m *MockObjectStreamer) Announce(hash []byte) error {
+func (m *MockObjectStreamer) Announce(hash []byte, doneCB func(error)) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Announce", hash)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Announce", hash, doneCB)
 }
 
 // Announce indicates an expected call of Announce
-func (mr *MockObjectStreamerMockRecorder) Announce(hash interface{}) *gomock.Call {
+func (mr *MockObjectStreamerMockRecorder) Announce(hash, doneCB interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Announce", reflect.TypeOf((*MockObjectStreamer)(nil).Announce), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Announce", reflect.TypeOf((*MockObjectStreamer)(nil).Announce), hash, doneCB)
 }
 
 // GetCommit mocks base method

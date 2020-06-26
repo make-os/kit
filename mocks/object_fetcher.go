@@ -53,7 +53,7 @@ func (m *MockObjectFetcher) OnPackReceived(cb func(string, io.ReadSeeker)) {
 }
 
 // OnPackReceived indicates an expected call of OnPackReceived
-func (mr *MockObjectFetcherMockRecorder) OnFetched(cb interface{}) *gomock.Call {
+func (mr *MockObjectFetcherMockRecorder) OnPackReceived(cb interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OnPackReceived", reflect.TypeOf((*MockObjectFetcher)(nil).OnPackReceived), cb)
 }

@@ -20,7 +20,7 @@ const (
 	StatusCodeInvalidPass           = "invalid_passphrase"
 	StatusCodeAddressRequire        = "addr_required"
 	StatusCodeAccountNotFound       = "account_not_found"
-	StatusCodeInvalidParams         = "invalid_params"
+	StatusCodeInvalidParam          = "invalid_param"
 	StatusCodeInvalidProposerPubKey = "invalid_proposer_pub_key"
 	StatusCodeMempoolAddFail        = "mempool_add_fail"
 	StatusCodePushKeyNotFound       = "push_key_not_found"

@@ -95,7 +95,7 @@ func (m *ChainModule) GetBlock(height string) util.Map {
 
 	blockHeight, err = strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "height", "value is invalid"))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
 	res, err := m.service.GetBlock(blockHeight)
@@ -125,7 +125,7 @@ func (m *ChainModule) GetBlockInfo(height string) util.Map {
 
 	blockHeight, err = strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "height", "value is invalid"))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
 	res, err := m.keepers.SysKeeper().GetBlockInfo(blockHeight)
@@ -153,7 +153,7 @@ func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 
 	blockHeight, err = strconv.ParseInt(height, 10, 64)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "height", "value is invalid"))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "height", "value is invalid"))
 	}
 
 	validators, err := m.keepers.ValidatorKeeper().GetByHeight(blockHeight)

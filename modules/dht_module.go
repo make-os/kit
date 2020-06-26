@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/dht/server/types"
+	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/modules"
 
@@ -48,6 +50,11 @@ func (m *DHTModule) namespacedFuncs() []*modules.ModuleFunc {
 			Name:        "announce",
 			Value:       m.Announce,
 			Description: "Inform the network that this node can provide value for a key",
+		},
+		{
+			Name:        "getRepoObjectProviders",
+			Value:       m.GetRepoObjectProviders,
+			Description: "Get providers of a given repository object",
 		},
 		{
 			Name:        "getProviders",
@@ -127,18 +134,60 @@ func (m *DHTModule) Lookup(key string) interface{} {
 // ARGS:
 // key: The data query key
 func (m *DHTModule) Announce(key string) {
-	if err := m.dht.Announce([]byte(key)); err != nil {
-		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
-	}
+	m.dht.Announce([]byte(key), nil)
 }
 
-// getProviders returns the providers for a given key
+// GetRepoObjectProviders returns the providers for a given repo object
 //
 // ARGS:
-// key: The data query key
+// hash: The object's hash
 //
 // RETURNS: resp <[]map[string]interface{}>
-// resp.id <string>: The libp2p ID of the provider
+// resp.id <string>: The peer ID of the provider
+// resp.addresses	<[]string>: A list of p2p multiaddrs of the provider
+func (m *DHTModule) GetRepoObjectProviders(hash string) (res []map[string]interface{}) {
+
+	var err error
+	var key []byte
+
+	// If hash is 40-chars long, it's a git SHA1.
+	// Otherwise, its expected to be DHT object key
+	if len(hash) == 40 {
+		key = dht.MakeObjectKey(plumbing.HashToBytes(hash))
+	} else {
+		key, err = util.FromHex(hash)
+		if err != nil {
+			panic(util.NewStatusError(400, StatusCodeInvalidParam, "hash", err.Error()))
+		}
+	}
+
+	ctx, cn := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cn()
+	peers, err := m.dht.GetProviders(ctx, key)
+	if err != nil {
+		panic(util.NewStatusError(500, StatusCodeAppErr, "key", err.Error()))
+	}
+
+	for _, p := range peers {
+		var address []string
+		for _, addr := range p.Addrs {
+			address = append(address, addr.String())
+		}
+		res = append(res, map[string]interface{}{
+			"id":        p.ID.String(),
+			"addresses": address,
+		})
+	}
+	return
+}
+
+// GetProviders returns the providers for a given key
+//
+// ARGS:
+// hash: The data key
+//
+// RETURNS: resp <[]map[string]interface{}>
+// resp.id <string>: The peer ID of the provider
 // resp.addresses	<[]string>: A list of p2p multiaddrs of the provider
 func (m *DHTModule) GetProviders(key string) (res []map[string]interface{}) {
 	ctx, cn := context.WithTimeout(context.Background(), 15*time.Second)

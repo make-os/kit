@@ -351,7 +351,7 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 
 	var tx = txns.NewBareTxSetDelegateCommission()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)

@@ -122,6 +122,7 @@ type DHTModule interface {
 	Store(key string, val string)
 	Lookup(key string) interface{}
 	Announce(key string)
+	GetRepoObjectProviders(key string) (res []map[string]interface{})
 	GetProviders(key string) (res []map[string]interface{})
 	GetPeers() []string
 }

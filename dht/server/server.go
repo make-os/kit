@@ -194,7 +194,7 @@ func (dht *Server) Lookup(ctx context.Context, key string) ([]byte, error) {
 	return dht.dht.GetValue(ctx, key)
 }
 
-// GetProviders finds peers that have announced their capability to
+// GetRepoObjectProviders finds peers that have announced their capability to
 // provide a value for the given key.
 func (dht *Server) GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo, error) {
 	id, err := dht2.MakeCid(key)
@@ -228,9 +228,8 @@ func (dht *Server) ObjectStreamer() types.ObjectStreamer {
 }
 
 // Announce asynchronously informs the network that it can provide value for the given key
-func (dht *Server) Announce(key []byte) error {
-	dht.announcer.Announce(key)
-	return nil
+func (dht *Server) Announce(key []byte, doneCB func(error)) {
+	dht.announcer.Announce(key, doneCB)
 }
 
 // Close closes the host
@@ -247,6 +246,11 @@ func (dht *Server) Stop() error {
 
 	if dht.host != nil {
 		err = dht.host.Close()
+	}
+
+	if dht.dht != nil {
+		dht.dht.RoutingTable().Close()
+		dht.dht.Close()
 	}
 
 	return err

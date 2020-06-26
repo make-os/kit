@@ -118,7 +118,7 @@ func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{
 
 	var tx = txns.NewBareTxCoinTransfer()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -146,7 +146,7 @@ func (m *TxModule) Get(hash string) util.Map {
 	// decode the hash from hex to byte
 	bz, err := hex.DecodeString(hash)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "hash", "invalid transaction hash"))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "hash", "invalid transaction hash"))
 	}
 
 	tx, err := m.logic.TxKeeper().GetTx(bz)
@@ -170,7 +170,7 @@ func (m *TxModule) Get(hash string) util.Map {
 func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
 	tx, err := txns.DecodeTxFromMap(params)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)

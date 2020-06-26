@@ -17,11 +17,11 @@ type DHT interface {
 	// Lookup searches for a value corresponding to the given key
 	Lookup(ctx context.Context, key string) ([]byte, error)
 
-	// GetProviders finds peers capable of providing value for the given key
+	// GetRepoObjectProviders finds peers capable of providing value for the given key
 	GetProviders(ctx context.Context, key []byte) ([]peer.AddrInfo, error)
 
 	// Announce informs the network that it can provide value for the given key
-	Announce(key []byte) error
+	Announce(key []byte, doneCB func(error))
 
 	// BasicObjectStreamer returns the object streamer
 	ObjectStreamer() types.ObjectStreamer

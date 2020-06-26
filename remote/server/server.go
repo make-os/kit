@@ -297,8 +297,8 @@ func (sv *Server) getRepoPath(name string) string {
 }
 
 // AnnounceObject announces a git object to the DHT network
-func (sv *Server) AnnounceObject(hash []byte) error {
-	return sv.dht.ObjectStreamer().Announce(hash)
+func (sv *Server) AnnounceObject(hash []byte, doneCB func(error)) {
+	sv.dht.ObjectStreamer().Announce(hash, doneCB)
 }
 
 // AnnounceRepoObjects announces all objects in a repository
@@ -316,7 +316,7 @@ func (sv *Server) AnnounceRepoObjects(repoName string) error {
 		return err
 	}
 	ci.ForEach(func(commit *object.Commit) error {
-		sv.dht.ObjectStreamer().Announce(commit.Hash[:])
+		sv.dht.ObjectStreamer().Announce(commit.Hash[:], nil)
 		return nil
 	})
 
@@ -328,7 +328,7 @@ func (sv *Server) AnnounceRepoObjects(repoName string) error {
 	ti.ForEach(func(reference *plumb.Reference) error {
 		tag, _ := repo.TagObject(reference.Hash())
 		if tag != nil {
-			sv.dht.ObjectStreamer().Announce(tag.Hash[:])
+			sv.dht.ObjectStreamer().Announce(tag.Hash[:], nil)
 		}
 		return nil
 	})

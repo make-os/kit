@@ -81,17 +81,15 @@ func (mr *MockDHTMockRecorder) GetProviders(ctx, key interface{}) *gomock.Call {
 }
 
 // Announce mocks base method
-func (m *MockDHT) Announce(key []byte) error {
+func (m *MockDHT) Announce(key []byte, doneCB func(error)) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Announce", key)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "Announce", key, doneCB)
 }
 
 // Announce indicates an expected call of Announce
-func (mr *MockDHTMockRecorder) Announce(key interface{}) *gomock.Call {
+func (mr *MockDHTMockRecorder) Announce(key, doneCB interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Announce", reflect.TypeOf((*MockDHT)(nil).Announce), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Announce", reflect.TypeOf((*MockDHT)(nil).Announce), key, doneCB)
 }
 
 // ObjectStreamer mocks base method

@@ -9,16 +9,10 @@ import (
 var _ = Describe("Account", func() {
 	var stakes AccountStakes
 	var acct *Account
-	var acctBs []byte
 
 	BeforeEach(func() {
 		stakes = map[string]*StakeInfo{"s1": {Value: "10"}}
 		acct = &Account{Balance: "10", Nonce: 2, Stakes: stakes}
-		acctBs = []uint8{
-			162, 49, 48, 207, 0, 0, 0, 0, 0, 0, 0, 2, 129, 162, 115, 49, 130, 165, 86,
-			97, 108, 117, 101, 162, 49, 48, 172, 85, 110, 98, 111, 110, 100, 72, 101,
-			105, 103, 104, 116, 207, 0, 0, 0, 0, 0, 0, 0, 0, 203, 0, 0, 0, 0, 0, 0, 0, 0,
-		}
 	})
 
 	Describe(".IsNil", func() {
@@ -31,13 +25,13 @@ var _ = Describe("Account", func() {
 	Describe(".Bytes", func() {
 		It("should return serialized byte", func() {
 			bz := acct.Bytes()
-			Expect(bz).To(Equal(acctBs))
+			Expect(bz).ToNot(BeEmpty())
 		})
 	})
 
 	Describe(".NewAccountFromBytes", func() {
 		It("should return expected account", func() {
-			res, err := NewAccountFromBytes(acctBs)
+			res, err := NewAccountFromBytes(acct.Bytes())
 			Expect(err).To(BeNil())
 			Expect(res).To(BeEquivalentTo(acct))
 		})

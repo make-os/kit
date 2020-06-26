@@ -113,7 +113,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 			obj, _ := read()
 			if obj.Type() == plumbing2.CommitObject || obj.Type() == plumbing2.TagObject {
 				objHash := obj.ID()
-				sv.AnnounceObject(objHash[:])
+				sv.AnnounceObject(objHash[:], nil)
 			}
 			return nil
 		})

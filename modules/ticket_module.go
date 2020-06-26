@@ -157,7 +157,7 @@ func (m *TicketModule) Buy(params map[string]interface{}, options ...interface{}
 
 	var tx = txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)
@@ -197,7 +197,7 @@ func (m *TicketModule) HostBuy(params map[string]interface{}, options ...interfa
 
 	var tx = txns.NewBareTxTicketPurchase(txns.TxTypeHostTicket)
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	// Derive BLS public key
@@ -420,7 +420,7 @@ func (m *TicketModule) UnbondHostTicket(params map[string]interface{},
 
 	var tx = txns.NewBareTxTicketUnbond(txns.TxTypeUnbondHostTicket)
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParams, "params", err.Error()))
+		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
 	payloadOnly := finalizeTx(tx, m.logic, options...)

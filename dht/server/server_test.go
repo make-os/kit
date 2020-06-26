@@ -284,7 +284,7 @@ var _ = Describe("Server", func() {
 		})
 	})
 
-	Describe(".Announce and .GetProviders", func() {
+	Describe(".Announce and .GetRepoObjectProviders", func() {
 		BeforeEach(func() {
 			dhtA, err = server.New(context.Background(), cfg, key.PrivKey().Key(), addr)
 			Expect(err).To(BeNil())
@@ -298,7 +298,7 @@ var _ = Describe("Server", func() {
 
 		When("a peer announces a key", func() {
 			BeforeEach(func() {
-				err = dhtA.Announce([]byte("key"))
+				dhtA.Announce([]byte("key"), nil)
 				dhtA.Start()
 				time.Sleep(2 * time.Millisecond)
 			})

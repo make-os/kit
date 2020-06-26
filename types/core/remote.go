@@ -68,7 +68,7 @@ type RemoteServer interface {
 	RegisterAPIHandlers(agg modules.ModuleHub)
 
 	// AnnounceObject announces a git object to the DHT network
-	AnnounceObject(hash []byte) error
+	AnnounceObject(hash []byte, doneCB func(error))
 
 	// AnnounceRepoObjects announces all objects in a repository
 	AnnounceRepoObjects(repoName string) error

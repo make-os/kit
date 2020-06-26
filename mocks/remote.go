@@ -290,17 +290,15 @@ func (mr *MockRemoteServerMockRecorder) RegisterAPIHandlers(agg interface{}) *go
 }
 
 // AnnounceObject mocks base method
-func (m *MockRemoteServer) AnnounceObject(hash []byte) error {
+func (m *MockRemoteServer) AnnounceObject(hash []byte, doneCB func(error)) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AnnounceObject", hash)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "AnnounceObject", hash, doneCB)
 }
 
 // AnnounceObject indicates an expected call of AnnounceObject
-func (mr *MockRemoteServerMockRecorder) AnnounceObject(hash interface{}) *gomock.Call {
+func (mr *MockRemoteServerMockRecorder) AnnounceObject(hash, doneCB interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AnnounceObject", reflect.TypeOf((*MockRemoteServer)(nil).AnnounceObject), hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AnnounceObject", reflect.TypeOf((*MockRemoteServer)(nil).AnnounceObject), hash, doneCB)
 }
 
 // AnnounceRepoObjects mocks base method
