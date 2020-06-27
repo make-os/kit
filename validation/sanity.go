@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -217,35 +218,34 @@ func CheckTxUnbondTicket(tx *txns.TxTicketUnbond, index int) error {
 // CheckRepoConfig validates a repo configuration object
 func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 
-	// Overwrite the default config with the user's config.
-	// This is what happens during actual tx execution.
-	// We mimic this operation to get the true version of
-	// the config and validate it
-	actual := state.MakeDefaultRepoConfig()
-	actual.MergeMap(cfg)
-	govCfg := actual.Governance
+	// Check if new config can successfully merge into RepoConfig structure without issue
+	base := state.MakeDefaultRepoConfig()
+	if err := base.MergeMap(cfg); err != nil {
+		return errors.Wrap(err, "dry merge failed")
+	}
+
+	govCfg := base.Governance
+	sf := fmt.Sprintf
 
 	// Ensure the voter type is known
-	allowedVoterChoices := []state.VoterType{0,
+	allowedVoterChoices := []state.VoterType{
 		state.VoterOwner,
 		state.VoterNetStakers,
 		state.VoterNetStakersAndVetoOwner}
 	if !funk.Contains(allowedVoterChoices, govCfg.Voter) {
-		return feI(index, "config.gov.propVoter", fmt.Sprintf("unknown value"))
+		return feI(index, "governance.propVoter", sf("unknown value"))
 	}
 
 	// Ensure the proposal creator type is known
-	allowedPropCreator := []state.ProposalCreatorType{0,
+	allowedPropCreator := []state.ProposalCreatorType{
 		state.ProposalCreatorAny,
 		state.ProposalCreatorOwner}
 	if !funk.Contains(allowedPropCreator, govCfg.ProposalCreator) {
-		return feI(index, "config.gov.propCreator", fmt.Sprintf("unknown value"))
+		return feI(index, "governance.propCreator", sf("unknown value"))
 	}
 
-	sf := fmt.Sprintf
-
 	// Ensure the proposer tally method is known
-	allowedTallyMethod := []state.ProposalTallyMethod{0,
+	allowedTallyMethod := []state.ProposalTallyMethod{
 		state.ProposalTallyMethodIdentity,
 		state.ProposalTallyMethodCoinWeighted,
 		state.ProposalTallyMethodNetStakeOfProposer,
@@ -253,36 +253,37 @@ func CheckRepoConfig(cfg map[string]interface{}, index int) error {
 		state.ProposalTallyMethodNetStake,
 	}
 	if !funk.Contains(allowedTallyMethod, govCfg.ProposalTallyMethod) {
-		return feI(index, "config.gov.propTallyMethod", sf("unknown value"))
+		return feI(index, "governance.propTallyMethod", sf("unknown value"))
 	}
 
 	if govCfg.ProposalQuorum < 0 {
-		return feI(index, "config.gov.propQuorum", sf("must be a non-negative number"))
+		return feI(index, "governance.propQuorum", sf("must be a non-negative number"))
 	}
 
 	if govCfg.ProposalThreshold < 0 {
-		return feI(index, "config.gov.propThreshold", sf("must be a non-negative number"))
+		return feI(index, "governance.propThreshold", sf("must be a non-negative number"))
 	}
 
 	if govCfg.ProposalVetoQuorum < 0 {
-		return feI(index, "config.gov.propVetoQuorum", sf("must be a non-negative number"))
+		return feI(index, "governance.propVetoQuorum", sf("must be a non-negative number"))
 	}
 
 	if govCfg.ProposalVetoOwnersQuorum < 0 {
-		return feI(index, "config.gov.propVetoOwnersQuorum", sf("must be a non-negative number"))
+		return feI(index, "governance.propVetoOwnersQuorum", sf("must be a non-negative number"))
 	}
 
 	if govCfg.ProposalFee < params.MinProposalFee {
-		return feI(index, "config.gov.propFee", sf("cannot be lower than network minimum"))
+		return feI(index, "governance.propFee", sf("cannot be lower than network minimum"))
 	}
 
 	// When proposer is ProposerOwner, tally method cannot be CoinWeighted or Identity
+	tallyMethod := govCfg.ProposalTallyMethod
 	isNotOwnerProposer := govCfg.Voter != state.VoterOwner
-	if isNotOwnerProposer &&
-		(govCfg.ProposalTallyMethod == state.ProposalTallyMethodCoinWeighted ||
-			govCfg.ProposalTallyMethod == state.ProposalTallyMethodIdentity) {
-		return feI(index, "config", "when proposer type is not 'ProposerOwner', tally methods "+
-			"'CoinWeighted' and 'Identity' are not allowed")
+	if isNotOwnerProposer {
+		if tallyMethod == state.ProposalTallyMethodCoinWeighted || tallyMethod == state.ProposalTallyMethodIdentity {
+			return feI(index, "config", "when proposer type is not 'ProposerOwner', tally methods "+
+				"'CoinWeighted' and 'Identity' are not allowed")
+		}
 	}
 
 	return nil

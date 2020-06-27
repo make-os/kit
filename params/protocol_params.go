@@ -123,7 +123,7 @@ var (
 	// members to overturn a "Yes" quorum
 	RepoProposalVetoQuorum = float64(33)
 	// RepoProposalVetoOwnersQuorum is the minimum percentage required for veto
-	// members to overturn a "Yes" quorum in a proposal where stakeholder and
+	// members to overturn a "Yes" quorum in a proposal where stakeholders and
 	// owners are eligible to vote
 	RepoProposalVetoOwnersQuorum = float64(0)
 	// MinProposalFee is the minimum fee to be paid for each new proposal

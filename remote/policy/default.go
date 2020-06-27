@@ -23,7 +23,6 @@ func AddDefaultPolicies(config *state.RepoConfig) {
 	mergeReqRefPath := plumbing.MakeMergeRequestReferencePath()
 	config.Policies = append(
 		config.Policies,
-		// &state.Policy{Subject: "all", Object: "refs/heads", Action: PolicyActionMergeRequestWrite},
 
 		// Everyone can create issues or merge request
 		&state.Policy{Subject: "all", Object: issueRefPath, Action: PolicyActionIssueWrite},

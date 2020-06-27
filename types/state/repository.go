@@ -1,6 +1,7 @@
 package state
 
 import (
+	"github.com/imdario/mergo"
 	"github.com/mitchellh/mapstructure"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/crypto"
@@ -91,9 +92,9 @@ func (r *References) Has(name string) bool {
 
 // RepoOwner describes an owner of a repository
 type RepoOwner struct {
-	Creator  bool   `json:"creator" mapstructure:"creator" msgpack:"creator"`
-	JoinedAt uint64 `json:"joinedAt" mapstructure:"joinedAt" msgpack:"joinedAt"`
-	Veto     bool   `json:"veto" mapstructure:"veto" msgpack:"veto"`
+	Creator  bool   `json:"creator" mapstructure:"creator" msgpack:"creator,omitempty"`
+	JoinedAt uint64 `json:"joinedAt" mapstructure:"joinedAt" msgpack:"joinedAt,omitempty"`
+	Veto     bool   `json:"veto" mapstructure:"veto" msgpack:"veto,omitempty"`
 }
 
 // RepoOwners represents an index of owners of a repository.
@@ -119,19 +120,19 @@ func (r RepoOwners) ForEach(iter func(o *RepoOwner, addr string)) {
 
 // RepoConfigGovernance contains governance settings for a repository
 type RepoConfigGovernance struct {
-	Voter                    VoterType             `json:"propVoter" mapstructure:"propVoter,omitempty" msgpack:"propVoter"`
-	ProposalCreator          ProposalCreatorType   `json:"propCreator" mapstructure:"propCreator,omitempty" msgpack:"propCreator"`
-	VoterAgeAsCurHeight      bool                  `json:"voterAgeAsCurHeight" mapstructure:"voterAgeAsCurHeight" msgpack:"voterAgeAsCurHeight"`
-	ProposalDuration         uint64                `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur"`
-	ProposalFeeDepositDur    uint64                `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur"`
-	ProposalTallyMethod      ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod"`
-	ProposalQuorum           float64               `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum"`
-	ProposalThreshold        float64               `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold"`
-	ProposalVetoQuorum       float64               `json:"propVetoQuorum" mapstructure:"propVetoQuorum,omitempty" msgpack:"propVetoQuorum"`
-	ProposalVetoOwnersQuorum float64               `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum,omitempty" msgpack:"propVetoOwnersQuorum"`
-	ProposalFee              float64               `json:"propFee" mapstructure:"propFee,omitempty" msgpack:"propFee"`
-	ProposalFeeRefundType    ProposalFeeRefundType `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType"`
-	NoProposalFeeForMergeReq bool                  `json:"noPropFeeForMergeReq" mapstructure:"noPropFeeForMergeReq" msgpack:"noPropFeeForMergeReq"`
+	Voter                    VoterType             `json:"propVoter" mapstructure:"propVoter,omitempty" msgpack:"propVoter,omitempty"`
+	ProposalCreator          ProposalCreatorType   `json:"propCreator" mapstructure:"propCreator,omitempty" msgpack:"propCreator,omitempty"`
+	VoterAgeAsCurHeight      bool                  `json:"voterAgeAsCurHeight" mapstructure:"voterAgeAsCurHeight" msgpack:"voterAgeAsCurHeight,omitempty"`
+	ProposalDuration         uint64                `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur,omitempty"`
+	ProposalFeeDepositDur    uint64                `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur,omitempty"`
+	ProposalTallyMethod      ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod,omitempty"`
+	ProposalQuorum           float64               `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum,omitempty"`
+	ProposalThreshold        float64               `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold,omitempty"`
+	ProposalVetoQuorum       float64               `json:"propVetoQuorum" mapstructure:"propVetoQuorum,omitempty" msgpack:"propVetoQuorum,omitempty"`
+	ProposalVetoOwnersQuorum float64               `json:"propVetoOwnersQuorum" mapstructure:"propVetoOwnersQuorum,omitempty" msgpack:"propVetoOwnersQuorum,omitempty"`
+	ProposalFee              float64               `json:"propFee" mapstructure:"propFee,omitempty" msgpack:"propFee,omitempty"`
+	ProposalFeeRefundType    ProposalFeeRefundType `json:"propFeeRefundType" mapstructure:"propFeeRefundType,omitempty" msgpack:"propFeeRefundType,omitempty"`
+	NoProposalFeeForMergeReq bool                  `json:"noPropFeeForMergeReq" mapstructure:"noPropFeeForMergeReq" msgpack:"noPropFeeForMergeReq,omitempty"`
 }
 
 // Policy describes a repository access policy
@@ -179,9 +180,19 @@ func (c *RepoConfig) Clone() *RepoConfig {
 	return clone
 }
 
-// MergeMap merges the specified map into c
-func (c *RepoConfig) MergeMap(m map[string]interface{}) {
-	mapstructure.Decode(m, &c)
+// MergeMap merges the specified upd into c.
+// Non-empty field in upd will override non-empty field in c.
+// Empty field in upd will override non-empty fields in c.
+// Slice from upd will be merged into slice field in c.
+func (c *RepoConfig) MergeMap(upd map[string]interface{}) error {
+	var dst = c.ToMap()
+	if err := mergo.Map(&dst, upd,
+		mergo.WithOverride,
+		mergo.WithOverwriteWithEmptyValue,
+		mergo.WithAppendSlice); err != nil {
+		return err
+	}
+	return mapstructure.Decode(dst, c)
 }
 
 // IsNil checks if the object's field all have zero value

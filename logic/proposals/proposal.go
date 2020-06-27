@@ -110,7 +110,7 @@ func GetProposalOutcome(tickmgr tickettypes.TicketManager, prop state.Proposal,
 	}
 
 	// When proposer are stakeholders and veto owners, the veto owners win
-	// the vote iff the "NoWithVetoByOwners" reached the special veto owner quorum.
+	// the vote iff the "NoWithVetoByOwners" reached the veto owner quorum.
 	if prop.GetVoterType() == state.VoterNetStakersAndVetoOwner {
 		if nRejectedWithVetoVotesByOwners > 0 && nRejectedWithVetoVotesByOwners >= vetoOwnerQuorum {
 			return state.ProposalOutcomeRejectedWithVetoByOwners

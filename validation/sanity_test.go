@@ -1,6 +1,7 @@
 package validation_test
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -601,163 +602,121 @@ var _ = Describe("TxValidator", func() {
 	})
 
 	Describe(".CheckRepoConfig", func() {
-		When("voter type is unknown", func() {
-			It("should return error", func() {
-				repoCfg := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{
-						Voter: 1000,
-					},
-				}
-				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propVoter, msg:unknown value"))
-			})
-		})
+		var cases = []map[string]interface{}{
+			{
+				"desc": "unexpected governance.propVoter field type",
+				"err":  "dry merge failed: cannot append two different types (string, int)",
+				"data": map[string]interface{}{"governance": map[string]interface{}{"propVoter": "1"}},
+			},
+			{
+				"desc": "invalid governance.propVoter value",
+				"err":  "field:governance.propVoter, msg:unknown value",
+				"data": map[string]interface{}{"governance": map[string]interface{}{"propVoter": 100}},
+			},
+			{
+				"desc": "invalid governance.propCreator value",
+				"err":  "field:governance.propCreator, msg:unknown value",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propVoter":   state.VoterOwner,
+					"propCreator": 1000,
+				}},
+			},
+			{
+				"desc": "invalid governance.propTallyMethod value",
+				"err":  "field:governance.propTallyMethod, msg:unknown value",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propVoter":       state.VoterOwner,
+					"propCreator":     state.ProposalCreatorAny,
+					"propTallyMethod": 1000,
+				}},
+			},
+			{
+				"desc": "proposal quorum has negative value",
+				"err":  "field:governance.propQuorum, msg:must be a non-negative number",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propVoter":       state.VoterOwner,
+					"propCreator":     state.ProposalCreatorAny,
+					"propTallyMethod": state.ProposalTallyMethodNetStake,
+					"propQuorum":      -1,
+				}},
+			},
+			{
+				"desc": "proposal threshold has negative value",
+				"err":  "field:governance.propThreshold, msg:must be a non-negative number",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propVoter":       state.VoterOwner,
+					"propCreator":     state.ProposalCreatorAny,
+					"propTallyMethod": state.ProposalTallyMethodNetStake,
+					"propThreshold":   -1,
+				}},
+			},
+			{
+				"desc": "proposal veto quorum has negative value",
+				"err":  "field:governance.propVetoQuorum, msg:must be a non-negative number",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propVoter":       state.VoterOwner,
+					"propCreator":     state.ProposalCreatorAny,
+					"propTallyMethod": state.ProposalTallyMethodNetStake,
+					"propVetoQuorum":  -1,
+				}},
+			},
+			{
+				"desc": "proposal veto owners quorum has negative value",
+				"err":  "field:governance.propVetoOwnersQuorum, msg:must be a non-negative number",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propVoter":            state.VoterOwner,
+					"propCreator":          state.ProposalCreatorAny,
+					"propTallyMethod":      state.ProposalTallyMethodNetStake,
+					"propVetoOwnersQuorum": -1,
+				}},
+			},
+			{
+				"desc": "proposal fee is below minimum value",
+				"err":  "field:governance.propFee, msg:cannot be lower than network minimum",
+				"before": func() {
+					params.MinProposalFee = float64(400)
+				},
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propVoter":       state.VoterOwner,
+					"propCreator":     state.ProposalCreatorAny,
+					"propTallyMethod": state.ProposalTallyMethodNetStake,
+					"propFee":         100,
+				}},
+			},
+			{
+				"desc": "when voter type is not ProposerOwner and tally method is CoinWeighted",
+				"err":  "field:config, msg:when proposer type is not 'ProposerOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propVoter":       state.VoterNetStakers,
+					"propTallyMethod": state.ProposalTallyMethodCoinWeighted,
+				}},
+			},
+			{
+				"desc": "when voter is not ProposerOwner and tally method is Identity",
+				"err":  "field:config, msg:when proposer type is not 'ProposerOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed",
+				"data": map[string]interface{}{"governance": map[string]interface{}{
+					"propVoter":       state.VoterNetStakers,
+					"propTallyMethod": state.ProposalTallyMethodIdentity,
+				}},
+			},
+		}
 
-		When("proposal creator type is unknown", func() {
-			It("should return error", func() {
-				repoCfg := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{
-						Voter:           state.VoterOwner,
-						ProposalCreator: 10,
-					},
+		for index, c := range cases {
+			i := index
+			cur := c
+			It(fmt.Sprintf("case %d: ", i)+cur["desc"].(string), func() {
+				if before, ok := cur["before"]; ok {
+					before.(func())()
 				}
-				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propCreator, msg:unknown value"))
-			})
-		})
-
-		When("tally method is unknown", func() {
-			It("should return error", func() {
-				repoCfg := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{
-						Voter:               state.VoterOwner,
-						ProposalTallyMethod: 1000,
-					},
+				err := validation.CheckRepoConfig(cur["data"].(map[string]interface{}), -1)
+				if cur["err"].(string) == "" {
+					Expect(err).To(BeNil())
+				} else {
+					Expect(err).ToNot(BeNil())
+					Expect(err.Error()).To(Equal(cur["err"].(string)))
 				}
-				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propTallyMethod, msg:unknown value"))
 			})
-		})
-
-		When("quorum is negative", func() {
-			It("should return error", func() {
-				repoCfg := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{
-						Voter:               state.VoterOwner,
-						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
-						ProposalQuorum:      -1,
-					},
-				}
-				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propQuorum, msg:must be a non-negative number"))
-			})
-		})
-
-		When("threshold is negative", func() {
-			It("should return error", func() {
-				repoCfg := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{
-						Voter:               state.VoterOwner,
-						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
-						ProposalQuorum:      1,
-						ProposalThreshold:   -1,
-					},
-				}
-				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propThreshold, msg:must be a non-negative number"))
-			})
-		})
-
-		When("veto quorum is negative", func() {
-			It("should return error", func() {
-				repoCfg := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{
-						Voter:               state.VoterOwner,
-						ProposalTallyMethod: state.ProposalTallyMethodNetStake,
-						ProposalQuorum:      1,
-						ProposalThreshold:   1,
-						ProposalVetoQuorum:  -1,
-					},
-				}
-				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propVetoQuorum, msg:must be a non-negative number"))
-			})
-		})
-
-		When("veto owners quorum is negative", func() {
-			It("should return error", func() {
-				repoCfg := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{
-						Voter:                    state.VoterOwner,
-						ProposalTallyMethod:      state.ProposalTallyMethodNetStake,
-						ProposalQuorum:           1,
-						ProposalThreshold:        1,
-						ProposalVetoQuorum:       1,
-						ProposalVetoOwnersQuorum: -1,
-					},
-				}
-				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propVetoOwnersQuorum, msg:must be a non-negative number"))
-			})
-		})
-
-		When("proposal fee is below network minimum", func() {
-			It("should return error", func() {
-				params.MinProposalFee = float64(400)
-				repoCfg := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{
-						Voter:                    state.VoterOwner,
-						ProposalTallyMethod:      state.ProposalTallyMethodNetStake,
-						ProposalQuorum:           1,
-						ProposalThreshold:        1,
-						ProposalVetoQuorum:       1,
-						ProposalVetoOwnersQuorum: 1,
-						ProposalFee:              1,
-					},
-				}
-				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propFee, msg:cannot be lower " +
-					"than network minimum"))
-			})
-		})
-
-		When("proposer is not ProposerOwner and tally method is CoinWeighted", func() {
-			It("should return error", func() {
-				repoCfg := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{
-						Voter:               state.VoterNetStakers,
-						ProposalTallyMethod: state.ProposalTallyMethodCoinWeighted,
-					},
-				}
-				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config, msg:when proposer type " +
-					"is not 'ProposerOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
-			})
-		})
-
-		When("proposer is not ProposerOwner and tally method is Identity", func() {
-			It("should return error", func() {
-				repoCfg := &state.RepoConfig{
-					Governance: &state.RepoConfigGovernance{
-						Voter:               state.VoterNetStakers,
-						ProposalTallyMethod: state.ProposalTallyMethodIdentity,
-					},
-				}
-				err := validation.CheckRepoConfig(repoCfg.ToMap(), -1)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config, msg:when proposer type " +
-					"is not 'ProposerOwner', tally methods 'CoinWeighted' and 'Identity' are not allowed"))
-			})
-		})
+		}
 	})
 
 	Describe(".CheckTxRepoCreate", func() {
@@ -810,7 +769,7 @@ var _ = Describe("TxValidator", func() {
 				}
 				err := validation.CheckTxRepoCreate(tx, -1)
 				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("field:config.gov.propVoter, msg:unknown value"))
+				Expect(err.Error()).To(Equal("field:governance.propVoter, msg:unknown value"))
 			})
 
 			It("has no nonce", func() {

@@ -198,74 +198,66 @@ var _ = Describe("Repository", func() {
 		})
 	})
 
-	Describe("RepoConfig", func() {
-		Describe(".MergeMap", func() {
-			Context("merge all key/value in map", func() {
-				base := &RepoConfig{
-					Governance: &RepoConfigGovernance{
-						Voter:               1,
-						VoterAgeAsCurHeight: true,
-						ProposalQuorum:      1,
+	Describe("RepoConfig.MergeMap", func() {
+		Context("Governance Merging", func() {
+			base := &RepoConfig{
+				Governance: &RepoConfigGovernance{
+					Voter:               1,
+					VoterAgeAsCurHeight: true,
+					ProposalQuorum:      1,
+				},
+				Policies: []*Policy{
+					{Subject: "user1", Object: "dev", Action: "deny"},
+				},
+			}
+
+			It("should update base object", func() {
+				base.MergeMap(map[string]interface{}{
+					"governance": map[string]interface{}{
+						"propVoter":           13,
+						"voterAgeAsCurHeight": false,
+						"propQuorum":          0,
 					},
-					Policies: []*Policy{{Subject: "user1", Object: "dev", Action: "deny"}},
-				}
-
-				It("should update base object", func() {
-					base.MergeMap(map[string]interface{}{
-						"name": "some-name",
-						"governance": map[string]interface{}{
-							"propVoter":           13,
-							"voterAgeAsCurHeight": false,
-							"propQuorum":          0,
-						},
-					})
-					Expect(int(base.Governance.Voter)).To(Equal(13))
-					Expect(base.Governance.VoterAgeAsCurHeight).To(BeFalse())
 				})
-			})
-
-			Context("Policies merge", func() {
-				When("Policies includes one policy named `user1_dev`", func() {
-					var base *RepoConfig
-
-					BeforeEach(func() {
-						base = &RepoConfig{
-							Governance: &RepoConfigGovernance{Voter: 1, ProposalDuration: 100, ProposalFee: 12},
-							Policies:   []*Policy{{Subject: "user1", Object: "dev", Action: "deny"}},
-						}
-					})
-
-					It("should replace existing policy only", func() {
-						base.MergeMap(map[string]interface{}{
-							"policies": []map[string]interface{}{{"sub": "sub2", "obj": "branch_dev", "act": "delete"}},
-						})
-						Expect(base.Policies).To(HaveLen(1))
-						Expect(base.Policies[0].Subject).To(Equal("sub2"))
-						Expect(base.Policies[0].Object).To(Equal("branch_dev"))
-						Expect(base.Policies[0].Action).To(Equal("delete"))
-						Expect(base.Governance.Voter).To(Equal(VoterType(1)))
-						Expect(base.Governance.ProposalDuration).To(Equal(uint64(100)))
-					})
-
-					It("should replace governance config only", func() {
-						base.MergeMap(map[string]interface{}{
-							"governance": map[string]interface{}{"propVoter": 2, "propDur": 10},
-						})
-						Expect(base.Policies).To(HaveLen(1))
-						Expect(base.Policies[0].Subject).To(Equal("user1"))
-						Expect(base.Policies[0].Object).To(Equal("dev"))
-						Expect(base.Policies[0].Action).To(Equal("deny"))
-						Expect(base.Governance.Voter).To(Equal(VoterType(2)))
-						Expect(base.Governance.ProposalDuration).To(Equal(uint64(10)))
-						Expect(base.Governance.ProposalFee).To(Equal(float64(12)))
-					})
-
-				})
-
+				Expect(int(base.Governance.Voter)).To(Equal(13))
+				Expect(base.Governance.VoterAgeAsCurHeight).To(BeFalse())
+				Expect(base.Governance.ProposalQuorum).To(BeZero())
 			})
 		})
 
-		Describe(".Clone", func() {
+		Context("Policies Merging", func() {
+			var base *RepoConfig
+
+			BeforeEach(func() {
+				base = &RepoConfig{
+					Governance: &RepoConfigGovernance{Voter: 1, ProposalDuration: 100, ProposalFee: 12},
+					Policies: []*Policy{
+						{Subject: "user1", Object: "dev", Action: "deny"},
+					},
+				}
+			})
+
+			It("should add to existing policy", func() {
+				err := base.MergeMap(map[string]interface{}{
+					"policies": []interface{}{
+						map[string]interface{}{"sub": "sub2", "obj": "branch_dev", "act": "delete"},
+					},
+				})
+				Expect(err).To(BeNil())
+				Expect(base.Policies).To(HaveLen(2))
+				Expect(base.Policies[0].Subject).To(Equal("user1"))
+				Expect(base.Policies[0].Object).To(Equal("dev"))
+				Expect(base.Policies[0].Action).To(Equal("deny"))
+				Expect(base.Policies[1].Subject).To(Equal("sub2"))
+				Expect(base.Policies[1].Object).To(Equal("branch_dev"))
+				Expect(base.Policies[1].Action).To(Equal("delete"))
+				Expect(base.Governance.Voter).To(Equal(VoterType(1)))
+				Expect(base.Governance.ProposalDuration).To(Equal(uint64(100)))
+				Expect(base.Governance.ProposalFee).To(Equal(float64(12)))
+			})
+		})
+
+		Describe("RepoConfig.Clone", func() {
 			base := &RepoConfig{
 				Governance: &RepoConfigGovernance{
 					Voter:               1,
