@@ -601,16 +601,16 @@ func (mr *MockPushNoteMockRecorder) GetValue() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValue", reflect.TypeOf((*MockPushNote)(nil).GetValue))
 }
 
-// IsFromPeer mocks base method
-func (m *MockPushNote) IsFromPeer() bool {
+// IsFromRemotePeer mocks base method
+func (m *MockPushNote) IsFromRemotePeer() bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsFromPeer")
+	ret := m.ctrl.Call(m, "IsFromRemotePeer")
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// IsFromPeer indicates an expected call of IsFromPeer
+// IsFromRemotePeer indicates an expected call of IsFromRemotePeer
 func (mr *MockPushNoteMockRecorder) IsFromPeer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFromPeer", reflect.TypeOf((*MockPushNote)(nil).IsFromPeer))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFromRemotePeer", reflect.TypeOf((*MockPushNote)(nil).IsFromRemotePeer))
 }

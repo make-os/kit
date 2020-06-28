@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/crypto"
-	types2 "gitlab.com/makeos/mosdef/dht/server/types"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/remote/push/types"
@@ -16,12 +15,12 @@ import (
 	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 )
 
-func txCheckNoIssue(tx types.PushNote, dht types2.DHT, logic core.Logic) error {
+func txCheckNoIssue(tx types.PushNote, logic core.Logic) error {
 	return nil
 }
 
-func txCheckErr(err error) func(tx types.PushNote, dht types2.DHT, logic core.Logic) error {
-	return func(tx types.PushNote, dht types2.DHT, logic core.Logic) error {
+func txCheckErr(err error) func(tx types.PushNote, logic core.Logic) error {
+	return func(tx types.PushNote, logic core.Logic) error {
 		return err
 	}
 }
@@ -32,15 +31,13 @@ var _ = Describe("PushPool", func() {
 	var tx2 *types.Note
 	var ctrl *gomock.Controller
 	var mockLogic *mocks.MockLogic
-	var mockDHT *mocks.MockDHT
 	var pushKeyID = "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t"
 	var pushKeyID2 = "push1k75ztyqr2dq7pc3nlpdfzj2ry58sfzm7l803nz"
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		mockLogic = mocks.NewMockLogic(ctrl)
-		mockDHT = mocks.NewMockDHT(ctrl)
-		pool = NewPushPool(10, mockLogic, mockDHT)
+		pool = NewPushPool(10, mockLogic)
 	})
 
 	AfterEach(func() {
@@ -73,7 +70,7 @@ var _ = Describe("PushPool", func() {
 
 		When("pool has one item and pool TTL is 10ms", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(1, mockLogic, mockDHT)
+				pool = NewPushPool(1, mockLogic)
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
@@ -107,7 +104,7 @@ var _ = Describe("PushPool", func() {
 
 		When("pool has reached capacity", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(1, mockLogic, mockDHT)
+				pool = NewPushPool(1, mockLogic)
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
@@ -122,7 +119,7 @@ var _ = Describe("PushPool", func() {
 
 		When("tx already exist in pool", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(2, mockLogic, mockDHT)
+				pool = NewPushPool(2, mockLogic)
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
@@ -137,7 +134,7 @@ var _ = Describe("PushPool", func() {
 
 		When("tx doesn't already exist", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(2, mockLogic, mockDHT)
+				pool = NewPushPool(2, mockLogic)
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 			})
@@ -424,7 +421,7 @@ var _ = Describe("PushPool", func() {
 
 		When("note exist", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(2, mockLogic, mockDHT)
+				pool = NewPushPool(2, mockLogic)
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
@@ -438,7 +435,7 @@ var _ = Describe("PushPool", func() {
 
 		When("note does not exist", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(2, mockLogic, mockDHT)
+				pool = NewPushPool(2, mockLogic)
 				pool.noteChecker = txCheckNoIssue
 			})
 
@@ -454,7 +451,7 @@ var _ = Describe("PushPool", func() {
 
 		When("pool has a tx", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(2, mockLogic, mockDHT)
+				pool = NewPushPool(2, mockLogic)
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
@@ -477,7 +474,7 @@ var _ = Describe("PushPool", func() {
 
 		When("pool has two txs", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(2, mockLogic, mockDHT)
+				pool = NewPushPool(2, mockLogic)
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				err = pool.Add(tx2)
@@ -505,7 +502,7 @@ var _ = Describe("PushPool", func() {
 
 		When("pool has a tx", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(2, mockLogic, mockDHT)
+				pool = NewPushPool(2, mockLogic)
 				pool.noteChecker = txCheckNoIssue
 				err = pool.Add(tx)
 				Expect(err).To(BeNil())
@@ -518,7 +515,7 @@ var _ = Describe("PushPool", func() {
 
 		When("pool has no tx", func() {
 			BeforeEach(func() {
-				pool = NewPushPool(2, mockLogic, mockDHT)
+				pool = NewPushPool(2, mockLogic)
 			})
 
 			It("should return 0", func() {

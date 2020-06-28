@@ -433,9 +433,8 @@ func CheckTxPush(tx *txns.TxPush, index int) error {
 	}
 
 	// The push note object must be set
-	err := v.Validate(tx.Note, v.Required.Error(feI(index, "note", "push note is required").Error()))
-	if err != nil {
-		return err
+	if tx.Note == nil {
+		return feI(index, "note", "push note is required")
 	}
 
 	// Perform sanity check on the push note

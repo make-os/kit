@@ -55,7 +55,7 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 	if err := util.ToObject(msgBytes, &note); err != nil {
 		return errors.Wrap(err, "failed to decoded message")
 	}
-	note.FromPeer = true
+	note.FromRemotePeer = true
 
 	peerID := peer.ID()
 	repoName := note.GetRepoName()
@@ -78,23 +78,11 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 		}
 	}
 
-	// Reconstruct references transaction details from push note
-	txDetails := validation.GetTxDetailsFromNote(&note)
-
-	// Perform authorization check
-	polEnforcer, err := sv.authenticate(txDetails, repoState, namespace, sv.logic, validation.CheckTxDetail)
-	if err != nil {
-		return errors.Wrap(err, "authorization failed")
-	}
-
-	// Open the repo
+	// Get a reference to the local repository
 	repo, err := git.PlainOpen(repoPath)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("failed to open repo '%s'", repoName))
 	}
-
-	// Register a cache entry that indicates the sender of the push note
-	sv.registerNoteSender(string(peerID), note.ID().String())
 
 	// Set the target repository object
 	note.TargetRepo = &rr.Repo{
@@ -105,6 +93,23 @@ func (sv *Server) onPushNoteReceived(peer p2p.Peer, msgBytes []byte) error {
 		State:         repoState,
 		Namespace:     namespace,
 	}
+
+	// Reconstruct references transaction details from push note
+	txDetails := validation.GetTxDetailsFromNote(&note)
+
+	// Perform authorization check
+	polEnforcer, err := sv.authenticate(txDetails, repoState, namespace, sv.logic, validation.CheckTxDetail)
+	if err != nil {
+		return errors.Wrap(err, "authorization failed")
+	}
+
+	// Validate the push note.
+	if err := sv.checkPushNote(&note, sv.logic); err != nil {
+		return errors.Wrap(err, "failed push note validation")
+	}
+
+	// Register a cache entry that indicates the sender of the push note
+	sv.registerNoteSender(string(peerID), note.ID().String())
 
 	// For each objects fetched:
 	// - Broadcast commit and tag objects.
@@ -154,11 +159,6 @@ func (sv *Server) maybeProcessPushNote(
 	note pushtypes.PushNote,
 	txDetails []*remotetypes.TxDetail,
 	polEnforcer policy.EnforcerFunc) error {
-
-	// Validate the push note.
-	if err := sv.checkPushNote(note, sv.dht, sv.logic); err != nil {
-		return errors.Wrap(err, "failed push note validation")
-	}
 
 	// Create a packfile that represents updates described in the note.
 	updatePackfile, err := sv.makeReferenceUpdatePack(note)

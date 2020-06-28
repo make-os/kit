@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
-	types2 "gitlab.com/makeos/mosdef/dht/server/types"
 	"gitlab.com/makeos/mosdef/params"
 	"gitlab.com/makeos/mosdef/remote/push/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
@@ -118,24 +117,21 @@ func newItem(note *types.Note) *containerItem {
 	return item
 }
 
-type pushPoolValidator func(note types.PushNote, dht types2.DHT, logic core.Logic) error
-
 // PushPool implements types.PushPool.
 type PushPool struct {
-	gmx          *sync.RWMutex     // general lock
-	cap          int               // The number of transaction the pool is capable of holding.
-	container    []*containerItem  // Holds all the push notes in the pool
-	index        containerIndex    // Helps keep track of note in the pool
-	refIndex     containerIndex    // Helps keep track of note targeting references of a repository
-	refNonceIdx  refNonceIndex     // Helps keep track of the nonce of repo references
-	repoNotesIdx repoNotesIndex    // Helps keep track of repos and push notes target them
-	logic        core.Logic        // The application logic manager
-	dht          types2.DHT        // The application's DHT provider
-	noteChecker  pushPoolValidator // Function used to validate a transaction
+	gmx          *sync.RWMutex          // general lock
+	cap          int                    // The number of transaction the pool is capable of holding.
+	container    []*containerItem       // Holds all the push notes in the pool
+	index        containerIndex         // Helps keep track of note in the pool
+	refIndex     containerIndex         // Helps keep track of note targeting references of a repository
+	refNonceIdx  refNonceIndex          // Helps keep track of the nonce of repo references
+	repoNotesIdx repoNotesIndex         // Helps keep track of repos and push notes target them
+	logic        core.Logic             // The application logic manager
+	noteChecker  validation.NoteChecker // Function used to validate a transaction
 }
 
 // NewPushPool creates an instance of PushPool
-func NewPushPool(cap int, logic core.Logic, dht types2.DHT) *PushPool {
+func NewPushPool(cap int, logic core.Logic) *PushPool {
 	pool := &PushPool{
 		gmx:          &sync.RWMutex{},
 		cap:          cap,
@@ -145,7 +141,6 @@ func NewPushPool(cap int, logic core.Logic, dht types2.DHT) *PushPool {
 		repoNotesIdx: repoNotesIndex(map[string][]*containerItem{}),
 		refNonceIdx:  refNonceIndex(map[string]uint64{}),
 		logic:        logic,
-		dht:          dht,
 		noteChecker:  validation.CheckPushNote,
 	}
 
@@ -312,7 +307,7 @@ func (p *PushPool) Get(noteID string) *types.Note {
 
 // validate validates a push transaction
 func (p *PushPool) validate(note types.PushNote) error {
-	return p.noteChecker(note, p.dht, p.logic)
+	return p.noteChecker(note, p.logic)
 }
 
 // RepoHasPushNote returns true if the given repo has a transaction in the pool

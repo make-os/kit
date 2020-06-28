@@ -52,7 +52,7 @@ type Note struct {
 
 	// FromPeer indicates that the note was received from a remote
 	// peer and not created by the local node
-	FromPeer bool `json:"-" msgpack:"-"`
+	FromRemotePeer bool `json:"-" msgpack:"-"`
 
 	// LocalSize is the actual size of the pushed objects from the push note receiver's perspective.
 	// This field is for local use; It will not be serialized along with other fields for transport.
@@ -190,9 +190,9 @@ func (pt *Note) ID(recompute ...bool) util.Bytes32 {
 	return util.BytesToBytes32(crypto2.Blake2b256(pt.Bytes(recompute...)))
 }
 
-// IsFromPeer checks whether the note was sent by a remote peer
-func (pt *Note) IsFromPeer() bool {
-	return pt.FromPeer
+// IsFromRemotePeer checks whether the note was sent by a remote peer
+func (pt *Note) IsFromRemotePeer() bool {
+	return pt.FromRemotePeer
 }
 
 // BytesAndID returns the serialized version of the tx and the id
@@ -421,7 +421,7 @@ type PushNote interface {
 	GetSize() uint64
 	GetFee() util.String
 	GetValue() util.String
-	IsFromPeer() bool
+	IsFromRemotePeer() bool
 }
 
 // PushedReference represents a reference that was pushed by git client

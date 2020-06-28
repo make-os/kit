@@ -25,6 +25,9 @@ type ObjectFetcher interface {
 	// cb will be called when the task has been processed.
 	Fetch(note types.PushNote, cb func(err error))
 
+	// QueueSize returns the size of the queue
+	QueueSize() int
+
 	// OnPackReceived registers a callback that is called each time a packfile
 	// of an object is fetched
 	OnPackReceived(cb func(hash string, packfile io.ReadSeeker))
@@ -111,6 +114,11 @@ func (f *BasicObjectFetcher) getTask() *Task {
 func (f *BasicObjectFetcher) Fetch(note types.PushNote, cb func(error)) {
 	f.addTask(&Task{note: note, resCb: cb})
 	return
+}
+
+// QueueSize returns the size of the queue
+func (f *BasicObjectFetcher) QueueSize() int {
+	return f.queue.Size()
 }
 
 // OnPackReceived registers a callback that is called each time an object's packfile is received

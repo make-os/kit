@@ -87,7 +87,7 @@ type Server struct {
 	modulesAgg                 modules.ModuleHub                    // Modules aggregator
 	refSyncer                  refsync.RefSyncer                    // Responsible for syncing pushed references in a push transaction
 	authenticate               AuthenticatorFunc                    // Function for performing authentication
-	checkPushNote              validation.PushNoteCheckFunc         // Function for performing PushNote validation
+	checkPushNote              validation.NoteChecker               // Function for performing PushNote validation
 	makeReferenceUpdatePack    push.ReferenceUpdateRequestPackMaker // Function for creating a reference update pack for updating a repository
 	makePushHandler            PushHandlerFunc                      // Function for creating a push handler
 	noteAndEndorserBroadcaster PushNoteAndEndorsementBroadcaster    // Function for broadcasting a push note and its endorsement
@@ -125,7 +125,7 @@ func NewRemoteServer(
 		rootDir:                 cfg.GetRepoRoot(),
 		gitBinPath:              cfg.Node.GitBinPath,
 		wg:                      wg,
-		pushPool:                push.NewPushPool(params.PushPoolCap, logic, dht),
+		pushPool:                push.NewPushPool(params.PushPoolCap, logic),
 		logic:                   logic,
 		validatorKey:            key,
 		dht:                     dht,

@@ -10,7 +10,6 @@ import (
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/crypto/bls"
-	types2 "gitlab.com/makeos/mosdef/dht/server/types"
 	"gitlab.com/makeos/mosdef/params"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/push/types"
@@ -23,101 +22,6 @@ import (
 	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
-
-// CheckPushNoteSanity performs syntactic checks on the fields of a push transaction
-func CheckPushNoteSanity(note types.PushNote) error {
-
-	if note.GetRepoName() == "" {
-		return util.FieldError("repo", "repo name is required")
-	}
-	if util.IsValidName(note.GetRepoName()) != nil {
-		return util.FieldError("repo", "repo name is not valid")
-	}
-
-	if note.GetNamespace() != "" && util.IsValidName(note.GetNamespace()) != nil {
-		return util.FieldError("namespace", "namespace is not valid")
-	}
-
-	for i, ref := range note.GetPushedReferences() {
-		if ref.Name == "" {
-			return fe(i, "references.name", "name is required")
-		}
-		if ref.OldHash == "" {
-			return fe(i, "references.oldHash", "old hash is required")
-		}
-		if len(ref.OldHash) != 40 {
-			return fe(i, "references.oldHash", "old hash is not valid")
-		}
-		if ref.NewHash == "" {
-			return fe(i, "references.newHash", "new hash is required")
-		}
-		if len(ref.NewHash) != 40 {
-			return fe(i, "references.newHash", "new hash is not valid")
-		}
-		if ref.Nonce == 0 {
-			return fe(i, "references.nonce", "reference nonce must be greater than zero")
-		}
-
-		if ref.Fee == "" {
-			return fe(i, "fee", "fee is required")
-		} else if !ref.Fee.IsNumeric() {
-			return fe(i, "fee", "fee must be numeric")
-		}
-
-		if ref.Value != "" && !ref.Value.IsNumeric() {
-			return fe(i, "value", "value must be numeric")
-		}
-
-		if ref.MergeProposalID != "" {
-			return CheckMergeProposalID(ref.MergeProposalID, i)
-		}
-
-		if len(ref.PushSig) == 0 {
-			return fe(i, "pushSig", "signature is required")
-		}
-	}
-
-	if note.IsFromPeer() && note.GetSize() != note.GetLocalSize() {
-		return util.FieldError("size", "size does not match local size")
-	}
-
-	if len(note.GetPusherKeyID()) == 0 {
-		return util.FieldError("pusherKeyId", "push key id is required")
-	}
-	if len(note.GetPusherKeyID()) != 20 {
-		return util.FieldError("pusherKeyId", "push key id is not valid")
-	}
-
-	if note.GetTimestamp() == 0 {
-		return util.FieldError("timestamp", "timestamp is required")
-	}
-	if note.GetTimestamp() > time.Now().Unix() {
-		return util.FieldError("timestamp", "timestamp cannot be a future time")
-	}
-
-	if note.GetPusherAccountNonce() == 0 {
-		return util.FieldError("accountNonce", "account nonce must be greater than zero")
-	}
-
-	if note.GetCreatorPubKey().IsEmpty() {
-		return util.FieldError("nodePubKey", "push node public key is required")
-	}
-
-	pk, err := crypto.PubKeyFromBytes(note.GetCreatorPubKey().Bytes())
-	if err != nil {
-		return util.FieldError("nodePubKey", "push node public key is not valid")
-	}
-
-	if len(note.GetNodeSignature()) == 0 {
-		return util.FieldError("nodeSig", "push node signature is required")
-	}
-
-	if ok, err := pk.Verify(note.BytesNoSig(), note.GetNodeSignature()); err != nil || !ok {
-		return util.FieldError("nodeSig", "failed to verify signature")
-	}
-
-	return nil
-}
 
 // CheckPushedReferenceConsistency validates pushed references
 func CheckPushedReferenceConsistency(
@@ -132,8 +36,7 @@ func CheckPushedReferenceConsistency(
 	// Ignore references whose old hash is a 0-hash, these are new
 	// references and as such we don't expect to find it in the repo.
 	if !oldHashIsZero && !repoState.References.Has(name) {
-		msg := fmt.Sprintf("reference '%s' is unknown", name)
-		return fe(-1, "references", msg)
+		return fe(-1, "references", fmt.Sprintf("reference '%s' is unknown", name))
 	}
 
 	// If target repo is set and old hash is non-zero, we need to ensure
@@ -142,8 +45,7 @@ func CheckPushedReferenceConsistency(
 	if targetRepo != nil && !oldHashIsZero {
 		localRef, err := targetRepo.Reference(plumbing.ReferenceName(name), false)
 		if err != nil {
-			msg := fmt.Sprintf("reference '%s' does not exist locally", name)
-			return fe(-1, "references", msg)
+			return fe(-1, "references", fmt.Sprintf("reference '%s' does not exist locally", name))
 		}
 		if ref.OldHash != localRef.Hash().String() {
 			msg := fmt.Sprintf("reference '%s' old hash does not match its local version", name)
@@ -224,6 +126,101 @@ func GetTxDetailsFromNote(note types.PushNote, targetRefs ...string) (details []
 	return
 }
 
+// CheckPushNoteSanity performs syntactic checks on the fields of a push transaction
+func CheckPushNoteSanity(note types.PushNote) error {
+
+	if note.GetRepoName() == "" {
+		return util.FieldError("repo", "repo name is required")
+	}
+	if util.IsValidName(note.GetRepoName()) != nil {
+		return util.FieldError("repo", "repo name is not valid")
+	}
+
+	if note.GetNamespace() != "" && util.IsValidName(note.GetNamespace()) != nil {
+		return util.FieldError("namespace", "namespace is not valid")
+	}
+
+	for i, ref := range note.GetPushedReferences() {
+		if ref.Name == "" {
+			return fe(i, "references.name", "name is required")
+		}
+		if ref.OldHash == "" {
+			return fe(i, "references.oldHash", "old hash is required")
+		}
+		if len(ref.OldHash) != 40 {
+			return fe(i, "references.oldHash", "old hash is not valid")
+		}
+		if ref.NewHash == "" {
+			return fe(i, "references.newHash", "new hash is required")
+		}
+		if len(ref.NewHash) != 40 {
+			return fe(i, "references.newHash", "new hash is not valid")
+		}
+		if ref.Nonce == 0 {
+			return fe(i, "references.nonce", "reference nonce must be greater than zero")
+		}
+
+		if ref.Fee == "" {
+			return fe(i, "fee", "fee is required")
+		} else if !ref.Fee.IsNumeric() {
+			return fe(i, "fee", "fee must be numeric")
+		}
+
+		if ref.Value != "" && !ref.Value.IsNumeric() {
+			return fe(i, "value", "value must be numeric")
+		}
+
+		if ref.MergeProposalID != "" {
+			return CheckMergeProposalID(ref.MergeProposalID, i)
+		}
+
+		if len(ref.PushSig) == 0 {
+			return fe(i, "pushSig", "signature is required")
+		}
+	}
+
+	if note.IsFromRemotePeer() && note.GetSize() != note.GetLocalSize() {
+		return util.FieldError("size", "size does not match local size")
+	}
+
+	if len(note.GetPusherKeyID()) == 0 {
+		return util.FieldError("pusherKeyId", "push key id is required")
+	}
+	if len(note.GetPusherKeyID()) != 20 {
+		return util.FieldError("pusherKeyId", "push key id is not valid")
+	}
+
+	if note.GetTimestamp() == 0 {
+		return util.FieldError("timestamp", "timestamp is required")
+	}
+	if note.GetTimestamp() > time.Now().Unix() {
+		return util.FieldError("timestamp", "timestamp cannot be a future time")
+	}
+
+	if note.GetPusherAccountNonce() == 0 {
+		return util.FieldError("accountNonce", "account nonce must be greater than zero")
+	}
+
+	if note.GetCreatorPubKey().IsEmpty() {
+		return util.FieldError("nodePubKey", "push node public key is required")
+	}
+
+	pk, err := crypto.PubKeyFromBytes(note.GetCreatorPubKey().Bytes())
+	if err != nil {
+		return util.FieldError("nodePubKey", "push node public key is not valid")
+	}
+
+	if len(note.GetNodeSignature()) == 0 {
+		return util.FieldError("nodeSig", "push node signature is required")
+	}
+
+	if ok, err := pk.Verify(note.BytesNoSig(), note.GetNodeSignature()); err != nil || !ok {
+		return util.FieldError("nodeSig", "failed to verify signature")
+	}
+
+	return nil
+}
+
 // CheckPushNoteConsistency performs consistency checks against the state of the
 // repository as seen by the node. If the target repo object is not set in tx,
 // local reference hash comparision is not performed.
@@ -297,20 +294,17 @@ func CheckPushNoteConsistency(note types.PushNote, logic core.Logic) error {
 	return nil
 }
 
-// PushNoteCheckFunc describes a function for checking a push note
-type PushNoteCheckFunc func(tx types.PushNote, dht types2.DHT, logic core.Logic) error
+// NoteChecker describes a function for checking a push note
+type NoteChecker func(tx types.PushNote, logic core.Logic) error
 
 // CheckPushNote performs validation checks on a push transaction
-func CheckPushNote(tx types.PushNote, dht types2.DHT, logic core.Logic) error {
-
-	if err := CheckPushNoteSanity(tx.(*types.Note)); err != nil {
+func CheckPushNote(note types.PushNote, logic core.Logic) error {
+	if err := CheckPushNoteSanity(note); err != nil {
 		return err
 	}
-
-	if err := CheckPushNoteConsistency(tx.(*types.Note), logic); err != nil {
+	if err := CheckPushNoteConsistency(note, logic); err != nil {
 		return err
 	}
-
 	return nil
 }
 

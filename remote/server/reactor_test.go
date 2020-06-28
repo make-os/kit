@@ -12,7 +12,6 @@ import (
 	"github.com/tendermint/tendermint/p2p"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
-	types3 "gitlab.com/makeos/mosdef/dht/server/types"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/params"
 	plumbing2 "gitlab.com/makeos/mosdef/remote/plumbing"
@@ -137,48 +136,15 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("authentication fails", func() {
-			BeforeEach(func() {
-				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
-				repoState := state.BareRepository()
-				repoState.Balance = "100"
-				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
-
-				svr.authenticate = func(
-					txDetails []*remotetypes.TxDetail,
-					repo *state.Repository,
-					namespace *state.Namespace,
-					keepers core.Keepers,
-					checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
-					return nil, fmt.Errorf("bad error")
-				}
-
-				pn := &types.Note{RepoName: "repo1"}
-				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
-			})
-
-			It("should return err", func() {
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(Equal("authorization failed: bad error"))
-			})
-		})
-
 		When("unable to open target repository", func() {
 			BeforeEach(func() {
 				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get("repo1").Return(repoState)
-
-				svr.authenticate = func(
-					txDetails []*remotetypes.TxDetail,
-					repo *state.Repository,
-					namespace *state.Namespace,
-					keepers core.Keepers,
-					checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
 					return nil, nil
 				}
-
 				pn := &types.Note{RepoName: "repo1"}
 				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
@@ -189,37 +155,79 @@ var _ = Describe("Reactor", func() {
 			})
 		})
 
-		When("pre-checks succeed", func() {
-			var peerID = p2p.ID("peer-id")
-			var pn *types.Note
-
+		When("authentication fails", func() {
 			BeforeEach(func() {
-				mockPeer.EXPECT().ID().Return(peerID)
+				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
 				repoState := state.BareRepository()
 				repoState.Balance = "100"
 				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
-
-				svr.authenticate = func(
-					txDetails []*remotetypes.TxDetail,
-					repo *state.Repository,
-					namespace *state.Namespace,
-					keepers core.Keepers,
-					checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
-					return nil, nil
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (enforcer policy.EnforcerFunc, err error) {
+					return nil, fmt.Errorf("bad error")
 				}
+				pn := &types.Note{RepoName: repoName}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
 			})
 
-			It("should call fetchers OnPackReceived && Fetch methods", func() {
-				mockObjFetcher := mocks.NewMockObjectFetcher(ctrl)
-				mockObjFetcher.EXPECT().OnPackReceived(gomock.Any())
-				mockObjFetcher.EXPECT().Fetch(gomock.Any(), gomock.Any())
-				mockObjFetcher.EXPECT().Stop()
-				svr.objfetcher = mockObjFetcher
-				pn = &types.Note{RepoName: repoName}
-				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
-				Expect(err).To(BeNil())
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("authorization failed: bad error"))
 			})
 		})
+
+		When("push note validation fail", func() {
+			BeforeEach(func() {
+				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (policy.EnforcerFunc, error) {
+					return nil, nil
+				}
+				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
+					return fmt.Errorf("error")
+				}
+				pn := &types.Note{RepoName: repoName}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
+			})
+
+			It("should return err", func() {
+				Expect(err).ToNot(BeNil())
+				Expect(err.Error()).To(Equal("failed push note validation: error"))
+			})
+		})
+
+		When("push note validation fail", func() {
+			var pn *types.Note
+
+			BeforeEach(func() {
+				mockPeer.EXPECT().ID().Return(p2p.ID("peer-id"))
+				repoState := state.BareRepository()
+				repoState.Balance = "100"
+				mockRepoKeeper.EXPECT().Get(repoName).Return(repoState)
+				svr.authenticate = func(txDetails []*remotetypes.TxDetail, repo *state.Repository, namespace *state.Namespace, keepers core.Keepers, checkTxDetail validation.TxDetailChecker) (policy.EnforcerFunc, error) {
+					return nil, nil
+				}
+				svr.checkPushNote = func(tx types.PushNote, logic core.Logic) error {
+					return nil
+				}
+				pn = &types.Note{RepoName: repoName}
+				err = svr.onPushNoteReceived(mockPeer, pn.Bytes())
+			})
+
+			It("should return no err", func() {
+				Expect(err).To(BeNil())
+			})
+
+			It("should register peer as note sender", func() {
+				yes := svr.isNoteSender("peer-id", pn.ID().String())
+				Expect(yes).To(BeTrue())
+			})
+
+			It("should add fetch task to object fetcher", func() {
+				Expect(svr.objfetcher.QueueSize()).To(Equal(1))
+			})
+		})
+
 	})
 
 	Describe(".createEndorsement", func() {
@@ -289,15 +297,7 @@ var _ = Describe("Reactor", func() {
 	})
 
 	Describe(".maybeProcessPushNote", func() {
-		It("should return error when push note failed validation", func() {
-			svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return fmt.Errorf("error") }
-			err := svr.maybeProcessPushNote(&types.Note{}, []*remotetypes.TxDetail{}, nil)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed push note validation: error"))
-		})
-
 		It("should return error when unable to create a packfile from push note", func() {
-			svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
 			svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return nil, fmt.Errorf("error") }
 			err := svr.maybeProcessPushNote(&types.Note{}, []*remotetypes.TxDetail{}, nil)
 			Expect(err).ToNot(BeNil())
@@ -318,7 +318,6 @@ var _ = Describe("Reactor", func() {
 
 			It("should return error when unable to run git command", func() {
 				svr.gitBinPath = "unknown-cmd"
-				svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
 				note := &types.Note{}
 				note.SetTargetRepo(testRepo)
@@ -328,7 +327,6 @@ var _ = Describe("Reactor", func() {
 			})
 
 			It("should return error if unable to handle incoming stream", func() {
-				svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
 				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail, enforcer policy.EnforcerFunc) push.Handler {
 					mockHandler := mocks.NewMockHandler(ctrl)
@@ -344,7 +342,6 @@ var _ = Describe("Reactor", func() {
 			})
 
 			It("should return error if unable to handle references", func() {
-				svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
 				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
 					enforcer policy.EnforcerFunc) push.Handler {
@@ -362,7 +359,6 @@ var _ = Describe("Reactor", func() {
 			})
 
 			It("should return error if unable to add note to push pool", func() {
-				svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
 				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
 					enforcer policy.EnforcerFunc) push.Handler {
@@ -383,7 +379,6 @@ var _ = Describe("Reactor", func() {
 			})
 
 			It("should broadcast note and return no error", func() {
-				svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
 				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
 					enforcer policy.EnforcerFunc) push.Handler {
@@ -409,7 +404,6 @@ var _ = Describe("Reactor", func() {
 			})
 
 			It("should return no error if note failed broadcast", func() {
-				svr.checkPushNote = func(tx types.PushNote, dht types3.DHT, logic core.Logic) error { return nil }
 				svr.makeReferenceUpdatePack = func(tx types.PushNote) (io.ReadSeeker, error) { return pack, nil }
 				svr.makePushHandler = func(targetRepo remotetypes.LocalRepo, txDetails []*remotetypes.TxDetail,
 					enforcer policy.EnforcerFunc) push.Handler {
