@@ -25,13 +25,13 @@ var _ = Describe("AccountLocal", func() {
 	})
 
 	Describe(".listAccounts", func() {
-		testCases := map[string]testCase{
+		testCases := map[string]*TestCase{
 			"when nonce is successfully returned": {
 				params: nil,
 				result: map[string]interface{}{
 					"accounts": []string{"addr1", "addr2"},
 				},
-				mocker: func(tp testCase) {
+				mocker: func(tp *TestCase) {
 					mockAcctMod := mocks.NewMockAccountModule(ctrl)
 					mockAcctMod.EXPECT().ListLocalAccounts().Return([]string{"addr1", "addr2"})
 					mods.Account = mockAcctMod

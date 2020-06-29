@@ -6,7 +6,6 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -23,13 +22,13 @@ var _ = Describe("Client", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".PushKeyGetAccountOfOwner", func() {
+	Describe(".GetPushKeyOwnerAccount", func() {
 		When("the RPC call returns an error", func() {
 			It("should return the error wrapped in a StatusError", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return nil, 0, fmt.Errorf("bad thing happened")
 				}
-				_, err := client.PushKeyGetAccountOfOwner("push1_abc", 100)
+				_, err := client.GetPushKeyOwnerAccount("push1_abc", 100)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
 					Code:     "client_error",
@@ -45,7 +44,7 @@ var _ = Describe("Client", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return util.Map{"balance": 1000}, 0, nil
 				}
-				_, err := client.PushKeyGetAccountOfOwner("push1_abc", 100)
+				_, err := client.GetPushKeyOwnerAccount("push1_abc", 100)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
 					Code:     "client_error",
@@ -61,32 +60,9 @@ var _ = Describe("Client", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return util.Map{"balance": "1000"}, 0, nil
 				}
-				acct, err := client.PushKeyGetAccountOfOwner("push1_abc", 100)
+				acct, err := client.GetPushKeyOwnerAccount("push1_abc", 100)
 				Expect(err).To(BeNil())
 				Expect(acct.Balance).To(Equal(util.String("1000")))
-			})
-		})
-	})
-
-	Describe(".GetNextNonceOfPushKeyOwnerUsingRPCClient", func() {
-		When("client call returns error", func() {
-			It("should return error", func() {
-				mockClient := NewMockClient(ctrl)
-				mockClient.EXPECT().PushKeyGetAccountOfOwner("push1_abc").
-					Return(nil, &util.StatusError{Msg: "bad thing"})
-				_, err := GetNextNonceOfPushKeyOwnerUsingRPCClient("push1_abc", mockClient)
-				Expect(err).NotTo(BeNil())
-				Expect(err.Msg).To(Equal("bad thing"))
-			})
-		})
-
-		When("client call a nonce", func() {
-			It("should be incremented by 1 and returned", func() {
-				mockClient := NewMockClient(ctrl)
-				mockClient.EXPECT().PushKeyGetAccountOfOwner("push1_abc").Return(&state.Account{Nonce: 10}, nil)
-				nonce, err := GetNextNonceOfPushKeyOwnerUsingRPCClient("push1_abc", mockClient)
-				Expect(err).To(BeNil())
-				Expect(nonce).To(Equal("11"))
 			})
 		})
 	})

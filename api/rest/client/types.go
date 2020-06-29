@@ -7,12 +7,12 @@ import (
 )
 
 // Client describes methods for accessing REST API endpoints
-type RestClient interface {
-	TxSendPayload(data map[string]interface{}) (*types.TxSendPayloadResponse, error)
-	AccountGetNonce(address string, blockHeight ...uint64) (*types.AccountGetNonceResponse, error)
-	AccountGet(address string, blockHeight ...uint64) (*state.Account, error)
+type Client interface {
+	SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, error)
+	GetAccountNonce(address string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error)
+	GetAccount(address string, blockHeight ...uint64) (*state.Account, error)
 	GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error)
 	PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error)
-	PushKeyGetNonceOfOwner(pushKeyID string, blockHeight ...uint64) (*types.AccountGetNonceResponse, error)
-	PushKeyFind(pushKeyID string, blockHeight ...uint64) (*state.PushKey, error)
+	GetPushKeyOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error)
+	GetPushKey(pushKeyID string, blockHeight ...uint64) (*state.PushKey, error)
 }

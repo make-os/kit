@@ -37,10 +37,12 @@ func (r *API) Modules() *modules.Modules {
 	return r.mods.GetModules()
 }
 
+// get returns a handler for GET operations
 func (r *API) get(handler func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return APIHandler("GET", handler, r.log)
 }
 
+// get returns a handler for POST operations
 func (r *API) post(handler func(w http.ResponseWriter, r *http.Request)) func(w http.ResponseWriter, r *http.Request) {
 	return APIHandler("POST", handler, r.log)
 }
@@ -49,9 +51,9 @@ func (r *API) post(handler func(w http.ResponseWriter, r *http.Request)) func(w 
 func (r *API) RegisterEndpoints(s *http.ServeMux) {
 	s.HandleFunc(V1Path(constants.NamespaceUser, MethodNameGetNonce), r.get(r.GetAccountNonce))
 	s.HandleFunc(V1Path(constants.NamespaceUser, MethodNameGetAccount), r.get(r.GetAccount))
-	s.HandleFunc(V1Path(constants.NamespaceTx, MethodNameSendPayload), r.post(r.TxSendPayload))
-	s.HandleFunc(V1Path(constants.NamespacePushKey, MethodNameOwnerNonce), r.get(r.GetNonceOfPushKeyOwner))
-	s.HandleFunc(V1Path(constants.NamespacePushKey, MethodNamePushKeyFind), r.get(r.FindPushKey))
+	s.HandleFunc(V1Path(constants.NamespaceTx, MethodNameSendPayload), r.post(r.SendTxPayload))
+	s.HandleFunc(V1Path(constants.NamespacePushKey, MethodNameOwnerNonce), r.get(r.GetPushKeyOwnerNonce))
+	s.HandleFunc(V1Path(constants.NamespacePushKey, MethodNamePushKeyFind), r.get(r.GetPushKey))
 }
 
 // V1Path creates a REST API v1 path

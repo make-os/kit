@@ -18,8 +18,8 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
-func testGetNextNonce2(nonce string, err error) func(string, *client.RPCClient, []restclient.RestClient) (string, error) {
-	return func(s string, rpcClient *client.RPCClient, clients []restclient.RestClient) (string, error) {
+func testGetNextNonce2(nonce string, err error) func(string, *client.RPCClient, []restclient.Client) (string, error) {
+	return func(s string, rpcClient *client.RPCClient, clients []restclient.Client) (string, error) {
 		return nonce, err
 	}
 }

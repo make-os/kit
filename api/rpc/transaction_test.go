@@ -26,7 +26,7 @@ var _ = Describe("Transaction", func() {
 	})
 
 	Describe(".sendPayload()", func() {
-		testCases := map[string]testCase{
+		testCases := map[string]*TestCase{
 			"when params is not a map[string]interface{}": {
 				params: "{}",
 				err:    &rpc.Err{Code: "60000", Message: "field:params, msg:wrong value type, want 'map', got string"},
@@ -34,7 +34,7 @@ var _ = Describe("Transaction", func() {
 			"when tx is successfully sent": {
 				params: map[string]interface{}{},
 				result: util.Map{"hash": "0x0000"},
-				mocker: func(tp testCase) {
+				mocker: func(tp *TestCase) {
 					mockTxMod := mocks.NewMockTxModule(ctrl)
 					mockTxMod.EXPECT().SendPayload(tp.params).Return(util.Map{
 						"hash": "0x0000",

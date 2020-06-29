@@ -64,7 +64,7 @@ type SignCommitArgs struct {
 	RPCClient *client.RPCClient
 
 	// RemoteClients is the remote server API client.
-	RemoteClients []restclient.RestClient
+	RemoteClients []restclient.Client
 
 	// PushKeyUnlocker is a function for getting and unlocking a push key from keystore
 	PushKeyUnlocker cmd.PushKeyUnlocker
@@ -137,7 +137,9 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *Sign
 			false, args.ForceCheckout); err != nil {
 			return fmt.Errorf("failed to checkout branch (%s): %s", activeBranch, err)
 		}
-		defer targetRepo.Checkout(plumbing.ReferenceName(activeBranchCpy).Short(), false, false)
+		defer func() {
+			_ = targetRepo.Checkout(plumbing.ReferenceName(activeBranchCpy).Short(), false, false)
+		}()
 	}
 
 	// Use active branch as the tx reference only if
@@ -170,8 +172,8 @@ func SignCommitCmd(cfg *config.AppConfig, targetRepo types.LocalRepo, args *Sign
 	// If we met it unset, set a deferred function to unset the var once done.
 	passVar := cmd.MakePassEnvVar(config.AppName, targetRepo.GetName())
 	if len(os.Getenv(passVar)) == 0 {
-		os.Setenv(passVar, args.PushKeyPass)
-		defer func() { os.Setenv(passVar, "") }()
+		_ = os.Setenv(passVar, args.PushKeyPass)
+		defer func() { _ = os.Setenv(passVar, "") }()
 	}
 
 	// Create a new quiet commit if recent commit amendment is not desired

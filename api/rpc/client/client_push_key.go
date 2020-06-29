@@ -1,13 +1,11 @@
 package client
 
 import (
-	"fmt"
-
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// PushKeyGetAccountOfOwner returns the account that owns a push key
+// GetPushKeyOwnerAccount returns the account that owns a push key
 //
 // ARGS:
 // - id: The push key unique ID
@@ -15,7 +13,7 @@ import (
 //
 // RETURNS:
 // - resp <map> - state.Account
-func (c *RPCClient) PushKeyGetAccountOfOwner(id string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
+func (c *RPCClient) GetPushKeyOwnerAccount(id string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
 	out, statusCode, err := c.call("key_getAccountOfOwner", util.Map{
 		"id":          id,
 		"blockHeight": util.GetIndexFromUInt64Slice(0, blockHeight...)})
@@ -29,21 +27,4 @@ func (c *RPCClient) PushKeyGetAccountOfOwner(id string, blockHeight ...uint64) (
 	}
 
 	return acct, nil
-}
-
-// GetNextNonceOfPushKeyOwnerUsingRPCClient gets the next account nonce
-// of the owner of the push key by querying the given JSON-RPC 2.0 client.
-//
-// ARGS:
-// pushKeyID: The push key ID
-// client: The RPCClient to use
-//
-// RETURNS
-// nonce: The next nonce of the account
-func GetNextNonceOfPushKeyOwnerUsingRPCClient(pushKeyID string, client Client) (string, *util.StatusError) {
-	acct, err := client.PushKeyGetAccountOfOwner(pushKeyID)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%d", acct.Nonce+1), nil
 }

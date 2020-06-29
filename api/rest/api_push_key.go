@@ -8,12 +8,12 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// PushKeyFind finds a push key by ID
+// GetPushKey finds a push key by ID
 // QueryParams:
 // - id: The push key unique ID
 // - [blockHeight]: The height of the block to query (default: latest)
 // Response <map> - state.PushKey
-func (r *API) FindPushKey(w http.ResponseWriter, req *http.Request) {
+func (r *API) GetPushKey(w http.ResponseWriter, req *http.Request) {
 	query := objx.MustFromURLQuery(req.URL.Query().Encode())
 	id := query.Get("id").String()
 
@@ -27,13 +27,13 @@ func (r *API) FindPushKey(w http.ResponseWriter, req *http.Request) {
 	util.WriteJSON(w, 200, gpgKey)
 }
 
-// PushKeyGetNonceOfOwner gets the account nonce of the push key owner
+// GetPushKeyOwnerNonce gets the account nonce of the push key owner
 // QueryParams:
 // - id: The gpg key bech32 unique ID
 // - [blockHeight]: The height of the block to query (default: latest)
 // Response <map>
 // - nonce <string> The key owner account nonce
-func (r *API) GetNonceOfPushKeyOwner(w http.ResponseWriter, req *http.Request) {
+func (r *API) GetPushKeyOwnerNonce(w http.ResponseWriter, req *http.Request) {
 	query := objx.MustFromURLQuery(req.URL.Query().Encode())
 	id := query.Get("id").String()
 

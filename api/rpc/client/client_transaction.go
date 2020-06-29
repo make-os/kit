@@ -5,7 +5,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// TxSendPayload sends a signed transaction payload to the mempool
+// SendTxPayload sends a signed transaction payload to the mempool
 //
 // ARGS:
 // - data <string>: The GPG key unique ID
@@ -13,13 +13,13 @@ import (
 //
 // RETURNS:
 // - resp <map> - state.Account
-func (c *RPCClient) TxSendPayload(data map[string]interface{}) (*types.TxSendPayloadResponse, *util.StatusError) {
+func (c *RPCClient) SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, *util.StatusError) {
 	out, statusCode, err := c.call("tx_sendPayload", data)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	var result types.TxSendPayloadResponse
+	var result types.SendTxPayloadResponse
 	_ = util.DecodeMap(out, &result)
 
 	return &result, nil

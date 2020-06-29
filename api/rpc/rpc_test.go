@@ -22,7 +22,7 @@ var _ = Describe("RPC", func() {
 	})
 
 	Describe(".echo()", func() {
-		testCases := map[string]testCase{
+		testCases := map[string]*TestCase{
 			"should return params passed to it": {
 				params: map[string]interface{}{"name": "major", "age": "1000"},
 				result: util.Map{"data": map[string]interface{}{"name": "major", "age": "1000"}},

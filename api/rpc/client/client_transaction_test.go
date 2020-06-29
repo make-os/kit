@@ -22,13 +22,13 @@ var _ = Describe("Client", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".TxSendPayload", func() {
+	Describe(".SendTxPayload", func() {
 		When("the RPC call returns an error", func() {
 			It("should return the error wrapped in a StatusError", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return nil, 0, fmt.Errorf("bad thing happened")
 				}
-				_, err := client.TxSendPayload(map[string]interface{}{})
+				_, err := client.SendTxPayload(map[string]interface{}{})
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
 					Code:     "client_error",
@@ -44,7 +44,7 @@ var _ = Describe("Client", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return util.Map{"hash": "0x123"}, 0, nil
 				}
-				txInfo, err := client.TxSendPayload(map[string]interface{}{})
+				txInfo, err := client.SendTxPayload(map[string]interface{}{})
 				Expect(err).To(BeNil())
 				Expect(txInfo.Hash).To(Equal("0x123"))
 			})

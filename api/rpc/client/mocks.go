@@ -35,59 +35,59 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
-// TxSendPayload mocks base method
-func (m *MockClient) TxSendPayload(data map[string]interface{}) (*types.TxSendPayloadResponse, *util.StatusError) {
+// SendTxPayload mocks base method
+func (m *MockClient) SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, *util.StatusError) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TxSendPayload", data)
-	ret0, _ := ret[0].(*types.TxSendPayloadResponse)
+	ret := m.ctrl.Call(m, "SendTxPayload", data)
+	ret0, _ := ret[0].(*types.SendTxPayloadResponse)
 	ret1, _ := ret[1].(*util.StatusError)
 	return ret0, ret1
 }
 
-// TxSendPayload indicates an expected call of TxSendPayload
-func (mr *MockClientMockRecorder) TxSendPayload(data interface{}) *gomock.Call {
+// SendTxPayload indicates an expected call of SendTxPayload
+func (mr *MockClientMockRecorder) SendTxPayload(data interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxSendPayload", reflect.TypeOf((*MockClient)(nil).TxSendPayload), data)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendTxPayload", reflect.TypeOf((*MockClient)(nil).SendTxPayload), data)
 }
 
-// AccountGet mocks base method
-func (m *MockClient) AccountGet(address string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
+// GetAccount mocks base method
+func (m *MockClient) GetAccount(address string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "AccountGet", varargs...)
+	ret := m.ctrl.Call(m, "GetAccount", varargs...)
 	ret0, _ := ret[0].(*state.Account)
 	ret1, _ := ret[1].(*util.StatusError)
 	return ret0, ret1
 }
 
-// AccountGet indicates an expected call of AccountGet
-func (mr *MockClientMockRecorder) AccountGet(address interface{}, blockHeight ...interface{}) *gomock.Call {
+// GetAccount indicates an expected call of GetAccount
+func (mr *MockClientMockRecorder) GetAccount(address interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountGet", reflect.TypeOf((*MockClient)(nil).AccountGet), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockClient)(nil).GetAccount), varargs...)
 }
 
-// PushKeyGetAccountOfOwner mocks base method
-func (m *MockClient) PushKeyGetAccountOfOwner(id string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
+// GetPushKeyOwnerAccount mocks base method
+func (m *MockClient) GetPushKeyOwnerAccount(id string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{id}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "PushKeyGetAccountOfOwner", varargs...)
+	ret := m.ctrl.Call(m, "GetPushKeyOwnerAccount", varargs...)
 	ret0, _ := ret[0].(*state.Account)
 	ret1, _ := ret[1].(*util.StatusError)
 	return ret0, ret1
 }
 
-// PushKeyGetAccountOfOwner indicates an expected call of PushKeyGetAccountOfOwner
-func (mr *MockClientMockRecorder) PushKeyGetAccountOfOwner(id interface{}, blockHeight ...interface{}) *gomock.Call {
+// GetPushKeyOwnerAccount indicates an expected call of GetPushKeyOwnerAccount
+func (mr *MockClientMockRecorder) GetPushKeyOwnerAccount(id interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{id}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushKeyGetAccountOfOwner", reflect.TypeOf((*MockClient)(nil).PushKeyGetAccountOfOwner), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKeyOwnerAccount", reflect.TypeOf((*MockClient)(nil).GetPushKeyOwnerAccount), varargs...)
 }
 
 // GetOptions mocks base method

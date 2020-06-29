@@ -1,11 +1,6 @@
 package client
 
 import (
-	"fmt"
-	"strconv"
-	"strings"
-
-	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/api/rest"
 	types2 "gitlab.com/makeos/mosdef/api/types"
 	"gitlab.com/makeos/mosdef/crypto"
@@ -14,13 +9,13 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// PushKeyGetNonceOfOwner returns the nonce of the push key owner account
+// GetPushKeyOwnerNonce returns the nonce of the push key owner account
 // Body:
 // - pushKeyID <string>: The push key ID
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
-// - resp <AccountGetNonceResponse>
-func (c *Client) PushKeyGetNonceOfOwner(pushKeyID string, blockHeight ...uint64) (*types2.AccountGetNonceResponse, error) {
+// - resp <GetAccountNonceResponse>
+func (c *ClientV1) GetPushKeyOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types2.GetAccountNonceResponse, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
@@ -34,17 +29,17 @@ func (c *Client) PushKeyGetNonceOfOwner(pushKeyID string, blockHeight ...uint64)
 		return nil, err
 	}
 
-	var result types2.AccountGetNonceResponse
+	var result types2.GetAccountNonceResponse
 	return &result, resp.ToJSON(&result)
 }
 
-// PushKeyFind finds a push key by its ID
+// GetPushKey finds a push key by its ID
 // Body:
 // - pushKeyID <string>: The push key ID
 // - [blockHeight] <string>: The target query block height (default: latest).
 // Response:
 // - resp <state.PushKey>
-func (c *Client) PushKeyFind(pushKeyID string, blockHeight ...uint64) (*state.PushKey, error) {
+func (c *ClientV1) GetPushKey(pushKeyID string, blockHeight ...uint64) (*state.PushKey, error) {
 	height := uint64(0)
 	if len(blockHeight) > 0 {
 		height = blockHeight[0]
@@ -59,30 +54,13 @@ func (c *Client) PushKeyFind(pushKeyID string, blockHeight ...uint64) (*state.Pu
 	}
 
 	var body map[string]interface{}
-	resp.ToJSON(&body)
+	_ = resp.ToJSON(&body)
 
 	var pushKey state.PushKey
-	util.DecodeMap(body, &pushKey)
+	_ = util.DecodeMap(body, &pushKey)
 
 	pk, _ := crypto.PubKeyFromBase58(body["pubKey"].(string))
 	pushKey.PubKey = pk.ToPublicKey()
 
 	return &pushKey, nil
-}
-
-// PushKeyGetNextNonceOfOwnerUsingClients gets the next account nonce of the owner of the
-// push key by querying the given Remote API clients until one succeeds.
-func PushKeyGetNextNonceOfOwnerUsingClients(clients []RestClient, pushKeyID string) (string, error) {
-	var errs []string
-	for i, cl := range clients {
-		var resp *types2.AccountGetNonceResponse
-		resp, err := cl.PushKeyGetNonceOfOwner(pushKeyID)
-		if err != nil {
-			errs = append(errs, errors.Wrapf(err, "client[%d]", i).Error())
-			continue
-		}
-		nonce, _ := strconv.ParseUint(resp.Nonce, 10, 64)
-		return fmt.Sprintf("%d", nonce+1), nil
-	}
-	return "", fmt.Errorf("%s", strings.Join(errs, ", "))
 }

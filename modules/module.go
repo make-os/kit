@@ -63,9 +63,7 @@ func (m *Module) GetModules() *modules.Modules {
 
 // ConfigureVM instructs VM-accessible modules accessible to configure the VM
 func (m *Module) ConfigureVM(vm *otto.Otto) (sugs []prompt.Suggest) {
-
-	fields := structs.Fields(m.Modules)
-	for _, f := range fields {
+	for _, f := range structs.Fields(m.Modules) {
 		mod := f.Value().(modules.Module)
 		if !m.cfg.ConsoleOnly() {
 			sugs = append(sugs, mod.ConfigureVM(vm)...)
@@ -76,6 +74,5 @@ func (m *Module) ConfigureVM(vm *otto.Otto) (sugs []prompt.Suggest) {
 			sugs = append(sugs, mod.ConfigureVM(vm)...)
 		}
 	}
-
 	return
 }

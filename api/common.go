@@ -2,179 +2,65 @@ package api
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
 
 	"github.com/pkg/errors"
-	restclient "gitlab.com/makeos/mosdef/api/rest/client"
+	rest "gitlab.com/makeos/mosdef/api/rest/client"
 	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/types/state"
 )
 
-// NextNonceGetter describes a function for getting next nonce of a pusher
-// using the remote rest client or the json rpc client
-type NextNonceGetter func(
-	pushKeyID string,
-	rpcClient *client.RPCClient,
-	remoteClients []restclient.RestClient) (string, error)
+// NextNonceGetter describes a function for getting the next nonce of a the owner of a push key.
+type NextNonceGetter func(pushKeyID string, rpcClient client.Client,
+	remoteClients []rest.Client) (string, error)
 
-// GetNextNonceOfPushKeyOwner is used to determine the next nonce of the account that
-// owns the target push key ID.
-//
-// It will use the rpc and remote clients as source to request for
-// the current account nonce.
-//
-// First, it will query remote API clients and will use the first value returned by
-// any of the clients, increment the value by 1 and return it as the next nonce.
-//
-// If still unable to get the nonce, it will attempt to query the JSON-RPC client
-// client, increment its result by 1 and return it as the next nonce.
-//
-// It returns error if unable to get nonce.
-func GetNextNonceOfPushKeyOwner(
-	pushKeyID string,
-	rpcClient *client.RPCClient,
-	remoteClients []restclient.RestClient) (string, error) {
+// GetNextNonceOfPushKeyOwner returns the next account nonce of the owner of a given push key.
+// It accepts a rpc client and one or more remote API clients represent different remotes.
+// If will attempt to first request account information using the remote clients and fallback
+// to the RPC client if remote clients failed.
+func GetNextNonceOfPushKeyOwner(pkID string, rpcClient client.Client, remoteClients []rest.Client) (string, error) {
 
-	var nextNonce string
+	// Return error when no remote client and RPC client were provided
+	if len(remoteClients) == 0 && (rpcClient == nil || reflect.ValueOf(rpcClient).IsNil()) {
+		return "", fmt.Errorf("no remote client or rpc client provided")
+	}
 
-	// If next nonce is not provided, attempt to get the nonce from the remote API.
-	var errRemote error
+	var err error
+	var mainErrs = []error{}
+
+	// If next nonce is not provided, attempt to get the nonce
+	// from at least one the remote clients.
 	if len(remoteClients) > 0 {
-		nextNonce, errRemote = restclient.PushKeyGetNextNonceOfOwnerUsingClients(remoteClients, pushKeyID)
-	}
-
-	// If the nonce is still not known and rpc client non-nil, attempt to get nonce using the client
-	var errRPC error
-	if util.IsZeroString(nextNonce) && rpcClient != nil {
-		nextNonce, errRPC = client.GetNextNonceOfPushKeyOwnerUsingRPCClient(pushKeyID, rpcClient)
-	}
-
-	// At this point, we have failed to use the clients to get the next nonce.
-	// Return appropriate error messages
-	errRemote = errors.Wrap(errRemote, "remote")
-	errRPC = errors.Wrap(errRPC, "rpc")
-	if errRemote != nil && errRPC != nil {
-		wrapped := errors.Wrap(errRemote, errRPC.Error())
-		msg := "failed to request next nonce using remote or rpc clients"
-		return "", errors.Wrap(wrapped, msg)
-	} else if errRemote != nil {
-		msg := "failed to request next nonce using remote client"
-		return "", errors.Wrap(errRemote, msg)
-	} else if errRPC != nil {
-		msg := "failed to request next nonce using rpc client"
-		return "", errors.Wrap(errRPC, msg)
-	}
-
-	if util.IsZeroString(nextNonce) {
-		return "", fmt.Errorf("signer's account nonce is required")
-	}
-
-	return nextNonce, nil
-}
-
-// First, it will query remote API clients and will use the first value returned by
-// any of the clients, increment the value by 1 and return it as the next nonce.
-//
-// If still unable to get the nonce, it will attempt to query the JSON-RPC
-// client, increment its result by 1 and return it as the next nonce.
-//
-// It returns error if unable to get nonce.
-func DetermineNextNonceOfAccount(
-	address string,
-	rpcClient *client.RPCClient,
-	remoteClients []restclient.RestClient) (string, error) {
-
-	var nextNonce string
-
-	// If there is at least 1 Remote API client, attempt to request the next nextNonce
-	var errRemote error
-	if len(remoteClients) > 0 {
-		nextNonce, errRemote = restclient.AccountGetNextNonceUsingClients(remoteClients, address)
-	}
-
-	// If the nextNonce is still not known and rpc client non-nil, attempt to get nextNonce using the client
-	var errRPC error
-	if util.IsZeroString(nextNonce) && rpcClient != nil {
-		nextNonce, errRPC = client.GetNextNonceOfAccountUsingRPCClient(address, rpcClient)
-	}
-
-	// At this point, we have failed to use the clients to get the next nonce.
-	// Return appropriate error messages
-	errRemote = errors.Wrap(errRemote, "remote")
-	errRPC = errors.Wrap(errRPC, "rpc")
-	if errRemote != nil && errRPC != nil {
-		wrapped := errors.Wrap(errRemote, errRPC.Error())
-		msg := "failed to request next nonce using remote or rpc clients"
-		return "", errors.Wrap(wrapped, msg)
-	} else if errRemote != nil {
-		msg := "failed to request next nonce using remote client"
-		return "", errors.Wrap(errRemote, msg)
-	} else if errRPC != nil {
-		msg := "failed to request next nonce using rpc client"
-		return "", errors.Wrap(errRPC, msg)
-	}
-
-	if util.IsZeroString(nextNonce) {
-		return "", fmt.Errorf("signer's account nextNonce is required")
-	}
-
-	return nextNonce, nil
-}
-
-// SendTxPayload sends a signed transaction payload to the mempool using either
-// an JSONRPC 2.0 client or one of several Remote API clients.
-func SendTxPayload(
-	data map[string]interface{},
-	rpcClient *client.RPCClient,
-	remoteClients []restclient.RestClient) (string, error) {
-
-	var resp *types.TxSendPayloadResponse
-	var errRPC, errRemote error
-
-	// If at least 1 remote client is provided, try to use the best one to send the transaction payload.
-	// Immediately return error if a non-500 http code is returned.
-	if len(remoteClients) > 0 {
-		resp, errRemote = restclient.TxSendPayloadUsingClients(remoteClients, data)
-		if errRemote != nil {
-			statusErr := util.StatusErrorFromStr(errRemote.Error())
-			if statusErr.HttpCode > 0 && statusErr.HttpCode != 500 {
-				return "", fmt.Errorf(statusErr.Msg)
+		var resp *types.GetAccountNonceResponse
+		var errs []error
+		for _, cl := range remoteClients {
+			resp, err = cl.GetPushKeyOwnerNonce(pkID)
+			if err != nil {
+				errs = append(errs, errors.Wrap(err, "Remote API"))
+				continue
 			}
+			break
 		}
 		if resp != nil {
-			return resp.Hash, nil
+			curNonce, _ := strconv.ParseUint(resp.Nonce, 10, 64)
+			return fmt.Sprintf("%d", curNonce+1), nil
+		}
+		mainErrs = append(mainErrs, errs...)
+	}
+
+	// If an rpc client was provided, attempt to get the nonce using it.
+	if rpcClient != nil && !reflect.ValueOf(rpcClient).IsNil() {
+		var acct *state.Account
+		acct, err = rpcClient.GetPushKeyOwnerAccount(pkID)
+		if err != nil {
+			mainErrs = append(mainErrs, errors.Wrap(err, "RPC API"))
+		}
+		if acct != nil {
+			return fmt.Sprintf("%d", acct.Nonce+1), nil
 		}
 	}
 
-	// If an rpc client is provided, attempt to use it to send the transaction payload
-	// Immediately return error if a non-500 http code is returned.
-	if rpcClient != nil {
-		resp, errRPC = rpcClient.TxSendPayload(data)
-		if errRPC != nil {
-			statusErr := util.StatusErrorFromStr(errRPC.Error())
-			if statusErr.HttpCode > 0 && statusErr.HttpCode != 500 {
-				return "", fmt.Errorf(statusErr.Msg)
-			}
-		}
-		if resp != nil {
-			return resp.Hash, nil
-		}
-	}
-
-	// At this point, all attempts to send the payload using the clients have failed.
-	// Return appropriate error messages.
-	errRemote = errors.Wrap(errRemote, "remote")
-	errRPC = errors.Wrap(errRPC, "rpc")
-	if errRemote != nil && errRPC != nil {
-		msg := "failed to send request using remote or rpc clients"
-		return "", errors.Wrap(errors.Wrap(errRemote, errRPC.Error()), msg)
-	} else if errRemote != nil {
-		msg := "failed to send request using Remote API client"
-		return "", errors.Wrap(errRemote, msg)
-	} else if errRPC != nil {
-		msg := "failed to send request using RPC client"
-		return "", errors.Wrap(errRPC, msg)
-	}
-
-	return "", fmt.Errorf("failed")
+	return "", mainErrs[0]
 }

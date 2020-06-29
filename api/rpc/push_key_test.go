@@ -27,7 +27,7 @@ var _ = Describe("PushKey", func() {
 	})
 
 	Describe(".find", func() {
-		testCases := map[string]testCase{
+		testCases := map[string]*TestCase{
 			"when id is not provided": {
 				params: map[string]interface{}{},
 				err:    &rpc.Err{Code: "60000", Message: "id is required", Data: "id"},
@@ -46,7 +46,7 @@ var _ = Describe("PushKey", func() {
 					"pubKey":  "---BEGIN PUBLIC KEY...",
 					"address": "addr1",
 				},
-				mocker: func(tp testCase) {
+				mocker: func(tp *TestCase) {
 					mockPushKeyMod := mocks.NewMockPushKeyModule(ctrl)
 					mockPushKeyMod.EXPECT().Get("push1_abc", uint64(0)).Return(util.Map{
 						"pubKey":  "---BEGIN PUBLIC KEY...",
@@ -72,7 +72,7 @@ var _ = Describe("PushKey", func() {
 	})
 
 	Describe(".getAccountOfOwner", func() {
-		testCases := map[string]testCase{
+		testCases := map[string]*TestCase{
 			"when id is not provided": {
 				params: map[string]interface{}{},
 				err:    &rpc.Err{Code: "60000", Message: "id is required", Data: "id"},
@@ -88,7 +88,7 @@ var _ = Describe("PushKey", func() {
 			"when account is successfully returned": {
 				params: map[string]interface{}{"id": "push1_abc"},
 				result: util.Map{"balance": "100", "nonce": 10, "delegatorCommission": 23},
-				mocker: func(tp testCase) {
+				mocker: func(tp *TestCase) {
 					mockPushKeyMod := mocks.NewMockPushKeyModule(ctrl)
 					mockPushKeyMod.EXPECT().GetAccountOfOwner("push1_abc", uint64(0)).Return(util.Map{
 						"balance":             "100",

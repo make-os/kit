@@ -1,10 +1,10 @@
 package types
 
-type TxSendPayloadResponse struct {
+type SendTxPayloadResponse struct {
 	Hash string `json:"hash"`
 }
 
-// AccountGetNonceResponse is the response of AccountGetNonce endpoint
-type AccountGetNonceResponse struct {
+// GetAccountNonceResponse is the response of GetAccountNonce endpoint
+type GetAccountNonceResponse struct {
 	Nonce string `json:"nonce"`
 }

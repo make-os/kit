@@ -64,6 +64,57 @@ func (mr *MockModuleHubMockRecorder) GetModules() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetModules", reflect.TypeOf((*MockModuleHub)(nil).GetModules))
 }
 
+// MockModule is a mock of Module interface
+type MockModule struct {
+	ctrl     *gomock.Controller
+	recorder *MockModuleMockRecorder
+}
+
+// MockModuleMockRecorder is the mock recorder for MockModule
+type MockModuleMockRecorder struct {
+	mock *MockModule
+}
+
+// NewMockModule creates a new mock instance
+func NewMockModule(ctrl *gomock.Controller) *MockModule {
+	mock := &MockModule{ctrl: ctrl}
+	mock.recorder = &MockModuleMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockModule) EXPECT() *MockModuleMockRecorder {
+	return m.recorder
+}
+
+// ConfigureVM mocks base method
+func (m *MockModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
+	ret0, _ := ret[0].([]prompt.Suggest)
+	return ret0
+}
+
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockModule)(nil).ConfigureVM), vm)
+}
+
+// ConsoleOnlyMode mocks base method
+func (m *MockModule) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockModule)(nil).ConsoleOnlyMode))
+}
+
 // MockChainModule is a mock of ChainModule interface
 type MockChainModule struct {
 	ctrl     *gomock.Controller
@@ -99,6 +150,20 @@ func (m *MockChainModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 func (mr *MockChainModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockChainModule)(nil).ConfigureVM), vm)
+}
+
+// ConsoleOnlyMode mocks base method
+func (m *MockChainModule) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockChainModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockChainModule)(nil).ConsoleOnlyMode))
 }
 
 // GetBlock mocks base method
@@ -194,6 +259,20 @@ func (mr *MockTxModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockTxModule)(nil).ConfigureVM), vm)
 }
 
+// ConsoleOnlyMode mocks base method
+func (m *MockTxModule) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockTxModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockTxModule)(nil).ConsoleOnlyMode))
+}
+
 // SendCoin mocks base method
 func (m *MockTxModule) SendCoin(params map[string]interface{}, options ...interface{}) util.Map {
 	m.ctrl.T.Helper()
@@ -278,6 +357,20 @@ func (mr *MockPoolModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockPoolModule)(nil).ConfigureVM), vm)
 }
 
+// ConsoleOnlyMode mocks base method
+func (m *MockPoolModule) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockPoolModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockPoolModule)(nil).ConsoleOnlyMode))
+}
+
 // GetSize mocks base method
 func (m *MockPoolModule) GetSize() util.Map {
 	m.ctrl.T.Helper()
@@ -355,6 +448,20 @@ func (m *MockAccountModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 func (mr *MockAccountModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockAccountModule)(nil).ConfigureVM), vm)
+}
+
+// ConsoleOnlyMode mocks base method
+func (m *MockAccountModule) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockAccountModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockAccountModule)(nil).ConsoleOnlyMode))
 }
 
 // ListLocalAccounts mocks base method
@@ -559,6 +666,20 @@ func (mr *MockPushKeyModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockPushKeyModule)(nil).ConfigureVM), vm)
 }
 
+// ConsoleOnlyMode mocks base method
+func (m *MockPushKeyModule) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockPushKeyModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockPushKeyModule)(nil).ConsoleOnlyMode))
+}
+
 // Register mocks base method
 func (m *MockPushKeyModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	m.ctrl.T.Helper()
@@ -667,6 +788,20 @@ func (mr *MockUtilModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockUtilModule)(nil).ConfigureVM), vm)
 }
 
+// ConsoleOnlyMode mocks base method
+func (m *MockUtilModule) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockUtilModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockUtilModule)(nil).ConsoleOnlyMode))
+}
+
 // TreasuryAddress mocks base method
 func (m *MockUtilModule) TreasuryAddress() string {
 	m.ctrl.T.Helper()
@@ -734,6 +869,20 @@ func (m *MockTicketModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 func (mr *MockTicketModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockTicketModule)(nil).ConfigureVM), vm)
+}
+
+// ConsoleOnlyMode mocks base method
+func (m *MockTicketModule) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockTicketModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockTicketModule)(nil).ConsoleOnlyMode))
 }
 
 // Buy mocks base method
@@ -940,6 +1089,20 @@ func (mr *MockRepoModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockRepoModule)(nil).ConfigureVM), vm)
 }
 
+// ConsoleOnlyMode mocks base method
+func (m *MockRepoModule) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockRepoModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockRepoModule)(nil).ConsoleOnlyMode))
+}
+
 // Create mocks base method
 func (m *MockRepoModule) Create(params map[string]interface{}, options ...interface{}) interface{} {
 	m.ctrl.T.Helper()
@@ -1103,6 +1266,20 @@ func (mr *MockNamespaceModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockNamespaceModule)(nil).ConfigureVM), vm)
 }
 
+// ConsoleOnlyMode mocks base method
+func (m *MockNamespaceModule) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockNamespaceModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockNamespaceModule)(nil).ConsoleOnlyMode))
+}
+
 // Lookup mocks base method
 func (m *MockNamespaceModule) Lookup(name string, height ...uint64) interface{} {
 	m.ctrl.T.Helper()
@@ -1214,6 +1391,20 @@ func (m *MockDHTModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 func (mr *MockDHTModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockDHTModule)(nil).ConfigureVM), vm)
+}
+
+// ConsoleOnlyMode mocks base method
+func (m *MockDHTModule) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockDHTModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockDHTModule)(nil).ConsoleOnlyMode))
 }
 
 // Store mocks base method
@@ -1331,6 +1522,20 @@ func (m *MockExtManager) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 func (mr *MockExtManagerMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockExtManager)(nil).ConfigureVM), vm)
+}
+
+// ConsoleOnlyMode mocks base method
+func (m *MockExtManager) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockExtManagerMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockExtManager)(nil).ConsoleOnlyMode))
 }
 
 // Exist mocks base method
@@ -1474,6 +1679,20 @@ func (m *MockRPCModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 func (mr *MockRPCModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockRPCModule)(nil).ConfigureVM), vm)
+}
+
+// ConsoleOnlyMode mocks base method
+func (m *MockRPCModule) ConsoleOnlyMode() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConsoleOnlyMode")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ConsoleOnlyMode indicates an expected call of ConsoleOnlyMode
+func (mr *MockRPCModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockRPCModule)(nil).ConsoleOnlyMode))
 }
 
 // IsRunning mocks base method

@@ -33,7 +33,7 @@ var _ = Describe("GPG", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".FindPushKey", func() {
+	Describe(".GetPushKey", func() {
 		var w *httptest.ResponseRecorder
 		var req *http.Request
 		var testCases = map[string]TestCase{
@@ -69,7 +69,7 @@ var _ = Describe("GPG", func() {
 					}
 
 					req.URL.RawQuery = q.Encode()
-					restApi.FindPushKey(w, req)
+					restApi.GetPushKey(w, req)
 					_ = req.Body.Close()
 					Expect(w.Code).To(Equal(tp.statusCode))
 					Expect(strings.TrimSpace(w.Body.String())).To(Equal(tp.body))
@@ -78,7 +78,7 @@ var _ = Describe("GPG", func() {
 		}
 	})
 
-	Describe(".GetNonceOfPushKeyOwner", func() {
+	Describe(".GetPushKeyOwnerNonce", func() {
 		var w *httptest.ResponseRecorder
 		var req *http.Request
 		var testCases = map[string]TestCase{
@@ -112,7 +112,7 @@ var _ = Describe("GPG", func() {
 					}
 
 					req.URL.RawQuery = q.Encode()
-					restApi.GetNonceOfPushKeyOwner(w, req)
+					restApi.GetPushKeyOwnerNonce(w, req)
 					_ = req.Body.Close()
 					Expect(w.Code).To(Equal(tp.statusCode))
 					Expect(strings.TrimSpace(w.Body.String())).To(Equal(tp.body))

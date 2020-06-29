@@ -46,7 +46,7 @@ type SignTagArgs struct {
 	RPCClient *client.RPCClient
 
 	// RemoteClients is the remote server API client.
-	RemoteClients []restclient.RestClient
+	RemoteClients []restclient.Client
 
 	// PushKeyUnlocker is a function for getting and unlocking a push key from keystore
 	PushKeyUnlocker cmd.PushKeyUnlocker

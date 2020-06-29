@@ -29,9 +29,9 @@ const (
 
 // Client represents a JSON-RPC client
 type Client interface {
-	TxSendPayload(data map[string]interface{}) (*types.TxSendPayloadResponse, *util.StatusError)
-	AccountGet(address string, blockHeight ...uint64) (*state.Account, *util.StatusError)
-	PushKeyGetAccountOfOwner(id string, blockHeight ...uint64) (*state.Account, *util.StatusError)
+	SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, *util.StatusError)
+	GetAccount(address string, blockHeight ...uint64) (*state.Account, *util.StatusError)
+	GetPushKeyOwnerAccount(id string, blockHeight ...uint64) (*state.Account, *util.StatusError)
 	GetOptions() *Options
 	Call(method string, params interface{}) (res util.Map, statusCode int, err error)
 }

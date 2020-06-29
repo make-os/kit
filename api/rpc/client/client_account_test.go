@@ -23,13 +23,13 @@ var _ = Describe("Client", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".AccountGet", func() {
+	Describe(".GetAccount", func() {
 		When("the RPC call returns an error", func() {
 			It("should return the error wrapped in a StatusError", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return nil, 0, fmt.Errorf("bad thing happened")
 				}
-				_, err := client.AccountGet("addr", 100)
+				_, err := client.GetAccount("addr", 100)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
 					Code:     "client_error",
@@ -45,7 +45,7 @@ var _ = Describe("Client", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return util.Map{"balance": 1000}, 0, nil
 				}
-				_, err := client.AccountGet("addr", 100)
+				_, err := client.GetAccount("addr", 100)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
 					Code:     "client_error",
@@ -61,7 +61,7 @@ var _ = Describe("Client", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return util.Map{"balance": "1000"}, 0, nil
 				}
-				acct, err := client.AccountGet("addr", 100)
+				acct, err := client.GetAccount("addr", 100)
 				Expect(err).To(BeNil())
 				Expect(acct.Balance).To(Equal(util.String("1000")))
 			})

@@ -2,7 +2,6 @@ package client
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 
@@ -10,25 +9,23 @@ import (
 	"github.com/imroc/req"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gitlab.com/makeos/mosdef/api/types"
-	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Account", func() {
 	var ctrl *gomock.Controller
-	var client *Client
+	var client *ClientV1
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		client = &Client{apiRoot: ""}
+		client = &ClientV1{apiRoot: ""}
 	})
 
 	AfterEach(func() {
 		ctrl.Finish()
 	})
 
-	Describe(".AccountGetNonce", func() {
+	Describe(".GetAccountNonce", func() {
 		When("address and block height are set", func() {
 			It("should send `address` and `block height` in request and return nonce sent from server", func() {
 				client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
@@ -48,14 +45,14 @@ var _ = Describe("Account", func() {
 
 					return resp, nil
 				}
-				resp, err := client.AccountGetNonce("addr1", 100)
+				resp, err := client.GetAccountNonce("addr1", 100)
 				Expect(err).To(BeNil())
 				Expect(resp.Nonce).To(Equal("123"))
 			})
 		})
 	})
 
-	Describe(".AccountGet", func() {
+	Describe(".GetAccount", func() {
 		When("address and block height are set", func() {
 			It("should send `address` and `block height` in request and return account sent from server", func() {
 				client.get = func(endpoint string, params map[string]interface{}) (resp *req.Resp, err error) {
@@ -79,58 +76,11 @@ var _ = Describe("Account", func() {
 
 					return resp, nil
 				}
-				resp, err := client.AccountGet("addr1", 100)
+				resp, err := client.GetAccount("addr1", 100)
 				Expect(err).To(BeNil())
 				Expect(resp.Balance).To(Equal(util.String("979956")))
 				Expect(resp.Nonce).To(Equal(uint64(43)))
 				Expect(resp.DelegatorCommission).To(Equal(float64(0)))
-			})
-		})
-	})
-
-	Describe(".AccountGetNextNonceUsingClients", func() {
-		When("two clients are provided but the first one succeeds, the second should not be used", func() {
-			It("should return the next nonce immediately after first client success", func() {
-				client := mocks.NewMockRestClient(ctrl)
-				client.EXPECT().AccountGetNonce("addr1").
-					Return(&types.AccountGetNonceResponse{Nonce: "10"}, nil).Times(1)
-				client2 := mocks.NewMockRestClient(ctrl)
-				client2.EXPECT().AccountGetNonce(gomock.Any()).Times(0)
-
-				nextNonce, err := AccountGetNextNonceUsingClients([]RestClient{client, client2}, "addr1")
-				Expect(err).To(BeNil())
-				Expect(nextNonce).To(Equal("11"))
-			})
-		})
-
-		When("two clients are provided but the first one fails, the second should be called", func() {
-			It("should return the next nonce from the second client", func() {
-				client := mocks.NewMockRestClient(ctrl)
-				client.EXPECT().AccountGetNonce("addr1").
-					Return(nil, fmt.Errorf("error")).Times(1)
-				client2 := mocks.NewMockRestClient(ctrl)
-				client2.EXPECT().AccountGetNonce(gomock.Any()).
-					Return(&types.AccountGetNonceResponse{Nonce: "11"}, nil).Times(1)
-
-				nextNonce, err := AccountGetNextNonceUsingClients([]RestClient{client, client2}, "addr1")
-				Expect(err).To(BeNil())
-				Expect(nextNonce).To(Equal("12"))
-			})
-		})
-
-		When("two clients are provided but both fail", func() {
-			It("should return error", func() {
-				client := mocks.NewMockRestClient(ctrl)
-				client.EXPECT().AccountGetNonce("addr1").
-					Return(nil, fmt.Errorf("error")).Times(1)
-				client2 := mocks.NewMockRestClient(ctrl)
-				client2.EXPECT().AccountGetNonce(gomock.Any()).
-					Return(nil, fmt.Errorf("error")).Times(1)
-
-				nextNonce, err := AccountGetNextNonceUsingClients([]RestClient{client, client2}, "addr1")
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("client[0]: error, client[1]: error"))
-				Expect(nextNonce).To(Equal(""))
 			})
 		})
 	})

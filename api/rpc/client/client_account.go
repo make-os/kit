@@ -7,7 +7,7 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// AccountGet gets an account corresponding to a given address
+// GetAccount gets an account corresponding to a given address
 //
 // ARGS:
 // - address <string>: The address of an account
@@ -15,7 +15,7 @@ import (
 //
 // RETURNS:
 // - resp <map> - state.Account
-func (c *RPCClient) AccountGet(address string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
+func (c *RPCClient) GetAccount(address string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
 	resp, statusCode, err := c.call("user_get", util.Map{
 		"address":     address,
 		"blockHeight": util.GetIndexFromUInt64Slice(0, blockHeight...),
@@ -42,7 +42,7 @@ func (c *RPCClient) AccountGet(address string, blockHeight ...uint64) (*state.Ac
 // RETURNS:
 // nonce: The next nonce of the account
 func GetNextNonceOfAccountUsingRPCClient(address string, client Client) (string, *util.StatusError) {
-	acct, err := client.AccountGet(address)
+	acct, err := client.GetAccount(address)
 	if err != nil {
 		return "", err
 	}

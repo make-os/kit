@@ -20,7 +20,7 @@ import (
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 )
 
-var testGetNextNonce = func(pushKeyID string, rpcClient *client.RPCClient, remoteClients []restclient.RestClient) (string, error) {
+var testGetNextNonce = func(pushKeyID string, rpcClient *client.RPCClient, remoteClients []restclient.Client) (string, error) {
 	return "1", nil
 }
 
@@ -93,7 +93,7 @@ var _ = Describe("SignCommit", func() {
 
 		It("should return error when unable to get next nonce", func() {
 			mockRepo.EXPECT().GetConfig("user.signingKey").Return(key.PushAddr().String())
-			args := &SignCommitArgs{GetNextNonce: func(pushKeyID string, rpcClient *client.RPCClient, remoteClients []restclient.RestClient) (string, error) {
+			args := &SignCommitArgs{GetNextNonce: func(pushKeyID string, rpcClient *client.RPCClient, remoteClients []restclient.Client) (string, error) {
 				return "", fmt.Errorf("error")
 			},
 			}

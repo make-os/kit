@@ -35,7 +35,7 @@ var _ = Describe("Tx", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".TxSendPayload", func() {
+	Describe(".SendTxPayload", func() {
 		var w *httptest.ResponseRecorder
 		var req *http.Request
 		var testCases = map[string]TestCase{
@@ -64,7 +64,7 @@ var _ = Describe("Tx", func() {
 						tp.mocker(&tp)
 					}
 
-					restApi.TxSendPayload(w, req)
+					restApi.SendTxPayload(w, req)
 					_ = req.Body.Close()
 					Expect(w.Code).To(Equal(tp.statusCode))
 					Expect(strings.TrimSpace(w.Body.String())).To(Equal(tp.body))

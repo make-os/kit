@@ -19,32 +19,32 @@ func joinURL(base string, paths ...string) string {
 	return fmt.Sprintf("%s/%s", strings.TrimRight(base, "/"), strings.TrimLeft(p, "/"))
 }
 
-// Client is a REST API client
-type Client struct {
+// ClientV1 is a REST API client
+type ClientV1 struct {
 	apiRoot string
 	get     RequestFunc
 	post    RequestFunc
 }
 
-// NewClient creates an instance of Client;
+// NewClient creates an instance of ClientV1;
 //
 // ARGS:
 // apiRoot is the URL path to the API server
-func NewClient(apiRoot string) *Client {
-	c := &Client{apiRoot: apiRoot}
+func NewClient(apiRoot string) *ClientV1 {
+	c := &ClientV1{apiRoot: apiRoot}
 	c.get = c.GetCall
 	c.post = c.PostCall
 	return c
 }
 
 // GetCall makes a get call to the endpoint
-func (c *Client) GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error) {
+func (c *ClientV1) GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error) {
 	url := joinURL(c.apiRoot, endpoint)
 	return req.Get(url, req.QueryParam(params))
 }
 
 // PostCall makes a get call to the endpoint
-func (c *Client) PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error) {
+func (c *ClientV1) PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error) {
 	url := joinURL(c.apiRoot, endpoint)
 	return req.Post(url, req.BodyJSON(body))
 }

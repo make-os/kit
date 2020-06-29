@@ -7,11 +7,11 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// TxSendPayload sends a signed transaction to the mempool
+// SendTxPayload sends a signed transaction to the mempool
 // Body (JSON): map that conforms to any valid types.BaseTx transaction
 // Response <map>
 // - hash <string>: The hash of the transaction
-func (r *API) TxSendPayload(w http.ResponseWriter, req *http.Request) {
+func (r *API) SendTxPayload(w http.ResponseWriter, req *http.Request) {
 	var body = make(map[string]interface{})
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
 		util.WriteJSON(w, 400, util.RESTApiErrorMsg("malformed body", "", "0"))

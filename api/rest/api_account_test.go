@@ -14,6 +14,13 @@ import (
 	modules2 "gitlab.com/makeos/mosdef/types/modules"
 )
 
+type TestCase struct {
+	params     map[string]string
+	body       string
+	statusCode int
+	mocker     func(tc *TestCase)
+}
+
 var _ = Describe("Account", func() {
 	var ctrl *gomock.Controller
 	var mockModuleHub *mocks.MockModuleHub

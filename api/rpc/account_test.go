@@ -26,7 +26,7 @@ var _ = Describe("Account", func() {
 	})
 
 	Describe(".getNonce", func() {
-		testCases := map[string]testCase{
+		testCases := map[string]*TestCase{
 			"when address is not provided": {
 				params: map[string]interface{}{},
 				err:    &rpc.Err{Code: "60000", Message: "address is required", Data: "address"},
@@ -38,7 +38,7 @@ var _ = Describe("Account", func() {
 			"when nonce is successfully returned": {
 				params: map[string]interface{}{"address": "addr1"},
 				result: map[string]interface{}{"nonce": "100"},
-				mocker: func(tp testCase) {
+				mocker: func(tp *TestCase) {
 					mockAcctMod := mocks.NewMockAccountModule(ctrl)
 					mockAcctMod.EXPECT().GetNonce("addr1", uint64(0)).Return("100")
 					mods.Account = mockAcctMod
@@ -60,7 +60,7 @@ var _ = Describe("Account", func() {
 	})
 
 	Describe(".getAccount()", func() {
-		testCases := map[string]testCase{
+		testCases := map[string]*TestCase{
 			"when address is not provided": {
 				params: map[string]interface{}{},
 				err:    &rpc.Err{Code: "60000", Message: "address is required", Data: "address"},
@@ -72,7 +72,7 @@ var _ = Describe("Account", func() {
 			"when account is successfully returned": {
 				params: map[string]interface{}{"address": "addr1"},
 				result: map[string]interface{}{"balance": "100"},
-				mocker: func(tp testCase) {
+				mocker: func(tp *TestCase) {
 					mockAcctMod := mocks.NewMockAccountModule(ctrl)
 					mockAcctMod.EXPECT().GetAccount("addr1", uint64(0)).Return(util.Map{
 						"balance": "100",

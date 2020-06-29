@@ -12,86 +12,86 @@ import (
 	reflect "reflect"
 )
 
-// MockRestClient is a mock of RestClient interface
-type MockRestClient struct {
+// MockClient is a mock of Client interface
+type MockClient struct {
 	ctrl     *gomock.Controller
-	recorder *MockRestClientMockRecorder
+	recorder *MockClientMockRecorder
 }
 
-// MockRestClientMockRecorder is the mock recorder for MockRestClient
-type MockRestClientMockRecorder struct {
-	mock *MockRestClient
+// MockClientMockRecorder is the mock recorder for MockClient
+type MockClientMockRecorder struct {
+	mock *MockClient
 }
 
-// NewMockRestClient creates a new mock instance
-func NewMockRestClient(ctrl *gomock.Controller) *MockRestClient {
-	mock := &MockRestClient{ctrl: ctrl}
-	mock.recorder = &MockRestClientMockRecorder{mock}
+// NewMockClient creates a new mock instance
+func NewMockClient(ctrl *gomock.Controller) *MockClient {
+	mock := &MockClient{ctrl: ctrl}
+	mock.recorder = &MockClientMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockRestClient) EXPECT() *MockRestClientMockRecorder {
+func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
-// TxSendPayload mocks base method
-func (m *MockRestClient) TxSendPayload(data map[string]interface{}) (*types.TxSendPayloadResponse, error) {
+// SendTxPayload mocks base method
+func (m *MockClient) SendTxPayload(data map[string]interface{}) (*types.SendTxPayloadResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TxSendPayload", data)
-	ret0, _ := ret[0].(*types.TxSendPayloadResponse)
+	ret := m.ctrl.Call(m, "SendTxPayload", data)
+	ret0, _ := ret[0].(*types.SendTxPayloadResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// TxSendPayload indicates an expected call of TxSendPayload
-func (mr *MockRestClientMockRecorder) TxSendPayload(data interface{}) *gomock.Call {
+// SendTxPayload indicates an expected call of SendTxPayload
+func (mr *MockClientMockRecorder) SendTxPayload(data interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TxSendPayload", reflect.TypeOf((*MockRestClient)(nil).TxSendPayload), data)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SendTxPayload", reflect.TypeOf((*MockClient)(nil).SendTxPayload), data)
 }
 
-// AccountGetNonce mocks base method
-func (m *MockRestClient) AccountGetNonce(address string, blockHeight ...uint64) (*types.AccountGetNonceResponse, error) {
+// GetAccountNonce mocks base method
+func (m *MockClient) GetAccountNonce(address string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "AccountGetNonce", varargs...)
-	ret0, _ := ret[0].(*types.AccountGetNonceResponse)
+	ret := m.ctrl.Call(m, "GetAccountNonce", varargs...)
+	ret0, _ := ret[0].(*types.GetAccountNonceResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AccountGetNonce indicates an expected call of AccountGetNonce
-func (mr *MockRestClientMockRecorder) AccountGetNonce(address interface{}, blockHeight ...interface{}) *gomock.Call {
+// GetAccountNonce indicates an expected call of GetAccountNonce
+func (mr *MockClientMockRecorder) GetAccountNonce(address interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountGetNonce", reflect.TypeOf((*MockRestClient)(nil).AccountGetNonce), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountNonce", reflect.TypeOf((*MockClient)(nil).GetAccountNonce), varargs...)
 }
 
-// AccountGet mocks base method
-func (m *MockRestClient) AccountGet(address string, blockHeight ...uint64) (*state.Account, error) {
+// GetAccount mocks base method
+func (m *MockClient) GetAccount(address string, blockHeight ...uint64) (*state.Account, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "AccountGet", varargs...)
+	ret := m.ctrl.Call(m, "GetAccount", varargs...)
 	ret0, _ := ret[0].(*state.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AccountGet indicates an expected call of AccountGet
-func (mr *MockRestClientMockRecorder) AccountGet(address interface{}, blockHeight ...interface{}) *gomock.Call {
+// GetAccount indicates an expected call of GetAccount
+func (mr *MockClientMockRecorder) GetAccount(address interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{address}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountGet", reflect.TypeOf((*MockRestClient)(nil).AccountGet), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockClient)(nil).GetAccount), varargs...)
 }
 
 // GetCall mocks base method
-func (m *MockRestClient) GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error) {
+func (m *MockClient) GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCall", endpoint, params)
 	ret0, _ := ret[0].(*req.Resp)
@@ -100,13 +100,13 @@ func (m *MockRestClient) GetCall(endpoint string, params map[string]interface{})
 }
 
 // GetCall indicates an expected call of GetCall
-func (mr *MockRestClientMockRecorder) GetCall(endpoint, params interface{}) *gomock.Call {
+func (mr *MockClientMockRecorder) GetCall(endpoint, params interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCall", reflect.TypeOf((*MockRestClient)(nil).GetCall), endpoint, params)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCall", reflect.TypeOf((*MockClient)(nil).GetCall), endpoint, params)
 }
 
 // PostCall mocks base method
-func (m *MockRestClient) PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error) {
+func (m *MockClient) PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PostCall", endpoint, body)
 	ret0, _ := ret[0].(*req.Resp)
@@ -115,47 +115,47 @@ func (m *MockRestClient) PostCall(endpoint string, body map[string]interface{}) 
 }
 
 // PostCall indicates an expected call of PostCall
-func (mr *MockRestClientMockRecorder) PostCall(endpoint, body interface{}) *gomock.Call {
+func (mr *MockClientMockRecorder) PostCall(endpoint, body interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostCall", reflect.TypeOf((*MockRestClient)(nil).PostCall), endpoint, body)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostCall", reflect.TypeOf((*MockClient)(nil).PostCall), endpoint, body)
 }
 
-// PushKeyGetNonceOfOwner mocks base method
-func (m *MockRestClient) PushKeyGetNonceOfOwner(pushKeyID string, blockHeight ...uint64) (*types.AccountGetNonceResponse, error) {
+// GetPushKeyOwnerNonce mocks base method
+func (m *MockClient) GetPushKeyOwnerNonce(pushKeyID string, blockHeight ...uint64) (*types.GetAccountNonceResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{pushKeyID}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "PushKeyGetNonceOfOwner", varargs...)
-	ret0, _ := ret[0].(*types.AccountGetNonceResponse)
+	ret := m.ctrl.Call(m, "GetPushKeyOwnerNonce", varargs...)
+	ret0, _ := ret[0].(*types.GetAccountNonceResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// PushKeyGetNonceOfOwner indicates an expected call of PushKeyGetNonceOfOwner
-func (mr *MockRestClientMockRecorder) PushKeyGetNonceOfOwner(pushKeyID interface{}, blockHeight ...interface{}) *gomock.Call {
+// GetPushKeyOwnerNonce indicates an expected call of GetPushKeyOwnerNonce
+func (mr *MockClientMockRecorder) GetPushKeyOwnerNonce(pushKeyID interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{pushKeyID}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushKeyGetNonceOfOwner", reflect.TypeOf((*MockRestClient)(nil).PushKeyGetNonceOfOwner), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKeyOwnerNonce", reflect.TypeOf((*MockClient)(nil).GetPushKeyOwnerNonce), varargs...)
 }
 
-// PushKeyFind mocks base method
-func (m *MockRestClient) PushKeyFind(pushKeyID string, blockHeight ...uint64) (*state.PushKey, error) {
+// GetPushKey mocks base method
+func (m *MockClient) GetPushKey(pushKeyID string, blockHeight ...uint64) (*state.PushKey, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{pushKeyID}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "PushKeyFind", varargs...)
+	ret := m.ctrl.Call(m, "GetPushKey", varargs...)
 	ret0, _ := ret[0].(*state.PushKey)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// PushKeyFind indicates an expected call of PushKeyFind
-func (mr *MockRestClientMockRecorder) PushKeyFind(pushKeyID interface{}, blockHeight ...interface{}) *gomock.Call {
+// GetPushKey indicates an expected call of GetPushKey
+func (mr *MockClientMockRecorder) GetPushKey(pushKeyID interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{pushKeyID}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PushKeyFind", reflect.TypeOf((*MockRestClient)(nil).PushKeyFind), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKey", reflect.TypeOf((*MockClient)(nil).GetPushKey), varargs...)
 }
