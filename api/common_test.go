@@ -50,7 +50,7 @@ var _ = Describe("", func() {
 			Expect(err).To(MatchError("Remote API: error"))
 		})
 
-		It("should return no err and respone when two remote clients are provided and one succeeds", func() {
+		It("should return no err and response when two remote clients are provided and one succeeds", func() {
 			client := mocks.NewMockClient(ctrl)
 			client2 := mocks.NewMockClient(ctrl)
 			client.EXPECT().GetPushKeyOwnerNonce("pk-id").Return(nil, fmt.Errorf("error"))
@@ -80,12 +80,20 @@ var _ = Describe("", func() {
 			Expect(err).To(MatchError("RPC API: field:'field', msg:'error', httpCode:'400', code:'100'"))
 		})
 
-		It("should return no err and response when only one rpc client is provided and it succeeds", func() {
+		It("should return no err and response when only an rpc client is provided and it succeeds", func() {
 			rpcClient := client.NewMockClient(ctrl)
 			rpcClient.EXPECT().GetPushKeyOwnerAccount("pk-id").Return(&state.Account{Nonce: 10}, nil)
 			nextNonce, err := GetNextNonceOfPushKeyOwner("pk-id", rpcClient, []rest.Client{})
 			Expect(err).To(BeNil())
 			Expect(nextNonce).To(Equal("11"))
+		})
+	})
+
+	Describe(".ClientCaller", func() {
+		It("should return error when no caller callbacks were provided", func() {
+			err := ClientCaller(&client.RPCClient{}, []rest.Client{&rest.ClientV1{}}, nil, nil)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("no client caller provided"))
 		})
 	})
 })
