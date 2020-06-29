@@ -21,22 +21,27 @@ import (
 
 // ChainModule provides access to chain information
 type ChainModule struct {
-	vm      *otto.Otto
 	service services.Service
 	keepers core.Keepers
 }
 
 // NewChainModule creates an instance of ChainModule
-func NewChainModule(vm *otto.Otto, service services.Service, keepers core.Keepers) *ChainModule {
-	return &ChainModule{vm: vm, service: service, keepers: keepers}
+func NewChainModule(service services.Service, keepers core.Keepers) *ChainModule {
+	return &ChainModule{service: service, keepers: keepers}
 }
 
+// ConsoleOnlyMode indicates that this module can be used on console-only mode
+func (m *ChainModule) ConsoleOnlyMode() bool {
+	return false
+}
+
+// globals are functions exposed in the VM's global namespace
 func (m *ChainModule) globals() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{}
 }
 
-// funcs exposed by the module
-func (m *ChainModule) funcs() []*modules.ModuleFunc {
+// methods are functions exposed in the special namespace of this module.
+func (m *ChainModule) methods() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
 			Name:        "getBlock",
@@ -61,27 +66,25 @@ func (m *ChainModule) funcs() []*modules.ModuleFunc {
 	}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *ChainModule) Configure() []prompt.Suggest {
+func (m *ChainModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	var suggestions []prompt.Suggest
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
-	util.VMSet(m.vm, constants.NamespaceNode, obj)
+	util.VMSet(vm, constants.NamespaceChain, obj)
 
-	for _, f := range m.funcs() {
+	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
-		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceNode, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceChain, f.Name)
+		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		vm.Set(f.Name, f.Value)
+		suggestions = append(suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
 	return suggestions

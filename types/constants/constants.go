@@ -3,7 +3,7 @@ package constants
 // Namespace for JS Module and RPC methods
 const (
 	NamespaceRPC       = "rpc"
-	NamespaceNode      = "node"
+	NamespaceChain     = "chain"
 	NamespaceTx        = "tx"
 	NamespaceCoin      = "coin"
 	NamespacePool      = "pool"

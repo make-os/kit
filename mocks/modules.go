@@ -87,18 +87,18 @@ func (m *MockChainModule) EXPECT() *MockChainModuleMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockChainModule) Configure() []prompt.Suggest {
+// ConfigureVM mocks base method
+func (m *MockChainModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockChainModuleMockRecorder) Configure() *gomock.Call {
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockChainModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockChainModule)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockChainModule)(nil).ConfigureVM), vm)
 }
 
 // GetBlock mocks base method
@@ -180,18 +180,18 @@ func (m *MockTxModule) EXPECT() *MockTxModuleMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockTxModule) Configure() []prompt.Suggest {
+// ConfigureVM mocks base method
+func (m *MockTxModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockTxModuleMockRecorder) Configure() *gomock.Call {
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockTxModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockTxModule)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockTxModule)(nil).ConfigureVM), vm)
 }
 
 // SendCoin mocks base method
@@ -264,18 +264,18 @@ func (m *MockPoolModule) EXPECT() *MockPoolModuleMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockPoolModule) Configure() []prompt.Suggest {
+// ConfigureVM mocks base method
+func (m *MockPoolModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockPoolModuleMockRecorder) Configure() *gomock.Call {
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockPoolModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockPoolModule)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockPoolModule)(nil).ConfigureVM), vm)
 }
 
 // GetSize mocks base method
@@ -343,18 +343,18 @@ func (m *MockAccountModule) EXPECT() *MockAccountModuleMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockAccountModule) Configure() []prompt.Suggest {
+// ConfigureVM mocks base method
+func (m *MockAccountModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockAccountModuleMockRecorder) Configure() *gomock.Call {
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockAccountModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockAccountModule)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockAccountModule)(nil).ConfigureVM), vm)
 }
 
 // ListLocalAccounts mocks base method
@@ -545,18 +545,18 @@ func (m *MockPushKeyModule) EXPECT() *MockPushKeyModuleMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockPushKeyModule) Configure() []prompt.Suggest {
+// ConfigureVM mocks base method
+func (m *MockPushKeyModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockPushKeyModuleMockRecorder) Configure() *gomock.Call {
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockPushKeyModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockPushKeyModule)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockPushKeyModule)(nil).ConfigureVM), vm)
 }
 
 // Register mocks base method
@@ -653,18 +653,18 @@ func (m *MockUtilModule) EXPECT() *MockUtilModuleMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockUtilModule) Configure() []prompt.Suggest {
+// ConfigureVM mocks base method
+func (m *MockUtilModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockUtilModuleMockRecorder) Configure() *gomock.Call {
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockUtilModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockUtilModule)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockUtilModule)(nil).ConfigureVM), vm)
 }
 
 // TreasuryAddress mocks base method
@@ -722,18 +722,18 @@ func (m *MockTicketModule) EXPECT() *MockTicketModuleMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockTicketModule) Configure() []prompt.Suggest {
+// ConfigureVM mocks base method
+func (m *MockTicketModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockTicketModuleMockRecorder) Configure() *gomock.Call {
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockTicketModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockTicketModule)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockTicketModule)(nil).ConfigureVM), vm)
 }
 
 // Buy mocks base method
@@ -926,18 +926,18 @@ func (m *MockRepoModule) EXPECT() *MockRepoModuleMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockRepoModule) Configure() []prompt.Suggest {
+// ConfigureVM mocks base method
+func (m *MockRepoModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockRepoModuleMockRecorder) Configure() *gomock.Call {
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockRepoModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockRepoModule)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockRepoModule)(nil).ConfigureVM), vm)
 }
 
 // Create mocks base method
@@ -1089,18 +1089,18 @@ func (m *MockNamespaceModule) EXPECT() *MockNamespaceModuleMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockNamespaceModule) Configure() []prompt.Suggest {
+// ConfigureVM mocks base method
+func (m *MockNamespaceModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockNamespaceModuleMockRecorder) Configure() *gomock.Call {
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockNamespaceModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockNamespaceModule)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockNamespaceModule)(nil).ConfigureVM), vm)
 }
 
 // Lookup mocks base method
@@ -1202,18 +1202,18 @@ func (m *MockDHTModule) EXPECT() *MockDHTModuleMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockDHTModule) Configure() []prompt.Suggest {
+// ConfigureVM mocks base method
+func (m *MockDHTModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockDHTModuleMockRecorder) Configure() *gomock.Call {
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockDHTModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockDHTModule)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockDHTModule)(nil).ConfigureVM), vm)
 }
 
 // Store mocks base method
@@ -1319,32 +1319,18 @@ func (m *MockExtManager) EXPECT() *MockExtManagerMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockExtManager) Configure() []prompt.Suggest {
+// ConfigureVM mocks base method
+func (m *MockExtManager) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockExtManagerMockRecorder) Configure() *gomock.Call {
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockExtManagerMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockExtManager)(nil).Configure))
-}
-
-// SetVM mocks base method
-func (m *MockExtManager) SetVM(vm *otto.Otto) modules.ExtManager {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetVM", vm)
-	ret0, _ := ret[0].(modules.ExtManager)
-	return ret0
-}
-
-// SetVM indicates an expected call of SetVM
-func (mr *MockExtManagerMockRecorder) SetVM(vm interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetVM", reflect.TypeOf((*MockExtManager)(nil).SetVM), vm)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockExtManager)(nil).ConfigureVM), vm)
 }
 
 // Exist mocks base method
@@ -1476,18 +1462,18 @@ func (m *MockRPCModule) EXPECT() *MockRPCModuleMockRecorder {
 	return m.recorder
 }
 
-// Configure mocks base method
-func (m *MockRPCModule) Configure() []prompt.Suggest {
+// ConfigureVM mocks base method
+func (m *MockRPCModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Configure")
+	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
 	return ret0
 }
 
-// Configure indicates an expected call of Configure
-func (mr *MockRPCModuleMockRecorder) Configure() *gomock.Call {
+// ConfigureVM indicates an expected call of ConfigureVM
+func (mr *MockRPCModuleMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Configure", reflect.TypeOf((*MockRPCModule)(nil).Configure))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockRPCModule)(nil).ConfigureVM), vm)
 }
 
 // IsRunning mocks base method

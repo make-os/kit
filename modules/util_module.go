@@ -23,10 +23,16 @@ type UtilModule struct {
 }
 
 // NewUtilModule creates an instance of UtilModule
-func NewUtilModule(vm *otto.Otto) *UtilModule {
-	return &UtilModule{vm: vm}
+func NewUtilModule() *UtilModule {
+	return &UtilModule{}
 }
 
+// ConsoleOnlyMode indicates that this module can be used on console-only mode
+func (m *UtilModule) ConsoleOnlyMode() bool {
+	return true
+}
+
+// globals are functions exposed in the VM's global namespace
 func (m *UtilModule) globals() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
@@ -67,8 +73,8 @@ func (m *UtilModule) globals() []*modules.ModuleFunc {
 	}
 }
 
-// funcs exposed by the module
-func (m *UtilModule) funcs() []*modules.ModuleFunc {
+// methods are functions exposed in the special namespace of this module.
+func (m *UtilModule) methods() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
 			Name:        "prettyPrint",
@@ -108,16 +114,17 @@ func (m *UtilModule) funcs() []*modules.ModuleFunc {
 	}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *UtilModule) Configure() []prompt.Suggest {
+func (m *UtilModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+	m.vm = vm
 	var suggestions []prompt.Suggest
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
 	util.VMSet(m.vm, constants.NamespaceUtil, obj)
 
-	for _, f := range m.funcs() {
+	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceUtil, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,

@@ -97,7 +97,7 @@ func readTendermintConfig(tmcfg *config.Config, dataDir string) error {
 	return nil
 }
 
-// Configure sets up the application command structure, tendermint
+// ConfigureVM sets up the application command structure, tendermint
 // and mosdef configuration. This is where all configuration and
 // settings are prepared
 func Configure(cfg *AppConfig, tmcfg *config.Config, itr *util.Interrupt) {

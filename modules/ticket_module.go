@@ -19,7 +19,6 @@ import (
 
 // TicketModule provides access to various utility functions
 type TicketModule struct {
-	vm        *otto.Otto
 	service   services.Service
 	logic     core.Logic
 	ticketmgr tickettypes.TicketManager
@@ -27,13 +26,8 @@ type TicketModule struct {
 }
 
 // NewTicketModule creates an instance of TicketModule
-func NewTicketModule(
-	vm *otto.Otto,
-	service services.Service,
-	logic core.Logic,
-	ticketmgr tickettypes.TicketManager) *TicketModule {
+func NewTicketModule(service services.Service, logic core.Logic, ticketmgr tickettypes.TicketManager) *TicketModule {
 	return &TicketModule{
-		vm:        vm,
 		service:   service,
 		ticketmgr: ticketmgr,
 		logic:     logic,
@@ -41,12 +35,18 @@ func NewTicketModule(
 	}
 }
 
+// globals are functions exposed in the VM's global namespace
 func (m *TicketModule) globals() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{}
 }
 
-// funcs exposed by the module
-func (m *TicketModule) funcs() []*modules.ModuleFunc {
+// ConsoleOnlyMode indicates that this module can be used on console-only mode
+func (m *TicketModule) ConsoleOnlyMode() bool {
+	return false
+}
+
+// methods are functions exposed in the special namespace of this module.
+func (m *TicketModule) methods() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
 			Name:        "buy",
@@ -86,7 +86,7 @@ func (m *TicketModule) funcs() []*modules.ModuleFunc {
 	}
 }
 
-// hostFuncs are `host` funcs exposed by the module
+// hostFuncs are `host` methods exposed by the module
 func (m *TicketModule) hostFuncs() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
@@ -102,17 +102,17 @@ func (m *TicketModule) hostFuncs() []*modules.ModuleFunc {
 	}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *TicketModule) Configure() []prompt.Suggest {
+func (m *TicketModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	var suggestions []prompt.Suggest
 
 	// Set the namespaces
 	ticketObj := map[string]interface{}{"host": m.hostObj}
-	util.VMSet(m.vm, constants.NamespaceTicket, ticketObj)
+	util.VMSet(vm, constants.NamespaceTicket, ticketObj)
 	hostNS := fmt.Sprintf("%s.%s", constants.NamespaceTicket, constants.NamespaceHost)
 
-	for _, f := range m.funcs() {
+	for _, f := range m.methods() {
 		ticketObj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceTicket, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
@@ -128,7 +128,7 @@ func (m *TicketModule) Configure() []prompt.Suggest {
 
 	// Register global functions
 	for _, f := range m.globals() {
-		_ = m.vm.Set(f.Name, f.Value)
+		_ = vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}

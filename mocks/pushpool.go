@@ -610,7 +610,7 @@ func (m *MockPushNote) IsFromRemotePeer() bool {
 }
 
 // IsFromRemotePeer indicates an expected call of IsFromRemotePeer
-func (mr *MockPushNoteMockRecorder) IsFromPeer() *gomock.Call {
+func (mr *MockPushNoteMockRecorder) IsFromRemotePeer() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsFromRemotePeer", reflect.TypeOf((*MockPushNote)(nil).IsFromRemotePeer))
 }

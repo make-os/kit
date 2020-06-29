@@ -274,9 +274,10 @@ func (n *Node) startConsoleOnly() error {
 // - Initializes JS virtual machine context
 func (n *Node) configureInterfaces() {
 
-	// Create extension manager
 	vm := otto.New()
-	extMgr := extensions.NewManager(n.cfg, vm)
+
+	// Create extension manager
+	extMgr := extensions.NewManager(n.cfg)
 
 	// Create module hub
 	n.modules = modules.New(
@@ -300,7 +301,7 @@ func (n *Node) configureInterfaces() {
 	// Set the js module to be the main module of the extension manager
 	extMgr.SetMainModule(n.modules)
 
-	// Configure the js module if we are not in console-only mode
+	// ConfigureVM the js module if we are not in console-only mode
 	if !n.ConsoleOn() {
 		n.modules.ConfigureVM(vm)
 	}

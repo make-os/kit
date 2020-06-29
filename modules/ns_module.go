@@ -16,7 +16,6 @@ import (
 
 // NamespaceModule provides namespace management functionalities
 type NamespaceModule struct {
-	vm      *otto.Otto
 	logic   core.Logic
 	service services.Service
 	repoMgr core.RemoteServer
@@ -24,15 +23,19 @@ type NamespaceModule struct {
 
 // NewNSModule creates an instance of NamespaceModule
 func NewNSModule(
-	vm *otto.Otto,
 	service services.Service,
 	repoMgr core.RemoteServer,
 	logic core.Logic) *NamespaceModule {
-	return &NamespaceModule{vm: vm, service: service, logic: logic, repoMgr: repoMgr}
+	return &NamespaceModule{service: service, logic: logic, repoMgr: repoMgr}
 }
 
-// funcs are functions accessible using the `ns` namespace
-func (m *NamespaceModule) funcs() []*modules.ModuleFunc {
+// ConsoleOnlyMode indicates that this module can be used on console-only mode
+func (m *NamespaceModule) ConsoleOnlyMode() bool {
+	return false
+}
+
+// methods are functions exposed in the special namespace of this module.
+func (m *NamespaceModule) methods() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
 			Name:        "register",
@@ -57,20 +60,21 @@ func (m *NamespaceModule) funcs() []*modules.ModuleFunc {
 	}
 }
 
+// globals are functions exposed in the VM's global namespace
 func (m *NamespaceModule) globals() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *NamespaceModule) Configure() []prompt.Suggest {
+func (m *NamespaceModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	var suggestions []prompt.Suggest
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
-	util.VMSet(m.vm, constants.NamespaceNS, obj)
+	util.VMSet(vm, constants.NamespaceNS, obj)
 
-	for _, f := range m.funcs() {
+	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceNS, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
@@ -79,7 +83,7 @@ func (m *NamespaceModule) Configure() []prompt.Suggest {
 
 	// Register global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
+		vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}

@@ -22,7 +22,6 @@ import (
 type UserModule struct {
 	cfg     *config.AppConfig
 	acctMgr *keystore.Keystore
-	vm      *otto.Otto
 	service services.Service
 	logic   core.Logic
 }
@@ -30,20 +29,24 @@ type UserModule struct {
 // NewUserModule creates an instance of UserModule
 func NewUserModule(
 	cfg *config.AppConfig,
-	vm *otto.Otto,
 	acctmgr *keystore.Keystore,
 	service services.Service,
 	logic core.Logic) *UserModule {
 	return &UserModule{
 		cfg:     cfg,
 		acctMgr: acctmgr,
-		vm:      vm,
 		service: service,
 		logic:   logic,
 	}
 }
 
-func (m *UserModule) namespacedFuncs() []*modules.ModuleFunc {
+// ConsoleOnlyMode indicates that this module can be used on console-only mode
+func (m *UserModule) ConsoleOnlyMode() bool {
+	return false
+}
+
+// methods are functions exposed in the special namespace of this module.
+func (m *UserModule) methods() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
 			Name:        "listAccounts",
@@ -93,6 +96,7 @@ func (m *UserModule) namespacedFuncs() []*modules.ModuleFunc {
 	}
 }
 
+// globals are functions exposed in the VM's global namespace
 func (m *UserModule) globals() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
@@ -103,17 +107,17 @@ func (m *UserModule) globals() []*modules.ModuleFunc {
 	}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *UserModule) Configure() []prompt.Suggest {
+func (m *UserModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	fMap := map[string]interface{}{}
 	var suggestions []prompt.Suggest
 
 	// Set the namespace object
-	util.VMSet(m.vm, constants.NamespaceUser, fMap)
+	util.VMSet(vm, constants.NamespaceUser, fMap)
 
-	// add namespaced functions
-	for _, f := range m.namespacedFuncs() {
+	// add methods functions
+	for _, f := range m.methods() {
 		fMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceUser, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
@@ -122,7 +126,7 @@ func (m *UserModule) Configure() []prompt.Suggest {
 
 	// Register global functions
 	for _, f := range m.globals() {
-		_ = m.vm.Set(f.Name, f.Value)
+		_ = vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}

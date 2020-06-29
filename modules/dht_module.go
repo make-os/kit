@@ -21,20 +21,24 @@ import (
 // DHTModule provides access to the DHT service
 type DHTModule struct {
 	cfg *config.AppConfig
-	vm  *otto.Otto
 	dht types.DHT
 }
 
 // NewDHTModule creates an instance of DHTModule
-func NewDHTModule(cfg *config.AppConfig, vm *otto.Otto, dht types.DHT) *DHTModule {
+func NewDHTModule(cfg *config.AppConfig, dht types.DHT) *DHTModule {
 	return &DHTModule{
 		cfg: cfg,
-		vm:  vm,
 		dht: dht,
 	}
 }
 
-func (m *DHTModule) namespacedFuncs() []*modules.ModuleFunc {
+// ConsoleOnlyMode indicates that this module can be used on console-only mode
+func (m *DHTModule) ConsoleOnlyMode() bool {
+	return false
+}
+
+// methods are functions exposed in the special namespace of this module.
+func (m *DHTModule) methods() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
 			Name:        "store",
@@ -69,21 +73,22 @@ func (m *DHTModule) namespacedFuncs() []*modules.ModuleFunc {
 	}
 }
 
+// globals are functions exposed in the VM's global namespace
 func (m *DHTModule) globals() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *DHTModule) Configure() []prompt.Suggest {
+func (m *DHTModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	fMap := map[string]interface{}{}
 	var suggestions []prompt.Suggest
 
 	// Set the namespace object
-	util.VMSet(m.vm, constants.NamespaceDHT, fMap)
+	util.VMSet(vm, constants.NamespaceDHT, fMap)
 
-	// add namespaced functions
-	for _, f := range m.namespacedFuncs() {
+	// add methods functions
+	for _, f := range m.methods() {
 		fMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceDHT, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
@@ -92,7 +97,7 @@ func (m *DHTModule) Configure() []prompt.Suggest {
 
 	// Register global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
+		vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}

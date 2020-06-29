@@ -20,26 +20,26 @@ import (
 // PushKeyModule manages and provides access to push keys.
 type PushKeyModule struct {
 	cfg     *config.AppConfig
-	vm      *otto.Otto
 	service services.Service
 	logic   core.Logic
 }
 
 // NewPushKeyModule creates an instance of PushKeyModule
-func NewPushKeyModule(
-	cfg *config.AppConfig,
-	vm *otto.Otto,
-	service services.Service,
-	logic core.Logic) *PushKeyModule {
+func NewPushKeyModule(cfg *config.AppConfig, service services.Service, logic core.Logic) *PushKeyModule {
 	return &PushKeyModule{
 		cfg:     cfg,
-		vm:      vm,
 		service: service,
 		logic:   logic,
 	}
 }
 
-func (m *PushKeyModule) namespacedFuncs() []*modules.ModuleFunc {
+// ConsoleOnlyMode indicates that this module can be used on console-only mode
+func (m *PushKeyModule) ConsoleOnlyMode() bool {
+	return false
+}
+
+// methods are functions exposed in the special namespace of this module.
+func (m *PushKeyModule) methods() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
 			Name:        "register",
@@ -74,21 +74,22 @@ func (m *PushKeyModule) namespacedFuncs() []*modules.ModuleFunc {
 	}
 }
 
+// globals are functions exposed in the VM's global namespace
 func (m *PushKeyModule) globals() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *PushKeyModule) Configure() []prompt.Suggest {
+func (m *PushKeyModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	fMap := map[string]interface{}{}
 	var suggestions []prompt.Suggest
 
 	// Set the namespace object
-	util.VMSet(m.vm, constants.NamespacePushKey, fMap)
+	util.VMSet(vm, constants.NamespacePushKey, fMap)
 
-	// add namespaced functions
-	for _, f := range m.namespacedFuncs() {
+	// add methods functions
+	for _, f := range m.methods() {
 		fMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespacePushKey, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
@@ -97,7 +98,7 @@ func (m *PushKeyModule) Configure() []prompt.Suggest {
 
 	// Register global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
+		vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}

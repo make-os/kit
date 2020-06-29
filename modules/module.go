@@ -2,6 +2,7 @@ package modules
 
 import (
 	"github.com/c-bata/go-prompt"
+	"github.com/fatih/structs"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/dht/server/types"
@@ -15,24 +16,13 @@ import (
 	"gitlab.com/makeos/mosdef/types/modules"
 )
 
-// Module consists of submodules optimized for accessing through Javascript
-// environment and suitable for reuse in JSON-RPC and REST APIs.
+// Module is a hub for other modules.
 type Module struct {
-	cfg            *config.AppConfig
-	service        services.Service
-	logic          core.Logic
-	mempoolReactor *mempool.Reactor
-	acctmgr        *keystore.Keystore
-	ticketmgr      types2.TicketManager
-	dht            types.DHT
-	extMgr         modules.ExtManager
-	rpcServer      *rpc.Server
-	repoMgr        core.RemoteServer
-	Modules        *modules.Modules
+	cfg     *config.AppConfig
+	Modules *modules.Modules
 }
 
-// new creates an instance of Module which aggregates and
-// provides functionality of configuring supported modules
+// New creates an instance of Module
 func New(
 	cfg *config.AppConfig,
 	acctmgr *keystore.Keystore,
@@ -45,21 +35,25 @@ func New(
 	rpcServer *rpc.Server,
 	repoMgr core.RemoteServer) *Module {
 
-	agg := &Module{
-		cfg:            cfg,
-		acctmgr:        acctmgr,
-		service:        service,
-		logic:          logic,
-		mempoolReactor: mempoolReactor,
-		ticketmgr:      ticketmgr,
-		dht:            dht,
-		extMgr:         extMgr,
-		rpcServer:      rpcServer,
-		repoMgr:        repoMgr,
-		Modules:        &modules.Modules{},
+	m := &Module{
+		cfg: cfg,
+		Modules: &modules.Modules{
+			Tx:      NewTxModule(service, logic),
+			Chain:   NewChainModule(service, logic),
+			Account: NewUserModule(cfg, acctmgr, service, logic),
+			PushKey: NewPushKeyModule(cfg, service, logic),
+			Ticket:  NewTicketModule(service, logic, ticketmgr),
+			Repo:    NewRepoModule(service, repoMgr, logic),
+			NS:      NewNSModule(service, repoMgr, logic),
+			DHT:     NewDHTModule(cfg, dht),
+			ExtMgr:  extMgr,
+			Util:    NewUtilModule(),
+			RPC:     NewRPCModule(cfg, rpcServer),
+			Pool:    NewPoolModule(mempoolReactor, repoMgr.GetPushPool()),
+		},
 	}
 
-	return agg
+	return m
 }
 
 // GetModules returns all sub-modules
@@ -67,47 +61,21 @@ func (m *Module) GetModules() *modules.Modules {
 	return m.Modules
 }
 
-func (m *Module) registerModules(vm *otto.Otto) {
-	m.Modules.Tx = NewTxModule(vm, m.service, m.logic)
-	m.Modules.Chain = NewChainModule(vm, m.service, m.logic)
-	m.Modules.Account = NewUserModule(m.cfg, vm, m.acctmgr, m.service, m.logic)
-	m.Modules.PushKey = NewPushKeyModule(m.cfg, vm, m.service, m.logic)
-	m.Modules.Ticket = NewTicketModule(vm, m.service, m.logic, m.ticketmgr)
-	m.Modules.Repo = NewRepoModule(vm, m.service, m.repoMgr, m.logic)
-	m.Modules.NS = NewNSModule(vm, m.service, m.repoMgr, m.logic)
-	m.Modules.DHT = NewDHTModule(m.cfg, vm, m.dht)
-	m.Modules.ExtMgr = m.extMgr
-	m.Modules.Util = NewUtilModule(vm)
-	m.Modules.RPC = NewRPCModule(m.cfg, vm, m.rpcServer)
-
-	if !m.cfg.ConsoleOnly() {
-		m.Modules.Pool = NewPoolModule(vm, m.mempoolReactor, m.repoMgr.GetPushPool())
-	}
-}
-
-// ConfigureVM initialized the module and all sub-modules
+// ConfigureVM instructs VM-accessible modules accessible to configure the VM
 func (m *Module) ConfigureVM(vm *otto.Otto) (sugs []prompt.Suggest) {
 
-	m.registerModules(vm)
+	fields := structs.Fields(m.Modules)
+	for _, f := range fields {
+		mod := f.Value().(modules.Module)
+		if !m.cfg.ConsoleOnly() {
+			sugs = append(sugs, mod.ConfigureVM(vm)...)
+			continue
+		}
 
-	if m.cfg.ConsoleOnly() {
-		goto console_only
+		if mod.ConsoleOnlyMode() {
+			sugs = append(sugs, mod.ConfigureVM(vm)...)
+		}
 	}
 
-	sugs = append(sugs, m.Modules.Tx.Configure()...)
-	sugs = append(sugs, m.Modules.Chain.Configure()...)
-	sugs = append(sugs, m.Modules.Pool.Configure()...)
-	sugs = append(sugs, m.Modules.Account.Configure()...)
-	sugs = append(sugs, m.Modules.PushKey.Configure()...)
-	sugs = append(sugs, m.Modules.Ticket.Configure()...)
-	sugs = append(sugs, m.Modules.Repo.Configure()...)
-	sugs = append(sugs, m.Modules.NS.Configure()...)
-	sugs = append(sugs, m.Modules.DHT.Configure()...)
-	sugs = append(sugs, m.Modules.ExtMgr.SetVM(vm).Configure()...)
-
-console_only:
-	sugs = append(sugs, m.Modules.Util.Configure()...)
-	sugs = append(sugs, m.Modules.RPC.Configure()...)
-
-	return sugs
+	return
 }

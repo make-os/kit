@@ -22,23 +22,24 @@ import (
 // RPCModule provides RPCClient functionalities
 type RPCModule struct {
 	cfg       *config.AppConfig
-	vm        *otto.Otto
 	rpcServer *rpc.Server
 }
 
 // NewRPCModule creates an instance of RPCModule
-func NewRPCModule(
-	cfg *config.AppConfig,
-	vm *otto.Otto,
-	rpcServer *rpc.Server) *RPCModule {
+func NewRPCModule(cfg *config.AppConfig, rpcServer *rpc.Server) *RPCModule {
 	return &RPCModule{
 		cfg:       cfg,
-		vm:        vm,
 		rpcServer: rpcServer,
 	}
 }
 
-func (m *RPCModule) namespacedFuncs() []*modules.ModuleFunc {
+// ConsoleOnlyMode indicates that this module can be used on console-only mode
+func (m *RPCModule) ConsoleOnlyMode() bool {
+	return true
+}
+
+// methods are functions exposed in the special namespace of this module.
+func (m *RPCModule) methods() []*modules.ModuleFunc {
 	modFuncs := []*modules.ModuleFunc{
 		{
 			Name:        "isRunning",
@@ -63,21 +64,22 @@ func (m *RPCModule) namespacedFuncs() []*modules.ModuleFunc {
 	return modFuncs
 }
 
+// globals are functions exposed in the VM's global namespace
 func (m *RPCModule) globals() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *RPCModule) Configure() []prompt.Suggest {
+func (m *RPCModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	fMap := map[string]interface{}{}
 	var suggestions []prompt.Suggest
 
 	// Set the namespace object
-	util.VMSet(m.vm, constants.NamespaceRPC, fMap)
+	util.VMSet(vm, constants.NamespaceRPC, fMap)
 
-	// add namespaced functions
-	for _, f := range m.namespacedFuncs() {
+	// add methods functions
+	for _, f := range m.methods() {
 		fMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceRPC, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
@@ -86,7 +88,7 @@ func (m *RPCModule) Configure() []prompt.Suggest {
 
 	// Register global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
+		vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{
 			Text:        f.Name,
 			Description: f.Description,

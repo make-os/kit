@@ -19,18 +19,22 @@ import (
 
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
-	vm      *otto.Otto
 	logic   core.Logic
 	service services.Service
 }
 
 // NewTxModule creates an instance of TxModule
-func NewTxModule(vm *otto.Otto, service services.Service, logic core.Logic) *TxModule {
-	return &TxModule{vm: vm, service: service, logic: logic}
+func NewTxModule(service services.Service, logic core.Logic) *TxModule {
+	return &TxModule{service: service, logic: logic}
 }
 
-// txCoinFuncs are functions accessible using the `tx.coin` namespace
-func (m *TxModule) txCoinFuncs() []*modules.ModuleFunc {
+// ConsoleOnlyMode indicates that this module can be used on console-only mode
+func (m *TxModule) ConsoleOnlyMode() bool {
+	return false
+}
+
+// coinMethods are functions accessible using the `tx.coin` namespace
+func (m *TxModule) coinMethods() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
 			Name:        "send",
@@ -40,8 +44,8 @@ func (m *TxModule) txCoinFuncs() []*modules.ModuleFunc {
 	}
 }
 
-// funcs are functions accessible using the `tx` namespace
-func (m *TxModule) funcs() []*modules.ModuleFunc {
+// methods are functions exposed in the special namespace of this module.
+func (m *TxModule) methods() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
 			Name:        "get",
@@ -56,31 +60,32 @@ func (m *TxModule) funcs() []*modules.ModuleFunc {
 	}
 }
 
+// globals are functions exposed in the VM's global namespace
 func (m *TxModule) globals() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *TxModule) Configure() []prompt.Suggest {
+func (m *TxModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	var suggestions []prompt.Suggest
 
 	// Register the main tx namespace
 	txMap := map[string]interface{}{}
-	util.VMSet(m.vm, constants.NamespaceTx, txMap)
+	util.VMSet(vm, constants.NamespaceTx, txMap)
 
-	// Register 'coin' namespaced functions
+	// Register 'coin' methods functions
 	coinMap := map[string]interface{}{}
 	txMap[constants.NamespaceCoin] = coinMap
-	for _, f := range m.txCoinFuncs() {
+	for _, f := range m.coinMethods() {
 		coinMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s.%s", constants.NamespaceTx, constants.NamespaceCoin, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
 
-	// Register other funcs to `tx` namespace
-	for _, f := range m.funcs() {
+	// Register other methods to `tx` namespace
+	for _, f := range m.methods() {
 		txMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceTx, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
@@ -89,7 +94,7 @@ func (m *TxModule) Configure() []prompt.Suggest {
 
 	// Register global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
+		vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}

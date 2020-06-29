@@ -19,23 +19,23 @@ import (
 
 // RepoModule provides repository functionalities to JS environment
 type RepoModule struct {
-	vm      *otto.Otto
 	logic   core.Logic
 	service services.Service
 	repoMgr core.RemoteServer
 }
 
 // NewRepoModule creates an instance of RepoModule
-func NewRepoModule(
-	vm *otto.Otto,
-	service services.Service,
-	repoMgr core.RemoteServer,
-	logic core.Logic) *RepoModule {
-	return &RepoModule{vm: vm, service: service, logic: logic, repoMgr: repoMgr}
+func NewRepoModule(service services.Service, repoMgr core.RemoteServer, logic core.Logic) *RepoModule {
+	return &RepoModule{service: service, logic: logic, repoMgr: repoMgr}
 }
 
-// funcs are functions accessible using the `repo` namespace
-func (m *RepoModule) funcs() []*modules.ModuleFunc {
+// ConsoleOnlyMode indicates that this module can be used on console-only mode
+func (m *RepoModule) ConsoleOnlyMode() bool {
+	return false
+}
+
+// methods are functions exposed in the special namespace of this module.
+func (m *RepoModule) methods() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{
 		{
 			Name:        "create",
@@ -85,20 +85,21 @@ func (m *RepoModule) funcs() []*modules.ModuleFunc {
 	}
 }
 
+// globals are functions exposed in the VM's global namespace
 func (m *RepoModule) globals() []*modules.ModuleFunc {
 	return []*modules.ModuleFunc{}
 }
 
-// Configure configures the JS context and return
+// ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *RepoModule) Configure() []prompt.Suggest {
+func (m *RepoModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	var suggestions []prompt.Suggest
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
-	util.VMSet(m.vm, constants.NamespaceRepo, obj)
+	util.VMSet(vm, constants.NamespaceRepo, obj)
 
-	for _, f := range m.funcs() {
+	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceRepo, f.Name)
 		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
@@ -107,7 +108,7 @@ func (m *RepoModule) Configure() []prompt.Suggest {
 
 	// Register global functions
 	for _, f := range m.globals() {
-		m.vm.Set(f.Name, f.Value)
+		vm.Set(f.Name, f.Value)
 		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}

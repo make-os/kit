@@ -17,7 +17,10 @@ type ModuleFunc struct {
 // accessing modules that provide uniform functionalities in JS environment,
 // JSON-RPC APIs and REST APIs
 type ModuleHub interface {
+	// ConfigureVM instructs VM-accessible modules accessible to configure the VM
 	ConfigureVM(vm *otto.Otto) []prompt.Suggest
+
+	// GetModules returns all modules
 	GetModules() *Modules
 }
 
@@ -37,8 +40,13 @@ type Modules struct {
 	RPC     RPCModule
 }
 
+type Module interface {
+	ConfigureVM(vm *otto.Otto) []prompt.Suggest
+	ConsoleOnlyMode() bool
+}
+
 type ChainModule interface {
-	Configure() []prompt.Suggest
+	Module
 	GetBlock(height string) util.Map
 	GetCurrentHeight() util.Map
 	GetBlockInfo(height string) util.Map
@@ -46,21 +54,21 @@ type ChainModule interface {
 }
 
 type TxModule interface {
-	Configure() []prompt.Suggest
+	Module
 	SendCoin(params map[string]interface{}, options ...interface{}) util.Map
 	Get(hash string) util.Map
 	SendPayload(params map[string]interface{}) util.Map
 }
 
 type PoolModule interface {
-	Configure() []prompt.Suggest
+	Module
 	GetSize() util.Map
 	GetTop(n int) []util.Map
 	GetPushPoolSize() int
 }
 
 type AccountModule interface {
-	Configure() []prompt.Suggest
+	Module
 	ListLocalAccounts() []string
 	GetKey(address string, passphrase ...string) string
 	GetPublicKey(address string, passphrase ...string) string
@@ -73,7 +81,7 @@ type AccountModule interface {
 }
 
 type PushKeyModule interface {
-	Configure() []prompt.Suggest
+	Module
 	Register(params map[string]interface{}, options ...interface{}) util.Map
 	Get(id string, blockHeight ...uint64) util.Map
 	GetByAddress(address string) []string
@@ -81,13 +89,13 @@ type PushKeyModule interface {
 }
 
 type UtilModule interface {
-	Configure() []prompt.Suggest
+	Module
 	TreasuryAddress() string
 	GenKey(seed ...int64) interface{}
 }
 
 type TicketModule interface {
-	Configure() []prompt.Suggest
+	Module
 	Buy(params map[string]interface{}, options ...interface{}) interface{}
 	HostBuy(params map[string]interface{}, options ...interface{}) interface{}
 	ListValidatorTicketsOfProposer(proposerPubKey string, queryOpts ...map[string]interface{}) []util.Map
@@ -100,7 +108,7 @@ type TicketModule interface {
 }
 
 type RepoModule interface {
-	Configure() []prompt.Suggest
+	Module
 	Create(params map[string]interface{}, options ...interface{}) interface{}
 	UpsertOwner(params map[string]interface{}, options ...interface{}) util.Map
 	VoteOnProposal(params map[string]interface{}, options ...interface{}) util.Map
@@ -110,7 +118,7 @@ type RepoModule interface {
 	DepositFee(params map[string]interface{}, options ...interface{}) util.Map
 }
 type NamespaceModule interface {
-	Configure() []prompt.Suggest
+	Module
 	Lookup(name string, height ...uint64) interface{}
 	GetTarget(path string, height ...uint64) string
 	Register(params map[string]interface{}, options ...interface{}) interface{}
@@ -118,7 +126,7 @@ type NamespaceModule interface {
 }
 
 type DHTModule interface {
-	Configure() []prompt.Suggest
+	Module
 	Store(key string, val string)
 	Lookup(key string) interface{}
 	Announce(key string)
@@ -128,8 +136,7 @@ type DHTModule interface {
 }
 
 type ExtManager interface {
-	Configure() []prompt.Suggest
-	SetVM(vm *otto.Otto) ExtManager
+	Module
 	Exist(name string) bool
 	Installed() (extensions []string)
 	Load(name string, args ...map[string]string) map[string]interface{}
@@ -140,7 +147,7 @@ type ExtManager interface {
 }
 
 type RPCModule interface {
-	Configure() []prompt.Suggest
+	Module
 	IsRunning() bool
 	Local() util.Map
 	Connect(host string, port int, https bool, user, pass string) util.Map

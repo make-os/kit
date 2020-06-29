@@ -46,6 +46,20 @@ func (mr *MockObjectFetcherMockRecorder) Fetch(note, cb interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockObjectFetcher)(nil).Fetch), note, cb)
 }
 
+// QueueSize mocks base method
+func (m *MockObjectFetcher) QueueSize() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "QueueSize")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// QueueSize indicates an expected call of QueueSize
+func (mr *MockObjectFetcherMockRecorder) QueueSize() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "QueueSize", reflect.TypeOf((*MockObjectFetcher)(nil).QueueSize))
+}
+
 // OnPackReceived mocks base method
 func (m *MockObjectFetcher) OnPackReceived(cb func(string, io.ReadSeeker)) {
 	m.ctrl.T.Helper()

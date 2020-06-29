@@ -190,7 +190,7 @@ func getInfoRefs(s *RequestContext) error {
 		return err
 	}
 
-	// Configure response headers. Disable cache and set code to 200
+	// ConfigureVM response headers. Disable cache and set code to 200
 	hdrNoCache(s.W)
 	s.W.Header().Set("Content-Type", fmt.Sprintf("application/x-git-%s-advertisement", s.ServiceName))
 	s.W.WriteHeader(http.StatusOK)

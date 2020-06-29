@@ -87,7 +87,7 @@ func New(historyPath string, cfg *config.AppConfig, log logger.Logger) *Console 
 	var history []string
 	data, _ := ioutil.ReadFile(historyPath)
 	if len(data) > 0 {
-		util.ToObject(data, &history)
+		_ = util.ToObject(data, &history)
 	}
 
 	c.history = append(c.history, history...)
