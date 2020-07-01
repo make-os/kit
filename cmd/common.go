@@ -9,11 +9,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
-	restclient "gitlab.com/makeos/mosdef/api/rest/client"
-	"gitlab.com/makeos/mosdef/api/rpc/client"
+	restclient "gitlab.com/makeos/mosdef/remote/api/client"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	rr "gitlab.com/makeos/mosdef/remote/repo"
 	"gitlab.com/makeos/mosdef/remote/types"
+	"gitlab.com/makeos/mosdef/rpc/api/client"
 	"gopkg.in/src-d/go-git.v4/plumbing/transport"
 )
 

@@ -6,14 +6,14 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
-	"gitlab.com/makeos/mosdef/api"
-	restclient "gitlab.com/makeos/mosdef/api/rest/client"
-	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/config"
+	restclient "gitlab.com/makeos/mosdef/remote/api/client"
 	"gitlab.com/makeos/mosdef/remote/cmd"
 	"gitlab.com/makeos/mosdef/remote/server"
 	"gitlab.com/makeos/mosdef/remote/types"
+	"gitlab.com/makeos/mosdef/rpc/api/client"
 	"gitlab.com/makeos/mosdef/util"
+	"gitlab.com/makeos/mosdef/util/clients"
 	"gopkg.in/src-d/go-git.v4/plumbing"
 )
 
@@ -52,7 +52,7 @@ type SignTagArgs struct {
 	PushKeyUnlocker cmd.PushKeyUnlocker
 
 	// GetNextNonce is a function for getting the next nonce of the owner account of a pusher key
-	GetNextNonce api.NextNonceGetter
+	GetNextNonce clients.NextNonceGetter
 
 	// RemoteURLTokenUpdater is a function for setting push tokens to git remote URLs
 	RemoteURLTokenUpdater server.RemoteURLsPushTokenUpdater

@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.com/makeos/mosdef/api/rpc/client"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
+	"gitlab.com/makeos/mosdef/rpc/api/client"
 	"gitlab.com/makeos/mosdef/types/constants"
 
 	"gitlab.com/makeos/mosdef/config"

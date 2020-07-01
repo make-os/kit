@@ -7,12 +7,12 @@ import (
 	"net/url"
 	"os"
 
-	rpcApi "gitlab.com/makeos/mosdef/api/rpc"
 	server2 "gitlab.com/makeos/mosdef/dht/server"
 	"gitlab.com/makeos/mosdef/dht/server/types"
 	types2 "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/remote/server"
 	"gitlab.com/makeos/mosdef/rpc"
+	rpcApi "gitlab.com/makeos/mosdef/rpc/api"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
 

@@ -13,31 +13,31 @@ import (
 	reflect "reflect"
 )
 
-// MockModuleHub is a mock of ModulesHub interface
-type MockModuleHub struct {
+// MockModulesHub is a mock of ModulesHub interface
+type MockModulesHub struct {
 	ctrl     *gomock.Controller
-	recorder *MockModuleHubMockRecorder
+	recorder *MockModulesHubMockRecorder
 }
 
-// MockModuleHubMockRecorder is the mock recorder for MockModuleHub
-type MockModuleHubMockRecorder struct {
-	mock *MockModuleHub
+// MockModulesHubMockRecorder is the mock recorder for MockModulesHub
+type MockModulesHubMockRecorder struct {
+	mock *MockModulesHub
 }
 
-// NewMockModuleHub creates a new mock instance
-func NewMockModuleHub(ctrl *gomock.Controller) *MockModuleHub {
-	mock := &MockModuleHub{ctrl: ctrl}
-	mock.recorder = &MockModuleHubMockRecorder{mock}
+// NewMockModulesHub creates a new mock instance
+func NewMockModulesHub(ctrl *gomock.Controller) *MockModulesHub {
+	mock := &MockModulesHub{ctrl: ctrl}
+	mock.recorder = &MockModulesHubMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use
-func (m *MockModuleHub) EXPECT() *MockModuleHubMockRecorder {
+func (m *MockModulesHub) EXPECT() *MockModulesHubMockRecorder {
 	return m.recorder
 }
 
 // ConfigureVM mocks base method
-func (m *MockModuleHub) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockModulesHub) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
 	ret0, _ := ret[0].([]prompt.Suggest)
@@ -45,13 +45,13 @@ func (m *MockModuleHub) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 }
 
 // ConfigureVM indicates an expected call of ConfigureVM
-func (mr *MockModuleHubMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
+func (mr *MockModulesHubMockRecorder) ConfigureVM(vm interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockModuleHub)(nil).ConfigureVM), vm)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigureVM", reflect.TypeOf((*MockModulesHub)(nil).ConfigureVM), vm)
 }
 
 // GetModules mocks base method
-func (m *MockModuleHub) GetModules() *types.Modules {
+func (m *MockModulesHub) GetModules() *types.Modules {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetModules")
 	ret0, _ := ret[0].(*types.Modules)
@@ -59,13 +59,13 @@ func (m *MockModuleHub) GetModules() *types.Modules {
 }
 
 // GetModules indicates an expected call of GetModules
-func (mr *MockModuleHubMockRecorder) GetModules() *gomock.Call {
+func (mr *MockModulesHubMockRecorder) GetModules() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetModules", reflect.TypeOf((*MockModuleHub)(nil).GetModules))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetModules", reflect.TypeOf((*MockModulesHub)(nil).GetModules))
 }
 
 // CreateNewModules mocks base method
-func (m *MockModuleHub) CreateNewModules() *types.Modules {
+func (m *MockModulesHub) CreateNewModules() *types.Modules {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateNewModules")
 	ret0, _ := ret[0].(*types.Modules)
@@ -73,9 +73,9 @@ func (m *MockModuleHub) CreateNewModules() *types.Modules {
 }
 
 // CreateNewModules indicates an expected call of CreateNewModules
-func (mr *MockModuleHubMockRecorder) CreateNewModules() *gomock.Call {
+func (mr *MockModulesHubMockRecorder) CreateNewModules() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNewModules", reflect.TypeOf((*MockModuleHub)(nil).CreateNewModules))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNewModules", reflect.TypeOf((*MockModulesHub)(nil).CreateNewModules))
 }
 
 // MockModule is a mock of Module interface
@@ -136,7 +136,7 @@ func (m *MockModule) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockModuleMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockModule)(nil).SetContext), arg0)
 }
@@ -199,7 +199,7 @@ func (m *MockChainModule) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockChainModuleMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockChainModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockChainModule)(nil).SetContext), arg0)
 }
@@ -318,7 +318,7 @@ func (m *MockTxModule) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockTxModuleMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockTxModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockTxModule)(nil).SetContext), arg0)
 }
@@ -428,7 +428,7 @@ func (m *MockPoolModule) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockPoolModuleMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockPoolModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockPoolModule)(nil).SetContext), arg0)
 }
@@ -533,7 +533,7 @@ func (m *MockAccountModule) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockAccountModuleMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockAccountModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockAccountModule)(nil).SetContext), arg0)
 }
@@ -761,7 +761,7 @@ func (m *MockPushKeyModule) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockPushKeyModuleMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockPushKeyModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockPushKeyModule)(nil).SetContext), arg0)
 }
@@ -895,7 +895,7 @@ func (m *MockUtilModule) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockUtilModuleMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockUtilModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockUtilModule)(nil).SetContext), arg0)
 }
@@ -990,7 +990,7 @@ func (m *MockTicketModule) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockTicketModuleMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockTicketModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockTicketModule)(nil).SetContext), arg0)
 }
@@ -1220,7 +1220,7 @@ func (m *MockRepoModule) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockRepoModuleMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockRepoModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockRepoModule)(nil).SetContext), arg0)
 }
@@ -1409,7 +1409,7 @@ func (m *MockNamespaceModule) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockNamespaceModuleMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockNamespaceModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockNamespaceModule)(nil).SetContext), arg0)
 }
@@ -1548,7 +1548,7 @@ func (m *MockDHTModule) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockDHTModuleMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockDHTModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockDHTModule)(nil).SetContext), arg0)
 }
@@ -1691,7 +1691,7 @@ func (m *MockExtManager) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockExtManagerMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockExtManagerMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockExtManager)(nil).SetContext), arg0)
 }
@@ -1860,7 +1860,7 @@ func (m *MockRPCModule) SetContext(arg0 *types.ModulesContext) {
 }
 
 // SetContext indicates an expected call of SetContext
-func (mr *MockRPCModuleMockRecorder) SetCallContextGetter(arg0 interface{}) *gomock.Call {
+func (mr *MockRPCModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockRPCModule)(nil).SetContext), arg0)
 }

@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"gitlab.com/makeos/mosdef/api/rest"
 	types2 "gitlab.com/makeos/mosdef/dht/server/types"
 	types3 "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/types"
 	"gitlab.com/makeos/mosdef/pkgs/cache"
+	"gitlab.com/makeos/mosdef/remote/api"
 	"gitlab.com/makeos/mosdef/remote/fetcher"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/remote/policy"
@@ -253,7 +253,7 @@ func (sv *Server) Start() error {
 }
 
 func (sv *Server) registerAPIHandlers(s *http.ServeMux) {
-	api := rest.NewAPI(sv.modulesAgg, sv.log)
+	api := api.NewAPI(sv.modulesAgg, sv.log)
 	api.RegisterEndpoints(s)
 }
 

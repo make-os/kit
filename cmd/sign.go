@@ -5,11 +5,11 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"gitlab.com/makeos/mosdef/api"
 	"gitlab.com/makeos/mosdef/config"
 	cmd2 "gitlab.com/makeos/mosdef/remote/cmd"
 	"gitlab.com/makeos/mosdef/remote/cmd/signcmd"
 	"gitlab.com/makeos/mosdef/remote/server"
+	"gitlab.com/makeos/mosdef/util/clients"
 )
 
 // signCmd represents the commit command
@@ -60,7 +60,7 @@ var signCommitCmd = &cobra.Command{
 			RPCClient:             client,
 			RemoteClients:         remoteClients,
 			PushKeyUnlocker:       cmd2.UnlockPushKey,
-			GetNextNonce:          api.GetNextNonceOfPushKeyOwner,
+			GetNextNonce:          clients.GetNextNonceOfPushKeyOwner,
 			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
@@ -97,7 +97,7 @@ var signTagCmd = &cobra.Command{
 			RPCClient:             client,
 			RemoteClients:         remoteClients,
 			PushKeyUnlocker:       cmd2.UnlockPushKey,
-			GetNextNonce:          api.GetNextNonceOfPushKeyOwner,
+			GetNextNonce:          clients.GetNextNonceOfPushKeyOwner,
 			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {
 			cfg.G().Log.Fatal(err.Error())
@@ -135,7 +135,7 @@ var signNoteCmd = &cobra.Command{
 			RPCClient:             client,
 			RemoteClients:         remoteClients,
 			PushKeyUnlocker:       cmd2.UnlockPushKey,
-			GetNextNonce:          api.GetNextNonceOfPushKeyOwner,
+			GetNextNonce:          clients.GetNextNonceOfPushKeyOwner,
 			RemoteURLTokenUpdater: server.UpdateRemoteURLsWithPushToken,
 		}); err != nil {
 			log.Fatal(err.Error())
