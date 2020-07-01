@@ -5,19 +5,19 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 var _ = Describe("Account", func() {
 	var ctrl *gomock.Controller
 	var acctApi *AccountAPI
-	var mods *modules.Modules
+	var mods *types.Modules
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mods = &modules.Modules{}
+		mods = &types.Modules{}
 		acctApi = &AccountAPI{mods}
 	})
 
@@ -29,11 +29,11 @@ var _ = Describe("Account", func() {
 		testCases := map[string]*TestCase{
 			"when address is not provided": {
 				params: map[string]interface{}{},
-				err:    &rpc.Err{Code: "60000", Message: "address is required", Data: "address"},
+				err:    &rpc.Err{Code: "60001", Message: "address is required", Data: "address"},
 			},
 			"when address type is not string": {
 				params: map[string]interface{}{"address": 222},
-				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "address"},
+				err:    &rpc.Err{Code: "60001", Message: "wrong value type, want 'string', got string", Data: "address"},
 			},
 			"when nonce is successfully returned": {
 				params: map[string]interface{}{"address": "addr1"},
@@ -63,11 +63,11 @@ var _ = Describe("Account", func() {
 		testCases := map[string]*TestCase{
 			"when address is not provided": {
 				params: map[string]interface{}{},
-				err:    &rpc.Err{Code: "60000", Message: "address is required", Data: "address"},
+				err:    &rpc.Err{Code: "60001", Message: "address is required", Data: "address"},
 			},
 			"when address type is not string": {
 				params: map[string]interface{}{"address": 222},
-				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "address"},
+				err:    &rpc.Err{Code: "60001", Message: "wrong value type, want 'string', got string", Data: "address"},
 			},
 			"when account is successfully returned": {
 				params: map[string]interface{}{"address": "addr1"},

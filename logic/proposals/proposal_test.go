@@ -180,7 +180,7 @@ var _ = Describe("ProposalHandler", func() {
 				proposal.Config.Voter = state.VoterOwner
 				proposal.Creator = key.Addr().String()
 				proposal.Action = txns.TxTypeRepoProposalUpsertOwner
-				proposal.ActionData = map[string][]byte{
+				proposal.ActionData = map[string]util.Bytes{
 					"addresses": util.ToBytes("addr"),
 					"veto":      util.ToBytes(false),
 				}
@@ -229,7 +229,7 @@ var _ = Describe("ProposalHandler", func() {
 						"addr":  "100",
 						"addr2": "50",
 					}
-					proposal.ActionData = map[string][]byte{
+					proposal.ActionData = map[string]util.Bytes{
 						"addresses": util.ToBytes("addr"),
 						"veto":      util.ToBytes(false),
 					}
@@ -268,7 +268,7 @@ var _ = Describe("ProposalHandler", func() {
 						"addr":  "100",
 						"addr2": "50",
 					}
-					proposal.ActionData = map[string][]byte{
+					proposal.ActionData = map[string]util.Bytes{
 						"addresses": util.ToBytes("addr"),
 						"veto":      util.ToBytes(false),
 					}

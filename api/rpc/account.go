@@ -2,19 +2,19 @@ package rpc
 
 import (
 	"github.com/stretchr/objx"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 // AccountAPI provides RPC methods for various account related functionalities.
 type AccountAPI struct {
-	mods *modules.Modules
+	mods *types.Modules
 }
 
 // NewAccountAPI creates an instance of AccountAPI
-func NewAccountAPI(mods *modules.Modules) *AccountAPI {
+func NewAccountAPI(mods *types.Modules) *AccountAPI {
 	return &AccountAPI{mods: mods}
 }
 

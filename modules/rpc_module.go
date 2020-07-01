@@ -6,11 +6,10 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
-
 	"gitlab.com/makeos/mosdef/api/rpc/client"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
+	"gitlab.com/makeos/mosdef/types/constants"
 
 	"gitlab.com/makeos/mosdef/config"
 
@@ -22,15 +21,18 @@ import (
 // RPCModule provides RPCClient functionalities
 type RPCModule struct {
 	cfg       *config.AppConfig
+	ctx       *types.ModulesContext
 	rpcServer *rpc.Server
 }
 
 // NewRPCModule creates an instance of RPCModule
 func NewRPCModule(cfg *config.AppConfig, rpcServer *rpc.Server) *RPCModule {
-	return &RPCModule{
-		cfg:       cfg,
-		rpcServer: rpcServer,
-	}
+	return &RPCModule{cfg: cfg, rpcServer: rpcServer, ctx: types.DefaultModuleContext}
+}
+
+// SetContext sets the function used to retrieve call context
+func (m *RPCModule) SetContext(cg *types.ModulesContext) {
+	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -39,8 +41,8 @@ func (m *RPCModule) ConsoleOnlyMode() bool {
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *RPCModule) methods() []*modules.ModuleFunc {
-	modFuncs := []*modules.ModuleFunc{
+func (m *RPCModule) methods() []*types.ModuleFunc {
+	modFuncs := []*types.ModuleFunc{
 		{
 			Name:        "isRunning",
 			Value:       m.IsRunning,
@@ -54,7 +56,7 @@ func (m *RPCModule) methods() []*modules.ModuleFunc {
 	}
 
 	if !m.cfg.ConsoleOnly() {
-		modFuncs = append(modFuncs, &modules.ModuleFunc{
+		modFuncs = append(modFuncs, &types.ModuleFunc{
 			Name:        "local",
 			Value:       m.Local(),
 			Description: "Call methods of the local RPCClient server",
@@ -65,8 +67,8 @@ func (m *RPCModule) methods() []*modules.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *RPCModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+func (m *RPCModule) globals() []*types.ModuleFunc {
+	return []*types.ModuleFunc{}
 }
 
 // ConfigureVM configures the JS context and return

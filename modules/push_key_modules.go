@@ -5,11 +5,11 @@ import (
 
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
+	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 
@@ -22,15 +22,17 @@ type PushKeyModule struct {
 	cfg     *config.AppConfig
 	service services.Service
 	logic   core.Logic
+	ctx     *modulestypes.ModulesContext
 }
 
 // NewPushKeyModule creates an instance of PushKeyModule
 func NewPushKeyModule(cfg *config.AppConfig, service services.Service, logic core.Logic) *PushKeyModule {
-	return &PushKeyModule{
-		cfg:     cfg,
-		service: service,
-		logic:   logic,
-	}
+	return &PushKeyModule{cfg: cfg, service: service, logic: logic, ctx: modulestypes.DefaultModuleContext}
+}
+
+// SetContext sets the function used to retrieve call context
+func (m *PushKeyModule) SetContext(cg *modulestypes.ModulesContext) {
+	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -39,8 +41,8 @@ func (m *PushKeyModule) ConsoleOnlyMode() bool {
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *PushKeyModule) methods() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *PushKeyModule) methods() []*modulestypes.ModuleFunc {
+	return []*modulestypes.ModuleFunc{
 		{
 			Name:        "register",
 			Value:       m.Register,
@@ -75,8 +77,8 @@ func (m *PushKeyModule) methods() []*modules.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *PushKeyModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+func (m *PushKeyModule) globals() []*modulestypes.ModuleFunc {
+	return []*modulestypes.ModuleFunc{}
 }
 
 // ConfigureVM configures the JS context and return
@@ -133,9 +135,8 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	// Process the transaction
@@ -146,7 +147,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 
 	pk := crypto.MustPubKeyFromBytes(tx.PublicKey.Bytes())
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash":    hash,
 		"address": pk.PushAddr().String(),
 	})
@@ -180,9 +181,8 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 	}
 	tx.Delete = false
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	// Process the transaction
@@ -191,7 +191,7 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -224,9 +224,8 @@ func (m *PushKeyModule) UnRegister(params map[string]interface{}, options ...int
 	tx.AddScopes = nil
 	tx.RemoveScopes = nil
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	// Process the transaction
@@ -235,7 +234,7 @@ func (m *PushKeyModule) UnRegister(params map[string]interface{}, options ...int
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -263,7 +262,7 @@ func (m *PushKeyModule) Get(id string, blockHeight ...uint64) util.Map {
 		panic(util.NewStatusError(404, StatusCodePushKeyNotFound, "", types.ErrPushKeyUnknown.Error()))
 	}
 
-	return EncodeForJS(o)
+	return normalizeUtilMap(m.ctx.Env, o)
 }
 
 // ownedBy fetches push keys owned by the given address
@@ -298,5 +297,5 @@ func (m *PushKeyModule) GetAccountOfOwner(pushKeyID string, blockHeight ...uint6
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound, "pushKeyID", types.ErrAccountUnknown.Error()))
 	}
 
-	return EncodeForJS(acct)
+	return normalizeUtilMap(m.ctx.Env, acct)
 }

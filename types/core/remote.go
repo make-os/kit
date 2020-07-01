@@ -6,11 +6,11 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/dht/server/types"
+	types2 "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/remote/fetcher"
 	pushtypes "gitlab.com/makeos/mosdef/remote/push/types"
 	remotetypes "gitlab.com/makeos/mosdef/remote/types"
-	"gitlab.com/makeos/mosdef/types/modules"
 )
 
 // PushKeyGetter represents a function used for fetching a push key
@@ -65,7 +65,7 @@ type RemoteServer interface {
 	BroadcastNoteAndEndorsement(note pushtypes.PushNote) error
 
 	// RegisterAPIHandlers registers server API handlers
-	RegisterAPIHandlers(agg modules.ModuleHub)
+	RegisterAPIHandlers(agg types2.ModulesHub)
 
 	// AnnounceObject announces a git object to the DHT network
 	AnnounceObject(hash []byte, doneCB func(error))

@@ -5,10 +5,10 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 	"gitlab.com/makeos/mosdef/util/crypto"
@@ -19,6 +19,7 @@ type NamespaceModule struct {
 	logic   core.Logic
 	service services.Service
 	repoMgr core.RemoteServer
+	ctx     *types.ModulesContext
 }
 
 // NewNSModule creates an instance of NamespaceModule
@@ -26,7 +27,12 @@ func NewNSModule(
 	service services.Service,
 	repoMgr core.RemoteServer,
 	logic core.Logic) *NamespaceModule {
-	return &NamespaceModule{service: service, logic: logic, repoMgr: repoMgr}
+	return &NamespaceModule{service: service, logic: logic, repoMgr: repoMgr, ctx: types.DefaultModuleContext}
+}
+
+// SetContext sets the function used to retrieve call context
+func (m *NamespaceModule) SetContext(cg *types.ModulesContext) {
+	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -35,8 +41,8 @@ func (m *NamespaceModule) ConsoleOnlyMode() bool {
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *NamespaceModule) methods() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *NamespaceModule) methods() []*types.ModuleFunc {
+	return []*types.ModuleFunc{
 		{
 			Name:        "register",
 			Value:       m.Register,
@@ -61,8 +67,8 @@ func (m *NamespaceModule) methods() []*modules.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *NamespaceModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+func (m *NamespaceModule) globals() []*types.ModuleFunc {
+	return []*types.ModuleFunc{}
 }
 
 // ConfigureVM configures the JS context and return
@@ -174,9 +180,7 @@ func (m *NamespaceModule) GetTarget(path string, height ...uint64) string {
 //
 // RETURNS object <map>
 // object.hash <string>: The transaction hash
-func (m *NamespaceModule) Register(
-	params map[string]interface{},
-	options ...interface{}) interface{} {
+func (m *NamespaceModule) Register(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = txns.NewBareTxNamespaceAcquire()
@@ -187,9 +191,8 @@ func (m *NamespaceModule) Register(
 	// Hash the name
 	tx.Name = crypto.HashNamespace(tx.Name)
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -197,7 +200,7 @@ func (m *NamespaceModule) Register(
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -218,9 +221,7 @@ func (m *NamespaceModule) Register(
 //
 // RETURNS object <map>
 // object.hash <string>: The transaction hash
-func (m *NamespaceModule) UpdateDomain(
-	params map[string]interface{},
-	options ...interface{}) interface{} {
+func (m *NamespaceModule) UpdateDomain(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = txns.NewBareTxNamespaceDomainUpdate()
@@ -231,9 +232,8 @@ func (m *NamespaceModule) UpdateDomain(
 	// Hash the name
 	tx.Name = crypto.HashNamespace(tx.Name)
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -241,7 +241,7 @@ func (m *NamespaceModule) UpdateDomain(
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }

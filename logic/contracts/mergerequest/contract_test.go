@@ -180,7 +180,7 @@ var _ = Describe("MergeRequestContract", func() {
 			BeforeEach(func() {
 				repo.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				repo.Proposals.Add(mergerequest.MakeMergeRequestProposalID(id), &state.RepoProposal{
-					ActionData: map[string][]byte{
+					ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyBaseBranch:   []byte("base"),
 						constants.ActionDataKeyBaseHash:     []byte("baseHash"),
 						constants.ActionDataKeyTargetBranch: []byte("target"),
@@ -227,7 +227,7 @@ var _ = Describe("MergeRequestContract", func() {
 				repo.AddOwner(sender.Addr().String(), &state.RepoOwner{})
 				repo.Proposals.Add(mergerequest.MakeMergeRequestProposalID(id), &state.RepoProposal{
 					Outcome: state.ProposalOutcomeAccepted,
-					ActionData: map[string][]byte{
+					ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyBaseBranch:   []byte("base"),
 						constants.ActionDataKeyBaseHash:     []byte("baseHash"),
 						constants.ActionDataKeyTargetBranch: []byte("target"),

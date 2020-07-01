@@ -23,8 +23,9 @@ import (
 
 // Timeout is the max duration for connection and read attempt
 const (
-	Timeout       = 15 * time.Second
-	ErrCodeClient = "client_error"
+	Timeout             = 15 * time.Second
+	ErrCodeClient       = "client_error"
+	ErrCodeDecodeFailed = "decode_error"
 )
 
 // Client represents a JSON-RPC client

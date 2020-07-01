@@ -154,7 +154,7 @@ var _ = Describe("Merge", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
-				prop.ActionData = map[string][]byte{
+				prop.ActionData = map[string]util.Bytes{
 					constants.ActionDataKeyBaseBranch: util.ToBytes("release"),
 				}
 				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
@@ -181,7 +181,7 @@ var _ = Describe("Merge", func() {
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
-				prop.ActionData = map[string][]byte{
+				prop.ActionData = map[string]util.Bytes{
 					constants.ActionDataKeyBaseBranch: []byte("master"),
 				}
 				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
@@ -208,7 +208,7 @@ var _ = Describe("Merge", func() {
 				repo.EXPECT().GetName().Return("repo1")
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
-				prop.ActionData = map[string][]byte{
+				prop.ActionData = map[string]util.Bytes{
 					constants.ActionDataKeyBaseBranch: []byte("master"),
 				}
 				prop.Outcome = 3
@@ -237,7 +237,7 @@ var _ = Describe("Merge", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
-				prop.ActionData = map[string][]byte{
+				prop.ActionData = map[string]util.Bytes{
 					constants.ActionDataKeyBaseBranch: []byte("master"),
 				}
 				repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
@@ -266,7 +266,7 @@ var _ = Describe("Merge", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
-				prop.ActionData = map[string][]byte{
+				prop.ActionData = map[string]util.Bytes{
 					constants.ActionDataKeyBaseBranch: []byte("master"),
 					constants.ActionDataKeyTargetHash: []byte("target_xyz"),
 				}
@@ -303,7 +303,7 @@ var _ = Describe("Merge", func() {
 					repoState := state.BareRepository()
 					prop := state.BareRepoProposal()
 					prop.Outcome = state.ProposalOutcomeAccepted
-					prop.ActionData = map[string][]byte{
+					prop.ActionData = map[string]util.Bytes{
 						constants.ActionDataKeyBaseBranch: []byte("master"),
 					}
 					repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
@@ -342,7 +342,7 @@ var _ = Describe("Merge", func() {
 					repoState := state.BareRepository()
 					prop := state.BareRepoProposal()
 					prop.Outcome = state.ProposalOutcomeAccepted
-					prop.ActionData = map[string][]byte{
+					prop.ActionData = map[string]util.Bytes{
 						constants.ActionDataKeyBaseBranch: []byte("master"),
 					}
 					repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
@@ -386,7 +386,7 @@ var _ = Describe("Merge", func() {
 					repoState := state.BareRepository()
 					prop := state.BareRepoProposal()
 					prop.Outcome = state.ProposalOutcomeAccepted
-					prop.ActionData = map[string][]byte{
+					prop.ActionData = map[string]util.Bytes{
 						constants.ActionDataKeyBaseBranch: []byte("master"),
 					}
 					repoState.Proposals.Add(mr.MakeMergeRequestProposalID("1"), prop)
@@ -436,7 +436,7 @@ var _ = Describe("Merge", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
-				prop.ActionData = map[string][]byte{
+				prop.ActionData = map[string]util.Bytes{
 					constants.ActionDataKeyBaseBranch: []byte("master"),
 					constants.ActionDataKeyBaseHash:   []byte("xyz"),
 				}
@@ -486,7 +486,7 @@ var _ = Describe("Merge", func() {
 				repoState := state.BareRepository()
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
-				prop.ActionData = map[string][]byte{
+				prop.ActionData = map[string]util.Bytes{
 					constants.ActionDataKeyBaseBranch: []byte("master"),
 					constants.ActionDataKeyBaseHash:   []byte("abc"),
 					constants.ActionDataKeyTargetHash: []byte("target_xyz"),
@@ -540,7 +540,7 @@ var _ = Describe("Merge", func() {
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
 				propTargetHash := plumbing2.MakeCommitHash(util.RandString(20))
-				prop.ActionData = map[string][]byte{
+				prop.ActionData = map[string]util.Bytes{
 					constants.ActionDataKeyBaseBranch: []byte("master"),
 					constants.ActionDataKeyBaseHash:   []byte("abc"),
 					constants.ActionDataKeyTargetHash: []byte(propTargetHash.String()),
@@ -583,7 +583,7 @@ var _ = Describe("Merge", func() {
 				prop := state.BareRepoProposal()
 				prop.Outcome = state.ProposalOutcomeAccepted
 				propTargetHash := plumbing2.MakeCommitHash(util.RandString(20))
-				prop.ActionData = map[string][]byte{
+				prop.ActionData = map[string]util.Bytes{
 					constants.ActionDataKeyBaseBranch: []byte("master"),
 					constants.ActionDataKeyBaseHash:   []byte("abc"),
 					constants.ActionDataKeyTargetHash: []byte(propTargetHash.String()),

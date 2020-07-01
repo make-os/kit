@@ -22,8 +22,8 @@ var (
 
 	// ErrFailedReplaceByFee means an attempt to replace by fee failed due to the replacement
 	// tx having a lower/equal fee to the current
-	ErrFailedReplaceByFee = fmt.Errorf("failed to replace transaction at same nonce due to " +
-		"low/equal fee. Fee must be higher to replace the existing transaction")
+	ErrFailedReplaceByFee = fmt.Errorf("there is already an existing transaction by " +
+		"same sender and at same nonce. To replace the existing transaction, the fee must be higher")
 )
 
 // containerItem represents the a container item.

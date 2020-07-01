@@ -213,7 +213,7 @@ var _ = Describe("UpdateRepoContract", func() {
 		When("update config object is empty", func() {
 			It("should not change the config", func() {
 				proposal := &state.RepoProposal{
-					ActionData: map[string][]byte{constants.ActionDataKeyCFG: util.ToBytes((&state.RepoConfig{}).ToMap())},
+					ActionData: map[string]util.Bytes{constants.ActionDataKeyCFG: util.ToBytes((&state.RepoConfig{}).ToMap())},
 				}
 				err = updaterepo.NewContract(nil).Apply(&core.ProposalApplyArgs{
 					Proposal:    proposal,
@@ -229,7 +229,7 @@ var _ = Describe("UpdateRepoContract", func() {
 			It("should change the config", func() {
 				cfg := &state.RepoConfig{Governance: &state.RepoConfigGovernance{ProposalQuorum: 120, ProposalDuration: 100}}
 				proposal := &state.RepoProposal{
-					ActionData: map[string][]byte{
+					ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyCFG: util.ToBytes(cfg.ToMap()),
 					},
 				}

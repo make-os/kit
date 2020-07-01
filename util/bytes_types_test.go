@@ -160,4 +160,20 @@ var _ = Describe("Errors", func() {
 			})
 		})
 	})
+
+	Describe("BlockNonce", func() {
+		Describe(".EncodeNonce", func() {
+			It("should encode to BlockNonce", func() {
+				bn := EncodeNonce(1000)
+				Expect(bn).To(BeAssignableToTypeOf(BlockNonce{}))
+			})
+		})
+
+		Describe(".Uint64", func() {
+			It("should return uint64 value", func() {
+				bn := EncodeNonce(1000)
+				Expect(bn.Uint64()).To(Equal(uint64(1000)))
+			})
+		})
+	})
 })

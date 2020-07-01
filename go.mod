@@ -18,6 +18,7 @@ require (
 	github.com/c-bata/go-prompt v0.2.3
 	github.com/cbroglie/mustache v1.0.1
 	github.com/cenkalti/backoff/v4 v4.0.2
+	github.com/davecgh/go-spew v1.1.1
 	github.com/dgraph-io/badger v1.6.1
 	github.com/dgryski/go-farm v0.0.0-20191112170834-c2139c5d712b // indirect
 	github.com/dustin/go-humanize v1.0.0

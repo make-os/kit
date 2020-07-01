@@ -281,13 +281,16 @@ func GetPtrAddr(ptrAddr interface{}) *big.Int {
 }
 
 // DecodeMap decodes a map to a struct.
-// It uses mapstructure.Decode internally but
-// with 'json' TagName.
-func DecodeMap(srcMap interface{}, dest interface{}) error {
+// Default tagname is 'json'
+func DecodeMap(srcMap interface{}, dest interface{}, tagName ...string) error {
+	tn := "json"
+	if len(tagName) > 0 {
+		tn = tagName[0]
+	}
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Metadata: nil,
 		Result:   dest,
-		TagName:  "json",
+		TagName:  tn,
 	})
 	if err != nil {
 		return err
@@ -318,23 +321,6 @@ func MayDecodeNumber(encNum []byte) (r uint64, err error) {
 	}()
 	r = DecodeNumber(encNum)
 	return
-}
-
-// BlockNonce is a 64-bit hash which proves (combined with the
-// mix-hash) that a sufficient amount of computation has been carried
-// out on a block.
-type BlockNonce [8]byte
-
-// EncodeNonce converts the given integer to a block nonce.
-func EncodeNonce(i uint64) BlockNonce {
-	var n BlockNonce
-	binary.BigEndian.PutUint64(n[:], i)
-	return n
-}
-
-// Uint64 returns the integer value of a block nonce.
-func (n BlockNonce) Uint64() uint64 {
-	return binary.BigEndian.Uint64(n[:])
 }
 
 // IsBoolChanClosed checks whether a boolean channel is closed
@@ -659,4 +645,16 @@ func ParseContentFrontMatter(rdr io.Reader) (pageparser.ContentFrontMatter, erro
 	}
 
 	return pageparser.ParseFrontMatterAndContent(buf)
+}
+
+// IsMapOrStruct checks whether o is a map or a struct (pointer to struct)
+func IsMapOrStruct(o interface{}) bool {
+	typ := reflect.TypeOf(o)
+	if typ.Kind() == reflect.Struct || typ.Kind() == reflect.Map {
+		return true
+	}
+	if typ.Kind() == reflect.Ptr && typ.Elem().Kind() == reflect.Struct {
+		return true
+	}
+	return false
 }

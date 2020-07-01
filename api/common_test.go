@@ -89,9 +89,9 @@ var _ = Describe("", func() {
 		})
 	})
 
-	Describe(".ClientCaller", func() {
+	Describe(".CallClients", func() {
 		It("should return error when no caller callbacks were provided", func() {
-			err := ClientCaller(&client.RPCClient{}, []rest.Client{&rest.ClientV1{}}, nil, nil)
+			err := CallClients(&client.RPCClient{}, []rest.Client{&rest.ClientV1{}}, nil, nil)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("no client caller provided"))
 		})

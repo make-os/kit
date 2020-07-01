@@ -311,22 +311,6 @@ var _ = Describe("Common", func() {
 
 	})
 
-	Describe("BlockNonce", func() {
-		Describe(".EncodeNonce", func() {
-			It("should encode to BlockNonce", func() {
-				bn := EncodeNonce(1000)
-				Expect(bn).To(BeAssignableToTypeOf(BlockNonce{}))
-			})
-		})
-
-		Describe(".Uint64", func() {
-			It("should return uint64 value", func() {
-				bn := EncodeNonce(1000)
-				Expect(bn.Uint64()).To(Equal(uint64(1000)))
-			})
-		})
-	})
-
 	Describe(".GetPtrAddr", func() {
 		It("should get numeric pointer address", func() {
 			name := "xyz"
@@ -739,6 +723,15 @@ var _ = Describe("Common", func() {
 			Expect(cfm.FrontMatter).To(Equal(map[string]interface{}{
 				"age": 1000,
 			}))
+		})
+	})
+
+	Describe(".IsMapOrStruct", func() {
+		It("should check for true/false", func() {
+			Expect(IsMapOrStruct(map[string]int{})).To(BeTrue())
+			Expect(IsMapOrStruct(map[string]interface{}{})).To(BeTrue())
+			Expect(IsMapOrStruct(struct{}{})).To(BeTrue())
+			Expect(IsMapOrStruct(&struct{}{})).To(BeTrue())
 		})
 	})
 })

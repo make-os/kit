@@ -51,7 +51,7 @@ func (c *RegisterRepoPushKeysContract) Exec() error {
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	proposal := proposals.MakeProposal(spk.Addr().String(), repo, c.tx.ID, c.tx.Value, c.chainHeight)
 	proposal.Action = txns.TxTypeRepoProposalRegisterPushKey
-	proposal.ActionData = map[string][]byte{
+	proposal.ActionData = map[string]util.Bytes{
 		constants.ActionDataKeyIDs:      util.ToBytes(c.tx.KeyIDs),
 		constants.ActionDataKeyPolicies: util.ToBytes(c.tx.Policies),
 		constants.ActionDataKeyFeeMode:  util.ToBytes(c.tx.FeeMode),

@@ -121,7 +121,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 		When("2 ids were provided in action data", func() {
 			BeforeEach(func() {
-				proposal := &state.RepoProposal{ActionData: map[string][]byte{
+				proposal := &state.RepoProposal{ActionData: map[string]util.Bytes{
 					constants.ActionDataKeyPolicies: util.ToBytes([]*state.Policy{{Action: "act", Subject: "sub", Object: "obj"}}),
 					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc", "push1_xyz"}),
 					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModePusherPays),
@@ -142,7 +142,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 		When("feeMode is FeeModeRepoPaysCapped", func() {
 			BeforeEach(func() {
-				proposal := &state.RepoProposal{ActionData: map[string][]byte{
+				proposal := &state.RepoProposal{ActionData: map[string]util.Bytes{
 					constants.ActionDataKeyPolicies: util.ToBytes([]*state.Policy{{Action: "act", Subject: "sub", Object: "obj"}}),
 					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc"}),
 					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModeRepoPaysCapped),
@@ -164,7 +164,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 		When("feeMode is not FeeModeRepoPaysCapped", func() {
 			BeforeEach(func() {
-				proposal := &state.RepoProposal{ActionData: map[string][]byte{
+				proposal := &state.RepoProposal{ActionData: map[string]util.Bytes{
 					constants.ActionDataKeyPolicies: util.ToBytes([]*state.Policy{{Action: "act", Subject: "sub", Object: "obj"}}),
 					constants.ActionDataKeyIDs:      util.ToBytes([]string{"push1_abc"}),
 					constants.ActionDataKeyFeeMode:  util.ToBytes(state.FeeModeRepoPays),
@@ -191,7 +191,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 			When("the target namespace does not exist", func() {
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{ActionData: map[string][]byte{
+					proposal = &state.RepoProposal{ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyPolicies:  util.ToBytes([]*state.Policy{}),
 						constants.ActionDataKeyIDs:       util.ToBytes([]string{"push1_abc"}),
 						constants.ActionDataKeyFeeMode:   util.ToBytes(state.FeeModeRepoPays),
@@ -217,7 +217,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 					nsObj = state.BareNamespace()
 					nsObj.Owner = "repo1"
 					logic.NamespaceKeeper().Update(crypto2.HashNamespace(ns), nsObj)
-					proposal = &state.RepoProposal{ActionData: map[string][]byte{
+					proposal = &state.RepoProposal{ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyPolicies:  util.ToBytes([]*state.Policy{}),
 						constants.ActionDataKeyIDs:       util.ToBytes([]string{"push1_abc"}),
 						constants.ActionDataKeyFeeMode:   util.ToBytes(state.FeeModeRepoPays),
@@ -252,7 +252,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 			When("the target namespace does not exist", func() {
 				BeforeEach(func() {
-					proposal = &state.RepoProposal{ActionData: map[string][]byte{
+					proposal = &state.RepoProposal{ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyPolicies:      util.ToBytes([]*state.Policy{}),
 						constants.ActionDataKeyIDs:           util.ToBytes([]string{"push1_abc"}),
 						constants.ActionDataKeyFeeMode:       util.ToBytes(state.FeeModeRepoPays),
@@ -279,7 +279,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 					nsObj = state.BareNamespace()
 					nsObj.Owner = "repo1"
 					logic.NamespaceKeeper().Update(crypto2.HashNamespace(ns), nsObj)
-					proposal = &state.RepoProposal{ActionData: map[string][]byte{
+					proposal = &state.RepoProposal{ActionData: map[string]util.Bytes{
 						constants.ActionDataKeyPolicies:      util.ToBytes([]*state.Policy{}),
 						constants.ActionDataKeyIDs:           util.ToBytes([]string{"push1_abc"}),
 						constants.ActionDataKeyFeeMode:       util.ToBytes(state.FeeModeRepoPays),

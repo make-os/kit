@@ -48,9 +48,9 @@ var _ = Describe("Client", func() {
 				_, err := client.GetAccount("addr", 100)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
-					Code:     "client_error",
-					HttpCode: 0,
-					Msg:      "failed to decode call response: field:balance, msg:invalid value type: has int, wants string",
+					Code:     "decode_error",
+					HttpCode: 500,
+					Msg:      "field:balance, msg:invalid value type: has int, wants string",
 					Field:    "",
 				}))
 			})
@@ -72,7 +72,7 @@ var _ = Describe("Client", func() {
 		When("client call returns error", func() {
 			It("should return error", func() {
 				mockClient := NewMockClient(ctrl)
-				mockClient.EXPECT().AccountGet("addr1").Return(nil, &util.StatusError{Msg: "bad thing"})
+				mockClient.EXPECT().GetAccount("addr1").Return(nil, &util.StatusError{Msg: "bad thing"})
 				_, err := GetNextNonceOfAccountUsingRPCClient("addr1", mockClient)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Msg).To(Equal("bad thing"))
@@ -82,7 +82,7 @@ var _ = Describe("Client", func() {
 		When("client call a nonce", func() {
 			It("should be incremented by 1 and returned", func() {
 				mockClient := NewMockClient(ctrl)
-				mockClient.EXPECT().AccountGet("addr1").Return(&state.Account{Nonce: 10}, nil)
+				mockClient.EXPECT().GetAccount("addr1").Return(&state.Account{Nonce: 10}, nil)
 				nonce, err := GetNextNonceOfAccountUsingRPCClient("addr1", mockClient)
 				Expect(err).To(BeNil())
 				Expect(nonce).To(Equal("11"))

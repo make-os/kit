@@ -7,15 +7,14 @@ import (
 	"net/url"
 	"os"
 
+	rpcApi "gitlab.com/makeos/mosdef/api/rpc"
 	server2 "gitlab.com/makeos/mosdef/dht/server"
 	"gitlab.com/makeos/mosdef/dht/server/types"
+	types2 "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/remote/server"
+	"gitlab.com/makeos/mosdef/rpc"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/core"
-	modules2 "gitlab.com/makeos/mosdef/types/modules"
-
-	rpcApi "gitlab.com/makeos/mosdef/api/rpc"
-	"gitlab.com/makeos/mosdef/rpc"
 
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/modules"
@@ -68,7 +67,7 @@ type Node struct {
 	mempoolReactor *mempool.Reactor
 	ticketMgr      tickettypes.TicketManager
 	dht            types.DHT
-	modules        modules2.ModuleHub
+	modules        types2.ModulesHub
 	rpcServer      *rpc.Server
 	remoteServer   core.RemoteServer
 }
@@ -344,7 +343,7 @@ func (n *Node) ConsoleOn() bool {
 }
 
 // GetModulesAggregator returns the javascript module instance
-func (n *Node) GetModulesAggregator() modules2.ModuleHub {
+func (n *Node) GetModulesAggregator() types2.ModulesHub {
 	return n.modules
 }
 

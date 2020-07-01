@@ -2,8 +2,11 @@ package util
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	"math/big"
+	"strings"
 )
 
 // Constants
@@ -18,6 +21,16 @@ type Bytes []byte
 // Bytes returns a slice of bytes
 func (b Bytes) Bytes() []byte {
 	return b
+}
+
+func (u Bytes) MarshalJSON() ([]byte, error) {
+	var result string
+	if u == nil {
+		result = "null"
+	} else {
+		result = strings.Join(strings.Fields(fmt.Sprintf("%d", u)), ",")
+	}
+	return []byte(result), nil
 }
 
 // Big returns the bytes as big integer
@@ -49,36 +62,46 @@ type Bytes32 [Length32]byte
 var EmptyBytes32 = Bytes32([Length32]byte{})
 
 // Bytes returns a slice of bytes
-func (h Bytes32) Bytes() []byte {
-	if h.IsEmpty() {
+func (b Bytes32) Bytes() []byte {
+	if b.IsEmpty() {
 		return []byte{}
 	}
-	return h[:]
+	return b[:]
+}
+
+func (b Bytes32) MarshalJSON() ([]byte, error) {
+	var result string
+	if b.IsEmpty() {
+		result = "null"
+	} else {
+		result = strings.Join(strings.Fields(fmt.Sprintf("%d", b)), ",")
+	}
+	return []byte(result), nil
 }
 
 // Big returns the bytes as big integer
-func (h Bytes32) Big() *big.Int { return new(big.Int).SetBytes(h.Bytes()) }
+func (b Bytes32) Big() *big.Int { return new(big.Int).SetBytes(b.Bytes()) }
 
 // Equal checks equality between h and o
-func (h Bytes32) Equal(o Bytes32) bool { return bytes.Equal(h.Bytes(), o.Bytes()) }
+func (b Bytes32) Equal(o Bytes32) bool { return bytes.Equal(b.Bytes(), o.Bytes()) }
 
-func (h Bytes32) String() string { return h.HexStr() }
+func (b Bytes32) String() string { return b.HexStr() }
 
 // HexStr encodes the bytes to hex, prefixed with 0x
-func (h Bytes32) HexStr() string {
-	return ToHex(h.Bytes())
+func (b Bytes32) HexStr() string {
+	return ToHex(b.Bytes())
 }
 
 // Hex encodes the bytes to hex
-func (h Bytes32) Hex() []byte {
-	dst := make([]byte, hex.EncodedLen(len(h)))
-	hex.Encode(dst, h.Bytes())
+func (b Bytes32) Hex() []byte {
+	dst := make([]byte, hex.EncodedLen(len(b)))
+	hex.Encode(dst, b.Bytes())
 	return dst
 }
 
 // IsEmpty checks whether the object is empty (having zero values)
-func (h Bytes32) IsEmpty() bool {
-	return h == EmptyBytes32
+func (b Bytes32) IsEmpty() bool {
+	return b == EmptyBytes32
 }
 
 // HexToBytes32 creates an hex value to Bytes32
@@ -109,36 +132,46 @@ type Bytes64 [Length64]byte
 var EmptyBytes64 = Bytes64([Length64]byte{})
 
 // Bytes returns a slice of bytes
-func (h Bytes64) Bytes() []byte {
-	if h.IsEmpty() {
+func (b Bytes64) Bytes() []byte {
+	if b.IsEmpty() {
 		return []byte{}
 	}
-	return h[:]
+	return b[:]
+}
+
+func (b Bytes64) MarshalJSON() ([]byte, error) {
+	var result string
+	if b.IsEmpty() {
+		result = "null"
+	} else {
+		result = strings.Join(strings.Fields(fmt.Sprintf("%d", b)), ",")
+	}
+	return []byte(result), nil
 }
 
 // Big returns the bytes as big integer
-func (h Bytes64) Big() *big.Int { return new(big.Int).SetBytes(h.Bytes()) }
+func (b Bytes64) Big() *big.Int { return new(big.Int).SetBytes(b.Bytes()) }
 
 // Equal checks equality between h and o
-func (h Bytes64) Equal(o Bytes64) bool { return bytes.Equal(h.Bytes(), o.Bytes()) }
+func (b Bytes64) Equal(o Bytes64) bool { return bytes.Equal(b.Bytes(), o.Bytes()) }
 
-func (h Bytes64) String() string { return h.HexStr() }
+func (b Bytes64) String() string { return b.HexStr() }
 
 // HexStr encodes the bytes to hex, prefixed with 0x
-func (h Bytes64) HexStr() string {
-	return ToHex(h.Bytes())
+func (b Bytes64) HexStr() string {
+	return ToHex(b.Bytes())
 }
 
 // Hex encodes the bytes to hex
-func (h Bytes64) Hex() []byte {
-	dst := make([]byte, hex.EncodedLen(len(h)))
-	hex.Encode(dst, h.Bytes())
+func (b Bytes64) Hex() []byte {
+	dst := make([]byte, hex.EncodedLen(len(b)))
+	hex.Encode(dst, b.Bytes())
 	return dst
 }
 
 // IsEmpty checks whether the object is empty (having zero values)
-func (h Bytes64) IsEmpty() bool {
-	return h == EmptyBytes64
+func (b Bytes64) IsEmpty() bool {
+	return b == EmptyBytes64
 }
 
 // BytesToBytes64 copies b to a Bytes64
@@ -146,4 +179,29 @@ func BytesToBytes64(b []byte) Bytes64 {
 	var h Bytes64
 	copy(h[:], b)
 	return h
+}
+
+// BlockNonce represents a 64-bit
+type BlockNonce [8]byte
+
+// EncodeNonce converts the given integer to a block nonce.
+func EncodeNonce(i uint64) BlockNonce {
+	var n BlockNonce
+	binary.BigEndian.PutUint64(n[:], i)
+	return n
+}
+
+// Uint64 returns the integer value of a block nonce.
+func (n BlockNonce) Uint64() uint64 {
+	return binary.BigEndian.Uint64(n[:])
+}
+
+func (n BlockNonce) MarshalJSON() ([]byte, error) {
+	var result string
+	if n == [8]byte{} {
+		result = "null"
+	} else {
+		result = strings.Join(strings.Fields(fmt.Sprintf("%d", n)), ",")
+	}
+	return []byte(result), nil
 }

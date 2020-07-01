@@ -86,7 +86,7 @@ type StatusError struct {
 }
 
 // NewStatusError creates StatusError
-// It outputs the example format: `msg:'some error message', httpCode:'400', code:'mempool_add_fail, field:'id'`
+// It outputs the example format: `msg:'some error message', httpCode:'400', code:'mempool_add_err, field:'id'`
 func NewStatusError(httpCode int, code, field, msg string) *StatusError {
 	return &StatusError{Code: code, HttpCode: httpCode, Msg: msg, Field: field}
 }

@@ -3,6 +3,8 @@ package crypto
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
+	"strings"
 
 	"github.com/tendermint/tendermint/libs/bech32"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -26,6 +28,16 @@ func (pk PublicKey) Bytes() []byte {
 // ToBytes32 convert PublicKey to Bytes32
 func (pk PublicKey) ToBytes32() util.Bytes32 {
 	return util.BytesToBytes32(pk.Bytes())
+}
+
+func (pk PublicKey) MarshalJSON() ([]byte, error) {
+	var result string
+	if pk.IsEmpty() {
+		result = "null"
+	} else {
+		result = strings.Join(strings.Fields(fmt.Sprintf("%d", pk)), ",")
+	}
+	return []byte(result), nil
 }
 
 // Equal checks equality between h and o
@@ -90,4 +102,14 @@ type PushKey []byte
 // String returns the push key ID as a string
 func (p PushKey) String() string {
 	return BytesToPushKeyID(p)
+}
+
+func (p PushKey) MarshalJSON() ([]byte, error) {
+	var result string
+	if p == nil {
+		result = "null"
+	} else {
+		result = strings.Join(strings.Fields(fmt.Sprintf("%d", p)), ",")
+	}
+	return []byte(result), nil
 }

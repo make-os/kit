@@ -98,7 +98,7 @@ type Proposal interface {
 	GetQuorum() float64
 	GetTallyMethod() ProposalTallyMethod
 	GetAction() types.TxCode
-	GetActionData() map[string][]byte
+	GetActionData() map[string]util.Bytes
 	GetThreshold() float64
 	GetVetoQuorum() float64
 	GetVetoOwnersQuorum() float64
@@ -135,7 +135,7 @@ type RepoProposal struct {
 	util.CodecUtil        `json:"-" msgpack:"-"`
 	ID                    string                `json:"-" mapstructure:"-" msgpack:"-"`
 	Action                types.TxCode          `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
-	ActionData            map[string][]byte     `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
+	ActionData            map[string]util.Bytes `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
 	Creator               string                `json:"creator" mapstructure:"creator" msgpack:"creator"`                                           // The creator is the address of the proposal creator.
 	Height                uint64                `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
 	Config                *RepoConfigGovernance `json:"config" mapstructure:"config" msgpack:"-"`                                                   // The repo config to used to evaluate the proposal
@@ -167,7 +167,7 @@ func (d *ProposalActionData) Get(actionName string) map[string]interface{} {
 func BareRepoProposal() *RepoProposal {
 	return &RepoProposal{
 		Config:     BareRepoConfig().Governance,
-		ActionData: make(map[string][]byte),
+		ActionData: make(map[string]util.Bytes),
 		Fees:       make(map[string]string),
 	}
 }
@@ -297,7 +297,7 @@ func (p *RepoProposal) GetAction() types.TxCode {
 }
 
 // GetActionData implements Proposal
-func (p *RepoProposal) GetActionData() map[string][]byte {
+func (p *RepoProposal) GetActionData() map[string]util.Bytes {
 	return p.ActionData
 }
 

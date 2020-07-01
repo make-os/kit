@@ -27,7 +27,7 @@ func MakeProposal(
 		Height:     chainHeight,
 		EndAt:      repo.Config.Governance.ProposalDuration + chainHeight + 1,
 		Fees:       map[string]string{},
-		ActionData: map[string][]byte{},
+		ActionData: map[string]util.Bytes{},
 	}
 
 	// Register proposal fee if set

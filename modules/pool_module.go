@@ -3,13 +3,12 @@ package modules
 import (
 	"fmt"
 
-	"gitlab.com/makeos/mosdef/mempool"
-	"gitlab.com/makeos/mosdef/remote/push/types"
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
-
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/mempool"
+	modulestypes "gitlab.com/makeos/mosdef/modules/types"
+	"gitlab.com/makeos/mosdef/remote/push/types"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -17,11 +16,17 @@ import (
 type PoolModule struct {
 	reactor  *mempool.Reactor
 	pushPool types.PushPool
+	ctx      *modulestypes.ModulesContext
 }
 
 // NewPoolModule creates an instance of PoolModule
 func NewPoolModule(reactor *mempool.Reactor, pushPool types.PushPool) *PoolModule {
-	return &PoolModule{reactor: reactor, pushPool: pushPool}
+	return &PoolModule{reactor: reactor, pushPool: pushPool, ctx: modulestypes.DefaultModuleContext}
+}
+
+// SetContext sets the function used to retrieve call context
+func (m *PoolModule) SetContext(cg *modulestypes.ModulesContext) {
+	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -30,13 +35,13 @@ func (m *PoolModule) ConsoleOnlyMode() bool {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *PoolModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+func (m *PoolModule) globals() []*modulestypes.ModuleFunc {
+	return []*modulestypes.ModuleFunc{}
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *PoolModule) methods() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *PoolModule) methods() []*modulestypes.ModuleFunc {
+	return []*modulestypes.ModuleFunc{
 		{
 			Name:        "getSize",
 			Value:       m.GetSize,
@@ -83,14 +88,14 @@ func (m *PoolModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 
 // getSize returns the size of the pool
 func (m *PoolModule) GetSize() util.Map {
-	return EncodeForJS(m.reactor.GetPoolSize())
+	return normalizeUtilMap(m.ctx.Env, m.reactor.GetPoolSize())
 }
 
 // getTop returns all the transactions in the pool
 func (m *PoolModule) GetTop(n int) []util.Map {
-	var res []util.Map
+	var res = []util.Map{}
 	for _, tx := range m.reactor.GetTop(n) {
-		res = append(res, EncodeForJS(tx.ToMap()))
+		res = append(res, normalizeUtilMap(m.ctx.Env, tx.ToMap()))
 	}
 	return res
 }

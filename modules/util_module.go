@@ -6,25 +6,30 @@ import (
 	"os"
 	"path/filepath"
 
-	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
-
 	"github.com/c-bata/go-prompt"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/params"
+	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 // UtilModule provides access to various utility functions
 type UtilModule struct {
-	vm *otto.Otto
+	vm  *otto.Otto
+	ctx *types.ModulesContext
 }
 
 // NewUtilModule creates an instance of UtilModule
 func NewUtilModule() *UtilModule {
-	return &UtilModule{}
+	return &UtilModule{ctx: types.DefaultModuleContext}
+}
+
+// SetContext sets the function used to retrieve call context
+func (m *UtilModule) SetContext(cg *types.ModulesContext) {
+	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -33,8 +38,8 @@ func (m *UtilModule) ConsoleOnlyMode() bool {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *UtilModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *UtilModule) globals() []*types.ModuleFunc {
+	return []*types.ModuleFunc{
 		{
 			Name:        "pp",
 			Value:       m.prettyPrint,
@@ -74,8 +79,8 @@ func (m *UtilModule) globals() []*modules.ModuleFunc {
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *UtilModule) methods() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *UtilModule) methods() []*types.ModuleFunc {
+	return []*types.ModuleFunc{
 		{
 			Name:        "prettyPrint",
 			Value:       m.prettyPrint,

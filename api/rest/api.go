@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
 	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -23,17 +23,17 @@ const (
 
 // API provides a REST API handlers
 type API struct {
-	mods modules.ModuleHub
+	mods types.ModulesHub
 	log  logger.Logger
 }
 
 // NewAPI creates an instance of API
-func NewAPI(mods modules.ModuleHub, log logger.Logger) *API {
+func NewAPI(mods types.ModulesHub, log logger.Logger) *API {
 	return &API{mods: mods, log: log.Module("rest-api")}
 }
 
 // Modules returns modules
-func (r *API) Modules() *modules.Modules {
+func (r *API) Modules() *types.Modules {
 	return r.mods.GetModules()
 }
 

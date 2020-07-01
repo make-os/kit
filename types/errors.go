@@ -9,7 +9,8 @@ const (
 	ErrCodeInvalidAuthCredentials = 40001
 
 	// Implementation error codes
-	RPCErrCodeInvalidParamValue = 60000
+	RPCErrCodeInvalidParamType  = 60000
+	RPCErrCodeInvalidParamValue = 60001
 )
 
 // General
@@ -25,9 +26,9 @@ var (
 
 // Decode/Cast Error
 var (
-	// ErrArgDecode means a parameter could not be decoded
-	ErrArgDecode = func(castType string, index int) error {
-		return fmt.Errorf("failed to decode argument.%d to %s", index, castType)
+	// ErrIntSliceArgDecode means an interface slice parameter could not be decoded
+	ErrIntSliceArgDecode = func(castType string, index, sliceIndex int) error {
+		return fmt.Errorf("failed to decode argument.%d[%d] to %s", index, sliceIndex, castType)
 	}
 )
 

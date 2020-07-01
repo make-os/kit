@@ -21,7 +21,7 @@ type BlockInfo struct {
 	Hash            []byte `json:"hash"`
 	Height          int64  `json:"height"`
 	ProposerAddress []byte `json:"proposerAddress"`
-	Time            int64
+	Time            int64  `json:"time"`
 }
 
 // Validator represents a validator

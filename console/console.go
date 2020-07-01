@@ -9,9 +9,8 @@ import (
 	"io/ioutil"
 	"sync"
 
-	"gitlab.com/makeos/mosdef/types/modules"
-
 	"github.com/thoas/go-funk"
+	"gitlab.com/makeos/mosdef/modules/types"
 
 	"github.com/pkg/errors"
 
@@ -64,7 +63,7 @@ type Console struct {
 	onStopFunc func()
 
 	// jsModules to integrate with the console
-	jsModules []modules.ModuleHub
+	jsModules []types.ModulesHub
 
 	// Versions
 	protocol uint64
@@ -156,7 +155,7 @@ func (c *Console) Prepare() error {
 }
 
 // AddModulesAggregator adds javascript modules
-func (c *Console) AddModulesAggregator(modules ...modules.ModuleHub) {
+func (c *Console) AddModulesAggregator(modules ...types.ModulesHub) {
 	c.jsModules = append(c.jsModules, modules...)
 }
 

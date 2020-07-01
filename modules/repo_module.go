@@ -6,11 +6,12 @@ import (
 	"github.com/c-bata/go-prompt"
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
+	"github.com/spf13/cast"
+	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
@@ -22,11 +23,17 @@ type RepoModule struct {
 	logic   core.Logic
 	service services.Service
 	repoMgr core.RemoteServer
+	ctx     *modulestypes.ModulesContext
 }
 
 // NewRepoModule creates an instance of RepoModule
 func NewRepoModule(service services.Service, repoMgr core.RemoteServer, logic core.Logic) *RepoModule {
-	return &RepoModule{service: service, logic: logic, repoMgr: repoMgr}
+	return &RepoModule{service: service, logic: logic, repoMgr: repoMgr, ctx: modulestypes.DefaultModuleContext}
+}
+
+// SetContext sets the function used to retrieve call context
+func (m *RepoModule) SetContext(cg *modulestypes.ModulesContext) {
+	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -35,8 +42,8 @@ func (m *RepoModule) ConsoleOnlyMode() bool {
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *RepoModule) methods() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *RepoModule) methods() []*modulestypes.ModuleFunc {
+	return []*modulestypes.ModuleFunc{
 		{
 			Name:        "create",
 			Value:       m.Create,
@@ -86,8 +93,8 @@ func (m *RepoModule) methods() []*modules.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *RepoModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+func (m *RepoModule) globals() []*modulestypes.ModuleFunc {
+	return []*modulestypes.ModuleFunc{}
 }
 
 // ConfigureVM configures the JS context and return
@@ -120,38 +127,39 @@ func (m *RepoModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 //
 // ARGS:
 // params <map>
-// params.name <string>:				The name of the namespace
-// params.value <string>:				The amount to pay for initial resources
-// params.nonce <number|string>: 		The senders next account nonce
-// params.fee <number|string>: 			The transaction fee to pay
-// params.timestamp <number>: 			The unix timestamp
+// params.name <string>:					The name of the namespace
+// params.value <string>:					The amount to pay for initial resources
+// params.nonce <number|string>: 			The senders next account nonce
+// params.fee <number|string>: 				The transaction fee to pay
+// params.timestamp <number>: 				The unix timestamp
+// params.config <map|hex-msgpack-string>  	The repo configuration
+// params.sig <hex-string>					The transaction signature
 //
 // options <[]interface{}>
-// options[0] key <string>: 			The signer's private key
-// options[1] payloadOnly <bool>: 		When true, returns the payload only, without sending the tx.
+// options[0] key <string>: 				The signer's private key
+// options[1] payloadOnly <bool>: 			When true, returns the payload only, without sending the tx.
 //
 // RETURNS object <map>
-// object.hash <string>: 				The transaction hash
-// object.address <string: 				The address of the repository
-func (m *RepoModule) Create(params map[string]interface{}, options ...interface{}) interface{} {
+// object.hash <string>: 					The transaction hash
+// object.address <string: 					The address of the repository
+func (m *RepoModule) Create(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = txns.NewBareTxRepoCreate()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(se(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash":    hash,
 		"address": fmt.Sprintf("r/%s", tx.Name),
 	})
@@ -180,20 +188,19 @@ func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...inter
 
 	var tx = txns.NewBareRepoProposalUpsertOwner()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(se(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -220,20 +227,19 @@ func (m *RepoModule) VoteOnProposal(params map[string]interface{}, options ...in
 
 	var tx = txns.NewBareRepoProposalVote()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(se(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -253,7 +259,7 @@ func (m *RepoModule) Prune(name string, force bool) {
 	m.repoMgr.GetPruner().Schedule(name)
 }
 
-// get finds and returns a repository. Panic if not found.
+// Get finds and returns a repository.
 //
 // ARGS:
 // name: The name of the repository
@@ -263,17 +269,19 @@ func (m *RepoModule) Prune(name string, force bool) {
 // opts.noProps: When true, the result will not include proposals
 //
 // RETURNS <map>
-func (m *RepoModule) Get(name string, opts ...map[string]interface{}) util.Map {
+func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map {
 	var targetHeight uint64
 	var noProposals bool
+	var err error
 
 	if len(opts) > 0 {
 		opt := opts[0]
-		if height, ok := opt["height"].(int64); ok {
-			targetHeight = uint64(height)
-		}
-		if noProps, ok := opt["noProps"].(bool); ok {
-			noProposals = noProps
+		noProposals = opt.NoProposals
+		if opt.Height != nil {
+			targetHeight, err = cast.ToUint64E(opt.Height)
+			if err != nil {
+				panic(se(400, StatusCodeInvalidParam, "opts.height", "unexpected type"))
+			}
 		}
 	}
 
@@ -286,13 +294,13 @@ func (m *RepoModule) Get(name string, opts ...map[string]interface{}) util.Map {
 	}
 
 	if repo.IsNil() {
-		panic(util.NewStatusError(404, StatusCodeRepoNotFound, "name", types.ErrRepoNotFound.Error()))
+		panic(se(404, StatusCodeRepoNotFound, "name", types.ErrRepoNotFound.Error()))
 	}
 
-	return EncodeForJS(repo)
+	return normalizeUtilMap(m.ctx.Env, repo)
 }
 
-// update creates a proposal to update a repository
+// Update creates a proposal to update a repository
 //
 // ARGS:
 // params <map>
@@ -315,25 +323,24 @@ func (m *RepoModule) Update(params map[string]interface{}, options ...interface{
 
 	var tx = txns.NewBareRepoProposalUpdate()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(se(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }
 
-// depositFee creates a transaction to deposit a fee to a proposal
+// DepositFee creates a transaction to deposit a fee to a proposal
 //
 // ARGS:
 // params <map>
@@ -355,20 +362,19 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 
 	var tx = txns.NewBareRepoProposalFeeSend()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(se(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -397,27 +403,24 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 //
 // RETURNS object <map>
 // object.hash <string>: 							The transaction hash
-func (m *RepoModule) RegisterPushKey(
-	params map[string]interface{},
-	options ...interface{}) interface{} {
+func (m *RepoModule) RegisterPushKey(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
 	var tx = txns.NewBareRepoProposalRegisterPushKey()
 	if err = tx.FromMap(params); err != nil {
-		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
+		panic(se(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
 	if err != nil {
-		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
+		panic(se(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -430,8 +433,8 @@ func (m *RepoModule) AnnounceObjects(repoName string) {
 	err := m.logic.GetRemoteServer().AnnounceRepoObjects(repoName)
 	if err != nil {
 		if errors.Cause(err) == git.ErrRepositoryNotExists {
-			panic(util.NewStatusError(404, StatusCodeRepoNotFound, "repoName", err.Error()))
+			panic(se(404, StatusCodeRepoNotFound, "repoName", err.Error()))
 		}
-		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
+		panic(se(500, StatusCodeAppErr, "", err.Error()))
 	}
 }

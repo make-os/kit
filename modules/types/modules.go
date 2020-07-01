@@ -1,7 +1,8 @@
-package modules
+package types
 
 import (
 	"github.com/c-bata/go-prompt"
+	"github.com/fatih/structs"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/util"
 )
@@ -13,15 +14,26 @@ type ModuleFunc struct {
 	Description string
 }
 
-// ModuleHub describes a mechanism for aggregating, configuring and
+// ModulesHub describes a mechanism for aggregating, configuring and
 // accessing modules that provide uniform functionalities in JS environment,
 // JSON-RPC APIs and REST APIs
-type ModuleHub interface {
+type ModulesHub interface {
 	// ConfigureVM instructs VM-accessible modules accessible to configure the VM
 	ConfigureVM(vm *otto.Otto) []prompt.Suggest
 
-	// GetModules returns all modules
+	// GetModules returns modules
 	GetModules() *Modules
+
+	// CreateNewModules creates and returns a new Modules instance
+	CreateNewModules() *Modules
+}
+
+// DefaultCallContext is the default module context
+var DefaultModuleContext = &ModulesContext{Env: JS}
+
+// ModulesContext contains common configuration accessible to all modules.
+type ModulesContext struct {
+	Env Env
 }
 
 // Modules contains all supported modules
@@ -40,9 +52,42 @@ type Modules struct {
 	RPC     RPCModule
 }
 
+// SetContext provides all modules with a function for getting the call context.
+func (m *Modules) SetContext(ctx *ModulesContext) {
+	for _, f := range structs.Fields(m) {
+		mod, ok := f.Value().(Module)
+		if !ok {
+			continue
+		}
+		mod.SetContext(ctx)
+	}
+}
+
+// ConfigureVM applies all modules' VM configurations to the given VM.
+func (m *Modules) ConfigureVM(vm *otto.Otto, consoleOnly bool) (sugs []prompt.Suggest) {
+	for _, f := range structs.Fields(m) {
+		mod, ok := f.Value().(Module)
+		if !ok {
+			continue
+		}
+		if !consoleOnly {
+			sugs = append(sugs, mod.ConfigureVM(vm)...)
+			continue
+		}
+
+		if mod.ConsoleOnlyMode() {
+			sugs = append(sugs, mod.ConfigureVM(vm)...)
+		}
+	}
+	return
+}
+
+type CallContextGetter func() *ModulesContext
+
 type Module interface {
 	ConfigureVM(vm *otto.Otto) []prompt.Suggest
 	ConsoleOnlyMode() bool
+	SetContext(*ModulesContext)
 }
 
 type ChainModule interface {
@@ -96,10 +141,10 @@ type UtilModule interface {
 
 type TicketModule interface {
 	Module
-	Buy(params map[string]interface{}, options ...interface{}) interface{}
-	HostBuy(params map[string]interface{}, options ...interface{}) interface{}
-	ListValidatorTicketsOfProposer(proposerPubKey string, queryOpts ...map[string]interface{}) []util.Map
-	ListHostTicketsOfProposer(proposerPubKey string, queryOpts ...map[string]interface{}) interface{}
+	BuyValidatorTicket(params map[string]interface{}, options ...interface{}) util.Map
+	BuyHostTicket(params map[string]interface{}, options ...interface{}) interface{}
+	ListProposerValidatorTickets(proposerPubKey string, queryOpts ...map[string]interface{}) []util.Map
+	ListProposerHostTickets(proposerPubKey string, queryOpts ...map[string]interface{}) interface{}
 	ListTopValidators(limit ...int) interface{}
 	ListTopHosts(limit ...int) interface{}
 	TicketStats(proposerPubKey ...string) (result util.Map)
@@ -107,13 +152,18 @@ type TicketModule interface {
 	UnbondHostTicket(params map[string]interface{}, options ...interface{}) interface{}
 }
 
+type GetOptions struct {
+	Height      interface{}
+	NoProposals bool
+}
+
 type RepoModule interface {
 	Module
-	Create(params map[string]interface{}, options ...interface{}) interface{}
+	Create(params map[string]interface{}, options ...interface{}) util.Map
 	UpsertOwner(params map[string]interface{}, options ...interface{}) util.Map
 	VoteOnProposal(params map[string]interface{}, options ...interface{}) util.Map
 	Prune(name string, force bool)
-	Get(name string, opts ...map[string]interface{}) util.Map
+	Get(name string, opts ...GetOptions) util.Map
 	Update(params map[string]interface{}, options ...interface{}) util.Map
 	DepositFee(params map[string]interface{}, options ...interface{}) util.Map
 }
@@ -121,8 +171,8 @@ type NamespaceModule interface {
 	Module
 	Lookup(name string, height ...uint64) interface{}
 	GetTarget(path string, height ...uint64) string
-	Register(params map[string]interface{}, options ...interface{}) interface{}
-	UpdateDomain(params map[string]interface{}, options ...interface{}) interface{}
+	Register(params map[string]interface{}, options ...interface{}) util.Map
+	UpdateDomain(params map[string]interface{}, options ...interface{}) util.Map
 }
 
 type DHTModule interface {
@@ -152,3 +202,17 @@ type RPCModule interface {
 	Local() util.Map
 	Connect(host string, port int, https bool, user, pass string) util.Map
 }
+
+// Env describes environment a module can be called from.
+type Env int
+
+const (
+
+	// JS represents javascript-like environment that cannot handle big integers
+	// natively and require external packages to for big integers.
+	JS Env = iota
+
+	// NORMAL represents an environment that can handle big numbers
+	// and buffers natively without needing external packages.
+	NORMAL
+)

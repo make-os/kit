@@ -1,20 +1,20 @@
 package rpc
 
 import (
+	types2 "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 // TransactionAPI provides RPC methods for various local account management functionality.
 type TransactionAPI struct {
-	mods *modules.Modules
+	mods *types2.Modules
 }
 
 // NewTransactionAPI creates an instance of TransactionAPI
-func NewTransactionAPI(mods *modules.Modules) *TransactionAPI {
+func NewTransactionAPI(mods *types2.Modules) *TransactionAPI {
 	return &TransactionAPI{mods}
 }
 

@@ -50,7 +50,7 @@ func (c *UpsertOwnerContract) Exec() error {
 	spk, _ := crypto.PubKeyFromBytes(c.tx.SenderPubKey.Bytes())
 	proposal := common2.MakeProposal(spk.Addr().String(), repo, c.tx.ID, c.tx.Value, c.chainHeight)
 	proposal.Action = txns.TxTypeRepoProposalUpsertOwner
-	proposal.ActionData = map[string][]byte{
+	proposal.ActionData = map[string]util.Bytes{
 		constants.ActionDataKeyAddrs: util.ToBytes(c.tx.Addresses),
 		constants.ActionDataKeyVeto:  util.ToBytes(c.tx.Veto),
 	}

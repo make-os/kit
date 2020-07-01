@@ -3,22 +3,22 @@ package rpc
 import (
 	"github.com/golang/mock/gomock"
 	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/util"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types/modules"
 )
 
 var _ = Describe("PushKey", func() {
 	var ctrl *gomock.Controller
 	var pushApi *PushKeyAPI
-	var mods *modules.Modules
+	var mods *types.Modules
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mods = &modules.Modules{}
+		mods = &types.Modules{}
 		pushApi = &PushKeyAPI{mods}
 	})
 
@@ -30,15 +30,15 @@ var _ = Describe("PushKey", func() {
 		testCases := map[string]*TestCase{
 			"when id is not provided": {
 				params: map[string]interface{}{},
-				err:    &rpc.Err{Code: "60000", Message: "id is required", Data: "id"},
+				err:    &rpc.Err{Code: "60001", Message: "id is required", Data: "id"},
 			},
 			"when id type is not string": {
 				params: map[string]interface{}{"id": 222},
-				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "id"},
+				err:    &rpc.Err{Code: "60001", Message: "wrong value type, want 'string', got string", Data: "id"},
 			},
 			"when blockHeight is provided but type is not string": {
 				params: map[string]interface{}{"id": "push1_abc", "blockHeight": 1},
-				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "blockHeight"},
+				err:    &rpc.Err{Code: "60001", Message: "wrong value type, want 'string', got string", Data: "blockHeight"},
 			},
 			"when push key is successfully returned": {
 				params: map[string]interface{}{"id": "push1_abc"},
@@ -75,15 +75,15 @@ var _ = Describe("PushKey", func() {
 		testCases := map[string]*TestCase{
 			"when id is not provided": {
 				params: map[string]interface{}{},
-				err:    &rpc.Err{Code: "60000", Message: "id is required", Data: "id"},
+				err:    &rpc.Err{Code: "60001", Message: "id is required", Data: "id"},
 			},
 			"when id type is not string": {
 				params: map[string]interface{}{"id": 222},
-				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "id"},
+				err:    &rpc.Err{Code: "60001", Message: "wrong value type, want 'string', got string", Data: "id"},
 			},
 			"when blockHeight is provided but type is not string": {
 				params: map[string]interface{}{"id": "push1_abc", "blockHeight": 1},
-				err:    &rpc.Err{Code: "60000", Message: "wrong value type, want 'string', got string", Data: "blockHeight"},
+				err:    &rpc.Err{Code: "60001", Message: "wrong value type, want 'string', got string", Data: "blockHeight"},
 			},
 			"when account is successfully returned": {
 				params: map[string]interface{}{"id": "push1_abc"},

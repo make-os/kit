@@ -86,7 +86,7 @@ func (c *MergeRequestContract) Exec() error {
 	if proposal == nil {
 		proposal = proposals.MakeProposal(c.data.CreatorAddress.String(), c.data.Repo, id, c.data.ProposerFee, c.chainHeight)
 		proposal.Action = txns.MergeRequestProposalAction
-		proposal.ActionData = map[string][]byte{
+		proposal.ActionData = map[string]util.Bytes{
 			constants.ActionDataKeyBaseBranch:   []byte(c.data.BaseBranch),
 			constants.ActionDataKeyBaseHash:     []byte(c.data.BaseBranchHash),
 			constants.ActionDataKeyTargetBranch: []byte(c.data.TargetBranch),

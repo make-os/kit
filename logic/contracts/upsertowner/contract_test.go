@@ -268,7 +268,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 
 		When("proposal includes 2 addresses", func() {
 			BeforeEach(func() {
-				proposal := &state.RepoProposal{ActionData: map[string][]byte{
+				proposal := &state.RepoProposal{ActionData: map[string]util.Bytes{
 					constants.ActionDataKeyAddrs: util.ToBytes([]string{"addr1", "addr2"}),
 				}}
 				err = upsertowner.NewContract(nil).Apply(&core.ProposalApplyArgs{
@@ -291,7 +291,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 			var existing = &state.RepoOwner{Veto: false, JoinedAt: 100}
 			BeforeEach(func() {
 				repoUpd.AddOwner("addr1", existing)
-				proposal := &state.RepoProposal{ActionData: map[string][]byte{
+				proposal := &state.RepoProposal{ActionData: map[string]util.Bytes{
 					constants.ActionDataKeyAddrs: util.ToBytes([]string{"addr1", "addr2"}),
 					constants.ActionDataKeyVeto:  util.ToBytes(true),
 				}}

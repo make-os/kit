@@ -5,18 +5,18 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types/modules"
 )
 
 var _ = Describe("AccountLocal", func() {
 	var ctrl *gomock.Controller
 	var localAcctApi *LocalAccountAPI
-	var mods *modules.Modules
+	var mods *types.Modules
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mods = &modules.Modules{}
+		mods = &types.Modules{}
 		localAcctApi = &LocalAccountAPI{mods}
 	})
 

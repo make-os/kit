@@ -8,10 +8,9 @@ import (
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/dht/server/types"
+	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/remote/plumbing"
 	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
-
 	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/c-bata/go-prompt"
@@ -21,15 +20,18 @@ import (
 // DHTModule provides access to the DHT service
 type DHTModule struct {
 	cfg *config.AppConfig
+	ctx *modulestypes.ModulesContext
 	dht types.DHT
 }
 
 // NewDHTModule creates an instance of DHTModule
 func NewDHTModule(cfg *config.AppConfig, dht types.DHT) *DHTModule {
-	return &DHTModule{
-		cfg: cfg,
-		dht: dht,
-	}
+	return &DHTModule{cfg: cfg, dht: dht, ctx: modulestypes.DefaultModuleContext}
+}
+
+// SetContext sets the function used to retrieve call context
+func (m *DHTModule) SetContext(cg *modulestypes.ModulesContext) {
+	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -38,8 +40,8 @@ func (m *DHTModule) ConsoleOnlyMode() bool {
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *DHTModule) methods() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *DHTModule) methods() []*modulestypes.ModuleFunc {
+	return []*modulestypes.ModuleFunc{
 		{
 			Name:        "store",
 			Value:       m.Store,
@@ -74,8 +76,8 @@ func (m *DHTModule) methods() []*modules.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *DHTModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+func (m *DHTModule) globals() []*modulestypes.ModuleFunc {
+	return []*modulestypes.ModuleFunc{}
 }
 
 // ConfigureVM configures the JS context and return

@@ -57,7 +57,7 @@ type Reference struct {
 	Data *ReferenceData `json:"data" mapstructure:"data" msgpack:"data,omitempty"`
 
 	// Hash is the current hash of the reference
-	Hash []byte `json:"hash" mapstructure:"hash" msgpack:"hash,omitempty"`
+	Hash util.Bytes `json:"hash" mapstructure:"hash" msgpack:"hash,omitempty"`
 }
 
 // IsNil checks whether the reference fields are all empty

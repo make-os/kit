@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/tendermint/tendermint/crypto/ed25519"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
-
-	"github.com/tendermint/tendermint/crypto/ed25519"
 
 	"gitlab.com/makeos/mosdef/crypto"
 
@@ -23,11 +22,17 @@ import (
 type ChainModule struct {
 	service services.Service
 	keepers core.Keepers
+	ctx     *types.ModulesContext
 }
 
 // NewChainModule creates an instance of ChainModule
 func NewChainModule(service services.Service, keepers core.Keepers) *ChainModule {
-	return &ChainModule{service: service, keepers: keepers}
+	return &ChainModule{service: service, keepers: keepers, ctx: types.DefaultModuleContext}
+}
+
+// SetContext sets the function used to retrieve call context
+func (m *ChainModule) SetContext(cg *types.ModulesContext) {
+	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -36,13 +41,13 @@ func (m *ChainModule) ConsoleOnlyMode() bool {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *ChainModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+func (m *ChainModule) globals() []*types.ModuleFunc {
+	return []*types.ModuleFunc{}
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *ChainModule) methods() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *ChainModule) methods() []*types.ModuleFunc {
+	return []*types.ModuleFunc{
 		{
 			Name:        "getBlock",
 			Value:       m.GetBlock,
@@ -106,7 +111,7 @@ func (m *ChainModule) GetBlock(height string) util.Map {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	return EncodeForJS(res)
+	return normalizeUtilMap(m.ctx.Env, res)
 }
 
 // getCurrentHeight returns the current block height
@@ -115,7 +120,7 @@ func (m *ChainModule) GetCurrentHeight() util.Map {
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"height": fmt.Sprintf("%d", bi.Height),
 	})
 }
@@ -136,7 +141,7 @@ func (m *ChainModule) GetBlockInfo(height string) util.Map {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	return EncodeForJS(res)
+	return normalizeUtilMap(m.ctx.Env, res)
 }
 
 // getValidators returns validators of a given block

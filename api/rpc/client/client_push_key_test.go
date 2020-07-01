@@ -47,9 +47,9 @@ var _ = Describe("Client", func() {
 				_, err := client.GetPushKeyOwnerAccount("push1_abc", 100)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
-					Code:     "client_error",
-					HttpCode: 0,
-					Msg:      "failed to decode call response: field:balance, msg:invalid value type: has int, wants string",
+					Code:     "decode_error",
+					HttpCode: 500,
+					Msg:      "field:balance, msg:invalid value type: has int, wants string",
 					Field:    "",
 				}))
 			})

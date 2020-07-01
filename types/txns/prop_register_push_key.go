@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/fatih/structs"
+	"github.com/imdario/mergo"
 	"github.com/stretchr/objx"
 	"github.com/vmihailenco/msgpack"
 	"gitlab.com/makeos/mosdef/types/state"
@@ -124,9 +124,11 @@ func (tx *TxRepoProposalRegisterPushKey) Sign(privKey string) ([]byte, error) {
 
 // ToMap returns a map equivalent of the transaction
 func (tx *TxRepoProposalRegisterPushKey) ToMap() map[string]interface{} {
-	s := structs.New(tx)
-	s.TagName = "json"
-	return s.Map()
+	m := util.StructToMap(tx, "mapstructure")
+	mergo.Map(&m, tx.TxType.ToMap())
+	mergo.Map(&m, tx.TxCommon.ToMap())
+	mergo.Map(&m, tx.TxProposalCommon.ToMap())
+	return m
 }
 
 // FromMap populates fields from a map.

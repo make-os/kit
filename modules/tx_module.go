@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/txns"
 
 	"github.com/c-bata/go-prompt"
@@ -19,13 +19,19 @@ import (
 
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
+	ctx     *modulestypes.ModulesContext
 	logic   core.Logic
 	service services.Service
 }
 
 // NewTxModule creates an instance of TxModule
 func NewTxModule(service services.Service, logic core.Logic) *TxModule {
-	return &TxModule{service: service, logic: logic}
+	return &TxModule{service: service, logic: logic, ctx: modulestypes.DefaultModuleContext}
+}
+
+// SetContext sets the function used to retrieve call context
+func (m *TxModule) SetContext(cg *modulestypes.ModulesContext) {
+	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -34,8 +40,8 @@ func (m *TxModule) ConsoleOnlyMode() bool {
 }
 
 // coinMethods are functions accessible using the `tx.coin` namespace
-func (m *TxModule) coinMethods() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *TxModule) coinMethods() []*modulestypes.ModuleFunc {
+	return []*modulestypes.ModuleFunc{
 		{
 			Name:        "send",
 			Value:       m.SendCoin,
@@ -45,8 +51,8 @@ func (m *TxModule) coinMethods() []*modules.ModuleFunc {
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *TxModule) methods() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *TxModule) methods() []*modulestypes.ModuleFunc {
+	return []*modulestypes.ModuleFunc{
 		{
 			Name:        "get",
 			Value:       m.Get,
@@ -61,8 +67,8 @@ func (m *TxModule) methods() []*modules.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *TxModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+func (m *TxModule) globals() []*modulestypes.ModuleFunc {
+	return []*modulestypes.ModuleFunc{}
 }
 
 // ConfigureVM configures the JS context and return
@@ -126,9 +132,8 @@ func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{
 		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -136,7 +141,7 @@ func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }
@@ -162,7 +167,7 @@ func (m *TxModule) Get(hash string) util.Map {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	return EncodeForJS(tx)
+	return normalizeUtilMap(m.ctx.Env, tx)
 }
 
 // sendPayload sends an already signed transaction object to the network
@@ -188,7 +193,7 @@ func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
 		panic(se)
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }

@@ -5,10 +5,10 @@ import (
 
 	"gitlab.com/makeos/mosdef/config"
 	"gitlab.com/makeos/mosdef/keystore"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 
@@ -21,6 +21,7 @@ import (
 // that are accessed through the javascript console environment
 type UserModule struct {
 	cfg     *config.AppConfig
+	ctx     *types.ModulesContext
 	acctMgr *keystore.Keystore
 	service services.Service
 	logic   core.Logic
@@ -37,7 +38,13 @@ func NewUserModule(
 		acctMgr: acctmgr,
 		service: service,
 		logic:   logic,
+		ctx:     types.DefaultModuleContext,
 	}
+}
+
+// SetContext sets the function used to retrieve call context
+func (m *UserModule) SetContext(cg *types.ModulesContext) {
+	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -46,8 +53,8 @@ func (m *UserModule) ConsoleOnlyMode() bool {
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *UserModule) methods() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *UserModule) methods() []*types.ModuleFunc {
+	return []*types.ModuleFunc{
 		{
 			Name:        "listAccounts",
 			Value:       m.ListLocalAccounts,
@@ -97,8 +104,8 @@ func (m *UserModule) methods() []*modules.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *UserModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *UserModule) globals() []*types.ModuleFunc {
+	return []*types.ModuleFunc{
 		{
 			Name:        "accounts",
 			Value:       m.ListLocalAccounts(),
@@ -268,7 +275,7 @@ func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 	if len(acct.Stakes) == 0 {
 		acct.Stakes = nil
 	}
-	return EncodeForJS(acct)
+	return normalizeUtilMap(m.ctx.Env, acct)
 }
 
 // GetSpendableBalance returns the spendable balance of an account
@@ -358,9 +365,8 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 		panic(util.NewStatusError(400, StatusCodeInvalidParam, "", err.Error()))
 	}
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -368,7 +374,7 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }

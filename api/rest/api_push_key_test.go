@@ -10,8 +10,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
-	modules2 "gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -48,7 +48,7 @@ var _ = Describe("GPG", func() {
 						Return(util.Map{
 							"pubKey":  "49G1iGk8fY7RQcJQ7LfQdThdyfaN8dKfxhGQSh8uuNaK35CgazZ",
 							"address": "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc"})
-					mockModuleHub.EXPECT().GetModules().Return(&modules2.Modules{PushKey: mockPushKeyModule})
+					mockModuleHub.EXPECT().GetModules().Return(&types.Modules{PushKey: mockPushKeyModule})
 				},
 			},
 		}
@@ -91,7 +91,7 @@ var _ = Describe("GPG", func() {
 					mockPushKeyModule.EXPECT().
 						GetAccountOfOwner("push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t", uint64(1)).
 						Return(util.Map{"nonce": "1000"})
-					mockModuleHub.EXPECT().GetModules().Return(&modules2.Modules{PushKey: mockPushKeyModule})
+					mockModuleHub.EXPECT().GetModules().Return(&types.Modules{PushKey: mockPushKeyModule})
 				},
 			},
 		}

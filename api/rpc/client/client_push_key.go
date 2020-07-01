@@ -23,7 +23,7 @@ func (c *RPCClient) GetPushKeyOwnerAccount(id string, blockHeight ...uint64) (*s
 
 	acct := state.BareAccount()
 	if err = acct.FromMap(out); err != nil {
-		return nil, makeClientStatusErr("failed to decode call response: %s", err)
+		return nil, util.NewStatusError(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
 	return acct, nil

@@ -19,11 +19,11 @@ type NextNonceGetter func(pushKeyID string, rpcClient client.Client,
 // GetNextNonceOfPushKeyOwner returns the next account nonce of the owner of a given push key.
 // It accepts a rpc client and one or more remote API clients represent different remotes.
 // If will attempt to first request account information using the remote clients and fallback
-// to the RPC client if remote clients failed.
+// to the RPC client if remote clients fail.
 func GetNextNonceOfPushKeyOwner(pkID string, rpcClient client.Client, remoteClients []rest.Client) (string, error) {
 
 	var nextNonce string
-	err := ClientCaller(rpcClient, remoteClients, func(c client.Client) error {
+	err := CallClients(rpcClient, remoteClients, func(c client.Client) error {
 		var err error
 		var acct *state.Account
 
@@ -50,7 +50,7 @@ func GetNextNonceOfPushKeyOwner(pkID string, rpcClient client.Client, remoteClie
 	return nextNonce, err
 }
 
-// ClientCaller allows the caller to perform calls on multiple remote clients
+// CallClients allows the caller to perform calls on multiple remote clients
 // and an RPC client. Callers must provide rpcCaller callback function to perform
 // operation with the given rpc client.
 //
@@ -62,7 +62,7 @@ func GetNextNonceOfPushKeyOwner(pkID string, rpcClient client.Client, remoteClie
 //
 // The rpcClient is not called when one of the remote API client
 // returns a nil error.
-func ClientCaller(
+func CallClients(
 	rpcClient client.Client,
 	remoteClients []rest.Client,
 	rpcCaller func(client.Client) error,

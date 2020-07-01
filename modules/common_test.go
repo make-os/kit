@@ -6,12 +6,22 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/modules"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 
+type TestCase struct {
+	Desc           string
+	Obj            interface{}
+	Expected       interface{}
+	FieldsToIgnore []string
+	ShouldPanic    bool
+	CallEnv        types.Env
+}
+
 var _ = Describe("Common", func() {
 
-	Describe(".EncodeForJS", func() {
+	Describe(".Normalize", func() {
 
 		type test1 struct {
 			Name string
@@ -19,9 +29,9 @@ var _ = Describe("Common", func() {
 		}
 
 		type test2 struct {
-			Age    int
+			Age    int64
 			Others test1
-			More   []interface{}
+			More   []interface{} `json:",omitempty"`
 		}
 
 		type test3 struct {
@@ -36,55 +46,111 @@ var _ = Describe("Common", func() {
 			Num util.BlockNonce
 		}
 
-		It("should return expected output", func() {
-			t1 := test1{Name: "fred", Desc: []byte("i love games")}
-			result := modules.EncodeForJS(t1)
-			Expect(result).To(Equal(util.Map{"Name": "fred",
-				"Desc": "0x69206c6f76652067616d6573",
-			}))
-
-			t2 := test2{Age: 20, Others: t1}
-			result = modules.EncodeForJS(t2)
-			Expect(result["Others"]).To(Equal(util.Map{
-				"Name": "fred",
-				"Desc": "0x69206c6f76652067616d6573",
-			}))
-
-			t3 := test2{Age: 20, Others: t1, More: []interface{}{t1}}
-			result = modules.EncodeForJS(t3)
-			Expect(result["More"]).To(Equal([]interface{}{
-				util.Map{
-					"Desc": "0x69206c6f76652067616d6573",
-					"Name": "fred",
+		var t1 = test1{Name: "fred", Desc: []byte("i love games")}
+		var cases = []TestCase{
+			{
+				Desc:        "should panic with non-map, non-slice map or struct",
+				Obj:         []interface{}{1, 2},
+				ShouldPanic: true,
+			},
+			{
+				Desc:        "should panic with nil result",
+				Obj:         nil,
+				Expected:    []util.Map{},
+				ShouldPanic: true,
+			},
+			{
+				Desc:     "if env = RPC, it should return util.Map and with fields untouched",
+				Obj:      test1{Desc: []byte{1, 2}},
+				Expected: util.Map{"Name": "", "Desc": []byte{1, 2}},
+				CallEnv:  types.NORMAL,
+			},
+			{
+				Desc:     "with a string and []byte field",
+				Obj:      t1,
+				Expected: util.Map{"Name": "fred", "Desc": "0x69206c6f76652067616d6573"},
+			},
+			{
+				Desc:     "with an integer field and a struct field (with string and []byte fields)",
+				Obj:      test2{Age: 20, Others: t1},
+				Expected: util.Map{"Age": "20", "Others": util.Map{"Name": "fred", "Desc": "0x69206c6f76652067616d6573"}},
+			},
+			{
+				Desc: "with an integer field, a slice of struct field and a struct field (with string and []byte fields)",
+				Obj:  test2{Age: 20, Others: t1, More: []interface{}{t1}},
+				Expected: util.Map{"Age": "20",
+					"Others": util.Map{"Name": "fred", "Desc": "0x69206c6f76652067616d6573"},
+					"More":   []interface{}{util.Map{"Name": "fred", "Desc": "0x69206c6f76652067616d6573"}}},
+			},
+			{
+				Desc:     "with a byte slice field",
+				Obj:      test3{Sig: util.StrToBytes32("fred")},
+				Expected: util.Map{"Sig": "0x6672656400000000000000000000000000000000000000000000000000000000"},
+			},
+			{
+				Desc:     "with a big.Int field",
+				Obj:      test4{Num: new(big.Int).SetInt64(10)},
+				Expected: util.Map{"Num": "10"},
+			},
+			{
+				Desc:     "with a BlockNonce field",
+				Obj:      test5{Num: util.EncodeNonce(10)},
+				Expected: util.Map{"Num": "0x000000000000000a"},
+			},
+			{
+				Desc:           "with fields to be ignored",
+				Obj:            test2{Age: 30, Others: test1{Desc: []byte("i love games")}},
+				FieldsToIgnore: []string{"Age"},
+				Expected:       util.Map{"Age": int64(30), "Others": util.Map{"Name": "", "Desc": "0x69206c6f76652067616d6573"}},
+			},
+			{
+				Desc: "with a slice of structs",
+				Obj:  []interface{}{t1, t1},
+				Expected: []util.Map{
+					{"Name": "fred", "Desc": "0x69206c6f76652067616d6573"},
+					{"Name": "fred", "Desc": "0x69206c6f76652067616d6573"},
 				},
-			}))
+			},
+			{
+				Desc: "with a slice of map[string]int",
+				Obj:  []interface{}{map[string]int{"age": 10}, map[string]int{"age": 1000}},
+				Expected: []util.Map{
+					{"age": 10},
+					{"age": 1000},
+				},
+			},
+			{
+				Desc: "with a slice of map[string]float64",
+				Obj:  []interface{}{map[string]float64{"age": 10.2}, map[string]float64{"age": 1000.3}},
+				Expected: []util.Map{
+					{"age": "10.2"},
+					{"age": "1000.3"},
+				},
+			},
+			{
+				Desc:        "should panic with non-map, non-slice map or struct",
+				Obj:         "string",
+				Expected:    []util.Map{},
+				ShouldPanic: true,
+			},
+		}
 
-			t4 := test3{Sig: util.StrToBytes32("fred")}
-			result = modules.EncodeForJS(t4)
-			Expect(result).To(Equal(util.Map{"Sig": "0x6672656400000000000000000000000000000000000000000000000000000000"}))
-
-			t5 := test4{Num: new(big.Int).SetInt64(10)}
-			result = modules.EncodeForJS(t5)
-			Expect(result).To(Equal(util.Map{"Num": "10"}))
-
-			t6 := test5{Num: util.EncodeNonce(10)}
-			result = modules.EncodeForJS(t6)
-			Expect(result).To(Equal(util.Map{"Num": "0x000000000000000a"}))
-		})
-
-		Context("With ignoreField specified", func() {
-			t1 := test2{Age: 30, Others: test1{Desc: []byte("i love games")}}
-
-			BeforeEach(func() {
-				result := modules.EncodeForJS(t1)
-				Expect(result["Age"]).To(Equal(30))
+		for _, c := range cases {
+			_c := c
+			It(_c.Desc, func() {
+				env := types.JS
+				if _c.CallEnv != 0 {
+					env = _c.CallEnv
+				}
+				if !_c.ShouldPanic {
+					result := modules.Normalize(env, _c.Obj, _c.FieldsToIgnore...)
+					Expect(result).To(Equal(_c.Expected))
+				} else {
+					Expect(func() {
+						modules.Normalize(env, _c.Obj, _c.FieldsToIgnore...)
+					}).To(Panic())
+				}
 			})
-
-			It("should not modify field", func() {
-				result := modules.EncodeForJS(t1, "Age")
-				Expect(result["Age"]).To(Equal(30))
-			})
-		})
+		}
 	})
-
 })

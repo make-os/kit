@@ -59,7 +59,7 @@ genmocks:
 	mockgen -source=keystore/types/types.go -destination=mocks/keystore.go -package mocks
 	mockgen -source=api/rest/client/types.go -destination=mocks/rest_client.go -package mocks
 	mockgen -source=api/rpc/client/client.go -destination=api/rpc/client/mocks.go -package client
-	mockgen -source=types/modules/modules.go -destination=mocks/modules.go -package mocks
+	mockgen -source=modules/types/modules.go -destination=mocks/modules.go -package mocks
 	mockgen -source=types/libp2p.go -destination=mocks/libp2p.go -package mocks
 	mockgen -source=pkgs/tree/types.go -destination=mocks/tree.go -package mocks
 	mockgen -source=node/types/types.go -destination=mocks/node.go -package mocks

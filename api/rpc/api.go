@@ -1,8 +1,8 @@
 package rpc
 
 import (
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
-	"gitlab.com/makeos/mosdef/types/modules"
 )
 
 type TestCase struct {
@@ -15,15 +15,20 @@ type TestCase struct {
 }
 
 // APIs returns all API handlers
-func APIs(modulesAgg modules.ModuleHub, rpcServer *rpc.Server) rpc.APISet {
+func APIs(modulesHub types.ModulesHub, rpcServer *rpc.Server) rpc.APISet {
 
-	mods := modulesAgg.GetModules()
+	// Create a new module instances for RPC environment.
+	modules := modulesHub.CreateNewModules()
+	modules.SetContext(&types.ModulesContext{Env: types.NORMAL})
+
+	// Collect APIs
 	var apiSets = []rpc.APISet{
-		NewAccountAPI(mods).APIs(),
-		NewPushKeyAPI(mods).APIs(),
-		NewLocalAccountAPI(mods).APIs(),
-		NewTransactionAPI(mods).APIs(),
+		NewAccountAPI(modules).APIs(),
+		NewPushKeyAPI(modules).APIs(),
+		NewLocalAccountAPI(modules).APIs(),
+		NewTransactionAPI(modules).APIs(),
 		NewRPCManagerAPI(rpcServer).APIs(),
+		NewRepoAPI(modules).APIs(),
 	}
 
 	var mainSet = make(map[string]rpc.APIInfo)

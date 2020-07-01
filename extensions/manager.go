@@ -12,20 +12,20 @@ import (
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
-
 	"gitlab.com/makeos/mosdef/util"
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
 )
 
-// Manager provides extension management capabilities
+// Manager implements Modules. It provides extension management functionalities.
 type Manager struct {
 	cfg        *config.AppConfig
-	main       modules.ModuleHub
+	main       types.ModulesHub
 	runningExt map[string]*ExtensionControl
+	ctx        *types.ModulesContext
 }
 
 // NewManager creates an instance of Manager
@@ -33,7 +33,13 @@ func NewManager(cfg *config.AppConfig) *Manager {
 	return &Manager{
 		cfg:        cfg,
 		runningExt: make(map[string]*ExtensionControl),
+		ctx:        types.DefaultModuleContext,
 	}
+}
+
+// SetContext sets the function used to retrieve call context
+func (m *Manager) SetContext(cg *types.ModulesContext) {
+	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -42,13 +48,13 @@ func (m *Manager) ConsoleOnlyMode() bool {
 }
 
 // SetMainModule configures the main JS module
-func (m *Manager) SetMainModule(main modules.ModuleHub) {
+func (m *Manager) SetMainModule(main types.ModulesHub) {
 	m.main = main
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *Manager) methods() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *Manager) methods() []*types.ModuleFunc {
+	return []*types.ModuleFunc{
 		{Name: "run", Value: m.Run, Description: "Load and run an extension"},
 		{Name: "load", Value: m.Load, Description: "Load an extension"},
 		{Name: "isInstalled", Value: m.Exist, Description: "Check whether an extension is installed"},
@@ -60,11 +66,11 @@ func (m *Manager) methods() []*modules.ModuleFunc {
 }
 
 // globals are functions exposed in the VM's global namespace
-func (m *Manager) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+func (m *Manager) globals() []*types.ModuleFunc {
+	return []*types.ModuleFunc{}
 }
 
-// ConfigureVM implements types.ModuleHub. It configures the JS
+// ConfigureVM implements types.ModulesHub. It configures the JS
 // context and return any number of console prompt suggestions
 func (m *Manager) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	fMap := map[string]interface{}{}

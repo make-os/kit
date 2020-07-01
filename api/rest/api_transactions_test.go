@@ -12,8 +12,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/mocks"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/pkgs/logger"
-	modules2 "gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -48,7 +48,7 @@ var _ = Describe("Tx", func() {
 					mockTxModule.EXPECT().
 						SendPayload(make(map[string]interface{})).
 						Return(util.Map{"hash": "0x000000"})
-					mockModuleHub.EXPECT().GetModules().Return(&modules2.Modules{Tx: mockTxModule})
+					mockModuleHub.EXPECT().GetModules().Return(&types.Modules{Tx: mockTxModule})
 				},
 			},
 		}

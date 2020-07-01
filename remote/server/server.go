@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"gitlab.com/makeos/mosdef/api/rest"
 	types2 "gitlab.com/makeos/mosdef/dht/server/types"
+	types3 "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/types"
 	"gitlab.com/makeos/mosdef/pkgs/cache"
 	"gitlab.com/makeos/mosdef/remote/fetcher"
@@ -26,7 +27,6 @@ import (
 	remotetypes "gitlab.com/makeos/mosdef/remote/types"
 	"gitlab.com/makeos/mosdef/remote/validation"
 	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/state"
 	crypto2 "gitlab.com/makeos/mosdef/util/crypto"
 	plumb "gopkg.in/src-d/go-git.v4/plumbing"
@@ -84,7 +84,7 @@ type Server struct {
 	noteSenders                *cache.Cache                         // Store senders of push notes
 	endorsementSenders         *cache.Cache                         // Stores senders of Endorsement messages
 	endorsementsReceived       *cache.Cache                         // Store PushEnds
-	modulesAgg                 modules.ModuleHub                    // Modules aggregator
+	modulesAgg                 types3.ModulesHub                    // Modules aggregator
 	refSyncer                  refsync.RefSyncer                    // Responsible for syncing pushed references in a push transaction
 	authenticate               AuthenticatorFunc                    // Function for performing authentication
 	checkPushNote              validation.NoteChecker               // Function for performing PushNote validation
@@ -175,7 +175,7 @@ func (sv *Server) SetRootDir(dir string) {
 }
 
 // RegisterAPIHandlers registers server API handlers
-func (sv *Server) RegisterAPIHandlers(agg modules.ModuleHub) {
+func (sv *Server) RegisterAPIHandlers(agg types3.ModulesHub) {
 	sv.modulesAgg = agg
 	sv.registerAPIHandlers(sv.srv.Handler.(*http.ServeMux))
 }

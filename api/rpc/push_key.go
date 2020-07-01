@@ -2,18 +2,18 @@ package rpc
 
 import (
 	"github.com/stretchr/objx"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types/constants"
-	"gitlab.com/makeos/mosdef/types/modules"
 )
 
 // PushKeyAPI provides RPC methods for various push key functionality.
 type PushKeyAPI struct {
-	mods *modules.Modules
+	mods *types.Modules
 }
 
 // NewPushKeyAPI creates an instance of PushKeyAPI
-func NewPushKeyAPI(mods *modules.Modules) *PushKeyAPI {
+func NewPushKeyAPI(mods *types.Modules) *PushKeyAPI {
 	return &PushKeyAPI{mods: mods}
 }
 

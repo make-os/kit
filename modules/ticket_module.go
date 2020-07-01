@@ -8,17 +8,18 @@ import (
 	"github.com/robertkrimen/otto"
 	"github.com/shopspring/decimal"
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	tickettypes "gitlab.com/makeos/mosdef/ticket/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/types/core"
-	"gitlab.com/makeos/mosdef/types/modules"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 // TicketModule provides access to various utility functions
 type TicketModule struct {
+	ctx       *types.ModulesContext
 	service   services.Service
 	logic     core.Logic
 	ticketmgr tickettypes.TicketManager
@@ -32,12 +33,18 @@ func NewTicketModule(service services.Service, logic core.Logic, ticketmgr ticke
 		ticketmgr: ticketmgr,
 		logic:     logic,
 		hostObj:   make(map[string]interface{}),
+		ctx:       types.DefaultModuleContext,
 	}
 }
 
+// SetContext sets the function used to retrieve call context
+func (m *TicketModule) SetContext(cg *types.ModulesContext) {
+	m.ctx = cg
+}
+
 // globals are functions exposed in the VM's global namespace
-func (m *TicketModule) globals() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{}
+func (m *TicketModule) globals() []*types.ModuleFunc {
+	return []*types.ModuleFunc{}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -46,22 +53,22 @@ func (m *TicketModule) ConsoleOnlyMode() bool {
 }
 
 // methods are functions exposed in the special namespace of this module.
-func (m *TicketModule) methods() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *TicketModule) methods() []*types.ModuleFunc {
+	return []*types.ModuleFunc{
 		{
 			Name:        "buy",
-			Value:       m.Buy,
-			Description: "Buy a validator ticket",
+			Value:       m.BuyValidatorTicket,
+			Description: "BuyValidatorTicket a validator ticket",
 		},
 		{
-			Name:        "listValidatorTicketsOfProposer",
-			Value:       m.ListValidatorTicketsOfProposer,
-			Description: "List validator tickets where given public key is the proposer",
+			Name:        "listProposerValidatorTickets",
+			Value:       m.ListProposerValidatorTickets,
+			Description: "List validator tickets assigned to a given proposer public key",
 		},
 		{
-			Name:        "listHostTicketsOfProposer",
-			Value:       m.ListHostTicketsOfProposer,
-			Description: "List host tickets where given public key is the proposer",
+			Name:        "listProposerHostTickets",
+			Value:       m.ListProposerHostTickets,
+			Description: "List host tickets assigned to a given proposer public key",
 		},
 		{
 			Name:        "listRecent",
@@ -87,12 +94,12 @@ func (m *TicketModule) methods() []*modules.ModuleFunc {
 }
 
 // hostFuncs are `host` methods exposed by the module
-func (m *TicketModule) hostFuncs() []*modules.ModuleFunc {
-	return []*modules.ModuleFunc{
+func (m *TicketModule) hostFuncs() []*types.ModuleFunc {
+	return []*types.ModuleFunc{
 		{
 			Name:        "buy",
-			Value:       m.HostBuy,
-			Description: "Buy an host ticket",
+			Value:       m.BuyHostTicket,
+			Description: "BuyValidatorTicket an host ticket",
 		},
 		{
 			Name:        "unbond",
@@ -136,7 +143,7 @@ func (m *TicketModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	return suggestions
 }
 
-// buy creates a transaction to acquire a validator ticket
+// BuyValidatorTicket creates a transaction to acquire a validator ticket
 //
 // ARGS:
 // params <map>
@@ -152,7 +159,7 @@ func (m *TicketModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TicketModule) Buy(params map[string]interface{}, options ...interface{}) interface{} {
+func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options ...interface{}) util.Map {
 	var err error
 
 	var tx = txns.NewBareTxTicketPurchase(txns.TxTypeValidatorTicket)
@@ -160,9 +167,8 @@ func (m *TicketModule) Buy(params map[string]interface{}, options ...interface{}
 		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	// Process the transaction
@@ -171,12 +177,12 @@ func (m *TicketModule) Buy(params map[string]interface{}, options ...interface{}
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }
 
-// hostBuy creates a transaction to acquire a host ticket
+// BuyHostTicket creates a transaction to acquire a host ticket
 //
 // ARGS:
 // params <map>
@@ -192,7 +198,7 @@ func (m *TicketModule) Buy(params map[string]interface{}, options ...interface{}
 //
 // RETURNS object <map>
 // object.hash <string>: 				The transaction hash
-func (m *TicketModule) HostBuy(params map[string]interface{}, options ...interface{}) interface{} {
+func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...interface{}) interface{} {
 	var err error
 
 	var tx = txns.NewBareTxTicketPurchase(txns.TxTypeHostTicket)
@@ -201,14 +207,13 @@ func (m *TicketModule) HostBuy(params map[string]interface{}, options ...interfa
 	}
 
 	// Derive BLS public key
-	key := checkAndGetKey(options...)
+	key, _ := parseOptions(options...)
 	pk, _ := crypto.PrivKeyFromBase58(key)
 	blsKey := pk.BLSKey()
 	tx.BLSPubKey = blsKey.Public().Bytes()
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -216,12 +221,12 @@ func (m *TicketModule) HostBuy(params map[string]interface{}, options ...interfa
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }
 
-// listValidatorTicketsOfProposer finds validator tickets where the given public
+// ListProposerValidatorTickets finds validator tickets where the given public
 // key is the proposer; By default it will filter out decayed tickets. Use query
 // option to override this behaviour
 //
@@ -233,7 +238,7 @@ func (m *TicketModule) HostBuy(params map[string]interface{}, options ...interfa
 // [queryOpts].decayed 	<bool>	Forces only decayed tickets to be returned
 //
 // RETURNS <[]types.Ticket>
-func (m *TicketModule) ListValidatorTicketsOfProposer(
+func (m *TicketModule) ListProposerValidatorTickets(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) []util.Map {
 
@@ -259,15 +264,19 @@ func (m *TicketModule) ListValidatorTicketsOfProposer(
 		panic(util.NewStatusError(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 	}
 
-	res, err := m.ticketmgr.GetByProposer(txns.TxTypeValidatorTicket, pk.MustBytes32(), qopts)
+	tickets, err := m.ticketmgr.GetByProposer(txns.TxTypeValidatorTicket, pk.MustBytes32(), qopts)
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	return EncodeManyForJS(res)
+	if len(tickets) == 0 {
+		return []util.Map{}
+	}
+
+	return normalizeSliceUtilMap(m.ctx.Env, tickets)
 }
 
-// listHostTicketsOfProposer finds host tickets where the given public
+// ListProposerHostTickets finds host tickets where the given public
 // key is the proposer
 //
 // ARGS:
@@ -276,7 +285,7 @@ func (m *TicketModule) ListValidatorTicketsOfProposer(
 // [queryOpts] <map>
 // [queryOpts].nonDecayed <bool>	Forces only non-decayed tickets to be returned (default: true)
 // [queryOpts].decayed 	<bool>	Forces only decayed tickets to be returned
-func (m *TicketModule) ListHostTicketsOfProposer(
+func (m *TicketModule) ListProposerHostTickets(
 	proposerPubKey string,
 	queryOpts ...map[string]interface{}) interface{} {
 
@@ -295,15 +304,19 @@ func (m *TicketModule) ListHostTicketsOfProposer(
 		panic(util.NewStatusError(400, StatusCodeInvalidProposerPubKey, "params", err.Error()))
 	}
 
-	res, err := m.ticketmgr.GetByProposer(txns.TxTypeHostTicket, pk.MustBytes32(), qopts)
+	tickets, err := m.ticketmgr.GetByProposer(txns.TxTypeHostTicket, pk.MustBytes32(), qopts)
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	return EncodeManyForJS(res)
+	if len(tickets) == 0 {
+		return []util.Map{}
+	}
+
+	return normalizeSliceUtilMap(m.ctx.Env, tickets)
 }
 
-// listTopValidators returns top n validators
+// ListTopValidators returns top n validators
 //
 // ARGS:
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
@@ -316,10 +329,13 @@ func (m *TicketModule) ListTopValidators(limit ...int) interface{} {
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
-	return EncodeManyForJS(tickets)
+	if len(tickets) == 0 {
+		return []util.Map{}
+	}
+	return normalizeSliceUtilMap(m.ctx.Env, tickets)
 }
 
-// listTopHosts returns top n hosts
+// ListTopHosts returns top n hosts
 //
 // ARGS
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
@@ -332,10 +348,13 @@ func (m *TicketModule) ListTopHosts(limit ...int) interface{} {
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
-	return EncodeManyForJS(tickets)
+	if len(tickets) == 0 {
+		return []util.Map{}
+	}
+	return normalizeSliceUtilMap(m.ctx.Env, tickets)
 }
 
-// ticketStats returns ticket statistics of the network; If proposerPubKey is
+// TicketStats returns ticket statistics of the network; If proposerPubKey is
 // provided, the proposer's personalized ticket stats are included.
 //
 // ARGS:
@@ -379,10 +398,10 @@ func (m *TicketModule) TicketStats(proposerPubKey ...string) (result util.Map) {
 	}
 	res["valueOfAll"] = valAll
 
-	return EncodeForJS(res)
+	return normalizeUtilMap(m.ctx.Env, res)
 }
 
-// listRecent returns most recently acquired tickets
+// ListRecent returns most recently acquired tickets
 //
 // ARGS
 // [limit] <int>: Set the number of result to return (default: 0 = no limit)
@@ -395,7 +414,10 @@ func (m *TicketModule) ListRecent(limit ...int) []util.Map {
 		Limit:        n,
 		SortByHeight: -1,
 	})
-	return EncodeManyForJS(res)
+	if len(res) == 0 {
+		return []util.Map{}
+	}
+	return normalizeSliceUtilMap(m.ctx.Env, res)
 }
 
 // unbondHostTicket initiates the release of stake associated with a host
@@ -423,9 +445,8 @@ func (m *TicketModule) UnbondHostTicket(params map[string]interface{},
 		panic(util.NewStatusError(400, StatusCodeInvalidParam, "params", err.Error()))
 	}
 
-	payloadOnly := finalizeTx(tx, m.logic, options...)
-	if payloadOnly {
-		return EncodeForJS(tx.ToMap())
+	if finalizeTx(tx, m.logic, options...) {
+		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -433,7 +454,7 @@ func (m *TicketModule) UnbondHostTicket(params map[string]interface{},
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return EncodeForJS(map[string]interface{}{
+	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
 		"hash": hash,
 	})
 }
