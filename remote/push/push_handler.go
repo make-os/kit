@@ -336,7 +336,7 @@ func (h *BasicHandler) createPushNote() (*types.Note, error) {
 			Name:            refName,
 			OldHash:         ref.OldHash,
 			NewHash:         ref.NewHash,
-			Nonce:           h.Repo.GetState().References.Get(refName).Nonce + 1,
+			Nonce:           h.Repo.GetState().References.Get(refName).Nonce.UInt64() + 1,
 			Fee:             h.TxDetails.Get(refName).Fee,
 			Value:           h.TxDetails.Get(refName).Value,
 			MergeProposalID: h.TxDetails.Get(refName).MergeProposalID,

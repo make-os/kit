@@ -8,6 +8,7 @@ import (
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
+	"gitlab.com/makeos/mosdef/util"
 )
 
 // CreateRepoContract is a system contract for creating a repository.
@@ -59,7 +60,7 @@ func (c *CreateRepoContract) Exec() error {
 		newRepo.AddOwner(spk.Addr().String(), &state.RepoOwner{
 			Creator:  true,
 			Veto:     voterType == state.VoterNetStakersAndVetoOwner,
-			JoinedAt: c.chainHeight + 1,
+			JoinedAt: util.UInt64(c.chainHeight) + 1,
 		})
 	}
 

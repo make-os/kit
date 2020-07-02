@@ -16,18 +16,21 @@ import (
 
 // API provides a REST API handlers
 type API struct {
-	mods types.ModulesHub
-	log  logger.Logger
+	modules *types.Modules
+	log     logger.Logger
 }
 
 // NewAPI creates an instance of API
 func NewAPI(mods types.ModulesHub, log logger.Logger) *API {
-	return &API{mods: mods, log: log.Module("rest-api")}
+	return &API{
+		log:     log.Module("rest-api"),
+		modules: mods.GetModules(),
+	}
 }
 
 // Modules returns modules
 func (r *API) Modules() *types.Modules {
-	return r.mods.GetModules()
+	return r.modules
 }
 
 // get returns a handler for GET operations

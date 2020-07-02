@@ -18,8 +18,7 @@ type TestCase struct {
 func APIs(modulesHub types.ModulesHub, rpcServer *rpc.Server) rpc.APISet {
 
 	// Create a new module instances for RPC environment.
-	modules := modulesHub.CreateNewModules()
-	modules.SetContext(&types.ModulesContext{Env: types.NORMAL})
+	modules := modulesHub.GetModules()
 
 	// Collect APIs
 	var apiSets = []rpc.APISet{
@@ -31,10 +30,10 @@ func APIs(modulesHub types.ModulesHub, rpcServer *rpc.Server) rpc.APISet {
 		NewRepoAPI(modules).APIs(),
 	}
 
-	var mainSet = make(map[string]rpc.APIInfo)
+	var mainSet = []rpc.APIInfo{}
 	for _, set := range apiSets {
-		for k, v := range set {
-			mainSet[k] = v
+		for _, v := range set {
+			mainSet = append(mainSet, v)
 		}
 	}
 

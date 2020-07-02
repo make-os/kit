@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/golang/mock/gomock"
+	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/mocks"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/util"
@@ -27,29 +28,18 @@ var _ = Describe("PushKey", func() {
 	})
 
 	Describe(".find", func() {
+		var key = crypto.NewKeyFromIntSeed(1)
 		testCases := map[string]*TestCase{
-			"when id is not provided": {
-				params: map[string]interface{}{},
-				err:    &rpc.Err{Code: "60001", Message: "id is required", Data: "id"},
-			},
-			"when id type is not string": {
-				params: map[string]interface{}{"id": 222},
-				err:    &rpc.Err{Code: "60001", Message: "wrong value type, want 'string', got string", Data: "id"},
-			},
-			"when blockHeight is provided but type is not string": {
-				params: map[string]interface{}{"id": "push1_abc", "blockHeight": 1},
-				err:    &rpc.Err{Code: "60001", Message: "wrong value type, want 'string', got string", Data: "blockHeight"},
-			},
 			"when push key is successfully returned": {
 				params: map[string]interface{}{"id": "push1_abc"},
 				result: util.Map{
-					"pubKey":  "---BEGIN PUBLIC KEY...",
+					"pubKey":  key.PubKey().ToPublicKey(),
 					"address": "addr1",
 				},
 				mocker: func(tp *TestCase) {
 					mockPushKeyMod := mocks.NewMockPushKeyModule(ctrl)
 					mockPushKeyMod.EXPECT().Get("push1_abc", uint64(0)).Return(util.Map{
-						"pubKey":  "---BEGIN PUBLIC KEY...",
+						"pubKey":  key.PubKey().ToPublicKey(),
 						"address": "addr1",
 					})
 					mods.PushKey = mockPushKeyMod
@@ -71,20 +61,8 @@ var _ = Describe("PushKey", func() {
 		}
 	})
 
-	Describe(".getAccountOfOwner", func() {
+	Describe(".getOwner", func() {
 		testCases := map[string]*TestCase{
-			"when id is not provided": {
-				params: map[string]interface{}{},
-				err:    &rpc.Err{Code: "60001", Message: "id is required", Data: "id"},
-			},
-			"when id type is not string": {
-				params: map[string]interface{}{"id": 222},
-				err:    &rpc.Err{Code: "60001", Message: "wrong value type, want 'string', got string", Data: "id"},
-			},
-			"when blockHeight is provided but type is not string": {
-				params: map[string]interface{}{"id": "push1_abc", "blockHeight": 1},
-				err:    &rpc.Err{Code: "60001", Message: "wrong value type, want 'string', got string", Data: "blockHeight"},
-			},
 			"when account is successfully returned": {
 				params: map[string]interface{}{"id": "push1_abc"},
 				result: util.Map{"balance": "100", "nonce": 10, "delegatorCommission": 23},
@@ -106,7 +84,7 @@ var _ = Describe("PushKey", func() {
 				if tp.mocker != nil {
 					tp.mocker(tp)
 				}
-				resp := pushApi.getAccountOfOwner(tp.params)
+				resp := pushApi.getOwner(tp.params)
 				Expect(resp).To(Equal(&rpc.Response{
 					JSONRPCVersion: "2.0", Err: tp.err, Result: tp.result,
 				}))

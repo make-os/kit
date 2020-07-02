@@ -41,11 +41,11 @@ func (a *RepoKeeper) Get(name string, blockNum ...uint64) *state.Repository {
 	// repo where they first appeared.
 	stateVersion := a.state.Version()
 	err := repo.Proposals.ForEach(func(prop *state.RepoProposal, id string) error {
-		if prop.Height == uint64(stateVersion) {
+		if prop.Height.UInt64() == uint64(stateVersion) {
 			prop.Config = repo.Config.Governance
 			return nil
 		}
-		propParent := a.GetNoPopulate(name, prop.Height)
+		propParent := a.GetNoPopulate(name, prop.Height.UInt64())
 		if propParent.IsNil() {
 			return fmt.Errorf("failed to get repo version of proposal (%s)", id)
 		}

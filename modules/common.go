@@ -11,7 +11,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/crypto"
-	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/types"
 	"gitlab.com/makeos/mosdef/types/core"
 	"gitlab.com/makeos/mosdef/util"
@@ -80,33 +79,24 @@ func finalizeTx(tx types.BaseTx, keepers core.Keepers, options ...interface{}) b
 
 	key, payloadOnly := parseOptions(options...)
 
+	// Set sender public key if unset and key was provided
+	if tx.GetSenderPubKey().IsEmpty() && key != "" {
+		pk, _ := crypto.PrivKeyFromBase58(key)
+		tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(pk).PubKey().MustBytes())
+	}
+
 	// Set timestamp if not already set
 	if tx.GetTimestamp() == 0 {
 		tx.SetTimestamp(time.Now().Unix())
 	}
 
-	// Set nonce if nonce is not provided
-	if tx.GetNonce() == 0 {
-		if tx.GetSenderPubKey().IsEmpty() {
-			panic(se(400, StatusCodeInvalidParam, "senderPubKey", "sender public key was not set"))
-		}
-
+	// Set nonce if nonce was not set and key was provided
+	if tx.GetNonce() == 0 && key != "" {
 		senderAcct := keepers.AccountKeeper().Get(tx.GetFrom())
 		if senderAcct.IsNil() {
 			panic(se(400, StatusCodeInvalidParam, "senderPubKey", "sender account was not found"))
 		}
-		tx.SetNonce(senderAcct.Nonce + 1)
-	}
-
-	// If no key, we can't sign, so return.
-	if key == "" {
-		return payloadOnly
-	}
-
-	// Set tx public key only if unset
-	if tx.GetSenderPubKey().IsEmpty() {
-		pk, _ := crypto.PrivKeyFromBase58(key)
-		tx.SetSenderPubKey(crypto.NewKeyFromPrivKey(pk).PubKey().MustBytes())
+		tx.SetNonce(senderAcct.Nonce.UInt64() + 1)
 	}
 
 	// Sign the tx only if unsigned
@@ -121,26 +111,8 @@ func finalizeTx(tx types.BaseTx, keepers core.Keepers, options ...interface{}) b
 	return payloadOnly
 }
 
-// normalizeUtilMap normalizes a struct or a map for specific environment,
-// returning a util.Map object. Panics if res is not a map or struct.
-func normalizeUtilMap(env modulestypes.Env, res interface{}, fieldToIgnore ...string) util.Map {
-	return Normalize(env, res, fieldToIgnore...).(util.Map)
-}
-
-// normalizeSliceUtilMap normalizes a slice of struct or a slice map for specific
-// environment, returning a slice of util.Map object.
-// Panics if res is not a slice of map or struct.
-func normalizeSliceUtilMap(env modulestypes.Env, res interface{}, fieldToIgnore ...string) []util.Map {
-	nRes := Normalize(env, res, fieldToIgnore...)
-	if nRes == nil {
-		return []util.Map{}
-	}
-	return nRes.([]util.Map)
-}
-
-// Normalize normalizes a map, struct or slice of struct/map for a given environment.
-// Panics if res is not a slice of map or struct.
-func Normalize(env modulestypes.Env, res interface{}, ignoreFields ...string) interface{} {
+// Normalize normalizes a map, struct or slice of struct/map.
+func Normalize(res interface{}, ignoreFields ...string) interface{} {
 
 	// Return nil result is nil
 	if res == nil {
@@ -153,7 +125,7 @@ func Normalize(env modulestypes.Env, res interface{}, ignoreFields ...string) in
 	switch val.Kind() {
 
 	case reflect.Ptr:
-		return Normalize(env, val.Elem().Interface(), ignoreFields...)
+		return Normalize(val.Elem().Interface(), ignoreFields...)
 
 	// Convert struct to map
 	case reflect.Struct:
@@ -170,18 +142,12 @@ func Normalize(env modulestypes.Env, res interface{}, ignoreFields ...string) in
 	case reflect.Slice:
 		var res []util.Map
 		for i := 0; i < val.Len(); i++ {
-			res = append(res, Normalize(env, val.Index(i).Interface(), ignoreFields...).(util.Map))
+			res = append(res, Normalize(val.Index(i).Interface(), ignoreFields...).(util.Map))
 		}
 		return res
 
 	default:
 		panic("only struct, map or map slice are allowed")
-	}
-
-	// If environment is RPC, return object immediately.
-	// We don't need to Normalize RPC result client response.
-	if env == modulestypes.NORMAL {
-		return util.Map(m)
 	}
 
 	for k, v := range m {
@@ -197,17 +163,17 @@ func Normalize(env modulestypes.Env, res interface{}, ignoreFields ...string) in
 		case float64:
 			m[k] = fmt.Sprintf("%s", decimal.NewFromFloat(o).String())
 		case map[string][]byte:
-			m[k] = Normalize(env, v, ignoreFields...)
+			m[k] = Normalize(v, ignoreFields...)
 		case map[string]interface{}:
 			if len(o) > 0 { // no need adding empty maps
 				if util.IsMapOrStruct(o) {
-					m[k] = Normalize(env, o, ignoreFields...)
+					m[k] = Normalize(o, ignoreFields...)
 				}
 			}
 		case []interface{}:
 			for i, item := range o {
 				if util.IsMapOrStruct(item) {
-					o[i] = Normalize(env, item, ignoreFields...)
+					o[i] = Normalize(item, ignoreFields...)
 				}
 			}
 
@@ -215,6 +181,8 @@ func Normalize(env modulestypes.Env, res interface{}, ignoreFields ...string) in
 		case util.BlockNonce:
 			m[k] = util.ToHex(o[:])
 		case util.Bytes32:
+			m[k] = o.HexStr()
+		case util.Bytes:
 			m[k] = o.HexStr()
 		case util.Bytes64:
 			m[k] = o.HexStr()
@@ -238,9 +206,9 @@ func Normalize(env modulestypes.Env, res interface{}, ignoreFields ...string) in
 						newMap[key.String()] = mapValStr
 					}
 				}
-				m[k] = Normalize(env, newMap, ignoreFields...)
+				m[k] = Normalize(newMap, ignoreFields...)
 			} else if kind == reflect.Struct {
-				m[k] = Normalize(env, structs.Map(o), ignoreFields...)
+				m[k] = Normalize(structs.Map(o), ignoreFields...)
 			}
 		}
 	}

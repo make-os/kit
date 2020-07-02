@@ -71,7 +71,7 @@ func (c *UpdateRepoContract) Exec() error {
 
 	// Index the proposal against its end height so it
 	// can be tracked and finalized at that height.
-	if err = repoKeeper.IndexProposalEnd(c.tx.RepoName, proposal.ID, proposal.EndAt); err != nil {
+	if err = repoKeeper.IndexProposalEnd(c.tx.RepoName, proposal.ID, proposal.EndAt.UInt64()); err != nil {
 		return errors.Wrap(err, common.ErrFailedToIndexProposal)
 	}
 

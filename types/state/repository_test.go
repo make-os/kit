@@ -34,7 +34,7 @@ var _ = Describe("Repository", func() {
 				res, err := NewRepositoryFromBytes(expectedBz)
 				Expect(err).To(BeNil())
 				Expect(res.References).To(HaveKey("refs/heads/master"))
-				Expect(res.References.Get("refs/heads/master").Nonce).To(Equal(uint64(20)))
+				Expect(res.References.Get("refs/heads/master").Nonce.UInt64()).To(Equal(uint64(20)))
 			})
 		})
 
@@ -252,7 +252,7 @@ var _ = Describe("Repository", func() {
 				Expect(base.Policies[1].Object).To(Equal("branch_dev"))
 				Expect(base.Policies[1].Action).To(Equal("delete"))
 				Expect(base.Governance.Voter).To(Equal(VoterType(1)))
-				Expect(base.Governance.ProposalDuration).To(Equal(uint64(100)))
+				Expect(base.Governance.ProposalDuration.UInt64()).To(Equal(uint64(100)))
 				Expect(base.Governance.ProposalFee).To(Equal(float64(12)))
 			})
 		})

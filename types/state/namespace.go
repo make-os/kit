@@ -10,8 +10,8 @@ import (
 type Namespace struct {
 	util.CodecUtil `json:"-" msgpack:"-"`
 	Owner          string           `json:"owner" mapstructure:"owner" msgpack:"owner"`
-	GraceEndAt     uint64           `json:"graceEndAt" mapstructure:"graceEndAt" msgpack:"graceEndAt"`
-	ExpiresAt      uint64           `json:"expiresAt" mapstructure:"expiresAt" msgpack:"expiresAt"`
+	GraceEndAt     util.UInt64      `json:"graceEndAt" mapstructure:"graceEndAt" msgpack:"graceEndAt"`
+	ExpiresAt      util.UInt64      `json:"expiresAt" mapstructure:"expiresAt" msgpack:"expiresAt"`
 	Domains        NamespaceDomains `json:"domains" mapstructure:"domains" msgpack:"domains"`
 	Contributors   BaseContributors `json:"contributors" msgpack:"contributors" mapstructure:"contributors"`
 }

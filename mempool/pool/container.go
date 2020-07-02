@@ -42,7 +42,7 @@ func newItem(tx types.BaseTx) *containerItem {
 // nonceInfo stores information about a transaction
 // that is associated with a specific nonce
 type nonceInfo struct {
-	TxHash util.Bytes32
+	TxHash util.HexBytes
 	Fee    util.String
 }
 
@@ -233,7 +233,7 @@ add:
 
 	q.senderNonceIndex[sender] = senderNonceInfo
 	q.container = append(q.container, item)
-	q.hashIndex[tx.GetHash().HexStr()] = struct{}{}
+	q.hashIndex[tx.GetHash().String()] = struct{}{}
 	q.len++
 	q.byteSize += tx.GetEcoSize()
 	q.actualSize += int64(len(tx.Bytes()))
@@ -251,7 +251,7 @@ add:
 func (q *TxContainer) Has(tx types.BaseTx) bool {
 	q.gmx.RLock()
 	defer q.gmx.RUnlock()
-	return q.hashIndex[tx.GetHash().HexStr()] != nil
+	return q.hashIndex[tx.GetHash().String()] != nil
 }
 
 // HasByHash is like Has but accepts a transaction hash
@@ -274,7 +274,7 @@ func (q *TxContainer) First() types.BaseTx {
 
 	item := q.container[0]
 	q.container = q.container[1:]
-	delete(q.hashIndex, item.Tx.GetHash().HexStr())
+	delete(q.hashIndex, item.Tx.GetHash().String())
 	q.senderNonceIndex.remove(item.Tx.GetFrom(), item.Tx.GetNonce())
 	q.byteSize -= item.Tx.GetEcoSize()
 	q.actualSize -= int64(len(item.Tx.Bytes()))
@@ -296,7 +296,7 @@ func (q *TxContainer) Last() types.BaseTx {
 	lastIndex := len(q.container) - 1
 	item := q.container[lastIndex]
 	q.container = q.container[0:lastIndex]
-	delete(q.hashIndex, item.Tx.GetHash().HexStr())
+	delete(q.hashIndex, item.Tx.GetHash().String())
 	q.senderNonceIndex.remove(item.Tx.GetFrom(), item.Tx.GetNonce())
 	q.byteSize -= item.Tx.GetEcoSize()
 	q.actualSize -= int64(len(item.Tx.Bytes()))
@@ -352,7 +352,7 @@ func (q *TxContainer) remove(txs ...types.BaseTx) {
 		if funk.Find(txs, func(tx types.BaseTx) bool {
 			return o.Tx.GetHash().Equal(tx.GetHash())
 		}) != nil {
-			delete(q.hashIndex, o.Tx.GetHash().HexStr())
+			delete(q.hashIndex, o.Tx.GetHash().String())
 			q.senderNonceIndex.remove(o.Tx.GetFrom(), o.Tx.GetNonce())
 			q.byteSize -= o.Tx.GetEcoSize()
 			q.actualSize -= int64(len(o.Tx.Bytes()))
@@ -367,12 +367,12 @@ func (q *TxContainer) remove(txs ...types.BaseTx) {
 
 // removeByHash removes transactions by hash
 // Note: Not thread-safe
-func (q *TxContainer) removeByHash(txsHash ...util.Bytes32) {
+func (q *TxContainer) removeByHash(txsHash ...util.HexBytes) {
 	finalTxs := funk.Filter(q.container, func(o *containerItem) bool {
-		if funk.Find(txsHash, func(hash util.Bytes32) bool {
+		if funk.Find(txsHash, func(hash util.HexBytes) bool {
 			return o.Tx.GetHash().Equal(hash)
 		}) != nil {
-			delete(q.hashIndex, o.Tx.GetHash().HexStr())
+			delete(q.hashIndex, o.Tx.GetHash().String())
 			q.senderNonceIndex.remove(o.Tx.GetFrom(), o.Tx.GetNonce())
 			q.byteSize -= o.Tx.GetEcoSize()
 			q.actualSize -= int64(len(o.Tx.Bytes()))
@@ -395,7 +395,7 @@ func (q *TxContainer) Remove(txs ...types.BaseTx) {
 // GetByHash get a transaction by its hash from the pool
 func (q *TxContainer) GetByHash(hash string) types.BaseTx {
 	for _, item := range q.container {
-		if hash == item.Tx.GetHash().HexStr() {
+		if hash == item.Tx.GetHash().String() {
 			return item.Tx
 		}
 	}

@@ -88,7 +88,7 @@ var _ = Describe("NamespaceDomainUpdateContract", func() {
 
 			Specify("that sender account nonce is incremented", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(acct.Nonce).To(Equal(uint64(2)))
+				Expect(acct.Nonce.UInt64()).To(Equal(uint64(2)))
 			})
 		})
 

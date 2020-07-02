@@ -44,7 +44,7 @@ type App struct {
 	txIndex                   int
 	unIdxValidatorTickets     []*ticketInfo
 	unIdxHostTickets          []*ticketInfo
-	unbondHostReqs            []util.Bytes32
+	unbondHostReqs            []util.HexBytes
 	ticketMgr                 tickettypes.TicketManager
 	isCurrentBlockProposer    bool
 	unsavedValidators         []*core.Validator
@@ -120,7 +120,7 @@ func (a *App) Info(req abcitypes.RequestInfo) abcitypes.ResponseInfo {
 
 	if lastBlock != nil {
 		lastBlockAppHash = lastBlock.AppHash
-		lastBlockHeight = lastBlock.Height
+		lastBlockHeight = lastBlock.Height.Int64()
 	}
 
 	return abcitypes.ResponseInfo{
@@ -158,16 +158,16 @@ func (a *App) CheckTx(req abcitypes.RequestCheckTx) abcitypes.ResponseCheckTx {
 		}
 	}
 
-	return abcitypes.ResponseCheckTx{Code: 0, Data: tx.GetHash().Bytes()}
+	return abcitypes.ResponseCheckTx{Code: 0, Data: tx.GetHash()}
 }
 
 // BeginBlock indicates the beginning of a new block.
 func (a *App) BeginBlock(req abcitypes.RequestBeginBlock) abcitypes.ResponseBeginBlock {
-	a.curBlock.Height = req.GetHeader().Height
+	a.curBlock.Time.Set(req.GetHeader().Time.Unix())
+	a.curBlock.Height.Set(req.GetHeader().Height)
 	a.curBlock.Hash = req.GetHash()
 	a.curBlock.LastAppHash = req.GetHeader().AppHash
 	a.curBlock.ProposerAddress = req.GetHeader().ProposerAddress
-	a.curBlock.Time = req.GetHeader().Time.Unix()
 
 	if bytes.Equal(a.cfg.G().PrivVal.GetAddress().Bytes(), a.curBlock.ProposerAddress) {
 		a.isCurrentBlockProposer = true
@@ -417,9 +417,8 @@ func (a *App) Commit() abcitypes.ResponseCommit {
 	// height is the height where the last validator update will take effect.
 	// Tendermint effects validator updates after 2 blocks; We need to index
 	// the validators to the real height when the validators were selected (2 blocks ago)
-	if a.curBlock.Height == a.heightToSaveNewValidators {
-		if err := a.logic.ValidatorKeeper().
-			Index(a.curBlock.Height, a.unsavedValidators); err != nil {
+	if a.curBlock.Height.Int64() == a.heightToSaveNewValidators {
+		if err := a.logic.ValidatorKeeper().Index(a.curBlock.Height.Int64(), a.unsavedValidators); err != nil {
 			a.commitPanic(errors.Wrap(err, "failed to update current validators"))
 		}
 		a.log.Info("Indexed new validators for the new epoch", "Height", a.curBlock.Height)
@@ -479,7 +478,7 @@ func (a *App) commitPanic(err error) {
 func (a *App) reset() {
 	a.unIdxValidatorTickets = []*ticketInfo{}
 	a.unIdxHostTickets = []*ticketInfo{}
-	a.unbondHostReqs = []util.Bytes32{}
+	a.unbondHostReqs = []util.HexBytes{}
 	a.txIndex = 0
 	a.isCurrentBlockProposer = false
 	a.unIdxTxs = []types.BaseTx{}
@@ -489,7 +488,7 @@ func (a *App) reset() {
 
 	// Only reset heightToSaveNewValidators if the current height is
 	// same as it to avoid not triggering saving of new validators at the target height.
-	if a.curBlock.Height == a.heightToSaveNewValidators {
+	if a.curBlock.Height.Int64() == a.heightToSaveNewValidators {
 		a.heightToSaveNewValidators = 0
 	}
 

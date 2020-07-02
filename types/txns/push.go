@@ -105,8 +105,8 @@ func (tx *TxPush) ComputeHash() util.Bytes32 {
 }
 
 // GetHash returns the hash of the transaction
-func (tx *TxPush) GetHash() util.Bytes32 {
-	return tx.Note.ID()
+func (tx *TxPush) GetHash() util.HexBytes {
+	return tx.Note.ID().ToHexBytes()
 }
 
 // GetID returns the id of the transaction (also the hash)

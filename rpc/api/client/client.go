@@ -11,11 +11,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/asaskevich/govalidator"
 	"github.com/gorilla/rpc/v2/json"
-	"github.com/pkg/errors"
+	"github.com/k0kubun/pp"
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/types/api"
-	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -24,13 +24,14 @@ const (
 	Timeout             = 15 * time.Second
 	ErrCodeClient       = "client_error"
 	ErrCodeDecodeFailed = "decode_error"
+	ErrCodeUnexpected   = "unexpected_error"
 )
 
 // Client represents a JSON-RPC client
 type Client interface {
 	SendTxPayload(data map[string]interface{}) (*api.SendTxPayloadResponse, *util.StatusError)
-	GetAccount(address string, blockHeight ...uint64) (*state.Account, *util.StatusError)
-	GetPushKeyOwnerAccount(id string, blockHeight ...uint64) (*state.Account, *util.StatusError)
+	GetAccount(address string, blockHeight ...uint64) (*api.GetAccountResponse, *util.StatusError)
+	GetPushKeyOwner(id string, blockHeight ...uint64) (*api.GetAccountResponse, *util.StatusError)
 	GetOptions() *Options
 	Call(method string, params interface{}) (res util.Map, statusCode int, err error)
 }
@@ -150,6 +151,7 @@ func (c *RPCClient) Call(method string, params interface{}) (res util.Map, statu
 	var m map[string]interface{}
 	err = json.DecodeClientResponse(resp.Body, &m)
 	if err != nil {
+		pp.Println(err)
 		return nil, resp.StatusCode, err
 	}
 
@@ -161,28 +163,26 @@ func makeClientStatusErr(msg string, args ...interface{}) *util.StatusError {
 	return util.NewStatusError(0, ErrCodeClient, "", fmt.Sprintf(msg, args...))
 }
 
-// makeStatusErrorFromCallErr converts error from a RPC call to a StatusError.
-// Expects callStatusCode of 0 to indicate a client error which is expected to be non-json.
-// Expects non-zero callStatusCode to be in json format and conforms to JSONRPC 2.0 error standard,
-// it will panic if otherwise.
-// Returns nil if err is nil
+// makeStatusErrorFromCallErr converts error containing a JSON marshalled
+// status error to StatusError. If error does not contain a JSON object,
+// an ErrCodeUnexpected status error including the error message is returned.
 func makeStatusErrorFromCallErr(callStatusCode int, err error) *util.StatusError {
 	if err == nil {
 		return nil
 	}
 
-	if callStatusCode == 0 {
-		return makeClientStatusErr(err.Error())
+	// For non-json error, return an ErrCodeUnexpected status error
+	if !govalidator.IsJSON(err.Error()) {
+		return util.NewStatusError(callStatusCode, ErrCodeUnexpected, "", err.Error())
 	}
 
 	var errResp rpc.Response
-	if err := encJson.Unmarshal([]byte(err.Error()), &errResp); err != nil {
-		panic(errors.Wrap(err, "unable to decode call response"))
+	encJson.Unmarshal([]byte(err.Error()), &errResp)
+
+	data := ""
+	if errResp.Err.Data != nil {
+		data = errResp.Err.Data.(string)
 	}
 
-	return util.NewStatusError(
-		callStatusCode,
-		errResp.Err.Code,
-		errResp.Err.Data.(string),
-		errResp.Err.Message)
+	return util.NewStatusError(callStatusCode, errResp.Err.Code, data, errResp.Err.Message)
 }

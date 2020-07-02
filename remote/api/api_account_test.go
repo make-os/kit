@@ -23,15 +23,15 @@ type TestCase struct {
 
 var _ = Describe("Account", func() {
 	var ctrl *gomock.Controller
-	var mockModuleHub *mocks.MockModulesHub
+	var modules *types.Modules
 	var restApi *API
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockModuleHub = mocks.NewMockModulesHub(ctrl)
+		modules = &types.Modules{}
 		restApi = &API{
-			mods: mockModuleHub,
-			log:  logger.NewLogrusNoOp(),
+			modules: modules,
+			log:     logger.NewLogrusNoOp(),
 		}
 	})
 
@@ -43,25 +43,14 @@ var _ = Describe("Account", func() {
 		var w *httptest.ResponseRecorder
 		var req *http.Request
 		var testCases = map[string]TestCase{
-			"address is not provided": {
-				params:     nil,
-				body:       `{"error":{"code":"60001","field":"address","msg":"address is required"}}`,
-				statusCode: 400,
-			},
-			"blockHeight type is a valid integer": {
-				params:     map[string]string{"address": "addr", "blockHeight": "1ab"},
-				body:       `{"error":{"code":"60001","field":"blockHeight","msg":"blockHeight requires a numeric value"}}`,
-				statusCode: 400,
-			},
 			"address should be passed to UserModule#GetNonce": {
 				params:     map[string]string{"address": "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc"},
 				body:       `{"nonce":"100"}`,
 				statusCode: 200,
 				mocker: func(tc *TestCase) {
 					mockAcctModule := mocks.NewMockAccountModule(ctrl)
-					mockAcctModule.EXPECT().GetNonce(
-						"maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc", uint64(0)).Return("100")
-					mockModuleHub.EXPECT().GetModules().Return(&types.Modules{Account: mockAcctModule})
+					mockAcctModule.EXPECT().GetNonce("maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc", uint64(0)).Return("100")
+					modules.Account = mockAcctModule
 				},
 			},
 		}
@@ -95,25 +84,14 @@ var _ = Describe("Account", func() {
 		var w *httptest.ResponseRecorder
 		var req *http.Request
 		var testCases = map[string]TestCase{
-			"address is not provided": {
-				params:     nil,
-				body:       `{"error":{"code":"60001","field":"address","msg":"address is required"}}`,
-				statusCode: 400,
-			},
-			"blockHeight type is a valid integer": {
-				params:     map[string]string{"address": "addr", "blockHeight": "1ab"},
-				body:       `{"error":{"code":"60001","field":"blockHeight","msg":"blockHeight requires a numeric value"}}`,
-				statusCode: 400,
-			},
 			"address is valid": {
 				params:     map[string]string{"address": "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc"},
 				body:       `{"nonce":"100"}`,
 				statusCode: 200,
 				mocker: func(tc *TestCase) {
 					mockAcctModule := mocks.NewMockAccountModule(ctrl)
-					mockAcctModule.EXPECT().GetNonce(
-						"maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc", uint64(0)).Return("100")
-					mockModuleHub.EXPECT().GetModules().Return(&types.Modules{Account: mockAcctModule})
+					mockAcctModule.EXPECT().GetNonce("maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc", uint64(0)).Return("100")
+					modules.Account = mockAcctModule
 				},
 			},
 		}

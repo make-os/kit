@@ -22,10 +22,10 @@ import (
 
 // Manager implements Modules. It provides extension management functionalities.
 type Manager struct {
-	cfg        *config.AppConfig
-	main       types.ModulesHub
-	runningExt map[string]*ExtensionControl
-	ctx        *types.ModulesContext
+	cfg         *config.AppConfig
+	main        types.ModulesHub
+	runningExt  map[string]*ExtensionControl
+	suggestions []prompt.Suggest
 }
 
 // NewManager creates an instance of Manager
@@ -33,13 +33,7 @@ func NewManager(cfg *config.AppConfig) *Manager {
 	return &Manager{
 		cfg:        cfg,
 		runningExt: make(map[string]*ExtensionControl),
-		ctx:        types.DefaultModuleContext,
 	}
-}
-
-// SetContext sets the function used to retrieve call context
-func (m *Manager) SetContext(cg *types.ModulesContext) {
-	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -70,31 +64,36 @@ func (m *Manager) globals() []*types.ModuleFunc {
 	return []*types.ModuleFunc{}
 }
 
+// completer returns suggestions for console input
+func (m *Manager) completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.suggestions, words, true)
+	}
+	return nil
+}
+
 // ConfigureVM implements types.ModulesHub. It configures the JS
 // context and return any number of console prompt suggestions
-func (m *Manager) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
-	fMap := map[string]interface{}{}
-	var suggestions []prompt.Suggest
+func (m *Manager) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Set the namespace object
-	util.VMSet(vm, constants.NamespaceExtension, fMap)
+	nsMap := map[string]interface{}{}
+	util.VMSet(vm, constants.NamespaceExtension, nsMap)
 
 	// add namespaced functions
 	for _, f := range m.methods() {
-		fMap[f.Name] = f.Value
+		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceExtension, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.completer
 }
 
 // prepare creates a new context for an extension under the given name.

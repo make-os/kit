@@ -109,7 +109,7 @@ func (c *MergeRequestContract) Exec() error {
 		// Index the proposal against its end height so it can be tracked and
 		// finalized at that height.
 		repoKeeper := c.RepoKeeper()
-		if err = repoKeeper.IndexProposalEnd(c.data.RepoName, proposal.ID, proposal.EndAt); err != nil {
+		if err = repoKeeper.IndexProposalEnd(c.data.RepoName, proposal.ID, proposal.EndAt.UInt64()); err != nil {
 			return errors.Wrap(err, common.ErrFailedToIndexProposal)
 		}
 

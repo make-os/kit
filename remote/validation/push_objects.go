@@ -58,7 +58,7 @@ func CheckPushedReferenceConsistency(
 	refInfo := repoState.References.Get(name)
 	nextNonce := refInfo.Nonce + 1
 	refPropFee := ref.Value
-	if nextNonce != ref.Nonce {
+	if nextNonce.UInt64() != ref.Nonce {
 		msg := fmt.Sprintf("reference '%s' has nonce '%d', expecting '%d'", name, nonce, nextNonce)
 		return fe(-1, "references", msg)
 	}
@@ -260,7 +260,7 @@ func CheckPushNoteConsistency(note types.PushNote, logic core.Logic) error {
 	pusherAcct := logic.AccountKeeper().Get(note.GetPusherAddress())
 	if pusherAcct.IsNil() {
 		return util.FieldError("pusherAddr", "pusher account not found")
-	} else if note.GetPusherAccountNonce() != pusherAcct.Nonce+1 {
+	} else if note.GetPusherAccountNonce() != pusherAcct.Nonce.UInt64()+1 {
 		msg := fmt.Sprintf("wrong account nonce '%d', expecting '%d'",
 			note.GetPusherAccountNonce(), pusherAcct.Nonce+1)
 		return util.FieldError("accountNonce", msg)

@@ -222,7 +222,7 @@ var _ = Describe("UpsertOwnerContract", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governance.ProposalDuration + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governance.ProposalDuration.UInt64() + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})
@@ -252,8 +252,8 @@ var _ = Describe("UpsertOwnerContract", func() {
 			It("should add the new proposal with expected `endAt` and `feeDepEndAt` values", func() {
 				repo := logic.RepoKeeper().GetNoPopulate(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
-				Expect(repo.Proposals.Get("1").FeeDepositEndAt).To(Equal(uint64(301)))
-				Expect(repo.Proposals.Get("1").EndAt).To(Equal(uint64(1301)))
+				Expect(repo.Proposals.Get("1").FeeDepositEndAt.UInt64()).To(Equal(uint64(301)))
+				Expect(repo.Proposals.Get("1").EndAt.UInt64()).To(Equal(uint64(1301)))
 			})
 		})
 	})

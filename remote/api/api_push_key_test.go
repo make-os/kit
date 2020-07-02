@@ -15,17 +15,17 @@ import (
 	"gitlab.com/makeos/mosdef/util"
 )
 
-var _ = Describe("GPG", func() {
+var _ = Describe("PushKeyAPI", func() {
 	var ctrl *gomock.Controller
-	var mockModuleHub *mocks.MockModulesHub
+	var modules *types.Modules
 	var restApi *API
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockModuleHub = mocks.NewMockModulesHub(ctrl)
+		modules = &types.Modules{}
 		restApi = &API{
-			mods: mockModuleHub,
-			log:  logger.NewLogrusNoOp(),
+			modules: modules,
+			log:     logger.NewLogrusNoOp(),
 		}
 	})
 
@@ -38,7 +38,7 @@ var _ = Describe("GPG", func() {
 		var req *http.Request
 		var testCases = map[string]TestCase{
 			"id and blockHeight should be passed to PushKeyModule#Get": {
-				params:     map[string]string{"id": "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t", "blockHeight": "1"},
+				params:     map[string]string{"id": "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t", "height": "1"},
 				body:       `{"address":"maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc","pubKey":"49G1iGk8fY7RQcJQ7LfQdThdyfaN8dKfxhGQSh8uuNaK35CgazZ"}`,
 				statusCode: 200,
 				mocker: func(tc *TestCase) {
@@ -48,7 +48,7 @@ var _ = Describe("GPG", func() {
 						Return(util.Map{
 							"pubKey":  "49G1iGk8fY7RQcJQ7LfQdThdyfaN8dKfxhGQSh8uuNaK35CgazZ",
 							"address": "maker1ztejwuradar2tkk3pdu79txnn7f8g3qf8q6dcc"})
-					mockModuleHub.EXPECT().GetModules().Return(&types.Modules{PushKey: mockPushKeyModule})
+					modules.PushKey = mockPushKeyModule
 				},
 			},
 		}
@@ -83,7 +83,7 @@ var _ = Describe("GPG", func() {
 		var req *http.Request
 		var testCases = map[string]TestCase{
 			"id and blockHeight should be passed to PushKeyModule#GetAccountOfOwner": {
-				params:     map[string]string{"id": "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t", "blockHeight": "1"},
+				params:     map[string]string{"id": "push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t", "height": "1"},
 				body:       `{"nonce":"1000"}`,
 				statusCode: 200,
 				mocker: func(tc *TestCase) {
@@ -91,7 +91,7 @@ var _ = Describe("GPG", func() {
 					mockPushKeyModule.EXPECT().
 						GetAccountOfOwner("push1wfx7vp8qfyv98cctvamqwec5xjrj48tpxaa77t", uint64(1)).
 						Return(util.Map{"nonce": "1000"})
-					mockModuleHub.EXPECT().GetModules().Return(&types.Modules{PushKey: mockPushKeyModule})
+					modules.PushKey = mockPushKeyModule
 				},
 			},
 		}

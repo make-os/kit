@@ -17,18 +17,15 @@ func NewRPCManagerAPI(srv *rpc.Server) *Manager {
 }
 
 // echo returns any parameter sent in the request
-// Body:
-// - params <any>: Arbitrary parameter
-// Response <map>:
-// - data <any>: The params passed in the request
 func (l *Manager) echo(params interface{}) (resp *rpc.Response) {
 	return rpc.Success(util.Map{"data": params})
 }
 
 // APIs returns all API handlers
 func (l *Manager) APIs() rpc.APISet {
-	return map[string]rpc.APIInfo{
-		"echo": {
+	return []rpc.APIInfo{
+		{
+			Name:        "echo",
 			Namespace:   constants.NamespaceRPC,
 			Description: "Returns echos back any parameter sent in the request",
 			Func:        l.echo,

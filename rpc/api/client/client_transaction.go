@@ -9,7 +9,7 @@ import (
 //
 // ARGS:
 // - data <string>: The GPG key unique ID
-// - [blockHeight] <string>: The target query block height (default: latest).
+// - [height] <string>: The target query block height (default: latest).
 //
 // RETURNS:
 // - resp <map> - state.Account

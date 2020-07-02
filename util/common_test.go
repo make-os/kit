@@ -311,6 +311,19 @@ var _ = Describe("Common", func() {
 
 	})
 
+	Describe(".StructSliceToMap", func() {
+
+		type testStruct struct {
+			Name string
+		}
+
+		It("should return correct map equivalent", func() {
+			s := []testStruct{{Name: "odion"}, {Name: "Ken"}}
+			expected := []Map{{"Name": "odion"}, {"Name": "Ken"}}
+			Expect(StructSliceToMap(s)).To(Equal(expected))
+		})
+	})
+
 	Describe(".GetPtrAddr", func() {
 		It("should get numeric pointer address", func() {
 			name := "xyz"
@@ -487,18 +500,6 @@ var _ = Describe("Common", func() {
 			Expect(err["msg"]).To(Equal("message"))
 			Expect(err["field"]).To(Equal("field"))
 			Expect(err["code"]).To(Equal("E200"))
-		})
-	})
-
-	Describe(".GetIndexFromUInt64Slice", func() {
-		It("should return 0 when slice is empty", func() {
-			retval := GetIndexFromUInt64Slice(1)
-			Expect(retval).To(BeZero())
-		})
-
-		It("should return value at target index", func() {
-			retval := GetIndexFromUInt64Slice(1, 3, 4, 5)
-			Expect(retval).To(Equal(uint64(4)))
 		})
 	})
 

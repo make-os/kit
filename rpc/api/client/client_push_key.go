@@ -1,30 +1,28 @@
 package client
 
 import (
+	"gitlab.com/makeos/mosdef/types/api"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
-// GetPushKeyOwnerAccount returns the account that owns a push key
-//
-// ARGS:
-// - id: The push key unique ID
-// - [blockHeight]: The target block height to query (default: latest).
-//
-// RETURNS:
-// - resp <map> - state.Account
-func (c *RPCClient) GetPushKeyOwnerAccount(id string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
-	out, statusCode, err := c.call("key_getAccountOfOwner", util.Map{
-		"id":          id,
-		"blockHeight": util.GetIndexFromUInt64Slice(0, blockHeight...)})
+// GetPushKeyOwner gets the account that owns a push key
+func (c *RPCClient) GetPushKeyOwner(id string, blockHeight ...uint64) (*api.GetAccountResponse, *util.StatusError) {
+
+	var height uint64
+	if len(blockHeight) > 0 {
+		height = blockHeight[0]
+	}
+
+	out, statusCode, err := c.call("pk_getOwner", util.Map{"id": id, "height": height})
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	acct := state.BareAccount()
-	if err = acct.FromMap(out); err != nil {
+	r := &api.GetAccountResponse{Account: state.BareAccount()}
+	if err = r.Account.FromMap(out); err != nil {
 		return nil, util.NewStatusError(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
-	return acct, nil
+	return r, nil
 }

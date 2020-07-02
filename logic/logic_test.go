@@ -53,7 +53,7 @@ var _ = Describe("Logic", func() {
 				if a.Type == config.GenDataTypeAccount {
 					res := logic.AccountKeeper().Get(util.Address(a.Address))
 					Expect(res.Balance).To(Equal(util.String("0")))
-					Expect(res.Nonce).To(Equal(uint64(0)))
+					Expect(res.Nonce.UInt64()).To(Equal(uint64(0)))
 				}
 			}
 			err = logic.WriteGenesisState()

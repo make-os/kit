@@ -144,7 +144,7 @@ func (m *Manager) getTopTickets(ticketType types.TxCode, limit int) (tickettypes
 }
 
 // Remove deletes a ticket by its hash
-func (m *Manager) Remove(hash util.Bytes32) error {
+func (m *Manager) Remove(hash util.HexBytes) error {
 	return m.s.RemoveByHash(hash)
 }
 
@@ -417,15 +417,15 @@ func (m *Manager) QueryOne(qf func(t *tickettypes.Ticket) bool) *tickettypes.Tic
 }
 
 // UpdateDecayBy updates the decay height of a ticket
-func (m *Manager) UpdateDecayBy(hash util.Bytes32, newDecayHeight uint64) error {
+func (m *Manager) UpdateDecayBy(hash util.HexBytes, newDecayHeight uint64) error {
 	m.s.UpdateOne(tickettypes.Ticket{DecayBy: newDecayHeight},
-		func(t *tickettypes.Ticket) bool { return t.Hash == hash })
+		func(t *tickettypes.Ticket) bool { return t.Hash.Equal(hash) })
 	return nil
 }
 
 // GetByHash get a ticket by hash
-func (m *Manager) GetByHash(hash util.Bytes32) *tickettypes.Ticket {
-	return m.QueryOne(func(t *tickettypes.Ticket) bool { return t.Hash == hash })
+func (m *Manager) GetByHash(hash util.HexBytes) *tickettypes.Ticket {
+	return m.QueryOne(func(t *tickettypes.Ticket) bool { return t.Hash.Equal(hash) })
 }
 
 // Stop stores the manager

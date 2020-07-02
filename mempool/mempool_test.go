@@ -165,7 +165,7 @@ var _ = Describe("Mempool", func() {
 			It("should return 2 txs; 1 tx must remain in the pool and it must be a types.TxTypeValidatorTicket", func() {
 				Expect(len(res)).To(Equal(2))
 				Expect(mempool.pool.Size()).To(Equal(int64(1)))
-				Expect(mempool.pool.HasByHash(tx3.GetHash().HexStr())).To(BeTrue())
+				Expect(mempool.pool.HasByHash(tx3.GetHash().String())).To(BeTrue())
 				actual := mempool.pool.Head()
 				Expect(actual.GetType()).To(Equal(txns.TxTypeValidatorTicket))
 			})

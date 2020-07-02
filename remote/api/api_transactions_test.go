@@ -19,15 +19,15 @@ import (
 
 var _ = Describe("Tx", func() {
 	var ctrl *gomock.Controller
-	var mockModuleHub *mocks.MockModulesHub
+	var modules *types.Modules
 	var restApi *API
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
-		mockModuleHub = mocks.NewMockModulesHub(ctrl)
+		modules = &types.Modules{}
 		restApi = &API{
-			mods: mockModuleHub,
-			log:  logger.NewLogrusNoOp(),
+			modules: modules,
+			log:     logger.NewLogrusNoOp(),
 		}
 	})
 
@@ -45,10 +45,8 @@ var _ = Describe("Tx", func() {
 				statusCode: 201,
 				mocker: func(tc *TestCase) {
 					mockTxModule := mocks.NewMockTxModule(ctrl)
-					mockTxModule.EXPECT().
-						SendPayload(make(map[string]interface{})).
-						Return(util.Map{"hash": "0x000000"})
-					mockModuleHub.EXPECT().GetModules().Return(&types.Modules{Tx: mockTxModule})
+					mockTxModule.EXPECT().SendPayload(make(map[string]interface{})).Return(util.Map{"hash": "0x000000"})
+					modules.Tx = mockTxModule
 				},
 			},
 		}

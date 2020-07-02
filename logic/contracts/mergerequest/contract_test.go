@@ -166,7 +166,7 @@ var _ = Describe("MergeRequestContract", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repo.Config.Governance.ProposalDuration + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(repo.Config.Governance.ProposalDuration.UInt64() + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})
@@ -210,10 +210,10 @@ var _ = Describe("MergeRequestContract", func() {
 			It("should update proposal action data", func() {
 				Expect(repo.Proposals).To(HaveLen(1))
 				id := mergerequest.MakeMergeRequestProposalID(id)
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseBranch]).To(Equal([]byte("base2")))
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseHash]).To(Equal([]byte("baseHash2")))
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetBranch]).To(Equal([]byte("target2")))
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetHash]).To(Equal([]byte("targetHash2")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseBranch]).To(Equal(util.Bytes("base2")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseHash]).To(Equal(util.Bytes("baseHash2")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetBranch]).To(Equal(util.Bytes("target2")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetHash]).To(Equal(util.Bytes("targetHash2")))
 			})
 		})
 
@@ -257,10 +257,10 @@ var _ = Describe("MergeRequestContract", func() {
 			It("should not update proposal action data", func() {
 				Expect(repo.Proposals).To(HaveLen(1))
 				id := mergerequest.MakeMergeRequestProposalID(id)
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseBranch]).To(Equal([]byte("base")))
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseHash]).To(Equal([]byte("baseHash")))
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetBranch]).To(Equal([]byte("target")))
-				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetHash]).To(Equal([]byte("targetHash")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseBranch]).To(Equal(util.Bytes("base")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyBaseHash]).To(Equal(util.Bytes("baseHash")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetBranch]).To(Equal(util.Bytes("target")))
+				Expect(repo.Proposals.Get(id).ActionData[constants.ActionDataKeyTargetHash]).To(Equal(util.Bytes("targetHash")))
 			})
 		})
 	})

@@ -14,19 +14,14 @@ import (
 
 // PoolModule provides access to the transaction pool
 type PoolModule struct {
-	reactor  *mempool.Reactor
-	pushPool types.PushPool
-	ctx      *modulestypes.ModulesContext
+	reactor     *mempool.Reactor
+	pushPool    types.PushPool
+	suggestions []prompt.Suggest
 }
 
 // NewPoolModule creates an instance of PoolModule
 func NewPoolModule(reactor *mempool.Reactor, pushPool types.PushPool) *PoolModule {
-	return &PoolModule{reactor: reactor, pushPool: pushPool, ctx: modulestypes.DefaultModuleContext}
-}
-
-// SetContext sets the function used to retrieve call context
-func (m *PoolModule) SetContext(cg *modulestypes.ModulesContext) {
-	m.ctx = cg
+	return &PoolModule{reactor: reactor, pushPool: pushPool}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -60,10 +55,17 @@ func (m *PoolModule) methods() []*modulestypes.ModuleFunc {
 	}
 }
 
+// completer returns suggestions for console input
+func (m *PoolModule) completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.suggestions, words, true)
+	}
+	return nil
+}
+
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *PoolModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
-	var suggestions []prompt.Suggest
+func (m *PoolModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
@@ -72,30 +74,30 @@ func (m *PoolModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespacePool, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}
 
-	return suggestions
+	return m.completer
 }
 
 // getSize returns the size of the pool
 func (m *PoolModule) GetSize() util.Map {
-	return normalizeUtilMap(m.ctx.Env, m.reactor.GetPoolSize())
+	return util.StructToMap(m.reactor.GetPoolSize())
 }
 
 // getTop returns all the transactions in the pool
 func (m *PoolModule) GetTop(n int) []util.Map {
 	var res = []util.Map{}
 	for _, tx := range m.reactor.GetTop(n) {
-		res = append(res, normalizeUtilMap(m.ctx.Env, tx.ToMap()))
+		res = append(res, tx.ToMap())
 	}
 	return res
 }

@@ -283,7 +283,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				mockLogic.SysKeeper.EXPECT().GetLastBlockInfo().Return(&core.BlockInfo{
 					AppHash: []byte("app_hash"),
-					Height:  height,
+					Height:  util.Int64(height),
 				}, nil)
 				app.logic = mockLogic.AtomicLogic
 			})
@@ -325,7 +325,7 @@ var _ = Describe("App", func() {
 
 		When("tx is valid", func() {
 			var res abcitypes.ResponseCheckTx
-			var expectedHash util.Bytes32
+			var expectedHash util.HexBytes
 			BeforeEach(func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error {
 					return nil
@@ -464,9 +464,9 @@ var _ = Describe("App", func() {
 
 			BeforeEach(func() {
 				app.validateTx = func(tx types.BaseTx, i int, logic core.Logic) error { return nil }
-				app.curBlock.Height = int64(10)
+				app.curBlock.Height = 10
 				tx := txns.NewBareTxTicketUnbond(txns.TxTypeUnbondHostTicket)
-				tx.TicketHash = util.StrToBytes32("tid")
+				tx.TicketHash = util.StrToHexBytes("tid")
 				req := abcitypes.RequestDeliverTx{Tx: tx.Bytes()}
 				mockLogic.AtomicLogic.EXPECT().ExecTx(gomock.Any()).Return(abcitypes.ResponseDeliverTx{})
 				app.logic = mockLogic.AtomicLogic
@@ -609,8 +609,8 @@ var _ = Describe("App", func() {
 				mockLogic.StateTree.EXPECT().WorkingHash().Return([]byte("app_hash")).Times(1)
 				mockLogic.SysKeeper.EXPECT().SaveBlockInfo(gomock.Any()).Return(nil)
 				app.heightToSaveNewValidators = 100
-				app.unbondHostReqs = append(app.unbondHostReqs, util.StrToBytes32("ticket_hash"))
-				mockLogic.TicketManager.EXPECT().UpdateDecayBy(util.StrToBytes32("ticket_hash"), uint64(app.curBlock.Height))
+				app.unbondHostReqs = append(app.unbondHostReqs, util.StrToHexBytes("ticket_hash"))
+				mockLogic.TicketManager.EXPECT().UpdateDecayBy(util.StrToHexBytes("ticket_hash"), uint64(app.curBlock.Height))
 				mockLogic.AtomicLogic.EXPECT().Commit().Return(nil)
 				app.logic = mockLogic.AtomicLogic
 

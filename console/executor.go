@@ -3,8 +3,6 @@ package console
 import (
 	"fmt"
 
-	"github.com/c-bata/go-prompt"
-
 	"github.com/fatih/color"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
@@ -31,13 +29,6 @@ func newExecutor(l logger.Logger) *Executor {
 	e.vm = otto.New()
 	e.log = l.Module("console/executor")
 	return e
-}
-
-// PrepareContext adds objects and functions into the VM's global
-// contexts allowing users to have access to pre-defined values and objects
-func (e *Executor) PrepareContext() ([]prompt.Suggest, error) {
-	var suggestions []prompt.Suggest
-	return suggestions, nil
 }
 
 // OnInput receives inputs and executes
@@ -72,7 +63,9 @@ func (e *Executor) exec(in string) {
 
 	vExp, _ := v.Export()
 	if vExp != nil {
-		bs, _ := prettyjson.Marshal(vExp)
+		format := prettyjson.NewFormatter()
+		format.NewlineArray = ""
+		bs, _ := format.Marshal(vExp)
 		fmt.Println(string(bs))
 	}
 }

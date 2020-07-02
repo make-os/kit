@@ -102,6 +102,6 @@ func (s *Server) AddAPI(apis ...APISet) {
 }
 
 // GetMethods returns all registered RPC methods
-func (s *Server) GetMethods() map[string]MethodInfo {
+func (s *Server) GetMethods() []MethodInfo {
 	return s.rpc.Methods()
 }

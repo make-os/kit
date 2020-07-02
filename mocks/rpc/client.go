@@ -8,7 +8,6 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	client "gitlab.com/makeos/mosdef/rpc/api/client"
 	api "gitlab.com/makeos/mosdef/types/api"
-	state "gitlab.com/makeos/mosdef/types/state"
 	util "gitlab.com/makeos/mosdef/util"
 	reflect "reflect"
 )
@@ -52,14 +51,14 @@ func (mr *MockClientMockRecorder) SendTxPayload(data interface{}) *gomock.Call {
 }
 
 // GetAccount mocks base method
-func (m *MockClient) GetAccount(address string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
+func (m *MockClient) GetAccount(address string, blockHeight ...uint64) (*api.GetAccountResponse, *util.StatusError) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetAccount", varargs...)
-	ret0, _ := ret[0].(*state.Account)
+	ret0, _ := ret[0].(*api.GetAccountResponse)
 	ret1, _ := ret[1].(*util.StatusError)
 	return ret0, ret1
 }
@@ -71,24 +70,24 @@ func (mr *MockClientMockRecorder) GetAccount(address interface{}, blockHeight ..
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockClient)(nil).GetAccount), varargs...)
 }
 
-// GetPushKeyOwnerAccount mocks base method
-func (m *MockClient) GetPushKeyOwnerAccount(id string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
+// GetPushKeyOwner mocks base method
+func (m *MockClient) GetPushKeyOwner(id string, blockHeight ...uint64) (*api.GetAccountResponse, *util.StatusError) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{id}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
-	ret := m.ctrl.Call(m, "GetPushKeyOwnerAccount", varargs...)
-	ret0, _ := ret[0].(*state.Account)
+	ret := m.ctrl.Call(m, "GetPushKeyOwner", varargs...)
+	ret0, _ := ret[0].(*api.GetAccountResponse)
 	ret1, _ := ret[1].(*util.StatusError)
 	return ret0, ret1
 }
 
-// GetPushKeyOwnerAccount indicates an expected call of GetPushKeyOwnerAccount
-func (mr *MockClientMockRecorder) GetPushKeyOwnerAccount(id interface{}, blockHeight ...interface{}) *gomock.Call {
+// GetPushKeyOwner indicates an expected call of GetPushKeyOwner
+func (mr *MockClientMockRecorder) GetPushKeyOwner(id interface{}, blockHeight ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{id}, blockHeight...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKeyOwnerAccount", reflect.TypeOf((*MockClient)(nil).GetPushKeyOwnerAccount), varargs...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPushKeyOwner", reflect.TypeOf((*MockClient)(nil).GetPushKeyOwner), varargs...)
 }
 
 // GetOptions mocks base method

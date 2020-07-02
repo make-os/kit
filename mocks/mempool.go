@@ -302,10 +302,10 @@ func (mr *MockMempoolReactorMockRecorder) GetTop(n interface{}) *gomock.Call {
 }
 
 // AddTx mocks base method
-func (m *MockMempoolReactor) AddTx(tx types1.BaseTx) (util.Bytes32, error) {
+func (m *MockMempoolReactor) AddTx(tx types1.BaseTx) (util.HexBytes, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddTx", tx)
-	ret0, _ := ret[0].(util.Bytes32)
+	ret0, _ := ret[0].(util.HexBytes)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -22,16 +22,16 @@ var _ = Describe("Client", func() {
 		ctrl.Finish()
 	})
 
-	Describe(".GetPushKeyOwnerAccount", func() {
+	Describe(".GetPushKeyOwner", func() {
 		When("the RPC call returns an error", func() {
 			It("should return the error wrapped in a StatusError", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return nil, 0, fmt.Errorf("bad thing happened")
 				}
-				_, err := client.GetPushKeyOwnerAccount("push1_abc", 100)
+				_, err := client.GetPushKeyOwner("push1_abc", 100)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
-					Code:     "client_error",
+					Code:     ErrCodeUnexpected,
 					HttpCode: 0,
 					Msg:      "bad thing happened",
 					Field:    "",
@@ -44,7 +44,7 @@ var _ = Describe("Client", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return util.Map{"balance": 1000}, 0, nil
 				}
-				_, err := client.GetPushKeyOwnerAccount("push1_abc", 100)
+				_, err := client.GetPushKeyOwner("push1_abc", 100)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
 					Code:     "decode_error",
@@ -60,7 +60,7 @@ var _ = Describe("Client", func() {
 				client.call = func(method string, params interface{}) (res util.Map, statusCode int, err error) {
 					return util.Map{"balance": "1000"}, 0, nil
 				}
-				acct, err := client.GetPushKeyOwnerAccount("push1_abc", 100)
+				acct, err := client.GetPushKeyOwner("push1_abc", 100)
 				Expect(err).To(BeNil())
 				Expect(acct.Balance).To(Equal(util.String("1000")))
 			})

@@ -67,7 +67,7 @@ var _ = Describe("TicketUnbondContract", func() {
 				mockLogic.TicketManager.EXPECT().GetByHash(gomock.Any()).Return(nil)
 
 				err = unbondticket.NewContract().Init(mockLogic.Logic, &txns.TxTicketUnbond{
-					TicketHash: util.StrToBytes32("ticket_id"),
+					TicketHash: util.StrToHexBytes("ticket_id"),
 					TxCommon:   &txns.TxCommon{Fee: "1", SenderPubKey: sender.PubKey().ToPublicKey()},
 				}, 0).Exec()
 				Expect(err).ToNot(BeNil())
@@ -91,7 +91,7 @@ var _ = Describe("TicketUnbondContract", func() {
 				mockLogic.AccountKeeper.EXPECT().Update(sender.Addr(), acct)
 				mockLogic.AccountKeeper.EXPECT().Get(sender.Addr(), uint64(1)).Return(acct)
 
-				returnTicket := &tickettypes.Ticket{Hash: util.StrToBytes32("ticket_id"), Value: "100"}
+				returnTicket := &tickettypes.Ticket{Hash: util.StrToHexBytes("ticket_id"), Value: "100"}
 				mockLogic.TicketManager.EXPECT().GetByHash(returnTicket.Hash).Return(returnTicket)
 
 				err = unbondticket.NewContract().Init(mockLogic.Logic, &txns.TxTicketUnbond{
@@ -104,11 +104,11 @@ var _ = Describe("TicketUnbondContract", func() {
 			Specify("that the unbondHeight is 202", func() {
 				stake := acct.Stakes.Get("s0")
 				Expect(stake.Value.String()).To(Equal("100"))
-				Expect(stake.UnbondHeight).To(Equal(uint64(202)))
+				Expect(stake.UnbondHeight.UInt64()).To(Equal(uint64(202)))
 			})
 
 			Specify("that the nonce is 1", func() {
-				Expect(acct.Nonce).To(Equal(uint64(1)))
+				Expect(acct.Nonce.UInt64()).To(Equal(uint64(1)))
 			})
 
 			Specify("that balance is 999", func() {

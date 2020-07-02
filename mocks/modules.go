@@ -37,10 +37,10 @@ func (m *MockModulesHub) EXPECT() *MockModulesHubMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockModulesHub) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockModulesHub) ConfigureVM(vm *otto.Otto) []prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].([]prompt.Completer)
 	return ret0
 }
 
@@ -62,20 +62,6 @@ func (m *MockModulesHub) GetModules() *types.Modules {
 func (mr *MockModulesHubMockRecorder) GetModules() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetModules", reflect.TypeOf((*MockModulesHub)(nil).GetModules))
-}
-
-// CreateNewModules mocks base method
-func (m *MockModulesHub) CreateNewModules() *types.Modules {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateNewModules")
-	ret0, _ := ret[0].(*types.Modules)
-	return ret0
-}
-
-// CreateNewModules indicates an expected call of CreateNewModules
-func (mr *MockModulesHubMockRecorder) CreateNewModules() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateNewModules", reflect.TypeOf((*MockModulesHub)(nil).CreateNewModules))
 }
 
 // MockModule is a mock of Module interface
@@ -102,10 +88,10 @@ func (m *MockModule) EXPECT() *MockModuleMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -127,18 +113,6 @@ func (m *MockModule) ConsoleOnlyMode() bool {
 func (mr *MockModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockModule)(nil).ConsoleOnlyMode))
-}
-
-// SetContext mocks base method
-func (m *MockModule) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockModule)(nil).SetContext), arg0)
 }
 
 // MockChainModule is a mock of ChainModule interface
@@ -165,10 +139,10 @@ func (m *MockChainModule) EXPECT() *MockChainModuleMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockChainModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockChainModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -190,18 +164,6 @@ func (m *MockChainModule) ConsoleOnlyMode() bool {
 func (mr *MockChainModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockChainModule)(nil).ConsoleOnlyMode))
-}
-
-// SetContext mocks base method
-func (m *MockChainModule) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockChainModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockChainModule)(nil).SetContext), arg0)
 }
 
 // GetBlock mocks base method
@@ -284,10 +246,10 @@ func (m *MockTxModule) EXPECT() *MockTxModuleMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockTxModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockTxModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -309,18 +271,6 @@ func (m *MockTxModule) ConsoleOnlyMode() bool {
 func (mr *MockTxModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockTxModule)(nil).ConsoleOnlyMode))
-}
-
-// SetContext mocks base method
-func (m *MockTxModule) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockTxModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockTxModule)(nil).SetContext), arg0)
 }
 
 // SendCoin mocks base method
@@ -394,10 +344,10 @@ func (m *MockPoolModule) EXPECT() *MockPoolModuleMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockPoolModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockPoolModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -419,18 +369,6 @@ func (m *MockPoolModule) ConsoleOnlyMode() bool {
 func (mr *MockPoolModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockPoolModule)(nil).ConsoleOnlyMode))
-}
-
-// SetContext mocks base method
-func (m *MockPoolModule) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockPoolModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockPoolModule)(nil).SetContext), arg0)
 }
 
 // GetSize mocks base method
@@ -499,10 +437,10 @@ func (m *MockAccountModule) EXPECT() *MockAccountModuleMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockAccountModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockAccountModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -524,18 +462,6 @@ func (m *MockAccountModule) ConsoleOnlyMode() bool {
 func (mr *MockAccountModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockAccountModule)(nil).ConsoleOnlyMode))
-}
-
-// SetContext mocks base method
-func (m *MockAccountModule) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockAccountModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockAccountModule)(nil).SetContext), arg0)
 }
 
 // ListLocalAccounts mocks base method
@@ -727,10 +653,10 @@ func (m *MockPushKeyModule) EXPECT() *MockPushKeyModuleMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockPushKeyModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockPushKeyModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -752,18 +678,6 @@ func (m *MockPushKeyModule) ConsoleOnlyMode() bool {
 func (mr *MockPushKeyModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockPushKeyModule)(nil).ConsoleOnlyMode))
-}
-
-// SetContext mocks base method
-func (m *MockPushKeyModule) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockPushKeyModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockPushKeyModule)(nil).SetContext), arg0)
 }
 
 // Register mocks base method
@@ -861,10 +775,10 @@ func (m *MockUtilModule) EXPECT() *MockUtilModuleMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockUtilModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockUtilModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -886,18 +800,6 @@ func (m *MockUtilModule) ConsoleOnlyMode() bool {
 func (mr *MockUtilModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockUtilModule)(nil).ConsoleOnlyMode))
-}
-
-// SetContext mocks base method
-func (m *MockUtilModule) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockUtilModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockUtilModule)(nil).SetContext), arg0)
 }
 
 // TreasuryAddress mocks base method
@@ -956,10 +858,10 @@ func (m *MockTicketModule) EXPECT() *MockTicketModuleMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockTicketModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockTicketModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -981,18 +883,6 @@ func (m *MockTicketModule) ConsoleOnlyMode() bool {
 func (mr *MockTicketModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockTicketModule)(nil).ConsoleOnlyMode))
-}
-
-// SetContext mocks base method
-func (m *MockTicketModule) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockTicketModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockTicketModule)(nil).SetContext), arg0)
 }
 
 // BuyValidatorTicket mocks base method
@@ -1186,10 +1076,10 @@ func (m *MockRepoModule) EXPECT() *MockRepoModuleMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockRepoModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockRepoModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -1211,18 +1101,6 @@ func (m *MockRepoModule) ConsoleOnlyMode() bool {
 func (mr *MockRepoModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockRepoModule)(nil).ConsoleOnlyMode))
-}
-
-// SetContext mocks base method
-func (m *MockRepoModule) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockRepoModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockRepoModule)(nil).SetContext), arg0)
 }
 
 // Create mocks base method
@@ -1375,10 +1253,10 @@ func (m *MockNamespaceModule) EXPECT() *MockNamespaceModuleMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockNamespaceModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockNamespaceModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -1400,18 +1278,6 @@ func (m *MockNamespaceModule) ConsoleOnlyMode() bool {
 func (mr *MockNamespaceModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockNamespaceModule)(nil).ConsoleOnlyMode))
-}
-
-// SetContext mocks base method
-func (m *MockNamespaceModule) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockNamespaceModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockNamespaceModule)(nil).SetContext), arg0)
 }
 
 // Lookup mocks base method
@@ -1514,10 +1380,10 @@ func (m *MockDHTModule) EXPECT() *MockDHTModuleMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockDHTModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockDHTModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -1539,18 +1405,6 @@ func (m *MockDHTModule) ConsoleOnlyMode() bool {
 func (mr *MockDHTModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockDHTModule)(nil).ConsoleOnlyMode))
-}
-
-// SetContext mocks base method
-func (m *MockDHTModule) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockDHTModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockDHTModule)(nil).SetContext), arg0)
 }
 
 // Store mocks base method
@@ -1657,10 +1511,10 @@ func (m *MockExtManager) EXPECT() *MockExtManagerMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockExtManager) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockExtManager) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -1682,18 +1536,6 @@ func (m *MockExtManager) ConsoleOnlyMode() bool {
 func (mr *MockExtManagerMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockExtManager)(nil).ConsoleOnlyMode))
-}
-
-// SetContext mocks base method
-func (m *MockExtManager) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockExtManagerMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockExtManager)(nil).SetContext), arg0)
 }
 
 // Exist mocks base method
@@ -1826,10 +1668,10 @@ func (m *MockRPCModule) EXPECT() *MockRPCModuleMockRecorder {
 }
 
 // ConfigureVM mocks base method
-func (m *MockRPCModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *MockRPCModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConfigureVM", vm)
-	ret0, _ := ret[0].([]prompt.Suggest)
+	ret0, _ := ret[0].(prompt.Completer)
 	return ret0
 }
 
@@ -1853,18 +1695,6 @@ func (mr *MockRPCModuleMockRecorder) ConsoleOnlyMode() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConsoleOnlyMode", reflect.TypeOf((*MockRPCModule)(nil).ConsoleOnlyMode))
 }
 
-// SetContext mocks base method
-func (m *MockRPCModule) SetContext(arg0 *types.ModulesContext) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetContext", arg0)
-}
-
-// SetContext indicates an expected call of SetContext
-func (mr *MockRPCModuleMockRecorder) SetContext(arg0 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetContext", reflect.TypeOf((*MockRPCModule)(nil).SetContext), arg0)
-}
-
 // IsRunning mocks base method
 func (m *MockRPCModule) IsRunning() bool {
 	m.ctrl.T.Helper()
@@ -1879,18 +1709,18 @@ func (mr *MockRPCModuleMockRecorder) IsRunning() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRunning", reflect.TypeOf((*MockRPCModule)(nil).IsRunning))
 }
 
-// Local mocks base method
-func (m *MockRPCModule) Local() util.Map {
+// ConnectLocal mocks base method
+func (m *MockRPCModule) ConnectLocal() util.Map {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Local")
+	ret := m.ctrl.Call(m, "ConnectLocal")
 	ret0, _ := ret[0].(util.Map)
 	return ret0
 }
 
-// Local indicates an expected call of Local
-func (mr *MockRPCModuleMockRecorder) Local() *gomock.Call {
+// ConnectLocal indicates an expected call of ConnectLocal
+func (mr *MockRPCModuleMockRecorder) ConnectLocal() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Local", reflect.TypeOf((*MockRPCModule)(nil).Local))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectLocal", reflect.TypeOf((*MockRPCModule)(nil).ConnectLocal))
 }
 
 // Connect mocks base method

@@ -138,7 +138,7 @@ var _ = Describe("TicketPurchaseContract", func() {
 			It("should add a stake entry with unbond height set to 0", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
 				Expect(acct.Stakes).To(HaveLen(1))
-				Expect(acct.Stakes[state.StakeTypeHost+"0"].UnbondHeight).To(Equal(uint64(0)))
+				Expect(acct.Stakes[state.StakeTypeHost+"0"].UnbondHeight.UInt64()).To(Equal(uint64(0)))
 			})
 
 			Specify("that total staked is 10", func() {

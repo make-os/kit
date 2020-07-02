@@ -283,7 +283,7 @@ var _ = Describe("AccountStakes", func() {
 				key2 := stakes.UpdateUnbondHeight("v", "10", 0, 10)
 				Expect(key).To(Equal(key2))
 				stake := stakes[key2]
-				Expect(stake.UnbondHeight).To(Equal(uint64(10)))
+				Expect(stake.UnbondHeight.UInt64()).To(Equal(uint64(10)))
 			})
 		})
 	})

@@ -97,7 +97,7 @@ func CheckTxDetailConsistency(params *types.TxDetail, keepers core.Keepers, inde
 	}
 
 	// Ensure the nonce is a future nonce (> current nonce of pusher's account)
-	if keyOwner := keepers.AccountKeeper().Get(pushKey.Address); params.Nonce <= keyOwner.Nonce {
+	if keyOwner := keepers.AccountKeeper().Get(pushKey.Address); params.Nonce <= keyOwner.Nonce.UInt64() {
 		msg := fmt.Sprintf("nonce (%d) must be greater than current key owner nonce (%d)", params.Nonce,
 			keyOwner.Nonce)
 		return fe(index, "nonce", msg)

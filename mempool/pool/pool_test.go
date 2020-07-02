@@ -281,13 +281,13 @@ var _ = Describe("pool", func() {
 		})
 
 		It("should get transaction from pool", func() {
-			txData := tp.GetByHash(tx.GetHash().HexStr())
+			txData := tp.GetByHash(tx.GetHash().String())
 			Expect(txData).ToNot(BeNil())
 			Expect(txData).To(Equal(tx))
 		})
 
 		It("should return nil from  GetTransaction in pool", func() {
-			txData := tp.GetByHash(tx2.GetHash().HexStr())
+			txData := tp.GetByHash(tx2.GetHash().String())
 			Expect(txData).To(BeNil())
 		})
 

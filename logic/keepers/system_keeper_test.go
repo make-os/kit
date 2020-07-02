@@ -46,7 +46,7 @@ var _ = Describe("SystemKeeper", func() {
 		})
 
 		It("should store last block info", func() {
-			rec, err := appDB.Get(MakeKeyBlockInfo(info.Height))
+			rec, err := appDB.Get(MakeKeyBlockInfo(info.Height.Int64()))
 			Expect(err).To(BeNil())
 			var actual core.BlockInfo
 			err = rec.Scan(&actual)

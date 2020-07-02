@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/spf13/cast"
 	"github.com/stretchr/objx"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
@@ -19,10 +20,6 @@ func NewRepoAPI(mods *modulestypes.Modules) *RepoAPI {
 }
 
 // createRepo creates a new repository
-//
-// ARGS:
-// params 		<map>: TxCreateRepo transaction fields
-// Response 	<map>: RPC:repo_create response
 func (a *RepoAPI) createRepo(params interface{}) (resp *rpc.Response) {
 	p, ok := params.(map[string]interface{})
 	if !ok {
@@ -41,22 +38,16 @@ func (a *RepoAPI) getRepo(params interface{}) (resp *rpc.Response) {
 	obj := objx.New(m)
 	name := obj.Get("name").Str()
 	opts := modulestypes.GetOptions{}
-
-	if !obj.Get("height").IsNil() {
-		opts.Height = obj.Get("height").Inter(0)
-	}
-
-	if !obj.Get("noProposals").IsNil() {
-		opts.NoProposals = obj.Get("noProposals").Bool()
-	}
+	opts.Height = cast.ToUint64(obj.Get("height").Inter())
+	opts.NoProposals = obj.Get("noProposals").Bool()
 
 	return rpc.Success(a.mods.Repo.Get(name, opts))
 }
 
 // APIs returns all API handlers
 func (a *RepoAPI) APIs() rpc.APISet {
-	return map[string]rpc.APIInfo{
-		"create": {Namespace: constants.NamespaceRepo, Func: a.createRepo, Description: "Create a repository"},
-		"get":    {Namespace: constants.NamespaceRepo, Func: a.getRepo, Description: "Get a repository"},
+	return []rpc.APIInfo{
+		{Name: "create", Namespace: constants.NamespaceRepo, Func: a.createRepo, Description: "Create a repository"},
+		{Name: "get", Namespace: constants.NamespaceRepo, Func: a.getRepo, Description: "Get a repository"},
 	}
 }

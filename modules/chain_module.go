@@ -20,19 +20,14 @@ import (
 
 // ChainModule provides access to chain information
 type ChainModule struct {
-	service services.Service
-	keepers core.Keepers
-	ctx     *types.ModulesContext
+	service     services.Service
+	keepers     core.Keepers
+	suggestions []prompt.Suggest
 }
 
 // NewChainModule creates an instance of ChainModule
 func NewChainModule(service services.Service, keepers core.Keepers) *ChainModule {
-	return &ChainModule{service: service, keepers: keepers, ctx: types.DefaultModuleContext}
-}
-
-// SetContext sets the function used to retrieve call context
-func (m *ChainModule) SetContext(cg *types.ModulesContext) {
-	m.ctx = cg
+	return &ChainModule{service: service, keepers: keepers}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -71,28 +66,35 @@ func (m *ChainModule) methods() []*types.ModuleFunc {
 	}
 }
 
+// completer returns suggestions for console input
+func (m *ChainModule) completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.suggestions, words, true)
+	}
+	return nil
+}
+
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *ChainModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
-	var suggestions []prompt.Suggest
+func (m *ChainModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Register the main namespace
-	obj := map[string]interface{}{}
-	util.VMSet(vm, constants.NamespaceChain, obj)
+	nsMap := map[string]interface{}{}
+	util.VMSet(vm, constants.NamespaceChain, nsMap)
 
 	for _, f := range m.methods() {
-		obj[f.Name] = f.Value
+		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceChain, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.completer
 }
 
 // getBlock fetches a block at the given height
@@ -111,18 +113,20 @@ func (m *ChainModule) GetBlock(height string) util.Map {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, res)
+	return res
 }
 
 // getCurrentHeight returns the current block height
 func (m *ChainModule) GetCurrentHeight() util.Map {
+
 	bi, err := m.keepers.SysKeeper().GetLastBlockInfo()
 	if err != nil {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+
+	return map[string]interface{}{
 		"height": fmt.Sprintf("%d", bi.Height),
-	})
+	}
 }
 
 // getBlockInfo get summary block information of a given height
@@ -141,7 +145,7 @@ func (m *ChainModule) GetBlockInfo(height string) util.Map {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, res)
+	return util.StructToMap(res)
 }
 
 // getValidators returns validators of a given block
@@ -180,7 +184,7 @@ func (m *ChainModule) GetValidators(height string) (res []util.Map) {
 			"publicKey": pubKey.Base58(),
 			"address":   pubKey.Addr(),
 			"tmAddress": pub32.Address().String(),
-			"ticketId":  valInfo.TicketID.HexStr(),
+			"ticketId":  valInfo.TicketID.String(),
 		})
 	}
 

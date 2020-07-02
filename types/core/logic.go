@@ -16,18 +16,18 @@ type BlockValidators map[util.Bytes32]*Validator
 
 // BlockInfo describes information about a block
 type BlockInfo struct {
-	AppHash         []byte `json:"appHash"`
-	LastAppHash     []byte `json:"lastAppHash"`
-	Hash            []byte `json:"hash"`
-	Height          int64  `json:"height"`
-	ProposerAddress []byte `json:"proposerAddress"`
-	Time            int64  `json:"time"`
+	AppHash         []byte     `json:"appHash"`
+	LastAppHash     []byte     `json:"lastAppHash"`
+	Hash            []byte     `json:"hash"`
+	Height          util.Int64 `json:"height"`
+	ProposerAddress []byte     `json:"proposerAddress"`
+	Time            util.Int64 `json:"time"`
 }
 
 // Validator represents a validator
 type Validator struct {
-	PubKey   util.Bytes32 `json:"publicKey,omitempty" mapstructure:"publicKey"`
-	TicketID util.Bytes32 `json:"ticketID,omitempty" mapstructure:"ticketID"`
+	PubKey   util.Bytes32  `json:"publicKey,omitempty" mapstructure:"publicKey"`
+	TicketID util.HexBytes `json:"ticketID,omitempty" mapstructure:"ticketID"`
 }
 
 // SystemKeeper describes an interface for accessing system data

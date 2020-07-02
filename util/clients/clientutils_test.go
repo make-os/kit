@@ -66,7 +66,7 @@ var _ = Describe("", func() {
 			remoteClient.EXPECT().GetPushKeyOwnerNonce("pk-id").Return(nil, fmt.Errorf("error"))
 			rpcClient := mocks2.NewMockClient(ctrl)
 			rpcClientErr := util.NewStatusError(400, "100", "field", "error")
-			rpcClient.EXPECT().GetPushKeyOwnerAccount("pk-id").Return(nil, rpcClientErr)
+			rpcClient.EXPECT().GetPushKeyOwner("pk-id").Return(nil, rpcClientErr)
 			_, err := GetNextNonceOfPushKeyOwner("pk-id", rpcClient, []rest.Client{remoteClient})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("Remote API: error"))
@@ -75,7 +75,7 @@ var _ = Describe("", func() {
 		It("should return err when only one rpc client is provided and it failed", func() {
 			rpcClient := mocks2.NewMockClient(ctrl)
 			rpcClientErr := util.NewStatusError(400, "100", "field", "error")
-			rpcClient.EXPECT().GetPushKeyOwnerAccount("pk-id").Return(nil, rpcClientErr)
+			rpcClient.EXPECT().GetPushKeyOwner("pk-id").Return(nil, rpcClientErr)
 			_, err := GetNextNonceOfPushKeyOwner("pk-id", rpcClient, []rest.Client{})
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("RPC API: field:'field', msg:'error', httpCode:'400', code:'100'"))
@@ -83,7 +83,7 @@ var _ = Describe("", func() {
 
 		It("should return no err and response when only an rpc client is provided and it succeeds", func() {
 			rpcClient := mocks2.NewMockClient(ctrl)
-			rpcClient.EXPECT().GetPushKeyOwnerAccount("pk-id").Return(&state.Account{Nonce: 10}, nil)
+			rpcClient.EXPECT().GetPushKeyOwner("pk-id").Return(&api.GetAccountResponse{Account: &state.Account{Nonce: 10}}, nil)
 			nextNonce, err := GetNextNonceOfPushKeyOwner("pk-id", rpcClient, []rest.Client{})
 			Expect(err).To(BeNil())
 			Expect(nextNonce).To(Equal("11"))

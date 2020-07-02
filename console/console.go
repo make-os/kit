@@ -38,7 +38,7 @@ type Console struct {
 	executor *Executor
 
 	// suggestMgr managers prompt suggestions
-	suggestMgr *SuggestionManager
+	completerMgr *CompleterManager
 
 	// attached indicates whether the console
 	// is in attach mode.
@@ -62,8 +62,8 @@ type Console struct {
 	// use this to perform clean up etc
 	onStopFunc func()
 
-	// jsModules to integrate with the console
-	jsModules []types.ModulesHub
+	// modules provides access to the system's module APIs
+	modules types.ModulesHub
 
 	// Versions
 	protocol uint64
@@ -78,7 +78,7 @@ func New(historyPath string, cfg *config.AppConfig, log logger.Logger) *Console 
 	c := new(Console)
 	c.historyFile = historyPath
 	c.executor = newExecutor(log)
-	c.suggestMgr = newSuggestionManager(initialSuggestions)
+	c.completerMgr = newCompleterManager()
 	c.executor.console = c
 	c.cfg = cfg
 
@@ -116,18 +116,10 @@ func (c *Console) Prepare() error {
 		prompt.OptionHistory(c.history),
 	}
 
-	// Prepare the vm context
-	suggestions, err := c.executor.PrepareContext()
-	if err != nil {
-		return err
+	// Pass the VM to the system modules for context configuration
+	if c.modules != nil {
+		c.completerMgr.add(c.modules.ConfigureVM(c.executor.vm)...)
 	}
-
-	// Apply JS module
-	for _, jm := range c.jsModules {
-		c.suggestMgr.add(jm.ConfigureVM(c.executor.vm)...)
-	}
-
-	c.suggestMgr.add(suggestions...)
 
 	// create new prompt and configure it
 	// with the options create above
@@ -145,7 +137,7 @@ func (c *Console) Prepare() error {
 			c.confirmedStop = false
 			c.executor.OnInput(in)
 		}
-	}, c.suggestMgr.completer, options...)
+	}, c.completerMgr.completer, options...)
 
 	c.Lock()
 	c.prompt = p
@@ -154,9 +146,9 @@ func (c *Console) Prepare() error {
 	return nil
 }
 
-// AddModulesAggregator adds javascript modules
-func (c *Console) AddModulesAggregator(modules ...types.ModulesHub) {
-	c.jsModules = append(c.jsModules, modules...)
+// SetModulesHub sets the system modules hub
+func (c *Console) SetModulesHub(hub types.ModulesHub) {
+	c.modules = hub
 }
 
 // OnStop sets a function that is called

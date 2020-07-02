@@ -31,7 +31,7 @@ func NewSystemKeeper(db storage.Tx) *SystemKeeper {
 // that GetLastBlockInfo will not refetch
 func (s *SystemKeeper) SaveBlockInfo(info *core.BlockInfo) error {
 	data := util.ToBytes(info)
-	record := storage.NewFromKeyValue(MakeKeyBlockInfo(info.Height), data)
+	record := storage.NewFromKeyValue(MakeKeyBlockInfo(info.Height.Int64()), data)
 
 	s.gmx.Lock()
 	s.lastSaved = info

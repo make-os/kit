@@ -1,50 +1,28 @@
 package client
 
 import (
-	"fmt"
-
+	"gitlab.com/makeos/mosdef/types/api"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
 // GetAccount gets an account corresponding to a given address
-//
-// ARGS:
-// - address <string>: The address of an account
-// - [blockHeight] <string>: The target query block height (default: latest).
-//
-// RETURNS:
-// - resp <map> - state.Account
-func (c *RPCClient) GetAccount(address string, blockHeight ...uint64) (*state.Account, *util.StatusError) {
-	resp, statusCode, err := c.call("user_get", util.Map{
-		"address":     address,
-		"blockHeight": util.GetIndexFromUInt64Slice(0, blockHeight...),
-	})
+func (c *RPCClient) GetAccount(address string, blockHeight ...uint64) (*api.GetAccountResponse, *util.StatusError) {
+
+	var height uint64
+	if len(blockHeight) > 0 {
+		height = blockHeight[0]
+	}
+
+	resp, statusCode, err := c.call("user_get", util.Map{"address": address, "height": height})
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	acct := state.BareAccount()
-	if err = acct.FromMap(resp); err != nil {
+	r := &api.GetAccountResponse{Account: state.BareAccount()}
+	if err = r.Account.FromMap(resp); err != nil {
 		return nil, util.NewStatusError(500, ErrCodeDecodeFailed, "", err.Error())
 	}
 
-	return acct, nil
-}
-
-// GetNextNonceOfAccountUsingRPCClient gets the next account nonce
-// of the owner of the gpg key by querying the given JSON-RPC 2.0 client.
-//
-// ARGS:
-// address: The address of the account
-// client: The RPCClient to use
-//
-// RETURNS:
-// nonce: The next nonce of the account
-func GetNextNonceOfAccountUsingRPCClient(address string, client Client) (string, *util.StatusError) {
-	acct, err := client.GetAccount(address)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%d", acct.Nonce+1), nil
+	return r, nil
 }

@@ -23,7 +23,7 @@ const (
 // MethodInfo describe an RPC method info
 type MethodInfo struct {
 	Name        string `json:"name"`
-	Namespace   string `json:"-"`
+	Namespace   string `json:"namespace"`
 	Description string `json:"description"`
 	Private     bool   `json:"private"`
 }
@@ -142,36 +142,28 @@ func newRPCServer(addr string, cfg *config.AppConfig, log logger.Logger) *JSONRP
 // APIs returns APIs for the jsonrpc package
 func (s *JSONRPC) APIs() APISet {
 	return APISet{
-		"methods": APIInfo{
+		{
+			Name:        "methods",
 			Description: "List RPC methods",
 			Namespace:   "rpc",
 			Func: func(interface{}) *Response {
-				return Success(util.ToStringMapInter(s.Methods()))
+				return Success(util.Map{"methods": s.Methods()})
 			},
 		},
 	}
 }
 
 // Methods gets the names of all methods in the API set.
-func (s *JSONRPC) Methods() (methodsInfo map[string]MethodInfo) {
-	methodsInfo = make(map[string]MethodInfo)
-	for name, d := range s.apiSet {
-		methodsInfo[name] = MethodInfo{
-			Name:        name,
-			Description: d.Description,
-			Namespace:   d.Namespace,
-			Private:     d.Private,
-		}
+func (s *JSONRPC) Methods() (methodsInfo []MethodInfo) {
+	for _, api := range s.apiSet {
+		methodsInfo = append(methodsInfo, MethodInfo{
+			Name:        api.Name,
+			Description: api.Description,
+			Namespace:   api.Namespace,
+			Private:     api.Private,
+		})
 	}
 	return
-}
-
-func (s *JSONRPC) methodWithInterVal() map[string]interface{} {
-	dest := make(map[string]interface{})
-	for k, v := range s.Methods() {
-		dest[k] = v
-	}
-	return dest
 }
 
 // Serve starts the server
@@ -225,24 +217,30 @@ func (s *JSONRPC) stop() {
 	s.log.Debug("Server has shutdown")
 }
 
+// HasAPI checks whether an API with matching full name exist
+func (s *JSONRPC) HasAPI(api APIInfo) bool {
+	for _, a := range s.apiSet {
+		if a.FullName() == api.FullName() {
+			return true
+		}
+	}
+	return false
+}
+
 // MergeAPISet merges an API set with s current api sets
 func (s *JSONRPC) MergeAPISet(apiSets ...APISet) {
 	for _, set := range apiSets {
-		for k, v := range set {
-			s.apiSet[v.Namespace+"_"+k] = v
+		for _, v := range set {
+			if !s.HasAPI(v) {
+				s.apiSet = append(s.apiSet, v)
+			}
 		}
 	}
 }
 
-// makeFullAPIName returns the full API name used to map
-// a RPC method to a server
-func makeFullAPIName(namespace, apiName string) string {
-	return fmt.Sprintf("%s_%s", namespace, apiName)
-}
-
 // AddAPI adds an API to s api set
-func (s *JSONRPC) AddAPI(name string, api APIInfo) {
-	s.apiSet[makeFullAPIName(api.Namespace, name)] = api
+func (s *JSONRPC) AddAPI(api APIInfo) {
+	s.apiSet = append(s.apiSet, api)
 }
 
 // handle processes incoming requests. It validates
@@ -262,13 +260,13 @@ func (s *JSONRPC) handle(w http.ResponseWriter, r *http.Request) *Response {
 	}
 
 	// Target method must be known
-	f := s.apiSet.Get(newReq.Method)
-	if f == nil {
+	method := s.apiSet.Get(newReq.Method)
+	if method == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return Error(-32601, "Method not found", nil)
 	}
 
-	if !s.cfg.RPC.DisableAuth && (f.Private || s.cfg.RPC.AuthPubMethod) {
+	if !s.cfg.RPC.DisableAuth && (method.Private || s.cfg.RPC.AuthPubMethod) {
 		username, password, ok := r.BasicAuth()
 		if !ok {
 			w.WriteHeader(http.StatusUnauthorized)
@@ -282,44 +280,62 @@ func (s *JSONRPC) handle(w http.ResponseWriter, r *http.Request) *Response {
 
 	var resp *Response
 
+	// Recover from panics
 	defer func() {
-		if rcv, ok := recover().(error); ok {
-			cause := errors.Cause(rcv)
-			var resp *Response
-			var respCode int
+		rcv := recover()
+		if rcv == nil {
+			return
+		}
 
-			// Check if a StatusError is the cause. If so, we use the information
-			// in the StatusError to create a good error response, otherwise we return
-			// a less useful 500 error
-			se := &util.StatusError{}
-			if errors2.As(cause, &se) {
-				respCode = se.HttpCode
-				resp = Error(se.Code, se.Msg, se.Field)
-			} else {
-				respCode = http.StatusInternalServerError
-				resp = Error("", cause.Error(), "")
-			}
+		// Get error or convert non-err to error
+		var err error
+		if e, ok := rcv.(error); ok {
+			err = e
+		} else {
+			err = fmt.Errorf("%v", rcv)
+		}
 
-			w.WriteHeader(respCode)
-			_ = json.NewEncoder(w).Encode(resp)
+		var resp *Response
+		var respCode int
 
-			// In dev mode, print out the stack for easy debugging
-			if s.cfg.IsDev() {
-				fmt.Println(string(debug.Stack()))
-			}
+		// Check if a StatusError is the cause, then, we use the information
+		// in the StatusError to create a good error response, otherwise we return
+		// a less useful 500 error
+		se := &util.StatusError{}
+		cause := errors.Cause(err)
+		if errors2.As(cause, &se) {
+			respCode = se.HttpCode
+			resp = Error(se.Code, se.Msg, se.Field)
+		} else {
+			respCode = http.StatusInternalServerError
+			resp = Error("unexpected_error", cause.Error(), "")
+		}
+
+		w.WriteHeader(respCode)
+		_ = json.NewEncoder(w).Encode(resp)
+
+		// In dev mode, print out the stack for easy debugging
+		if s.cfg.IsDev() {
+			fmt.Println(string(debug.Stack()))
 		}
 	}()
 
-	resp = f.Func(newReq.Params)
+	// Run the method
+	resp = method.Func(newReq.Params)
+
+	// If function result is nil return nil http response
 	if resp == nil {
 		w.WriteHeader(http.StatusOK)
 		return Success(nil)
 	}
 
+	// If function returned no error.
 	if !resp.IsError() {
+
+		// Set RPC request ID
 		resp.ID = newReq.ID
 
-		// a notification. Send no response.
+		// If request is a notification, send no response.
 		if newReq.IsNotification() {
 			resp.Result = nil
 		}

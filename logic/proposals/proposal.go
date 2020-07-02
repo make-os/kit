@@ -24,8 +24,8 @@ func MakeProposal(
 		ID:         id,
 		Config:     repo.Config.Clone().Governance,
 		Creator:    creatorAddress,
-		Height:     chainHeight,
-		EndAt:      repo.Config.Governance.ProposalDuration + chainHeight + 1,
+		Height:     util.UInt64(chainHeight),
+		EndAt:      repo.Config.Governance.ProposalDuration + util.UInt64(chainHeight) + 1,
 		Fees:       map[string]string{},
 		ActionData: map[string]util.Bytes{},
 	}
@@ -37,13 +37,13 @@ func MakeProposal(
 
 	// Set the max. join height for voters.
 	if repo.Config.Governance.VoterAgeAsCurHeight {
-		proposal.ProposerMaxJoinHeight = chainHeight + 1
+		proposal.ProposerMaxJoinHeight = util.UInt64(chainHeight) + 1
 	}
 
 	// Set the fee deposit end height and also update the proposal end height to
 	// be after the fee deposit height
 	if repo.Config.Governance.ProposalFeeDepositDur > 0 {
-		proposal.FeeDepositEndAt = 1 + chainHeight + repo.Config.Governance.ProposalFeeDepositDur
+		proposal.FeeDepositEndAt = 1 + util.UInt64(chainHeight) + repo.Config.Governance.ProposalFeeDepositDur
 		proposal.EndAt = proposal.FeeDepositEndAt + repo.Config.Governance.ProposalDuration
 	}
 
@@ -70,7 +70,7 @@ func GetProposalOutcome(tickmgr tickettypes.TicketManager, prop state.Proposal,
 	if prop.GetVoterType() == state.VoterOwner {
 		maxJoinHeight := prop.GetVoterMaxJoinHeight()
 		repo.Owners.ForEach(func(o *state.RepoOwner, addr string) {
-			if maxJoinHeight > 0 && maxJoinHeight < o.JoinedAt {
+			if maxJoinHeight > 0 && maxJoinHeight < o.JoinedAt.UInt64() {
 				return
 			}
 			totalPower++

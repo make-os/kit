@@ -20,20 +20,15 @@ import (
 
 // RepoModule provides repository functionalities to JS environment
 type RepoModule struct {
-	logic   core.Logic
-	service services.Service
-	repoMgr core.RemoteServer
-	ctx     *modulestypes.ModulesContext
+	logic       core.Logic
+	service     services.Service
+	repoMgr     core.RemoteServer
+	suggestions []prompt.Suggest
 }
 
 // NewRepoModule creates an instance of RepoModule
 func NewRepoModule(service services.Service, repoMgr core.RemoteServer, logic core.Logic) *RepoModule {
-	return &RepoModule{service: service, logic: logic, repoMgr: repoMgr, ctx: modulestypes.DefaultModuleContext}
-}
-
-// SetContext sets the function used to retrieve call context
-func (m *RepoModule) SetContext(cg *modulestypes.ModulesContext) {
-	m.ctx = cg
+	return &RepoModule{service: service, logic: logic, repoMgr: repoMgr}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -97,10 +92,17 @@ func (m *RepoModule) globals() []*modulestypes.ModuleFunc {
 	return []*modulestypes.ModuleFunc{}
 }
 
+// completer returns suggestions for console input
+func (m *RepoModule) completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.suggestions, words, true)
+	}
+	return nil
+}
+
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *RepoModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
-	var suggestions []prompt.Suggest
+func (m *RepoModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
@@ -109,18 +111,18 @@ func (m *RepoModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceRepo, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}
 
-	return suggestions
+	return m.completer
 }
 
 // create registers a git repository on the network
@@ -151,7 +153,7 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -159,10 +161,10 @@ func (m *RepoModule) Create(params map[string]interface{}, options ...interface{
 		panic(se(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash":    hash,
 		"address": fmt.Sprintf("r/%s", tx.Name),
-	})
+	}
 }
 
 // upsertOwner creates a proposal to add or update a repository owner
@@ -192,7 +194,7 @@ func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...inter
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -200,9 +202,9 @@ func (m *RepoModule) UpsertOwner(params map[string]interface{}, options ...inter
 		panic(se(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
 
 // voteOnProposal sends a TxTypeRepoCreate transaction to create a git repository
@@ -231,7 +233,7 @@ func (m *RepoModule) VoteOnProposal(params map[string]interface{}, options ...in
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -239,9 +241,9 @@ func (m *RepoModule) VoteOnProposal(params map[string]interface{}, options ...in
 		panic(se(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
 
 // prune removes dangling or unreachable objects from a repository.
@@ -297,7 +299,7 @@ func (m *RepoModule) Get(name string, opts ...modulestypes.GetOptions) util.Map 
 		panic(se(404, StatusCodeRepoNotFound, "name", types.ErrRepoNotFound.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, repo)
+	return util.StructToMap(repo)
 }
 
 // Update creates a proposal to update a repository
@@ -327,7 +329,7 @@ func (m *RepoModule) Update(params map[string]interface{}, options ...interface{
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -335,9 +337,9 @@ func (m *RepoModule) Update(params map[string]interface{}, options ...interface{
 		panic(se(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
 
 // DepositFee creates a transaction to deposit a fee to a proposal
@@ -366,7 +368,7 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -374,9 +376,9 @@ func (m *RepoModule) DepositFee(params map[string]interface{}, options ...interf
 		panic(se(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
 
 // RegisterPushKey creates a proposal to register one or more push keys
@@ -412,7 +414,7 @@ func (m *RepoModule) RegisterPushKey(params map[string]interface{}, options ...i
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -420,9 +422,9 @@ func (m *RepoModule) RegisterPushKey(params map[string]interface{}, options ...i
 		panic(se(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
 
 // AnnounceObjects announces commits and tags of a repository

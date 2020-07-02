@@ -84,8 +84,8 @@ func (tx *TxRepoProposalUpsertOwner) ComputeHash() util.Bytes32 {
 }
 
 // GetHash returns the hash of the transaction
-func (tx *TxRepoProposalUpsertOwner) GetHash() util.Bytes32 {
-	return tx.ComputeHash()
+func (tx *TxRepoProposalUpsertOwner) GetHash() util.HexBytes {
+	return tx.ComputeHash().ToHexBytes()
 }
 
 // GetID returns the id of the transaction (also the hash)

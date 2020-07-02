@@ -79,13 +79,13 @@ var _ = Describe("AcquireNamespaceContract", func() {
 			Specify("that expireAt is set 10", func() {
 				ns := logic.NamespaceKeeper().Get(nsName)
 				Expect(ns.IsNil()).To(BeFalse())
-				Expect(ns.ExpiresAt).To(Equal(uint64(10)))
+				Expect(ns.ExpiresAt.UInt64()).To(Equal(uint64(10)))
 			})
 
 			Specify("that graceEndAt is set 20", func() {
 				ns := logic.NamespaceKeeper().Get(nsName)
 				Expect(ns.IsNil()).To(BeFalse())
-				Expect(ns.GraceEndAt).To(Equal(uint64(20)))
+				Expect(ns.GraceEndAt.UInt64()).To(Equal(uint64(20)))
 			})
 
 			Specify("that sender account is deduct of fee+value", func() {
@@ -100,7 +100,7 @@ var _ = Describe("AcquireNamespaceContract", func() {
 
 			Specify("that nonce was incremented", func() {
 				acct := logic.AccountKeeper().Get(util.Address(sender.Addr()))
-				Expect(acct.Nonce).To(Equal(uint64(2)))
+				Expect(acct.Nonce.UInt64()).To(Equal(uint64(2)))
 			})
 		})
 

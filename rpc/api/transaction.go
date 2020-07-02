@@ -19,9 +19,6 @@ func NewTransactionAPI(mods *types2.Modules) *TransactionAPI {
 }
 
 // sendPayload sends a signed transaction object to the mempool
-// Body <map>: Transaction object
-// Response <map>
-// - hash <string>: The transaction hash
 func (t *TransactionAPI) sendPayload(params interface{}) (resp *rpc.Response) {
 	txMap, ok := params.(map[string]interface{})
 	if !ok {
@@ -33,8 +30,9 @@ func (t *TransactionAPI) sendPayload(params interface{}) (resp *rpc.Response) {
 
 // APIs returns all API handlers
 func (t *TransactionAPI) APIs() rpc.APISet {
-	return map[string]rpc.APIInfo{
-		"sendPayload": {
+	return []rpc.APIInfo{
+		{
+			Name:        "sendPayload",
 			Namespace:   constants.NamespaceTx,
 			Description: "Sends a signed transaction object to the mempool",
 			Func:        t.sendPayload,

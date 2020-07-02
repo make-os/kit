@@ -16,10 +16,10 @@ import (
 
 // NamespaceModule provides namespace management functionalities
 type NamespaceModule struct {
-	logic   core.Logic
-	service services.Service
-	repoMgr core.RemoteServer
-	ctx     *types.ModulesContext
+	logic       core.Logic
+	service     services.Service
+	repoMgr     core.RemoteServer
+	suggestions []prompt.Suggest
 }
 
 // NewNSModule creates an instance of NamespaceModule
@@ -27,12 +27,7 @@ func NewNSModule(
 	service services.Service,
 	repoMgr core.RemoteServer,
 	logic core.Logic) *NamespaceModule {
-	return &NamespaceModule{service: service, logic: logic, repoMgr: repoMgr, ctx: types.DefaultModuleContext}
-}
-
-// SetContext sets the function used to retrieve call context
-func (m *NamespaceModule) SetContext(cg *types.ModulesContext) {
-	m.ctx = cg
+	return &NamespaceModule{service: service, logic: logic, repoMgr: repoMgr}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -71,10 +66,17 @@ func (m *NamespaceModule) globals() []*types.ModuleFunc {
 	return []*types.ModuleFunc{}
 }
 
+// completer returns suggestions for console input
+func (m *NamespaceModule) completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.suggestions, words, true)
+	}
+	return nil
+}
+
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *NamespaceModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
-	var suggestions []prompt.Suggest
+func (m *NamespaceModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
@@ -83,18 +85,16 @@ func (m *NamespaceModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceNS, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.completer
 }
 
 // lookup finds a namespace
@@ -128,11 +128,11 @@ func (m *NamespaceModule) Lookup(name string, height ...uint64) interface{} {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	if ns.GraceEndAt <= uint64(curBlockInfo.Height) {
+	if ns.GraceEndAt.UInt64() <= uint64(curBlockInfo.Height) {
 		nsMap["expired"] = true
 	}
 
-	if ns.ExpiresAt <= uint64(curBlockInfo.Height) {
+	if ns.ExpiresAt.UInt64() <= uint64(curBlockInfo.Height) {
 		nsMap["expiring"] = true
 	}
 
@@ -192,7 +192,7 @@ func (m *NamespaceModule) Register(params map[string]interface{}, options ...int
 	tx.Name = crypto.HashNamespace(tx.Name)
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -200,9 +200,9 @@ func (m *NamespaceModule) Register(params map[string]interface{}, options ...int
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
 
 // updateDomain updates one or more domains of a namespace
@@ -233,7 +233,7 @@ func (m *NamespaceModule) UpdateDomain(params map[string]interface{}, options ..
 	tx.Name = crypto.HashNamespace(tx.Name)
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -241,7 +241,7 @@ func (m *NamespaceModule) UpdateDomain(params map[string]interface{}, options ..
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }

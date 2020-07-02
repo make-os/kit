@@ -19,19 +19,14 @@ import (
 
 // DHTModule provides access to the DHT service
 type DHTModule struct {
-	cfg *config.AppConfig
-	ctx *modulestypes.ModulesContext
-	dht types.DHT
+	cfg         *config.AppConfig
+	dht         types.DHT
+	suggestions []prompt.Suggest
 }
 
 // NewDHTModule creates an instance of DHTModule
 func NewDHTModule(cfg *config.AppConfig, dht types.DHT) *DHTModule {
-	return &DHTModule{cfg: cfg, dht: dht, ctx: modulestypes.DefaultModuleContext}
-}
-
-// SetContext sets the function used to retrieve call context
-func (m *DHTModule) SetContext(cg *modulestypes.ModulesContext) {
-	m.ctx = cg
+	return &DHTModule{cfg: cfg, dht: dht}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -80,31 +75,36 @@ func (m *DHTModule) globals() []*modulestypes.ModuleFunc {
 	return []*modulestypes.ModuleFunc{}
 }
 
+// completer returns suggestions for console input
+func (m *DHTModule) completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.suggestions, words, true)
+	}
+	return nil
+}
+
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *DHTModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
-	fMap := map[string]interface{}{}
-	var suggestions []prompt.Suggest
+func (m *DHTModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Set the namespace object
-	util.VMSet(vm, constants.NamespaceDHT, fMap)
+	nsMap := map[string]interface{}{}
+	util.VMSet(vm, constants.NamespaceDHT, nsMap)
 
 	// add methods functions
 	for _, f := range m.methods() {
-		fMap[f.Name] = f.Value
+		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceDHT, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.completer
 }
 
 // store stores a value corresponding to the given key

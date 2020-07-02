@@ -84,7 +84,7 @@ var _ = Describe("CreateRepoContract", func() {
 
 			Specify("that sender account nonce increased", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(acct.Nonce).To(Equal(uint64(1)))
+				Expect(acct.Nonce.UInt64()).To(Equal(uint64(1)))
 			})
 
 			When("voter type is VoteByOwner", func() {
@@ -130,7 +130,7 @@ var _ = Describe("CreateRepoContract", func() {
 				Specify("that repo config is not the default", func() {
 					repo := logic.RepoKeeper().Get("repo")
 					Expect(repo.Config).ToNot(Equal(state.DefaultRepoConfig))
-					Expect(repo.Config.Governance.ProposalDuration).To(Equal(uint64(1000)))
+					Expect(repo.Config.Governance.ProposalDuration.UInt64()).To(Equal(uint64(1000)))
 				})
 			})
 		})

@@ -77,7 +77,7 @@ func (r *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 
 	// Register the peer as a sender of the tx so we don't
 	// broadcast the tx back to it
-	r.addSender(tx.GetHash().HexStr(), string(src.ID()))
+	r.addSender(tx.GetHash().String(), string(src.ID()))
 
 	// Register the peer to the pool
 	_, err = r.AddTx(tx)
@@ -85,8 +85,7 @@ func (r *Reactor) Receive(chID byte, src p2p.Peer, msgBytes []byte) {
 		return
 	}
 
-	r.log.Debug("Received and added a transaction",
-		"TxHash", tx.GetHash().HexStr(), "PeerID", src.ID())
+	r.log.Debug("Received and added a transaction", "TxHash", tx.GetHash(), "PeerID", src.ID())
 }
 
 // GetPoolSize returns the size information of the pool
@@ -112,10 +111,10 @@ func (r *Reactor) GetTop(n int) []types.BaseTx {
 }
 
 // AddTx adds a transaction to the tx pool and broadcasts it.
-func (r *Reactor) AddTx(tx types.BaseTx) (hash util.Bytes32, err error) {
+func (r *Reactor) AddTx(tx types.BaseTx) (hash util.HexBytes, err error) {
 	err = r.mempool.Add(tx)
 	if err != nil {
-		return util.Bytes32{}, err
+		return nil, err
 	}
 
 	r.broadcastTx(tx)
@@ -127,7 +126,7 @@ func (r *Reactor) AddTx(tx types.BaseTx) (hash util.Bytes32, err error) {
 // It will not resend the transaction to peers that have previously
 // sent the same transaction
 func (r *Reactor) broadcastTx(tx types.BaseTx) {
-	txHash := tx.GetHash().HexStr()
+	txHash := tx.GetHash().String()
 	txBytes := tx.Bytes()
 	for _, peer := range r.Switch.Peers().List() {
 		if r.isSender(txHash, string(peer.ID())) {

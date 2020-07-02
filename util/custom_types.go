@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 )
 
@@ -67,6 +69,11 @@ func (b Bytes32) Bytes() []byte {
 		return []byte{}
 	}
 	return b[:]
+}
+
+// HexBytes wraps b in HexBytes
+func (b Bytes32) ToHexBytes() HexBytes {
+	return b.Bytes()
 }
 
 func (b Bytes32) MarshalJSON() ([]byte, error) {
@@ -204,4 +211,118 @@ func (n BlockNonce) MarshalJSON() ([]byte, error) {
 		result = strings.Join(strings.Fields(fmt.Sprintf("%d", n)), ",")
 	}
 	return []byte(result), nil
+}
+
+// HexBytes represents a slice of bytes
+type HexBytes []byte
+
+// String returns the hex encoded version of h
+func (h HexBytes) String() string {
+	return ToHex(h)
+}
+
+// Bytes returns bytes
+func (h HexBytes) Bytes() []byte {
+	return h
+}
+
+func (h HexBytes) MarshalJSON() ([]byte, error) {
+	var result string
+	if len(h) == 0 {
+		result = "null"
+	} else {
+		result = `"` + h.String() + `"`
+	}
+	return []byte(result), nil
+}
+
+// Equal checks equality between h and o
+func (h HexBytes) Equal(o HexBytes) bool { return bytes.Equal(h, o) }
+
+// IsEmpty checks whether h is empty
+func (h HexBytes) IsEmpty() bool { return len(h) == 0 }
+
+// StrToHexBytes converts a string to a HexBytes
+func StrToHexBytes(s string) HexBytes {
+	return []byte(s)
+}
+
+// UInt64 wraps uint64
+type UInt64 uint64
+
+func (i *UInt64) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+
+	var v uint64
+	v, err := strconv.ParseUint(str, 10, 64)
+	if err != nil {
+		return err
+	}
+	i.Set(v)
+
+	return nil
+}
+
+// MarshalJSON marshals for JSON
+func (i UInt64) MarshalJSON() ([]byte, error) {
+	var result string
+	if i == 0 {
+		result = `"0"`
+	} else {
+		result = `"` + fmt.Sprintf("%d", i) + `"`
+	}
+	return []byte(result), nil
+}
+
+// UInt64 casts and returns uint64
+func (i *UInt64) UInt64() uint64 {
+	return uint64(*i)
+}
+
+// Set sets the value
+func (i *UInt64) Set(v uint64) {
+	*i = UInt64(v)
+}
+
+// Int64 wraps int64
+type Int64 int64
+
+func (i *Int64) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+
+	var v int64
+	v, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return err
+	}
+	i.Set(v)
+
+	return nil
+}
+
+// MarshalJSON marshals for JSON
+func (i Int64) MarshalJSON() ([]byte, error) {
+	var result string
+	if i == 0 {
+		result = `"0"`
+	} else {
+		result = `"` + fmt.Sprintf("%d", i) + `"`
+	}
+	return []byte(result), nil
+}
+
+// Int64 casts and returns int64
+func (i *Int64) Int64() int64 {
+	return int64(*i)
+}
+
+// Set sets the value
+func (i *Int64) Set(v int64) {
+	*i = Int64(v)
 }

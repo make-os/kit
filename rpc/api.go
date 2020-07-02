@@ -1,6 +1,8 @@
 package rpc
 
 import (
+	"fmt"
+
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -19,27 +21,42 @@ type APIInfo struct {
 	// Func is the API function to be executed.
 	Func func(params interface{}) *Response
 
+	// Namespace is the namespace where the method is under
+	Namespace string
+
+	// Name is the name of the method
+	Name string
+
 	// Private indicates a requirement for a private, authenticated
 	// user session before this API function is executed.
 	Private bool
-
-	// Namespace is the JS namespace where the method should reside
-	Namespace string
 
 	// Description describes the API
 	Description string
 }
 
+func (a *APIInfo) FullName() string {
+	return fmt.Sprintf("%s_%s", a.Namespace, a.Name)
+}
+
 // APISet defines a collection of APIs
-type APISet map[string]APIInfo
+type APISet []APIInfo
 
 // Get gets an API function by name
 // and namespace
-func (a APISet) Get(name string) *APIInfo {
-	if api, ok := a[name]; ok {
-		return &api
+func (a *APISet) Get(name string) *APIInfo {
+	for _, v := range *a {
+		if name == v.FullName() {
+			return &v
+		}
 	}
 	return nil
+}
+
+// Get gets an API function by name
+// and namespace
+func (a *APISet) Add(api APIInfo) {
+	*a = append(*a, api)
 }
 
 // API defines an interface for providing and

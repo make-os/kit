@@ -19,20 +19,15 @@ import (
 
 // PushKeyModule manages and provides access to push keys.
 type PushKeyModule struct {
-	cfg     *config.AppConfig
-	service services.Service
-	logic   core.Logic
-	ctx     *modulestypes.ModulesContext
+	cfg         *config.AppConfig
+	service     services.Service
+	logic       core.Logic
+	suggestions []prompt.Suggest
 }
 
 // NewPushKeyModule creates an instance of PushKeyModule
 func NewPushKeyModule(cfg *config.AppConfig, service services.Service, logic core.Logic) *PushKeyModule {
-	return &PushKeyModule{cfg: cfg, service: service, logic: logic, ctx: modulestypes.DefaultModuleContext}
-}
-
-// SetContext sets the function used to retrieve call context
-func (m *PushKeyModule) SetContext(cg *modulestypes.ModulesContext) {
-	m.ctx = cg
+	return &PushKeyModule{cfg: cfg, service: service, logic: logic}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -69,7 +64,7 @@ func (m *PushKeyModule) methods() []*modulestypes.ModuleFunc {
 			Description: "Get registered push keys belonging to an address",
 		},
 		{
-			Name:        "getAccountOfOwner",
+			Name:        "getOwner",
 			Value:       m.GetAccountOfOwner,
 			Description: "Get the account of a push key owner",
 		},
@@ -81,31 +76,38 @@ func (m *PushKeyModule) globals() []*modulestypes.ModuleFunc {
 	return []*modulestypes.ModuleFunc{}
 }
 
+// completer returns suggestions for console input
+func (m *PushKeyModule) completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.suggestions, words, true)
+	}
+	return nil
+}
+
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *PushKeyModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
-	fMap := map[string]interface{}{}
-	var suggestions []prompt.Suggest
+func (m *PushKeyModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Set the namespace object
-	util.VMSet(vm, constants.NamespacePushKey, fMap)
+	nsMap := map[string]interface{}{}
+	util.VMSet(vm, constants.NamespacePushKey, nsMap)
 
 	// add methods functions
 	for _, f := range m.methods() {
-		fMap[f.Name] = f.Value
+		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespacePushKey, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}
 
-	return suggestions
+	return m.completer
 }
 
 // Register registers a push key with the network.
@@ -136,7 +138,7 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	// Process the transaction
@@ -147,10 +149,10 @@ func (m *PushKeyModule) Register(params map[string]interface{}, options ...inter
 
 	pk := crypto.MustPubKeyFromBytes(tx.PublicKey.Bytes())
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash":    hash,
 		"address": pk.PushAddr().String(),
-	})
+	}
 }
 
 // Update updates a push key
@@ -182,7 +184,7 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 	tx.Delete = false
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	// Process the transaction
@@ -191,9 +193,9 @@ func (m *PushKeyModule) Update(params map[string]interface{}, options ...interfa
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
 
 // UnRegister removes a push key from the network
@@ -225,7 +227,7 @@ func (m *PushKeyModule) UnRegister(params map[string]interface{}, options ...int
 	tx.RemoveScopes = nil
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	// Process the transaction
@@ -234,9 +236,9 @@ func (m *PushKeyModule) UnRegister(params map[string]interface{}, options ...int
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
 
 // Get fetches a push key by id
@@ -262,7 +264,7 @@ func (m *PushKeyModule) Get(id string, blockHeight ...uint64) util.Map {
 		panic(util.NewStatusError(404, StatusCodePushKeyNotFound, "", types.ErrPushKeyUnknown.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, o)
+	return util.StructToMap(o)
 }
 
 // ownedBy fetches push keys owned by the given address
@@ -290,12 +292,10 @@ func (m *PushKeyModule) GetAccountOfOwner(pushKeyID string, blockHeight ...uint6
 		targetHeight = blockHeight[0]
 	}
 
-	acct := m.logic.AccountKeeper().Get(
-		pushKey["address"].(util.Address),
-		targetHeight)
+	acct := m.logic.AccountKeeper().Get(pushKey["address"].(util.Address), targetHeight)
 	if acct.IsNil() {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound, "pushKeyID", types.ErrAccountUnknown.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, acct)
+	return util.StructToMap(acct)
 }

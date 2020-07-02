@@ -6,9 +6,7 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	mocks "gitlab.com/makeos/mosdef/mocks/rpc"
 	client2 "gitlab.com/makeos/mosdef/rpc/api/client"
-	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -34,7 +32,7 @@ var _ = Describe("Client", func() {
 				_, err := client.GetAccount("addr", 100)
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
-					Code:     "client_error",
+					Code:     client2.ErrCodeUnexpected,
 					HttpCode: 0,
 					Msg:      "bad thing happened",
 					Field:    "",
@@ -66,28 +64,6 @@ var _ = Describe("Client", func() {
 				acct, err := client.GetAccount("addr", 100)
 				Expect(err).To(BeNil())
 				Expect(acct.Balance).To(Equal(util.String("1000")))
-			})
-		})
-	})
-
-	Describe(".GetNextNonceOfAccountUsingRPCClient", func() {
-		When("client call returns error", func() {
-			It("should return error", func() {
-				mockClient := mocks.NewMockClient(ctrl)
-				mockClient.EXPECT().GetAccount("addr1").Return(nil, &util.StatusError{Msg: "bad thing"})
-				_, err := client2.GetNextNonceOfAccountUsingRPCClient("addr1", mockClient)
-				Expect(err).NotTo(BeNil())
-				Expect(err.Msg).To(Equal("bad thing"))
-			})
-		})
-
-		When("client call a nonce", func() {
-			It("should be incremented by 1 and returned", func() {
-				mockClient := mocks.NewMockClient(ctrl)
-				mockClient.EXPECT().GetAccount("addr1").Return(&state.Account{Nonce: 10}, nil)
-				nonce, err := client2.GetNextNonceOfAccountUsingRPCClient("addr1", mockClient)
-				Expect(err).To(BeNil())
-				Expect(nonce).To(Equal("11"))
 			})
 		})
 	})

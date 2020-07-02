@@ -258,14 +258,14 @@ var _ = Describe("TxContainer", func() {
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
 			err := q.add(tx)
 			Expect(err).To(BeNil())
-			has := q.HasByHash(tx.GetHash().HexStr())
+			has := q.HasByHash(tx.GetHash().String())
 			Expect(has).To(BeTrue())
 		})
 
 		It("should return false when tx does not exist in queue", func() {
 			q := newTxContainer(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
-			has := q.HasByHash(tx.GetHash().HexStr())
+			has := q.HasByHash(tx.GetHash().String())
 			Expect(has).To(BeFalse())
 		})
 	})
@@ -356,14 +356,14 @@ var _ = Describe("TxContainer", func() {
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
 			err := q.add(tx)
 			Expect(err).To(BeNil())
-			txData := q.GetByHash(tx.GetHash().HexStr())
+			txData := q.GetByHash(tx.GetHash().String())
 			Expect(txData).ToNot(BeNil())
 		})
 
 		It("should return nil when tx does not exist in queue", func() {
 			q := newTxContainer(1)
 			tx := txns.NewCoinTransferTx(1, "something", sender, "0", "0.2", time.Now().Unix())
-			txData := q.GetByHash(tx.GetHash().HexStr())
+			txData := q.GetByHash(tx.GetHash().String())
 			Expect(txData).To(BeNil())
 		})
 
@@ -431,7 +431,7 @@ var _ = Describe("NonceCollection", func() {
 		Context("when nonce is part of the collection", func() {
 			nc := nonceCollection{
 				nonces: map[uint64]*nonceInfo{
-					1: {TxHash: util.StrToBytes32("")},
+					1: {TxHash: util.HexBytes{1, 2}},
 				},
 			}
 
@@ -453,7 +453,7 @@ var _ = Describe("NonceCollection", func() {
 	})
 
 	Describe(".get", func() {
-		nonce := &nonceInfo{TxHash: util.StrToBytes32("abc")}
+		nonce := &nonceInfo{TxHash: util.HexBytes{1, 2}}
 		BeforeEach(func() {
 			nc.add(1, nonce)
 			Expect(nc.nonces).To(HaveLen(1))

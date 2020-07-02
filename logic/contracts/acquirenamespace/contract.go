@@ -41,8 +41,8 @@ func (c *AcquireNamespaceContract) Exec() error {
 	// Get the current namespace object and re-populate it
 	ns := c.NamespaceKeeper().Get(c.tx.Name)
 	ns.Owner = spk.Addr().String()
-	ns.ExpiresAt = c.chainHeight + uint64(params.NamespaceTTL)
-	ns.GraceEndAt = ns.ExpiresAt + uint64(params.NamespaceGraceDur)
+	ns.ExpiresAt.Set(c.chainHeight + uint64(params.NamespaceTTL))
+	ns.GraceEndAt.Set(ns.ExpiresAt.UInt64() + uint64(params.NamespaceGraceDur))
 	ns.Domains = c.tx.Domains
 	ns.Owner = c.tx.TransferTo
 

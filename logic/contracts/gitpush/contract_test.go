@@ -136,7 +136,7 @@ var _ = Describe("GitPush", func() {
 
 			Specify("that the reference's nonce was incremented", func() {
 				repo := logic.RepoKeeper().Get(repo)
-				Expect(repo.References.Get("refs/heads/master").Nonce).To(Equal(uint64(2)))
+				Expect(repo.References.Get("refs/heads/master").Nonce.UInt64()).To(Equal(uint64(2)))
 			})
 
 			Specify("that (total pushed reference fee + total pushed reference secondary fees) were deducted from pusher account", func() {
@@ -146,7 +146,7 @@ var _ = Describe("GitPush", func() {
 
 			Specify("that sender account nonce was incremented", func() {
 				acct := logic.AccountKeeper().Get(sender.Addr())
-				Expect(acct.Nonce).To(Equal(uint64(2)))
+				Expect(acct.Nonce.UInt64()).To(Equal(uint64(2)))
 			})
 		})
 
@@ -242,10 +242,10 @@ var _ = Describe("GitPush", func() {
 				Expect(rep.Proposals).To(HaveLen(1))
 				Expect(rep.Proposals.Has(mergerequest.MakeMergeRequestProposalID(1))).To(BeTrue())
 				prop := rep.Proposals.Get(mergerequest.MakeMergeRequestProposalID(1))
-				Expect(prop.ActionData[constants.ActionDataKeyBaseBranch]).To(Equal([]byte(mr.BaseBranch)))
-				Expect(prop.ActionData[constants.ActionDataKeyBaseHash]).To(Equal([]byte(mr.BaseBranchHash)))
-				Expect(prop.ActionData[constants.ActionDataKeyTargetBranch]).To(Equal([]byte(mr.TargetBranch)))
-				Expect(prop.ActionData[constants.ActionDataKeyTargetBranch]).To(Equal([]byte(mr.TargetBranch)))
+				Expect(prop.ActionData[constants.ActionDataKeyBaseBranch]).To(Equal(util.Bytes(mr.BaseBranch)))
+				Expect(prop.ActionData[constants.ActionDataKeyBaseHash]).To(Equal(util.Bytes(mr.BaseBranchHash)))
+				Expect(prop.ActionData[constants.ActionDataKeyTargetBranch]).To(Equal(util.Bytes(mr.TargetBranch)))
+				Expect(prop.ActionData[constants.ActionDataKeyTargetBranch]).To(Equal(util.Bytes(mr.TargetBranch)))
 			})
 
 			When("reference is not new", func() {

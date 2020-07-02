@@ -71,7 +71,7 @@ var _ = Describe("SetDelegateCommissionContract", func() {
 			})
 
 			It("should increment nonce", func() {
-				Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+				Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 			})
 
 			It("should have balance of 8", func() {

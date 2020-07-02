@@ -18,9 +18,7 @@ func NewLocalAccountAPI(mods *types.Modules) *LocalAccountAPI {
 	return &LocalAccountAPI{mods: mods}
 }
 
-// getAccount returns the account corresponding to the given address
-// Response <map>:
-// - accounts <[]string>: list of addresses
+// listAccount list all wallet accounts on the node
 func (l *LocalAccountAPI) listAccounts(interface{}) (resp *rpc.Response) {
 	return rpc.Success(util.Map{
 		"accounts": l.mods.Account.ListLocalAccounts(),
@@ -29,8 +27,9 @@ func (l *LocalAccountAPI) listAccounts(interface{}) (resp *rpc.Response) {
 
 // APIs returns all API handlers
 func (l *LocalAccountAPI) APIs() rpc.APISet {
-	return map[string]rpc.APIInfo{
-		"listAccounts": {
+	return []rpc.APIInfo{
+		{
+			Name:        "listAccounts",
 			Namespace:   constants.NamespaceUser,
 			Private:     true,
 			Description: "List all accounts that exist on the node",

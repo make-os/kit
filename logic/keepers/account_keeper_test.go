@@ -51,13 +51,13 @@ var _ = Describe("Account", func() {
 			key := util.Address("addr1")
 			acct := ak.Get(key)
 			Expect(acct.Balance).To(Equal(util.String("0")))
-			Expect(acct.Nonce).To(Equal(uint64(0)))
+			Expect(acct.Nonce.UInt64()).To(Equal(uint64(0)))
 			acct.Balance = "10000"
 			acct.Nonce = 2
 			ak.Update(key, acct)
 			acct = ak.Get(key)
 			Expect(acct.Balance).To(Equal(util.String("10000")))
-			Expect(acct.Nonce).To(Equal(uint64(2)))
+			Expect(acct.Nonce.UInt64()).To(Equal(uint64(2)))
 		})
 	})
 })

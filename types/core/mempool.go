@@ -83,7 +83,7 @@ type Mempool interface {
 type MempoolReactor interface {
 	GetPoolSize() *PoolSizeInfo
 	GetTop(n int) []types.BaseTx
-	AddTx(tx types.BaseTx) (hash util.Bytes32, err error)
+	AddTx(tx types.BaseTx) (hash util.HexBytes, err error)
 }
 
 // PoolSizeInfo describes the transaction byte size an count of the tx pool

@@ -75,7 +75,7 @@ func (c *UpsertOwnerContract) Exec() error {
 
 	// Index the proposal against its end height so it can be tracked
 	// and finalized at that height.
-	if err = repoKeeper.IndexProposalEnd(c.tx.RepoName, proposal.ID, proposal.EndAt); err != nil {
+	if err = repoKeeper.IndexProposalEnd(c.tx.RepoName, proposal.ID, proposal.EndAt.UInt64()); err != nil {
 		return errors.Wrap(err, common.ErrFailedToIndexProposal)
 	}
 
@@ -105,7 +105,7 @@ func (c *UpsertOwnerContract) Apply(args *core.ProposalApplyArgs) error {
 
 		args.Repo.AddOwner(address, &state.RepoOwner{
 			Creator:  false,
-			JoinedAt: args.ChainHeight + 1,
+			JoinedAt: util.UInt64(args.ChainHeight) + 1,
 			Veto:     veto,
 		})
 	}

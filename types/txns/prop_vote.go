@@ -79,8 +79,8 @@ func (tx *TxRepoProposalVote) ComputeHash() util.Bytes32 {
 }
 
 // GetHash returns the hash of the transaction
-func (tx *TxRepoProposalVote) GetHash() util.Bytes32 {
-	return tx.ComputeHash()
+func (tx *TxRepoProposalVote) GetHash() util.HexBytes {
+	return tx.ComputeHash().ToHexBytes()
 }
 
 // GetID returns the id of the transaction (also the hash)

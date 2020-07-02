@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"gitlab.com/makeos/mosdef/crypto"
+	"gitlab.com/makeos/mosdef/types/api"
 	"gitlab.com/makeos/mosdef/types/state"
 	"gitlab.com/makeos/mosdef/types/txns"
 	"gitlab.com/makeos/mosdef/util"
@@ -19,14 +20,8 @@ type CreateRepoArgs struct {
 	SigningKey *crypto.Key
 }
 
-// CreateRepoResponse is the response object for CreateRepoResponse
-type CreateRepoResponse struct {
-	Address string `json:"address"`
-	Hash    string `json:"hash"`
-}
-
 // CreateRepo creates a new repository
-func (c *RPCClient) CreateRepo(args CreateRepoArgs) (*CreateRepoResponse, *util.StatusError) {
+func (c *RPCClient) CreateRepo(args *CreateRepoArgs) (*api.CreateRepoResponse, *util.StatusError) {
 
 	// Create a TxRepoCreate object and fill it with args
 	tx := txns.NewBareTxRepoCreate()
@@ -51,33 +46,32 @@ func (c *RPCClient) CreateRepo(args CreateRepoArgs) (*CreateRepoResponse, *util.
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	var r CreateRepoResponse
+	var r api.CreateRepoResponse
 	_ = util.DecodeMap(resp, &r)
 
 	return &r, nil
 }
 
-// GetRepoArgs contains arguments for GetRepo
-type GetRepoArgs struct {
-	Name        string `json:"name"`
+// GetRepoOpts contains arguments for GetRepo
+type GetRepoOpts struct {
 	Height      uint64 `json:"height"`
 	NoProposals bool   `json:"noProposals"`
 }
 
-// GetRepoResponse contains repository information
-type GetRepoResponse struct {
-	*state.Repository
-}
+// GetRepo finds and returns a repository
+func (c *RPCClient) GetRepo(name string, opts ...*GetRepoOpts) (*api.GetRepoResponse, *util.StatusError) {
 
-func (c *RPCClient) GetRepo(args *GetRepoArgs) (*GetRepoResponse, *util.StatusError) {
+	if len(opts) == 0 {
+		opts = []*GetRepoOpts{{}}
+	}
 
-	// call RPC method: repo_get
-	resp, statusCode, err := c.call("repo_get", util.StructToMap(args))
+	params := util.Map{"name": name, "height": opts[0].Height, "noProposals": opts[0].NoProposals}
+	resp, statusCode, err := c.call("repo_get", params)
 	if err != nil {
 		return nil, makeStatusErrorFromCallErr(statusCode, err)
 	}
 
-	var r = GetRepoResponse{state.BareRepository()}
+	var r = api.GetRepoResponse{Repository: state.BareRepository()}
 	if err := util.DecodeMap(resp, r.Repository); err != nil {
 		return nil, util.NewStatusError(500, ErrCodeDecodeFailed, "", err.Error())
 	}

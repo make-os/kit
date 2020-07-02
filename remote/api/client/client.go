@@ -7,18 +7,17 @@ import (
 
 	"github.com/imroc/req"
 	"gitlab.com/makeos/mosdef/types/api"
-	"gitlab.com/makeos/mosdef/types/state"
 )
 
 // Client describes methods for accessing REST API endpoints
 type Client interface {
 	SendTxPayload(data map[string]interface{}) (*api.SendTxPayloadResponse, error)
 	GetAccountNonce(address string, blockHeight ...uint64) (*api.GetAccountNonceResponse, error)
-	GetAccount(address string, blockHeight ...uint64) (*state.Account, error)
+	GetAccount(address string, blockHeight ...uint64) (*api.GetAccountResponse, error)
 	GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error)
 	PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error)
 	GetPushKeyOwnerNonce(pushKeyID string, blockHeight ...uint64) (*api.GetAccountNonceResponse, error)
-	GetPushKey(pushKeyID string, blockHeight ...uint64) (*state.PushKey, error)
+	GetPushKey(pushKeyID string, blockHeight ...uint64) (*api.GetPushKeyResponse, error)
 }
 
 // RequestFunc describes the function for making http requests
@@ -50,14 +49,30 @@ func NewClient(apiRoot string) *ClientV1 {
 	return c
 }
 
-// GetCall makes a get call to the endpoint
+// GetCall makes a get call to the endpoint.
+// Responses not within 200-299 are considered an error.
 func (c *ClientV1) GetCall(endpoint string, params map[string]interface{}) (*req.Resp, error) {
 	url := joinURL(c.apiRoot, endpoint)
-	return req.Get(url, req.QueryParam(params))
+	resp, err := req.Get(url, req.QueryParam(params))
+	if err != nil {
+		return nil, err
+	}
+	if resp.Response().StatusCode >= 200 && resp.Response().StatusCode <= 299 {
+		return resp, nil
+	}
+	return resp, fmt.Errorf(resp.String())
 }
 
-// PostCall makes a get call to the endpoint
+// PostCall makes a get call to the endpoint.
+// Responses not within 200-299 are considered an error.
 func (c *ClientV1) PostCall(endpoint string, body map[string]interface{}) (*req.Resp, error) {
 	url := joinURL(c.apiRoot, endpoint)
-	return req.Post(url, req.BodyJSON(body))
+	resp, err := req.Post(url, req.BodyJSON(body))
+	if err != nil {
+		return nil, err
+	}
+	if resp.Response().StatusCode >= 200 && resp.Response().StatusCode <= 299 {
+		return resp, nil
+	}
+	return resp, fmt.Errorf(resp.String())
 }

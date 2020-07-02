@@ -50,7 +50,7 @@ type BaseTx interface {
 	GetFrom() util.Address
 
 	// GetHash returns the hash of the transaction
-	GetHash() util.Bytes32
+	GetHash() util.HexBytes
 
 	// GetBytesNoSig returns the serialized the tx excluding the signature
 	GetBytesNoSig() []byte

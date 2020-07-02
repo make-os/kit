@@ -260,6 +260,22 @@ func MustFromHex(hexValue string) []byte {
 	return v
 }
 
+// StructSliceToMap converts struct slice s to a map slice.
+// If tagName is not provided, 'json' tag is used as a default.
+func StructSliceToMap(s interface{}, tagName ...string) []Map {
+	val := reflect.ValueOf(s)
+	switch val.Kind() {
+	case reflect.Slice:
+		var res = []Map{}
+		for i := 0; i < val.Len(); i++ {
+			res = append(res, StructToMap(val.Index(i).Interface(), tagName...))
+		}
+		return res
+	default:
+		panic("slice of struct was expected")
+	}
+}
+
 // StructToMap converts s to a map.
 // If tagName is not provided, 'json' tag is used as a default.
 func StructToMap(s interface{}, tagName ...string) map[string]interface{} {
@@ -495,15 +511,6 @@ func RESTApiErrorMsg(msg, field string, code string) map[string]interface{} {
 	}
 }
 
-// GetIndexFromUInt64Slice gets an index from a uint64 variadic param.
-// Returns 0 if opts is empty
-func GetIndexFromUInt64Slice(index int, opts ...uint64) uint64 {
-	if len(opts) == 0 {
-		return 0
-	}
-	return opts[index]
-}
-
 // ToStringMapInter converts a map to map[string]interface{}.
 // If structToMap is true, struct element is converted to map.
 // Panics if m is not a map with string key.
@@ -657,4 +664,13 @@ func IsMapOrStruct(o interface{}) bool {
 		return true
 	}
 	return false
+}
+
+// ParseUint is like strconv.ParseUint but returns util.UIInt64
+func ParseUint(s string, base int, bitSize int) (UInt64, error) {
+	v, err := strconv.ParseUint(s, base, bitSize)
+	if err != nil {
+		return 0, err
+	}
+	return UInt64(v), err
 }

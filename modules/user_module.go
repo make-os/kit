@@ -20,11 +20,11 @@ import (
 // UserModule provides account management functionalities
 // that are accessed through the javascript console environment
 type UserModule struct {
-	cfg     *config.AppConfig
-	ctx     *types.ModulesContext
-	acctMgr *keystore.Keystore
-	service services.Service
-	logic   core.Logic
+	cfg         *config.AppConfig
+	acctMgr     *keystore.Keystore
+	service     services.Service
+	logic       core.Logic
+	suggestions []prompt.Suggest
 }
 
 // NewUserModule creates an instance of UserModule
@@ -38,13 +38,7 @@ func NewUserModule(
 		acctMgr: acctmgr,
 		service: service,
 		logic:   logic,
-		ctx:     types.DefaultModuleContext,
 	}
-}
-
-// SetContext sets the function used to retrieve call context
-func (m *UserModule) SetContext(cg *types.ModulesContext) {
-	m.ctx = cg
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -114,31 +108,36 @@ func (m *UserModule) globals() []*types.ModuleFunc {
 	}
 }
 
+// completer returns suggestions for console input
+func (m *UserModule) completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.suggestions, words, true)
+	}
+	return nil
+}
+
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *UserModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
-	fMap := map[string]interface{}{}
-	var suggestions []prompt.Suggest
+func (m *UserModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Set the namespace object
-	util.VMSet(vm, constants.NamespaceUser, fMap)
+	nsMap := map[string]interface{}{}
+	util.VMSet(vm, constants.NamespaceUser, nsMap)
 
 	// add methods functions
 	for _, f := range m.methods() {
-		fMap[f.Name] = f.Value
+		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceUser, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		_ = vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.completer
 }
 
 // listAccounts lists all accounts on this node
@@ -272,10 +271,12 @@ func (m *UserModule) GetAccount(address string, height ...uint64) util.Map {
 		panic(util.NewStatusError(404, StatusCodeAccountNotFound,
 			"address", apptypes.ErrAccountUnknown.Error()))
 	}
+
 	if len(acct.Stakes) == 0 {
 		acct.Stakes = nil
 	}
-	return normalizeUtilMap(m.ctx.Env, acct)
+
+	return util.StructToMap(acct)
 }
 
 // GetSpendableBalance returns the spendable balance of an account
@@ -366,7 +367,7 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -374,7 +375,7 @@ func (m *UserModule) SetCommission(params map[string]interface{}, options ...int
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }

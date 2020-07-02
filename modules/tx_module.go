@@ -19,19 +19,14 @@ import (
 
 // TxModule provides transaction functionalities to JS environment
 type TxModule struct {
-	ctx     *modulestypes.ModulesContext
-	logic   core.Logic
-	service services.Service
+	logic       core.Logic
+	service     services.Service
+	suggestions []prompt.Suggest
 }
 
 // NewTxModule creates an instance of TxModule
 func NewTxModule(service services.Service, logic core.Logic) *TxModule {
-	return &TxModule{service: service, logic: logic, ctx: modulestypes.DefaultModuleContext}
-}
-
-// SetContext sets the function used to retrieve call context
-func (m *TxModule) SetContext(cg *modulestypes.ModulesContext) {
-	m.ctx = cg
+	return &TxModule{service: service, logic: logic}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -71,10 +66,17 @@ func (m *TxModule) globals() []*modulestypes.ModuleFunc {
 	return []*modulestypes.ModuleFunc{}
 }
 
+// completer returns suggestions for console input
+func (m *TxModule) completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.suggestions, words, true)
+	}
+	return nil
+}
+
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *TxModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
-	var suggestions []prompt.Suggest
+func (m *TxModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Register the main tx namespace
 	txMap := map[string]interface{}{}
@@ -86,7 +88,7 @@ func (m *TxModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	for _, f := range m.coinMethods() {
 		coinMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s.%s", constants.NamespaceTx, constants.NamespaceCoin, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
 
@@ -94,18 +96,16 @@ func (m *TxModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	for _, f := range m.methods() {
 		txMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceTx, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.completer
 }
 
 // sendCoin sends the native coin from a source account to a destination account.
@@ -133,7 +133,7 @@ func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -141,9 +141,9 @@ func (m *TxModule) SendCoin(params map[string]interface{}, options ...interface{
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
 
 // get returns a tx by hash
@@ -167,7 +167,7 @@ func (m *TxModule) Get(hash string) util.Map {
 		panic(util.NewStatusError(500, StatusCodeAppErr, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, tx)
+	return util.StructToMap(tx)
 }
 
 // sendPayload sends an already signed transaction object to the network
@@ -193,7 +193,7 @@ func (m *TxModule) SendPayload(params map[string]interface{}) util.Map {
 		panic(se)
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }

@@ -8,9 +8,6 @@ import (
 )
 
 // SendTxPayload sends a signed transaction to the mempool
-// Body (JSON): map that conforms to any valid types.BaseTx transaction
-// Response <map>
-// - hash <string>: The hash of the transaction
 func (r *API) SendTxPayload(w http.ResponseWriter, req *http.Request) {
 	var body = make(map[string]interface{})
 	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {

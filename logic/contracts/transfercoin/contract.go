@@ -144,7 +144,7 @@ func (c *CoinTransferContract) DryExec(sender interface{}) error {
 	// Ensure the transaction nonce is the next expected nonce
 	field := "value+fee"
 	expectedNonce := senderAcct.Nonce + 1
-	if expectedNonce != c.tx.Nonce {
+	if expectedNonce.UInt64() != c.tx.Nonce {
 		return fe(field, fmt.Sprintf("tx has invalid nonce (%d); expected (%d)", c.tx.Nonce, expectedNonce))
 	}
 

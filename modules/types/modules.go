@@ -19,21 +19,10 @@ type ModuleFunc struct {
 // JSON-RPC APIs and REST APIs
 type ModulesHub interface {
 	// ConfigureVM instructs VM-accessible modules accessible to configure the VM
-	ConfigureVM(vm *otto.Otto) []prompt.Suggest
+	ConfigureVM(vm *otto.Otto) []prompt.Completer
 
 	// GetModules returns modules
 	GetModules() *Modules
-
-	// CreateNewModules creates and returns a new Modules instance
-	CreateNewModules() *Modules
-}
-
-// DefaultCallContext is the default module context
-var DefaultModuleContext = &ModulesContext{Env: JS}
-
-// ModulesContext contains common configuration accessible to all modules.
-type ModulesContext struct {
-	Env Env
 }
 
 // Modules contains all supported modules
@@ -52,42 +41,28 @@ type Modules struct {
 	RPC     RPCModule
 }
 
-// SetContext provides all modules with a function for getting the call context.
-func (m *Modules) SetContext(ctx *ModulesContext) {
-	for _, f := range structs.Fields(m) {
-		mod, ok := f.Value().(Module)
-		if !ok {
-			continue
-		}
-		mod.SetContext(ctx)
-	}
-}
-
 // ConfigureVM applies all modules' VM configurations to the given VM.
-func (m *Modules) ConfigureVM(vm *otto.Otto, consoleOnly bool) (sugs []prompt.Suggest) {
+func (m *Modules) ConfigureVM(vm *otto.Otto, consoleOnly bool) (completers []prompt.Completer) {
 	for _, f := range structs.Fields(m) {
 		mod, ok := f.Value().(Module)
 		if !ok {
 			continue
 		}
 		if !consoleOnly {
-			sugs = append(sugs, mod.ConfigureVM(vm)...)
+			completers = append(completers, mod.ConfigureVM(vm))
 			continue
 		}
 
 		if mod.ConsoleOnlyMode() {
-			sugs = append(sugs, mod.ConfigureVM(vm)...)
+			completers = append(completers, mod.ConfigureVM(vm))
 		}
 	}
 	return
 }
 
-type CallContextGetter func() *ModulesContext
-
 type Module interface {
-	ConfigureVM(vm *otto.Otto) []prompt.Suggest
+	ConfigureVM(vm *otto.Otto) prompt.Completer
 	ConsoleOnlyMode() bool
-	SetContext(*ModulesContext)
 }
 
 type ChainModule interface {
@@ -199,20 +174,6 @@ type ExtManager interface {
 type RPCModule interface {
 	Module
 	IsRunning() bool
-	Local() util.Map
+	ConnectLocal() util.Map
 	Connect(host string, port int, https bool, user, pass string) util.Map
 }
-
-// Env describes environment a module can be called from.
-type Env int
-
-const (
-
-	// JS represents javascript-like environment that cannot handle big integers
-	// natively and require external packages to for big integers.
-	JS Env = iota
-
-	// NORMAL represents an environment that can handle big numbers
-	// and buffers natively without needing external packages.
-	NORMAL
-)

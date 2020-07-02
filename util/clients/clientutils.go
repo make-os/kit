@@ -9,7 +9,6 @@ import (
 	rest "gitlab.com/makeos/mosdef/remote/api/client"
 	"gitlab.com/makeos/mosdef/rpc/api/client"
 	"gitlab.com/makeos/mosdef/types/api"
-	"gitlab.com/makeos/mosdef/types/state"
 )
 
 // NextNonceGetter describes a function for getting the next nonce of a the owner of a push key.
@@ -25,9 +24,9 @@ func GetNextNonceOfPushKeyOwner(pkID string, rpcClient client.Client, remoteClie
 	var nextNonce string
 	err := CallClients(rpcClient, remoteClients, func(c client.Client) error {
 		var err error
-		var acct *state.Account
+		var acct *api.GetAccountResponse
 
-		acct, err = rpcClient.GetPushKeyOwnerAccount(pkID)
+		acct, err = rpcClient.GetPushKeyOwner(pkID)
 		if acct != nil {
 			nextNonce = fmt.Sprintf("%d", acct.Nonce+1)
 		}

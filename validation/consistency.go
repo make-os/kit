@@ -346,7 +346,7 @@ func CheckTxNSAcquireConsistency(
 	}
 
 	ns := logic.NamespaceKeeper().Get(tx.Name)
-	if !ns.IsNil() && ns.GraceEndAt > uint64(bi.Height) {
+	if !ns.IsNil() && ns.GraceEndAt.UInt64() > uint64(bi.Height) {
 		return feI(index, "name", "chosen name is not currently available")
 	}
 
@@ -476,7 +476,7 @@ func CheckTxRepoProposalUpsertOwnerConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
+	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height.Int64())
 	if err != nil {
 		return err
 	}
@@ -614,7 +614,7 @@ func CheckTxRepoProposalUpdateConsistency(
 		return errors.Wrap(err, "failed to fetch current block info")
 	}
 
-	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
+	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height.Int64())
 	if err != nil {
 		return err
 	}
@@ -651,7 +651,7 @@ func CheckTxRepoProposalRegisterPushKeyConsistency(
 		}
 	}
 
-	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height)
+	_, err = CheckProposalCommonConsistency(tx.Type, tx.TxProposalCommon, tx.TxCommon, index, logic, bi.Height.Int64())
 	if err != nil {
 		return err
 	}

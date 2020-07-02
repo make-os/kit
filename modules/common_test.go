@@ -6,7 +6,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"gitlab.com/makeos/mosdef/modules"
-	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/util"
 )
 
@@ -16,7 +15,6 @@ type TestCase struct {
 	Expected       interface{}
 	FieldsToIgnore []string
 	ShouldPanic    bool
-	CallEnv        types.Env
 }
 
 var _ = Describe("Common", func() {
@@ -58,12 +56,6 @@ var _ = Describe("Common", func() {
 				Obj:         nil,
 				Expected:    []util.Map{},
 				ShouldPanic: true,
-			},
-			{
-				Desc:     "if env = RPC, it should return util.Map and with fields untouched",
-				Obj:      test1{Desc: []byte{1, 2}},
-				Expected: util.Map{"Name": "", "Desc": []byte{1, 2}},
-				CallEnv:  types.NORMAL,
 			},
 			{
 				Desc:     "with a string and []byte field",
@@ -138,16 +130,12 @@ var _ = Describe("Common", func() {
 		for _, c := range cases {
 			_c := c
 			It(_c.Desc, func() {
-				env := types.JS
-				if _c.CallEnv != 0 {
-					env = _c.CallEnv
-				}
 				if !_c.ShouldPanic {
-					result := modules.Normalize(env, _c.Obj, _c.FieldsToIgnore...)
+					result := modules.Normalize(_c.Obj, _c.FieldsToIgnore...)
 					Expect(result).To(Equal(_c.Expected))
 				} else {
 					Expect(func() {
-						modules.Normalize(env, _c.Obj, _c.FieldsToIgnore...)
+						modules.Normalize(_c.Obj, _c.FieldsToIgnore...)
 					}).To(Panic())
 				}
 			})

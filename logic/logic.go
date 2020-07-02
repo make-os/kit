@@ -270,7 +270,7 @@ func (l *Logic) WriteGenesisState() error {
 			for address, owner := range ga.Owners {
 				newRepo.AddOwner(address, &state.RepoOwner{
 					Creator:  owner.Creator,
-					JoinedAt: owner.JoinedAt,
+					JoinedAt: util.UInt64(owner.JoinedAt),
 					Veto:     owner.Veto,
 				})
 			}

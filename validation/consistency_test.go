@@ -271,7 +271,7 @@ var _ = Describe("TxValidator", func() {
 		When("target ticket does not exist", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxTicketUnbond(txns.TxTypeHostTicket)
-				tx.TicketHash = util.StrToBytes32("ticket_hash")
+				tx.TicketHash = util.StrToHexBytes("ticket_hash")
 
 				bi := &core.BlockInfo{Height: 1}
 				mockSysKeeper.EXPECT().GetLastBlockInfo().Return(bi, nil)
@@ -291,7 +291,7 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					key2 := crypto.NewKeyFromIntSeed(2)
 					tx := txns.NewBareTxTicketUnbond(txns.TxTypeHostTicket)
-					tx.TicketHash = util.StrToBytes32("ticket_hash")
+					tx.TicketHash = util.StrToHexBytes("ticket_hash")
 					tx.SetSenderPubKey(key2.PubKey().MustBytes())
 
 					bi := &core.BlockInfo{Height: 1}
@@ -314,7 +314,7 @@ var _ = Describe("TxValidator", func() {
 				BeforeEach(func() {
 					key2 := crypto.NewKeyFromIntSeed(2)
 					tx := txns.NewBareTxTicketUnbond(txns.TxTypeHostTicket)
-					tx.TicketHash = util.StrToBytes32("ticket_hash")
+					tx.TicketHash = util.StrToHexBytes("ticket_hash")
 					tx.SetSenderPubKey(key2.PubKey().MustBytes())
 
 					bi := &core.BlockInfo{Height: 1}
@@ -338,7 +338,7 @@ var _ = Describe("TxValidator", func() {
 		When("ticket decay height is set and greater than current block height", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxTicketUnbond(txns.TxTypeHostTicket)
-				tx.TicketHash = util.StrToBytes32("ticket_hash")
+				tx.TicketHash = util.StrToHexBytes("ticket_hash")
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				bi := &core.BlockInfo{Height: 50}
@@ -361,7 +361,7 @@ var _ = Describe("TxValidator", func() {
 		When("ticket decay height is set less than current block height", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxTicketUnbond(txns.TxTypeHostTicket)
-				tx.TicketHash = util.StrToBytes32("ticket_hash")
+				tx.TicketHash = util.StrToHexBytes("ticket_hash")
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				bi := &core.BlockInfo{Height: 101}
@@ -384,7 +384,7 @@ var _ = Describe("TxValidator", func() {
 		When("coin transfer dry-run fails", func() {
 			BeforeEach(func() {
 				tx := txns.NewBareTxTicketUnbond(txns.TxTypeHostTicket)
-				tx.TicketHash = util.StrToBytes32("ticket_hash")
+				tx.TicketHash = util.StrToHexBytes("ticket_hash")
 				tx.SetSenderPubKey(key.PubKey().MustBytes())
 
 				bi := &core.BlockInfo{Height: 101}

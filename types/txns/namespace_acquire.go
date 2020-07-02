@@ -82,8 +82,8 @@ func (tx *TxNamespaceAcquire) ComputeHash() util.Bytes32 {
 }
 
 // GetHash returns the hash of the transaction
-func (tx *TxNamespaceAcquire) GetHash() util.Bytes32 {
-	return tx.ComputeHash()
+func (tx *TxNamespaceAcquire) GetHash() util.HexBytes {
+	return tx.ComputeHash().ToHexBytes()
 }
 
 // GetID returns the id of the transaction (also the hash)

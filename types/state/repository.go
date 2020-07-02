@@ -51,7 +51,7 @@ type Reference struct {
 
 	// Nonce is the current count of commits on the reference.
 	// It is used to enforce order of operation to the reference.
-	Nonce uint64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce,omitempty"`
+	Nonce util.UInt64 `json:"nonce" mapstructure:"nonce" msgpack:"nonce,omitempty"`
 
 	// ReferenceData contains extra data
 	Data *ReferenceData `json:"data" mapstructure:"data" msgpack:"data,omitempty"`
@@ -92,9 +92,9 @@ func (r *References) Has(name string) bool {
 
 // RepoOwner describes an owner of a repository
 type RepoOwner struct {
-	Creator  bool   `json:"creator" mapstructure:"creator" msgpack:"creator,omitempty"`
-	JoinedAt uint64 `json:"joinedAt" mapstructure:"joinedAt" msgpack:"joinedAt,omitempty"`
-	Veto     bool   `json:"veto" mapstructure:"veto" msgpack:"veto,omitempty"`
+	Creator  bool        `json:"creator" mapstructure:"creator" msgpack:"creator,omitempty"`
+	JoinedAt util.UInt64 `json:"joinedAt" mapstructure:"joinedAt" msgpack:"joinedAt,omitempty"`
+	Veto     bool        `json:"veto" mapstructure:"veto" msgpack:"veto,omitempty"`
 }
 
 // RepoOwners represents an index of owners of a repository.
@@ -123,8 +123,8 @@ type RepoConfigGovernance struct {
 	Voter                    VoterType             `json:"propVoter" mapstructure:"propVoter,omitempty" msgpack:"propVoter,omitempty"`
 	ProposalCreator          ProposalCreatorType   `json:"propCreator" mapstructure:"propCreator,omitempty" msgpack:"propCreator,omitempty"`
 	VoterAgeAsCurHeight      bool                  `json:"voterAgeAsCurHeight" mapstructure:"voterAgeAsCurHeight" msgpack:"voterAgeAsCurHeight,omitempty"`
-	ProposalDuration         uint64                `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur,omitempty"`
-	ProposalFeeDepositDur    uint64                `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur,omitempty"`
+	ProposalDuration         util.UInt64           `json:"propDur" mapstructure:"propDur,omitempty" msgpack:"propDur,omitempty"`
+	ProposalFeeDepositDur    util.UInt64           `json:"propFeeDepDur" mapstructure:"propFeeDepDur,omitempty" msgpack:"propFeeDepDur,omitempty"`
 	ProposalTallyMethod      ProposalTallyMethod   `json:"propTallyMethod" mapstructure:"propTallyMethod,omitempty" msgpack:"propTallyMethod,omitempty"`
 	ProposalQuorum           float64               `json:"propQuorum" mapstructure:"propQuorum,omitempty" msgpack:"propQuorum,omitempty"`
 	ProposalThreshold        float64               `json:"propThreshold" mapstructure:"propThreshold,omitempty" msgpack:"propThreshold,omitempty"`
@@ -218,7 +218,7 @@ func MakeDefaultRepoConfig() *RepoConfig {
 			Voter:                    VoterOwner,
 			ProposalCreator:          ProposalCreatorAny,
 			VoterAgeAsCurHeight:      false,
-			ProposalDuration:         params.RepoProposalDur,
+			ProposalDuration:         util.UInt64(params.RepoProposalDur),
 			ProposalTallyMethod:      ProposalTallyMethodIdentity,
 			ProposalQuorum:           params.RepoProposalQuorum,
 			ProposalThreshold:        params.RepoProposalThreshold,

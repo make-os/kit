@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/c-bata/go-prompt"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/google/go-cmp/cmp"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
 	"gitlab.com/makeos/mosdef/crypto"
@@ -18,18 +20,13 @@ import (
 
 // UtilModule provides access to various utility functions
 type UtilModule struct {
-	vm  *otto.Otto
-	ctx *types.ModulesContext
+	vm          *otto.Otto
+	suggestions []prompt.Suggest
 }
 
 // NewUtilModule creates an instance of UtilModule
 func NewUtilModule() *UtilModule {
-	return &UtilModule{ctx: types.DefaultModuleContext}
-}
-
-// SetContext sets the function used to retrieve call context
-func (m *UtilModule) SetContext(cg *types.ModulesContext) {
-	m.ctx = cg
+	return &UtilModule{}
 }
 
 // ConsoleOnlyMode indicates that this module can be used on console-only mode
@@ -40,90 +37,35 @@ func (m *UtilModule) ConsoleOnlyMode() bool {
 // globals are functions exposed in the VM's global namespace
 func (m *UtilModule) globals() []*types.ModuleFunc {
 	return []*types.ModuleFunc{
-		{
-			Name:        "pp",
-			Value:       m.prettyPrint,
-			Description: "Pretty print an object",
-		},
-		{
-			Name:        "eval",
-			Value:       m.eval,
-			Description: "Execute javascript code represented as a string",
-		},
-		{
-			Name:        "evalFile",
-			Value:       m.evalFile,
-			Description: "Execute javascript code stored in a file",
-		},
-		{
-			Name:        "readFile",
-			Value:       m.readFile,
-			Description: "Read a file",
-		},
-		{
-			Name:        "readTextFile",
-			Value:       m.readTextFile,
-			Description: "Read a text file",
-		},
-		{
-			Name:        "treasuryAddress",
-			Value:       m.TreasuryAddress(),
-			Description: "Get the treasury address",
-		},
-		{
-			Name:        "genKey",
-			Value:       m.GenKey,
-			Description: "Generate an Ed25519 key",
-		},
+		{Name: "pp", Value: m.prettyPrint, Description: "Pretty print an object"},
+		{Name: "eval", Value: m.eval, Description: "Execute javascript code represented as a string"},
+		{Name: "evalFile", Value: m.evalFile, Description: "Execute javascript code stored in a file"},
+		{Name: "readFile", Value: m.readFile, Description: "Read a file"},
+		{Name: "readTextFile", Value: m.readTextFile, Description: "Read a text file"},
+		{Name: "treasuryAddress", Value: m.TreasuryAddress(), Description: "Get the treasury address"},
+		{Name: "genKey", Value: m.GenKey, Description: "Generate an Ed25519 key"},
+		{Name: "dump", Value: m.dump, Description: "Dump displays the passed parameters to standard out"},
+		{Name: "diff", Value: m.diff, Description: "Diff returns a human-readable report of the differences between two values"},
 	}
 }
 
 // methods are functions exposed in the special namespace of this module.
 func (m *UtilModule) methods() []*types.ModuleFunc {
-	return []*types.ModuleFunc{
-		{
-			Name:        "prettyPrint",
-			Value:       m.prettyPrint,
-			Description: "Pretty print an object",
-		},
-		{
-			Name:        "eval",
-			Value:       m.eval,
-			Description: "Execute javascript code represented as a string",
-		},
-		{
-			Name:        "evalFile",
-			Value:       m.evalFile,
-			Description: "Execute javascript code stored in a file",
-		},
-		{
-			Name:        "readFile",
-			Value:       m.readFile,
-			Description: "Read a file",
-		},
-		{
-			Name:        "readTextFile",
-			Value:       m.readTextFile,
-			Description: "Read a text file",
-		},
-		{
-			Name:        "treasuryAddress",
-			Value:       m.TreasuryAddress(),
-			Description: "Get the treasury address",
-		},
-		{
-			Name:        "genKey",
-			Value:       m.GenKey,
-			Description: "Generate an Ed25519 key",
-		},
+	return m.globals()
+}
+
+// completer returns suggestions for console input
+func (m *UtilModule) completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.suggestions, words, true)
 	}
+	return nil
 }
 
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *UtilModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
+func (m *UtilModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	m.vm = vm
-	var suggestions []prompt.Suggest
 
 	// Register the main namespace
 	obj := map[string]interface{}{}
@@ -132,18 +74,16 @@ func (m *UtilModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
 	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceUtil, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		m.vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.completer
 }
 
 // prettyPrint pretty prints any object.
@@ -153,11 +93,25 @@ func (m *UtilModule) prettyPrint(values ...interface{}) {
 	if len(values) == 1 {
 		v = values[0]
 	}
-	bs, err := prettyjson.Marshal(v)
+	f := prettyjson.NewFormatter()
+	f.NewlineArray = ""
+	bs, err := f.Marshal(v)
 	if err != nil {
 		panic(m.vm.MakeCustomError("PrettyPrintError", err.Error()))
 	}
 	fmt.Println(string(bs))
+}
+
+// Dump displays the passed parameters to standard out.
+func (m *UtilModule) dump(objs ...interface{}) {
+	spew.Dump(objs...)
+}
+
+// Diff returns a human-readable report of the differences between two values.
+// It returns an empty string if and only if Equal returns true for the same
+// input values and options.
+func (m *UtilModule) diff(a, b interface{}) {
+	fmt.Print(cmp.Diff(a, b))
 }
 
 // eval executes javascript represent as string

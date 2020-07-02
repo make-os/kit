@@ -128,13 +128,13 @@ var _ = Describe("CoinTransferContract", func() {
 				Specify("that sender balance is equal to 89 and nonce=1", func() {
 					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("89")))
-					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+					Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 				})
 
 				Specify("that recipient balance is equal to 20 and nonce=0", func() {
 					recipientAcct := logic.AccountKeeper().Get(recipientKey.Addr())
 					Expect(recipientAcct.Balance).To(Equal(util.String("20")))
-					Expect(recipientAcct.Nonce).To(Equal(uint64(0)))
+					Expect(recipientAcct.Nonce.UInt64()).To(Equal(uint64(0)))
 				})
 			})
 		})
@@ -157,7 +157,7 @@ var _ = Describe("CoinTransferContract", func() {
 				Specify("that sender balance is equal to 99 and nonce=1", func() {
 					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("99")))
-					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+					Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 				})
 			})
 		})
@@ -185,7 +185,7 @@ var _ = Describe("CoinTransferContract", func() {
 				Specify("that sender balance is equal to 99 and nonce=1", func() {
 					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("99")))
-					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+					Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 				})
 			})
 		})
@@ -209,7 +209,7 @@ var _ = Describe("CoinTransferContract", func() {
 				Specify("that sender balance is equal to 99 and nonce=1", func() {
 					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("99")))
-					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+					Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 				})
 			})
 		})
@@ -238,7 +238,7 @@ var _ = Describe("CoinTransferContract", func() {
 				Specify("that sender balance is equal to 89 and nonce=1", func() {
 					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("89")))
-					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+					Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 				})
 
 				Specify("that the repo has a balance=10", func() {
@@ -269,7 +269,7 @@ var _ = Describe("CoinTransferContract", func() {
 				Specify("that sender balance is equal to 89 and nonce=1", func() {
 					senderAcct := logic.AccountKeeper().Get(sender.Addr())
 					Expect(senderAcct.Balance).To(Equal(util.String("89")))
-					Expect(senderAcct.Nonce).To(Equal(uint64(1)))
+					Expect(senderAcct.Nonce.UInt64()).To(Equal(uint64(1)))
 				})
 
 				Specify("that the repo has a balance=10", func() {

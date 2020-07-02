@@ -17,9 +17,8 @@ import (
 
 // Module implements ModulesHub. It is a hub for other modules.
 type Module struct {
-	cfg            *config.AppConfig
-	DefaultModules *modulestypes.Modules
-	modulesCreator func() *modulestypes.Modules
+	cfg     *config.AppConfig
+	Modules *modulestypes.Modules
 }
 
 // New creates an instance of Module
@@ -35,8 +34,9 @@ func New(
 	rpcServer *rpc.Server,
 	repoMgr core.RemoteServer) *Module {
 
-	newModules := func() *modulestypes.Modules {
-		return &modulestypes.Modules{
+	return &Module{
+		cfg: cfg,
+		Modules: &modulestypes.Modules{
 			Tx:      NewTxModule(service, logic),
 			Chain:   NewChainModule(service, logic),
 			Account: NewUserModule(cfg, acctmgr, service, logic),
@@ -49,27 +49,16 @@ func New(
 			Util:    NewUtilModule(),
 			RPC:     NewRPCModule(cfg, rpcServer),
 			Pool:    NewPoolModule(mempoolReactor, repoMgr.GetPushPool()),
-		}
+		},
 	}
-
-	return &Module{
-		cfg:            cfg,
-		modulesCreator: newModules,
-		DefaultModules: newModules(),
-	}
-}
-
-// CreateNewModules creates and returns a new Modules instance
-func (m *Module) CreateNewModules() *modulestypes.Modules {
-	return m.modulesCreator()
 }
 
 // GetModules returns all sub-modules
 func (m *Module) GetModules() *modulestypes.Modules {
-	return m.DefaultModules
+	return m.Modules
 }
 
 // ConfigureVM instructs VM-accessible modules accessible to configure the VM
-func (m *Module) ConfigureVM(vm *otto.Otto) (sugs []prompt.Suggest) {
-	return m.DefaultModules.ConfigureVM(vm, m.cfg.ConsoleOnly())
+func (m *Module) ConfigureVM(vm *otto.Otto) (sugs []prompt.Completer) {
+	return m.Modules.ConfigureVM(vm, m.cfg.ConsoleOnly())
 }

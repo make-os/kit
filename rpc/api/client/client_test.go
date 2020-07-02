@@ -57,21 +57,13 @@ var _ = Describe("Client", func() {
 	})
 
 	Describe(".makeStatusErrorFromCallErr", func() {
-		When("status code is 0", func() {
-			It("should create client error", func() {
-				err := makeStatusErrorFromCallErr(0, fmt.Errorf("some bad error"))
-				Expect(err.HttpCode).To(Equal(0))
+		When("error does not contain a json object string", func() {
+			It("should create unexpected_error", func() {
+				err := makeStatusErrorFromCallErr(500, fmt.Errorf("some bad error"))
+				Expect(err.HttpCode).To(Equal(500))
 				Expect(err.Msg).To(Equal("some bad error"))
-				Expect(err.Code).To(Equal("client_error"))
+				Expect(err.Code).To(Equal(ErrCodeUnexpected))
 				Expect(err.Field).To(Equal(""))
-			})
-		})
-
-		When("status code is not 0 and error is not json", func() {
-			It("should panic", func() {
-				Expect(func() {
-					_ = makeStatusErrorFromCallErr(500, fmt.Errorf("{malformed|non-json"))
-				}).To(Panic())
 			})
 		})
 

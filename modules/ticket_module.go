@@ -19,11 +19,10 @@ import (
 
 // TicketModule provides access to various utility functions
 type TicketModule struct {
-	ctx       *types.ModulesContext
-	service   services.Service
-	logic     core.Logic
-	ticketmgr tickettypes.TicketManager
-	hostObj   map[string]interface{}
+	service     services.Service
+	logic       core.Logic
+	ticketmgr   tickettypes.TicketManager
+	suggestions []prompt.Suggest
 }
 
 // NewTicketModule creates an instance of TicketModule
@@ -32,14 +31,7 @@ func NewTicketModule(service services.Service, logic core.Logic, ticketmgr ticke
 		service:   service,
 		ticketmgr: ticketmgr,
 		logic:     logic,
-		hostObj:   make(map[string]interface{}),
-		ctx:       types.DefaultModuleContext,
 	}
-}
-
-// SetContext sets the function used to retrieve call context
-func (m *TicketModule) SetContext(cg *types.ModulesContext) {
-	m.ctx = cg
 }
 
 // globals are functions exposed in the VM's global namespace
@@ -109,38 +101,43 @@ func (m *TicketModule) hostFuncs() []*types.ModuleFunc {
 	}
 }
 
+// completer returns suggestions for console input
+func (m *TicketModule) completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.suggestions, words, true)
+	}
+	return nil
+}
+
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
-func (m *TicketModule) ConfigureVM(vm *otto.Otto) []prompt.Suggest {
-	var suggestions []prompt.Suggest
+func (m *TicketModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 
 	// Set the namespaces
-	ticketObj := map[string]interface{}{"host": m.hostObj}
+	hostObj := map[string]interface{}{}
+	ticketObj := map[string]interface{}{"host": hostObj}
 	util.VMSet(vm, constants.NamespaceTicket, ticketObj)
 	hostNS := fmt.Sprintf("%s.%s", constants.NamespaceTicket, constants.NamespaceHost)
 
 	for _, f := range m.methods() {
 		ticketObj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceTicket, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	for _, f := range m.hostFuncs() {
-		m.hostObj[f.Name] = f.Value
+		hostObj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", hostNS, f.Name)
-		suggestions = append(suggestions, prompt.Suggest{Text: funcFullName,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		_ = vm.Set(f.Name, f.Value)
-		suggestions = append(suggestions, prompt.Suggest{Text: f.Name,
-			Description: f.Description})
+		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return suggestions
+	return m.completer
 }
 
 // BuyValidatorTicket creates a transaction to acquire a validator ticket
@@ -168,7 +165,7 @@ func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	// Process the transaction
@@ -177,9 +174,9 @@ func (m *TicketModule) BuyValidatorTicket(params map[string]interface{}, options
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
 
 // BuyHostTicket creates a transaction to acquire a host ticket
@@ -213,7 +210,7 @@ func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...i
 	tx.BLSPubKey = blsKey.Public().Bytes()
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -221,9 +218,9 @@ func (m *TicketModule) BuyHostTicket(params map[string]interface{}, options ...i
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }
 
 // ListProposerValidatorTickets finds validator tickets where the given public
@@ -273,7 +270,7 @@ func (m *TicketModule) ListProposerValidatorTickets(
 		return []util.Map{}
 	}
 
-	return normalizeSliceUtilMap(m.ctx.Env, tickets)
+	return util.StructSliceToMap(tickets)
 }
 
 // ListProposerHostTickets finds host tickets where the given public
@@ -313,7 +310,7 @@ func (m *TicketModule) ListProposerHostTickets(
 		return []util.Map{}
 	}
 
-	return normalizeSliceUtilMap(m.ctx.Env, tickets)
+	return tickets
 }
 
 // ListTopValidators returns top n validators
@@ -332,7 +329,7 @@ func (m *TicketModule) ListTopValidators(limit ...int) interface{} {
 	if len(tickets) == 0 {
 		return []util.Map{}
 	}
-	return normalizeSliceUtilMap(m.ctx.Env, tickets)
+	return tickets
 }
 
 // ListTopHosts returns top n hosts
@@ -351,7 +348,7 @@ func (m *TicketModule) ListTopHosts(limit ...int) interface{} {
 	if len(tickets) == 0 {
 		return []util.Map{}
 	}
-	return normalizeSliceUtilMap(m.ctx.Env, tickets)
+	return tickets
 }
 
 // TicketStats returns ticket statistics of the network; If proposerPubKey is
@@ -398,7 +395,7 @@ func (m *TicketModule) TicketStats(proposerPubKey ...string) (result util.Map) {
 	}
 	res["valueOfAll"] = valAll
 
-	return normalizeUtilMap(m.ctx.Env, res)
+	return res
 }
 
 // ListRecent returns most recently acquired tickets
@@ -410,14 +407,17 @@ func (m *TicketModule) ListRecent(limit ...int) []util.Map {
 	if len(limit) > 0 {
 		n = limit[0]
 	}
+
 	res := m.ticketmgr.Query(func(t *tickettypes.Ticket) bool { return true }, tickettypes.QueryOptions{
 		Limit:        n,
 		SortByHeight: -1,
 	})
+
 	if len(res) == 0 {
 		return []util.Map{}
 	}
-	return normalizeSliceUtilMap(m.ctx.Env, res)
+
+	return util.StructSliceToMap(res)
 }
 
 // unbondHostTicket initiates the release of stake associated with a host
@@ -446,7 +446,7 @@ func (m *TicketModule) UnbondHostTicket(params map[string]interface{},
 	}
 
 	if finalizeTx(tx, m.logic, options...) {
-		return normalizeUtilMap(m.ctx.Env, tx.ToMap())
+		return tx.ToMap()
 	}
 
 	hash, err := m.logic.GetMempoolReactor().AddTx(tx)
@@ -454,7 +454,7 @@ func (m *TicketModule) UnbondHostTicket(params map[string]interface{},
 		panic(util.NewStatusError(400, StatusCodeMempoolAddFail, "", err.Error()))
 	}
 
-	return normalizeUtilMap(m.ctx.Env, map[string]interface{}{
+	return map[string]interface{}{
 		"hash": hash,
-	})
+	}
 }

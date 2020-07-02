@@ -31,7 +31,7 @@ var _ = Describe("Client", func() {
 				_, err := client.SendTxPayload(map[string]interface{}{})
 				Expect(err).ToNot(BeNil())
 				Expect(err).To(Equal(&util.StatusError{
-					Code:     "client_error",
+					Code:     ErrCodeUnexpected,
 					HttpCode: 0,
 					Msg:      "bad thing happened",
 					Field:    "",

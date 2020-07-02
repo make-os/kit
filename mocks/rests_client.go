@@ -8,7 +8,6 @@ import (
 	gomock "github.com/golang/mock/gomock"
 	req "github.com/imroc/req"
 	api "gitlab.com/makeos/mosdef/types/api"
-	state "gitlab.com/makeos/mosdef/types/state"
 	reflect "reflect"
 )
 
@@ -71,14 +70,14 @@ func (mr *MockClientMockRecorder) GetAccountNonce(address interface{}, blockHeig
 }
 
 // GetAccount mocks base method
-func (m *MockClient) GetAccount(address string, blockHeight ...uint64) (*state.Account, error) {
+func (m *MockClient) GetAccount(address string, blockHeight ...uint64) (*api.GetAccountResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{address}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetAccount", varargs...)
-	ret0, _ := ret[0].(*state.Account)
+	ret0, _ := ret[0].(*api.GetAccountResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -141,14 +140,14 @@ func (mr *MockClientMockRecorder) GetPushKeyOwnerNonce(pushKeyID interface{}, bl
 }
 
 // GetPushKey mocks base method
-func (m *MockClient) GetPushKey(pushKeyID string, blockHeight ...uint64) (*state.PushKey, error) {
+func (m *MockClient) GetPushKey(pushKeyID string, blockHeight ...uint64) (*api.GetPushKeyResponse, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{pushKeyID}
 	for _, a := range blockHeight {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetPushKey", varargs...)
-	ret0, _ := ret[0].(*state.PushKey)
+	ret0, _ := ret[0].(*api.GetPushKeyResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

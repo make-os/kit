@@ -59,7 +59,7 @@ require (
 	github.com/mr-tron/base58 v1.2.0
 	github.com/multiformats/go-multiaddr v0.2.2
 	github.com/multiformats/go-multihash v0.0.13
-	github.com/ncodes/go-prettyjson v0.0.0-20180528130907-d229c224a219
+	github.com/ncodes/go-prettyjson v0.0.1
 	github.com/olebedev/emitter v0.0.0-20190110104742-e8d1457e6aee
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/onsi/ginkgo v1.12.0

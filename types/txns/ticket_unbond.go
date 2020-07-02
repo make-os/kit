@@ -16,7 +16,7 @@ import (
 type TxTicketUnbond struct {
 	*TxType    `json:",flatten" msgpack:"-" mapstructure:"-"`
 	*TxCommon  `json:",flatten" msgpack:"-" mapstructure:"-"`
-	TicketHash util.Bytes32 `json:"hash" msgpack:"hash" mapstructure:"hash"`
+	TicketHash util.HexBytes `json:"hash" msgpack:"hash" mapstructure:"hash"`
 }
 
 // NewBareTxTicketUnbond returns an instance of TxTicketUnbond with zero values
@@ -24,7 +24,7 @@ func NewBareTxTicketUnbond(ticketType types.TxCode) *TxTicketUnbond {
 	return &TxTicketUnbond{
 		TxType:     &TxType{Type: ticketType},
 		TxCommon:   NewBareTxCommon(),
-		TicketHash: util.EmptyBytes32,
+		TicketHash: []byte{},
 	}
 }
 
@@ -72,8 +72,8 @@ func (tx *TxTicketUnbond) ComputeHash() util.Bytes32 {
 }
 
 // GetHash returns the hash of the transaction
-func (tx *TxTicketUnbond) GetHash() util.Bytes32 {
-	return tx.ComputeHash()
+func (tx *TxTicketUnbond) GetHash() util.HexBytes {
+	return tx.ComputeHash().ToHexBytes()
 }
 
 // GetID returns the id of the transaction (also the hash)
@@ -118,7 +118,7 @@ func (tx *TxTicketUnbond) FromMap(data map[string]interface{}) error {
 			if err != nil {
 				return util.FieldError("blsPubKey", "unable to decode hex value")
 			}
-			tx.TicketHash = util.BytesToBytes32(bz)
+			tx.TicketHash = bz
 		} else {
 			return util.FieldError("addresses", fmt.Sprintf("invalid value type: has %T, "+
 				"wants string", tickHashVal.Inter()))

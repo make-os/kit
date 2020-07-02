@@ -102,7 +102,7 @@ var _ = Describe("UpdateRepoContract", func() {
 			Specify("that config is updated", func() {
 				repo := logic.RepoKeeper().Get(repoName)
 				Expect(repo.Config).ToNot(Equal(repoUpd.Config))
-				Expect(repo.Config.Governance.ProposalDuration).To(Equal(uint64(1000)))
+				Expect(repo.Config.Governance.ProposalDuration.UInt64()).To(Equal(uint64(1000)))
 			})
 
 			Specify("that network fee + proposal fee was deducted", func() {
@@ -165,7 +165,7 @@ var _ = Describe("UpdateRepoContract", func() {
 			})
 
 			Specify("that the proposal was indexed against its end height", func() {
-				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governance.ProposalDuration + curHeight + 1)
+				res := logic.RepoKeeper().GetProposalsEndingAt(repoUpd.Config.Governance.ProposalDuration.UInt64() + curHeight + 1)
 				Expect(res).To(HaveLen(1))
 			})
 		})
@@ -195,8 +195,8 @@ var _ = Describe("UpdateRepoContract", func() {
 			It("should add the new proposal with expected `endAt` and `feeDepEndAt` values", func() {
 				repo := logic.RepoKeeper().GetNoPopulate(repoName)
 				Expect(repo.Proposals).To(HaveLen(1))
-				Expect(repo.Proposals.Get(propID).FeeDepositEndAt).To(Equal(uint64(301)))
-				Expect(repo.Proposals.Get(propID).EndAt).To(Equal(uint64(1301)))
+				Expect(repo.Proposals.Get(propID).FeeDepositEndAt.UInt64()).To(Equal(uint64(301)))
+				Expect(repo.Proposals.Get(propID).EndAt.UInt64()).To(Equal(uint64(1301)))
 			})
 		})
 	})
@@ -240,7 +240,7 @@ var _ = Describe("UpdateRepoContract", func() {
 				})
 				Expect(err).To(BeNil())
 				Expect(repo.Config.Governance.ProposalQuorum).To(Equal(float64(120)))
-				Expect(repo.Config.Governance.ProposalDuration).To(Equal(uint64(100)))
+				Expect(repo.Config.Governance.ProposalDuration.UInt64()).To(Equal(uint64(100)))
 			})
 		})
 	})

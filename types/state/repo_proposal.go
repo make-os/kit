@@ -137,11 +137,11 @@ type RepoProposal struct {
 	Action                types.TxCode          `json:"action" mapstructure:"action" msgpack:"action"`                                              // The action type.
 	ActionData            map[string]util.Bytes `json:"actionData" mapstructure:"actionData" msgpack:"actionData"`                                  // The data to use to perform the action.
 	Creator               string                `json:"creator" mapstructure:"creator" msgpack:"creator"`                                           // The creator is the address of the proposal creator.
-	Height                uint64                `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
+	Height                util.UInt64           `json:"height" mapstructure:"height" msgpack:"height"`                                              // The height of the block the proposal was added
 	Config                *RepoConfigGovernance `json:"config" mapstructure:"config" msgpack:"-"`                                                   // The repo config to used to evaluate the proposal
-	EndAt                 uint64                `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                                                 // Used to close the proposal after the given height.
-	FeeDepositEndAt       uint64                `json:"feeDepEndAt" mapstructure:"feeDepEndAt" msgpack:"feeDepEndAt"`                               // Used to close the proposal after the given height.
-	ProposerMaxJoinHeight uint64                `json:"proposerMaxJoinHeight" mapstructure:"proposerMaxJoinHeight" msgpack:"proposerMaxJoinHeight"` // Used to allow proposer that are active before a specific height.
+	EndAt                 util.UInt64           `json:"endAt" mapstructure:"endAt" msgpack:"endAt"`                                                 // Used to close the proposal after the given height.
+	FeeDepositEndAt       util.UInt64           `json:"feeDepEndAt" mapstructure:"feeDepEndAt" msgpack:"feeDepEndAt"`                               // Used to close the proposal after the given height.
+	ProposerMaxJoinHeight util.UInt64           `json:"proposerMaxJoinHeight" mapstructure:"proposerMaxJoinHeight" msgpack:"proposerMaxJoinHeight"` // Used to allow proposer that are active before a specific height.
 	Yes                   float64               `json:"yes" mapstructure:"yes" msgpack:"yes"`                                                       // Count of "Yes" votes
 	No                    float64               `json:"no" mapstructure:"no" msgpack:"no"`                                                          // Count of "No" votes
 	NoWithVeto            float64               `json:"noWithVeto" mapstructure:"noWithVeto" msgpack:"noWithVeto"`                                  // Count of "No" votes from owners/stakeholders veto power
@@ -174,7 +174,7 @@ func BareRepoProposal() *RepoProposal {
 
 // IsDepositPeriod checks whether the proposal is in the deposit period
 func (p *RepoProposal) IsDepositPeriod(chainHeight uint64) bool {
-	return p.FeeDepositEndAt != 0 && p.FeeDepositEndAt >= chainHeight
+	return p.FeeDepositEndAt != 0 && p.FeeDepositEndAt >= util.UInt64(chainHeight)
 }
 
 // IsFeeDepositEnabled checks whether fee deposit is enabled on the proposal
@@ -263,12 +263,12 @@ func (p *RepoProposal) GetVoterType() VoterType {
 
 // GetVoterMaxJoinHeight implements Proposal
 func (p *RepoProposal) GetVoterMaxJoinHeight() uint64 {
-	return p.ProposerMaxJoinHeight
+	return uint64(p.ProposerMaxJoinHeight)
 }
 
 // GetEndAt implements Proposal
 func (p *RepoProposal) GetEndAt() uint64 {
-	return p.EndAt
+	return p.EndAt.UInt64()
 }
 
 // GetFees implements Proposal

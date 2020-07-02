@@ -98,8 +98,8 @@ func (tx *TxRepoProposalRegisterPushKey) ComputeHash() util.Bytes32 {
 }
 
 // GetHash returns the hash of the transaction
-func (tx *TxRepoProposalRegisterPushKey) GetHash() util.Bytes32 {
-	return tx.ComputeHash()
+func (tx *TxRepoProposalRegisterPushKey) GetHash() util.HexBytes {
+	return tx.ComputeHash().ToHexBytes()
 }
 
 // GetID returns the id of the transaction (also the hash)

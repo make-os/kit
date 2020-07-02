@@ -27,14 +27,6 @@ var _ = Describe("Account", func() {
 
 	Describe(".getNonce", func() {
 		testCases := map[string]*TestCase{
-			"when address is not provided": {
-				params: map[string]interface{}{},
-				err:    &rpc.Err{Code: "60001", Message: "address is required", Data: "address"},
-			},
-			"when address type is not string": {
-				params: map[string]interface{}{"address": 222},
-				err:    &rpc.Err{Code: "60001", Message: "wrong value type, want 'string', got string", Data: "address"},
-			},
 			"when nonce is successfully returned": {
 				params: map[string]interface{}{"address": "addr1"},
 				result: map[string]interface{}{"nonce": "100"},
@@ -61,14 +53,6 @@ var _ = Describe("Account", func() {
 
 	Describe(".getAccount()", func() {
 		testCases := map[string]*TestCase{
-			"when address is not provided": {
-				params: map[string]interface{}{},
-				err:    &rpc.Err{Code: "60001", Message: "address is required", Data: "address"},
-			},
-			"when address type is not string": {
-				params: map[string]interface{}{"address": 222},
-				err:    &rpc.Err{Code: "60001", Message: "wrong value type, want 'string', got string", Data: "address"},
-			},
 			"when account is successfully returned": {
 				params: map[string]interface{}{"address": "addr1"},
 				result: map[string]interface{}{"balance": "100"},
