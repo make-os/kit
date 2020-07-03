@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/objx"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/rpc"
 	"gitlab.com/makeos/mosdef/rpc/api/client"
@@ -19,10 +20,10 @@ import (
 
 // RPCModule provides RPCClient functionalities
 type RPCModule struct {
-	cfg         *config.AppConfig
-	rpcServer   *rpc.Server
-	modFuncs    []*types.ModuleFunc
-	suggestions []prompt.Suggest
+	console.ConsoleSuggestions
+	cfg       *config.AppConfig
+	rpcServer *rpc.Server
+	modFuncs  []*types.ModuleFunc
 }
 
 // NewRPCModule creates an instance of RPCModule
@@ -63,14 +64,6 @@ func (m *RPCModule) globals() []*types.ModuleFunc {
 	return []*types.ModuleFunc{}
 }
 
-// completer returns suggestions for console input
-func (m *RPCModule) completer(d prompt.Document) []prompt.Suggest {
-	if words := d.GetWordBeforeCursor(); len(words) > 1 {
-		return prompt.FilterHasPrefix(m.suggestions, words, true)
-	}
-	return nil
-}
-
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
 func (m *RPCModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
@@ -83,16 +76,16 @@ func (m *RPCModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	for _, f := range m.methods() {
 		rpcNs[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceRPC, f.Name)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return m.completer
+	return m.Completer
 }
 
 // isRunning checks whether the server is running

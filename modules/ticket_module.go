@@ -7,6 +7,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkrimen/otto"
 	"github.com/shopspring/decimal"
+	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
@@ -19,10 +20,10 @@ import (
 
 // TicketModule provides access to various utility functions
 type TicketModule struct {
-	service     services.Service
-	logic       core.Logic
-	ticketmgr   tickettypes.TicketManager
-	suggestions []prompt.Suggest
+	console.ConsoleSuggestions
+	service   services.Service
+	logic     core.Logic
+	ticketmgr tickettypes.TicketManager
 }
 
 // NewTicketModule creates an instance of TicketModule
@@ -101,14 +102,6 @@ func (m *TicketModule) hostFuncs() []*types.ModuleFunc {
 	}
 }
 
-// completer returns suggestions for console input
-func (m *TicketModule) completer(d prompt.Document) []prompt.Suggest {
-	if words := d.GetWordBeforeCursor(); len(words) > 1 {
-		return prompt.FilterHasPrefix(m.suggestions, words, true)
-	}
-	return nil
-}
-
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
 func (m *TicketModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
@@ -122,22 +115,22 @@ func (m *TicketModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	for _, f := range m.methods() {
 		ticketObj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceTicket, f.Name)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	for _, f := range m.hostFuncs() {
 		hostObj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", hostNS, f.Name)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		_ = vm.Set(f.Name, f.Value)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return m.completer
+	return m.Completer
 }
 
 // BuyValidatorTicket creates a transaction to acquire a validator ticket

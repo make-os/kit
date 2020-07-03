@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/crypto"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
@@ -19,10 +20,10 @@ import (
 
 // PushKeyModule manages and provides access to push keys.
 type PushKeyModule struct {
-	cfg         *config.AppConfig
-	service     services.Service
-	logic       core.Logic
-	suggestions []prompt.Suggest
+	console.ConsoleSuggestions
+	cfg     *config.AppConfig
+	service services.Service
+	logic   core.Logic
 }
 
 // NewPushKeyModule creates an instance of PushKeyModule
@@ -76,14 +77,6 @@ func (m *PushKeyModule) globals() []*modulestypes.ModuleFunc {
 	return []*modulestypes.ModuleFunc{}
 }
 
-// completer returns suggestions for console input
-func (m *PushKeyModule) completer(d prompt.Document) []prompt.Suggest {
-	if words := d.GetWordBeforeCursor(); len(words) > 1 {
-		return prompt.FilterHasPrefix(m.suggestions, words, true)
-	}
-	return nil
-}
-
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
 func (m *PushKeyModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
@@ -96,18 +89,18 @@ func (m *PushKeyModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	for _, f := range m.methods() {
 		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespacePushKey, f.Name)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName,
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name,
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}
 
-	return m.completer
+	return m.Completer
 }
 
 // Register registers a push key with the network.

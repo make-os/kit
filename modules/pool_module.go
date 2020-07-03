@@ -5,6 +5,7 @@ import (
 
 	"github.com/c-bata/go-prompt"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/mempool"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/remote/push/types"
@@ -14,9 +15,9 @@ import (
 
 // PoolModule provides access to the transaction pool
 type PoolModule struct {
-	reactor     *mempool.Reactor
-	pushPool    types.PushPool
-	suggestions []prompt.Suggest
+	console.ConsoleSuggestions
+	reactor  *mempool.Reactor
+	pushPool types.PushPool
 }
 
 // NewPoolModule creates an instance of PoolModule
@@ -55,14 +56,6 @@ func (m *PoolModule) methods() []*modulestypes.ModuleFunc {
 	}
 }
 
-// completer returns suggestions for console input
-func (m *PoolModule) completer(d prompt.Document) []prompt.Suggest {
-	if words := d.GetWordBeforeCursor(); len(words) > 1 {
-		return prompt.FilterHasPrefix(m.suggestions, words, true)
-	}
-	return nil
-}
-
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
 func (m *PoolModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
@@ -74,18 +67,18 @@ func (m *PoolModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespacePool, f.Name)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName,
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name,
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}
 
-	return m.completer
+	return m.Completer
 }
 
 // getSize returns the size of the pool

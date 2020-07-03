@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/robertkrimen/otto"
 	"github.com/spf13/cast"
+	"gitlab.com/makeos/mosdef/console"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types"
@@ -20,10 +21,10 @@ import (
 
 // RepoModule provides repository functionalities to JS environment
 type RepoModule struct {
-	logic       core.Logic
-	service     services.Service
-	repoMgr     core.RemoteServer
-	suggestions []prompt.Suggest
+	console.ConsoleSuggestions
+	logic   core.Logic
+	service services.Service
+	repoMgr core.RemoteServer
 }
 
 // NewRepoModule creates an instance of RepoModule
@@ -92,14 +93,6 @@ func (m *RepoModule) globals() []*modulestypes.ModuleFunc {
 	return []*modulestypes.ModuleFunc{}
 }
 
-// completer returns suggestions for console input
-func (m *RepoModule) completer(d prompt.Document) []prompt.Suggest {
-	if words := d.GetWordBeforeCursor(); len(words) > 1 {
-		return prompt.FilterHasPrefix(m.suggestions, words, true)
-	}
-	return nil
-}
-
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
 func (m *RepoModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
@@ -111,18 +104,18 @@ func (m *RepoModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceRepo, f.Name)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName,
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName,
 			Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name,
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name,
 			Description: f.Description})
 	}
 
-	return m.completer
+	return m.Completer
 }
 
 // create registers a git repository on the network

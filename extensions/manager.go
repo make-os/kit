@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/thoas/go-funk"
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/types/constants"
 	"gitlab.com/makeos/mosdef/util"
@@ -22,10 +23,10 @@ import (
 
 // Manager implements Modules. It provides extension management functionalities.
 type Manager struct {
-	cfg         *config.AppConfig
-	main        types.ModulesHub
-	runningExt  map[string]*ExtensionControl
-	suggestions []prompt.Suggest
+	console.ConsoleSuggestions
+	cfg        *config.AppConfig
+	main       types.ModulesHub
+	runningExt map[string]*ExtensionControl
 }
 
 // NewManager creates an instance of Manager
@@ -64,14 +65,6 @@ func (m *Manager) globals() []*types.ModuleFunc {
 	return []*types.ModuleFunc{}
 }
 
-// completer returns suggestions for console input
-func (m *Manager) completer(d prompt.Document) []prompt.Suggest {
-	if words := d.GetWordBeforeCursor(); len(words) > 1 {
-		return prompt.FilterHasPrefix(m.suggestions, words, true)
-	}
-	return nil
-}
-
 // ConfigureVM implements types.ModulesHub. It configures the JS
 // context and return any number of console prompt suggestions
 func (m *Manager) ConfigureVM(vm *otto.Otto) prompt.Completer {
@@ -84,16 +77,16 @@ func (m *Manager) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	for _, f := range m.methods() {
 		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceExtension, f.Name)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return m.completer
+	return m.Completer
 }
 
 // prepare creates a new context for an extension under the given name.

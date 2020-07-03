@@ -26,7 +26,7 @@ type CompleterManager struct {
 	completers []prompt.Completer
 }
 
-// newCompleterManager creates a completer manager.
+// newCompleterManager creates a Completer manager.
 func newCompleterManager() *CompleterManager {
 	sm := new(CompleterManager)
 	sm.completers = append(sm.completers, optionsCompleter)
@@ -38,7 +38,7 @@ func (sm *CompleterManager) add(completers ...prompt.Completer) {
 	sm.completers = append(sm.completers, completers...)
 }
 
-// completer finds suggestions from known completers
+// Completer finds suggestions from known completers
 func (sm *CompleterManager) completer(d prompt.Document) (suggestions []prompt.Suggest) {
 	for _, c := range sm.completers {
 		if sugs := c(d); len(sugs) > 0 {
@@ -46,4 +46,18 @@ func (sm *CompleterManager) completer(d prompt.Document) (suggestions []prompt.S
 		}
 	}
 	return
+}
+
+// consoleSuggestions provides functionalities for providing the console with suggestions.
+// It is meant to be embedded in a module to allow it handle console suggestion provisioning.
+type ConsoleSuggestions struct {
+	Suggestions []prompt.Suggest
+}
+
+// Completer returns suggestions for console input
+func (m *ConsoleSuggestions) Completer(d prompt.Document) []prompt.Suggest {
+	if words := d.GetWordBeforeCursor(); len(words) > 1 {
+		return prompt.FilterHasPrefix(m.Suggestions, words, true)
+	}
+	return nil
 }

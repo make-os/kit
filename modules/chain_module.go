@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/node/services"
 	"gitlab.com/makeos/mosdef/types/constants"
@@ -20,9 +21,9 @@ import (
 
 // ChainModule provides access to chain information
 type ChainModule struct {
-	service     services.Service
-	keepers     core.Keepers
-	suggestions []prompt.Suggest
+	console.ConsoleSuggestions
+	service services.Service
+	keepers core.Keepers
 }
 
 // NewChainModule creates an instance of ChainModule
@@ -66,14 +67,6 @@ func (m *ChainModule) methods() []*types.ModuleFunc {
 	}
 }
 
-// completer returns suggestions for console input
-func (m *ChainModule) completer(d prompt.Document) []prompt.Suggest {
-	if words := d.GetWordBeforeCursor(); len(words) > 1 {
-		return prompt.FilterHasPrefix(m.suggestions, words, true)
-	}
-	return nil
-}
-
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
 func (m *ChainModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
@@ -85,16 +78,16 @@ func (m *ChainModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	for _, f := range m.methods() {
 		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceChain, f.Name)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return m.completer
+	return m.Completer
 }
 
 // getBlock fetches a block at the given height

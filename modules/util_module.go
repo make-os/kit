@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/ncodes/go-prettyjson"
 	"github.com/robertkrimen/otto"
+	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/crypto"
 	"gitlab.com/makeos/mosdef/modules/types"
 	"gitlab.com/makeos/mosdef/params"
@@ -20,8 +21,8 @@ import (
 
 // UtilModule provides access to various utility functions
 type UtilModule struct {
-	vm          *otto.Otto
-	suggestions []prompt.Suggest
+	console.ConsoleSuggestions
+	vm *otto.Otto
 }
 
 // NewUtilModule creates an instance of UtilModule
@@ -54,14 +55,6 @@ func (m *UtilModule) methods() []*types.ModuleFunc {
 	return m.globals()
 }
 
-// completer returns suggestions for console input
-func (m *UtilModule) completer(d prompt.Document) []prompt.Suggest {
-	if words := d.GetWordBeforeCursor(); len(words) > 1 {
-		return prompt.FilterHasPrefix(m.suggestions, words, true)
-	}
-	return nil
-}
-
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
 func (m *UtilModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
@@ -74,16 +67,16 @@ func (m *UtilModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	for _, f := range m.methods() {
 		obj[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceUtil, f.Name)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		m.vm.Set(f.Name, f.Value)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return m.completer
+	return m.Completer
 }
 
 // prettyPrint pretty prints any object.

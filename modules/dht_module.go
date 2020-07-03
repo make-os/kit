@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gitlab.com/makeos/mosdef/config"
+	"gitlab.com/makeos/mosdef/console"
 	"gitlab.com/makeos/mosdef/dht"
 	"gitlab.com/makeos/mosdef/dht/server/types"
 	modulestypes "gitlab.com/makeos/mosdef/modules/types"
@@ -19,9 +20,9 @@ import (
 
 // DHTModule provides access to the DHT service
 type DHTModule struct {
-	cfg         *config.AppConfig
-	dht         types.DHT
-	suggestions []prompt.Suggest
+	console.ConsoleSuggestions
+	cfg *config.AppConfig
+	dht types.DHT
 }
 
 // NewDHTModule creates an instance of DHTModule
@@ -75,14 +76,6 @@ func (m *DHTModule) globals() []*modulestypes.ModuleFunc {
 	return []*modulestypes.ModuleFunc{}
 }
 
-// completer returns suggestions for console input
-func (m *DHTModule) completer(d prompt.Document) []prompt.Suggest {
-	if words := d.GetWordBeforeCursor(); len(words) > 1 {
-		return prompt.FilterHasPrefix(m.suggestions, words, true)
-	}
-	return nil
-}
-
 // ConfigureVM configures the JS context and return
 // any number of console prompt suggestions
 func (m *DHTModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
@@ -95,16 +88,16 @@ func (m *DHTModule) ConfigureVM(vm *otto.Otto) prompt.Completer {
 	for _, f := range m.methods() {
 		nsMap[f.Name] = f.Value
 		funcFullName := fmt.Sprintf("%s.%s", constants.NamespaceDHT, f.Name)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: funcFullName, Description: f.Description})
 	}
 
 	// Register global functions
 	for _, f := range m.globals() {
 		vm.Set(f.Name, f.Value)
-		m.suggestions = append(m.suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
+		m.Suggestions = append(m.Suggestions, prompt.Suggest{Text: f.Name, Description: f.Description})
 	}
 
-	return m.completer
+	return m.Completer
 }
 
 // store stores a value corresponding to the given key
